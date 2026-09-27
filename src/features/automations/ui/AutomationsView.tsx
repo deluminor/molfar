@@ -9,8 +9,13 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { AccessPicker } from "../../sessions/ui/AccessPicker";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { OverlayNav } from "../../../app/shell/TitleBar";
+import { WindowControls } from "../../../app/shell/WindowControls";
+import { gitBranches } from "../../../platform/tauri/fs";
+import { IS_MAC } from "../../../platform/tauri/platform";
+import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { LAYER } from "../../../shared/lib/layers";
+import { projectKey, projectName } from "../../../shared/lib/paths";
 import {
   AlertCircle,
   CheckCircle,
@@ -33,18 +38,57 @@ import {
   X,
   Zap,
 } from "../../../shared/ui/icons";
-import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
-import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
 import { Popover } from "../../../shared/ui/Popover";
+import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
+import {
+  AZUREDEVOPS_CHANGE_EVENT,
+  azureDevOpsConnected,
+} from "../../inbox/model/azureDevOps";
+import {
+  formatRelativeTime,
+  githubStatus,
+} from "../../inbox/model/githubTasks";
+import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../../inbox/model/gitlab";
+import { JIRA_CHANGE_EVENT, jiraConnected } from "../../inbox/model/jira";
+import { LINEAR_CHANGE_EVENT, linearConnected } from "../../inbox/model/linear";
+import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
+import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
+import {
+  looksLikeProject,
+  type RecentProject,
+} from "../../projects/model/recents";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
+import {
+  defaultSessionChoice,
+  firstEnabledHarness,
+  modelsFor,
+  preferredModelId,
+  resolveModel,
+} from "../../sessions/model/models";
+import {
+  loadSessionFolders,
+  subscribeSessionFolders,
+} from "../../sessions/model/sessionFolders";
+import { AccessPicker } from "../../sessions/ui/AccessPicker";
+import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
+import {
+  loadModelControls,
+  subscribeModelControls,
+} from "../../settings/model/settings";
 import { SkillPromptField } from "../../skills/ui/SkillPromptField";
-import { OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
+import {
+  loadTabGroupColors,
+  loadTabGroupCustomColors,
+  loadTabGroupLabels,
+  loadTabGroupMascots,
+  resolveTabGroupColor,
+  resolveTabGroupLabel,
+  resolveTabGroupLogo,
+  resolveTabGroupMascot,
+} from "../../workspace/model/tabGroups";
 import {
   AUTOMATION_WEEKDAYS,
   applyTriggers,
@@ -79,41 +123,14 @@ import {
   type AutomationTemplateCategoryId,
   type AutomationTemplateIcon,
 } from "../model/automationTemplates";
-import {
-  AZUREDEVOPS_CHANGE_EVENT,
-  azureDevOpsConnected,
-} from "../../inbox/model/azureDevOps";
-import { gitBranches } from "../../../platform/tauri/fs";
-import { formatRelativeTime, githubStatus } from "../../inbox/model/githubTasks";
-import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../../inbox/model/gitlab";
-import { LAYER } from "../../../shared/lib/layers";
-import { LINEAR_CHANGE_EVENT, linearConnected } from "../../inbox/model/linear";
-import { JIRA_CHANGE_EVENT, jiraConnected } from "../../inbox/model/jira";
-import { defaultSessionChoice, firstEnabledHarness, modelsFor, preferredModelId, resolveModel } from "../../sessions/model/models";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { looksLikeProject, type RecentProject } from "../../projects/model/recents";
-import {
-  loadSessionFolders,
-  subscribeSessionFolders,
-} from "../../sessions/model/sessionFolders";
-import { loadModelControls, subscribeModelControls } from "../../settings/model/settings";
-import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLabel,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
 
 type Props = {
   besideRail?: boolean;
   compactRail?: boolean;
   cwd?: string;
   recents: RecentProject[];
+  focusAutomationId?: string | null;
+  onFocusAutomationConsumed?: () => void;
   onClose: () => void;
   onToggleSidebar?: () => void;
   onLaunch: (
@@ -135,6 +152,8 @@ export function AutomationsView({
   compactRail = false,
   cwd,
   recents,
+  focusAutomationId = null,
+  onFocusAutomationConsumed,
   onClose,
   onToggleSidebar,
   onLaunch,
@@ -168,6 +187,8 @@ export function AutomationsView({
       <AutomationsContent
         cwd={cwd}
         recents={recents}
+        focusAutomationId={focusAutomationId}
+        onFocusAutomationConsumed={onFocusAutomationConsumed}
         onLaunch={onLaunch}
         onOpenSession={onOpenSession}
       />
@@ -178,14 +199,25 @@ export function AutomationsView({
 function AutomationsContent({
   cwd,
   recents,
+  focusAutomationId,
+  onFocusAutomationConsumed,
   onLaunch,
   onOpenSession,
-}: Pick<Props, "cwd" | "recents" | "onLaunch" | "onOpenSession">) {
+}: Pick<
+  Props,
+  | "cwd"
+  | "recents"
+  | "focusAutomationId"
+  | "onFocusAutomationConsumed"
+  | "onLaunch"
+  | "onOpenSession"
+>) {
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [runs, setRuns] = useState<AutomationRun[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(
-    rememberedAutomationId,
+    focusAutomationId ?? rememberedAutomationId,
   );
+
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -216,6 +248,15 @@ function AutomationsContent({
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!focusAutomationId) return;
+
+    setSelectedId(focusAutomationId);
+    rememberedAutomationId = focusAutomationId;
+
+    onFocusAutomationConsumed?.();
+  }, [focusAutomationId, onFocusAutomationConsumed]);
 
   useEffect(() => {
     void refresh();
@@ -772,9 +813,7 @@ function runTriggerMeta(
     const event = run.event ?? draft.triggerEvent;
     return {
       kind,
-      label:
-        findTriggerEvent(kind, event)?.label ??
-        triggerName(kind),
+      label: findTriggerEvent(kind, event)?.label ?? triggerName(kind),
     };
   }
   const times = draft.triggers.filter((trigger) => trigger.kind === "time");
