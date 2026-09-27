@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Gauge, RefreshCw } from "../../../shared/ui/icons";
 import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
 import { refreshUsageCards } from "../model/fetchUsage";
@@ -11,9 +17,9 @@ import {
 } from "../model/usageCard";
 
 const PROVIDERS: { id: UsageProviderId; title: string }[] = [
-  { id: "claude", title: "Claude" },
   { id: "codex", title: "Codex" },
   { id: "cursor", title: "Cursor" },
+  { id: "claude", title: "Claude" },
   { id: "antigravity", title: "Antigravity" },
 ];
 
@@ -30,7 +36,13 @@ type Props = {
   onToggleSidebar?: () => void;
 };
 
-function UsageBar({ window, now }: { window: UsageWindow; now: number }): ReactNode {
+function UsageBar({
+  window,
+  now,
+}: {
+  window: UsageWindow;
+  now: number;
+}): ReactNode {
   const pct = Math.min(100, Math.max(0, window.usedPercent));
   return (
     <div className="flex flex-col gap-1.5">
