@@ -18,7 +18,7 @@ export const DragonCard = memo(function DragonCard(): ReactNode {
       <div className="relative h-full w-full overflow-hidden text-accent">
         <svg
           role="img"
-          aria-label="Pixel dragon with spread wings and a curled tail"
+          aria-label="Pixel dragon facing left with spread wings and a curled tail"
           viewBox={`0 0 ${DRAGON_VIEW_WIDTH} ${DRAGON_VIEW_HEIGHT}`}
           className="absolute inset-0 h-full w-full"
           preserveAspectRatio="xMidYMid meet"
