@@ -30,6 +30,7 @@ rusqlite = { version = "0.40.2", features = ["bundled"], default-features = fals
 ureq = { version = "2.12.1", default-features = false, features = ["tls", "gzip"] }
 url = "2.5"
 tauri-plugin-process = "2"
+sysinfo = { version = "0.39.6", default-features = false, features = ["system"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -55,7 +56,7 @@ tauri-plugin-global-shortcut = "2"
 notify-rust = "4.18"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-updater = "2"
+tauri-plugin-updater = "2.12"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-window-state = "2.4.1"

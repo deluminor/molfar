@@ -12,6 +12,7 @@ mod external_editor;
 mod fs;
 mod gitlab;
 mod harness;
+mod home_host;
 mod inbox_media;
 mod jira;
 mod linear;
@@ -35,6 +36,7 @@ mod session_store;
 mod skills;
 #[cfg(target_os = "windows")]
 mod tray;
+mod usage_limits;
 mod window;
 mod window_transfer;
 #[cfg(windows)]
@@ -422,6 +424,9 @@ pub fn run() {
             account_identity::provider_account_identity,
             rate_limits::fetch_claude_usage,
             rate_limits::fetch_opencode_go_usage,
+            home_host::home_host_stats,
+            usage_limits::usage_cursor_limits,
+            usage_limits::usage_antigravity_limits,
             pty::pty_spawn,
             pty::pty_write,
             pty::pty_resize,
