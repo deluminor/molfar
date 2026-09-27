@@ -56,6 +56,7 @@ import GitPullRequestDraftIcon from "@hugeicons/core-free-icons/GitPullRequestDr
 import GitPullRequestIcon from "@hugeicons/core-free-icons/GitPullRequestIcon";
 import GlobeIcon from "@hugeicons/core-free-icons/GlobeIcon";
 import HelpCircleIcon from "@hugeicons/core-free-icons/HelpCircleIcon";
+import Home01Icon from "@hugeicons/core-free-icons/Home01Icon";
 import ImageAdd01Icon from "@hugeicons/core-free-icons/ImageAdd01Icon";
 import InboxIcon from "@hugeicons/core-free-icons/InboxIcon";
 import NotificationOff01Icon from "@hugeicons/core-free-icons/NotificationOff01Icon";
@@ -195,6 +196,7 @@ export const Eye = wrap(ViewIcon, "Eye");
 export const FolderPlus = wrap(FolderAddIcon, "FolderPlus");
 export const FolderTree = wrap(FolderTreeIcon, "FolderTree");
 export const Gauge = wrap(GaugeIcon, "Gauge");
+export const Home = wrap(Home01Icon, "Home");
 export const ChartBreakoutSquare = wrap(
   ChartBreakoutSquareIcon,
   "ChartBreakoutSquare",

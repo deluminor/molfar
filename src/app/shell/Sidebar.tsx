@@ -286,6 +286,7 @@ type Props = {
   updateNotice?: InstalledUpdate | null;
   onOpenWhatsNew?: (version: string) => void;
   onDismissUpdate?: () => void;
+  railExtraActions?: ReactNode;
 };
 
 function SidebarComponent({
@@ -372,6 +373,7 @@ function SidebarComponent({
   updateNotice = null,
   onOpenWhatsNew,
   onDismissUpdate,
+  railExtraActions,
 }: Props) {
   const gitRoot = gitCwd || cwd;
   const resize = useDragResize({
@@ -1974,6 +1976,7 @@ function SidebarComponent({
           updateNotice={updateNotice}
           onOpenWhatsNew={onOpenWhatsNew}
           onDismissUpdate={onDismissUpdate}
+          extraActions={railExtraActions}
         />
       ) : null}
       {sidebarVisible ? sidebarContent : null}

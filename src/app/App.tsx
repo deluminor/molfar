@@ -1,53 +1,4 @@
-import { acceptQuickLaunch } from "./model/quickLaunchSession";
-import {
-  handleAgentApp,
-  type AppSessionListing,
-} from "../features/agent-app/model/agentApp";
-import { submitWithSettlement } from "./model/managedSubmission";
-import {
-  submitAfterProjectSync,
-  type SubmissionAcceptance,
-} from "./model/submissionAcceptance";
-import type { CiRepairRequest } from "../features/inbox/model/ciRepair";
-import { ciRepairSessions } from "../features/inbox/model/ciRepairSessions";
-import {
-  rebaseCiRepairs,
-  trackCiRepair,
-} from "../features/inbox/model/ciRepairTracking";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  orchestrationCheckoutCwd,
-  orchestrationProjectCwd,
-  orchestrator,
-  shellPath,
-  workspaceIdentity,
-  type ControlOutcome,
-} from "../features/orchestration/model/orchestration";
-import { modelsFor } from "../features/sessions/model/models";
-import { isHarnessAvailable } from "../integrations/harness/core/availability";
-import {
-  completeOrchestrationProposal,
-  completeOrRepairOrchestrationProposal,
-  orchestrationPlanningPrompt,
-  orchestrationRepairPrompt,
-  proposalBlock,
-  validateOrchestrationSettings,
-  withOrchestrationProposal,
-  type OrchestrationProposal,
-} from "../features/orchestration/model/orchestrationPlan";
-import { discoverOrchestrationSettings } from "../features/orchestration/model/orchestrationCatalog";
-import {
-  attachOrchestrationWorkers,
-  consolidateOrchestrationTabs,
-  prepareOrchestrationWorkerDetails,
-  releaseOrchestrationWorker,
-} from "../features/orchestration/model/orchestrationWorkspace";
-import {
-  OrchestrationActions,
-  OrchestrationWorkers,
-  type OrchestrationWorkerDetail,
-} from "../features/orchestration/ui/OrchestrationActions";
-import { flushSync } from "react-dom";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask, message } from "@tauri-apps/plugin-dialog";
@@ -60,72 +11,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { Sidebar } from "./shell/Sidebar";
-import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
-import { WhatsNewDialog } from "./shell/WhatsNewDialog";
-import { ProviderSignInDialog } from "../features/sessions/ui/ProviderSignInDialog";
-import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
-import { MenuBar } from "./shell/MenuBar";
-import { FilePicker } from "../features/files/ui/FilePicker";
+import { flushSync } from "react-dom";
 import {
-  DeleteSessionDialog,
-  type SessionDeleteChoice,
-} from "../features/sessions/ui/DeleteSessionDialog";
-import {
-  assertWorktreeFilesClosed,
-  createOrchestrationWorktree,
-  createWorktree,
-  detachSessionWorktree,
-  checkWorktreeRemoval,
-  listWorktrees,
-  namedWorktreeBranch,
-  orchestrationWorktreeBranchName,
-  removeOrchestrationBranch,
-  removeOrchestrationWorktree,
-  removeWorktree,
-  renameWorktreeBranch,
-  sessionInWorktree,
-  temporaryWorktreeBranchName,
-  worktreeSessionIds,
-  type Worktree,
-} from "../features/source-control/model/worktrees";
-import { UsageFooter } from "./shell/UsageFooter";
-import { useProjectBranches } from "../features/source-control/hooks/useProjectBranches";
-import { useInboxActivity } from "../features/inbox/hooks/useInboxUnseen";
-import {
-  loadProjectRailOpen,
-  loadSessionSidebarOpen,
-  saveProjectRailOpen,
-  saveSessionSidebarOpen,
-  type SidebarTabId,
-} from "../features/settings/model/appearance";
-import {
-  loadProjectSidebarTab,
-  saveProjectSidebarTab,
-} from "../features/settings/model/projectSidebarTab";
-import { HAS_NATIVE_GLASS, IS_MAC } from "../platform/tauri/platform";
-import {
-  applyUiScale,
-  loadUiScale,
-  saveUiScale,
-  UI_SCALE_DEFAULT,
-  zoomInUiScale,
-  zoomOutUiScale,
-} from "../features/settings/model/uiScale";
-import { resolveZoomKeybinding } from "../features/settings/model/zoomKeybinding";
-import { resolveAppShortcut } from "../features/settings/model/appShortcuts";
-import { runUpdateFlow } from "./model/updater";
-import {
-  displayAttachments,
-  prepareAttachments,
-} from "../features/sessions/model/attachments";
-import {
-  basename,
-  notifyGitChanged,
-  pickFolder,
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-} from "../platform/tauri/fs";
+  handleAgentApp,
+  type AppSessionListing,
+} from "../features/agent-app/model/agentApp";
 import {
   invalidateProjectFiles,
   prefetchProjectFiles,
@@ -133,57 +23,44 @@ import {
   resolveFileOpenRequest,
   resolveOpenablePath,
 } from "../features/files/model/fileIndex";
+import { FilePicker } from "../features/files/ui/FilePicker";
+import { useInboxActivity } from "../features/inbox/hooks/useInboxUnseen";
+import type { CiRepairRequest } from "../features/inbox/model/ciRepair";
+import { ciRepairSessions } from "../features/inbox/model/ciRepairSessions";
 import {
-  closeLeaf,
-  closeSurfacePanes,
-  findSurfacePane,
-  firstLeafId,
-  focusedFileTab,
-  isolateTerminalPanes,
-  isFilesystemTab,
-  isCommitTab,
-  isTerminalTab,
-  leaf,
-  leafIds,
-  movePane,
-  neighborLeafId,
-  newEditorWorkspaceTab,
-  newFileTab,
-  newPlanTab,
-  newTab,
-  newTerminalFile,
-  newTerminalWorkspaceTab,
-  nextTerminalTitle,
-  openChangesTab,
-  openCommitTab,
-  newAgentTab,
-  openEditorTab,
-  openSessionChangesTab,
-  pinEditorFile,
-  openWorkspaceFile,
-  previewWorkspaceFile,
-  openTerminalTab,
-  removePane,
-  resetTabToSession,
-  replaceLeafId,
-  setSplitRatio,
-  siblingLeafId,
-  splitPane,
-  surfacePanes,
-  updateTerminalTab,
-  withSurfacePanes,
-  type EditorPane,
-  type FilePaneTab,
-  type FocusDir,
-  type PaneEdge,
-  type SplitDir,
-  type WorkspaceTab,
-} from "../features/workspace/model/layout";
+  rebaseCiRepairs,
+  trackCiRepair,
+} from "../features/inbox/model/ciRepairTracking";
 import {
-  releaseNotesForVersion,
-  releaseNotesTitle,
-} from "./model/releaseNotes";
-import { mergeOrderedSubset, orderByIds } from "../shared/lib/reorder";
+  orchestrationCheckoutCwd,
+  orchestrationProjectCwd,
+  orchestrator,
+  shellPath,
+  workspaceIdentity,
+  type ControlOutcome,
+} from "../features/orchestration/model/orchestration";
+import { discoverOrchestrationSettings } from "../features/orchestration/model/orchestrationCatalog";
+import {
+  completeOrchestrationProposal,
+  completeOrRepairOrchestrationProposal,
+  orchestrationPlanningPrompt,
+  orchestrationRepairPrompt,
+  proposalBlock,
+  validateOrchestrationSettings,
+  withOrchestrationProposal,
+  type OrchestrationProposal,
+} from "../features/orchestration/model/orchestrationPlan";
+import {
+  attachOrchestrationWorkers,
+  consolidateOrchestrationTabs,
+  prepareOrchestrationWorkerDetails,
+  releaseOrchestrationWorker,
+} from "../features/orchestration/model/orchestrationWorkspace";
+import {
+  OrchestrationActions,
+  OrchestrationWorkers,
+  type OrchestrationWorkerDetail,
+} from "../features/orchestration/ui/OrchestrationActions";
 import {
   addTerminalToDock,
   applyDockGridStyle,
@@ -202,57 +79,17 @@ import {
   type ProjectTerminalDock as ProjectTerminal,
 } from "../features/projects/model/projectTerminal";
 import {
-  applyGroupedReorder,
-  insertTabBesideActive,
-  removeTabFromGroup,
-  tabGroupProject,
-} from "../features/workspace/model/tabGroups";
-import { type WindowTransferPayload } from "./model/windowTransfer";
+  displayAttachments,
+  prepareAttachments,
+} from "../features/sessions/model/attachments";
 import {
-  confirmCloseTerminal,
-  confirmCloseTerminals,
-} from "../features/terminal/model/terminalClose";
-import {
-  listRunningTerminals,
-  terminalTabLabel,
-  type TerminalMetaPatch,
-} from "../features/terminal/model/terminalTab";
-import {
-  applyHarnessEvent,
-  appendUser,
-  appendSteerUser,
-  bindHarnessSession,
-  cancelHarnessTurn,
-  canCompactHarnessContext,
-  canRewindHarnessLastTurn,
-  canSteerHarness,
-  compactHarnessContext,
-  rewindHarnessLastTurn,
-  forgetHarnessSession,
-  generateHarnessTitle,
-  generateHarnessBranchName,
-  isLiveHarness,
-  latestTurnNeedsHarnessLogin,
-  probeHarnessAvailability,
-  refreshHarnessCatalogs,
-  registerBuiltinHarnesses,
-  promoteLastAssistantToPlan,
-  respondHarnessApproval,
-  respondHarnessQuestion,
-  keepHarnessQuestionOpen,
-  runHarnessTextPrompt,
-  sendHarnessTurn,
-  steerHarnessTurn,
-  startHarnessBridge,
-  stopHarnessSession,
-  stopHarnessTextPrompts,
-  stopStreaming,
-  pickTextHarness,
-  type ApprovalDecision,
-  type HarnessEvent,
-  type UserQuestionReply,
-} from "../integrations/harness";
-import { supportsHarnessLogin } from "../integrations/harness/core/authSupport";
+  applyBtwHarnessEvent,
+  btwTurnHarness,
+  buildBtwPrompt,
+  replaceBtwThread,
+  sealBtwResponseBlocks,
+  supportsBtwHarness,
+} from "../features/sessions/model/btw";
 import {
   appendPreparingHandoff,
   buildDeterministicHandoff,
@@ -268,36 +105,183 @@ import {
   sessionChildHarnesses,
   sessionThroughTurn,
   shouldAskOutgoingAgent,
-  type HandoffComposerCard,
   userMessagesAfterHandoff,
   wrapHandoffPrompt,
+  type HandoffComposerCard,
 } from "../features/sessions/model/handoff";
 import { requestOutgoingHandoff } from "../features/sessions/model/handoffTurn";
+import { modelsFor } from "../features/sessions/model/models";
+import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
 import {
-  applyBtwHarnessEvent,
-  btwTurnHarness,
-  buildBtwPrompt,
-  replaceBtwThread,
-  sealBtwResponseBlocks,
-  supportsBtwHarness,
-} from "../features/sessions/model/btw";
+  DeleteSessionDialog,
+  type SessionDeleteChoice,
+} from "../features/sessions/ui/DeleteSessionDialog";
+import { ProviderSignInDialog } from "../features/sessions/ui/ProviderSignInDialog";
+import {
+  loadProjectRailOpen,
+  loadSessionSidebarOpen,
+  saveProjectRailOpen,
+  saveSessionSidebarOpen,
+  type SidebarTabId,
+} from "../features/settings/model/appearance";
+import { resolveAppShortcut } from "../features/settings/model/appShortcuts";
+import {
+  loadProjectSidebarTab,
+  saveProjectSidebarTab,
+} from "../features/settings/model/projectSidebarTab";
+import {
+  applyUiScale,
+  loadUiScale,
+  saveUiScale,
+  UI_SCALE_DEFAULT,
+  zoomInUiScale,
+  zoomOutUiScale,
+} from "../features/settings/model/uiScale";
+import { resolveZoomKeybinding } from "../features/settings/model/zoomKeybinding";
+import { useProjectBranches } from "../features/source-control/hooks/useProjectBranches";
+import {
+  assertWorktreeFilesClosed,
+  checkWorktreeRemoval,
+  createOrchestrationWorktree,
+  createWorktree,
+  detachSessionWorktree,
+  listWorktrees,
+  namedWorktreeBranch,
+  orchestrationWorktreeBranchName,
+  removeOrchestrationBranch,
+  removeOrchestrationWorktree,
+  removeWorktree,
+  renameWorktreeBranch,
+  sessionInWorktree,
+  temporaryWorktreeBranchName,
+  worktreeSessionIds,
+  type Worktree,
+} from "../features/source-control/model/worktrees";
+import {
+  confirmCloseTerminal,
+  confirmCloseTerminals,
+} from "../features/terminal/model/terminalClose";
+import {
+  listRunningTerminals,
+  terminalTabLabel,
+  type TerminalMetaPatch,
+} from "../features/terminal/model/terminalTab";
+import {
+  closeLeaf,
+  closeSurfacePanes,
+  findSurfacePane,
+  firstLeafId,
+  focusedFileTab,
+  isCommitTab,
+  isFilesystemTab,
+  isolateTerminalPanes,
+  isTerminalTab,
+  leaf,
+  leafIds,
+  movePane,
+  neighborLeafId,
+  newAgentTab,
+  newEditorWorkspaceTab,
+  newFileTab,
+  newPlanTab,
+  newTab,
+  newTerminalFile,
+  newTerminalWorkspaceTab,
+  nextTerminalTitle,
+  openChangesTab,
+  openCommitTab,
+  openEditorTab,
+  openSessionChangesTab,
+  openTerminalTab,
+  openWorkspaceFile,
+  pinEditorFile,
+  previewWorkspaceFile,
+  removePane,
+  replaceLeafId,
+  resetTabToSession,
+  setSplitRatio,
+  siblingLeafId,
+  splitPane,
+  surfacePanes,
+  updateTerminalTab,
+  withSurfacePanes,
+  type EditorPane,
+  type FilePaneTab,
+  type FocusDir,
+  type PaneEdge,
+  type SplitDir,
+  type WorkspaceTab,
+} from "../features/workspace/model/layout";
+import {
+  applyGroupedReorder,
+  insertTabBesideActive,
+  removeTabFromGroup,
+  tabGroupProject,
+} from "../features/workspace/model/tabGroups";
+import {
+  appendSteerUser,
+  appendUser,
+  applyHarnessEvent,
+  bindHarnessSession,
+  cancelHarnessTurn,
+  canCompactHarnessContext,
+  canRewindHarnessLastTurn,
+  canSteerHarness,
+  compactHarnessContext,
+  forgetHarnessSession,
+  generateHarnessBranchName,
+  generateHarnessTitle,
+  isLiveHarness,
+  keepHarnessQuestionOpen,
+  latestTurnNeedsHarnessLogin,
+  pickTextHarness,
+  probeHarnessAvailability,
+  promoteLastAssistantToPlan,
+  refreshHarnessCatalogs,
+  registerBuiltinHarnesses,
+  respondHarnessApproval,
+  respondHarnessQuestion,
+  rewindHarnessLastTurn,
+  runHarnessTextPrompt,
+  sendHarnessTurn,
+  startHarnessBridge,
+  steerHarnessTurn,
+  stopHarnessSession,
+  stopHarnessTextPrompts,
+  stopStreaming,
+  type ApprovalDecision,
+  type HarnessEvent,
+  type UserQuestionReply,
+} from "../integrations/harness";
+import { supportsHarnessLogin } from "../integrations/harness/core/authSupport";
+import { isHarnessAvailable } from "../integrations/harness/core/availability";
+import {
+  basename,
+  notifyGitChanged,
+  pickFolder,
+  type GitFileDiffKind,
+  type GitHistoryCommit,
+} from "../platform/tauri/fs";
+import { HAS_NATIVE_GLASS, IS_MAC } from "../platform/tauri/platform";
+import { mergeOrderedSubset, orderByIds } from "../shared/lib/reorder";
+import { submitWithSettlement } from "./model/managedSubmission";
+import { acceptQuickLaunch } from "./model/quickLaunchSession";
+import {
+  releaseNotesForVersion,
+  releaseNotesTitle,
+} from "./model/releaseNotes";
+import {
+  submitAfterProjectSync,
+  type SubmissionAcceptance,
+} from "./model/submissionAcceptance";
+import { runUpdateFlow } from "./model/updater";
+import { type WindowTransferPayload } from "./model/windowTransfer";
+import { MenuBar } from "./shell/MenuBar";
+import { Sidebar } from "./shell/Sidebar";
+import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
+import { UsageFooter } from "./shell/UsageFooter";
+import { WhatsNewDialog } from "./shell/WhatsNewDialog";
 
-import { isEditTool } from "../integrations/harness/core/preview";
-import {
-  createEditedResendAttempt,
-  createEditedResendCoordinator,
-} from "../features/sessions/model/editLastTurn";
-import {
-  beginSessionTurn,
-  applySessionCheckpoint,
-  captureSessionCheckpoint,
-  forgetSessionCheckpoint,
-  flushSessionCheckpoint,
-  keepSessionChanges,
-  notifyReviewChanged,
-  prepareSessionCheckpoint,
-  sessionCheckpointCleanupSafe,
-} from "../features/sessions/model/checkpoint";
 import { notifyDirsChanged } from "../features/files/model/fileTree";
 import {
   invalidateWatchedFiles,
@@ -308,6 +292,21 @@ import {
   type OpenFileFn,
 } from "../features/search/model/search";
 import {
+  applySessionCheckpoint,
+  beginSessionTurn,
+  captureSessionCheckpoint,
+  flushSessionCheckpoint,
+  forgetSessionCheckpoint,
+  keepSessionChanges,
+  notifyReviewChanged,
+  prepareSessionCheckpoint,
+  sessionCheckpointCleanupSafe,
+} from "../features/sessions/model/checkpoint";
+import {
+  createEditedResendAttempt,
+  createEditedResendCoordinator,
+} from "../features/sessions/model/editLastTurn";
+import {
   mergeModelSettings,
   nativeModelId,
   preferredModelSettings,
@@ -315,21 +314,8 @@ import {
   saveLastModelSettings,
   saveRecentModelChoice,
 } from "../features/sessions/model/models";
+import { isEditTool } from "../integrations/harness/core/preview";
 
-import {
-  buildPlanPrompt,
-  isProviderFailureText,
-  planTitle,
-  planTurnPrompt,
-} from "../features/sessions/model/plan";
-import {
-  displayPath,
-  isEqualOrInside,
-  pathKey,
-  projectName,
-  rebasePath,
-  resolveWorkspacePath,
-} from "../shared/lib/paths";
 import {
   rebaseProjectData,
   removeProjectData,
@@ -352,44 +338,37 @@ import {
   sameProjectPath,
 } from "../features/projects/model/recents";
 import {
-  applyDetachPaneToTab,
-  applyPlaceTabOnPane,
-  applyPlaceSessionOnPane,
-  filterTabsForProject,
-  findOpenSessionTab,
-  planWorkspaceTabClose,
-  switchSessionInTab,
-  workspaceTabCwd,
-  focusedWorkspaceTabCwd,
-} from "../features/workspace/model/workspaceTabGroups";
-import { applyAddToChatRequest } from "../features/sessions/model/addChatToWorkspace";
-import {
-  ADD_TO_CHAT_EVENT,
-  type AddToChatRequest,
-} from "../features/sessions/model/quoteDraft";
-import { createSessionRemover } from "../features/sessions/model/sessionRemoval";
-import { shouldGenerateSessionTitle } from "../features/sessions/model/sessionTitle";
-import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
   providerAccountExists,
   selectedProviderAccountId,
   supportsProviderAccounts,
   type ProviderAccountProvider,
 } from "../features/providers/model/providerAccounts";
+import { applyAddToChatRequest } from "../features/sessions/model/addChatToWorkspace";
 import {
-  HARNESSES,
-  HARNESS_LABEL,
-  HARNESS_TITLE,
+  buildPlanPrompt,
+  isProviderFailureText,
+  planTitle,
+  planTurnPrompt,
+} from "../features/sessions/model/plan";
+import {
+  ADD_TO_CHAT_EVENT,
+  type AddToChatRequest,
+} from "../features/sessions/model/quoteDraft";
+import {
   canReplaceSessionTitle,
   formatSessionTitle,
-  sessionNeedsInput,
+  HARNESS_LABEL,
+  HARNESS_TITLE,
+  HARNESSES,
   newDefaultSession,
   newSession,
   newSessionForProject,
-  retargetSessionToProject,
   removeSessionDraft,
+  retargetSessionToProject,
   sessionDisplayTitle,
   sessionDraftBlock,
+  sessionNeedsInput,
   sessionWorkCwd,
   titleFromPrompt,
   type Attachment,
@@ -400,31 +379,71 @@ import {
   type LinkedWorkItem,
   type ModelTarget,
   type PlanBuildTarget,
-  type RuntimeMode,
   type PlanStatus,
+  type RuntimeMode,
   type SecondOpinionMeta,
   type Session,
   type UsageLimit,
   type WorkspaceMode,
 } from "../features/sessions/model/session";
+import { createSessionRemover } from "../features/sessions/model/sessionRemoval";
+import { shouldGenerateSessionTitle } from "../features/sessions/model/sessionTitle";
+import {
+  applyDetachPaneToTab,
+  applyPlaceSessionOnPane,
+  applyPlaceTabOnPane,
+  filterTabsForProject,
+  findOpenSessionTab,
+  focusedWorkspaceTabCwd,
+  planWorkspaceTabClose,
+  switchSessionInTab,
+  workspaceTabCwd,
+} from "../features/workspace/model/workspaceTabGroups";
+import {
+  displayPath,
+  isEqualOrInside,
+  pathKey,
+  projectName,
+  rebasePath,
+  resolveWorkspacePath,
+} from "../shared/lib/paths";
 
+import { claimInboxAutomationRuns } from "../features/automations/model/automationEvents";
 import {
-  canDispatchQueuedHead,
-  dequeueQueuedMessage,
-  queuedMessageForSubmit,
-} from "../features/sessions/model/messageQueue";
+  claimDueAutomations,
+  recoverAutomationRuns,
+  updateAutomationRun,
+  type Automation,
+  type AutomationRun,
+} from "../features/automations/model/automations";
 import {
-  USAGE_LIMIT_RESUME_GRACE_MS,
-  usageLimitResumeDue,
-} from "../features/sessions/model/usageLimit";
+  ADD_NOTE_TO_CHAT_EVENT,
+  composeNoteMessage,
+  noteCardMeta,
+  type NoteComposerCard,
+} from "../features/notes";
+import { useInputNotifications } from "../features/notifications/hooks/useInputNotifications";
+import { useSessionReminders } from "../features/notifications/hooks/useSessionReminders";
+import { hiddenApprovalNotices } from "../features/notifications/model/approvalToast";
+import { syncDockBadge } from "../features/notifications/model/dockBadge";
+import {
+  announceSessionFinished,
+  loadNotificationsEnabled,
+  NOTIFICATION_CLICK_EVENT,
+  probeNotificationPermission,
+  setWindowFocused,
+} from "../features/notifications/model/notifications";
+import { exhaustedWindowResetAt } from "../features/providers/model/rateLimits";
 import {
   fetchClaudeRateLimits,
   fetchCodexRateLimits,
 } from "../features/providers/model/rateLimitsFetch";
-import { exhaustedWindowResetAt } from "../features/providers/model/rateLimits";
-import { dropContextWindow } from "../features/sessions/model/contextUsage";
+import { useQuickComposerLaunches } from "../features/quick-composer/hooks/useQuickComposerLaunches";
+import type { QuickLaunch } from "../features/quick-composer/model/quickComposer";
+import { rememberLoadedSession } from "../features/sessions/data/sessionCache";
 import {
   discardDraftSessionRecord,
+  flushSessionWrites,
   getSession,
   listLinkedSessions,
   listSessionsByProject,
@@ -437,29 +456,49 @@ import {
   setSessionPinned,
   shouldPersistSession,
   upsertSession,
-  flushSessionWrites,
   type SessionSummary,
 } from "../features/sessions/data/sessionStore";
-import { rememberLoadedSession } from "../features/sessions/data/sessionCache";
+import { archiveFocusedSession } from "../features/sessions/model/archiveShortcut";
+import { dropContextWindow } from "../features/sessions/model/contextUsage";
+import { liveAgentsFromSessions } from "../features/sessions/model/liveAgents";
+import {
+  canDispatchQueuedHead,
+  dequeueQueuedMessage,
+  queuedMessageForSubmit,
+} from "../features/sessions/model/messageQueue";
+import {
+  consumeOperatorCommand,
+  operatorEnabledInThread,
+} from "../features/sessions/model/operatorCommand";
+import { preparePrompt } from "../features/sessions/model/promptPreparation";
+import {
+  buildSecondOpinionRequest,
+  harnessForTurn,
+  SECOND_OPINION_TITLE,
+  turnEditedFiles,
+  turnUserRequest,
+} from "../features/sessions/model/secondOpinion";
+import { nextUnseenFinishedSessions } from "../features/sessions/model/sessionDone";
+import {
+  loadSessionFolders,
+  placeSessionInFolder,
+  saveSessionFolders,
+  type SessionFolderTarget,
+} from "../features/sessions/model/sessionFolders";
+import { nativeSkillContextForSession } from "../features/sessions/model/sessionSkills";
+import {
+  USAGE_LIMIT_RESUME_GRACE_MS,
+  usageLimitResumeDue,
+} from "../features/sessions/model/usageLimit";
+import { ReminderNotices } from "../features/sessions/ui/ReminderNotices";
 import {
   TranscriptPool,
   TranscriptPoolOutlet,
 } from "../features/sessions/ui/TranscriptPool";
-import { syncDockBadge } from "../features/notifications/model/dockBadge";
-import { liveAgentsFromSessions } from "../features/sessions/model/liveAgents";
-import { hiddenApprovalNotices } from "../features/notifications/model/approvalToast";
-import { useSessionReminders } from "../features/notifications/hooks/useSessionReminders";
-import { ReminderNotices } from "../features/sessions/ui/ReminderNotices";
-import { nextUnseenFinishedSessions } from "../features/sessions/model/sessionDone";
 import {
-  loadNotificationsEnabled,
-  NOTIFICATION_CLICK_EVENT,
-  announceSessionFinished,
-  probeNotificationPermission,
-  setWindowFocused,
-} from "../features/notifications/model/notifications";
-import { useInputNotifications } from "../features/notifications/hooks/useInputNotifications";
-import { archiveFocusedSession } from "../features/sessions/model/archiveShortcut";
+  isNativeCommandPrompt,
+  warmNativeSkills,
+} from "../features/skills/model/skills";
 import {
   adjacentItemId,
   deferUnhandledEscape,
@@ -480,121 +519,80 @@ import {
   tabVisitForward,
   type TabVisitHistory,
 } from "../features/workspace/model/tabVisitHistory";
-import { preparePrompt } from "../features/sessions/model/promptPreparation";
-import {
-  consumeOperatorCommand,
-  operatorEnabledInThread,
-} from "../features/sessions/model/operatorCommand";
-import {
-  warmNativeSkills,
-  isNativeCommandPrompt,
-} from "../features/skills/model/skills";
-import { nativeSkillContextForSession } from "../features/sessions/model/sessionSkills";
-import {
-  loadSessionFolders,
-  placeSessionInFolder,
-  saveSessionFolders,
-  type SessionFolderTarget,
-} from "../features/sessions/model/sessionFolders";
-import {
-  ADD_NOTE_TO_CHAT_EVENT,
-  composeNoteMessage,
-  noteCardMeta,
-  type NoteComposerCard,
-} from "../features/notes";
-import {
-  claimDueAutomations,
-  recoverAutomationRuns,
-  updateAutomationRun,
-  type Automation,
-  type AutomationRun,
-} from "../features/automations/model/automations";
-import { useQuickComposerLaunches } from "../features/quick-composer/hooks/useQuickComposerLaunches";
-import type { QuickLaunch } from "../features/quick-composer/model/quickComposer";
-import { claimInboxAutomationRuns } from "../features/automations/model/automationEvents";
-import {
-  SECOND_OPINION_TITLE,
-  buildSecondOpinionRequest,
-  harnessForTurn,
-  turnEditedFiles,
-  turnUserRequest,
-} from "../features/sessions/model/secondOpinion";
 
-import { PaneTree } from "../features/workspace/ui/PaneTree";
-import { SessionPane } from "../features/sessions/ui/SessionPane";
-import { SessionSurface } from "../features/sessions/ui/SessionSurface";
-import { ProjectTerminalDock } from "../features/terminal/ui/ProjectTerminalDock";
-import { SearchView } from "../features/search/ui/SearchView";
-import { requestTranscriptJump } from "../features/sessions/model/transcriptJump";
-import { SettingsView, type SettingsAnchor } from "../features/settings/ui/SettingsView";
-import type { ConnectableInboxSource } from "../features/inbox/model/inboxFilters";
-import { InboxView, LinkedWorkItemPanel } from "../features/inbox/ui/InboxView";
-import type { InboxSessionPortal } from "../features/inbox/ui/InboxDiscussionPanel";
-import { inboxAskKey, inboxAskPrompt } from "../features/inbox/model/inboxAsk";
-import { NotesView } from "../features/notes/ui";
 import { AutomationsView } from "../features/automations/ui/AutomationsView";
+import {
+  handleEditorFindKey,
+  openFindInActiveEditor,
+} from "../features/files/editor/editorSearch";
+import { HomeView } from "../features/home/ui/HomeView";
+import {
+  LocalSurfaceRailActions,
+  type LocalSurfaceId,
+} from "../features/home/ui/LocalSurfaceRailActions";
+import {
+  azureDevOpsWorkItemDetails,
+  peekAzureDevOpsWorkItemDetails,
+} from "../features/inbox/model/azureDevOps";
 import {
   githubWorkItemThread,
   inboxComposerCard,
   type InboxItem,
 } from "../features/inbox/model/githubTasks";
 import {
-  linkedWorkItemFromAutomationEvent,
-  linkedWorkItemFromInboxItem,
-  resolveLinkedWorkItem,
-} from "../features/sessions/model/sessionWorkItem";
+  gitlabWorkItemDetails,
+  peekGitlabWorkItemDetails,
+} from "../features/inbox/model/gitlab";
+import { inboxAskKey, inboxAskPrompt } from "../features/inbox/model/inboxAsk";
+import { inboxTrackerDescription } from "../features/inbox/model/inboxContext";
+import type { ConnectableInboxSource } from "../features/inbox/model/inboxFilters";
+import { markLinkedSessionUpdateSeen } from "../features/inbox/model/linkedSessionSeen";
+import type { LinkedSessionUpdate } from "../features/inbox/model/linkedSessionUpdates";
 import {
   completeLinkedWorkItemUpdateCard,
   failLinkedWorkItemUpdateCard,
   pendingLinkedWorkItemUpdateCard,
   type LinkedWorkItemUpdateCard,
 } from "../features/inbox/model/linkedWorkItemActivity";
-import type { LinkedSessionUpdate } from "../features/inbox/model/linkedSessionUpdates";
-import { markLinkedSessionUpdateSeen } from "../features/inbox/model/linkedSessionSeen";
-import { inboxTrackerDescription } from "../features/inbox/model/inboxContext";
-import { gitlabWorkItemDetails, peekGitlabWorkItemDetails } from "../features/inbox/model/gitlab";
+import type { InboxSessionPortal } from "../features/inbox/ui/InboxDiscussionPanel";
+import { InboxView, LinkedWorkItemPanel } from "../features/inbox/ui/InboxView";
+import { NotesView } from "../features/notes/ui";
+import { SearchView } from "../features/search/ui/SearchView";
 import {
-  azureDevOpsWorkItemDetails,
-  peekAzureDevOpsWorkItemDetails,
-} from "../features/inbox/model/azureDevOps";
+  linkedWorkItemFromAutomationEvent,
+  linkedWorkItemFromInboxItem,
+  resolveLinkedWorkItem,
+} from "../features/sessions/model/sessionWorkItem";
+import { requestTranscriptJump } from "../features/sessions/model/transcriptJump";
+import { SessionPane } from "../features/sessions/ui/SessionPane";
+import { SessionSurface } from "../features/sessions/ui/SessionSurface";
 import {
+  keybindingPressed,
   loadCloseToTray,
   loadCollapsedProjectRailMode,
-  loadFileTabMode,
-  loadLiveAgentsEnabled,
-  loadNotesEnabled,
   loadDiffViewer,
+  loadFileTabMode,
   loadFollowUpBehavior,
   loadKeybindingOverrides,
+  loadLiveAgentsEnabled,
+  loadNotesEnabled,
   loadSettingsSection,
-  keybindingPressed,
   matchCustomKeybinding,
   saveSettingsSection,
   subscribeLiveAgentsEnabled,
   subscribeNotesEnabled,
   type CollapsedProjectRailMode,
-  type SettingsSectionId,
   type FollowUpBehavior,
+  type SettingsSectionId,
 } from "../features/settings/model/settings";
 import {
-  handleEditorFindKey,
-  openFindInActiveEditor,
-} from "../features/files/editor/editorSearch";
+  SettingsView,
+  type SettingsAnchor,
+} from "../features/settings/ui/SettingsView";
+import { ProjectTerminalDock } from "../features/terminal/ui/ProjectTerminalDock";
+import { UsageView } from "../features/usage/ui/UsageView";
+import { PaneTree } from "../features/workspace/ui/PaneTree";
 
-import {
-  mergeHistorySummary,
-  mergeProjectHistorySummary,
-  replaceProjectHistory,
-  historyWithLiveSessions,
-  summaryFromSession,
-} from "../features/sessions/data/sessionHistory";
-import {
-  CONTINUE_PROMPT,
-  canAutoContinue,
-  inFlightRefs,
-  inFlightSnapshotKey,
-  shouldWriteInFlightSnapshot,
-} from "../features/sessions/model/inFlight";
 import {
   isBlankSession,
   planProjectReturn,
@@ -602,10 +600,23 @@ import {
   type ProjectReturnMemory,
 } from "../features/projects/model/projectReturn";
 import {
+  historyWithLiveSessions,
+  mergeHistorySummary,
+  mergeProjectHistorySummary,
+  replaceProjectHistory,
+  summaryFromSession,
+} from "../features/sessions/data/sessionHistory";
+import {
+  canAutoContinue,
+  CONTINUE_PROMPT,
+  inFlightRefs,
+  inFlightSnapshotKey,
+  shouldWriteInFlightSnapshot,
+} from "../features/sessions/model/inFlight";
+import {
   collectWorkspaceSnapshot,
   workspaceSnapshotKey,
 } from "../features/workspace/model/workspaceSnapshot";
-import type { InstalledUpdate } from "./model/updateNotice";
 import {
   bindResumedSessions,
   closeBusyWindow,
@@ -620,6 +631,7 @@ import {
   setQuitWorkspace,
   type ResumedWorkspace,
 } from "./model/appLifecycle";
+import type { InstalledUpdate } from "./model/updateNotice";
 
 /** How long a hidden idle session stays attached after it leaves every tab. */
 const SESSION_DETACH_DELAY_MS = 250;
@@ -632,7 +644,6 @@ type LinkedWorkItemPanelState = {
 
 type SubmitOptions = ComposerTurnOptions & {
   ciRepair?: CiRepairRequest;
-  /** Saved alongside the user turn; does not replace the submitted prompt. */
   ciContext?: string;
   secondOpinion?: SecondOpinionMeta;
   followUpBehavior?: FollowUpBehavior;
@@ -645,9 +656,7 @@ type SubmitOptions = ComposerTurnOptions & {
   orchestrationRetry?: OrchestrationProposal;
   appRequestId?: string;
   onSettled?: (outcome: ControlOutcome) => void;
-  /** Generate a fresh title even when this is not the session's first turn. */
   refreshTitle?: boolean;
-  /** Internal guard for the retry after resolving a renamed project. */
   projectLocationReady?: boolean;
 };
 
@@ -935,7 +944,19 @@ export default function App({
     useState<InboxSessionPortal | null>(null);
   const openingInboxSessions = useRef(new Map<string, Promise<string>>());
   const [notesViewOpen, setNotesViewOpen] = useState(false);
-  const [automationsViewOpen, setAutomationsViewOpen] = useState(false);
+  const [automationsSurfaceOpen, setAutomationsSurfaceOpen] = useState(false);
+  const [automationsFocusId, setAutomationsFocusId] = useState<string | null>(
+    null,
+  );
+  const [localSurface, setLocalSurface] = useState<LocalSurfaceId | null>(null);
+
+  const automationsViewOpen = automationsSurfaceOpen || localSurface !== null;
+  const setAutomationsViewOpen = useCallback((open: boolean) => {
+    setLocalSurface(null);
+    if (!open) setAutomationsFocusId(null);
+    setAutomationsSurfaceOpen(open);
+  }, []);
+
   const [inspectedWorkerId, setInspectedWorkerId] = useState<string | null>(
     null,
   );
@@ -5803,9 +5824,7 @@ export default function App({
       const ciContext = options?.ciRepair?.prompt ?? options?.ciContext;
       const harnessText =
         options?.ciRepair?.prompt ??
-        (rawCommand
-          ? submittedText
-          : composeNoteMessage(noteCard, promptText));
+        (rawCommand ? submittedText : composeNoteMessage(noteCard, promptText));
 
       const pendingSwitch =
         current.pendingSwitch && current.pendingSwitch.from !== current.harness
@@ -6034,19 +6053,20 @@ export default function App({
       const card =
         options?.secondOpinion ??
         (handoffCard ? handoffTurnCard(handoffCard) : undefined);
-      const visibleText =
-        operatorCommand.matched
-          ? promptText
-          : card?.kind === "handoff"
-            ? submittedText
-            : card
-              ? SECOND_OPINION_TITLE
-              : submittedText;
+      const visibleText = operatorCommand.matched
+        ? promptText
+        : card?.kind === "handoff"
+          ? submittedText
+          : card
+            ? SECOND_OPINION_TITLE
+            : submittedText;
       const cards = {
         ...(rawCommand ? undefined : userTurnCards(noteCard, card)),
         ...(ciContext ? { ciContext } : {}),
         ...(operatorCommand.matched ? { monocode: true } : {}),
-        ...(options?.appRequestId ? { appRequestId: options.appRequestId } : {}),
+        ...(options?.appRequestId
+          ? { appRequestId: options.appRequestId }
+          : {}),
         // The orchestrator writes these turns, not the user; hide them.
         ...(options?.managed ? { internal: true } : {}),
       };
@@ -6066,7 +6086,9 @@ export default function App({
             const draftRemoved = draftBlock
               ? {
                   ...s,
-                  blocks: s.blocks.filter((block) => block.id !== draftBlock.id),
+                  blocks: s.blocks.filter(
+                    (block) => block.id !== draftBlock.id,
+                  ),
                 }
               : s;
             const selected = options?.buildTarget
@@ -6362,11 +6384,7 @@ export default function App({
           }
           if (turnGen.current.get(sessionId) !== gen) return;
           const latest = sessionsRef.current.find((s) => s.id === sessionId);
-          const brief = chooseHandoffBrief(
-            agentText,
-            latest ?? current,
-            text,
-          );
+          const brief = chooseHandoffBrief(agentText, latest ?? current, text);
           await forgetHarnessSession(pendingSwitch.from, sessionId);
           if (turnGen.current.get(sessionId) !== gen) return;
           wrap = { from: pendingSwitch.from, to: current.harness, text: brief };
@@ -6497,10 +6515,7 @@ export default function App({
           const earlier = queuedHandoff
             ? userMessagesAfterHandoff(current)
             : [];
-          if (
-            editedResend &&
-            canRewindHarnessLastTurn(current.harness)
-          ) {
+          if (editedResend && canRewindHarnessLastTurn(current.harness)) {
             try {
               await rewindHarnessLastTurn({
                 harness: current.harness,
@@ -6958,9 +6973,7 @@ export default function App({
         },
         submit: submitSession,
         saveDraft: (id, prompt, attachments, requestId) =>
-          flushSync(() =>
-            onSaveDraft(id, prompt, attachments, requestId),
-          ),
+          flushSync(() => onSaveDraft(id, prompt, attachments, requestId)),
       }),
     [appendTab, submitSession, onSaveDraft],
   );
@@ -8711,7 +8724,9 @@ export default function App({
                   previous.text !== launch.prompt ||
                   (!launch.draft && !!previous.draft)
                 )
-                  throw new Error("Request ID was already used for another session launch");
+                  throw new Error(
+                    "Request ID was already used for another session launch",
+                  );
                 return;
               }
               if (
@@ -9300,11 +9315,7 @@ export default function App({
   );
 
   const onRepairChecks = useCallback(
-    async (
-      item: InboxItem,
-      request: CiRepairRequest,
-      sessionId?: string,
-    ) => {
+    async (item: InboxItem, request: CiRepairRequest, sessionId?: string) => {
       const cwd = item.projectPath;
       if (!cwd) throw new Error("Choose a local project for this PR first.");
       let session = sessionId ? await ensureOpenSession(sessionId) : undefined;
@@ -9384,6 +9395,54 @@ export default function App({
   const onLeaveAutomations = useCallback(() => {
     setAutomationsViewOpen(false);
   }, []);
+
+  const onOpenLocalSurface = useCallback((id: LocalSurfaceId) => {
+    setFilePickerOpen(false);
+    setSettingsOpen(false);
+    setSearchViewOpen(false);
+    setInboxViewOpen(false);
+    setNotesViewOpen(false);
+    setAutomationsSurfaceOpen(false);
+    setLocalSurface(id);
+  }, []);
+
+  const onLeaveLocalSurface = useCallback(() => {
+    setLocalSurface(null);
+  }, []);
+
+  const onOpenHomeSession = useCallback(
+    (sessionId: string) => {
+      setLocalSurface(null);
+      const cwd =
+        sessionsRef.current.find((session) => session.id === sessionId)?.cwd ??
+        history.find((session) => session.id === sessionId)?.cwd;
+      setSidebarTab("sessions", cwd);
+      void onSelectHistorySession(sessionId);
+    },
+    [history, onSelectHistorySession],
+  );
+
+  const onOpenHomeAutomation = useCallback(
+    (automationId: string) => {
+      setAutomationsFocusId(automationId);
+      setAutomationsViewOpen(true);
+    },
+    [setAutomationsViewOpen],
+  );
+
+  const onAutomationsFocusConsumed = useCallback(() => {
+    setAutomationsFocusId(null);
+  }, []);
+
+  const localSurfaceRailActions = useMemo(
+    () => (
+      <LocalSurfaceRailActions
+        active={localSurface}
+        onOpen={onOpenLocalSurface}
+      />
+    ),
+    [localSurface, onOpenLocalSurface],
+  );
 
   const onOpenAutomationSession = useCallback(
     async (sessionId: string) => {
@@ -9565,10 +9624,13 @@ export default function App({
         prefetchAhead();
         if (!session || session.inboxAsk) return;
         if (activeTabIdRef.current !== activeTabId) return;
-        const currentTab = tabsRef.current.find((tab) => tab.id === activeTabId);
+        const currentTab = tabsRef.current.find(
+          (tab) => tab.id === activeTabId,
+        );
         if (currentTab?.focusedId !== focusedId) return;
-        setTabs((prev) =>
-          switchSessionInTab(prev, activeTabId, focusedId, next) ?? prev,
+        setTabs(
+          (prev) =>
+            switchSessionInTab(prev, activeTabId, focusedId, next) ?? prev,
         );
         setComposerFocused(true);
         const linkedUpdate = linkedSessionUpdatesRef.current.get(next);
@@ -9856,8 +9918,7 @@ export default function App({
         else if (shortcut === "App: Command Palette")
           run("open_command_palette", a.onOpenCommandPalette);
         else if (shortcut === "View: Reload") run("reload", a.onReload);
-        else if (shortcut === "App: Search")
-          run("open_search", a.onOpenSearch);
+        else if (shortcut === "App: Search") run("open_search", a.onOpenSearch);
         else if (shortcut === "App: Settings")
           run("open_settings", () => a.openSettings());
         else if (shortcut === "App: Find in Files")
@@ -10111,7 +10172,7 @@ export default function App({
               cwd={sidebarCwd}
               gitCwd={gitCwd}
               explorerRootLabel={explorerRootLabel}
-              open={sessionSidebarOpen}
+              open={sessionSidebarOpen && localSurface === null}
               tab={sidebarTab}
               onTabChange={setSidebarTab}
               filesSearchOpen={filesSearchOpen}
@@ -10189,7 +10250,8 @@ export default function App({
               searchActive={searchViewOpen}
               inboxActive={inboxViewOpen}
               notesActive={notesViewOpen}
-              automationsActive={automationsViewOpen}
+              automationsActive={automationsSurfaceOpen}
+              railExtraActions={localSurfaceRailActions}
               notesEnabled={notesEnabled}
               projectRailOpen={projectRailOpen}
               compactProjectRail={compactProjectRail}
@@ -10417,7 +10479,8 @@ export default function App({
                   onToggleSidebar={onToggleSidebar}
                   onOpenFile={onOpenFile}
                   onOpenSession={(sessionId, blockId, query) => {
-                    if (blockId) requestTranscriptJump(sessionId, blockId, query);
+                    if (blockId)
+                      requestTranscriptJump(sessionId, blockId, query);
                     void onSelectHistorySession(sessionId);
                   }}
                   onOpenProject={onSelectProject}
@@ -10476,12 +10539,33 @@ export default function App({
                   onToggleSidebar={onToggleSidebar}
                 />
               ) : null}
-              {automationsViewOpen ? (
+              {localSurface === "home" ? (
+                <HomeView
+                  besideRail={projectRailOpen || compactProjectRail}
+                  compactRail={compactRailActive}
+                  projectPaths={recents.map((project) => project.path)}
+                  onClose={onLeaveLocalSurface}
+                  onToggleSidebar={onToggleSidebar}
+                  onOpenSession={onOpenHomeSession}
+                  onOpenAutomation={onOpenHomeAutomation}
+                />
+              ) : null}
+              {localSurface === "usage" ? (
+                <UsageView
+                  besideRail={projectRailOpen || compactProjectRail}
+                  compactRail={compactRailActive}
+                  onClose={onLeaveLocalSurface}
+                  onToggleSidebar={onToggleSidebar}
+                />
+              ) : null}
+              {automationsSurfaceOpen ? (
                 <AutomationsView
                   besideRail={projectRailOpen || compactProjectRail}
                   compactRail={compactRailActive}
                   cwd={projectCwd}
                   recents={recents}
+                  focusAutomationId={automationsFocusId}
+                  onFocusAutomationConsumed={onAutomationsFocusConsumed}
                   onClose={onLeaveAutomations}
                   onToggleSidebar={onToggleSidebar}
                   onLaunch={(automation, run) =>
