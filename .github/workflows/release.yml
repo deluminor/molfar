@@ -88,7 +88,10 @@ jobs:
             process.env.RUNNER_TEMP + "/tauri.release.conf.json",
             JSON.stringify(
               {
-                bundle: { macOS: { signingIdentity: identity } },
+                bundle: {
+                  createUpdaterArtifacts: true,
+                  macOS: { signingIdentity: identity },
+                },
                 plugins: {
                   updater: {
                     pubkey,
