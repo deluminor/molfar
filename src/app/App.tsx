@@ -317,24 +317,6 @@ import {
 import { isEditTool } from "../integrations/harness/core/preview";
 
 import {
-<<<<<<< HEAD
-=======
-  buildPlanPrompt,
-  isProviderFailureText,
-  planTitle,
-  planTurnKey,
-  planTurnPrompt,
-} from "../features/sessions/model/plan";
-import {
-  displayPath,
-  isEqualOrInside,
-  pathKey,
-  projectName,
-  rebasePath,
-  resolveWorkspacePath,
-} from "../shared/lib/paths";
-import {
->>>>>>> origin/main
   rebaseProjectData,
   removeProjectData,
 } from "../features/projects/model/projectData";
@@ -367,6 +349,7 @@ import {
   buildPlanPrompt,
   isProviderFailureText,
   planTitle,
+  planTurnKey,
   planTurnPrompt,
 } from "../features/sessions/model/plan";
 import {
@@ -436,8 +419,10 @@ import {
 } from "../features/automations/model/automations";
 import {
   ADD_NOTE_TO_CHAT_EVENT,
+  NOTES_CHANGED_EVENT,
   composeNoteMessage,
   noteCardMeta,
+  upsertNote,
   type NoteComposerCard,
 } from "../features/notes";
 import { useInputNotifications } from "../features/notifications/hooks/useInputNotifications";
@@ -537,50 +522,6 @@ import {
   tabVisitForward,
   type TabVisitHistory,
 } from "../features/workspace/model/tabVisitHistory";
-<<<<<<< HEAD
-=======
-import { preparePrompt } from "../features/sessions/model/promptPreparation";
-import {
-  consumeOperatorCommand,
-  operatorEnabledInThread,
-} from "../features/sessions/model/operatorCommand";
-import {
-  warmNativeSkills,
-  isNativeCommandPrompt,
-} from "../features/skills/model/skills";
-import { nativeSkillContextForSession } from "../features/sessions/model/sessionSkills";
-import {
-  loadSessionFolders,
-  placeSessionInFolder,
-  saveSessionFolders,
-  type SessionFolderTarget,
-} from "../features/sessions/model/sessionFolders";
-import {
-  ADD_NOTE_TO_CHAT_EVENT,
-  NOTES_CHANGED_EVENT,
-  composeNoteMessage,
-  noteCardMeta,
-  upsertNote,
-  type NoteComposerCard,
-} from "../features/notes";
-import {
-  claimDueAutomations,
-  recoverAutomationRuns,
-  updateAutomationRun,
-  type Automation,
-  type AutomationRun,
-} from "../features/automations/model/automations";
-import { useQuickComposerLaunches } from "../features/quick-composer/hooks/useQuickComposerLaunches";
-import type { QuickLaunch } from "../features/quick-composer/model/quickComposer";
-import { claimInboxAutomationRuns } from "../features/automations/model/automationEvents";
-import {
-  SECOND_OPINION_TITLE,
-  buildSecondOpinionRequest,
-  harnessForTurn,
-  turnEditedFiles,
-  turnUserRequest,
-} from "../features/sessions/model/secondOpinion";
->>>>>>> origin/main
 
 import { AutomationsView } from "../features/automations/ui/AutomationsView";
 import {
