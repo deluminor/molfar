@@ -248,7 +248,6 @@ type Props = {
   selectedDiffKind?: GitFileDiffKind;
   selectedCommitSha?: string;
   textHarness?: HarnessId;
-  onShowSourceControl?: () => void;
   recents?: RecentProject[];
   busyProjectPaths?: Iterable<string>;
   liveAgents?: LiveAgent[];
@@ -337,7 +336,6 @@ function SidebarComponent({
   selectedDiffKind,
   selectedCommitSha,
   textHarness,
-  onShowSourceControl,
   recents = [],
   busyProjectPaths,
   liveAgents = [],
@@ -1474,8 +1472,6 @@ function SidebarComponent({
                 onFileDeleted={onFileDeleted}
                 onSearch={onOpenFilesSearch}
                 gitStatuses={gitStatuses}
-                sourceControlActive={panelOpen && tab === "changes"}
-                onShowSourceControl={onShowSourceControl}
               />
             </div>
           ) : (

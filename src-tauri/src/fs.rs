@@ -1149,6 +1149,7 @@ pub struct GitHubWorkItem {
     pub title: String,
     pub url: String,
     pub state: String,
+    pub state_reason: String,
     pub created_at: String,
     pub updated_at: String,
     pub labels: Vec<GitHubLabel>,
@@ -1749,13 +1750,22 @@ fn git_diff_index_with(root: &Path, include_sync: bool) -> GitDiffIndex {
 
     if let Some(text) = git_run(
         root,
-        &["diff", "--no-ext-diff", "--numstat", "HEAD", "--", "."],
+        &[
+            "diff",
+            "--relative",
+            "--no-ext-diff",
+            "--numstat",
+            "HEAD",
+            "--",
+            ".",
+        ],
     ) {
         add_numstat_map(&text, &mut files);
         if let Some(names) = git_run(
             root,
             &[
                 "diff",
+                "--relative",
                 "--no-ext-diff",
                 "--name-status",
                 "--no-renames",
@@ -1767,12 +1777,30 @@ fn git_diff_index_with(root: &Path, include_sync: bool) -> GitDiffIndex {
             add_name_status(&names, &mut statuses);
         }
     } else {
-        if let Some(text) = git_run(root, &["diff", "--no-ext-diff", "--numstat", "--", "."]) {
+        if let Some(text) = git_run(
+            root,
+            &[
+                "diff",
+                "--relative",
+                "--no-ext-diff",
+                "--numstat",
+                "--",
+                ".",
+            ],
+        ) {
             add_numstat_map(&text, &mut files);
         }
         if let Some(text) = git_run(
             root,
-            &["diff", "--no-ext-diff", "--cached", "--numstat", "--", "."],
+            &[
+                "diff",
+                "--relative",
+                "--no-ext-diff",
+                "--cached",
+                "--numstat",
+                "--",
+                ".",
+            ],
         ) {
             add_numstat_map(&text, &mut files);
         }
@@ -1780,6 +1808,7 @@ fn git_diff_index_with(root: &Path, include_sync: bool) -> GitDiffIndex {
             root,
             &[
                 "diff",
+                "--relative",
                 "--no-ext-diff",
                 "--name-status",
                 "--no-renames",
@@ -1793,6 +1822,7 @@ fn git_diff_index_with(root: &Path, include_sync: bool) -> GitDiffIndex {
             root,
             &[
                 "diff",
+                "--relative",
                 "--no-ext-diff",
                 "--cached",
                 "--name-status",
@@ -1954,7 +1984,15 @@ fn text_line_count(path: &Path) -> i64 {
 fn mark_cached_and_unstaged(root: &Path, files: &mut HashMap<String, FileAcc>) {
     if let Some(names) = git_run(
         root,
-        &["diff", "--cached", "--name-only", "--no-renames", "--", "."],
+        &[
+            "diff",
+            "--relative",
+            "--cached",
+            "--name-only",
+            "--no-renames",
+            "--",
+            ".",
+        ],
     ) {
         for line in names.lines() {
             let relative = normalize_diff_path(line);
@@ -1963,7 +2001,17 @@ fn mark_cached_and_unstaged(root: &Path, files: &mut HashMap<String, FileAcc>) {
             }
         }
     }
-    if let Some(names) = git_run(root, &["diff", "--name-only", "--no-renames", "--", "."]) {
+    if let Some(names) = git_run(
+        root,
+        &[
+            "diff",
+            "--relative",
+            "--name-only",
+            "--no-renames",
+            "--",
+            ".",
+        ],
+    ) {
         for line in names.lines() {
             let relative = normalize_diff_path(line);
             if !relative.is_empty() {
@@ -2631,7 +2679,7 @@ fn git_github_work_items_for(
     let fields = if kind == "pr" {
         "number,title,url,state,createdAt,updatedAt,labels,assignees,isDraft"
     } else {
-        "number,title,url,state,createdAt,updatedAt,labels,assignees"
+        "number,title,url,state,stateReason,createdAt,updatedAt,labels,assignees"
     };
     let mut args = vec![
         kind.to_string(),
@@ -2678,7 +2726,7 @@ fn git_github_work_item_for(
     let fields = if kind == "pr" {
         "number,title,url,state,createdAt,updatedAt,labels,assignees,isDraft"
     } else {
-        "number,title,url,state,createdAt,updatedAt,labels,assignees"
+        "number,title,url,state,stateReason,createdAt,updatedAt,labels,assignees"
     };
     let json = gh_checked(
         root,
@@ -3849,6 +3897,8 @@ fn parse_github_work_items(
         url: String,
         state: String,
         #[serde(default)]
+        state_reason: String,
+        #[serde(default)]
         created_at: String,
         #[serde(default)]
         updated_at: String,
@@ -3868,6 +3918,7 @@ fn parse_github_work_items(
             title: row.title,
             url: row.url,
             state: row.state.to_lowercase(),
+            state_reason: row.state_reason.to_lowercase(),
             created_at: row.created_at,
             updated_at: row.updated_at,
             labels: row
@@ -6240,6 +6291,41 @@ mod tests {
     }
 
     #[test]
+    fn git_diff_files_keep_paths_relative_to_nested_workspace() {
+        let dir = tmp("git-diff-nested-workspace");
+        let workspace = dir.0.join("sub");
+        std::fs::create_dir_all(workspace.join("sub")).unwrap();
+        assert!(init_git_commit(
+            &dir.0,
+            &[("sub/file.txt", "original\n"), ("sub/second.txt", "old\n")],
+        ));
+        std::fs::write(workspace.join("file.txt"), "staged\n").unwrap();
+        assert!(git(&dir.0, &["add", "--", "sub/file.txt"]));
+        std::fs::write(workspace.join("second.txt"), "unstaged\n").unwrap();
+        // Without --relative this collides with the tracked sub/file.txt key.
+        std::fs::write(workspace.join("sub/file.txt"), "untracked\n").unwrap();
+
+        let changes = git_diff_files_for(&workspace);
+        assert_eq!(changes.files.len(), 3);
+        for (relative, staged, unstaged) in [
+            ("file.txt", true, false),
+            ("second.txt", false, true),
+            ("sub/file.txt", false, true),
+        ] {
+            let file = changes
+                .files
+                .iter()
+                .find(|file| file.relative == relative)
+                .unwrap();
+            assert_eq!(file.path, path_to_js(&workspace.join(relative)));
+            assert_eq!((file.staged, file.unstaged), (staged, unstaged));
+        }
+        let staged = git_file_diff_for(&workspace, "file.txt", true).unwrap();
+        assert_eq!(staged.original, "original\n");
+        assert_eq!(staged.current, "staged\n");
+    }
+
+    #[test]
     fn git_file_diff_returns_both_sides() {
         let dir = tmp("git-file-diff");
         if !init_git_commit(&dir.0, &[("a.txt", "alpha\nbeta\ngamma\n")]) {
@@ -6995,6 +7081,7 @@ mod tests {
             "title": "Promo codes fail to apply",
             "url": "https://github.com/acme/web/issues/5138",
             "state": "OPEN",
+            "stateReason": "",
             "createdAt": "2026-08-20T09:00:00Z",
             "updatedAt": "2026-08-27T08:00:00Z",
             "labels": [{"name": "bug", "color": "d73a4a"}],
@@ -7005,6 +7092,7 @@ mod tests {
         assert_eq!(items[0].kind, "issue");
         assert_eq!(items[0].number, 5138);
         assert_eq!(items[0].state, "open");
+        assert_eq!(items[0].state_reason, "");
         assert_eq!(items[0].repo, "acme/web");
         assert_eq!(items[0].labels[0].name, "bug");
         assert_eq!(items[0].assignees[0].login, "maya");
@@ -7016,6 +7104,24 @@ mod tests {
         let payload = serde_json::to_value(&items[0]).unwrap();
         assert_eq!(payload["createdAt"], "2026-08-20T09:00:00Z");
         assert_eq!(payload["updatedAt"], "2026-08-27T08:00:00Z");
+    }
+
+    #[test]
+    fn parse_github_work_items_reads_issue_state_reason() {
+        let json = r#"[{
+            "number": 42,
+            "title": "Ship the fix",
+            "url": "https://github.com/acme/web/issues/42",
+            "state": "CLOSED",
+            "stateReason": "COMPLETED"
+        }]"#;
+        let items = parse_github_work_items(json, "issue", "acme/web").unwrap();
+        assert_eq!(items[0].state, "closed");
+        assert_eq!(items[0].state_reason, "completed");
+        assert_eq!(
+            serde_json::to_value(&items[0]).unwrap()["stateReason"],
+            "completed"
+        );
     }
 
     #[test]
