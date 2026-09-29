@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MonoCode System Overview",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [1180, 720],
+    "views": [
+      {
+        "id": "agent-turn",
+        "label": "Agent turn path",
+        "focus": ["user", "ui", "tauri", "harness", "providers"],
+        "note": "Follow a composer turn from the desktop UI through Tauri into a provider CLI."
+      },
+      {
+        "id": "inbox-atlassian",
+        "label": "Inbox and Atlassian",
+        "focus": ["ui", "inbox", "tauri", "atlassian"],
+        "note": "Jira issues and Confluence docs share Atlassian credentials via Rust commands."
+      },
+      {
+        "id": "operator-control",
+        "label": "Operator and local state",
+        "focus": ["ui", "control", "store", "harness"],
+        "note": "/operator gives the agent a scoped app CLI while sessions and notes stay local."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User",
+      "sublabel": "Desktop operator",
+      "pos": [40, 300],
+      "size": [130, 64]
+    },
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "React UI",
+      "sublabel": "Vite + feature slices",
+      "brand": "react",
+      "pos": [240, 300],
+      "size": [150, 72],
+      "tag": "sessions · inbox · home"
+    },
+    {
+      "id": "inbox",
+      "type": "frontend",
+      "label": "Inbox",
+      "sublabel": "Issues + Docs",
+      "pos": [240, 120],
+      "size": [150, 64]
+    },
+    {
+      "id": "control",
+      "type": "backend",
+      "label": "App / Control CLI",
+      "sublabel": "/operator tools",
+      "pos": [240, 480],
+      "size": [150, 64]
+    },
+    {
+      "id": "tauri",
+      "type": "backend",
+      "label": "Tauri Core",
+      "sublabel": "Rust commands",
+      "pos": [480, 300],
+      "size": [150, 72],
+      "tag": "PTY · FS · git"
+    },
+    {
+      "id": "harness",
+      "type": "backend",
+      "label": "Agent Harness",
+      "sublabel": "Provider adapters",
+      "pos": [720, 300],
+      "size": [150, 72]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "Local Store",
+      "sublabel": "Sessions · notes",
+      "pos": [480, 480],
+      "size": [150, 64]
+    },
+    {
+      "id": "atlassian",
+      "type": "external",
+      "label": "Atlassian Cloud",
+      "sublabel": "Jira + Confluence",
+      "brand": "jira",
+      "pos": [480, 120],
+      "size": [150, 64]
+    },
+    {
+      "id": "providers",
+      "type": "external",
+      "label": "Provider CLIs",
+      "sublabel": "Claude · Codex · Cursor…",
+      "pos": [960, 300],
+      "size": [160, 72]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "MonoCode desktop process",
+      "wraps": ["ui", "inbox", "control", "tauri", "harness", "store"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Credential boundary",
+      "wraps": ["tauri", "atlassian"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-to-ui",
+      "from": "user",
+      "to": "ui",
+      "label": "interact",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui-to-inbox",
+      "from": "ui",
+      "to": "inbox",
+      "label": "open source",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ui-to-tauri",
+      "from": "ui",
+      "to": "tauri",
+      "label": "invoke"
+    },
+    {
+      "id": "inbox-to-tauri",
+      "from": "inbox",
+      "to": "tauri",
+      "label": "list / read",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "tauri-to-atlassian",
+      "from": "tauri",
+      "to": "atlassian",
+      "label": "REST + ADF",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDy": -66
+    },
+    {
+      "id": "tauri-to-harness",
+      "from": "tauri",
+      "to": "harness",
+      "label": "spawn / stream"
+    },
+    {
+      "id": "harness-to-providers",
+      "from": "harness",
+      "to": "providers",
+      "label": "stdio / ACP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui-to-control",
+      "from": "ui",
+      "to": "control",
+      "label": "/operator",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "control-to-store",
+      "from": "control",
+      "to": "store",
+      "label": "sessions · notes",
+      "variant": "dashed"
+    },
+    {
+      "id": "tauri-to-store",
+      "from": "tauri",
+      "to": "store",
+      "label": "persist",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Desktop shell",
+      "items": [
+        "React 19 feature slices render sessions, Inbox, Home, and settings",
+        "Tauri 2 owns filesystem, PTY, git, and native window behavior"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Agent path",
+      "items": [
+        "Harness adapters normalize provider CLI protocols into MonoCode events",
+        "MonoCode does not sell tokens — it drives CLIs you already authenticate"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Custom fork additions",
+      "items": [
+        "Confluence Docs browse and agent tools reuse Jira Atlassian credentials",
+        "Home brand visuals switch between dragon and Jarvis hearing sphere"
+      ]
+    }
+  ]
+}

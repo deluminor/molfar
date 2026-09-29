@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Confluence Docs Read Path",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [980, 780],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "browse",
+        "label": "Browse tree",
+        "focus": ["user", "inbox", "tauri", "confluence"],
+        "note": "Expand spaces and children through Rust Confluence commands."
+      },
+      {
+        "id": "read-page",
+        "label": "Read page body",
+        "focus": ["inbox", "tauri", "confluence"],
+        "note": "ADF converts to markdown; unsupported types return a clear message."
+      },
+      {
+        "id": "hand-off",
+        "label": "Send to chat",
+        "focus": ["user", "inbox", "composer", "agent"],
+        "note": "Pages inject full body; folders inject TOC only."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "User", "sublabel": "Inbox Docs" },
+    { "id": "inbox", "type": "frontend", "label": "Confluence Panel", "sublabel": "Inbox UI" },
+    { "id": "tauri", "type": "backend", "label": "Tauri", "sublabel": "confluence.rs" },
+    { "id": "confluence", "type": "external", "label": "Confluence API", "sublabel": "Atlassian Cloud", "brand": "jira" },
+    { "id": "composer", "type": "frontend", "label": "Composer", "sublabel": "session input" },
+    { "id": "agent", "type": "backend", "label": "Agent", "sublabel": "provider turn" }
+  ],
+  "segments": [
+    { "from": 150, "to": 320, "label": "Browse" },
+    { "from": 340, "to": 520, "label": "Read" },
+    { "from": 540, "to": 700, "label": "Hand-off" }
+  ],
+  "messages": [
+    { "id": "open-docs", "from": "user", "to": "inbox", "y": 180, "label": "open Docs tab", "variant": "default" },
+    { "id": "list-spaces", "from": "inbox", "to": "tauri", "y": 220, "label": "confluence_list_spaces", "variant": "emphasis" },
+    { "id": "spaces-api", "from": "tauri", "to": "confluence", "y": 258, "label": "GET spaces", "variant": "default" },
+    { "id": "spaces-ok", "from": "confluence", "to": "tauri", "y": 292, "label": "space list", "variant": "return" },
+    { "id": "spaces-ui", "from": "tauri", "to": "inbox", "y": 326, "label": "spaces", "variant": "return" },
+    { "id": "expand-node", "from": "user", "to": "inbox", "y": 370, "label": "expand folder / page", "variant": "default" },
+    { "id": "children", "from": "inbox", "to": "tauri", "y": 408, "label": "confluence_list_children", "variant": "emphasis" },
+    { "id": "children-api", "from": "tauri", "to": "confluence", "y": 446, "label": "direct-children", "variant": "default" },
+    { "id": "children-ok", "from": "confluence", "to": "tauri", "y": 480, "label": "nodes", "variant": "return" },
+    { "id": "read-page", "from": "inbox", "to": "tauri", "y": 530, "label": "confluence_page", "variant": "emphasis" },
+    { "id": "page-api", "from": "tauri", "to": "confluence", "y": 568, "label": "GET page + ADF", "variant": "default" },
+    { "id": "page-md", "from": "tauri", "to": "inbox", "y": 606, "label": "markdown body", "variant": "return" },
+    { "id": "send-chat", "from": "user", "to": "inbox", "y": 630, "label": "Send to chat / @mention", "variant": "default" },
+    { "id": "inject", "from": "inbox", "to": "composer", "y": 662, "label": "page body or folder TOC", "variant": "emphasis" },
+    { "id": "submit", "from": "composer", "to": "agent", "y": 690, "label": "submit turn", "variant": "dashed" }
+  ],
+  "activations": [
+    { "participant": "inbox", "from": 210, "to": 700, "type": "frontend" },
+    { "participant": "tauri", "from": 215, "to": 620, "type": "backend" },
+    { "participant": "confluence", "from": 250, "to": 590, "type": "external" },
+    { "participant": "composer", "from": 655, "to": 700, "type": "frontend" },
+    { "participant": "agent", "from": 685, "to": 705, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Credentials",
+      "items": [
+        "Reuses Jira site, email, and API token from jira-config.json",
+        "403 surfaces when the token lacks Confluence access"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Read semantics",
+      "items": [
+        "Pages return markdown bodies with size caps",
+        "Folders return titles and URLs only (TOC)"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Agent tools",
+      "items": [
+        "confluence.search, confluence.list, confluence.read are read-only",
+        "Unsupported types (e.g. whiteboards) fail clearly without crashing"
+      ]
+    }
+  ]
+}
