@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img width="1680" height="1050" alt="MonoCode desktop screenshot" src="https://github.com/user-attachments/assets/2cd4a6ec-eb1e-4b45-8627-a76442ea3874" />
+  <img width="1680" height="1050" alt="MonoCode desktop screenshot" src="docs/architecture/images/monocode.jpeg" />
 </p>
 
 ## Table of Contents
