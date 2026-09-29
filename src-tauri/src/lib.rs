@@ -13,6 +13,8 @@ mod fs;
 mod gitlab;
 mod harness;
 mod home_host;
+mod atlassian_adf;
+mod confluence;
 mod inbox_media;
 mod jira;
 mod linear;
@@ -362,6 +364,11 @@ pub fn run() {
             jira::jira_issue_details,
             jira::jira_issue_thread,
             jira::jira_issue_comment,
+            confluence::confluence_status,
+            confluence::confluence_list_spaces,
+            confluence::confluence_list_children,
+            confluence::confluence_search,
+            confluence::confluence_page,
             link_preview::fetch_link_preview,
             fs::git_branches,
             fs::git_checkout,
