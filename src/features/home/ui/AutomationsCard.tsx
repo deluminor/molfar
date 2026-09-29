@@ -55,7 +55,7 @@ export function AutomationsCard({
   }
   return (
     <HomeCard title="Automations">
-      <ul className="flex h-full flex-col justify-center gap-1">
+      <ul className="flex h-full flex-col justify-center align-top gap-1">
         {automations.map((automation) => (
           <li key={automation.id}>
             <button
