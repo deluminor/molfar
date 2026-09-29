@@ -23,6 +23,11 @@ const mediaDescriptor = Object.getOwnPropertyDescriptor(window, "matchMedia");
 const hiddenDescriptor = Object.getOwnPropertyDescriptor(document, "hidden");
 
 beforeEach(() => {
+  const storage = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+  });
   reducedMotion = false;
   hidden = false;
   nextFrame = 0;
@@ -61,6 +66,16 @@ beforeEach(() => {
       clearRect: clear,
       setTransform: vi.fn(),
       fillRect: draw,
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      createRadialGradient: () => ({ addColorStop: vi.fn() }),
       fillStyle: "",
       globalAlpha: 1,
     }),
@@ -103,7 +118,11 @@ it("keeps static accessible art and never starts the loop with reduced motion", 
   renderCard();
   expect(container.querySelector('svg[role="img"]')).not.toBeNull();
   expect(container.querySelectorAll("svg rect").length).toBeGreaterThan(200);
-  expect(container.querySelector("ellipse, radialGradient, filter")).toBeNull();
+  expect(
+    container.querySelector(
+      'svg[role="img"] ellipse, svg[role="img"] radialGradient, svg[role="img"] filter',
+    ),
+  ).toBeNull();
   expect(frames.size).toBe(0);
   expect(draw).not.toHaveBeenCalled();
 });
@@ -148,4 +167,70 @@ it("cancels pending work and disconnects observers on unmount", () => {
   document.dispatchEvent(new Event("visibilitychange"));
   motion.dispatchEvent(new Event("change"));
   expect(frames.size).toBe(0);
+});
+
+it("switches visuals, tears down dragon work and restores the saved choice", () => {
+  renderCard();
+  expect(frames.size).toBe(1);
+  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+    configurable: true,
+    value: () => null,
+  });
+  const jarvis = container.querySelector<HTMLButtonElement>(
+    'button[aria-label="dragon: switch to Jarvis"]',
+  );
+  act(() => jarvis?.click());
+  expect(jarvis?.textContent).toContain("jarvis");
+  expect(frames.size).toBe(0);
+  expect(container.querySelector('svg[aria-label^="Pixel dragon"]')).toBeNull();
+  act(() => root.render(null));
+  renderCard();
+  expect(
+    container.querySelector(".home-brand-selector")?.textContent,
+  ).toContain("jarvis");
+  act(() =>
+    container
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="jarvis: switch to Dragon"]',
+      )
+      ?.click(),
+  );
+  expect(
+    container.querySelector('svg[aria-label^="Pixel dragon"]'),
+  ).not.toBeNull();
+  expect(
+    container.querySelector(".home-brand-selector")?.textContent,
+  ).toContain("dragon");
+});
+
+it("keeps exactly one active loop when switching both ways repeatedly", () => {
+  renderCard();
+  for (const visual of ["Jarvis", "Dragon", "Jarvis", "Dragon"]) {
+    act(() =>
+      container
+        .querySelector<HTMLButtonElement>(".home-brand-selector")
+        ?.click(),
+    );
+    expect(frames.size).toBe(1);
+    expect(
+      container.querySelector(".home-brand-selector")?.textContent,
+    ).toContain(visual.toLowerCase());
+  }
+  act(() => root.render(null));
+  expect(frames.size).toBe(0);
+});
+
+it("keeps one compact text control and preserves focus while cycling", () => {
+  renderCard();
+  const button = container.querySelector<HTMLButtonElement>(
+    ".home-brand-selector",
+  );
+  expect(container.querySelectorAll("button")).toHaveLength(1);
+  expect(button?.querySelector("svg")).toBeNull();
+  expect(button?.textContent).toBe("←dragon→");
+  button?.focus();
+  act(() => button?.click());
+  expect(button?.textContent).toBe("←jarvis→");
+  expect(document.activeElement).toBe(button);
+  expect(button?.getAttribute("aria-label")).toBe("jarvis: switch to Dragon");
 });

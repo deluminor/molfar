@@ -1,47 +1,33 @@
-import { memo, type ReactNode } from "react";
-import { DRAGON_DOTS } from "../model/dragon";
+import { memo, useState, type ReactNode } from "react";
 import {
-  DRAGON_PADDING,
-  DRAGON_PIXEL_SIZE,
-  DRAGON_VIEW_HEIGHT,
-  DRAGON_VIEW_WIDTH,
-} from "../model/dragon-constants";
+  readBrandVisual,
+  saveBrandVisual,
+} from "../model/brand-visual-preference";
+import type { BrandVisual } from "../model/brand-visual-types";
+import { BrandVisualSelector } from "./BrandVisualSelector";
+import { DragonVisual } from "./DragonVisual";
 import { HomeCard } from "./HomeCard";
-import { useDragonParticles } from "./use-dragon-particles";
+import { JarvisVisual } from "./JarvisVisual";
 
-/** Pixel wyvern with a steady silhouette and softly falling square fragments. */
 export const DragonCard = memo(function DragonCard(): ReactNode {
-  const canvasRef = useDragonParticles();
+  const [visual, setVisual] = useState(readBrandVisual);
+
+  function selectVisual(next: BrandVisual): void {
+    setVisual(next);
+    saveBrandVisual(next);
+  }
 
   return (
-    <HomeCard title="MonoCode" className="overflow-hidden">
-      <div className="relative h-full w-full overflow-hidden text-accent">
-        <svg
-          role="img"
-          aria-label="Pixel dragon facing left with spread wings and a curled tail"
-          viewBox={`0 0 ${DRAGON_VIEW_WIDTH} ${DRAGON_VIEW_HEIGHT}`}
-          className="absolute inset-0 h-full w-full"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <g transform={`translate(${DRAGON_PADDING} ${DRAGON_PADDING})`}>
-            {DRAGON_DOTS.map((dot) => (
-              <rect
-                key={`${dot.x}:${dot.y}`}
-                x={dot.x + (1 - DRAGON_PIXEL_SIZE) / 2}
-                y={dot.y + (1 - DRAGON_PIXEL_SIZE) / 2}
-                width={DRAGON_PIXEL_SIZE}
-                height={DRAGON_PIXEL_SIZE}
-                fill={dot.eye ? "var(--color-content)" : "currentColor"}
-                fillOpacity={dot.intensity}
-              />
-            ))}
-          </g>
-        </svg>
-        <canvas
-          ref={canvasRef}
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full"
-        />
+    <HomeCard
+      title="MonoCode"
+      className="home-brand-card overflow-hidden"
+      actions={<BrandVisualSelector value={visual} onChange={selectVisual} />}
+    >
+      <div
+        key={visual}
+        className="home-brand-visual relative h-full w-full text-accent"
+      >
+        {visual === "dragon" ? <DragonVisual /> : <JarvisVisual />}
       </div>
     </HomeCard>
   );

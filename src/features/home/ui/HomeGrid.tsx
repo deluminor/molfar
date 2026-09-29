@@ -31,10 +31,6 @@ type Props = {
 const ITEM =
   "home-grid-item grid min-h-0 min-w-0 [&>*]:h-full [&>*]:min-h-0";
 
-/**
- * Home dashboard grid: react-grid-layout with vertical compact/push.
- * Drag and resize only when `isEditing` is true.
- */
 export function HomeGrid({
   layout,
   isEditing,
@@ -75,6 +71,7 @@ export function HomeGrid({
           dragConfig={{
             enabled: isEditing,
             handle: ".home-card-drag-handle",
+            cancel: ".home-brand-selector",
           }}
           resizeConfig={{
             enabled: isEditing,
