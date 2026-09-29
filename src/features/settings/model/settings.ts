@@ -381,7 +381,7 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     id: "jira",
     section: "inbox",
     label: "Jira",
-    keywords: "atlassian cloud site email api token issues projects connect",
+    keywords: "atlassian cloud site email api token issues projects confluence docs connect",
   },
   {
     id: "linear",

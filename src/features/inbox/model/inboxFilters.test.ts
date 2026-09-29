@@ -523,7 +523,7 @@ describe("visibleInboxSources", () => {
         gitlab: false,
         azuredevops: false,
       }),
-    ).toEqual(["linear", "jira"]);
+    ).toEqual(["linear", "jira", "confluence"]);
     expect(
       visibleInboxSources({
         github: true,
@@ -532,7 +532,7 @@ describe("visibleInboxSources", () => {
         gitlab: true,
         azuredevops: true,
       }),
-    ).toEqual(["github", "linear", "jira", "gitlab", "azuredevops"]);
+    ).toEqual(["github", "linear", "jira", "confluence", "gitlab", "azuredevops"]);
   });
 
   it("keeps unresolved sources visible so tabs do not flash away", () => {
@@ -544,7 +544,7 @@ describe("visibleInboxSources", () => {
         gitlab: null,
         azuredevops: null,
       }),
-    ).toEqual(["github", "linear", "jira", "gitlab", "azuredevops"]);
+    ).toEqual(["github", "linear", "jira", "confluence", "gitlab", "azuredevops"]);
   });
 });
 

@@ -54,9 +54,9 @@ export const DEFAULT_INBOX_FILTERS: InboxFilters = {
   status: DEFAULT_INBOX_STATUS_FILTER,
 };
 
-export type InboxSource = InboxProvider;
+export type InboxSource = InboxProvider | "confluence";
 
-export type ConnectableInboxSource = InboxSource;
+export type ConnectableInboxSource = InboxProvider;
 
 /** `null` means the status check has not resolved yet. */
 export type InboxSourceConnections = Record<
@@ -68,6 +68,7 @@ export const INBOX_SOURCE_LABELS: Record<InboxSource, string> = {
   github: "GitHub",
   linear: "Linear",
   jira: "Jira",
+  confluence: "Docs",
   gitlab: "GitLab",
   azuredevops: "ADO",
 };
@@ -78,7 +79,10 @@ export function visibleInboxSources(
   const sources: InboxSource[] = [];
   if (connections.github !== false) sources.push("github");
   if (connections.linear !== false) sources.push("linear");
-  if (connections.jira !== false) sources.push("jira");
+  if (connections.jira !== false) {
+    sources.push("jira");
+    sources.push("confluence");
+  }
   if (connections.gitlab !== false) sources.push("gitlab");
   if (connections.azuredevops !== false) sources.push("azuredevops");
   return sources;
@@ -99,6 +103,10 @@ export function connectableInboxSources(
 /** Account-wide issue trackers: no local repos, no PRs, no draft/merged states. */
 export function isTrackerSource(source?: InboxSource): boolean {
   return source === "linear" || source === "jira";
+}
+
+export function isConfluenceSource(source?: InboxSource): boolean {
+  return source === "confluence";
 }
 
 export function resolveInboxSource(
@@ -126,6 +134,7 @@ export function loadInboxSource(): InboxSource {
     const raw = localStorage.getItem(SOURCE_KEY);
     return raw === "linear" ||
       raw === "jira" ||
+      raw === "confluence" ||
       raw === "gitlab" ||
       raw === "azuredevops"
       ? raw

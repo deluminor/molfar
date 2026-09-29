@@ -1,11 +1,12 @@
 import { Inbox } from "../../../shared/ui/icons";
 import type { InboxProvider } from "../model/githubTasks";
+import type { InboxSource } from "../model/inboxFilters";
 
 export function InboxProviderMark({
   provider,
   className,
 }: {
-  provider: InboxProvider;
+  provider: InboxProvider | InboxSource;
   className?: string;
 }) {
   if (provider === "gitlab") {
@@ -58,6 +59,13 @@ export function InboxProviderMark({
     return (
       <svg viewBox="0 0 24 24" fill="#2684FF" aria-hidden className={className}>
         <path d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005Zm5.723-5.756H5.736a5.215 5.215 0 0 0 5.215 5.214h2.129v2.058a5.218 5.218 0 0 0 5.215 5.214V6.758a1.001 1.001 0 0 0-1.001-1.001ZM23.013 0H11.455a5.215 5.215 0 0 0 5.215 5.215h2.129v2.057A5.215 5.215 0 0 0 24 12.483V1.005A1.001 1.001 0 0 0 23.013 0Z" />
+      </svg>
+    );
+  }
+  if (provider === "confluence") {
+    return (
+      <svg viewBox="0 0 24 24" fill="#1868DB" aria-hidden className={className}>
+        <path d="M2.07 16.669c-.131-.209-.066-.48.131-.59 1.617-.918 4.41-1.85 8.085-1.85 3.676 0 6.47.932 8.086 1.85.197.11.262.381.13.59l-1.747 2.79a.467.467 0 0 1-.59.197c-1.354-.59-3.545-1.223-5.88-1.223-2.333 0-4.525.633-5.878 1.223a.467.467 0 0 1-.59-.197l-1.747-2.79Zm3.938-6.295c-.131-.21-.066-.481.131-.59 1.266-.721 3.283-1.355 6.01-1.355 2.728 0 4.745.634 6.011 1.354.197.11.262.381.13.59l-1.747 2.79a.467.467 0 0 1-.59.197c-1.047-.459-2.71-.984-3.804-.984-1.092 0-2.757.525-3.803.984a.467.467 0 0 1-.59-.197L6.008 10.374Z" />
       </svg>
     );
   }

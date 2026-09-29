@@ -14,6 +14,10 @@ import {
   type JiraProject,
   type JiraStatus,
 } from "../../inbox/model/jira";
+import {
+  clearConfluenceCache,
+  notifyConfluenceChange,
+} from "../../inbox/model/confluence";
 
 export function JiraSettings() {
   const [status, setStatus] = useState<JiraStatus | null>(null);
@@ -67,6 +71,8 @@ export function JiraSettings() {
       setStatus(await saveJiraConfig({ site, email, token }));
       setToken("");
       clearInboxCache();
+      clearConfluenceCache();
+      notifyConfluenceChange();
       saveHiddenJiraProjectIds([]);
       await loadProjects();
     } catch (err) {
@@ -85,7 +91,9 @@ export function JiraSettings() {
       setProjects([]);
       setToken("");
       clearInboxCache();
+      clearConfluenceCache();
       notifyJiraChange();
+      notifyConfluenceChange();
     } catch (err) {
       setError(String(err instanceof Error ? err.message : err));
     } finally {
@@ -117,7 +125,9 @@ export function JiraSettings() {
         >
           <p className="text-[12px] leading-relaxed text-content/45">
             Connect your Jira Cloud site using your Atlassian email and an API
-            token without scopes. Disconnect deletes the saved credentials.
+            token without scopes. The same credentials power the Inbox{" "}
+            <span className="text-content/70">Docs</span> tab for Confluence.
+            Disconnect deletes the saved credentials.
           </p>
           {(
             [
