@@ -16,6 +16,7 @@ id_ed25519*
 .tauri/
 node_modules/
 .pnpm-store/
+.codegraph/
 dist/
 dist-ssr/
 build/
@@ -56,3 +57,4 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 scratch/
+docs/specs
