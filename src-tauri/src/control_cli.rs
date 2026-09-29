@@ -82,7 +82,7 @@ const ACTIONS: [&str; 12] = [
     "list", "delegate", "get", "steer", "message", "retry", "cancel", "wait", "review", "finish",
     "respond", "answer",
 ];
-const APP_ACTIONS: [&str; 11] = [
+const APP_ACTIONS: [&str; 14] = [
     "models.list",
     "sessions.list",
     "sessions.read",
@@ -94,6 +94,9 @@ const APP_ACTIONS: [&str; 11] = [
     "notes.list",
     "notes.read",
     "notes.write",
+    "confluence.search",
+    "confluence.list",
+    "confluence.read",
 ];
 const APP_USAGE: &str = r#"MonoCode app access — use in a thread enabled by /operator.
 
@@ -135,6 +138,12 @@ Actions:
                   to derive it from the body. Use {"id":"...","body":"..."}
                   to edit an existing note; title and tags are also optional.
                   Omitted fields stay unchanged. Reuse --request-id on retries.
+  confluence.search {"query":"hyperopt","spaceKey":"TB","limit":25}
+                  Search Confluence pages/folders (requires Jira connection).
+  confluence.list   {"spaceKey":"TB"} or {"parentId":"...","parentKind":"folder"}
+                  List root pages in a space, or children of a page/folder.
+                  parentKind is optional (page|folder); omit to try both.
+  confluence.read   {"id":"..."}  Page markdown, or folder table of contents.
 
 The output is one JSON line: {"ok":true,"result":...} or {"ok":false,"error":"..."}.
 Use --input - to pass JSON on stdin. Never print MonoCode credentials.

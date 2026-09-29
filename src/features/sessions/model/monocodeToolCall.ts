@@ -18,6 +18,9 @@ const ACTION_LABELS: Record<string, string> = {
   "notes.list": "List notes",
   "notes.read": "Read a note",
   "notes.write": "Write a note",
+  "confluence.search": "Search Confluence",
+  "confluence.list": "List Confluence pages",
+  "confluence.read": "Read Confluence page",
 };
 
 /** Conservatively parse one shell invocation; compound commands use the shell row. */

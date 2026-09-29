@@ -1,5 +1,19 @@
 import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
+import {
+  confluenceFolderTocMarkdown,
+  confluencePage,
+  listConfluenceChildren,
+  listConfluenceSpaces,
+  searchConfluence,
+} from "../../inbox/model/confluence";
+import {
+  normalizeNoteTags,
+  noteTitle,
+  type Note,
+  type NoteUpsert,
+} from "../../notes";
 import { looksLikeProject } from "../../projects/model/recents";
+import type { QuickLaunch } from "../../quick-composer/model/quickComposer";
 import {
   mergeModelSettings,
   modelEffortSetting,
@@ -7,6 +21,7 @@ import {
   preferredModelId,
   resolveModel,
 } from "../../sessions/model/models";
+import { consumeOperatorCommand } from "../../sessions/model/operatorCommand";
 import {
   HARNESSES,
   RUNTIME_MODE_HINT,
@@ -20,14 +35,6 @@ import {
   placeSessionInFolder,
   saveSessionFolders,
 } from "../../sessions/model/sessionFolders";
-import {
-  normalizeNoteTags,
-  noteTitle,
-  type Note,
-  type NoteUpsert,
-} from "../../notes";
-import type { QuickLaunch } from "../../quick-composer/model/quickComposer";
-import { consumeOperatorCommand } from "../../sessions/model/operatorCommand";
 import { sessionConversationPage } from "./sessionConversation";
 
 export type AppSessionListing = {
@@ -84,6 +91,9 @@ const FIELDS = new Map<string, readonly string[]>([
   ["notes.list", ["limit", "offset"]],
   ["notes.read", ["id"]],
   ["notes.write", ["id", "title", "body", "tags"]],
+  ["confluence.search", ["query", "spaceKey", "limit"]],
+  ["confluence.list", ["spaceKey", "spaceId", "parentId", "parentKind"]],
+  ["confluence.read", ["id"]],
 ]);
 
 function fields(action: string, input: Record<string, unknown>) {
@@ -461,5 +471,134 @@ export async function handleAgentApp(
         ...(looksLikeProject(source.cwd) ? { sourceCwd: source.cwd } : {}),
       });
     }
+    case "confluence.search": {
+      const query = requiredString(input.query, "query", 200);
+      const spaceKey = optionalString(input.spaceKey, "spaceKey", 64);
+      const rawLimit = input.limit ?? 25;
+
+      if (
+        typeof rawLimit !== "number" ||
+        !Number.isInteger(rawLimit) ||
+        rawLimit < 1 ||
+        rawLimit > 50
+      )
+        throw new Error("limit must be an integer from 1 to 50");
+
+      const limit = rawLimit;
+      const hits = await searchConfluence({
+        query,
+        spaceKey,
+        limit,
+      });
+
+      return {
+        query,
+        spaceKey: spaceKey ?? null,
+        results: hits.map((hit) => ({
+          id: hit.id,
+          title: hit.title,
+          kind: hit.kind,
+          spaceKey: hit.spaceKey,
+          url: hit.url,
+          readable: hit.readable,
+          hasChildren: hit.hasChildren,
+        })),
+      };
+    }
+
+    case "confluence.list": {
+      const spaceKey = optionalString(input.spaceKey, "spaceKey", 64);
+      const spaceId = optionalString(input.spaceId, "spaceId", 64);
+      const parentId = optionalString(input.parentId, "parentId", 64);
+      const parentKind = optionalString(input.parentKind, "parentKind", 32);
+
+      if (!parentId && !spaceId) {
+        if (!spaceKey)
+          throw new Error("Provide spaceKey, spaceId, or parentId");
+
+        const spaces = await listConfluenceSpaces();
+        const space = spaces.find(
+          (entry) => entry.key.toLowerCase() === spaceKey.toLowerCase(),
+        );
+
+        if (!space) throw new Error(`Confluence space "${spaceKey}" not found`);
+        const children = await listConfluenceChildren({
+          spaceId: space.id,
+          spaceKey: space.key,
+        });
+
+        return {
+          space: { id: space.id, key: space.key, name: space.name },
+          children: children.map((child) => ({
+            id: child.id,
+            title: child.title,
+            kind: child.kind,
+            url: child.url,
+            readable: child.readable,
+            hasChildren: child.hasChildren,
+          })),
+        };
+      }
+
+      const children = await listConfluenceChildren({
+        spaceId,
+        parentId,
+        spaceKey,
+        parentKind,
+      });
+
+      return {
+        parentId: parentId ?? null,
+        spaceId: spaceId ?? null,
+        parentKind: parentKind ?? null,
+        children: children.map((child) => ({
+          id: child.id,
+          title: child.title,
+          kind: child.kind,
+          url: child.url,
+          readable: child.readable,
+          hasChildren: child.hasChildren,
+        })),
+      };
+    }
+
+    case "confluence.read": {
+      const id = requiredString(input.id, "id", 64);
+      const page = await confluencePage(id);
+
+      if (page.kind === "folder" || !page.readable) {
+        const children = await listConfluenceChildren({
+          parentId: id,
+          spaceId: page.spaceId || undefined,
+          spaceKey: page.spaceKey || undefined,
+          parentKind: page.kind,
+        });
+
+        return {
+          id: page.id,
+          title: page.title,
+          kind: page.kind,
+          url: page.url,
+          readable: false,
+          body: confluenceFolderTocMarkdown(
+            { title: page.title, url: page.url, id: page.id },
+            children,
+          ),
+          truncated: false,
+        };
+      }
+
+      return {
+        id: page.id,
+        title: page.title,
+        kind: page.kind,
+        url: page.url,
+        readable: page.readable,
+        body: page.body,
+        truncated: page.truncated,
+      };
+    }
+    default:
+      throw new Error(`Unknown app action: ${action}`);
   }
 }
