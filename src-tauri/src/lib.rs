@@ -1,10 +1,12 @@
 use tauri::Manager;
 
 mod account_identity;
+mod atlassian_adf;
 mod automations;
 mod azure_devops;
 mod chat_background;
 mod checkpoint;
+mod confluence;
 mod control;
 pub mod control_cli;
 mod cursor_store;
@@ -12,13 +14,8 @@ mod external_editor;
 mod fs;
 mod gitlab;
 mod harness;
-<<<<<<< HEAD
-mod home_host;
-mod atlassian_adf;
-mod confluence;
-=======
 mod harness_updates;
->>>>>>> origin/main
+mod home_host;
 mod inbox_media;
 mod jira;
 mod linear;
@@ -48,6 +45,7 @@ pub mod ssh_askpass;
 #[cfg(target_os = "windows")]
 mod tray;
 mod usage_limits;
+mod vault;
 mod window;
 mod window_transfer;
 #[cfg(windows)]
@@ -234,6 +232,7 @@ pub fn run() {
         .manage(harness::HarnessHost::new())
         .manage(pty::PtyHost::new())
         .manage(remote::RemoteConnections::default())
+        .manage(vault::types::VaultState::default())
         .manage(window_transfer::WindowTransferState::new())
         .setup(|app| {
             harness::reap_orphaned_harness_processes();
@@ -495,6 +494,14 @@ pub fn run() {
             notes::notes_delete,
             notes::notes_save_image,
             notes::notes_image_path,
+            vault::vault_status,
+            vault::vault_connect,
+            vault::vault_scan,
+            vault::vault_cancel_scan,
+            vault::vault_read,
+            vault::vault_save,
+            vault::vault_disconnect,
+            vault::vault_asset_path,
             checkpoint::session_checkpoint_ensure,
             checkpoint::session_checkpoint_prepare,
             checkpoint::session_checkpoint_capture,
