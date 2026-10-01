@@ -3,6 +3,7 @@ import {
   captureSettingsReturnView,
   restoreSettingsReturnView,
 } from "./settings-return-view";
+import { RAIL_SURFACES_DEFAULT } from "../../../features/settings/model/projectRail";
 import type { SettingsReturnView } from "./types";
 
 function workspace(): SettingsReturnView {
@@ -26,7 +27,11 @@ describe("settings return navigation", () => {
         workspace(),
         true,
       );
-      const restored = restoreSettingsReturnView(reopenedSnapshot, true);
+      const restored = restoreSettingsReturnView(
+        reopenedSnapshot,
+        true,
+        RAIL_SURFACES_DEFAULT,
+      );
 
       expect(restored.localSurface).toBe(localSurface);
       expect(restored.automations).toBe(false);
@@ -40,7 +45,7 @@ describe("settings return navigation", () => {
       false,
     );
 
-    expect(restoreSettingsReturnView(snapshot, true)).toEqual({
+    expect(restoreSettingsReturnView(snapshot, true, RAIL_SURFACES_DEFAULT)).toEqual({
       ...workspace(),
       automations: true,
     });
@@ -53,7 +58,22 @@ describe("settings return navigation", () => {
       false,
     );
 
-    expect(restoreSettingsReturnView(snapshot, false)).toEqual(workspace());
+    expect(restoreSettingsReturnView(snapshot, false, RAIL_SURFACES_DEFAULT)).toEqual(workspace());
+  });
+
+  it("does not reopen a rail surface that was hidden in Settings", () => {
+    const snapshot = captureSettingsReturnView(
+      workspace(),
+      { ...workspace(), localSurface: "usage" },
+      false,
+    );
+
+    expect(
+      restoreSettingsReturnView(snapshot, true, {
+        ...RAIL_SURFACES_DEFAULT,
+        usage: false,
+      }),
+    ).toEqual(workspace());
   });
 
   it("captures a new destination on the next visit to Settings", () => {
@@ -68,7 +88,7 @@ describe("settings return navigation", () => {
       false,
     );
 
-    expect(restoreSettingsReturnView(search, true)).toEqual({
+    expect(restoreSettingsReturnView(search, true, RAIL_SURFACES_DEFAULT)).toEqual({
       ...workspace(),
       search: true,
     });

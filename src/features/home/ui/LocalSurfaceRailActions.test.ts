@@ -2,6 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { RAIL_SURFACES_DEFAULT } from "../../settings/model/projectRail";
 import { LocalSurfaceRailActions } from "./LocalSurfaceRailActions";
 
 let container: HTMLDivElement;
@@ -27,7 +28,11 @@ function buttons(): HTMLButtonElement[] {
 it("renders Home before Usage and marks only the active surface", () => {
   act(() =>
     root.render(
-      createElement(LocalSurfaceRailActions, { active: "usage", onOpen: vi.fn() }),
+      createElement(LocalSurfaceRailActions, {
+        active: "usage",
+        visible: RAIL_SURFACES_DEFAULT,
+        onOpen: vi.fn(),
+      }),
     ),
   );
   const [home, usage] = buttons();
@@ -42,10 +47,32 @@ it("renders Home before Usage and marks only the active surface", () => {
 it("reports which surface was clicked", () => {
   const onOpen = vi.fn();
   act(() =>
-    root.render(createElement(LocalSurfaceRailActions, { active: null, onOpen })),
+    root.render(
+      createElement(LocalSurfaceRailActions, {
+        active: null,
+        visible: RAIL_SURFACES_DEFAULT,
+        onOpen,
+      }),
+    ),
   );
   const [home, usage] = buttons();
   act(() => home.click());
   act(() => usage.click());
   expect(onOpen.mock.calls).toEqual([["home"], ["usage"]]);
+});
+
+it("leaves out surfaces hidden in Settings", () => {
+  act(() =>
+    root.render(
+      createElement(LocalSurfaceRailActions, {
+        active: null,
+        visible: { ...RAIL_SURFACES_DEFAULT, home: false },
+        onOpen: vi.fn(),
+      }),
+    ),
+  );
+
+  expect(buttons().map((button) => button.getAttribute("aria-label"))).toEqual([
+    "Usage",
+  ]);
 });
