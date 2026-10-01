@@ -4,6 +4,7 @@ import {
   ChevronRight,
   FolderPlus,
   Internet,
+  FolderTree,
   Inbox,
   MoreHorizontal,
   Pin,
@@ -113,6 +114,8 @@ type Props = {
   inboxActive?: boolean;
   notesEnabled?: boolean;
   onOpenNotes?: () => void;
+  onOpenKnowledge?: () => void;
+  knowledgeActive?: boolean;
   notesActive?: boolean;
   onOpenAutomations?: () => void;
   automationsActive?: boolean;
@@ -151,6 +154,8 @@ export function ProjectRail({
   inboxActive = false,
   notesEnabled = true,
   onOpenNotes,
+  onOpenKnowledge,
+  knowledgeActive = false,
   notesActive = false,
   onOpenAutomations,
   automationsActive = false,
@@ -404,6 +409,15 @@ export function ProjectRail({
                 ariaLabel="Notes"
               />
             ) : null}
+            {onOpenKnowledge ? (
+              <RailAction
+                label="Knowledge"
+                icon={FolderTree}
+                onClick={onOpenKnowledge}
+                active={knowledgeActive}
+                ariaLabel="Knowledge"
+              />
+            ) : null}
             <RailAction
               label="Automations"
               icon={Zap}
@@ -433,7 +447,7 @@ export function ProjectRail({
                 searchActive={
                   searchActive ||
                   inboxActive ||
-                  notesActive ||
+                  notesActive || knowledgeActive ||
                   automationsActive
                 }
                 onSelect={onSelectProject}
@@ -467,7 +481,7 @@ export function ProjectRail({
                       searchActive={
                         searchActive ||
                         inboxActive ||
-                        notesActive ||
+                        notesActive || knowledgeActive ||
                         automationsActive
                       }
                       onSelect={onSelectProject}
@@ -511,7 +525,7 @@ export function ProjectRail({
               sortable={projectSortable}
               pinned={false}
               searchActive={
-                searchActive || inboxActive || notesActive || automationsActive
+                searchActive || inboxActive || notesActive || knowledgeActive || automationsActive
               }
               onSelect={onSelectProject}
               onTogglePin={toggleProjectPin}

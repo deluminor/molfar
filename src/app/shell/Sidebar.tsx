@@ -13,6 +13,7 @@ import {
   Clock,
   FileScript,
   Folder,
+  FolderTree,
   GitBranch,
   GitPullRequest,
   Inbox,
@@ -288,11 +289,13 @@ type Props = {
   onOpenInbox?: () => void;
   onOpenInboxItem?: (item: LinkedWorkItem, sessionId: string) => void;
   onOpenNotes?: () => void;
+  onOpenKnowledge?: () => void;
   onOpenAutomations?: () => void;
   onGoToFile?: () => void;
   searchActive?: boolean;
   inboxActive?: boolean;
   notesActive?: boolean;
+  knowledgeActive?: boolean;
   automationsActive?: boolean;
   notesEnabled?: boolean;
   onToggleProjectRail?: () => void;
@@ -377,11 +380,13 @@ function SidebarComponent({
   onOpenInbox,
   onOpenInboxItem,
   onOpenNotes,
+  onOpenKnowledge,
   onOpenAutomations,
   onGoToFile,
   searchActive = false,
   inboxActive = false,
   notesActive = false,
+  knowledgeActive = false,
   automationsActive = false,
   notesEnabled = true,
   onToggleProjectRail,
@@ -742,6 +747,7 @@ function SidebarComponent({
     !searchActive &&
     !inboxActive &&
     !notesActive &&
+    !knowledgeActive &&
     !automationsActive &&
     !settingsOpen &&
     inProject;
@@ -1640,10 +1646,12 @@ function SidebarComponent({
               onOpenInbox={onOpenInbox}
               onOpenNotificationSettings={onOpenNotificationSettings}
               onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+          onOpenKnowledge={onOpenKnowledge}
               onOpenAutomations={onOpenAutomations}
               searchActive={searchActive}
               inboxActive={inboxActive}
               notesActive={notesActive}
+          knowledgeActive={knowledgeActive}
               automationsActive={automationsActive}
               inboxUnseen={inboxUnseen}
             />
@@ -2144,7 +2152,9 @@ function SidebarComponent({
           inboxActive={inboxActive}
           onOpenNotificationSettings={onOpenNotificationSettings}
           onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+          onOpenKnowledge={onOpenKnowledge}
           notesActive={notesActive}
+          knowledgeActive={knowledgeActive}
           onOpenAutomations={onOpenAutomations}
           automationsActive={automationsActive}
           onOpenSettings={onOpenSettings}
@@ -2173,7 +2183,9 @@ function SidebarComponent({
           inboxActive={inboxActive}
           notesEnabled={notesEnabled}
           onOpenNotes={onOpenNotes}
+          onOpenKnowledge={onOpenKnowledge}
           notesActive={notesActive}
+          knowledgeActive={knowledgeActive}
           onOpenAutomations={onOpenAutomations}
           automationsActive={automationsActive}
           onTogglePanel={onToggleProjectRail}
@@ -2252,10 +2264,12 @@ function SidebarProjectPicker({
   onOpenInbox,
   onOpenNotificationSettings,
   onOpenNotes,
+  onOpenKnowledge,
   onOpenAutomations,
   searchActive = false,
   inboxActive = false,
   notesActive = false,
+  knowledgeActive = false,
   automationsActive = false,
   inboxUnseen = false,
 }: {
@@ -2270,10 +2284,12 @@ function SidebarProjectPicker({
   onOpenInbox?: () => void;
   onOpenNotificationSettings?: (projectPath?: string) => void;
   onOpenNotes?: () => void;
+  onOpenKnowledge?: () => void;
   onOpenAutomations?: () => void;
   searchActive?: boolean;
   inboxActive?: boolean;
   notesActive?: boolean;
+  knowledgeActive?: boolean;
   automationsActive?: boolean;
   inboxUnseen?: boolean;
 }) {
@@ -2340,6 +2356,11 @@ function SidebarProjectPicker({
             <StickyNote className="size-3.5" strokeWidth={1.75} />
           </IconButton>
         ) : null}
+        {onOpenKnowledge ? (
+          <IconButton label="Knowledge" active={knowledgeActive} onClick={onOpenKnowledge}>
+            <FolderTree className="size-3.5" strokeWidth={1.75} />
+          </IconButton>
+        ) : null}
         {onOpenAutomations ? (
           <IconButton
             label="Automations"
@@ -2385,7 +2406,9 @@ function CompactProjectRail({
   inboxActive,
   onOpenNotificationSettings,
   onOpenNotes,
+  onOpenKnowledge,
   notesActive,
+  knowledgeActive,
   onOpenAutomations,
   automationsActive,
   onOpenSettings,
@@ -2412,7 +2435,9 @@ function CompactProjectRail({
   inboxActive: boolean;
   onOpenNotificationSettings?: (projectPath?: string) => void;
   onOpenNotes?: () => void;
+  onOpenKnowledge?: () => void;
   notesActive: boolean;
+  knowledgeActive: boolean;
   onOpenAutomations?: () => void;
   automationsActive: boolean;
   onOpenSettings?: () => void;
@@ -2427,7 +2452,7 @@ function CompactProjectRail({
   const action = (active: boolean, open?: () => void) =>
     active && onLeaveActive ? onLeaveActive : open;
   const workspaceActive =
-    !searchActive && !inboxActive && !notesActive && !automationsActive;
+    !searchActive && !inboxActive && !notesActive && !knowledgeActive && !automationsActive;
   const openWorkspaceTab = (nextTab: SidebarTab) => {
     if (!workspaceActive) onLeaveActive?.();
     onTabChange(nextTab);
@@ -2518,6 +2543,14 @@ function CompactProjectRail({
             icon={StickyNote}
             active={notesActive}
             onClick={action(notesActive, onOpenNotes)}
+          />
+        ) : null}
+        {onOpenKnowledge ? (
+          <CompactRailAction
+            label="Knowledge"
+            icon={FolderTree}
+            active={knowledgeActive}
+            onClick={action(knowledgeActive, onOpenKnowledge)}
           />
         ) : null}
         <CompactRailAction

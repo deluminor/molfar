@@ -3,7 +3,7 @@ import { RailAction } from "../../../app/shell/RailAction";
 import { Gauge, Home } from "../../../shared/ui/icons";
 
 /** Fork-only workspace surfaces opened from the project rail. */
-export type LocalSurfaceId = "home" | "usage";
+export type LocalSurfaceId = "home" | "usage" | "knowledge";
 
 type Props = {
   active: LocalSurfaceId | null;

@@ -1,0 +1,145 @@
+.knowledge-connect {
+  align-self: center;
+  margin: auto;
+  width: min(540px, calc(100% - 48px));
+  padding: 40px 12px;
+}
+.knowledge-connect-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: var(--color-selection-subtle);
+  border: 1px solid var(--color-stroke);
+  border-radius: 16px;
+  color: var(--color-accent);
+  margin-bottom: 25px;
+}
+.knowledge-connect h1 {
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  margin: 12px 0;
+}
+.knowledge-connect > p {
+  max-width: 450px;
+  opacity: 0.75;
+  line-height: 1.8;
+  margin: 0 0 25px;
+}
+.knowledge-connect > button {
+  height: 38px;
+  font-size: 12px;
+}
+.knowledge-connect form {
+  margin-top: 28px;
+}
+.knowledge-connect label {
+  display: block;
+  font-size: 10px;
+  opacity: 0.75;
+  margin-bottom: 9px;
+}
+.knowledge-path-input {
+  display: flex;
+  gap: 8px;
+}
+.knowledge-path-input input {
+  flex: 1;
+  width: 0;
+  padding: 10px 12px;
+  color: inherit;
+  background: var(--color-selection-subtle);
+  border: 1px solid var(--color-stroke);
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.knowledge-connect > .knowledge-connect-footnote {
+  margin-top: 18px;
+  font-size: 10px;
+  opacity: 0.4;
+}
+.knowledge-confirm-copy {
+  opacity: 0.7;
+  line-height: 1.7;
+}
+.knowledge-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+@media (max-width: 1024px) {
+  .knowledge-files {
+    width: 185px;
+  }
+}
+@media (max-width: 768px) {
+  .knowledge-files {
+    width: 180px;
+    max-width: 35%;
+  }
+  .knowledge-side-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 70% !important;
+    max-width: 100%;
+    z-index: 2;
+  }
+  .knowledge-side-panel-handle {
+    display: none;
+  }
+  .knowledge-toolbar {
+    gap: 6px;
+    padding: 8px;
+  }
+  .knowledge-count {
+    display: none;
+  }
+  .knowledge-status-refresh {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .knowledge-files {
+    width: 145px;
+    max-width: 40%;
+    min-width: 120px;
+  }
+  .knowledge-side-panel {
+    width: 100% !important;
+  }
+  .knowledge-connect h1 {
+    font-size: 24px;
+  }
+  .knowledge-toolbar .knowledge-button {
+    padding: 8px;
+  }
+  .knowledge-button,
+  .knowledge-icon-button,
+  .knowledge-tree-row {
+    min-height: 44px;
+  }
+  .knowledge-icon-button {
+    width: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .knowledge-view * {
+    transition: none !important;
+  }
+}
+
+.knowledge-attachment {
+  overflow: auto;
+  padding: 20px;
+}
+.knowledge-attachment img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}

@@ -1,5 +1,8 @@
-<<<<<<< HEAD
-=======
+import {
+  captureSettingsReturnView,
+  restoreSettingsReturnView,
+} from "./model/settings-return/settings-return-view";
+import type { SettingsReturnView } from "./model/settings-return/types";
 import { acceptQuickLaunch } from "./model/quickLaunchSession";
 import {
   cancelScheduledFlush,
@@ -22,7 +25,6 @@ import {
   rebaseCiRepairs,
   trackCiRepair,
 } from "../features/inbox/model/ciRepairTracking";
->>>>>>> origin/main
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -38,13 +40,8 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-<<<<<<< HEAD
 import { flushSync } from "react-dom";
-import {
-  handleAgentApp,
-  type AppSessionListing,
-} from "../features/agent-app/model/agentApp";
-=======
+
 import { Sidebar } from "./shell/Sidebar";
 import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
 import { HarnessUpdateNotice } from "../features/providers/ui/HarnessUpdateNotice";
@@ -112,7 +109,6 @@ import {
   type GitFileDiffKind,
   type GitHistoryCommit,
 } from "../platform/tauri/fs";
->>>>>>> origin/main
 import {
   invalidateProjectFiles,
   prefetchProjectFiles,
@@ -120,14 +116,7 @@ import {
   resolveFileOpenRequest,
   resolveOpenablePath,
 } from "../features/files/model/fileIndex";
-import { FilePicker } from "../features/files/ui/FilePicker";
-import { useInboxActivity } from "../features/inbox/hooks/useInboxUnseen";
-import type { CiRepairRequest } from "../features/inbox/model/ciRepair";
-import { ciRepairSessions } from "../features/inbox/model/ciRepairSessions";
-import {
-  rebaseCiRepairs,
-  trackCiRepair,
-} from "../features/inbox/model/ciRepairTracking";
+
 import {
   orchestrationCheckoutCwd,
   orchestrationProjectCwd,
@@ -175,12 +164,8 @@ import {
   type DockSide,
   type ProjectTerminalDock as ProjectTerminal,
 } from "../features/projects/model/projectTerminal";
+
 import {
-  displayAttachments,
-  prepareAttachments,
-} from "../features/sessions/model/attachments";
-import {
-<<<<<<< HEAD
   applyBtwHarnessEvent,
   btwTurnHarness,
   buildBtwPrompt,
@@ -188,7 +173,7 @@ import {
   sealBtwResponseBlocks,
   supportsBtwHarness,
 } from "../features/sessions/model/btw";
-=======
+import {
   confirmCloseTerminal,
   confirmCloseTerminals,
 } from "../features/terminal/model/terminalClose";
@@ -234,7 +219,6 @@ import {
   type UserQuestionReply,
 } from "../integrations/harness";
 import { supportsHarnessLogin } from "../integrations/harness/core/authSupport";
->>>>>>> origin/main
 import {
   appendPreparingHandoff,
   buildDeterministicHandoff,
@@ -256,61 +240,7 @@ import {
 } from "../features/sessions/model/handoff";
 import { requestOutgoingHandoff } from "../features/sessions/model/handoffTurn";
 import { modelsFor } from "../features/sessions/model/models";
-import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
-import {
-  DeleteSessionDialog,
-  type SessionDeleteChoice,
-} from "../features/sessions/ui/DeleteSessionDialog";
-import { ProviderSignInDialog } from "../features/sessions/ui/ProviderSignInDialog";
-import {
-  loadProjectRailOpen,
-  loadSessionSidebarOpen,
-  saveProjectRailOpen,
-  saveSessionSidebarOpen,
-  type SidebarTabId,
-} from "../features/settings/model/appearance";
-import { resolveAppShortcut } from "../features/settings/model/appShortcuts";
-import {
-  loadProjectSidebarTab,
-  saveProjectSidebarTab,
-} from "../features/settings/model/projectSidebarTab";
-import {
-  applyUiScale,
-  loadUiScale,
-  saveUiScale,
-  UI_SCALE_DEFAULT,
-  zoomInUiScale,
-  zoomOutUiScale,
-} from "../features/settings/model/uiScale";
-import { resolveZoomKeybinding } from "../features/settings/model/zoomKeybinding";
-import { useProjectBranches } from "../features/source-control/hooks/useProjectBranches";
-import {
-  assertWorktreeFilesClosed,
-  checkWorktreeRemoval,
-  createOrchestrationWorktree,
-  createWorktree,
-  detachSessionWorktree,
-  listWorktrees,
-  namedWorktreeBranch,
-  orchestrationWorktreeBranchName,
-  removeOrchestrationBranch,
-  removeOrchestrationWorktree,
-  removeWorktree,
-  renameWorktreeBranch,
-  sessionInWorktree,
-  temporaryWorktreeBranchName,
-  worktreeSessionIds,
-  type Worktree,
-} from "../features/source-control/model/worktrees";
-import {
-  confirmCloseTerminal,
-  confirmCloseTerminals,
-} from "../features/terminal/model/terminalClose";
-import {
-  listRunningTerminals,
-  terminalTabLabel,
-  type TerminalMetaPatch,
-} from "../features/terminal/model/terminalTab";
+
 import {
   closeLeaf,
   closeSurfacePanes,
@@ -363,69 +293,17 @@ import {
   removeTabFromGroup,
   tabGroupProject,
 } from "../features/workspace/model/tabGroups";
-import {
-  appendSteerUser,
-  appendUser,
-  applyHarnessEvent,
-  bindHarnessSession,
-  cancelHarnessTurn,
-  canCompactHarnessContext,
-  canRewindHarnessLastTurn,
-  canSteerHarness,
-  compactHarnessContext,
-  forgetHarnessSession,
-  generateHarnessBranchName,
-  generateHarnessTitle,
-  isLiveHarness,
-  keepHarnessQuestionOpen,
-  latestTurnNeedsHarnessLogin,
-  pickTextHarness,
-  probeHarnessAvailability,
-  promoteLastAssistantToPlan,
-  refreshHarnessCatalogs,
-  registerBuiltinHarnesses,
-  respondHarnessApproval,
-  respondHarnessQuestion,
-  rewindHarnessLastTurn,
-  runHarnessTextPrompt,
-  sendHarnessTurn,
-  startHarnessBridge,
-  steerHarnessTurn,
-  stopHarnessSession,
-  stopHarnessTextPrompts,
-  stopStreaming,
-  type ApprovalDecision,
-  type HarnessEvent,
-  type UserQuestionReply,
-} from "../integrations/harness";
-import { supportsHarnessLogin } from "../integrations/harness/core/authSupport";
+
 import { isHarnessAvailable } from "../integrations/harness/core/availability";
-import {
-  basename,
-  notifyGitChanged,
-  pickFolder,
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-} from "../platform/tauri/fs";
-import { HAS_NATIVE_GLASS, IS_MAC } from "../platform/tauri/platform";
+
 import { mergeOrderedSubset, orderByIds } from "../shared/lib/reorder";
-import { submitWithSettlement } from "./model/managedSubmission";
-import { acceptQuickLaunch } from "./model/quickLaunchSession";
+
 import {
   releaseNotesForVersion,
   releaseNotesTitle,
 } from "./model/releaseNotes";
-import {
-  submitAfterProjectSync,
-  type SubmissionAcceptance,
-} from "./model/submissionAcceptance";
-import { runUpdateFlow } from "./model/updater";
+
 import { type WindowTransferPayload } from "./model/windowTransfer";
-import { MenuBar } from "./shell/MenuBar";
-import { Sidebar } from "./shell/Sidebar";
-import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
-import { UsageFooter } from "./shell/UsageFooter";
-import { WhatsNewDialog } from "./shell/WhatsNewDialog";
 
 import { notifyDirsChanged } from "../features/files/model/fileTree";
 import {
@@ -511,11 +389,6 @@ import {
   HARNESSES,
   newDefaultSession,
   newSession,
-<<<<<<< HEAD
-  newSessionForProject,
-=======
-  retargetSessionToProject,
->>>>>>> origin/main
   removeSessionDraft,
   retargetSessionToProject,
   sessionDisplayTitle,
@@ -597,11 +470,8 @@ import type { QuickLaunch } from "../features/quick-composer/model/quickComposer
 import { rememberLoadedSession } from "../features/sessions/data/sessionCache";
 import {
   discardDraftSessionRecord,
-<<<<<<< HEAD
   flushSessionWrites,
-=======
   deleteSession,
->>>>>>> origin/main
   getSession,
   listLinkedSessions,
   listSessionsByProject,
@@ -677,53 +547,9 @@ import {
   tabVisitForward,
   type TabVisitHistory,
 } from "../features/workspace/model/tabVisitHistory";
-<<<<<<< HEAD
 
-import { AutomationsView } from "../features/automations/ui/AutomationsView";
-=======
-import { preparePrompt } from "../features/sessions/model/promptPreparation";
-import {
-  consumeOperatorCommand,
-  operatorEnabledInThread,
-} from "../features/sessions/model/operatorCommand";
-import {
-  warmNativeSkills,
-  isNativeCommandPrompt,
-} from "../features/skills/model/skills";
-import { nativeSkillContextForSession } from "../features/sessions/model/sessionSkills";
-import {
-  loadSessionFolders,
-  placeSessionInFolder,
-  saveSessionFolders,
-  type SessionFolderTarget,
-} from "../features/sessions/model/sessionFolders";
-import {
-  ADD_NOTE_TO_CHAT_EVENT,
-  NOTES_CHANGED_EVENT,
-  composeNoteMessage,
-  loadNotes,
-  noteCardMeta,
-  upsertNote,
-  type NoteComposerCard,
-} from "../features/notes";
-import {
-  claimDueAutomations,
-  listAutomations,
-  recoverAutomationRuns,
-  updateAutomationRun,
-  type Automation,
-  type AutomationRun,
-} from "../features/automations/model/automations";
-import { useQuickComposerLaunches } from "../features/quick-composer/hooks/useQuickComposerLaunches";
-import type { QuickLaunch } from "../features/quick-composer/model/quickComposer";
-import { claimInboxAutomationRuns } from "../features/automations/model/automationEvents";
-import {
-  SECOND_OPINION_TITLE,
-  buildSecondOpinionRequest,
-  harnessForTurn,
-  turnEditedFiles,
-  turnUserRequest,
-} from "../features/sessions/model/secondOpinion";
+import { loadNotes } from "../features/notes";
+import { listAutomations } from "../features/automations/model/automations";
 
 import { PaneTree } from "../features/workspace/ui/PaneTree";
 import { SessionPane } from "../features/sessions/ui/SessionPane";
@@ -744,15 +570,20 @@ import {
   remoteTabCwd,
   remoteSessionFor,
 } from "../features/connections/model/connections";
-import { buildRemotePlan, remoteSessionActions } from "../features/connections/model/remoteSessionActions";
+import {
+  buildRemotePlan,
+  remoteSessionActions,
+} from "../features/connections/model/remoteSessionActions";
 import { remoteSessionState } from "../features/connections/model/remoteSessionState";
-import { remotePath, remoteProjectFor } from "../features/connections/model/remoteProjects";
+import {
+  remotePath,
+  remoteProjectFor,
+} from "../features/connections/model/remoteProjects";
 import type { HostSession } from "../features/connections/model/protocol";
 import { AddRemoteProjectDialog } from "../features/connections/ui/AddRemoteProjectDialog";
 import type { ConnectableInboxSource } from "../features/inbox/model/inboxFilters";
 import type { InboxSessionPortal } from "../features/inbox/ui/InboxDiscussionPanel";
 import { inboxAskKey, inboxAskPrompt } from "../features/inbox/model/inboxAsk";
->>>>>>> origin/main
 import {
   handleEditorFindKey,
   openFindInActiveEditor,
@@ -775,9 +606,9 @@ import {
   gitlabWorkItemDetails,
   peekGitlabWorkItemDetails,
 } from "../features/inbox/model/gitlab";
-import { inboxAskKey, inboxAskPrompt } from "../features/inbox/model/inboxAsk";
+
 import { inboxTrackerDescription } from "../features/inbox/model/inboxContext";
-import type { ConnectableInboxSource } from "../features/inbox/model/inboxFilters";
+
 import { markLinkedSessionUpdateSeen } from "../features/inbox/model/linkedSessionSeen";
 import type { LinkedSessionUpdate } from "../features/inbox/model/linkedSessionUpdates";
 import {
@@ -786,28 +617,13 @@ import {
   pendingLinkedWorkItemUpdateCard,
   type LinkedWorkItemUpdateCard,
 } from "../features/inbox/model/linkedWorkItemActivity";
-<<<<<<< HEAD
-import type { InboxSessionPortal } from "../features/inbox/ui/InboxDiscussionPanel";
-import { InboxView, LinkedWorkItemPanel } from "../features/inbox/ui/InboxView";
-import { NotesView } from "../features/notes/ui";
-import { SearchView } from "../features/search/ui/SearchView";
-=======
-import type { LinkedSessionUpdate } from "../features/inbox/model/linkedSessionUpdates";
-import { markLinkedSessionUpdateSeen } from "../features/inbox/model/linkedSessionSeen";
-import { inboxTrackerDescription } from "../features/inbox/model/inboxContext";
-import {
-  gitlabWorkItemDetails,
-  peekGitlabWorkItemDetails,
-} from "../features/inbox/model/gitlab";
->>>>>>> origin/main
+import { KnowledgeView } from "../features/knowledge/ui/KnowledgeView";
 import {
   linkedWorkItemFromAutomationEvent,
   linkedWorkItemFromInboxItem,
   resolveLinkedWorkItem,
 } from "../features/sessions/model/sessionWorkItem";
-import { requestTranscriptJump } from "../features/sessions/model/transcriptJump";
-import { SessionPane } from "../features/sessions/ui/SessionPane";
-import { SessionSurface } from "../features/sessions/ui/SessionSurface";
+
 import {
   keybindingPressed,
   loadCloseToTray,
@@ -829,13 +645,8 @@ import {
   type FollowUpBehavior,
   type SettingsSectionId,
 } from "../features/settings/model/settings";
-import {
-  SettingsView,
-  type SettingsAnchor,
-} from "../features/settings/ui/SettingsView";
-import { ProjectTerminalDock } from "../features/terminal/ui/ProjectTerminalDock";
+
 import { UsageView } from "../features/usage/ui/UsageView";
-import { PaneTree } from "../features/workspace/ui/PaneTree";
 
 import {
   isBlankSession,
@@ -843,7 +654,6 @@ import {
   type ProjectReturnMemory,
 } from "../features/projects/model/projectReturn";
 import {
-<<<<<<< HEAD
   historyWithLiveSessions,
   mergeHistorySummary,
   mergeProjectHistorySummary,
@@ -857,11 +667,10 @@ import {
   inFlightSnapshotKey,
   shouldWriteInFlightSnapshot,
 } from "../features/sessions/model/inFlight";
-=======
+import {
   planProjectOpenRun,
   type ProjectOpenStep,
 } from "../features/projects/model/projectOpenRun";
->>>>>>> origin/main
 import {
   collectWorkspaceSnapshot,
   workspaceSnapshotKey,
@@ -1268,11 +1077,12 @@ function Workspace({
   const [collapsedProjectRailMode, setCollapsedProjectRailMode] =
     useState<CollapsedProjectRailMode>(loadCollapsedProjectRailMode);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const settingsReturnViewRef = useRef({
+  const settingsReturnViewRef = useRef<SettingsReturnView>({
     search: false,
     inbox: false,
     notes: false,
     automations: false,
+    localSurface: null,
   });
   const [updateNotice, setUpdateNotice] = useState(installedUpdate);
   const [whatsNewVersion, setWhatsNewVersion] = useState<string | null>(null);
@@ -1390,6 +1200,10 @@ function Workspace({
   notesViewOpenRef.current = notesViewOpen;
   const automationsViewOpenRef = useRef(automationsViewOpen);
   automationsViewOpenRef.current = automationsViewOpen;
+  const automationsSurfaceOpenRef = useRef(automationsSurfaceOpen);
+  automationsSurfaceOpenRef.current = automationsSurfaceOpen;
+  const localSurfaceRef = useRef(localSurface);
+  localSurfaceRef.current = localSurface;
   const settingsOpenRef = useRef(settingsOpen);
   settingsOpenRef.current = settingsOpen;
   const sessionNavigationIdsRef = useRef<readonly string[]>([]);
@@ -1852,7 +1666,13 @@ function Workspace({
           ? DEFAULT_PROVIDER_ACCOUNT_ID
           : undefined),
     };
-  }, [active?.id, active?.harness, active?.model, active?.blocks, active?.providerAccountId]);
+  }, [
+    active?.id,
+    active?.harness,
+    active?.model,
+    active?.blocks,
+    active?.providerAccountId,
+  ]);
   const activeProviderSignInRequest = useMemo(() => {
     if (
       !active ||
@@ -2782,7 +2602,8 @@ function Workspace({
   const onOpenTerminal = useCallback(
     (cwd: string, asWorkspaceTab = false, occupySessionId?: string) => {
       const workdir = cwd || gitCwd;
-      if (!isLocalProject(projectCwdRef.current) || !isLocalProject(workdir)) return;
+      if (!isLocalProject(projectCwdRef.current) || !isLocalProject(workdir))
+        return;
       if (openProjectTerminal(workdir)) return;
 
       if (asWorkspaceTab || !activeTab) {
@@ -3827,22 +3648,25 @@ function Workspace({
   );
 
   /** Stack one section's working-tree changes in one review, whatever the diff-view setting. */
-  const onOpenAllChanges = useCallback((kind: GitFileDiffKind) => {
-    setTabs((prev) =>
-      prev.map((tab) =>
-        tab.id === activeTabId
-          ? openChangesTab(
-              tab,
-              gitCwdRef.current,
-              undefined,
-              kind,
-              sidebarCwdRef.current,
-            )
-          : tab,
-      ),
-    );
-    setComposerFocused(false);
-  }, [activeTabId]);
+  const onOpenAllChanges = useCallback(
+    (kind: GitFileDiffKind) => {
+      setTabs((prev) =>
+        prev.map((tab) =>
+          tab.id === activeTabId
+            ? openChangesTab(
+                tab,
+                gitCwdRef.current,
+                undefined,
+                kind,
+                sidebarCwdRef.current,
+              )
+            : tab,
+        ),
+      );
+      setComposerFocused(false);
+    },
+    [activeTabId],
+  );
 
   const onOpenCommit = useCallback(
     (commit: GitHistoryCommit, pin?: boolean) => {
@@ -5489,7 +5313,10 @@ function Workspace({
           step.action === "create",
       );
       if (created.length > 0) {
-        setSessions((prev) => [...prev, ...created.map((step) => step.session)]);
+        setSessions((prev) => [
+          ...prev,
+          ...created.map((step) => step.session),
+        ]);
         // Each tab sits beside the one before it in the run, so the folders keep
         // their selection order.
         setTabs((prev) =>
@@ -5784,10 +5611,7 @@ function Workspace({
     for (const tab of tabsRef.current) {
       for (const pane of tab.editorPanes) {
         for (const file of pane.files) {
-          if (
-            isFilesystemTab(file) &&
-            isEqualOrInside(file.path, path)
-          ) {
+          if (isFilesystemTab(file) && isEqualOrInside(file.path, path)) {
             dropped.add(file.id);
           }
         }
@@ -6136,9 +5960,15 @@ function Workspace({
       attachments: Attachment[] = [],
       options?: SubmitOptions,
     ): SubmissionAcceptance => {
-      const remote = sessionsRef.current.find((session) => session.id === sessionId);
+      const remote = sessionsRef.current.find(
+        (session) => session.id === sessionId,
+      );
       if (remote && remoteProjectFor(remote.cwd))
-        return !!remoteSessionActions(sessionId)?.submit(text, attachments, options);
+        return !!remoteSessionActions(sessionId)?.submit(
+          text,
+          attachments,
+          options,
+        );
       if (editedResends.isActive(sessionId)) return false;
       const controlError = orchestrator.submissionError(
         sessionId,
@@ -6555,14 +6385,10 @@ function Workspace({
         ...(rawCommand ? undefined : userTurnCards(noteCard, card)),
         ...(ciContext ? { ciContext } : {}),
         ...(operatorCommand.matched ? { monocode: true } : {}),
-<<<<<<< HEAD
+        ...(intent === "plan" || intent === "orchestrate" ? { intent } : {}),
         ...(options?.appRequestId
           ? { appRequestId: options.appRequestId }
           : {}),
-=======
-        ...(intent === "plan" || intent === "orchestrate" ? { intent } : {}),
-        ...(options?.appRequestId ? { appRequestId: options.appRequestId } : {}),
->>>>>>> origin/main
         // The orchestrator writes these turns, not the user; hide them.
         ...(options?.managed ? { internal: true } : {}),
       };
@@ -7453,65 +7279,69 @@ function Workspace({
   );
 
   const launchQuickSession = useCallback(
-    (launch: QuickLaunch, deliveryId: string, placement?: AppSessionPlacement) =>
-      acceptQuickLaunch(launch, deliveryId, {
-        getSessions: () => sessionsRef.current,
-        updateSessions: (update) => {
-          sessionsRef.current = update(sessionsRef.current);
-          // Compose with submission's queued transcript updates.
-          setSessions(update);
+    (
+      launch: QuickLaunch,
+      deliveryId: string,
+      placement?: AppSessionPlacement,
+    ) =>
+      acceptQuickLaunch(
+        launch,
+        deliveryId,
+        {
+          getSessions: () => sessionsRef.current,
+          updateSessions: (update) => {
+            sessionsRef.current = update(sessionsRef.current);
+            // Compose with submission's queued transcript updates.
+            setSessions(update);
+          },
+          appendTab,
+          placeSession: (sessionId, target, cwd) => {
+            const anchor = sessionsRef.current.find(
+              (session) => session.id === target.besideSessionId,
+            );
+            const tab = tabsRef.current.find((entry) =>
+              leafIds(entry.layout).includes(target.besideSessionId),
+            );
+            if (!anchor || !sameProjectPath(anchor.cwd, cwd) || !tab)
+              throw new Error(
+                "The target session must be open in this project",
+              );
+            const nextTabs = tabsRef.current.map((entry) =>
+              entry.id === tab.id
+                ? {
+                    ...entry,
+                    layout: splitPane(
+                      entry.layout,
+                      target.besideSessionId,
+                      target.direction,
+                      sessionId,
+                    ),
+                    focusedId: launch.reveal ? sessionId : entry.focusedId,
+                    diffFocused: launch.reveal ? false : entry.diffFocused,
+                  }
+                : entry,
+            );
+            tabsRef.current = nextTabs;
+            setTabs(nextTabs);
+            return tab.id;
+          },
+          setProjectCwd,
+          setRecents,
+          revealTab: (id, cwd) => {
+            setActiveTabId(id);
+            setComposerFocused(false);
+            setSearchViewOpen(false);
+            setInboxViewOpen(false);
+            setNotesViewOpen(false);
+            setAutomationsViewOpen(false);
+            setSidebarTab("sessions", cwd);
+          },
+          submit: submitSession,
+          saveDraft: (id, prompt, attachments, requestId) =>
+            flushSync(() => onSaveDraft(id, prompt, attachments, requestId)),
         },
-        appendTab,
-        placeSession: (sessionId, target, cwd) => {
-          const anchor = sessionsRef.current.find(
-            (session) => session.id === target.besideSessionId,
-          );
-          const tab = tabsRef.current.find((entry) =>
-            leafIds(entry.layout).includes(target.besideSessionId),
-          );
-          if (!anchor || !sameProjectPath(anchor.cwd, cwd) || !tab)
-            throw new Error("The target session must be open in this project");
-          const nextTabs = tabsRef.current.map((entry) =>
-            entry.id === tab.id
-              ? {
-                  ...entry,
-                  layout: splitPane(
-                    entry.layout,
-                    target.besideSessionId,
-                    target.direction,
-                    sessionId,
-                  ),
-                  focusedId: launch.reveal ? sessionId : entry.focusedId,
-                  diffFocused: launch.reveal ? false : entry.diffFocused,
-                }
-              : entry,
-          );
-          tabsRef.current = nextTabs;
-          setTabs(nextTabs);
-          return tab.id;
-        },
-        setProjectCwd,
-        setRecents,
-        revealTab: (id, cwd) => {
-          setActiveTabId(id);
-          setComposerFocused(false);
-          setSearchViewOpen(false);
-          setInboxViewOpen(false);
-          setNotesViewOpen(false);
-          setAutomationsViewOpen(false);
-          setSidebarTab("sessions", cwd);
-        },
-        submit: submitSession,
-        saveDraft: (id, prompt, attachments, requestId) =>
-<<<<<<< HEAD
-          flushSync(() => onSaveDraft(id, prompt, attachments, requestId)),
-      }),
-=======
-          flushSync(() =>
-            onSaveDraft(id, prompt, attachments, requestId),
-          ),
-      }, placement),
->>>>>>> origin/main
+        placement,
+      ),
     [appendTab, submitSession, onSaveDraft],
   );
   useQuickComposerLaunches(launchQuickSession);
@@ -10040,6 +9870,8 @@ function Workspace({
     setLocalSurface(id);
   }, []);
 
+  const onOpenKnowledge = useCallback(() => onOpenLocalSurface("knowledge"), [onOpenLocalSurface]);
+
   const onLeaveLocalSurface = useCallback(() => {
     setLocalSurface(null);
   }, []);
@@ -10099,14 +9931,17 @@ function Workspace({
 
   const openSettings = useCallback(
     (section?: SettingsSectionId, anchor?: SettingsAnchor) => {
-      if (!settingsOpenRef.current) {
-        settingsReturnViewRef.current = {
+      settingsReturnViewRef.current = captureSettingsReturnView(
+        settingsReturnViewRef.current,
+        {
           search: searchViewOpenRef.current,
           inbox: inboxViewOpenRef.current,
           notes: notesViewOpenRef.current,
-          automations: automationsViewOpenRef.current,
-        };
-      }
+          automations: automationsSurfaceOpenRef.current,
+          localSurface: localSurfaceRef.current,
+        },
+        settingsOpenRef.current,
+      );
       startTransition(() => {
         setFilePickerOpen(false);
         setSearchViewOpen(false);
@@ -10142,7 +9977,8 @@ function Workspace({
   useEffect(() => {
     const onOpenMcp = () => openSettings("mcp");
     window.addEventListener("monocode:open-mcp-settings", onOpenMcp);
-    return () => window.removeEventListener("monocode:open-mcp-settings", onOpenMcp);
+    return () =>
+      window.removeEventListener("monocode:open-mcp-settings", onOpenMcp);
   }, [openSettings]);
 
   const onOpenNotificationSettings = useCallback(
@@ -10160,11 +9996,15 @@ function Workspace({
   );
 
   const onCloseSettings = useCallback(() => {
-    const returnView = settingsReturnViewRef.current;
+    const returnView = restoreSettingsReturnView(
+      settingsReturnViewRef.current,
+      loadNotesEnabled(),
+    );
     setSearchViewOpen(returnView.search);
     setInboxViewOpen(returnView.inbox);
-    setNotesViewOpen(returnView.notes && loadNotesEnabled());
-    setAutomationsViewOpen(returnView.automations);
+    setNotesViewOpen(returnView.notes);
+    setAutomationsSurfaceOpen(returnView.automations);
+    setLocalSurface(returnView.localSurface);
     setSettingsOpen(false);
   }, []);
 
@@ -10236,8 +10076,7 @@ function Workspace({
     for (const tab of tabs) {
       for (const pane of tab.editorPanes) {
         for (const file of pane.files) {
-          if (!isFilesystemTab(file) || seen.has(file.path))
-            continue;
+          if (!isFilesystemTab(file) || seen.has(file.path)) continue;
           seen.add(file.path);
           paths.push(file.path);
         }
@@ -10759,26 +10598,40 @@ function Workspace({
   }, [currentProjectDock, dockVisible]);
 
   const lastRemoteSnapshot = useRef(new Map<string, HostSession>());
-  const onRemoteSnapshot = useCallback((shellId: string, snapshot?: HostSession) => {
-    if (!snapshot) {
-      lastRemoteSnapshot.current.delete(shellId);
-      setSessions((current) => current.map((entry) => entry.id === shellId
-        ? { ...entry, title: "New remote session", blocks: [], busy: false }
-        : entry));
-      return;
-    }
-    if (lastRemoteSnapshot.current.get(shellId) === snapshot) return;
-    lastRemoteSnapshot.current.set(shellId, snapshot);
-    setSessions((current) => {
-      const shell = current.find((entry) => entry.id === shellId);
-      if (!shell) return current;
-      const project = remoteProjectFor(shell.cwd);
-      if (!project) return current;
-      return current.map((entry) => entry.id === shellId
-        ? remoteSessionState(entry, snapshot, project)
-        : entry);
-    });
-  }, []);
+  const onRemoteSnapshot = useCallback(
+    (shellId: string, snapshot?: HostSession) => {
+      if (!snapshot) {
+        lastRemoteSnapshot.current.delete(shellId);
+        setSessions((current) =>
+          current.map((entry) =>
+            entry.id === shellId
+              ? {
+                  ...entry,
+                  title: "New remote session",
+                  blocks: [],
+                  busy: false,
+                }
+              : entry,
+          ),
+        );
+        return;
+      }
+      if (lastRemoteSnapshot.current.get(shellId) === snapshot) return;
+      lastRemoteSnapshot.current.set(shellId, snapshot);
+      setSessions((current) => {
+        const shell = current.find((entry) => entry.id === shellId);
+        if (!shell) return current;
+        const project = remoteProjectFor(shell.cwd);
+        if (!project) return current;
+        return current.map((entry) =>
+          entry.id === shellId
+            ? remoteSessionState(entry, snapshot, project)
+            : entry,
+        );
+      });
+    },
+    [],
+  );
 
   const onManageWorktrees = useCallback(
     () => openSettings("worktrees"),
@@ -10968,6 +10821,8 @@ function Workspace({
               onOpenInbox={onOpenInbox}
               onOpenInboxItem={onOpenLinkedWorkItem}
               onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+              onOpenKnowledge={onOpenKnowledge}
+              knowledgeActive={localSurface === "knowledge"}
               onOpenAutomations={onOpenAutomations}
               onGoToFile={onGoToFile}
               searchActive={searchViewOpen}
@@ -11259,6 +11114,14 @@ function Workspace({
                   cwd={projectCwd}
                   recents={recents}
                   onClose={onLeaveNotes}
+                  onToggleSidebar={onToggleSidebar}
+                />
+              ) : null}
+              {localSurface === "knowledge" ? (
+                <KnowledgeView
+                  besideRail={projectRailOpen || compactProjectRail}
+                  compactRail={compactRailActive}
+                  onClose={onLeaveLocalSurface}
                   onToggleSidebar={onToggleSidebar}
                 />
               ) : null}
@@ -11628,8 +11491,7 @@ function dropOpenFiles(
   const editorPanes: EditorPane[] = [];
   for (const pane of tab.editorPanes) {
     const files = pane.files.filter(
-      (file) =>
-        !isFilesystemTab(file) || !shouldDrop(file.path),
+      (file) => !isFilesystemTab(file) || !shouldDrop(file.path),
     );
     if (files.length === 0) {
       const sibling = siblingLeafId(layout, pane.id);
