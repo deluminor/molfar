@@ -19,6 +19,7 @@ vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: mocks.relaunch }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: mocks.check }));
 vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: mocks.announce }));
 vi.mock("./updateNotice", () => ({ rememberInstalledUpdate: mocks.remember }));
+vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -1,3 +1,4 @@
+import type { RailSurfaceVisibility } from "../../../features/settings/model/projectRail";
 import type { SettingsReturnView } from "./types";
 
 export function captureSettingsReturnView(
@@ -13,6 +14,14 @@ export function captureSettingsReturnView(
 export function restoreSettingsReturnView(
   snapshot: SettingsReturnView,
   notesEnabled: boolean,
+  railSurfaces: RailSurfaceVisibility,
 ): SettingsReturnView {
-  return { ...snapshot, notes: snapshot.notes && notesEnabled };
+  const localSurfaceVisible =
+    snapshot.localSurface !== null && railSurfaces[snapshot.localSurface];
+
+  return {
+    ...snapshot,
+    notes: snapshot.notes && notesEnabled,
+    localSurface: localSurfaceVisible ? snapshot.localSurface : null,
+  };
 }

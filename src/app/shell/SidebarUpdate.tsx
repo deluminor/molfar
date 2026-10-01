@@ -1,5 +1,6 @@
 import { ArrowDownCircle, Loader } from "../../shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { APP_UPDATER_DISABLED } from "../model/forkPolicy";
 import {
   installPendingUpdate,
   probeForUpdate,
@@ -14,6 +15,7 @@ import { UpdateRailCard } from "./UpdateRailCard";
 // — including a probe that failed — stays silent, because manual "Check for
 // updates" already lives in Settings and the app menu.
 export function isSidebarUpdateActionable(snapshot: UpdaterSnapshot): boolean {
+  if (APP_UPDATER_DISABLED) return false;
   return snapshot.phase === "available" || snapshot.phase === "downloading";
 }
 
@@ -36,6 +38,8 @@ export function SidebarUpdateFooter({
   // snapshot lives here rather than in SidebarUpdate so the footer can drop its
   // padding entirely when neither child has anything to show.
   useEffect(() => {
+    if (APP_UPDATER_DISABLED) return;
+
     let cancelled = false;
 
     (async () => {
@@ -44,13 +48,13 @@ export function SidebarUpdateFooter({
       setSnapshot({ phase: "checking", currentVersion });
 
       try {
-        const update = await probeForUpdate();
+        const next = await probeForUpdate();
         if (cancelled) return;
-        if (update) {
+        if (next) {
           setSnapshot({
             phase: "available",
             currentVersion,
-            availableVersion: update.version,
+            availableVersion: next.version,
           });
           return;
         }

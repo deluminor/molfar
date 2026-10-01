@@ -1,17 +1,20 @@
 import { getVersion } from "@tauri-apps/api/app";
 import { ask, message } from "@tauri-apps/plugin-dialog";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { check, type DownloadEvent, type Update } from "@tauri-apps/plugin-updater";
+import {
+  check,
+  type DownloadEvent,
+  type Update,
+} from "@tauri-apps/plugin-updater";
 import { announceUpdateAvailable } from "../../features/settings/model/sounds";
+import { APP_UPDATER_DISABLED } from "./forkPolicy";
 import { rememberInstalledUpdate } from "./updateNotice";
 
+const FORK_UPDATER_DISABLED_MESSAGE =
+  "App updates are disabled in this fork so upstream builds cannot overwrite it.\n\nPull upstream with git, or build and install from this repository.";
+
 export type UpdaterPhase =
-  | "idle"
-  | "checking"
-  | "current"
-  | "available"
-  | "downloading"
-  | "error";
+  "idle" | "checking" | "current" | "available" | "downloading" | "error";
 
 export type UpdaterSnapshot = {
   phase: UpdaterPhase;
@@ -37,6 +40,11 @@ export async function readAppVersion(): Promise<string> {
 }
 
 export async function probeForUpdate(): Promise<Update | null> {
+  if (APP_UPDATER_DISABLED) {
+    pendingUpdate = null;
+    return null;
+  }
+
   const update = await check();
   pendingUpdate = update;
   if (update) announceUpdateAvailable(update.version);
@@ -48,6 +56,20 @@ export async function runUpdateFlow(
   onProgress?: (snapshot: UpdaterSnapshot) => void,
 ): Promise<UpdaterSnapshot> {
   const currentVersion = await readAppVersion();
+
+  if (APP_UPDATER_DISABLED) {
+    pendingUpdate = null;
+
+    const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
+    onProgress?.(idle);
+
+    if (manual) {
+      await message(FORK_UPDATER_DISABLED_MESSAGE, { title: "MonoCode" });
+    }
+
+    return idle;
+  }
+
   const base: UpdaterSnapshot = { phase: "checking", currentVersion };
   onProgress?.(base);
 
@@ -113,6 +135,16 @@ export async function installPendingUpdate(
   onProgress?: (snapshot: UpdaterSnapshot) => void,
 ): Promise<UpdaterSnapshot> {
   const currentVersion = await readAppVersion();
+
+  if (APP_UPDATER_DISABLED) {
+    pendingUpdate = null;
+
+    const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
+    onProgress?.(idle);
+
+    return idle;
+  }
+
   const update = pendingUpdate;
   if (!update) {
     const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
@@ -169,7 +201,10 @@ export async function installPendingUpdate(
       error,
     };
     onProgress?.(failed);
-    await message(`Couldn't install the update.\n\n${error}`, { title: "MonoCode" });
+    await message(`Couldn't install the update.\n\n${error}`, {
+      title: "MonoCode",
+    });
+
     return failed;
   }
 }

@@ -331,6 +331,15 @@ import {
   type SettingsSearchResult,
   type SettingsSectionId,
 } from "../model/settings";
+import {
+  LIVE_AGENTS_MIN_COUNT_MAX,
+  loadLiveAgentsMinCount,
+  loadRailSurfaces,
+  saveLiveAgentsMinCount,
+  saveRailSurfaceVisible,
+  type RailSurfaceId,
+  type RailSurfaceVisibility,
+} from "../model/projectRail";
 import { loadSoundsEnabled, playCue, saveSoundsEnabled } from "../model/sounds";
 import { setQuickComposerShortcut } from "../../quick-composer/model/quickComposer";
 import {
@@ -355,6 +364,7 @@ import {
   runUpdateFlow,
   type UpdaterSnapshot,
 } from "../../../app/model/updater";
+import { APP_UPDATER_DISABLED } from "../../../app/model/forkPolicy";
 
 import { SkillsPage } from "../../skills/ui/SkillsPage";
 import { ProjectNotificationSettings } from "../../notifications/ui/ProjectNotificationSettings";
@@ -727,6 +737,11 @@ function GeneralPage({
   const [liveAgentsEnabled, setLiveAgentsEnabled] = useState(
     loadLiveAgentsEnabled,
   );
+  const [liveAgentsMinCount, setLiveAgentsMinCount] = useState(
+    loadLiveAgentsMinCount,
+  );
+  const [railSurfaces, setRailSurfaces] =
+    useState<RailSurfaceVisibility>(loadRailSurfaces);
   const [fileTabMode, setFileTabMode] = useState<FileTabMode>(loadFileTabMode);
   const [tabAnimationsEnabled, setTabAnimationsEnabled] = useState(
     loadTabAnimationsEnabled,
@@ -782,6 +797,16 @@ function GeneralPage({
   const onLiveAgentsEnabled = (next: boolean) => {
     saveLiveAgentsEnabled(next);
     setLiveAgentsEnabled(next);
+  };
+
+  const onLiveAgentsMinCount = (next: number) => {
+    saveLiveAgentsMinCount(next);
+    setLiveAgentsMinCount(loadLiveAgentsMinCount());
+  };
+
+  const onRailSurfaceVisible = (id: RailSurfaceId, visible: boolean) => {
+    saveRailSurfaceVisible(id, visible);
+    setRailSurfaces(loadRailSurfaces());
   };
 
   const onFileTabMode = (next: FileTabMode) => {
@@ -895,12 +920,27 @@ function GeneralPage({
         <Row
           id="working-agents"
           label="Working agents"
-          description="When two or more chats are in flight, a card on the project rail lists them so you can jump across projects. Finished turns stay until you open that session."
+          description="While chats are in flight, a card on the project rail lists them so you can jump across projects. Finished turns stay until you open that session."
         >
           <Toggle
             label="Working agents"
             on={liveAgentsEnabled}
             onChange={onLiveAgentsEnabled}
+          />
+        </Row>
+        <Row
+          id="working-agents-threshold"
+          label="Show working agents from"
+          description="How many chats must be in flight before the card appears. Set it to 1 to keep even a single running agent in view."
+        >
+          <Slider
+            label="Show working agents from"
+            value={liveAgentsMinCount}
+            display={`${liveAgentsMinCount}+`}
+            min={1}
+            max={LIVE_AGENTS_MIN_COUNT_MAX}
+            onChange={onLiveAgentsMinCount}
+            disabled={!liveAgentsEnabled}
           />
         </Row>
         {IS_WIN && (
@@ -916,6 +956,45 @@ function GeneralPage({
             />
           </Row>
         )}
+      </Group>
+
+      <Group
+        title="Project rail"
+        description="Which shortcuts sit above your projects. Hidden surfaces close if they are open."
+      >
+        <Row
+          id="rail-home"
+          label="Home"
+          description="A rearrangeable dashboard with host metrics, status, recent sessions, and Automations."
+        >
+          <Toggle
+            label="Home"
+            on={railSurfaces.home}
+            onChange={(next) => onRailSurfaceVisible("home", next)}
+          />
+        </Row>
+        <Row
+          id="rail-usage"
+          label="Usage"
+          description="Quota and rate-limit signals from your providers."
+        >
+          <Toggle
+            label="Usage"
+            on={railSurfaces.usage}
+            onChange={(next) => onRailSurfaceVisible("usage", next)}
+          />
+        </Row>
+        <Row
+          id="rail-knowledge"
+          label="Knowledge"
+          description="Local Obsidian vaults you can browse, edit, and add to agent context."
+        >
+          <Toggle
+            label="Knowledge"
+            on={railSurfaces.knowledge}
+            onChange={(next) => onRailSurfaceVisible("knowledge", next)}
+          />
+        </Row>
       </Group>
 
       <Group title="About">
@@ -1748,7 +1827,9 @@ function UpdateRow({
             ? "You're on the latest version."
             : snapshot.phase === "error"
               ? (snapshot.error ?? "Update check failed.")
-              : "MonoCode updates itself from the release feed.";
+              : APP_UPDATER_DISABLED
+                ? "This fork does not install updates from the upstream release feed."
+                : "MonoCode updates itself from the release feed.";
 
   return (
     <Row
@@ -1770,16 +1851,18 @@ function UpdateRow({
         >
           What's new
         </SecondaryButton>
-        <SecondaryButton onClick={() => void onClick()} disabled={busy}>
-          {busy ? (
-            <Loader className="size-3.5 animate-spin" aria-hidden />
-          ) : hasUpdate ? (
-            <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
-          ) : (
-            <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden />
-          )}
-          {hasUpdate ? "Download" : "Check for updates"}
-        </SecondaryButton>
+        {APP_UPDATER_DISABLED ? null : (
+          <SecondaryButton onClick={() => void onClick()} disabled={busy}>
+            {busy ? (
+              <Loader className="size-3.5 animate-spin" aria-hidden />
+            ) : hasUpdate ? (
+              <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
+            ) : (
+              <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden />
+            )}
+            {hasUpdate ? "Download" : "Check for updates"}
+          </SecondaryButton>
+        )}
       </div>
     </Row>
   );

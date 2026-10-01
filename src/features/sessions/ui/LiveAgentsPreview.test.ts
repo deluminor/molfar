@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LiveAgent } from "../model/liveAgents";
 import { LiveAgentsPreview } from "./LiveAgentsPreview";
+import { saveLiveAgentsMinCount } from "../../settings/model/projectRail";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -121,5 +122,50 @@ describe("LiveAgentsPreview", () => {
     expect(liveRegion.textContent).toBe("2 working agents");
     expect(liveRegion.textContent).not.toMatch(/\d+s/);
     expect(container.querySelector("[role=status]")).toBeNull();
+  });
+
+  it("hides a single agent under the default two-chat threshold", () => {
+    render({
+      agents: [agent("a", "/repo/a")],
+      groupLabels: {},
+      groupColors: {},
+      groupCustomColors: {},
+      groupMascots: {},
+    });
+
+    expect(container.querySelector("[data-live-agents-preview]")).toBeNull();
+  });
+
+  it("shows a single agent once the threshold is lowered to one", () => {
+    saveLiveAgentsMinCount(1);
+
+    render({
+      agents: [agent("a", "/repo/a")],
+      groupLabels: {},
+      groupColors: {},
+      groupCustomColors: {},
+      groupMascots: {},
+    });
+
+    const liveRegion = container.querySelector('[aria-live="polite"]')!;
+    expect(liveRegion.textContent).toBe("1 working agent");
+    expect(container.querySelectorAll("[data-live-agent-card]")).toHaveLength(
+      1,
+    );
+  });
+
+  it("follows a raised threshold without remounting", () => {
+    render({
+      agents: [agent("a", "/repo/a"), agent("b", "/repo/b")],
+      groupLabels: {},
+      groupColors: {},
+      groupCustomColors: {},
+      groupMascots: {},
+    });
+    expect(container.querySelector("[data-live-agents-preview]")).not.toBeNull();
+
+    act(() => saveLiveAgentsMinCount(3));
+
+    expect(container.querySelector("[data-live-agents-preview]")).toBeNull();
   });
 });

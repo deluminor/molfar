@@ -21,6 +21,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
 }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: vi.fn() }));
+vi.mock("../model/forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
 vi.mock("../model/updater", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../model/updater")>();
   return {

@@ -13,6 +13,7 @@ vi.mock("@tauri-apps/plugin-updater", () => ({ check }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask, message }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch }));
 vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: vi.fn() }));
+vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
 
 import { runUpdateFlow } from "./updater";
 
