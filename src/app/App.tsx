@@ -1535,6 +1535,15 @@ function Workspace({
       const detail = (event as CustomEvent<AddToChatRequest>).detail;
       if (!detail?.text) return;
 
+      // Match notes/inbox: leave the overlay surface so the chat is visible.
+      setSearchViewOpen(false);
+      setInboxViewOpen(false);
+      setNotesViewOpen(false);
+      setAutomationsViewOpen(false);
+      setSidebarTab("sessions");
+      setProjectTerminalFocused(false);
+      setComposerFocused(true);
+
       const result = applyAddToChatRequest({
         sessions: sessionsRef.current,
         tabs: tabsRef.current,
@@ -1545,6 +1554,7 @@ function Workspace({
         text: detail.text,
         mode: detail.mode,
       });
+      // null ⇒ a mounted session pane already owns add-to-chat (draft insert).
       if (!result) return;
 
       sessionsRef.current = result.sessions;
@@ -1552,14 +1562,12 @@ function Workspace({
       setSessions(result.sessions);
       setTabs(result.tabs);
       setActiveTabId(result.activeTabId);
-      setProjectTerminalFocused(false);
-      setComposerFocused(true);
     };
 
     window.addEventListener(ADD_TO_CHAT_EVENT, openSessionForAddToChat);
     return () =>
       window.removeEventListener(ADD_TO_CHAT_EVENT, openSessionForAddToChat);
-  }, [sessionDefaults?.cwd, sessionDefaults?.runtimeMode]);
+  }, [sessionDefaults?.cwd, sessionDefaults?.runtimeMode, setSidebarTab]);
 
   const activeSkillContext = active
     ? nativeSkillContextForSession(active)
