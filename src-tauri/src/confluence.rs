@@ -82,9 +82,8 @@ pub async fn confluence_list_spaces(app: AppHandle) -> Result<Vec<ConfluenceSpac
         let mut spaces = Vec::new();
         let mut cursor: Option<String> = None;
         loop {
-            let mut path = format!(
-                "/wiki/api/v2/spaces?limit={DEFAULT_LIMIT}&status=current&type=global"
-            );
+            let mut path =
+                format!("/wiki/api/v2/spaces?limit={DEFAULT_LIMIT}&status=current&type=global");
             if let Some(token) = cursor.as_ref() {
                 path.push_str("&cursor=");
                 path.push_str(&encode(token));
@@ -96,7 +95,7 @@ pub async fn confluence_list_spaces(app: AppHandle) -> Result<Vec<ConfluenceSpac
                 break;
             }
         }
-        spaces.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        spaces.sort_by_key(|space| space.name.to_lowercase());
         Ok(spaces)
     })
     .await
@@ -203,10 +202,7 @@ fn list_space_roots(
     list_space_root_fallback(config, space_id, space_key)
 }
 
-fn space_homepage_id(
-    config: &AtlassianConfig,
-    space_id: &str,
-) -> Result<Option<String>, String> {
+fn space_homepage_id(config: &AtlassianConfig, space_id: &str) -> Result<Option<String>, String> {
     let data = confluence_get(config, &format!("/wiki/api/v2/spaces/{space_id}"))?;
     Ok(string_field(&data, "homepageId").filter(|id| valid_id(id)))
 }
@@ -219,21 +215,14 @@ fn list_space_root_fallback(
     let mut nodes = Vec::new();
     let mut cursor: Option<String> = None;
     loop {
-        let mut path = format!(
-            "/wiki/api/v2/spaces/{space_id}/pages?limit={DEFAULT_LIMIT}&depth=root"
-        );
+        let mut path =
+            format!("/wiki/api/v2/spaces/{space_id}/pages?limit={DEFAULT_LIMIT}&depth=root");
         if let Some(token) = cursor.as_ref() {
             path.push_str("&cursor=");
             path.push_str(&encode(token));
         }
         let data = confluence_get(config, &path)?;
-        nodes.extend(parse_v2_pages(
-            &data,
-            space_id,
-            space_key,
-            "",
-            &config.site,
-        ));
+        nodes.extend(parse_v2_pages(&data, space_id, space_key, "", &config.site));
         cursor = next_cursor(&data);
         if cursor.is_none() || nodes.len() >= 400 {
             break;
@@ -246,7 +235,7 @@ fn list_space_root_fallback(
             }
         }
     }
-    nodes.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    nodes.sort_by_key(|node| node.title.to_lowercase());
     Ok(nodes)
 }
 
@@ -258,9 +247,7 @@ fn list_space_folders(
     let mut nodes = Vec::new();
     let mut cursor: Option<String> = None;
     loop {
-        let mut path = format!(
-            "/wiki/api/v2/folders?limit={DEFAULT_LIMIT}&space-id={space_id}"
-        );
+        let mut path = format!("/wiki/api/v2/folders?limit={DEFAULT_LIMIT}&space-id={space_id}");
         if let Some(token) = cursor.as_ref() {
             path.push_str("&cursor=");
             path.push_str(&encode(token));
@@ -303,16 +290,12 @@ fn list_node_children(
     };
     match list_content_direct_children(config, primary, parent_id, space_id, space_key) {
         Ok(nodes) => Ok(nodes),
-        Err(error) => match list_content_direct_children(
-            config,
-            secondary,
-            parent_id,
-            space_id,
-            space_key,
-        ) {
-            Ok(nodes) => Ok(nodes),
-            Err(_) => Err(error),
-        },
+        Err(error) => {
+            match list_content_direct_children(config, secondary, parent_id, space_id, space_key) {
+                Ok(nodes) => Ok(nodes),
+                Err(_) => Err(error),
+            }
+        }
     }
 }
 
@@ -326,9 +309,8 @@ fn list_content_direct_children(
     let mut nodes = Vec::new();
     let mut cursor: Option<String> = None;
     loop {
-        let mut path = format!(
-            "/wiki/api/v2/{kind_path}/{parent_id}/direct-children?limit={DEFAULT_LIMIT}"
-        );
+        let mut path =
+            format!("/wiki/api/v2/{kind_path}/{parent_id}/direct-children?limit={DEFAULT_LIMIT}");
         if let Some(token) = cursor.as_ref() {
             path.push_str("&cursor=");
             path.push_str(&encode(token));
@@ -346,7 +328,7 @@ fn list_content_direct_children(
             break;
         }
     }
-    nodes.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    nodes.sort_by_key(|node| node.title.to_lowercase());
     Ok(nodes)
 }
 
@@ -432,7 +414,8 @@ fn unsupported_from_v1(data: &Value, kind: &str, site: &str) -> ConfluencePage {
 }
 
 fn parse_page(data: &Value, site: &str) -> Result<ConfluencePage, String> {
-    let id = string_field(data, "id").ok_or_else(|| "Confluence page is missing an id".to_string())?;
+    let id =
+        string_field(data, "id").ok_or_else(|| "Confluence page is missing an id".to_string())?;
     let title = string_field(data, "title").unwrap_or_else(|| "Untitled".into());
     let kind = normalize_kind(
         data.get("type")
@@ -588,7 +571,7 @@ fn parse_v2_node(
     let has_children = source
         .get("hasChildren")
         .and_then(Value::as_bool)
-        .unwrap_or_else(|| {
+        .unwrap_or({
             matches!(
                 kind.as_str(),
                 "folder" | "page" | "blogpost" | "whiteboard" | "database"
@@ -675,7 +658,11 @@ pub fn build_search_cql(query: &str, space_key: &str) -> String {
         format!("text ~ \"{escaped}\""),
     ];
 
-    if !space_key.is_empty() && space_key.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
+    if !space_key.is_empty()
+        && space_key
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+    {
         clauses.push(format!("space = \"{space_key}\""));
     }
 
@@ -695,7 +682,7 @@ fn normalize_kind(raw: &str) -> String {
         "embed" | "smart-link" | "smartlink" => "embed".into(),
         "blogpost" | "blog" => "blogpost".into(),
         "current" => "page".into(), // v2 status field misuse guard
-        other if other.is_empty() => "other".into(),
+        "" => "other".into(),
         _ => "other".into(),
     }
 }
@@ -788,8 +775,7 @@ struct HttpError {
 
 impl HttpError {
     fn is_not_found(&self) -> bool {
-        matches!(self.status, Some(404))
-            || self.message.to_ascii_lowercase().contains("not found")
+        matches!(self.status, Some(404)) || self.message.to_ascii_lowercase().contains("not found")
     }
 }
 
@@ -916,8 +902,8 @@ fn read_config(app: &AppHandle) -> Result<Option<AtlassianConfig>, String> {
     let path = config_path(app)?;
     match fs::read_to_string(path) {
         Ok(raw) => {
-            let mut config: AtlassianConfig = serde_json::from_str(&raw)
-                .map_err(|_| "Jira settings are invalid".to_string())?;
+            let mut config: AtlassianConfig =
+                serde_json::from_str(&raw).map_err(|_| "Jira settings are invalid".to_string())?;
             config.site = normalize_site(&config.site)?;
             config.email = config.email.trim().to_string();
             config.token = config.token.trim().to_string();

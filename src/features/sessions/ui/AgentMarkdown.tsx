@@ -124,6 +124,7 @@ const FileOpenContext = createContext<{
 }>({});
 
 const RemoteMediaContext = createContext(false);
+const LocalImageSourcesContext = createContext<ReadonlyMap<string, string> | undefined>(undefined);
 
 const REVEAL_LABEL = IS_MAC
   ? "Reveal in Finder"
@@ -465,7 +466,10 @@ function MarkdownImage({
   ...props
 }: MarkdownImageProps) {
   const allowRemoteMedia = useContext(RemoteMediaContext);
+  const localImageSources = useContext(LocalImageSourcesContext);
   const url = typeof src === "string" ? src.trim() : "";
+  const localSrc = localImageSources?.get(url);
+  if (localSrc) return <img {...props} src={localSrc} alt={alt ?? ""} loading="lazy" draggable={false} />;
   if (url.startsWith("data:image/")) {
     return <img {...props} src={url} alt={alt ?? ""} />;
   }
@@ -508,6 +512,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
   cwd,
   onOpenFile,
   allowRemoteMedia,
+  localImageSources,
 }: {
   text: string;
   streaming?: boolean;
@@ -515,6 +520,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
   cwd?: string;
   onOpenFile?: OpenFileFn;
   allowRemoteMedia?: boolean;
+  localImageSources?: ReadonlyMap<string, string>;
 }) {
   const [fileMenu, setFileMenu] = useState<FileLinkMenu | null>(null);
   const [fileActionError, setFileActionError] = useState<string | null>(null);
@@ -590,44 +596,46 @@ export const AgentMarkdown = memo(function AgentMarkdown({
   };
 
   return (
-    <RemoteMediaContext.Provider value={remoteMedia}>
-      <FileOpenContext.Provider value={fileOpen}>
-        <>
-          <Streamdown
-            // Streamdown keeps a parsed tree while the text is unchanged, so
-            // the plugin swap has to remount it once the fade is over.
-            key={fading ? "fade" : "plain"}
-            BlockComponent={DirectionalBlock}
-            className={`agent-markdown min-w-0 font-sans text-sm leading-6 ${fading ? "word-fading" : ""} ${className ?? ""}`}
-            components={MARKDOWN_COMPONENTS}
-            controls={false}
-            dir="auto"
-            isAnimating={!!streaming || paced.revealing}
-            plugins={MARKDOWN_PLUGINS}
-            remarkPlugins={remarkPlugins}
-            rehypePlugins={rehypePlugins}
-          >
-            {paced.text}
-          </Streamdown>
-          {fileMenu ? (
-            <ExplorerMenu
-              x={fileMenu.x}
-              y={fileMenu.y}
-              items={fileLinkMenuItems(!!onOpenFile, !!cwd)}
-              ariaLabel="File link actions"
-              onPick={onFileMenuPick}
-              onClose={() => setFileMenu(null)}
-            />
-          ) : null}
-          {fileActionError ? (
-            <FileActionError
-              message={fileActionError}
-              onDismiss={() => setFileActionError(null)}
-            />
-          ) : null}
-        </>
-      </FileOpenContext.Provider>
-    </RemoteMediaContext.Provider>
+    <LocalImageSourcesContext.Provider value={localImageSources}>
+      <RemoteMediaContext.Provider value={remoteMedia}>
+        <FileOpenContext.Provider value={fileOpen}>
+          <>
+            <Streamdown
+              // Streamdown keeps a parsed tree while the text is unchanged, so
+              // the plugin swap has to remount it once the fade is over.
+              key={fading ? "fade" : "plain"}
+              BlockComponent={DirectionalBlock}
+              className={`agent-markdown min-w-0 font-sans text-sm leading-6 ${fading ? "word-fading" : ""} ${className ?? ""}`}
+              components={MARKDOWN_COMPONENTS}
+              controls={false}
+              dir="auto"
+              isAnimating={!!streaming || paced.revealing}
+              plugins={MARKDOWN_PLUGINS}
+              remarkPlugins={remarkPlugins}
+              rehypePlugins={rehypePlugins}
+            >
+              {paced.text}
+            </Streamdown>
+            {fileMenu ? (
+              <ExplorerMenu
+                x={fileMenu.x}
+                y={fileMenu.y}
+                items={fileLinkMenuItems(!!onOpenFile, !!cwd)}
+                ariaLabel="File link actions"
+                onPick={onFileMenuPick}
+                onClose={() => setFileMenu(null)}
+              />
+            ) : null}
+            {fileActionError ? (
+              <FileActionError
+                message={fileActionError}
+                onDismiss={() => setFileActionError(null)}
+              />
+            ) : null}
+          </>
+        </FileOpenContext.Provider>
+      </RemoteMediaContext.Provider>
+    </LocalImageSourcesContext.Provider>
   );
 });
 

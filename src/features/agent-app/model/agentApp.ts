@@ -35,20 +35,9 @@ import {
   placeSessionInFolder,
   saveSessionFolders,
 } from "../../sessions/model/sessionFolders";
-<<<<<<< HEAD
-=======
-import {
-  normalizeNoteTags,
-  noteTitle,
-  type Note,
-  type NoteUpsert,
-} from "../../notes";
-import type { QuickLaunch } from "../../quick-composer/model/quickComposer";
 import type { Worktree, Worktrees } from "../../source-control/model/worktrees";
 import { pathKey } from "../../../shared/lib/paths";
 import type { SplitDir } from "../../workspace/model/layout";
-import { consumeOperatorCommand } from "../../sessions/model/operatorCommand";
->>>>>>> origin/main
 import { sessionConversationPage } from "./sessionConversation";
 
 export type AppSessionListing = {

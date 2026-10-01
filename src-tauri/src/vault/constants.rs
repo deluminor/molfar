@@ -1,0 +1,9 @@
+pub const MAX_ENTRIES: usize = 50_000;
+pub const MAX_DOCUMENT_BYTES: u64 = 2 * 1024 * 1024;
+pub const MAX_SCAN_BYTES: u64 = 128 * 1024 * 1024;
+pub const MAX_WARNINGS: usize = 100;
+pub const MAX_SCAN_SECONDS: u64 = 30;
+pub const CONNECTION_FILE: &str = "knowledge-vault.json";
+pub const MAX_ASSET_BYTES: u64 = 20 * 1024 * 1024;
+pub const IMAGE_EXTENSIONS: [&str; 8] = ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp"];
+pub const CONNECTION_EVENT: &str = "knowledge:connection-changed";

@@ -7,3 +7,6 @@ allowBuilds:
   esbuild: true
   "@tailwindcss/oxide": true
   sharp: true
+
+minimumReleaseAgeExclude:
+  - 3d-force-graph@1.80.1

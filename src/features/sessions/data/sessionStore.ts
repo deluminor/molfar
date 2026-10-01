@@ -1162,11 +1162,17 @@ function sanitizeNoteCard(value: Block["noteCard"]): Block["noteCard"] {
   const title = typeof value.title === "string" ? value.title.trim() : "";
   const sourceCwd =
     typeof value.sourceCwd === "string" ? value.sourceCwd.trim() : "";
+  const source = value.source;
+  const validSource = source?.kind === "knowledge" &&
+    typeof source.vaultName === "string" && typeof source.path === "string" &&
+    typeof source.revision === "string";
+
   return {
     id,
     slug,
     title,
     ...(sourceCwd ? { sourceCwd } : {}),
+    ...(validSource ? { source: { kind: "knowledge" as const, vaultName: source.vaultName, path: source.path, revision: source.revision } } : {}),
   };
 }
 

@@ -23,6 +23,8 @@ serde.workspace = true
 serde_json.workspace = true
 toml = "0.9.12"
 sha2 = "0.10"
+pulldown-cmark = { version = "0.13", default-features = false }
+serde-saphyr = { version = "1", default-features = false, features = ["deserialize"] }
 unicode-normalization = "0.1"
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
@@ -32,12 +34,9 @@ ureq = { version = "2.12.1", default-features = false, features = ["tls", "gzip"
 url = "2.5"
 time = { version = "0.3", features = ["parsing"] }
 tauri-plugin-process = "2"
-<<<<<<< HEAD
 sysinfo = { version = "0.39.6", default-features = false, features = ["system"] }
-=======
 arboard = { version = "3.6", features = ["wayland-data-control"] }
 png = "0.18"
->>>>>>> origin/main
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

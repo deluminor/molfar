@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black" alt="Tauri" />
   <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust" />
   <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.6.0-blue" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
 
@@ -38,17 +38,16 @@ MonoCode is a cross-platform desktop shell for coding agents you already pay for
 
 **Why it exists** — agent CLIs are powerful but fragmented. MonoCode gives one workspace for multi-provider sessions, project files, notes, terminal, source control, Inbox connectors, and light orchestration — on your machine.
 
-<<<<<<< HEAD
 **Status** — early product (expect bugs). Upstream MonoCode ships agent sessions, `/operator` app access, Inbox providers, notes, worktrees, and automations. This fork (`custom`) additionally ships **Confluence Docs browse** in Inbox (reuse Jira Atlassian credentials), read-only `confluence.*` agent tools, ADF→markdown conversion, and **Home brand visuals** (pixel dragon / Jarvis sphere with local preference).
-=======
-Linux (x86_64): download the `.deb` or AppImage from [GitHub Releases](https://github.com/hardbeat920/monocode/releases/latest). Install the `.deb` with `sudo apt install ./MonoCode_*.deb`, or make the AppImage executable with `chmod +x MonoCode_*.AppImage` and run it directly. On Fedora and Enterprise Linux 10, download the `.rpm` from the same release page — see [Fedora / Enterprise Linux packages](#fedora--enterprise-linux-packages) for the one extra repository step Enterprise Linux needs.
->>>>>>> origin/main
 
 > Fork of [hardbeat920/monocode](https://github.com/hardbeat920/monocode). Official binary downloads below point at upstream releases.
 
+Linux (x86_64): download the `.deb` or AppImage from [GitHub Releases](https://github.com/hardbeat920/monocode/releases/latest). Install the `.deb` with `sudo apt install ./MonoCode_*.deb`, or make the AppImage executable with `chmod +x MonoCode_*.AppImage` and run it directly. On Fedora and Enterprise Linux 10, download the `.rpm` from the same release page — see [Fedora / Enterprise Linux packages](#fedora--enterprise-linux-packages) for the one extra repository step Enterprise Linux needs.
+
+Experimental remote sessions: run agents on an always-on Windows, Linux, or macOS machine and connect from the desktop. See [remote access setup and current limitations](docs/remote-access.md).
+
 ## Tech Stack
 
-<<<<<<< HEAD
 | Layer               | Technology                                 |
 | ------------------- | ------------------------------------------ |
 | Desktop runtime     | Tauri 2                                    |
@@ -60,24 +59,12 @@ Linux (x86_64): download the `.deb` or AppImage from [GitHub Releases](https://g
 | Terminal            | xterm.js                                   |
 | Tests               | Vitest 3, cargo test                       |
 | Package manager     | npm (lockfile); pnpm lockfile also present |
-=======
-Experimental remote sessions: run agents on an always-on Windows, Linux, or macOS machine and connect from the desktop. See [remote access setup and current limitations](docs/remote-access.md).
-
-This is very early and you should expect bugs.
->>>>>>> origin/main
 
 The UI talks to Rust through Tauri commands. Agent providers are driven locally via harness adapters over stdio / ACP — no MonoCode-hosted model API.
 
 ## Architecture
 
-<<<<<<< HEAD
 React feature slices compose the shell. Tauri owns filesystem, PTY, git, session persistence, and HTTP to Atlassian. The harness layer normalizes each provider CLI into MonoCode session events. Inbox connectors (GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence) hang off the same local-credential pattern.
-=======
-- `models.list` shows available providers, models, settings, and permission modes.
-- `sessions.start` opens a tab in the current project with a prompt. Set `placement: "right"` or `placement: "down"` to split the calling session's pane instead; `besideSessionId` selects another visible session pane in the project. Reuse the returned session ID as the next `besideSessionId` to build nested layouts. By default it submits the prompt; set `draft: true` to save it unsent without starting an agent turn. It accepts a provider, model, effort or other model settings, permission mode, and current checkout or new worktree choice. Set `worktreeCwd` to a path from `worktrees.list` for a specific existing checkout. Use `worktrees.create` to create a worktree on a named new or existing local branch, then pass its path as `worktreeCwd`. Omit `runtimeMode` to inherit the calling session's permission mode, or set it explicitly to override. It returns the new session ID as soon as the pane and prompt are accepted, so the agent can move it into a folder immediately.
-- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older exchanges and a per-message character cap. `sessions.send` submits a follow-up to an idle session, while `sessions.draft` saves an unsent message for the user to review. `folders.list` and `folders.move` organize project sessions in sidebar folders, including a new folder.
-- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
->>>>>>> origin/main
 
 ### System Overview
 
@@ -136,19 +123,33 @@ docs/
 
 | Area                        | What shipped                                                                                                                                             |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Confluence Docs (Inbox)** | Source tab when Jira is connected to `*.atlassian.net`; space tree, search, markdown page body, folder TOC, Send to chat / `@confluence/page             | folder` mentions |
+| **Confluence Docs (Inbox)** | Source tab when Jira is connected to `*.atlassian.net`; space tree, search, markdown page body, folder TOC, Send to chat / `@confluence/page` and `@confluence/folder` mentions |
 | **Agent tools**             | Read-only `confluence.search`, `confluence.list`, `confluence.read` via the app/control CLI                                                              |
 | **ADF pipeline**            | Shared Atlassian Document Format → markdown conversion (`atlassian_adf.rs`) for Jira and Confluence                                                      |
 | **Home brand visuals**      | Pixel dragon (default) and Jarvis holographic sphere; `← dragon →` / `← jarvis →` selector; preference persisted locally; reduced-motion static fallback |
+
+### Knowledge: local Obsidian vaults
+
+Open **Knowledge**, directly below Notes in the project navigation, and choose a vault folder or enter its path. One vault is active at a time; its connection is remembered across restarts. Markdown files remain the source of truth. No Obsidian plugin or running Obsidian instance is required.
+
+- Browse folders and attachments, search note paths/titles/aliases/tags, and explore a 3D graph of note links. Selecting a graph node opens the same document as selecting it in the tree. The graph shows at most 1,500 notes and 12,000 edges; displayed counts identify bounded views. Use Neighborhood to focus on an individual note.
+- Edit Markdown in Source or use Preview. Save explicitly with the button or `Cmd/Ctrl+S`. Original frontmatter and line endings are preserved by the native save operation. Unsaved drafts remain in memory when navigating between notes or sections; save before quitting the application.
+- External changes are reconciled on refresh, window focus and every 30 seconds while Knowledge is visible. Dirty drafts are retained and conflicts block saving until the current revision is loaded. Revision checks reduce concurrent-write risk, but cannot lock out an independently writing application.
+- **Add to agent context** reads the saved note again and opens an agent chat with a context card carrying vault name, relative path and revision. Nothing is submitted automatically. Context is limited to 128 KiB of UTF-8 text per selected note; this is a payload bound, not a guarantee that every provider's token budget will fit it.
+- Indexing supports wikilinks, relative Markdown links, aliases, tags and heading/block target references. Preview opens referenced notes; embedded notes become navigable links, and heading/block references currently open the containing note. Vetted local raster images are previewed through a bounded application cache. Canvas editing, Dataview, plugin execution and autonomous agent vault search/write are outside this release.
+
+Hidden files/directories and symlinks are excluded. Scans stop at 50,000 entries, 128 MiB of Markdown or 30 seconds and report incomplete results. Individual notes are limited to 2 MiB; image previews to 20 MiB. Scan cancellation and file errors are visible. Graph metadata uses modification-time/size caching; editor reads and saves use content hashes. Disconnect removes connection/image-cache data and can discard drafts after confirmation; it never deletes vault files. A file-tree fallback remains available if WebGL fails. Desktop WebGL performance and visual QA require a separate native-app check.
 
 ### Agent access to MonoCode (`/operator`)
 
 Type `/operator` at the start of a composer message to enable MonoCode access in that thread. The transcript shows the request without the command; MonoCode injects the local `app` CLI path for that turn. Later turns in the same thread keep access; other threads do not. The CLI acts only during an active agent turn — run `app --help` for exact JSON fields.
 
-- `models.list` — providers, models, settings, permission modes
-- `sessions.start` / `sessions.list` / `sessions.read` / `sessions.send` / `sessions.draft`
+- `models.list` shows available providers, models, settings, and permission modes.
+- `sessions.start` opens a tab in the current project with a prompt. Set `placement: "right"` or `placement: "down"` to split the calling session's pane instead; `besideSessionId` selects another visible session pane in the project. Reuse the returned session ID as the next `besideSessionId` to build nested layouts. By default it submits the prompt; set `draft: true` to save it unsent without starting an agent turn. It accepts a provider, model, effort or other model settings, permission mode, and current checkout or new worktree choice. Set `worktreeCwd` to a path from `worktrees.list` for a specific existing checkout. Use `worktrees.create` to create a worktree on a named new or existing local branch, then pass its path as `worktreeCwd`. Omit `runtimeMode` to inherit the calling session's permission mode, or set it explicitly to override. It returns the new session ID as soon as the pane and prompt are accepted, so the agent can move it into a folder immediately.
+- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older exchanges and a per-message character cap. `sessions.send` submits a follow-up to an idle session, while `sessions.draft` saves an unsent message for the user to review. `folders.list` and `folders.move` organize project sessions in sidebar folders, including a new folder.
+- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
+- `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
 - `folders.list` / `folders.move`
-- `notes.list` / `notes.read`
 - `confluence.search` / `confluence.list` / `confluence.read` _(fork)_
 
 Orchestration workers keep their scoped `control` workflow and do not receive this app access.
@@ -218,9 +219,6 @@ npm run build:windows  # NSIS under target/release/bundle/nsis/
 
 Tauri loads `src-tauri/tauri.linux.conf.json` / `tauri.windows.conf.json` automatically for those targets.
 
-<<<<<<< HEAD
-## Running the App
-=======
 ### Fedora / Enterprise Linux packages
 
 On Fedora, or on an Enterprise Linux 10 system (registered RHEL, Rocky, Alma, CentOS Stream, Oracle), install the release `.rpm` from [GitHub Releases](https://github.com/hardbeat920/monocode/releases/latest). Enterprise Linux needs EPEL first, because `webkit2gtk4.1` is an EPEL package there — CRB is not needed to run MonoCode. On Oracle Linux 10, `epel-release` does not enable `ol10_developer_EPEL`, which is the repository that provides that package. Enable it before installing the rpm:
@@ -250,8 +248,7 @@ That emits a `.rpm` under `target/release/bundle/rpm/`, installable with `sudo d
 
 The portable AppImage bundles Ubuntu-built Wayland libraries that can fail against newer Mesa drivers: the app aborts at startup with `Could not create default EGL display: EGL_BAD_PARAMETER`, or opens a blank window. The native `.rpm` above links the system WebKitGTK stack and does not have this problem — prefer it on Fedora.
 
-### Windows packages
->>>>>>> origin/main
+## Running the App
 
 ```bash
 # Desktop (recommended)
