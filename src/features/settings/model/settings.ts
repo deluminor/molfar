@@ -216,6 +216,30 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "live running sessions rail card",
   },
   {
+    id: "working-agents-threshold",
+    section: "general",
+    label: "Show working agents from",
+    keywords: "live running sessions rail card threshold minimum count single one chat",
+  },
+  {
+    id: "rail-home",
+    section: "general",
+    label: "Home",
+    keywords: "project rail shortcut overview dashboard hide show",
+  },
+  {
+    id: "rail-usage",
+    section: "general",
+    label: "Usage",
+    keywords: "project rail shortcut tokens cost limits hide show",
+  },
+  {
+    id: "rail-knowledge",
+    section: "general",
+    label: "Knowledge",
+    keywords: "project rail shortcut vault obsidian notes hide show",
+  },
+  {
     id: "file-tabs",
     section: "general",
     label: "File tabs",
