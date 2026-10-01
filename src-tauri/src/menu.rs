@@ -202,8 +202,14 @@ fn build(
         "App: Settings",
         overrides,
     )?;
-    let check_for_updates =
-        MenuItemBuilder::with_id("check_for_updates", "Check for Updates…").build(app)?;
+    // Fork policy: keep in sync with src/app/model/forkPolicy.ts (APP_UPDATER_DISABLED).
+    let app_updater_disabled = true;
+    let check_for_updates = if !app_updater_disabled {
+        Some(MenuItemBuilder::with_id("check_for_updates", "Check for Updates…").build(app)?)
+    } else {
+        None
+    };
+
     let new_window = menu_item(
         app,
         "new_window",
@@ -513,11 +519,16 @@ fn build(
         let quit = MenuItemBuilder::with_id("quit", "Quit MonoCode")
             .accelerator("CmdOrCtrl+Q")
             .build(app)?;
-        let app_menu = SubmenuBuilder::new(app, "MonoCode")
+        let mut app_menu = SubmenuBuilder::new(app, "MonoCode")
             .about(Some(AboutMetadata::default()))
             .separator()
-            .item(&open_settings)
-            .item(&check_for_updates)
+            .item(&open_settings);
+
+        if let Some(check_for_updates) = &check_for_updates {
+            app_menu = app_menu.item(check_for_updates);
+        }
+
+        let app_menu = app_menu
             .separator()
             .hide()
             .hide_others()

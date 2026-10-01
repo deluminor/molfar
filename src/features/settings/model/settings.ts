@@ -179,7 +179,7 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     id: "update",
     section: "general",
     label: "Version",
-    keywords: "update upgrade release what's new build changelog",
+    keywords: "version what's new build changelog fork",
   },
   {
     id: "sounds",

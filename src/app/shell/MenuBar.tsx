@@ -5,6 +5,7 @@ import {
   type ExplorerMenuItem,
 } from "../../features/files/ui/ExplorerMenu";
 import { ALT, MOD, SHIFT } from "../../platform/tauri/platform";
+import { APP_UPDATER_DISABLED } from "../model/forkPolicy";
 import { runUpdateFlow } from "../model/updater";
 import {
   keybindingShortcutLabel,
@@ -305,12 +306,16 @@ export function MenuBar({
             label: "Close All Tabs",
             shortcut: shortcut("Tab: Close All", `${MOD}${SHIFT}W`),
           },
-          { kind: "sep" },
-          {
-            kind: "item",
-            id: "check_for_updates",
-            label: "Check for Updates…",
-          },
+          ...(APP_UPDATER_DISABLED
+            ? []
+            : [
+                { kind: "sep" as const },
+                {
+                  kind: "item" as const,
+                  id: "check_for_updates",
+                  label: "Check for Updates…",
+                },
+              ]),
         ];
       case "view":
         return [

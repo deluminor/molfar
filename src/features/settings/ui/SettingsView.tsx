@@ -364,6 +364,7 @@ import {
   runUpdateFlow,
   type UpdaterSnapshot,
 } from "../../../app/model/updater";
+import { APP_UPDATER_DISABLED } from "../../../app/model/forkPolicy";
 
 import { SkillsPage } from "../../skills/ui/SkillsPage";
 import { ProjectNotificationSettings } from "../../notifications/ui/ProjectNotificationSettings";
@@ -1826,7 +1827,9 @@ function UpdateRow({
             ? "You're on the latest version."
             : snapshot.phase === "error"
               ? (snapshot.error ?? "Update check failed.")
-              : "MonoCode updates itself from the release feed.";
+              : APP_UPDATER_DISABLED
+                ? "This fork does not install updates from the upstream release feed."
+                : "MonoCode updates itself from the release feed.";
 
   return (
     <Row
@@ -1848,16 +1851,18 @@ function UpdateRow({
         >
           What's new
         </SecondaryButton>
-        <SecondaryButton onClick={() => void onClick()} disabled={busy}>
-          {busy ? (
-            <Loader className="size-3.5 animate-spin" aria-hidden />
-          ) : hasUpdate ? (
-            <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
-          ) : (
-            <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden />
-          )}
-          {hasUpdate ? "Download" : "Check for updates"}
-        </SecondaryButton>
+        {APP_UPDATER_DISABLED ? null : (
+          <SecondaryButton onClick={() => void onClick()} disabled={busy}>
+            {busy ? (
+              <Loader className="size-3.5 animate-spin" aria-hidden />
+            ) : hasUpdate ? (
+              <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
+            ) : (
+              <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden />
+            )}
+            {hasUpdate ? "Download" : "Check for updates"}
+          </SecondaryButton>
+        )}
       </div>
     </Row>
   );
