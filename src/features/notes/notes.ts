@@ -4,6 +4,7 @@ import type { ProjectFile } from "../../platform/tauri/fs";
 import type { RankedFile } from "../files/model/fileIndex";
 import { projectName } from "../../shared/lib/paths";
 import { looksLikeProject } from "../projects/model/recents";
+import type { NoteSource } from "./types/note-source";
 
 export const NOTE_MENTION_PREFIX = "note/";
 export const NOTE_PATH_PREFIX = "note:";
@@ -36,6 +37,7 @@ export type NoteCardMeta = {
   slug: string;
   title: string;
   sourceCwd?: string;
+  source?: NoteSource;
 };
 
 /** Composer chip: display fields plus the body injected into the harness prompt. */
@@ -49,6 +51,7 @@ export function noteCardMeta(card: NoteComposerCard): NoteCardMeta {
     slug: card.slug,
     title: card.title,
     ...(card.sourceCwd ? { sourceCwd: card.sourceCwd } : {}),
+    ...(card.source ? { source: card.source } : {}),
   };
 }
 
@@ -345,12 +348,17 @@ export function composeNoteMessage(
 ): string {
   if (!card) return text.trim();
   const lead = text.trim() || "Use this note.";
+  let body = card.body;
+  if (card.source) {
+    body = `Knowledge source: ${JSON.stringify({ vault: card.source.vaultName, path: card.source.path, revision: card.source.revision })}\n\n${body}`;
+  }
+
   return injectNotePrompt(lead, [
     {
       id: card.id,
       slug: card.slug,
       title: card.title,
-      body: card.body,
+      body,
       tags: [],
       createdAt: 0,
       updatedAt: 0,
