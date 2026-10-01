@@ -204,7 +204,6 @@ function AutomationsContent({
   onFocusAutomationConsumed,
   onLaunch,
   onOpenSession,
-<<<<<<< HEAD
 }: Pick<
   Props,
   | "cwd"
@@ -214,13 +213,9 @@ function AutomationsContent({
   | "onLaunch"
   | "onOpenSession"
 >) {
-  const [automations, setAutomations] = useState<Automation[]>([]);
-=======
-}: Pick<Props, "cwd" | "recents" | "onLaunch" | "onOpenSession">) {
   const [automations, setAutomations] = useState<Automation[]>(
     () => peekAutomations() ?? [],
   );
->>>>>>> origin/main
   const [runs, setRuns] = useState<AutomationRun[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(
     focusAutomationId ?? rememberedAutomationId,

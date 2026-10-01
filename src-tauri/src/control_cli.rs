@@ -82,11 +82,7 @@ const ACTIONS: [&str; 12] = [
     "list", "delegate", "get", "steer", "message", "retry", "cancel", "wait", "review", "finish",
     "respond", "answer",
 ];
-<<<<<<< HEAD
-const APP_ACTIONS: [&str; 14] = [
-=======
-const APP_ACTIONS: [&str; 13] = [
->>>>>>> origin/main
+const APP_ACTIONS: [&str; 16] = [
     "models.list",
     "sessions.list",
     "sessions.read",
