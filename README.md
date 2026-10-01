@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/architecture/images/monocode.jpeg" alt="MonoCode Home dashboard" width="100%" />
+  <img src="docs/architecture/images/monocode.png" alt="MonoCode Home dashboard" width="100%" />
 </p>
 
 ## Table of Contents
