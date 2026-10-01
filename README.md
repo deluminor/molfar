@@ -15,12 +15,13 @@
 </p>
 
 <p align="center">
-  <img width="1680" height="1050" alt="MonoCode desktop screenshot" src="docs/architecture/images/monocode.jpeg" />
+  <img src="docs/architecture/images/monocode.jpeg" alt="MonoCode Home dashboard" width="100%" />
 </p>
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Product Tour](#product-tour)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
@@ -38,13 +39,55 @@ MonoCode is a cross-platform desktop shell for coding agents you already pay for
 
 **Why it exists** — agent CLIs are powerful but fragmented. MonoCode gives one workspace for multi-provider sessions, project files, notes, terminal, source control, Inbox connectors, and light orchestration — on your machine.
 
-**Status** — early product (expect bugs). Upstream MonoCode ships agent sessions, `/operator` app access, Inbox providers, notes, worktrees, and automations. This fork (`custom`) additionally ships **Confluence Docs browse** in Inbox (reuse Jira Atlassian credentials), read-only `confluence.*` agent tools, ADF→markdown conversion, and **Home brand visuals** (pixel dragon / Jarvis sphere with local preference).
+**Status** — early product (expect bugs). Upstream MonoCode ships agent sessions, `/operator` app access, Inbox providers, notes, worktrees, and automations. This fork (`custom`) additionally ships **Confluence Docs browse** in Inbox (reuse Jira Atlassian credentials), read-only `confluence.*` agent tools, ADF→markdown conversion, **Knowledge** (local Obsidian vaults), a rearrangeable **Home** dashboard (host metrics, status, sessions, Automations, brand visuals), and a **Usage** surface for provider quota signals.
 
 > Fork of [hardbeat920/monocode](https://github.com/hardbeat920/monocode). Official binary downloads below point at upstream releases.
 
 Linux (x86_64): download the `.deb` or AppImage from [GitHub Releases](https://github.com/hardbeat920/monocode/releases/latest). Install the `.deb` with `sudo apt install ./MonoCode_*.deb`, or make the AppImage executable with `chmod +x MonoCode_*.AppImage` and run it directly. On Fedora and Enterprise Linux 10, download the `.rpm` from the same release page — see [Fedora / Enterprise Linux packages](#fedora--enterprise-linux-packages) for the one extra repository step Enterprise Linux needs.
 
 Experimental remote sessions: run agents on an always-on Windows, Linux, or macOS machine and connect from the desktop. See [remote access setup and current limitations](docs/remote-access.md).
+
+## Product Tour
+
+### Home
+
+The landing surface for the whole workspace, shown at the top of this README. Home combines live host telemetry (CPU, RAM, swap, load, processes), MonoCode status, the last 24 hours of agent sessions, and upcoming and recent automation runs. Every widget can be rearranged, and the layout persists locally. The brand visual is a pixel dragon by default and can be switched to an animated Jarvis sphere.
+
+### Sessions
+
+Each tab is a full agent conversation backed by a locally installed provider CLI. The composer chooses the provider, model, reasoning effort, permission mode, and checkout (the current branch or an isolated worktree) for every run. It also handles attachments, `@`-mentions of files, notes, and Confluence pages, and slash commands. The project explorer, terminal, and source control stay docked beside the conversation, so reviewing a diff never means leaving the session.
+
+![Session composer with provider, model, effort, and checkout selection](docs/architecture/images/new-chat.png)
+
+### Inbox
+
+A single triage queue for GitHub, GitLab, Linear, Jira, Azure DevOps, and Confluence. Issues, pull requests, and pages render in place with full Markdown and CI check status. **Ask** puts a question about an item to an agent without leaving the Inbox. **Send to chat** opens a session pre-loaded with the item's context. Failing GitHub checks can be turned into a scoped CI-repair session that carries the check evidence. Credentials stay on the machine, and the Confluence source reuses the existing Jira Atlassian connection.
+
+![Inbox with a GitHub pull request open in the detail pane](docs/architecture/images/inbox.png)
+
+### Automations
+
+Recurring and event-driven agent work. You can start from a template (code review, security scans, incident triage, docs generation, test coverage) or from scratch. Each run can be triggered on a schedule or by GitHub, GitLab, Linear, Jira, or Azure DevOps activity. Runs execute locally against your own checkouts with the same providers and permission modes as interactive sessions.
+
+![Automation templates and the list of scheduled runs](docs/architecture/images/automations.png)
+
+### Notes
+
+Project-scoped Markdown notes for decisions, checklists, and context worth reusing across sessions. Notes support tags, a Source/Preview toggle, and **Add to chat**. Any note can be referenced with `@` in the composer, and agents with `/operator` access can list and read notes programmatically.
+
+![Notes view with a tagged note in preview mode](docs/architecture/images/notifi.png)
+
+### Knowledge
+
+Connects a local Obsidian vault without any plugin or running Obsidian instance, and the Markdown files stay the source of truth. The vault opens as a searchable folder tree next to a 3D graph of wikilinks, Markdown links, aliases, and tags. Selecting a graph node opens the same document as selecting it in the tree, and Neighborhood mode narrows the graph to a single note's links.
+
+![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-close.png)
+
+### Knowledge → agent context
+
+Notes open in a Source/Preview editor that saves explicitly and preserves the original frontmatter and line endings. **Add to agent context** re-reads the saved revision and opens a chat with a context card that records the vault, relative path, and revision. Nothing is sent until you submit, so the agent works from exactly the text you reviewed. Limits and conflict handling are covered in [Knowledge: local Obsidian vaults](#knowledge-local-obsidian-vaults).
+
+![Knowledge note open in the editor with Add to agent context](docs/architecture/images/vault-open.png)
 
 ## Tech Stack
 
@@ -56,6 +99,7 @@ Experimental remote sessions: run agents on an always-on Windows, Linux, or macO
 | Language (native)   | Rust (stable toolchain)                    |
 | Editor              | CodeMirror 6                               |
 | Markdown / diagrams | Streamdown, Mermaid                        |
+| Knowledge graph     | 3d-force-graph (WebGL)                     |
 | Terminal            | xterm.js                                   |
 | Tests               | Vitest 3, cargo test                       |
 | Package manager     | npm (lockfile); pnpm lockfile also present |
@@ -91,21 +135,24 @@ src/
 │   ├── sessions/        # Composer, transcripts, BTW, second opinion
 │   ├── inbox/           # Connectors incl. Confluence Docs panel
 │   ├── home/            # Dashboard grid, dragon / Jarvis brand visuals
+│   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
+│   ├── usage/           # Provider quota / rate-limit cards
 │   ├── files/           # File tree + CodeMirror editor
 │   ├── notes/           # Project notes + @mentions
 │   ├── settings/        # Providers, Jira/Atlassian, keybindings…
 │   ├── agent-app/       # /operator app-tool surface
 │   ├── orchestration/   # Multi-agent worker flows
-│   └── …                # terminal, usage, automations, workspace…
+│   └── …                # terminal, automations, source-control, workspace…
 ├── integrations/
 │   └── harness/         # Provider-independent core + per-CLI adapters
 ├── platform/tauri/      # Browser ↔ Tauri adapters
 ├── shared/              # Reusable UI primitives (no feature logic)
 └── styles/              # Global CSS + design tokens
-src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, control CLI
+src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, control CLI
+host/                    # Experimental remote host (Node) for always-on agent machines
 docs/
 ├── architecture/        # Interactive HTML diagrams + JSON sources
-│   └── images/          # PNG previews for README
+│   └── images/          # Diagram / screenshot previews for README
 └── specs/               # Feature specs / plans / tasks
 ```
 
@@ -115,18 +162,26 @@ docs/
 
 - **Multi-provider sessions** — Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent when installed and logged in
 - **Composer + transcript** — attachments, @mentions, BTW side conversations, second opinions
-- **`/operator` app access** — scoped local CLI for `models.*`, `sessions.*`, `folders.*`, `notes.*` during an active turn (see notes below)
+- **`/operator` app access** — scoped local CLI for `models.*`, `sessions.*`, `folders.*`, `notes.*`, `worktrees.*` during an active turn (see notes below)
 - **Inbox** — GitHub, GitLab, Linear, Jira, Azure DevOps issue sources with Send to chat
-- **Workspace** — files, notes, terminal, source control, worktrees, automations, usage
+- **Workspace** — files, notes, terminal, source control, worktrees, automations
+- **Automations** — scheduled or event-driven agent runs (time, GitHub, Linear, Jira, GitLab, Azure DevOps)
+- **CI repair** — turn failing GitHub PR checks into a scoped repair session with the check evidence attached
+- **Quick composer** — a global shortcut (`Cmd+Shift+Space` by default) that starts a session from anywhere
+- **Skills & slash commands** — discover and author provider skills and use native slash commands from the composer
+- **Notifications** — approval toasts, dock badges, and per-project delivery preferences
+- **Remote sessions** _(experimental)_ — drive agents on an always-on machine over SSH; see [docs/remote-access.md](docs/remote-access.md)
 
 ### Custom fork additions
 
-| Area                        | What shipped                                                                                                                                             |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Area                        | What shipped                                                                                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Confluence Docs (Inbox)** | Source tab when Jira is connected to `*.atlassian.net`; space tree, search, markdown page body, folder TOC, Send to chat / `@confluence/page` and `@confluence/folder` mentions |
-| **Agent tools**             | Read-only `confluence.search`, `confluence.list`, `confluence.read` via the app/control CLI                                                              |
-| **ADF pipeline**            | Shared Atlassian Document Format → markdown conversion (`atlassian_adf.rs`) for Jira and Confluence                                                      |
-| **Home brand visuals**      | Pixel dragon (default) and Jarvis holographic sphere; `← dragon →` / `← jarvis →` selector; preference persisted locally; reduced-motion static fallback |
+| **Agent tools**             | Read-only `confluence.search`, `confluence.list`, `confluence.read` via the app/control CLI                                                                                     |
+| **ADF pipeline**            | Shared Atlassian Document Format → markdown conversion (`atlassian_adf.rs`) for Jira and Confluence                                                                             |
+| **Knowledge**               | Local Obsidian vault connect (no plugin); tree, search, 3D graph, Source/Preview edit, Add to agent context — see [Knowledge](#knowledge-local-obsidian-vaults)                 |
+| **Home dashboard**          | Rearrangeable widgets: host metrics, MonoCode status, recent sessions, Automations, clock/matrix; pixel dragon (default) / Jarvis sphere brand visual with local preference     |
+| **Usage**                   | Provider quota / rate-limit cards for Claude, Codex, Cursor, and Antigravity                                                                                                    |
 
 ### Knowledge: local Obsidian vaults
 
@@ -146,10 +201,10 @@ Type `/operator` at the start of a composer message to enable MonoCode access in
 
 - `models.list` shows available providers, models, settings, and permission modes.
 - `sessions.start` opens a tab in the current project with a prompt. Set `placement: "right"` or `placement: "down"` to split the calling session's pane instead; `besideSessionId` selects another visible session pane in the project. Reuse the returned session ID as the next `besideSessionId` to build nested layouts. By default it submits the prompt; set `draft: true` to save it unsent without starting an agent turn. It accepts a provider, model, effort or other model settings, permission mode, and current checkout or new worktree choice. Set `worktreeCwd` to a path from `worktrees.list` for a specific existing checkout. Use `worktrees.create` to create a worktree on a named new or existing local branch, then pass its path as `worktreeCwd`. Omit `runtimeMode` to inherit the calling session's permission mode, or set it explicitly to override. It returns the new session ID as soon as the pane and prompt are accepted, so the agent can move it into a folder immediately.
-- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older exchanges and a per-message character cap. `sessions.send` submits a follow-up to an idle session, while `sessions.draft` saves an unsent message for the user to review. `folders.list` and `folders.move` organize project sessions in sidebar folders, including a new folder.
+- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older exchanges and a per-message character cap. `sessions.send` submits a follow-up to an idle session, while `sessions.draft` saves an unsent message for the user to review.
+- `folders.list` / `folders.move` organize project sessions in sidebar folders, including a new folder.
 - `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
 - `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
-- `folders.list` / `folders.move`
 - `confluence.search` / `confluence.list` / `confluence.read` _(fork)_
 
 Orchestration workers keep their scoped `control` workflow and do not receive this app access.
@@ -263,22 +318,26 @@ npm run tauri:stable
 
 ## Available Scripts
 
-| Script                    | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `npm run dev`             | Vite frontend only                                     |
-| `npm run tauri`           | Tauri CLI (use `npm run tauri -- dev` for desktop dev) |
-| `npm run tauri:stable`    | Tauri dev with stable config, no watch                 |
-| `npm run build`           | `tsc` + Vite production build                          |
-| `npm run preview`         | Preview Vite production build                          |
-| `npm test`                | Vitest once                                            |
-| `npm run test:watch`      | Vitest watch mode                                      |
-| `npm run check`           | Web checks + Rust fmt/clippy/tests                     |
-| `npm run check:web`       | Vitest + `tsc --noEmit`                                |
-| `npm run check:rust`      | `cargo fmt --check`, clippy `-D warnings`, cargo test  |
-| `npm run setup:linux:deb` | Install Debian Tauri build dependencies                |
-| `npm run build:linux`     | Linux `.deb` + AppImage bundles                        |
-| `npm run build:windows`   | Windows NSIS installer                                 |
-| `npm run set-version`     | Bump version via `scripts/bump-version.mjs`            |
+| Script                       | Description                                            |
+| ---------------------------- | ------------------------------------------------------ |
+| `npm run dev`                | Vite frontend only                                     |
+| `npm run tauri`              | Tauri CLI (use `npm run tauri -- dev` for desktop dev) |
+| `npm run tauri:stable`       | Tauri dev with stable config, no watch                 |
+| `npm run build`              | `tsc` + Vite production build                          |
+| `npm run preview`            | Preview Vite production build                          |
+| `npm test`                   | Vitest once                                            |
+| `npm run test:watch`         | Vitest watch mode                                      |
+| `npm run check`              | Web checks + Rust fmt/clippy/tests                     |
+| `npm run check:web`          | Vitest + `tsc --noEmit`                                |
+| `npm run check:rust`         | `cargo fmt --check`, clippy `-D warnings`, cargo test  |
+| `npm run setup:linux:deb`    | Install Debian Tauri build dependencies                |
+| `npm run setup:linux:fedora` | Install Fedora / EL Tauri build dependencies           |
+| `npm run build:linux`        | Linux `.deb` + AppImage bundles                        |
+| `npm run build:fedora`       | Linux `.rpm` bundle                                    |
+| `npm run build:windows`      | Windows NSIS installer                                 |
+| `npm run host:build`         | Build experimental remote host                         |
+| `npm run test:host`          | Vitest for the remote host                             |
+| `npm run set-version`        | Bump version via `scripts/bump-version.mjs`            |
 
 ## Testing
 
