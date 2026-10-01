@@ -11,6 +11,7 @@ import {
   attachmentPathText,
   isVisionImage,
   normalizeImageMime,
+  promptText,
 } from "../../../../features/sessions/model/attachments";
 import { displayPath } from "../../../../shared/lib/paths";
 import { normalizeTaskListStatus } from "../../../../features/sessions/model/taskList";
@@ -185,7 +186,8 @@ function codexInput(
   attachments: Attachment[] = [],
 ): Array<Record<string, unknown>> {
   const input: Array<Record<string, unknown>> = [];
-  if (prompt) input.push({ type: "text", text: prompt });
+  const body = promptText(prompt ?? "", attachments);
+  if (body) input.push({ type: "text", text: body });
   for (const file of attachments) {
     if (isVisionImage(file.mimeType)) {
       input.push(
@@ -573,6 +575,24 @@ function mapItemLifecycle(
       return { events };
     }
     return { events: [] };
+  }
+
+  if (itemType === "imageGeneration") {
+    if (!completed) return { events: [] };
+    const result = stringField(item, "result")?.trim();
+    if (!result) return { events: [] };
+    const prompt = stringField(item, "revisedPrompt")?.trim();
+    return {
+      events: [
+        {
+          type: "image.generated",
+          itemId: callId,
+          data: result,
+          name: "generated-image",
+          ...(prompt ? { alt: prompt } : {}),
+        },
+      ],
+    };
   }
 
   if (itemType === "reasoning") {
@@ -1016,6 +1036,12 @@ export function mapCodexSubagentSteps(
   return mapCodexNotification(method, params).events.flatMap(
     (event): HarnessEvent[] => {
       if (event.type === "tool.started" || event.type === "tool.updated") {
+        // Only a failure earns detail: a settled result already rides in the
+        // preview, and a long one would weigh the run down for nothing.
+        const detail =
+          event.type === "tool.updated" && event.status === "failed"
+            ? event.detail
+            : undefined;
         return [
           {
             type: "agent.step",
@@ -1025,6 +1051,7 @@ export function mapCodexSubagentSteps(
             text: event.title ?? "",
             ...(event.kind ? { toolKind: event.kind } : {}),
             ...(event.status ? { status: event.status } : {}),
+            ...(detail ? { detail } : {}),
             ...(event.preview ? { preview: event.preview } : {}),
           },
         ];

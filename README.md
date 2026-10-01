@@ -38,12 +38,17 @@ MonoCode is a cross-platform desktop shell for coding agents you already pay for
 
 **Why it exists** — agent CLIs are powerful but fragmented. MonoCode gives one workspace for multi-provider sessions, project files, notes, terminal, source control, Inbox connectors, and light orchestration — on your machine.
 
+<<<<<<< HEAD
 **Status** — early product (expect bugs). Upstream MonoCode ships agent sessions, `/operator` app access, Inbox providers, notes, worktrees, and automations. This fork (`custom`) additionally ships **Confluence Docs browse** in Inbox (reuse Jira Atlassian credentials), read-only `confluence.*` agent tools, ADF→markdown conversion, and **Home brand visuals** (pixel dragon / Jarvis sphere with local preference).
+=======
+Linux (x86_64): download the `.deb` or AppImage from [GitHub Releases](https://github.com/hardbeat920/monocode/releases/latest). Install the `.deb` with `sudo apt install ./MonoCode_*.deb`, or make the AppImage executable with `chmod +x MonoCode_*.AppImage` and run it directly. On Fedora and Enterprise Linux 10, download the `.rpm` from the same release page — see [Fedora / Enterprise Linux packages](#fedora--enterprise-linux-packages) for the one extra repository step Enterprise Linux needs.
+>>>>>>> upstream/main
 
 > Fork of [hardbeat920/monocode](https://github.com/hardbeat920/monocode). Official binary downloads below point at upstream releases.
 
 ## Tech Stack
 
+<<<<<<< HEAD
 | Layer               | Technology                                 |
 | ------------------- | ------------------------------------------ |
 | Desktop runtime     | Tauri 2                                    |
@@ -55,12 +60,24 @@ MonoCode is a cross-platform desktop shell for coding agents you already pay for
 | Terminal            | xterm.js                                   |
 | Tests               | Vitest 3, cargo test                       |
 | Package manager     | npm (lockfile); pnpm lockfile also present |
+=======
+Experimental remote sessions: run agents on an always-on Windows, Linux, or macOS machine and connect from the desktop. See [remote access setup and current limitations](docs/remote-access.md).
+
+This is very early and you should expect bugs.
+>>>>>>> upstream/main
 
 The UI talks to Rust through Tauri commands. Agent providers are driven locally via harness adapters over stdio / ACP — no MonoCode-hosted model API.
 
 ## Architecture
 
+<<<<<<< HEAD
 React feature slices compose the shell. Tauri owns filesystem, PTY, git, session persistence, and HTTP to Atlassian. The harness layer normalizes each provider CLI into MonoCode session events. Inbox connectors (GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence) hang off the same local-credential pattern.
+=======
+- `models.list` shows available providers, models, settings, and permission modes.
+- `sessions.start` opens a tab in the current project with a prompt. Set `placement: "right"` or `placement: "down"` to split the calling session's pane instead; `besideSessionId` selects another visible session pane in the project. Reuse the returned session ID as the next `besideSessionId` to build nested layouts. By default it submits the prompt; set `draft: true` to save it unsent without starting an agent turn. It accepts a provider, model, effort or other model settings, permission mode, and current checkout or new worktree choice. Set `worktreeCwd` to a path from `worktrees.list` for a specific existing checkout. Use `worktrees.create` to create a worktree on a named new or existing local branch, then pass its path as `worktreeCwd`. Omit `runtimeMode` to inherit the calling session's permission mode, or set it explicitly to override. It returns the new session ID as soon as the pane and prompt are accepted, so the agent can move it into a folder immediately.
+- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older exchanges and a per-message character cap. `sessions.send` submits a follow-up to an idle session, while `sessions.draft` saves an unsent message for the user to review. `folders.list` and `folders.move` organize project sessions in sidebar folders, including a new folder.
+- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
+>>>>>>> upstream/main
 
 ### System Overview
 
@@ -201,7 +218,40 @@ npm run build:windows  # NSIS under target/release/bundle/nsis/
 
 Tauri loads `src-tauri/tauri.linux.conf.json` / `tauri.windows.conf.json` automatically for those targets.
 
+<<<<<<< HEAD
 ## Running the App
+=======
+### Fedora / Enterprise Linux packages
+
+On Fedora, or on an Enterprise Linux 10 system (registered RHEL, Rocky, Alma, CentOS Stream, Oracle), install the release `.rpm` from [GitHub Releases](https://github.com/hardbeat920/monocode/releases/latest). Enterprise Linux needs EPEL first, because `webkit2gtk4.1` is an EPEL package there — CRB is not needed to run MonoCode. On Oracle Linux 10, `epel-release` does not enable `ol10_developer_EPEL`, which is the repository that provides that package. Enable it before installing the rpm:
+
+```bash
+# Enterprise Linux 10 only; skip on Fedora.
+sudo dnf install -y epel-release   # RHEL: sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+# Oracle Linux 10, instead of epel-release:
+# sudo dnf install -y oracle-epel-release-el10 dnf-plugins-core
+# sudo dnf config-manager --set-enabled ol10_developer_EPEL
+sudo dnf install ./MonoCode-*.rpm
+```
+
+The `.rpm` declares its own runtime dependencies, so `dnf` pulls the WebKitGTK stack for you. GitHub Releases builds that package on Enterprise Linux 10 so it loads on Fedora and EL 10. Building natively links the system WebKitGTK instead of the Ubuntu-built libraries shipped in the AppImage, which avoids graphics issues (e.g. `Could not create default EGL display`) on newer Mesa/Wayland systems.
+
+To build it yourself instead — which also enables EPEL 10 and CRB automatically, since the -devel packages need CRB:
+
+```bash
+npm run setup:linux:fedora
+npm ci
+npm run build:fedora
+```
+
+That emits a `.rpm` under `target/release/bundle/rpm/`, installable with `sudo dnf install ./target/release/bundle/rpm/MonoCode-*.rpm`. EL 9 and older are unsupported (`webkit2gtk4.1-devel` only exists in EPEL 10).
+
+### Troubleshooting on Fedora / Wayland
+
+The portable AppImage bundles Ubuntu-built Wayland libraries that can fail against newer Mesa drivers: the app aborts at startup with `Could not create default EGL display: EGL_BAD_PARAMETER`, or opens a blank window. The native `.rpm` above links the system WebKitGTK stack and does not have this problem — prefer it on Fedora.
+
+### Windows packages
+>>>>>>> upstream/main
 
 ```bash
 # Desktop (recommended)
