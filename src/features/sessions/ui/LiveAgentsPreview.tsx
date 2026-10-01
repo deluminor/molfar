@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { formatLiveElapsed, type LiveAgent } from "../model/liveAgents";
 import { projectKey, projectName } from "../../../shared/lib/paths";
@@ -15,8 +15,12 @@ import { Check, ChevronDown, ChevronUp, CircleAlert } from "../../../shared/ui/i
 import { HarnessIcon } from "./HarnessIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { TerminalSpinner } from "./TerminalSpinner";
+import {
+  LIVE_AGENTS_MIN_COUNT_DEFAULT,
+  loadLiveAgentsMinCount,
+  subscribeLiveAgentsMinCount,
+} from "../../settings/model/projectRail";
 
-const LIVE_AGENT_MIN = 2;
 const LIVE_AGENT_CAP = 4;
 
 type Props = {
@@ -51,8 +55,14 @@ export function LiveAgentsPreview({
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const lockList = useLockOverscroll<HTMLDivElement>();
+  const minCount = useSyncExternalStore(
+    subscribeLiveAgentsMinCount,
+    loadLiveAgentsMinCount,
+    () => LIVE_AGENTS_MIN_COUNT_DEFAULT,
+  );
+  const shown = agents.length >= minCount;
   const ticking =
-    agents.length >= LIVE_AGENT_MIN &&
+    shown &&
     agents.some((agent) => !agent.done && agent.startedAt != null);
 
   useEffect(() => {
@@ -61,7 +71,7 @@ export function LiveAgentsPreview({
     return () => window.clearInterval(id);
   }, [ticking]);
 
-  if (agents.length < LIVE_AGENT_MIN) return null;
+  if (!shown) return null;
 
   const extra = agents.length - LIVE_AGENT_CAP;
   const visible =
@@ -74,7 +84,7 @@ export function LiveAgentsPreview({
       data-live-agents-preview="full"
     >
       <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {agents.length} working agents
+        {agents.length} working {agents.length === 1 ? "agent" : "agents"}
       </span>
       <div className="overflow-hidden rounded-lg bg-content/5">
         <div className="flex items-center gap-2 px-3.5 py-1.5">
