@@ -1,19 +1,19 @@
 import type { RefObject } from "react";
 
-export interface JarvisPoint {
+export interface OrbPoint {
   x: number;
   y: number;
   z: number;
 }
 
-export interface JarvisProjectedPoint {
+export interface OrbProjectedPoint {
   x: number;
   y: number;
   radius: number;
   opacity: number;
 }
 
-export interface JarvisAnimation {
+export interface OrbAnimation {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   canvasReady: boolean;
 }

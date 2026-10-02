@@ -1,6 +1,6 @@
-import type { JarvisPoint } from "./jarvis-types";
+import type { OrbPoint } from "./types";
 
-export function createJarvisSurfaceCurves(): JarvisPoint[][] {
+export function createOrbSurfaceCurves(): OrbPoint[][] {
   const latitudes = [-0.7, -0.35, 0, 0.35, 0.7].map((y) =>
     Array.from({ length: 97 }, (_, index) => {
       const angle = (index / 96) * Math.PI * 2;

@@ -1,24 +1,24 @@
 import {
-  JARVIS_DUST_INTERVAL,
-  JARVIS_DUST_LIFETIME,
-  JARVIS_DUST_LIMIT,
-} from "./jarvis-constants";
-import { projectJarvisPoint } from "./jarvis-geometry";
-import type { JarvisPoint, JarvisProjectedPoint } from "./jarvis-types";
+  ORB_DUST_INTERVAL,
+  ORB_DUST_LIFETIME,
+  ORB_DUST_LIMIT,
+} from "./constants";
+import { projectOrbPoint } from "./geometry";
+import type { OrbPoint, OrbProjectedPoint } from "./types";
 
 const CONTOUR_BUCKETS = 28;
 const CONTOUR_RADIUS = 0.36;
 const EMITTER_STEP = 7;
 
-function createJarvisDustEmitters(
-  points: readonly JarvisPoint[],
+function createOrbDustEmitters(
+  points: readonly OrbPoint[],
   seconds: number,
   size: number,
-): JarvisProjectedPoint[] {
-  const emitters = new Map<number, JarvisProjectedPoint>();
+): OrbProjectedPoint[] {
+  const emitters = new Map<number, OrbProjectedPoint>();
 
   for (const point of points) {
-    const projected = projectJarvisPoint(point, seconds, size);
+    const projected = projectOrbPoint(point, seconds, size);
     if (projected.opacity <= 0.35 || projected.y < size * 0.16) continue;
 
     const normalizedX = (projected.x / (size * CONTOUR_RADIUS) + 1) / 2;
@@ -36,27 +36,27 @@ function createJarvisDustEmitters(
     .map(([, point]) => point);
 }
 
-export function createJarvisDust(
-  points: readonly JarvisPoint[],
+export function createOrbDust(
+  points: readonly OrbPoint[],
   seconds: number,
   size: number,
-): JarvisProjectedPoint[] {
+): OrbProjectedPoint[] {
   if (size <= 0 || seconds <= 0 || points.length === 0) return [];
 
-  const particles: JarvisProjectedPoint[] = [];
-  const latestEmission = Math.floor(seconds / JARVIS_DUST_INTERVAL);
+  const particles: OrbProjectedPoint[] = [];
+  const latestEmission = Math.floor(seconds / ORB_DUST_INTERVAL);
   const earliestEmission = Math.max(
     0,
-    latestEmission - Math.ceil(JARVIS_DUST_LIFETIME / JARVIS_DUST_INTERVAL),
+    latestEmission - Math.ceil(ORB_DUST_LIFETIME / ORB_DUST_INTERVAL),
   );
 
   for (let event = earliestEmission; event <= latestEmission; event += 1) {
-    const born = event * JARVIS_DUST_INTERVAL;
+    const born = event * ORB_DUST_INTERVAL;
     const age = seconds - born;
-    if (age >= JARVIS_DUST_LIFETIME) continue;
+    if (age >= ORB_DUST_LIFETIME) continue;
 
-    const progress = age / JARVIS_DUST_LIFETIME;
-    const emitters = createJarvisDustEmitters(points, born, size);
+    const progress = age / ORB_DUST_LIFETIME;
+    const emitters = createOrbDustEmitters(points, born, size);
     if (emitters.length === 0) continue;
 
     const source = emitters[(event * EMITTER_STEP) % emitters.length];
@@ -73,5 +73,5 @@ export function createJarvisDust(
     });
   }
 
-  return particles.slice(-JARVIS_DUST_LIMIT);
+  return particles.slice(-ORB_DUST_LIMIT);
 }

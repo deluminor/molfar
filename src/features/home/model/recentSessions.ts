@@ -57,9 +57,7 @@ export function pickRecentSessions(
 ): RecentSessionRow[] {
   return [...rows]
     .filter((row) => !row.archived)
-    .sort(
-      (a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id),
-    )
+    .sort((a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id))
     .slice(0, Math.max(0, limit))
     .map((row) => ({
       id: row.id,

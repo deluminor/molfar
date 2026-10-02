@@ -2,14 +2,14 @@ import { memo, useState, type ReactNode } from "react";
 import {
   readBrandVisual,
   saveBrandVisual,
-} from "../model/brand-visual-preference";
-import type { BrandVisual } from "../model/brand-visual-types";
+} from "../model/brand-visual/preference";
+import type { BrandVisual } from "../model/brand-visual/types";
 import { BrandVisualSelector } from "./BrandVisualSelector";
-import { DragonVisual } from "./DragonVisual";
+import { FireVisual } from "./FireVisual";
 import { HomeCard } from "./HomeCard";
-import { JarvisVisual } from "./JarvisVisual";
+import { OrbVisual } from "./OrbVisual";
 
-export const DragonCard = memo(function DragonCard(): ReactNode {
+export const BrandCard = memo(function BrandCard(): ReactNode {
   const [visual, setVisual] = useState(readBrandVisual);
 
   function selectVisual(next: BrandVisual): void {
@@ -19,7 +19,7 @@ export const DragonCard = memo(function DragonCard(): ReactNode {
 
   return (
     <HomeCard
-      title="MonoCode"
+      title="Vatra"
       className="home-brand-card overflow-hidden"
       actions={<BrandVisualSelector value={visual} onChange={selectVisual} />}
     >
@@ -27,7 +27,7 @@ export const DragonCard = memo(function DragonCard(): ReactNode {
         key={visual}
         className="home-brand-visual relative h-full w-full text-accent"
       >
-        {visual === "dragon" ? <DragonVisual /> : <JarvisVisual />}
+        {visual === "fire" ? <FireVisual /> : <OrbVisual />}
       </div>
     </HomeCard>
   );

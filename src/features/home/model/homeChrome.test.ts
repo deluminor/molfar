@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { clockParts, msUntilNextSecond } from "./clock";
-import { dragonDots, dragonEmitters, dragonTransform } from "./dragon";
-import {
-  DRAGON_COLUMNS,
-  DRAGON_LINES,
-  DRAGON_PADDING,
-  DRAGON_VIEW_WIDTH,
-  DRAGON_VIEW_HEIGHT,
-} from "./dragon-constants";
 import {
   MATRIX_GLYPHS,
   MATRIX_STEP_MS,
@@ -38,74 +30,6 @@ describe("clockParts", () => {
   it("waits only until the next whole second", () => {
     expect(msUntilNextSecond(10_250)).toBe(750);
     expect(msUntilNextSecond(10_000)).toBe(1000);
-  });
-});
-
-describe("dragon mark", () => {
-  it("keeps every dot inside the declared grid", () => {
-    const dots = dragonDots();
-    expect(dots.length).toBeGreaterThan(200);
-    for (const dot of dots) {
-      expect(dot.x).toBeLessThan(DRAGON_COLUMNS);
-      expect(dot.y).toBeLessThan(DRAGON_LINES);
-      expect(dot.intensity).toBeGreaterThanOrEqual(0.35);
-      expect(dot.intensity).toBeLessThanOrEqual(1);
-    }
-    expect(dots.some((dot) => dot.eye)).toBe(true);
-  });
-
-  it("is deterministic between renders", () => {
-    expect(dragonDots()).toEqual(dragonDots());
-  });
-
-  it("exposes bottom emitters for falling pixels", () => {
-    const emitters = dragonEmitters();
-    expect(emitters.length).toBeGreaterThan(10);
-    const byColumn = new Set(emitters.map((emitter) => emitter.x));
-    expect(byColumn.size).toBe(emitters.length);
-  });
-});
-
-describe("dragon fitting", () => {
-  it.each([
-    [160, 140],
-    [320, 420],
-    [600, 180],
-    [180, 600],
-  ])("fits uniformly in a %i by %i card", (width, height) => {
-    const transform = dragonTransform(width, height);
-    const left = transform.x - DRAGON_PADDING * transform.scale;
-    const top = transform.y - DRAGON_PADDING * transform.scale;
-    expect(left).toBeGreaterThanOrEqual(-1e-10);
-    expect(top).toBeGreaterThanOrEqual(-1e-10);
-    expect(left + DRAGON_VIEW_WIDTH * transform.scale).toBeLessThanOrEqual(
-      width + 1e-10,
-    );
-    expect(top + DRAGON_VIEW_HEIGHT * transform.scale).toBeLessThanOrEqual(
-      height + 1e-10,
-    );
-    expect(left).toBeCloseTo((width - DRAGON_VIEW_WIDTH * transform.scale) / 2);
-    expect(top).toBeCloseTo(
-      (height - DRAGON_VIEW_HEIGHT * transform.scale) / 2,
-    );
-  });
-
-  it("collapses safely when the card has no area", () => {
-    expect(dragonTransform(0, 0)).toEqual({ scale: 0, x: 0, y: 0 });
-  });
-
-  it("emits only from occupied cells with no silhouette beneath them", () => {
-    const dots = dragonDots();
-    for (const emitter of dragonEmitters(dots)) {
-      expect(
-        dots.some((dot) => dot.x === emitter.x && dot.y === emitter.y),
-      ).toBe(true);
-      expect(dots.some((dot) => dot.x === emitter.x && dot.y > emitter.y)).toBe(
-        false,
-      );
-    }
-    expect(dragonEmitters([])).toEqual([]);
-    expect(dots.filter((dot) => dot.eye)).toHaveLength(2);
   });
 });
 

@@ -67,7 +67,7 @@ function draw(scene: Scene): void {
       const trailAlpha = isHead
         ? 0.95
         : Math.max(0.03, 0.8 * Math.pow(1 - t, 1.8));
-      
+
       ctx.globalAlpha = trailAlpha * fadeIn;
       ctx.fillStyle = isHead ? scene.head : scene.accent;
 
@@ -81,7 +81,7 @@ function draw(scene: Scene): void {
       // Bind the glyph to the offset so the character stays the same as it falls.
       // We use index and offset to deterministically pick a glyph from the pre-generated array.
       const glyphRow = (index * 7 + offset) % rows;
-      
+
       // Randomly mutate glyphs slightly
       if (Math.random() < GLYPH_MUTATION) {
         glyphs[index][glyphRow] = randomGlyph();

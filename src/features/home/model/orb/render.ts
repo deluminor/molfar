@@ -1,15 +1,15 @@
 import {
-  JARVIS_CENTER_OFFSET,
-  JARVIS_ORBIT_TILTS,
-  JARVIS_SURFACE_CURVES,
-} from "./jarvis-constants";
-import { jarvisOrbitPoints, projectJarvisPoint } from "./jarvis-geometry";
-import { createJarvisDust } from "./jarvis-particles";
-import type { JarvisPoint } from "./jarvis-types";
+  ORB_CENTER_OFFSET,
+  ORB_ORBIT_TILTS,
+  ORB_SURFACE_CURVES,
+} from "./constants";
+import { orbitPoints, projectOrbPoint } from "./geometry";
+import { createOrbDust } from "./particles";
+import type { OrbPoint } from "./types";
 
-export function drawJarvisFrame(
+export function drawOrbFrame(
   context: CanvasRenderingContext2D,
-  points: JarvisPoint[],
+  points: OrbPoint[],
   width: number,
   height: number,
   seconds: number,
@@ -21,7 +21,7 @@ export function drawJarvisFrame(
   if (size <= 0) return;
 
   context.save();
-  context.translate(width / 2, height / 2 - size * JARVIS_CENTER_OFFSET);
+  context.translate(width / 2, height / 2 - size * ORB_CENTER_OFFSET);
   context.fillStyle = color;
   context.strokeStyle = color;
 
@@ -40,10 +40,10 @@ export function drawJarvisFrame(
   context.lineWidth = Math.max(0.55, size * 0.0011);
   context.globalAlpha = 0.12;
 
-  for (const curve of JARVIS_SURFACE_CURVES) {
+  for (const curve of ORB_SURFACE_CURVES) {
     context.beginPath();
     curve.forEach((point, index) => {
-      const projected = projectJarvisPoint(point, seconds, size);
+      const projected = projectOrbPoint(point, seconds, size);
 
       if (index === 0) context.moveTo(projected.x, projected.y);
       else context.lineTo(projected.x, projected.y);
@@ -52,7 +52,7 @@ export function drawJarvisFrame(
   }
 
   for (const point of points) {
-    const projected = projectJarvisPoint(point, seconds, size);
+    const projected = projectOrbPoint(point, seconds, size);
     context.globalAlpha = projected.opacity;
     context.beginPath();
     context.arc(projected.x, projected.y, projected.radius, 0, Math.PI * 2);
@@ -61,8 +61,8 @@ export function drawJarvisFrame(
 
   context.lineWidth = Math.max(0.7, size * 0.0018);
 
-  for (const tilt of JARVIS_ORBIT_TILTS) {
-    const orbit = jarvisOrbitPoints(tilt, seconds, size);
+  for (const tilt of ORB_ORBIT_TILTS) {
+    const orbit = orbitPoints(tilt, seconds, size);
     context.beginPath();
 
     orbit.forEach((point, index) => {
@@ -82,7 +82,7 @@ export function drawJarvisFrame(
   }
 
   if (!reducedMotion) {
-    for (const particle of createJarvisDust(points, seconds, size)) {
+    for (const particle of createOrbDust(points, seconds, size)) {
       context.globalAlpha = particle.opacity;
       context.beginPath();
       context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);

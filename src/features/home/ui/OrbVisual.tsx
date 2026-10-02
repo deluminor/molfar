@@ -1,25 +1,25 @@
 import { memo, useId, type ReactNode } from "react";
 import {
-  JARVIS_CENTER_OFFSET,
-  JARVIS_ORBIT_TILTS,
-  JARVIS_SURFACE_CURVES,
-} from "../model/jarvis-constants";
+  ORB_CENTER_OFFSET,
+  ORB_ORBIT_TILTS,
+  ORB_SURFACE_CURVES,
+} from "../model/orb/constants";
 import {
-  createJarvisPoints,
-  jarvisOrbitPoints,
-  projectJarvisPoint,
-} from "../model/jarvis-geometry";
-import { useJarvisAnimation } from "./use-jarvis-animation";
+  createOrbPoints,
+  orbitPoints,
+  projectOrbPoint,
+} from "../model/orb/geometry";
+import { useOrbAnimation } from "../hooks/useOrbAnimation";
 
-export const JarvisVisual = memo(function JarvisVisual(): ReactNode {
+export const OrbVisual = memo(function OrbVisual(): ReactNode {
   const coreId = useId();
-  const { canvasRef, canvasReady } = useJarvisAnimation();
+  const { canvasRef, canvasReady } = useOrbAnimation();
 
   return (
     <div
       className="relative h-full w-full overflow-hidden text-accent"
       role="img"
-      aria-label="Jarvis holographic sphere with luminous orbiting arcs"
+      aria-label="Orb holographic sphere with luminous orbiting arcs"
     >
       {!canvasReady && (
         <svg
@@ -33,14 +33,14 @@ export const JarvisVisual = memo(function JarvisVisual(): ReactNode {
               <stop offset="1" stopColor="currentColor" stopOpacity="0" />
             </radialGradient>
           </defs>
-          <g transform={`translate(0 ${-500 * JARVIS_CENTER_OFFSET})`}>
+          <g transform={`translate(0 ${-500 * ORB_CENTER_OFFSET})`}>
             <circle r="52.5" fill={`url(#${coreId})`} />
-            {JARVIS_SURFACE_CURVES.map((curve, index) => (
+            {ORB_SURFACE_CURVES.map((curve, index) => (
               <path
                 key={index}
                 d={curve
                   .map((point, pointIndex) => {
-                    const projected = projectJarvisPoint(point, 0, 500);
+                    const projected = projectOrbPoint(point, 0, 500);
                     return `${pointIndex === 0 ? "M" : "L"}${projected.x},${projected.y}`;
                   })
                   .join(" ")}
@@ -51,8 +51,8 @@ export const JarvisVisual = memo(function JarvisVisual(): ReactNode {
               />
             ))}
             <g fill="currentColor">
-              {createJarvisPoints().map((point, index) => {
-                const projected = projectJarvisPoint(point, 0, 500);
+              {createOrbPoints().map((point, index) => {
+                const projected = projectOrbPoint(point, 0, 500);
                 return (
                   <circle
                     key={index}
@@ -64,10 +64,10 @@ export const JarvisVisual = memo(function JarvisVisual(): ReactNode {
                 );
               })}
             </g>
-            {JARVIS_ORBIT_TILTS.map((tilt) => (
+            {ORB_ORBIT_TILTS.map((tilt) => (
               <polyline
                 key={tilt}
-                points={jarvisOrbitPoints(tilt, 0, 500)
+                points={orbitPoints(tilt, 0, 500)
                   .map((point) => `${point.x},${point.y}`)
                   .join(" ")}
                 fill="none"

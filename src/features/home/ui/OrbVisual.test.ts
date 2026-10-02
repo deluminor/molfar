@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { JarvisVisual } from "./JarvisVisual";
+import { OrbVisual } from "./OrbVisual";
 
 let root: ReturnType<typeof createRoot>;
 let container: HTMLDivElement;
@@ -89,7 +89,7 @@ afterEach(async () => {
 
 it("renders a complete static SVG when canvas is unavailable", async () => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
-  await act(async () => root.render(createElement(JarvisVisual)));
+  await act(async () => root.render(createElement(OrbVisual)));
   expect(container.querySelectorAll("circle").length).toBeGreaterThan(700);
   expect(container.querySelectorAll("polyline")).toHaveLength(3);
   expect(frames.size).toBe(0);
@@ -97,14 +97,14 @@ it("renders a complete static SVG when canvas is unavailable", async () => {
 
 it("draws a complete reduced-motion frame without scheduling animation", async () => {
   reduced = true;
-  await act(async () => root.render(createElement(JarvisVisual)));
+  await act(async () => root.render(createElement(OrbVisual)));
   expect(arc.mock.calls.length).toBeGreaterThan(700);
   expect(frames.size).toBe(0);
   expect(container.querySelector("svg")).toBeNull();
 });
 
 it("caps DPR, pauses hidden work, resizes, and cleans up the loop", async () => {
-  await act(async () => root.render(createElement(JarvisVisual)));
+  await act(async () => root.render(createElement(OrbVisual)));
   expect(container.querySelector("canvas")?.width).toBe(600);
   expect(setTransform).toHaveBeenLastCalledWith(2, 0, 0, 2, 0, 0);
   expect(frames.size).toBe(1);
@@ -122,7 +122,7 @@ it("caps DPR, pauses hidden work, resizes, and cleans up the loop", async () => 
 });
 
 it("removes falling dust when reduced motion is enabled mid-animation", async () => {
-  await act(async () => root.render(createElement(JarvisVisual)));
+  await act(async () => root.render(createElement(OrbVisual)));
   arc.mockClear();
   fill.mockClear();
   for (let step = 0; step < 12; step += 1) {

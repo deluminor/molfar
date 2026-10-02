@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { JARVIS_MAX_DPR } from "../model/jarvis-constants";
-import { createJarvisPoints } from "../model/jarvis-geometry";
-import { drawJarvisFrame } from "../model/jarvis-render";
-import type { JarvisAnimation } from "../model/jarvis-types";
+import { ORB_MAX_DPR } from "../model/orb/constants";
+import { createOrbPoints } from "../model/orb/geometry";
+import { drawOrbFrame } from "../model/orb/render";
+import type { OrbAnimation } from "../model/orb/types";
 
-export function useJarvisAnimation(): JarvisAnimation {
+export function useOrbAnimation(): OrbAnimation {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
 
@@ -15,7 +15,7 @@ export function useJarvisAnimation(): JarvisAnimation {
     const context = canvas.getContext("2d");
     if (!context) return;
 
-    const points = createJarvisPoints();
+    const points = createOrbPoints();
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
     let last = 0;
@@ -24,7 +24,7 @@ export function useJarvisAnimation(): JarvisAnimation {
     let height = 0;
 
     const draw = (): void => {
-      drawJarvisFrame(
+      drawOrbFrame(
         context,
         points,
         width,
@@ -48,7 +48,7 @@ export function useJarvisAnimation(): JarvisAnimation {
 
       width = rect.width;
       height = rect.height;
-      const ratio = Math.min(JARVIS_MAX_DPR, window.devicePixelRatio || 1);
+      const ratio = Math.min(ORB_MAX_DPR, window.devicePixelRatio || 1);
 
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));

@@ -1,4 +1,4 @@
-export type BrandVisual = "dragon" | "jarvis";
+export type BrandVisual = "fire" | "orb";
 
 export interface BrandVisualSelectorProps {
   value: BrandVisual;

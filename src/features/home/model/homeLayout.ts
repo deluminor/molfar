@@ -1,6 +1,6 @@
 /** Persistable Home dashboard grid layout (react-grid-layout units). */
 
-export const HOME_LAYOUT_STORAGE_KEY = "monocode.homeLayout.v1";
+export const HOME_LAYOUT_STORAGE_KEY = "vatra.homeLayout.v1";
 
 export const HOME_LAYOUT_COLS = 12;
 export const HOME_LAYOUT_ROW_HEIGHT = 40;
@@ -93,7 +93,10 @@ function clampItem(raw: {
   const wRaw = readFiniteNumber(raw.w);
   const hRaw = readFiniteNumber(raw.h);
   if (xRaw == null || yRaw == null || wRaw == null || hRaw == null) return null;
-  const w = Math.max(defaults.minW, Math.min(HOME_LAYOUT_COLS, Math.round(wRaw)));
+  const w = Math.max(
+    defaults.minW,
+    Math.min(HOME_LAYOUT_COLS, Math.round(wRaw)),
+  );
   const h = Math.max(defaults.minH, Math.round(hRaw));
   const x = Math.max(0, Math.min(HOME_LAYOUT_COLS - w, Math.round(xRaw)));
   const y = Math.max(0, Math.round(yRaw));

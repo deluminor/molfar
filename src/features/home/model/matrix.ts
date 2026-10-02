@@ -42,8 +42,7 @@ export function advanceColumns(
   deltaMs = MATRIX_STEP_MS,
   random: Random = Math.random,
 ): MatrixColumn[] {
-  const step =
-    Math.min(200, Math.max(0, deltaMs)) / MATRIX_STEP_MS;
+  const step = Math.min(200, Math.max(0, deltaMs)) / MATRIX_STEP_MS;
   return columns.map((column) => {
     const head = column.head + column.speed * step;
     return head - column.length > rows

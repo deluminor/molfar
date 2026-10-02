@@ -25,7 +25,9 @@ export function ClockCard(): ReactNode {
         >
           {time}
           {period ? (
-            <span className="ml-1 mt-1 text-sm font-medium text-accent/70">{period}</span>
+            <span className="ml-1 mt-1 text-sm font-medium text-accent/70">
+              {period}
+            </span>
           ) : null}
         </time>
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-content/40">
