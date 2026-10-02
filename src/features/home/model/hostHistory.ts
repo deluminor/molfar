@@ -1,8 +1,4 @@
-import {
-  clampPercent,
-  loadAsPercent,
-  type HostStats,
-} from "./hostStats";
+import { clampPercent, loadAsPercent, type HostStats } from "./hostStats";
 
 export { clampPercent } from "./hostStats";
 
@@ -44,9 +40,7 @@ export function pushHostSample(
  * Map process counts into a 0–100 sparkline relative to the max in the window
  * (and a soft floor so a flat line does not sit on zero).
  */
-export function processSeriesAsPercent(
-  counts: readonly number[],
-): number[] {
+export function processSeriesAsPercent(counts: readonly number[]): number[] {
   if (counts.length === 0) return [];
   const peak = Math.max(...counts, 1);
   return counts.map((count) => clampPercent((count / peak) * 100));
@@ -73,13 +67,15 @@ export function sparklineGeometry(
     return { line: "", area: "" };
   }
   const points = values.map((raw, index) => {
-    const x =
-      values.length === 1 ? w / 2 : (index / (values.length - 1)) * w;
+    const x = values.length === 1 ? w / 2 : (index / (values.length - 1)) * w;
     const y = h - (clampPercent(raw) / 100) * h;
     return { x, y };
   });
   const line = points
-    .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .map(
+      (point, index) =>
+        `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`,
+    )
     .join(" ");
   const first = points[0];
   const last = points[points.length - 1];

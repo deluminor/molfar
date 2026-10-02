@@ -16,7 +16,7 @@ it.each(["cursor", "pi", "fx"] as const)(
   "does not execute an unrelated ambiguous %s binary while resolving providers",
   async (provider) => {
     const directory = mkdtempSync(
-      join(tmpdir(), "monocode-provider-identity-"),
+      join(tmpdir(), "vatra-provider-identity-"),
     );
     const name = provider === "cursor" ? "agent" : provider;
     const candidate = join(directory, name);
@@ -43,7 +43,7 @@ it.each(["cursor", "pi", "fx"] as const)(
 it.runIf(process.platform !== "win32")(
   "recognizes a Cursor agent shim without executing it",
   async () => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-cursor-identity-"));
+    const directory = mkdtempSync(join(tmpdir(), "vatra-cursor-identity-"));
     const targetDirectory = join(directory, "cursor-agent-package");
     const target = join(targetDirectory, "cursor-agent");
     const candidate = join(directory, "agent");

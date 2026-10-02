@@ -1,15 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Automation } from "../../automations/model/automations";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
-import {
-  buildHomeStatus,
-  formatNextDueAt,
-} from "./homeStatus";
-import {
-  formatLoad,
-  formatPercent,
-  formatProcessCount,
-} from "./hostStats";
+import { buildHomeStatus, formatNextDueAt } from "./homeStatus";
+import { formatLoad, formatPercent, formatProcessCount } from "./hostStats";
 import {
   countEnabledAutomations,
   nextDueAutomationAt,

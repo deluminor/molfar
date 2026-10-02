@@ -35,7 +35,10 @@ export function SurfaceHeader({
         <OverlayNav onBack={onClose} onToggleSidebar={onToggleSidebar} />
       )}
       <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-[13px]">
-        <Icon className="size-3.5 shrink-0 text-content/45" strokeWidth={1.75} />
+        <Icon
+          className="size-3.5 shrink-0 text-content/45"
+          strokeWidth={1.75}
+        />
         <span className="min-w-0 truncate text-content">{title}</span>
       </div>
       {actions}

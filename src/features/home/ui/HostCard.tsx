@@ -101,7 +101,11 @@ export function HostCard({ stats, history, error }: Props): ReactNode {
     <HomeCard title="Host">
       <div className="flex h-full flex-col justify-center gap-2.5">
         <div className="grid min-h-0 grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
-          <MetricChart label="CPU" value={stats.cpuPercent} series={cpuSeries} />
+          <MetricChart
+            label="CPU"
+            value={stats.cpuPercent}
+            series={cpuSeries}
+          />
           <MetricChart
             label="RAM"
             value={stats.memoryPercent}

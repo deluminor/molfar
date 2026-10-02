@@ -37,10 +37,7 @@ export function clampPercent(value: number): number {
 }
 
 /** Load average as a 0–100 share of logical cores (100% ≈ fully loaded). */
-export function loadAsPercent(
-  load: number | null,
-  cpuCount: number,
-): number {
+export function loadAsPercent(load: number | null, cpuCount: number): number {
   if (load == null || !Number.isFinite(load) || cpuCount <= 0) return 0;
   return clampPercent((load / cpuCount) * 100);
 }

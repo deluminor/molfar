@@ -40,7 +40,9 @@ export function SessionsCard({
   if (sessions.length === 0) {
     return (
       <HomeCard title="Sessions">
-        <p className="font-mono text-[12px] text-content/45">No recent sessions</p>
+        <p className="font-mono text-[12px] text-content/45">
+          No recent sessions
+        </p>
       </HomeCard>
     );
   }

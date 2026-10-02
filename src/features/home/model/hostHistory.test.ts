@@ -9,8 +9,7 @@ import {
 import { loadAsPercent, type HostStats } from "./hostStats";
 
 function sample(
-  partial: Partial<HostStats> &
-    Pick<HostStats, "cpuPercent" | "memoryPercent">,
+  partial: Partial<HostStats> & Pick<HostStats, "cpuPercent" | "memoryPercent">,
 ): HostStats {
   return {
     swapPercent: 0,
@@ -48,7 +47,11 @@ describe("pushHostSample", () => {
   });
 
   it("trims to the history limit, keeping the newest", () => {
-    let history = pushHostSample([], sample({ cpuPercent: 1, memoryPercent: 1 }), 1);
+    let history = pushHostSample(
+      [],
+      sample({ cpuPercent: 1, memoryPercent: 1 }),
+      1,
+    );
     for (let i = 2; i <= HOST_HISTORY_LIMIT + 5; i++) {
       history = pushHostSample(
         history,

@@ -187,7 +187,7 @@ fn fetch_antigravity_usage_sync() -> UsageFetch {
         &antigravity_body(antigravity_project_id().as_deref()),
         false,
     );
-    // MonoCode never refreshes another CLI's OAuth token; agy renews it on use.
+    // Vatra never refreshes another CLI's OAuth token; agy renews it on use.
     if result.http_status == Some(401) {
         return fetch_result(
             "unavailable",

@@ -14,6 +14,7 @@ import {
   type RemoteMachine,
   type SshSetup,
 } from "../model/protocol";
+import { hostUpdateReason } from "../model/hostUpdate";
 
 const input =
   "w-full rounded-lg border border-content/15 bg-content/3 px-3 py-2 text-[13px] outline-none focus:border-content/35";
@@ -134,12 +135,9 @@ export function ConnectionsSettings() {
                 throw new Error("Host identity changed");
               if (!host.providers.length)
                 label = "Connected · install a supported provider on the host";
-              const update =
-                !host.capabilities?.includes("workspace.run") ||
-                !host.capabilities?.includes("git.worktreeCreate");
-              if (update)
-                label =
-                  "Connected · host update needed for Explorer and Changes";
+              const reason = hostUpdateReason(host);
+              const update = reason != null;
+              if (reason) label = `Connected · ${reason}`;
               if (!disposed)
                 setNeedsUpdate((current) => ({
                   ...current,
@@ -219,7 +217,7 @@ export function ConnectionsSettings() {
           await remoteRequest(machine.id, "devices.revokeSelf");
         } catch (reason) {
           throw new Error(
-            `Could not revoke access, so ${machine.name} was not removed: ${String(reason)}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with monocode-host devices and monocode-host revoke <device-id>.`,
+            `Could not revoke access, so ${machine.name} was not removed: ${String(reason)}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with vatra-host devices and vatra-host revoke <device-id>.`,
           );
         }
       }
@@ -245,7 +243,7 @@ export function ConnectionsSettings() {
           </h2>
           <p className="mt-1 text-[12px] leading-relaxed text-content/45">
             Run agents on another computer and return to them from your laptop.
-            The host keeps working when you close MonoCode here.
+            The host keeps working when you close Vatra here.
           </p>
         </div>
         {!adding && (
@@ -343,11 +341,11 @@ export function ConnectionsSettings() {
                   <p>
                     To stop the host and turn off its background service, run{" "}
                     <code className="rounded bg-content/10 px-1">
-                      ~/.monocode-host/bin/monocode-host service uninstall
+                      ~/.vatra-host/bin/vatra-host service uninstall
                     </code>{" "}
                     on that machine (
                     <code className="rounded bg-content/10 px-1">
-                      %USERPROFILE%\.monocode-host\bin\monocode-host.cmd service
+                      %USERPROFILE%\.vatra-host\bin\vatra-host.cmd service
                       uninstall
                     </code>{" "}
                     on Windows). Its sessions and history are kept.
@@ -444,7 +442,7 @@ export function ConnectionsSettings() {
             </label>
           </details>
           <p className="text-[12px] leading-relaxed text-content/45">
-            MonoCode installs and starts its background host, then connects
+            Vatra installs and starts its background host, then connects
             securely. Your SSH keys and config are used automatically. Enable
             SSH on the host and sign in to Codex or Claude Code there. On
             Windows and Mac, keep the host’s desktop account signed in and the

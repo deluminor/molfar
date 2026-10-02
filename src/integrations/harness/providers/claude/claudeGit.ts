@@ -62,7 +62,7 @@ export async function generateClaudePrContent(
     });
     parsed = parsePrContent(output);
   } catch (error) {
-    console.debug("[monocode] pr content", error);
+    console.debug("[vatra] pr content", error);
   }
   const title =
     parsed?.title ||
@@ -88,7 +88,7 @@ export async function generateClaudeBranchName(
     });
     return parseBranchName(output);
   } catch (error) {
-    console.debug("[monocode] branch name", error);
+    console.debug("[vatra] branch name", error);
     return null;
   }
 }

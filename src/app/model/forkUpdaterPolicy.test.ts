@@ -46,7 +46,7 @@ describe("fork updater kill-switch", () => {
     expect(check).not.toHaveBeenCalled();
     expect(message).toHaveBeenCalledWith(
       expect.stringContaining("disabled in this fork"),
-      { title: "MonoCode" },
+      { title: "Vatra" },
     );
   });
 });

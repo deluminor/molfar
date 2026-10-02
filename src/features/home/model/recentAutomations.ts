@@ -28,10 +28,7 @@ export function pickRecentAutomations(
   limit: number,
 ): RecentAutomationRow[] {
   return [...automations]
-    .sort(
-      (a, b) =>
-        b.createdAt - a.createdAt || a.id.localeCompare(b.id),
-    )
+    .sort((a, b) => b.createdAt - a.createdAt || a.id.localeCompare(b.id))
     .slice(0, Math.max(0, limit))
     .map((automation) => ({
       id: automation.id,

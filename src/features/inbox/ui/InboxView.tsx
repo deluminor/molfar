@@ -47,6 +47,7 @@ import { Popover } from "../../../shared/ui/Popover";
 import { IconButton, OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
+import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import {
@@ -103,7 +104,7 @@ import {
   type InboxFilters,
   type InboxSource,
 } from "../model/inboxFilters";
-import { ConfluenceInboxPanel } from "./ConfluenceInboxPanel";
+import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import { IS_MAC } from "../../../platform/tauri/platform";
@@ -214,9 +215,6 @@ const ACTION_GHOST = `${ACTION} h-7 text-content/70 hover:bg-content/10 hover:te
 const DEFAULT_WIDTH = 280;
 const LINKED_PANEL_MIN_WIDTH = 360;
 const LINKED_PANEL_DEFAULT_WIDTH = 520;
-
-let rememberedWidth = DEFAULT_WIDTH;
-let rememberedLinkedPanelWidth = LINKED_PANEL_DEFAULT_WIDTH;
 
 type InboxProjectOption = {
   path: string;
@@ -497,10 +495,8 @@ export function InboxView({
     min: MIN_WIDTH,
     max: () => Math.min(MAX_WIDTH, Math.round(window.innerWidth * 0.5)),
     defaultWidth: DEFAULT_WIDTH,
-    initial: rememberedWidth,
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
+    initial: DEFAULT_WIDTH,
+    storageKey: paneWidthStorageKey("inboxList"),
   });
 
   useEffect(() => {
@@ -1289,11 +1285,9 @@ export function LinkedWorkItemPanel({
         ),
       ),
     defaultWidth: LINKED_PANEL_DEFAULT_WIDTH,
-    initial: rememberedLinkedPanelWidth,
+    initial: LINKED_PANEL_DEFAULT_WIDTH,
     direction: "left",
-    onCommit: (width) => {
-      rememberedLinkedPanelWidth = width;
-    },
+    storageKey: paneWidthStorageKey("inboxLinkedPanel"),
   });
 
   useEffect(() => {

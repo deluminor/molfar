@@ -363,7 +363,7 @@ describe("model picker", () => {
       },
     ]);
     localStorage.setItem(
-      "monocode.favoriteModels",
+      "vatra.favoriteModels",
       JSON.stringify([
         "cursor:auto",
         "cursor:muse-spark-1.3",

@@ -117,23 +117,22 @@ fn menu_item(
     builder.build(app)
 }
 
+const REPOSITORY_URL: &str = "https://github.com/deluminor/vatra";
+
 pub fn dispatch(app: &AppHandle, id: &str) {
     match id {
-        "help_website" => {
-            let _ = open::that("https://usemono.dev");
-        }
         "help_github" => {
-            let _ = open::that("https://github.com/hardbeat920/monocode");
+            let _ = open::that(REPOSITORY_URL);
         }
         "help_report_bug" => {
-            let _ = open::that(
-                "https://github.com/hardbeat920/monocode/issues/new?template=bug_report.yml",
-            );
+            let _ = open::that(format!(
+                "{REPOSITORY_URL}/issues/new?template=bug_report.yml"
+            ));
         }
         "help_request_feature" => {
-            let _ = open::that(
-                "https://github.com/hardbeat920/monocode/issues/new?template=feature_request.yml",
-            );
+            let _ = open::that(format!(
+                "{REPOSITORY_URL}/issues/new?template=feature_request.yml"
+            ));
         }
         "new_window" => {
             let _ = crate::window::open_new_window(app);
@@ -203,7 +202,7 @@ fn build(
         overrides,
     )?;
     // Fork policy: keep in sync with src/app/model/forkPolicy.ts (APP_UPDATER_DISABLED).
-    let app_updater_disabled = true;
+    let app_updater_disabled = false;
     let check_for_updates = if !app_updater_disabled {
         Some(MenuItemBuilder::with_id("check_for_updates", "Check for Updates…").build(app)?)
     } else {
@@ -516,10 +515,10 @@ fn build(
 
     #[cfg(target_os = "macos")]
     {
-        let quit = MenuItemBuilder::with_id("quit", "Quit MonoCode")
+        let quit = MenuItemBuilder::with_id("quit", "Quit Vatra")
             .accelerator("CmdOrCtrl+Q")
             .build(app)?;
-        let mut app_menu = SubmenuBuilder::new(app, "MonoCode")
+        let mut app_menu = SubmenuBuilder::new(app, "Vatra")
             .about(Some(AboutMetadata::default()))
             .separator()
             .item(&open_settings);
@@ -542,13 +541,11 @@ fn build(
             .minimize()
             .maximize()
             .build()?;
-        let website = MenuItemBuilder::with_id("help_website", "MonoCode Website").build(app)?;
         let github = MenuItemBuilder::with_id("help_github", "View on GitHub").build(app)?;
         let report_bug = MenuItemBuilder::with_id("help_report_bug", "Report a Bug…").build(app)?;
         let request_feature =
             MenuItemBuilder::with_id("help_request_feature", "Request a Feature…").build(app)?;
         let help = SubmenuBuilder::with_id(app, tauri::menu::HELP_SUBMENU_ID, "Help")
-            .item(&website)
             .item(&github)
             .separator()
             .item(&report_bug)

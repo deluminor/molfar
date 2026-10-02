@@ -82,7 +82,7 @@ describe("working agents threshold", () => {
     expect(clampLiveAgentsMinCount(99)).toBe(LIVE_AGENTS_MIN_COUNT_MAX);
     expect(clampLiveAgentsMinCount(2.6)).toBe(3);
 
-    localStorage.setItem("monocode.liveAgentsMinCount", "nope");
+    localStorage.setItem("vatra.liveAgentsMinCount", "nope");
     expect(loadLiveAgentsMinCount()).toBe(LIVE_AGENTS_MIN_COUNT_DEFAULT);
   });
 });

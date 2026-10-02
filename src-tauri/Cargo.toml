@@ -1,15 +1,15 @@
 [package]
-name = "monocode"
+name = "vatra"
 version.workspace = true
 edition.workspace = true
-description = "MonoCode — one UI for every agent harness"
+description = "Vatra — one UI for every agent harness"
 authors = ["Nick"]
-repository = "https://github.com/hardbeat920/monocode"
-homepage = "https://usemono.dev"
+repository = "https://github.com/deluminor/vatra"
+homepage = "https://github.com/deluminor/vatra"
 license.workspace = true
 
 [lib]
-name = "monocode_lib"
+name = "vatra_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

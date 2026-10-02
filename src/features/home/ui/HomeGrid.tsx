@@ -28,8 +28,7 @@ type Props = {
   matrix: ReactNode;
 };
 
-const ITEM =
-  "home-grid-item grid min-h-0 min-w-0 [&>*]:h-full [&>*]:min-h-0";
+const ITEM = "home-grid-item grid min-h-0 min-w-0 [&>*]:h-full [&>*]:min-h-0";
 
 export function HomeGrid({
   layout,

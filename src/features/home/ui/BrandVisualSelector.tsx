@@ -1,15 +1,25 @@
 import type { ReactNode } from "react";
-import type { BrandVisualSelectorProps } from "../model/brand-visual-types";
+import type {
+  BrandVisual,
+  BrandVisualSelectorProps,
+} from "../model/brand-visual/types";
+
+const NEXT_VISUAL: Record<BrandVisual, BrandVisual> = {
+  fire: "orb",
+  orb: "fire",
+};
+
+const VISUAL_NAME: Record<BrandVisual, string> = {
+  fire: "Fire",
+  orb: "Orb",
+};
 
 export function BrandVisualSelector({
   value,
   onChange,
 }: BrandVisualSelectorProps): ReactNode {
-  const nextVisual = value === "dragon" ? "jarvis" : "dragon";
-  const label =
-    value === "dragon"
-      ? "dragon: switch to Jarvis"
-      : "jarvis: switch to Dragon";
+  const nextVisual = NEXT_VISUAL[value];
+  const label = `${value}: switch to ${VISUAL_NAME[nextVisual]}`;
 
   function cycleVisual(): void {
     onChange(nextVisual);

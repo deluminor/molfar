@@ -5,10 +5,10 @@ import { normalizeProjectPath } from "../../projects/model/recents";
 import { orderByIds } from "../../../shared/lib/reorder";
 import { TAB_GROUP_COLORS } from "../../workspace/model/tabGroups";
 
-const KEY = "monocode.sessionFolders";
-const CHANGE_EVENT = "monocode:session-folders-change";
-const PINNED_COLLAPSED_KEY = "monocode.pinnedSessionsCollapsed";
-const REMINDERS_COLLAPSED_KEY = "monocode.reminderSessionsCollapsed";
+const KEY = "vatra.sessionFolders";
+const CHANGE_EVENT = "vatra:session-folders-change";
+const PINNED_COLLAPSED_KEY = "vatra.pinnedSessionsCollapsed";
+const REMINDERS_COLLAPSED_KEY = "vatra.reminderSessionsCollapsed";
 
 export type SessionFolder = {
   id: string;

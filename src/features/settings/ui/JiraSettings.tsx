@@ -15,10 +15,8 @@ import {
   type JiraProject,
   type JiraStatus,
 } from "../../inbox/model/jira";
-import {
-  clearConfluenceCache,
-  notifyConfluenceChange,
-} from "../../inbox/model/confluence";
+import { clearConfluenceCache } from "../../inbox/model/confluence/api";
+import { notifyConfluenceChange } from "../../inbox/model/confluence/hiddenSpaces";
 
 export function JiraSettings() {
   const [status, setStatus] = useState<JiraStatus | null>(null);

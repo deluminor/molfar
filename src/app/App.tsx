@@ -577,11 +577,6 @@ import {
   handleEditorFindKey,
   openFindInActiveEditor,
 } from "../features/files/editor/editorSearch";
-import { HomeView } from "../features/home/ui/HomeView";
-import {
-  LocalSurfaceRailActions,
-  type LocalSurfaceId,
-} from "../features/home/ui/LocalSurfaceRailActions";
 import {
   azureDevOpsWorkItemDetails,
   peekAzureDevOpsWorkItemDetails,
@@ -605,7 +600,10 @@ import type { SettingsAnchor } from "../features/settings/ui/SettingsView";
 import { ProjectTerminalDock } from "../features/terminal/ui/ProjectTerminalDock";
 import { PaneTree } from "../features/workspace/ui/PaneTree";
 import { lazySurface } from "../shared/ui/lazySurface";
+import { useLocalSurfaceActions } from "./model/local-surfaces/useLocalSurfaceActions";
+import { useLocalSurfaceState } from "./model/local-surfaces/useLocalSurfaceState";
 import { preloadNavigationWhenIdle } from "./model/preloadNavigation";
+import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 
 import { inboxTrackerDescription } from "../features/inbox/model/inboxContext";
 
@@ -617,18 +615,13 @@ import {
   pendingLinkedWorkItemUpdateCard,
   type LinkedWorkItemUpdateCard,
 } from "../features/inbox/model/linkedWorkItemActivity";
-import { KnowledgeView } from "../features/knowledge/ui/KnowledgeView";
 import {
   linkedWorkItemFromAutomationEvent,
   linkedWorkItemFromInboxItem,
   resolveLinkedWorkItem,
 } from "../features/sessions/model/sessionWorkItem";
 
-import {
-  loadRailSurfaces,
-  RAIL_SURFACES_DEFAULT,
-  subscribeRailSurfaces,
-} from "../features/settings/model/projectRail";
+import { loadRailSurfaces } from "../features/settings/model/projectRail";
 import {
   keybindingPressed,
   loadAutosave,
@@ -650,8 +643,6 @@ import {
   type FollowUpBehavior,
   type SettingsSectionId,
 } from "../features/settings/model/settings";
-
-import { UsageView } from "../features/usage/ui/UsageView";
 
 import {
   planProjectOpenRun,
@@ -895,7 +886,7 @@ function filesInWorkspaceTabs(tabs: readonly WorkspaceTab[]): FilePaneTab[] {
 
 /** Native sheet. `window.confirm` is swallowed when a macOS menu accelerator fires. */
 function confirmDiscardUnsaved(message: string): Promise<boolean> {
-  return ask(message, { title: "MonoCode", kind: "warning" });
+  return ask(message, { title: "Vatra", kind: "warning" });
 }
 
 function titleTabsEqual(a: TitleTab[], b: TitleTab[]): boolean {
@@ -1042,19 +1033,19 @@ function Workspace({
     useState<InboxSessionPortal | null>(null);
   const openingInboxSessions = useRef(new Map<string, Promise<string>>());
   const [notesViewOpen, setNotesViewOpen] = useState(false);
-  const [automationsSurfaceOpen, setAutomationsSurfaceOpen] = useState(false);
-  const [automationsFocusId, setAutomationsFocusId] = useState<string | null>(
-    null,
-  );
-  const [localSurface, setLocalSurface] = useState<LocalSurfaceId | null>(null);
-
-  const automationsViewOpen = automationsSurfaceOpen || localSurface !== null;
-  const setAutomationsViewOpen = useCallback((open: boolean) => {
-    setLocalSurface(null);
-    if (!open) setAutomationsFocusId(null);
-    setAutomationsSurfaceOpen(open);
-  }, []);
-
+  const localSurfaces = useLocalSurfaceState();
+  const {
+    localSurface,
+    setLocalSurface,
+    localSurfaceRef,
+    automationsSurfaceOpen,
+    setAutomationsSurfaceOpen,
+    automationsSurfaceOpenRef,
+    automationsFocusId,
+    automationsViewOpen,
+    setAutomationsViewOpen,
+    railSurfaces,
+  } = localSurfaces;
   const [inspectedWorkerId, setInspectedWorkerId] = useState<string | null>(
     null,
   );
@@ -1079,12 +1070,6 @@ function Workspace({
     loadLiveAgentsEnabled,
     () => true,
   );
-  const railSurfaces = useSyncExternalStore(
-    subscribeRailSurfaces,
-    loadRailSurfaces,
-    () => RAIL_SURFACES_DEFAULT,
-  );
-
   const [collapsedProjectRailMode, setCollapsedProjectRailMode] =
     useState<CollapsedProjectRailMode>(loadCollapsedProjectRailMode);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1211,10 +1196,6 @@ function Workspace({
   notesViewOpenRef.current = notesViewOpen;
   const automationsViewOpenRef = useRef(automationsViewOpen);
   automationsViewOpenRef.current = automationsViewOpen;
-  const automationsSurfaceOpenRef = useRef(automationsSurfaceOpen);
-  automationsSurfaceOpenRef.current = automationsSurfaceOpen;
-  const localSurfaceRef = useRef(localSurface);
-  localSurfaceRef.current = localSurface;
   const settingsOpenRef = useRef(settingsOpen);
   settingsOpenRef.current = settingsOpen;
   const sessionNavigationIdsRef = useRef<readonly string[]>([]);
@@ -1245,12 +1226,6 @@ function Workspace({
   useEffect(() => {
     if (!notesEnabled) setNotesViewOpen(false);
   }, [notesEnabled]);
-
-  useEffect(() => {
-    if (localSurface !== null && !railSurfaces[localSurface]) {
-      setLocalSurface(null);
-    }
-  }, [localSurface, railSurfaces]);
 
   useEffect(
     () =>
@@ -1567,7 +1542,7 @@ function Workspace({
     window.addEventListener(ADD_TO_CHAT_EVENT, openSessionForAddToChat);
     return () =>
       window.removeEventListener(ADD_TO_CHAT_EVENT, openSessionForAddToChat);
-  }, [sessionDefaults?.cwd, sessionDefaults?.runtimeMode, setSidebarTab]);
+  }, [sessionDefaults?.cwd, sessionDefaults?.runtimeMode]);
 
   const activeSkillContext = active
     ? nativeSkillContextForSession(active)
@@ -2363,7 +2338,7 @@ function Workspace({
     if (!document) {
       void message(
         "Release notes for this version are not available in this build.",
-        { title: "MonoCode" },
+        { title: "Vatra" },
       );
       return;
     }
@@ -4754,7 +4729,7 @@ function Workspace({
           } catch (error) {
             void message(
               `The session was deleted. Its worktree was kept.\n\n${String(error)}\n\nYou can manage it in Settings → Worktrees.`,
-              { title: "MonoCode", kind: "warning" },
+              { title: "Vatra", kind: "warning" },
             );
           }
         }
@@ -4762,7 +4737,7 @@ function Workspace({
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
         void message(`Could not ${mode} this conversation.\n\n${detail}`, {
-          title: "MonoCode",
+          title: "Vatra",
           kind: "error",
         });
         return false;
@@ -4798,7 +4773,7 @@ function Workspace({
         void message(
           `Could not unarchive this conversation.\n\n${String(error)}`,
           {
-            title: "MonoCode",
+            title: "Vatra",
             kind: "error",
           },
         );
@@ -4927,7 +4902,7 @@ function Workspace({
           void refreshHistory(sidebarCwd);
           void message(
             `Could not update this conversation's GitHub link.\n\n${String(error)}`,
-            { title: "MonoCode", kind: "error" },
+            { title: "Vatra", kind: "error" },
           );
         },
       );
@@ -6162,7 +6137,7 @@ function Workspace({
         operatorCommand.matched || operatorEnabledInThread(current.blocks);
       const promptText = operatorCommand.matched
         ? operatorCommand.text.trim() ||
-          "Explain what you can do in MonoCode with the app CLI."
+          "Explain what you can do in Vatra with the app CLI."
         : submittedText;
       const rawCommand =
         !operatorCommand.matched &&
@@ -6409,7 +6384,7 @@ function Workspace({
       const cards = {
         ...(rawCommand ? undefined : userTurnCards(noteCard, card)),
         ...(ciContext ? { ciContext } : {}),
-        ...(operatorCommand.matched ? { monocode: true } : {}),
+        ...(operatorCommand.matched ? { vatra: true } : {}),
         ...(intent === "plan" || intent === "orchestrate" ? { intent } : {}),
         ...(options?.appRequestId
           ? { appRequestId: options.appRequestId }
@@ -6954,7 +6929,7 @@ function Workspace({
           );
           if (operatorCommand.matched) {
             const cli = `${shellPath(await invoke<string>("app_cli_path"))} app`;
-            sendText += `\n\n<monocode_app>\nThe user's Operator command enables app access in this thread, including later turns without the command. You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read and continue other project sessions, save unsent drafts, organize session folders, and read or write saved notes through its local CLI. Run \`${cli} --help\` for exact commands and JSON fields, then use it as needed for the user's request. When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</monocode_app>`;
+            sendText += `\n\n<vatra_app>\nThe user's Operator command enables app access in this thread, including later turns without the command. You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read and continue other project sessions, save unsent drafts, organize session folders, and read or write saved notes through its local CLI. Run \`${cli} --help\` for exact commands and JSON fields, then use it as needed for the user's request. When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</vatra_app>`;
           }
           await sendTurn(sendText);
           acceptEditedResend();
@@ -8664,7 +8639,7 @@ function Workspace({
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      const inTerminal = Boolean(target?.closest(".monocode-terminal"));
+      const inTerminal = Boolean(target?.closest(".vatra-terminal"));
       const activeTabId = activeTabIdRef.current;
       const sessionId = focusedBusyAgentSessionId(
         activeTabId,
@@ -9147,7 +9122,7 @@ function Workspace({
       requestId: string;
       action: string;
       input: Record<string, unknown>;
-    }>("monocode-control-request", ({ payload }) => {
+    }>("vatra-control-request", ({ payload }) => {
       const handle = async () => {
         if (payload.namespace === "control") {
           return orchestrator.handle(
@@ -9168,7 +9143,7 @@ function Workspace({
           source.orchestrationLeadId ||
           orchestrator.run(source.id)
         )
-          throw new Error("This session cannot use the MonoCode app CLI");
+          throw new Error("This session cannot use the Vatra app CLI");
         const key = `${source.id}:${payload.requestId}`;
         const signature = JSON.stringify([payload.action, payload.input]);
         const previous = appReceipts.current.get(key);
@@ -9885,59 +9860,25 @@ function Workspace({
     setAutomationsViewOpen(false);
   }, []);
 
-  const onOpenLocalSurface = useCallback((id: LocalSurfaceId) => {
-    setFilePickerOpen(false);
-    setSettingsOpen(false);
-    setSearchViewOpen(false);
-    setInboxViewOpen(false);
-    setNotesViewOpen(false);
-    setAutomationsSurfaceOpen(false);
-    setLocalSurface(id);
-  }, []);
-
-  const onOpenKnowledge = useCallback(
-    () => onOpenLocalSurface("knowledge"),
-    [onOpenLocalSurface],
-  );
-
-  const onLeaveLocalSurface = useCallback(() => {
-    setLocalSurface(null);
-  }, []);
-
-  const onOpenHomeSession = useCallback(
-    (sessionId: string) => {
-      setLocalSurface(null);
-      const cwd =
-        sessionsRef.current.find((session) => session.id === sessionId)?.cwd ??
-        history.find((session) => session.id === sessionId)?.cwd;
-      setSidebarTab("sessions", cwd);
-      void onSelectHistorySession(sessionId);
-    },
-    [history, onSelectHistorySession],
-  );
-
-  const onOpenHomeAutomation = useCallback(
-    (automationId: string) => {
-      setAutomationsFocusId(automationId);
-      setAutomationsViewOpen(true);
-    },
-    [setAutomationsViewOpen],
-  );
-
-  const onAutomationsFocusConsumed = useCallback(() => {
-    setAutomationsFocusId(null);
-  }, []);
-
-  const localSurfaceRailActions = useMemo(
-    () => (
-      <LocalSurfaceRailActions
-        active={localSurface}
-        visible={railSurfaces}
-        onOpen={onOpenLocalSurface}
-      />
-    ),
-    [localSurface, railSurfaces, onOpenLocalSurface],
-  );
+  const {
+    onOpenKnowledge,
+    onLeaveLocalSurface,
+    onOpenHomeSession,
+    onOpenHomeAutomation,
+    onAutomationsFocusConsumed,
+    localSurfaceRailActions,
+  } = useLocalSurfaceActions({
+    surfaces: localSurfaces,
+    setFilePickerOpen,
+    setSettingsOpen,
+    setSearchViewOpen,
+    setInboxViewOpen,
+    setNotesViewOpen,
+    setSidebarTab,
+    sessionsRef,
+    history,
+    onSelectHistorySession,
+  });
 
   const onOpenAutomationSession = useCallback(
     async (sessionId: string) => {
@@ -10005,9 +9946,9 @@ function Workspace({
 
   useEffect(() => {
     const onOpenMcp = () => openSettings("mcp");
-    window.addEventListener("monocode:open-mcp-settings", onOpenMcp);
+    window.addEventListener("vatra:open-mcp-settings", onOpenMcp);
     return () =>
-      window.removeEventListener("monocode:open-mcp-settings", onOpenMcp);
+      window.removeEventListener("vatra:open-mcp-settings", onOpenMcp);
   }, [openSettings]);
 
   const onOpenNotificationSettings = useCallback(
@@ -10344,7 +10285,7 @@ function Workspace({
         if (listNavigation) {
           const blockedTarget = Boolean(
             target?.closest(
-              'input, textarea, select, [contenteditable="true"], .cm-editor, .monocode-terminal, [role="dialog"], [data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]',
+              'input, textarea, select, [contenteditable="true"], .cm-editor, .vatra-terminal, [role="dialog"], [data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]',
             ),
           );
           const emptyComposerTarget = Boolean(
@@ -10369,7 +10310,7 @@ function Workspace({
           }
         }
         if (
-          target?.closest(".monocode-terminal") &&
+          target?.closest(".vatra-terminal") &&
           e.ctrlKey &&
           !e.metaKey &&
           (cmd === "back" ||
@@ -10452,7 +10393,7 @@ function Workspace({
         if (
           shortcut === "App: Search" &&
           e.target instanceof Element &&
-          e.target.closest(".monocode-terminal") &&
+          e.target.closest(".vatra-terminal") &&
           e.ctrlKey &&
           !e.metaKey
         ) {
@@ -11149,33 +11090,16 @@ function Workspace({
                   onToggleSidebar={onToggleSidebar}
                 />
               ) : null}
-              {localSurface === "knowledge" ? (
-                <KnowledgeView
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  onClose={onLeaveLocalSurface}
-                  onToggleSidebar={onToggleSidebar}
-                />
-              ) : null}
-              {localSurface === "home" ? (
-                <HomeView
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  projectPaths={recents.map((project) => project.path)}
-                  onClose={onLeaveLocalSurface}
-                  onToggleSidebar={onToggleSidebar}
-                  onOpenSession={onOpenHomeSession}
-                  onOpenAutomation={onOpenHomeAutomation}
-                />
-              ) : null}
-              {localSurface === "usage" ? (
-                <UsageView
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  onClose={onLeaveLocalSurface}
-                  onToggleSidebar={onToggleSidebar}
-                />
-              ) : null}
+              <LocalSurfaceViews
+                surface={localSurface}
+                besideRail={projectRailOpen || compactProjectRail}
+                compactRail={compactRailActive}
+                projectPaths={recents.map((project) => project.path)}
+                onClose={onLeaveLocalSurface}
+                onToggleSidebar={onToggleSidebar}
+                onOpenSession={onOpenHomeSession}
+                onOpenAutomation={onOpenHomeAutomation}
+              />
               {automationsSurfaceOpen ? (
                 <AutomationsView
                   besideRail={projectRailOpen || compactProjectRail}

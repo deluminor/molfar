@@ -1,5 +1,5 @@
 import { applyFileMentionsToTurn } from "../../files/model/fileMentions";
-import { applyConfluenceToTurn } from "../../inbox/model/confluence";
+import { applyConfluenceToTurn } from "../../inbox/model/confluence/prompt";
 import { applyNotesToTurn } from "../../notes";
 import {
   applySkillsToTurn,

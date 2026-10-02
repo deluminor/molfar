@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import { useDragResize } from "../../../../shared/hooks/useDragResize";
+import { paneWidthStorageKey } from "../../../../shared/lib/paneWidthStorage";
 import {
   SIDE_PANEL_DEFAULT_WIDTH,
   SIDE_PANEL_MAX_RATIO,
   SIDE_PANEL_MIN_WIDTH,
 } from "../constants";
-
-let rememberedWidth = SIDE_PANEL_DEFAULT_WIDTH;
 
 export function KnowledgeSidePanel({ children }: { children: ReactNode }) {
   const resize = useDragResize({
@@ -14,10 +13,8 @@ export function KnowledgeSidePanel({ children }: { children: ReactNode }) {
     min: SIDE_PANEL_MIN_WIDTH,
     max: () => Math.round(window.innerWidth * SIDE_PANEL_MAX_RATIO),
     defaultWidth: SIDE_PANEL_DEFAULT_WIDTH,
-    initial: rememberedWidth,
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
+    initial: SIDE_PANEL_DEFAULT_WIDTH,
+    storageKey: paneWidthStorageKey("knowledgeSidePanel"),
   });
 
   return (

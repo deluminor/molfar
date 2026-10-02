@@ -30,7 +30,7 @@ describe("Operator composer command", () => {
       text: "Explain /operator",
       matched: false,
     });
-    for (const alias of ["/mono", "/monocode"]) {
+    for (const alias of ["/mono", "/vatra", "/monocode"]) {
       expect(consumeOperatorCommand(`${alias} list notes`)).toEqual({
         text: "list notes",
         matched: true,
@@ -38,10 +38,21 @@ describe("Operator composer command", () => {
     }
   });
 
+  it("honours the flag saved before the rename", () => {
+    expect(
+      isOperatorUserTurn({
+        id: "saved",
+        role: "user",
+        text: "list notes",
+        monocode: true,
+      }),
+    ).toBe(true);
+  });
+
   it("keeps access for later turns when a submitted user turn enabled it", () => {
     expect(
       operatorEnabledInThread([
-        { id: "first", role: "user", text: "list notes", monocode: true },
+        { id: "first", role: "user", text: "list notes", vatra: true },
         { id: "reply", role: "assistant", text: "Here are your notes." },
         { id: "followup", role: "user", text: "Start two sessions" },
       ]),
@@ -53,12 +64,12 @@ describe("Operator composer command", () => {
           role: "user",
           text: "list notes",
           draft: true,
-          monocode: true,
+          vatra: true,
         },
         { id: "other", role: "user", text: "Explain /operator" },
       ]),
     ).toBe(false);
-    for (const alias of ["/mono", "/monocode"]) {
+    for (const alias of ["/mono", "/vatra", "/monocode"]) {
       const legacy = {
         id: "legacy",
         role: "user" as const,
