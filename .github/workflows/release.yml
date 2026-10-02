@@ -1,6 +1,16 @@
 name: Release
 
+# Releases are cut from `custom`: Actions → Release → Run workflow bumps the
+# version, writes the CHANGELOG section, commits and tags it, then builds and
+# publishes desktop packages, host packages and the updater feed. Pushing a
+# `v*` tag that already points at a commit on `custom` runs the same build.
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "patch, minor, major, or an exact version (X.Y.Z)"
+        required: true
+        default: patch
   push:
     tags:
       - "v*"
@@ -8,15 +18,99 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  RELEASE_BRANCH: custom
+
 jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.result.outputs.tag }}
+      version: ${{ steps.result.outputs.version }}
+      sha: ${{ steps.result.outputs.sha }}
+    steps:
+      - name: Require the release branch
+        if: github.event_name == 'workflow_dispatch' && github.ref != format('refs/heads/{0}', env.RELEASE_BRANCH)
+        run: |
+          echo "Run the release from the $RELEASE_BRANCH branch, not $GITHUB_REF." >&2
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: ${{ github.event_name == 'workflow_dispatch' }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Bump version and write release notes
+        id: bump
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION_REQUEST: ${{ inputs.version }}
+        run: node scripts/release/prepare.mjs "$VERSION_REQUEST"
+
+      - name: Commit and tag the release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          node scripts/release/verify.mjs "$TAG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md package.json package-lock.json Cargo.toml Cargo.lock src-tauri/tauri.conf.json
+          git commit -m "chore(release): $TAG"
+          git tag -a "$TAG" -m "Vatra $VERSION"
+          # Atomic: the branch and tag land together or not at all, and a
+          # branch that moved since the run started is rejected.
+          git push --atomic origin "HEAD:refs/heads/$RELEASE_BRANCH" "refs/tags/$TAG"
+
+      - name: Verify the pushed tag
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$RELEASE_BRANCH"
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "$GITHUB_REF_NAME is not on $RELEASE_BRANCH; releases are cut from $RELEASE_BRANCH only." >&2
+            exit 1
+          fi
+          node scripts/release/verify.mjs "$GITHUB_REF_NAME"
+
+      - name: Resolve release
+        id: result
+        env:
+          DISPATCH_TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG="${DISPATCH_TAG:-$GITHUB_REF_NAME}"
+          {
+            echo "tag=$TAG"
+            echo "version=${TAG#v}"
+            echo "sha=$(git rev-parse "$TAG^{commit}")"
+          } >> "$GITHUB_OUTPUT"
+
   release:
-    needs: [linux, linux-rpm, windows, host]
+    needs: [prepare, linux, linux-rpm, windows, host]
     runs-on: macos-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+      VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@v4
@@ -28,7 +122,27 @@ jobs:
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
+      - run: npm ci
+
+      # Without a Developer ID the app is ad-hoc signed and not notarized:
+      # macOS asks once to "Open Anyway". Adding the APPLE_* secrets switches
+      # to full signing and notarization with no workflow change.
+      - name: Detect Apple signing
+        id: apple
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [[ -n "$APPLE_CERTIFICATE" && -n "$APPLE_SIGNING_IDENTITY" && -n "$APPLE_API_KEY" ]]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Apple Developer ID secrets: building ad-hoc signed, not notarized."
+          fi
+
       - name: Write Apple API key
+        if: steps.apple.outputs.signed == 'true'
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
@@ -37,85 +151,50 @@ jobs:
           printf '%s\n' "$APPLE_API_KEY_P8" > "$HOME/private_keys/AuthKey_${APPLE_API_KEY}.p8"
           echo "APPLE_API_KEY_PATH=$HOME/private_keys/AuthKey_${APPLE_API_KEY}.p8" >> "$GITHUB_ENV"
 
-      - run: npm ci
-
-      - name: Check tag matches app version
-        run: |
-          set -euo pipefail
-          TAG="${GITHUB_REF_NAME#v}"
-          CONF=$(node -p "require('./src-tauri/tauri.conf.json').version")
-          PKG=$(node -p "require('./package.json').version")
-          CARGO=$(awk '/^\[workspace.package\]/{f=1} f && /^version = /{gsub(/"/, "", $3); print $3; exit}' Cargo.toml)
-          if [ "$TAG" != "$CONF" ] || [ "$TAG" != "$PKG" ] || [ "$TAG" != "$CARGO" ]; then
-            echo "Tag v$TAG does not match package.json ($PKG), Cargo.toml ($CARGO), or tauri.conf.json ($CONF)"
-            exit 1
-          fi
-          node - "$TAG" <<'NODE'
-          const { readFileSync } = require("node:fs");
-          const version = process.argv[2];
-          const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const heading = new RegExp(
-            `^## \\[${escaped}\\](?: - \\d{4}-\\d{2}-\\d{2})?$`,
-            "m",
-          );
-          if (!heading.test(readFileSync("CHANGELOG.md", "utf8"))) {
-            console.error(`CHANGELOG.md has no valid release section for ${version}`);
-            process.exit(1);
-          }
-          NODE
-
       - name: Write release config
         env:
+          SIGNED: ${{ steps.apple.outputs.signed }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          TAURI_UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
-          TAURI_UPDATER_ENDPOINT: ${{ secrets.TAURI_UPDATER_ENDPOINT }}
-          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
+          if [[ -z "$TAURI_SIGNING_PRIVATE_KEY" ]]; then
+            echo "TAURI_SIGNING_PRIVATE_KEY is required to sign updater packages" >&2
+            exit 1
+          fi
           node <<'NODE'
           const { writeFileSync } = require("node:fs");
-          const identity = (process.env.APPLE_SIGNING_IDENTITY || "").trim();
-          if (!identity || identity === "-") {
-            console.error("APPLE_SIGNING_IDENTITY is required and must not be ad-hoc '-'");
-            process.exit(1);
-          }
-          const pubkey = process.env.TAURI_UPDATER_PUBKEY || "";
-          const endpoint =
-            process.env.TAURI_UPDATER_ENDPOINT ||
-            (process.env.R2_PUBLIC_BASE_URL
-              ? `${process.env.R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/latest.json`
-              : "");
-          if (!pubkey || !endpoint) {
-            console.error("TAURI_UPDATER_PUBKEY and an updater endpoint are required");
-            process.exit(1);
-          }
+          const signed = process.env.SIGNED === "true";
           writeFileSync(
-            process.env.RUNNER_TEMP + "/tauri.release.conf.json",
-            JSON.stringify(
-              {
-                bundle: {
-                  createUpdaterArtifacts: true,
-                  macOS: { signingIdentity: identity },
-                },
-                plugins: {
-                  updater: {
-                    pubkey,
-                    endpoints: endpoint ? [endpoint] : [],
-                  },
+            `${process.env.RUNNER_TEMP}/tauri.release.conf.json`,
+            JSON.stringify({
+              bundle: {
+                createUpdaterArtifacts: true,
+                macOS: {
+                  signingIdentity: signed ? process.env.APPLE_SIGNING_IDENTITY.trim() : "-",
                 },
               },
-              null,
-              2,
-            ),
+            }),
           );
           NODE
 
       - name: Build, sign, and notarize macOS packages
+        if: steps.apple.outputs.signed == 'true'
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "$RUNNER_TEMP/tauri.release.conf.json"
+          npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "$RUNNER_TEMP/tauri.release.conf.json"
+
+      - name: Build ad-hoc signed macOS packages
+        if: steps.apple.outputs.signed != 'true'
+        env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
@@ -139,8 +218,8 @@ jobs:
             fi
             codesign --verify --deep --strict --verbose=2 "$app"
           }
-          verify_app "target/aarch64-apple-darwin/release/bundle/macos/MonoCode.app" arm64
-          verify_app "target/x86_64-apple-darwin/release/bundle/macos/MonoCode.app" x86_64
+          verify_app "target/aarch64-apple-darwin/release/bundle/macos/Vatra.app" arm64
+          verify_app "target/x86_64-apple-darwin/release/bundle/macos/Vatra.app" x86_64
 
       - name: Download Linux packages
         uses: actions/download-artifact@v4
@@ -166,189 +245,96 @@ jobs:
           name: host-packages
           path: build/host-packages
 
-      - name: Upload updater packages to R2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+      - name: Stage release assets and updater feed
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
           BUNDLE="target/release/bundle"
           ARM_BUNDLE="target/aarch64-apple-darwin/release/bundle"
           INTEL_BUNDLE="target/x86_64-apple-darwin/release/bundle"
+          ASSETS="$RUNNER_TEMP/release-assets"
+          mkdir -p "$ASSETS"
+
+          ARM_TAR="$ARM_BUNDLE/macos/Vatra.app.tar.gz"
+          INTEL_TAR="$INTEL_BUNDLE/macos/Vatra.app.tar.gz"
+          ARM_DMG="$ARM_BUNDLE/dmg/Vatra_${VERSION}_aarch64.dmg"
+          INTEL_DMG="$INTEL_BUNDLE/dmg/Vatra_${VERSION}_x64.dmg"
+          DEB="$BUNDLE/linux/Vatra_${VERSION}_amd64.deb"
+          APPIMAGE="$BUNDLE/linux/Vatra_${VERSION}_amd64.AppImage"
+          NSIS="$BUNDLE/nsis/Vatra_${VERSION}_x64-setup.exe"
           shopt -s nullglob
-          ARM_TARS=("$ARM_BUNDLE"/macos/*.app.tar.gz)
-          ARM_DMGS=("$ARM_BUNDLE"/dmg/*.dmg)
-          INTEL_TARS=("$INTEL_BUNDLE"/macos/*.app.tar.gz)
-          INTEL_DMGS=("$INTEL_BUNDLE"/dmg/*.dmg)
-          WINDOWS_INSTALLERS=("$BUNDLE"/nsis/*.exe)
-          WINDOWS_SIGNATURES=("$BUNDLE"/nsis/*.exe.sig)
-          if (( ${#ARM_TARS[@]} != 1 || ${#ARM_DMGS[@]} != 1 )); then
-            echo "Expected exactly one Apple Silicon updater archive and DMG" >&2
+          RPMS=("$BUNDLE"/rpm/*.rpm)
+          HOST_ARCHIVES=(build/host-packages/*.tar.gz build/host-packages/*.zip)
+          if (( ${#RPMS[@]} != 1 )); then
+            echo "Expected exactly one .rpm" >&2
             exit 1
           fi
-          if (( ${#INTEL_TARS[@]} != 1 || ${#INTEL_DMGS[@]} != 1 )); then
-            echo "Expected exactly one Intel updater archive and DMG" >&2
+          if (( ${#HOST_ARCHIVES[@]} != 6 )); then
+            echo "Expected six host archives" >&2
             exit 1
           fi
-          if (( ${#WINDOWS_INSTALLERS[@]} != 1 || ${#WINDOWS_SIGNATURES[@]} != 1 )); then
-            echo "Expected exactly one Windows installer and updater signature" >&2
-            exit 1
-          fi
-          ARM_TAR="${ARM_TARS[0]}"
-          ARM_SIG="${ARM_TAR}.sig"
-          ARM_DMG="${ARM_DMGS[0]}"
-          INTEL_TAR="${INTEL_TARS[0]}"
-          INTEL_SIG="${INTEL_TAR}.sig"
-          INTEL_DMG="${INTEL_DMGS[0]}"
-          WINDOWS_INSTALLER="${WINDOWS_INSTALLERS[0]}"
-          WINDOWS_SIGNATURE="${WINDOWS_SIGNATURES[0]}"
-          for artifact in "$ARM_SIG" "$INTEL_SIG"; do
+          for artifact in "$ARM_TAR" "$ARM_TAR.sig" "$INTEL_TAR" "$INTEL_TAR.sig" "$ARM_DMG" "$INTEL_DMG" "$DEB" "$APPIMAGE" "$NSIS" "$NSIS.sig"; do
             if [[ ! -f "$artifact" ]]; then
               echo "Missing release artifact: $artifact" >&2
               exit 1
             fi
           done
-          BASE="${R2_PUBLIC_BASE_URL%/}"
-          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          RELEASE_PREFIX="releases/${VERSION}"
-          ARM_TAR_KEY="${RELEASE_PREFIX}/MonoCode.app.tar.gz"
-          ARM_SIG_KEY="${ARM_TAR_KEY}.sig"
-          ARM_DMG_KEY="${RELEASE_PREFIX}/MonoCode_${VERSION}_aarch64.dmg"
-          INTEL_TAR_KEY="${RELEASE_PREFIX}/MonoCode_x64.app.tar.gz"
-          INTEL_SIG_KEY="${INTEL_TAR_KEY}.sig"
-          INTEL_DMG_KEY="${RELEASE_PREFIX}/MonoCode_${VERSION}_x64.dmg"
-          WINDOWS_INSTALLER_KEY="${RELEASE_PREFIX}/MonoCode_${VERSION}_x64-setup.exe"
-          WINDOWS_SIGNATURE_KEY="${WINDOWS_INSTALLER_KEY}.sig"
 
-          VERSION="$VERSION" \
-            ARM_SIG="$ARM_SIG" \
-            ARM_TAR_URL="$BASE/$ARM_TAR_KEY" \
-            INTEL_SIG="$INTEL_SIG" \
-            INTEL_TAR_URL="$BASE/$INTEL_TAR_KEY" \
-            WINDOWS_SIGNATURE="$WINDOWS_SIGNATURE" \
-            WINDOWS_INSTALLER_URL="$BASE/$WINDOWS_INSTALLER_KEY" \
+          cp "$ARM_TAR" "$ASSETS/Vatra.app.tar.gz"
+          cp "$ARM_TAR.sig" "$ASSETS/Vatra.app.tar.gz.sig"
+          cp "$INTEL_TAR" "$ASSETS/Vatra_x64.app.tar.gz"
+          cp "$INTEL_TAR.sig" "$ASSETS/Vatra_x64.app.tar.gz.sig"
+          cp "$ARM_DMG" "$INTEL_DMG" "$DEB" "$APPIMAGE" "${RPMS[0]}" "$NSIS" "$NSIS.sig" "$ASSETS/"
+          for archive in "${HOST_ARCHIVES[@]}"; do
+            if [[ ! -f "$archive.sha256" ]]; then
+              echo "Missing host checksum: $archive.sha256" >&2
+              exit 1
+            fi
+            cp "$archive" "$archive.sha256" "$ASSETS/"
+          done
+
+          node scripts/release/notes.mjs "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+          DOWNLOAD="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
+          ASSETS="$ASSETS" DOWNLOAD="$DOWNLOAD" NSIS_NAME="$(basename "$NSIS")" NOTES="$RUNNER_TEMP/release-notes.md" \
             node <<'NODE'
-          const fs = require("fs");
+          const fs = require("node:fs");
+          const { ASSETS, DOWNLOAD, NSIS_NAME, NOTES, VERSION } = process.env;
+          const platform = (asset) => ({
+            signature: fs.readFileSync(`${ASSETS}/${asset}.sig`, "utf8").trim(),
+            url: `${DOWNLOAD}/${asset}`,
+          });
           fs.writeFileSync(
-            "latest.json",
-            JSON.stringify(
+            `${ASSETS}/latest.json`,
+            `${JSON.stringify(
               {
-                version: process.env.VERSION,
-                notes: `MonoCode ${process.env.VERSION}`,
+                version: VERSION,
+                notes: fs.readFileSync(NOTES, "utf8").trim(),
                 pub_date: new Date().toISOString(),
                 platforms: {
-                  "darwin-aarch64": {
-                    signature: fs
-                      .readFileSync(process.env.ARM_SIG, "utf8")
-                      .trim(),
-                    url: process.env.ARM_TAR_URL,
-                  },
-                  "darwin-x86_64": {
-                    signature: fs
-                      .readFileSync(process.env.INTEL_SIG, "utf8")
-                      .trim(),
-                    url: process.env.INTEL_TAR_URL,
-                  },
-                  "windows-x86_64": {
-                    signature: fs
-                      .readFileSync(process.env.WINDOWS_SIGNATURE, "utf8")
-                      .trim(),
-                    url: process.env.WINDOWS_INSTALLER_URL,
-                  },
+                  "darwin-aarch64": platform("Vatra.app.tar.gz"),
+                  "darwin-x86_64": platform("Vatra_x64.app.tar.gz"),
+                  "windows-x86_64": platform(NSIS_NAME),
                 },
               },
               null,
               2,
-            ) + "\n",
+            )}\n`,
           );
           NODE
-
-          brew list awscli >/dev/null 2>&1 || brew install awscli
-          IMMUTABLE_CACHE="public,max-age=31536000,immutable"
-          NO_CACHE="no-store,max-age=0,must-revalidate"
-          aws s3 cp "$ARM_DMG" "s3://${R2_BUCKET_NAME}/${ARM_DMG_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$ARM_TAR" "s3://${R2_BUCKET_NAME}/${ARM_TAR_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$ARM_SIG" "s3://${R2_BUCKET_NAME}/${ARM_SIG_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$INTEL_DMG" "s3://${R2_BUCKET_NAME}/${INTEL_DMG_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$INTEL_TAR" "s3://${R2_BUCKET_NAME}/${INTEL_TAR_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$INTEL_SIG" "s3://${R2_BUCKET_NAME}/${INTEL_SIG_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$WINDOWS_INSTALLER" "s3://${R2_BUCKET_NAME}/${WINDOWS_INSTALLER_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$WINDOWS_SIGNATURE" "s3://${R2_BUCKET_NAME}/${WINDOWS_SIGNATURE_KEY}" --cache-control "$IMMUTABLE_CACHE" --endpoint-url "$ENDPOINT"
-          # Keep stable links for both architectures, but never let the CDN
-          # retain an older release under these mutable names.
-          aws s3 cp "$ARM_DMG" "s3://${R2_BUCKET_NAME}/MonoCode.dmg" --cache-control "$NO_CACHE" --endpoint-url "$ENDPOINT"
-          aws s3 cp "$INTEL_DMG" "s3://${R2_BUCKET_NAME}/MonoCode_x64.dmg" --cache-control "$NO_CACHE" --endpoint-url "$ENDPOINT"
 
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
-          BUNDLE="target/release/bundle"
-          ARM_BUNDLE="target/aarch64-apple-darwin/release/bundle"
-          INTEL_BUNDLE="target/x86_64-apple-darwin/release/bundle"
-          ARM_TAR="$ARM_BUNDLE/macos/MonoCode.app.tar.gz"
-          ARM_SIG="${ARM_TAR}.sig"
-          ARM_DMG="$ARM_BUNDLE/dmg/MonoCode_${VERSION}_aarch64.dmg"
-          INTEL_TAR="$INTEL_BUNDLE/macos/MonoCode.app.tar.gz"
-          INTEL_SIG="${INTEL_TAR}.sig"
-          INTEL_DMG="$INTEL_BUNDLE/dmg/MonoCode_${VERSION}_x64.dmg"
-          DEB="$BUNDLE/linux/MonoCode_${VERSION}_amd64.deb"
-          APPIMAGE="$BUNDLE/linux/MonoCode_${VERSION}_amd64.AppImage"
-          shopt -s nullglob
-          RPMS=("$BUNDLE"/rpm/*.rpm)
-          if (( ${#RPMS[@]} != 1 )); then
-            echo "Expected exactly one .rpm" >&2
-            exit 1
-          fi
-          RPM="${RPMS[0]}"
-          NSIS="$BUNDLE/nsis/MonoCode_${VERSION}_x64-setup.exe"
-          NSIS_SIG="${NSIS}.sig"
-          for artifact in "$ARM_DMG" "$ARM_TAR" "$ARM_SIG" "$INTEL_DMG" "$INTEL_TAR" "$INTEL_SIG" "$DEB" "$APPIMAGE" "$RPM" "$NSIS" "$NSIS_SIG"; do
-            if [[ ! -f "$artifact" ]]; then
-              echo "Missing release artifact: $artifact" >&2
-              exit 1
-            fi
-          done
-          RELEASE_ASSETS="$RUNNER_TEMP/github-release-assets"
-          mkdir -p "$RELEASE_ASSETS"
-          cp "$ARM_TAR" "$RELEASE_ASSETS/MonoCode.app.tar.gz"
-          cp "$ARM_SIG" "$RELEASE_ASSETS/MonoCode.app.tar.gz.sig"
-          cp "$INTEL_TAR" "$RELEASE_ASSETS/MonoCode_x64.app.tar.gz"
-          cp "$INTEL_SIG" "$RELEASE_ASSETS/MonoCode_x64.app.tar.gz.sig"
-          HOST_ARCHIVES=(build/host-packages/*.tar.gz build/host-packages/*.zip)
-          if (( ${#HOST_ARCHIVES[@]} != 6 )); then
-            echo "Expected six host archives" >&2
-            exit 1
-          fi
-          HOST_FILES=("${HOST_ARCHIVES[@]}")
-          for archive in "${HOST_ARCHIVES[@]}"; do
-            if [[ ! -f "$archive.sha256" ]]; then
-              echo "Missing host checksum: $archive.sha256" >&2
-              exit 1
-            fi
-            HOST_FILES+=("$archive.sha256")
-          done
-          RELEASE_FILES=(
-            "$ARM_DMG" "$RELEASE_ASSETS/MonoCode.app.tar.gz" "$RELEASE_ASSETS/MonoCode.app.tar.gz.sig"
-            "$INTEL_DMG" "$RELEASE_ASSETS/MonoCode_x64.app.tar.gz" "$RELEASE_ASSETS/MonoCode_x64.app.tar.gz.sig"
-            "$DEB" "$APPIMAGE" "$RPM" "$NSIS" "$NSIS_SIG" "${HOST_FILES[@]}"
-          )
-          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release create "$GITHUB_REF_NAME" \
-              --draft \
-              --title "MonoCode $VERSION" \
-              --notes "See CHANGELOG.md for details."
+          ASSETS="$RUNNER_TEMP/release-assets"
+          NOTES="$RUNNER_TEMP/release-notes.md"
+          RELEASE_FILES=("$ASSETS"/*)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --verify-tag --title "Vatra $VERSION" --notes-file "$NOTES"
           fi
           verify_release() {
             local expected_draft="$1"
-            gh release view "$GITHUB_REF_NAME" --json isDraft,assets > "$RUNNER_TEMP/release-state.json"
+            gh release view "$TAG" --json isDraft,assets > "$RUNNER_TEMP/release-state.json"
             node - "$RUNNER_TEMP/release-state.json" "$expected_draft" "${RELEASE_FILES[@]}" <<'NODE'
           const fs = require("node:fs");
           const path = require("node:path");
@@ -367,36 +353,24 @@ jobs:
           }
           NODE
           }
-          IS_DRAFT=$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)
+          IS_DRAFT=$(gh release view "$TAG" --json isDraft --jq .isDraft)
           if [[ "$IS_DRAFT" == true ]]; then
             # Draft assets can be replaced after an interrupted upload. A
-            # published release is immutable, so only resume drafts.
-            gh release upload "$GITHUB_REF_NAME" "${RELEASE_FILES[@]}" --clobber
+            # published release is immutable, so only resume drafts. The
+            # updater feed goes live with publication, never before its assets.
+            gh release edit "$TAG" --title "Vatra $VERSION" --notes-file "$NOTES"
+            gh release upload "$TAG" "${RELEASE_FILES[@]}" --clobber
             verify_release true
-            gh release edit "$GITHUB_REF_NAME" --draft=false
+            gh release edit "$TAG" --draft=false --latest
           elif [[ "$IS_DRAFT" != false ]]; then
             echo "Unexpected GitHub Release state: $IS_DRAFT" >&2
             exit 1
           fi
           verify_release false
 
-      - name: Publish updater feed
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-        run: |
-          set -euo pipefail
-          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          aws s3 cp latest.json "s3://${R2_BUCKET_NAME}/latest.json" \
-            --content-type "application/json" \
-            --cache-control "no-store,max-age=0,must-revalidate" \
-            --endpoint-url "$ENDPOINT"
-
   host:
     name: Standalone host packages
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -404,6 +378,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -426,9 +403,13 @@ jobs:
 
   linux:
     name: Linux packages
+    needs: prepare
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -467,6 +448,7 @@ jobs:
 
   linux-rpm:
     name: Linux rpm package
+    needs: prepare
     runs-on: ubuntu-latest
     # Build on EL 10 so the published rpm's glibc requirement matches the
     # oldest advertised target. Fedora 43 is newer and would install on EL 10
@@ -480,6 +462,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@v4
@@ -530,9 +513,13 @@ jobs:
 
   windows:
     name: Windows packages
+    needs: prepare
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -544,39 +531,17 @@ jobs:
       - run: npm ci
 
       - name: Write updater release config
-        env:
-          TAURI_UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
-          TAURI_UPDATER_ENDPOINT: ${{ secrets.TAURI_UPDATER_ENDPOINT }}
-          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
         run: |
-          $endpoint = $env:TAURI_UPDATER_ENDPOINT
-          if ([string]::IsNullOrWhiteSpace($endpoint)) {
-            if ([string]::IsNullOrWhiteSpace($env:R2_PUBLIC_BASE_URL)) {
-              throw "TAURI_UPDATER_ENDPOINT or R2_PUBLIC_BASE_URL is required"
-            }
-            $endpoint = "$($env:R2_PUBLIC_BASE_URL.TrimEnd('/'))/latest.json"
-          }
-          if ([string]::IsNullOrWhiteSpace($env:TAURI_UPDATER_PUBKEY)) {
-            throw "TAURI_UPDATER_PUBKEY is required"
-          }
-          $config = @{
-            bundle = @{
-              createUpdaterArtifacts = $true
-            }
-            plugins = @{
-              updater = @{
-                pubkey = $env:TAURI_UPDATER_PUBKEY
-                endpoints = @($endpoint)
-              }
-            }
-          }
-          $config | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 "$env:RUNNER_TEMP\tauri.release.conf.json"
+          '{"bundle":{"createUpdaterArtifacts":true}}' | Set-Content -Encoding utf8 "$env:RUNNER_TEMP\tauri.release.conf.json"
 
       - name: Build Windows packages
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "TAURI_SIGNING_PRIVATE_KEY is required to sign updater packages"
+          }
           $env:RUSTUP_TOOLCHAIN = "stable-x86_64-pc-windows-msvc"
           npx tauri build --bundles nsis --config "$env:RUNNER_TEMP\tauri.release.conf.json"
 
