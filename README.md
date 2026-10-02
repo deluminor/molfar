@@ -373,7 +373,7 @@ Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`) an
 
 Vatra is released under the [MIT License](LICENSE).
 
-- Vatra: © 2026 Erik Kopcha
+- Vatra: © 2026 Erik K. (deluminor)
 - Based on [MonoCode](https://github.com/hardbeat920/monocode) (MIT)
 
 Vatra is not affiliated with or endorsed by the MonoCode project. Provider names and logos are trademarks of their owners — see [NOTICE](NOTICE). Vatra is not affiliated with, endorsed by, or sponsored by those providers.
