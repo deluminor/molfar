@@ -23,7 +23,7 @@ function setup() {
     }),
     load: vi.fn(async (id: string) => saved.get(id) ?? null),
     enable: vi.fn(
-      async () => "/Applications/MonoCode.app/Contents/MacOS/monocode",
+      async () => "/Applications/Vatra.app/Contents/MacOS/vatra",
     ),
     disable: vi.fn(async () => {}),
     scopes: vi.fn(async (cwd: string, files: string[]) =>
@@ -48,7 +48,7 @@ function setup() {
         busy: false,
       });
       return {
-        scratchDir: `/private/var/folders/test/T/monocode-worker-${task.sessionId}`,
+        scratchDir: `/private/var/folders/test/T/vatra-worker-${task.sessionId}`,
         workspace: {
           id: `checkout:/worktrees/${task.id}`,
           projectCwd: run.cwd,
@@ -120,7 +120,7 @@ describe("worker assignment prompts", () => {
   it("keeps the task text and wraps it in the assignment envelope", () => {
     const sent = workerTurnPrompt("Review the branch.", ["src/App.tsx"]);
     expect(sent.startsWith("Review the branch.")).toBe(true);
-    expect(sent).toContain("<monocode_assignment>");
+    expect(sent).toContain("<vatra_assignment>");
     expect(sent).toContain("src/App.tsx");
     expect(sent).toContain("override any contradictory wording");
     expect(sent).toContain("stage, commit, push");
@@ -128,6 +128,19 @@ describe("worker assignment prompts", () => {
       "Git finalization remains the lead's responsibility",
     );
     expect(visibleUserPrompt(sent)).toBe("Review the branch.");
+  });
+
+  it("hides the pre-rename assignment envelope in saved transcripts", () => {
+    const saved =
+      "Review the branch.\n\n<monocode_assignment>\nScope: src\n</monocode_assignment>";
+
+    expect(visibleUserPrompt(saved)).toBe("Review the branch.");
+  });
+
+  it("does not strip mismatched envelope tags", () => {
+    const text = "Keep\n<vatra_assignment>x</monocode_assignment>";
+
+    expect(visibleUserPrompt(text)).toBe(text);
   });
 });
 
@@ -243,10 +256,10 @@ describe("local orchestration", () => {
       .mocked(f.host.submit)
       .mock.calls.find(
         ([id, prompt]) =>
-          id !== "lead" && String(prompt).includes("<monocode_assignment>"),
+          id !== "lead" && String(prompt).includes("<vatra_assignment>"),
       )?.[1];
     expect(workerPrompt).toContain("Define the types");
-    expect(workerPrompt).toContain("<monocode_assignment>");
+    expect(workerPrompt).toContain("<vatra_assignment>");
     expect(
       vi.mocked(f.host.submit).mock.calls.find(([id]) => id === "lead")?.[1],
     ).toContain("do not delegate duplicates");
@@ -1215,19 +1228,19 @@ describe("local orchestration", () => {
   });
   it("quotes the control path only when the shell needs it", () => {
     expect(
-      shellPath("/Applications/MonoCode.app/Contents/MacOS/monocode"),
-    ).toBe("/Applications/MonoCode.app/Contents/MacOS/monocode");
-    expect(shellPath("/Users/a b/MonoCode")).toBe("'/Users/a b/MonoCode'");
-    expect(shellPath("C:/Program Files/MonoCode/monocode.exe")).toBe(
-      '"C:/Program Files/MonoCode/monocode.exe"',
+      shellPath("/Applications/Vatra.app/Contents/MacOS/vatra"),
+    ).toBe("/Applications/Vatra.app/Contents/MacOS/vatra");
+    expect(shellPath("/Users/a b/Vatra")).toBe("'/Users/a b/Vatra'");
+    expect(shellPath("C:/Program Files/Vatra/vatra.exe")).toBe(
+      '"C:/Program Files/Vatra/vatra.exe"',
     );
-    expect(shellPath("C:\\Tools\\monocode.exe")).toBe(
-      "C:\\Tools\\monocode.exe",
+    expect(shellPath("C:\\Tools\\vatra.exe")).toBe(
+      "C:\\Tools\\vatra.exe",
     );
     // A backslash escapes in a POSIX shell, so bare would rewrite the path.
-    expect(shellPath("/Users/a\\b/MonoCode")).toBe("'/Users/a\\b/MonoCode'");
-    expect(shellPath("/Users/it's/MonoCode")).toBe(
-      "'/Users/it'\\''s/MonoCode'",
+    expect(shellPath("/Users/a\\b/Vatra")).toBe("'/Users/a\\b/Vatra'");
+    expect(shellPath("/Users/it's/Vatra")).toBe(
+      "'/Users/it'\\''s/Vatra'",
     );
   });
   it("treats an action named after an Object member as unknown", async () => {

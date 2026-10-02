@@ -1,6 +1,6 @@
 import type { Block } from "./session";
 
-export type MonoCodeToolCall = {
+export type VatraToolCall = {
   action: string;
   label: string;
   command: string;
@@ -79,7 +79,7 @@ function shellWords(command: string): string[] | undefined {
 }
 
 /** Recognize the actual app CLI command, not a mention of it in prose/output. */
-export function monoCodeToolCall(block: Block): MonoCodeToolCall | undefined {
+export function vatraToolCall(block: Block): VatraToolCall | undefined {
   if (block.role !== "tool" && block.role !== "approval") return undefined;
   // A shell preview retains the original command when the display title was
   // simplified. Never accept a shorter title in place of that command.
@@ -92,7 +92,7 @@ export function monoCodeToolCall(block: Block): MonoCodeToolCall | undefined {
   const command = candidate?.trim().replace(/^Run(?:ning)?\s+command:\s*/i, "");
   if (!command) return undefined;
   const words = shellWords(command);
-  if (!words || !/(?:^|[/\\])monocode(?:\.exe)?$/i.test(words[0] ?? ""))
+  if (!words || !/(?:^|[/\\])(?:vatra|monocode)(?:\.exe)?$/i.test(words[0] ?? ""))
     return undefined;
   if (words[1] !== "app") return undefined;
   const action = words[2] ?? "--help";
@@ -113,8 +113,8 @@ export function monoCodeToolCall(block: Block): MonoCodeToolCall | undefined {
   return { action, label: ACTION_LABELS[action], command };
 }
 
-/** A group of only MonoCode calls can be named for the app, not the shell. */
-export function monoCodeWorkSummary(
+/** A group of only Vatra calls can be named for the app, not the shell. */
+export function vatraWorkSummary(
   steps: Block[],
   live: boolean,
 ): string | undefined {
@@ -124,8 +124,8 @@ export function monoCodeWorkSummary(
   const calls = steps.filter(
     (block) => block.role === "tool" || block.role === "approval",
   );
-  if (calls.length === 0 || calls.some((block) => !monoCodeToolCall(block))) {
+  if (calls.length === 0 || calls.some((block) => !vatraToolCall(block))) {
     return undefined;
   }
-  return live ? "Using MonoCode" : "Used MonoCode";
+  return live ? "Using Vatra" : "Used Vatra";
 }
