@@ -65,7 +65,10 @@ jobs:
         env:
           TAG: ${{ steps.bump.outputs.tag }}
           VERSION: ${{ steps.bump.outputs.version }}
-          GH_TOKEN: ${{ github.token }}
+          # Personal-repo rulesets cannot add the GitHub Actions app as a bypass
+          # actor. Use an admin PAT (RELEASE_GITHUB_TOKEN) so --admin can land
+          # the release PR without waiting on required status checks.
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN || github.token }}
         run: |
           set -euo pipefail
           node scripts/release/verify.mjs "$TAG"
@@ -85,7 +88,7 @@ jobs:
             --title "chore(release): $TAG" \
             --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`main\` stays PR-only.")"
 
-          gh pr merge "$PR_URL" --squash --delete-branch
+          gh pr merge "$PR_URL" --squash --delete-branch --admin
           MERGE_SHA="$(gh pr view "$PR_URL" --json mergeCommit --jq .mergeCommit.oid)"
           if [ -z "$MERGE_SHA" ] || [ "$MERGE_SHA" = "null" ]; then
             echo "Squash merge of $PR_URL did not produce a merge commit SHA." >&2
