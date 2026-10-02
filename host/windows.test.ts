@@ -92,6 +92,11 @@ it("keeps only the text of a PowerShell error written as CLIXML", () => {
       `#< CLIXML\r\n<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T></TN><MS><PR N="Record"><AV>Preparing modules for first use.</AV></PR></MS></Obj></Objs>${privilege}\r\n`,
     ),
   ).toBe(privilege);
+  expect(
+    powershellErrorText(
+      `#< CLIXML\r\n<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="error" RefId="0"><TN RefId="0"><T>System.Management.Automation.ErrorRecord</T></TN><ToString>${privilege}</ToString><Props><S N="Message">${privilege.replaceAll("'", "&apos;")}</S></Props></Obj></Objs>\r\n`,
+    ),
+  ).toBe(privilege);
   expect(powershellErrorText("Access denied.\r\n")).toBe("Access denied.");
 });
 

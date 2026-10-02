@@ -32,11 +32,30 @@ export const powershellEnvironment = (
  * CLIXML. A message that starts with that marker also makes a parent
  * PowerShell, such as the scheduled task's runner, try to parse it as XML. */
 export function powershellErrorText(stderr: string): string {
-  return stderr
+  const stripped = stderr
     .replace(/#< CLIXML\r?\n?/g, "")
     .replace(/<Objs [\s\S]*?<\/Objs>/g, "")
     .trim();
+  if (stripped) return stripped;
+
+  // Some failures only exist inside the CLIXML ErrorRecords — no trailing text.
+  return [...stderr.matchAll(/<S N="Message">([^<]*)<\/S>/g)]
+    .map((match) =>
+      match[1]!
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'"),
+    )
+    .join("\n")
+    .trim();
 }
+
+/** Reads the script from the process stdin handle. `[Console]::In` can miss a
+ * redirected pipe on Windows PowerShell 5.1 and block forever on ReadToEnd. */
+const POWERSHELL_STDIN_RUNNER =
+  "$ErrorActionPreference = 'Stop'; [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $reader = [IO.StreamReader]::new([Console]::OpenStandardInput(), [Text.UTF8Encoding]::new($false)); try { & ([ScriptBlock]::Create($reader.ReadToEnd())) } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 } finally { $reader.Dispose() }";
 
 export async function runPowerShell(script: string): Promise<string> {
   // Send script contents through stdin, avoiding Windows' command-line limit
@@ -44,9 +63,7 @@ export async function runPowerShell(script: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       powershell(),
-      powershellArgs(
-        "$ErrorActionPreference = 'Stop'; [Console]::InputEncoding = [Text.UTF8Encoding]::new($false); [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); try { & ([ScriptBlock]::Create([Console]::In.ReadToEnd())) } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }",
-      ),
+      powershellArgs(POWERSHELL_STDIN_RUNNER),
       {
         env: powershellEnvironment(),
         windowsHide: true,
@@ -54,8 +71,22 @@ export async function runPowerShell(script: string): Promise<string> {
         maxBuffer: 128 * 1024,
       },
       (error, stdout, stderr) => {
-        if (error) reject(new Error(powershellErrorText(stderr) || error.message));
-        else resolve(stdout);
+        if (!error) {
+          resolve(stdout);
+          return;
+        }
+        const detail = powershellErrorText(stderr);
+        if (detail) {
+          reject(new Error(detail));
+          return;
+        }
+        reject(
+          new Error(
+            error.killed
+              ? "PowerShell timed out while reading or running the script"
+              : error.message,
+          ),
+        );
       },
     );
     child.stdin!.on("error", () => {
