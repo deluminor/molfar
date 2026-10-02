@@ -24,7 +24,13 @@ export type UpdaterSnapshot = {
   error?: string;
 };
 
+// A stalled request would otherwise pin the phase at "checking" until restart.
+const UPDATE_CHECK_TIMEOUT_MS = 30_000;
+
 let pendingUpdate: Update | null = null;
+// Several surfaces (sidebar, Settings, app menu) can start an install, each with
+// its own snapshot, so the guard against a second download lives here.
+let installInFlight = false;
 
 function isUpdaterNotConfiguredError(error: unknown): boolean {
   const text = error instanceof Error ? error.message : String(error);
@@ -45,7 +51,9 @@ export async function probeForUpdate(): Promise<Update | null> {
     return null;
   }
 
-  const update = await check();
+  if (installInFlight) return null;
+
+  const update = await check({ timeout: UPDATE_CHECK_TIMEOUT_MS });
   pendingUpdate = update;
   if (update) announceUpdateAvailable(update.version);
   return update;
@@ -74,7 +82,7 @@ export async function runUpdateFlow(
   onProgress?.(base);
 
   try {
-    const update = await check();
+    const update = await check({ timeout: UPDATE_CHECK_TIMEOUT_MS });
     if (!update) {
       pendingUpdate = null;
       const current: UpdaterSnapshot = { phase: "current", currentVersion };
@@ -152,15 +160,17 @@ export async function installPendingUpdate(
     return idle;
   }
 
-  let downloaded = 0;
-  let contentLength = 0;
-
   const downloading: UpdaterSnapshot = {
     phase: "downloading",
     currentVersion,
     availableVersion: update.version,
     progress: 0,
   };
+  if (installInFlight) return downloading;
+
+  installInFlight = true;
+  let downloaded = 0;
+  let contentLength = 0;
   onProgress?.(downloading);
 
   try {
@@ -206,5 +216,7 @@ export async function installPendingUpdate(
     });
 
     return failed;
+  } finally {
+    installInFlight = false;
   }
 }
