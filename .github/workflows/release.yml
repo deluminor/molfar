@@ -1,10 +1,10 @@
 name: Release
 
-# Releases are cut from `custom`: Actions → Release → Run workflow bumps the
-# version, opens a PR into `custom` (required by the branch ruleset), squash-
+# Releases are cut from `main`: Actions → Release → Run workflow bumps the
+# version, opens a PR into `main` (required by the branch ruleset), squash-
 # merges it, tags the merge commit, then builds and publishes desktop packages,
 # host packages and the updater feed. Pushing a `v*` tag that already points at
-# a commit on `custom` runs the same build.
+# a commit on `main` runs the same build.
 on:
   workflow_dispatch:
     inputs:
@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  RELEASE_BRANCH: custom
+  RELEASE_BRANCH: main
 
 jobs:
   prepare:
@@ -83,7 +83,7 @@ jobs:
             --base "$RELEASE_BRANCH" \
             --head "$RELEASE_HEAD" \
             --title "chore(release): $TAG" \
-            --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`custom\` stays PR-only.")"
+            --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`main\` stays PR-only.")"
 
           gh pr merge "$PR_URL" --squash --delete-branch
           MERGE_SHA="$(gh pr view "$PR_URL" --json mergeCommit --jq .mergeCommit.oid)"

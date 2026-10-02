@@ -1,22 +1,22 @@
 # Releasing Vatra
 
-Vatra ships its own releases from the `custom` branch of `deluminor/vatra`: desktop installers, the remote host packages, and the signed feed the app updates from. Upstream MonoCode releases are not used for anything.
+Vatra ships its own releases from the `main` branch of `deluminor/vatra`: desktop installers, the remote host packages, and the signed feed the app updates from. Upstream MonoCode releases are not used for anything.
 
 ## Cut a release
 
-1. Merge the work into `custom` and make sure CI is green.
+1. Merge the work into `main` and make sure CI is green.
 2. Optional: write the notes under `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added, Changed, Fixed, Removed).
-3. **Actions → Release → Run workflow**, branch `custom`, version `patch`, `minor`, `major`, or an exact `X.Y.Z`.
+3. **Actions → Release → Run workflow**, branch `main`, version `patch`, `minor`, `major`, or an exact `X.Y.Z`.
 
 The workflow then:
 
 - bumps `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` and `tauri.conf.json` (`scripts/release/prepare.mjs`);
 - writes the release section of `CHANGELOG.md` — an existing `## [X.Y.Z]` section is kept, otherwise the `Unreleased` notes are promoted, otherwise notes are generated from conventional commits since the previous tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert`/other → Changed; `chore`, `ci`, `docs`, `test`, `build`, `style` and merges are skipped);
-- opens a `release/vX.Y.Z` branch, squash-merges a PR into `custom` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `custom` moved);
+- opens a `release/vX.Y.Z` branch, squash-merges a PR into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
 - builds macOS (arm64 + x64), Windows, Linux (`.deb`, AppImage, `.rpm`) and the six host packages from that tag;
 - publishes the GitHub release with the changelog section as its body, plus `latest.json` for in-app updates.
 
-Pushing a `vX.Y.Z` tag yourself runs the same build, provided the tag points at a commit on `custom` and the manifests and changelog already carry that version (`scripts/release/verify.mjs`).
+Pushing a `vX.Y.Z` tag yourself runs the same build, provided the tag points at a commit on `main` and the manifests and changelog already carry that version (`scripts/release/verify.mjs`).
 
 A failed build leaves the release as a draft; use **Re-run failed jobs** on that run to resume it (starting a new run would try to bump the version again). Published releases are never modified.
 
@@ -36,6 +36,15 @@ Vatra uses its own semver line, starting at 1.0.0. The remote host must match th
 Without the Apple secrets the macOS build is ad-hoc signed and not notarized; users confirm the first launch once (see README → Download). Adding the secrets switches the workflow to signing and notarization automatically.
 
 ## Syncing from upstream
+
+MonoCode lives on the `upstream` remote (`hardbeat920/monocode`). A mirror of their default branch is kept on this repo as `upstream-main` for comparison; prefer fetching the remote for fresh syncs:
+
+```bash
+git fetch upstream
+git checkout main
+git merge upstream/main
+# resolve conflicts, keep fork-owned paths below
+```
 
 These parts are fork-owned; keep ours when porting upstream changes:
 

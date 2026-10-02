@@ -257,7 +257,7 @@ To work on Vatra or run unreleased changes, build it locally:
 ```bash
 git clone https://github.com/deluminor/vatra.git
 cd vatra
-git checkout custom
+git checkout main
 npm install
 npm run tauri -- dev
 ```
@@ -369,7 +369,7 @@ Feature logic lives next to its tests under `src/features/**/*.test.ts`. A versi
 
 Small, focused pull requests are welcome. Large changes are worth an issue first — see [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`) and run `npm run check` before opening a PR against `custom`.
+Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`) and run `npm run check` before opening a PR against `main`.
 
 ## License and Attribution
 
