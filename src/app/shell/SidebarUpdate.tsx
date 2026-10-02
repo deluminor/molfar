@@ -8,6 +8,10 @@ import {
   type UpdaterSnapshot,
 } from "../model/updater";
 import type { InstalledUpdate } from "../model/updateNotice";
+import {
+  shouldRecheckForUpdate,
+  UPDATE_RECHECK_INTERVAL_MS,
+} from "../model/updateRecheck";
 import { UpdateRailCard } from "./UpdateRailCard";
 
 // The sidebar row only earns its space when there is something to act on: an
@@ -32,17 +36,24 @@ export function SidebarUpdateFooter({
     phase: "idle",
     currentVersion: "…",
   });
+  const phaseRef = useRef(snapshot.phase);
 
-  // The automatic probe runs on mount whether or not it ends up rendering
-  // anything, so a newly published version still surfaces on its own. The
-  // snapshot lives here rather than in SidebarUpdate so the footer can drop its
-  // padding entirely when neither child has anything to show.
+  useEffect(() => {
+    phaseRef.current = snapshot.phase;
+  }, [snapshot.phase]);
+
+  // The automatic probe runs on mount and then on an interval, whether or not
+  // it ends up rendering anything, so a newly published version still surfaces
+  // on its own. The snapshot lives here rather than in SidebarUpdate so the
+  // footer can drop its padding entirely when neither child has anything to show.
   useEffect(() => {
     if (APP_UPDATER_DISABLED) return;
 
     let cancelled = false;
 
-    (async () => {
+    const probe = async (): Promise<void> => {
+      if (!shouldRecheckForUpdate(phaseRef.current)) return;
+
       const currentVersion = await readAppVersion();
       if (cancelled) return;
       setSnapshot({ phase: "checking", currentVersion });
@@ -63,10 +74,17 @@ export function SidebarUpdateFooter({
         if (cancelled) return;
         setSnapshot({ phase: "idle", currentVersion });
       }
-    })();
+    };
+
+    void probe();
+    const timer = window.setInterval(
+      () => void probe(),
+      UPDATE_RECHECK_INTERVAL_MS,
+    );
 
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, []);
 
