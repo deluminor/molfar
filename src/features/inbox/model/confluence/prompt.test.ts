@@ -2,35 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   composeConfluenceMessage,
   confluenceFolderTocMarkdown,
-  confluenceIdsInText,
-  confluenceMentionLabel,
   injectConfluencePrompt,
-  isConfluenceFolderLike,
-  normalizeConfluenceKind,
-  visibleConfluenceSpaces,
-  type ConfluenceNode,
-} from "./confluence";
+} from "./prompt";
+import type { ConfluenceNode } from "./types";
 
-describe("confluence mentions", () => {
-  it("collects page and folder ids from text", () => {
-    expect(
-      confluenceIdsInText(
-        "See @confluence/page/99 and @confluence/folder/12 plus @confluence/page/99 again.",
-      ),
-    ).toEqual({ pages: ["99"], folders: ["12"] });
-  });
-
-  it("builds mention labels", () => {
-    expect(
-      confluenceMentionLabel({
-        kind: "page",
-        id: "42",
-        title: "Blueprint",
-        url: "https://example.com",
-      }),
-    ).toBe("@confluence/page/42");
-  });
-
+describe("confluence prompt", () => {
   it("injects page bodies and folder TOC", () => {
     const injected = injectConfluencePrompt("Use this.", [
       { title: "Blueprint", body: "Hello world" },
@@ -89,41 +65,5 @@ describe("confluence mentions", () => {
         "Focus on architecture",
       ),
     ).toContain("Focus on architecture");
-  });
-
-  it("filters hidden spaces", () => {
-    const spaces = [
-      { id: "1", key: "TB", name: "Trading" },
-      { id: "2", key: "ENG", name: "Engineering" },
-    ];
-    expect(visibleConfluenceSpaces(spaces, ["2"]).map((s) => s.key)).toEqual([
-      "TB",
-    ]);
-  });
-
-  it("classifies folder-like nodes", () => {
-    expect(
-      isConfluenceFolderLike({
-        kind: "folder",
-        readable: false,
-        hasChildren: true,
-      }),
-    ).toBe(true);
-    expect(
-      isConfluenceFolderLike({
-        kind: "page",
-        readable: false,
-        hasChildren: true,
-      }),
-    ).toBe(true);
-    expect(
-      isConfluenceFolderLike({
-        kind: "page",
-        readable: true,
-        hasChildren: true,
-      }),
-    ).toBe(false);
-    expect(normalizeConfluenceKind("blogpost")).toBe("blogpost");
-    expect(normalizeConfluenceKind("weird")).toBe("other");
   });
 });

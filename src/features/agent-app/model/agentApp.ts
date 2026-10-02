@@ -1,11 +1,11 @@
 import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
 import {
-  confluenceFolderTocMarkdown,
   confluencePage,
   listConfluenceChildren,
   listConfluenceSpaces,
   searchConfluence,
-} from "../../inbox/model/confluence";
+} from "../../inbox/model/confluence/api";
+import { confluenceFolderTocMarkdown } from "../../inbox/model/confluence/prompt";
 import {
   normalizeNoteTags,
   noteTitle,
@@ -213,7 +213,7 @@ function startLaunch(
     throw new Error("Unknown harness; run models.list for available providers");
   const chosenHarness = harness as HarnessId;
   if (!isHarnessAvailable(chosenHarness))
-    throw new Error(`${chosenHarness} is not available in MonoCode`);
+    throw new Error(`${chosenHarness} is not available in Vatra`);
   const requestedModel = optionalString(input.model, "model");
   const model = requestedModel
     ? modelsFor(chosenHarness).find((entry) => entry.id === requestedModel)
