@@ -78,7 +78,7 @@ Recurring and event-driven agent work. Start from a template (code review, secur
 
 Project-scoped Markdown notes for decisions, checklists, and context worth reusing across sessions. Notes support tags, a Source/Preview toggle, and **Add to chat**. Any note can be referenced with `@` in the composer, and agents with `/operator` access can list and read notes programmatically.
 
-![Notes view with a tagged note in preview mode](docs/architecture/images/notifi.png)
+![Notes view with a tagged note in preview mode](docs/architecture/images/notes.png)
 
 ### Knowledge
 
@@ -261,6 +261,8 @@ git checkout custom
 npm install
 npm run tauri -- dev
 ```
+
+Dev builds run as **Vatra Dev** (`com.vatra.desktop.dev`) with their own profile — sessions, settings, connections, and WebView storage — so they never touch an installed Vatra and both can run side by side. A dev profile starts empty and does not import MonoCode data. On Windows, dev-build notifications may not appear, because no Start-menu shortcut is registered for the dev identifier.
 
 Credentials for Jira / Confluence are configured in **Settings → Jira** and stored locally. There is no `.env.example`; secrets stay out of the repository.
 
