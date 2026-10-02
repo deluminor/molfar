@@ -15,10 +15,6 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
 
-<p align="center">
-  <img src="docs/architecture/images/home.png" alt="Vatra Home dashboard" width="100%" />
-</p>
-
 ## Table of Contents
 
 - [Why "Vatra"](#why-vatra)
@@ -55,6 +51,8 @@ Experimental remote sessions: run agents on an always-on Windows, Linux, or macO
 ### Home
 
 The landing surface for the whole workspace. Home combines live host telemetry (CPU, RAM, swap, load, processes), Vatra status, the last 24 hours of agent sessions, and upcoming and recent automation runs. Every widget can be rearranged, and the layout persists locally. The brand card burns an animated campfire — a dotted flame over crossed logs, with rising sparks — and can be switched to a holographic **Orb**. The fire pauses when the window is hidden or the card scrolls away, and holds still when the system asks for reduced motion.
+
+![Vatra Home dashboard](docs/architecture/images/home.png)
 
 ### Sessions
 
