@@ -43,25 +43,25 @@ describe("AgentTranscript collapsed work", () => {
 
   it("shows a /operator request without the command in its amber bubble", () => {
     const markup = render([
-      { id: "user", role: "user", text: "list my notes", monocode: true },
+      { id: "user", role: "user", text: "list my notes", vatra: true },
     ]);
-    expect(markup).toContain('data-monocode="true"');
+    expect(markup).toContain('data-vatra="true"');
     expect(markup).toContain("list my notes");
     expect(markup).not.toContain("/operator");
 
     const legacy = render([
-      { id: "old", role: "user", text: "/monocode list my notes" },
+      { id: "old", role: "user", text: "/vatra list my notes" },
     ]);
-    expect(legacy).toContain('data-monocode="true"');
-    expect(legacy).not.toContain("/monocode");
+    expect(legacy).toContain('data-vatra="true"');
+    expect(legacy).not.toContain("/vatra");
   });
 
-  it("shows MonoCode CLI actions instead of their long shell commands", () => {
+  it("shows Vatra CLI actions instead of their long shell commands", () => {
     const command =
-      "/repo/target/debug/MonoCode.app/Contents/MacOS/monocode";
+      "/repo/target/debug/Vatra.app/Contents/MacOS/vatra";
     const markup = render(
       [
-        { id: "user", role: "user", text: "/monocode list my notes" },
+        { id: "user", role: "user", text: "/vatra list my notes" },
         {
           id: "help",
           role: "tool",
@@ -77,19 +77,19 @@ describe("AgentTranscript collapsed work", () => {
       ],
       true,
     );
-    expect(markup).toContain("Using MonoCode");
-    expect(markup).toContain('data-monocode-tool-call="--help"');
-    expect(markup).toContain('data-monocode-tool-call="notes.list"');
-    expect(markup).toContain("monocode app --help");
-    expect(markup).toContain("monocode app notes.list");
+    expect(markup).toContain("Using Vatra");
+    expect(markup).toContain('data-vatra-tool-call="--help"');
+    expect(markup).toContain('data-vatra-tool-call="notes.list"');
+    expect(markup).toContain("vatra app --help");
+    expect(markup).toContain("vatra app notes.list");
     expect(markup).toContain("Ran");
     expect(markup).toContain("Running");
-    expect(markup).not.toContain("Contents/MacOS/monocode");
-    expect(markup).not.toContain("Show error details for MonoCode");
+    expect(markup).not.toContain("Contents/MacOS/vatra");
+    expect(markup).not.toContain("Show error details for Vatra");
   });
 
-  it("shows the full command before approving a MonoCode CLI call", () => {
-    const command = "monocode app sessions.send --json '{\"prompt\":\"private-marker\"}'";
+  it("shows the full command before approving a Vatra CLI call", () => {
+    const command = "vatra app sessions.send --json '{\"prompt\":\"private-marker\"}'";
     const markup = renderToStaticMarkup(
       createElement(AgentTranscript, {
         blocks: [
@@ -106,7 +106,7 @@ describe("AgentTranscript collapsed work", () => {
         onApproval: () => {},
       }),
     );
-    expect(markup).toContain('data-monocode-tool-call="sessions.send"');
+    expect(markup).toContain('data-vatra-tool-call="sessions.send"');
     expect(markup).toContain("private-marker");
     expect(markup).toContain("Allow</button>");
 
@@ -117,7 +117,7 @@ describe("AgentTranscript collapsed work", () => {
           {
             id: "call",
             role: "tool",
-            text: "monocode app notes.list && echo extra",
+            text: "vatra app notes.list && echo extra",
             tool: { kind: "shell", status: "pending" },
             approval: { requestId: 2 },
           },
@@ -126,25 +126,25 @@ describe("AgentTranscript collapsed work", () => {
         onApproval: () => {},
       }),
     );
-    expect(compound).not.toContain("data-monocode-tool-call");
+    expect(compound).not.toContain("data-vatra-tool-call");
     expect(compound).toContain("echo extra");
     expect(compound).toContain("Allow</button>");
   });
 
-  it("keeps a failed MonoCode call compact until its error is opened", () => {
+  it("keeps a failed Vatra call compact until its error is opened", () => {
     const markup = render([
-      { id: "user", role: "user", text: "/monocode list notes" },
+      { id: "user", role: "user", text: "/vatra list notes" },
       {
         id: "notes",
         role: "tool",
-        text: "monocode app notes.list",
+        text: "vatra app notes.list",
         tool: { kind: "shell", status: "failed", detail: "Connection refused" },
       },
     ]);
-    expect(markup).toContain('data-monocode-tool-call="notes.list"');
+    expect(markup).toContain('data-vatra-tool-call="notes.list"');
     expect(markup).toContain("Ran");
-    expect(markup).toContain("monocode app notes.list");
-    expect(markup).toContain("Show error details for MonoCode: List notes");
+    expect(markup).toContain("vatra app notes.list");
+    expect(markup).toContain("Show error details for Vatra: List notes");
     expect(markup).not.toContain("Connection refused");
   });
 
@@ -779,7 +779,7 @@ describe("worker assignment prompts", () => {
             id: "u1",
             role: "user",
             internal: true,
-            text: "Review the current branch against main.\n\n<monocode_assignment>\nYou are a worker managed by a MonoCode lead. Your assigned write scope is: src/App.tsx.\n</monocode_assignment>",
+            text: "Review the current branch against main.\n\n<vatra_assignment>\nYou are a worker managed by a Vatra lead. Your assigned write scope is: src/App.tsx.\n</vatra_assignment>",
           },
           { id: "a1", role: "assistant", text: "Looking now" },
         ],
@@ -787,7 +787,7 @@ describe("worker assignment prompts", () => {
     );
     expect(markup).toContain("Review the current branch against main.");
     expect(markup).toContain("Looking now");
-    expect(markup).not.toContain("monocode_assignment");
-    expect(markup).not.toContain("You are a worker managed by a MonoCode lead");
+    expect(markup).not.toContain("vatra_assignment");
+    expect(markup).not.toContain("You are a worker managed by a Vatra lead");
   });
 });

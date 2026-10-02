@@ -50,21 +50,21 @@ import {
 } from "./settings";
 import { IS_MAC, MOD, SHIFT } from "../../../platform/tauri/platform";
 
-const KEY = "monocode.composerRunner";
-const MODEL_CONTROLS_KEY = "monocode.modelControls";
-const LEGACY_EFFORT_VISIBLE_KEY = "monocode.composerEffortVisible";
-const NOTES_KEY = "monocode.notesEnabled";
-const KEYBINDING_OVERRIDES_KEY = "monocode.keybindingOverrides";
-const QUICK_COMPOSER_SHORTCUT_KEY = "monocode.quickComposerShortcut";
-const LIVE_AGENTS_KEY = "monocode.liveAgentsEnabled";
-const GRID_ARCADE_KEY = "monocode.gridArcadeEnabled";
-const DIFF_VIEWER_KEY = "monocode.diffViewer";
-const FORMAT_ON_SAVE_KEY = "monocode.formatOnSave";
-const AUTOSAVE_KEY = "monocode.autosave";
-const FILE_TAB_MODE_KEY = "monocode.fileTabMode";
-const FOLLOW_UP_BEHAVIOR_KEY = "monocode.followUpBehavior";
-const TAB_ANIMATIONS_KEY = "monocode.tabAnimationsEnabled";
-const COLLAPSED_PROJECT_RAIL_MODE_KEY = "monocode.collapsedProjectRailMode";
+const KEY = "vatra.composerRunner";
+const MODEL_CONTROLS_KEY = "vatra.modelControls";
+const LEGACY_EFFORT_VISIBLE_KEY = "vatra.composerEffortVisible";
+const NOTES_KEY = "vatra.notesEnabled";
+const KEYBINDING_OVERRIDES_KEY = "vatra.keybindingOverrides";
+const QUICK_COMPOSER_SHORTCUT_KEY = "vatra.quickComposerShortcut";
+const LIVE_AGENTS_KEY = "vatra.liveAgentsEnabled";
+const GRID_ARCADE_KEY = "vatra.gridArcadeEnabled";
+const DIFF_VIEWER_KEY = "vatra.diffViewer";
+const FORMAT_ON_SAVE_KEY = "vatra.formatOnSave";
+const AUTOSAVE_KEY = "vatra.autosave";
+const FILE_TAB_MODE_KEY = "vatra.fileTabMode";
+const FOLLOW_UP_BEHAVIOR_KEY = "vatra.followUpBehavior";
+const TAB_ANIMATIONS_KEY = "vatra.tabAnimationsEnabled";
+const COLLAPSED_PROJECT_RAIL_MODE_KEY = "vatra.collapsedProjectRailMode";
 
 describe("follow-up behavior setting", () => {
   beforeEach(mockLocalStorage);

@@ -8,36 +8,36 @@ import {
   clearPreparedNewThreadBackground,
 } from "./newThreadBackgroundEffects";
 
-const ACCENT_COLOR_KEY = "monocode.accentColor";
-const THEME_HUE_KEY = "monocode.themeHue";
-const THEME_SATURATION_KEY = "monocode.themeSaturation";
-const THEME_DARK_LIGHTNESS_KEY = "monocode.themeDarkLightness";
-const OPACITY_KEY = "monocode.sidebarOpacity";
-const BLUR_KEY = "monocode.sidebarBlur";
-const PROJECT_RAIL_OPEN_KEY = "monocode.projectRailOpen";
-const SESSION_SIDEBAR_OPEN_KEY = "monocode.sessionSidebarOpen";
-const BODY_KEY = "monocode.bodyGlass";
-const SCHEME_KEY = "monocode.colorScheme";
-const SIDEBAR_TAB_ORDER_KEY = "monocode.sidebarTabOrder";
-const PROJECT_RAIL_WIDTH_KEY = "monocode.projectRailWidth";
-const TRANSCRIPT_LAYOUT_KEY = "monocode.transcriptLayout";
-const TRANSCRIPT_ANCHOR_KEY = "monocode.transcriptAnchor";
-const CHAT_BACKGROUND_PATH_KEY = "monocode.chatBackgroundPath";
-const CHAT_BACKGROUND_OPACITY_KEY = "monocode.chatBackgroundOpacity";
-const CHAT_BACKGROUND_EMPTY_OPACITY_KEY = "monocode.chatBackgroundEmptyOpacity";
+const ACCENT_COLOR_KEY = "vatra.accentColor";
+const THEME_HUE_KEY = "vatra.themeHue";
+const THEME_SATURATION_KEY = "vatra.themeSaturation";
+const THEME_DARK_LIGHTNESS_KEY = "vatra.themeDarkLightness";
+const OPACITY_KEY = "vatra.sidebarOpacity";
+const BLUR_KEY = "vatra.sidebarBlur";
+const PROJECT_RAIL_OPEN_KEY = "vatra.projectRailOpen";
+const SESSION_SIDEBAR_OPEN_KEY = "vatra.sessionSidebarOpen";
+const BODY_KEY = "vatra.bodyGlass";
+const SCHEME_KEY = "vatra.colorScheme";
+const SIDEBAR_TAB_ORDER_KEY = "vatra.sidebarTabOrder";
+const PROJECT_RAIL_WIDTH_KEY = "vatra.projectRailWidth";
+const TRANSCRIPT_LAYOUT_KEY = "vatra.transcriptLayout";
+const TRANSCRIPT_ANCHOR_KEY = "vatra.transcriptAnchor";
+const CHAT_BACKGROUND_PATH_KEY = "vatra.chatBackgroundPath";
+const CHAT_BACKGROUND_OPACITY_KEY = "vatra.chatBackgroundOpacity";
+const CHAT_BACKGROUND_EMPTY_OPACITY_KEY = "vatra.chatBackgroundEmptyOpacity";
 const CHAT_BACKGROUND_SESSION_OPACITY_KEY =
-  "monocode.chatBackgroundSessionOpacity";
-const CHAT_BACKGROUND_SCOPE_KEY = "monocode.chatBackgroundScope";
-const NEW_THREAD_BACKGROUND_EFFECT_KEY = "monocode.newThreadBackgroundEffect";
-const CHANGES_VIEW_KEY = "monocode.changesView";
-const SHOW_EXCLUDED_FILES_KEY = "monocode.showExcludedFiles";
+  "vatra.chatBackgroundSessionOpacity";
+const CHAT_BACKGROUND_SCOPE_KEY = "vatra.chatBackgroundScope";
+const NEW_THREAD_BACKGROUND_EFFECT_KEY = "vatra.newThreadBackgroundEffect";
+const CHANGES_VIEW_KEY = "vatra.changesView";
+const SHOW_EXCLUDED_FILES_KEY = "vatra.showExcludedFiles";
 let chatBackgroundRevision = Date.now();
 let nativeGlassReady = false;
 let glassFadeTimer: number | undefined;
 let glassSyncGeneration = 0;
 
 export const CHAT_BACKGROUND_PATH_CHANGE_EVENT =
-  "monocode:chat-background-path-change";
+  "vatra:chat-background-path-change";
 
 export type ColorScheme = "dark" | "light";
 export type ThemePreference = ColorScheme | "system";
@@ -82,7 +82,7 @@ export const THEME_PREFERENCE_DEFAULT: ThemePreference = "dark";
 export const ACCENT_COLOR_DEFAULT = null;
 
 /** Fired on `window` whenever the color scheme flips (detail: ColorScheme). */
-export const SCHEME_CHANGE_EVENT = "monocode:schemechange";
+export const SCHEME_CHANGE_EVENT = "vatra:schemechange";
 
 export const TRANSCRIPT_LAYOUT_DEFAULT: TranscriptLayout = "chat";
 
@@ -91,16 +91,16 @@ export const CHANGES_VIEW_DEFAULT: ChangesView = "list";
 export const TRANSCRIPT_ANCHOR_DEFAULT = true;
 
 /** Fired on `window` whenever prompt-to-top anchoring flips (detail: boolean). */
-export const TRANSCRIPT_ANCHOR_CHANGE_EVENT = "monocode:transcriptanchorchange";
+export const TRANSCRIPT_ANCHOR_CHANGE_EVENT = "vatra:transcriptanchorchange";
 
 /** Fired on `window` whenever the transcript layout flips (detail: TranscriptLayout). */
-export const TRANSCRIPT_LAYOUT_CHANGE_EVENT = "monocode:transcriptlayoutchange";
+export const TRANSCRIPT_LAYOUT_CHANGE_EVENT = "vatra:transcriptlayoutchange";
 
 export const SHOW_EXCLUDED_FILES_DEFAULT = false;
 
 /** Fired on `window` whenever the explorer excluded-files setting flips (detail: boolean). */
 export const SHOW_EXCLUDED_FILES_CHANGE_EVENT =
-  "monocode:showexcludedfileschange";
+  "vatra:showexcludedfileschange";
 
 export type SidebarTabId = "files" | "sessions" | "changes" | "inbox";
 

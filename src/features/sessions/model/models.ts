@@ -213,13 +213,13 @@ export const DEFAULT_MODEL_ID: Record<HarnessId, string> = {
   antigravity: "antigravity:gemini-3.8-flash-high",
 };
 
-const FAVORITES_KEY = "monocode.favoriteModels";
-const MODEL_PICKER_TAB_KEY = "monocode.modelPickerTab";
-const HIDDEN_PICKER_PROVIDERS_KEY = "monocode.hiddenPickerProviders";
-const LAST_MODEL_KEY = "monocode.lastModel";
-const LAST_MODEL_SETTINGS_KEY = "monocode.lastModelSettings";
-const DEFAULT_MODELS_KEY = "monocode.defaultModels";
-const RECENT_MODELS_KEY = "monocode.recentModels";
+const FAVORITES_KEY = "vatra.favoriteModels";
+const MODEL_PICKER_TAB_KEY = "vatra.modelPickerTab";
+const HIDDEN_PICKER_PROVIDERS_KEY = "vatra.hiddenPickerProviders";
+const LAST_MODEL_KEY = "vatra.lastModel";
+const LAST_MODEL_SETTINGS_KEY = "vatra.lastModelSettings";
+const DEFAULT_MODELS_KEY = "vatra.defaultModels";
+const RECENT_MODELS_KEY = "vatra.recentModels";
 const RECENT_MODEL_LIMIT = 6;
 
 export type ModelPickerTab = "favorites" | HarnessId;

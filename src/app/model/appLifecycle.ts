@@ -163,7 +163,7 @@ export async function askQuitConfirmation(
     quitDialogOpen = true;
     try {
       confirmed = await ask(quitWhileBusyMessage(inFlight), {
-        title: "MonoCode",
+        title: "Vatra",
         kind: "warning",
         okLabel: "Quit",
       });
@@ -355,8 +355,8 @@ export async function confirmReload(
   hasUnsavedFiles: boolean,
 ): Promise<boolean> {
   if (!hasUnsavedFiles) return true;
-  return ask("Reload MonoCode and discard unsaved changes?", {
-    title: "MonoCode",
+  return ask("Reload Vatra and discard unsaved changes?", {
+    title: "Vatra",
     kind: "warning",
     okLabel: "Reload",
   });
@@ -462,7 +462,7 @@ async function confirmAndCloseWindow(
     if (refs.length > 0) {
       const ok = await ask(
         "Close this window and stop its running chats? Other windows will stay open.",
-        { title: "MonoCode", kind: "warning", okLabel: "Close window" },
+        { title: "Vatra", kind: "warning", okLabel: "Close window" },
       );
       if (!ok) return;
     }

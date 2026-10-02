@@ -2,7 +2,7 @@ use super::constants::MAX_DOCUMENT_BYTES;
 use super::paths;
 use super::types::VaultDocument;
 use sha2::{Digest, Sha256};
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -57,7 +57,7 @@ pub fn atomic_write(
     let parent = destination
         .parent()
         .ok_or("File has no parent directory.")?;
-    let temporary = parent.join(format!(".monocode-{}.tmp", uuid::Uuid::new_v4()));
+    let temporary = parent.join(format!(".vatra-{}.tmp", uuid::Uuid::new_v4()));
     let result = (|| {
         let mut file = OpenOptions::new()
             .create_new(true)
@@ -76,7 +76,7 @@ pub fn atomic_write(
         std::fs::rename(&temporary, destination)
             .map_err(|error| format!("Cannot replace note: {error}"))?;
         #[cfg(unix)]
-        File::open(parent)
+        std::fs::File::open(parent)
             .and_then(|directory| directory.sync_all())
             .map_err(|error| format!("Save completed, directory sync failed: {error}"))?;
 

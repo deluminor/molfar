@@ -182,7 +182,7 @@ describe("useProviderAccountUsage", () => {
     });
     clearCachedRateLimits();
     localStorage.setItem(
-      "monocode.providerAccounts.v1",
+      "vatra.providerAccounts.v1",
       JSON.stringify({
         claude: [{ id: "account-work", provider: "claude", label: "Work" }],
       }),

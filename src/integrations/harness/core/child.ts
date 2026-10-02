@@ -493,7 +493,7 @@ export function inspectHarnessBinary(
   });
 }
 
-/** Runs the CLI's own self-update against the binary MonoCode uses. */
+/** Runs the CLI's own self-update against the binary Vatra uses. */
 export async function updateHarnessCli(
   provider: ConfigurableBinaryProvider,
 ): Promise<void> {

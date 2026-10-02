@@ -10,7 +10,7 @@ impl Fixture {
         let root = std::env::temp_dir()
             .canonicalize()
             .unwrap()
-            .join(format!("monocode-vault-test-{}", uuid::Uuid::new_v4()));
+            .join(format!("vatra-vault-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir(&root).unwrap();
         Self(root)
     }

@@ -54,7 +54,7 @@ export type HarnessAdapter = {
   canSteer?: boolean;
   commands?: NativeCommandProvider;
   sendTurn(input: SendTurnInput): Promise<void>;
-  /** Trigger provider-owned compaction outside MonoCode's normal user-turn path. */
+  /** Trigger provider-owned compaction outside Vatra's normal user-turn path. */
   compactContext?(input: CompactContextInput): Promise<void>;
   /** Rewind provider state so the last user turn can be replaced. */
   rewindLastTurn?(input: RewindLastTurnInput): Promise<RewindLastTurnResult>;
@@ -76,7 +76,7 @@ export type HarnessAdapter = {
   stopSession(sessionId: string): Promise<void>;
   /** Drop resume state and kill the child (delete, harness switch, idle detach). */
   forgetSession(sessionId: string): Promise<void>;
-  /** Seed resume state from a restored MonoCode session. */
+  /** Seed resume state from a restored Vatra session. */
   bindSession(
     threadId: string,
     providerSessionId: string,
@@ -398,7 +398,7 @@ export async function refreshHarnessCatalogs(
         if (!adapter.refreshCatalog) return;
         if (!options?.force && hasLiveCatalog(adapter.id)) return;
         await adapter.refreshCatalog().catch((error: unknown) => {
-          console.debug(`[monocode] ${adapter.id} catalog`, error);
+          console.debug(`[vatra] ${adapter.id} catalog`, error);
         });
       }),
   );

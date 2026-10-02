@@ -5,13 +5,13 @@ export type RailSurfaceId = "home" | "usage" | "knowledge";
 export type RailSurfaceVisibility = Readonly<Record<RailSurfaceId, boolean>>;
 
 const RAIL_SURFACE_KEYS: Record<RailSurfaceId, string> = {
-  home: "monocode.railSurface.home",
-  usage: "monocode.railSurface.usage",
-  knowledge: "monocode.railSurface.knowledge",
+  home: "vatra.railSurface.home",
+  usage: "vatra.railSurface.usage",
+  knowledge: "vatra.railSurface.knowledge",
 };
 
 /** Fired on `window` when any project rail shortcut is shown or hidden. */
-export const RAIL_SURFACES_CHANGE_EVENT = "monocode:rail-surfaces-change";
+export const RAIL_SURFACES_CHANGE_EVENT = "vatra:rail-surfaces-change";
 
 export const RAIL_SURFACES_DEFAULT: RailSurfaceVisibility = {
   home: true,
@@ -56,14 +56,14 @@ function readRailSurface(id: RailSurfaceId): boolean {
   return readFlag(RAIL_SURFACE_KEYS[id]) ?? RAIL_SURFACES_DEFAULT[id];
 }
 
-const LIVE_AGENTS_MIN_COUNT_KEY = "monocode.liveAgentsMinCount";
+const LIVE_AGENTS_MIN_COUNT_KEY = "vatra.liveAgentsMinCount";
 
 export const LIVE_AGENTS_MIN_COUNT_DEFAULT = 2;
 export const LIVE_AGENTS_MIN_COUNT_MAX = 8;
 
 /** Fired on `window` when the working-agents card threshold changes. */
 export const LIVE_AGENTS_MIN_COUNT_CHANGE_EVENT =
-  "monocode:live-agents-min-count-change";
+  "vatra:live-agents-min-count-change";
 
 export function clampLiveAgentsMinCount(value: number): number {
   if (!Number.isFinite(value)) return LIVE_AGENTS_MIN_COUNT_DEFAULT;

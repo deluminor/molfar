@@ -34,7 +34,7 @@ function makeSparkles(): Sparkle[] {
 }
 
 /** A one-shot burst of rising sparkles inside a freshly sent /operator bubble. */
-export function MonocodeSparkles({
+export function VatraSparkles({
   blockId,
   startedAt,
 }: {
@@ -46,11 +46,11 @@ export function MonocodeSparkles({
 
   if (!active) return null;
   return (
-    <span aria-hidden className="monocode-sparkles">
+    <span aria-hidden className="vatra-sparkles">
       {sparkles.map((sparkle, index) => (
         <span
           key={index}
-          className="monocode-sparkle"
+          className="vatra-sparkle"
           style={
             {
               "--x": `${sparkle.x}%`,
@@ -63,11 +63,11 @@ export function MonocodeSparkles({
           }
         >
           {sparkle.star ? (
-            <svg viewBox="0 0 24 24" className="monocode-sparkle-glyph">
+            <svg viewBox="0 0 24 24" className="vatra-sparkle-glyph">
               <path d={STAR_PATH} fill="currentColor" />
             </svg>
           ) : (
-            <span className="monocode-sparkle-glyph monocode-sparkle-ember" />
+            <span className="vatra-sparkle-glyph vatra-sparkle-ember" />
           )}
         </span>
       ))}

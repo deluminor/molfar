@@ -288,7 +288,7 @@ export class HostChildBackend implements ChildBackend {
         stdio: ["pipe", "pipe", "pipe", "pipe"],
         detached: process.platform !== "win32",
         windowsHide: true,
-        env: { ...process.env, MONOCODE_HOST: "1" },
+        env: { ...process.env, VATRA_HOST: "1" },
       },
     );
     this.children.set(id, child);
