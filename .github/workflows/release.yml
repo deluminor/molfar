@@ -1,9 +1,10 @@
 name: Release
 
 # Releases are cut from `custom`: Actions → Release → Run workflow bumps the
-# version, writes the CHANGELOG section, commits and tags it, then builds and
-# publishes desktop packages, host packages and the updater feed. Pushing a
-# `v*` tag that already points at a commit on `custom` runs the same build.
+# version, opens a PR into `custom` (required by the branch ruleset), squash-
+# merges it, tags the merge commit, then builds and publishes desktop packages,
+# host packages and the updater feed. Pushing a `v*` tag that already points at
+# a commit on `custom` runs the same build.
 on:
   workflow_dispatch:
     inputs:
@@ -31,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     outputs:
       tag: ${{ steps.result.outputs.tag }}
       version: ${{ steps.result.outputs.version }}
@@ -58,22 +60,46 @@ jobs:
           VERSION_REQUEST: ${{ inputs.version }}
         run: node scripts/release/prepare.mjs "$VERSION_REQUEST"
 
-      - name: Commit and tag the release
+      - name: Land release via pull request and tag
         if: github.event_name == 'workflow_dispatch'
         env:
           TAG: ${{ steps.bump.outputs.tag }}
           VERSION: ${{ steps.bump.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           node scripts/release/verify.mjs "$TAG"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          RELEASE_HEAD="release/${TAG}"
+          git switch -c "$RELEASE_HEAD"
           git add CHANGELOG.md package.json package-lock.json Cargo.toml Cargo.lock src-tauri/tauri.conf.json
           git commit -m "chore(release): $TAG"
-          git tag -a "$TAG" -m "Vatra $VERSION"
-          # Atomic: the branch and tag land together or not at all, and a
-          # branch that moved since the run started is rejected.
-          git push --atomic origin "HEAD:refs/heads/$RELEASE_BRANCH" "refs/tags/$TAG"
+          git push --force-with-lease origin "HEAD:refs/heads/$RELEASE_HEAD"
+
+          PR_URL="$(gh pr create \
+            --base "$RELEASE_BRANCH" \
+            --head "$RELEASE_HEAD" \
+            --title "chore(release): $TAG" \
+            --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`custom\` stays PR-only.")"
+
+          gh pr merge "$PR_URL" --squash --delete-branch
+          MERGE_SHA="$(gh pr view "$PR_URL" --json mergeCommit --jq .mergeCommit.oid)"
+          if [ -z "$MERGE_SHA" ] || [ "$MERGE_SHA" = "null" ]; then
+            echo "Squash merge of $PR_URL did not produce a merge commit SHA." >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin "$RELEASE_BRANCH"
+          if ! git merge-base --is-ancestor "$MERGE_SHA" "origin/$RELEASE_BRANCH"; then
+            echo "Merge commit $MERGE_SHA is not on origin/$RELEASE_BRANCH." >&2
+            exit 1
+          fi
+
+          git tag -a "$TAG" -m "Vatra $VERSION" "$MERGE_SHA"
+          git push origin "refs/tags/$TAG"
 
       - name: Verify the pushed tag
         if: github.event_name == 'push'
