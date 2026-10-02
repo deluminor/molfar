@@ -124,6 +124,7 @@ import type { SettingsSectionId } from "../../features/settings/model/settings";
 import type { InstalledUpdate } from "../model/updateNotice";
 import { TAB_GROUP_COLORS } from "../../features/workspace/model/tabGroups";
 import { useDragResize } from "../../shared/hooks/useDragResize";
+import { paneWidthStorageKey } from "../../shared/lib/paneWidthStorage";
 import { useGitFileStatuses } from "../../features/source-control/hooks/useGitFileStatuses";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
 import { useProjectDiffStats } from "../../features/source-control/hooks/useProjectDiffStats";
@@ -182,8 +183,6 @@ const MIN_WIDTH = 260;
 const MAX_WIDTH = 560;
 const DEFAULT_WIDTH = 260;
 const REMINDERS_COLOR = "#f59e0b";
-
-let rememberedWidth = DEFAULT_WIDTH;
 
 type SidebarTab = SidebarTabId;
 
@@ -533,10 +532,8 @@ function SidebarComponent({
     min: MIN_WIDTH,
     max: () => Math.min(MAX_WIDTH, Math.floor(window.innerWidth * 0.5)),
     defaultWidth: DEFAULT_WIDTH,
-    initial: rememberedWidth,
-    onCommit: (next) => {
-      rememberedWidth = next;
-    },
+    initial: DEFAULT_WIDTH,
+    storageKey: paneWidthStorageKey("sessionSidebar"),
   });
   const [tabOrder, setTabOrder] = useState<SidebarTab[]>(loadSidebarTabOrder);
   const [now, setNow] = useState(() => Date.now());
@@ -1097,8 +1094,8 @@ function SidebarComponent({
               },
               {
                 kind: "item" as const,
-                id: "copy-monocode-session-id",
-                label: "MonoCode session ID",
+                id: "copy-vatra-session-id",
+                label: "Vatra session ID",
               },
             ],
           },
@@ -1243,7 +1240,7 @@ function SidebarComponent({
       setRenamingSessionId(sessionId);
       return;
     }
-    if (id === "copy-harness-session-id" || id === "copy-monocode-session-id") {
+    if (id === "copy-harness-session-id" || id === "copy-vatra-session-id") {
       const value =
         id === "copy-harness-session-id" ? providerSessionId : sessionId;
       if (value) {

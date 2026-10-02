@@ -17,6 +17,7 @@ import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPick
 import { OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
+import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import { formatRelativeTime } from "../../inbox/model/githubTasks";
@@ -58,7 +59,6 @@ const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;
 const DEFAULT_WIDTH = 280;
 
-let rememberedWidth = DEFAULT_WIDTH;
 let rememberedNoteId: string | null = null;
 
 // Keep pending saves ordered across editor unmounts and reopened notes.
@@ -108,10 +108,8 @@ export function NotesView({
     min: MIN_WIDTH,
     max: () => Math.min(MAX_WIDTH, Math.round(window.innerWidth * 0.5)),
     defaultWidth: DEFAULT_WIDTH,
-    initial: rememberedWidth,
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
+    initial: DEFAULT_WIDTH,
+    storageKey: paneWidthStorageKey("notesList"),
   });
   const [notes, setNotes] = useState<Note[]>(() => peekNotes() ?? []);
   const [loading, setLoading] = useState(() => peekNotes() === null);

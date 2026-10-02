@@ -6,6 +6,11 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { suppressTextSelection } from "../lib/drag";
+import {
+  loadPaneWidth,
+  parsePaneWidth,
+  savePaneWidth,
+} from "../lib/paneWidthStorage";
 
 type Options = {
   min: number;
@@ -13,6 +18,8 @@ type Options = {
   max: () => number;
   defaultWidth: number;
   initial: number;
+  /** Persists the width in localStorage and follows changes from other windows. */
+  storageKey?: string;
   onCommit?: (width: number) => void;
 };
 
@@ -27,6 +34,7 @@ export function useDragResize({
   max,
   defaultWidth,
   initial,
+  storageKey,
   onCommit,
 }: Options) {
   const minRef = useRef(min);
@@ -42,7 +50,12 @@ export function useDragResize({
     return clampTo(value, minRef.current, maxRef.current());
   }, []);
 
-  const [width, setWidth] = useState(() => clamp(initial));
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+
+  const [width, setWidth] = useState(() =>
+    clamp((storageKey ? loadPaneWidth(storageKey) : null) ?? initial),
+  );
   const [dragging, setDragging] = useState(false);
   const paneRef = useRef<HTMLElement | null>(null);
   const widthRef = useRef(width);
@@ -63,6 +76,9 @@ export function useDragResize({
     const value = clamp(next);
     apply(value);
     setWidth(value);
+
+    const key = storageKeyRef.current;
+    if (key) savePaneWidth(key, value);
     onCommitRef.current?.(value);
   };
 
@@ -118,6 +134,24 @@ export function useDragResize({
   };
 
   useEffect(() => () => stopDrag.current?.(), []);
+
+  useEffect(() => {
+    if (!storageKey) return;
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== storageKey || stopDrag.current) return;
+
+      const stored = parsePaneWidth(event.newValue);
+      if (stored == null) return;
+
+      const value = clamp(stored);
+      apply(value);
+      setWidth(value);
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [storageKey, clamp]);
 
   const onDoubleClick = () => {
     commit(defaultRef.current);

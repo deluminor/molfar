@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { PanelLeft, RotateCcw } from "../../../shared/ui/icons";
 import { IconButton } from "../../../app/shell/TitleBar";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
+import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
 import { inboxItemRef, type InboxItem } from "../model/githubTasks";
 import { inboxAskKey } from "../model/inboxAsk";
 
 export type InboxSessionPortal = { sessionId: string; host: HTMLElement };
-let rememberedWidth = 440;
 
 /** Only a destination for the regular session pane; it owns no chat state. */
 export function InboxDiscussionPanel({
@@ -28,12 +28,10 @@ export function InboxDiscussionPanel({
   const resize = useDragResize({
     min: 360,
     max: () => Math.max(360, window.innerWidth - 650),
-    initial: rememberedWidth,
+    initial: 440,
     defaultWidth: 440,
     direction: "left",
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
+    storageKey: paneWidthStorageKey("inboxDiscussion"),
   });
   const key = inboxAskKey(item);
   useEffect(() => {
