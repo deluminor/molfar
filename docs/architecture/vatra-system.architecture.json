@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MonoCode System Overview",
+    "title": "Vatra System Overview",
     "locale": "en",
     "quality_profile": "showcase",
     "viewBox": [1180, 720],
@@ -108,7 +108,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "MonoCode desktop process",
+      "label": "Vatra desktop process",
       "wraps": ["ui", "inbox", "control", "tauri", "harness", "store"]
     },
     {
@@ -210,8 +210,8 @@
       "dot": "emerald",
       "title": "Agent path",
       "items": [
-        "Harness adapters normalize provider CLI protocols into MonoCode events",
-        "MonoCode does not sell tokens — it drives CLIs you already authenticate"
+        "Harness adapters normalize provider CLI protocols into Vatra events",
+        "Vatra does not sell tokens — it drives CLIs you already authenticate"
       ]
     },
     {
