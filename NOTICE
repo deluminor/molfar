@@ -1,4 +1,11 @@
-MonoCode is not affiliated with, endorsed by, or sponsored by the makers of the
-agent harnesses it can drive.
+Vatra
+Copyright (c) 2026 Erik Kopcha
+
+Vatra is a fork of MonoCode (https://github.com/hardbeat920/monocode),
+Copyright (c) 2026 Nick, distributed under the MIT License. The original
+copyright notice and permission notice are retained in LICENSE.
+
+Vatra is not affiliated with, endorsed by, or sponsored by the MonoCode
+project or by the makers of the agent harnesses it can drive.
 
 Provider marks that appear in the UI (including Claude, Codex, Cursor, GitHub, GitLab, Linear, Grok, OpenCode, Pi, omp, fx, Hermes, and Nous Research) are trademarks of their respective owners and are used only to identify those products.

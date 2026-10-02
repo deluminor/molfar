@@ -64,7 +64,7 @@ export async function runUpdateFlow(
     onProgress?.(idle);
 
     if (manual) {
-      await message(FORK_UPDATER_DISABLED_MESSAGE, { title: "MonoCode" });
+      await message(FORK_UPDATER_DISABLED_MESSAGE, { title: "Vatra" });
     }
 
     return idle;
@@ -80,7 +80,7 @@ export async function runUpdateFlow(
       const current: UpdaterSnapshot = { phase: "current", currentVersion };
       onProgress?.(current);
       if (manual) {
-        await message("You're on the latest version.", { title: "MonoCode" });
+        await message("You're on the latest version.", { title: "Vatra" });
       }
       return current;
     }
@@ -99,7 +99,7 @@ export async function runUpdateFlow(
     const notes = update.body?.trim();
     const detail = notes ? `\n\n${notes}` : "";
     const yes = await ask(
-      `MonoCode ${update.version} is available (you have ${currentVersion}).${detail}\n\nInstall now?`,
+      `Vatra ${update.version} is available (you have ${currentVersion}).${detail}\n\nInstall now?`,
       { title: "Update available", kind: "info" },
     );
     if (!yes) return available;
@@ -112,8 +112,8 @@ export async function runUpdateFlow(
       onProgress?.(idle);
       if (manual) {
         await message(
-          "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/hardbeat920/monocode/releases/latest",
-          { title: "MonoCode" },
+          "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/deluminor/vatra/releases/latest",
+          { title: "Vatra" },
         );
       }
       return idle;
@@ -124,7 +124,7 @@ export async function runUpdateFlow(
     onProgress?.(failed);
     if (manual) {
       await message(`Couldn't check for updates.\n\n${error}`, {
-        title: "MonoCode",
+        title: "Vatra",
       });
     }
     return failed;
@@ -202,7 +202,7 @@ export async function installPendingUpdate(
     };
     onProgress?.(failed);
     await message(`Couldn't install the update.\n\n${error}`, {
-      title: "MonoCode",
+      title: "Vatra",
     });
 
     return failed;
