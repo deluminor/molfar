@@ -180,6 +180,8 @@ fn snapshots_the_session_database_without_raw_sidecars() {
         .query_row("SELECT id FROM sessions", [], |row| row.get(0))
         .unwrap();
     assert_eq!(id, "in-wal");
+    // Windows refuses to delete a directory while SQLite still holds the file.
+    drop(copy);
     fs::remove_dir_all(base).unwrap();
 }
 
