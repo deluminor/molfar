@@ -27,6 +27,11 @@ fn reject_symlinks(path: &Path) -> Result<(), String> {
             return Err("Parent traversal is not permitted.".into());
         }
         current.push(component);
+        // Drive prefixes and roots (`C:`, `\\?\C:\`) are not valid
+        // symlink_metadata targets on Windows (ERROR_INVALID_FUNCTION).
+        if matches!(component, Component::Prefix(_) | Component::RootDir) {
+            continue;
+        }
         let metadata = std::fs::symlink_metadata(&current)
             .map_err(|error| format!("{}: {error}", current.display()))?;
         if metadata.file_type().is_symlink() {
