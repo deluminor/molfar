@@ -645,13 +645,14 @@ fn write_dev_bundle_icons(app: &Path, app_name: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Must match `CFBundleIdentifier` in the generated dev bundle plist and tauri.conf.json.
 #[cfg(debug_assertions)]
-const DEV_BUNDLE_DEFAULT_NAME: &str = "Vatra";
+const DEV_BUNDLE_DEFAULT_NAME: &str = "Vatra Dev";
 #[cfg(debug_assertions)]
 const DEV_BUNDLE_NAME_ENV: &str = "VATRA_DEV_APP_NAME";
+/// WebKit storage and notification authorization key off the bundle id, so
+/// it must equal the identifier `lib.rs` gives debug builds.
 #[cfg(debug_assertions)]
-const DEV_BUNDLE_ID: &str = crate::legacy_identity::IDENTIFIER;
+const DEV_BUNDLE_ID: &str = crate::app_identity::DEV_IDENTIFIER;
 #[cfg(debug_assertions)]
 const DEV_ICNS: &[u8] = include_bytes!("../icons/icon.icns");
 #[cfg(debug_assertions)]
@@ -796,5 +797,9 @@ mod tests {
         let plist = String::from_utf8(dev_bundle_plist("Vatra Dev")).unwrap();
         assert!(plist.contains("<string>Vatra Dev</string>"));
         assert!(!plist.contains("<string>Vatra</string>"));
+        assert!(plist.contains(&format!(
+            "<string>{}</string>",
+            crate::app_identity::DEV_IDENTIFIER
+        )));
     }
 }

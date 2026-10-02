@@ -40,7 +40,55 @@ async function updaterWithPendingUpdate() {
   return updater;
 }
 
+describe("probeForUpdate", () => {
+  it("bounds the check so a stalled request cannot pin the phase", async () => {
+    mocks.check.mockResolvedValue(null);
+    const updater = await import("./updater");
+
+    await updater.probeForUpdate();
+
+    expect(mocks.check).toHaveBeenCalledWith({ timeout: 30_000 });
+  });
+
+  it("skips the check while an install is downloading", async () => {
+    mocks.downloadAndInstall.mockReturnValue(new Promise(() => {}));
+    const updater = await updaterWithPendingUpdate();
+    void updater.installPendingUpdate();
+    await vi.waitFor(() => expect(mocks.downloadAndInstall).toHaveBeenCalledOnce());
+
+    await expect(updater.probeForUpdate()).resolves.toBeNull();
+
+    expect(mocks.check).toHaveBeenCalledOnce();
+  });
+});
+
 describe("installPendingUpdate", () => {
+  it("starts one download when two surfaces install at once", async () => {
+    mocks.downloadAndInstall.mockResolvedValue(undefined);
+    const updater = await updaterWithPendingUpdate();
+
+    const [first, second] = await Promise.all([
+      updater.installPendingUpdate(),
+      updater.installPendingUpdate(),
+    ]);
+
+    expect(mocks.downloadAndInstall).toHaveBeenCalledOnce();
+    expect(first.phase).toBe("current");
+    expect(second.phase).toBe("downloading");
+  });
+
+  it("allows a retry after a failed install", async () => {
+    mocks.downloadAndInstall.mockRejectedValueOnce(new Error("offline"));
+    const updater = await updaterWithPendingUpdate();
+
+    await updater.installPendingUpdate();
+    mocks.downloadAndInstall.mockResolvedValue(undefined);
+    const retry = await updater.installPendingUpdate();
+
+    expect(mocks.downloadAndInstall).toHaveBeenCalledTimes(2);
+    expect(retry.phase).toBe("current");
+  });
+
   it("records a successful installation before relaunching", async () => {
     mocks.downloadAndInstall.mockResolvedValue(undefined);
     const updater = await updaterWithPendingUpdate();

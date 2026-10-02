@@ -15,8 +15,9 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::app_identity::IDENTIFIER;
+
 pub const LEGACY_IDENTIFIER: &str = "com.monocode.desktop";
-pub const IDENTIFIER: &str = "com.vatra.desktop";
 
 #[derive(Debug, PartialEq, Eq)]
 enum Outcome {
@@ -25,6 +26,11 @@ enum Outcome {
 }
 
 pub fn migrate() {
+    // A dev profile starts empty; only the released identity inherits MonoCode data.
+    if !crate::app_identity::is_release_identity() {
+        return;
+    }
+
     let pending: Vec<PathBuf> = base_dirs()
         .into_iter()
         .filter(|base| needs_migration(base, LEGACY_IDENTIFIER, IDENTIFIER))

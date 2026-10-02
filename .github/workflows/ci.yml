@@ -17,8 +17,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -33,13 +33,13 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: bash scripts/install-linux-deps-debian.sh --sources /etc/apt/sources.list.d/ubuntu.sources
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -73,14 +73,14 @@ jobs:
       - name: Install git
         run: dnf install -y git
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Install system dependencies
         run: bash scripts/install-linux-deps-fedora.sh
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -119,7 +119,7 @@ jobs:
         # Ship and test the EL 10 build. Fedora 43's glibc is newer, so a
         # fedora:43 rpm can dnf-install on AlmaLinux 10 and still fail to load.
         if: matrix.image == 'almalinux:10'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rpm-package
           path: target/release/bundle/rpm/*.rpm
@@ -139,14 +139,14 @@ jobs:
       - name: Install git
         run: dnf install -y git
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Enable EPEL 10
         run: dnf install -y epel-release
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rpm-package
           path: rpm

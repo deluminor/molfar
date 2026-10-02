@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Vatra checks for updates every six hours while it is open, not only at launch.
+- Development builds run as **Vatra Dev** with a separate profile, so they never read or write the installed app's sessions and settings.
+
 ## [1.0.0] - 2026-10-02
 
 ### Changed

@@ -1,6 +1,7 @@
 use tauri::Manager;
 
 mod account_identity;
+mod app_identity;
 mod atlassian_adf;
 mod automations;
 mod azure_devops;
@@ -212,6 +213,12 @@ fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
 
 fn should_request_quit(code: Option<i32>) -> bool {
     code.is_some() || cfg!(any(target_os = "linux", target_os = "windows"))
+}
+
+fn app_context() -> tauri::Context {
+    let mut context = tauri::generate_context!();
+    context.config_mut().identifier = app_identity::current().into();
+    context
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -565,7 +572,7 @@ pub fn run() {
             project_logo::remove_project_logo,
             project_logo::forget_logo_file,
         ])
-        .build(tauri::generate_context!())
+        .build(app_context())
         .expect("error while building Vatra");
 
     app.run(|handle, event| match event {

@@ -12,7 +12,7 @@ The workflow then:
 
 - bumps `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` and `tauri.conf.json` (`scripts/release/prepare.mjs`);
 - writes the release section of `CHANGELOG.md` — an existing `## [X.Y.Z]` section is kept, otherwise the `Unreleased` notes are promoted, otherwise notes are generated from conventional commits since the previous tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert`/other → Changed; `chore`, `ci`, `docs`, `test`, `build`, `style` and merges are skipped);
-- commits `chore(release): vX.Y.Z` to `custom`, tags it, and pushes both atomically (the run fails if `custom` moved meanwhile — just run it again);
+- opens a `release/vX.Y.Z` branch, squash-merges a PR into `custom` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `custom` moved);
 - builds macOS (arm64 + x64), Windows, Linux (`.deb`, AppImage, `.rpm`) and the six host packages from that tag;
 - publishes the GitHub release with the changelog section as its body, plus `latest.json` for in-app updates.
 

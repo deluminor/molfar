@@ -210,11 +210,3 @@ fn recognises_monocode_process_names() {
     assert!(!is_legacy_process_name(OsStr::new("monocode-host")));
     assert!(!is_legacy_process_name(OsStr::new("vatra")));
 }
-
-#[test]
-fn identifier_matches_the_tauri_config() {
-    let config: serde_json::Value =
-        serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
-
-    assert_eq!(config["identifier"], IDENTIFIER);
-}

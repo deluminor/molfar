@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,6 +15,27 @@ function copyOfRepo() {
   return root;
 }
 
+function convertToCrlf(root) {
+  for (const file of FILES) {
+    const path = join(root, file);
+    writeFileSync(path, readFileSync(path, "utf8").replace(/\r?\n/g, "\r\n"));
+  }
+}
+
+function expectVersion(root, version) {
+  const escaped = version.replaceAll(".", "\\.");
+
+  expect(readVersion(root)).toBe(version);
+  const lock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
+  expect(lock.version).toBe(version);
+  expect(lock.packages[""].version).toBe(version);
+  expect(readFileSync(join(root, "Cargo.toml"), "utf8")).toMatch(new RegExp(`^version = "${escaped}"\r?$`, "m"));
+  expect(readFileSync(join(root, "Cargo.lock"), "utf8")).toMatch(
+    new RegExp(`name = "vatra"\r?\nversion = "${escaped}"`),
+  );
+  expect(JSON.parse(readFileSync(join(root, "src-tauri/tauri.conf.json"), "utf8")).version).toBe(version);
+}
+
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
@@ -25,13 +46,17 @@ describe("setVersion", () => {
 
     setVersion(root, "9.8.7");
 
-    expect(readVersion(root)).toBe("9.8.7");
-    const lock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
-    expect(lock.version).toBe("9.8.7");
-    expect(lock.packages[""].version).toBe("9.8.7");
-    expect(readFileSync(join(root, "Cargo.toml"), "utf8")).toMatch(/^version = "9\.8\.7"$/m);
-    expect(readFileSync(join(root, "Cargo.lock"), "utf8")).toContain('name = "vatra"\nversion = "9.8.7"');
-    expect(JSON.parse(readFileSync(join(root, "src-tauri/tauri.conf.json"), "utf8")).version).toBe("9.8.7");
+    expectVersion(root, "9.8.7");
+  });
+
+  it("updates CRLF checkouts the same way", () => {
+    const root = copyOfRepo();
+    convertToCrlf(root);
+
+    setVersion(root, "9.8.7");
+
+    expectVersion(root, "9.8.7");
+    expect(readFileSync(join(root, "package-lock.json"), "utf8")).toContain("\r\n");
   });
 
   it("rejects a malformed version before touching files", () => {
