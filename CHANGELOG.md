@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Renamed the app to **Vatra** — the fire your agents gather around. New name, logo, app icons, window titles, menus, and packaging (`com.vatra.desktop`). On first launch Vatra copies sessions, settings, connections, and WebView storage from the previous MonoCode profile; the old profile is left untouched.
+- Renamed the app to **Vatra** — the fire your agents gather around. New name, logo, app icons, window titles, menus, and packaging (`com.vatra.desktop`). On first launch Vatra copies sessions, settings, connections, and WebView storage from the previous MonoCode profile; the old profile is left untouched. The copy waits while MonoCode is running and is retried if it is interrupted; a profile created in the meantime is kept as a backup.
 - Finished the rename inside the app: settings keys, events, the session database (`vatra.db`), the executable (`vatra` / `vatra.exe`), environment variables, and agent prompt envelopes now use `vatra`. Saved settings are copied from their `monocode.*` keys once, the database is renamed in place, and transcripts saved before the rename still render.
 - Vatra publishes its own releases: desktop apps, remote host packages and the in-app update feed now come from `deluminor/vatra`. Versions restart at 1.0.0, and "What's new" shows this changelog.
 - The remote host is now **Vatra Host** (`~/.vatra-host`, `vatra-host`, `com.vatra.host`). **Update Host** retires a MonoCode-era host once — stops its service and copies its database and attachments — so paired devices and sessions carry over; `~/.monocode-host` is left untouched.
 - Resizable panes — session sidebar, Inbox list and panels, Notes list, Knowledge side panel — remember their width across restarts and windows.
-- Home's brand card now shows an animated campfire (WebGL) by default; the Jarvis sphere is now **Orb**. Saved choices carry over.
+- Home's brand card now shows an animated campfire by default; the Jarvis sphere is now **Orb**. Saved choices carry over.
 
 ### Removed
 
