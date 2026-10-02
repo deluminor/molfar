@@ -54,7 +54,7 @@ Experimental remote sessions: run agents on an always-on Windows, Linux, or macO
 
 ### Home
 
-The landing surface for the whole workspace. Home combines live host telemetry (CPU, RAM, swap, load, processes), Vatra status, the last 24 hours of agent sessions, and upcoming and recent automation runs. Every widget can be rearranged, and the layout persists locally. The brand card burns an animated campfire rendered on the GPU — three tongues of flame over a log cross, with rising sparks — and can be switched to a holographic **Orb**. The fire pauses when the window is hidden or the card scrolls away, and holds still when the system asks for reduced motion.
+The landing surface for the whole workspace. Home combines live host telemetry (CPU, RAM, swap, load, processes), Vatra status, the last 24 hours of agent sessions, and upcoming and recent automation runs. Every widget can be rearranged, and the layout persists locally. The brand card burns an animated campfire — a dotted flame over crossed logs, with rising sparks — and can be switched to a holographic **Orb**. The fire pauses when the window is hidden or the card scrolls away, and holds still when the system asks for reduced motion.
 
 ### Sessions
 
@@ -103,7 +103,7 @@ Notes open in a Source/Preview editor that saves explicitly and preserves the or
 | Editor              | CodeMirror 6                               |
 | Markdown / diagrams | Streamdown, Mermaid                        |
 | Knowledge graph     | 3d-force-graph (WebGL)                     |
-| Home fire           | WebGL fragment shader (no dependencies)    |
+| Home fire / Orb     | Canvas 2D particle renderers (no deps)     |
 | Terminal            | xterm.js                                   |
 | Tests               | Vitest 3, cargo test                       |
 | Package manager     | npm (lockfile); pnpm lockfile also present |
@@ -138,7 +138,7 @@ src/
 ├── features/            # Product slices (UI + model + tests per feature)
 │   ├── sessions/        # Composer, transcripts, BTW, second opinion
 │   ├── inbox/           # Connectors incl. Confluence Docs panel
-│   ├── home/            # Dashboard grid, campfire shader, Orb visual
+│   ├── home/            # Dashboard grid, campfire and Orb visuals
 │   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
 │   ├── usage/           # Provider quota / rate-limit cards
 │   ├── files/           # File tree + CodeMirror editor
@@ -184,7 +184,7 @@ docs/
 | **Agent tools**             | Read-only `confluence.search`, `confluence.list`, `confluence.read` via the app/control CLI                                                                                     |
 | **ADF pipeline**            | Shared Atlassian Document Format → markdown conversion (`atlassian_adf.rs`) for Jira and Confluence                                                                             |
 | **Knowledge**               | Local Obsidian vault connect (no plugin); tree, search, 3D graph, Source/Preview edit, Add to agent context — see [Knowledge](#knowledge-local-obsidian-vaults)                 |
-| **Home dashboard**          | Rearrangeable widgets: host metrics, status, recent sessions, Automations, clock/matrix; GPU campfire (default) or Orb brand visual                                             |
+| **Home dashboard**          | Rearrangeable widgets: host metrics, status, recent sessions, Automations, clock/matrix; animated campfire (default) or Orb brand visual                                        |
 | **Usage**                   | Provider quota / rate-limit cards for Claude, Codex, Cursor, and Antigravity                                                                                                    |
 | **Rail visibility**         | Choose which local surfaces (Home, Usage, Knowledge) appear on the project rail                                                                                                 |
 
@@ -252,14 +252,14 @@ Maintainers: see [Releasing](docs/releasing.md).
 
 ### Build from source
 
-Vatra does not publish binaries yet, so build it locally:
+To work on Vatra or run unreleased changes, build it locally:
 
 ```bash
 git clone https://github.com/deluminor/vatra.git
 cd vatra
 git checkout custom
 npm install
-npm run tauri dev
+npm run tauri -- dev
 ```
 
 Credentials for Jira / Confluence are configured in **Settings → Jira** and stored locally. There is no `.env.example`; secrets stay out of the repository.
@@ -308,9 +308,10 @@ The `.rpm` declares its own runtime dependencies, so `dnf` pulls the WebKitGTK s
 
 ## Upgrading from MonoCode
 
-Vatra uses its own app identifier (`com.vatra.desktop`). On first launch it copies your MonoCode profile — sessions, settings, Jira/GitLab/Linear connections, the Knowledge vault link, checkpoints, and WebView storage — into Vatra's directories. The copy is atomic and runs once; your MonoCode data is left untouched, so both apps can stay installed.
+Vatra uses its own app identifier (`com.vatra.desktop`). On first launch it copies your MonoCode profile — sessions, settings, Jira/GitLab/Linear connections, the Knowledge vault link, checkpoints, and WebView storage — into Vatra's directories. Your MonoCode data is left untouched, so both apps can stay installed.
 
-- **Quit MonoCode before the first Vatra launch**, so the session database is copied in a consistent state.
+- **While MonoCode is running, the copy waits.** Quit MonoCode and restart Vatra to bring your data over; the session database is copied as a consistent snapshot.
+- If the copy fails (for example, a full disk), Vatra retries on the next launch. A profile Vatra created in the meantime is kept next to it as `com.vatra.desktop.before-migration-<timestamp>`, never deleted.
 - macOS asks for notification permission again, because the app identity is new.
 - Remote hosts installed by MonoCode keep working. Settings → Connections offers **Update Host**, which moves each one to Vatra Host (`~/.vatra-host`) with its paired devices and sessions — see [Remote access](docs/remote-access.md#hosts-installed-by-monocode).
 - On first launch settings saved under the old `monocode.*` keys are copied to `vatra.*` (the old keys stay), and the `monocode.db` session database is renamed to `vatra.db`.
