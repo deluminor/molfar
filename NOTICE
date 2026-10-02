@@ -1,9 +1,11 @@
 Vatra
 Copyright (c) 2026 Erik K. (deluminor)
 
-Vatra is a fork of MonoCode (https://github.com/hardbeat920/monocode),
-Copyright (c) 2026 Nick, distributed under the MIT License. The original
-copyright notice and permission notice are retained in LICENSE.
+Vatra is derived from MonoCode (https://github.com/hardbeat920/monocode),
+distributed under the MIT License. The original copyright notice and
+permission notice are retained in LICENSE. Vatra
+started as a fork of MonoCode and is now maintained as a separate
+repository that continues to incorporate MonoCode changes.
 
 Vatra is not affiliated with, endorsed by, or sponsored by the MonoCode
 project or by the makers of the agent harnesses it can drive.

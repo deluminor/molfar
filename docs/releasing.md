@@ -37,16 +37,29 @@ Without the Apple secrets the macOS build is ad-hoc signed and not notarized; us
 
 ## Syncing from upstream
 
-MonoCode lives on the `upstream` remote (`hardbeat920/monocode`). A mirror of their default branch is kept on this repo as `upstream-main` for comparison; prefer fetching the remote for fresh syncs:
+Vatra is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** is unavailable and PRs cannot target MonoCode from here. Syncing is plain git against the `upstream` remote (`hardbeat920/monocode`), which works as long as MonoCode stays public.
+
+| Ref | Role |
+| --- | --- |
+| `upstream/main` | MonoCode's default branch |
+| `upstream-main` | Mirror of `upstream/main` on this repo; only ever fast-forwarded, never committed to |
+| `main` | Vatra; upstream changes arrive through a `sync/upstream-into-main-YYYYMMDD` PR |
+
+The **Sync MonoCode upstream** automation in Vatra (Tuesday and Friday, 09:00) does both steps: it fast-forwards `upstream-main`, then opens a sync PR into `main` with release notes and a cross-linked Issue. It resolves conflicts only in the Vatra-owned paths below; any other conflict produces a **Sync blocked** Issue instead of a PR. Merge sync PRs with a merge commit — a squash drops the upstream ancestry and the next sync conflicts again.
+
+By hand:
 
 ```bash
-git fetch upstream
-git checkout main
-git merge upstream/main
-# resolve conflicts, keep fork-owned paths below
+git remote add upstream https://github.com/hardbeat920/monocode.git   # once per clone
+gh repo set-default deluminor/vatra                                    # once per clone
+git fetch upstream main
+git push origin upstream/main:refs/heads/upstream-main                 # fast-forward the mirror
+git switch -c sync/upstream-into-main-$(date +%Y%m%d) origin/main
+git merge origin/upstream-main
+# resolve conflicts, keep Vatra-owned paths below, open a PR into main
 ```
 
-These parts are fork-owned; keep ours when porting upstream changes:
+These parts are Vatra-owned; keep ours when porting upstream changes:
 
 - `.github/workflows/release.yml`, `scripts/release/`
 - `src/app/model/forkPolicy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`

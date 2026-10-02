@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black" alt="Tauri" />
   <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust" />
   <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/badge/version-0.6.0-orange" alt="Version" />
+  <img src="https://img.shields.io/github/v/release/deluminor/vatra?color=orange&label=version" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
 
@@ -46,7 +46,7 @@ The fire is yours. Every agent runs through the CLI you already installed and lo
 
 Vatra is a cross-platform desktop workspace for coding agents you already pay for. It opens provider CLIs (Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent) as first-class sessions: tabs are conversations, the composer is the input, and everything around them — files, terminal, source control, notes, Inbox, automations, and light orchestration — lives in the same window.
 
-**Status** — early and actively developed; expect rough edges. Vatra builds on [MonoCode](https://github.com/hardbeat920/monocode) and adds **Confluence Docs** in Inbox, read-only `confluence.*` agent tools, a shared ADF→markdown pipeline, **Knowledge** (local Obsidian vaults with a 3D link graph), a rearrangeable **Home** dashboard, and a **Usage** surface for provider quotas.
+**Status** — early and actively developed; expect rough edges. Vatra is an independent project derived from [MonoCode](https://github.com/hardbeat920/monocode): it started as a fork, now lives in its own repository with its own releases, and still pulls MonoCode changes in regularly (see [Syncing from upstream](docs/releasing.md#syncing-from-upstream)). On top of MonoCode it adds **Confluence Docs** in Inbox, read-only `confluence.*` agent tools, a shared ADF→markdown pipeline, **Knowledge** (local Obsidian vaults with a 3D link graph), a rearrangeable **Home** dashboard, and a **Usage** surface for provider quotas.
 
 Experimental remote sessions: run agents on an always-on Windows, Linux, or macOS machine and connect from the desktop. See [remote access setup and current limitations](docs/remote-access.md).
 
@@ -369,14 +369,14 @@ Feature logic lives next to its tests under `src/features/**/*.test.ts`. A versi
 
 Small, focused pull requests are welcome. Large changes are worth an issue first — see [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`) and run `npm run check` before opening a PR against `main`.
+Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`) and run `npm run check` before opening a PR against `main` of [deluminor/vatra](https://github.com/deluminor/vatra). Changes that belong in MonoCode itself should go to [MonoCode](https://github.com/hardbeat920/monocode); Vatra picks them up through its upstream sync.
 
 ## License and Attribution
 
 Vatra is released under the [MIT License](LICENSE).
 
 - Vatra: © 2026 Erik K. (deluminor)
-- Based on [MonoCode](https://github.com/hardbeat920/monocode) (MIT)
+- Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT); the original copyright and permission notice are kept in [LICENSE](LICENSE)
 
 Vatra is not affiliated with or endorsed by the MonoCode project. Provider names and logos are trademarks of their owners — see [NOTICE](NOTICE). Vatra is not affiliated with, endorsed by, or sponsored by those providers.
 
