@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-02
+
 ### Changed
 
 - Renamed the app to **Vatra** — the fire your agents gather around. New name, logo, app icons, window titles, menus, and packaging (`com.vatra.desktop`). On first launch Vatra copies sessions, settings, connections, and WebView storage from the previous MonoCode profile; the old profile is left untouched.
@@ -1188,7 +1190,8 @@ First public release. macOS (Apple Silicon) only.
 - Updater endpoint and minisign public key are injected at release time rather than committed, so forks do not inherit the maintainer's update channel.
 - macOS release builds sign with `APPLE_SIGNING_IDENTITY` via a config overlay; the committed default remains ad-hoc `-` for community builds.
 
-[Unreleased]: https://github.com/hardbeat920/monocode/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/deluminor/vatra/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/deluminor/vatra/releases/tag/v0.6.1
 [0.6.0]: https://github.com/hardbeat920/monocode/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/hardbeat920/monocode/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/hardbeat920/monocode/compare/v0.4.2...v0.4.3
