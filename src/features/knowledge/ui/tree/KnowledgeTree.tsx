@@ -105,9 +105,11 @@ export function KnowledgeTree({
           />
         ))}
       </ul>
-      {nodes.length === 0 && (
-        <p className="knowledge-empty">No matching files.</p>
-      )}
+      {nodes.length === 0 ? (
+        <p className="px-2 py-2 text-[12px] text-content/50">
+          No matching files.
+        </p>
+      ) : null}
     </nav>
   );
 }

@@ -37,4 +37,29 @@ describe("ModalPanel", () => {
     expect(markup).toContain("Authentication required");
     expect(markup).toContain("Provider login");
   });
+
+  it("pins a footer outside the scrolling content", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ModalPanel, {
+        title: "Example",
+        onClose: vi.fn(),
+        footer: "Actions",
+        children: "Body",
+      }),
+    );
+
+    expect(markup).toMatch(/Body<\/div><footer[^>]*>Actions<\/footer>/);
+  });
+
+  it("omits the footer when none is given", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ModalPanel, {
+        title: "Example",
+        onClose: vi.fn(),
+        children: "Body",
+      }),
+    );
+
+    expect(markup).not.toContain("<footer");
+  });
 });

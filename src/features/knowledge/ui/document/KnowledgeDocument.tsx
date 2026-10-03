@@ -7,8 +7,11 @@ import {
 } from "react";
 import { AgentMarkdown } from "../../../sessions/ui/AgentMarkdown";
 import { X } from "../../../../shared/ui/icons";
+import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
 import { prepareVaultPreview } from "../../model/document/prepare-vault-preview";
 import { useVaultAssets } from "../../hooks/documents/use-vault-assets";
+import { ACTION_FILLED, ICON_BUTTON } from "../constants";
+import { KnowledgeAlert } from "../KnowledgeAlert";
 import type { KnowledgeDocumentProps } from "./types";
 
 export function KnowledgeDocument({
@@ -61,37 +64,61 @@ export function KnowledgeDocument({
 
   return (
     <section className="knowledge-document" aria-label="Note editor">
-      <div className="knowledge-document-heading">
-        <div>
-          <span className="knowledge-eyebrow">NOTE</span>
-          <h2>{path.split("/").pop()}</h2>
-          <span className="knowledge-document-path" title={path}>
+      <div className="flex items-start gap-3 px-4 pb-3 pt-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[15px] font-medium text-content">
+            {path.split("/").pop()}
+          </h2>
+          <span
+            className="mt-0.5 block truncate text-[11px] text-content/45"
+            title={path}
+          >
             {path}
           </span>
         </div>
         <button
-          className="knowledge-icon-button"
+          type="button"
+          className={ICON_BUTTON}
           aria-label="Close note"
           onClick={onClose}
         >
-          <X size={16} />
+          <X className="size-3.5" strokeWidth={1.75} />
         </button>
       </div>
-      <div className="knowledge-document-toolbar">
-        <div className="knowledge-tabs">
-          <button onClick={source} aria-pressed={!preview}>
+      <div className="flex items-center gap-2 border-y border-stroke px-3 py-2">
+        <div className="flex rounded-md bg-content/[0.04] p-0.5">
+          <button
+            type="button"
+            onClick={source}
+            aria-pressed={!preview}
+            className={`rounded px-2.5 py-1 text-[11px] ${
+              !preview
+                ? "bg-content/10 text-content"
+                : "text-content/50 hover:text-content"
+            }`}
+          >
             Source
           </button>
-          <button onClick={rendered} aria-pressed={preview}>
+          <button
+            type="button"
+            onClick={rendered}
+            aria-pressed={preview}
+            className={`rounded px-2.5 py-1 text-[11px] ${
+              preview
+                ? "bg-content/10 text-content"
+                : "text-content/50 hover:text-content"
+            }`}
+          >
             Preview
           </button>
         </div>
-        <span className="knowledge-muted">
+        <span className="ml-auto text-[11px] text-content/45">
           {state.dirty ? "Unsaved changes" : "Saved"}
         </span>
         <button
-          className="knowledge-button knowledge-primary"
-          onClick={state.save}
+          type="button"
+          className={`${ACTION_FILLED} h-6.5`}
+          onClick={() => void state.save()}
           disabled={
             !state.dirty || state.saving || Boolean(state.draft?.conflict)
           }
@@ -99,39 +126,33 @@ export function KnowledgeDocument({
           {state.saving ? "Saving…" : "Save"}
         </button>
       </div>
-      {linkError && (
-        <div className="knowledge-error" role="alert">
-          {linkError}
-        </div>
-      )}
-      {assets.error && (
-        <div className="knowledge-error" role="alert">
-          {assets.error}
-        </div>
-      )}
-      {state.error && (
-        <div className="knowledge-error" role="alert">
-          {state.error}
-        </div>
-      )}
-      {state.draft?.conflict && (
-        <div className="knowledge-conflict">
-          <p>
+      {linkError ? (
+        <KnowledgeAlert>{linkError}</KnowledgeAlert>
+      ) : null}
+      {assets.error ? (
+        <KnowledgeAlert>{assets.error}</KnowledgeAlert>
+      ) : null}
+      {state.error ? (
+        <KnowledgeAlert>{state.error}</KnowledgeAlert>
+      ) : null}
+      {state.draft?.conflict ? (
+        <div className="border-b border-stroke bg-content/[0.03] px-4 py-3">
+          <p className="mb-2 text-[12px] leading-relaxed text-content/60">
             The file changed or saving failed. Your draft is kept. Load the
             current file before trying again; your draft will stay in the
             editor.
           </p>
-          <button className="knowledge-button" onClick={state.reload}>
+          <SecondaryButton onClick={() => void state.reload()}>
             Load current revision
-          </button>
+          </SecondaryButton>
         </div>
-      )}
-      {state.loading && (
-        <p className="knowledge-empty" role="status">
+      ) : null}
+      {state.loading ? (
+        <p className="px-4 py-6 text-[12px] text-content/50" role="status">
           Opening note…
         </p>
-      )}
-      {state.draft && !preview && (
+      ) : null}
+      {state.draft && !preview ? (
         <textarea
           className="knowledge-source"
           aria-label="Markdown source"
@@ -139,8 +160,8 @@ export function KnowledgeDocument({
           onChange={change}
           spellCheck={false}
         />
-      )}
-      {state.draft && preview && (
+      ) : null}
+      {state.draft && preview ? (
         <div className="knowledge-preview" onClickCapture={link}>
           <AgentMarkdown
             text={markdown}
@@ -148,11 +169,10 @@ export function KnowledgeDocument({
             localImageSources={assets.sources}
           />
         </div>
-      )}
-      <footer className="knowledge-document-footer">
-        <button
-          className="knowledge-button"
-          onClick={onContext}
+      ) : null}
+      <footer className="flex flex-wrap items-center gap-2 border-t border-stroke px-3 py-2.5">
+        <SecondaryButton
+          onClick={() => void onContext()}
           disabled={
             contextBusy ||
             !state.draft ||
@@ -162,13 +182,13 @@ export function KnowledgeDocument({
           }
         >
           {contextBusy ? "Preparing context…" : "Add to agent context"}
-        </button>
-        {state.dirty && (
-          <button className="knowledge-button" onClick={state.discard}>
+        </SecondaryButton>
+        {state.dirty ? (
+          <SecondaryButton onClick={state.discard}>
             Discard draft
-          </button>
-        )}
-        <span className="knowledge-muted">
+          </SecondaryButton>
+        ) : null}
+        <span className="ml-auto text-[11px] text-content/45">
           {state.draft?.body.length.toLocaleString() ?? 0} characters
         </span>
       </footer>

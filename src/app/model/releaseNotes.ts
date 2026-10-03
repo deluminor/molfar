@@ -93,10 +93,32 @@ const MONTHS = [
   "Dec",
 ] as const;
 
+function formatCalendarDay(match: RegExpExecArray): string | null {
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  const isRealDay =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+  if (!isRealDay) return null;
+
+  return `${day} ${MONTHS[month - 1]} ${year}`;
+}
+
 export function formatReleaseDate(iso: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return iso;
-  const month = MONTHS[Number(match[2]) - 1];
-  if (!month) return iso;
-  return `${Number(match[3])} ${month} ${match[1]}`;
+
+  return formatCalendarDay(match) ?? iso;
+}
+
+/** Updater `pub_date` arrives as `2026-10-03 14:18:46.976 +00:00:00`; only the day is shown. */
+export function formatUpdateDate(date: string | undefined): string | null {
+  const match = date ? /^(\d{4})-(\d{2})-(\d{2})/.exec(date) : null;
+  if (!match) return null;
+
+  return formatCalendarDay(match);
 }
