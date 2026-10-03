@@ -398,6 +398,23 @@ pub async fn git_orchestration_worktree_create(
         .map_err(|error| error.to_string())?
 }
 
+// Branches created before the rename keep the MonoCode-era `mc/` and
+// `monocode/` prefixes and must stay manageable.
+const GENERATED_BRANCH_PREFIXES: [&str; 3] = ["vatra/", "mc/", "monocode/"];
+const ORCHESTRATION_BRANCH_PREFIXES: [&str; 2] = ["vatra/orch-", "mc/orch-"];
+
+fn is_generated_branch(branch: &str) -> bool {
+    GENERATED_BRANCH_PREFIXES
+        .iter()
+        .any(|prefix| branch.starts_with(prefix))
+}
+
+fn is_orchestration_branch(branch: &str) -> bool {
+    ORCHESTRATION_BRANCH_PREFIXES
+        .iter()
+        .any(|prefix| branch.starts_with(prefix))
+}
+
 fn rename_branch(root: &Path, path: &Path, branch: &str) -> Result<Worktree, String> {
     let branch = branch.trim();
     if branch.starts_with('-') || branch.starts_with('@') || branch.is_empty() {
@@ -412,7 +429,7 @@ fn rename_branch(root: &Path, path: &Path, branch: &str) -> Result<Worktree, Str
         return Err("The main working copy cannot be renamed here".into());
     }
     let current = tree.branch.as_deref().ok_or("The worktree is detached")?;
-    if !current.starts_with("mc/") && !current.starts_with("monocode/") {
+    if !is_generated_branch(current) {
         return Err("Only automatically created worktree branches can be renamed".into());
     }
     if current == branch {
@@ -739,7 +756,7 @@ pub fn git_orchestration_worktree_remove(
     let conn = store.lock_conn()?;
     let removed = remove_with_sessions(&conn, &root, &path, true, true)?;
     if let Some(branch) = branch {
-        if branch.starts_with("mc/orch-") {
+        if is_orchestration_branch(&branch) {
             if let Err(error) = git(Path::new(&removed.project_cwd), &["branch", "-D", &branch]) {
                 eprintln!("Orchestration worktree removed; temporary branch cleanup will need a retry: {error}");
             }
@@ -753,7 +770,7 @@ pub async fn git_orchestration_branch_remove(cwd: String, branch: String) -> Res
     tauri::async_runtime::spawn_blocking(move || {
         let root = expand_home(&cwd);
         let branch = branch.trim();
-        if !branch.starts_with("mc/orch-") {
+        if !is_orchestration_branch(branch) {
             return Err("Only orchestration temporary branches can be removed here".into());
         }
         git(&root, &["check-ref-format", "--branch", branch])?;
@@ -887,7 +904,7 @@ mod tests {
         std::fs::write(root.join("untracked.txt"), "lead new\n").unwrap();
         std::fs::remove_file(root.join("deleted.txt")).unwrap();
 
-        let tree = create_seeded(&root, "mc/orch-testworker").unwrap();
+        let tree = create_seeded(&root, "vatra/orch-testworker").unwrap();
         let worker = Path::new(&tree.path);
         assert_eq!(
             std::fs::read_to_string(worker.join("tracked.txt")).unwrap(),
@@ -899,12 +916,12 @@ mod tests {
         );
         assert!(!worker.join("deleted.txt").exists());
         assert_eq!(
-            create_seeded(&root, "mc/orch-testworker").unwrap().path,
+            create_seeded(&root, "vatra/orch-testworker").unwrap().path,
             tree.path
         );
 
         std::fs::write(root.join("tracked.txt"), "later lead edit\n").unwrap();
-        assert!(create_seeded(&root, "mc/orch-testworker").is_err());
+        assert!(create_seeded(&root, "vatra/orch-testworker").is_err());
         assert_eq!(
             std::fs::read_to_string(worker.join("tracked.txt")).unwrap(),
             "lead dirty\n"
@@ -931,18 +948,37 @@ mod tests {
     fn renames_only_temporary_worktree_branches() {
         let repo = repo();
         let root = repo.0.join("repo");
-        let tree = create(&root, "mc/12345678", "main", false).unwrap();
-        let renamed = rename_branch(&root, Path::new(&tree.path), "mc/faster-worktrees").unwrap();
-        assert_eq!(renamed.branch.as_deref(), Some("mc/faster-worktrees"));
+        let tree = create(&root, "vatra/12345678", "main", false).unwrap();
+        let renamed =
+            rename_branch(&root, Path::new(&tree.path), "vatra/faster-worktrees").unwrap();
+        assert_eq!(renamed.branch.as_deref(), Some("vatra/faster-worktrees"));
         assert!(git(
             &root,
-            &["rev-parse", "--verify", "refs/heads/mc/faster-worktrees"]
+            &["rev-parse", "--verify", "refs/heads/vatra/faster-worktrees"]
         )
         .is_ok());
-        assert!(rename_branch(&root, &root, "mc/nope").is_err());
+        assert!(rename_branch(&root, &root, "vatra/nope").is_err());
+
+        let legacy = create(&root, "mc/87654321", "main", false).unwrap();
+        let renamed =
+            rename_branch(&root, Path::new(&legacy.path), "vatra/legacy-worktree").unwrap();
+        assert_eq!(renamed.branch.as_deref(), Some("vatra/legacy-worktree"));
 
         let regular = create(&root, "feature/manual", "main", false).unwrap();
-        assert!(rename_branch(&root, Path::new(&regular.path), "mc/should-not-change").is_err());
+        assert!(rename_branch(&root, Path::new(&regular.path), "vatra/should-not-change").is_err());
+    }
+
+    #[test]
+    fn recognizes_current_and_legacy_branch_prefixes() {
+        assert!(is_generated_branch("vatra/12345678"));
+        assert!(is_generated_branch("mc/12345678"));
+        assert!(is_generated_branch("monocode/12345678"));
+        assert!(!is_generated_branch("feature/vatra"));
+
+        assert!(is_orchestration_branch("vatra/orch-task"));
+        assert!(is_orchestration_branch("mc/orch-task"));
+        assert!(!is_orchestration_branch("vatra/task"));
+        assert!(!is_orchestration_branch("monocode/orch-task"));
     }
 
     #[test]

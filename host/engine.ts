@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { realpath, stat } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { basename, isAbsolute } from "node:path";
-import { renameHostWorktreeBranch, resolveHostWorktree } from "./git-worktrees";
+import { AUTO_WORKTREE_BRANCH, renameHostWorktreeBranch, resolveHostWorktree } from "./git-worktrees";
 import {
   applyHarnessEvent,
   stopStreaming,
@@ -89,7 +89,7 @@ export function parseCommand(input: unknown): HostCommand {
       v.autoWorktreeBranch !== undefined &&
       (v.worktreeCwd === undefined ||
         typeof v.autoWorktreeBranch !== "string" ||
-        !/^mc\/[a-z0-9]{8}$/.test(v.autoWorktreeBranch))
+        !AUTO_WORKTREE_BRANCH.test(v.autoWorktreeBranch))
     )
       throw new Error("Invalid automatically created worktree branch");
     return {
