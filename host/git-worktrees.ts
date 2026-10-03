@@ -5,6 +5,10 @@ import { basename, dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 const exec = promisify(execFile);
+
+// `mc/` is the MonoCode-era prefix; worktrees created before the rename keep it.
+export const AUTO_WORKTREE_BRANCH = /^(?:vatra|mc)\/[a-z0-9]{8}$/;
+
 const options = (cwd: string) => ({
   cwd,
   timeout: 10_000,
@@ -210,7 +214,7 @@ export async function renameHostWorktreeBranch(
   branch: string,
   stillOwned: () => boolean = () => true,
 ): Promise<HostWorktree> {
-  if (!/^mc\/[a-z0-9]{8}$/.test(expectedBranch))
+  if (!AUTO_WORKTREE_BRANCH.test(expectedBranch))
     throw new Error("This is not an automatically created worktree branch");
   if (
     !branch ||

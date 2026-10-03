@@ -6,6 +6,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { HostEngine } from "./engine";
 import { HostStore } from "./store";
 import {
+  AUTO_WORKTREE_BRANCH,
   createHostWorktree,
   hostWorktrees,
   renameHostWorktreeBranch,
@@ -61,7 +62,7 @@ it.each([false, true])("applies generated worktree names only to retained sessio
     rmSync(root, { recursive: true, force: true });
     rmSync(cwd, { recursive: true, force: true });
   });
-  const tree = await createHostWorktree(cwd, "mc/12345678", "HEAD", false);
+  const tree = await createHostWorktree(cwd, "vatra/12345678", "HEAD", false);
   const { sessionId } = engine.command({
     type: "create",
     commandId: "create-named",
@@ -86,7 +87,7 @@ it.each([false, true])("applies generated worktree names only to retained sessio
     try {
       finishBranch("remote-naming");
       await vi.waitFor(() => expect(logged).toHaveBeenCalledWith("[vatra] remote worktree branch", expect.any(Error)));
-      expect((await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)?.branch).toBe("mc/12345678");
+      expect((await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)?.branch).toBe("vatra/12345678");
     } finally { logged.mockRestore(); }
     return;
   }
@@ -94,14 +95,14 @@ it.each([false, true])("applies generated worktree names only to retained sessio
   await vi.waitFor(() => {
     expect(store.session(sessionId).session).toMatchObject({
       title: "codex · Fix remote naming",
-      branch: "mc/remote-naming",
+      branch: "vatra/remote-naming",
       worktreeCwd: tree.path,
     });
   });
   expect(
     (await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)
       ?.branch,
-  ).toBe("mc/remote-naming");
+  ).toBe("vatra/remote-naming");
   expect(title).toHaveBeenCalledTimes(1);
   expect(branch).toHaveBeenCalledTimes(1);
   engine.command({
@@ -114,8 +115,15 @@ it.each([false, true])("applies generated worktree names only to retained sessio
   expect(title).toHaveBeenCalledTimes(1);
   expect(branch).toHaveBeenCalledTimes(1);
   await expect(
-    renameHostWorktreeBranch(cwd, tree.path, "mc/12345678", "mc/other"),
+    renameHostWorktreeBranch(cwd, tree.path, "vatra/12345678", "vatra/other"),
   ).rejects.toThrow("changed");
+});
+
+it("accepts current and MonoCode-era automatic worktree branches", () => {
+  expect(AUTO_WORKTREE_BRANCH.test("vatra/12345678")).toBe(true);
+  expect(AUTO_WORKTREE_BRANCH.test("mc/12345678")).toBe(true);
+  expect(AUTO_WORKTREE_BRANCH.test("monocode/12345678")).toBe(false);
+  expect(AUTO_WORKTREE_BRANCH.test("vatra/feature")).toBe(false);
 });
 
 it("creates registered host worktrees and binds new sessions to the selected checkout", async () => {
