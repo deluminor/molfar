@@ -54,8 +54,7 @@
     "resources": {
       "macos/Assets.car": "Assets.car",
       "../LICENSE": "LICENSE",
-      "../NOTICE": "NOTICE",
-      "../dist/THIRD-PARTY-NOTICES.md": "THIRD-PARTY-NOTICES.md"
+      "../NOTICE": "NOTICE"
     },
     "macOS": {
       "entitlements": "Entitlements.plist",
