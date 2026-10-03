@@ -127,6 +127,7 @@ for (const target of targets) {
   await copyFile("host/provider-guard.mjs", join(folder, "provider-guard.mjs"));
   await copyFile("LICENSE", join(folder, "VATRA-LICENSE"));
   await copyFile("NOTICE", join(folder, "VATRA-NOTICE"));
+  await copyFile("build/host/THIRD-PARTY-NOTICES.md", join(folder, "THIRD-PARTY-NOTICES.md"));
   await writeFile(
     join(folder, "version.json"),
     JSON.stringify({ version, nodeVersion, target }),

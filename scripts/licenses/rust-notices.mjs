@@ -6,7 +6,8 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { LICENSE_FILE, linkedPackages, renderNotices } from "./linked-crates.mjs";
+import { linkedPackages } from "./linked-crates.mjs";
+import { borrowRepositoryLicenses, LICENSE_FILE, renderNotices } from "./render-notices.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const output = resolve(root, process.argv[2] ?? "public/THIRD-PARTY-NOTICES-RUST.md");
@@ -32,12 +33,15 @@ function licenseTexts(pkg) {
   return [...new Set(files)].sort().map((file) => readFileSync(file, "utf8"));
 }
 
-const crates = linkedPackages(metadata).map((pkg) => ({
-  name: pkg.name,
-  version: pkg.version,
-  license: pkg.license,
-  texts: licenseTexts(pkg),
-}));
+const crates = borrowRepositoryLicenses(
+  linkedPackages(metadata).map((pkg) => ({
+    name: pkg.name,
+    version: pkg.version,
+    license: pkg.license,
+    repository: pkg.repository,
+    texts: licenseTexts(pkg),
+  })),
+);
 
 mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, renderNotices(crates));
