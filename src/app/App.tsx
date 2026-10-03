@@ -117,10 +117,12 @@ import {
   type GitHistoryCommit,
 } from "../platform/tauri/fs";
 import { HAS_NATIVE_GLASS, IS_MAC } from "../platform/tauri/platform";
+import { getUpdatePrompt } from "./model/updatePrompt";
 import { runUpdateFlow } from "./model/updater";
 import { MenuBar } from "./shell/MenuBar";
 import { Sidebar } from "./shell/Sidebar";
 import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
+import { UpdatePromptDialog } from "./shell/UpdatePromptDialog";
 import { UsageFooter } from "./shell/UsageFooter";
 import { WhatsNewDialog } from "./shell/WhatsNewDialog";
 
@@ -4907,7 +4909,8 @@ function Workspace({
             automationsViewOpenRef.current ||
             settingsOpenRef.current ||
             filePickerOpenRef.current ||
-            whatsNewVersionRef.current,
+            whatsNewVersionRef.current ||
+            getUpdatePrompt(),
           ),
         },
         (sessionId) => {
@@ -10461,7 +10464,8 @@ function Workspace({
             automationsViewOpenRef.current ||
             settingsOpenRef.current ||
             filePickerOpenRef.current ||
-            Boolean(whatsNewVersionRef.current);
+            Boolean(whatsNewVersionRef.current) ||
+            Boolean(getUpdatePrompt());
           if (
             !shouldHandleListNavigation({
               blockedTarget,
@@ -11410,6 +11414,7 @@ function Workspace({
               onClose={() => setWhatsNewVersion(null)}
             />
           ) : null}
+          <UpdatePromptDialog />
           {remoteProjectDialogOpen ? (
             <AddRemoteProjectDialog
               onCancel={() => setRemoteProjectDialogOpen(false)}
