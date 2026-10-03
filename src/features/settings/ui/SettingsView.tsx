@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ConnectionsSettings } from "../../connections/ui/ConnectionsSettings";
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmApp } from "../../../app/model/appDialog";
 import {
   ArrowDownCircle,
   Check,
@@ -3429,7 +3429,7 @@ function ProviderAccountsSettings() {
 
   const removeAccount = async (account: ProviderAccount) => {
     if (account.isDefault || working) return;
-    const confirmed = await ask(
+    const confirmed = await confirmApp(
       `Remove “${account.label}”? Its stored credentials will be deleted and any running turns for this account will stop. Existing conversations stay in history, but cannot continue until you switch accounts.`,
       {
         title: `Remove ${HARNESS_TITLE[account.provider]} account`,

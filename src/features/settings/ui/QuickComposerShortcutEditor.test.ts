@@ -26,7 +26,9 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(async () => true) }));
+vi.mock("../../../app/model/appDialog", () => ({
+  confirmApp: vi.fn(async () => true),
+}));
 
 let container: HTMLDivElement;
 let root: Root;

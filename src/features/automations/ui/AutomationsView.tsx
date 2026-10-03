@@ -9,6 +9,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { confirmApp } from "../../../app/model/appDialog";
 import { OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
 import { gitBranches } from "../../../platform/tauri/fs";
@@ -365,8 +366,11 @@ function AutomationsContent({
   };
 
   const onDelete = async (automation: Automation) => {
-    if (!window.confirm(`Delete “${automation.name}” and its run history?`))
-      return;
+    const confirmed = await confirmApp(
+      `Delete “${automation.name}” and its run history?`,
+      { okLabel: "Delete" },
+    );
+    if (!confirmed) return;
     try {
       await deleteAutomation(automation.id);
       setSelectedId(null);

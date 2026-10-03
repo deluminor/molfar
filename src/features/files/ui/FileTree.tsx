@@ -70,6 +70,7 @@ import {
 } from "../../../shared/lib/drag";
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
+import { confirmApp } from "../../../app/model/appDialog";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
   modified: "text-amber-400",
@@ -544,10 +545,11 @@ export const FileTree = memo(function FileTree({
     if (path === cwd) return;
     const isDir = isDirAt(cwd, path);
     const label = basename(path);
-    const ok = window.confirm(
+    const ok = await confirmApp(
       isDir
         ? `Delete folder “${label}” and everything inside it?`
         : `Delete “${label}”?`,
+      { okLabel: "Delete" },
     );
     if (!ok) return;
     await deletePath(path);

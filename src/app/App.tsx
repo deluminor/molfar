@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ask, message } from "@tauri-apps/plugin-dialog";
+import { alertApp, confirmApp, getAppDialog } from "./model/appDialog";
 import {
   startTransition,
   Suspense,
@@ -122,6 +122,7 @@ import { runUpdateFlow } from "./model/updater";
 import { MenuBar } from "./shell/MenuBar";
 import { Sidebar } from "./shell/Sidebar";
 import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
+import { AppDialog } from "./shell/AppDialog";
 import { UpdatePromptDialog } from "./shell/UpdatePromptDialog";
 import { UsageFooter } from "./shell/UsageFooter";
 import { WhatsNewDialog } from "./shell/WhatsNewDialog";
@@ -891,9 +892,9 @@ function filesInWorkspaceTabs(tabs: readonly WorkspaceTab[]): FilePaneTab[] {
   ]);
 }
 
-/** Native sheet. `window.confirm` is swallowed when a macOS menu accelerator fires. */
+/** In-app confirm. `window.confirm` is swallowed when a macOS menu accelerator fires. */
 function confirmDiscardUnsaved(message: string): Promise<boolean> {
-  return ask(message, { title: "Vatra", kind: "warning" });
+  return confirmApp(message, { kind: "warning" });
 }
 
 function titleTabsEqual(a: TitleTab[], b: TitleTab[]): boolean {
@@ -2358,9 +2359,8 @@ function Workspace({
   const onOpenWhatsNew = useCallback((version: string) => {
     const document = releaseNotesForVersion(version);
     if (!document) {
-      void message(
+      void alertApp(
         "Release notes for this version are not available in this build.",
-        { title: "Vatra" },
       );
       return;
     }
@@ -4837,17 +4837,16 @@ function Workspace({
           try {
             await onRemoveWorktree(seed.cwd, deleteWorktreePath, false);
           } catch (error) {
-            void message(
+            void alertApp(
               `The session was deleted. Its worktree was kept.\n\n${String(error)}\n\nYou can manage it in Settings → Worktrees.`,
-              { title: "Vatra", kind: "warning" },
+              { kind: "warning" },
             );
           }
         }
         return removed;
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        void message(`Could not ${mode} this conversation.\n\n${detail}`, {
-          title: "Vatra",
+        void alertApp(`Could not ${mode} this conversation.\n\n${detail}`, {
           kind: "error",
         });
         return false;
@@ -4880,12 +4879,9 @@ function Workspace({
         );
         return true;
       } catch (error) {
-        void message(
+        void alertApp(
           `Could not unarchive this conversation.\n\n${String(error)}`,
-          {
-            title: "Vatra",
-            kind: "error",
-          },
+          { kind: "error" },
         );
         return false;
       }
@@ -4910,7 +4906,8 @@ function Workspace({
             settingsOpenRef.current ||
             filePickerOpenRef.current ||
             whatsNewVersionRef.current ||
-            getUpdatePrompt(),
+            getUpdatePrompt() ||
+            getAppDialog(),
           ),
         },
         (sessionId) => {
@@ -5011,9 +5008,9 @@ function Workspace({
               : current.filter((session) => session.id !== sessionId),
           );
           void refreshHistory(sidebarCwd);
-          void message(
+          void alertApp(
             `Could not update this conversation's GitHub link.\n\n${String(error)}`,
-            { title: "Vatra", kind: "error" },
+            { kind: "error" },
           );
         },
       );
@@ -5059,12 +5056,11 @@ function Workspace({
   const onDeleteHistorySessions = useCallback(
     async (sessionIds: readonly string[]) => {
       if (sessionIds.length === 0) return;
-      if (
-        !window.confirm(
-          `Delete ${sessionIds.length} selected conversations? This can’t be undone.`,
-        )
-      )
-        return;
+      const confirmed = await confirmApp(
+        `Delete ${sessionIds.length} selected conversations? This can’t be undone.`,
+        { okLabel: "Delete" },
+      );
+      if (!confirmed) return;
       for (const sessionId of sessionIds) {
         if (!(await onRemoveHistorySession(sessionId, "delete", true))) break;
       }
@@ -10465,7 +10461,8 @@ function Workspace({
             settingsOpenRef.current ||
             filePickerOpenRef.current ||
             Boolean(whatsNewVersionRef.current) ||
-            Boolean(getUpdatePrompt());
+            Boolean(getUpdatePrompt()) ||
+            Boolean(getAppDialog());
           if (
             !shouldHandleListNavigation({
               blockedTarget,
@@ -11415,6 +11412,7 @@ function Workspace({
             />
           ) : null}
           <UpdatePromptDialog />
+          <AppDialog />
           {remoteProjectDialogOpen ? (
             <AddRemoteProjectDialog
               onCancel={() => setRemoteProjectDialogOpen(false)}

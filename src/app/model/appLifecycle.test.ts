@@ -5,6 +5,7 @@ import { forgetHarnessSession } from "../../integrations/harness/core/registry";
 import { killAllChildren } from "../../integrations/harness/core/child";
 import { newSession } from "../../features/sessions/model/session";
 import { newTab } from "../../features/workspace/model/layout";
+import { confirmApp } from "./appDialog";
 import {
   askQuitConfirmation,
   closeBusyWindow,
@@ -27,6 +28,9 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   ask: vi.fn().mockResolvedValue(true),
+}));
+vi.mock("./appDialog", () => ({
+  confirmApp: vi.fn().mockResolvedValue(true),
 }));
 vi.mock("./windowTransferBootstrap", () => ({
   loadWindowTransfer: vi.fn().mockResolvedValue(null),
@@ -219,7 +223,7 @@ describe("project choices through lifecycle saves", () => {
 describe("closing a busy window", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(ask).mockResolvedValue(true);
+    vi.mocked(confirmApp).mockResolvedValue(true);
   });
 
   function workspace() {
@@ -243,7 +247,8 @@ describe("closing a busy window", () => {
     const { session, release } = workspace();
     try {
       await closeBusyWindow();
-      expect(ask).toHaveBeenCalled();
+      expect(confirmApp).toHaveBeenCalled();
+      expect(ask).not.toHaveBeenCalled();
       expect(forgetHarnessSession).toHaveBeenCalledWith("cursor", session.id);
       expect(killAllChildren).not.toHaveBeenCalled();
       expect(invoke).toHaveBeenCalledWith("destroy_window");
@@ -259,7 +264,7 @@ describe("closing a busy window", () => {
 
   it("leaves the window and sessions running when closing is cancelled", async () => {
     const { release } = workspace();
-    vi.mocked(ask).mockResolvedValue(false);
+    vi.mocked(confirmApp).mockResolvedValue(false);
     try {
       await closeBusyWindow();
       expect(forgetHarnessSession).not.toHaveBeenCalled();
@@ -386,20 +391,19 @@ describe("coordinated quit", () => {
 describe("confirming reload", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(ask).mockResolvedValue(true);
+    vi.mocked(confirmApp).mockResolvedValue(true);
   });
 
   it("reloads without prompting when files are clean", async () => {
     await expect(confirmReload(false)).resolves.toBe(true);
-    expect(ask).not.toHaveBeenCalled();
+    expect(confirmApp).not.toHaveBeenCalled();
   });
 
   it("allows reload after unsaved changes are confirmed", async () => {
     await expect(confirmReload(true)).resolves.toBe(true);
-    expect(ask).toHaveBeenCalledWith(
+    expect(confirmApp).toHaveBeenCalledWith(
       "Reload Vatra and discard unsaved changes?",
       {
-        title: "Vatra",
         kind: "warning",
         okLabel: "Reload",
       },
@@ -407,7 +411,7 @@ describe("confirming reload", () => {
   });
 
   it("cancels reload when unsaved changes are kept", async () => {
-    vi.mocked(ask).mockResolvedValue(false);
+    vi.mocked(confirmApp).mockResolvedValue(false);
     await expect(confirmReload(true)).resolves.toBe(false);
   });
 });

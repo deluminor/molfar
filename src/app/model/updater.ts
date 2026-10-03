@@ -1,5 +1,4 @@
 import { getVersion } from "@tauri-apps/api/app";
-import { message } from "@tauri-apps/plugin-dialog";
 import { relaunch } from "@tauri-apps/plugin-process";
 import {
   check,
@@ -7,6 +6,7 @@ import {
   type Update,
 } from "@tauri-apps/plugin-updater";
 import { announceUpdateAvailable } from "../../features/settings/model/sounds";
+import { alertApp } from "./appDialog";
 import { APP_UPDATER_DISABLED } from "./forkPolicy";
 import { formatUpdateDate } from "./releaseNotes";
 import { openUpdatePrompt } from "./updatePrompt";
@@ -74,7 +74,7 @@ export async function runUpdateFlow(
     onProgress?.(idle);
 
     if (manual) {
-      await message(FORK_UPDATER_DISABLED_MESSAGE, { title: "Vatra" });
+      await alertApp(FORK_UPDATER_DISABLED_MESSAGE);
     }
 
     return idle;
@@ -83,9 +83,8 @@ export async function runUpdateFlow(
   // A re-check would swap `pendingUpdate` under the running download.
   if (installInFlight) {
     if (manual) {
-      await message(
+      await alertApp(
         "An update is already downloading. Vatra will restart when it's ready.",
-        { title: "Vatra" },
       );
     }
 
@@ -106,7 +105,7 @@ export async function runUpdateFlow(
       const current: UpdaterSnapshot = { phase: "current", currentVersion };
       onProgress?.(current);
       if (manual) {
-        await message("You're on the latest version.", { title: "Vatra" });
+        await alertApp("You're on the latest version.");
       }
       return current;
     }
@@ -136,9 +135,8 @@ export async function runUpdateFlow(
       const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
       onProgress?.(idle);
       if (manual) {
-        await message(
+        await alertApp(
           "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/deluminor/vatra/releases/latest",
-          { title: "Vatra" },
         );
       }
       return idle;
@@ -148,8 +146,8 @@ export async function runUpdateFlow(
     const failed: UpdaterSnapshot = { phase: "error", currentVersion, error };
     onProgress?.(failed);
     if (manual) {
-      await message(`Couldn't check for updates.\n\n${error}`, {
-        title: "Vatra",
+      await alertApp(`Couldn't check for updates.\n\n${error}`, {
+        kind: "error",
       });
     }
     return failed;
@@ -248,8 +246,8 @@ export async function installPendingUpdate(
     };
     onProgress?.(failed);
     if (reportFailure) {
-      await message(`Couldn't install the update.\n\n${error}`, {
-        title: "Vatra",
+      await alertApp(`Couldn't install the update.\n\n${error}`, {
+        kind: "error",
       });
     }
 

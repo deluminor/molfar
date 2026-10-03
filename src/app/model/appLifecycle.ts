@@ -41,10 +41,11 @@ import {
   hydrateWorkspaceSnapshot,
   parseWorkspaceSnapshot,
 } from "../../features/workspace/model/workspaceSnapshot";
-import { loadWindowTransfer } from "./windowTransferBootstrap";
-import type { WindowTransferPayload } from "./windowTransfer";
 import { lastProjectPath, normalizeProjectPath, sameProjectPath } from "../../features/projects/model/recents";
 import type { ProjectReturnMemory } from "../../features/projects/model/projectReturn";
+import { confirmApp } from "./appDialog";
+import { loadWindowTransfer } from "./windowTransferBootstrap";
+import type { WindowTransferPayload } from "./windowTransfer";
 
 export type { ResumedWorkspace };
 export { hasInFlightSessions };
@@ -166,6 +167,8 @@ export async function askQuitConfirmation(
   if (!quitDialogOpen) {
     quitDialogOpen = true;
     try {
+      // Stays native: the coordinator may pick a window it just opened for a
+      // tray Quit, before its workspace (and the in-app dialog host) mounts.
       confirmed = await ask(quitWhileBusyMessage(inFlight), {
         title: "Vatra",
         kind: "warning",
@@ -359,8 +362,7 @@ export async function confirmReload(
   hasUnsavedFiles: boolean,
 ): Promise<boolean> {
   if (!hasUnsavedFiles) return true;
-  return ask("Reload Vatra and discard unsaved changes?", {
-    title: "Vatra",
+  return confirmApp("Reload Vatra and discard unsaved changes?", {
     kind: "warning",
     okLabel: "Reload",
   });
@@ -466,9 +468,9 @@ async function confirmAndCloseWindow(
   try {
     const refs = inFlightRefs(sessions, tabs);
     if (refs.length > 0) {
-      const ok = await ask(
+      const ok = await confirmApp(
         "Close this window and stop its running chats? Other windows will stay open.",
-        { title: "Vatra", kind: "warning", okLabel: "Close window" },
+        { kind: "warning", okLabel: "Close window" },
       );
       if (!ok) return;
     }

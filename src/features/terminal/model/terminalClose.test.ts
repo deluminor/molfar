@@ -3,22 +3,22 @@ import { newTerminalFile } from "../../workspace/model/layout";
 import { confirmCloseTerminal, confirmCloseTerminals } from "./terminalClose";
 
 const getPtyStatus = vi.fn();
-const ask = vi.fn();
+const confirmApp = vi.fn();
 
 vi.mock("../../../platform/tauri/pty", () => ({
   getPtyStatus: (...args: unknown[]) => getPtyStatus(...args),
 }));
 
-vi.mock("@tauri-apps/plugin-dialog", () => ({
-  ask: (...args: unknown[]) => ask(...args),
+vi.mock("../../../app/model/appDialog", () => ({
+  confirmApp: (...args: unknown[]) => confirmApp(...args),
 }));
 
-const dialogOptions = { title: "Vatra", kind: "warning" } as const;
+const dialogOptions = { kind: "warning" } as const;
 
 describe("confirmCloseTerminal", () => {
   afterEach(() => {
     getPtyStatus.mockReset();
-    ask.mockReset();
+    confirmApp.mockReset();
   });
 
   it("allows close when only the shell is foreground", async () => {
@@ -26,15 +26,15 @@ describe("confirmCloseTerminal", () => {
     getPtyStatus.mockResolvedValue({ foreground: null });
     await expect(confirmCloseTerminal(file)).resolves.toBe(true);
     expect(getPtyStatus).toHaveBeenCalledWith(file.id);
-    expect(ask).not.toHaveBeenCalled();
+    expect(confirmApp).not.toHaveBeenCalled();
   });
 
   it("prompts when a process is running", async () => {
     const file = newTerminalFile("/repo", "agent-terminal");
     getPtyStatus.mockResolvedValue({ foreground: "npm" });
-    ask.mockResolvedValue(false);
+    confirmApp.mockResolvedValue(false);
     await expect(confirmCloseTerminal(file)).resolves.toBe(false);
-    expect(ask).toHaveBeenCalledWith(
+    expect(confirmApp).toHaveBeenCalledWith(
       '"npm" is still running in agent-terminal. Close this terminal anyway?',
       dialogOptions,
     );
@@ -44,7 +44,7 @@ describe("confirmCloseTerminal", () => {
 describe("confirmCloseTerminals", () => {
   afterEach(() => {
     getPtyStatus.mockReset();
-    ask.mockReset();
+    confirmApp.mockReset();
   });
 
   it("summarizes multiple running terminals", async () => {
@@ -55,9 +55,9 @@ describe("confirmCloseTerminals", () => {
       if (id === second.id) return { foreground: "jest" };
       return { foreground: null };
     });
-    ask.mockResolvedValue(true);
+    confirmApp.mockResolvedValue(true);
     await expect(confirmCloseTerminals([first, second])).resolves.toBe(true);
-    expect(ask).toHaveBeenCalledWith(
+    expect(confirmApp).toHaveBeenCalledWith(
       "These terminals are still running:\n• dev (vite)\n• test (jest)\n\nClose them anyway?",
       dialogOptions,
     );

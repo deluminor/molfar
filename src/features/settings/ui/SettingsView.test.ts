@@ -3,7 +3,7 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmApp } from "../../../app/model/appDialog";
 import { SettingsView } from "./SettingsView";
 import { rememberNotificationProjects } from "../../notifications/model/notificationProjects";
 import {
@@ -36,7 +36,9 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(async () => true) }));
+vi.mock("../../../app/model/appDialog", () => ({
+  confirmApp: vi.fn(async () => true),
+}));
 vi.mock("../../../integrations/harness/core/availability", () => ({
   isHarnessAvailable: (id: string) => id === "claude" || id === "cursor",
   hasProbedHarnessAvailability: () => true,
@@ -357,7 +359,7 @@ describe("settings pages", () => {
         .querySelector<HTMLButtonElement>('[aria-label="Remove Work"]')!
         .click(),
     );
-    expect(ask).toHaveBeenCalled();
+    expect(confirmApp).toHaveBeenCalled();
     expect(invoke).toHaveBeenCalledWith("provider_account_remove", {
       provider: "codex",
       accountId: "account-work",

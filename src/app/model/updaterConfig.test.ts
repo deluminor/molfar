@@ -1,18 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { getVersion, check, message, ask, relaunch } = vi.hoisted(() => ({
+const { getVersion, check, alertApp, relaunch } = vi.hoisted(() => ({
   getVersion: vi.fn(),
   check: vi.fn(),
-  message: vi.fn(),
-  ask: vi.fn(),
+  alertApp: vi.fn(),
   relaunch: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/app", () => ({ getVersion }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ ask, message }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch }));
 vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: vi.fn() }));
+vi.mock("./appDialog", () => ({ alertApp }));
 vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
 
 import { runUpdateFlow } from "./updater";
@@ -30,7 +29,7 @@ describe("updater", () => {
       phase: "idle",
       currentVersion: "0.1.23",
     });
-    expect(message).not.toHaveBeenCalled();
+    expect(alertApp).not.toHaveBeenCalled();
   });
 
   it("points manual checks without updater endpoints to GitHub releases", async () => {
@@ -41,9 +40,8 @@ describe("updater", () => {
       phase: "idle",
       currentVersion: "0.1.23",
     });
-    expect(message).toHaveBeenCalledWith(
+    expect(alertApp).toHaveBeenCalledWith(
       expect.stringContaining("https://github.com/deluminor/vatra/releases/latest"),
-      { title: "Vatra" },
     );
   });
 
@@ -55,6 +53,6 @@ describe("updater", () => {
       phase: "error",
       error: "network failed",
     });
-    expect(message).toHaveBeenCalledOnce();
+    expect(alertApp).toHaveBeenCalledOnce();
   });
 });

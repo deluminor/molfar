@@ -15,12 +15,12 @@ const updaterMocks = vi.hoisted(() => ({
 // The updater module reaches for Tauri plugins at import time; stub them so the
 // component under test can be imported in the plain node environment.
 vi.mock("@tauri-apps/api/app", () => ({ getVersion: vi.fn() }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({
-  ask: vi.fn(),
-  message: vi.fn(),
-}));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: vi.fn() }));
+vi.mock("../model/appDialog", () => ({
+  alertApp: vi.fn(),
+  confirmApp: vi.fn(),
+}));
 vi.mock("../model/forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
 vi.mock("../model/updater", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../model/updater")>();
