@@ -37,7 +37,11 @@ function canvas2d(): typeof context {
     stroke: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
+    closePath: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    rotate: vi.fn(),
     createRadialGradient: () => ({ addColorStop: vi.fn() }),
+    createLinearGradient: () => ({ addColorStop: vi.fn() }),
     fillStyle: "",
     globalAlpha: 1,
   };
@@ -139,8 +143,50 @@ function fireStatus(): string | null | undefined {
     ?.getAttribute("data-fire-status");
 }
 
-describe("fire visual", () => {
+function sphereStatus(): string | null | undefined {
+  return container
+    .querySelector("[data-sphere-status]")
+    ?.getAttribute("data-sphere-status");
+}
+
+describe("sphere visual", () => {
   it("is the default and runs exactly one animation loop", () => {
+    renderCard();
+
+    expect(
+      container.querySelector('[aria-label^="Glass sphere"]'),
+    ).not.toBeNull();
+    expect(sphereStatus()).toBe("running");
+    expect(context.arc).toHaveBeenCalled();
+    expect(frames.size).toBe(1);
+  });
+
+  it("paints one still frame under reduced motion", () => {
+    reducedMotion = true;
+    renderCard();
+
+    expect(sphereStatus()).toBe("still");
+    expect(context.arc).toHaveBeenCalled();
+    expect(frames.size).toBe(0);
+  });
+
+  it("pauses off screen and resumes with a single loop", () => {
+    renderCard();
+
+    intersect(false);
+    expect(frames.size).toBe(0);
+
+    intersect(true);
+    expect(frames.size).toBe(1);
+  });
+});
+
+describe("fire visual", () => {
+  beforeEach(() => {
+    storage.set(BRAND_VISUAL_STORAGE_KEY, "fire");
+  });
+
+  it("runs exactly one animation loop", () => {
     renderCard();
 
     expect(container.querySelector('[aria-label^="Campfire"]')).not.toBeNull();
@@ -205,20 +251,26 @@ describe("fire visual", () => {
 });
 
 describe("visual selector", () => {
-  it("cycles fire and orb, keeping focus and one compact control", () => {
+  it("cycles sphere, fire and orb, keeping focus and one compact control", () => {
     renderCard();
     const button = selector();
 
     expect(container.querySelectorAll("button")).toHaveLength(1);
-    expect(button?.textContent).toBe("←fire→");
-    expect(button?.getAttribute("aria-label")).toBe("fire: switch to Orb");
+    expect(button?.textContent).toBe("←sphere→");
+    expect(button?.getAttribute("aria-label")).toBe("sphere: switch to Fire");
 
     button?.focus();
     act(() => button?.click());
 
-    expect(selector()?.textContent).toBe("←orb→");
+    expect(selector()?.textContent).toBe("←fire→");
     expect(document.activeElement).toBe(selector());
-    expect(selector()?.getAttribute("aria-label")).toBe("orb: switch to Fire");
+    expect(selector()?.getAttribute("aria-label")).toBe("fire: switch to Orb");
+    expect(container.querySelector('[aria-label^="Glass sphere"]')).toBeNull();
+
+    act(() => selector()?.click());
+    expect(selector()?.getAttribute("aria-label")).toBe(
+      "orb: switch to Sphere",
+    );
     expect(container.querySelector('[aria-label^="Campfire"]')).toBeNull();
   });
 
@@ -226,25 +278,25 @@ describe("visual selector", () => {
     renderCard();
     act(() => selector()?.click());
 
-    expect(storage.get(BRAND_VISUAL_STORAGE_KEY)).toBe("orb");
+    expect(storage.get(BRAND_VISUAL_STORAGE_KEY)).toBe("fire");
 
     act(() => root.render(null));
-    renderCard();
-
-    expect(selector()?.textContent).toBe("←orb→");
-  });
-
-  it("migrates a stored dragon preference to fire", () => {
-    storage.set(BRAND_VISUAL_STORAGE_KEY, "dragon");
     renderCard();
 
     expect(selector()?.textContent).toBe("←fire→");
   });
 
-  it("keeps exactly one active loop while switching both ways", () => {
+  it("falls back to sphere for an unknown stored preference", () => {
+    storage.set(BRAND_VISUAL_STORAGE_KEY, "dragon");
     renderCard();
 
-    for (const visual of ["orb", "fire", "orb", "fire"]) {
+    expect(selector()?.textContent).toBe("←sphere→");
+  });
+
+  it("keeps exactly one active loop while cycling every visual", () => {
+    renderCard();
+
+    for (const visual of ["fire", "orb", "sphere", "fire"]) {
       act(() => selector()?.click());
       expect(frames.size).toBe(1);
       expect(selector()?.textContent).toContain(visual);

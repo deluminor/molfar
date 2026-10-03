@@ -19,33 +19,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("defaults to fire and rejects unknown stored values", () => {
-  expect(readBrandVisual()).toBe("fire");
+it("defaults to sphere and rejects unknown stored values", () => {
+  expect(readBrandVisual()).toBe("sphere");
   localStorage.setItem(BRAND_VISUAL_STORAGE_KEY, "unknown");
-  expect(readBrandVisual()).toBe("fire");
+  expect(readBrandVisual()).toBe("sphere");
 });
 
-it("restores either saved visual", () => {
-  saveBrandVisual("orb");
-  expect(readBrandVisual()).toBe("orb");
-  saveBrandVisual("fire");
-  expect(readBrandVisual()).toBe("fire");
-});
+it.each(["sphere", "fire", "orb"] as const)(
+  "restores the saved %s visual",
+  (visual) => {
+    saveBrandVisual(visual);
+    expect(readBrandVisual()).toBe(visual);
+  },
+);
 
-it.each([
-  ["dragon", "fire"],
-  ["jarvis", "orb"],
-  [null, "fire"],
-] as const)("migrates the stored value %s to %s", (stored, expected) => {
-  expect(parseBrandVisual(stored)).toBe(expected);
-});
+it.each([null, "", "dragon", "jarvis"])(
+  "falls back to sphere for %s",
+  (stored) => {
+    expect(parseBrandVisual(stored)).toBe("sphere");
+  },
+);
 
 it("falls back and reports inaccessible storage", () => {
   const report = vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(localStorage, "getItem").mockImplementation(() => {
     throw new Error("blocked");
   });
-  expect(readBrandVisual()).toBe("fire");
+  expect(readBrandVisual()).toBe("sphere");
   expect(report).toHaveBeenCalledWith(
     "Failed to read home brand visual preference:",
     expect.any(Error),

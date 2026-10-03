@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  advanceFireTime,
-  fireCanvasSize,
-  shouldAnimateFire,
+  advanceBrandTime,
+  brandCanvasSize,
+  shouldAnimateBrandVisual,
 } from "./animation";
 
 const visible = {
@@ -13,9 +13,9 @@ const visible = {
   height: 240,
 };
 
-describe("shouldAnimateFire", () => {
+describe("shouldAnimateBrandVisual", () => {
   it("animates a visible, sized canvas", () => {
-    expect(shouldAnimateFire(visible)).toBe(true);
+    expect(shouldAnimateBrandVisual(visible)).toBe(true);
   });
 
   it.each([
@@ -25,13 +25,13 @@ describe("shouldAnimateFire", () => {
     ["the canvas has no width", { width: 0 }],
     ["the canvas has no height", { height: 0 }],
   ])("stays still when %s", (_, override) => {
-    expect(shouldAnimateFire({ ...visible, ...override })).toBe(false);
+    expect(shouldAnimateBrandVisual({ ...visible, ...override })).toBe(false);
   });
 });
 
-describe("fireCanvasSize", () => {
+describe("brandCanvasSize", () => {
   it("caps the device pixel ratio", () => {
-    expect(fireCanvasSize(200, 100, 3)).toEqual({
+    expect(brandCanvasSize(200, 100, 3)).toEqual({
       width: 400,
       height: 200,
       ratio: 2,
@@ -39,17 +39,17 @@ describe("fireCanvasSize", () => {
   });
 
   it("falls back to 1x and never returns an empty buffer", () => {
-    expect(fireCanvasSize(0, 0, 0)).toEqual({ width: 1, height: 1, ratio: 1 });
+    expect(brandCanvasSize(0, 0, 0)).toEqual({ width: 1, height: 1, ratio: 1 });
   });
 });
 
-describe("advanceFireTime", () => {
+describe("advanceBrandTime", () => {
   it("advances by the elapsed frame time", () => {
-    expect(advanceFireTime(1, 16)).toBeCloseTo(1.016);
+    expect(advanceBrandTime(1, 16)).toBeCloseTo(1.016);
   });
 
   it("clamps long gaps and ignores clock skew", () => {
-    expect(advanceFireTime(1, 5_000)).toBeCloseTo(1.1);
-    expect(advanceFireTime(1, -40)).toBe(1);
+    expect(advanceBrandTime(1, 5_000)).toBeCloseTo(1.1);
+    expect(advanceBrandTime(1, -40)).toBe(1);
   });
 });

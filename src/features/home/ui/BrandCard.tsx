@@ -8,6 +8,14 @@ import { BrandVisualSelector } from "./BrandVisualSelector";
 import { FireVisual } from "./FireVisual";
 import { HomeCard } from "./HomeCard";
 import { OrbVisual } from "./OrbVisual";
+import { SphereVisual } from "./SphereVisual";
+
+function BrandVisualCanvas({ visual }: { visual: BrandVisual }): ReactNode {
+  if (visual === "fire") return <FireVisual />;
+  if (visual === "orb") return <OrbVisual />;
+
+  return <SphereVisual />;
+}
 
 export const BrandCard = memo(function BrandCard(): ReactNode {
   const [visual, setVisual] = useState(readBrandVisual);
@@ -27,7 +35,7 @@ export const BrandCard = memo(function BrandCard(): ReactNode {
         key={visual}
         className="home-brand-visual relative h-full w-full text-accent"
       >
-        {visual === "fire" ? <FireVisual /> : <OrbVisual />}
+        <BrandVisualCanvas visual={visual} />
       </div>
     </HomeCard>
   );

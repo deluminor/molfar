@@ -129,9 +129,7 @@ import {
   molfarWorkSummary,
   type MolfarToolCall,
 } from "../model/molfarToolCall";
-import {
-  isOperatorUserTurn,
-} from "../model/operatorCommand";
+import { isOperatorUserTurn } from "../model/operatorCommand";
 import {
   clearTranscriptHighlights,
   paintTranscriptHighlights,
@@ -1613,9 +1611,7 @@ function UserMessageBlock({
   const note = block.noteCard;
   const molfar = isOperatorUserTurn(block);
   const text =
-    card && card.kind !== "handoff"
-      ? ""
-      : visibleUserPrompt(block.text);
+    card && card.kind !== "handoff" ? "" : visibleUserPrompt(block.text);
   const messageLink = text ? parseUserMessageLink(text) : null;
   const displayText = messageLink
     ? `${messageLink.beforeText}${messageLink.afterText}`

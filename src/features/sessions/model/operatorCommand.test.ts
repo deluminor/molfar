@@ -56,7 +56,11 @@ describe("Operator composer command", () => {
       ]),
     ).toBe(false);
     expect(
-      isOperatorUserTurn({ id: "plain", role: "user", text: "/mono list notes" }),
+      isOperatorUserTurn({
+        id: "plain",
+        role: "user",
+        text: "/mono list notes",
+      }),
     ).toBe(false);
   });
 });

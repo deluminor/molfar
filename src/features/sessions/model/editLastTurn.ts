@@ -160,9 +160,7 @@ export function lastTurnRecall(session: Session): LastTurnRecall | null {
   const block = lastUserTurnBlock(session.blocks);
   if (!block?.text.trim() && !block?.attachments?.length) return null;
   return {
-    text: isOperatorUserTurn(block)
-      ? `/operator ${block.text}`
-      : block.text,
+    text: isOperatorUserTurn(block) ? `/operator ${block.text}` : block.text,
     attachments: block.attachments ?? [],
   };
 }

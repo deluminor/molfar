@@ -1,11 +1,13 @@
 import { BRAND_VISUAL_STORAGE_KEY } from "./constants";
 import type { BrandVisual } from "./types";
 
-/** Maps stored values, including pre-MOLFAR ones ("dragon", "jarvis"), to a visual. */
-export function parseBrandVisual(stored: string | null): BrandVisual {
-  if (stored === "orb" || stored === "jarvis") return "orb";
+const DEFAULT_VISUAL: BrandVisual = "sphere";
 
-  return "fire";
+export function parseBrandVisual(stored: string | null): BrandVisual {
+  if (stored === "fire" || stored === "orb" || stored === "sphere")
+    return stored;
+
+  return DEFAULT_VISUAL;
 }
 
 export function readBrandVisual(): BrandVisual {
@@ -13,7 +15,7 @@ export function readBrandVisual(): BrandVisual {
     return parseBrandVisual(localStorage.getItem(BRAND_VISUAL_STORAGE_KEY));
   } catch (error) {
     console.error("Failed to read home brand visual preference:", error);
-    return "fire";
+    return DEFAULT_VISUAL;
   }
 }
 
