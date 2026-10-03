@@ -52,9 +52,20 @@ Vatra is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** i
 
 `main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are Vatra's own. MonoCode's authors and full history live in the MonoCode repository and on `upstream-main`; Vatra's history before the reset is kept on `archive/main-pre-squash`. Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge origin/upstream-main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches `upstream-main`.
 
-`.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `origin/upstream-main` as a three-way patch to the working tree and index, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, or `3` if MonoCode rewrote its history.
+`.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `origin/upstream-main` to the working tree and index one path at a time, as three-way patches, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, `3` if MonoCode rewrote its history, or `4` if some changes became pending ports (below).
 
-The **Sync MonoCode upstream** automation in Vatra (Tuesday and Friday, 09:00) fast-forwards `upstream-main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps Vatra's side in the Vatra-owned paths below, and resolves product-code conflicts by combining both sides: it keeps Vatra's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
+Vatra restructures code that came from MonoCode (split modules, kebab-case file names, a workspace store), so the same file often lives elsewhere in Vatra. `.github/upstream-moves.json` records every move relative to `refactorBase`, the commit before the restructuring:
+
+| Section | Meaning | What `apply.mjs` does with an upstream change to the path |
+| --- | --- | --- |
+| `renames` | old path → new path | applies it to the new path |
+| `splits` | old path → `targets` + `notes` | writes a pending port |
+| `removed` | old path → reason | writes a pending port |
+| (no entry, path missing) | | writes a pending port |
+
+Pending ports land in `.upstream-pending/<from>..<to>/` (ignored by git) with a `manifest.json`; the sync agent ports each into the new modules, or lists it under **Needs human** in the sync PR. Any change that moves or removes a MonoCode-derived path updates the map in the same commit: run `node scripts/upstream/moves.mjs` to add detected renames, describe splits and removals by hand, and `node scripts/upstream/moves.mjs --check` (part of `check:web`) verifies that the map covers the tree.
+
+The **Sync MonoCode upstream** automation in Vatra (Tuesday and Friday, 09:00; prompt kept in `docs/automations/upstream-sync.md`) fast-forwards `upstream-main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps Vatra's side in the Vatra-owned paths below, and resolves product-code conflicts by combining both sides: it keeps Vatra's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
 
 Every sync, including one that applies cleanly, also:
 
@@ -72,7 +83,7 @@ git push origin upstream/main:refs/heads/upstream-main                 # fast-fo
 git fetch origin
 git switch -c sync/upstream-into-main-$(date +%Y%m%d) origin/main
 node scripts/upstream/apply.mjs                                        # applies the patch, updates .github/upstream-sync.json
-# resolve conflicts, keep Vatra-owned paths below, commit, open a PR into main
+# resolve conflicts, port .upstream-pending/ entries, keep Vatra-owned paths below, commit, open a PR into main
 ```
 
 These parts are Vatra-owned; keep ours when porting upstream changes:
