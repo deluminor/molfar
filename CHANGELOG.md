@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Inbox image and video cache has a 32 MiB budget, evicts the least recently used media, and shares downloads already in progress instead of retaining every file for the life of the window. From MonoCode #638.
 - Codex Max and Ultra effort options have animated tile and glow effects in the model picker and effort menu, with keyboard highlighting and reduced-motion support. From MonoCode #516.
 - Transcript turn metrics have more spacing beside the other response controls.
+- Every build ships complete third-party license notices: the desktop apps list the bundled JavaScript packages and linked Rust crates, and Vatra Host packages include Vatra's notice and the licenses of the npm packages bundled into the host.
 
 ### Fixed
 
@@ -38,9 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.2] - 2026-10-02
 
-### Fixed
-
-- **release:** merge release PRs with admin bypass (#14)
+Maintenance release: improves the release pipeline; no app changes.
 
 ## [1.0.1] - 2026-10-02
 

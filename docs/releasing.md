@@ -11,8 +11,10 @@ Vatra ships its own releases from the `main` branch of `deluminor/vatra`: deskto
 The workflow then:
 
 - bumps `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` and `tauri.conf.json` (`scripts/release/prepare.mjs`);
-- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes are combined, section by section, with notes generated from Vatra's conventional commits since the previous Vatra tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert`/other → Changed). These commits are left out of the generated notes:
+- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes are combined, section by section, with notes generated from Vatra's conventional commits since the previous Vatra tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert` → Changed). These commits are left out of the generated notes:
   - `chore`, `ci`, `docs`, `test`, `build`, `style` and merge commits;
+  - commits scoped `release`, `sync` or `license`, which change tooling or notices rather than the app — describe user-visible license changes under `Unreleased` yourself;
+  - subjects without a conventional prefix;
   - commits that edited `CHANGELOG.md` themselves, since they already wrote their notes;
   - MonoCode commits reachable from `upstream-main`, which the sync PR describes under `Unreleased`;
 - opens a `release/vX.Y.Z` branch, squash-merges a PR into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
