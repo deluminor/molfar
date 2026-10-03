@@ -64,8 +64,8 @@ export type JiraStatus = {
   email: string;
 };
 
-const PROJECT_IDS_KEY = "vatra.jiraHiddenProjects";
-export const JIRA_CHANGE_EVENT = "vatra:jira-change";
+const PROJECT_IDS_KEY = "molfar.jiraHiddenProjects";
+export const JIRA_CHANGE_EVENT = "molfar:jira-change";
 
 // Keyed by issue key (ENG-42): the REST paths and browse URLs both take it.
 const detailsByKey = new Map<string, JiraIssueDetails>();

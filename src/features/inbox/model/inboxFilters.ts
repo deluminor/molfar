@@ -117,9 +117,9 @@ export function resolveInboxSource(
   return visible.includes(source) ? source : (visible[0] ?? "github");
 }
 
-const FILTERS_KEY = "vatra.inboxFilters";
-const SOURCE_KEY = "vatra.inboxSource";
-const CONNECTIONS_KEY = "vatra.inboxConnections";
+const FILTERS_KEY = "molfar.inboxFilters";
+const SOURCE_KEY = "molfar.inboxSource";
+const CONNECTIONS_KEY = "molfar.inboxConnections";
 
 const UNKNOWN_CONNECTIONS: InboxSourceConnections = {
   github: null,

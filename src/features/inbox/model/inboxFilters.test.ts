@@ -664,7 +664,7 @@ function mockLocalStorage() {
 }
 
 describe("inbox connection cache", () => {
-  const KEY = "vatra.inboxConnections";
+  const KEY = "molfar.inboxConnections";
   beforeEach(mockLocalStorage);
 
   it("round-trips the last known connect state", () => {

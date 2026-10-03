@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 async function setup(providers: RemoteProvider[] = ["codex"]) {
-  const directory = mkdtempSync(join(tmpdir(), "vatra-server-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "molfar-server-test-"));
   const store = new HostStore(join(directory, "host.db"));
   let turn: SendTurnInput | undefined;
   let finish = () => {};
@@ -499,7 +499,7 @@ describe("remote host API", () => {
 
   it("answers this app's file commands inside host projects only", async () => {
     const s = await setup();
-    const outside = mkdtempSync(join(tmpdir(), "vatra-outside-"));
+    const outside = mkdtempSync(join(tmpdir(), "molfar-outside-"));
     cleanups.push(async () => rmSync(outside, { recursive: true, force: true }));
     const checkout = join(s.directory, "checkout");
     mkdirSync(join(checkout, "src"), { recursive: true });

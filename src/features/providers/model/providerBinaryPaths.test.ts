@@ -11,7 +11,7 @@ import {
   saveProviderBinaryPath,
 } from "./providerBinaryPaths";
 
-const key = "vatra.providerBinaryPaths.v1";
+const key = "molfar.providerBinaryPaths.v1";
 
 beforeEach(() => {
   mocks.invoke.mockReset();

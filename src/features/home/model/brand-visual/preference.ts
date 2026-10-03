@@ -1,7 +1,7 @@
 import { BRAND_VISUAL_STORAGE_KEY } from "./constants";
 import type { BrandVisual } from "./types";
 
-/** Maps stored values, including pre-Vatra ones ("dragon", "jarvis"), to a visual. */
+/** Maps stored values, including pre-MOLFAR ones ("dragon", "jarvis"), to a visual. */
 export function parseBrandVisual(stored: string | null): BrandVisual {
   if (stored === "orb" || stored === "jarvis") return "orb";
 

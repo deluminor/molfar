@@ -117,7 +117,7 @@ fn menu_item(
     builder.build(app)
 }
 
-const REPOSITORY_URL: &str = "https://github.com/deluminor/vatra";
+const REPOSITORY_URL: &str = "https://github.com/deluminor/molfar";
 
 pub fn dispatch(app: &AppHandle, id: &str) {
     match id {
@@ -515,10 +515,10 @@ fn build(
 
     #[cfg(target_os = "macos")]
     {
-        let quit = MenuItemBuilder::with_id("quit", "Quit Vatra")
+        let quit = MenuItemBuilder::with_id("quit", "Quit MOLFAR")
             .accelerator("CmdOrCtrl+Q")
             .build(app)?;
-        let mut app_menu = SubmenuBuilder::new(app, "Vatra")
+        let mut app_menu = SubmenuBuilder::new(app, "MOLFAR")
             .about(Some(AboutMetadata::default()))
             .separator()
             .item(&open_settings);

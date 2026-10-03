@@ -49,7 +49,7 @@ export const MODE_COMMAND_STYLES: Record<string, ModeCommandStyle> = {
     },
     menu: {
       label: "Operator",
-      description: "Give this thread access to Vatra",
+      description: "Give this thread access to MOLFAR",
       iconClassName: "text-sky-300/80",
     },
   },

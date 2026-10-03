@@ -13,19 +13,19 @@ import {
 import { remoteProjectFor } from "./remoteProjects";
 import { withRemoteAttachmentPreviews } from "./remoteAttachmentPreviews";
 
-const CHANGE = "vatra:remote-machines";
-export const REMOTE_HISTORY_CHANGE = "vatra:remote-history";
-export const REMOTE_HISTORY_UPDATED = "vatra:remote-history-updated";
+const CHANGE = "molfar:remote-machines";
+export const REMOTE_HISTORY_CHANGE = "molfar:remote-history";
+export const REMOTE_HISTORY_UPDATED = "molfar:remote-history-updated";
 export const refreshRemoteProjectSessions = () =>
   window.dispatchEvent(new Event(REMOTE_HISTORY_CHANGE));
 let cachedMachines: RemoteMachine[] = [];
 let machinesLoaded = false;
-export const OPEN_CONNECTIONS_EVENT = "vatra:open-connections";
-export const OPEN_REMOTE_PROJECT_EVENT = "vatra:open-remote-project";
+export const OPEN_CONNECTIONS_EVENT = "molfar:open-connections";
+export const OPEN_REMOTE_PROJECT_EVENT = "molfar:open-remote-project";
 export const refreshRemoteMachines = () =>
   window.dispatchEvent(new Event(CHANGE));
-const TAB_KEY = "vatra.remote-tabs.v2";
-const WORKTREE_KEY = "vatra.remote-pending-worktrees.v1";
+const TAB_KEY = "molfar.remote-tabs.v2";
+const WORKTREE_KEY = "molfar.remote-pending-worktrees.v1";
 
 export function remotePendingWorktree(shellId: string): string | undefined {
   try {
@@ -81,7 +81,7 @@ export function rememberRemoteSession(shellId: string, sessionId?: string) {
 }
 
 const pendingPrefix = (project: string, environment: string) =>
-  `vatra.remote-command.v1:${JSON.stringify([project, environment])}:`;
+  `molfar.remote-command.v1:${JSON.stringify([project, environment])}:`;
 
 type PendingEntry = { command: HostCommand; shellId?: string; followup?: HostCommand };
 const readPendingEntry = (value: string): PendingEntry => {
@@ -289,7 +289,7 @@ export function useRemoteMachines(enabled = true): {
   return state;
 }
 
-const STATUS = "vatra:remote-machine-status";
+const STATUS = "molfar:remote-machine-status";
 const machineOnline = new Map<string, boolean>();
 const statusWatchers = new Map<
   string,
@@ -360,7 +360,7 @@ export function useRemoteMachineOnline(machineId?: string): boolean | undefined 
   return online;
 }
 
-const historyKey = (project: string) => `vatra.remote-history.v2:${project}`;
+const historyKey = (project: string) => `molfar.remote-history.v2:${project}`;
 
 function cachedSessions(project: string): HostSessionSummary[] {
   try {

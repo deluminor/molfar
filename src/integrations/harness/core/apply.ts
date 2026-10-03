@@ -424,7 +424,7 @@ type UserTurnExtra = {
   noteCard?: Block["noteCard"];
   ciContext?: string;
   internal?: boolean;
-  vatra?: boolean;
+  molfar?: boolean;
   intent?: Block["intent"];
   appRequestId?: string;
 };
@@ -435,7 +435,7 @@ function userTurnFields(extra?: UserTurnExtra) {
     ...(extra?.noteCard ? { noteCard: extra.noteCard } : {}),
     ...(extra?.ciContext ? { ciContext: extra.ciContext } : {}),
     ...(extra?.internal ? { internal: true } : {}),
-    ...(extra?.vatra ? { vatra: true } : {}),
+    ...(extra?.molfar ? { molfar: true } : {}),
     ...(extra?.intent ? { intent: extra.intent } : {}),
     ...(extra?.appRequestId ? { appRequestId: extra.appRequestId } : {}),
   };

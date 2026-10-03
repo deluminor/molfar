@@ -6,9 +6,9 @@ export const OPERATOR_COMMAND: BuiltinSkill = {
   name: "operator",
   invocation: "operator",
   description:
-    "Give this thread access to Vatra sessions, folders, and notes.",
+    "Give this thread access to MOLFAR sessions, folders, and notes.",
   scope: "builtin",
-  source: "vatra",
+  source: "molfar",
 };
 
 /** Activate app access with a leading composer command. */
@@ -27,7 +27,7 @@ export function isOperatorUserTurn(block: Block): boolean {
     block.role === "user" &&
     !block.draft &&
     !block.internal &&
-    block.vatra === true
+    block.molfar === true
   );
 }
 

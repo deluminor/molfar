@@ -54,7 +54,7 @@ mod windows;
 mod worktree_lifecycle;
 mod worktrees;
 
-// Phase 1 seam: spawn / kill harness children per Vatra thread.
+// Phase 1 seam: spawn / kill harness children per MOLFAR thread.
 // Adapters own the protocol; this host only supervises processes.
 
 /// Project directory for new sessions — prefer cwd, else home.
@@ -343,8 +343,8 @@ pub fn run() {
             fs::git_pr_status,
             fs::git_pr_create,
             fs::git_github_status,
-            fs::github_vatra_star_status,
-            fs::github_star_vatra,
+            fs::github_molfar_star_status,
+            fs::github_star_molfar,
             fs::git_github_repo,
             fs::git_github_repositories,
             fs::git_github_work_item,
@@ -570,7 +570,7 @@ pub fn run() {
             project_logo::forget_logo_file,
         ])
         .build(app_context())
-        .expect("error while building Vatra");
+        .expect("error while building MOLFAR");
 
     app.run(|handle, event| match event {
         #[cfg(target_os = "macos")]

@@ -6,15 +6,15 @@ import {
 } from "../../notifications/model/notificationPreferences";
 import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
 
-const KEY = "vatra.sounds";
-const ENABLED_AT_KEY = "vatra.soundsEnabledAt";
+const KEY = "molfar.sounds";
+const ENABLED_AT_KEY = "molfar.soundsEnabledAt";
 
 export const SOUNDS_DEFAULT = true;
 
 /** Soft enough to sit in the background while a turn runs in another app. */
 export const SOUNDS_VOLUME = 0.55;
 
-export const SOUNDS_CHANGE_EVENT = "vatra:sounds-change";
+export const SOUNDS_CHANGE_EVENT = "molfar:sounds-change";
 
 export type SoundCue =
   | "turnFinished"

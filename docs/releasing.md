@@ -1,6 +1,6 @@
-# Releasing Vatra
+# Releasing MOLFAR
 
-Vatra ships its own releases from the `main` branch of `deluminor/vatra`: desktop installers, the remote host packages, and the signed feed the app updates from. Upstream MonoCode releases are not used for anything.
+MOLFAR ships its own releases from the `main` branch of `deluminor/molfar`: desktop installers, the remote host packages, and the signed feed the app updates from. Upstream MonoCode releases are not used for anything.
 
 ## Cut a release
 
@@ -11,7 +11,7 @@ Vatra ships its own releases from the `main` branch of `deluminor/vatra`: deskto
 The workflow then:
 
 - bumps `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` and `tauri.conf.json` (`scripts/release/prepare.mjs`);
-- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes are combined, section by section, with notes generated from Vatra's conventional commits since the previous Vatra tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert` → Changed). These commits are left out of the generated notes:
+- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes are combined, section by section, with notes generated from MOLFAR's conventional commits since the previous MOLFAR tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert` → Changed). These commits are left out of the generated notes:
   - `chore`, `ci`, `docs`, `test`, `build`, `style` and merge commits;
   - commits scoped `release`, `sync` or `license`, which change tooling or notices rather than the app — describe user-visible license changes under `Unreleased` yourself;
   - subjects without a conventional prefix;
@@ -27,7 +27,7 @@ A failed build leaves the release as a draft; use **Re-run failed jobs** on that
 
 ## Versions
 
-Vatra uses its own semver line, starting at 1.0.0. The remote host must match the desktop version exactly — SSH setup downloads `vatra-host-<os>-<arch>` from the release of the running app's version — so every release must include the host packages (the workflow refuses to publish without all six).
+MOLFAR uses its own semver line, starting at 1.0.0. The remote host must match the desktop version exactly — SSH setup downloads `molfar-host-<os>-<arch>` from the release of the running app's version — so every release must include the host packages (the workflow refuses to publish without all six).
 
 ## Signing
 
@@ -42,23 +42,23 @@ Without the Apple secrets the macOS build is ad-hoc signed and not notarized; us
 
 ## Syncing from upstream
 
-Vatra is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** is unavailable and PRs cannot target MonoCode from here. Syncing is plain git against the `upstream` remote (`hardbeat920/monocode`), which works as long as MonoCode stays public.
+MOLFAR is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** is unavailable and PRs cannot target MonoCode from here. Syncing is plain git against the `upstream` remote (`hardbeat920/monocode`), which works as long as MonoCode stays public.
 
 | Ref | Role |
 | --- | --- |
 | `upstream/main` | MonoCode's default branch |
 | `upstream-main` | Mirror of `upstream/main` on this repo; only ever fast-forwarded, never committed to |
-| `main` | Vatra; upstream changes arrive through a `sync/upstream-into-main-YYYYMMDD` PR |
+| `main` | MOLFAR; upstream changes arrive through a `sync/upstream-into-main-YYYYMMDD` PR |
 
-`main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are Vatra's own. MonoCode's authors and full history live in the MonoCode repository and on `upstream-main`; Vatra's history before the reset is kept on `archive/main-pre-squash`. Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge origin/upstream-main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches `upstream-main`.
+`main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are MOLFAR's own. MonoCode's authors and full history live in the MonoCode repository and on `upstream-main`; MOLFAR's history before the reset is kept on `archive/main-pre-squash`. Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge origin/upstream-main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches `upstream-main`.
 
 `.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `origin/upstream-main` as a three-way patch to the working tree and index, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, or `3` if MonoCode rewrote its history.
 
-The **Sync MonoCode upstream** automation in Vatra (Tuesday and Friday, 09:00) fast-forwards `upstream-main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps Vatra's side in the Vatra-owned paths below, and resolves product-code conflicts by combining both sides: it keeps Vatra's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
+The **Sync MonoCode upstream** automation in MOLFAR (Tuesday and Friday, 09:00) fast-forwards `upstream-main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps MOLFAR's side in the MOLFAR-owned paths below, and resolves product-code conflicts by combining both sides: it keeps MOLFAR's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
 
 Every sync, including one that applies cleanly, also:
 
-- renames MonoCode identifiers that upstream code brings in to Vatra's: `monocode.*` storage keys and `monocode:*` events become `vatra.*` / `vatra:*`, and the same goes for component names and user-facing text. Upstream issue links and the legacy-profile migration code keep their MonoCode names;
+- renames MonoCode identifiers that upstream code brings in to MOLFAR's: `monocode.*` storage keys and `monocode:*` events become `molfar.*` / `molfar:*`, and the same goes for component names and user-facing text. Upstream issue links and the legacy-profile migration code keep their MonoCode names;
 - adds the incoming user-visible changes under `## [Unreleased]` in `CHANGELOG.md`, citing upstream PRs as `MonoCode #NNN`. These notes are the only place the release sees upstream changes;
 - runs `npm run check:web` (plus `cargo check` and the host tests when the sync touches them), and lists user-visible default changes under **Breaking / attention** in the notes.
 
@@ -66,23 +66,23 @@ By hand:
 
 ```bash
 git remote add upstream https://github.com/hardbeat920/monocode.git   # once per clone
-gh repo set-default deluminor/vatra                                    # once per clone
+gh repo set-default deluminor/molfar                                    # once per clone
 git fetch upstream main
 git push origin upstream/main:refs/heads/upstream-main                 # fast-forward the mirror
 git fetch origin
 git switch -c sync/upstream-into-main-$(date +%Y%m%d) origin/main
 node scripts/upstream/apply.mjs                                        # applies the patch, updates .github/upstream-sync.json
-# resolve conflicts, keep Vatra-owned paths below, commit, open a PR into main
+# resolve conflicts, keep MOLFAR-owned paths below, commit, open a PR into main
 ```
 
-These parts are Vatra-owned; keep ours when porting upstream changes:
+These parts are MOLFAR-owned; keep ours when porting upstream changes:
 
 - `.github/workflows/release.yml`, `scripts/release/`
 - `src/app/model/forkPolicy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`
 - `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`
-- host names in `host/` (`~/.vatra-host`, `vatra-host`, `com.vatra.host`, `Vatra Host-<SID>`, the `host.vatra` capability)
+- host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`, the `host.molfar` capability)
 - version numbers and `CHANGELOG.md`
 
-License notices are the exception. Keep Vatra's additions, but always port upstream changes to them: a new or changed copyright line in `LICENSE`, `NOTICE` content, `LICENSE*`/`NOTICE*` files under `vendor/` or anywhere else, and copyright or SPDX headers in source files. MIT requires every copy to carry these notices, so dropping an upstream change here is a license violation, not just a style choice.
+License notices are the exception. Keep MOLFAR's additions, but always port upstream changes to them: a new or changed copyright line in `LICENSE`, `NOTICE` content, `LICENSE*`/`NOTICE*` files under `vendor/` or anywhere else, and copyright or SPDX headers in source files. MIT requires every copy to carry these notices, so dropping an upstream change here is a license violation, not just a style choice.
 
-Every build ships the notices: macOS, Windows and Linux bundles include `LICENSE` and `NOTICE` as resources; `THIRD-PARTY-NOTICES.md` (generated by `vite build` from the bundled JavaScript dependencies) and `THIRD-PARTY-NOTICES-RUST.md` (generated by `scripts/licenses/rust-notices.mjs` in `beforeBuildCommand` from the Rust crates linked into the binary for the build platform, with crates.io source links for MPL-2.0 crates) are part of the frontend that Tauri embeds into every binary; the host packages include `VATRA-LICENSE`, `VATRA-NOTICE`, Node's `LICENSE`, and `THIRD-PARTY-NOTICES.md` for the npm packages bundled into `host.mjs` (written by `host/build.mjs` from the esbuild metafile). Code copied into Vatra's own source keeps its full notice in `NOTICE` too, because minification strips source headers: today that is the Visual Studio Code portion of `gitGraph.ts`. Crates and packages that ship no license file of their own borrow one from a sibling in the same repository (for example `alloc-stdlib` from `alloc-no-stdlib`). Bundle resources must be files committed to the repository, because `cargo check` validates them without a frontend build.
+Every build ships the notices: macOS, Windows and Linux bundles include `LICENSE` and `NOTICE` as resources; `THIRD-PARTY-NOTICES.md` (generated by `vite build` from the bundled JavaScript dependencies) and `THIRD-PARTY-NOTICES-RUST.md` (generated by `scripts/licenses/rust-notices.mjs` in `beforeBuildCommand` from the Rust crates linked into the binary for the build platform, with crates.io source links for MPL-2.0 crates) are part of the frontend that Tauri embeds into every binary; the host packages include `MOLFAR-LICENSE`, `MOLFAR-NOTICE`, Node's `LICENSE`, and `THIRD-PARTY-NOTICES.md` for the npm packages bundled into `host.mjs` (written by `host/build.mjs` from the esbuild metafile). Code copied into MOLFAR's own source keeps its full notice in `NOTICE` too, because minification strips source headers: today that is the Visual Studio Code portion of `gitGraph.ts`. Crates and packages that ship no license file of their own borrow one from a sibling in the same repository (for example `alloc-stdlib` from `alloc-no-stdlib`). Bundle resources must be files committed to the repository, because `cargo check` validates them without a frontend build.

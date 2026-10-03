@@ -1,16 +1,16 @@
 name: Bug report
-description: Report a problem in Vatra
+description: Report a problem in MOLFAR
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Vatra supports macOS, Linux, and Windows.
+        MOLFAR supports macOS, Linux, and Windows.
 
   - type: input
     id: version
     attributes:
-      label: Vatra version
+      label: MOLFAR version
       placeholder: "0.1.0"
     validations:
       required: true

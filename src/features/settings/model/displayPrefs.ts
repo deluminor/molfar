@@ -1,17 +1,17 @@
 import { useSyncExternalStore } from "react";
 import { readFlag, writeFlag } from "./storageFlags";
 
-const SHOW_REMAINING_USAGE_KEY = "vatra.showRemainingUsage";
-const MASK_EMAILS_KEY = "vatra.maskEmails";
+const SHOW_REMAINING_USAGE_KEY = "molfar.showRemainingUsage";
+const MASK_EMAILS_KEY = "molfar.maskEmails";
 
 export const SHOW_REMAINING_USAGE_DEFAULT = false;
 export const MASK_EMAILS_DEFAULT = false;
 
 /** Fired on `window` whenever the usage meter direction flips (detail: boolean). */
 export const SHOW_REMAINING_USAGE_CHANGE_EVENT =
-  "vatra:showremainingusagechange";
+  "molfar:showremainingusagechange";
 /** Fired on `window` whenever email masking flips (detail: boolean). */
-export const MASK_EMAILS_CHANGE_EVENT = "vatra:maskemailschange";
+export const MASK_EMAILS_CHANGE_EVENT = "molfar:maskemailschange";
 
 function flagStore(key: string, fallback: boolean, event: string) {
   // Holds a saved value only while storage failed to keep it, so the switch

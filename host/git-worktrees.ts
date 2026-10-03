@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 const exec = promisify(execFile);
 
 // Worktrees created by earlier builds keep the `mc/` prefix.
-export const AUTO_WORKTREE_BRANCH = /^(?:vatra|mc)\/[a-z0-9]{8}$/;
+export const AUTO_WORKTREE_BRANCH = /^(?:molfar|mc)\/[a-z0-9]{8}$/;
 
 const options = (cwd: string) => ({
   cwd,

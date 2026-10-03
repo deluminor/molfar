@@ -534,11 +534,11 @@ html.has-chat-background.chat-background-effect-ready.chat-background-gradient-b
   contain-intrinsic-block-size: auto 240px;
 }
 
-::highlight(vatra-transcript-search-match) {
+::highlight(molfar-transcript-search-match) {
   background-color: color-mix(in srgb, #e2c08d 46%, transparent);
 }
 
-::highlight(vatra-transcript-search-current) {
+::highlight(molfar-transcript-search-current) {
   background-color: color-mix(in srgb, var(--color-accent) 62%, transparent);
 }
 
@@ -607,7 +607,7 @@ html.has-user-accent .user-message-bubble {
  * halo, a golden sheen sweeps across it, and sparkles drift up from a glow at
  * its base, twinkling as they rise and fading out past the top edge.
  */
-.vatra-sparkles {
+.molfar-sparkles {
   --sparkle-color: #fde68a;
   --sparkle-glow: rgb(251 191 36 / 0.9);
   position: absolute;
@@ -615,15 +615,15 @@ html.has-user-accent .user-message-bubble {
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
-  animation: vatra-halo 2400ms 150ms ease-out both;
+  animation: molfar-halo 2400ms 150ms ease-out both;
 }
 
-html.theme-light .vatra-sparkles {
+html.theme-light .molfar-sparkles {
   --sparkle-color: #f59e0b;
   --sparkle-glow: rgb(217 119 6 / 0.55);
 }
 
-.vatra-sparkles::before {
+.molfar-sparkles::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -635,10 +635,10 @@ html.theme-light .vatra-sparkles {
     transparent 70%
   );
   transform: translateX(-120%);
-  animation: vatra-sheen 1100ms 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: molfar-sheen 1100ms 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-.vatra-sparkles::after {
+.molfar-sparkles::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -647,21 +647,21 @@ html.theme-light .vatra-sparkles {
     rgb(251 191 36 / 0.35),
     transparent 70%
   );
-  animation: vatra-ember-glow 2200ms 100ms ease-out both;
+  animation: molfar-ember-glow 2200ms 100ms ease-out both;
 }
 
-.vatra-sparkle {
+.molfar-sparkle {
   position: absolute;
   top: 0;
   bottom: 0;
   left: var(--x);
   z-index: 1;
   width: 0;
-  animation: vatra-rise var(--duration) var(--delay)
+  animation: molfar-rise var(--duration) var(--delay)
     cubic-bezier(0.3, 0.6, 0.4, 1) both;
 }
 
-.vatra-sparkle-glyph {
+.molfar-sparkle-glyph {
   position: absolute;
   bottom: calc(var(--size) * -1);
   left: calc(var(--size) / -2);
@@ -669,15 +669,15 @@ html.theme-light .vatra-sparkles {
   height: var(--size);
   color: var(--sparkle-color);
   filter: drop-shadow(0 0 3px var(--sparkle-glow));
-  animation: vatra-twinkle var(--duration) var(--delay) ease-in-out both;
+  animation: molfar-twinkle var(--duration) var(--delay) ease-in-out both;
 }
 
-.vatra-sparkle-ember {
+.molfar-sparkle-ember {
   border-radius: 9999px;
   background: radial-gradient(circle, #fffbeb, var(--sparkle-color) 70%);
 }
 
-@keyframes vatra-rise {
+@keyframes molfar-rise {
   from {
     transform: translate(0, 0);
   }
@@ -686,7 +686,7 @@ html.theme-light .vatra-sparkles {
   }
 }
 
-@keyframes vatra-twinkle {
+@keyframes molfar-twinkle {
   0% {
     opacity: 0;
     transform: scale(0.2) rotate(0deg);
@@ -709,7 +709,7 @@ html.theme-light .vatra-sparkles {
   }
 }
 
-@keyframes vatra-halo {
+@keyframes molfar-halo {
   0% {
     box-shadow:
       0 0 0 0 rgb(245 158 11 / 0),
@@ -727,13 +727,13 @@ html.theme-light .vatra-sparkles {
   }
 }
 
-@keyframes vatra-sheen {
+@keyframes molfar-sheen {
   to {
     transform: translateX(120%);
   }
 }
 
-@keyframes vatra-ember-glow {
+@keyframes molfar-ember-glow {
   0% {
     opacity: 0;
   }
@@ -746,7 +746,7 @@ html.theme-light .vatra-sparkles {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vatra-sparkles {
+  .molfar-sparkles {
     display: none;
   }
 }
@@ -791,7 +791,7 @@ html.theme-light .vatra-sparkles {
     color-mix(in srgb, var(--mode-glow) 35%, transparent),
     transparent 70%
   );
-  animation: vatra-ember-glow 2200ms 100ms ease-out both;
+  animation: molfar-ember-glow 2200ms 100ms ease-out both;
 }
 
 @keyframes turn-mode-halo {
@@ -841,7 +841,7 @@ html.theme-light .plan-steps {
   left: var(--x);
   z-index: 2;
   width: 0;
-  animation: vatra-rise var(--duration) var(--delay)
+  animation: molfar-rise var(--duration) var(--delay)
     cubic-bezier(0.3, 0.6, 0.4, 1) both;
 }
 
@@ -892,7 +892,7 @@ html.theme-light .plan-steps {
   left: var(--x);
   z-index: 1;
   width: 0;
-  animation: vatra-rise var(--duration) var(--delay)
+  animation: molfar-rise var(--duration) var(--delay)
     cubic-bezier(0.3, 0.6, 0.4, 1) both;
 }
 
@@ -906,7 +906,7 @@ html.theme-light .plan-steps {
   border-radius: 9999px;
   background: radial-gradient(circle, #fefce8, var(--mode-color) 70%);
   box-shadow: 0 0 5px var(--mode-glow);
-  animation: vatra-twinkle var(--duration) var(--delay) ease-in-out both;
+  animation: molfar-twinkle var(--duration) var(--delay) ease-in-out both;
 }
 
 @keyframes plan-step-dot {
@@ -1246,9 +1246,9 @@ input,
 .inbox-pr-diff,
 .unified-diff,
 .inbox-comment-md,
-.vatra-terminal,
-.vatra-terminal .xterm,
-.vatra-terminal .xterm-viewport {
+.molfar-terminal,
+.molfar-terminal .xterm,
+.molfar-terminal .xterm-viewport {
   user-select: text;
 }
 
@@ -2126,43 +2126,43 @@ header[data-tauri-drag-region] button {
   }
 }
 
-.vatra-terminal {
+.molfar-terminal {
   box-sizing: border-box;
   overflow: hidden;
   /* Shell padding; full-screen TUIs use the alt buffer and drop to 0. */
   padding: 8px 10px;
 }
 
-.vatra-terminal--alt-screen {
+.molfar-terminal--alt-screen {
   padding: 0;
 }
 
-.vatra-terminal--alt-screen .vatra-terminal-host,
-.vatra-terminal--alt-screen .xterm,
-.vatra-terminal--alt-screen .xterm-viewport,
-.vatra-terminal--alt-screen .xterm-scrollable-element {
+.molfar-terminal--alt-screen .molfar-terminal-host,
+.molfar-terminal--alt-screen .xterm,
+.molfar-terminal--alt-screen .xterm-viewport,
+.molfar-terminal--alt-screen .xterm-scrollable-element {
   width: 100%;
   height: 100%;
 }
 
-.vatra-terminal--alt-screen .xterm .xterm-scrollable-element > .scrollbar {
+.molfar-terminal--alt-screen .xterm .xterm-scrollable-element > .scrollbar {
   display: none !important;
 }
 
-.vatra-terminal .xterm {
+.molfar-terminal .xterm {
   padding: 0;
 }
 
-.vatra-terminal .xterm-viewport {
+.molfar-terminal .xterm-viewport {
   background: transparent !important;
   overflow: hidden;
 }
 
-.vatra-terminal .xterm-scrollable-element > .shadow {
+.molfar-terminal .xterm-scrollable-element > .shadow {
   display: none !important;
 }
 
-.vatra-terminal .xterm-screen {
+.molfar-terminal .xterm-screen {
   user-select: text;
 }
 

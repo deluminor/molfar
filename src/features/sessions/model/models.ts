@@ -213,13 +213,13 @@ export const DEFAULT_MODEL_ID: Record<HarnessId, string> = {
   antigravity: "antigravity:gemini-3.8-flash-high",
 };
 
-const FAVORITES_KEY = "vatra.favoriteModels";
-const MODEL_PICKER_TAB_KEY = "vatra.modelPickerTab";
-const HIDDEN_PICKER_PROVIDERS_KEY = "vatra.hiddenPickerProviders";
-const LAST_MODEL_KEY = "vatra.lastModel";
-const LAST_MODEL_SETTINGS_KEY = "vatra.lastModelSettings";
-const DEFAULT_MODELS_KEY = "vatra.defaultModels";
-const RECENT_MODELS_KEY = "vatra.recentModels";
+const FAVORITES_KEY = "molfar.favoriteModels";
+const MODEL_PICKER_TAB_KEY = "molfar.modelPickerTab";
+const HIDDEN_PICKER_PROVIDERS_KEY = "molfar.hiddenPickerProviders";
+const LAST_MODEL_KEY = "molfar.lastModel";
+const LAST_MODEL_SETTINGS_KEY = "molfar.lastModelSettings";
+const DEFAULT_MODELS_KEY = "molfar.defaultModels";
+const RECENT_MODELS_KEY = "molfar.recentModels";
 const RECENT_MODEL_LIMIT = 6;
 
 export type ModelPickerTab = "favorites" | HarnessId;

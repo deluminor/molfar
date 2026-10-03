@@ -1125,8 +1125,8 @@ function SidebarComponent({
               },
               {
                 kind: "item" as const,
-                id: "copy-vatra-session-id",
-                label: "Vatra session ID",
+                id: "copy-molfar-session-id",
+                label: "MOLFAR session ID",
               },
             ],
           },
@@ -1271,7 +1271,7 @@ function SidebarComponent({
       setRenamingSessionId(sessionId);
       return;
     }
-    if (id === "copy-harness-session-id" || id === "copy-vatra-session-id") {
+    if (id === "copy-harness-session-id" || id === "copy-molfar-session-id") {
       const value =
         id === "copy-harness-session-id" ? providerSessionId : sessionId;
       if (value) {

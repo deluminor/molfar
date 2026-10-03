@@ -72,20 +72,20 @@ export function temporaryWorktreeBranchName(
     .replace(/[^a-zA-Z0-9]/g, "")
     .slice(0, 8)
     .toLowerCase();
-  return `vatra/${token || Date.now().toString(36)}`;
+  return `molfar/${token || Date.now().toString(36)}`;
 }
 
 export function orchestrationWorktreeBranchName(id: string): string {
   const token = id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12).toLowerCase();
-  return `vatra/orch-${token || Date.now().toString(36)}`;
+  return `molfar/orch-${token || Date.now().toString(36)}`;
 }
 
 export function namedWorktreeBranch(fragment: string): string | null {
   const clean = fragment
     .trim()
-    .replace(/^(?:vatra|mc)\/+/, "")
+    .replace(/^(?:molfar|mc)\/+/, "")
     .replace(/^\/+|\/+$/g, "");
-  return clean ? `vatra/${clean}` : null;
+  return clean ? `molfar/${clean}` : null;
 }
 
 export async function removeWorktree(

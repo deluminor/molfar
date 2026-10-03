@@ -400,8 +400,8 @@ pub async fn git_orchestration_worktree_create(
 
 // Branches created by earlier builds keep the `mc/` prefix and must stay
 // manageable.
-const GENERATED_BRANCH_PREFIXES: [&str; 2] = ["vatra/", "mc/"];
-const ORCHESTRATION_BRANCH_PREFIXES: [&str; 2] = ["vatra/orch-", "mc/orch-"];
+const GENERATED_BRANCH_PREFIXES: [&str; 2] = ["molfar/", "mc/"];
+const ORCHESTRATION_BRANCH_PREFIXES: [&str; 2] = ["molfar/orch-", "mc/orch-"];
 
 fn is_generated_branch(branch: &str) -> bool {
     GENERATED_BRANCH_PREFIXES
@@ -802,7 +802,7 @@ mod tests {
     }
     fn repo() -> Repo {
         let dir =
-            std::env::temp_dir().join(format!("vatra-worktree-test-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("molfar-worktree-test-{}", uuid::Uuid::new_v4()));
         let root = dir.join("repo");
         std::fs::create_dir_all(&root).unwrap();
         git_checked(&root, &["init", "-b", "main"]).unwrap();
@@ -904,7 +904,7 @@ mod tests {
         std::fs::write(root.join("untracked.txt"), "lead new\n").unwrap();
         std::fs::remove_file(root.join("deleted.txt")).unwrap();
 
-        let tree = create_seeded(&root, "vatra/orch-testworker").unwrap();
+        let tree = create_seeded(&root, "molfar/orch-testworker").unwrap();
         let worker = Path::new(&tree.path);
         assert_eq!(
             std::fs::read_to_string(worker.join("tracked.txt")).unwrap(),
@@ -916,12 +916,12 @@ mod tests {
         );
         assert!(!worker.join("deleted.txt").exists());
         assert_eq!(
-            create_seeded(&root, "vatra/orch-testworker").unwrap().path,
+            create_seeded(&root, "molfar/orch-testworker").unwrap().path,
             tree.path
         );
 
         std::fs::write(root.join("tracked.txt"), "later lead edit\n").unwrap();
-        assert!(create_seeded(&root, "vatra/orch-testworker").is_err());
+        assert!(create_seeded(&root, "molfar/orch-testworker").is_err());
         assert_eq!(
             std::fs::read_to_string(worker.join("tracked.txt")).unwrap(),
             "lead dirty\n"
@@ -948,36 +948,36 @@ mod tests {
     fn renames_only_temporary_worktree_branches() {
         let repo = repo();
         let root = repo.0.join("repo");
-        let tree = create(&root, "vatra/12345678", "main", false).unwrap();
+        let tree = create(&root, "molfar/12345678", "main", false).unwrap();
         let renamed =
-            rename_branch(&root, Path::new(&tree.path), "vatra/faster-worktrees").unwrap();
-        assert_eq!(renamed.branch.as_deref(), Some("vatra/faster-worktrees"));
+            rename_branch(&root, Path::new(&tree.path), "molfar/faster-worktrees").unwrap();
+        assert_eq!(renamed.branch.as_deref(), Some("molfar/faster-worktrees"));
         assert!(git(
             &root,
-            &["rev-parse", "--verify", "refs/heads/vatra/faster-worktrees"]
+            &["rev-parse", "--verify", "refs/heads/molfar/faster-worktrees"]
         )
         .is_ok());
-        assert!(rename_branch(&root, &root, "vatra/nope").is_err());
+        assert!(rename_branch(&root, &root, "molfar/nope").is_err());
 
         let legacy = create(&root, "mc/87654321", "main", false).unwrap();
         let renamed =
-            rename_branch(&root, Path::new(&legacy.path), "vatra/legacy-worktree").unwrap();
-        assert_eq!(renamed.branch.as_deref(), Some("vatra/legacy-worktree"));
+            rename_branch(&root, Path::new(&legacy.path), "molfar/legacy-worktree").unwrap();
+        assert_eq!(renamed.branch.as_deref(), Some("molfar/legacy-worktree"));
 
         let regular = create(&root, "feature/manual", "main", false).unwrap();
-        assert!(rename_branch(&root, Path::new(&regular.path), "vatra/should-not-change").is_err());
+        assert!(rename_branch(&root, Path::new(&regular.path), "molfar/should-not-change").is_err());
     }
 
     #[test]
     fn recognizes_current_and_legacy_branch_prefixes() {
-        assert!(is_generated_branch("vatra/12345678"));
+        assert!(is_generated_branch("molfar/12345678"));
         assert!(is_generated_branch("mc/12345678"));
         assert!(!is_generated_branch("monocode/12345678"));
-        assert!(!is_generated_branch("feature/vatra"));
+        assert!(!is_generated_branch("feature/molfar"));
 
-        assert!(is_orchestration_branch("vatra/orch-task"));
+        assert!(is_orchestration_branch("molfar/orch-task"));
         assert!(is_orchestration_branch("mc/orch-task"));
-        assert!(!is_orchestration_branch("vatra/task"));
+        assert!(!is_orchestration_branch("molfar/task"));
         assert!(!is_orchestration_branch("monocode/orch-task"));
     }
 

@@ -3,8 +3,8 @@
 //! window without bringing that window forward.
 //!
 //! The panel is a WKWebView window re-classed as a non-activating `NSPanel`.
-//! A plain `NSWindow` would have to activate Vatra to take keys, which pulls
-//! the workspace window over the browser and leaves focus with Vatra after
+//! A plain `NSWindow` would have to activate MOLFAR to take keys, which pulls
+//! the workspace window over the browser and leaves focus with MOLFAR after
 //! the panel hides. A non-activating panel takes keys while the other app
 //! stays active, and it can join a full-screen Space.
 
@@ -504,7 +504,7 @@ fn toggle(app: &AppHandle) {
         }
         match build(&handle) {
             Ok(panel) => show(&handle, &panel),
-            Err(err) => eprintln!("vatra: quick composer: {err}"),
+            Err(err) => eprintln!("molfar: quick composer: {err}"),
         }
     });
 }
@@ -515,7 +515,7 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         QUICK_COMPOSER_LABEL,
         WebviewUrl::App("quick-composer.html".into()),
     )
-    .title("Vatra")
+    .title("MOLFAR")
     .inner_size(WIDTH, INITIAL_HEIGHT)
     .resizable(false)
     .maximizable(false)
@@ -554,7 +554,7 @@ fn show(app: &AppHandle, panel: &WebviewWindow) {
     let _ = panel.emit(SHOWN, ());
     if let Err(err) = git_popup::prepare(app, panel) {
         // Opening the picker retries; a failed preload must not block drafting.
-        eprintln!("vatra: prepare git picker: {err}");
+        eprintln!("molfar: prepare git picker: {err}");
     }
 }
 
@@ -566,7 +566,7 @@ fn present(panel: &WebviewWindow) {
             ns_window.makeKeyWindow();
         }
         // Could not become a panel: an ordinary window still works, it just
-        // brings Vatra forward with it.
+        // brings MOLFAR forward with it.
         _ => {
             let _ = panel.show();
             let _ = panel.set_focus();
@@ -599,7 +599,7 @@ fn place(app: &AppHandle, panel: &WebviewWindow) {
 fn panel_class() -> Option<&'static AnyClass> {
     static CLASS: OnceLock<Option<&'static AnyClass>> = OnceLock::new();
     *CLASS.get_or_init(|| {
-        let mut builder = ClassBuilder::new(c"VatraQuickComposerPanel", NSPanel::class())?;
+        let mut builder = ClassBuilder::new(c"MolfarQuickComposerPanel", NSPanel::class())?;
         builder.add_ivar::<Bool>(c"focusable");
         unsafe {
             // Borderless windows refuse key status by default, and the prompt
@@ -643,7 +643,7 @@ fn make_panel(window: &WebviewWindow) {
     // size is undefined behavior (and objc2 panics on it), so fall back to an
     // ordinary window if a Tao update ever changes its layout.
     if panel_class.instance_size() != ns_window.class().instance_size() {
-        eprintln!("vatra: quick composer: panel class does not match Tao's window size");
+        eprintln!("molfar: quick composer: panel class does not match Tao's window size");
         return;
     }
     unsafe {
@@ -755,7 +755,7 @@ mod tests {
         let request: QuickLaunch = serde_json::from_value(serde_json::json!({
             "prompt": "look", "cwd": "/tmp/project", "harness": "codex", "reveal": false,
             "attachments": [{ "id": "shot", "name": "Screenshot.png", "mimeType": "image/png",
-                "kind": "image", "size": 4, "path": "/missing/vatra-test.png" }]
+                "kind": "image", "size": 4, "path": "/missing/molfar-test.png" }]
         }))
         .unwrap();
         assert!(validate_attachments(&request.attachments, "codex").is_err());
@@ -779,7 +779,7 @@ mod tests {
         request.workspace_mode = None;
         assert!(validate_workspace(&request).is_err());
         request.worktree_base = None;
-        request.worktree_cwd = Some("/missing/vatra-worktree-test".into());
+        request.worktree_cwd = Some("/missing/molfar-worktree-test".into());
         assert!(validate_workspace(&request).is_err());
         request.worktree_cwd = Some(std::env::temp_dir().to_string_lossy().into_owned());
         assert!(validate_workspace(&request).is_ok());

@@ -12,9 +12,9 @@ import { ChevronDown, ChevronUp, X } from "../../../shared/ui/icons";
 import { keybindingPressed } from "../../settings/model/settings";
 
 const MATCH_CAP = 999;
-const MATCH_HIGHLIGHT = "vatra-file-preview-search-match";
-const CURRENT_HIGHLIGHT = "vatra-file-preview-search-current";
-const HIGHLIGHT_STYLE_ID = "vatra-file-preview-search-styles";
+const MATCH_HIGHLIGHT = "molfar-file-preview-search-match";
+const CURRENT_HIGHLIGHT = "molfar-file-preview-search-current";
+const HIGHLIGHT_STYLE_ID = "molfar-file-preview-search-styles";
 const BLOCK_ELEMENTS = new Set([
   "address",
   "article",

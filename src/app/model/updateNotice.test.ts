@@ -32,9 +32,9 @@ describe("installed update marker", () => {
     "removes malformed marker %j",
     (value) => {
       const store = memoryStore();
-      store.setItem("vatra.installedUpdate", value);
+      store.setItem("molfar.installedUpdate", value);
       expect(consumeInstalledUpdate(store)).toBeNull();
-      expect(store.getItem("vatra.installedUpdate")).toBeNull();
+      expect(store.getItem("molfar.installedUpdate")).toBeNull();
     },
   );
 

@@ -23,7 +23,7 @@ import { initializeProviderBinaryPaths } from "./features/providers/model/provid
 import "./features/connections/model/remoteCommands";
 import "./styles/index.css";
 
-performance.mark("vatra:bootstrap");
+performance.mark("molfar:bootstrap");
 // Let local boot IPC overlap loading/evaluating the workspace UI.
 const appLoaded = import("./app/App");
 
@@ -49,10 +49,10 @@ function dismissBootSplash() {
     splash.classList.add("boot-splash-out");
     window.setTimeout(() => {
       splash.remove();
-      performance.mark("vatra:ui-ready");
-      performance.measure("vatra:navigation-to-ui", {
+      performance.mark("molfar:ui-ready");
+      performance.measure("molfar:navigation-to-ui", {
         start: 0,
-        end: "vatra:ui-ready",
+        end: "molfar:ui-ready",
       });
     }, 180);
   };
@@ -101,7 +101,7 @@ void Promise.all([
     { windowTransfer, resumed, history, historyCwd },
     { default: App },
   ]) => {
-    performance.mark("vatra:workspace-ready");
+    performance.mark("molfar:workspace-ready");
     const installedUpdate = windowTransfer ? null : consumeInstalledUpdate();
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <React.StrictMode>

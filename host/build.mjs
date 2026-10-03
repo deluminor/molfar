@@ -4,7 +4,7 @@ import { writeNpmNotices } from "../scripts/licenses/npm-notices.mjs";
 
 const result = await build({
   entryPoints: ["host/cli.ts"],
-  outfile: "build/host/vatra-host.mjs",
+  outfile: "build/host/molfar-host.mjs",
   bundle: true,
   platform: "node",
   format: "esm",
@@ -20,6 +20,6 @@ writeNpmNotices({
   cwd: process.cwd(),
   metafile: result.metafile,
   output: "build/host/THIRD-PARTY-NOTICES.md",
-  title: "Vatra Host dependency licenses",
-  intro: "The Vatra Host bundle (host.mjs) includes the following npm packages.",
+  title: "MOLFAR Host dependency licenses",
+  intro: "The MOLFAR Host bundle (host.mjs) includes the following npm packages.",
 });

@@ -1,15 +1,15 @@
 [package]
-name = "vatra"
+name = "molfar"
 version.workspace = true
 edition.workspace = true
-description = "Vatra — one UI for every agent harness"
+description = "MOLFAR — Multi-Agent Orchestration Layer for Autonomous Reasoning. A local-first engineering workspace for coding agents, code, knowledge, worktrees, and automation."
 authors = ["Erik K. (deluminor)", "Nick (MonoCode)"]
-repository = "https://github.com/deluminor/vatra"
-homepage = "https://github.com/deluminor/vatra"
+repository = "https://github.com/deluminor/molfar"
+homepage = "https://github.com/deluminor/molfar"
 license.workspace = true
 
 [lib]
-name = "vatra_lib"
+name = "molfar_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

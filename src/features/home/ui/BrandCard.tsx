@@ -19,7 +19,7 @@ export const BrandCard = memo(function BrandCard(): ReactNode {
 
   return (
     <HomeCard
-      title="Vatra"
+      title="MOLFAR"
       className="home-brand-card overflow-hidden"
       actions={<BrandVisualSelector value={visual} onChange={selectVisual} />}
     >

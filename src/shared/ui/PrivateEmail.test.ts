@@ -54,9 +54,9 @@ it("masks an email when another window turns masking on", async () => {
   expect(revealButton()).toBeNull();
 
   await act(async () => {
-    localStorage.setItem("vatra.maskEmails", "1");
+    localStorage.setItem("molfar.maskEmails", "1");
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "vatra.maskEmails" }),
+      new StorageEvent("storage", { key: "molfar.maskEmails" }),
     );
   });
 

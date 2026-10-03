@@ -32,13 +32,13 @@ it("keeps paths and environment content from injecting service configuration", (
 it.skipIf(process.platform === "win32").each(["darwin", "linux"] as const)(
   "removes the %s service registration but keeps host data",
   async (platform) => {
-    const home = mkdtempSync(join(tmpdir(), "vatra-service-test-"));
+    const home = mkdtempSync(join(tmpdir(), "molfar-service-test-"));
     try {
       const service =
         platform === "darwin"
-          ? join(home, "Library/LaunchAgents/com.vatra.host.plist")
-          : join(home, ".config/systemd/user/vatra-host.service");
-      const data = join(home, ".vatra-host/host.db");
+          ? join(home, "Library/LaunchAgents/com.molfar.host.plist")
+          : join(home, ".config/systemd/user/molfar-host.service");
+      const data = join(home, ".molfar-host/host.db");
       for (const file of [service, data]) {
         mkdirSync(dirname(file), { recursive: true });
         writeFileSync(file, "existing");
@@ -64,7 +64,7 @@ it.skipIf(process.platform === "win32").each(["darwin", "linux"] as const)(
           "--user",
           "disable",
           "--now",
-          "vatra-host.service",
+          "molfar-host.service",
         ]);
         expect(notes.join("\n")).toContain("loginctl disable-linger");
       }
@@ -80,7 +80,7 @@ it("unregisters only this user's Windows task", async () => {
     platform: "win32",
     powershell: async (script) => scripts.push(script),
   });
-  expect(scripts[0]).toContain('"Vatra Host-$sid"');
+  expect(scripts[0]).toContain('"MOLFAR Host-$sid"');
   expect(scripts[0]).toContain("Unregister-ScheduledTask");
-  expect(scripts[0]).not.toMatch(/Remove-Item|\.vatra-host/);
+  expect(scripts[0]).not.toMatch(/Remove-Item|\.molfar-host/);
 });

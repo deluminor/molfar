@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 function setup(harness: "codex" | "claude" = "codex") {
-  const directory = mkdtempSync(join(tmpdir(), "vatra-engine-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "molfar-engine-test-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Test");
   const turns: Array<{ input: SendTurnInput; finish: () => void }> = [];

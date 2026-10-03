@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 
-const APP_TURN_INACTIVE: &str = "Vatra app access is inactive. Use /operator once in this thread to enable it, then call the CLI during an active agent turn. Retrying this request now will not enable access.";
+const APP_TURN_INACTIVE: &str = "MOLFAR app access is inactive. Use /operator once in this thread to enable it, then call the CLI during an active agent turn. Retrying this request now will not enable access.";
 
 #[derive(Clone)]
 struct Grant {
@@ -112,7 +112,7 @@ impl Inner {
             }
             let _ = pending
                 .reply
-                .send(json!({"ok":false,"error":"Vatra window closed"}));
+                .send(json!({"ok":false,"error":"MOLFAR window closed"}));
             false
         });
         ids
@@ -259,9 +259,9 @@ fn serve(mut stream: TcpStream, app: &AppHandle, inner: &Arc<Mutex<Inner>>) {
             action: request.action,
             input: request.input,
         };
-        let delivered = app.emit_to(grant.window.as_str(), "vatra-control-request", event);
+        let delivered = app.emit_to(grant.window.as_str(), "molfar-control-request", event);
         let result = if delivered.is_err() {
-            Err("Vatra executor is unavailable".into())
+            Err("MOLFAR executor is unavailable".into())
         } else {
             rx.recv_timeout(Duration::from_secs(35))
                 .map_err(|_| "Control request timed out. Retry with the same request ID.".into())
@@ -383,7 +383,7 @@ pub fn control_attach_worker(
 }
 
 fn create_worker_scratch() -> Result<PathBuf, String> {
-    let path = std::env::temp_dir().join(format!("vatra-worker-{}", uuid::Uuid::new_v4()));
+    let path = std::env::temp_dir().join(format!("molfar-worker-{}", uuid::Uuid::new_v4()));
     let builder = std::fs::DirBuilder::new();
     #[cfg(unix)]
     let builder = {
@@ -462,21 +462,21 @@ pub fn window_closed(app: &AppHandle, label: &str) {
 }
 
 pub fn configure_child(app: &AppHandle, session_id: &str, cmd: &mut Command) {
-    cmd.env_remove("VATRA_CONTROL_ENDPOINT")
-        .env_remove("VATRA_CONTROL_TOKEN")
-        .env_remove("VATRA_APP_ENDPOINT")
-        .env_remove("VATRA_APP_TOKEN");
+    cmd.env_remove("MOLFAR_CONTROL_ENDPOINT")
+        .env_remove("MOLFAR_CONTROL_TOKEN")
+        .env_remove("MOLFAR_APP_ENDPOINT")
+        .env_remove("MOLFAR_APP_TOKEN");
     let Some(host) = app.try_state::<ControlHost>() else {
         return;
     };
     if let Ok(inner) = host.inner.lock() {
         if let Some(grant) = inner.grants.get(session_id) {
-            cmd.env("VATRA_CONTROL_ENDPOINT", &host.endpoint)
-                .env("VATRA_CONTROL_TOKEN", &grant.token);
+            cmd.env("MOLFAR_CONTROL_ENDPOINT", &host.endpoint)
+                .env("MOLFAR_CONTROL_TOKEN", &grant.token);
         }
         if let Some(grant) = inner.app_grants.get(session_id) {
-            cmd.env("VATRA_APP_ENDPOINT", &host.endpoint)
-                .env("VATRA_APP_TOKEN", &grant.token);
+            cmd.env("MOLFAR_APP_ENDPOINT", &host.endpoint)
+                .env("MOLFAR_APP_TOKEN", &grant.token);
         }
         if let Some(scratch) = inner.scratch.get(session_id) {
             configure_worker_scratch(cmd, scratch);

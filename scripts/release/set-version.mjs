@@ -21,17 +21,17 @@ export function setVersion(root, version) {
   // top-level object repeats the same name/version pair.
   replaceFirst(
     join(root, "package-lock.json"),
-    /^(\{\r?\n\s*"name": "vatra-desktop",\r?\n\s*"version": ")[^"]+(")/,
+    /^(\{\r?\n\s*"name": "molfar-desktop",\r?\n\s*"version": ")[^"]+(")/,
     `$1${version}$2`,
   );
   replaceFirst(
     join(root, "package-lock.json"),
-    /("packages": \{\r?\n\s*"": \{\r?\n\s*"name": "vatra-desktop",\r?\n\s*"version": ")[^"]+(")/,
+    /("packages": \{\r?\n\s*"": \{\r?\n\s*"name": "molfar-desktop",\r?\n\s*"version": ")[^"]+(")/,
     `$1${version}$2`,
   );
   replaceFirst(join(root, "Cargo.toml"), /^(version = ")[^"]+(")/m, `$1${version}$2`);
   replaceFirst(join(root, "src-tauri/tauri.conf.json"), /("version": ")[^"]+(")/, `$1${version}$2`);
-  replaceFirst(join(root, "Cargo.lock"), /(name = "vatra"\r?\nversion = ")[^"]+(")/, `$1${version}$2`);
+  replaceFirst(join(root, "Cargo.lock"), /(name = "molfar"\r?\nversion = ")[^"]+(")/, `$1${version}$2`);
 }
 
 /** The app version every manifest must agree on. */

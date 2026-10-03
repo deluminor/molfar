@@ -7,15 +7,15 @@ import {
 } from "./notificationPreferences";
 import { knownNotificationProject } from "./notificationProjects";
 
-const KEY = "vatra.notifications";
+const KEY = "molfar.notifications";
 
 /** Off until the user opts in; enabling asks the OS for permission. */
 export const NOTIFICATIONS_DEFAULT = false;
 
-export const NOTIFICATIONS_CHANGE_EVENT = "vatra:notifications-change";
+export const NOTIFICATIONS_CHANGE_EVENT = "molfar:notifications-change";
 
 /** Rust emits this with the session id when a notification is clicked. */
-export const NOTIFICATION_CLICK_EVENT = "vatra:notification-click";
+export const NOTIFICATION_CLICK_EVENT = "molfar:notification-click";
 
 export type NotificationPermission =
   "prompt" | "granted" | "denied" | "unsupported";
@@ -169,7 +169,7 @@ export function notificationText(
   session: Session,
   event: NotificationEvent,
 ): NotificationText {
-  const title = "Vatra";
+  const title = "MOLFAR";
   const subtitle = sessionDisplayTitle(session.title, session.harness);
   const harness = HARNESS_TITLE[session.harness];
   if (event !== "finished") {

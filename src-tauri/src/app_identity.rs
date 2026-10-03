@@ -2,8 +2,8 @@
 //! storage) and the notification identity. Debug builds get their own so
 //! `tauri dev` never reads or writes the installed app's profile.
 
-pub const IDENTIFIER: &str = "com.vatra.desktop";
-pub const DEV_IDENTIFIER: &str = "com.vatra.desktop.dev";
+pub const IDENTIFIER: &str = "com.molfar.desktop";
+pub const DEV_IDENTIFIER: &str = "com.molfar.desktop.dev";
 
 pub fn current() -> &'static str {
     if cfg!(debug_assertions) {

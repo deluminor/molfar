@@ -106,7 +106,7 @@ it("records a global shortcut, persists it, and restores the default", async () 
     enabled: true,
     shortcut: "Command+KeyQ",
   });
-  expect(data.get("vatra.quickComposerShortcut")).toBe("Command+KeyQ");
+  expect(data.get("molfar.quickComposerShortcut")).toBe("Command+KeyQ");
   expect(input.value).toBe("⌘Q");
 
   await act(async () =>
@@ -116,7 +116,7 @@ it("records a global shortcut, persists it, and restores the default", async () 
       )!
       .click(),
   );
-  expect(data.get("vatra.quickComposerShortcut")).toBe(
+  expect(data.get("molfar.quickComposerShortcut")).toBe(
     "Command+Shift+Space",
   );
   expect(input.value).toBe("⌘⇧Space");
@@ -141,7 +141,7 @@ it("keeps the previous shortcut when native registration fails", async () => {
     ),
   );
   expect(input.value).toBe("⌘⇧Space");
-  expect(data.has("vatra.quickComposerShortcut")).toBe(false);
+  expect(data.has("molfar.quickComposerShortcut")).toBe(false);
   expect(container.textContent).toContain("Shortcut is in use");
 });
 
@@ -199,7 +199,7 @@ it("refuses a chord another command already owns", async () => {
     ),
   );
   expect(container.textContent).toContain("Already used by App: Search");
-  expect(data.has("vatra.quickComposerShortcut")).toBe(false);
+  expect(data.has("molfar.quickComposerShortcut")).toBe(false);
   // A rejected chord must never reach native registration, or the OS would
   // hold a live global hotkey that is not in settings.
   expect(invoke).not.toHaveBeenCalled();
@@ -223,7 +223,7 @@ it("reserves its live custom chord so no other command can claim it", async () =
       }),
     ),
   );
-  expect(data.get("vatra.quickComposerShortcut")).toBe("Command+Shift+KeyQ");
+  expect(data.get("molfar.quickComposerShortcut")).toBe("Command+Shift+KeyQ");
 
   // The chord is stored outside the override table, so this is the path the
   // reviewer flagged: it must still be treated as taken.
@@ -252,7 +252,7 @@ it("re-enables and re-registers the default when a disabled row is reset", async
     ),
   );
   expect(input.value).toBe("Disabled");
-  expect(data.get("vatra.quickComposerEnabled")).toBe("0");
+  expect(data.get("molfar.quickComposerEnabled")).toBe("0");
 
   await act(async () =>
     container
@@ -265,7 +265,7 @@ it("re-enables and re-registers the default when a disabled row is reset", async
     enabled: true,
     shortcut: "Command+Shift+Space",
   });
-  expect(data.get("vatra.quickComposerEnabled")).toBe("1");
+  expect(data.get("molfar.quickComposerEnabled")).toBe("1");
   expect(input.value).toBe("⌘⇧Space");
 });
 
@@ -289,7 +289,7 @@ it("refuses an Alt-only global shortcut without registering it", async () => {
   );
   expect(container.textContent).toContain("Quick Composer needs");
   expect(invoke).not.toHaveBeenCalled();
-  expect(data.has("vatra.quickComposerShortcut")).toBe(false);
+  expect(data.has("molfar.quickComposerShortcut")).toBe(false);
 });
 
 it("shows pressed keys without an error and Escape cancels recording", async () => {

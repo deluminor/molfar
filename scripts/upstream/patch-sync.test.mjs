@@ -52,14 +52,14 @@ function setUp() {
   git("switch", "-q", "--orphan", "main");
   git("checkout", "-q", base, "--", ".");
   write(STATE_FILE, `${JSON.stringify({ syncedCommit: base }, null, 2)}\n`);
-  write("vatra.txt", "vatra only\n");
-  commitAll("start Vatra history");
+  write("molfar.txt", "molfar only\n");
+  commitAll("start MOLFAR history");
 
   return base;
 }
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "vatra-patch-sync-"));
+  root = mkdtempSync(join(tmpdir(), "molfar-patch-sync-"));
   writeFileSync(join(root, ".empty-gitconfig"), "");
 });
 
@@ -82,17 +82,17 @@ describe("applyUpstreamPatch", () => {
     expect(result.commits).toEqual([expect.stringMatching(/ add four$/)]);
     expect(read("app.txt")).toBe("one\ntwo\nthree\nfour\n");
     expect(read("new.txt")).toBe("added upstream\n");
-    expect(read("vatra.txt")).toBe("vatra only\n");
+    expect(read("molfar.txt")).toBe("molfar only\n");
     expect(readSyncState(root).syncedCommit).toBe(head);
     expect(git("diff", "--cached", "--name-only").split("\n").sort()).toEqual(
       [STATE_FILE, "app.txt", "new.txt"].sort(),
     );
   });
 
-  it("merges upstream edits into lines Vatra also changed elsewhere in the file", () => {
+  it("merges upstream edits into lines MOLFAR also changed elsewhere in the file", () => {
     setUp();
     write("app.txt", "ONE\ntwo\nthree\n");
-    commitAll("vatra edit");
+    commitAll("molfar edit");
     git("switch", "-q", "upstream");
     write("app.txt", "one\ntwo\nTHREE\n");
     commitAll("upstream edit");
@@ -106,8 +106,8 @@ describe("applyUpstreamPatch", () => {
 
   it("leaves conflict markers and reports the paths when both sides changed the same line", () => {
     setUp();
-    write("app.txt", "one\nVATRA\nthree\n");
-    commitAll("vatra edit");
+    write("app.txt", "one\nMOLFAR\nthree\n");
+    commitAll("molfar edit");
     git("switch", "-q", "upstream");
     write("app.txt", "one\nUPSTREAM\nthree\n");
     commitAll("upstream edit");

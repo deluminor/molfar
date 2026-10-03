@@ -20,7 +20,7 @@ afterEach(() => {
 });
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 function fixture(badChecksum = false) {
-  const dir = mkdtempSync(join(tmpdir(), "vatra-bootstrap-"));
+  const dir = mkdtempSync(join(tmpdir(), "molfar-bootstrap-"));
   directories.push(dir);
   const base = join(dir, "host with spaces ' and $data");
   const source = join(dir, "source");
@@ -28,8 +28,8 @@ function fixture(badChecksum = false) {
   mkdirSync(source);
   mkdirSync(bin);
   writeFileSync(
-    join(source, "vatra-host"),
-    `#!/bin/sh\ncase "$1" in\n--version) printf '%s\\n' ${quote(version)} ;;\nservice) printf 'service %s\\n' "$2" >> "$VATRA_TEST_EVENTS"; [ "$2" != install ] || [ -z "$VATRA_TEST_FAIL_INSTALL" ] ;;\nconnection-info) printf '{"port":3774,"pid":123}\\n' ;;\n*) exit 1 ;;\nesac\n`,
+    join(source, "molfar-host"),
+    `#!/bin/sh\ncase "$1" in\n--version) printf '%s\\n' ${quote(version)} ;;\nservice) printf 'service %s\\n' "$2" >> "$MOLFAR_TEST_EVENTS"; [ "$2" != install ] || [ -z "$MOLFAR_TEST_FAIL_INSTALL" ] ;;\nconnection-info) printf '{"port":3774,"pid":123}\\n' ;;\n*) exit 1 ;;\nesac\n`,
     { mode: 0o755 },
   );
   const archive = join(dir, "host.tar.gz");
@@ -42,11 +42,11 @@ function fixture(badChecksum = false) {
   // a user service. Never change the test runner's HOME or installed services.
   writeFileSync(
     join(bin, "curl"),
-    `#!/bin/sh\nfor arg do previous="$last"; last="$arg"; done\ncase "$previous" in -o) ;; *) exit 1 ;; esac\ncase "$last" in */checksum) cp "$VATRA_TEST_CHECKSUM" "$last" ;; *) cp "$VATRA_TEST_ARCHIVE" "$last" ;; esac\nprintf 'download\\n' >> "$VATRA_TEST_DOWNLOADS"\n`,
+    `#!/bin/sh\nfor arg do previous="$last"; last="$arg"; done\ncase "$previous" in -o) ;; *) exit 1 ;; esac\ncase "$last" in */checksum) cp "$MOLFAR_TEST_CHECKSUM" "$last" ;; *) cp "$MOLFAR_TEST_ARCHIVE" "$last" ;; esac\nprintf 'download\\n' >> "$MOLFAR_TEST_DOWNLOADS"\n`,
     { mode: 0o755 },
   );
   const script = readFileSync("src-tauri/src/remote_bootstrap.sh", "utf8")
-    .replace('BASE="$HOME/.vatra-host"', `BASE=${quote(base)}`)
+    .replace('BASE="$HOME/.molfar-host"', `BASE=${quote(base)}`)
     .replace("@@VERSION@@", quote(version))
     .replace("@@RELEASE@@", "'https://example.invalid/releases'");
   const run = (forceUpgrade = false, env: Record<string, string> = {}) =>
@@ -56,11 +56,11 @@ function fixture(badChecksum = false) {
           env: {
             ...process.env,
             PATH: `${bin}:/usr/bin:/bin`,
-            VATRA_TEST_ARCHIVE: archive,
-            VATRA_TEST_CHECKSUM: join(dir, "checksum"),
-            VATRA_TEST_EVENTS: join(dir, "events"),
-            VATRA_TEST_DOWNLOADS: join(dir, "downloads"),
-            VATRA_HOST_FORCE_UPGRADE: forceUpgrade ? "1" : "0",
+            MOLFAR_TEST_ARCHIVE: archive,
+            MOLFAR_TEST_CHECKSUM: join(dir, "checksum"),
+            MOLFAR_TEST_EVENTS: join(dir, "events"),
+            MOLFAR_TEST_DOWNLOADS: join(dir, "downloads"),
+            MOLFAR_HOST_FORCE_UPGRADE: forceUpgrade ? "1" : "0",
             ...env,
           },
           signal: AbortSignal.timeout(10_000),
@@ -89,7 +89,7 @@ it.skipIf(process.platform === "win32")(
     expect(first.error).toBe("");
     expect(first.code).toBe(0);
     expect(JSON.parse(first.out).port).toBe(3774);
-    expect(existsSync(join(base, "bin/vatra-host"))).toBe(true);
+    expect(existsSync(join(base, "bin/molfar-host"))).toBe(true);
     expect((await run()).code).toBe(0);
     expect(
       readFileSync(join(dir, "downloads"), "utf8").trim().split("\n"),
@@ -121,7 +121,7 @@ it.skipIf(process.platform === "win32")(
     const result = await run();
     expect(result.code).not.toBe(0);
     expect(result.error).toContain("checksum mismatch");
-    expect(existsSync(join(base, "bin/vatra-host"))).toBe(false);
+    expect(existsSync(join(base, "bin/molfar-host"))).toBe(false);
     expect(existsSync(join(dir, "events"))).toBe(false);
   },
 );
@@ -129,9 +129,9 @@ it.skipIf(process.platform === "win32")(
   "reports a host service that cannot be installed",
   async () => {
     const { base, run } = fixture();
-    const result = await run(false, { VATRA_TEST_FAIL_INSTALL: "1" });
+    const result = await run(false, { MOLFAR_TEST_FAIL_INSTALL: "1" });
     expect(result.code).not.toBe(0);
     expect(result.error).toContain("service setup failed");
-    expect(existsSync(join(base, "bin/vatra-host"))).toBe(true);
+    expect(existsSync(join(base, "bin/molfar-host"))).toBe(true);
   },
 );

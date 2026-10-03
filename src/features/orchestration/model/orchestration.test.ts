@@ -23,7 +23,7 @@ function setup() {
     }),
     load: vi.fn(async (id: string) => saved.get(id) ?? null),
     enable: vi.fn(
-      async () => "/Applications/Vatra.app/Contents/MacOS/vatra",
+      async () => "/Applications/MOLFAR.app/Contents/MacOS/molfar",
     ),
     disable: vi.fn(async () => {}),
     scopes: vi.fn(async (cwd: string, files: string[]) =>
@@ -48,13 +48,13 @@ function setup() {
         busy: false,
       });
       return {
-        scratchDir: `/private/var/folders/test/T/vatra-worker-${task.sessionId}`,
+        scratchDir: `/private/var/folders/test/T/molfar-worker-${task.sessionId}`,
         workspace: {
           id: `checkout:/worktrees/${task.id}`,
           projectCwd: run.cwd,
           checkoutCwd: `/worktrees/${task.id}`,
           kind: "worktree" as const,
-          branch: `vatra/orch-${task.id}`,
+          branch: `molfar/orch-${task.id}`,
         },
       };
     }),
@@ -120,7 +120,7 @@ describe("worker assignment prompts", () => {
   it("keeps the task text and wraps it in the assignment envelope", () => {
     const sent = workerTurnPrompt("Review the branch.", ["src/App.tsx"]);
     expect(sent.startsWith("Review the branch.")).toBe(true);
-    expect(sent).toContain("<vatra_assignment>");
+    expect(sent).toContain("<molfar_assignment>");
     expect(sent).toContain("src/App.tsx");
     expect(sent).toContain("override any contradictory wording");
     expect(sent).toContain("stage, commit, push");
@@ -131,7 +131,7 @@ describe("worker assignment prompts", () => {
   });
 
   it("does not strip mismatched envelope tags", () => {
-    const text = "Keep\n<vatra_assignment>x</vatra_proposal>";
+    const text = "Keep\n<molfar_assignment>x</molfar_proposal>";
 
     expect(visibleUserPrompt(text)).toBe(text);
   });
@@ -249,10 +249,10 @@ describe("local orchestration", () => {
       .mocked(f.host.submit)
       .mock.calls.find(
         ([id, prompt]) =>
-          id !== "lead" && String(prompt).includes("<vatra_assignment>"),
+          id !== "lead" && String(prompt).includes("<molfar_assignment>"),
       )?.[1];
     expect(workerPrompt).toContain("Define the types");
-    expect(workerPrompt).toContain("<vatra_assignment>");
+    expect(workerPrompt).toContain("<molfar_assignment>");
     expect(
       vi.mocked(f.host.submit).mock.calls.find(([id]) => id === "lead")?.[1],
     ).toContain("do not delegate duplicates");
@@ -1221,19 +1221,19 @@ describe("local orchestration", () => {
   });
   it("quotes the control path only when the shell needs it", () => {
     expect(
-      shellPath("/Applications/Vatra.app/Contents/MacOS/vatra"),
-    ).toBe("/Applications/Vatra.app/Contents/MacOS/vatra");
-    expect(shellPath("/Users/a b/Vatra")).toBe("'/Users/a b/Vatra'");
-    expect(shellPath("C:/Program Files/Vatra/vatra.exe")).toBe(
-      '"C:/Program Files/Vatra/vatra.exe"',
+      shellPath("/Applications/MOLFAR.app/Contents/MacOS/molfar"),
+    ).toBe("/Applications/MOLFAR.app/Contents/MacOS/molfar");
+    expect(shellPath("/Users/a b/MOLFAR")).toBe("'/Users/a b/MOLFAR'");
+    expect(shellPath("C:/Program Files/MOLFAR/molfar.exe")).toBe(
+      '"C:/Program Files/MOLFAR/molfar.exe"',
     );
-    expect(shellPath("C:\\Tools\\vatra.exe")).toBe(
-      "C:\\Tools\\vatra.exe",
+    expect(shellPath("C:\\Tools\\molfar.exe")).toBe(
+      "C:\\Tools\\molfar.exe",
     );
     // A backslash escapes in a POSIX shell, so bare would rewrite the path.
-    expect(shellPath("/Users/a\\b/Vatra")).toBe("'/Users/a\\b/Vatra'");
-    expect(shellPath("/Users/it's/Vatra")).toBe(
-      "'/Users/it'\\''s/Vatra'",
+    expect(shellPath("/Users/a\\b/MOLFAR")).toBe("'/Users/a\\b/MOLFAR'");
+    expect(shellPath("/Users/it's/MOLFAR")).toBe(
+      "'/Users/it'\\''s/MOLFAR'",
     );
   });
   it("treats an action named after an Object member as unknown", async () => {

@@ -144,7 +144,7 @@ type Live = {
   /**
    * Every task Claude still runs for this session, by id: subagents, shells it
    * backgrounded, monitors. Each one ends in a notification that wakes Claude
-   * for another turn, so the Vatra turn stays open until they are done.
+   * for another turn, so the MOLFAR turn stays open until they are done.
    */
   backgroundTasks: Map<string, BackgroundTask>;
   /** Rows shown for tasks still running when Claude yielded, by task id. */
@@ -1563,7 +1563,7 @@ function completeAgentTask(
 
 /**
  * A task is done. If Claude had already yielded, the notification about it
- * starts a follow-up turn, so hold the Vatra turn open for that too rather
+ * starts a follow-up turn, so hold the MOLFAR turn open for that too rather
  * than settling in the gap between the two.
  */
 function finishBackgroundTask(live: Live, taskId: string): void {
@@ -1580,9 +1580,9 @@ function finishBackgroundTask(live: Live, taskId: string): void {
 }
 
 /**
- * Claude began another turn inside this Vatra turn: woken by a finished
+ * Claude began another turn inside this MOLFAR turn: woken by a finished
  * task, or by a follow-up written in while it waited. Its own result, not the
- * earlier one, decides when the Vatra turn ends.
+ * earlier one, decides when the MOLFAR turn ends.
  */
 function noteClaudeTurnStarted(live: Live): void {
   if (!live.activeTurn || !live.turnResultSeen) return;
@@ -1749,7 +1749,7 @@ function waitForInit(live: Live, timeoutMs: number): Promise<void> {
 
 function nextControlId(live: Live): string {
   live.nextControlId += 1;
-  return `vatra_${live.nextControlId}`;
+  return `molfar_${live.nextControlId}`;
 }
 
 function writeJson(

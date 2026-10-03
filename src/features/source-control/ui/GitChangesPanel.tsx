@@ -588,7 +588,7 @@ function ChangedFiles({
   const confirmAmend = async () => {
     if (!amend || !index?.headPushed) return true;
     return confirmNative(
-      "Amend a commit that is already pushed? Vatra cannot push the result. You will need a force push from the terminal.",
+      "Amend a commit that is already pushed? MOLFAR cannot push the result. You will need a force push from the terminal.",
       "Amend",
     );
   };
