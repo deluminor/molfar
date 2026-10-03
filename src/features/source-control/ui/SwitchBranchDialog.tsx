@@ -32,10 +32,12 @@ export function SwitchBranchDialog({
   const host = useContext(NativePopupHost);
   const [message, setMessage] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const generateAbortRef = useRef<AbortController | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const trimmed = message.trim();
   const canCommit = trimmed.length > 0 && !busy && !generating;
+  const shownError = error ?? generateError;
 
   useEffect(() => {
     messageRef.current?.focus();
@@ -75,6 +77,7 @@ export function SwitchBranchDialog({
     const controller = new AbortController();
     generateAbortRef.current = controller;
     setGenerating(true);
+    setGenerateError(null);
     try {
       const generated = await generateCommitMessage(
         cwd,
@@ -84,7 +87,7 @@ export function SwitchBranchDialog({
       if (!controller.signal.aborted) setMessage(generated);
     } catch (err) {
       if (!controller.signal.aborted) {
-        window.alert(err instanceof Error ? err.message : String(err));
+        setGenerateError(err instanceof Error ? err.message : String(err));
       }
     } finally {
       if (generateAbortRef.current === controller) {
@@ -186,9 +189,9 @@ export function SwitchBranchDialog({
           </button>
         </div>
 
-        {error ? (
+        {shownError ? (
           <p className="whitespace-pre-wrap text-[11px] leading-4 text-red-400/90">
-            {error}
+            {shownError}
           </p>
         ) : null}
 
