@@ -1,0 +1,593 @@
+name: Release
+
+# Releases are cut from `main`: Actions → Release → Run workflow bumps the
+# version, opens a PR into `main` (required by the branch ruleset), squash-
+# merges it, tags the merge commit, then builds and publishes desktop packages,
+# host packages and the updater feed. Pushing a `v*` tag that already points at
+# a commit on `main` runs the same build.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "patch, minor, major, or an exact version (X.Y.Z)"
+        required: true
+        default: patch
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  RELEASE_BRANCH: main
+
+jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      tag: ${{ steps.result.outputs.tag }}
+      version: ${{ steps.result.outputs.version }}
+      sha: ${{ steps.result.outputs.sha }}
+    steps:
+      - name: Require the release branch
+        if: github.event_name == 'workflow_dispatch' && github.ref != format('refs/heads/{0}', env.RELEASE_BRANCH)
+        run: |
+          echo "Run the release from the $RELEASE_BRANCH branch, not $GITHUB_REF." >&2
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: ${{ github.event_name == 'workflow_dispatch' }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bump version and write release notes
+        id: bump
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          VERSION_REQUEST: ${{ inputs.version }}
+        run: node scripts/release/prepare.mjs "$VERSION_REQUEST"
+
+      - name: Land release via pull request and tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          # Personal-repo rulesets cannot add the GitHub Actions app as a bypass
+          # actor. Use an admin PAT (RELEASE_GITHUB_TOKEN) so --admin can land
+          # the release PR without waiting on required status checks.
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/release/verify.mjs "$TAG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          RELEASE_HEAD="release/${TAG}"
+          git switch -c "$RELEASE_HEAD"
+          git add CHANGELOG.md package.json package-lock.json Cargo.toml Cargo.lock src-tauri/tauri.conf.json
+          git commit -m "chore(release): $TAG"
+          git push --force-with-lease origin "HEAD:refs/heads/$RELEASE_HEAD"
+
+          PR_URL="$(gh pr create \
+            --base "$RELEASE_BRANCH" \
+            --head "$RELEASE_HEAD" \
+            --title "chore(release): $TAG" \
+            --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`main\` stays PR-only.")"
+
+          gh pr merge "$PR_URL" --squash --delete-branch --admin
+          MERGE_SHA="$(gh pr view "$PR_URL" --json mergeCommit --jq .mergeCommit.oid)"
+          if [ -z "$MERGE_SHA" ] || [ "$MERGE_SHA" = "null" ]; then
+            echo "Squash merge of $PR_URL did not produce a merge commit SHA." >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin "$RELEASE_BRANCH"
+          if ! git merge-base --is-ancestor "$MERGE_SHA" "origin/$RELEASE_BRANCH"; then
+            echo "Merge commit $MERGE_SHA is not on origin/$RELEASE_BRANCH." >&2
+            exit 1
+          fi
+
+          git tag -a "$TAG" -m "Vatra $VERSION" "$MERGE_SHA"
+          git push origin "refs/tags/$TAG"
+
+      - name: Verify the pushed tag
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$RELEASE_BRANCH"
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "$GITHUB_REF_NAME is not on $RELEASE_BRANCH; releases are cut from $RELEASE_BRANCH only." >&2
+            exit 1
+          fi
+          node scripts/release/verify.mjs "$GITHUB_REF_NAME"
+
+      - name: Resolve release
+        id: result
+        env:
+          DISPATCH_TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG="${DISPATCH_TAG:-$GITHUB_REF_NAME}"
+          {
+            echo "tag=$TAG"
+            echo "version=${TAG#v}"
+            echo "sha=$(git rev-parse "$TAG^{commit}")"
+          } >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: [prepare, linux, linux-rpm, windows, host]
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - run: npm ci
+
+      # Without a Developer ID the app is ad-hoc signed and not notarized:
+      # macOS asks once to "Open Anyway". Adding the APPLE_* secrets switches
+      # to full signing and notarization with no workflow change.
+      - name: Detect Apple signing
+        id: apple
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [[ -n "$APPLE_CERTIFICATE" && -n "$APPLE_SIGNING_IDENTITY" && -n "$APPLE_API_KEY" ]]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Apple Developer ID secrets: building ad-hoc signed, not notarized."
+          fi
+
+      - name: Write Apple API key
+        if: steps.apple.outputs.signed == 'true'
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s\n' "$APPLE_API_KEY_P8" > "$HOME/private_keys/AuthKey_${APPLE_API_KEY}.p8"
+          echo "APPLE_API_KEY_PATH=$HOME/private_keys/AuthKey_${APPLE_API_KEY}.p8" >> "$GITHUB_ENV"
+
+      - name: Write release config
+        env:
+          SIGNED: ${{ steps.apple.outputs.signed }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$TAURI_SIGNING_PRIVATE_KEY" ]]; then
+            echo "TAURI_SIGNING_PRIVATE_KEY is required to sign updater packages" >&2
+            exit 1
+          fi
+          node <<'NODE'
+          const { writeFileSync } = require("node:fs");
+          const signed = process.env.SIGNED === "true";
+          writeFileSync(
+            `${process.env.RUNNER_TEMP}/tauri.release.conf.json`,
+            JSON.stringify({
+              bundle: {
+                createUpdaterArtifacts: true,
+                macOS: {
+                  signingIdentity: signed ? process.env.APPLE_SIGNING_IDENTITY.trim() : "-",
+                },
+              },
+            }),
+          );
+          NODE
+
+      - name: Build, sign, and notarize macOS packages
+        if: steps.apple.outputs.signed == 'true'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "$RUNNER_TEMP/tauri.release.conf.json"
+          npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "$RUNNER_TEMP/tauri.release.conf.json"
+
+      - name: Build ad-hoc signed macOS packages
+        if: steps.apple.outputs.signed != 'true'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "$RUNNER_TEMP/tauri.release.conf.json"
+          npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "$RUNNER_TEMP/tauri.release.conf.json"
+
+      - name: Verify macOS package architectures and signatures
+        run: |
+          set -euo pipefail
+          verify_app() {
+            local app="$1"
+            local expected_arch="$2"
+            local executable
+            local actual_arch
+            executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
+            actual_arch=$(lipo -archs "$app/Contents/MacOS/$executable")
+            if [[ "$actual_arch" != "$expected_arch" ]]; then
+              echo "Expected $app to contain only $expected_arch, got: $actual_arch" >&2
+              exit 1
+            fi
+            codesign --verify --deep --strict --verbose=2 "$app"
+          }
+          verify_app "target/aarch64-apple-darwin/release/bundle/macos/Vatra.app" arm64
+          verify_app "target/x86_64-apple-darwin/release/bundle/macos/Vatra.app" x86_64
+
+      - name: Download Linux packages
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-packages
+          path: target/release/bundle/linux
+
+      - name: Download Linux rpm package
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-rpm-package
+          path: target/release/bundle/rpm
+
+      - name: Download Windows packages
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-packages
+          path: target/release/bundle/nsis
+
+      - name: Download host packages
+        uses: actions/download-artifact@v8
+        with:
+          name: host-packages
+          path: build/host-packages
+
+      - name: Stage release assets and updater feed
+        run: |
+          set -euo pipefail
+          BUNDLE="target/release/bundle"
+          ARM_BUNDLE="target/aarch64-apple-darwin/release/bundle"
+          INTEL_BUNDLE="target/x86_64-apple-darwin/release/bundle"
+          ASSETS="$RUNNER_TEMP/release-assets"
+          mkdir -p "$ASSETS"
+
+          ARM_TAR="$ARM_BUNDLE/macos/Vatra.app.tar.gz"
+          INTEL_TAR="$INTEL_BUNDLE/macos/Vatra.app.tar.gz"
+          ARM_DMG="$ARM_BUNDLE/dmg/Vatra_${VERSION}_aarch64.dmg"
+          INTEL_DMG="$INTEL_BUNDLE/dmg/Vatra_${VERSION}_x64.dmg"
+          DEB="$BUNDLE/linux/Vatra_${VERSION}_amd64.deb"
+          APPIMAGE="$BUNDLE/linux/Vatra_${VERSION}_amd64.AppImage"
+          NSIS="$BUNDLE/nsis/Vatra_${VERSION}_x64-setup.exe"
+          shopt -s nullglob
+          RPMS=("$BUNDLE"/rpm/*.rpm)
+          HOST_ARCHIVES=(build/host-packages/*.tar.gz build/host-packages/*.zip)
+          if (( ${#RPMS[@]} != 1 )); then
+            echo "Expected exactly one .rpm" >&2
+            exit 1
+          fi
+          if (( ${#HOST_ARCHIVES[@]} != 6 )); then
+            echo "Expected six host archives" >&2
+            exit 1
+          fi
+          for artifact in "$ARM_TAR" "$ARM_TAR.sig" "$INTEL_TAR" "$INTEL_TAR.sig" "$ARM_DMG" "$INTEL_DMG" "$DEB" "$APPIMAGE" "$NSIS" "$NSIS.sig"; do
+            if [[ ! -f "$artifact" ]]; then
+              echo "Missing release artifact: $artifact" >&2
+              exit 1
+            fi
+          done
+
+          cp "$ARM_TAR" "$ASSETS/Vatra.app.tar.gz"
+          cp "$ARM_TAR.sig" "$ASSETS/Vatra.app.tar.gz.sig"
+          cp "$INTEL_TAR" "$ASSETS/Vatra_x64.app.tar.gz"
+          cp "$INTEL_TAR.sig" "$ASSETS/Vatra_x64.app.tar.gz.sig"
+          cp "$ARM_DMG" "$INTEL_DMG" "$DEB" "$APPIMAGE" "${RPMS[0]}" "$NSIS" "$NSIS.sig" "$ASSETS/"
+          for archive in "${HOST_ARCHIVES[@]}"; do
+            if [[ ! -f "$archive.sha256" ]]; then
+              echo "Missing host checksum: $archive.sha256" >&2
+              exit 1
+            fi
+            cp "$archive" "$archive.sha256" "$ASSETS/"
+          done
+
+          node scripts/release/notes.mjs "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+          DOWNLOAD="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
+          ASSETS="$ASSETS" DOWNLOAD="$DOWNLOAD" NSIS_NAME="$(basename "$NSIS")" NOTES="$RUNNER_TEMP/release-notes.md" \
+            node <<'NODE'
+          const fs = require("node:fs");
+          const { ASSETS, DOWNLOAD, NSIS_NAME, NOTES, VERSION } = process.env;
+          const platform = (asset) => ({
+            signature: fs.readFileSync(`${ASSETS}/${asset}.sig`, "utf8").trim(),
+            url: `${DOWNLOAD}/${asset}`,
+          });
+          fs.writeFileSync(
+            `${ASSETS}/latest.json`,
+            `${JSON.stringify(
+              {
+                version: VERSION,
+                notes: fs.readFileSync(NOTES, "utf8").trim(),
+                pub_date: new Date().toISOString(),
+                platforms: {
+                  "darwin-aarch64": platform("Vatra.app.tar.gz"),
+                  "darwin-x86_64": platform("Vatra_x64.app.tar.gz"),
+                  "windows-x86_64": platform(NSIS_NAME),
+                },
+              },
+              null,
+              2,
+            )}\n`,
+          );
+          NODE
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ASSETS="$RUNNER_TEMP/release-assets"
+          NOTES="$RUNNER_TEMP/release-notes.md"
+          RELEASE_FILES=("$ASSETS"/*)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --verify-tag --title "Vatra $VERSION" --notes-file "$NOTES"
+          fi
+          verify_release() {
+            local expected_draft="$1"
+            gh release view "$TAG" --json isDraft,assets > "$RUNNER_TEMP/release-state.json"
+            node - "$RUNNER_TEMP/release-state.json" "$expected_draft" "${RELEASE_FILES[@]}" <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const release = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (release.isDraft !== (process.argv[3] === "true")) {
+            console.error("GitHub Release publication state is unexpected.");
+            process.exit(1);
+          }
+          const names = new Set(release.assets.map((asset) => asset.name));
+          for (const file of process.argv.slice(4)) {
+            const name = path.basename(file);
+            if (!names.has(name)) {
+              console.error(`GitHub Release is missing ${name}.`);
+              process.exit(1);
+            }
+          }
+          NODE
+          }
+          IS_DRAFT=$(gh release view "$TAG" --json isDraft --jq .isDraft)
+          if [[ "$IS_DRAFT" == true ]]; then
+            # Draft assets can be replaced after an interrupted upload. A
+            # published release is immutable, so only resume drafts. The
+            # updater feed goes live with publication, never before its assets.
+            gh release edit "$TAG" --title "Vatra $VERSION" --notes-file "$NOTES"
+            gh release upload "$TAG" "${RELEASE_FILES[@]}" --clobber
+            verify_release true
+            gh release edit "$TAG" --draft=false --latest
+          elif [[ "$IS_DRAFT" != false ]]; then
+            echo "Unexpected GitHub Release state: $IS_DRAFT" >&2
+            exit 1
+          fi
+          verify_release false
+
+  host:
+    name: Standalone host packages
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:host
+      - run: npm run host:package -- --all
+        if: runner.os == 'Linux'
+      - run: npm run host:package
+        if: runner.os != 'Linux'
+      - uses: actions/upload-artifact@v7
+        if: runner.os == 'Linux'
+        with:
+          name: host-packages
+          path: |
+            build/host-packages/*.tar.gz
+            build/host-packages/*.zip
+            build/host-packages/*.sha256
+          if-no-files-found: error
+
+  linux:
+    name: Linux packages
+    needs: prepare
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux system dependencies
+        run: bash scripts/install-linux-deps-debian.sh
+
+      - run: npm ci
+
+      - name: Build Linux packages
+        run: npm run build:linux
+
+      - name: Stage Linux packages
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          deb=(target/release/bundle/deb/*.deb)
+          appimage=(target/release/bundle/appimage/*.AppImage)
+          if (( ${#deb[@]} != 1 || ${#appimage[@]} != 1 )); then
+            echo "Expected exactly one .deb and one AppImage" >&2
+            exit 1
+          fi
+          mkdir -p release-artifacts
+          cp "${deb[0]}" "${appimage[0]}" release-artifacts/
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-packages
+          path: release-artifacts/
+          if-no-files-found: error
+
+  linux-rpm:
+    name: Linux rpm package
+    needs: prepare
+    runs-on: ubuntu-latest
+    # Build on EL 10 so the published rpm's glibc requirement matches the
+    # oldest advertised target. Fedora 43 is newer and would install on EL 10
+    # while failing to load.
+    container: almalinux:10
+    steps:
+      # almalinux:10 ships no git, which actions/checkout otherwise has to work
+      # around with a REST API tarball download.
+      - name: Install git
+        run: dnf install -y git
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Enterprise Linux system dependencies
+        run: bash scripts/install-linux-deps-fedora.sh
+
+      - run: npm ci
+
+      - name: Build rpm package
+        run: npm run build:fedora
+
+      - name: Install and stage the generated rpm
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          bundle=(target/release/bundle/rpm/*.rpm)
+          if (( ${#bundle[@]} != 1 )); then
+            echo "Expected exactly one .rpm" >&2
+            exit 1
+          fi
+          # tauri-bundler derives rpm Requires only from
+          # bundle.linux.rpm.depends, and the setup script has already
+          # installed every -devel package, so assert the metadata directly.
+          requires="$(rpm -qp --requires "${bundle[0]}")"
+          for dep in webkit2gtk4.1 gtk3 libappindicator-gtk3 librsvg2 openssl-libs; do
+            if ! grep -qx "$dep" <<<"$requires"; then
+              echo "rpm is missing Requires: $dep" >&2
+              exit 1
+            fi
+          done
+          dnf install -y "${bundle[0]}"
+          rpm -q "$(rpm -qp --queryformat '%{NAME}' "${bundle[0]}")"
+          mkdir -p release-artifacts
+          cp "${bundle[0]}" release-artifacts/
+
+      - name: Upload rpm package
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-rpm-package
+          path: release-artifacts/
+          if-no-files-found: error
+
+  windows:
+    name: Windows packages
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: npm ci
+
+      - name: Write updater release config
+        run: |
+          '{"bundle":{"createUpdaterArtifacts":true}}' | Set-Content -Encoding utf8 "$env:RUNNER_TEMP\tauri.release.conf.json"
+
+      - name: Build Windows packages
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "TAURI_SIGNING_PRIVATE_KEY is required to sign updater packages"
+          }
+          $env:RUSTUP_TOOLCHAIN = "stable-x86_64-pc-windows-msvc"
+          npx tauri build --bundles nsis --config "$env:RUNNER_TEMP\tauri.release.conf.json"
+
+      - name: Stage Windows packages
+        run: |
+          $installers = @(Get-ChildItem "target/release/bundle/nsis" -Filter "*.exe")
+          $signatures = @(Get-ChildItem "target/release/bundle/nsis" -Filter "*.exe.sig")
+          if ($installers.Count -ne 1 -or $signatures.Count -ne 1) {
+            throw "Expected exactly one NSIS installer and one updater signature"
+          }
+          New-Item -ItemType Directory -Force "release-artifacts" | Out-Null
+          $artifacts = @($installers[0].FullName, $signatures[0].FullName)
+          Copy-Item -Path $artifacts -Destination "release-artifacts/"
+
+      - name: Upload Windows packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-packages
+          path: release-artifacts/
+          if-no-files-found: error
