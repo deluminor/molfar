@@ -31,7 +31,7 @@ Intro.
 const OPTIONS = {
   version: "1.0.0",
   date: "2026-10-02",
-  fallback: null,
+  generated: null,
   previousTag: "",
   repository: "deluminor/vatra",
 };
@@ -120,13 +120,50 @@ describe("prepareChangelog", () => {
     );
   });
 
-  it("falls back to generated notes when Unreleased is empty", () => {
+  it("uses generated notes alone when Unreleased is empty", () => {
     const empty = CHANGELOG.replace("### Changed\n\n- Renamed the app.\n\n", "");
 
-    const result = prepareChangelog(empty, { ...OPTIONS, fallback: "### Fixed\n\n- A bug." });
+    const result = prepareChangelog(empty, { ...OPTIONS, generated: "### Fixed\n\n- A bug." });
 
     expect(result?.source).toBe("commits");
     expect(releaseNotes(result.changelog, "1.0.0")).toBe("### Fixed\n\n- A bug.");
+  });
+
+  it("combines Unreleased notes with generated notes section by section", () => {
+    const result = prepareChangelog(CHANGELOG, {
+      ...OPTIONS,
+      generated: "### Added\n\n- New view.\n\n### Changed\n\n- Faster sync.",
+    });
+
+    expect(result?.source).toBe("unreleased+commits");
+    expect(releaseNotes(result.changelog, "1.0.0")).toBe(
+      "### Added\n\n- New view.\n\n### Changed\n\n- Renamed the app.\n- Faster sync.",
+    );
+  });
+
+  it("does not repeat a generated item already in Unreleased", () => {
+    const result = prepareChangelog(CHANGELOG, {
+      ...OPTIONS,
+      generated: "### Changed\n\n- Renamed the app.",
+    });
+
+    expect(releaseNotes(result.changelog, "1.0.0")).toBe("### Changed\n\n- Renamed the app.");
+  });
+
+  it("keeps Unreleased prose and custom sections around merged items", () => {
+    const custom = CHANGELOG.replace(
+      "### Changed\n\n- Renamed the app.\n\n",
+      "Upstream sync.\n\n### Security\n\n- Patched a parser.\n  Details on two lines.\n\n### Fixed\n\n- Old bug.\n\n",
+    );
+
+    const result = prepareChangelog(custom, {
+      ...OPTIONS,
+      generated: "### Fixed\n\n- New bug.\n\n### Added\n\n- Feature.",
+    });
+
+    expect(releaseNotes(result.changelog, "1.0.0")).toBe(
+      "Upstream sync.\n\n### Added\n\n- Feature.\n\n### Fixed\n\n- Old bug.\n- New bug.\n\n### Security\n\n- Patched a parser.\n  Details on two lines.",
+    );
   });
 
   it("keeps a hand-written section for the version untouched", () => {
