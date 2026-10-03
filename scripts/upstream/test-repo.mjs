@@ -1,5 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { STATE_FILE } from "./patch-sync.mjs";
@@ -39,7 +46,9 @@ export function createTestRepo() {
   };
 
   /** Seeds both histories with `files`; returns the upstream base commit. */
-  const setUp = (files = { "app.txt": "one\ntwo\nthree\n", LICENSE: "Copyright (c) Nick\n" }) => {
+  const setUp = (
+    files = { "app.txt": "one\ntwo\nthree\n", LICENSE: "Copyright (c) Nick\n" },
+  ) => {
     git("init", "-q", "-b", "upstream");
     git("config", "commit.gpgsign", "false");
     // Windows runners set core.autocrlf in the system config, which the module's
@@ -81,5 +90,9 @@ export function createTestRepo() {
 }
 
 export function numberedLines(count, edits = {}) {
-  return Array.from({ length: count }, (_, index) => edits[index + 1] ?? `line ${index + 1}`).join("\n") + "\n";
+  const lines = Array.from(
+    { length: count },
+    (_, index) => edits[index + 1] ?? `line ${index + 1}`,
+  );
+  return `${lines.join("\n")}\n`;
 }

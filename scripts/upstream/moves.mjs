@@ -4,7 +4,13 @@
 //   node scripts/upstream/moves.mjs --check    fail when the move map does not cover the tree
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MOVE_MAP_FILE, readMoveMap, regenerateMoveMap, validateMoveMap, writeMoveMap } from "./move-map.mjs";
+import {
+  MOVE_MAP_FILE,
+  readMoveMap,
+  regenerateMoveMap,
+  validateMoveMap,
+  writeMoveMap,
+} from "./move-map.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const map = readMoveMap(root);

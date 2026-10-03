@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyUpstreamPatch, readSyncState, STATE_FILE, SYNC_STATUS } from "./patch-sync.mjs";
+import {
+  applyUpstreamPatch,
+  readSyncState,
+  STATE_FILE,
+  SYNC_STATUS,
+} from "./patch-sync.mjs";
 import { createTestRepo } from "./test-repo.mjs";
 
 let repo;
@@ -29,9 +34,9 @@ describe("applyUpstreamPatch", () => {
     expect(repo.read("new.txt")).toBe("added upstream\n");
     expect(repo.read("vatra.txt")).toBe("vatra only\n");
     expect(readSyncState(repo.root).syncedCommit).toBe(head);
-    expect(repo.git("diff", "--cached", "--name-only").split("\n").sort()).toEqual(
-      [STATE_FILE, "app.txt", "new.txt"].sort(),
-    );
+    expect(
+      repo.git("diff", "--cached", "--name-only").split("\n").sort(),
+    ).toEqual([STATE_FILE, "app.txt", "new.txt"].sort());
   });
 
   it("merges upstream edits into lines Vatra also changed elsewhere in the file", () => {
@@ -50,7 +55,9 @@ describe("applyUpstreamPatch", () => {
     repo.setUp();
     repo.write("app.txt", "one\nVATRA\nthree\n");
     repo.commitAll("vatra edit");
-    repo.upstreamCommit("upstream edit", { "app.txt": "one\nUPSTREAM\nthree\n" });
+    repo.upstreamCommit("upstream edit", {
+      "app.txt": "one\nUPSTREAM\nthree\n",
+    });
 
     const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
 
@@ -63,7 +70,10 @@ describe("applyUpstreamPatch", () => {
     repo.setUp({ "a.txt": "one\ntwo\n", "b.txt": "one\ntwo\n" });
     repo.write("a.txt", "one\nVATRA\n");
     repo.commitAll("vatra edit");
-    repo.upstreamCommit("upstream edits", { "a.txt": "one\nUPSTREAM\n", "b.txt": "one\ntwo\nthree\n" });
+    repo.upstreamCommit("upstream edits", {
+      "a.txt": "one\nUPSTREAM\n",
+      "b.txt": "one\ntwo\nthree\n",
+    });
 
     const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
 
@@ -74,7 +84,11 @@ describe("applyUpstreamPatch", () => {
 
   it("applies upstream renames of paths Vatra kept in place", () => {
     repo.setUp({ "old.txt": "one\ntwo\nthree\nfour\nfive\n" });
-    repo.upstreamCommit("rename", { "new.txt": "one\ntwo\nthree\nfour\nfive\n" }, ["old.txt"]);
+    repo.upstreamCommit(
+      "rename",
+      { "new.txt": "one\ntwo\nthree\nfour\nfive\n" },
+      ["old.txt"],
+    );
 
     const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
 

@@ -18,7 +18,10 @@ export function writePendingPorts(cwd, from, to, pending) {
   });
 
   if (entries.length > 0) {
-    writeFileSync(join(cwd, runDir, "manifest.json"), `${JSON.stringify({ from, to, pending: entries }, null, 2)}\n`);
+    writeFileSync(
+      join(cwd, runDir, "manifest.json"),
+      `${JSON.stringify({ from, to, pending: entries }, null, 2)}\n`,
+    );
   }
 
   return entries;

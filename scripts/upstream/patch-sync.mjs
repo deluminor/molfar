@@ -41,17 +41,30 @@ function tryApply(cwd, patch) {
 }
 
 function resolveChange(cwd, map, change) {
-  if (change.status === "A") return { action: PATH_ACTION.APPLY, path: change.destination };
+  if (change.status === "A")
+    return { action: PATH_ACTION.APPLY, path: change.destination };
 
   const resolved = resolvePath(cwd, map, change.source);
-  if (resolved.action !== PATH_ACTION.RETARGET || RETARGETABLE_STATUSES.has(change.status)) return resolved;
+  if (
+    resolved.action !== PATH_ACTION.RETARGET ||
+    RETARGETABLE_STATUSES.has(change.status)
+  )
+    return resolved;
 
   return { action: PENDING_REASON.MOVED_AND_RENAMED, path: resolved.path };
 }
 
 function pendingEntry(change, reason, patch, details = {}) {
-  const upstreamPath = change.destination === change.source ? undefined : change.destination;
-  return { path: change.source, upstreamPath, status: change.status, reason, ...details, patch };
+  const upstreamPath =
+    change.destination === change.source ? undefined : change.destination;
+  return {
+    path: change.source,
+    upstreamPath,
+    status: change.status,
+    reason,
+    ...details,
+    patch,
+  };
 }
 
 function applyChange(cwd, range, map, change) {
@@ -61,16 +74,29 @@ function applyChange(cwd, range, map, change) {
   const resolved = resolveChange(cwd, map, change);
   const retarget = resolved.action === PATH_ACTION.RETARGET;
   if (resolved.action !== PATH_ACTION.APPLY && !retarget) {
-    const details = { vatraPath: resolved.path, targets: resolved.targets, notes: resolved.notes };
-    return { kind: "pending", entry: pendingEntry(change, resolved.action, patch, details) };
+    const details = {
+      vatraPath: resolved.path,
+      targets: resolved.targets,
+      notes: resolved.notes,
+    };
+    return {
+      kind: "pending",
+      entry: pendingEntry(change, resolved.action, patch, details),
+    };
   }
 
   const target = retarget ? resolved.path : change.destination;
-  const error = tryApply(cwd, retarget ? retargetPatch(patch, change.source, target) : patch);
+  const error = tryApply(
+    cwd,
+    retarget ? retargetPatch(patch, change.source, target) : patch,
+  );
   if (!error) return { kind: "applied", target, retargeted: retarget };
   if (unmergedPaths(cwd).includes(target)) return { kind: "conflict", target };
 
-  return { kind: "pending", entry: pendingEntry(change, PENDING_REASON.APPLY_FAILED, patch, { error }) };
+  return {
+    kind: "pending",
+    entry: pendingEntry(change, PENDING_REASON.APPLY_FAILED, patch, { error }),
+  };
 }
 
 function overallStatus(conflicts, pending) {
@@ -90,13 +116,29 @@ export function applyUpstreamPatch({ cwd, target }) {
   const state = readSyncState(cwd);
   const from = state.syncedCommit;
   const to = git(cwd, ["rev-parse", `${target}^{commit}`]).trim();
-  const empty = { commits: [], conflicts: [], pending: [], retargeted: [], added: [] };
+  const empty = {
+    commits: [],
+    conflicts: [],
+    pending: [],
+    retargeted: [],
+    added: [],
+  };
 
-  if (from === to) return { status: SYNC_STATUS.UP_TO_DATE, from, to, ...empty };
-  if (!isAncestor(cwd, from, to)) return { status: SYNC_STATUS.DIVERGED, from, to, ...empty };
+  if (from === to)
+    return { status: SYNC_STATUS.UP_TO_DATE, from, to, ...empty };
+  if (!isAncestor(cwd, from, to))
+    return { status: SYNC_STATUS.DIVERGED, from, to, ...empty };
 
   const map = readMoveMap(cwd);
-  const commits = lines(git(cwd, ["log", "--reverse", "--no-merges", "--format=%h %s", `${from}..${to}`]));
+  const commits = lines(
+    git(cwd, [
+      "log",
+      "--reverse",
+      "--no-merges",
+      "--format=%h %s",
+      `${from}..${to}`,
+    ]),
+  );
   const conflicts = [];
   const pending = [];
   const retargeted = [];
@@ -106,8 +148,10 @@ export function applyUpstreamPatch({ cwd, target }) {
     const outcome = applyChange(cwd, { from, to }, map, change);
     if (outcome.kind === "pending") pending.push(outcome.entry);
     if (outcome.kind === "conflict") conflicts.push(outcome.target);
-    if (outcome.retargeted) retargeted.push({ upstream: change.source, vatra: outcome.target });
-    if (outcome.kind === "applied" && change.status === "A") added.push(outcome.target);
+    if (outcome.retargeted)
+      retargeted.push({ upstream: change.source, vatra: outcome.target });
+    if (outcome.kind === "applied" && change.status === "A")
+      added.push(outcome.target);
   }
 
   const pendingPorts = writePendingPorts(cwd, from, to, pending);
@@ -115,5 +159,14 @@ export function applyUpstreamPatch({ cwd, target }) {
   git(cwd, ["add", "--", STATE_FILE]);
 
   const status = overallStatus(conflicts, pendingPorts);
-  return { status, from, to, commits, conflicts, pending: pendingPorts, retargeted, added };
+  return {
+    status,
+    from,
+    to,
+    commits,
+    conflicts,
+    pending: pendingPorts,
+    retargeted,
+    added,
+  };
 }

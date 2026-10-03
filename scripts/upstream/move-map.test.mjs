@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { MOVE_MAP_FILE, readMoveMap, regenerateMoveMap, validateMoveMap, writeMoveMap } from "./move-map.mjs";
+import {
+  MOVE_MAP_FILE,
+  readMoveMap,
+  regenerateMoveMap,
+  validateMoveMap,
+  writeMoveMap,
+} from "./move-map.mjs";
 import { createTestRepo, numberedLines } from "./test-repo.mjs";
 
 let repo;
@@ -9,9 +15,18 @@ const bigLines = (count) => numberedLines(count).replaceAll("line", "big");
 
 beforeEach(() => {
   repo = createTestRepo();
-  repo.setUp({ "src/fooBar.ts": numberedLines(30), "src/big.ts": bigLines(30), "src/dead.ts": "dead\n" });
+  repo.setUp({
+    "src/fooBar.ts": numberedLines(30),
+    "src/big.ts": bigLines(30),
+    "src/dead.ts": "dead\n",
+  });
   refactorBase = repo.git("rev-parse", "HEAD");
-  writeMoveMap(repo.root, { refactorBase, renames: {}, splits: {}, removed: {} });
+  writeMoveMap(repo.root, {
+    refactorBase,
+    renames: {},
+    splits: {},
+    removed: {},
+  });
   repo.commitAll("add move map");
 });
 
@@ -46,7 +61,12 @@ describe("move map", () => {
     refactor();
     const map = regenerateMoveMap(repo.root, {
       ...readMoveMap(repo.root),
-      splits: { "src/big.ts": { targets: ["src/big/first.ts", "src/big/second.ts"], notes: "halves" } },
+      splits: {
+        "src/big.ts": {
+          targets: ["src/big/first.ts", "src/big/second.ts"],
+          notes: "halves",
+        },
+      },
       removed: { "src/dead.ts": "unused" },
     });
     writeMoveMap(repo.root, map);
@@ -62,10 +82,15 @@ describe("move map", () => {
 
     const map = regenerateMoveMap(repo.root, {
       ...readMoveMap(repo.root),
-      renames: { "src/laterUpstream.ts": "src/later-upstream.ts", "src/stale.ts": "src/missing.ts" },
+      renames: {
+        "src/laterUpstream.ts": "src/later-upstream.ts",
+        "src/stale.ts": "src/missing.ts",
+      },
     });
 
-    expect(map.renames).toEqual({ "src/laterUpstream.ts": "src/later-upstream.ts" });
+    expect(map.renames).toEqual({
+      "src/laterUpstream.ts": "src/later-upstream.ts",
+    });
   });
 
   it("reports targets that do not exist and splits without notes", () => {
@@ -86,6 +111,8 @@ describe("move map", () => {
   it("requires refactorBase", () => {
     repo.write(MOVE_MAP_FILE, "{}\n");
 
-    expect(validateMoveMap(repo.root, readMoveMap(repo.root))).toEqual([`${MOVE_MAP_FILE}: refactorBase is not set`]);
+    expect(validateMoveMap(repo.root, readMoveMap(repo.root))).toEqual([
+      `${MOVE_MAP_FILE}: refactorBase is not set`,
+    ]);
   });
 });
