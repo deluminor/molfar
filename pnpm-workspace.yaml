@@ -1,0 +1,12 @@
+overrides:
+  "@codemirror/state": "$@codemirror/state"
+  "@codemirror/view": "$@codemirror/view"
+  "@lezer/common": "$@lezer/common"
+
+allowBuilds:
+  esbuild: true
+  "@tailwindcss/oxide": true
+  sharp: true
+
+minimumReleaseAgeExclude:
+  - 3d-force-graph@1.80.1

@@ -1,0 +1,1 @@
+export const MAX_KNOWLEDGE_CONTEXT_BYTES = 128 * 1024;
