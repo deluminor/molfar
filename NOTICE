@@ -14,7 +14,9 @@ Third-party components keep their own notices: vendor/portable-pty/LICENSE.md
 (Copyright (c) 2018 Wez Furlong, MIT) and the MIT header in
 src/features/source-control/model/gitGraph.ts (Copyright (c) Microsoft
 Corporation). Each desktop build embeds THIRD-PARTY-NOTICES.md with the
-licenses of the JavaScript dependencies bundled into the app.
+licenses of the JavaScript dependencies bundled into the app, and
+THIRD-PARTY-NOTICES-RUST.md with the licenses of the Rust crates linked into
+it (with source links for MPL-2.0 crates).
 
 Vatra is not affiliated with, endorsed by, or sponsored by the MonoCode
 project or by the makers of the agent harnesses it can drive.
