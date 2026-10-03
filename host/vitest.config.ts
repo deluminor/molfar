@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["host/**/*.test.ts"],
+    setupFiles: ["scripts/test/isolate-git-env.mjs"],
     // These integration tests launch real Git, Node and PowerShell processes.
     // Competing suites on Windows runners can exceed the default 5s budget,
     // leaving processes alive when teardown tries to remove their directories.
