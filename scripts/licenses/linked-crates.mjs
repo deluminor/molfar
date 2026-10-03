@@ -1,7 +1,3 @@
-import { createHash } from "node:crypto";
-
-export const LICENSE_FILE = /^(licen[cs]e|copying|notice|copyright|unlicense)([-._].*)?$/i;
-
 function isProcMacro(pkg) {
   return pkg.targets.some((target) => target.kind.includes("proc-macro"));
 }
@@ -38,41 +34,4 @@ export function linkedPackages(metadata) {
     .filter((id) => !members.has(id))
     .map((id) => packages.get(id))
     .sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version));
-}
-
-/** Markdown listing each crate with its license texts; identical texts are printed once. */
-export function renderNotices(crates) {
-  const groups = new Map();
-  const withoutFiles = [];
-
-  for (const crate of crates) {
-    if (crate.texts.length === 0) {
-      withoutFiles.push(crate);
-      continue;
-    }
-
-    const body = crate.texts.map((text) => text.trim()).join("\n\n---\n\n");
-    const key = createHash("sha256").update(body).digest("hex");
-    const group = groups.get(key) ?? { body, crates: [] };
-    group.crates.push(crate);
-    groups.set(key, group);
-  }
-
-  const label = (crate) => `${crate.name} ${crate.version}${crate.license ? ` (${crate.license})` : ""}`;
-  const sections = [...groups.values()].map(
-    (group) => `## ${group.crates.map(label).join(", ")}\n\n\`\`\`\`text\n${group.body}\n\`\`\`\``,
-  );
-  const sourceRequired = crates.filter((crate) => /\bMPL-/.test(crate.license ?? ""));
-  if (sourceRequired.length > 0) {
-    sections.push(
-      `## Source code for MPL-licensed crates\n\nThese crates are used unmodified; their source code is available at:\n\n${sourceRequired.map((crate) => `- ${label(crate)}: https://crates.io/crates/${crate.name}/${crate.version}`).join("\n")}`,
-    );
-  }
-  if (withoutFiles.length > 0) {
-    sections.push(
-      `## Crates without bundled license files\n\nThese crates declare their license in package metadata only.\n\n${withoutFiles.map((crate) => `- ${label(crate)}`).join("\n")}`,
-    );
-  }
-
-  return `# Rust dependency licenses\n\nThe Vatra desktop binary links the following Rust crates.\n\n${sections.join("\n\n")}\n`;
 }
