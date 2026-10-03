@@ -48,7 +48,13 @@ Vatra is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** i
 | `upstream-main` | Mirror of `upstream/main` on this repo; only ever fast-forwarded, never committed to |
 | `main` | Vatra; upstream changes arrive through a `sync/upstream-into-main-YYYYMMDD` PR |
 
-The **Sync MonoCode upstream** automation in Vatra (Tuesday and Friday, 09:00) does both steps: it fast-forwards `upstream-main`, then opens a sync PR into `main` with release notes and a cross-linked Issue. It resolves conflicts only in the Vatra-owned paths below; any other conflict produces a **Sync blocked** Issue instead of a PR. Merge sync PRs with a merge commit — a squash drops the upstream ancestry and the next sync conflicts again.
+The **Sync MonoCode upstream** automation in Vatra (Tuesday and Friday, 09:00) does both steps: it fast-forwards `upstream-main`, then opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps Vatra's side in the Vatra-owned paths below, and resolves product-code conflicts by combining both sides: it keeps Vatra's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after merge-caused errors are fixed. Merge sync PRs with a merge commit — a squash drops the upstream ancestry and the next sync conflicts again.
+
+Every sync, including one that merges cleanly, also:
+
+- renames MonoCode identifiers that upstream code brings in to Vatra's: `monocode.*` storage keys and `monocode:*` events become `vatra.*` / `vatra:*`, and the same goes for component names and user-facing text. Upstream issue links and the legacy-profile migration code keep their MonoCode names;
+- adds the incoming user-visible changes under `## [Unreleased]` in `CHANGELOG.md`, citing upstream PRs as `MonoCode #NNN`. Upstream commits are not conventional commits, so without these notes the release script would leave them out;
+- runs `npm run check:web` (plus `cargo check` and the host tests when the merge touches them), and lists user-visible default changes under **Breaking / attention** in the notes.
 
 By hand:
 
