@@ -45,6 +45,49 @@ export function addCount(counts, file, kind, amount = 1) {
   counts[file][kind] = (counts[file][kind] ?? 0) + amount;
 }
 
+function totals(counts) {
+  const sums = {};
+  for (const kinds of Object.values(counts)) {
+    for (const [kind, count] of Object.entries(kinds))
+      sums[kind] = (sums[kind] ?? 0) + count;
+  }
+  return sums;
+}
+
+/**
+ * Why regressions cannot be accepted as moved code: a kind's repo-wide total grew, or (unless
+ * allowed) a file that was clean before now has findings. Refactors move code between files, so
+ * findings may move with it as long as nothing is added overall.
+ */
+export function transferBlockers(
+  current,
+  baseline,
+  regressions,
+  { allowNewFiles },
+) {
+  const before = totals(baseline);
+  const after = totals(current);
+  const blockers = [];
+
+  for (const kind of new Set(
+    regressions.map((regression) => regression.kind),
+  )) {
+    if ((after[kind] ?? 0) > (before[kind] ?? 0)) {
+      blockers.push(
+        `${kind} total grew ${before[kind] ?? 0} -> ${after[kind]}`,
+      );
+    }
+  }
+
+  if (!allowNewFiles) {
+    for (const { file } of regressions) {
+      if (!baseline[file]) blockers.push(`${file} is new to the baseline`);
+    }
+  }
+
+  return blockers;
+}
+
 function readBaseline(path) {
   return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 }
@@ -67,6 +110,8 @@ export function runRatchet({
   current,
   update,
   updateCommand,
+  transfer = false,
+  allowNewFiles = true,
 }) {
   const baseline = readBaseline(baselinePath);
 
@@ -82,6 +127,19 @@ export function runRatchet({
   }
 
   const { regressions, improvements } = compareToBaseline(current, baseline);
+
+  if (update && transfer && regressions.length > 0) {
+    const blockers = transferBlockers(current, baseline, regressions, {
+      allowNewFiles,
+    });
+    for (const blocker of blockers)
+      console.error(`${name}: cannot transfer: ${blocker}`);
+    if (blockers.length > 0) return 1;
+    for (const regression of regressions)
+      console.error(`${name}: moved ${describe(regression)}`);
+    writeBaseline(baselinePath, current);
+    return 0;
+  }
 
   for (const regression of regressions)
     console.error(`${name}: new violation ${describe(regression)}`);

@@ -32,6 +32,7 @@ process.exit(
     baselinePath: join(here, "boundaries.baseline.json"),
     current,
     update: process.argv.includes("--update"),
+    transfer: process.argv.includes("--transfer"),
     updateCommand: "npm run check:boundaries -- --update",
   }),
 );

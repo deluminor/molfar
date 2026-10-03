@@ -35,6 +35,8 @@ process.exit(
     baselinePath: join(here, "file-size.baseline.json"),
     current,
     update: process.argv.includes("--update"),
+    transfer: process.argv.includes("--transfer"),
+    allowNewFiles: false,
     updateCommand: "npm run check:size -- --update",
   }),
 );

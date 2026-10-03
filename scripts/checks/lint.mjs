@@ -14,6 +14,7 @@ process.exit(
     baselinePath: join(here, "lint.baseline.json"),
     current: collectLintCounts(join(here, "../..")),
     update: process.argv.includes("--update"),
+    transfer: process.argv.includes("--transfer"),
     updateCommand: "npm run lint -- --update",
   }),
 );
