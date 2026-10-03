@@ -42,6 +42,9 @@ function commitAll(message) {
 function setUp() {
   git("init", "-q", "-b", "upstream");
   git("config", "commit.gpgsign", "false");
+  // Windows runners set core.autocrlf in the system config, which the module's
+  // own git calls inherit; the fixtures compare exact line endings.
+  git("config", "core.autocrlf", "false");
   write("app.txt", "one\ntwo\nthree\n");
   write("LICENSE", "Copyright (c) Nick\n");
   const base = commitAll("upstream base");
