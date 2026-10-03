@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatReleaseDate,
+  formatUpdateDate,
   presentReleaseNotes,
   releaseNotesForVersion,
   releaseNotesMarkdown,
@@ -115,10 +116,33 @@ describe("formatReleaseDate", () => {
     expect(formatReleaseDate("2026-09-01")).toBe("1 Sep 2026");
   });
 
-  it.each(["soon", "2026-13-01", "2026-09-1"])(
+  it.each(["soon", "2026-13-01", "2026-09-1", "2026-02-30"])(
     "leaves invalid date %j alone",
     (value) => {
       expect(formatReleaseDate(value)).toBe(value);
+    },
+  );
+});
+
+describe("formatUpdateDate", () => {
+  it.each(["2026-10-03 14:18:46.976 +00:00:00", "2026-10-03T14:18:46.976Z"])(
+    "formats the day of %j",
+    (value) => {
+      expect(formatUpdateDate(value)).toBe("3 Oct 2026");
+    },
+  );
+
+  it.each([
+    undefined,
+    "",
+    "soon",
+    "2026-13-01 00:00:00",
+    "2026-02-31 00:00:00",
+    "2026-10-00 00:00:00",
+  ])(
+    "hides unparseable date %j",
+    (value) => {
+      expect(formatUpdateDate(value)).toBeNull();
     },
   );
 });

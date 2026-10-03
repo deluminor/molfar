@@ -29,6 +29,8 @@ type Props = {
   className?: string;
   /** Keep taller dialogs inside the viewport, scrolling their content. */
   fitViewport?: boolean;
+  /** Pinned below the scrolling content. */
+  footer?: ReactNode;
   children: ReactNode;
 };
 
@@ -40,6 +42,7 @@ export function ModalPanel({
   minimalHeader = false,
   className,
   fitViewport = false,
+  footer,
   children,
 }: Props) {
   const popupHost = useContext(NativePopupHost);
@@ -129,6 +132,11 @@ export function ModalPanel({
           >
             {children}
           </div>
+          {footer ? (
+            <footer className="shrink-0 border-t border-content/7 px-4 py-3">
+              {footer}
+            </footer>
+          ) : null}
         </div>
       </div>
     </div>

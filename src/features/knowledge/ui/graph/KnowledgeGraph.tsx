@@ -3,6 +3,12 @@ import type { KnowledgeGraphProps } from "../../model/graph/types";
 import { useKnowledgeGraph } from "./use-knowledge-graph";
 import "./graph.css";
 
+const CONTROL =
+  "inline-flex h-7 items-center gap-1.5 rounded-md border border-content/10 bg-background-base px-2.5 text-[12px] text-content/70 hover:bg-content/10 hover:text-content disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent";
+
+const ICON_BUTTON =
+  "grid size-7 shrink-0 place-items-center rounded-md border border-content/10 bg-background-base text-content/45 hover:bg-content/10 hover:text-content disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent max-[480px]:size-11";
+
 export function KnowledgeGraph({
   projection,
   neighborsOnly,
@@ -29,21 +35,25 @@ export function KnowledgeGraph({
       />
       <div className="knowledge-graph-controls">
         <button
-          className="knowledge-button"
+          type="button"
+          className={`${CONTROL} ${
+            neighborsOnly ? "border-accent/50 text-accent" : ""
+          }`}
           onClick={onToggleNeighborhood}
           aria-pressed={neighborsOnly}
           disabled={!selectedPath}
         >
-          <FolderTree size={14} />{" "}
+          <FolderTree className="size-3.5" strokeWidth={1.75} />{" "}
           {neighborsOnly ? "Neighborhood" : "All connections"}
         </button>
         <button
-          className="knowledge-icon-button"
+          type="button"
+          className={ICON_BUTTON}
           onClick={scene.fit}
           aria-label="Fit graph to view"
           disabled={!scene.ready}
         >
-          <Maximize2 size={15} />
+          <Maximize2 className="size-3.5" strokeWidth={1.75} />
         </button>
       </div>
       {message ? (

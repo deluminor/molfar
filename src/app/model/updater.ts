@@ -1,5 +1,5 @@
 import { getVersion } from "@tauri-apps/api/app";
-import { ask, message } from "@tauri-apps/plugin-dialog";
+import { message } from "@tauri-apps/plugin-dialog";
 import { relaunch } from "@tauri-apps/plugin-process";
 import {
   check,
@@ -8,6 +8,8 @@ import {
 } from "@tauri-apps/plugin-updater";
 import { announceUpdateAvailable } from "../../features/settings/model/sounds";
 import { APP_UPDATER_DISABLED } from "./forkPolicy";
+import { formatUpdateDate } from "./releaseNotes";
+import { openUpdatePrompt } from "./updatePrompt";
 import { rememberInstalledUpdate } from "./updateNotice";
 
 const FORK_UPDATER_DISABLED_MESSAGE =
@@ -78,6 +80,22 @@ export async function runUpdateFlow(
     return idle;
   }
 
+  // A re-check would swap `pendingUpdate` under the running download.
+  if (installInFlight) {
+    if (manual) {
+      await message(
+        "An update is already downloading. Vatra will restart when it's ready.",
+        { title: "Vatra" },
+      );
+    }
+
+    return {
+      phase: "downloading",
+      currentVersion,
+      availableVersion: pendingUpdate?.version,
+    };
+  }
+
   const base: UpdaterSnapshot = { phase: "checking", currentVersion };
   onProgress?.(base);
 
@@ -104,15 +122,14 @@ export async function runUpdateFlow(
 
     if (!manual) return available;
 
-    const notes = update.body?.trim();
-    const detail = notes ? `\n\n${notes}` : "";
-    const yes = await ask(
-      `Vatra ${update.version} is available (you have ${currentVersion}).${detail}\n\nInstall now?`,
-      { title: "Update available", kind: "info" },
-    );
-    if (!yes) return available;
-
-    return installPendingUpdate(onProgress);
+    openUpdatePrompt({
+      version: update.version,
+      currentVersion,
+      date: formatUpdateDate(update.date),
+      notes: update.body?.trim() || null,
+      onProgress,
+    });
+    return available;
   } catch (err) {
     if (isUpdaterNotConfiguredError(err)) {
       pendingUpdate = null;
@@ -139,8 +156,15 @@ export async function runUpdateFlow(
   }
 }
 
+type InstallOptions = {
+  reportFailure?: boolean;
+  /** Refuse to install unless the pending update is still this version. */
+  version?: string;
+};
+
 export async function installPendingUpdate(
   onProgress?: (snapshot: UpdaterSnapshot) => void,
+  { reportFailure = true, version }: InstallOptions = {},
 ): Promise<UpdaterSnapshot> {
   const currentVersion = await readAppVersion();
 
@@ -154,6 +178,18 @@ export async function installPendingUpdate(
   }
 
   const update = pendingUpdate;
+  if (version && update?.version !== version) {
+    const stale: UpdaterSnapshot = {
+      phase: "error",
+      currentVersion,
+      availableVersion: update?.version,
+      error: `Vatra ${version} is no longer the pending update. Check for updates again.`,
+    };
+    onProgress?.(stale);
+
+    return stale;
+  }
+
   if (!update) {
     const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
     onProgress?.(idle);
@@ -211,9 +247,11 @@ export async function installPendingUpdate(
       error,
     };
     onProgress?.(failed);
-    await message(`Couldn't install the update.\n\n${error}`, {
-      title: "Vatra",
-    });
+    if (reportFailure) {
+      await message(`Couldn't install the update.\n\n${error}`, {
+        title: "Vatra",
+      });
+    }
 
     return failed;
   } finally {

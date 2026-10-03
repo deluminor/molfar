@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { vaultAssetPath } from "../../../../platform/tauri/vault";
+import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
+import { KnowledgeAlert } from "../KnowledgeAlert";
 
 export function KnowledgeAttachment({
   vaultId,
@@ -33,33 +35,35 @@ export function KnowledgeAttachment({
 
   return (
     <section className="knowledge-document" aria-label="Attachment preview">
-      <div className="knowledge-document-heading">
-        <h2>{path.split("/").pop()}</h2>
-        <button className="knowledge-button" onClick={onClose}>
-          Close
-        </button>
+      <div className="flex items-start gap-3 px-4 pb-3 pt-4">
+        <h2 className="min-w-0 flex-1 truncate text-[15px] font-medium text-content">
+          {path.split("/").pop()}
+        </h2>
+        <SecondaryButton onClick={onClose}>Close</SecondaryButton>
       </div>
-      {error && (
-        <div className="knowledge-error" role="alert">
-          {error}
-        </div>
-      )}
-      {image && !source && !error && (
-        <p className="knowledge-empty" role="status">
+      {error ? (
+        <KnowledgeAlert>{error}</KnowledgeAlert>
+      ) : null}
+      {image && !source && !error ? (
+        <p className="px-4 py-6 text-[12px] text-content/50" role="status">
           Loading attachment…
         </p>
-      )}
-      {source && (
-        <div className="knowledge-attachment">
-          <img src={source} alt={path.split("/").pop()} />
+      ) : null}
+      {source ? (
+        <div className="overflow-auto p-5">
+          <img
+            src={source}
+            alt={path.split("/").pop()}
+            className="block h-auto w-full rounded-md"
+          />
         </div>
-      )}
-      {!image && (
-        <p className="knowledge-empty">
+      ) : null}
+      {!image ? (
+        <p className="px-4 py-6 text-[12px] leading-relaxed text-content/55">
           Preview is not available for this file type. Open it from your vault
           in Obsidian. Markdown notes can be edited and shared with agents here.
         </p>
-      )}
+      ) : null}
     </section>
   );
 }

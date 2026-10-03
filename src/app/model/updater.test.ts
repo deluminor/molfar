@@ -2,22 +2,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   announce: vi.fn(),
+  ask: vi.fn(),
   check: vi.fn(),
   downloadAndInstall: vi.fn(),
   getVersion: vi.fn(),
   message: vi.fn(),
   relaunch: vi.fn(),
+  openPrompt: vi.fn(),
   remember: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({
-  ask: vi.fn(),
+  ask: mocks.ask,
   message: mocks.message,
 }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: mocks.relaunch }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: mocks.check }));
 vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: mocks.announce }));
+vi.mock("./updatePrompt", () => ({ openUpdatePrompt: mocks.openPrompt }));
 vi.mock("./updateNotice", () => ({ rememberInstalledUpdate: mocks.remember }));
 vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
 
@@ -113,11 +116,152 @@ describe("installPendingUpdate", () => {
     expect(mocks.relaunch).not.toHaveBeenCalled();
   });
 
+  it("can leave install failures to the caller", async () => {
+    mocks.downloadAndInstall.mockRejectedValue(new Error("offline"));
+    const updater = await updaterWithPendingUpdate();
+
+    const result = await updater.installPendingUpdate(undefined, {
+      reportFailure: false,
+    });
+
+    expect(result).toMatchObject({ phase: "error", error: "offline" });
+    expect(mocks.message).not.toHaveBeenCalled();
+  });
+
+  it("refuses a prompted version that is no longer pending", async () => {
+    const updater = await updaterWithPendingUpdate();
+
+    const result = await updater.installPendingUpdate(undefined, {
+      version: "0.1.21",
+    });
+
+    expect(result).toMatchObject({
+      phase: "error",
+      availableVersion: "0.1.23",
+      error: expect.stringContaining("0.1.21 is no longer the pending update"),
+    });
+    expect(mocks.downloadAndInstall).not.toHaveBeenCalled();
+  });
+
+  it("refuses a prompted version once nothing is pending", async () => {
+    const updater = await import("./updater");
+
+    const result = await updater.installPendingUpdate(undefined, {
+      version: "0.1.23",
+    });
+
+    expect(result.phase).toBe("error");
+    expect(mocks.downloadAndInstall).not.toHaveBeenCalled();
+  });
+
+  it("installs when the prompted version is still pending", async () => {
+    mocks.downloadAndInstall.mockResolvedValue(undefined);
+    const updater = await updaterWithPendingUpdate();
+
+    const result = await updater.installPendingUpdate(undefined, {
+      version: "0.1.23",
+    });
+
+    expect(result.phase).toBe("current");
+    expect(mocks.downloadAndInstall).toHaveBeenCalledOnce();
+  });
+
   it("does not record when no update is pending", async () => {
     const updater = await import("./updater");
 
     expect((await updater.installPendingUpdate()).phase).toBe("idle");
     expect(mocks.remember).not.toHaveBeenCalled();
     expect(mocks.relaunch).not.toHaveBeenCalled();
+  });
+});
+
+describe("runUpdateFlow", () => {
+  it("opens the in-app prompt instead of a native dialog on a manual check", async () => {
+    mocks.check.mockResolvedValue({
+      version: "0.1.23",
+      date: "2026-10-03 14:18:46.976 +00:00:00",
+      body: "  ### Added\n\n- Thing  ",
+      downloadAndInstall: mocks.downloadAndInstall,
+    });
+    const onProgress = vi.fn();
+    const updater = await import("./updater");
+
+    const result = await updater.runUpdateFlow(true, onProgress);
+
+    expect(result.phase).toBe("available");
+    expect(mocks.ask).not.toHaveBeenCalled();
+    expect(mocks.downloadAndInstall).not.toHaveBeenCalled();
+    expect(mocks.openPrompt).toHaveBeenCalledWith({
+      version: "0.1.23",
+      currentVersion: "0.1.22",
+      date: "3 Oct 2026",
+      notes: "### Added\n\n- Thing",
+      onProgress,
+    });
+  });
+
+  it("does not open the prompt on a background check", async () => {
+    mocks.check.mockResolvedValue({
+      version: "0.1.23",
+      downloadAndInstall: mocks.downloadAndInstall,
+    });
+    const updater = await import("./updater");
+
+    await updater.runUpdateFlow(false);
+
+    expect(mocks.openPrompt).not.toHaveBeenCalled();
+  });
+
+  it("passes missing notes and date as null", async () => {
+    mocks.check.mockResolvedValue({
+      version: "0.1.23",
+      body: "   ",
+      downloadAndInstall: mocks.downloadAndInstall,
+    });
+    const updater = await import("./updater");
+
+    await updater.runUpdateFlow(true);
+
+    expect(mocks.openPrompt).toHaveBeenCalledWith(
+      expect.objectContaining({ date: null, notes: null }),
+    );
+  });
+});
+
+describe("runUpdateFlow while an install is downloading", () => {
+  async function updaterMidInstall() {
+    mocks.downloadAndInstall.mockReturnValue(new Promise(() => {}));
+    const updater = await updaterWithPendingUpdate();
+    void updater.installPendingUpdate();
+    await vi.waitFor(() =>
+      expect(mocks.downloadAndInstall).toHaveBeenCalledOnce(),
+    );
+
+    return updater;
+  }
+
+  it("skips the check and tells a manual caller", async () => {
+    const updater = await updaterMidInstall();
+    const onProgress = vi.fn();
+
+    const result = await updater.runUpdateFlow(true, onProgress);
+
+    expect(result).toMatchObject({
+      phase: "downloading",
+      availableVersion: "0.1.23",
+    });
+    expect(mocks.check).toHaveBeenCalledOnce();
+    expect(mocks.openPrompt).not.toHaveBeenCalled();
+    expect(onProgress).not.toHaveBeenCalled();
+    expect(mocks.message).toHaveBeenCalledOnce();
+  });
+
+  it("stays silent on a background check", async () => {
+    const updater = await updaterMidInstall();
+
+    await updater.runUpdateFlow(false);
+
+    expect(mocks.check).toHaveBeenCalledOnce();
+    expect(mocks.message).not.toHaveBeenCalled();
   });
 });
