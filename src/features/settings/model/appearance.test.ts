@@ -32,16 +32,16 @@ import {
   NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
 } from "./appearance";
 
-const KEY = "vatra.transcriptLayout";
-const ACCENT_COLOR_KEY = "vatra.accentColor";
-const SCHEME_KEY = "vatra.colorScheme";
-const ANCHOR_KEY = "vatra.transcriptAnchor";
-const SHOW_EXCLUDED_FILES_KEY = "vatra.showExcludedFiles";
-const CHAT_BACKGROUND_PATH_KEY = "vatra.chatBackgroundPath";
-const CHAT_BACKGROUND_OPACITY_KEY = "vatra.chatBackgroundOpacity";
-const CHAT_BACKGROUND_SCOPE_KEY = "vatra.chatBackgroundScope";
-const NEW_THREAD_BACKGROUND_EFFECT_KEY = "vatra.newThreadBackgroundEffect";
-const THEME_DARK_LIGHTNESS_KEY = "vatra.themeDarkLightness";
+const KEY = "molfar.transcriptLayout";
+const ACCENT_COLOR_KEY = "molfar.accentColor";
+const SCHEME_KEY = "molfar.colorScheme";
+const ANCHOR_KEY = "molfar.transcriptAnchor";
+const SHOW_EXCLUDED_FILES_KEY = "molfar.showExcludedFiles";
+const CHAT_BACKGROUND_PATH_KEY = "molfar.chatBackgroundPath";
+const CHAT_BACKGROUND_OPACITY_KEY = "molfar.chatBackgroundOpacity";
+const CHAT_BACKGROUND_SCOPE_KEY = "molfar.chatBackgroundScope";
+const NEW_THREAD_BACKGROUND_EFFECT_KEY = "molfar.newThreadBackgroundEffect";
+const THEME_DARK_LIGHTNESS_KEY = "molfar.themeDarkLightness";
 
 function mockLocalStorage() {
   const data = new Map<string, string>();

@@ -37,15 +37,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Vatra's main shares no commits with MonoCode, so its contributors are
-      # Vatra's own. Merging MonoCode history (an old pre-reset branch, or a
+      # MOLFAR's main shares no commits with MonoCode, so its contributors are
+      # MOLFAR's own. Merging MonoCode history (an old pre-reset branch, or a
       # `git merge` of upstream-main) would bring every upstream author back.
       - name: Reject MonoCode history
         if: runner.os == 'Linux'
         run: |
           git fetch --no-tags --quiet origin upstream-main
           if git merge-base HEAD FETCH_HEAD >/dev/null; then
-            echo "::error::This change brings MonoCode commit history into Vatra. Sync upstream with scripts/upstream/apply.mjs, and rebase branches created before the history reset onto main."
+            echo "::error::This change brings MonoCode commit history into MOLFAR. Sync upstream with scripts/upstream/apply.mjs, and rebase branches created before the history reset onto main."
             exit 1
           fi
 
@@ -127,7 +127,7 @@ jobs:
           done
           dnf install -y "${bundle[0]}"
           rpm -q "$(rpm -qp --queryformat '%{NAME}' "${bundle[0]}")"
-          command -v vatra
+          command -v molfar
 
       - name: Upload rpm for the clean install check
         # Ship and test the EL 10 build. Fedora 43's glibc is newer, so a
@@ -179,12 +179,12 @@ jobs:
             rpm -q "$dep" >/dev/null || { echo "dnf did not install $dep" >&2; exit 1; }
           done
           rpm -q "$(rpm -qp --queryformat '%{NAME}' "${bundle[0]}")"
-          test -x /usr/bin/vatra
+          test -x /usr/bin/molfar
           # ldd -r can exit non-zero on GTK/WebKit plugin symbols; fail only
           # when a library or GLIBC version is actually missing.
-          loader_output="$(ldd -r /usr/bin/vatra 2>&1 || true)"
+          loader_output="$(ldd -r /usr/bin/molfar 2>&1 || true)"
           printf '%s\n' "$loader_output"
           if grep -q 'not found' <<<"$loader_output"; then
-            echo "vatra cannot load on EL 10" >&2
+            echo "molfar cannot load on EL 10" >&2
             exit 1
           fi

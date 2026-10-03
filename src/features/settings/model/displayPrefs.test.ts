@@ -12,14 +12,14 @@ import {
 const prefs = [
   {
     name: "show remaining usage",
-    key: "vatra.showRemainingUsage",
+    key: "molfar.showRemainingUsage",
     load: loadShowRemainingUsage,
     save: saveShowRemainingUsage,
     subscribe: subscribeShowRemainingUsage,
   },
   {
     name: "mask emails",
-    key: "vatra.maskEmails",
+    key: "molfar.maskEmails",
     load: loadMaskEmails,
     save: saveMaskEmails,
     subscribe: subscribeMaskEmails,

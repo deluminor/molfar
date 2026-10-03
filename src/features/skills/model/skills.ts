@@ -26,10 +26,10 @@ export {
   type SlashToken,
 } from "./slashCommands";
 
-const DISABLED_SKILL_PATHS_KEY = "vatra.disabledSkillPaths";
+const DISABLED_SKILL_PATHS_KEY = "molfar.disabledSkillPaths";
 
 /** Fired on `window` when a skill is enabled or disabled in Settings. */
-export const SKILLS_CHANGE_EVENT = "vatra:skills-change";
+export const SKILLS_CHANGE_EVENT = "molfar:skills-change";
 
 export function loadDisabledSkillPaths(): string[] {
   try {
@@ -74,7 +74,7 @@ export type SkillSource =
   | "grok"
   | "hermes"
   | "antigravity"
-  | "vatra";
+  | "molfar";
 
 type SkillCommon = {
   name: string;
@@ -92,7 +92,7 @@ export type FileSkill = SkillCommon & {
 export type BuiltinSkill = SkillCommon & {
   kind: "builtin";
   scope: "builtin";
-  source: "vatra";
+  source: "molfar";
 };
 
 export type NativeSkill = NativeCommand & {
@@ -107,7 +107,7 @@ export const BUILTIN_CREATE_SKILL: BuiltinSkill = {
   description: CREATE_SKILL_DESCRIPTION,
   invocation: CREATE_SKILL_NAME,
   scope: "builtin",
-  source: "vatra",
+  source: "molfar",
 };
 
 const SKILL_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -341,7 +341,7 @@ function asSkill(skill: DiscoveredSkill): FileSkill {
     invocation: skill.name,
     path: skill.path,
     scope: skill.scope === "user" ? "user" : "project",
-    source: skill.source === "vatra" ? "vatra" : skill.source,
+    source: skill.source === "molfar" ? "molfar" : skill.source,
   };
 }
 

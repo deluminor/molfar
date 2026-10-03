@@ -117,6 +117,6 @@ export function applyTerminalChrome(
   outer: HTMLElement,
   tui: boolean,
 ): void {
-  outer.classList.toggle("vatra-terminal--alt-screen", tui);
+  outer.classList.toggle("molfar-terminal--alt-screen", tui);
   term.options.overviewRuler = tui ? { width: MIN_TUI_SCROLLBAR_WIDTH } : {};
 }

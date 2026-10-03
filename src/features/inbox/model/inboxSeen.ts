@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { sameProjectPath } from "../../projects/model/recents";
 
-const KEY = "vatra.inboxSeen";
-const LEGACY_KEY = "vatra.inboxSeenAt";
+const KEY = "molfar.inboxSeen";
+const LEGACY_KEY = "molfar.inboxSeenAt";
 
 export type InboxSeenEntry = {
   key: string;

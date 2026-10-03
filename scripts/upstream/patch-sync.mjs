@@ -58,7 +58,7 @@ function applyPatch(cwd, patch) {
 /**
  * Applies upstream's changes since the last synced commit to the index and
  * working tree as a three-way patch, and records `target` as synced.
- * Vatra's `main` shares no commits with upstream, so a merge would pull every
+ * MOLFAR's `main` shares no commits with upstream, so a merge would pull every
  * upstream author into its history; a patch keeps the content and leaves
  * authorship to the sync commit.
  */

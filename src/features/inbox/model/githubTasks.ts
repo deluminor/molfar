@@ -261,14 +261,14 @@ export function githubStatus(): Promise<GithubStatus> {
   return invoke<GithubStatus>("git_github_status");
 }
 
-/** Whether the active GitHub CLI account has starred Vatra. */
-export function githubVatraStarStatus(): Promise<GithubStarStatus> {
-  return invoke<GithubStarStatus>("github_vatra_star_status");
+/** Whether the active GitHub CLI account has starred MOLFAR. */
+export function githubMolfarStarStatus(): Promise<GithubStarStatus> {
+  return invoke<GithubStarStatus>("github_molfar_star_status");
 }
 
-/** Star Vatra for the active GitHub CLI account. */
-export function starVatraOnGithub(): Promise<void> {
-  return invoke<void>("github_star_vatra");
+/** Star MOLFAR for the active GitHub CLI account. */
+export function starMolfarOnGithub(): Promise<void> {
+  return invoke<void>("github_star_molfar");
 }
 
 export async function githubRepo(cwd: string): Promise<string> {

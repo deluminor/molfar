@@ -3,42 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/vatra.png" />
-    <title>Vatra</title>
-    <script id="legacy-storage-migration">
-      (function () {
-        try {
-          var marker = "vatra.storageMigrated.v1";
-          if (localStorage.getItem(marker) != null) return;
-          var keys = [];
-          for (var i = 0; i < localStorage.length; i++) {
-            var key = localStorage.key(i);
-            if (key != null) keys.push(key);
-          }
-          for (var j = 0; j < keys.length; j++) {
-            var key = keys[j];
-            if (key.indexOf("monocode.") === 0 || key.indexOf("monocode:") === 0) {
-              var target = "vatra" + key.slice("monocode".length);
-              var value = localStorage.getItem(key);
-              if (value != null && localStorage.getItem(target) == null) {
-                localStorage.setItem(target, value);
-              }
-            }
-          }
-          localStorage.setItem(marker, "1");
-        } catch (_) {}
-      })();
-    </script>
+    <link rel="icon" href="/molfar.png" />
+    <title>MOLFAR</title>
     <script>
       (function () {
         try {
           var root = document.documentElement;
-          var hue = localStorage.getItem("vatra.themeHue");
-          var sat = localStorage.getItem("vatra.themeSaturation");
+          var hue = localStorage.getItem("molfar.themeHue");
+          var sat = localStorage.getItem("molfar.themeSaturation");
           var darkLightness = localStorage.getItem(
-            "vatra.themeDarkLightness",
+            "molfar.themeDarkLightness",
           );
-          var opacity = localStorage.getItem("vatra.sidebarOpacity");
+          var opacity = localStorage.getItem("molfar.sidebarOpacity");
           if (hue != null) {
             var h = Math.max(0, Math.min(360, Number(hue) || 0));
             root.style.setProperty("--theme-hue", String(h));
@@ -55,7 +31,7 @@
             var o = Math.max(0.15, Math.min(1, Number(opacity) || 0.85));
             root.style.setProperty("--sidebar-opacity", String(o));
           }
-          var scheme = localStorage.getItem("vatra.colorScheme");
+          var scheme = localStorage.getItem("molfar.colorScheme");
           if (scheme === "system") {
             scheme = window.matchMedia("(prefers-color-scheme: light)").matches
               ? "light"
@@ -64,7 +40,7 @@
           if (scheme === "light") {
             root.classList.add("theme-light");
           }
-          var bodyGlass = localStorage.getItem("vatra.bodyGlass");
+          var bodyGlass = localStorage.getItem("molfar.bodyGlass");
           if (bodyGlass == null || bodyGlass === "1" || bodyGlass === "true") {
             root.classList.add("glass-body");
           }
@@ -127,7 +103,7 @@
   </head>
   <body>
     <div id="boot-splash" aria-hidden="true">
-      <img src="/vatra.png" alt="" />
+      <img src="/molfar.png" alt="" />
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

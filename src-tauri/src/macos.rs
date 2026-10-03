@@ -57,7 +57,7 @@ pub const BLUR_MIN: u8 = 1;
 pub const BLUR_MAX: u8 = 64;
 pub const BLUR_DEFAULT: u8 = 24;
 
-const GLASS_BACKING_ID: &str = "vatra.webview-glass-backing";
+const GLASS_BACKING_ID: &str = "molfar.webview-glass-backing";
 
 const RTLD_DEFAULT: *mut c_void = -2isize as *mut c_void;
 
@@ -442,7 +442,7 @@ struct DockMenuTargetIvars {
 
 define_class!(
     #[unsafe(super(NSObject))]
-    #[name = "VatraDockMenuTarget"]
+    #[name = "MolfarDockMenuTarget"]
     #[ivars = DockMenuTargetIvars]
     struct DockMenuTarget;
 
@@ -534,7 +534,7 @@ pub(crate) fn install_dock_menu(app: &AppHandle) {
 #[cfg(debug_assertions)]
 pub(crate) fn ensure_dev_bundle() {
     if let Err(err) = relaunch_from_dev_bundle() {
-        eprintln!("vatra: macos dev bundle: {err}");
+        eprintln!("molfar: macos dev bundle: {err}");
     }
 }
 
@@ -601,7 +601,7 @@ fn relaunch_from_dev_bundle() -> Result<(), String> {
     std::fs::create_dir_all(&macos_dir).map_err(|e| e.to_string())?;
     write_dev_bundle_icons(&app, &app_name)?;
 
-    let bundled = macos_dir.join("vatra");
+    let bundled = macos_dir.join("molfar");
     let _ = std::fs::remove_file(&bundled);
     // A copy, not a hard link: re-signing below rewrites the file, and the
     // linked original is the executable running this code.
@@ -612,7 +612,7 @@ fn relaunch_from_dev_bundle() -> Result<(), String> {
     perms.set_mode(0o755);
     std::fs::set_permissions(&bundled, perms).map_err(|e| e.to_string())?;
 
-    // The linker's ad-hoc signature carries a `vatra-<hash>` identifier.
+    // The linker's ad-hoc signature carries a `molfar-<hash>` identifier.
     // UNUserNotificationCenter refuses authorization, without prompting,
     // unless the signing identifier matches CFBundleIdentifier.
     let signed = Command::new("/usr/bin/codesign")
@@ -622,7 +622,7 @@ fn relaunch_from_dev_bundle() -> Result<(), String> {
         .map(|status| status.success())
         .unwrap_or(false);
     if !signed {
-        eprintln!("vatra: macos dev bundle: codesign failed; notifications stay off");
+        eprintln!("molfar: macos dev bundle: codesign failed; notifications stay off");
     }
 
     let err = Command::new(&bundled)
@@ -646,9 +646,9 @@ fn write_dev_bundle_icons(app: &Path, app_name: &str) -> Result<(), String> {
 }
 
 #[cfg(debug_assertions)]
-const DEV_BUNDLE_DEFAULT_NAME: &str = "Vatra Dev";
+const DEV_BUNDLE_DEFAULT_NAME: &str = "MOLFAR Dev";
 #[cfg(debug_assertions)]
-const DEV_BUNDLE_NAME_ENV: &str = "VATRA_DEV_APP_NAME";
+const DEV_BUNDLE_NAME_ENV: &str = "MOLFAR_DEV_APP_NAME";
 /// WebKit storage and notification authorization key off the bundle id, so
 /// it must equal the identifier `lib.rs` gives debug builds.
 #[cfg(debug_assertions)]
@@ -714,7 +714,7 @@ fn dev_bundle_plist(app_name: &str) -> Vec<u8> {
 	<key>CFBundleDisplayName</key>
 	<string>{app_name}</string>
 	<key>CFBundleExecutable</key>
-	<string>vatra</string>
+	<string>molfar</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIconName</key>
@@ -754,9 +754,9 @@ mod tests {
             .unwrap()
             .as_nanos();
         let root =
-            std::env::temp_dir().join(format!("vatra-macos-tests-{}-{nonce}", std::process::id()));
+            std::env::temp_dir().join(format!("molfar-macos-tests-{}-{nonce}", std::process::id()));
         let app = root.join(app_name);
-        let exe = app.join("Contents/MacOS/vatra");
+        let exe = app.join("Contents/MacOS/molfar");
         std::fs::create_dir_all(exe.parent().unwrap()).unwrap();
         std::fs::write(app.join("Contents/Info.plist"), b"plist").unwrap();
         (root, exe)
@@ -765,8 +765,8 @@ mod tests {
     #[test]
     fn sanitized_dev_bundle_name_accepts_single_component() {
         assert_eq!(
-            sanitized_dev_bundle_name("  Vatra Dev  "),
-            Some("Vatra Dev".into())
+            sanitized_dev_bundle_name("  MOLFAR Dev  "),
+            Some("MOLFAR Dev".into())
         );
     }
 
@@ -780,8 +780,8 @@ mod tests {
     #[test]
     fn bundle_name_from_app_path_reads_existing_bundle_name() {
         assert_eq!(
-            bundle_name_from_app_path(Path::new("/tmp/Vatra Dev.app")),
-            Some("Vatra Dev".into())
+            bundle_name_from_app_path(Path::new("/tmp/MOLFAR Dev.app")),
+            Some("MOLFAR Dev".into())
         );
     }
 
@@ -794,9 +794,9 @@ mod tests {
 
     #[test]
     fn dev_bundle_plist_uses_the_provided_app_name() {
-        let plist = String::from_utf8(dev_bundle_plist("Vatra Dev")).unwrap();
-        assert!(plist.contains("<string>Vatra Dev</string>"));
-        assert!(!plist.contains("<string>Vatra</string>"));
+        let plist = String::from_utf8(dev_bundle_plist("MOLFAR Dev")).unwrap();
+        assert!(plist.contains("<string>MOLFAR Dev</string>"));
+        assert!(!plist.contains("<string>MOLFAR</string>"));
         assert!(plist.contains(&format!(
             "<string>{}</string>",
             crate::app_identity::DEV_IDENTIFIER

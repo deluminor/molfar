@@ -1,12 +1,12 @@
 name: Feature request
-description: Suggest an idea or improvement for Vatra
+description: Suggest an idea or improvement for MOLFAR
 title: "[Feature]: "
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve Vatra.
+        Thanks for helping improve MOLFAR.
 
   - type: textarea
     id: problem
@@ -21,7 +21,7 @@ body:
     id: solution
     attributes:
       label: Proposed solution
-      description: What would you like Vatra to do?
+      description: What would you like MOLFAR to do?
     validations:
       required: true
 

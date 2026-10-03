@@ -5,11 +5,13 @@ import type {
 } from "../model/brand-visual/types";
 
 const NEXT_VISUAL: Record<BrandVisual, BrandVisual> = {
+  sphere: "fire",
   fire: "orb",
-  orb: "fire",
+  orb: "sphere",
 };
 
 const VISUAL_NAME: Record<BrandVisual, string> = {
+  sphere: "Sphere",
   fire: "Fire",
   orb: "Orb",
 };

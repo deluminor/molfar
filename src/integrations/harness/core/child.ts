@@ -508,7 +508,7 @@ export function inspectHarnessBinary(
   });
 }
 
-/** Runs the CLI's own self-update against the binary Vatra uses. */
+/** Runs the CLI's own self-update against the binary MOLFAR uses. */
 export async function updateHarnessCli(
   provider: ConfigurableBinaryProvider,
 ): Promise<void> {

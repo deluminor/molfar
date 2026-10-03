@@ -7,8 +7,5 @@ export function hostUpdateReason(host: { capabilities?: string[] }): string | nu
   if (!capabilities.includes("workspace.run") || !capabilities.includes("git.worktreeCreate")) {
     return "host update needed for Explorer and Changes";
   }
-  if (!capabilities.includes("host.vatra")) {
-    return "update to move this MonoCode host to Vatra Host";
-  }
   return null;
 }

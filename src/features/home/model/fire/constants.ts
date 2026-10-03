@@ -1,9 +1,5 @@
-export const FIRE_MAX_DPR = 2;
-
 /** A representative moment shown when motion is reduced. */
 export const FIRE_STILL_SECONDS = 2.3;
-
-export const FIRE_MAX_FRAME_STEP_MS = 100;
 
 export const FIRE_FLAME_PARTICLES = 340;
 export const FIRE_EMBER_PARTICLES = 56;

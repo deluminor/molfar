@@ -34,7 +34,7 @@ type PendingConfirm = AppDialogState & {
 
 type Pending = PendingAlert | PendingConfirm;
 
-const DEFAULT_TITLE = "Vatra";
+const DEFAULT_TITLE = "MOLFAR";
 const DEFAULT_OK = "OK";
 const DEFAULT_CANCEL = "Cancel";
 

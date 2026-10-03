@@ -59,4 +59,6 @@ ehthumbs.db
 Desktop.ini
 scratch/
 docs/specs
-/docs/other
+docs/other
+docs/adr
+.upstream-pending/

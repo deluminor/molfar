@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDragResize } from "./useDragResize";
 
-const KEY = "vatra.paneWidth.test";
+const KEY = "molfar.paneWidth.test";
 
 type Resize = ReturnType<typeof useDragResize>;
 

@@ -10,7 +10,7 @@ import { notesFromCommits, prepareChangelog, resolveNextVersion } from "./change
 import { readVersion, setVersion } from "./set-version.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const repository = process.env.GITHUB_REPOSITORY || "deluminor/vatra";
+const repository = process.env.GITHUB_REPOSITORY || "deluminor/molfar";
 const UPSTREAM_REF = "refs/remotes/origin/upstream-main";
 
 /** Empty when git fails: a missing tag or an unborn range is an expected answer here. */
@@ -32,7 +32,7 @@ function lines(output) {
 
 // Upstream MonoCode commits arrive through sync merges and are described by
 // the sync's Unreleased notes; their subjects (and their v0.x tags) must not
-// leak into Vatra's generated notes or previous-release lookup.
+// leak into MOLFAR's generated notes or previous-release lookup.
 function upstreamExclusion() {
   return tryGit("rev-parse", "-q", "--verify", UPSTREAM_REF) ? [`^${UPSTREAM_REF}`] : [];
 }
@@ -49,7 +49,7 @@ function previousReleaseTag(exclusion) {
   return lines(tags)[0] ?? "";
 }
 
-/** Vatra's own commit subjects; commits that edited CHANGELOG.md already wrote their notes. */
+/** MOLFAR's own commit subjects; commits that edited CHANGELOG.md already wrote their notes. */
 function commitSubjectsSince(previousTag, exclusion) {
   const base = previousTag || tryGit("log", "-1", "--format=%H", "--", "CHANGELOG.md");
   const range = [base ? `${base}..HEAD` : "HEAD", ...exclusion];

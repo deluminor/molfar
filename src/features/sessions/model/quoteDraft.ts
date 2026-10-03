@@ -1,4 +1,4 @@
-export const ADD_TO_CHAT_EVENT = "vatra:add-to-chat";
+export const ADD_TO_CHAT_EVENT = "molfar:add-to-chat";
 
 export type AddToChatMode = "quote" | "plain";
 

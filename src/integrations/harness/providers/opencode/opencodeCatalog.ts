@@ -57,7 +57,7 @@ export function refreshOpenCodeCatalog(): Promise<void> {
       if (models.length > 0) setHarnessModels("opencode", models);
     })
     .catch((error: unknown) => {
-      console.debug("[vatra] opencode catalog", error);
+      console.debug("[molfar] opencode catalog", error);
     })
     .finally(() => {
       inflight = null;
@@ -74,7 +74,7 @@ export async function discoverOpenCodeModels(
   const version = parseOpenCodeVersion(versionOut);
   if (!version) {
     throw new Error(
-      `Unable to determine OpenCode version. Vatra requires v${MINIMUM_OPENCODE_VERSION} or newer.`,
+      `Unable to determine OpenCode version. MOLFAR requires v${MINIMUM_OPENCODE_VERSION} or newer.`,
     );
   }
   if (compareSemver(version, MINIMUM_OPENCODE_VERSION) < 0) {
@@ -95,7 +95,7 @@ export async function discoverOpenCodeModels(
     const agentsOut = await execChild(path, ["agent", "list"], cwd, "opencode");
     agents = parseAgentListCliOutput(agentsOut);
   } catch (error) {
-    console.debug("[vatra] opencode agents", error);
+    console.debug("[molfar] opencode agents", error);
   }
   return flattenOpenCodeModels(parsed, agents);
 }

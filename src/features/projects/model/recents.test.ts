@@ -167,20 +167,20 @@ describe("replaceProjectPath", () => {
 
   it("keeps rail order and pin state under the renamed path", () => {
     rememberProject("/work/other");
-    rememberProject("/work/vatra");
-    saveProjectRailOrder(["/work/other", "/work/vatra"]);
-    savePinnedProjects(["/work/vatra"]);
+    rememberProject("/work/molfar");
+    saveProjectRailOrder(["/work/other", "/work/molfar"]);
+    savePinnedProjects(["/work/molfar"]);
 
     expect(
-      replaceProjectPath("/work/vatra", "/work/vatra-personal").map(
+      replaceProjectPath("/work/molfar", "/work/molfar-personal").map(
         (item) => item.path,
       ),
-    ).toEqual(["/work/vatra-personal", "/work/other"]);
+    ).toEqual(["/work/molfar-personal", "/work/other"]);
     expect(loadProjectRailOrder()).toEqual([
       "/work/other",
-      "/work/vatra-personal",
+      "/work/molfar-personal",
     ]);
-    expect(loadPinnedProjects()).toEqual(["/work/vatra-personal"]);
+    expect(loadPinnedProjects()).toEqual(["/work/molfar-personal"]);
   });
 });
 

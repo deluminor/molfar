@@ -262,9 +262,6 @@ export function createHostServer(
                   : provider === "codex" || provider === "claude"
               ),
               capabilities: [
-                // Marks Vatra's own host package. MonoCode-era hosts lack it,
-                // so the desktop offers Update Host to migrate them.
-                "host.vatra",
                 "sessions",
                 "projects.browse",
                 "models.list",

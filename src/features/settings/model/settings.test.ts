@@ -50,21 +50,21 @@ import {
 } from "./settings";
 import { IS_MAC, MOD, SHIFT } from "../../../platform/tauri/platform";
 
-const KEY = "vatra.composerRunner";
-const MODEL_CONTROLS_KEY = "vatra.modelControls";
-const LEGACY_EFFORT_VISIBLE_KEY = "vatra.composerEffortVisible";
-const NOTES_KEY = "vatra.notesEnabled";
-const KEYBINDING_OVERRIDES_KEY = "vatra.keybindingOverrides";
-const QUICK_COMPOSER_SHORTCUT_KEY = "vatra.quickComposerShortcut";
-const LIVE_AGENTS_KEY = "vatra.liveAgentsEnabled";
-const GRID_ARCADE_KEY = "vatra.gridArcadeEnabled";
-const DIFF_VIEWER_KEY = "vatra.diffViewer";
-const FORMAT_ON_SAVE_KEY = "vatra.formatOnSave";
-const AUTOSAVE_KEY = "vatra.autosave";
-const FILE_TAB_MODE_KEY = "vatra.fileTabMode";
-const FOLLOW_UP_BEHAVIOR_KEY = "vatra.followUpBehavior";
-const TAB_ANIMATIONS_KEY = "vatra.tabAnimationsEnabled";
-const COLLAPSED_PROJECT_RAIL_MODE_KEY = "vatra.collapsedProjectRailMode";
+const KEY = "molfar.composerRunner";
+const MODEL_CONTROLS_KEY = "molfar.modelControls";
+const LEGACY_EFFORT_VISIBLE_KEY = "molfar.composerEffortVisible";
+const NOTES_KEY = "molfar.notesEnabled";
+const KEYBINDING_OVERRIDES_KEY = "molfar.keybindingOverrides";
+const QUICK_COMPOSER_SHORTCUT_KEY = "molfar.quickComposerShortcut";
+const LIVE_AGENTS_KEY = "molfar.liveAgentsEnabled";
+const GRID_ARCADE_KEY = "molfar.gridArcadeEnabled";
+const DIFF_VIEWER_KEY = "molfar.diffViewer";
+const FORMAT_ON_SAVE_KEY = "molfar.formatOnSave";
+const AUTOSAVE_KEY = "molfar.autosave";
+const FILE_TAB_MODE_KEY = "molfar.fileTabMode";
+const FOLLOW_UP_BEHAVIOR_KEY = "molfar.followUpBehavior";
+const TAB_ANIMATIONS_KEY = "molfar.tabAnimationsEnabled";
+const COLLAPSED_PROJECT_RAIL_MODE_KEY = "molfar.collapsedProjectRailMode";
 
 describe("follow-up behavior setting", () => {
   beforeEach(mockLocalStorage);

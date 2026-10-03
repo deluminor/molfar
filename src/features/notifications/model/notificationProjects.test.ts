@@ -113,7 +113,7 @@ it("keeps provider-only repository and Linear identities", () => {
 
 it("uses a new catalog version so old Git-derived path mappings are ignored", () => {
   localStorage.setItem(
-    "vatra.notificationProjects.v1",
+    "molfar.notificationProjects.v1",
     JSON.stringify([
       {
         id: "repository:github.com/old/app",

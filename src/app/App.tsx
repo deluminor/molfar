@@ -6288,7 +6288,7 @@ function Workspace({
         operatorCommand.matched || operatorEnabledInThread(current.blocks);
       const promptText = operatorCommand.matched
         ? operatorCommand.text.trim() ||
-          "Explain what you can do in Vatra with the app CLI."
+          "Explain what you can do in MOLFAR with the app CLI."
         : submittedText;
       const rawCommand =
         !operatorCommand.matched &&
@@ -6535,7 +6535,7 @@ function Workspace({
       const cards = {
         ...(rawCommand ? undefined : userTurnCards(noteCard, card)),
         ...(ciContext ? { ciContext } : {}),
-        ...(operatorCommand.matched ? { vatra: true } : {}),
+        ...(operatorCommand.matched ? { molfar: true } : {}),
         ...(intent === "plan" || intent === "orchestrate" ? { intent } : {}),
         ...(options?.appRequestId
           ? { appRequestId: options.appRequestId }
@@ -7084,7 +7084,7 @@ function Workspace({
           );
           if (operatorCommand.matched) {
             const cli = `${shellPath(await invoke<string>("app_cli_path"))} app`;
-            sendText += `\n\n<vatra_app>\nThe user's Operator command enables app access in this thread, including later turns without the command. You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read and continue other project sessions, save unsent drafts, organize session folders, and read or write saved notes through its local CLI. Run \`${cli} --help\` for exact commands and JSON fields, then use it as needed for the user's request. When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</vatra_app>`;
+            sendText += `\n\n<molfar_app>\nThe user's Operator command enables app access in this thread, including later turns without the command. You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read and continue other project sessions, save unsent drafts, organize session folders, and read or write saved notes through its local CLI. Run \`${cli} --help\` for exact commands and JSON fields, then use it as needed for the user's request. When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`;
           }
           await sendTurn(sendText);
           acceptEditedResend();
@@ -8796,7 +8796,7 @@ function Workspace({
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      const inTerminal = Boolean(target?.closest(".vatra-terminal"));
+      const inTerminal = Boolean(target?.closest(".molfar-terminal"));
       const activeTabId = activeTabIdRef.current;
       const sessionId = focusedBusyAgentSessionId(
         activeTabId,
@@ -9279,7 +9279,7 @@ function Workspace({
       requestId: string;
       action: string;
       input: Record<string, unknown>;
-    }>("vatra-control-request", ({ payload }) => {
+    }>("molfar-control-request", ({ payload }) => {
       const handle = async () => {
         if (payload.namespace === "control") {
           return orchestrator.handle(
@@ -9300,7 +9300,7 @@ function Workspace({
           source.orchestrationLeadId ||
           orchestrator.run(source.id)
         )
-          throw new Error("This session cannot use the Vatra app CLI");
+          throw new Error("This session cannot use the MOLFAR app CLI");
         const key = `${source.id}:${payload.requestId}`;
         const signature = JSON.stringify([payload.action, payload.input]);
         const previous = appReceipts.current.get(key);
@@ -10108,9 +10108,9 @@ function Workspace({
 
   useEffect(() => {
     const onOpenMcp = () => openSettings("mcp");
-    window.addEventListener("vatra:open-mcp-settings", onOpenMcp);
+    window.addEventListener("molfar:open-mcp-settings", onOpenMcp);
     return () =>
-      window.removeEventListener("vatra:open-mcp-settings", onOpenMcp);
+      window.removeEventListener("molfar:open-mcp-settings", onOpenMcp);
   }, [openSettings]);
 
   const onOpenNotificationSettings = useCallback(
@@ -10447,7 +10447,7 @@ function Workspace({
         if (listNavigation) {
           const blockedTarget = Boolean(
             target?.closest(
-              'input, textarea, select, [contenteditable="true"], .cm-editor, .vatra-terminal, [role="dialog"], [data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]',
+              'input, textarea, select, [contenteditable="true"], .cm-editor, .molfar-terminal, [role="dialog"], [data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]',
             ),
           );
           const emptyComposerTarget = Boolean(
@@ -10474,7 +10474,7 @@ function Workspace({
           }
         }
         if (
-          target?.closest(".vatra-terminal") &&
+          target?.closest(".molfar-terminal") &&
           e.ctrlKey &&
           !e.metaKey &&
           (cmd === "back" ||
@@ -10557,7 +10557,7 @@ function Workspace({
         if (
           shortcut === "App: Search" &&
           e.target instanceof Element &&
-          e.target.closest(".vatra-terminal") &&
+          e.target.closest(".molfar-terminal") &&
           e.ctrlKey &&
           !e.metaKey
         ) {

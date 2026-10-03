@@ -33,7 +33,7 @@ const OPTIONS = {
   date: "2026-10-02",
   generated: null,
   previousTag: "",
-  repository: "deluminor/vatra",
+  repository: "deluminor/molfar",
 };
 
 describe("resolveNextVersion", () => {
@@ -121,7 +121,7 @@ describe("prepareChangelog", () => {
     expect(unreleasedNotes(result.changelog)).toBe("");
     expect(result.changelog).toContain("## [Unreleased]\n\n## [1.0.0] - 2026-10-02\n");
     expect(result.changelog).toContain(
-      "[Unreleased]: https://github.com/deluminor/vatra/compare/v1.0.0...HEAD\n[1.0.0]: https://github.com/deluminor/vatra/releases/tag/v1.0.0\n[0.6.0]:",
+      "[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.0...HEAD\n[1.0.0]: https://github.com/deluminor/molfar/releases/tag/v1.0.0\n[0.6.0]:",
     );
     expect(releaseNotes(result.changelog, "0.6.0")).toBe("### Added\n\n- Thing.");
   });
@@ -130,7 +130,7 @@ describe("prepareChangelog", () => {
     const result = prepareChangelog(CHANGELOG, { ...OPTIONS, previousTag: "v0.9.0" });
 
     expect(result?.changelog).toContain(
-      "[1.0.0]: https://github.com/deluminor/vatra/compare/v0.9.0...v1.0.0",
+      "[1.0.0]: https://github.com/deluminor/molfar/compare/v0.9.0...v1.0.0",
     );
   });
 

@@ -100,7 +100,7 @@ function run(status: OrchestrationRun["status"]): OrchestrationRun {
     status,
     allowedHarnesses: ["claude"],
     maxWorkers: 1,
-    cli: "vatra",
+    cli: "molfar",
     tasks: [],
     continuations: 0,
     requests: {},

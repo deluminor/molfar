@@ -134,15 +134,15 @@ const REVEAL_LABEL = IS_MAC
     : "Open Containing Folder";
 
 function fileLinkMenuItems(
-  canOpenInVatra: boolean,
+  canOpenInMolfar: boolean,
   canCopyRelativePath: boolean,
 ): ExplorerMenuItem[] {
   return [
     {
       kind: "item",
-      id: "open-vatra",
-      label: "Open in Vatra",
-      disabled: !canOpenInVatra,
+      id: "open-molfar",
+      label: "Open in MOLFAR",
+      disabled: !canOpenInMolfar,
     },
     { kind: "item", id: "open-default", label: "Open in Default App" },
     { kind: "item", id: "reveal", label: REVEAL_LABEL },
@@ -575,7 +575,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
     setFileMenu(null);
     setFileActionError(null);
 
-    if (id === "open-vatra") {
+    if (id === "open-molfar") {
       if (fileMenu.navigation) onOpenFile?.(path, fileMenu.navigation);
       else onOpenFile?.(path);
       return;

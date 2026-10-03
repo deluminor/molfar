@@ -17,8 +17,8 @@ beforeEach(() => {
 afterEach(() => resetHarnessModelOverlays());
 
 it("uses the configured Codex default instead of the last quick-composer model", () => {
-  localStorage.setItem("vatra.quickComposerHarness", "cursor");
-  localStorage.setItem("vatra.quickComposerModel", "cursor:composer-2.5");
+  localStorage.setItem("molfar.quickComposerHarness", "cursor");
+  localStorage.setItem("molfar.quickComposerModel", "cursor:composer-2.5");
   saveLastModelChoice("codex", "codex:gpt-5.6-luna");
   expect(initialQuickChoice()).toEqual({
     harness: "codex",

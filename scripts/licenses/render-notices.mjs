@@ -31,7 +31,7 @@ export function renderNotices(
   crates,
   {
     title = "Rust dependency licenses",
-    intro = "The Vatra desktop binary links the following Rust crates.",
+    intro = "The MOLFAR desktop binary links the following Rust crates.",
     sourceUrl = (crate) => `https://crates.io/crates/${crate.name}/${crate.version}`,
   } = {},
 ) {

@@ -1415,7 +1415,7 @@ mod tests {
                 .as_nanos();
             let seq = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
             let dir = std::env::temp_dir().join(format!(
-                "vatra-checkpoint-{label}-{}-{stamp}-{seq}",
+                "molfar-checkpoint-{label}-{}-{stamp}-{seq}",
                 std::process::id()
             ));
             match std::fs::create_dir(&dir) {
@@ -1430,10 +1430,10 @@ mod tests {
         Command::new("git")
             .args(args)
             .current_dir(dir)
-            .env("GIT_AUTHOR_NAME", "vatra")
-            .env("GIT_AUTHOR_EMAIL", "vatra@test")
-            .env("GIT_COMMITTER_NAME", "vatra")
-            .env("GIT_COMMITTER_EMAIL", "vatra@test")
+            .env("GIT_AUTHOR_NAME", "molfar")
+            .env("GIT_AUTHOR_EMAIL", "molfar@test")
+            .env("GIT_COMMITTER_NAME", "molfar")
+            .env("GIT_COMMITTER_EMAIL", "molfar@test")
             .status()
             .map(|status| status.success())
             .unwrap_or(false)
@@ -1443,8 +1443,8 @@ mod tests {
         if !git(dir, &["init", "-b", "main"]) && !git(dir, &["init"]) {
             return false;
         }
-        let _ = git(dir, &["config", "user.email", "vatra@test"]);
-        let _ = git(dir, &["config", "user.name", "vatra"]);
+        let _ = git(dir, &["config", "user.email", "molfar@test"]);
+        let _ = git(dir, &["config", "user.name", "molfar"]);
         let _ = git(dir, &["config", "core.autocrlf", "false"]);
         for (name, contents) in files {
             let path = dir.join(name);

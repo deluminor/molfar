@@ -1,12 +1,13 @@
 import { FIRE_BASE_OFFSET, FIRE_SCALE } from "./constants";
 import { createFireLogPoints } from "./logs";
 import { createFireParticles } from "./particles";
-import type { FirePalette, FireParticle } from "./types";
+import type { BrandPalette } from "../brand-visual/types";
+import type { FireParticle } from "./types";
 
 function drawDots(
   context: CanvasRenderingContext2D,
   dots: readonly FireParticle[],
-  palette: FirePalette,
+  palette: BrandPalette,
 ): void {
   for (const dot of dots) {
     if (dot.opacity <= 0) continue;
@@ -24,7 +25,7 @@ export function drawFireFrame(
   width: number,
   height: number,
   seconds: number,
-  palette: FirePalette,
+  palette: BrandPalette,
 ): void {
   const side = Math.min(width, height);
   const size = side * FIRE_SCALE;

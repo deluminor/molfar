@@ -160,7 +160,7 @@ pub struct OmpAssistantText {
     concat: String,
 }
 
-/// Recover displayed OMP custom messages that older Vatra builds omitted
+/// Recover displayed OMP custom messages that older MOLFAR builds omitted
 /// from their persisted transcript. The provider id is already stored with the
 /// session; matching the original JSONL keeps the repair deterministic instead
 /// of guessing from neighbouring reasoning text.
@@ -1226,7 +1226,7 @@ pub enum GitHubStarStatus {
     Unavailable,
 }
 
-const VATRA_STAR_ENDPOINT: &str = "/user/starred/deluminor/vatra";
+const MOLFAR_STAR_ENDPOINT: &str = "/user/starred/deluminor/molfar";
 
 /// Whether the GitHub CLI is installed and has an active authenticated account.
 #[tauri::command]
@@ -1263,18 +1263,18 @@ fn git_github_status_for() -> GitHubStatus {
     }
 }
 
-/// Whether the active GitHub CLI account has starred the Vatra repository.
+/// Whether the active GitHub CLI account has starred the MOLFAR repository.
 #[tauri::command]
-pub async fn github_vatra_star_status() -> Result<GitHubStarStatus, String> {
-    tauri::async_runtime::spawn_blocking(github_vatra_star_status_for)
+pub async fn github_molfar_star_status() -> Result<GitHubStarStatus, String> {
+    tauri::async_runtime::spawn_blocking(github_molfar_star_status_for)
         .await
         .map_err(|error| error.to_string())
 }
 
-fn github_vatra_star_status_for() -> GitHubStarStatus {
+fn github_molfar_star_status_for() -> GitHubStarStatus {
     let result = gh_run(
         Path::new("."),
-        &["api", "--silent", VATRA_STAR_ENDPOINT],
+        &["api", "--silent", MOLFAR_STAR_ENDPOINT],
         true,
     );
     github_star_status_from_result(result)
@@ -1288,13 +1288,13 @@ fn github_star_status_from_result(result: Result<String, String>) -> GitHubStarS
     }
 }
 
-/// Star the Vatra repository for the active GitHub CLI account.
+/// Star the MOLFAR repository for the active GitHub CLI account.
 #[tauri::command]
-pub async fn github_star_vatra() -> Result<(), String> {
+pub async fn github_star_molfar() -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(|| {
         gh_run(
             Path::new("."),
-            &["api", "--silent", "--method", "PUT", VATRA_STAR_ENDPOINT],
+            &["api", "--silent", "--method", "PUT", MOLFAR_STAR_ENDPOINT],
             true,
         )
         .map(|_| ())
@@ -2584,7 +2584,7 @@ fn with_signing_hint(error: String) -> String {
         return error;
     }
     format!(
-        "{error}\n\nGit couldn't sign this commit. Vatra runs git without a terminal, \
+        "{error}\n\nGit couldn't sign this commit. MOLFAR runs git without a terminal, \
          so your signer needs a GUI passphrase prompt (e.g. pinentry-mac) or an unlocked agent."
     )
 }
@@ -3119,7 +3119,7 @@ fn with_temp_markdown(
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let path = std::env::temp_dir().join(format!("vatra-comment-{stamp}.md"));
+    let path = std::env::temp_dir().join(format!("molfar-comment-{stamp}.md"));
     std::fs::write(&path, body).map_err(|error| error.to_string())?;
     let path_str = path.to_string_lossy().into_owned();
     let result = run(&path_str);
@@ -4051,7 +4051,7 @@ fn git_pr_create_for(root: &Path, input: &GitPrCreateInput) -> Result<String, St
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let body_path = std::env::temp_dir().join(format!("vatra-pr-{stamp}.md"));
+    let body_path = std::env::temp_dir().join(format!("molfar-pr-{stamp}.md"));
     std::fs::write(&body_path, input.body.trim()).map_err(|e| e.to_string())?;
     let result = gh_checked(
         root,
@@ -5281,7 +5281,7 @@ fn write_attachment_sync(name: &str, data: &str) -> Result<String, String> {
             MAX_ATTACHMENT_EMBED_BYTES / 1024 / 1024
         ));
     }
-    let dir = std::env::temp_dir().join("vatra-attachments");
+    let dir = std::env::temp_dir().join("molfar-attachments");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -5498,7 +5498,7 @@ fn write_text_file_sync(path: &str, content: &str) -> Result<(), String> {
     let mut temporary = None;
     for attempt in 0..100 {
         let candidate = parent.join(format!(
-            ".{name}.vatra-{}-{stamp}-{attempt}.tmp",
+            ".{name}.molfar-{}-{stamp}-{attempt}.tmp",
             std::process::id()
         ));
         match std::fs::OpenOptions::new()
@@ -5628,7 +5628,7 @@ fn rename_path_sync(path: &str, name: &str) -> Result<String, String> {
             .unwrap_or_default()
             .as_nanos();
         let tmp = parent.join(format!(
-            ".{}.vatra-rename-{stamp}",
+            ".{}.molfar-rename-{stamp}",
             file_label(&from, "tmp")
         ));
         std::fs::rename(&from, &tmp).map_err(|e| e.to_string())?;
@@ -6046,8 +6046,8 @@ mod tests {
     #[test]
     fn project_location_follows_a_sibling_rename() {
         let parent = tmp("project-location-rename");
-        let original = parent.0.join("vatra");
-        let renamed = parent.0.join("vatra-personal");
+        let original = parent.0.join("molfar");
+        let renamed = parent.0.join("molfar-personal");
         std::fs::create_dir(&original).unwrap();
 
         let first = resolve_project_location_sync(&path_to_js(&original), None)
@@ -6081,7 +6081,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let dir = std::env::temp_dir().join(format!("vatra-editor-{}-{stamp}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("molfar-editor-{}-{stamp}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("example.rs");
         std::fs::write(&path, "fn old() {}\n").unwrap();
@@ -6151,7 +6152,7 @@ mod tests {
                 .as_nanos();
             let seq = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
             let dir = std::env::temp_dir().join(format!(
-                "vatra-{label}-{}-{stamp}-{seq}",
+                "molfar-{label}-{}-{stamp}-{seq}",
                 std::process::id()
             ));
             match std::fs::create_dir(&dir) {
@@ -6532,8 +6533,8 @@ mod tests {
                 return false;
             }
         }
-        git(dir, &["config", "user.name", "Vatra"])
-            && git(dir, &["config", "user.email", "vatra@test"])
+        git(dir, &["config", "user.name", "MOLFAR"])
+            && git(dir, &["config", "user.email", "molfar@test"])
             && git(dir, &["config", "commit.gpgsign", "false"])
             && git(dir, &["config", "core.autocrlf", "false"])
     }
@@ -6571,18 +6572,18 @@ mod tests {
         Command::new("git")
             .args([
                 "-c",
-                "user.name=Vatra",
+                "user.name=MOLFAR",
                 "-c",
-                "user.email=vatra@test",
+                "user.email=molfar@test",
                 "-c",
                 "commit.gpgsign=false",
             ])
             .args(args)
             .current_dir(dir)
-            .env("GIT_AUTHOR_NAME", "Vatra")
-            .env("GIT_AUTHOR_EMAIL", "vatra@test")
-            .env("GIT_COMMITTER_NAME", "Vatra")
-            .env("GIT_COMMITTER_EMAIL", "vatra@test")
+            .env("GIT_AUTHOR_NAME", "MOLFAR")
+            .env("GIT_AUTHOR_EMAIL", "molfar@test")
+            .env("GIT_COMMITTER_NAME", "MOLFAR")
+            .env("GIT_COMMITTER_EMAIL", "molfar@test")
             .status()
             .map(|status| status.success())
             .unwrap_or(false)
@@ -7385,8 +7386,8 @@ mod tests {
                 .status()
                 .map(|status| !status.success())
                 .unwrap_or(true)
-            || !git(&b.0, &["config", "user.name", "Vatra"])
-            || !git(&b.0, &["config", "user.email", "vatra@test"])
+            || !git(&b.0, &["config", "user.name", "MOLFAR"])
+            || !git(&b.0, &["config", "user.email", "molfar@test"])
             || !git(&b.0, &["config", "commit.gpgsign", "false"])
             || !git(&b.0, &["config", "core.autocrlf", "false"])
             || !git(&b.0, &["checkout", "--", "."])
@@ -7432,7 +7433,7 @@ mod tests {
     #[test]
     fn pr_head_filter_qualifies_branch_with_repo_owner() {
         assert_eq!(
-            github_pr_head_filter("deluminor/vatra", "main").as_deref(),
+            github_pr_head_filter("deluminor/molfar", "main").as_deref(),
             Some("deluminor:main")
         );
     }
@@ -7440,27 +7441,27 @@ mod tests {
     #[test]
     fn parse_github_repositories_includes_a_forks_parent() {
         let json = r#"{
-            "nameWithOwner": "EricRasputin/vatra-eric",
+            "nameWithOwner": "EricRasputin/molfar-eric",
             "parent": {
-                "name": "vatra",
+                "name": "molfar",
                 "owner": { "login": "deluminor" }
             }
         }"#;
         assert_eq!(
             parse_github_repositories(json).unwrap(),
-            vec!["EricRasputin/vatra-eric", "deluminor/vatra"]
+            vec!["EricRasputin/molfar-eric", "deluminor/molfar"]
         );
     }
 
     #[test]
     fn parse_github_repositories_keeps_a_normal_repo_single() {
         let json = r#"{
-            "nameWithOwner": "deluminor/vatra",
+            "nameWithOwner": "deluminor/molfar",
             "parent": null
         }"#;
         assert_eq!(
             parse_github_repositories(json).unwrap(),
-            vec!["deluminor/vatra"]
+            vec!["deluminor/molfar"]
         );
     }
 
@@ -7601,10 +7602,10 @@ mod tests {
     #[test]
     fn split_github_repo_reads_owner_and_name() {
         assert_eq!(
-            split_github_repo(" deluminor/vatra ").unwrap(),
-            ("deluminor".into(), "vatra".into())
+            split_github_repo(" deluminor/molfar ").unwrap(),
+            ("deluminor".into(), "molfar".into())
         );
-        assert!(split_github_repo("vatra").is_err());
+        assert!(split_github_repo("molfar").is_err());
         assert!(split_github_repo("acme/web extra").is_err());
     }
 
@@ -8390,7 +8391,7 @@ mod tests {
         for args in [
             ["config", "commit.gpgsign", "true"],
             ["config", "gpg.format", "openpgp"],
-            ["config", "gpg.program", "/nonexistent/vatra-gpg"],
+            ["config", "gpg.program", "/nonexistent/molfar-gpg"],
         ] {
             assert!(git(&dir.0, &args));
         }

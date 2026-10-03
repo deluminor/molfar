@@ -6,8 +6,8 @@ import { promisify } from "node:util";
 
 const exec = promisify(execFile);
 
-// `mc/` is the MonoCode-era prefix; worktrees created before the rename keep it.
-export const AUTO_WORKTREE_BRANCH = /^(?:vatra|mc)\/[a-z0-9]{8}$/;
+// Worktrees created by earlier builds keep the `vatra/` or `mc/` prefix.
+export const AUTO_WORKTREE_BRANCH = /^(?:molfar|vatra|mc)\/[a-z0-9]{8}$/;
 
 const options = (cwd: string) => ({
   cwd,

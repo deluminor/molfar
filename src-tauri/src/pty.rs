@@ -267,7 +267,7 @@ fn spawn_unix(
         .env("TERM", "xterm-256color")
         .env("COLORTERM", "truecolor")
         .env("COLORFGBG", "15;0")
-        .env("TERM_PROGRAM", "Vatra")
+        .env("TERM_PROGRAM", "MOLFAR")
         .env("PATH", crate::harness::gui_search_path());
     if let Some(home) = dirs_home() {
         cmd.env("HOME", &home);
@@ -398,7 +398,7 @@ fn spawn_windows(
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("COLORFGBG", "15;0");
-    cmd.env("TERM_PROGRAM", "Vatra");
+    cmd.env("TERM_PROGRAM", "MOLFAR");
     cmd.env("PATH", crate::harness::gui_search_path());
     if let Some(home) = dirs_home() {
         cmd.env("HOME", &home);

@@ -8,7 +8,7 @@ const FILES = ["package.json", "package-lock.json", "Cargo.toml", "Cargo.lock", 
 const roots = [];
 
 function copyOfRepo() {
-  const root = mkdtempSync(join(tmpdir(), "vatra-set-version-"));
+  const root = mkdtempSync(join(tmpdir(), "molfar-set-version-"));
   roots.push(root);
   mkdirSync(join(root, "src-tauri"));
   for (const file of FILES) copyFileSync(file, join(root, file));
@@ -31,7 +31,7 @@ function expectVersion(root, version) {
   expect(lock.packages[""].version).toBe(version);
   expect(readFileSync(join(root, "Cargo.toml"), "utf8")).toMatch(new RegExp(`^version = "${escaped}"\r?$`, "m"));
   expect(readFileSync(join(root, "Cargo.lock"), "utf8")).toMatch(
-    new RegExp(`name = "vatra"\r?\nversion = "${escaped}"`),
+    new RegExp(`name = "molfar"\r?\nversion = "${escaped}"`),
   );
   expect(JSON.parse(readFileSync(join(root, "src-tauri/tauri.conf.json"), "utf8")).version).toBe(version);
 }

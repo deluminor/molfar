@@ -1,22 +1,21 @@
-Vatra
+MOLFAR — Multi-Agent Orchestration Layer for Autonomous Reasoning
 Copyright (c) 2026 Erik K. (deluminor)
 
-Vatra is derived from MonoCode (https://github.com/hardbeat920/monocode),
+MOLFAR is derived from MonoCode (https://github.com/hardbeat920/monocode),
 distributed under the MIT License. The original copyright notice and
-permission notice are retained in LICENSE. Vatra
-started as a fork of MonoCode and is now maintained as a separate
-repository that continues to incorporate MonoCode changes. MonoCode's
-authors and contributors, and the full history of their work, are listed
-in the MonoCode repository and mirrored on this repository's
-`upstream-main` branch.
+permission notice are retained in LICENSE. MOLFAR is maintained in its own
+repository with its own releases and architecture, and selected MonoCode
+changes are still ported into it. MonoCode's authors and contributors, and
+the full history of their work, are listed in the MonoCode repository and
+mirrored on this repository's `upstream-main` branch.
 
 Each desktop build embeds THIRD-PARTY-NOTICES.md with the licenses of the
 JavaScript dependencies bundled into the app, and THIRD-PARTY-NOTICES-RUST.md
 with the licenses of the Rust crates linked into it (with source links for
-MPL-2.0 crates). Each Vatra Host package includes THIRD-PARTY-NOTICES.md for
+MPL-2.0 crates). Each MOLFAR Host package includes THIRD-PARTY-NOTICES.md for
 the npm packages bundled into host.mjs, and Node.js's own LICENSE.
 
-Third-party code included in Vatra's own source:
+Third-party code included in MOLFAR's own source:
 
 portable-pty (vendor/portable-pty, Windows builds)
   Copyright (c) 2018 Wez Furlong
@@ -47,7 +46,7 @@ derived from src/vs/workbench/contrib/scm/browser/scmHistory.ts)
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-Vatra is not affiliated with, endorsed by, or sponsored by the MonoCode
+MOLFAR is not affiliated with, endorsed by, or sponsored by the MonoCode
 project or by the makers of the agent harnesses it can drive.
 
 Product names and marks that appear in the UI (including Claude and

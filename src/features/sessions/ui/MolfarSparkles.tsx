@@ -34,7 +34,7 @@ function makeSparkles(): Sparkle[] {
 }
 
 /** A one-shot burst of rising sparkles inside a freshly sent /operator bubble. */
-export function VatraSparkles({
+export function MolfarSparkles({
   blockId,
   startedAt,
 }: {
@@ -46,11 +46,11 @@ export function VatraSparkles({
 
   if (!active) return null;
   return (
-    <span aria-hidden className="vatra-sparkles">
+    <span aria-hidden className="molfar-sparkles">
       {sparkles.map((sparkle, index) => (
         <span
           key={index}
-          className="vatra-sparkle"
+          className="molfar-sparkle"
           style={
             {
               "--x": `${sparkle.x}%`,
@@ -63,11 +63,11 @@ export function VatraSparkles({
           }
         >
           {sparkle.star ? (
-            <svg viewBox="0 0 24 24" className="vatra-sparkle-glyph">
+            <svg viewBox="0 0 24 24" className="molfar-sparkle-glyph">
               <path d={STAR_PATH} fill="currentColor" />
             </svg>
           ) : (
-            <span className="vatra-sparkle-glyph vatra-sparkle-ember" />
+            <span className="molfar-sparkle-glyph molfar-sparkle-ember" />
           )}
         </span>
       ))}

@@ -647,8 +647,8 @@ function sanitizeBlock(
   const turnModel = sanitizeTurnModel(block.turnModel);
   if (block.role === "user" && turnModel) next.turnModel = turnModel;
   if (block.role === "user" && block.draft) next.draft = true;
-  if (block.role === "user" && (block.vatra || block.monocode)) {
-    next.vatra = true;
+  if (block.role === "user" && block.molfar) {
+    next.molfar = true;
   }
   if (
     block.role === "user" &&

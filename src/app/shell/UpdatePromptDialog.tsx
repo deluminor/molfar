@@ -33,7 +33,7 @@ function UpdatePromptModal({ prompt }: { prompt: UpdatePrompt }) {
   };
 
   const description = [
-    `Vatra ${prompt.version}`,
+    `MOLFAR ${prompt.version}`,
     prompt.date,
     `you have ${prompt.currentVersion}`,
   ]
@@ -44,7 +44,7 @@ function UpdatePromptModal({ prompt }: { prompt: UpdatePrompt }) {
     <ReleaseNotesDialog
       title="Update available"
       description={description}
-      label={`Release notes for Vatra ${prompt.version}`}
+      label={`Release notes for MOLFAR ${prompt.version}`}
       markdown={prompt.notes}
       onClose={onClose}
       footer={
