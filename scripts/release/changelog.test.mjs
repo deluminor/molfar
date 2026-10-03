@@ -84,7 +84,6 @@ describe("notesFromCommits", () => {
         "### Changed",
         "",
         "- **Breaking:** drop the legacy host",
-        "- Tidy the sidebar",
         "",
         "### Fixed",
         "",
@@ -95,6 +94,21 @@ describe("notesFromCommits", () => {
 
   it("returns null when nothing is user-facing", () => {
     expect(notesFromCommits(["chore: release", "ci: cache", ""])).toBeNull();
+  });
+
+  it("skips release, sync and license commits unless they break something", () => {
+    const notes = notesFromCommits([
+      "fix(release): merge release PRs with admin bypass (#14)",
+      "feat(sync): apply MonoCode changes as patches",
+      "feat(license): ship notices for the Rust crates",
+      "feat(sync)!: drop the legacy sync branch",
+    ]);
+
+    expect(notes).toBe(["### Added", "", "- **Breaking:** **sync:** drop the legacy sync branch"].join("\n"));
+  });
+
+  it("skips commits without a conventional prefix", () => {
+    expect(notesFromCommits(["Optimize architecture documentation images", "Tidy the sidebar"])).toBeNull();
   });
 });
 

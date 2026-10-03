@@ -9,6 +9,7 @@ const SECTIONS = [
   { title: "Fixed", types: ["fix"] },
 ];
 const SKIPPED_TYPES = new Set(["build", "chore", "ci", "docs", "style", "test"]);
+const SKIPPED_SCOPES = new Set(["license", "release", "sync"]);
 const SECTION_ORDER = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"];
 
 export function parseVersion(version) {
@@ -87,10 +88,11 @@ export function unreleasedNotes(changelog) {
 
 function describeCommit(subject) {
   const match = CONVENTIONAL.exec(subject.trim());
-  if (!match) return { section: "Changed", text: subject.trim() };
+  if (!match) return null;
 
   const [, type, scope, breaking, description] = match;
-  if (SKIPPED_TYPES.has(type) && !breaking) return null;
+  const internal = SKIPPED_TYPES.has(type) || SKIPPED_SCOPES.has(scope);
+  if (internal && !breaking) return null;
 
   const section = SECTIONS.find((candidate) => candidate.types.includes(type))?.title ?? "Changed";
   const prefix = breaking ? "**Breaking:** " : "";
