@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The sidebar working-copy switcher gives local worktrees their own workspaces, with open-tab counts and activity indicators. Selecting a worktree filters its sessions and tabs; the project-folder session list still shows all project conversations. New sessions start in the selected checkout, and switching workspaces restores a remembered tab, carries over a blank session, or opens a new one.
+- Settings → Providers → Usage and privacy adds **Show remaining usage** and **Mask account emails**. Both preferences stay in sync across windows; enabling masking again hides previously revealed emails. From MonoCode #592.
+
+### Changed
+
+- Usage meters show used capacity and account emails are visible by default, including after updating. Enable **Show remaining usage** and **Mask account emails** to restore the previous display behavior. From MonoCode #592.
+- Tabs belong to the workspace where they were opened. Opening an existing conversation from the session list, search, or inbox brings its tab into the selected workspace while preserving its checkout; changing a session's working copy from the composer keeps the tab in its current workspace.
+- Local projects reopen in their default workspace after an app restart. Only tabs assigned to that workspace are restored; tabs in other worktree workspaces close, while saved conversations remain available in history.
+- Markdown code highlighting uses a bounded cache and shares concurrent highlighting requests, avoiding the accumulation of every partial code block during streaming. Exact cache keys also prevent different blocks from receiving each other's highlighting. From MonoCode #636.
+- The Inbox image and video cache has a 32 MiB budget, evicts the least recently used media, and shares downloads already in progress instead of retaining every file for the life of the window. From MonoCode #638.
+- Codex Max and Ultra effort options have animated tile and glow effects in the model picker and effort menu, with keyboard highlighting and reduced-motion support. From MonoCode #516.
+- Transcript turn metrics have more spacing beside the other response controls.
+
+### Fixed
+
+- Rapid worktree selections apply the latest choice and ignore stale completions, keeping the selected workspace aligned with the blank session's execution directory. The switcher shows progress and failures, and the composer is temporarily disabled while a switch is pending.
+- Opening a specific session from search or the inbox after a project switch no longer redirects to an unrelated remembered worktree tab.
+- Finished orchestration workers and internal inbox discussions no longer remain marked as unseen live agents, allowing eligible finished workers to detach and release their transcripts. From MonoCode #639.
+- App windows no longer buffer harness output for processes owned by other windows or for stopped process generations. From MonoCode #637.
+- OpenCode closes event-stream handlers when stopping a session even if the stream or server already ended, releasing the retained session state. From MonoCode #640.
+- A terminal no longer opens blank when its view remounts with the same ID, such as after moving a terminal between the dock and a file pane. From MonoCode #641.
+- Markdown previews, notes, and skill documents preserve line breaks, including around inline formatting, blockquotes, and explicit breaks. Agent replies and inbox comments continue to reflow as prose. From MonoCode #595.
+- Codex command rows show their commands instead of a bare Shell label when a file-listing action has no path. Older rows are repaired from their saved command previews. From MonoCode #581.
+- User-message bubbles fit within narrow session panes and recalculate their shape when a pooled transcript is shown again. From MonoCode #575.
+- **Reveal in File Explorer** selects the correct file on Windows when its path contains spaces. From MonoCode #619.
+
 ## [1.0.2] - 2026-10-02
 
 ### Fixed

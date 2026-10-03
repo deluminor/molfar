@@ -151,6 +151,9 @@ importers:
       rehype-harden:
         specifier: ^1.1.8
         version: 1.1.8
+      shiki:
+        specifier: ^3.23.0
+        version: 3.23.0
       streamdown:
         specifier: ^2.5.0
         version: 2.6.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
