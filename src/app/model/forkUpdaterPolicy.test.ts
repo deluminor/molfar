@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { getVersion, check, message } = vi.hoisted(() => ({
+const { getVersion, check, alertApp } = vi.hoisted(() => ({
   getVersion: vi.fn(),
   check: vi.fn(),
-  message: vi.fn(),
+  alertApp: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/app", () => ({ getVersion }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(), message }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
 vi.mock("../../features/settings/model/sounds", () => ({
   announceUpdateAvailable: vi.fn(),
 }));
+vi.mock("./appDialog", () => ({ alertApp }));
 vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: true }));
 
 import {
@@ -44,9 +44,8 @@ describe("fork updater kill-switch", () => {
     });
 
     expect(check).not.toHaveBeenCalled();
-    expect(message).toHaveBeenCalledWith(
+    expect(alertApp).toHaveBeenCalledWith(
       expect.stringContaining("disabled in this fork"),
-      { title: "Vatra" },
     );
   });
 });

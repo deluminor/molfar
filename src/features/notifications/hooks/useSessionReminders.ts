@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { message } from "@tauri-apps/plugin-dialog";
+import { alertApp } from "../../../app/model/appDialog";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   loadNotificationsEnabled,
@@ -93,7 +93,7 @@ export function useSessionReminders(
   }, [configure]);
 
   const report = (error: unknown) => {
-    void message(String(error), { title: "Reminder", kind: "error" });
+    void alertApp(String(error), { title: "Reminder", kind: "error" });
   };
 
   const schedule = useCallback(

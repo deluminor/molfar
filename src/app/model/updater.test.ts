@@ -2,24 +2,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   announce: vi.fn(),
+  alertApp: vi.fn(),
   ask: vi.fn(),
   check: vi.fn(),
   downloadAndInstall: vi.fn(),
   getVersion: vi.fn(),
-  message: vi.fn(),
   relaunch: vi.fn(),
   openPrompt: vi.fn(),
   remember: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({
-  ask: mocks.ask,
-  message: mocks.message,
-}));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: mocks.relaunch }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: mocks.check }));
 vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: mocks.announce }));
+vi.mock("./appDialog", () => ({ alertApp: mocks.alertApp }));
 vi.mock("./updatePrompt", () => ({ openUpdatePrompt: mocks.openPrompt }));
 vi.mock("./updateNotice", () => ({ rememberInstalledUpdate: mocks.remember }));
 vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
@@ -29,7 +26,7 @@ beforeEach(() => {
   vi.resetModules();
   mocks.getVersion.mockResolvedValue("0.1.22");
   mocks.relaunch.mockResolvedValue(undefined);
-  mocks.message.mockResolvedValue(undefined);
+  mocks.alertApp.mockResolvedValue(undefined);
 });
 
 async function updaterWithPendingUpdate() {
@@ -125,7 +122,7 @@ describe("installPendingUpdate", () => {
     });
 
     expect(result).toMatchObject({ phase: "error", error: "offline" });
-    expect(mocks.message).not.toHaveBeenCalled();
+    expect(mocks.alertApp).not.toHaveBeenCalled();
   });
 
   it("refuses a prompted version that is no longer pending", async () => {
@@ -253,7 +250,7 @@ describe("runUpdateFlow while an install is downloading", () => {
     expect(mocks.check).toHaveBeenCalledOnce();
     expect(mocks.openPrompt).not.toHaveBeenCalled();
     expect(onProgress).not.toHaveBeenCalled();
-    expect(mocks.message).toHaveBeenCalledOnce();
+    expect(mocks.alertApp).toHaveBeenCalledOnce();
   });
 
   it("stays silent on a background check", async () => {
@@ -262,6 +259,6 @@ describe("runUpdateFlow while an install is downloading", () => {
     await updater.runUpdateFlow(false);
 
     expect(mocks.check).toHaveBeenCalledOnce();
-    expect(mocks.message).not.toHaveBeenCalled();
+    expect(mocks.alertApp).not.toHaveBeenCalled();
   });
 });

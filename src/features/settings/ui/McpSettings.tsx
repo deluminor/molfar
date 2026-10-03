@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmApp } from "../../../app/model/appDialog";
 import {
   useCallback,
   useEffect,
@@ -418,7 +418,7 @@ function McpConnections({
       ? server.scope
       : (removeScopes[server.name] ?? "local");
     if (
-      !(await ask(`Remove ${server.name} from ${selectedScope} scope?`, {
+      !(await confirmApp(`Remove ${server.name} from ${selectedScope} scope?`, {
         title: "Remove MCP server",
       }))
     )

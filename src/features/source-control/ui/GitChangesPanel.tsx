@@ -1,4 +1,4 @@
-import { ask } from "@tauri-apps/plugin-dialog";
+import { alertApp, confirmApp } from "../../../app/model/appDialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,
@@ -83,8 +83,7 @@ import { isRemoteProjectPath } from "../../projects/model/recents";
 const GIT_POLL_MS = 2000;
 
 function confirmNative(message: string, okLabel?: string): Promise<boolean> {
-  return ask(message, {
-    title: "Vatra",
+  return confirmApp(message, {
     kind: "warning",
     ...(okLabel ? { okLabel } : {}),
   });
@@ -166,7 +165,9 @@ export function GitChangesPanel({
       invalidateWatchedFiles();
       setStatus("Pull complete");
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      void alertApp(error instanceof Error ? error.message : String(error), {
+        kind: "error",
+      });
     } finally {
       setBusy(null);
       setBranchMenuOpen(false);
@@ -452,7 +453,9 @@ function ChangedFiles({
   };
 
   const fail = (error: unknown) => {
-    window.alert(error instanceof Error ? error.message : String(error));
+    void alertApp(error instanceof Error ? error.message : String(error), {
+      kind: "error",
+    });
   };
 
   const recordPrActivity = (number = pr?.number) => {

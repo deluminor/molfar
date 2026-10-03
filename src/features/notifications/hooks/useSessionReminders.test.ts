@@ -11,14 +11,14 @@ import {
 import { useSessionReminders } from "./useSessionReminders";
 import { updateNotificationPreferences } from "../model/notificationPreferences";
 
-const { invoke, listen, message } = vi.hoisted(() => ({
+const { invoke, listen, alertApp } = vi.hoisted(() => ({
   invoke: vi.fn(),
   listen: vi.fn(),
-  message: vi.fn(),
+  alertApp: vi.fn(),
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ message }));
+vi.mock("../../../app/model/appDialog", () => ({ alertApp }));
 vi.mock("../../settings/model/sounds", () => ({
   loadSoundsEnabled: () => false,
   SOUNDS_CHANGE_EVENT: "sounds-change",
@@ -86,7 +86,7 @@ beforeEach(() => {
   listeners = new Map();
   onOpen.mockReset().mockResolvedValue(undefined);
   ensureSaved.mockReset().mockResolvedValue(undefined);
-  message.mockReset();
+  alertApp.mockReset();
   invoke
     .mockReset()
     .mockImplementation(
@@ -266,10 +266,10 @@ describe("saved session reminders", () => {
     expect(
       invoke.mock.calls.some(([command]) => command === "reminder_set"),
     ).toBe(false);
-    expect(message).toHaveBeenCalledWith(
-      "Error: Save failed",
-      expect.anything(),
-    );
+    expect(alertApp).toHaveBeenCalledWith("Error: Save failed", {
+      title: "Reminder",
+      kind: "error",
+    });
     expect(api.reminders).toEqual([reminder]);
     await act(async () =>
       api.schedule([reminder.sessionId], Date.now() + 60_000),

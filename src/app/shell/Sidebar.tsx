@@ -7,6 +7,7 @@ import {
 import { SidebarWorktreeSwitcher } from "../../features/source-control/ui/SidebarWorktreeSwitcher";
 import { OrchestrationSidebarAgents } from "../../features/orchestration/ui/OrchestrationSidebarAgents";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { alertApp, confirmApp } from "../model/appDialog";
 import {
   Archive,
   Chatting,
@@ -430,7 +431,9 @@ function SidebarComponent({
     patch: { title?: string; archived?: boolean; pinned?: boolean; linkedWorkItem?: LinkedWorkItem | null },
   ) => {
     if (!remote.machine || !hostProject) {
-      window.alert("Connect this project's machine to change its sessions.");
+      void alertApp("Connect this project's machine to change its sessions.", {
+        kind: "warning",
+      });
       return;
     }
     try {
@@ -441,18 +444,24 @@ function SidebarComponent({
       });
       refreshRemoteProjectSessions();
     } catch (error) {
-      window.alert(`Could not update this session.\n\n${String(error)}`);
+      void alertApp(`Could not update this session.\n\n${String(error)}`, {
+        kind: "error",
+      });
     }
   };
   const remoteDelete = async (sessionIds: readonly string[]) => {
     if (sessionIds.length === 0) return;
     if (!remote.machine || !hostProject) {
-      window.alert("Connect this project's machine to delete its sessions.");
+      void alertApp("Connect this project's machine to delete its sessions.", {
+        kind: "warning",
+      });
       return;
     }
-    if (!window.confirm(
+    const confirmed = await confirmApp(
       `Delete ${sessionIds.length === 1 ? "this conversation" : `${sessionIds.length} conversations`}? This can’t be undone.`,
-    )) return;
+      { okLabel: "Delete" },
+    );
+    if (!confirmed) return;
     try {
       for (const sessionId of sessionIds) {
         await remoteRequest(remote.machine.id, "sessions.delete", {
@@ -463,7 +472,9 @@ function SidebarComponent({
       }
       refreshRemoteProjectSessions();
     } catch (error) {
-      window.alert(`Could not delete this session.\n\n${String(error)}`);
+      void alertApp(`Could not delete this session.\n\n${String(error)}`, {
+        kind: "error",
+      });
       refreshRemoteProjectSessions();
     }
   };
