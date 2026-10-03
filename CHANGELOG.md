@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-03
+
 ### Added
 
 - The sidebar working-copy switcher gives local worktrees their own workspaces, with open-tab counts and activity indicators. Selecting a worktree filters its sessions and tabs; the project-folder session list still shows all project conversations. New sessions start in the selected checkout, and switching workspaces restores a remembered tab, carries over a blank session, or opens a new one.
@@ -1231,7 +1233,8 @@ First public release. macOS (Apple Silicon) only.
 - Updater endpoint and minisign public key are injected at release time rather than committed, so forks do not inherit the maintainer's update channel.
 - macOS release builds sign with `APPLE_SIGNING_IDENTITY` via a config overlay; the committed default remains ad-hoc `-` for community builds.
 
-[Unreleased]: https://github.com/deluminor/vatra/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/deluminor/vatra/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/deluminor/vatra/releases/tag/v1.0.3
 [1.0.2]: https://github.com/deluminor/vatra/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/deluminor/vatra/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/deluminor/vatra/releases/tag/v1.0.0
