@@ -1,0 +1,441 @@
+{
+  "host/attachments.ts": {
+    "layer:host->features": 2
+  },
+  "host/browse.ts": {
+    "layer:host->features": 1
+  },
+  "host/child-backend.test.ts": {
+    "layer:host->features": 1
+  },
+  "host/child-backend.ts": {
+    "layer:host->features": 1
+  },
+  "host/cli.ts": {
+    "layer:host->features": 1
+  },
+  "host/engine.ts": {
+    "layer:host->features": 5
+  },
+  "host/large-sync.test.ts": {
+    "layer:host->features": 2
+  },
+  "host/process.ts": {
+    "layer:host->features": 1
+  },
+  "host/providers.test.ts": {
+    "layer:host->features": 2
+  },
+  "host/providers.ts": {
+    "layer:host->features": 3
+  },
+  "host/server.test.ts": {
+    "layer:host->features": 1
+  },
+  "host/server.ts": {
+    "layer:host->features": 4
+  },
+  "host/store.ts": {
+    "layer:host->features": 2
+  },
+  "host/sync-transfer.test.ts": {
+    "layer:host->features": 1
+  },
+  "host/sync-transfer.ts": {
+    "layer:host->features": 1
+  },
+  "host/workspace-commands.ts": {
+    "layer:host->platform": 1
+  },
+  "host/workspace.ts": {
+    "layer:host->features": 1,
+    "layer:host->platform": 1
+  },
+  "src/features/agent-app/model/agentApp.ts": {
+    "feature-internal:inbox": 2
+  },
+  "src/features/automations/ui/AutomationsView.tsx": {
+    "layer:features->app": 3
+  },
+  "src/features/files/ui/FilePane.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/files/ui/FileTree.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/home/ui/LocalSurfaceRailActions.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/home/ui/SurfaceHeader.tsx": {
+    "layer:features->app": 2
+  },
+  "src/features/inbox/ui/InboxDiscussionPanel.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/inbox/ui/InboxNotificationMenu.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/inbox/ui/InboxView.tsx": {
+    "layer:features->app": 2
+  },
+  "src/features/inbox/ui/LinkedWorkItemUpdateNotice.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/inbox/ui/ProjectNotificationMenu.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/notes/ui/NotesView.tsx": {
+    "layer:features->app": 2
+  },
+  "src/features/notifications/hooks/useSessionReminders.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/notifications/hooks/useSessionReminders.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/projects/ui/ProjectGroups.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/providers/ui/HarnessUpdateNotice.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/search/ui/SearchView.tsx": {
+    "layer:features->app": 2
+  },
+  "src/features/sessions/model/promptPreparation.test.ts": {
+    "feature-internal:inbox": 1
+  },
+  "src/features/sessions/model/promptPreparation.ts": {
+    "feature-internal:inbox": 1
+  },
+  "src/features/sessions/ui/BtwSheet.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/settings/ui/JiraSettings.tsx": {
+    "feature-internal:inbox": 2
+  },
+  "src/features/settings/ui/McpSettings.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/settings/ui/McpSettings.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/settings/ui/QuickComposerShortcutEditor.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/settings/ui/SettingsView.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/settings/ui/SettingsView.tsx": {
+    "layer:features->app": 4
+  },
+  "src/features/source-control/ui/GitChangesPanel.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/terminal/model/terminalClose.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/terminal/model/terminalClose.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/terminal/ui/ProjectTerminalDock.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/workspace/model/layout.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/workspace/model/tabGroups.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/workspace/model/tabGroups.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/workspace/model/workspaceSnapshot.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/workspace/ui/SurfaceTabs.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/workspace/ui/SurfaceTabs.tsx": {
+    "layer:features->app": 2
+  },
+  "src/features/workspace/ui/TabCloseMotion.test.ts": {
+    "layer:features->app": 2
+  },
+  "src/features/workspace/ui/TabMiddleClick.test.ts": {
+    "layer:features->app": 2
+  },
+  "src/integrations/harness/core/acpSubagents.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/acpSubagents.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/apply.test.ts": {
+    "layer:integrations->features": 3
+  },
+  "src/integrations/harness/core/apply.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/core/applyBatch.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/auth.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/core/authSupport.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/availability.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/availabilityState.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/child.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/fileAttachments.test.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/core/nativeCommands.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/preview.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/core/registry.test.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/core/registry.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/core/textHarness.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/core/types.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/index.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/antigravity/antigravity.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/antigravity/antigravityCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/antigravity/antigravityLive.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/antigravity/antigravityProtocol.test.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/antigravity/antigravityProtocol.ts": {
+    "layer:integrations->features": 4
+  },
+  "src/integrations/harness/providers/claude/claude.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/providers/claude/claudeCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/claude/claudeGit.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/claude/claudeLive.test.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/claude/claudeProtocol.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/providers/claude/claudeText.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/claude/claudeTitle.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/codex/codex.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/providers/codex/codexApprovalUi.test.ts": {
+    "layer:integrations->features": 7
+  },
+  "src/integrations/harness/providers/codex/codexAttachments.test.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/codex/codexCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/codex/codexGit.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/codex/codexLive.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/codex/codexProtocol.ts": {
+    "layer:integrations->features": 3
+  },
+  "src/integrations/harness/providers/codex/codexQuestions.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/codex/codexQuestions.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/codex/codexText.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/codex/codexTitle.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/cursor/cursor.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/providers/cursor/cursorCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/cursor/cursorGit.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/cursor/cursorLive.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/cursor/cursorSubagents.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/cursor/cursorSubagents.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/cursor/cursorTitle.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/fx/fx.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/fx/fxCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/fx/fxProtocol.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/fx/fxProtocol.ts": {
+    "layer:integrations->features": 4
+  },
+  "src/integrations/harness/providers/fx/fxTool.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/grok/grok.ts": {
+    "layer:integrations->features": 3
+  },
+  "src/integrations/harness/providers/grok/grokCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/grok/grokGit.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/grok/grokProtocol.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/grok/grokProtocol.ts": {
+    "layer:integrations->features": 5
+  },
+  "src/integrations/harness/providers/grok/grokTitle.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/hermes/hermes.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/hermes/hermesCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/hermes/hermesProtocol.ts": {
+    "layer:integrations->features": 3
+  },
+  "src/integrations/harness/providers/omp/ompLive.test.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/opencode/opencode.ts": {
+    "layer:integrations->features": 4
+  },
+  "src/integrations/harness/providers/opencode/opencodeCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/opencode/opencodeGit.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/opencode/opencodeLive.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/opencode/opencodeProtocol.ts": {
+    "layer:integrations->features": 3
+  },
+  "src/integrations/harness/providers/opencode/opencodeText.ts": {
+    "layer:integrations->features": 2
+  },
+  "src/integrations/harness/providers/opencode/opencodeTitle.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/pi/piCatalog.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/pi/piCatalog.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/pi/piFamily.ts": {
+    "layer:integrations->features": 4
+  },
+  "src/integrations/harness/providers/pi/piFlavor.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/pi/piProtocol.ts": {
+    "layer:integrations->features": 4
+  },
+  "src/integrations/harness/providers/pi/piSubagents.test.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/pi/piText.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/integrations/harness/providers/pi/piTitle.ts": {
+    "layer:integrations->features": 1
+  },
+  "src/platform/tauri/clipboard.test.ts": {
+    "layer:platform->features": 1
+  },
+  "src/platform/tauri/clipboard.ts": {
+    "layer:platform->features": 2
+  },
+  "src/platform/tauri/fs.ts": {
+    "layer:platform->features": 1
+  },
+  "src/platform/tauri/vault.ts": {
+    "layer:platform->features": 2
+  },
+  "src/shared/hooks/useColorScheme.ts": {
+    "layer:shared->features": 1
+  },
+  "src/shared/lib/dragPoint.ts": {
+    "layer:shared->platform": 1
+  },
+  "src/shared/lib/format.ts": {
+    "layer:shared->platform": 1
+  },
+  "src/shared/lib/paths.ts": {
+    "layer:shared->platform": 1
+  },
+  "src/shared/ui/icons.test.ts": {
+    "layer:shared->features": 1
+  },
+  "src/shared/ui/Modal.tsx": {
+    "layer:shared->app": 1
+  },
+  "src/shared/ui/Popover.tsx": {
+    "layer:shared->app": 1
+  },
+  "src/shared/ui/PrivateEmail.test.ts": {
+    "layer:shared->features": 1
+  },
+  "src/shared/ui/PrivateEmail.tsx": {
+    "layer:shared->features": 1
+  }
+}

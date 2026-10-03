@@ -66,6 +66,9 @@ jobs:
       - run: npm test
       - run: npx tsc --noEmit
       - run: npm run check:moves
+      - run: npm run lint
+      - run: npm run check:size
+      - run: npm run check:boundaries
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo check
