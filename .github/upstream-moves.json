@@ -210,6 +210,7 @@
     "src/features/knowledge/ui/tree/KnowledgeTree.test.ts": "src/features/knowledge/ui/tree/knowledge-tree.test.ts",
     "src/features/notes/noteImages.test.ts": "src/features/notes/note-images.test.ts",
     "src/features/notes/noteImages.ts": "src/features/notes/note-images.ts",
+    "src/features/notes/types/note-source.ts": "src/domain/notes/note-source.ts",
     "src/features/notes/ui/NotesView.test.ts": "src/features/notes/ui/notes-view.test.ts",
     "src/features/notifications/hooks/projectNotificationFlow.test.ts": "src/features/notifications/hooks/project-notification-flow.test.ts",
     "src/features/notifications/hooks/useInputNotifications.test.ts": "src/features/notifications/hooks/use-input-notifications.test.ts",
@@ -340,8 +341,8 @@
     "src/features/sessions/model/composerResize.ts": "src/features/sessions/model/composer-resize.ts",
     "src/features/sessions/model/composerRunner.test.ts": "src/features/sessions/model/composer-runner.test.ts",
     "src/features/sessions/model/composerRunner.ts": "src/features/sessions/model/composer-runner.ts",
-    "src/features/sessions/model/contextUsage.test.ts": "src/features/sessions/model/context-usage.test.ts",
-    "src/features/sessions/model/contextUsage.ts": "src/features/sessions/model/context-usage.ts",
+    "src/features/sessions/model/contextUsage.test.ts": "src/domain/session/context-usage.test.ts",
+    "src/features/sessions/model/contextUsage.ts": "src/domain/session/context-usage.ts",
     "src/features/sessions/model/draftCache.test.ts": "src/features/sessions/model/draft-cache.test.ts",
     "src/features/sessions/model/draftCache.ts": "src/features/sessions/model/draft-cache.ts",
     "src/features/sessions/model/draftCommand.ts": "src/features/sessions/model/draft-command.ts",
@@ -395,16 +396,16 @@
     "src/features/sessions/model/sessionSelection.ts": "src/features/sessions/model/session-selection.ts",
     "src/features/sessions/model/sessionSkills.test.ts": "src/features/sessions/model/session-skills.test.ts",
     "src/features/sessions/model/sessionSkills.ts": "src/features/sessions/model/session-skills.ts",
-    "src/features/sessions/model/sessionTitle.test.ts": "src/features/sessions/model/session-title.test.ts",
-    "src/features/sessions/model/sessionTitle.ts": "src/features/sessions/model/session-title.ts",
+    "src/features/sessions/model/sessionTitle.test.ts": "src/domain/session/generated-title.test.ts",
+    "src/features/sessions/model/sessionTitle.ts": "src/domain/session/generated-title.ts",
     "src/features/sessions/model/sessionWorkItem.test.ts": "src/features/sessions/model/session-work-item.test.ts",
     "src/features/sessions/model/sessionWorkItem.ts": "src/features/sessions/model/session-work-item.ts",
     "src/features/sessions/model/sessionWorkspaceLifecycle.test.ts": "src/features/sessions/model/session-workspace-lifecycle.test.ts",
     "src/features/sessions/model/sessionWorkspaceLifecycle.ts": "src/features/sessions/model/session-workspace-lifecycle.ts",
     "src/features/sessions/model/speechBubble.test.ts": "src/features/sessions/model/speech-bubble.test.ts",
     "src/features/sessions/model/speechBubble.ts": "src/features/sessions/model/speech-bubble.ts",
-    "src/features/sessions/model/taskList.test.ts": "src/features/sessions/model/task-list.test.ts",
-    "src/features/sessions/model/taskList.ts": "src/features/sessions/model/task-list.ts",
+    "src/features/sessions/model/taskList.test.ts": "src/domain/session/task-list.test.ts",
+    "src/features/sessions/model/taskList.ts": "src/domain/session/task-list.ts",
     "src/features/sessions/model/transcriptActivity.test.ts": "src/features/sessions/model/transcript-activity.test.ts",
     "src/features/sessions/model/transcriptActivity.ts": "src/features/sessions/model/transcript-activity.ts",
     "src/features/sessions/model/transcriptFind.test.ts": "src/features/sessions/model/transcript-find.test.ts",
@@ -417,8 +418,8 @@
     "src/features/sessions/model/transcriptSelection.ts": "src/features/sessions/model/transcript-selection.ts",
     "src/features/sessions/model/usageLimit.test.ts": "src/features/sessions/model/usage-limit.test.ts",
     "src/features/sessions/model/usageLimit.ts": "src/features/sessions/model/usage-limit.ts",
-    "src/features/sessions/model/userQuestion.test.ts": "src/features/sessions/model/user-question.test.ts",
-    "src/features/sessions/model/userQuestion.ts": "src/features/sessions/model/user-question.ts",
+    "src/features/sessions/model/userQuestion.test.ts": "src/domain/session/user-question.test.ts",
+    "src/features/sessions/model/userQuestion.ts": "src/domain/session/user-question.ts",
     "src/features/sessions/model/vatraToolCall.test.ts": "src/features/sessions/model/vatra-tool-call.test.ts",
     "src/features/sessions/model/vatraToolCall.ts": "src/features/sessions/model/vatra-tool-call.ts",
     "src/features/sessions/ui/AgentMarkdown.test.ts": "src/features/sessions/ui/agent-markdown.test.ts",
@@ -711,6 +712,94 @@
     "src/shared/ui/PrivateEmail.test.ts": "src/shared/ui/private-email.test.ts",
     "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
   },
-  "splits": {},
-  "removed": {}
+  "splits": {
+    "src/features/sessions/model/session.ts": {
+      "targets": [
+        "src/features/sessions/model/session.ts",
+        "src/domain/harness/harness.ts",
+        "src/domain/session/runtime-mode.ts",
+        "src/domain/session/task-list.ts",
+        "src/domain/session/turn.ts",
+        "src/domain/session/block-meta.ts",
+        "src/domain/session/agent-run.ts",
+        "src/domain/session/attachment.ts",
+        "src/domain/session/message-queue.ts",
+        "src/domain/session/block.ts",
+        "src/domain/session/session.ts",
+        "src/domain/session/session-state.ts",
+        "src/domain/session/title.ts"
+      ],
+      "notes": "Session factories that read provider settings (newSession, newDefaultSession, newSessionForProject, retargetSessionToProject, newSessionLike) stay in features/sessions/model/session.ts. Everything else moved to src/domain: HarnessId, HARNESSES, HARNESS_LABEL, HARNESS_TITLE, harnessSupportsAttachments -> domain/harness/harness.ts; RuntimeMode + RUNTIME_MODE* -> domain/session/runtime-mode.ts; TaskList* types -> domain/session/task-list.ts; TurnIntent, EditedResendRejection, ComposerTurnOptions, ModelTarget, PlanBuildTarget, TurnModel, TurnMetrics -> turn.ts; Plan/Handoff/Btw/SecondOpinion/Interjection meta types -> block-meta.ts; ToolPreview*, AgentStep*, AgentRunMeta -> agent-run.ts; Attachment, AttachmentKind, GeneratedImageMeta -> attachment.ts; QueuedMessage, MessageQueueStatus, UsageLimit -> message-queue.ts; BlockRole, Block -> block.ts; Session, LinkedWorkItem, WorkspaceMode, PendingHarnessSwitch -> domain/session/session.ts; hasPendingApproval, sessionNeedsInput, sessionDraftBlock, removeSessionDraft, sessionWorkCwd -> session-state.ts; titleFromPrompt, formatSessionTitle, canReplaceSessionTitle, sessionDisplayTitle -> title.ts."
+    }
+  },
+  "extractions": {
+    "src/features/inbox/model/githubTasks.ts": [
+      {
+        "names": [
+          "GithubTaskKind",
+          "InboxProvider",
+          "InboxKind",
+          "GithubLabel"
+        ],
+        "target": "src/domain/work-items/work-item.ts"
+      },
+      {
+        "names": [
+          "InboxComposerCard"
+        ],
+        "target": "src/domain/work-items/inbox-card.ts"
+      }
+    ],
+    "src/features/inbox/model/inboxAsk.ts": [
+      {
+        "names": [
+          "InboxAskContext"
+        ],
+        "target": "src/domain/work-items/inbox-ask-context.ts"
+      }
+    ],
+    "src/features/inbox/model/linkedWorkItemActivity.ts": [
+      {
+        "names": [
+          "LinkedWorkItemActivityKind",
+          "LinkedWorkItemActivityCounts",
+          "LinkedWorkItemActivityEntry",
+          "LinkedWorkItemUpdateCard"
+        ],
+        "target": "src/domain/work-items/linked-activity.ts"
+      }
+    ],
+    "src/features/notes/notes.ts": [
+      {
+        "names": [
+          "NoteCardMeta",
+          "NoteComposerCard",
+          "noteCardMeta"
+        ],
+        "target": "src/domain/notes/note-card.ts"
+      }
+    ],
+    "src/features/orchestration/model/orchestrationPlan.ts": [
+      {
+        "names": [
+          "OrchestrationChoice",
+          "OrchestrationSettings",
+          "ProposedTask",
+          "OrchestrationProposal"
+        ],
+        "target": "src/domain/orchestration/proposal.ts"
+      }
+    ],
+    "src/features/sessions/model/handoff.ts": [
+      {
+        "names": [
+          "HandoffComposerCard"
+        ],
+        "target": "src/domain/session/handoff-card.ts"
+      }
+    ]
+  },
+  "removed": {
+    "src/features/notes/index.ts": "Barrel removed (Vatra forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly."
+  }
 }

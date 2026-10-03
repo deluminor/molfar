@@ -7,7 +7,7 @@ import {
   type EditorPane,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
-import type { Session } from "./session";
+import type { Session } from "@/domain/session/session";
 import {
   planWorkspaceTabClose,
   type WorkspaceTabCloseScope,

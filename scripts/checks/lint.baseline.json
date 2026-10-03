@@ -70,7 +70,6 @@
     "lint/correctness/noUnsafeFinally": 2,
     "lint/correctness/useExhaustiveDependencies": 95,
     "lint/style/noNonNullAssertion": 9,
-    "lint/style/useImportType": 2,
     "lint/suspicious/noAssignInExpressions": 1,
     "lint/suspicious/useIterableCallbackReturn": 1
   },
@@ -129,7 +128,6 @@
     "lint/a11y/useSemanticElements": 2,
     "lint/correctness/useExhaustiveDependencies": 8,
     "lint/style/noNonNullAssertion": 1,
-    "lint/style/useImportType": 1,
     "lint/suspicious/noArrayIndexKey": 1,
     "lint/suspicious/noConfusingVoidType": 2
   },
@@ -192,6 +190,12 @@
   },
   "src/assets/providers/pi.svg": {
     "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/domain/session/context-usage.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/domain/session/user-question.test.ts": {
+    "lint/style/noNonNullAssertion": 3
   },
   "src/features/agent-app/model/agent-app.ts": {
     "lint/style/noNonNullAssertion": 2
@@ -427,8 +431,7 @@
     "lint/correctness/useExhaustiveDependencies": 2
   },
   "src/features/inbox/ui/InboxFiltersMenu.tsx": {
-    "lint/a11y/useSemanticElements": 1,
-    "lint/style/useImportType": 1
+    "lint/a11y/useSemanticElements": 1
   },
   "src/features/inbox/ui/InboxMedia.tsx": {
     "lint/a11y/useKeyWithClickEvents": 1,
@@ -472,10 +475,6 @@
   },
   "src/features/knowledge/ui/tree/KnowledgeTree.tsx": {
     "lint/a11y/useButtonType": 1
-  },
-  "src/features/notes/index.ts": {
-    "lint/performance/noBarrelFile": 1,
-    "lint/performance/noReExportAll": 2
   },
   "src/features/notes/notes.test.ts": {
     "lint/style/noNonNullAssertion": 1
@@ -683,7 +682,6 @@
   "src/features/search/ui/SearchView.tsx": {
     "lint/a11y/useSemanticElements": 1,
     "lint/correctness/useExhaustiveDependencies": 4,
-    "lint/style/useImportType": 1,
     "lint/suspicious/noArrayIndexKey": 1
   },
   "src/features/sessions/data/session-store.ts": {
@@ -698,15 +696,11 @@
   "src/features/sessions/model/ci-repair-context.test.ts": {
     "lint/style/noNonNullAssertion": 1
   },
-  "src/features/sessions/model/context-usage.ts": {
-    "lint/complexity/useOptionalChain": 1
-  },
   "src/features/sessions/model/edit-last-turn.test.ts": {
     "lint/style/noNonNullAssertion": 3
   },
   "src/features/sessions/model/models.ts": {
-    "lint/suspicious/noAssignInExpressions": 2,
-    "lint/suspicious/noImportCycles": 2
+    "lint/suspicious/noAssignInExpressions": 2
   },
   "src/features/sessions/model/omp-interjections.test.ts": {
     "lint/style/noNonNullAssertion": 14
@@ -721,9 +715,6 @@
   "src/features/sessions/model/session-work-item.test.ts": {
     "lint/style/noNonNullAssertion": 2
   },
-  "src/features/sessions/model/session.ts": {
-    "lint/suspicious/noImportCycles": 1
-  },
   "src/features/sessions/model/transcript-activity.test.ts": {
     "lint/style/noNonNullAssertion": 13
   },
@@ -732,9 +723,6 @@
   },
   "src/features/sessions/model/transcript-jump.test.ts": {
     "lint/style/noNonNullAssertion": 2
-  },
-  "src/features/sessions/model/user-question.test.ts": {
-    "lint/style/noNonNullAssertion": 3
   },
   "src/features/sessions/model/vatra-tool-call.ts": {
     "lint/suspicious/noPrototypeBuiltins": 1
@@ -839,7 +827,6 @@
     "lint/a11y/noAutofocus": 1,
     "lint/a11y/noStaticElementInteractions": 1,
     "lint/correctness/useExhaustiveDependencies": 10,
-    "lint/style/useImportType": 1,
     "lint/suspicious/noArrayIndexKey": 5,
     "lint/suspicious/noConfusingVoidType": 3
   },
@@ -921,8 +908,7 @@
     "lint/style/noNonNullAssertion": 1
   },
   "src/features/sessions/ui/SessionFiltersMenu.tsx": {
-    "lint/a11y/useSemanticElements": 1,
-    "lint/style/useImportType": 1
+    "lint/a11y/useSemanticElements": 1
   },
   "src/features/sessions/ui/SessionFolderPicker.tsx": {
     "lint/correctness/useExhaustiveDependencies": 1,

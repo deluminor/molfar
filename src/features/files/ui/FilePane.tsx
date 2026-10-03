@@ -1,6 +1,5 @@
 import { lazySurface } from "@/shared/ui/lazy-surface";
-import type { PointerEvent as ReactPointerEvent } from "react";
-import { memo, useSyncExternalStore } from "react";
+import { type PointerEvent as ReactPointerEvent, memo, useSyncExternalStore } from "react";
 import {
   MarkdownViewShell,
   useMarkdownMode,
@@ -20,9 +19,9 @@ import {
 } from "@/features/workspace/model/layout";
 import { isImagePath } from "../model/file-preview";
 import type { TerminalMetaPatch } from "@/features/terminal/model/terminal-tab";
-import type { EditorNavigationTarget } from "@/features/search/model/search";
-import { editorPathsEqual } from "@/features/search/model/search";
-import type { PlanBuildTarget, Session } from "@/features/sessions/model/session";
+import { type EditorNavigationTarget, editorPathsEqual } from "@/features/search/model/search";
+import type { Session } from "@/domain/session/session";
+import type { PlanBuildTarget } from "@/domain/session/turn";
 import { Play } from "@/shared/ui/icons";
 import { BuildTargetButton } from "@/features/sessions/ui/SecondOpinionButton";
 import {

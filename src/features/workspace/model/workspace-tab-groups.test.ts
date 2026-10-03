@@ -8,7 +8,7 @@ import {
   type WorkspaceTab,
 } from "./layout";
 import { planProjectReturn } from "@/features/projects/model/project-return";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   applyDetachPaneToTab,
   applyPlaceTabOnPane,

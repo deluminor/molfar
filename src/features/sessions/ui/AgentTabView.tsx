@@ -8,13 +8,11 @@ import {
 } from "../model/transcript-jump";
 import { HarnessIcon } from "./HarnessIcon";
 import { findModel } from "../model/models";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  sessionWorkCwd,
-  type Session,
-} from "../model/session";
-import { createNote, noteTitle } from "@/features/notes";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
+import { createNote, noteTitle } from "@/features/notes/notes";
 import { loadNotesEnabled, subscribeNotesEnabled } from "@/features/settings/model/settings";
 
 /**

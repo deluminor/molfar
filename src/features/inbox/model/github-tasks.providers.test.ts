@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearInboxCache,
   listInboxItems,
-  type GithubTaskKind,
   type GithubWorkItem,
 } from "./github-tasks";
+import type { GithubTaskKind } from "@/domain/work-items/work-item";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

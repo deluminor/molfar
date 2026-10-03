@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   compareSemver,
   parseOpenCodeVersion,

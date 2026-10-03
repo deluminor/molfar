@@ -11,7 +11,7 @@ import {
   shellPath,
 } from "./orchestration";
 import { newSession } from "@/features/sessions/model/session";
-import type { OrchestrationProposal } from "./orchestration-plan";
+import type { OrchestrationProposal } from "@/domain/orchestration/proposal";
 import { normalizeOrchestrationRun } from "./orchestration-state";
 import { previewFromToolPart } from "@/integrations/harness/providers/opencode/opencode-protocol";
 

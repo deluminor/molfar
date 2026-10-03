@@ -1,5 +1,5 @@
 import { leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import { pathKey } from "@/shared/lib/paths";
 import { sameProjectPath } from "./recents";
 

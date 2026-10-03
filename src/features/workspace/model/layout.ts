@@ -5,7 +5,7 @@ import {
   defaultTerminalTitle,
   type TerminalMetaPatch,
 } from "@/features/terminal/model/terminal-tab";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import { pathKey } from "@/shared/lib/paths";
 
 /**

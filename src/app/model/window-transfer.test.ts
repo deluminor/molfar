@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { leaf, newTab, newTerminalFile, type WorkspaceTab } from "@/features/workspace/model/layout";
 import { createProjectTerminal } from "@/features/projects/model/project-terminal";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import { collectWindowTransfer } from "./window-transfer";
 
 function session(id: string, cwd: string): Session {

@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "@/domain/session/block";
 import { AgentTranscript } from "./AgentTranscript";
 
 vi.mock("../hooks/use-transcript-layout", () => ({

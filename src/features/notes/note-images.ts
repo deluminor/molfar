@@ -4,7 +4,7 @@ import {
   attachmentsFromPaths,
   revokeAttachment,
 } from "@/features/sessions/model/attachments";
-import type { Attachment } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 
 export const NOTE_IMAGE_PREFIX = "/note-assets/";
 

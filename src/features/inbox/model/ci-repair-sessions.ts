@@ -1,7 +1,7 @@
 import { summaryFromSession } from "@/features/sessions/data/session-history";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { isPreparingHandoff } from "@/features/sessions/model/handoff";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 
 export function ciRepairSessions(
   history: readonly SessionSummary[],

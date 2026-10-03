@@ -9,8 +9,8 @@ import type {
   RemoteProvider,
   SessionSync,
 } from "../src/features/connections/model/protocol";
-import type { LinkedWorkItem } from "../src/features/sessions/model/session";
-import { sessionNeedsInput } from "../src/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
+import { sessionNeedsInput } from "@/domain/session/session-state";
 
 const CACHED_SESSIONS = 32;
 

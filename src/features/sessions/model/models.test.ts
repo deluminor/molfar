@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { newSession, type HarnessId } from "./session";
+import { newSession } from "./session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   MODELS,
   coerceModelPickerTab,

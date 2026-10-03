@@ -2,7 +2,7 @@ import {
   buildThreadTitlePrompt,
   parseGeneratedSessionTitle,
   type GeneratedSessionTitle,
-} from "@/features/sessions/model/session-title";
+} from "@/domain/session/generated-title";
 import { runOpenCodeTextPrompt } from "./opencode-text";
 
 const TITLE_TIMEOUT_MS = 45_000;

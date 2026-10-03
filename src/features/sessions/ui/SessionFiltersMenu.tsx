@@ -1,5 +1,5 @@
 import { Check } from "@/shared/ui/icons";
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Popover } from "@/shared/ui/Popover";
 import {
   DEFAULT_SESSION_SIDEBAR_FILTERS,
@@ -7,7 +7,7 @@ import {
   type SessionSidebarFilters,
   type SessionTimeFilter,
 } from "../model/session-filters";
-import { HARNESS_TITLE, type HarnessId } from "../model/session";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 
 const MENU_WIDTH = 228;

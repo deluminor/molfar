@@ -63,7 +63,7 @@ import {
   type GitHistoryCommit,
   type GitPr,
 } from "@/platform/tauri/fs";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import { recordInboxSelfActivity } from "@/features/inbox/model/inbox-self-activity";
 import {
   loadChangesView,

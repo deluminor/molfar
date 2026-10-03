@@ -67,7 +67,7 @@ import {
   setHarnessModels,
   resetHarnessModelOverlays,
 } from "@/features/sessions/model/models";
-import type { OrchestrationProposal } from "../model/orchestration-plan";
+import type { OrchestrationProposal } from "@/domain/orchestration/proposal";
 import { invoke } from "@tauri-apps/api/core";
 
 const emptyRuns: OrchestrationRun[] = [];

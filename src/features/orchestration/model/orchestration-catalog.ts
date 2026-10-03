@@ -1,4 +1,4 @@
-import { HARNESSES } from "@/features/sessions/model/session";
+import { HARNESSES } from "@/domain/harness/harness";
 import { modelsFor } from "@/features/sessions/model/models";
 import {
   isHarnessAvailable,

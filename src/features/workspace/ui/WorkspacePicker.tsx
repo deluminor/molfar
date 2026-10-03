@@ -12,7 +12,7 @@ import { useProjectWorktrees } from "@/features/source-control/hooks/use-project
 import type { Worktree } from "@/features/source-control/model/worktrees";
 import { MOD, SHIFT } from "@/platform/tauri/platform";
 import { prettyCwd } from "@/shared/lib/paths";
-import type { WorkspaceMode } from "@/features/sessions/model/session";
+import type { WorkspaceMode } from "@/domain/session/session";
 import {
   Check,
   ChevronRight,

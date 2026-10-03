@@ -1,14 +1,10 @@
-import type {
-  AgentStepKind,
-  Attachment,
-  InterjectionMeta,
-  RuntimeMode,
-  TaskListItem,
-  ToolPreview,
-  TurnIntent,
-  TurnMetrics,
-} from "@/features/sessions/model/session";
-import type { UserQuestion } from "@/features/sessions/model/user-question";
+import type { Attachment } from "@/domain/session/attachment";
+import type { AgentStepKind, ToolPreview } from "@/domain/session/agent-run";
+import type { InterjectionMeta } from "@/domain/session/block-meta";
+import type { TurnMetrics, TurnIntent } from "@/domain/session/turn";
+import type { TaskListItem } from "@/domain/session/task-list";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { UserQuestion } from "@/domain/session/user-question";
 
 export type HarnessEvent =
   | { type: "session.started" }

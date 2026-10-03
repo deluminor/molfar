@@ -7,7 +7,8 @@ import {
   SessionPane,
   type SessionPaneProps,
 } from "@/features/sessions/ui/SessionPane";
-import type { Block, Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
 import type { AgentModel } from "@/features/sessions/model/models";
 import { rememberRemoteProject } from "../model/remote-projects";
 import { preloadRemoteSession } from "./RemoteSession";

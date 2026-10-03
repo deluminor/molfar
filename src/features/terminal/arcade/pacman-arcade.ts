@@ -8,7 +8,7 @@
  * cells so the caller can draw them mid-step.
  */
 import { PROJECT_MASCOTS } from "@/features/projects/model/project-mascots";
-import { HARNESSES, type HarnessId } from "@/features/sessions/model/session";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import type {
   ArcadeMode,
   ArcadeSprite,

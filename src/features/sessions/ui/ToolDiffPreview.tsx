@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import type { ToolPreview } from "../model/session";
+import type { ToolPreview } from "@/domain/session/agent-run";
 import { FilePreview } from "@/features/files/ui/FilePreview";
 import { Popover } from "@/shared/ui/Popover";
 import { X } from "@/shared/ui/icons";

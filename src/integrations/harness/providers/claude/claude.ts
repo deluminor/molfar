@@ -1,10 +1,10 @@
 import { nativeModelId } from "@/features/sessions/model/models";
 import { sameProviderAccountId } from "@/features/providers/model/provider-accounts";
 import type {
-  RuntimeMode,
   TaskListItem,
-  TaskListMeta,
-} from "@/features/sessions/model/session";
+  TaskListMeta
+} from "@/domain/session/task-list";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { loadClaudeHooks } from "@/features/settings/model/settings";
 import {
   killChild,
@@ -76,7 +76,7 @@ import {
   questionPromptTitle,
   questionsFromUnknown,
   type UserQuestionReply,
-} from "@/features/sessions/model/user-question";
+} from "@/domain/session/user-question";
 import type {
   ApprovalDecision,
   CompactContextInput,

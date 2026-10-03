@@ -2,7 +2,7 @@ import {
   buildThreadTitlePrompt,
   parseGeneratedSessionTitle,
   type GeneratedSessionTitle,
-} from "@/features/sessions/model/session-title";
+} from "@/domain/session/generated-title";
 import { OMP_FLAVOR, PI_FLAVOR, type PiFlavor } from "./pi-flavor";
 import { runTextPrompt } from "./pi-text";
 

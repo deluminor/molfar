@@ -11,7 +11,8 @@ import {
   truncateBeforeLastEditableTurn,
   truncateBeforeLastUserTurn,
 } from "./edit-last-turn";
-import { newSession, type Block } from "./session";
+import { newSession } from "./session";
+import type { Block } from "@/domain/session/block";
 
 function chat(blocks: Block[]) {
   return { ...newSession("pi", "/tmp"), blocks };

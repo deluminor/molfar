@@ -1,4 +1,4 @@
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import type { GitFileDiffKind, GitHistoryCommit } from "@/platform/tauri/fs";
 import { GitChangesPanel } from "./GitChangesPanel";
 

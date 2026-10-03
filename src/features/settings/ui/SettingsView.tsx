@@ -194,12 +194,8 @@ import {
   type ArchivedProject,
   type RecentProject,
 } from "@/features/projects/model/recents";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  type HarnessId,
-} from "@/features/sessions/model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import {
   loadProjectProviderSettings,
   projectProvidersRevision,
@@ -379,7 +375,7 @@ import {
   removeWorktree,
   type RemoveWorktree,
 } from "@/features/source-control/model/worktrees";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 
 /**
  * The `data-setting-id` Settings should reveal when it opens: one of the ids in

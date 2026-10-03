@@ -1,3 +1,4 @@
+import type { LinkedWorkItemActivityCounts, LinkedWorkItemActivityEntry, LinkedWorkItemActivityKind, LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
 import {
   githubReviewStateLabel,
   type GithubWorkItemComment,
@@ -5,42 +6,8 @@ import {
 } from "./github-tasks";
 import type { LinkedSessionUpdate } from "./linked-session-updates";
 
-export type LinkedWorkItemActivityKind =
-  "comment" | "review" | "review_comment" | "commit";
-
-export type LinkedWorkItemActivityEntry = {
-  id: string;
-  kind: LinkedWorkItemActivityKind;
-  author: string;
-  text: string;
-  createdAt: string;
-  url: string;
-};
-
-export type LinkedWorkItemActivityCounts = {
-  comments: number;
-  reviews: number;
-  commits: number;
-};
-
 export type LinkedWorkItemTerminalState =
   "issue_closed" | "pr_merged" | "pr_closed";
-
-/** In-memory, one-shot context shown when an updated linked session is opened. */
-export type LinkedWorkItemUpdateCard = {
-  kind: "issue" | "pr";
-  repo: string;
-  number: number;
-  title: string;
-  url: string;
-  state: string;
-  since: number;
-  updatedAt: number;
-  status: "loading" | "ready" | "error";
-  counts: LinkedWorkItemActivityCounts;
-  entries: LinkedWorkItemActivityEntry[];
-  truncated: boolean;
-};
 
 const EMPTY_COUNTS: LinkedWorkItemActivityCounts = {
   comments: 0,

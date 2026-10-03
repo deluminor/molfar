@@ -3,10 +3,10 @@ import {
   githubRepo,
   inboxIdentityKey,
   type InboxItem,
-  type GithubTaskKind,
 } from "@/features/inbox/model/github-tasks";
-import type { LinkedWorkItem } from "./session";
-import type { GeneratedWorkItemHint } from "./session-title";
+import type { GithubTaskKind } from "@/domain/work-items/work-item";
+import type { LinkedWorkItem } from "@/domain/session/session";
+import type { GeneratedWorkItemHint } from "@/domain/session/generated-title";
 
 const GITHUB_URL_RE =
   /https?:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/(pull|issues)\/(\d+)\b/i;

@@ -10,7 +10,7 @@ import {
   openEditorTab,
 } from "@/features/workspace/model/layout";
 import { groupTurns } from "./transcript-activity";
-import type { Block } from "./session";
+import type { Block } from "@/domain/session/block";
 
 const agent = (sessionId: string, title: string) =>
   newAgentTab(title, "/repo", {

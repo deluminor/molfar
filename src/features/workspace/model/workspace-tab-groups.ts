@@ -14,10 +14,8 @@ import {
 } from "./layout";
 import { projectName } from "@/shared/lib/paths";
 import { sameProjectPath } from "@/features/projects/model/recents";
-import {
-  sessionWorkCwd,
-  type Session,
-} from "@/features/sessions/model/session";
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 
 export function workspaceTabCwd(
   tab: WorkspaceTab,

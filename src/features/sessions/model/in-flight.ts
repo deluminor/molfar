@@ -1,6 +1,7 @@
 import { leafIds, newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
 import type { DockSide, ProjectTerminalDock } from "@/features/projects/model/project-terminal";
-import { sessionNeedsInput, type Session } from "./session";
+import { sessionNeedsInput } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 import { stopStreaming } from "@/integrations/harness/core/apply";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 

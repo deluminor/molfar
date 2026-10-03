@@ -13,14 +13,10 @@ import {
   sessionBtwThreads,
 } from "../model/btw";
 import { groupTurns } from "../model/transcript-activity";
-import {
-  DEFAULT_RUNTIME_MODE,
-  HARNESS_TITLE,
-  type Block,
-  type BtwMessage,
-  type BtwThread,
-  type HarnessId,
-} from "../model/session";
+import type { Block } from "@/domain/session/block";
+import type { BtwMessage, BtwThread } from "@/domain/session/block-meta";
+import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 
 type Options = {
   /** False when this session cannot take side questions right now. */

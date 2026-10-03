@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
+import type { Block } from "@/domain/session/block";
 import { findTranscriptBlocks } from "./transcript-find";
 
 describe("findTranscriptBlocks", () => {

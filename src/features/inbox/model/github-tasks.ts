@@ -40,17 +40,11 @@ import {
   type RecentProject,
 } from "@/features/projects/model/recents";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
+import type { GithubLabel, GithubTaskKind, InboxKind, InboxProvider } from "@/domain/work-items/work-item";
+import type { InboxComposerCard } from "@/domain/work-items/inbox-card";
 
-export type GithubTaskKind = "issue" | "pr";
 export type GithubPrAction =
   "merge" | "squash" | "rebase" | "draft" | "ready" | "close" | "reopen";
-export type InboxKind = GithubTaskKind | "linear" | "jira";
-
-export type GithubLabel = {
-  name: string;
-  color: string;
-};
-
 export type GithubAssignee = {
   login: string;
   avatarUrl?: string;
@@ -71,9 +65,6 @@ export type GithubWorkItem = {
   draft: boolean;
   repo: string;
 };
-
-export type InboxProvider =
-  "github" | "linear" | "jira" | "gitlab" | "azuredevops";
 
 export type InboxItem = Omit<GithubWorkItem, "kind"> & {
   kind: InboxKind;
@@ -1206,18 +1197,6 @@ export function inboxStartDraft(item: InboxItem, body?: string): string {
   if (url) lines.push(url);
   return `${lines.join("\n")}\n`;
 }
-
-/** Compact chip shown above the composer when starting from Inbox. */
-export type InboxComposerCard = {
-  provider: InboxProvider;
-  kind: InboxKind;
-  identifier: string;
-  title: string;
-  url: string;
-  source: string;
-  labels: GithubLabel[];
-  prompt: string;
-};
 
 export function inboxComposerCard(
   item: InboxItem,

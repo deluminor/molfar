@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RUNTIME_MODES } from "@/features/sessions/model/session";
+import { RUNTIME_MODES } from "@/domain/session/runtime-mode";
 import type { AgentModel } from "@/features/sessions/model/models";
 import {
   filterQuickModels,

@@ -19,10 +19,7 @@ import {
   clearCachedRateLimits,
   setCachedRateLimits,
 } from "@/features/providers/model/rate-limits-cache";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-} from "@/features/sessions/model/session";
+import { HARNESS_TITLE, HARNESSES } from "@/domain/harness/harness";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/display-prefs";
 
 vi.mock("@tauri-apps/api/core", () => ({

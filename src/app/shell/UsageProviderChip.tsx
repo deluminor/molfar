@@ -14,7 +14,7 @@ import {
 import type { CodexRateLimitResetOutcome } from "@/features/providers/model/rate-limits-fetch";
 import { mascotPath, projectMascot } from "@/features/projects/model/project-mascots";
 import { projectKey, projectName } from "@/shared/lib/paths";
-import { HARNESS_TITLE, type HarnessId } from "@/features/sessions/model/session";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,

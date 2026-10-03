@@ -9,8 +9,8 @@ import { hiddenApprovalNotices } from "@/features/notifications/model/approval-t
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import {
   newSession,
-  type Session,
 } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   probeNotificationPermission,
   saveNotificationsEnabled,

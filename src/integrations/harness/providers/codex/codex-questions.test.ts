@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CUSTOM_OPTION_ID } from "@/features/sessions/model/user-question";
+import { CUSTOM_OPTION_ID } from "@/domain/session/user-question";
 import { codexQuestions, codexQuestionResponse } from "./codex-questions";
 
 describe("Codex question protocol", () => {

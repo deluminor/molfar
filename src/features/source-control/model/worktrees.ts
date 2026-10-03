@@ -4,7 +4,9 @@ import { invokeWorkspace, notifyGitChanged } from "@/platform/tauri/fs";
 import { isFilesystemTab, type FilePaneTab } from "@/features/workspace/model/layout";
 import { isEqualOrInside, pathKey } from "@/shared/lib/paths";
 import { isBlankSession } from "@/features/projects/model/project-return";
-import { newSession, sessionWorkCwd, type Session } from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 
 export type Worktree = {
   path: string;

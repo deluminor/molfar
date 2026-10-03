@@ -14,11 +14,7 @@ import {
   setCachedRateLimits,
   useCachedRateLimits,
 } from "@/features/providers/model/rate-limits-cache";
-import {
-  HARNESS_LABEL,
-  HARNESS_TITLE,
-  type HarnessId,
-} from "@/features/sessions/model/session";
+import { HARNESS_LABEL, HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import {
   loginHarness,
   supportsHarnessLogin,

@@ -1,26 +1,19 @@
-import type {
-  Attachment,
-  RuntimeMode,
-  TaskListItem,
-  ToolPreview,
-  TurnMetrics,
-} from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ToolPreview } from "@/domain/session/agent-run";
+import type { TurnMetrics } from "@/domain/session/turn";
+import { type TaskListItem, isTaskListToolName, normalizeTaskListStatus, taskListFromToolInput } from "@/domain/session/task-list";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPathText,
   promptText,
 } from "@/features/sessions/model/attachments";
 import { parseResetTimestamp } from "@/features/providers/model/rate-limits";
 import {
-  isTaskListToolName,
-  normalizeTaskListStatus,
-  taskListFromToolInput,
-} from "@/features/sessions/model/task-list";
-import {
   questionPromptTitle,
   questionsFromUnknown,
   selectedAnswerLabels,
   type UserQuestionReply,
-} from "@/features/sessions/model/user-question";
+} from "@/domain/session/user-question";
 import {
   extractToolPreview,
   isAgentToolName,

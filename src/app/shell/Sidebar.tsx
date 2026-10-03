@@ -54,15 +54,12 @@ import {
   type SidebarTabId,
 } from "@/features/settings/model/appearance";
 import { formatInteger } from "@/shared/lib/numbers";
-import {
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-} from "@/platform/tauri/fs";
+import type { GitFileDiffKind, GitHistoryCommit } from "@/platform/tauri/fs";
 import { IS_MAC, MOD } from "@/platform/tauri/platform";
 import { copyText } from "@/platform/tauri/clipboard";
 import { resolveModel } from "@/features/sessions/model/models";
 import type { OpenFileFn } from "@/features/search/model/search";
-import { sessionDisplayTitle } from "@/features/sessions/model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
 import { nextUnseenFinishedSessions } from "@/features/sessions/model/session-done";
 import { orchestrationTaskLabel } from "@/features/orchestration/model/orchestration-summary";
 import {
@@ -121,10 +118,8 @@ import {
   saveSessionSidebarFilters,
   type SessionSidebarFilters,
 } from "@/features/sessions/model/session-filters";
-import type {
-  HarnessId,
-  LinkedWorkItem,
-} from "@/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import type { LiveAgent } from "@/features/sessions/model/live-agents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import type { SettingsSectionId } from "@/features/settings/model/settings";

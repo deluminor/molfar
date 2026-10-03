@@ -1,4 +1,4 @@
-import type { ToolPreview, ToolPreviewKind, ToolPreviewLine } from "@/features/sessions/model/session";
+import type { ToolPreview, ToolPreviewKind, ToolPreviewLine } from "@/domain/session/agent-run";
 import { displayPath } from "@/shared/lib/paths";
 import {
   formatShellIntent,

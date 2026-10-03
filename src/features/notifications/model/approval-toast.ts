@@ -1,5 +1,6 @@
 import { leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
-import type { Block, Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
 import { toolCallLabel } from "@/features/sessions/model/transcript-activity";
 
 export type PendingApprovalNotice = {

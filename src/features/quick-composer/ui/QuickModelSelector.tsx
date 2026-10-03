@@ -25,12 +25,8 @@ import {
   type AgentModel,
   type ModelPickerTab,
 } from "@/features/sessions/model/models";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  type HarnessId,
-  type RuntimeMode,
-} from "@/features/sessions/model/session";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   filterQuickModels,

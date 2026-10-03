@@ -20,8 +20,8 @@ import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import {
   newSession,
-  type Session,
 } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   newTab,
   type WorkspaceTab,

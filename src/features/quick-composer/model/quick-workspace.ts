@@ -1,4 +1,4 @@
-import type { WorkspaceMode, Session } from "@/features/sessions/model/session";
+import type { WorkspaceMode, Session } from "@/domain/session/session";
 import type { QuickLaunch } from "./quick-composer";
 import {
   listWorktrees,

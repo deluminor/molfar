@@ -1,6 +1,6 @@
 import { nativeModelId } from "@/features/sessions/model/models";
 import { AcpSubagents } from "../../core/acp-subagents";
-import type { RuntimeMode } from "@/features/sessions/model/session";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,

@@ -8,7 +8,8 @@ import {
   openEditorTab,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
-import { newSession, type Session } from "./session";
+import { newSession } from "./session";
+import type { Session } from "@/domain/session/session";
 import {
   removeSessionFromWorkspace,
   type SessionWorkspaceRemoval,

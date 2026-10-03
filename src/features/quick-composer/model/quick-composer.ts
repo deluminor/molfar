@@ -20,16 +20,10 @@ import {
   setHarnessModels,
   type AgentModel,
 } from "@/features/sessions/model/models";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  RUNTIME_MODES,
-  type RuntimeMode,
-  type WorkspaceMode,
-  type Attachment,
-  harnessSupportsAttachments,
-  type HarnessId,
-} from "@/features/sessions/model/session";
+import type { WorkspaceMode } from "@/domain/session/session";
+import type { Attachment } from "@/domain/session/attachment";
+import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
+import { HARNESS_TITLE, harnessSupportsAttachments, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 
 /** Workspace windows hear this when the panel has a session for them. */
 export const QUICK_COMPOSER_LAUNCH_EVENT = "quick_composer_launch";

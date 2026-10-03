@@ -7,7 +7,7 @@ import {
   githubWorkItemDetails,
   type InboxItem,
 } from "../model/github-tasks";
-import type { LinkedWorkItem } from "@/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   InboxDetail,

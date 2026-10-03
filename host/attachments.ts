@@ -7,7 +7,7 @@ import {
   statSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { Attachment } from "../src/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 import type { RemoteAttachment } from "../src/features/connections/model/protocol";
 import type { HostStore } from "./store";
 

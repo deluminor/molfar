@@ -43,7 +43,9 @@ const {
   __codexTestReset,
 } = await import("./codex");
 import type { HarnessEvent } from "../../core/types";
-import { newSession, type RuntimeMode, type TurnIntent } from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
+import type { TurnIntent } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { applyHarnessEvent } from "../../core/apply";
 
 function parse() {

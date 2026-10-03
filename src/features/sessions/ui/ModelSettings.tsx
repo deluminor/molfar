@@ -13,7 +13,7 @@ import {
   subscribeModels,
   type ModelSetting,
 } from "../model/models";
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 
 type Props = {
   harness: HarnessId;

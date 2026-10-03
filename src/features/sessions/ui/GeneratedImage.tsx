@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { readBinaryFile } from "@/platform/tauri/fs";
 import { formatFileSize, sniffImageMime } from "@/features/files/model/file-preview";
 import { ImageLightbox } from "@/shared/ui/ImageLightbox";
-import type { GeneratedImageMeta } from "../model/session";
+import type { GeneratedImageMeta } from "@/domain/session/attachment";
 
 type State =
   | { status: "loading" }

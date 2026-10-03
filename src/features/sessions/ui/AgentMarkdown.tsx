@@ -44,7 +44,7 @@ import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { copyText } from "@/platform/tauri/clipboard";
 import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
 import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl } from "@/features/inbox/model/inbox-media";
-import { isNoteImagePath } from "@/features/notes";
+import { isNoteImagePath } from "@/features/notes/note-images";
 import { IS_MAC, IS_WIN } from "@/platform/tauri/platform";
 import { InboxMedia } from "@/features/inbox/ui/InboxMedia";
 import { rehypeHardBreaks } from "./hard-breaks";

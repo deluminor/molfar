@@ -5,7 +5,7 @@ import {
   orchestrationTaskLabel,
   type OrchestrationSummary,
 } from "../model/orchestration-summary";
-import { HARNESS_TITLE } from "@/features/sessions/model/session";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   OrchestrationActions,

@@ -4,10 +4,10 @@ import { mapCodexNotification } from "@/integrations/harness/providers/codex/cod
 import { toolCallLabel } from "../model/transcript-activity";
 import {
   newSession,
-  type Block,
-  type BtwThread,
-  type Session,
 } from "../model/session";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { BtwThread } from "@/domain/session/block-meta";
 import {
   backfillClaudeShellCommands,
   backfillCodexShellCommands,

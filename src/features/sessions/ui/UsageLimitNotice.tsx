@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Clock, Gauge, Play, X } from "@/shared/ui/icons";
-import type { UsageLimit } from "../model/session";
+import type { UsageLimit } from "@/domain/session/message-queue";
 import { formatUsageLimitReset } from "../model/usage-limit";
 
 const BUTTON =

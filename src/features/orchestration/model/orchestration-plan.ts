@@ -1,43 +1,8 @@
-import { HARNESSES, type Block, type HarnessId, type Session } from "@/features/sessions/model/session";
+import type { OrchestrationSettings, ProposedTask, OrchestrationProposal } from "@/domain/orchestration/proposal";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { isEqualOrInside, pathKey } from "@/shared/lib/paths";
-
-export type OrchestrationChoice = {
-  harness: HarnessId;
-  model: string;
-  name: string;
-};
-export type OrchestrationSettings = {
-  choices: OrchestrationChoice[];
-  maxWorkers: number;
-};
-export type ProposedTask = {
-  id: string;
-  title: string;
-  prompt: string;
-  harness: HarnessId;
-  model: string;
-  modelSettings?: Record<string, string>;
-  files: string[];
-  dependsOn: string[];
-};
-export type OrchestrationProposal = {
-  version: 1;
-  leadId: string;
-  /** Project identity retained for history and proposal ownership. */
-  cwd: string;
-  /** Concrete checkout inspected while preparing this proposal. */
-  checkoutCwd?: string;
-  request: string;
-  author: OrchestrationChoice;
-  settings: OrchestrationSettings;
-  status: "planning" | "ready" | "invalid" | "starting" | "approved";
-  title: string;
-  summary: string;
-  tasks: ProposedTask[];
-  error?: string;
-  /** Kept only for invalid cards so a retry can repair the response directly. */
-  response?: string;
-};
 
 function required(value: unknown, label: string, max = 30_000): string {
   if (typeof value !== "string" || !value.trim() || value.length > max)

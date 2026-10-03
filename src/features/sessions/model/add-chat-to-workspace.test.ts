@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { leafIds, newFileTab, newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
-import type { Session } from "./session";
+import type { Session } from "@/domain/session/session";
 import { applyAddToChatRequest } from "./add-chat-to-workspace";
 
 function session(id: string, cwd: string, overrides: Partial<Session> = {}): Session {

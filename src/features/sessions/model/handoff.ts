@@ -2,26 +2,13 @@ import { isEditTool } from "@/integrations/harness/core/preview";
 import { compactCiRepairContext } from "@/features/inbox/model/ci-repair";
 import { limitSection } from "@/shared/lib/json-text";
 import { displayPath } from "@/shared/lib/paths";
-import {
-  HARNESS_TITLE,
-  type Block,
-  type HarnessId,
-  type HandoffMeta,
-  type PendingHarnessSwitch,
-  type SecondOpinionMeta,
-  type Session,
-} from "./session";
+import type { PendingHarnessSwitch, Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { HandoffMeta, SecondOpinionMeta } from "@/domain/session/block-meta";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 
 export const HANDOFF_TITLE = "Handoff";
-
-/** Composer chip: recap is injected on send so the user can add context first. */
-export type HandoffComposerCard = {
-  from: HarnessId;
-  to: HarnessId;
-  brief: string;
-  request?: string;
-  files?: number;
-};
 
 export function buildHandoffComposerCard(input: {
   from: HarnessId;

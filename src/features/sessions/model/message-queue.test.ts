@@ -7,7 +7,9 @@ import {
   queuedHead,
   queuedMessageForSubmit,
 } from "./message-queue";
-import { newSession, type QueuedMessage, type Session } from "./session";
+import { newSession } from "./session";
+import type { Session } from "@/domain/session/session";
+import type { QueuedMessage } from "@/domain/session/message-queue";
 
 function queued(id: string, text = id): QueuedMessage {
   return { id, text, attachments: [] };

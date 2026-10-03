@@ -1,5 +1,5 @@
 import type { BuiltinSkill } from "@/features/skills/model/skills";
-import type { Block } from "./session";
+import type { Block } from "@/domain/session/block";
 
 export const OPERATOR_COMMAND: BuiltinSkill = {
   kind: "builtin",

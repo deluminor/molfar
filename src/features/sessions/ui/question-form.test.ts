@@ -6,7 +6,7 @@ import { QuestionForm } from "./QuestionForm";
 import type {
   UserQuestionPrompt,
   UserQuestionReply,
-} from "../model/user-question";
+} from "@/domain/session/user-question";
 
 let container: HTMLDivElement;
 let root: Root;

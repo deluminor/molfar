@@ -43,7 +43,7 @@ import {
   searchProject,
   type OpenFileFn,
 } from "../model/search";
-import { type Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   cancelSessionSearch,
   searchSessions,

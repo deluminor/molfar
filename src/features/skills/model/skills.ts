@@ -10,7 +10,7 @@ import { invalidateProjectFiles } from "@/features/files/model/file-index";
 import { joinPath } from "@/shared/lib/paths";
 import { isLocalProject, normalizeProjectPath } from "@/features/projects/model/recents";
 import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import { getHarness } from "@/integrations/harness/core/registry";
 import type { NativeCommand } from "@/integrations/harness/core/native-commands";
 import {

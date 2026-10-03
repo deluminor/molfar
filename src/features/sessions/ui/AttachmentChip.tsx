@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X } from "@/shared/ui/icons";
 import { attachmentPreviewSrc, isAttachmentFolder } from "../model/attachments";
-import type { Attachment } from "../model/session";
+import type { Attachment } from "@/domain/session/attachment";
 import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { ImageLightbox } from "@/shared/ui/ImageLightbox";
 

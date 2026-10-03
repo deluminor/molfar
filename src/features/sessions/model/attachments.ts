@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { basename, pickFiles as pickFilePaths } from "@/platform/tauri/fs";
-import type { Attachment, AttachmentKind } from "./session";
+import type { Attachment, AttachmentKind } from "@/domain/session/attachment";
 
 export const MAX_ATTACHMENTS = 20;
 export const MAX_EMBED_BYTES = 20 * 1024 * 1024;

@@ -5,7 +5,7 @@ import {
   requireHostDescriptor,
 } from "../src/features/connections/model/protocol";
 import { hostProviders } from "./providers";
-import { HARNESSES } from "../src/features/sessions/model/session";
+import { HARNESSES } from "@/domain/harness/harness";
 
 it("exposes every local harness through the remote host contract", () => {
   expect(Object.keys(hostProviders).sort()).toEqual(

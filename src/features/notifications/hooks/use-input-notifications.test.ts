@@ -7,7 +7,8 @@ import {
   saveNotificationsEnabled,
   setWindowFocused,
 } from "../model/notifications";
-import { newSession, type Session } from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import { useInputNotifications } from "./use-input-notifications";
 
 const invoke = vi.hoisted(() =>

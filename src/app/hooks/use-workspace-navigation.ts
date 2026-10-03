@@ -4,7 +4,7 @@ import {
   sameProjectPath,
 } from "@/features/projects/model/recents";
 import { isBlankSession } from "@/features/projects/model/project-return";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   setWorktreeFocus,
   worktreeFocus,

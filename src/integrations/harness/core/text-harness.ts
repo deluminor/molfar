@@ -1,4 +1,4 @@
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import { isHarnessAvailable } from "./availability";
 import type { PrContent } from "@/features/source-control/model/git-text";
 import {

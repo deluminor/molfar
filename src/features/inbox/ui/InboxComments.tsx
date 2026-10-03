@@ -11,8 +11,8 @@ import {
   formatRelativeTime,
   githubReviewStateLabel,
   inboxPersonAvatarUrl,
-  type InboxProvider,
 } from "../model/github-tasks";
+import type { InboxProvider } from "@/domain/work-items/work-item";
 import { MOD } from "@/platform/tauri/platform";
 import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 

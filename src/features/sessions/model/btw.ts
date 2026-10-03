@@ -1,13 +1,13 @@
 import { applyHarnessEvent } from "@/integrations/harness/core/apply";
 import type { HarnessEvent } from "@/integrations/harness/core/types";
 import { displayPath } from "@/shared/lib/paths";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
 import type {
-  Attachment,
-  Block,
   BtwMessage,
-  BtwThread,
-  HarnessId,
-} from "./session";
+  BtwThread
+} from "@/domain/session/block-meta";
+import type { HarnessId } from "@/domain/harness/harness";
 import { newSession } from "./session";
 import type { BuiltinSkill } from "@/features/skills/model/skills";
 import { harnessForTurn } from "./second-opinion";

@@ -16,7 +16,7 @@ import {
   pickAttachments,
   revokeAttachment,
 } from "@/features/sessions/model/attachments";
-import type { Attachment } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 import {
   isFileReferenceText,
   nativeClipboardAttachments,

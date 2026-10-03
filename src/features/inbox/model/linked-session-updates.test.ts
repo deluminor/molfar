@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LinkedWorkItem } from "@/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import type { GithubWorkItem } from "./github-tasks";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {

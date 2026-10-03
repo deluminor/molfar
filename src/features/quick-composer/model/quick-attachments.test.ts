@@ -5,7 +5,7 @@ import {
   quickLaunchAttachments,
   storeQuickAttachments,
 } from "./quick-attachments";
-import type { Attachment } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 const image: Attachment = {

@@ -1,5 +1,5 @@
 import { ChevronRight, Replace, X } from "@/shared/ui/icons";
-import { HARNESS_TITLE, type HarnessId } from "../model/session";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 
 type Card = {

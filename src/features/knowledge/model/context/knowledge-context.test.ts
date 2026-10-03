@@ -2,9 +2,9 @@
 import { expect, it, vi } from "vitest";
 import {
   composeNoteMessage,
-  noteCardMeta,
   ADD_NOTE_TO_CHAT_EVENT,
 } from "@/features/notes/notes";
+import { noteCardMeta } from "@/domain/notes/note-card";
 import {
   knowledgeContextCard,
   requestKnowledgeContext,

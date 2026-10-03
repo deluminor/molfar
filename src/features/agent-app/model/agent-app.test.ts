@@ -9,7 +9,7 @@ import {
   loadSessionFolders,
   saveSessionFolders,
 } from "@/features/sessions/model/session-folders";
-import type { Note } from "@/features/notes";
+import type { Note } from "@/features/notes/notes";
 import type { Worktree } from "@/features/source-control/model/worktrees";
 import { handleAgentApp, notePreview, type AgentAppHost } from "./agent-app";
 

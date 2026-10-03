@@ -20,7 +20,8 @@ import {
   splitPane,
 } from "./layout";
 import { createProjectTerminal } from "@/features/projects/model/project-terminal";
-import { newSession, type Session } from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   collectWorkspaceSnapshot,
   hydrateWorkspaceSnapshot,

@@ -1,5 +1,5 @@
 import { play, setEnabled, setVolume, type SoundName } from "cuelume";
-import type { LinkedWorkItemUpdateCard } from "@/features/inbox/model/linked-work-item-activity";
+import type { LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
 import {
   allowsProjectNotification,
   type NotificationSubject,

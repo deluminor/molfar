@@ -2,13 +2,9 @@ import { isEditTool } from "@/integrations/harness/core/preview";
 import { compactCiRepairContext } from "@/features/inbox/model/ci-repair";
 import { limitSection } from "@/shared/lib/json-text";
 import { displayPath } from "@/shared/lib/paths";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  type Block,
-  type HarnessId,
-  type SecondOpinionMeta,
-} from "./session";
+import type { Block } from "@/domain/session/block";
+import type { SecondOpinionMeta } from "@/domain/session/block-meta";
+import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 
 const USER_LIMIT = 400;
 const REPORT_LIMIT = 900;

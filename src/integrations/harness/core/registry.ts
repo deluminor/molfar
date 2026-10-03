@@ -1,14 +1,12 @@
-import type {
-  Block,
-  HarnessId,
-  TaskListMeta,
-  TurnIntent,
-} from "@/features/sessions/model/session";
+import type { Block } from "@/domain/session/block";
+import type { TurnIntent } from "@/domain/session/turn";
+import type { TaskListMeta } from "@/domain/session/task-list";
+import type { HarnessId } from "@/domain/harness/harness";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { GeneratedSessionTitle } from "@/features/sessions/model/session-title";
+import type { GeneratedSessionTitle } from "@/domain/session/generated-title";
 import type { PrContent } from "@/features/source-control/model/git-text";
 import { hasLiveCatalog } from "@/features/sessions/model/models";
-import type { UserQuestionReply } from "@/features/sessions/model/user-question";
+import type { UserQuestionReply } from "@/domain/session/user-question";
 import type { NativeCommandProvider } from "./native-commands";
 import type {
   ApprovalDecision,

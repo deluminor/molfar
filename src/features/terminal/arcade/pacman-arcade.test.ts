@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HARNESSES } from "@/features/sessions/model/session";
+import { HARNESSES } from "@/domain/harness/harness";
 import type { ArcadeSprite } from "./grid-arcade";
 import { createPacmanArcade } from "./pacman-arcade";
 

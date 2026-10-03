@@ -1,11 +1,8 @@
-import type {
-  Attachment,
-  RuntimeMode,
-  TaskListItem,
-  ToolPreview,
-  TurnIntent,
-  TurnMetrics,
-} from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ToolPreview } from "@/domain/session/agent-run";
+import type { TurnMetrics, TurnIntent } from "@/domain/session/turn";
+import { type TaskListItem, normalizeTaskListStatus } from "@/domain/session/task-list";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPath,
   attachmentPathText,
@@ -14,7 +11,6 @@ import {
   promptText,
 } from "@/features/sessions/model/attachments";
 import { displayPath } from "@/shared/lib/paths";
-import { normalizeTaskListStatus } from "@/features/sessions/model/task-list";
 import {
   composeToolTitle,
   extractToolPreview,

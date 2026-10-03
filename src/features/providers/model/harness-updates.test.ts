@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   announceHarnessUpdated,
   findHarnessUpdates,

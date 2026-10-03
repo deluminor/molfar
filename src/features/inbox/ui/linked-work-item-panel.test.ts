@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearInboxCache, type GithubWorkItem } from "../model/github-tasks";
-import type { LinkedWorkItem } from "@/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import { LinkedWorkItemPanel } from "./InboxView";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

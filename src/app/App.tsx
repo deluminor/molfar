@@ -144,8 +144,8 @@ import {
   proposalBlock,
   validateOrchestrationSettings,
   withOrchestrationProposal,
-  type OrchestrationProposal,
 } from "@/features/orchestration/model/orchestration-plan";
+import type { OrchestrationProposal } from "@/domain/orchestration/proposal";
 import {
   attachOrchestrationWorkers,
   consolidateOrchestrationTabs,
@@ -200,10 +200,10 @@ import {
   shouldAskOutgoingAgent,
   userMessagesAfterHandoff,
   wrapHandoffPrompt,
-  type HandoffComposerCard,
 } from "@/features/sessions/model/handoff";
+import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 import { requestOutgoingHandoff } from "@/features/sessions/model/handoff-turn";
-import { modelsFor } from "@/features/sessions/model/models";
+import { modelsFor, mergeModelSettings, nativeModelId, preferredModelSettings, resolveModel, saveLastModelSettings, saveRecentModelChoice } from "@/features/sessions/model/models";
 import {
   confirmCloseTerminal,
   confirmCloseTerminals,
@@ -313,17 +313,14 @@ import {
   releaseNotesTitle,
 } from "./model/release-notes";
 
-import { type WindowTransferPayload } from "./model/window-transfer";
+import type { WindowTransferPayload } from "./model/window-transfer";
 
 import { notifyDirsChanged } from "@/features/files/model/file-tree";
 import {
   invalidateWatchedFiles,
   nudgeWatchedFiles,
 } from "@/features/files/model/file-watch";
-import {
-  type EditorNavigationTarget,
-  type OpenFileFn,
-} from "@/features/search/model/search";
+import type { EditorNavigationTarget, OpenFileFn } from "@/features/search/model/search";
 import {
   applySessionCheckpoint,
   beginSessionTurn,
@@ -339,14 +336,6 @@ import {
   createEditedResendAttempt,
   createEditedResendCoordinator,
 } from "@/features/sessions/model/edit-last-turn";
-import {
-  mergeModelSettings,
-  nativeModelId,
-  preferredModelSettings,
-  resolveModel,
-  saveLastModelSettings,
-  saveRecentModelChoice,
-} from "@/features/sessions/model/models";
 import { isEditTool } from "@/integrations/harness/core/preview";
 
 import {
@@ -392,37 +381,26 @@ import {
   type AddToChatRequest,
 } from "@/features/sessions/model/quote-draft";
 import {
-  canReplaceSessionTitle,
-  formatSessionTitle,
-  HARNESS_LABEL,
-  HARNESS_TITLE,
-  HARNESSES,
   newDefaultSession,
   newSession,
-  removeSessionDraft,
   retargetSessionToProject,
-  sessionDisplayTitle,
-  sessionDraftBlock,
-  sessionNeedsInput,
-  sessionWorkCwd,
-  titleFromPrompt,
-  type Attachment,
-  type Block,
-  type BtwThread,
-  type ComposerTurnOptions,
-  type HarnessId,
-  type LinkedWorkItem,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type PlanStatus,
-  type RuntimeMode,
-  type SecondOpinionMeta,
-  type Session,
-  type UsageLimit,
-  type WorkspaceMode,
 } from "@/features/sessions/model/session";
+import {
+  canReplaceSessionTitle,
+  formatSessionTitle, sessionDisplayTitle,
+  titleFromPrompt
+} from "@/domain/session/title";
+import { sessionWorkCwd, removeSessionDraft, sessionDraftBlock, sessionNeedsInput } from "@/domain/session/session-state";
+import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { UsageLimit } from "@/domain/session/message-queue";
+import type { Attachment } from "@/domain/session/attachment";
+import type { BtwThread, PlanStatus, SecondOpinionMeta } from "@/domain/session/block-meta";
+import type { ModelTarget, PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { HARNESS_LABEL, HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { createSessionRemover } from "@/features/sessions/model/session-removal";
-import { shouldGenerateSessionTitle } from "@/features/sessions/model/session-title";
+import { shouldGenerateSessionTitle } from "@/domain/session/generated-title";
 import {
   applyDetachPaneToTab,
   applyPlaceSessionOnPane,
@@ -445,21 +423,9 @@ import {
 } from "@/shared/lib/paths";
 
 import { claimInboxAutomationRuns } from "@/features/automations/model/automation-events";
-import {
-  claimDueAutomations,
-  recoverAutomationRuns,
-  updateAutomationRun,
-  type Automation,
-  type AutomationRun,
-} from "@/features/automations/model/automations";
-import {
-  ADD_NOTE_TO_CHAT_EVENT,
-  composeNoteMessage,
-  noteCardMeta,
-  NOTES_CHANGED_EVENT,
-  upsertNote,
-  type NoteComposerCard,
-} from "@/features/notes";
+import { claimDueAutomations, recoverAutomationRuns, updateAutomationRun, type Automation, type AutomationRun, listAutomations } from "@/features/automations/model/automations";
+import { ADD_NOTE_TO_CHAT_EVENT, composeNoteMessage, NOTES_CHANGED_EVENT, upsertNote, loadNotes } from "@/features/notes/notes";
+import { noteCardMeta, type NoteComposerCard } from "@/domain/notes/note-card";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
@@ -498,7 +464,7 @@ import {
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
 import { archiveFocusedSession } from "@/features/sessions/model/archive-shortcut";
-import { dropContextWindow } from "@/features/sessions/model/context-usage";
+import { dropContextWindow } from "@/domain/session/context-usage";
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import {
@@ -559,8 +525,6 @@ import {
   type TabVisitHistory,
 } from "@/features/workspace/model/tab-visit-history";
 
-import { listAutomations } from "@/features/automations/model/automations";
-import { loadNotes } from "@/features/notes";
 
 import {
   cachedRemoteSessionSummary,
@@ -624,8 +588,8 @@ import {
   completeLinkedWorkItemUpdateCard,
   failLinkedWorkItemUpdateCard,
   pendingLinkedWorkItemUpdateCard,
-  type LinkedWorkItemUpdateCard,
 } from "@/features/inbox/model/linked-work-item-activity";
+import type { LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
 import {
   linkedWorkItemFromAutomationEvent,
   linkedWorkItemFromInboxItem,

@@ -73,7 +73,6 @@ import {
   peekInboxList,
   formatRelativeTime,
   inboxPersonAvatarUrl,
-  type GithubLabel,
   type GithubPrAction,
   type GithubPrDiff,
   type GithubWorkItemDetails,
@@ -82,6 +81,7 @@ import {
   type InboxProviderErrors,
   type InboxQuery,
 } from "../model/github-tasks";
+import type { GithubLabel } from "@/domain/work-items/work-item";
 import {
   applyInboxFilters,
   connectableInboxSources,
@@ -110,7 +110,8 @@ import { projectKey, projectName } from "@/shared/lib/paths";
 import { IS_MAC } from "@/platform/tauri/platform";
 import { playCue } from "@/features/settings/model/sounds";
 import { sameProjectPath, type RecentProject } from "@/features/projects/model/recents";
-import { sessionDisplayTitle, type LinkedWorkItem } from "@/features/sessions/model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   inboxItemMatchesLinkedWorkItem,

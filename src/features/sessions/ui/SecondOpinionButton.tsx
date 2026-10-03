@@ -37,11 +37,8 @@ import {
 } from "../model/models";
 import { LAYER } from "@/shared/lib/layers";
 import { secondOpinionTargets } from "../model/second-opinion";
-import {
-  HARNESS_TITLE,
-  type HarnessId,
-  type ModelTarget,
-} from "../model/session";
+import type { ModelTarget } from "@/domain/session/turn";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 import { Popover } from "@/shared/ui/Popover";
 

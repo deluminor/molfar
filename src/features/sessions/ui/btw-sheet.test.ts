@@ -44,7 +44,8 @@ vi.mock("./Composer", () => ({
 }));
 
 import { BtwSheet, useBtwConversation, type BtwConversation } from "./BtwSheet";
-import type { Block, BtwThread } from "../model/session";
+import type { Block } from "@/domain/session/block";
+import type { BtwThread } from "@/domain/session/block-meta";
 
 function thread(id: string, question: string, createdAt: number): BtwThread {
   return {

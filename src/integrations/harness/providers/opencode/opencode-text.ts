@@ -1,5 +1,5 @@
 import { modelsFor } from "@/features/sessions/model/models";
-import type { TurnIntent } from "@/features/sessions/model/session";
+import type { TurnIntent } from "@/domain/session/turn";
 import {
   execChild,
   freeHarnessPort,

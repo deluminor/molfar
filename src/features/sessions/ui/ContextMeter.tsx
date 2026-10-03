@@ -3,7 +3,7 @@ import {
   contextRatio,
   contextTooltip,
   type ContextUsage,
-} from "../model/context-usage";
+} from "@/domain/session/context-usage";
 import { Popover } from "@/shared/ui/Popover";
 
 const SIZE = 14;

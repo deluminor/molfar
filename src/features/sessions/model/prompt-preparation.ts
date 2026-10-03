@@ -1,6 +1,6 @@
 import { applyFileMentionsToTurn } from "@/features/files/model/file-mentions";
 import { applyConfluenceToTurn } from "@/features/inbox/model/confluence/prompt";
-import { applyNotesToTurn } from "@/features/notes";
+import { applyNotesToTurn } from "@/features/notes/notes";
 import {
   applySkillsToTurn,
   warmNativeSkills,

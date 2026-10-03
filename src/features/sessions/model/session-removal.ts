@@ -11,10 +11,10 @@ import { isFilesystemTab, type WorkspaceTab } from "@/features/workspace/model/l
 import { orchestrator } from "@/features/orchestration/model/orchestration";
 import {
   newSession,
-  type HarnessId,
-  type RuntimeMode,
-  type Session,
 } from "./session";
+import type { Session } from "@/domain/session/session";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   deleteSession,
   setSessionArchived,

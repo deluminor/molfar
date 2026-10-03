@@ -46,7 +46,8 @@ const {
   __claudeTestReset,
 } = await import("./claude");
 import type { HarnessEvent } from "../../core/types";
-import type { RuntimeMode, TurnIntent } from "@/features/sessions/model/session";
+import type { TurnIntent } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 
 function parse() {
   return sent.map((line) => JSON.parse(line) as Record<string, unknown>);

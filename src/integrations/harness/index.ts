@@ -202,5 +202,5 @@ export type {
   UserQuestion,
   UserQuestionPrompt,
   UserQuestionReply,
-} from "@/features/sessions/model/user-question";
+} from "@/domain/session/user-question";
 export type { HarnessAdapter, TextPromptInput } from "./core/registry";

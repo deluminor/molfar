@@ -1,5 +1,6 @@
 import { ChevronRight } from "@/shared/ui/icons";
-import { HARNESS_TITLE, type SecondOpinionMeta } from "../model/session";
+import type { SecondOpinionMeta } from "@/domain/session/block-meta";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 
 type Props = {

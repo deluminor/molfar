@@ -17,11 +17,7 @@ import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 import { LAYER } from "@/shared/lib/layers";
 import { Check, Loader, X } from "@/shared/ui/icons";
 import { isPickerProviderVisible } from "@/features/sessions/model/models";
-import {
-  HARNESS_TITLE,
-  HARNESSES,
-  type HarnessId,
-} from "@/features/sessions/model/session";
+import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   announceHarnessUpdated,

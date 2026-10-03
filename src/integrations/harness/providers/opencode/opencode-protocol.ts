@@ -1,16 +1,14 @@
-import type {
-  Attachment,
-  RuntimeMode,
-  ToolPreview,
-  TurnMetrics,
-} from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ToolPreview } from "@/domain/session/agent-run";
+import type { TurnMetrics } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPath,
   attachmentPathText,
   isVisionImage,
   promptText,
 } from "@/features/sessions/model/attachments";
-import { isTaskListToolName } from "@/features/sessions/model/task-list";
+import { isTaskListToolName } from "@/domain/session/task-list";
 import { extractToolPreview } from "../../core/preview";
 import type { HarnessEvent } from "../../core/types";
 

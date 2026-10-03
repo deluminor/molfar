@@ -60,25 +60,19 @@ import {
   stubFilePreview,
 } from "@/integrations/harness/core/preview";
 import { copyMessage } from "@/platform/tauri/clipboard";
-import type { Attachment } from "../model/session";
+import type { Attachment } from "@/domain/session/attachment";
 import { visibleUserPrompt } from "@/features/orchestration/model/orchestration";
 import { playCue } from "@/features/settings/model/sounds";
-import { legacyTaskListFromText } from "../model/task-list";
+import { legacyTaskListFromText } from "@/domain/session/task-list";
 import { resolveModel } from "../model/models";
 import { harnessForTurn } from "../model/second-opinion";
 import { Shimmer } from "@/shared/ui/Shimmer";
-import {
-  hasPendingApproval,
-  HARNESS_TITLE,
-  type AgentStep,
-  type Block,
-  type HarnessId,
-  type InterjectionMeta,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type ToolPreview,
-  type TurnMetrics,
-} from "../model/session";
+import { hasPendingApproval } from "@/domain/session/session-state";
+import type { Block } from "@/domain/session/block";
+import type { AgentStep, ToolPreview } from "@/domain/session/agent-run";
+import type { InterjectionMeta } from "@/domain/session/block-meta";
+import type { TurnMetrics, ModelTarget, PlanBuildTarget } from "@/domain/session/turn";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { useTranscriptLayout } from "../hooks/use-transcript-layout";

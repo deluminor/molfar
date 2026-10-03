@@ -5,7 +5,7 @@ import {
   previewLines,
   promptPreview,
 } from "./prompt-outline";
-import type { Block } from "./session";
+import type { Block } from "@/domain/session/block";
 
 const viewport = { top: 100, bottom: 500 };
 

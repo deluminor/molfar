@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Block, HarnessId } from "./session";
+import type { Block } from "@/domain/session/block";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   buildSecondOpinionCard,
   buildSecondOpinionPrompt,

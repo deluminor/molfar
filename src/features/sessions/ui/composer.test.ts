@@ -39,13 +39,14 @@ import {
   clearMcpSettingsCache,
   loadMcpSettings,
 } from "@/features/settings/model/mcp-settings-cache";
-import type { ComposerTurnOptions, Attachment } from "../model/session";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ComposerTurnOptions } from "@/domain/session/turn";
 import {
   clearComposerDraft,
   getComposerDraft,
   setComposerDraft,
 } from "../model/draft-cache";
-import type { UserQuestionPrompt } from "../model/user-question";
+import type { UserQuestionPrompt } from "@/domain/session/user-question";
 
 function renderAction(
   busy: boolean,

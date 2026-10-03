@@ -1,5 +1,4 @@
-import type { HarnessId } from "./session";
-import { HARNESSES } from "./session";
+import { type HarnessId, HARNESSES } from "@/domain/harness/harness";
 import type { SessionSummary } from "../data/session-store";
 
 export type SessionTimeFilter = "all" | "today" | "7d" | "30d";

@@ -17,7 +17,7 @@ import {
   withDockOpen,
   withDockSide,
 } from "./project-terminal";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 
 function chat(id: string, cwd: string): Session {
   return {

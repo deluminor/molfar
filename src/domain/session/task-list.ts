@@ -1,7 +1,8 @@
-import type { TaskListItem, TaskListItemStatus } from "./session";
-
 export function isTaskListToolName(value: string): boolean {
-  const name = value.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  const name = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
   return ["todowrite", "writetodos", "updatetodos"].some(
     (candidate) => name === candidate || name.endsWith(candidate),
   );
@@ -20,8 +21,7 @@ export function taskListFromToolInput(
     const row = asRecord(todo);
     const text = [row?.content, row?.activeForm, row?.text]
       .find(
-        (value): value is string =>
-          typeof value === "string" && !!value.trim(),
+        (value): value is string => typeof value === "string" && !!value.trim(),
       )
       ?.trim();
     if (!text) return [];
@@ -112,3 +112,21 @@ function taskListItemId(value: unknown): string | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return undefined;
 }
+export type TaskListItemStatus =
+  "pending" | "in_progress" | "completed" | "cancelled";
+
+export type TaskListItem = {
+  /** Stable provider identity, when available, for merging status-only updates. */
+  id?: string;
+  text: string;
+  status: TaskListItemStatus;
+};
+
+export type TaskListMeta = {
+  /** Provider identity for replacing later snapshots of the same list. */
+  key?: string;
+  /** Provider conversation that produced this list, when the provider scopes task ids to one. */
+  providerSessionId?: string;
+  explanation?: string;
+  items: TaskListItem[];
+};

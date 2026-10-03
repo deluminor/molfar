@@ -9,7 +9,7 @@ import omp from "@/assets/providers/omp.svg";
 import opencode from "@/assets/providers/opencode.svg";
 import pi from "@/assets/providers/pi.svg";
 import antigravity from "@/assets/providers/antigravity.svg";
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 
 export const HARNESS_ICONS: Record<HarnessId, string> = {
   claude,

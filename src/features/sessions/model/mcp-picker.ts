@@ -1,4 +1,4 @@
-import type { HarnessId } from "./session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   MCP_PROVIDER_LABELS,
   type McpConnection,

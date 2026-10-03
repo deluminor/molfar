@@ -2,7 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatSessionTitle } from "@/features/sessions/model/session";
+import { formatSessionTitle } from "@/domain/session/title";
 import { formatReminderTime } from "@/features/sessions/model/session-reminders";
 import { Sidebar } from "./Sidebar";
 import { loadSessionFolders } from "@/features/sessions/model/session-folders";

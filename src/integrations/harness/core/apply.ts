@@ -1,13 +1,12 @@
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
 import type {
   AgentRunMeta,
-  AgentStep,
-  Attachment,
-  Block,
-  Session,
-  TaskListItem,
-  ToolPreview,
-} from "@/features/sessions/model/session";
-import { mergeContextUsage } from "@/features/sessions/model/context-usage";
+  AgentStep, ToolPreview
+} from "@/domain/session/agent-run";
+import { type TaskListItem, taskListText } from "@/domain/session/task-list";
+import { mergeContextUsage } from "@/domain/session/context-usage";
 import { displayPath } from "@/shared/lib/paths";
 import {
   composeToolTitle,
@@ -17,7 +16,6 @@ import {
   stubFilePreview,
 } from "./preview";
 import { joinStreamText } from "./stream-text";
-import { taskListText } from "@/features/sessions/model/task-list";
 import { isReviewablePlan } from "@/features/sessions/model/plan";
 import { resolveModel } from "@/features/sessions/model/models";
 import type { HarnessEvent } from "./types";

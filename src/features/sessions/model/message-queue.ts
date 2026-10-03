@@ -1,5 +1,6 @@
 import { isPreparingHandoff } from "./handoff";
-import type { QueuedMessage, Session } from "./session";
+import type { Session } from "@/domain/session/session";
+import type { QueuedMessage } from "@/domain/session/message-queue";
 
 export function queuedHead(session: Session): QueuedMessage | undefined {
   return session.queuedMessages?.[0];

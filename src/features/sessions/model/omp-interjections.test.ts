@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OmpAssistantText, OmpInterjectionAnchor } from "@/platform/tauri/fs";
 import { backfillOmpInterjections, ompStatusSplitTexts } from "./omp-interjections";
-import { newSession, type Block } from "./session";
+import { newSession } from "./session";
+import type { Block } from "@/domain/session/block";
 import { getSession } from "../data/session-store";
 import { foldableWork, foldedBlocks, groupTurnItems, groupTurns } from "./transcript-activity";
 

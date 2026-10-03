@@ -11,9 +11,9 @@ import {
 } from "@/features/sessions/model/models";
 import {
   newSession,
-  type Session,
-  type Attachment,
 } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
+import type { Attachment } from "@/domain/session/attachment";
 import {
   newTab,
   type SplitDir,

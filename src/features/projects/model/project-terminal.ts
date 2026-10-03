@@ -10,7 +10,7 @@ import {
   normalizeProjectPath,
   sameProjectPath,
 } from "./recents";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   applyTerminalMeta,
   type TerminalMetaPatch,

@@ -10,7 +10,7 @@ import {
 } from "./automations";
 import { inboxStartDraft, type InboxItem } from "@/features/inbox/model/github-tasks";
 import { sameProjectPath } from "@/features/projects/model/recents";
-import type { LinkedWorkItem } from "@/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import { linkedWorkItemFromInboxItem } from "@/features/sessions/model/session-work-item";
 
 export type InboxAutomationMatch = {

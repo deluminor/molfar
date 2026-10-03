@@ -3,8 +3,8 @@ import {
   newSession,
   newSessionForProject,
   retargetSessionToProject,
-  type Session,
 } from "./session";
+import type { Session } from "@/domain/session/session";
 import {
   setProjectDefaultModel,
   setProjectDefaultProvider,

@@ -135,13 +135,13 @@
     "lines": 1240
   },
   "src/app/App.tsx": {
-    "lines": 11731
+    "lines": 11695
   },
   "src/app/hooks/use-workspace-navigation.ts": {
     "lines": 288
   },
   "src/app/model/app-lifecycle.ts": {
-    "lines": 534
+    "lines": 535
   },
   "src/app/model/updater.ts": {
     "lines": 258
@@ -153,13 +153,13 @@
     "lines": 1227
   },
   "src/app/shell/Sidebar.tsx": {
-    "lines": 3709
+    "lines": 3704
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 1081
+    "lines": 1080
   },
   "src/app/shell/UsageFooter.tsx": {
-    "lines": 596
+    "lines": 592
   },
   "src/app/shell/UsageProviderChip.tsx": {
     "lines": 1165
@@ -168,13 +168,13 @@
     "lines": 606
   },
   "src/features/agent-app/model/agent-app.ts": {
-    "lines": 674
+    "lines": 668
   },
   "src/features/automations/model/automation-templates.ts": {
     "lines": 363
   },
   "src/features/automations/model/automations.ts": {
-    "lines": 612
+    "lines": 613
   },
   "src/features/automations/ui/AutomationsView.tsx": {
     "lines": 2011
@@ -189,7 +189,7 @@
     "lines": 603
   },
   "src/features/connections/ui/RemoteSession.tsx": {
-    "lines": 1300
+    "lines": 1298
   },
   "src/features/files/editor/editor-editing.ts": {
     "lines": 363
@@ -222,7 +222,7 @@
     "lines": 1304
   },
   "src/features/files/ui/FilePane.tsx": {
-    "lines": 390
+    "lines": 389
   },
   "src/features/files/ui/FilePicker.tsx": {
     "lines": 463
@@ -243,13 +243,13 @@
     "lines": 285
   },
   "src/features/inbox/model/github-tasks.ts": {
-    "lines": 1248
+    "lines": 1227
   },
   "src/features/inbox/model/gitlab.ts": {
     "lines": 259
   },
   "src/features/inbox/model/inbox-filters.ts": {
-    "lines": 432
+    "lines": 431
   },
   "src/features/inbox/ui/CheckRepairForm.tsx": {
     "lines": 312
@@ -267,13 +267,13 @@
     "lines": 839
   },
   "src/features/inbox/ui/InboxView.tsx": {
-    "lines": 3246
+    "lines": 3247
   },
   "src/features/inbox/ui/LinkedWorkItemUpdateNotice.tsx": {
-    "lines": 302
+    "lines": 301
   },
   "src/features/notes/notes.ts": {
-    "lines": 375
+    "lines": 351
   },
   "src/features/notes/ui/NotesView.tsx": {
     "lines": 1098
@@ -282,19 +282,19 @@
     "lines": 258
   },
   "src/features/notifications/model/notifications.ts": {
-    "lines": 293
+    "lines": 295
   },
   "src/features/notifications/ui/ProjectNotificationSettings.tsx": {
     "lines": 417
   },
   "src/features/orchestration/model/orchestration-plan.ts": {
-    "lines": 379
+    "lines": 344
   },
   "src/features/orchestration/model/orchestration.ts": {
     "lines": 2162
   },
   "src/features/orchestration/ui/OrchestrationPreview.tsx": {
-    "lines": 785
+    "lines": 786
   },
   "src/features/orchestration/ui/OrchestrationSidebarAgents.tsx": {
     "lines": 304
@@ -330,28 +330,28 @@
     "lines": 515
   },
   "src/features/providers/ui/HarnessUpdateNotice.tsx": {
-    "lines": 286
+    "lines": 282
   },
   "src/features/quick-composer/model/quick-composer.ts": {
-    "lines": 306
+    "lines": 300
   },
   "src/features/quick-composer/ui/QuickComposer.tsx": {
-    "lines": 882
+    "lines": 877
   },
   "src/features/quick-composer/ui/QuickModelSelector.tsx": {
-    "lines": 444
+    "lines": 440
   },
   "src/features/quick-composer/ui/use-quick-attachments.ts": {
     "lines": 288
   },
   "src/features/search/model/app-search.ts": {
-    "lines": 467
+    "lines": 464
   },
   "src/features/search/ui/SearchView.tsx": {
     "lines": 673
   },
   "src/features/sessions/data/session-store.ts": {
-    "lines": 1243
+    "lines": 1245
   },
   "src/features/sessions/model/attachments.ts": {
     "lines": 547
@@ -363,10 +363,10 @@
     "lines": 395
   },
   "src/features/sessions/model/handoff.ts": {
-    "lines": 480
+    "lines": 467
   },
   "src/features/sessions/model/models.ts": {
-    "lines": 1003
+    "lines": 1002
   },
   "src/features/sessions/model/omp-interjections.ts": {
     "lines": 362
@@ -374,26 +374,23 @@
   "src/features/sessions/model/session-folders.ts": {
     "lines": 679
   },
-  "src/features/sessions/model/session.ts": {
-    "lines": 732
-  },
   "src/features/sessions/model/transcript-activity.ts": {
-    "lines": 1007
+    "lines": 1008
   },
   "src/features/sessions/ui/AgentMarkdown.tsx": {
     "lines": 941
   },
   "src/features/sessions/ui/AgentTranscript.tsx": {
-    "lines": 3855
+    "lines": 3849
   },
   "src/features/sessions/ui/AstraWelcome.css": {
     "lines": 328
   },
   "src/features/sessions/ui/BtwSheet.tsx": {
-    "lines": 871
+    "lines": 867
   },
   "src/features/sessions/ui/Composer.tsx": {
-    "lines": 2847
+    "lines": 2839
   },
   "src/features/sessions/ui/ComposerRunner.tsx": {
     "lines": 491
@@ -411,10 +408,10 @@
     "lines": 383
   },
   "src/features/sessions/ui/SecondOpinionButton.tsx": {
-    "lines": 607
+    "lines": 604
   },
   "src/features/sessions/ui/SessionPane.tsx": {
-    "lines": 983
+    "lines": 972
   },
   "src/features/sessions/ui/SessionReview.tsx": {
     "lines": 269
@@ -435,7 +432,7 @@
     "lines": 645
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "lines": 4466
+    "lines": 4462
   },
   "src/features/skills/model/skills.ts": {
     "lines": 541
@@ -501,13 +498,13 @@
     "lines": 267
   },
   "src/features/workspace/model/workspace-snapshot.ts": {
-    "lines": 739
+    "lines": 737
   },
   "src/features/workspace/model/workspace-tab-groups.ts": {
-    "lines": 481
+    "lines": 479
   },
   "src/features/workspace/ui/PaneTree.tsx": {
-    "lines": 700
+    "lines": 694
   },
   "src/features/workspace/ui/SurfaceTabs.tsx": {
     "lines": 468
@@ -519,7 +516,7 @@
     "lines": 639
   },
   "src/integrations/harness/core/apply.ts": {
-    "lines": 1274
+    "lines": 1272
   },
   "src/integrations/harness/core/child.ts": {
     "lines": 541
@@ -528,13 +525,13 @@
     "lines": 1086
   },
   "src/integrations/harness/core/registry.ts": {
-    "lines": 543
+    "lines": 541
   },
   "src/integrations/harness/core/shell-intent.ts": {
     "lines": 667
   },
   "src/integrations/harness/providers/antigravity/antigravity-protocol.ts": {
-    "lines": 580
+    "lines": 582
   },
   "src/integrations/harness/providers/antigravity/antigravity.ts": {
     "lines": 835
@@ -543,7 +540,7 @@
     "lines": 581
   },
   "src/integrations/harness/providers/claude/claude-protocol.ts": {
-    "lines": 1193
+    "lines": 1186
   },
   "src/integrations/harness/providers/claude/claude-text.ts": {
     "lines": 447
@@ -555,7 +552,7 @@
     "lines": 307
   },
   "src/integrations/harness/providers/codex/codex-protocol.ts": {
-    "lines": 1387
+    "lines": 1383
   },
   "src/integrations/harness/providers/codex/codex-text.ts": {
     "lines": 478
@@ -573,7 +570,7 @@
     "lines": 1642
   },
   "src/integrations/harness/providers/fx/fx-protocol.ts": {
-    "lines": 716
+    "lines": 717
   },
   "src/integrations/harness/providers/fx/fx-tool.ts": {
     "lines": 272
@@ -582,7 +579,7 @@
     "lines": 531
   },
   "src/integrations/harness/providers/grok/grok-protocol.ts": {
-    "lines": 946
+    "lines": 947
   },
   "src/integrations/harness/providers/grok/grok-text.ts": {
     "lines": 360
@@ -600,19 +597,19 @@
     "lines": 290
   },
   "src/integrations/harness/providers/opencode/opencode-protocol.ts": {
-    "lines": 516
+    "lines": 514
   },
   "src/integrations/harness/providers/opencode/opencode-text.ts": {
     "lines": 444
   },
   "src/integrations/harness/providers/opencode/opencode.ts": {
-    "lines": 1380
+    "lines": 1381
   },
   "src/integrations/harness/providers/pi/pi-family.ts": {
-    "lines": 1293
+    "lines": 1292
   },
   "src/integrations/harness/providers/pi/pi-protocol.ts": {
-    "lines": 811
+    "lines": 813
   },
   "src/integrations/harness/providers/pi/pi-text.ts": {
     "lines": 371

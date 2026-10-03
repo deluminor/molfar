@@ -3,7 +3,7 @@ import {
   buildThreadTitlePrompt,
   parseGeneratedSessionTitle,
   shouldGenerateSessionTitle,
-} from "./session-title";
+} from "./generated-title";
 
 describe("session title metadata", () => {
   it("asks the title pass for one optional work item", () => {

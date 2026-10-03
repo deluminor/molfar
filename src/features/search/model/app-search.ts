@@ -1,13 +1,10 @@
 import { fuzzyMatch } from "@/shared/lib/fuzzy";
 import { projectName } from "@/shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "@/features/projects/model/recents";
-import {
-  HARNESSES,
-  sessionDisplayTitle,
-  type Block,
-  type HarnessId,
-  type Session,
-} from "@/features/sessions/model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import type {
   SessionSearchHit,
   SessionSummary,

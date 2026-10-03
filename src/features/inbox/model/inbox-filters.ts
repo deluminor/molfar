@@ -2,9 +2,8 @@ import {
   filterInboxItems,
   inboxItemStatus,
   type InboxItem,
-  type InboxKind,
-  type InboxProvider,
 } from "./github-tasks";
+import type { InboxProvider, InboxKind } from "@/domain/work-items/work-item";
 import { normalizeProjectPath } from "@/features/projects/model/recents";
 import { timeFilterStart, type SessionTimeFilter } from "@/features/sessions/model/session-filters";
 

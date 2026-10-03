@@ -6,7 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { ChevronDown, ChevronUp, Search, X } from "@/shared/ui/icons";
-import type { Block } from "../model/session";
+import type { Block } from "@/domain/session/block";
 import { findTranscriptBlocks } from "../model/transcript-find";
 import { keybindingPressed } from "@/features/settings/model/settings";
 

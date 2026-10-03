@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { newFileTab, newTab, placePane, type WorkspaceTab } from "@/features/workspace/model/layout";
-import { newSession, type Session } from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import { planProjectReturn, reconcileProjectReturn } from "./project-return";
 import {
   emptyTabVisitHistory,

@@ -3,12 +3,12 @@ import { summarizeOrchestration } from "@/features/orchestration/model/orchestra
 import { fuzzyMatch } from "@/shared/lib/fuzzy";
 import { projectName } from "@/shared/lib/paths";
 import { sameProjectPath } from "@/features/projects/model/recents";
+import { sessionDisplayTitle } from "@/domain/session/title";
 import {
-  sessionDisplayTitle,
   sessionDraftBlock,
-  sessionNeedsInput,
-  type Session,
-} from "../model/session";
+  sessionNeedsInput
+} from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 import { shouldPersistSession, type SessionSummary } from "./session-store";
 
 export type SessionGitHint = {

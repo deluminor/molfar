@@ -1,5 +1,4 @@
-import type { HarnessId } from "../model/session";
-import { HARNESS_TITLE } from "../model/session";
+import { type HarnessId, HARNESS_TITLE } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 import { Check, RefreshCw } from "@/shared/ui/icons";
 

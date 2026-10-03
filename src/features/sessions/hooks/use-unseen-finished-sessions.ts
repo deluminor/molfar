@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { isLiveAgentSession } from "../model/live-agents";
-import type { Session } from "../model/session";
+import type { Session } from "@/domain/session/session";
 import { nextUnseenFinishedSessions } from "../model/session-done";
 
 export function useUnseenFinishedSessions(

@@ -27,7 +27,7 @@ import {
   tryParseJsonRecord,
   turnStatusFromResult,
 } from "./claude-protocol";
-import type { TurnIntent } from "@/features/sessions/model/session";
+import type { TurnIntent } from "@/domain/session/turn";
 import type { HarnessEvent } from "../../core/types";
 import { mergeStream } from "../../core/stream-text";
 

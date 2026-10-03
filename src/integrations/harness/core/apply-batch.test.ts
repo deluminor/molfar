@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   newSession,
-  type Session,
 } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import { applyHarnessEvent, applyHarnessEvents } from "./apply";
 import type { HarnessEvent } from "./types";
 

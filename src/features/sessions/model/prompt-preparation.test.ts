@@ -13,7 +13,7 @@ vi.mock("@/features/files/model/file-mentions", () => ({
   applyFileMentionsToTurn: mocks.applyFileMentionsToTurn,
 }));
 
-vi.mock("@/features/notes", () => ({
+vi.mock("@/features/notes/notes", () => ({
   applyNotesToTurn: mocks.applyNotesToTurn,
 }));
 

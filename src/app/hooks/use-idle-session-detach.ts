@@ -10,7 +10,7 @@ import type { OrchestrationRun } from "@/features/orchestration/model/orchestrat
 import { rememberLoadedSession } from "@/features/sessions/data/session-cache";
 import { shouldPersistSession } from "@/features/sessions/data/session-store";
 import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   leafIds,
   type WorkspaceTab,

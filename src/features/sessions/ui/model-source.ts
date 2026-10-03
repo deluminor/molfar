@@ -5,7 +5,7 @@ import {
   resolveModel,
   type AgentModel,
 } from "../model/models";
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   hasProbedHarnessAvailability,
   isHarnessAvailable,

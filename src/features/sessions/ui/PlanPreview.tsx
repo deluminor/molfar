@@ -1,6 +1,8 @@
 import { AiIdea, CircleDashed, PanelRight, Play } from "@/shared/ui/icons";
 import { planSummary, planTitle } from "../model/plan";
-import type { HarnessId, PlanBlockMeta, PlanBuildTarget } from "../model/session";
+import type { PlanBlockMeta } from "@/domain/session/block-meta";
+import type { PlanBuildTarget } from "@/domain/session/turn";
+import type { HarnessId } from "@/domain/harness/harness";
 import { BuildTargetButton } from "./SecondOpinionButton";
 
 type Props = {

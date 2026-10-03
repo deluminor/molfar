@@ -9,7 +9,7 @@ import {
   type Ref,
 } from "react";
 import { resizeComposer } from "@/features/sessions/model/composer-resize";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   hasNativeCommands,
   rankSkills,

@@ -7,11 +7,12 @@ import {
   useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { HARNESS_TITLE, type Block } from "@/features/sessions/model/session";
+import type { Block } from "@/domain/session/block";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
 import type {
   OrchestrationChoice,
-  ProposedTask,
-} from "../model/orchestration-plan";
+  ProposedTask
+} from "@/domain/orchestration/proposal";
 import { orchestrator } from "../model/orchestration";
 import { resizeComposer } from "@/features/sessions/model/composer-resize";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";

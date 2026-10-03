@@ -1,10 +1,8 @@
-import type {
-  Attachment,
-  Block,
-  EditedResendRejection,
-  HarnessId,
-  Session,
-} from "./session";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
+import type { EditedResendRejection } from "@/domain/session/turn";
+import type { HarnessId } from "@/domain/harness/harness";
 import { isOperatorUserTurn, operatorUserPrompt } from "./operator-command";
 
 /** Harnesses that can rewind provider state before resending an edited prompt. */

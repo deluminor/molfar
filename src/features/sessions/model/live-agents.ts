@@ -1,12 +1,10 @@
 import { composeToolTitle } from "@/integrations/harness/core/preview";
 import { isInFlightSession } from "./in-flight";
 import { displayPath } from "@/shared/lib/paths";
-import {
-  sessionDisplayTitle,
-  type Block,
-  type HarnessId,
-  type Session,
-} from "./session";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { HarnessId } from "@/domain/harness/harness";
 
 export type LiveAgent = {
   id: string;

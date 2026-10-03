@@ -14,7 +14,7 @@ import {
 } from "../src/features/connections/model/protocol";
 import { HostEngine } from "./engine";
 import { writeAttachmentChunk, readAttachmentChunk } from "./attachments";
-import type { LinkedWorkItem } from "../src/features/sessions/model/session";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import { parseGithubWorkItemUrl } from "../src/features/sessions/model/session-work-item";
 import { SyncTransfers } from "./sync-transfer";
 import { browseHostDirectories } from "./browse";

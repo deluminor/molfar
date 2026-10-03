@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HARNESS_ICONS, MONOCHROME_HARNESSES } from "@/features/sessions/ui/HarnessIcon";
 import { MASCOT_GRID, PROJECT_MASCOTS } from "@/features/projects/model/project-mascots";
-import { HARNESSES, type HarnessId } from "@/features/sessions/model/session";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import {
   ARCADE_MODES,
   type ArcadeMode,

@@ -17,7 +17,8 @@ import {
   buildSecondOpinionRequest,
   SECOND_OPINION_TITLE,
 } from "./second-opinion";
-import { newSession, type Block } from "./session";
+import { newSession } from "./session";
+import type { Block } from "@/domain/session/block";
 
 const repair: Block = {
   id: "repair",

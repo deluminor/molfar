@@ -1,4 +1,4 @@
-import type { Block } from "./session";
+import type { Block } from "@/domain/session/block";
 
 export type VatraToolCall = {
   action: string;

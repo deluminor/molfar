@@ -1,14 +1,14 @@
 import { nativeModelId } from "@/features/sessions/model/models";
-import { taskListFromToolInput } from "@/features/sessions/model/task-list";
+import { taskListFromToolInput } from "@/domain/session/task-list";
 import { normalizeProjectPath } from "@/features/projects/model/recents";
-import type { UserQuestionReply } from "@/features/sessions/model/user-question";
+import type { UserQuestionReply } from "@/domain/session/user-question";
 import type {
   CommandContext,
   NativeCommand,
   NativeCommandProvider,
 } from "../../core/native-commands";
 import { discoverOmpCommands, ompCommandsFromRpcData } from "./pi-skills";
-import { OMP_FLAVOR } from "./pi-flavor";
+import { OMP_FLAVOR, type PiFlavor } from "./pi-flavor";
 import {
   killChild,
   spawnChild,
@@ -16,7 +16,6 @@ import {
   watchChild,
   writeChild,
 } from "../../core/child";
-import type { PiFlavor } from "./pi-flavor";
 import { PiRpc } from "./pi-client";
 import { piSubagentEvents } from "./pi-subagents";
 import {

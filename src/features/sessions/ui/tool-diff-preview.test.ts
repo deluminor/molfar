@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { previewFromTool } from "@/integrations/harness/providers/claude/claude-protocol";
 import { ToolDiffPreview } from "./ToolDiffPreview";
 import { AgentTranscript } from "./AgentTranscript";
-import type { Block } from "../model/session";
+import type { Block } from "@/domain/session/block";
 
 let container: HTMLDivElement;
 let root: Root;

@@ -23,7 +23,8 @@ import {
   type DockSide,
   type ProjectTerminalDock,
 } from "@/features/projects/model/project-terminal";
-import { sessionWorkCwd, type Session } from "@/features/sessions/model/session";
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
 import {
   getSession,

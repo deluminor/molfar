@@ -6,7 +6,7 @@ import {
   NOTIFICATIONS_CHANGE_EVENT,
 } from "@/features/notifications/model/notifications";
 import { projectName } from "@/shared/lib/paths";
-import { sessionDisplayTitle } from "../model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
 import {
   formatReminderTime,
   reminderTime,

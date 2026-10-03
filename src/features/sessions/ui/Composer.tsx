@@ -48,7 +48,7 @@ import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,
 } from "@/shared/lib/drag";
-import type { ContextUsage } from "../model/context-usage";
+import type { ContextUsage } from "@/domain/session/context-usage";
 import {
   loadProjectFiles,
   peekProjectFiles,
@@ -68,28 +68,27 @@ import {
 import type { ProjectFile } from "@/platform/tauri/fs";
 import {
   composeInboxMessage,
-  type InboxComposerCard,
 } from "@/features/inbox/model/github-tasks";
-import type { HandoffComposerCard } from "../model/handoff";
+import type { InboxComposerCard } from "@/domain/work-items/inbox-card";
+import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 import {
   looksLikeProject,
   type RecentProject,
 } from "@/features/projects/model/recents";
+import type { WorkspaceMode } from "@/domain/session/session";
 import type {
-  Attachment,
-  HarnessId,
   MessageQueueStatus,
   QueuedMessage,
-  UsageLimit,
-  RuntimeMode,
-  WorkspaceMode,
-  ComposerTurnOptions,
-} from "../model/session";
-import { HARNESS_TITLE, harnessSupportsAttachments } from "../model/session";
+  UsageLimit
+} from "@/domain/session/message-queue";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ComposerTurnOptions } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { type HarnessId, HARNESS_TITLE, harnessSupportsAttachments } from "@/domain/harness/harness";
 import type {
   UserQuestionPrompt,
   UserQuestionReply,
-} from "../model/user-question";
+} from "@/domain/session/user-question";
 import { isImeComposition } from "@/shared/lib/keyboard";
 import {
   captureDraft,
@@ -141,15 +140,8 @@ import {
   subscribeModelControls,
   subscribeNotesEnabled,
 } from "@/features/settings/model/settings";
-import {
-  isNoteMentionPath,
-  loadNotes,
-  peekNotes,
-  rankNoteFiles,
-  notesAsProjectFiles,
-  type Note,
-  type NoteComposerCard,
-} from "@/features/notes";
+import { isNoteMentionPath, loadNotes, peekNotes, rankNoteFiles, notesAsProjectFiles, type Note } from "@/features/notes/notes";
+import type { NoteComposerCard } from "@/domain/notes/note-card";
 import { resolveTabGroupLogo } from "@/features/workspace/model/tab-groups";
 import { useComposerSkills } from "./use-composer-skills";
 import { Popover } from "@/shared/ui/Popover";
@@ -199,7 +191,7 @@ import {
   type McpTag,
 } from "../model/mcp-picker";
 import { getComposerMcpTags, setComposerMcpTags } from "../model/draft-cache";
-import { type McpConnection } from "@/features/settings/model/mcp";
+import type { McpConnection } from "@/features/settings/model/mcp";
 import {
   getCachedMcpSettings,
   loadMcpSettings,

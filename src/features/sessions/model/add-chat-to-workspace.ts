@@ -1,5 +1,6 @@
 import { composerSeedForAddToChat, type AddToChatMode } from "./quote-draft";
-import { newDefaultSession, newSessionLike, type Session } from "./session";
+import { newDefaultSession, newSessionLike } from "./session";
+import type { Session } from "@/domain/session/session";
 import {
   focusedFileTab,
   leafIds,

@@ -6,7 +6,7 @@ import {
 import { codexCommandPresentation } from "@/integrations/harness/providers/codex/codex-protocol";
 import { recoverCursorSubagents } from "@/integrations/harness/providers/cursor/cursor-subagents";
 import { persistableAttachment } from "../model/attachments";
-import type { ContextUsage } from "../model/context-usage";
+import type { ContextUsage } from "@/domain/session/context-usage";
 import { isRemoteProjectPath, normalizeProjectPath } from "@/features/projects/model/recents";
 import {
   claudeShellCommands,
@@ -18,27 +18,29 @@ import {
   ompStatusSplitTexts,
 } from "../model/omp-interjections";
 import type {
-  AgentRunMeta,
-  AgentStep,
-  Block,
-  BtwMessage,
-  BtwThread,
-  GeneratedImageMeta,
-  HarnessId,
-  HandoffMeta,
-  HandoffStatus,
-  InterjectionMeta,
   LinkedWorkItem,
-  RuntimeMode,
-  SecondOpinionMeta,
-  Session,
-  TaskListMeta,
-  PlanBlockMeta,
+  Session
+} from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { GeneratedImageMeta } from "@/domain/session/attachment";
+import type {
+  AgentRunMeta,
+  AgentStep
+} from "@/domain/session/agent-run";
+import type {
+  BtwMessage,
+  BtwThread, HandoffMeta,
+  HandoffStatus,
+  InterjectionMeta, SecondOpinionMeta, PlanBlockMeta
+} from "@/domain/session/block-meta";
+import type {
   TurnModel,
-  TurnMetrics,
-} from "../model/session";
+  TurnMetrics
+} from "@/domain/session/turn";
+import type { TaskListMeta } from "@/domain/session/task-list";
+import { type RuntimeMode, RUNTIME_MODES } from "@/domain/session/runtime-mode";
+import { type HarnessId, HARNESSES } from "@/domain/harness/harness";
 
-import { HARNESSES, RUNTIME_MODES } from "../model/session";
 
 import { restoreOrchestrationProposal } from "@/features/orchestration/model/orchestration-plan";
 

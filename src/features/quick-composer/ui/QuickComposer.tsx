@@ -38,13 +38,8 @@ import {
   saveLastModelSettings,
   saveRecentModelChoice,
 } from "@/features/sessions/model/models";
-import {
-  DEFAULT_RUNTIME_MODE,
-  HARNESS_TITLE,
-  type HarnessId,
-  type RuntimeMode,
-  harnessSupportsAttachments,
-} from "@/features/sessions/model/session";
+import { DEFAULT_RUNTIME_MODE, type RuntimeMode } from "@/domain/session/runtime-mode";
+import { HARNESS_TITLE, harnessSupportsAttachments, type HarnessId } from "@/domain/harness/harness";
 import { Popover } from "@/shared/ui/Popover";
 import { AttachmentChip } from "@/features/sessions/ui/AttachmentChip";
 import { quickLaunchAttachments } from "../model/quick-attachments";

@@ -1,11 +1,12 @@
 import { promptBlocks, type PromptContentBlock } from "@/features/sessions/model/attachments";
 import type { AgentModel, ModelSetting, ModelSettingChoice } from "@/features/sessions/model/models";
-import type { Attachment, RuntimeMode, ToolPreview } from "@/features/sessions/model/session";
-import { normalizeTaskListStatus } from "@/features/sessions/model/task-list";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ToolPreview } from "@/domain/session/agent-run";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { normalizeTaskListStatus } from "@/domain/session/task-list";
 import { acpAgentInfo } from "../../core/acp-subagents";
 import type { ApprovalDecision, HarnessEvent } from "../../core/types";
-import type { UserQuestion, UserQuestionReply } from "@/features/sessions/model/user-question";
-import { questionsFromUnknown, selectedAnswerLabels } from "@/features/sessions/model/user-question";
+import { type UserQuestion, type UserQuestionReply, questionsFromUnknown, selectedAnswerLabels } from "@/domain/session/user-question";
 import {
   composeToolTitle,
   extractSearchQuery,

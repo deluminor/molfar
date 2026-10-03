@@ -1,5 +1,5 @@
-import type { Session } from "@/features/sessions/model/session";
-import { isTaskListToolName } from "@/features/sessions/model/task-list";
+import type { Session } from "@/domain/session/session";
+import { isTaskListToolName } from "@/domain/session/task-list";
 import { applyHarnessEvent } from "../../core/apply";
 import {
   readStoredCursorSubagentRuns,

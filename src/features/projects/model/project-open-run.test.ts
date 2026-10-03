@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { newTab } from "@/features/workspace/model/layout";
 import {
   newSession,
-  type HarnessId,
-  type Session,
 } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import { planProjectOpenRun, type ProjectOpenStep } from "./project-open-run";
 
 function chat(id: string, cwd: string, harness: HarnessId = "cursor"): Session {

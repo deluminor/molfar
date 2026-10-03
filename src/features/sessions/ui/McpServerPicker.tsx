@@ -7,7 +7,7 @@ import {
   type McpConnection,
 } from "@/features/settings/model/mcp";
 import { mcpPickerServers } from "../model/mcp-picker";
-import type { HarnessId } from "../model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 
 export function McpServerPicker({
   connections,

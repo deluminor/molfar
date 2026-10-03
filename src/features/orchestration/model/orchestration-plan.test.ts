@@ -6,8 +6,8 @@ import {
   orchestrationPlanningPrompt,
   proposalBlock,
   validateProposedTasks,
-  type OrchestrationProposal,
 } from "./orchestration-plan";
+import type { OrchestrationProposal } from "@/domain/orchestration/proposal";
 import { newSession } from "@/features/sessions/model/session";
 import { sanitizeSessionForPersist } from "@/features/sessions/data/session-store";
 import { stopStreaming } from "@/integrations/harness/core/apply";

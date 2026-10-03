@@ -6,12 +6,7 @@ import {
   searchConfluence,
 } from "@/features/inbox/model/confluence/api";
 import { confluenceFolderTocMarkdown } from "@/features/inbox/model/confluence/prompt";
-import {
-  normalizeNoteTags,
-  noteTitle,
-  type Note,
-  type NoteUpsert,
-} from "@/features/notes";
+import { normalizeNoteTags, noteTitle, type Note, type NoteUpsert } from "@/features/notes/notes";
 import { looksLikeProject } from "@/features/projects/model/recents";
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import {
@@ -22,14 +17,13 @@ import {
   resolveModel,
 } from "@/features/sessions/model/models";
 import { consumeOperatorCommand } from "@/features/sessions/model/operator-command";
+import type { Session } from "@/domain/session/session";
 import {
-  HARNESSES,
   RUNTIME_MODE_HINT,
   RUNTIME_MODE_LABEL,
-  RUNTIME_MODES,
-  type HarnessId,
-  type Session,
-} from "@/features/sessions/model/session";
+  RUNTIME_MODES
+} from "@/domain/session/runtime-mode";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import {
   loadSessionFolders,
   placeSessionInFolder,

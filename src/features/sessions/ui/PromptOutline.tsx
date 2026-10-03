@@ -20,7 +20,7 @@ import {
   type OutlineAnchor,
   type OutlineBand,
 } from "../model/prompt-outline";
-import type { Block } from "../model/session";
+import type { Block } from "@/domain/session/block";
 import { Popover } from "@/shared/ui/Popover";
 
 const OPEN_DELAY_MS = 25;

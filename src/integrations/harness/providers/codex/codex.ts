@@ -4,8 +4,8 @@ import {
   exhaustedWindowResetAt,
   parseCodexRateLimits,
 } from "@/features/providers/model/rate-limits";
-import type { RuntimeMode } from "@/features/sessions/model/session";
-import { questionPromptTitle, type UserQuestionReply } from "@/features/sessions/model/user-question";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { questionPromptTitle, type UserQuestionReply } from "@/domain/session/user-question";
 import {
   killChild,
   resolveCodexBinary,

@@ -3,7 +3,7 @@ import {
   MAX_ATTACHMENTS,
   persistableAttachment,
 } from "@/features/sessions/model/attachments";
-import type { Attachment } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 
 /** Paths survive the handoff to another webview; blob URLs do not. */
 export async function storeQuickAttachments(

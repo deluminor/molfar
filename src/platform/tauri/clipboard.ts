@@ -6,7 +6,7 @@ import {
   MAX_ATTACHMENTS,
   MAX_EMBED_BYTES,
 } from "@/features/sessions/model/attachments";
-import type { Attachment } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 
 type CopiedFile = { name: string; mimeType: string; data: string };
 

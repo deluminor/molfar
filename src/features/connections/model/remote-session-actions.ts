@@ -1,4 +1,5 @@
-import type { Attachment, ComposerTurnOptions, PlanBuildTarget } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
+import type { PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
 import type { ApprovalDecision, UserQuestionReply } from "@/integrations/harness";
 
 type RemoteActions = {

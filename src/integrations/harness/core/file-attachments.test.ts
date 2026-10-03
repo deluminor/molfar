@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Attachment } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
 import {
   ATTACHMENT_ONLY_PROMPT,
   attachmentPathText,

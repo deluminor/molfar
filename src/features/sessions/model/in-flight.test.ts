@@ -12,7 +12,8 @@ import {
   shouldWriteInFlightSnapshot,
   workspaceFromResumed,
 } from "./in-flight";
-import { newSession, type Session } from "./session";
+import { newSession } from "./session";
+import type { Session } from "@/domain/session/session";
 
 function chat(
   cwd: string,

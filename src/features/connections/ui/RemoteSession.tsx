@@ -1,24 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SessionPaneProps } from "@/features/sessions/ui/SessionPane";
 import type {
-  Attachment,
-  Block,
-  ComposerTurnOptions,
-  HarnessId,
-  RuntimeMode,
   Session,
-  WorkspaceMode,
-  PlanBuildTarget,
-} from "@/features/sessions/model/session";
+  WorkspaceMode
+} from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
+import type { PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { HarnessId } from "@/domain/harness/harness";
 import { uploadRemoteAttachments } from "../model/remote-attachments";
-import { temporaryWorktreeBranchName } from "@/features/source-control/model/worktrees";
+import { temporaryWorktreeBranchName, type Worktree } from "@/features/source-control/model/worktrees";
 import type { AgentModel } from "@/features/sessions/model/models";
 import {
   ModelSourceContext,
   type ModelSource,
 } from "@/features/sessions/ui/model-source";
 import { notifyGitChanged } from "@/platform/tauri/fs";
-import type { Worktree } from "@/features/source-control/model/worktrees";
 import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
 import { registerRemoteSessionActions } from "../model/remote-session-actions";
 import {

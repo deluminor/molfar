@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newSession, type RuntimeMode } from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { applyHarnessEvent } from "../../core/apply";
 
 let onStdout: ((line: string) => void) | undefined;

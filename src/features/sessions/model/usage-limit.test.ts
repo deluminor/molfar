@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { newSession, type Session } from "./session";
+import { newSession } from "./session";
+import type { Session } from "@/domain/session/session";
 import {
   formatUsageLimitReset,
   USAGE_LIMIT_RESUME_GRACE_MS,

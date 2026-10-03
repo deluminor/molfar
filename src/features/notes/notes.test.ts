@@ -4,7 +4,6 @@ import {
   composeNoteMessage,
   injectNotePrompt,
   isNoteMentionPath,
-  noteCardMeta,
   noteMentionLabel,
   notePreview,
   noteSourceProject,
@@ -15,6 +14,7 @@ import {
   rankNoteFiles,
   type Note,
 } from "./notes";
+import { noteCardMeta } from "@/domain/notes/note-card";
 
 function note(
   partial: Partial<Note> & Pick<Note, "id" | "slug" | "title">,

@@ -3,7 +3,7 @@ import {
   resetHarnessModelOverlays,
   setHarnessModels,
 } from "@/features/sessions/model/models";
-import type { HarnessId } from "@/features/sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   HARNESS_IDLE_PARK_MS,
   bindHarnessSession,

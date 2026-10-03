@@ -1,10 +1,12 @@
-import type { Attachment, ToolPreview, TurnMetrics } from "@/features/sessions/model/session";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ToolPreview } from "@/domain/session/agent-run";
+import type { TurnMetrics } from "@/domain/session/turn";
 import {
   attachmentPathText,
   promptText,
 } from "@/features/sessions/model/attachments";
 import type { AgentModel, ModelSetting } from "@/features/sessions/model/models";
-import { isTaskListToolName } from "@/features/sessions/model/task-list";
+import { isTaskListToolName } from "@/domain/session/task-list";
 import type { PiFlavor } from "./pi-flavor";
 import { extractToolPreview, titleFromToolInput } from "../../core/preview";
 import { streamTextDelta } from "../../core/stream-text";

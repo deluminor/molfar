@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { Block } from "../model/session";
+import type { Block } from "@/domain/session/block";
 
 // Only "claude" is an installed/available harness in this test, the same
 // shape as a user who only enabled one harness in Settings.

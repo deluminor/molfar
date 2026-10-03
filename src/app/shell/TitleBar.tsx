@@ -24,8 +24,8 @@ import {
   type ReactNode,
 } from "react";
 import { basename } from "@/platform/tauri/fs";
-import { looksLikeProject } from "@/features/projects/model/recents";
-import type { HarnessId } from "@/features/sessions/model/session";
+import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
+import type { HarnessId } from "@/domain/harness/harness";
 import { CwdPicker } from "@/features/projects/ui/CwdPicker";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
@@ -40,7 +40,6 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
 import { WindowControls } from "./WindowControls";
 import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/platform/tauri/platform";
-import type { RecentProject } from "@/features/projects/model/recents";
 import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
 import {
   paneDropFromPoint,

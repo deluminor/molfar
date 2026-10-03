@@ -16,7 +16,7 @@ import {
 } from "./codex-protocol";
 import type { HarnessEvent } from "../../core/types";
 import { JsonRpcClient, type JsonRpcId } from "../../core/json-rpc";
-import type { TurnIntent } from "@/features/sessions/model/session";
+import type { TurnIntent } from "@/domain/session/turn";
 
 import { mergeStream, streamTextDelta } from "../../core/stream-text";
 

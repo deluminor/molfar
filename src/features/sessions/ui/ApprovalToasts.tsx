@@ -7,11 +7,9 @@ import { useProjectNotificationPreferences } from "@/features/notifications/hook
 import type { ApprovalDecision } from "@/integrations/harness";
 import type { PendingApprovalNotice } from "@/features/notifications/model/approval-toast";
 import { LAYER } from "@/shared/lib/layers";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  type Session,
-} from "../model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { Session } from "@/domain/session/session";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 
 type Notice = PendingApprovalNotice & { session: Session };

@@ -1,5 +1,4 @@
 /** Shared clarifying-question model for every harness that can ask the user. */
-
 export const CUSTOM_OPTION_ID = "__custom__";
 
 export type UserQuestionOption = {
@@ -182,7 +181,8 @@ function optionsFromUnknown(value: unknown): UserQuestionOption[] {
       stringField(rec, "text") ??
       stringField(rec, "id");
     if (!label) return [];
-    const description = stringField(rec, "description") ?? stringField(rec, "detail");
+    const description =
+      stringField(rec, "description") ?? stringField(rec, "detail");
     return [
       {
         id: uniqueId(

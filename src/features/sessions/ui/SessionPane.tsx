@@ -25,25 +25,15 @@ import {
   type ApprovalDecision,
   type UserQuestionReply,
 } from "@/integrations/harness";
-import {
-  looksLikeProject,
-  type RecentProject,
-} from "@/features/projects/model/recents";
-import {
-  sessionDisplayTitle,
-  sessionDraftBlock,
-  sessionWorkCwd,
-  type Attachment,
-  type Block,
-  type HarnessId,
-  type LinkedWorkItem,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type RuntimeMode,
-  type Session,
-  type WorkspaceMode,
-  type ComposerTurnOptions,
-} from "../model/session";
+import { looksLikeProject, type RecentProject, isRemoteProjectPath } from "@/features/projects/model/recents";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { sessionWorkCwd, sessionDraftBlock } from "@/domain/session/session-state";
+import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
+import type { ModelTarget, PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { HarnessId } from "@/domain/harness/harness";
 import { sessionHasBtwThreads, supportsBtwHarness } from "../model/btw";
 import { BtwSheet, useBtwConversation } from "./BtwSheet";
 import { AgentTranscript } from "./AgentTranscript";
@@ -63,7 +53,7 @@ import {
   type AddToChatRequest,
   type QuoteRequest,
 } from "../model/quote-draft";
-import { createNote, noteTitle } from "@/features/notes";
+import { createNote, noteTitle } from "@/features/notes/notes";
 import {
   loadNotesEnabled,
   subscribeNotesEnabled,
@@ -92,7 +82,6 @@ import {
 import type { SessionFolderTarget } from "../model/session-folders";
 import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import { RemoteSession } from "@/features/connections/ui/RemoteSession";
-import { isRemoteProjectPath } from "@/features/projects/model/recents";
 import type { HostSession } from "@/features/connections/model/protocol";
 
 export type SessionPaneProps = {

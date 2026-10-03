@@ -14,13 +14,13 @@ import type {
   HarnessSessionInput,
 } from "../src/integrations/harness/core/types";
 import {
-  HARNESS_LABEL,
-  RUNTIME_MODES,
   canReplaceSessionTitle,
   formatSessionTitle,
-  titleFromPrompt,
-  type Session,
-} from "../src/features/sessions/model/session";
+  titleFromPrompt
+} from "@/domain/session/title";
+import type { Session } from "@/domain/session/session";
+import { RUNTIME_MODES } from "@/domain/session/runtime-mode";
+import { HARNESS_LABEL } from "@/domain/harness/harness";
 import { namedWorktreeBranch } from "../src/features/source-control/model/worktrees";
 import {
   isRemoteProvider,

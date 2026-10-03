@@ -7,7 +7,8 @@ import {
   newTerminalFile,
   openTerminalTab,
 } from "@/features/workspace/model/layout";
-import { newSession, type Session } from "./session";
+import { newSession } from "./session";
+import type { Session } from "@/domain/session/session";
 import type { SessionWorkspaceRemoval } from "./session-workspace-lifecycle";
 import { createSessionRemover } from "./session-removal";
 

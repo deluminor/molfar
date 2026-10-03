@@ -4,7 +4,7 @@ import type { ProjectFile } from "@/platform/tauri/fs";
 import type { RankedFile } from "@/features/files/model/file-index";
 import { projectName } from "@/shared/lib/paths";
 import { looksLikeProject } from "@/features/projects/model/recents";
-import type { NoteSource } from "./types/note-source";
+import type { NoteComposerCard } from "@/domain/notes/note-card";
 
 export const NOTE_MENTION_PREFIX = "note/";
 export const NOTE_PATH_PREFIX = "note:";
@@ -30,30 +30,6 @@ export type NoteUpsert = {
   /** Omit on update to keep the saved project directory. */
   sourceCwd?: string;
 };
-
-/** Note chip shown in the composer and on the user turn in the thread. */
-export type NoteCardMeta = {
-  id: string;
-  slug: string;
-  title: string;
-  sourceCwd?: string;
-  source?: NoteSource;
-};
-
-/** Composer chip: display fields plus the body injected into the harness prompt. */
-export type NoteComposerCard = NoteCardMeta & {
-  body: string;
-};
-
-export function noteCardMeta(card: NoteComposerCard): NoteCardMeta {
-  return {
-    id: card.id,
-    slug: card.slug,
-    title: card.title,
-    ...(card.sourceCwd ? { sourceCwd: card.sourceCwd } : {}),
-    ...(card.source ? { source: card.source } : {}),
-  };
-}
 
 export const ADD_NOTE_TO_CHAT_EVENT = "vatra:add-note-to-chat";
 export const NOTES_CHANGED_EVENT = "vatra:notes-changed";

@@ -14,7 +14,8 @@ import {
   resolveWorkspacePath,
 } from "@/shared/lib/paths";
 import { INTERRUPT_MESSAGE } from "./in-flight";
-import type { Block, ToolPreview } from "./session";
+import type { Block } from "@/domain/session/block";
+import type { ToolPreview } from "@/domain/session/agent-run";
 import { allModels } from "./models";
 import { vatraWorkSummary } from "./vatra-tool-call";
 

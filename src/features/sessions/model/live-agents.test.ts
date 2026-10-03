@@ -3,7 +3,9 @@ import {
   formatLiveElapsed,
   liveAgentsFromSessions,
 } from "./live-agents";
-import { newSession, type Block, type Session } from "./session";
+import { newSession } from "./session";
+import type { Session } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
 
 function chat(cwd: string, patch: Partial<Session> = {}): Session {
   const session = newSession("claude", cwd);

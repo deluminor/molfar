@@ -1,5 +1,4 @@
-import type { HarnessId } from "./session";
-import { HARNESSES } from "./session";
+import { type HarnessId, HARNESSES } from "@/domain/harness/harness";
 import { loadProjectProviderSettings } from "./project-providers";
 import {
   hasProbedHarnessAvailability,

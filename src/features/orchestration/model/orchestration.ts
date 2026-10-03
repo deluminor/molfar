@@ -1,15 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
-import { HARNESSES, type HarnessId, type Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { pathKey } from "@/shared/lib/paths";
 import type { ApprovalDecision, HarnessEvent } from "@/integrations/harness/core/types";
 import { pendingApprovalForSession } from "@/features/notifications/model/approval-toast";
-import type { UserQuestionReply } from "@/features/sessions/model/user-question";
+import type { UserQuestionReply } from "@/domain/session/user-question";
 import {
   validateOrchestrationSettings,
   validateProposedTasks,
-  type OrchestrationChoice,
-  type OrchestrationProposal,
 } from "./orchestration-plan";
+import type { OrchestrationChoice, OrchestrationProposal } from "@/domain/orchestration/proposal";
 import {
   normalizeOrchestrationRun,
   orchestrationCheckoutCwd,

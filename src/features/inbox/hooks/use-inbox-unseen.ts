@@ -15,8 +15,8 @@ import {
   type GithubWorkItem,
   type InboxItem,
   type InboxQuery,
-  type InboxProvider,
 } from "../model/github-tasks";
+import type { InboxProvider } from "@/domain/work-items/work-item";
 import {
   applyInboxFilters,
   inboxFetchState,

@@ -1,6 +1,6 @@
 import { leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
 import type { ProjectTerminalDock } from "@/features/projects/model/project-terminal";
-import type { Session } from "@/features/sessions/model/session";
+import type { Session } from "@/domain/session/session";
 
 export type WindowTransferPayload = {
   tabs: WorkspaceTab[];

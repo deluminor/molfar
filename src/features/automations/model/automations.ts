@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { HarnessId, RuntimeMode } from "@/features/sessions/model/session";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { HarnessId } from "@/domain/harness/harness";
 
 export const AUTOMATIONS_CHANGED = "vatra:automations-changed";
 const LOCAL_CHANGED = "vatra:automations-local-changed";
