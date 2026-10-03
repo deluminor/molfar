@@ -1,10 +1,19 @@
 import { NativePopupHost } from "./NativePopupHost";
 import { X } from "./icons";
-import { useContext, useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  useContext,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { createPortal } from "react-dom";
 import { useLockOverscroll } from "../hooks/useLockOverscroll";
 import { LAYER } from "../lib/layers";
 import { GlassBackdrop } from "../../app/shell/GlassBackdrop";
+import { pushModalEscape } from "./modalEscape";
 
 export type ModalSize = "sm" | "md";
 
@@ -31,6 +40,8 @@ type Props = {
   fitViewport?: boolean;
   /** Pinned below the scrolling content. */
   footer?: ReactNode;
+  /** Focused on open instead of the close button (e.g. a dialog's primary action). */
+  initialFocusRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
 };
 
@@ -43,6 +54,7 @@ export function ModalPanel({
   className,
   fitViewport = false,
   footer,
+  initialFocusRef,
   children,
 }: Props) {
   const popupHost = useContext(NativePopupHost);
@@ -52,26 +64,17 @@ export function ModalPanel({
   const titleId = `${uid}-title`;
   const descriptionId = description ? `${uid}-desc` : undefined;
 
-  useEffect(() => {
-    if (!minimalHeader) closeRef.current?.focus();
-  }, [minimalHeader]);
+  const onCloseRef = useRef(onClose);
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (
-        event.key !== "Escape" ||
-        event.defaultPrevented ||
-        (event.target instanceof Element &&
-          event.target.closest("[data-dialog-popover]"))
-      )
-        return;
-      event.preventDefault();
-      event.stopPropagation();
-      onClose();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
+    if (initialFocusRef?.current) initialFocusRef.current.focus();
+    else if (!minimalHeader) closeRef.current?.focus();
+  }, [initialFocusRef, minimalHeader]);
+
+  useEffect(() => pushModalEscape(onCloseRef), []);
 
   return (
     <div
