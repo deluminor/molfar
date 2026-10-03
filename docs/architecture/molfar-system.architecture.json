@@ -216,10 +216,10 @@
     },
     {
       "dot": "rose",
-      "title": "Custom fork additions",
+      "title": "MOLFAR additions",
       "items": [
         "Confluence Docs browse and agent tools reuse Jira Atlassian credentials",
-        "Home brand visuals switch between dragon and Jarvis hearing sphere"
+        "Home brand visuals switch between Sphere, Fire and Orb"
       ]
     }
   ]

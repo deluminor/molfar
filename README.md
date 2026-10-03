@@ -1,241 +1,202 @@
 <div align="center">
-  <img src="public/vatra.png" alt="Vatra logo" width="96" />
-  <h1>Vatra</h1>
-  <p><strong>The fire your agents gather around.</strong></p>
-  <p>Claude Code, Codex, Cursor, and every other coding agent you already use — around one local fire.<br/>One workspace, every provider, your machine.</p>
+  <img src="public/molfar.png" alt="MOLFAR logo" width="112" />
+  <h1>MOLFAR</h1>
+  <p><strong>Multi-Agent Orchestration Layer for Autonomous Reasoning</strong></p>
+  <p>One local-first engineering workspace for coding agents, code, knowledge, worktrees, and automation.<br/>Claude Code, Codex, Cursor, and other coding agents side by side, on your machine.</p>
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black" alt="Tauri" />
-  <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust" />
-  <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/github/v/release/deluminor/vatra?color=orange&label=version" alt="Version" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+  <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black" alt="Tauri 2" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript strict" />
+  <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust stable" />
+  <img src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-555" alt="macOS, Windows, Linux" />
+  <img src="https://img.shields.io/github/v/release/deluminor/molfar?color=8b5cf6&label=version" alt="Latest release" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
+
+![MOLFAR Home dashboard](docs/architecture/images/home.png)
+
+> **MOLFAR** brings agents, projects, worktrees, tickets, knowledge, automation, and developer tooling into one desktop environment. It drives the provider CLIs you already use and keeps project state, sessions, and credentials on your machine.
+>
+> Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT), MOLFAR is an independent project with its own repository, releases, and architecture, and it still ports selected upstream changes.
 
 ## Table of Contents
 
-- [Why "Vatra"](#why-vatra)
-- [Overview](#overview)
-- [Product Tour](#product-tour)
-- [Tech Stack](#tech-stack)
+- [TL;DR](#tldr)
+- [Why MOLFAR](#why-molfar)
+- [What it does](#what-it-does)
 - [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Key Features](#key-features)
-- [Getting Started](#getting-started)
-- [Upgrading from MonoCode](#upgrading-from-monocode)
-- [Running the App](#running-the-app)
-- [Available Scripts](#available-scripts)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License and Attribution](#license-and-attribution)
+- [Security and execution model](#security-and-execution-model)
+- [Getting started](#getting-started)
+- [Reference](#reference)
+- [Development](#development)
+- [Direction](#direction)
+- [License and attribution](#license-and-attribution)
 
-## Why "Vatra"
+## TL;DR
 
-A _vatra_ is the bonfire of the Carpathian highlands — the fire everyone gathers around at night to talk, plan, and keep warm. Vatra is that fire for coding agents. Claude Code, Codex, Cursor, Grok Build, OpenCode and the rest each bring their own strengths, and here they meet in one place: same projects, same files, same history, side by side.
+|                |                                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| **What**       | Local-first engineering workspace and control plane for coding agents                                 |
+| **Providers**  | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent              |
+| **Cost**       | No hosted model and no token resale. MOLFAR drives the CLIs and subscriptions you already have        |
+| **Data**       | Sessions, project state, notes, knowledge links, and integration credentials stay on your machine     |
+| **Platforms**  | macOS (Apple Silicon and Intel), Windows, Linux (`.deb`, AppImage, `.rpm`)                            |
+| **Origin**     | Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT); independent project since    |
+| **Status**     | Early and actively developed; used daily as the author's primary engineering workspace               |
 
-The fire is yours. Every agent runs through the CLI you already installed and logged into, on your machine, with your credentials. Vatra hosts no model and resells no tokens.
+## Why MOLFAR
 
-## Overview
+Working with several coding agents quickly turns into a pile of disconnected tools:
 
-Vatra is a cross-platform desktop workspace for coding agents you already pay for. It opens provider CLIs (Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent) as first-class sessions: tabs are conversations, the composer is the input, and everything around them — files, terminal, source control, notes, Inbox, automations, and light orchestration — lives in the same window.
+- one terminal or app window per provider, each with its own session history;
+- Git worktrees created by hand for parallel work;
+- tickets in Jira, GitHub, Linear, or Azure DevOps, documentation in Confluence, engineering notes in Obsidian;
+- automations and CI signals spread across other systems.
 
-**Status** — early and actively developed; expect rough edges. Vatra is an independent project derived from [MonoCode](https://github.com/hardbeat920/monocode): it started as a fork, now lives in its own repository with its own releases, and still pulls MonoCode changes in regularly (see [Syncing from upstream](docs/releasing.md#syncing-from-upstream)). On top of MonoCode it adds **Confluence Docs** in Inbox, read-only `confluence.*` agent tools, a shared ADF→markdown pipeline, **Knowledge** (local Obsidian vaults with a 3D link graph), a rearrangeable **Home** dashboard, and a **Usage** surface for provider quotas.
+The problem is not a lack of agents. It is the lack of a shared engineering environment around them. MOLFAR puts the agents inside the same project context as the code, terminal, tickets, and knowledge, so a task does not need constant copy-pasting between applications.
 
-Experimental remote sessions: run agents on an always-on Windows, Linux, or macOS machine and connect from the desktop. See [remote access setup and current limitations](docs/remote-access.md).
+The name is a nod to the *molfar* — the Carpathian wise man who reads signs and keeps knowledge. The acronym says what the product does: a layer that orchestrates many agents locally and keeps their reasoning grounded in your project.
 
-## Product Tour
+## What it does
 
-### Home
+### Sessions: every agent, one workspace
 
-The landing surface for the whole workspace. Home combines live host telemetry (CPU, RAM, swap, load, processes), Vatra status, the last 24 hours of agent sessions, and upcoming and recent automation runs. Every widget can be rearranged, and the layout persists locally. The brand card burns an animated campfire — a dotted flame over crossed logs, with rising sparks — and can be switched to a holographic **Orb**. The fire pauses when the window is hidden or the card scrolls away, and holds still when the system asks for reduced motion.
+Each tab is a full agent session backed by a locally installed provider CLI. For every run you choose the **provider, model, reasoning effort, permission mode, and checkout** — the current branch or an isolated Git worktree.
 
-![Vatra Home dashboard](docs/architecture/images/home.png)
+- `@` mentions for files, notes, and Confluence pages; image and file attachments;
+- slash commands such as `/plan`, `/orchestrator`, `/mcp`, `/btw`, and `/operator`;
+- project explorer, CodeMirror editor, integrated terminal, and source control docked beside the conversation.
 
-### Sessions
-
-Each tab is a full agent conversation backed by a locally installed provider CLI. The composer chooses the provider, model, reasoning effort, permission mode, and checkout (the current branch or an isolated worktree) for every run. It also handles attachments, `@`-mentions of files, notes, and Confluence pages, and slash commands. The project explorer, terminal, and source control stay docked beside the conversation, so reviewing a diff never means leaving the session.
+Reviewing a diff never means leaving the session.
 
 ![Session composer with provider, model, effort, and checkout selection](docs/architecture/images/new-chat.png)
 
-### Inbox
+### Inbox: engineering signals become sessions
 
-A single triage queue for GitHub, GitLab, Linear, Jira, Azure DevOps, and Confluence. Issues, pull requests, and pages render in place with full Markdown and CI check status. **Ask** puts a question about an item to an agent without leaving the Inbox. **Send to chat** opens a session pre-loaded with the item's context. Failing GitHub checks can be turned into a scoped CI-repair session that carries the check evidence. Credentials stay on the machine, and the Confluence source reuses the existing Jira Atlassian connection.
+One triage queue for **GitHub · GitLab · Linear · Jira · Azure DevOps · Confluence**. Issues, pull requests, and pages render in place with Markdown and CI check status.
+
+- **Ask** — question an agent about an item without leaving the Inbox.
+- **Send to chat** — open a session with the item's context already attached.
+- **CI repair** — turn a failing GitHub check into a scoped session that carries the check evidence.
+- **Confluence Docs** — browse spaces and page trees, read ADF as Markdown, mention pages with `@confluence`, and send them into agent context. Confluence reuses the existing Jira Atlassian connection.
 
 ![Inbox with a GitHub pull request open in the detail pane](docs/architecture/images/inbox.png)
 
-### Automations
+### Automations: agents on a schedule or an event
 
-Recurring and event-driven agent work. Start from a template (code review, security scans, incident triage, docs generation, test coverage) or from scratch. Each run can be triggered on a schedule or by GitHub, GitLab, Linear, Jira, or Azure DevOps activity. Runs execute locally against your own checkouts with the same providers and permission modes as interactive sessions.
+Start from a template (code review, security scan, incident triage, documentation, test coverage) or from scratch. Runs are triggered by a schedule or by GitHub, GitLab, Linear, Jira, or Azure DevOps activity, and execute locally against your checkouts — optionally in a fresh worktree — with the same providers and permission modes as interactive sessions.
 
 ![Automation templates and the list of scheduled runs](docs/architecture/images/automations.png)
 
-### Notes
+### Knowledge: local Obsidian vaults as agent context
 
-Project-scoped Markdown notes for decisions, checklists, and context worth reusing across sessions. Notes support tags, a Source/Preview toggle, and **Add to chat**. Any note can be referenced with `@` in the composer, and agents with `/operator` access can list and read notes programmatically.
+MOLFAR opens a local Obsidian vault directly — no plugin, no running Obsidian. The Markdown files stay the source of truth.
 
-![Notes view with a tagged note in preview mode](docs/architecture/images/notes.png)
-
-### Knowledge
-
-Connects a local Obsidian vault without any plugin or running Obsidian instance; the Markdown files stay the source of truth. The vault opens as a searchable folder tree next to a 3D graph of wikilinks, Markdown links, aliases, and tags. Selecting a graph node opens the same document as selecting it in the tree, and Neighborhood mode narrows the graph to a single note's links.
+- searchable folder tree and a **3D graph** of wikilinks, Markdown links, aliases, and tags;
+- Source/Preview editing that preserves frontmatter and line endings;
+- **Add to agent context** attaches the saved revision as an explicit context card, so the agent works from exactly the text you reviewed.
 
 ![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-close.png)
 
-### Knowledge → agent context
+### Notes
 
-Notes open in a Source/Preview editor that saves explicitly and preserves the original frontmatter and line endings. **Add to agent context** re-reads the saved revision and opens a chat with a context card that records the vault, relative path, and revision. Nothing is sent until you submit, so the agent works from exactly the text you reviewed. Limits and conflict handling are covered in [Knowledge: local Obsidian vaults](#knowledge-local-obsidian-vaults).
+Project-scoped Markdown notes for decisions, checklists, and context worth reusing. Notes support tags, Source/Preview, **Add to chat**, and `@` mentions in the composer; agents with `/operator` access can list and read them.
 
-![Knowledge note open in the editor with Add to agent context](docs/architecture/images/vault-open.png)
+![Notes view with a tagged note in preview mode](docs/architecture/images/notes.png)
 
-## Tech Stack
+### Orchestration and `/operator`
 
-| Layer               | Technology                                 |
-| ------------------- | ------------------------------------------ |
-| Desktop runtime     | Tauri 2                                    |
-| UI                  | React 19, Vite 7, Tailwind CSS 4           |
-| Language (web)      | TypeScript 5.8 (strict)                    |
-| Language (native)   | Rust (stable toolchain)                    |
-| Editor              | CodeMirror 6                               |
-| Markdown / diagrams | Streamdown, Mermaid                        |
-| Knowledge graph     | 3d-force-graph (WebGL)                     |
-| Home fire / Orb     | Canvas 2D particle renderers (no deps)     |
-| Terminal            | xterm.js                                   |
-| Tests               | Vitest 3, cargo test                       |
-| Package manager     | npm (lockfile); pnpm lockfile also present |
+- **Orchestration** lets a lead agent decompose a larger task into coordinated worker sessions, each in its own checkout.
+- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes, worktrees, and read-only Confluence tools. Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
 
-The UI talks to Rust through Tauri commands. Agent providers are driven locally via harness adapters over stdio / ACP — there is no Vatra-hosted model API.
+### Home and Usage
+
+**Home** is a rearrangeable dashboard: CPU, RAM, swap, load and process metrics, MOLFAR status, recent sessions, enabled automations, upcoming and recent runs. The brand card renders an animated **Sphere** — the logo's glass orb with orbiting agent rings — and can switch to **Fire** or **Orb**. Animations pause when the window is hidden or the card scrolls away, and hold still under reduced motion.
+
+**Usage** surfaces provider quota and rate-limit signals for Claude, Codex, Cursor, and Antigravity.
+
+### Also inside
+
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Architecture
 
-React feature slices compose the shell. Tauri owns filesystem, PTY, git, session persistence, and HTTP to Atlassian. The harness layer normalizes each provider CLI into one stream of session events. Inbox connectors (GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence) hang off the same local-credential pattern.
-
-### System Overview
-
 <p align="center">
-  <img src="docs/architecture/images/vatra-system.png" alt="Vatra system architecture — React UI, Tauri core, agent harness, Atlassian, and local store" width="900" />
+  <img src="docs/architecture/images/molfar-system.png" alt="MOLFAR system architecture — React UI, Tauri core, agent harness, Atlassian, and local store" width="900" />
 </p>
 
-Interactive diagram: [`docs/architecture/vatra-system.html`](docs/architecture/vatra-system.html)
+Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
 
-### Confluence Docs read path
+| Layer                 | Responsibility                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| **React UI**          | Sessions, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them             |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model        |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session persistence, host metrics, Atlassian requests, local control CLI      |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine      |
 
-<p align="center">
-  <img src="docs/architecture/images/confluence-read.png" alt="Confluence Docs sequence — browse spaces, read pages, hand off to composer and agent" width="900" />
-</p>
+The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
 
-Interactive diagram: [`docs/architecture/confluence-read.html`](docs/architecture/confluence-read.html)
-
-## Project Structure
+| Concern             | Technology                                            |
+| ------------------- | ----------------------------------------------------- |
+| Desktop runtime     | Tauri 2                                               |
+| UI                  | React 19, Vite 7, Tailwind CSS 4, TypeScript (strict) |
+| Native runtime      | Rust (stable)                                         |
+| Editor / terminal   | CodeMirror 6, xterm.js                                |
+| Markdown / diagrams | Streamdown, Mermaid                                   |
+| Knowledge graph     | 3d-force-graph (WebGL)                                |
+| Home visuals        | Canvas 2D renderers, no extra dependencies            |
+| Tests               | Vitest, cargo test, clippy `-D warnings`              |
 
 ```
 src/
-├── app/                 # Shell composition, window chrome, startup
+├── app/                 # Shell composition, window chrome, startup, updates
 ├── features/            # Product slices (UI + model + tests per feature)
 │   ├── sessions/        # Composer, transcripts, BTW, second opinion
-│   ├── inbox/           # Connectors incl. Confluence Docs panel
-│   ├── home/            # Dashboard grid, campfire and Orb visuals
+│   ├── inbox/           # Connectors incl. Confluence Docs
+│   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
 │   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
-│   ├── usage/           # Provider quota / rate-limit cards
-│   ├── files/           # File tree + CodeMirror editor
-│   ├── notes/           # Project notes + @mentions
-│   ├── settings/        # Providers, Jira/Atlassian, keybindings…
+│   ├── orchestration/   # Lead/worker runs
 │   ├── agent-app/       # /operator app-tool surface
-│   ├── orchestration/   # Multi-agent worker flows
-│   └── …                # terminal, automations, source-control, workspace…
-├── integrations/
-│   └── harness/         # Provider-independent core + per-CLI adapters
+│   └── …                # files, notes, terminal, automations, source-control, usage, settings
+├── integrations/harness/ # Provider-independent core + per-CLI adapters
 ├── platform/tauri/      # Browser ↔ Tauri adapters
 ├── shared/              # Reusable UI primitives (no feature logic)
 └── styles/              # Global CSS + design tokens
 src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, control CLI
 host/                    # Experimental remote host (Node) for always-on agent machines
 docs/
-├── architecture/        # Interactive HTML diagrams + JSON sources
-│   └── images/          # Diagram / screenshot previews for README
+├── architecture/        # Interactive HTML diagrams, JSON sources, README images
 └── brand/               # Logo, app-icon and installer artwork sources (SVG)
 ```
 
-## Key Features
+## Security and execution model
 
-### Core
+- **No MOLFAR backend.** Agents run through the provider CLIs installed on your machine and authenticated with your accounts.
+- **Credentials stay local.** Integration credentials are stored on the machine and never committed; there is no `.env` to fill in.
+- **Rust owns sensitive integration calls.** Atlassian requests run in the Tauri core, so the stored credential is not exposed to the UI.
+- **Explicit permission modes.** Every session and automation declares how much authority its agent has.
+- **Scoped `/operator` access.** App control is granted per thread and only during an active agent turn.
+- **Worktree isolation.** Parallel tasks can run in separate Git checkouts.
+- **Reviewed knowledge injection.** Knowledge reaches an agent only through context you select and submit.
 
-- **Multi-provider sessions** — Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent when installed and logged in
-- **Composer + transcript** — attachments, @mentions, BTW side conversations, second opinions
-- **`/operator` app access** — scoped local CLI for `models.*`, `sessions.*`, `folders.*`, `notes.*`, `worktrees.*` during an active turn (see below)
-- **Inbox** — GitHub, GitLab, Linear, Jira, Azure DevOps, and Confluence sources with Send to chat
-- **Workspace** — files, notes, terminal, source control, worktrees, automations
-- **Automations** — scheduled or event-driven agent runs (time, GitHub, Linear, Jira, GitLab, Azure DevOps)
-- **CI repair** — turn failing GitHub PR checks into a scoped repair session with the check evidence attached
-- **Quick composer** — a global shortcut (`Cmd+Shift+Space` by default) that starts a session from anywhere
-- **Skills & slash commands** — discover and author provider skills and use native slash commands from the composer
-- **Notifications** — approval toasts, dock badges, and per-project delivery preferences
-- **Remote sessions** _(experimental)_ — drive agents on an always-on machine over SSH; see [docs/remote-access.md](docs/remote-access.md)
+> MOLFAR is an early-stage tool. Start with a non-sensitive repository, review agent output before merging, and scope unattended automations carefully. Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
 
-### What Vatra adds on top of MonoCode
-
-| Area                        | What shipped                                                                                                                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Confluence Docs (Inbox)** | Source tab when Jira is connected to `*.atlassian.net`; space tree, search, markdown page body, folder TOC, Send to chat / `@confluence/page` and `@confluence/folder` mentions |
-| **Agent tools**             | Read-only `confluence.search`, `confluence.list`, `confluence.read` via the app/control CLI                                                                                     |
-| **ADF pipeline**            | Shared Atlassian Document Format → markdown conversion (`atlassian_adf.rs`) for Jira and Confluence                                                                             |
-| **Knowledge**               | Local Obsidian vault connect (no plugin); tree, search, 3D graph, Source/Preview edit, Add to agent context — see [Knowledge](#knowledge-local-obsidian-vaults)                 |
-| **Home dashboard**          | Rearrangeable widgets: host metrics, status, recent sessions, Automations, clock/matrix; animated campfire (default) or Orb brand visual                                        |
-| **Usage**                   | Provider quota / rate-limit cards for Claude, Codex, Cursor, and Antigravity                                                                                                    |
-| **Rail visibility**         | Choose which local surfaces (Home, Usage, Knowledge) appear on the project rail                                                                                                 |
-
-### Knowledge: local Obsidian vaults
-
-Open **Knowledge**, directly below Notes in the project navigation, and choose a vault folder or enter its path. One vault is active at a time; its connection is remembered across restarts. Markdown files remain the source of truth. No Obsidian plugin or running Obsidian instance is required.
-
-- Browse folders and attachments, search note paths/titles/aliases/tags, and explore a 3D graph of note links. Selecting a graph node opens the same document as selecting it in the tree. The graph shows at most 1,500 notes and 12,000 edges; displayed counts identify bounded views. Use Neighborhood to focus on an individual note.
-- Edit Markdown in Source or use Preview. Save explicitly with the button or `Cmd/Ctrl+S`. Original frontmatter and line endings are preserved by the native save operation. Unsaved drafts remain in memory when navigating between notes or sections; save before quitting the application.
-- External changes are reconciled on refresh, window focus and every 30 seconds while Knowledge is visible. Dirty drafts are retained and conflicts block saving until the current revision is loaded. Revision checks reduce concurrent-write risk, but cannot lock out an independently writing application.
-- **Add to agent context** reads the saved note again and opens an agent chat with a context card carrying vault name, relative path and revision. Nothing is submitted automatically. Context is limited to 128 KiB of UTF-8 text per selected note; this is a payload bound, not a guarantee that every provider's token budget will fit it.
-- Indexing supports wikilinks, relative Markdown links, aliases, tags and heading/block target references. Preview opens referenced notes; embedded notes become navigable links, and heading/block references currently open the containing note. Vetted local raster images are previewed through a bounded application cache. Canvas editing, Dataview, plugin execution and autonomous agent vault search/write are outside this release.
-
-Hidden files/directories and symlinks are excluded. Scans stop at 50,000 entries, 128 MiB of Markdown or 30 seconds and report incomplete results. Individual notes are limited to 2 MiB; image previews to 20 MiB. Scan cancellation and file errors are visible. Graph metadata uses modification-time/size caching; editor reads and saves use content hashes. Disconnect removes connection/image-cache data and can discard drafts after confirmation; it never deletes vault files. A file-tree fallback remains available if WebGL fails.
-
-### Agent access to Vatra (`/operator`)
-
-Type `/operator` at the start of a composer message to enable Vatra access in that thread. The transcript shows the request without the command; Vatra injects the local `app` CLI path for that turn. Later turns in the same thread keep access; other threads do not. The CLI acts only during an active agent turn — run `app --help` for exact JSON fields.
-
-- `models.list` shows available providers, models, settings, and permission modes.
-- `sessions.start` opens a tab in the current project with a prompt. Set `placement: "right"` or `placement: "down"` to split the calling session's pane instead; `besideSessionId` selects another visible session pane in the project. Reuse the returned session ID as the next `besideSessionId` to build nested layouts. By default it submits the prompt; set `draft: true` to save it unsent without starting an agent turn. It accepts a provider, model, effort or other model settings, permission mode, and current checkout or new worktree choice. Set `worktreeCwd` to a path from `worktrees.list` for a specific existing checkout. Use `worktrees.create` to create a worktree on a named new or existing local branch, then pass its path as `worktreeCwd`. Omit `runtimeMode` to inherit the calling session's permission mode, or set it explicitly to override. It returns the new session ID as soon as the pane and prompt are accepted, so the agent can move it into a folder immediately.
-- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older exchanges and a per-message character cap. `sessions.send` submits a follow-up to an idle session, while `sessions.draft` saves an unsent message for the user to review.
-- `folders.list` / `folders.move` organize project sessions in sidebar folders, including a new folder.
-- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
-- `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
-- `confluence.search` / `confluence.list` / `confluence.read` read Confluence through the connected Atlassian account.
-
-Orchestration workers keep their scoped `control` workflow and do not receive this app access.
-
-## Getting Started
+## Getting started
 
 ### Download
 
-Installers for macOS (Apple Silicon and Intel), Windows and Linux are on [GitHub Releases](https://github.com/deluminor/vatra/releases/latest). On macOS and Windows the app updates itself from the same releases; on Linux, install the newer package.
+Installers for macOS (Apple Silicon and Intel), Windows, and Linux are on [GitHub Releases](https://github.com/deluminor/molfar/releases/latest). On macOS and Windows the app updates itself from the same releases; on Linux, install the newer package.
 
-Vatra builds are not signed with an Apple Developer ID or a Windows code-signing certificate, so the first launch needs one extra click:
+MOLFAR builds are not signed with an Apple Developer ID or a Windows code-signing certificate, so the first launch needs one extra step:
 
-- **macOS:** open the app once, then **System Settings → Privacy & Security → Open Anyway** (or run `xattr -dr com.apple.quarantine /Applications/Vatra.app`). In-app updates do not ask again.
+- **macOS:** open the app once, then **System Settings → Privacy & Security → Open Anyway** (or run `xattr -dr com.apple.quarantine /Applications/MOLFAR.app`). In-app updates do not ask again.
 - **Windows:** SmartScreen shows "Windows protected your PC" → **More info → Run anyway**.
 
-Maintainers: see [Releasing](docs/releasing.md).
+### Install a provider
 
-### Prerequisites
-
-- **Node.js** ≥ 20.x (CI runs 20 and 24; 26 works too)
-- **Rust** — current stable toolchain (`rustup`)
-- At least one provider CLI installed and logged in (see list below)
-- **Linux:** Tauri native deps (e.g. `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `libsoup-3.0-dev`, `libjavascriptcoregtk-4.1-dev`) — or `npm run setup:linux:deb` on Debian/Ubuntu
-- **Windows:** WebView2 (installer bootstraps it when missing)
-
-### Install a provider first
-
-> Vatra probes for each CLI at startup and disables missing ones.
+MOLFAR probes for each CLI at startup and disables the ones it cannot find. One provider is enough.
 
 - [Claude Code](https://claude.com/product/claude-code) — `claude auth login`
 - [Codex](https://developers.openai.com/codex/cli) — `codex login`
@@ -250,19 +211,18 @@ Maintainers: see [Releasing](docs/releasing.md).
 
 ### Build from source
 
-To work on Vatra or run unreleased changes, build it locally:
+Prerequisites: **Node.js** ≥ 20 (CI runs 20 and 24), a current stable **Rust** toolchain, and at least one provider CLI. On Linux, install the Tauri native dependencies (`npm run setup:linux:deb` on Debian/Ubuntu); on Windows, WebView2 (the installer bootstraps it).
 
 ```bash
-git clone https://github.com/deluminor/vatra.git
-cd vatra
-git checkout main
+git clone https://github.com/deluminor/molfar.git
+cd molfar
 npm install
 npm run tauri -- dev
 ```
 
-Dev builds run as **Vatra Dev** (`com.vatra.desktop.dev`) with their own profile — sessions, settings, connections, and WebView storage — so they never touch an installed Vatra and both can run side by side. A dev profile starts empty and does not import MonoCode data. On Windows, dev-build notifications may not appear, because no Start-menu shortcut is registered for the dev identifier.
+Dev builds run as **MOLFAR Dev** (`com.molfar.desktop.dev`) with their own profile — sessions, settings, connections, and WebView storage — so they never touch an installed MOLFAR and both can run side by side. On Windows, dev-build notifications may not appear, because no Start-menu shortcut is registered for the dev identifier.
 
-Credentials for Jira / Confluence are configured in **Settings → Jira** and stored locally. There is no `.env.example`; secrets stay out of the repository.
+Credentials for Jira and Confluence are configured in **Settings → Jira** and stored locally.
 
 ### Platform packages
 
@@ -281,11 +241,11 @@ npm ci
 npm run build:windows  # NSIS installer under target/release/bundle/nsis/
 ```
 
-Tauri loads `src-tauri/tauri.linux.conf.json` / `tauri.windows.conf.json` automatically for those targets. Install the Debian package with `sudo apt install ./target/release/bundle/deb/Vatra_*.deb`, or make the AppImage executable with `chmod +x Vatra_*.AppImage` and run it directly.
+Tauri loads `src-tauri/tauri.linux.conf.json` / `tauri.windows.conf.json` automatically for those targets. Install the Debian package with `sudo apt install ./target/release/bundle/deb/MOLFAR_*.deb`, or make the AppImage executable with `chmod +x MOLFAR_*.AppImage` and run it directly.
 
-### Fedora / Enterprise Linux packages
+### Fedora / Enterprise Linux
 
-On Fedora, or on an Enterprise Linux 10 system (registered RHEL, Rocky, Alma, CentOS Stream, Oracle), build the `.rpm` natively — that also enables EPEL 10 and CRB automatically, since the -devel packages need CRB:
+On Fedora, or on Enterprise Linux 10 (registered RHEL, Rocky, Alma, CentOS Stream, Oracle), build the `.rpm` natively — the setup script also enables EPEL 10 and CRB, which the `-devel` packages need:
 
 ```bash
 npm run setup:linux:fedora
@@ -301,82 +261,79 @@ sudo dnf install -y epel-release   # RHEL: sudo dnf install -y https://dl.fedora
 # Oracle Linux 10, instead of epel-release:
 # sudo dnf install -y oracle-epel-release-el10 dnf-plugins-core
 # sudo dnf config-manager --set-enabled ol10_developer_EPEL
-sudo dnf install ./target/release/bundle/rpm/Vatra-*.rpm
+sudo dnf install ./target/release/bundle/rpm/MOLFAR-*.rpm
 ```
 
-The `.rpm` declares its own runtime dependencies, so `dnf` pulls the WebKitGTK stack for you. Building natively links the system WebKitGTK instead of the Ubuntu-built libraries shipped in the AppImage, which avoids graphics issues (e.g. `Could not create default EGL display: EGL_BAD_PARAMETER`, or a blank window) on newer Mesa/Wayland systems. EL 9 and older are unsupported (`webkit2gtk4.1-devel` only exists in EPEL 10).
+The `.rpm` declares its runtime dependencies, so `dnf` pulls the WebKitGTK stack. Building natively links the system WebKitGTK instead of the Ubuntu-built libraries in the AppImage, which avoids graphics issues (for example `Could not create default EGL display: EGL_BAD_PARAMETER`, or a blank window) on newer Mesa/Wayland systems. EL 9 and older are unsupported (`webkit2gtk4.1-devel` only exists in EPEL 10).
 
-## Upgrading from MonoCode
+## Reference
 
-Vatra uses its own app identifier (`com.vatra.desktop`). On first launch it copies your MonoCode profile — sessions, settings, Jira/GitLab/Linear connections, the Knowledge vault link, checkpoints, and WebView storage — into Vatra's directories. Your MonoCode data is left untouched, so both apps can stay installed.
+### Agent access to MOLFAR (`/operator`)
 
-- **While MonoCode is running, the copy waits.** Quit MonoCode and restart Vatra to bring your data over; the session database is copied as a consistent snapshot.
-- If the copy fails (for example, a full disk), Vatra retries on the next launch. A profile Vatra created in the meantime is kept next to it as `com.vatra.desktop.before-migration-<timestamp>`, never deleted.
-- macOS asks for notification permission again, because the app identity is new.
-- Remote hosts installed by MonoCode keep working. Settings → Connections offers **Update Host**, which moves each one to Vatra Host (`~/.vatra-host`) with its paired devices and sessions — see [Remote access](docs/remote-access.md#hosts-installed-by-monocode).
-- On first launch settings saved under the old `monocode.*` keys are copied to `vatra.*` (the old keys stay), and the `monocode.db` session database is renamed to `vatra.db`.
+Type `/operator` at the start of a composer message to enable MOLFAR access in that thread. The transcript shows the request without the command, and MOLFAR injects the local `app` CLI path for that turn. Later turns in the same thread keep access; other threads do not. The CLI acts only during an active agent turn — run `app --help` for exact JSON fields.
 
-## Running the App
+- `models.list` shows available providers, models, settings, and permission modes.
+- `sessions.start` opens a tab in the current project with a prompt. `placement: "right"` or `"down"` splits the calling session's pane; `besideSessionId` targets another visible pane, and the returned session ID can be reused to build nested layouts. `draft: true` saves the prompt unsent. It accepts a provider, model, effort and other model settings, permission mode, and a checkout: the current one, a new worktree, or an existing `worktreeCwd` from `worktrees.list`. Omit `runtimeMode` to inherit the caller's permission mode.
+- `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older ones and a per-message character cap. `sessions.send` submits a follow-up to an idle session; `sessions.draft` saves an unsent message for review.
+- `folders.list` / `folders.move` organize sessions in sidebar folders, including a new folder.
+- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
+- `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
+- `confluence.search` / `confluence.list` / `confluence.read` read Confluence through the connected Atlassian account.
 
-```bash
-# Desktop (recommended)
-npm run tauri -- dev
+Orchestration workers keep their scoped `control` workflow and do not receive this app access.
 
-# Vite UI only (no native shell)
-npm run dev
+### Knowledge limits
 
-# Stable Tauri config (no file watch)
-npm run tauri:stable
-```
+Open **Knowledge**, below Notes in the project navigation, and choose a vault folder or enter its path. One vault is active at a time and its connection is remembered.
 
-## Available Scripts
+- The graph shows at most 1,500 notes and 12,000 edges; displayed counts identify bounded views. **Neighborhood** focuses on one note's links.
+- Save explicitly with the button or `Cmd/Ctrl+S`. Unsaved drafts stay in memory across navigation; save before quitting.
+- External changes are reconciled on refresh, on window focus, and every 30 seconds while Knowledge is visible. Dirty drafts are kept and conflicts block saving until the current revision is loaded. Revision checks reduce concurrent-write risk but cannot lock out another application.
+- **Add to agent context** re-reads the saved note and attaches vault name, relative path, and revision. Nothing is submitted automatically. Context is capped at 128 KiB of UTF-8 per note — a payload bound, not a guarantee that every provider's token budget fits it.
+- Indexing covers wikilinks, relative Markdown links, aliases, tags, and heading/block references (which currently open the containing note). Canvas editing, Dataview, plugin execution, and autonomous agent vault search/write are out of scope.
+- Hidden files and symlinks are excluded. Scans stop at 50,000 entries, 128 MiB of Markdown, or 30 seconds and report incomplete results. Notes are limited to 2 MiB and image previews to 20 MiB. Disconnecting removes connection and image-cache data and can discard drafts after confirmation; it never deletes vault files. A file-tree fallback remains available if WebGL fails.
+
+### Remote sessions (experimental)
+
+Run agents on an always-on Windows, Linux, or macOS machine through MOLFAR Host and connect from the desktop over SSH. Setup, management commands, and current limitations: [docs/remote-access.md](docs/remote-access.md).
+
+## Development
 
 | Script                       | Description                                            |
 | ---------------------------- | ------------------------------------------------------ |
-| `npm run dev`                | Vite frontend only                                     |
-| `npm run tauri`              | Tauri CLI (use `npm run tauri -- dev` for desktop dev) |
-| `npm run tauri:stable`       | Tauri dev with stable config, no watch                 |
+| `npm run tauri -- dev`       | Desktop app in development mode                        |
+| `npm run dev`                | Vite frontend only (no native shell)                   |
+| `npm run tauri:stable`       | Tauri dev with stable config, no file watch            |
 | `npm run build`              | `tsc` + Vite production build                          |
-| `npm run preview`            | Preview Vite production build                          |
-| `npm test`                   | Vitest once                                            |
-| `npm run test:watch`         | Vitest watch mode                                      |
-| `npm run check`              | Web checks + Rust fmt/clippy/tests                     |
+| `npm test`                   | Vitest once (`npm run test:watch` for watch mode)      |
+| `npm run check`              | Full gate: web checks + Rust fmt/clippy/tests          |
 | `npm run check:web`          | Vitest + `tsc --noEmit`                                |
 | `npm run check:rust`         | `cargo fmt --check`, clippy `-D warnings`, cargo test  |
-| `npm run setup:linux:deb`    | Install Debian Tauri build dependencies                |
-| `npm run setup:linux:fedora` | Install Fedora / EL Tauri build dependencies           |
 | `npm run build:linux`        | Linux `.deb` + AppImage bundles                        |
 | `npm run build:fedora`       | Linux `.rpm` bundle                                    |
 | `npm run build:windows`      | Windows NSIS installer                                 |
-| `npm run host:build`         | Build experimental remote host                         |
+| `npm run host:build`         | Build the experimental remote host                     |
 | `npm run test:host`          | Vitest for the remote host                             |
-| `npm run set-version`        | Bump version via `scripts/bump-version.mjs`            |
+| `npm run set-version`        | Set the app version in every manifest                  |
 
-## Testing
+Feature logic lives next to its tests under `src/features/**`. A versioned pre-push hook runs `npm run check:web`; enable it once per clone with `git config core.hooksPath .githooks`.
 
-```bash
-npm test              # Vitest (web)
-npm run check:web     # Vitest + TypeScript
-npm run check:rust    # Rust fmt, clippy, tests
-npm run check         # Full web + Rust gate
-```
+Small, focused pull requests are welcome; larger changes are worth an issue first — see [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Use Conventional Commits and run `npm run check` before opening a PR against `main`. Changes that belong in MonoCode itself should go to [MonoCode](https://github.com/hardbeat920/monocode). Releases and the upstream sync are described in [docs/releasing.md](docs/releasing.md).
 
-Feature logic lives next to its tests under `src/features/**/*.test.ts`. A versioned pre-push hook runs `npm run check:web`; enable it once per clone with `git config core.hooksPath .githooks`.
+## Direction
 
-## Contributing
+The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
 
-Small, focused pull requests are welcome. Large changes are worth an issue first — see [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+The next major step is an **iPad and iOS companion** that connects to a running MOLFAR host: monitor sessions, approve permission requests, inspect agent activity, and steer ongoing work remotely.
 
-Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`) and run `npm run check` before opening a PR against `main` of [deluminor/vatra](https://github.com/deluminor/vatra). Changes that belong in MonoCode itself should go to [MonoCode](https://github.com/hardbeat920/monocode); Vatra picks them up through its upstream sync.
+> **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 
-## License and Attribution
+## License and attribution
 
-Vatra is released under the [MIT License](LICENSE).
+MOLFAR is released under the [MIT License](LICENSE).
 
-- Vatra: © 2026 Erik K. (deluminor)
+- MOLFAR: © 2026 Erik K. (deluminor)
 - Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT); the original copyright and permission notice are kept in [LICENSE](LICENSE)
 - Third-party code and dependencies keep their own licenses; see [NOTICE](NOTICE). Every build also ships the full license texts of its bundled JavaScript and Rust dependencies
 
-Vatra is not affiliated with or endorsed by the MonoCode project. Provider names and logos are trademarks of their owners — see [NOTICE](NOTICE). Vatra is not affiliated with, endorsed by, or sponsored by those providers.
-
-Security reports: [SECURITY.md](SECURITY.md).
+MOLFAR is not affiliated with or endorsed by the MonoCode project. Provider names and logos are trademarks of their owners — see [NOTICE](NOTICE). MOLFAR is not affiliated with, endorsed by, or sponsored by those providers.

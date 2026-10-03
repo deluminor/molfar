@@ -21,7 +21,7 @@ The workflow then:
 - builds macOS (arm64 + x64), Windows, Linux (`.deb`, AppImage, `.rpm`) and the six host packages from that tag;
 - publishes the GitHub release with the changelog section as its body, plus `latest.json` for in-app updates.
 
-Pushing a `vX.Y.Z` tag yourself runs the same build, provided the tag points at a commit on `main` and the manifests and changelog already carry that version (`scripts/release/verify.mjs`).
+Pushing a `vX.Y.Z` tag yourself runs the same build, provided the tag points at a commit on `main` and the manifests and changelog already carry that version (`scripts/release/verify.mjs`). The first release, 1.0.0, ships this way: the manifests and `CHANGELOG.md` already carry it, and the workflow only accepts versions newer than the current one.
 
 A failed build leaves the release as a draft; use **Re-run failed jobs** on that run to resume it (starting a new run would try to bump the version again). Published releases are never modified.
 
@@ -58,7 +58,7 @@ The **Sync MonoCode upstream** automation in MOLFAR (Tuesday and Friday, 09:00) 
 
 Every sync, including one that applies cleanly, also:
 
-- renames MonoCode identifiers that upstream code brings in to MOLFAR's: `monocode.*` storage keys and `monocode:*` events become `molfar.*` / `molfar:*`, and the same goes for component names and user-facing text. Upstream issue links and the legacy-profile migration code keep their MonoCode names;
+- renames MonoCode identifiers that upstream code brings in to MOLFAR's: `monocode.*` storage keys and `monocode:*` events become `molfar.*` / `molfar:*`, and the same goes for component names and user-facing text. Upstream issue links keep their MonoCode names;
 - adds the incoming user-visible changes under `## [Unreleased]` in `CHANGELOG.md`, citing upstream PRs as `MonoCode #NNN`. These notes are the only place the release sees upstream changes;
 - runs `npm run check:web` (plus `cargo check` and the host tests when the sync touches them), and lists user-visible default changes under **Breaking / attention** in the notes.
 
@@ -80,7 +80,7 @@ These parts are MOLFAR-owned; keep ours when porting upstream changes:
 - `.github/workflows/release.yml`, `scripts/release/`
 - `src/app/model/forkPolicy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`
 - `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`
-- host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`, the `host.molfar` capability)
+- host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`)
 - version numbers and `CHANGELOG.md`
 
 License notices are the exception. Keep MOLFAR's additions, but always port upstream changes to them: a new or changed copyright line in `LICENSE`, `NOTICE` content, `LICENSE*`/`NOTICE*` files under `vendor/` or anywhere else, and copyright or SPDX headers in source files. MIT requires every copy to carry these notices, so dropping an upstream change here is a license violation, not just a style choice.

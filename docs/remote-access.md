@@ -88,23 +88,13 @@ SSH-installed hosts have a launcher at `~/.molfar-host/bin/molfar-host`; use it 
 
 On Windows, the launcher is `%USERPROFILE%\.molfar-host\bin\molfar-host.cmd`. The scheduled task is named `MOLFAR Host-<user SID>`; `service uninstall` unregisters it and stops the host. Normal cancellation and shutdown stop the provider's process tree. A plain manual `start` is detached, but use `service install` for SSH-hosted Windows sessions so Task Scheduler owns the process independently of the SSH login.
 
-## Hosts installed by MonoCode
-
-Before MOLFAR published its own host packages, SSH setup installed the upstream MonoCode host in `~/.monocode-host` (service `com.monocode.host` / `monocode-host.service`, Windows task `MonoCode Host-<SID>`). The next SSH setup or **Update Host** retires it once:
-
-1. It stops the old host with its own `service uninstall`, so both never compete for port 3774. If the old host keeps running, setup stops with an error and changes nothing.
-2. It copies `host.db` (with its `-wal`/`-shm` files) and `attachments/` into `~/.molfar-host`, unless that directory already has a database. Paired devices, the environment ID and remote sessions carry over, so the desktop reconnects without pairing again.
-3. It installs and starts `molfar-host` on the same port. If that fails, the copied files are removed and the old service is reinstalled.
-
-`~/.monocode-host` is never modified or deleted. Once the new host works, remove it yourself with `rm -rf ~/.monocode-host` (`Remove-Item -Recurse "$env:USERPROFILE\.monocode-host"` on Windows).
-
 ## Release packaging
 
 `npm run host:package` builds a self-contained package for the current Windows/Mac/Linux architecture. `npm run host:package -- --all` builds all six archives, using pinned official Node binaries and checksums. Archives contain the host bundle, runtime, launcher, and licenses. `host/package.mjs` pins the runtime version. Cross-packaging Windows on Unix requires `zip` and `unzip`; native Windows packaging uses PowerShell.
 
 The release workflow publishes `molfar-host-{darwin,linux}-{arm64,x64}.tar.gz`, `molfar-host-win32-{arm64,x64}.zip`, and their `.sha256` files alongside the desktop release. SSH setup downloads from the GitHub release of the exact desktop version (`deluminor/molfar`), then installs under `~/.molfar-host/runtime`.
 
-**Unreleased development builds:** automatic first-time installation and **Update Host** require host archives published for the desktop version. Release builds from v0.5.0 onward include the matching archives; an unreleased checkout may not have them. Until the matching release is available, use the manual development connection above. A missing archive produces an explicit error in Settings. No fallback to an arbitrary latest release or unverified download is used. Connecting does not automatically upgrade a running host. When an SSH host lacks Explorer or Changes, Settings → Connections offers **Update Host**. This downloads and verifies the matching package, restarts the host service, and reconnects using the existing device credential. The restart interrupts active agent turns; sessions and history remain on the host. URL connections must be updated on the host manually.
+**Unreleased development builds:** automatic first-time installation and **Update Host** require host archives published for the desktop version. Every MOLFAR release includes the matching archives; an unreleased checkout may not have them. Until the matching release is available, use the manual development connection above. A missing archive produces an explicit error in Settings. No fallback to an arbitrary latest release or unverified download is used. Connecting does not automatically upgrade a running host. When an SSH host lacks Explorer or Changes, Settings → Connections offers **Update Host**. This downloads and verifies the matching package, restarts the host service, and reconnects using the existing device credential. The restart interrupts active agent turns; sessions and history remain on the host. URL connections must be updated on the host manually.
 
 ## Scope of this first version
 
