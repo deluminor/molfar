@@ -69,12 +69,16 @@ jobs:
           # actor. Use an admin PAT (RELEASE_GITHUB_TOKEN) so --admin can land
           # the release PR without waiting on required status checks.
           GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN || github.token }}
+          OWNER: ${{ github.repository_owner }}
+          OWNER_ID: ${{ github.repository_owner_id }}
         run: |
           set -euo pipefail
           node scripts/release/verify.mjs "$TAG"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Commit as the repository owner so release bumps do not add a bot
+          # to the repository's contributors.
+          git config user.name "$OWNER"
+          git config user.email "${OWNER_ID}+${OWNER}@users.noreply.github.com"
 
           RELEASE_HEAD="release/${TAG}"
           git switch -c "$RELEASE_HEAD"
