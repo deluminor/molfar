@@ -809,7 +809,6 @@ mod tests {
             let script = bootstrap_script(platform);
             assert!(script.contains(&release));
             assert!(script.contains("vatra-host-"));
-            assert!(script.contains(".monocode-host"), "legacy migration source");
         }
         assert!(
             pairing_script(HostPlatform::Unix, "Desk").contains("$HOME/.vatra-host/bin/vatra-host")

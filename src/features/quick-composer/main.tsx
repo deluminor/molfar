@@ -1,4 +1,3 @@
-import "../../shared/lib/migrateLegacyStorageOnLoad";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";

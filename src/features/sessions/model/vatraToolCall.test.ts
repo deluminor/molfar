@@ -63,19 +63,6 @@ describe("Vatra CLI tool calls", () => {
     ).toBe("List notes");
   });
 
-  it("recognizes CLI calls saved before the executable was renamed", () => {
-    expect(
-      vatraToolCall(
-        shell("/Applications/Vatra.app/Contents/MacOS/monocode app notes.list"),
-      )?.label,
-    ).toBe("List notes");
-    expect(
-      vatraToolCall(
-        shell('"C:\\Program Files\\Vatra\\monocode.exe" app notes.list'),
-      )?.label,
-    ).toBe("List notes");
-  });
-
   it("does not restyle unrelated commands or text mentioning the CLI", () => {
     expect(
       vatraToolCall(shell("echo vatra app notes.list")),

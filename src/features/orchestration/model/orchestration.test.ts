@@ -130,15 +130,8 @@ describe("worker assignment prompts", () => {
     expect(visibleUserPrompt(sent)).toBe("Review the branch.");
   });
 
-  it("hides the pre-rename assignment envelope in saved transcripts", () => {
-    const saved =
-      "Review the branch.\n\n<monocode_assignment>\nScope: src\n</monocode_assignment>";
-
-    expect(visibleUserPrompt(saved)).toBe("Review the branch.");
-  });
-
   it("does not strip mismatched envelope tags", () => {
-    const text = "Keep\n<vatra_assignment>x</monocode_assignment>";
+    const text = "Keep\n<vatra_assignment>x</vatra_proposal>";
 
     expect(visibleUserPrompt(text)).toBe(text);
   });

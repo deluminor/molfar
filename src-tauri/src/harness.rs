@@ -1380,9 +1380,6 @@ const KILL_ALL_GRACE: Duration = Duration::from_millis(300);
 #[cfg(not(windows))]
 const KILL_ALL_KILL_WAIT: Duration = Duration::from_millis(150);
 const HARNESS_PARENT_ENV: &str = "VATRA_HARNESS_PARENT";
-/// Marker MonoCode set before the rename; its orphans must stay reapable.
-#[cfg(any(unix, test))]
-const LEGACY_HARNESS_PARENT_ENV: &str = "MONOCODE_HARNESS_PARENT";
 
 /// An interactive shell has to source the user's whole rc file; nvm alone can
 /// take a second.
@@ -1708,9 +1705,7 @@ fn parse_ps_row(line: &str) -> Option<ProcessSnapshot> {
 
 #[cfg(any(unix, test))]
 fn harness_parent_from_bytes(buf: &[u8]) -> Option<u32> {
-    [HARNESS_PARENT_ENV, LEGACY_HARNESS_PARENT_ENV]
-        .into_iter()
-        .find_map(|name| marker_value(buf, name))
+    marker_value(buf, HARNESS_PARENT_ENV)
 }
 
 #[cfg(any(unix, test))]
@@ -3875,12 +3870,6 @@ mod reap_logic_tests {
         buf.extend_from_slice(HARNESS_PARENT_ENV.as_bytes());
         buf.extend_from_slice(b"=21504\0HOME=/tmp\0");
         assert_eq!(harness_parent_from_bytes(&buf), Some(21504));
-    }
-
-    #[test]
-    fn harness_parent_from_bytes_reads_the_legacy_marker() {
-        let buf = b"PATH=/usr/bin\0MONOCODE_HARNESS_PARENT=31337\0HOME=/tmp\0";
-        assert_eq!(harness_parent_from_bytes(buf), Some(31337));
     }
 
     #[test]

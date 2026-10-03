@@ -262,7 +262,7 @@ export function completeOrchestrationProposal(
   try {
     if (error) throw new Error(error);
     const tagged = response.match(
-      /<(?:vatra|monocode)_proposal>\s*([\s\S]*?)\s*<\/(?:vatra|monocode)_proposal>/,
+      /<vatra_proposal>\s*([\s\S]*?)\s*<\/vatra_proposal>/,
     );
     const fenced = response.match(/```(?:json)?\s*([\s\S]*?)```/);
     const raw = (tagged?.[1] ?? fenced?.[1] ?? response).trim();

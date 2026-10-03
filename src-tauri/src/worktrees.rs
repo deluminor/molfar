@@ -398,9 +398,9 @@ pub async fn git_orchestration_worktree_create(
         .map_err(|error| error.to_string())?
 }
 
-// Branches created before the rename keep the MonoCode-era `mc/` and
-// `monocode/` prefixes and must stay manageable.
-const GENERATED_BRANCH_PREFIXES: [&str; 3] = ["vatra/", "mc/", "monocode/"];
+// Branches created by earlier builds keep the `mc/` prefix and must stay
+// manageable.
+const GENERATED_BRANCH_PREFIXES: [&str; 2] = ["vatra/", "mc/"];
 const ORCHESTRATION_BRANCH_PREFIXES: [&str; 2] = ["vatra/orch-", "mc/orch-"];
 
 fn is_generated_branch(branch: &str) -> bool {
@@ -972,7 +972,7 @@ mod tests {
     fn recognizes_current_and_legacy_branch_prefixes() {
         assert!(is_generated_branch("vatra/12345678"));
         assert!(is_generated_branch("mc/12345678"));
-        assert!(is_generated_branch("monocode/12345678"));
+        assert!(!is_generated_branch("monocode/12345678"));
         assert!(!is_generated_branch("feature/vatra"));
 
         assert!(is_orchestration_branch("vatra/orch-task"));

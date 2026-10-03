@@ -83,7 +83,7 @@ export function orchestrationWorktreeBranchName(id: string): string {
 export function namedWorktreeBranch(fragment: string): string | null {
   const clean = fragment
     .trim()
-    .replace(/^(?:vatra|mc|monocode)\/+/, "")
+    .replace(/^(?:vatra|mc)\/+/, "")
     .replace(/^\/+|\/+$/g, "");
   return clean ? `vatra/${clean}` : null;
 }

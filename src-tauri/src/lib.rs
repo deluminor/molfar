@@ -19,8 +19,6 @@ mod harness_updates;
 mod home_host;
 mod inbox_media;
 mod jira;
-mod legacy_identity;
-mod legacy_session_db;
 mod linear;
 mod link_preview;
 #[cfg(target_os = "macos")]
@@ -225,7 +223,6 @@ fn app_context() -> tauri::Context {
 pub fn run() {
     #[cfg(windows)]
     windows::initialize().expect("Failed to initialize Windows process safety");
-    legacy_identity::migrate();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())

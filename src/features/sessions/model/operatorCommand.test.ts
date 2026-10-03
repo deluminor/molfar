@@ -3,7 +3,6 @@ import {
   consumeOperatorCommand,
   isOperatorUserTurn,
   operatorEnabledInThread,
-  operatorUserPrompt,
   OPERATOR_COMMAND,
 } from "./operatorCommand";
 
@@ -30,23 +29,10 @@ describe("Operator composer command", () => {
       text: "Explain /operator",
       matched: false,
     });
-    for (const alias of ["/mono", "/vatra", "/monocode"]) {
-      expect(consumeOperatorCommand(`${alias} list notes`)).toEqual({
-        text: "list notes",
-        matched: true,
-      });
-    }
-  });
-
-  it("honours the flag saved before the rename", () => {
-    expect(
-      isOperatorUserTurn({
-        id: "saved",
-        role: "user",
-        text: "list notes",
-        monocode: true,
-      }),
-    ).toBe(true);
+    expect(consumeOperatorCommand("/mono list notes")).toEqual({
+      text: "/mono list notes",
+      matched: false,
+    });
   });
 
   it("keeps access for later turns when a submitted user turn enabled it", () => {
@@ -69,15 +55,8 @@ describe("Operator composer command", () => {
         { id: "other", role: "user", text: "Explain /operator" },
       ]),
     ).toBe(false);
-    for (const alias of ["/mono", "/vatra", "/monocode"]) {
-      const legacy = {
-        id: "legacy",
-        role: "user" as const,
-        text: `${alias} list notes`,
-      };
-      expect(isOperatorUserTurn(legacy)).toBe(true);
-      expect(operatorUserPrompt(legacy)).toBe("list notes");
-      expect(operatorEnabledInThread([legacy])).toBe(true);
-    }
+    expect(
+      isOperatorUserTurn({ id: "plain", role: "user", text: "/mono list notes" }),
+    ).toBe(false);
   });
 });

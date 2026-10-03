@@ -48,12 +48,6 @@ describe("AgentTranscript collapsed work", () => {
     expect(markup).toContain('data-vatra="true"');
     expect(markup).toContain("list my notes");
     expect(markup).not.toContain("/operator");
-
-    const legacy = render([
-      { id: "old", role: "user", text: "/vatra list my notes" },
-    ]);
-    expect(legacy).toContain('data-vatra="true"');
-    expect(legacy).not.toContain("/vatra");
   });
 
   it("shows Vatra CLI actions instead of their long shell commands", () => {
@@ -61,7 +55,7 @@ describe("AgentTranscript collapsed work", () => {
       "/repo/target/debug/Vatra.app/Contents/MacOS/vatra";
     const markup = render(
       [
-        { id: "user", role: "user", text: "/vatra list my notes" },
+        { id: "user", role: "user", text: "list my notes", vatra: true },
         {
           id: "help",
           role: "tool",
@@ -133,7 +127,7 @@ describe("AgentTranscript collapsed work", () => {
 
   it("keeps a failed Vatra call compact until its error is opened", () => {
     const markup = render([
-      { id: "user", role: "user", text: "/vatra list notes" },
+      { id: "user", role: "user", text: "list notes", vatra: true },
       {
         id: "notes",
         role: "tool",

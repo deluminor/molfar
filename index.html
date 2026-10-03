@@ -5,30 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/vatra.png" />
     <title>Vatra</title>
-    <script id="legacy-storage-migration">
-      (function () {
-        try {
-          var marker = "vatra.storageMigrated.v1";
-          if (localStorage.getItem(marker) != null) return;
-          var keys = [];
-          for (var i = 0; i < localStorage.length; i++) {
-            var key = localStorage.key(i);
-            if (key != null) keys.push(key);
-          }
-          for (var j = 0; j < keys.length; j++) {
-            var key = keys[j];
-            if (key.indexOf("monocode.") === 0 || key.indexOf("monocode:") === 0) {
-              var target = "vatra" + key.slice("monocode".length);
-              var value = localStorage.getItem(key);
-              if (value != null && localStorage.getItem(target) == null) {
-                localStorage.setItem(target, value);
-              }
-            }
-          }
-          localStorage.setItem(marker, "1");
-        } catch (_) {}
-      })();
-    </script>
     <script>
       (function () {
         try {

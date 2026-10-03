@@ -94,15 +94,10 @@ function Expand-Archive([string] $LiteralPath, [string] $DestinationPath) {
 }`
 }
 `;
-  const legacy = join(fixtureDirectory, "legacy monocode ' host");
   const script = readFileSync("src-tauri/src/remote_bootstrap.ps1", "utf8")
     .replace(
       "$base = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.vatra-host'",
       `$base = ${psQuote(base)}`,
-    )
-    .replace(
-      "$legacyBase = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.monocode-host'",
-      `$legacyBase = ${psQuote(legacy)}`,
     )
     .replace("@@VERSION@@", psQuote(version))
     .replace("@@RELEASE@@", "'https://example.invalid'")
@@ -117,7 +112,6 @@ function Expand-Archive([string] $LiteralPath, [string] $DestinationPath) {
   const launch = `try { & ([ScriptBlock]::Create([IO.File]::ReadAllText(${psQuote(file)}))) } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }`;
   return {
     base,
-    legacy,
     downloads,
     events,
     run: (forceUpgrade = false, env: Record<string, string> = {}) =>
@@ -129,37 +123,6 @@ function Expand-Archive([string] $LiteralPath, [string] $DestinationPath) {
       }),
   };
 }
-
-/** A MonoCode-era install whose runtime tracks whether its host runs. */
-function installLegacyHost(legacy: string) {
-  const runtime = join(legacy, "runtime", "0.6.0");
-  mkdirSync(runtime, { recursive: true });
-  mkdirSync(join(legacy, "attachments"));
-  copyFileSync(process.execPath, join(runtime, "node.exe"));
-  writeFileSync(
-    join(runtime, "host.mjs"),
-    `import { appendFileSync, existsSync, rmSync, writeFileSync } from 'node:fs';
-const state = ${JSON.stringify(join(legacy, "running"))};
-const log = (event) => appendFileSync(process.env.VATRA_TEST_EVENTS, 'legacy ' + event + '\\n');
-const stuck = Boolean(process.env.VATRA_TEST_LEGACY_STUCK);
-const [action, detail] = process.argv.slice(2);
-if (action === 'service' && detail === 'uninstall') { log('service uninstall'); if (!stuck) rmSync(state, { force: true }); }
-else if (action === 'service' && detail === 'install') { log('service install ' + process.argv[5]); writeFileSync(state, ''); }
-else if (action === 'stop') { log('stop'); if (!stuck) rmSync(state, { force: true }); }
-else if (action === 'connection-info') { if (!existsSync(state)) process.exit(1); console.log(JSON.stringify({ port: 4100, pid: 1 })); }
-else process.exit(1);
-`,
-  );
-  writeFileSync(join(legacy, "runtime-path"), runtime);
-  writeFileSync(join(legacy, "host.db"), "legacy db");
-  writeFileSync(join(legacy, "host.db-wal"), "legacy wal");
-  writeFileSync(join(legacy, "attachments", "shot.png"), "png");
-  writeFileSync(join(legacy, "running.json"), "{}");
-  writeFileSync(join(legacy, "running"), "");
-}
-
-const lines = (path: string) =>
-  readFileSync(path, "utf8").trim().split(/\r?\n/);
 
 it.skipIf(!shell)(
   "runs the PowerShell installer, verifies its package, and reuses the installed runtime",
@@ -218,84 +181,6 @@ it.skipIf(!shell)(
     await expect(fixture.run()).rejects.toThrow("checksum mismatch");
     expect(existsSync(join(fixture.base, "runtime-path"))).toBe(false);
     expect(existsSync(fixture.events)).toBe(false);
-  },
-  90_000,
-);
-
-it.skipIf(!shell)(
-  "retires a MonoCode-era Windows host once and carries its state over",
-  async () => {
-    const fixture = await install(false);
-    installLegacyHost(fixture.legacy);
-
-    await fixture.run();
-
-    expect(lines(fixture.events)).toEqual([
-      "legacy service uninstall",
-      "service install",
-    ]);
-    expect(readFileSync(join(fixture.base, "host.db"), "utf8")).toBe("legacy db");
-    expect(readFileSync(join(fixture.base, "host.db-wal"), "utf8")).toBe(
-      "legacy wal",
-    );
-    expect(
-      readFileSync(join(fixture.base, "attachments", "shot.png"), "utf8"),
-    ).toBe("png");
-    expect(existsSync(join(fixture.base, "running.json"))).toBe(false);
-    expect(readFileSync(join(fixture.legacy, "host.db"), "utf8")).toBe(
-      "legacy db",
-    );
-
-    await fixture.run();
-    expect(lines(fixture.events)).toEqual([
-      "legacy service uninstall",
-      "service install",
-      "service install",
-    ]);
-  },
-  90_000,
-);
-
-it.skipIf(!shell)(
-  "keeps the legacy Windows host when it cannot be stopped",
-  async () => {
-    const fixture = await install(false);
-    installLegacyHost(fixture.legacy);
-
-    await expect(
-      fixture.run(false, { VATRA_TEST_LEGACY_STUCK: "1" }),
-    ).rejects.toThrow("could not be stopped");
-
-    expect(lines(fixture.events)).toEqual([
-      "legacy service uninstall",
-      "legacy stop",
-      "legacy service install 4100",
-    ]);
-    expect(existsSync(join(fixture.base, "host.db"))).toBe(false);
-    expect(existsSync(join(fixture.base, "legacy-retired"))).toBe(false);
-  },
-  90_000,
-);
-
-it.skipIf(!shell)(
-  "restores the legacy Windows host when the Vatra host fails to start",
-  async () => {
-    const fixture = await install(false);
-    installLegacyHost(fixture.legacy);
-
-    await expect(
-      fixture.run(false, { VATRA_TEST_FAIL_INSTALL: "1" }),
-    ).rejects.toThrow("Host service setup failed");
-
-    expect(lines(fixture.events)).toEqual([
-      "legacy service uninstall",
-      "service install",
-      "legacy service install 4100",
-    ]);
-    expect(existsSync(join(fixture.base, "host.db"))).toBe(false);
-    expect(existsSync(join(fixture.base, "attachments"))).toBe(false);
-    expect(existsSync(join(fixture.base, "legacy-retired"))).toBe(false);
-    expect(existsSync(join(fixture.legacy, "running"))).toBe(true);
   },
   90_000,
 );

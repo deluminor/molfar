@@ -13,10 +13,6 @@ pub fn current() -> &'static str {
     }
 }
 
-pub fn is_release_identity() -> bool {
-    current() == IDENTIFIER
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -33,7 +29,6 @@ mod tests {
     #[test]
     fn debug_builds_use_the_dev_identity() {
         assert_eq!(current(), DEV_IDENTIFIER);
-        assert!(!is_release_identity());
         assert_ne!(DEV_IDENTIFIER, IDENTIFIER);
     }
 }

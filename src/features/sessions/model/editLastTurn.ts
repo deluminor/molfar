@@ -5,7 +5,7 @@ import type {
   HarnessId,
   Session,
 } from "./session";
-import { isOperatorUserTurn, operatorUserPrompt } from "./operatorCommand";
+import { isOperatorUserTurn } from "./operatorCommand";
 
 /** Harnesses that can rewind provider state before resending an edited prompt. */
 export function harnessSupportsEditLastTurn(harness: HarnessId): boolean {
@@ -161,7 +161,7 @@ export function lastTurnRecall(session: Session): LastTurnRecall | null {
   if (!block?.text.trim() && !block?.attachments?.length) return null;
   return {
     text: isOperatorUserTurn(block)
-      ? `/operator ${operatorUserPrompt(block)}`
+      ? `/operator ${block.text}`
       : block.text,
     attachments: block.attachments ?? [],
   };

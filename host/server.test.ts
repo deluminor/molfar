@@ -304,8 +304,6 @@ describe("remote host API", () => {
     expect((await s.call("environment.describe", {
       supportedProviders: ["codex", "cursor"],
     })).value.result.providers).toEqual(["codex", "cursor"]);
-    expect((await s.call("environment.describe")).value.result.capabilities)
-      .toContain("host.vatra");
   });
   it("re-probes models after the provider CLI is updated", async () => {
     const s = await setup();

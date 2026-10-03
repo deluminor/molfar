@@ -296,18 +296,6 @@ describe("sanitizeSessionForPersist", () => {
     });
   });
 
-  it("rewrites the pre-rename /operator marker to the current field", () => {
-    const session = newSession("codex", "/repo");
-    session.blocks = [
-      { id: "saved", role: "user", text: "list notes", monocode: true },
-    ];
-
-    const [block] = sanitizeSessionForPersist(session).blocks;
-
-    expect(block).toMatchObject({ vatra: true });
-    expect(block).not.toHaveProperty("monocode");
-  });
-
   it("persists the request ID for an agent-sent follow-up", () => {
     const submitted = appendUser(newSession("codex", "/repo"), "Continue", [], {
       appRequestId: "app-source-request-1",

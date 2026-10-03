@@ -131,7 +131,6 @@ import {
 } from "../model/vatraToolCall";
 import {
   isOperatorUserTurn,
-  operatorUserPrompt,
 } from "../model/operatorCommand";
 import {
   clearTranscriptHighlights,
@@ -1616,7 +1615,7 @@ function UserMessageBlock({
   const text =
     card && card.kind !== "handoff"
       ? ""
-      : visibleUserPrompt(vatra ? operatorUserPrompt(block) : block.text);
+      : visibleUserPrompt(block.text);
   const messageLink = text ? parseUserMessageLink(text) : null;
   const displayText = messageLink
     ? `${messageLink.beforeText}${messageLink.afterText}`
