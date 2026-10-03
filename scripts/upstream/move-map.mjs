@@ -12,7 +12,13 @@ export const PATH_ACTION = {
   UNMAPPED: "unmapped",
 };
 
-const EMPTY_MAP = { refactorBase: null, renames: {}, splits: {}, removed: {} };
+const EMPTY_MAP = {
+  refactorBase: null,
+  renames: {},
+  splits: {},
+  extractions: {},
+  removed: {},
+};
 
 export function readMoveMap(cwd) {
   const file = join(cwd, MOVE_MAP_FILE);
@@ -21,11 +27,13 @@ export function readMoveMap(cwd) {
   return { ...EMPTY_MAP, ...JSON.parse(readFileSync(file, "utf8")) };
 }
 
-export function writeMoveMap(cwd, map) {
+export function writeMoveMap(cwd, partial) {
+  const map = { ...EMPTY_MAP, ...partial };
   const sorted = {
     refactorBase: map.refactorBase,
     renames: sortKeys(map.renames),
     splits: sortKeys(map.splits),
+    extractions: sortKeys(map.extractions),
     removed: sortKeys(map.removed),
   };
   writeFileSync(
@@ -38,6 +46,11 @@ function sortKeys(record) {
   return Object.fromEntries(
     Object.entries(record).sort(([a], [b]) => a.localeCompare(b)),
   );
+}
+
+/** Declarations Vatra moved out of `path` (which still exists), for whoever ports a change to it. */
+export function extractionsFor(map, path) {
+  return map.extractions[path] ?? [];
 }
 
 /** Where an upstream change to `path` (a pre-refactor path) has to go in Vatra's tree. */
@@ -140,6 +153,17 @@ export function validateMoveMap(cwd, map) {
     for (const target of split.targets ?? []) {
       if (!existsInIndex(cwd, target))
         problems.push(`split target ${target} (from ${source}) does not exist`);
+    }
+  }
+
+  for (const [source, moves] of Object.entries(map.extractions)) {
+    for (const { names, target } of moves) {
+      if (!Array.isArray(names) || names.length === 0)
+        problems.push(`extraction from ${source} lists no names`);
+      if (!existsInIndex(cwd, target))
+        problems.push(
+          `extraction target ${target} (from ${source}) does not exist`,
+        );
     }
   }
 

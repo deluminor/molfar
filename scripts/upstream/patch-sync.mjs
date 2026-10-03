@@ -1,7 +1,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { git, isAncestor, lines, unmergedPaths } from "./git.mjs";
-import { PATH_ACTION, readMoveMap, resolvePath } from "./move-map.mjs";
+import {
+  extractionsFor,
+  PATH_ACTION,
+  readMoveMap,
+  resolvePath,
+} from "./move-map.mjs";
 import { changedPaths, filePatch, retargetPatch } from "./patch-paths.mjs";
 import { writePendingPorts } from "./pending-ports.mjs";
 
@@ -122,6 +127,7 @@ export function applyUpstreamPatch({ cwd, target }) {
     pending: [],
     retargeted: [],
     added: [],
+    extracted: [],
   };
 
   if (from === to)
@@ -143,6 +149,7 @@ export function applyUpstreamPatch({ cwd, target }) {
   const pending = [];
   const retargeted = [];
   const added = [];
+  const extracted = [];
 
   for (const change of changedPaths(cwd, from, to)) {
     const outcome = applyChange(cwd, { from, to }, map, change);
@@ -152,6 +159,10 @@ export function applyUpstreamPatch({ cwd, target }) {
       retargeted.push({ upstream: change.source, vatra: outcome.target });
     if (outcome.kind === "applied" && change.status === "A")
       added.push(outcome.target);
+    const moved = extractionsFor(map, change.source);
+    if (moved.length > 0 && outcome.kind !== "pending") {
+      extracted.push({ upstream: change.source, vatra: outcome.target, moved });
+    }
   }
 
   const pendingPorts = writePendingPorts(cwd, from, to, pending);
@@ -168,5 +179,6 @@ export function applyUpstreamPatch({ cwd, target }) {
     pending: pendingPorts,
     retargeted,
     added,
+    extracted,
   };
 }

@@ -60,6 +60,7 @@ Vatra restructures code that came from MonoCode (split modules, kebab-case file 
 | --- | --- | --- |
 | `renames` | old path → new path | applies it to the new path |
 | `splits` | old path → `targets` + `notes` | writes a pending port |
+| `extractions` | old path (still present) → declarations moved elsewhere | applies it; lists the moves under `extracted` so the agent checks them |
 | `removed` | old path → reason | writes a pending port |
 | (no entry, path missing) | | writes a pending port |
 

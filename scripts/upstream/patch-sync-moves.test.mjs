@@ -57,6 +57,33 @@ describe("applyUpstreamPatch with moved paths", () => {
     expect(repo.exists("src/fooBar.ts")).toBe(false);
   });
 
+  it("applies paths Vatra extracted declarations from and reports where they went", () => {
+    repo.write("src/types.ts", "export type Kind = 'a';\n");
+    writeMoveMap({
+      extractions: {
+        "src/big.ts": [{ names: ["Kind"], target: "src/types.ts" }],
+      },
+    });
+    repo.commitAll("vatra extraction");
+    repo.upstreamCommit("upstream edit", {
+      "src/big.ts": numberedLines(30, { 20: "upstream edit" }),
+    });
+
+    const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
+
+    expect(result.status).toBe(SYNC_STATUS.APPLIED);
+    expect(result.extracted).toEqual([
+      {
+        upstream: "src/big.ts",
+        vatra: "src/big.ts",
+        moved: [{ names: ["Kind"], target: "src/types.ts" }],
+      },
+    ]);
+    expect(repo.read("src/big.ts")).toBe(
+      numberedLines(30, { 20: "upstream edit" }),
+    );
+  });
+
   it("writes split paths as pending ports and still applies everything else", () => {
     repo.git("rm", "-q", "src/big.ts");
     repo.write("src/big/first.ts", numberedLines(15));

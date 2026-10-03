@@ -108,6 +108,24 @@ describe("move map", () => {
     ]);
   });
 
+  it("reports extraction targets that do not exist and extractions without names", () => {
+    writeMoveMap(repo.root, {
+      ...readMoveMap(repo.root),
+      extractions: {
+        "src/big.ts": [
+          { names: ["A"], target: "src/missing.ts" },
+          { names: [], target: "src/fooBar.ts" },
+        ],
+      },
+    });
+    repo.commitAll("broken extractions");
+
+    expect(validateMoveMap(repo.root, readMoveMap(repo.root))).toEqual([
+      "extraction target src/missing.ts (from src/big.ts) does not exist",
+      "extraction from src/big.ts lists no names",
+    ]);
+  });
+
   it("requires refactorBase", () => {
     repo.write(MOVE_MAP_FILE, "{}\n");
 
