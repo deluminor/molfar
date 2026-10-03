@@ -150,7 +150,11 @@ function sphereStatus(): string | null | undefined {
 }
 
 describe("sphere visual", () => {
-  it("is the default and runs exactly one animation loop", () => {
+  beforeEach(() => {
+    storage.set(BRAND_VISUAL_STORAGE_KEY, "sphere");
+  });
+
+  it("runs exactly one animation loop", () => {
     renderCard();
 
     expect(
@@ -184,11 +188,7 @@ describe("sphere visual", () => {
 });
 
 describe("fire visual", () => {
-  beforeEach(() => {
-    storage.set(BRAND_VISUAL_STORAGE_KEY, "fire");
-  });
-
-  it("runs exactly one animation loop", () => {
+  it("is the default and runs exactly one animation loop", () => {
     renderCard();
 
     expect(container.querySelector('[aria-label^="Campfire"]')).not.toBeNull();
@@ -254,52 +254,52 @@ describe("fire visual", () => {
 });
 
 describe("visual selector", () => {
-  it("cycles sphere, fire and orb, keeping focus and one compact control", () => {
+  it("cycles fire, orb and sphere, keeping focus and one compact control", () => {
     renderCard();
     const button = selector();
 
     expect(container.querySelectorAll("button")).toHaveLength(1);
-    expect(button?.textContent).toBe("←sphere→");
-    expect(button?.getAttribute("aria-label")).toBe("sphere: switch to Fire");
+    expect(button?.textContent).toBe("←fire→");
+    expect(button?.getAttribute("aria-label")).toBe("fire: switch to Orb");
 
     button?.focus();
     act(() => button?.click());
 
-    expect(selector()?.textContent).toBe("←fire→");
+    expect(selector()?.textContent).toBe("←orb→");
     expect(document.activeElement).toBe(selector());
-    expect(selector()?.getAttribute("aria-label")).toBe("fire: switch to Orb");
-    expect(container.querySelector('[aria-label^="Glass sphere"]')).toBeNull();
+    expect(selector()?.getAttribute("aria-label")).toBe("orb: switch to Sphere");
+    expect(container.querySelector('[aria-label^="Campfire"]')).toBeNull();
 
     act(() => selector()?.click());
     expect(selector()?.getAttribute("aria-label")).toBe(
-      "orb: switch to Sphere",
+      "sphere: switch to Fire",
     );
-    expect(container.querySelector('[aria-label^="Campfire"]')).toBeNull();
+    expect(container.querySelector('[aria-label^="Orb"]')).toBeNull();
   });
 
   it("persists the choice and restores it after remount", () => {
     renderCard();
     act(() => selector()?.click());
 
-    expect(storage.get(BRAND_VISUAL_STORAGE_KEY)).toBe("fire");
+    expect(storage.get(BRAND_VISUAL_STORAGE_KEY)).toBe("orb");
 
     act(() => root.render(null));
+    renderCard();
+
+    expect(selector()?.textContent).toBe("←orb→");
+  });
+
+  it("falls back to fire for an unknown stored preference", () => {
+    storage.set(BRAND_VISUAL_STORAGE_KEY, "dragon");
     renderCard();
 
     expect(selector()?.textContent).toBe("←fire→");
   });
 
-  it("falls back to sphere for an unknown stored preference", () => {
-    storage.set(BRAND_VISUAL_STORAGE_KEY, "dragon");
-    renderCard();
-
-    expect(selector()?.textContent).toBe("←sphere→");
-  });
-
   it("keeps exactly one active loop while cycling every visual", () => {
     renderCard();
 
-    for (const visual of ["fire", "orb", "sphere", "fire"]) {
+    for (const visual of ["orb", "sphere", "fire", "orb"]) {
       act(() => selector()?.click());
       expect(frames.size).toBe(1);
       expect(selector()?.textContent).toContain(visual);

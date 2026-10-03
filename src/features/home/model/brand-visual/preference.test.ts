@@ -19,10 +19,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("defaults to sphere and rejects unknown stored values", () => {
-  expect(readBrandVisual()).toBe("sphere");
+it("defaults to fire and rejects unknown stored values", () => {
+  expect(readBrandVisual()).toBe("fire");
   localStorage.setItem(BRAND_VISUAL_STORAGE_KEY, "unknown");
-  expect(readBrandVisual()).toBe("sphere");
+  expect(readBrandVisual()).toBe("fire");
 });
 
 it.each(["sphere", "fire", "orb"] as const)(
@@ -34,9 +34,9 @@ it.each(["sphere", "fire", "orb"] as const)(
 );
 
 it.each([null, "", "dragon", "jarvis"])(
-  "falls back to sphere for %s",
+  "falls back to fire for %s",
   (stored) => {
-    expect(parseBrandVisual(stored)).toBe("sphere");
+    expect(parseBrandVisual(stored)).toBe("fire");
   },
 );
 
@@ -45,7 +45,7 @@ it("falls back and reports inaccessible storage", () => {
   vi.spyOn(localStorage, "getItem").mockImplementation(() => {
     throw new Error("blocked");
   });
-  expect(readBrandVisual()).toBe("sphere");
+  expect(readBrandVisual()).toBe("fire");
   expect(report).toHaveBeenCalledWith(
     "Failed to read home brand visual preference:",
     expect.any(Error),
