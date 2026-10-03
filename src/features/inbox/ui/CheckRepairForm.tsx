@@ -3,7 +3,7 @@ import {
   type CiRepairEvidence,
   type CiRepairRequest,
 } from "../model/ci-repair";
-import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 import {
   Check,
   ChevronRight,
@@ -13,7 +13,7 @@ import {
   Search,
   Sparkles,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   fetchGithubCheckDetails,

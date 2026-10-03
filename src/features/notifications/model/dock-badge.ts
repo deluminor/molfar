@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { sessionNeedsInput, type Session } from "../../sessions/model/session";
+import { sessionNeedsInput, type Session } from "@/features/sessions/model/session";
 
 let lastCount = -1;
 

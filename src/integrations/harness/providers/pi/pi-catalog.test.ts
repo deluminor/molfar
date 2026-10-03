@@ -10,10 +10,10 @@ const mocks = vi.hoisted(() => ({
   watchChild: vi.fn(),
 }));
 
-vi.mock("../../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   homeDir: vi.fn(async () => "/home/test"),
 }));
-vi.mock("../../../../features/sessions/model/models", () => ({
+vi.mock("@/features/sessions/model/models", () => ({
   setHarnessModels: vi.fn(),
 }));
 vi.mock("../../core/child", () => ({

@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { inboxAskKey, inboxAskPrompt } from "./inbox-ask";
 import type { InboxItem } from "./github-tasks";
-import { newSession } from "../../sessions/model/session";
-import { shouldPersistSession, upsertSession } from "../../sessions/data/session-store";
+import { newSession } from "@/features/sessions/model/session";
+import { shouldPersistSession, upsertSession } from "@/features/sessions/data/session-store";
 import {
   collectWorkspaceSnapshot,
   hydrateWorkspaceSnapshot,
   parseWorkspaceSnapshot,
-} from "../../workspace/model/workspace-snapshot";
-import { newTab } from "../../workspace/model/layout";
-import { inFlightRefs, workspaceFromResumed } from "../../sessions/model/in-flight";
+} from "@/features/workspace/model/workspace-snapshot";
+import { newTab } from "@/features/workspace/model/layout";
+import { inFlightRefs, workspaceFromResumed } from "@/features/sessions/model/in-flight";
 
-import { historyWithLiveSessions, summaryFromSession } from "../../sessions/data/session-history";
-import { liveAgentsFromSessions } from "../../sessions/model/live-agents";
-import { hiddenApprovalNotices } from "../../notifications/model/approval-toast";
+import { historyWithLiveSessions, summaryFromSession } from "@/features/sessions/data/session-history";
+import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
+import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
 
 const context = {
   key: "github:github.com:/acme/app/pull/42",

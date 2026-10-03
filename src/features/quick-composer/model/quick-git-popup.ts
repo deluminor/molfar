@@ -1,5 +1,5 @@
 import type { QuickWorkspace } from "./quick-workspace";
-import type { GitBranches } from "../../../platform/tauri/fs";
+import type { GitBranches } from "@/platform/tauri/fs";
 
 export const QUICK_GIT_REQUEST = "quick_git_request";
 export const QUICK_GIT_RESULT = "quick_git_result";

@@ -5,7 +5,7 @@ import {
   FolderPlus,
   FoldVertical,
   Search,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   createContext,
   memo,
@@ -25,11 +25,11 @@ import {
   wellFormedFileName,
   type NameIssue,
 } from "../model/file-name";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   loadShowExcludedFiles,
   subscribeShowExcludedFiles,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   createParentOf,
   dirsTouchedByCreate,
@@ -46,8 +46,8 @@ import {
   subscribeDirsChanged,
 } from "../model/file-tree";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remote-paths";
-import { dragPointToClient } from "../../../shared/lib/drag-point";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
+import { dragPointToClient } from "@/shared/lib/drag-point";
 import {
   basename,
   clipboardFilePaths,
@@ -58,19 +58,19 @@ import {
   renamePath,
   revealPath,
   type FsEntry,
-} from "../../../platform/tauri/fs";
-import { displayPath, parentPath, rebasePath } from "../../../shared/lib/paths";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../../platform/tauri/platform";
-import type { OpenFileFn } from "../../search/model/search";
-import type { GitStatusMap } from "../../source-control/hooks/use-git-file-statuses";
+} from "@/platform/tauri/fs";
+import { displayPath, parentPath, rebasePath } from "@/shared/lib/paths";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/platform/tauri/platform";
+import type { OpenFileFn } from "@/features/search/model/search";
+import type { GitStatusMap } from "@/features/source-control/hooks/use-git-file-statuses";
 import {
   emitExplorerFilePointerDrag,
   setGrabbing,
   suppressTextSelection,
-} from "../../../shared/lib/drag";
+} from "@/shared/lib/drag";
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { confirmApp } from "../../../app/model/app-dialog";
+import { confirmApp } from "@/app/model/app-dialog";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
   modified: "text-amber-400",

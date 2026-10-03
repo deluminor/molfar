@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { RUNTIME_MODES } from "../../sessions/model/session";
-import type { AgentModel } from "../../sessions/model/models";
+import { RUNTIME_MODES } from "@/features/sessions/model/session";
+import type { AgentModel } from "@/features/sessions/model/models";
 import {
   filterQuickModels,
   filterQuickProjects,

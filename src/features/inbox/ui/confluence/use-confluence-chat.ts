@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { requestAddToChat } from "../../../sessions/model/quote-draft";
+import { requestAddToChat } from "@/features/sessions/model/quote-draft";
 import {
   confluenceChildrenCached,
   confluencePage,

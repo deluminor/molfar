@@ -1,4 +1,4 @@
-import { CircleDot, GitPullRequest, X } from "../../../shared/ui/icons";
+import { CircleDot, GitPullRequest, X } from "@/shared/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { GithubLabel, InboxComposerCard } from "../model/github-tasks";
 import { InboxProviderMark } from "./InboxProviderMark";

@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { saveMaskEmails } from "../../features/settings/model/display-prefs";
+import { saveMaskEmails } from "@/features/settings/model/display-prefs";
 import { PrivateEmail } from "./PrivateEmail";
 
 let container: HTMLDivElement;

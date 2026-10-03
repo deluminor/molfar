@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { leafIds, newFileTab, newTab, type WorkspaceTab } from "../../workspace/model/layout";
+import { leafIds, newFileTab, newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
 import type { Session } from "./session";
 import { applyAddToChatRequest } from "./add-chat-to-workspace";
 

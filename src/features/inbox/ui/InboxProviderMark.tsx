@@ -1,4 +1,4 @@
-import { Inbox } from "../../../shared/ui/icons";
+import { Inbox } from "@/shared/ui/icons";
 import type { InboxProvider } from "../model/github-tasks";
 import type { InboxSource } from "../model/inbox-filters";
 

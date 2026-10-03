@@ -1,7 +1,7 @@
 import {
   markTurnInterrupted,
   type ResumedWorkspace,
-} from "../../sessions/model/in-flight";
+} from "@/features/sessions/model/in-flight";
 import {
   closeLeaf,
   isAgentTab,
@@ -16,21 +16,21 @@ import {
   type SessionChangesSource,
   type WorkspaceTab,
 } from "./layout";
-import type { ReleaseNotesTabSource } from "../../../app/model/release-notes";
+import type { ReleaseNotesTabSource } from "@/app/model/release-notes";
 import {
   clampDockSize,
   isDockSide,
   type DockSide,
   type ProjectTerminalDock,
-} from "../../projects/model/project-terminal";
-import { normalizeProjectPath } from "../../projects/model/recents";
-import { pathKey } from "../../../shared/lib/paths";
-import { parseRemotePath, remotePath } from "../../connections/model/remote-projects";
+} from "@/features/projects/model/project-terminal";
+import { normalizeProjectPath } from "@/features/projects/model/recents";
+import { pathKey } from "@/shared/lib/paths";
+import { parseRemotePath, remotePath } from "@/features/connections/model/remote-projects";
 import {
   reconcileProjectReturn,
   type ProjectReturnMemory,
-} from "../../projects/model/project-return";
-import type { InboxAskContext } from "../../inbox/model/inbox-ask";
+} from "@/features/projects/model/project-return";
+import type { InboxAskContext } from "@/features/inbox/model/inbox-ask";
 import {
   HARNESSES,
   RUNTIME_MODES,
@@ -38,7 +38,7 @@ import {
   type HarnessId,
   type RuntimeMode,
   type Session,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 
 export type WorkspaceSessionStub = {
   inboxAsk?: InboxAskContext;

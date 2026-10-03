@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { homeDir } from "../../../platform/tauri/fs";
+import { homeDir } from "@/platform/tauri/fs";
 import {
   errorRateLimits,
   parseClaudeOAuthUsage,
@@ -14,9 +14,9 @@ import {
   spawnChild,
   unwatchChild,
   watchChild,
-} from "../../../integrations/harness/core/child";
-import { asRecord } from "../../../integrations/harness/providers/codex/codex-protocol";
-import { JsonRpcClient } from "../../../integrations/harness/core/json-rpc";
+} from "@/integrations/harness/core/child";
+import { asRecord } from "@/integrations/harness/providers/codex/codex-protocol";
+import { JsonRpcClient } from "@/integrations/harness/core/json-rpc";
 
 const USAGE_CHILD_ID = "vatra-codex-usage";
 const DISCOVERY_TIMEOUT_MS = 15_000;

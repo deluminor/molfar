@@ -1,4 +1,4 @@
-import { X } from "../../shared/ui/icons";
+import { X } from "@/shared/ui/icons";
 import type { InstalledUpdate } from "../model/update-notice";
 
 type Props = {

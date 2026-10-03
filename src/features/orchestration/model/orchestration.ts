@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import { HARNESSES, type HarnessId, type Session } from "../../sessions/model/session";
-import { pathKey } from "../../../shared/lib/paths";
-import type { ApprovalDecision, HarnessEvent } from "../../../integrations/harness/core/types";
-import { pendingApprovalForSession } from "../../notifications/model/approval-toast";
-import type { UserQuestionReply } from "../../sessions/model/user-question";
+import { HARNESSES, type HarnessId, type Session } from "@/features/sessions/model/session";
+import { pathKey } from "@/shared/lib/paths";
+import type { ApprovalDecision, HarnessEvent } from "@/integrations/harness/core/types";
+import { pendingApprovalForSession } from "@/features/notifications/model/approval-toast";
+import type { UserQuestionReply } from "@/features/sessions/model/user-question";
 import {
   validateOrchestrationSettings,
   validateProposedTasks,

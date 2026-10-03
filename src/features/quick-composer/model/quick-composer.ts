@@ -1,9 +1,9 @@
 import { parseQuickAttachments } from "./quick-attachments";
-import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
+import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 import { invoke } from "@tauri-apps/api/core";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { loadQuickComposerShortcut } from "../../settings/model/settings";
-import { pathKey, projectName, prettyParent } from "../../../shared/lib/paths";
+import { IS_MAC } from "@/platform/tauri/platform";
+import { loadQuickComposerShortcut } from "@/features/settings/model/settings";
+import { pathKey, projectName, prettyParent } from "@/shared/lib/paths";
 import {
   loadArchivedProjects,
   loadPinnedProjects,
@@ -11,7 +11,7 @@ import {
   loadRecents,
   looksLikeProject,
   normalizeProjectPath,
-} from "../../projects/model/recents";
+} from "@/features/projects/model/recents";
 import {
   defaultSessionChoice,
   hasLiveCatalog,
@@ -19,7 +19,7 @@ import {
   resolveModel,
   setHarnessModels,
   type AgentModel,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import {
   HARNESSES,
   HARNESS_TITLE,
@@ -29,7 +29,7 @@ import {
   type Attachment,
   harnessSupportsAttachments,
   type HarnessId,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 
 /** Workspace windows hear this when the panel has a session for them. */
 export const QUICK_COMPOSER_LAUNCH_EVENT = "quick_composer_launch";

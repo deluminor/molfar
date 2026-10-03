@@ -8,7 +8,7 @@ import {
   newFileTab,
   newTab,
   openEditorTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import { groupTurns } from "./transcript-activity";
 import type { Block } from "./session";
 

@@ -6,10 +6,10 @@ import {
   notificationMuteStatus,
 } from "./notification-mute-actions";
 import { NotificationMuteDatePicker } from "./NotificationMuteDatePicker";
-import { ExplorerMenu } from "../../files/ui/ExplorerMenu";
-import { Popover } from "../../../shared/ui/Popover";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
-import { BellOff, ChevronDown } from "../../../shared/ui/icons";
+import { ExplorerMenu } from "@/features/files/ui/ExplorerMenu";
+import { Popover } from "@/shared/ui/Popover";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { BellOff, ChevronDown } from "@/shared/ui/icons";
 import {
   isProjectMuted,
   updateNotificationPreferences,

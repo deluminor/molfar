@@ -1,5 +1,5 @@
 import { parseQuickLaunch, type QuickLaunch } from "./quick-composer";
-import { ProjectNotFoundError } from "../../projects/model/project-location-error";
+import { ProjectNotFoundError } from "@/features/projects/model/project-location-error";
 
 const INITIAL_RETRY_MS = 250;
 const MAX_RETRY_MS = 30_000;

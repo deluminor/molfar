@@ -5,8 +5,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Gauge, RefreshCw } from "../../../shared/ui/icons";
-import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
+import { Gauge, RefreshCw } from "@/shared/ui/icons";
+import { SurfaceHeader } from "@/features/home/ui/SurfaceHeader";
 import { refreshUsageCards } from "../model/fetch-usage";
 import {
   usageBarTone,

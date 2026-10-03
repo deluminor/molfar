@@ -4,8 +4,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SkillsPage } from "./SkillsPage";
-import { SettingsView } from "../../settings/ui/SettingsView";
-import type { DiscoveredSkill } from "../../../platform/tauri/fs";
+import { SettingsView } from "@/features/settings/ui/SettingsView";
+import type { DiscoveredSkill } from "@/platform/tauri/fs";
 import { loadDisabledSkillPaths, saveDisabledSkillPaths } from "../model/skills";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

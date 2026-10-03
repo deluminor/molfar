@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { appendUser } from "../../../integrations/harness/core/apply";
+import { appendUser } from "@/integrations/harness/core/apply";
 import {
   CONTINUE_PROMPT,
   INTERRUPT_MESSAGE,
   canAutoContinue,
-} from "../../sessions/model/in-flight";
+} from "@/features/sessions/model/in-flight";
 import {
   leaf,
   leafIds,
@@ -19,8 +19,8 @@ import {
   newTerminalFile,
   splitPane,
 } from "./layout";
-import { createProjectTerminal } from "../../projects/model/project-terminal";
-import { newSession, type Session } from "../../sessions/model/session";
+import { createProjectTerminal } from "@/features/projects/model/project-terminal";
+import { newSession, type Session } from "@/features/sessions/model/session";
 import {
   collectWorkspaceSnapshot,
   hydrateWorkspaceSnapshot,

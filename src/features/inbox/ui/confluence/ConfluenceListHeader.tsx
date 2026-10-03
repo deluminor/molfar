@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { RefreshCw, Search } from "../../../../shared/ui/icons";
+import { RefreshCw, Search } from "@/shared/ui/icons";
 import type { ConfluenceSpace } from "../../model/confluence/types";
 
 type Props = {

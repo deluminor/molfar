@@ -1,4 +1,4 @@
-import type { HarnessId } from "../../../features/sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
 
 /** Provider-owned commands share a picker, but execute inside their harness. */
 export type NativeCommand = {

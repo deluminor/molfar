@@ -1,6 +1,6 @@
-import { confirmApp } from "../../../app/model/app-dialog";
-import type { FilePaneTab } from "../../workspace/model/layout";
-import { getPtyStatus } from "../../../platform/tauri/pty";
+import { confirmApp } from "@/app/model/app-dialog";
+import type { FilePaneTab } from "@/features/workspace/model/layout";
+import { getPtyStatus } from "@/platform/tauri/pty";
 import { terminalTabLabel } from "./terminal-tab";
 
 type RunningTerminal = {

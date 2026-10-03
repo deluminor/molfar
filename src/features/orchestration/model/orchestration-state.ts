@@ -1,6 +1,6 @@
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import type { OrchestrationChoice } from "./orchestration-plan";
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
 
 export type TaskStatus =
   | "queued"

@@ -5,7 +5,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Check, MessageSquare } from "../../../shared/ui/icons";
+import { Check, MessageSquare } from "@/shared/ui/icons";
 import {
   CUSTOM_OPTION_ID,
   buildQuestionReply,

@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { closeUpdatePrompt, openUpdatePrompt } from "../model/update-prompt";
 
 vi.mock("../model/updater", () => ({ installPendingUpdate: vi.fn() }));
-vi.mock("../../shared/ui/Modal", async () => {
+vi.mock("@/shared/ui/Modal", async () => {
   const { ModalPanel } = await vi.importActual<
-    typeof import("../../shared/ui/Modal")
-  >("../../shared/ui/Modal");
+    typeof import("@/shared/ui/Modal")
+  >("@/shared/ui/Modal");
   return { Modal: ModalPanel };
 });
 

@@ -6,16 +6,16 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import type { OrchestrationRun } from "../../features/orchestration/model/orchestration";
-import { rememberLoadedSession } from "../../features/sessions/data/session-cache";
-import { shouldPersistSession } from "../../features/sessions/data/session-store";
-import { sessionChildHarnesses } from "../../features/sessions/model/handoff";
-import type { Session } from "../../features/sessions/model/session";
+import type { OrchestrationRun } from "@/features/orchestration/model/orchestration";
+import { rememberLoadedSession } from "@/features/sessions/data/session-cache";
+import { shouldPersistSession } from "@/features/sessions/data/session-store";
+import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
+import type { Session } from "@/features/sessions/model/session";
 import {
   leafIds,
   type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { forgetHarnessSession } from "../../integrations/harness/core/registry";
+} from "@/features/workspace/model/layout";
+import { forgetHarnessSession } from "@/integrations/harness/core/registry";
 
 const SESSION_DETACH_DELAY_MS = 250;
 

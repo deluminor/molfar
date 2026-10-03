@@ -17,7 +17,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { prettyParent, projectName } from "../../../shared/lib/paths";
+import { prettyParent, projectName } from "@/shared/lib/paths";
 import {
   ChevronDown,
   Search,
@@ -25,7 +25,7 @@ import {
   X,
   ImagePlus,
   Maximize2,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   QuickProjectIcon,
   loadQuickProjectAppearance,
@@ -37,36 +37,36 @@ import {
   loadLastModelSettings,
   saveLastModelSettings,
   saveRecentModelChoice,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import {
   DEFAULT_RUNTIME_MODE,
   HARNESS_TITLE,
   type HarnessId,
   type RuntimeMode,
   harnessSupportsAttachments,
-} from "../../sessions/model/session";
-import { Popover } from "../../../shared/ui/Popover";
-import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
+} from "@/features/sessions/model/session";
+import { Popover } from "@/shared/ui/Popover";
+import { AttachmentChip } from "@/features/sessions/ui/AttachmentChip";
 import { quickLaunchAttachments } from "../model/quick-attachments";
 import { useQuickAttachments } from "./use-quick-attachments";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { QuickModelSelector } from "./QuickModelSelector";
 import { useQuickPickerMotion } from "./use-quick-picker-motion";
-import { OPERATOR_COMMAND } from "../../sessions/model/operator-command";
-import { ORCHESTRATOR_COMMAND } from "../../sessions/model/orchestrator-command";
-import { PLAN_COMMAND } from "../../sessions/model/plan";
-import { DRAFT_COMMAND } from "../../sessions/model/draft-command";
+import { OPERATOR_COMMAND } from "@/features/sessions/model/operator-command";
+import { ORCHESTRATOR_COMMAND } from "@/features/sessions/model/orchestrator-command";
+import { PLAN_COMMAND } from "@/features/sessions/model/plan";
+import { DRAFT_COMMAND } from "@/features/sessions/model/draft-command";
 import {
   leadingModeCommand,
   MODE_COMMAND_STYLES,
   ModeCommandText,
-} from "../../sessions/ui/mode-commands";
+} from "@/features/sessions/ui/mode-commands";
 import {
   rankSkills,
   replaceSlashToken,
   slashTokenAt,
   type SlashToken,
-} from "../../skills/model/slash-commands";
+} from "@/features/skills/model/slash-commands";
 import {
   applyQuickCatalog,
   filterQuickProjects,

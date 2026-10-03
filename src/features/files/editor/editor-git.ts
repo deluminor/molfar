@@ -20,7 +20,7 @@ import {
   type DecorationSet,
   type ViewUpdate,
 } from "@codemirror/view";
-import type { UnifiedLine } from "../../source-control/model/unified-diff";
+import type { UnifiedLine } from "@/features/source-control/model/unified-diff";
 
 const DIFF_CONFIG = { scanLimit: 5_000, timeout: 100 };
 

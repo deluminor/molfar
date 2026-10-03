@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { gitBranches, subscribeGitChanged, type GitBranches } from "../../../platform/tauri/fs";
+import { gitBranches, subscribeGitChanged, type GitBranches } from "@/platform/tauri/fs";
 
 export type ProjectBranchesState = {
   branches: GitBranches | null;

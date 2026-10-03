@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { newTab, splitPane } from "../../workspace/model/layout";
+import { newTab, splitPane } from "@/features/workspace/model/layout";
 import {
   hiddenApprovalNotices,
   isSessionConversationFocused,
   pendingApprovalForSession,
 } from "./approval-toast";
-import { newSession, type Block } from "../../sessions/model/session";
+import { newSession, type Block } from "@/features/sessions/model/session";
 
 function block(role: Block["role"], approval?: Block["approval"]): Block {
   return {

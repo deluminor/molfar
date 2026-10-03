@@ -1,4 +1,4 @@
-import { AiIdea, CircleDashed, PanelRight, Play } from "../../../shared/ui/icons";
+import { AiIdea, CircleDashed, PanelRight, Play } from "@/shared/ui/icons";
 import { planSummary, planTitle } from "../model/plan";
 import type { HarnessId, PlanBlockMeta, PlanBuildTarget } from "../model/session";
 import { BuildTargetButton } from "./SecondOpinionButton";

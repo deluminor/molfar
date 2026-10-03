@@ -1,6 +1,6 @@
-import { FilePlusCorner, MessageSquarePlus } from "../../../shared/ui/icons";
+import { FilePlusCorner, MessageSquarePlus } from "@/shared/ui/icons";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import { type TranscriptSelection } from "../model/transcript-selection";
 
 type Props = {

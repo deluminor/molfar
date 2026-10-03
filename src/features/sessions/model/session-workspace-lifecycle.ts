@@ -6,12 +6,12 @@ import {
   removePane,
   type EditorPane,
   type WorkspaceTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import type { Session } from "./session";
 import {
   planWorkspaceTabClose,
   type WorkspaceTabCloseScope,
-} from "../../workspace/model/workspace-tab-groups";
+} from "@/features/workspace/model/workspace-tab-groups";
 
 export type SessionWorkspaceRemoval = {
   tabs: WorkspaceTab[];

@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import { Internet, Loader, Plus, Trash2 } from "../../../shared/ui/icons";
+import { Internet, Loader, Plus, Trash2 } from "@/shared/ui/icons";
 import {
   connectMachine,
   disconnectMachine,

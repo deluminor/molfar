@@ -1,10 +1,10 @@
-import { HARNESSES } from "../../sessions/model/session";
-import { modelsFor } from "../../sessions/model/models";
+import { HARNESSES } from "@/features/sessions/model/session";
+import { modelsFor } from "@/features/sessions/model/models";
 import {
   isHarnessAvailable,
   probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+} from "@/integrations/harness/core/availability";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 import { validateOrchestrationSettings } from "./orchestration-plan";
 
 /** Discover worker choices only when the user sends an orchestration request. */

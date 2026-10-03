@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   readTextFile: vi.fn(),
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   getHarness: (id: string) =>
     id === "pi"
       ? {
@@ -27,7 +27,7 @@ vi.mock("../../../integrations/harness/core/registry", () => ({
         : undefined,
 }));
 
-vi.mock("../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   createPath: vi.fn(),
   homeDir: vi.fn(),
   listSkills: mocks.listSkills,
@@ -47,8 +47,8 @@ import {
   subscribeSkills,
   applySkillsToTurn,
 } from "./skills";
-import type { DiscoveredSkill } from "../../../platform/tauri/fs";
-import type { PiSkillCommand } from "../../../integrations/harness/providers/pi/pi-skills";
+import type { DiscoveredSkill } from "@/platform/tauri/fs";
+import type { PiSkillCommand } from "@/integrations/harness/providers/pi/pi-skills";
 
 function piSkill(name: string): PiSkillCommand {
   return {

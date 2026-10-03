@@ -1,9 +1,9 @@
-import { homeDir } from "../../../../platform/tauri/fs";
+import { homeDir } from "@/platform/tauri/fs";
 import {
   setHarnessModels,
   type AgentModel,
   type ModelSetting,
-} from "../../../../features/sessions/model/models";
+} from "@/features/sessions/model/models";
 import {
   execChild,
   killChild,

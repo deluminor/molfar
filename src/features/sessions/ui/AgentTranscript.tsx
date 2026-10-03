@@ -15,7 +15,7 @@ import {
   Trash2,
   Wrench,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   startTransition,
@@ -35,38 +35,38 @@ import { GeneratedImage } from "./GeneratedImage";
 import { VatraSparkles } from "./VatraSparkles";
 import { OrchestratorConstellation } from "./OrchestratorConstellation";
 import { PlanStepsBurst } from "./PlanStepsBurst";
-import { FilePreview } from "../../files/ui/FilePreview";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+import { FilePreview } from "@/features/files/ui/FilePreview";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { ToolDiffPreview } from "./ToolDiffPreview";
 import { PlanPreview } from "./PlanPreview";
-import { OrchestrationPreview } from "../../orchestration/ui/OrchestrationPreview";
+import { OrchestrationPreview } from "@/features/orchestration/ui/OrchestrationPreview";
 import { TaskListPreview } from "./TaskListPreview";
 import { HandoffButton, SecondOpinionButton } from "./SecondOpinionButton";
 import { SecondOpinionCard } from "./SecondOpinionCard";
-import { NoteMiniCard } from "../../notes/ui/NoteMiniCard";
+import { NoteMiniCard } from "@/features/notes/ui/NoteMiniCard";
 
 import { TerminalSpinner } from "./TerminalSpinner";
-import { Popover } from "../../../shared/ui/Popover";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import type { ApprovalDecision } from "../../../integrations/harness";
+import { Popover } from "@/shared/ui/Popover";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import type { ApprovalDecision } from "@/integrations/harness";
 import {
   isHarnessAuthError,
   supportsHarnessLogin,
-} from "../../../integrations/harness/core/auth-support";
+} from "@/integrations/harness/core/auth-support";
 import {
   isEditTool,
   isReadTool,
   isSearchTool,
   stubFilePreview,
-} from "../../../integrations/harness/core/preview";
-import { copyMessage } from "../../../platform/tauri/clipboard";
+} from "@/integrations/harness/core/preview";
+import { copyMessage } from "@/platform/tauri/clipboard";
 import type { Attachment } from "../model/session";
-import { visibleUserPrompt } from "../../orchestration/model/orchestration";
-import { playCue } from "../../settings/model/sounds";
+import { visibleUserPrompt } from "@/features/orchestration/model/orchestration";
+import { playCue } from "@/features/settings/model/sounds";
 import { legacyTaskListFromText } from "../model/task-list";
 import { resolveModel } from "../model/models";
 import { harnessForTurn } from "../model/second-opinion";
-import { Shimmer } from "../../../shared/ui/Shimmer";
+import { Shimmer } from "@/shared/ui/Shimmer";
 import {
   hasPendingApproval,
   HARNESS_TITLE,
@@ -80,11 +80,11 @@ import {
   type TurnMetrics,
 } from "../model/session";
 import { HarnessIcon } from "./HarnessIcon";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { useTranscriptLayout } from "../hooks/use-transcript-layout";
 import { useTranscriptAnchor } from "../hooks/use-transcript-anchor";
 import { useTranscriptSelection } from "../hooks/use-transcript-selection";
-import type { TranscriptLayout } from "../../settings/model/appearance";
+import type { TranscriptLayout } from "@/features/settings/model/appearance";
 import { AgentMarkdown } from "./AgentMarkdown";
 import { TranscriptSelectionMenu } from "./TranscriptSelectionMenu";
 import { parseUserMessageLink } from "../model/link-preview";

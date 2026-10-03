@@ -1,4 +1,4 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
+import { modelsFor } from "@/features/sessions/model/models";
 import {
   killChild,
   resolveCodexBinary,
@@ -16,7 +16,7 @@ import {
 } from "./codex-protocol";
 import type { HarnessEvent } from "../../core/types";
 import { JsonRpcClient, type JsonRpcId } from "../../core/json-rpc";
-import type { TurnIntent } from "../../../../features/sessions/model/session";
+import type { TurnIntent } from "@/features/sessions/model/session";
 
 import { mergeStream, streamTextDelta } from "../../core/stream-text";
 

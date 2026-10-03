@@ -7,9 +7,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { ALT, MOD, SHIFT } from "../../../platform/tauri/platform";
-import { ChevronDown, ChevronUp, X } from "../../../shared/ui/icons";
-import { keybindingPressed } from "../../settings/model/settings";
+import { ALT, MOD, SHIFT } from "@/platform/tauri/platform";
+import { ChevronDown, ChevronUp, X } from "@/shared/ui/icons";
+import { keybindingPressed } from "@/features/settings/model/settings";
 
 const MATCH_CAP = 999;
 const MATCH_HIGHLIGHT = "vatra-file-preview-search-match";

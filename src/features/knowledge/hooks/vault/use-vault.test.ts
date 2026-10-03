@@ -10,7 +10,7 @@ const api = vi.hoisted(() => ({
   disconnectVault: vi.fn(),
   cancelVaultScan: vi.fn(),
 }));
-vi.mock("../../../../platform/tauri/vault", () => api);
+vi.mock("@/platform/tauri/vault", () => api);
 const events = vi.hoisted(
   () => new Map<string, (event: { payload: unknown }) => void>(),
 );

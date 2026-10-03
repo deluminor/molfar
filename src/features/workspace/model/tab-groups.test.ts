@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Tab } from "../../../app/shell/TitleBar";
+import type { Tab } from "@/app/shell/TitleBar";
 import {
   addTabToGroup,
   addTabsToNewGroup,
@@ -22,7 +22,7 @@ import {
   sharedGroupProject,
   ungroupTabs,
 } from "./tab-groups";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { projectKey, projectName } from "@/shared/lib/paths";
 
 function tab(id: string, project: string, groupId?: string): Tab {
   return {

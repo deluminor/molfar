@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { MessageSquarePlus, X } from "../../../shared/ui/icons";
-import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
+import { MessageSquarePlus, X } from "@/shared/ui/icons";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 import { diffCommentLocation, formatDiffComment } from "../model/diff-comment";
-import { MOD } from "../../../platform/tauri/platform";
-import { requestAddToChat } from "../../sessions/model/quote-draft";
+import { MOD } from "@/platform/tauri/platform";
+import { requestAddToChat } from "@/features/sessions/model/quote-draft";
 import type { UnifiedLine } from "../model/unified-diff";
 
 export type DiffCommentComposerTarget = {

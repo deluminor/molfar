@@ -1,5 +1,5 @@
-import { stopStreaming } from "../../../integrations/harness/core/apply";
-import { forgetHarnessSession } from "../../../integrations/harness/core/registry";
+import { stopStreaming } from "@/integrations/harness/core/apply";
+import { forgetHarnessSession } from "@/integrations/harness/core/registry";
 import {
   buildDeterministicHandoff,
   completeHandoff,
@@ -7,8 +7,8 @@ import {
   sessionChildHarnesses,
 } from "./handoff";
 import { flushSessionCheckpoint } from "./checkpoint";
-import { isFilesystemTab, type WorkspaceTab } from "../../workspace/model/layout";
-import { orchestrator } from "../../orchestration/model/orchestration";
+import { isFilesystemTab, type WorkspaceTab } from "@/features/workspace/model/layout";
+import { orchestrator } from "@/features/orchestration/model/orchestration";
 import {
   newSession,
   type HarnessId,
@@ -26,7 +26,7 @@ import {
   removeSessionFromWorkspace,
   type SessionWorkspaceRemoval,
 } from "./session-workspace-lifecycle";
-import type { WorkspaceTabCloseScope } from "../../workspace/model/workspace-tab-groups";
+import type { WorkspaceTabCloseScope } from "@/features/workspace/model/workspace-tab-groups";
 
 type Workspace = {
   tabs: WorkspaceTab[];

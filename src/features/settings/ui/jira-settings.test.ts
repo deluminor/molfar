@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { JiraSettings } from "./JiraSettings";
-import { loadHiddenJiraProjectIds } from "../../inbox/model/jira";
+import { loadHiddenJiraProjectIds } from "@/features/inbox/model/jira";
 import { saveMaskEmails } from "../model/display-prefs";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
-import claude from "../../../assets/providers/claude.svg";
-import codex from "../../../assets/providers/codex.svg";
-import cursor from "../../../assets/providers/cursor.svg";
-import fx from "../../../assets/providers/fx.svg";
-import grok from "../../../assets/providers/grok.svg";
-import hermes from "../../../assets/providers/hermes.svg";
-import omp from "../../../assets/providers/omp.svg";
-import opencode from "../../../assets/providers/opencode.svg";
-import pi from "../../../assets/providers/pi.svg";
-import antigravity from "../../../assets/providers/antigravity.svg";
+import claude from "@/assets/providers/claude.svg";
+import codex from "@/assets/providers/codex.svg";
+import cursor from "@/assets/providers/cursor.svg";
+import fx from "@/assets/providers/fx.svg";
+import grok from "@/assets/providers/grok.svg";
+import hermes from "@/assets/providers/hermes.svg";
+import omp from "@/assets/providers/omp.svg";
+import opencode from "@/assets/providers/opencode.svg";
+import pi from "@/assets/providers/pi.svg";
+import antigravity from "@/assets/providers/antigravity.svg";
 import type { HarnessId } from "../model/session";
 
 export const HARNESS_ICONS: Record<HarnessId, string> = {

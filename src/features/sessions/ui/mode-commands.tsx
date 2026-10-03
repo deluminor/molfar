@@ -5,7 +5,7 @@ import {
   MessageSquare,
   Share,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { BTW_COMMAND } from "../model/btw";
 import { DRAFT_COMMAND } from "../model/draft-command";
 import { OPERATOR_COMMAND } from "../model/operator-command";

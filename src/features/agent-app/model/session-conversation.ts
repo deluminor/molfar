@@ -1,5 +1,5 @@
-import type { Block, Session } from "../../sessions/model/session";
-import { operatorUserPrompt } from "../../sessions/model/operator-command";
+import type { Block, Session } from "@/features/sessions/model/session";
+import { operatorUserPrompt } from "@/features/sessions/model/operator-command";
 
 type Exchange = { user: Block; assistants: Block[] };
 

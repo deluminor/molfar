@@ -3,7 +3,7 @@ import {
   selectedAnswerLabels,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/user-question";
+} from "@/features/sessions/model/user-question";
 import { asRecord } from "./codex-protocol";
 
 export function codexQuestions(params: unknown): UserQuestion[] {

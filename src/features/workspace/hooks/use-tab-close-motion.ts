@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { loadTabAnimationsEnabled } from "../../settings/model/settings";
+import { loadTabAnimationsEnabled } from "@/features/settings/model/settings";
 
 export type TabMotionEntry<T extends { id: string }> = {
   id: string;

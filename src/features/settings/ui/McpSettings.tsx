@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { confirmApp } from "../../../app/model/app-dialog";
+import { confirmApp } from "@/app/model/app-dialog";
 import {
   useCallback,
   useEffect,
@@ -9,13 +9,13 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { revealPath } from "../../../platform/tauri/fs";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
-import type { RecentProject } from "../../projects/model/recents";
-import { Modal } from "../../../shared/ui/Modal";
-import { Popover } from "../../../shared/ui/Popover";
-import { LAYER } from "../../../shared/lib/layers";
+import { revealPath } from "@/platform/tauri/fs";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";
+import type { RecentProject } from "@/features/projects/model/recents";
+import { Modal } from "@/shared/ui/Modal";
+import { Popover } from "@/shared/ui/Popover";
+import { LAYER } from "@/shared/lib/layers";
 import {
   Globe,
   Plus,
@@ -23,7 +23,7 @@ import {
   ChevronDown,
   ListFilter,
   Check,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { MCP_PROVIDER_LABELS, type McpConnection } from "../model/mcp";
 import {
   getCachedMcpSettings,

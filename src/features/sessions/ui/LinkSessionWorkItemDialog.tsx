@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 import type { LinkedWorkItem } from "../model/session";
 import { parseGithubWorkItemUrl } from "../model/session-work-item";
 

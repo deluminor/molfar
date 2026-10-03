@@ -1,10 +1,10 @@
 import { invoke as invokeLocal } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { slash } from "../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../shared/lib/remote-paths";
-import type { InterjectionMeta } from "../../features/sessions/model/session";
+import { slash } from "@/shared/lib/paths";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
+import type { InterjectionMeta } from "@/features/sessions/model/session";
 
-export { REMOTE_PATH_PREFIX } from "../../shared/lib/remote-paths";
+export { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
 type RemoteCommandRunner = (
   command: string,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Loader } from "../../../shared/ui/icons";
+import { AlertCircle, Loader } from "@/shared/ui/icons";
 import {
   gitDiffFiles,
   gitDiscardFile,
@@ -10,8 +10,8 @@ import {
   subscribeGitChanged,
   type GitChangedFile,
   type GitFileDiffKind,
-} from "../../../platform/tauri/fs";
-import { forEachConcurrent } from "../../../shared/lib/concurrent";
+} from "@/platform/tauri/fs";
+import { forEachConcurrent } from "@/shared/lib/concurrent";
 import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unified-diff";
 import {
   prioritizeWorkingTreeDiffEntries,
@@ -19,7 +19,7 @@ import {
   workingTreeDiffEntryLabel,
   workingTreeDiffFocusId,
 } from "../model/working-tree-diff";
-import { stageChunkText } from "../../files/editor/editor-git";
+import { stageChunkText } from "@/features/files/editor/editor-git";
 import { LINE_DIFF_CONFIG } from "../model/line-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
 

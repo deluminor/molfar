@@ -1,4 +1,4 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
+import { modelsFor } from "@/features/sessions/model/models";
 import {
   killChild,
   spawnChild,

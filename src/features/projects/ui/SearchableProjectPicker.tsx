@@ -5,8 +5,8 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
-import { basename } from "../../../platform/tauri/fs";
-import { prettyParent, projectKey, projectName } from "../../../shared/lib/paths";
+import { basename } from "@/platform/tauri/fs";
+import { prettyParent, projectKey, projectName } from "@/shared/lib/paths";
 import {
   looksLikeProject,
   projectRailItems,
@@ -23,9 +23,9 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
-import { Check, ChevronDown, Plus, Search } from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
+} from "@/features/workspace/model/tab-groups";
+import { Check, ChevronDown, Plus, Search } from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
 import { ProjectMascot } from "./ProjectMascot";
 

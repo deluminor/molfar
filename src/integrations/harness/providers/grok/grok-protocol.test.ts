@@ -19,7 +19,7 @@ import {
   planFromExitPlan,
   sessionIdFromResult,
 } from "./grok-protocol";
-import { harnessSupportsAttachments } from "../../../../features/sessions/model/session";
+import { harnessSupportsAttachments } from "@/features/sessions/model/session";
 
 describe("grok protocol", () => {
   it("supports attachments despite Grok's stale advertised capability", () => {

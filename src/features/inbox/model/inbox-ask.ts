@@ -1,5 +1,5 @@
 import type { InboxItem } from "./github-tasks";
-import inboxInstructions from "../../../instructions/inbox.md?raw";
+import inboxInstructions from "@/instructions/inbox.md?raw";
 
 export type InboxAskContext = {
   key: string;

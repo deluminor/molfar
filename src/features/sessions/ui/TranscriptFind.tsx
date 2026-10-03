@@ -5,10 +5,10 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { ChevronDown, ChevronUp, Search, X } from "../../../shared/ui/icons";
+import { ChevronDown, ChevronUp, Search, X } from "@/shared/ui/icons";
 import type { Block } from "../model/session";
 import { findTranscriptBlocks } from "../model/transcript-find";
-import { keybindingPressed } from "../../settings/model/settings";
+import { keybindingPressed } from "@/features/settings/model/settings";
 
 type Props = {
   blocks: Block[];

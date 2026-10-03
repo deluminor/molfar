@@ -1,5 +1,5 @@
-import { HARNESSES, type Block, type HarnessId, type Session } from "../../sessions/model/session";
-import { isEqualOrInside, pathKey } from "../../../shared/lib/paths";
+import { HARNESSES, type Block, type HarnessId, type Session } from "@/features/sessions/model/session";
+import { isEqualOrInside, pathKey } from "@/shared/lib/paths";
 
 export type OrchestrationChoice = {
   harness: HarnessId;

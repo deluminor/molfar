@@ -5,8 +5,8 @@ import {
   type InboxKind,
   type InboxProvider,
 } from "./github-tasks";
-import { normalizeProjectPath } from "../../projects/model/recents";
-import { timeFilterStart, type SessionTimeFilter } from "../../sessions/model/session-filters";
+import { normalizeProjectPath } from "@/features/projects/model/recents";
+import { timeFilterStart, type SessionTimeFilter } from "@/features/sessions/model/session-filters";
 
 export type InboxTimeFilter = SessionTimeFilter;
 

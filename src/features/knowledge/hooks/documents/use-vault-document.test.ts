@@ -8,7 +8,7 @@ const api = vi.hoisted(() => ({
   readVaultNote: vi.fn(),
   saveVaultNote: vi.fn(),
 }));
-vi.mock("../../../../platform/tauri/vault", () => api);
+vi.mock("@/platform/tauri/vault", () => api);
 let root: Root;
 let state: ReturnType<typeof useVaultDocument>;
 let path = "one.md";

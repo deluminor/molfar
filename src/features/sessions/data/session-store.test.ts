@@ -1,6 +1,6 @@
-import { appendUser, applyHarnessEvents } from "../../../integrations/harness/core/apply";
+import { appendUser, applyHarnessEvents } from "@/integrations/harness/core/apply";
 import { describe, expect, it } from "vitest";
-import { mapCodexNotification } from "../../../integrations/harness/providers/codex/codex-protocol";
+import { mapCodexNotification } from "@/integrations/harness/providers/codex/codex-protocol";
 import { toolCallLabel } from "../model/transcript-activity";
 import {
   newSession,

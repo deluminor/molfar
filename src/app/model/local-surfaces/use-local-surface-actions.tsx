@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import {
   LocalSurfaceRailActions,
   type LocalSurfaceId,
-} from "../../../features/home/ui/LocalSurfaceRailActions";
+} from "@/features/home/ui/LocalSurfaceRailActions";
 import type { LocalSurfaceActionDeps, LocalSurfaceActions } from "./types";
 
 export function useLocalSurfaceActions({

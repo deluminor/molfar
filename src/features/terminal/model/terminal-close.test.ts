@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { newTerminalFile } from "../../workspace/model/layout";
+import { newTerminalFile } from "@/features/workspace/model/layout";
 import { confirmCloseTerminal, confirmCloseTerminals } from "./terminal-close";
 
 const getPtyStatus = vi.fn();
 const confirmApp = vi.fn();
 
-vi.mock("../../../platform/tauri/pty", () => ({
+vi.mock("@/platform/tauri/pty", () => ({
   getPtyStatus: (...args: unknown[]) => getPtyStatus(...args),
 }));
 
-vi.mock("../../../app/model/app-dialog", () => ({
+vi.mock("@/app/model/app-dialog", () => ({
   confirmApp: (...args: unknown[]) => confirmApp(...args),
 }));
 

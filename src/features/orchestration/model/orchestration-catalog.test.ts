@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   isHarnessAvailable: vi.fn((id: string) => id === "codex" || id === "claude"),
   probeHarnessAvailability: vi.fn(async () => {}),
 }));
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   refreshHarnessCatalogs: vi.fn(async () => {}),
 }));
 import { discoverOrchestrationSettings } from "./orchestration-catalog";
 import {
   isHarnessAvailable,
   probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { resetHarnessModelOverlays, setHarnessModels } from "../../sessions/model/models";
+} from "@/integrations/harness/core/availability";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
+import { resetHarnessModelOverlays, setHarnessModels } from "@/features/sessions/model/models";
 
 afterEach(() => {
   resetHarnessModelOverlays();

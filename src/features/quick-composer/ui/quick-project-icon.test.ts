@@ -6,10 +6,10 @@ import {
   QuickProjectIcon,
   loadQuickProjectAppearance,
 } from "./QuickProjectIcon";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { projectMascot } from "../../projects/model/project-mascots";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { projectMascot } from "@/features/projects/model/project-mascots";
 
-vi.mock("../../projects/model/project-logos", () => ({
+vi.mock("@/features/projects/model/project-logos", () => ({
   projectLogoSrc: (path: string | null) => (path ? `asset://${path}` : null),
 }));
 

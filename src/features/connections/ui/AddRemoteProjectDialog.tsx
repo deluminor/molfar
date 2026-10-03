@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LAYER } from "../../../shared/lib/layers";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import { ChevronRight, Folder } from "../../../shared/ui/icons";
+import { LAYER } from "@/shared/lib/layers";
+import { SearchableSelect } from "@/shared/ui/SearchableSelect";
+import { ChevronRight, Folder } from "@/shared/ui/icons";
 import {
   OPEN_CONNECTIONS_EVENT,
   remoteRequest,

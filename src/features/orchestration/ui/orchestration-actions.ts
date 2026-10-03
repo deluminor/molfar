@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import type { OrchestrationProposal } from "../model/orchestration-plan";
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
 
 export type OrchestrationWorkerDetail = {
   sessionId: string;

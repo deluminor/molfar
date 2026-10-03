@@ -7,7 +7,7 @@ const { DEFAULT_AVAILABLE } = vi.hoisted(() => ({
   DEFAULT_AVAILABLE: (harness: string) => harness === "grok",
 }));
 
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: vi.fn(DEFAULT_AVAILABLE),
@@ -15,12 +15,12 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   subscribeHarnessAvailability: () => () => undefined,
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   refreshHarnessCatalogs: () => Promise.resolve(),
 }));
 
 import { SecondOpinionButton } from "./SecondOpinionButton";
-import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
+import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 import { resetHarnessModelOverlays, setHarnessModels } from "../model/models";
 
 let container: HTMLDivElement;

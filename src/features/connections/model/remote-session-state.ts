@@ -1,4 +1,4 @@
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "@/features/sessions/model/session";
 import type { HostSession } from "./protocol";
 import { remotePath, type RemoteProject } from "./remote-projects";
 

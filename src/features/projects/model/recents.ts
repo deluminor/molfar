@@ -1,5 +1,5 @@
-import { pathKey, prettyCwd, slash } from "../../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remote-paths";
+import { pathKey, prettyCwd, slash } from "@/shared/lib/paths";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
 const KEY = "vatra.recentProjects";
 const RAIL_ORDER_KEY = "vatra.projectRailOrder";

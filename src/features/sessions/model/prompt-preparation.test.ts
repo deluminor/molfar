@@ -9,19 +9,19 @@ const mocks = vi.hoisted(() => ({
   warmNativeSkills: vi.fn(),
 }));
 
-vi.mock("../../files/model/file-mentions", () => ({
+vi.mock("@/features/files/model/file-mentions", () => ({
   applyFileMentionsToTurn: mocks.applyFileMentionsToTurn,
 }));
 
-vi.mock("../../notes", () => ({
+vi.mock("@/features/notes", () => ({
   applyNotesToTurn: mocks.applyNotesToTurn,
 }));
 
-vi.mock("../../inbox/model/confluence/prompt", () => ({
+vi.mock("@/features/inbox/model/confluence/prompt", () => ({
   applyConfluenceToTurn: mocks.applyConfluenceToTurn,
 }));
 
-vi.mock("../../skills/model/skills", () => ({
+vi.mock("@/features/skills/model/skills", () => ({
   applySkillsToTurn: mocks.applySkillsToTurn,
   warmNativeSkills: mocks.warmNativeSkills,
   isNativeCommandPrompt: (text: string, harness: string) =>

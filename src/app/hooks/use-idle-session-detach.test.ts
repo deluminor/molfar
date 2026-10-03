@@ -8,24 +8,24 @@ import {
 } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OrchestrationRun } from "../../features/orchestration/model/orchestration";
-import { prepareOrchestrationWorkerDetails } from "../../features/orchestration/model/orchestration-workspace";
+import type { OrchestrationRun } from "@/features/orchestration/model/orchestration";
+import { prepareOrchestrationWorkerDetails } from "@/features/orchestration/model/orchestration-workspace";
 import {
   flushSessionWrites,
   getSession,
   upsertSession,
   type SessionRecord,
-} from "../../features/sessions/data/session-store";
-import { useUnseenFinishedSessions } from "../../features/sessions/hooks/use-unseen-finished-sessions";
-import { liveAgentsFromSessions } from "../../features/sessions/model/live-agents";
+} from "@/features/sessions/data/session-store";
+import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
+import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import {
   newSession,
   type Session,
-} from "../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   newTab,
   type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import { useIdleSessionDetach } from "./use-idle-session-detach";
 
 const mocks = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
-vi.mock("../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   forgetHarnessSession: mocks.forgetHarnessSession,
 }));
 

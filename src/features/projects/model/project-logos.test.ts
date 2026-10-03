@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { projectKey } from "../../../shared/lib/paths";
+import { projectKey } from "@/shared/lib/paths";
 import {
   clearProjectLogo,
   droppableLogoFile,
   pickAndSetProjectLogo,
 } from "./project-logos";
-import { loadTabGroupLogos, saveTabGroupLogo } from "../../workspace/model/tab-groups";
+import { loadTabGroupLogos, saveTabGroupLogo } from "@/features/workspace/model/tab-groups";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), open: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({

@@ -5,9 +5,9 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   loadNotificationPreferences,
   updateNotificationPreferences,
-} from "../../notifications/model/notification-preferences";
-import { rememberNotificationProjects } from "../../notifications/model/notification-projects";
-import { ProjectRail } from "../../../app/shell/ProjectRail";
+} from "@/features/notifications/model/notification-preferences";
+import { rememberNotificationProjects } from "@/features/notifications/model/notification-projects";
+import { ProjectRail } from "@/app/shell/ProjectRail";
 import { invoke } from "@tauri-apps/api/core";
 import { inboxItemKey, listInboxItems, type InboxItem } from "../model/github-tasks";
 import {
@@ -34,7 +34,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   })),
   convertFileSrc: (path: string) => path,
 }));
-vi.mock("../../source-control/hooks/use-project-diff-stats", () => ({
+vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
   useProjectDiffStats: () => null,
 }));
 

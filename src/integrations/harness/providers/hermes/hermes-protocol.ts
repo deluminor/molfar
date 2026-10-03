@@ -1,6 +1,6 @@
-import { promptBlocks, type PromptContentBlock } from "../../../../features/sessions/model/attachments";
-import type { AgentModel } from "../../../../features/sessions/model/models";
-import type { Attachment, RuntimeMode } from "../../../../features/sessions/model/session";
+import { promptBlocks, type PromptContentBlock } from "@/features/sessions/model/attachments";
+import type { AgentModel } from "@/features/sessions/model/models";
+import type { Attachment, RuntimeMode } from "@/features/sessions/model/session";
 
 export type HermesBackgroundDispatch = {
   callId: string;

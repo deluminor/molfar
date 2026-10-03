@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { useDragResize } from "../../../../shared/hooks/use-drag-resize";
-import { paneWidthStorageKey } from "../../../../shared/lib/pane-width-storage";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
 import {
   SIDE_PANEL_DEFAULT_WIDTH,
   SIDE_PANEL_MAX_RATIO,

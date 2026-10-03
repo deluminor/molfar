@@ -1,21 +1,21 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { rememberProject } from "../../features/projects/model/recents";
-import { ProjectNotFoundError } from "../../features/projects/model/project-location-error";
-import { launchReceiver } from "../../features/quick-composer/model/launch-delivery";
-import type { QuickLaunch } from "../../features/quick-composer/model/quick-composer";
+import { rememberProject } from "@/features/projects/model/recents";
+import { ProjectNotFoundError } from "@/features/projects/model/project-location-error";
+import { launchReceiver } from "@/features/quick-composer/model/launch-delivery";
+import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import {
   newSession,
   type Attachment,
   type Session,
-} from "../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   leafIds,
   newTab,
   splitPane,
   type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { filterTabsForProject } from "../../features/workspace/model/workspace-tab-groups";
+} from "@/features/workspace/model/layout";
+import { filterTabsForProject } from "@/features/workspace/model/workspace-tab-groups";
 import { acceptQuickLaunch } from "./quick-launch-session";
 import {
   submitAfterProjectSync,

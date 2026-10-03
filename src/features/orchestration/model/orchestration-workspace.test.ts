@@ -5,8 +5,8 @@ import {
   prepareOrchestrationWorkerDetails,
   releaseOrchestrationWorker,
 } from "./orchestration-workspace";
-import { leafIds, newTab, splitPane } from "../../workspace/model/layout";
-import { newSession } from "../../sessions/model/session";
+import { leafIds, newTab, splitPane } from "@/features/workspace/model/layout";
+import { newSession } from "@/features/sessions/model/session";
 import type { OrchestrationRun, OrchestrationTask } from "./orchestration";
 
 const tasks: OrchestrationTask[] = ["worker-a", "worker-b"].map(

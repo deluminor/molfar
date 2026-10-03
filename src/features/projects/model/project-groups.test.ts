@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from "vitest";
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import {
   createProjectGroup,
   loadProjectGroupAssignments,

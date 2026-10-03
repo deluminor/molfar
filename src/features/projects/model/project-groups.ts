@@ -1,6 +1,6 @@
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import { PROJECT_MASCOTS } from "./project-mascots";
-import { TAB_GROUP_COLORS, tabGroupColor } from "../../workspace/model/tab-groups";
+import { TAB_GROUP_COLORS, tabGroupColor } from "@/features/workspace/model/tab-groups";
 import { notifyProjectPathsChanged } from "./recents";
 
 const GROUPS_KEY = "vatra.projectGroups";

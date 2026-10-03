@@ -1,4 +1,4 @@
-import { alertApp, confirmApp } from "../../../app/model/app-dialog";
+import { alertApp, confirmApp } from "@/app/model/app-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,
@@ -19,7 +19,7 @@ import {
   Undo2,
   WandSparkles,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -29,7 +29,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import {
   GitHistoryGraph,
   GraphResizeSash,
@@ -62,23 +62,23 @@ import {
   type GitFileDiffKind,
   type GitHistoryCommit,
   type GitPr,
-} from "../../../platform/tauri/fs";
-import type { HarnessId } from "../../sessions/model/session";
-import { recordInboxSelfActivity } from "../../inbox/model/inbox-self-activity";
+} from "@/platform/tauri/fs";
+import type { HarnessId } from "@/features/sessions/model/session";
+import { recordInboxSelfActivity } from "@/features/inbox/model/inbox-self-activity";
 import {
   loadChangesView,
   saveChangesView,
   type ChangesView,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   generateCommitMessage,
   generatePrContent,
-} from "../../../integrations/harness";
-import { invalidateWatchedFiles } from "../../files/model/file-watch";
-import { MOD } from "../../../platform/tauri/platform";
+} from "@/integrations/harness";
+import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
+import { MOD } from "@/platform/tauri/platform";
 import { applyProjectDiffStats } from "../hooks/use-project-diff-stats";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { isRemoteProjectPath } from "../../projects/model/recents";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
 
 const GIT_POLL_MS = 2000;
 

@@ -5,7 +5,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FILE_EDITOR_AUTOSAVE_DELAY_MS, FileEditor } from "./FileEditor";
-import { saveAutosave } from "../../settings/model/settings";
+import { saveAutosave } from "@/features/settings/model/settings";
 import { invalidateWatchedFiles } from "../model/file-watch";
 
 const disk = vi.hoisted(() => ({ content: "" }));
@@ -26,7 +26,7 @@ vi.mock("@tauri-apps/api/core", async (original) => ({
   ...(await original<typeof import("@tauri-apps/api/core")>()),
   invoke,
 }));
-vi.mock("../../../shared/lib/format", () => ({ formatText }));
+vi.mock("@/shared/lib/format", () => ({ formatText }));
 const defaultInvoke = invoke.getMockImplementation()!;
 
 describe("file editor line endings", () => {

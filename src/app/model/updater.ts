@@ -5,7 +5,7 @@ import {
   type DownloadEvent,
   type Update,
 } from "@tauri-apps/plugin-updater";
-import { announceUpdateAvailable } from "../../features/settings/model/sounds";
+import { announceUpdateAvailable } from "@/features/settings/model/sounds";
 import { alertApp } from "./app-dialog";
 import { APP_UPDATER_DISABLED } from "./fork-policy";
 import { formatUpdateDate } from "./release-notes";

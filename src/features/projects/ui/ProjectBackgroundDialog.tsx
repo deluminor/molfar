@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Loader } from "../../../shared/ui/icons";
-import { Modal } from "../../../shared/ui/Modal";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
+import { Loader } from "@/shared/ui/icons";
+import { Modal } from "@/shared/ui/Modal";
+import { SearchableSelect } from "@/shared/ui/SearchableSelect";
 import {
   CHAT_BACKGROUND_OPACITY_MAX,
   CHAT_BACKGROUND_OPACITY_MIN,
@@ -17,7 +17,7 @@ import {
   NEW_THREAD_BACKGROUND_EFFECTS,
   type ChatBackgroundScope,
   type NewThreadBackgroundEffect,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   clearProjectChatBackground,
   pickAndSaveProjectChatBackground,
@@ -30,7 +30,7 @@ import {
   saveProjectChatBackgroundSettings,
 } from "../model/project-chat-background";
 import { useProjectBackgroundEffect } from "./use-project-background-effect";
-import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
+import { GradientBlurBackground } from "@/features/settings/ui/GradientBlurBackground";
 
 type Props = {
   project: string;

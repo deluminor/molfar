@@ -1,5 +1,5 @@
-import type { ProjectLocationSync } from "../../features/projects/model/project-location";
-import { ProjectNotFoundError } from "../../features/projects/model/project-location-error";
+import type { ProjectLocationSync } from "@/features/projects/model/project-location";
+import { ProjectNotFoundError } from "@/features/projects/model/project-location-error";
 
 /** Resolves when the user turn is accepted, not when the agent finishes. */
 export type SubmissionAcceptance = boolean | Promise<boolean>;

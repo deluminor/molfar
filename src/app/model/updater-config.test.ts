@@ -10,7 +10,7 @@ const { getVersion, check, alertApp, relaunch } = vi.hoisted(() => ({
 vi.mock("@tauri-apps/api/app", () => ({ getVersion }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch }));
-vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: vi.fn() }));
+vi.mock("@/features/settings/model/sounds", () => ({ announceUpdateAvailable: vi.fn() }));
 vi.mock("./app-dialog", () => ({ alertApp }));
 vi.mock("./fork-policy", () => ({ APP_UPDATER_DISABLED: false }));
 

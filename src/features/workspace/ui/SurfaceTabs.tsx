@@ -3,15 +3,15 @@ import {
   GripVertical,
   Terminal,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
-import { copyText } from "../../../platform/tauri/clipboard";
+import { copyText } from "@/platform/tauri/clipboard";
 import {
   basename,
   openPathWithDefaultApp,
   revealPath,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   isAgentTab,
   isChangesTab,
@@ -24,21 +24,21 @@ import {
   isTerminalTab,
   type FilePaneTab,
 } from "../model/layout";
-import { displayPath } from "../../../shared/lib/paths";
-import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
-import { releaseNotesTitle } from "../../../app/model/release-notes";
-import { terminalTabLabel } from "../../terminal/model/terminal-tab";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { useAnimatedReorder } from "../../../shared/hooks/use-animated-reorder";
+import { displayPath } from "@/shared/lib/paths";
+import { IS_MAC, IS_WIN } from "@/platform/tauri/platform";
+import { releaseNotesTitle } from "@/app/model/release-notes";
+import { terminalTabLabel } from "@/features/terminal/model/terminal-tab";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useAnimatedReorder } from "@/shared/hooks/use-animated-reorder";
 import { useTabCloseMotion } from "../hooks/use-tab-close-motion";
-import { TabWidthMotion } from "../../../app/shell/ClosingTab";
+import { TabWidthMotion } from "@/app/shell/ClosingTab";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../files/ui/ExplorerMenu";
-import { FileActionError } from "../../files/ui/FileActionError";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+} from "@/features/files/ui/ExplorerMenu";
+import { FileActionError } from "@/features/files/ui/FileActionError";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 
 type Props = {
   files: FilePaneTab[];

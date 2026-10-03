@@ -7,7 +7,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { setGrabbing, suppressTextSelection } from "../../../shared/lib/drag";
+import { setGrabbing, suppressTextSelection } from "@/shared/lib/drag";
 import {
   paneDropFromPoint,
   setExternalTitleTabDrop,
@@ -18,8 +18,8 @@ import {
 import type {
   ApprovalDecision,
   UserQuestionReply,
-} from "../../../integrations/harness";
-import type { EditorNavigationTarget } from "../../search/model/search";
+} from "@/integrations/harness";
+import type { EditorNavigationTarget } from "@/features/search/model/search";
 import {
   layoutLeaves,
   layoutSashes,
@@ -32,8 +32,8 @@ import {
 import {
   sameProjectPath,
   type RecentProject,
-} from "../../projects/model/recents";
-import type { TerminalMetaPatch } from "../../terminal/model/terminal-tab";
+} from "@/features/projects/model/recents";
+import type { TerminalMetaPatch } from "@/features/terminal/model/terminal-tab";
 import {
   sessionWorkCwd,
   type Attachment,
@@ -46,12 +46,12 @@ import {
   type Session,
   type WorkspaceMode,
   type ComposerTurnOptions,
-} from "../../sessions/model/session";
-import { FilePane } from "../../files/ui/FilePane";
-import { SessionPane } from "../../sessions/ui/SessionPane";
-import type { TranscriptPool } from "../../sessions/ui/TranscriptPool";
-import type { SessionFolderTarget } from "../../sessions/model/session-folders";
-import type { Worktree } from "../../source-control/model/worktrees";
+} from "@/features/sessions/model/session";
+import { FilePane } from "@/features/files/ui/FilePane";
+import { SessionPane } from "@/features/sessions/ui/SessionPane";
+import type { TranscriptPool } from "@/features/sessions/ui/TranscriptPool";
+import type { SessionFolderTarget } from "@/features/sessions/model/session-folders";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 
 type Shared = {
   workspaceSwitchingSessionId?: string;

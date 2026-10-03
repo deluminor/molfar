@@ -1,6 +1,6 @@
-import type { Tab } from "../../../app/shell/TitleBar";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { knownProjectPaths, notifyProjectPathsChanged } from "../../projects/model/recents";
+import type { Tab } from "@/app/shell/TitleBar";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { knownProjectPaths, notifyProjectPathsChanged } from "@/features/projects/model/recents";
 
 /** Chrome-like palette — saturated enough to read on dark glass. */
 export const TAB_GROUP_COLORS = [

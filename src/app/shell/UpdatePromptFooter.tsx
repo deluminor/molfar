@@ -1,5 +1,5 @@
 import type { UpdaterSnapshot } from "../model/updater";
-import { Loader } from "../../shared/ui/icons";
+import { Loader } from "@/shared/ui/icons";
 
 type Props = {
   snapshot: UpdaterSnapshot | null;

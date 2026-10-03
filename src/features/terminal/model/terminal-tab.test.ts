@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newTerminalFile } from "../../workspace/model/layout";
+import { newTerminalFile } from "@/features/workspace/model/layout";
 import {
   applyTerminalMeta,
   defaultTerminalTitle,

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { X } from "../../../shared/ui/icons";
+import { X } from "@/shared/ui/icons";
 import { attachmentPreviewSrc, isAttachmentFolder } from "../model/attachments";
 import type { Attachment } from "../model/session";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { ImageLightbox } from "../../../shared/ui/ImageLightbox";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { ImageLightbox } from "@/shared/ui/ImageLightbox";
 
 type Props = {
   attachment: Attachment;

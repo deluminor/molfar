@@ -1,12 +1,12 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { projectKey } from "../../../shared/lib/paths";
+import { projectKey } from "@/shared/lib/paths";
 import {
   loadTabGroupLogos,
   notifyTabGroupLogosChanged,
   saveTabGroupLogo,
   tabGroupLogoDisplayRevision,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 
 export async function pickImageFile(directory: string): Promise<string | null> {
   const selected = await open({

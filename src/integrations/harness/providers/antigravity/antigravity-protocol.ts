@@ -1,7 +1,7 @@
-import { promptBlocks, type PromptContentBlock } from "../../../../features/sessions/model/attachments";
-import type { AgentModel, ModelSetting, ModelSettingChoice } from "../../../../features/sessions/model/models";
-import type { Attachment, RuntimeMode, ToolPreview } from "../../../../features/sessions/model/session";
-import { normalizeTaskListStatus } from "../../../../features/sessions/model/task-list";
+import { promptBlocks, type PromptContentBlock } from "@/features/sessions/model/attachments";
+import type { AgentModel, ModelSetting, ModelSettingChoice } from "@/features/sessions/model/models";
+import type { Attachment, RuntimeMode, ToolPreview } from "@/features/sessions/model/session";
+import { normalizeTaskListStatus } from "@/features/sessions/model/task-list";
 import type { ApprovalDecision, HarnessEvent } from "../../core/types";
 import {
   composeToolTitle,

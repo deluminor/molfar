@@ -1,6 +1,6 @@
 import type { InboxItem, InboxProvider } from "./github-tasks";
-import { inboxNotificationProject } from "../../notifications/model/notification-projects";
-import type { NotificationSubject } from "../../notifications/model/notification-preferences";
+import { inboxNotificationProject } from "@/features/notifications/model/notification-projects";
+import type { NotificationSubject } from "@/features/notifications/model/notification-preferences";
 
 export function inboxNotificationSubject(
   item: Parameters<typeof inboxNotificationProject>[0] &

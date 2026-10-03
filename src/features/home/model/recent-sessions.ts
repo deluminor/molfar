@@ -1,7 +1,7 @@
 import {
   listSessionsByProject,
   type SessionSummary,
-} from "../../sessions/data/session-store";
+} from "@/features/sessions/data/session-store";
 
 export type RecentSessionRow = {
   id: string;

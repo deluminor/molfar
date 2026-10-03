@@ -7,7 +7,7 @@ import {
   MessageSquarePlus,
   Undo2,
   UnfoldVertical,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -17,13 +17,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { useColorScheme } from "../../../shared/hooks/use-color-scheme";
-import { formatInteger } from "../../../shared/lib/numbers";
-import type { ColorScheme } from "../../settings/model/appearance";
-import { basename } from "../../../platform/tauri/fs";
-import { highlightDiffFile, type SyntaxToken } from "../../files/editor/syntax-tokens";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { formatInteger } from "@/shared/lib/numbers";
+import type { ColorScheme } from "@/features/settings/model/appearance";
+import { basename } from "@/platform/tauri/fs";
+import { highlightDiffFile, type SyntaxToken } from "@/features/files/editor/syntax-tokens";
 import { DiffCommentComposer } from "./DiffCommentComposer";
 import {
   expandFold,

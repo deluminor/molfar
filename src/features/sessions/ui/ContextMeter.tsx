@@ -4,7 +4,7 @@ import {
   contextTooltip,
   type ContextUsage,
 } from "../model/context-usage";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 
 const SIZE = 14;
 const STROKE = 2;

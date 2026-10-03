@@ -5,7 +5,7 @@ import type { Block } from "../model/session";
 
 // Only "claude" is an installed/available harness in this test, the same
 // shape as a user who only enabled one harness in Settings.
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: (harness: string) => harness === "claude",
@@ -13,7 +13,7 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   subscribeHarnessAvailability: () => () => undefined,
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   refreshHarnessCatalogs: () => Promise.resolve(),
 }));
 

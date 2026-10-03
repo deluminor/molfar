@@ -1,6 +1,6 @@
-import { modelContextWindow, nativeModelId } from "../../../../features/sessions/model/models";
-import type { RuntimeMode, TurnMetrics } from "../../../../features/sessions/model/session";
-import { taskListFromToolInput } from "../../../../features/sessions/model/task-list";
+import { modelContextWindow, nativeModelId } from "@/features/sessions/model/models";
+import type { RuntimeMode, TurnMetrics } from "@/features/sessions/model/session";
+import { taskListFromToolInput } from "@/features/sessions/model/task-list";
 import {
   closeHarnessSse,
   execChild,
@@ -65,7 +65,7 @@ import {
   selectedAnswerLabels,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/user-question";
+} from "@/features/sessions/model/user-question";
 
 type PendingApproval = {
   id: string;

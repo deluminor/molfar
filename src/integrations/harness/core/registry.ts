@@ -3,12 +3,12 @@ import type {
   HarnessId,
   TaskListMeta,
   TurnIntent,
-} from "../../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { GeneratedSessionTitle } from "../../../features/sessions/model/session-title";
-import type { PrContent } from "../../../features/source-control/model/git-text";
-import { hasLiveCatalog } from "../../../features/sessions/model/models";
-import type { UserQuestionReply } from "../../../features/sessions/model/user-question";
+import type { GeneratedSessionTitle } from "@/features/sessions/model/session-title";
+import type { PrContent } from "@/features/source-control/model/git-text";
+import { hasLiveCatalog } from "@/features/sessions/model/models";
+import type { UserQuestionReply } from "@/features/sessions/model/user-question";
 import type { NativeCommandProvider } from "./native-commands";
 import type {
   ApprovalDecision,

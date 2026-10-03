@@ -1,7 +1,7 @@
 import {
   ADD_NOTE_TO_CHAT_EVENT,
   type NoteComposerCard,
-} from "../../../notes/notes";
+} from "@/features/notes/notes";
 import type { VaultConnection, VaultDocument } from "../vault/types";
 import { MAX_KNOWLEDGE_CONTEXT_BYTES } from "./constants";
 

@@ -7,9 +7,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { LAYER } from "../../../shared/lib/layers";
-import { Check, ChevronRight } from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
+import { LAYER } from "@/shared/lib/layers";
+import { Check, ChevronRight } from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
 
 type MenuAction = {
   kind: "item";

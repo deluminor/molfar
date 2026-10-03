@@ -1,4 +1,4 @@
-import type { HarnessId } from "../../../features/sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
 
 /**
  * The probed installer state for every harness. Kept free of the binary

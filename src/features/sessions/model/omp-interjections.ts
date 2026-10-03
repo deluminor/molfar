@@ -1,4 +1,4 @@
-import type { OmpAssistantText, OmpInterjectionAnchor } from "../../../platform/tauri/fs";
+import type { OmpAssistantText, OmpInterjectionAnchor } from "@/platform/tauri/fs";
 import type { Block } from "./session";
 
 interface BoundaryNode {

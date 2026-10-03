@@ -1,4 +1,4 @@
-import { Check, CircleDot, GitPullRequest } from "../../../shared/ui/icons";
+import { Check, CircleDot, GitPullRequest } from "@/shared/ui/icons";
 import { type ReactNode } from "react";
 import type { InboxKind } from "../model/github-tasks";
 import {
@@ -12,8 +12,8 @@ import {
 } from "../model/inbox-filters";
 import type { JiraProject } from "../model/jira";
 import type { LinearTeam } from "../model/linear";
-import { Popover } from "../../../shared/ui/Popover";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
+import { Popover } from "@/shared/ui/Popover";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 
 export const INBOX_FILTER_MENU_WIDTH = 228;
 

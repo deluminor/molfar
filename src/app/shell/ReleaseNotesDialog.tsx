@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
-import { Modal } from "../../shared/ui/Modal";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
+import { Modal } from "@/shared/ui/Modal";
 
 type ReleaseNotesDialogProps = {
   title: string;

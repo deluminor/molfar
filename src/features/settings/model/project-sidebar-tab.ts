@@ -1,4 +1,4 @@
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import { loadSidebarTabOrder, type SidebarTabId } from "./appearance";
 
 const KEY = "vatra.projectSidebarTabs.v1";

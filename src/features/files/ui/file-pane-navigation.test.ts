@@ -3,7 +3,7 @@ import { EditorView } from "@codemirror/view";
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newEditorPane, newFileTab } from "../../workspace/model/layout";
+import { newEditorPane, newFileTab } from "@/features/workspace/model/layout";
 import { invalidateWatchedFiles } from "../model/file-watch";
 import { FilePane } from "./FilePane";
 

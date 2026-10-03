@@ -6,7 +6,7 @@ import {
   newMcpTag,
   taggedMcpServers,
 } from "./mcp-picker";
-import type { McpConnection } from "../../settings/model/mcp";
+import type { McpConnection } from "@/features/settings/model/mcp";
 
 const servers: McpConnection[] = [
   {

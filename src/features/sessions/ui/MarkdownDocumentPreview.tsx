@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
-import { splitMarkdownFrontmatter } from "../../../shared/lib/markdown-frontmatter";
-import { ChevronDown, ChevronRight } from "../../../shared/ui/icons";
-import type { OpenFileFn } from "../../search/model/search";
+import { splitMarkdownFrontmatter } from "@/shared/lib/markdown-frontmatter";
+import { ChevronDown, ChevronRight } from "@/shared/ui/icons";
+import type { OpenFileFn } from "@/features/search/model/search";
 import { MarkdownPreview } from "./AgentMarkdown";
 
 export const MarkdownDocumentPreview = memo(function MarkdownDocumentPreview({

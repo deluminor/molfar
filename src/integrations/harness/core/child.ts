@@ -3,7 +3,7 @@ import { listen as tauriListen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
   runtimeProviderBinaryPath,
   type ConfigurableBinaryProvider,
-} from "../../../features/providers/model/provider-binary-paths";
+} from "@/features/providers/model/provider-binary-paths";
 
 /** Process I/O is supplied by the desktop or a headless host. Provider
  * protocols never need to know which process owns their children. */

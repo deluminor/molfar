@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import {
   loadProjectGroupAssignments,
   loadProjectGroups,
@@ -10,14 +10,14 @@ import {
   saveProjectGroups,
 } from "../model/project-groups";
 import { savePinnedProjects } from "../model/recents";
-import { ProjectRail } from "../../../app/shell/ProjectRail";
-import { useProjectDiffStats } from "../../source-control/hooks/use-project-diff-stats";
+import { ProjectRail } from "@/app/shell/ProjectRail";
+import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),
   convertFileSrc: (path: string) => path,
 }));
-vi.mock("../../source-control/hooks/use-project-diff-stats", () => ({
+vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
   useProjectDiffStats: vi.fn(() => null),
 }));
 

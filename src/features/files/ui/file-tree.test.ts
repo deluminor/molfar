@@ -2,7 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { saveShowExcludedFiles } from "../../settings/model/appearance";
+import { saveShowExcludedFiles } from "@/features/settings/model/appearance";
 import {
   listCachedDir,
   notifyDirsChanged,
@@ -10,11 +10,11 @@ import {
   saveExpanded,
   saveSelected,
 } from "../model/file-tree";
-import type { FsEntry } from "../../../platform/tauri/fs";
+import type { FsEntry } from "@/platform/tauri/fs";
 import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+} from "@/shared/lib/drag";
 import { FileTree } from "./FileTree";
 
 const { iconRender, directories, clipboardFiles, copied, dragDrop } =

@@ -2,7 +2,7 @@ import {
   formatAutomationRunAt,
   listAutomations,
   type Automation,
-} from "../../automations/model/automations";
+} from "@/features/automations/model/automations";
 
 export { formatAutomationRunAt };
 

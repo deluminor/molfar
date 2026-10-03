@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfluencePage } from "../../model/confluence/types";
 import { ConfluenceReader } from "./ConfluenceReader";
 
-vi.mock("../../../sessions/ui/AgentMarkdown", () => ({
+vi.mock("@/features/sessions/ui/AgentMarkdown", () => ({
   AgentMarkdown: ({ text }: { text: string }) => text,
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));

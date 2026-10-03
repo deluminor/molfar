@@ -4,7 +4,7 @@ import {
   IS_WIN,
   MOD,
   SHIFT,
-} from "../../../platform/tauri/platform";
+} from "@/platform/tauri/platform";
 import {
   canonicalShortcut,
   isGlobalShortcut,
@@ -12,7 +12,7 @@ import {
   quickComposerShortcutLabel,
   shortcutFromKeyEvent,
   shortcutTokens,
-} from "../../quick-composer/model/quick-composer-shortcut";
+} from "@/features/quick-composer/model/quick-composer-shortcut";
 import { readFlag, writeFlag } from "./storage-flags";
 
 const SECTION_KEY = "vatra.settingsSection";

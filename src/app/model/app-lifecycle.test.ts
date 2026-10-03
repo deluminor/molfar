@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
-import { forgetHarnessSession } from "../../integrations/harness/core/registry";
-import { killAllChildren } from "../../integrations/harness/core/child";
-import { newSession } from "../../features/sessions/model/session";
-import { newTab } from "../../features/workspace/model/layout";
+import { forgetHarnessSession } from "@/integrations/harness/core/registry";
+import { killAllChildren } from "@/integrations/harness/core/child";
+import { newSession } from "@/features/sessions/model/session";
+import { newTab } from "@/features/workspace/model/layout";
 import { confirmApp } from "./app-dialog";
 import {
   askQuitConfirmation,
@@ -14,14 +14,14 @@ import {
   reportQuitPoll,
   setQuitWorkspace,
 } from "./app-lifecycle";
-import type { DockSide } from "../../features/projects/model/project-terminal";
+import type { DockSide } from "@/features/projects/model/project-terminal";
 import {
   collectWorkspaceSnapshot,
   hydrateWorkspaceSnapshot,
   parseWorkspaceSnapshot,
-} from "../../features/workspace/model/workspace-snapshot";
-import { loadWorkspaceSnapshot, saveWorkspaceSnapshot } from "../../features/sessions/data/session-store";
-import { reconcileProjectReturn } from "../../features/projects/model/project-return";
+} from "@/features/workspace/model/workspace-snapshot";
+import { loadWorkspaceSnapshot, saveWorkspaceSnapshot } from "@/features/sessions/data/session-store";
+import { reconcileProjectReturn } from "@/features/projects/model/project-return";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),
@@ -35,8 +35,8 @@ vi.mock("./app-dialog", () => ({
 vi.mock("./window-transfer-bootstrap", () => ({
   loadWindowTransfer: vi.fn().mockResolvedValue(null),
 }));
-vi.mock("../../features/sessions/data/session-store", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../features/sessions/data/session-store")>();
+vi.mock("@/features/sessions/data/session-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/sessions/data/session-store")>();
   return {
     ...actual,
     loadWorkspaceSnapshot: vi.fn().mockResolvedValue(null),
@@ -45,12 +45,12 @@ vi.mock("../../features/sessions/data/session-store", async (importOriginal) => 
     getSession: vi.fn().mockResolvedValue(null),
   };
 });
-vi.mock("../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   bindHarnessSession: vi.fn(),
   isLiveHarness: vi.fn(),
   forgetHarnessSession: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../../integrations/harness/core/child", () => ({
+vi.mock("@/integrations/harness/core/child", () => ({
   killAllChildren: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -497,7 +497,7 @@ describe("remembering the terminal dock side across restarts", () => {
 
   it("keeps the restored side when quitting before App registers live getters", async () => {
     const state = dockWorkspace("left");
-    const store = await import("../../features/sessions/data/session-store");
+    const store = await import("@/features/sessions/data/session-store");
     vi.mocked(store.loadWorkspaceSnapshot).mockResolvedValue(
       collectWorkspaceSnapshot(
         state.tabs,

@@ -5,13 +5,13 @@ import {
   Pencil,
   Shield,
   Sparkles,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   RUNTIME_MODES,
   RUNTIME_MODE_HINT,
   RUNTIME_MODE_LABEL,
   type RuntimeMode,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 
 const ICONS = {
   supervised: Lock,

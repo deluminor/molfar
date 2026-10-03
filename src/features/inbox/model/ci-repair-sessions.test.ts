@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
-import { summaryFromSession } from "../../sessions/data/session-history";
-import { appendPreparingHandoff } from "../../sessions/model/handoff";
-import { newSession } from "../../sessions/model/session";
+import { summaryFromSession } from "@/features/sessions/data/session-history";
+import { appendPreparingHandoff } from "@/features/sessions/model/handoff";
+import { newSession } from "@/features/sessions/model/session";
 import { ciRepairSessions } from "./ci-repair-sessions";
 
 it("excludes removed worktrees from history and live chats", () => {

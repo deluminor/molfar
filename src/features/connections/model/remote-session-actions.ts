@@ -1,5 +1,5 @@
-import type { Attachment, ComposerTurnOptions, PlanBuildTarget } from "../../sessions/model/session";
-import type { ApprovalDecision, UserQuestionReply } from "../../../integrations/harness";
+import type { Attachment, ComposerTurnOptions, PlanBuildTarget } from "@/features/sessions/model/session";
+import type { ApprovalDecision, UserQuestionReply } from "@/integrations/harness";
 
 type RemoteActions = {
   buildPlan: (blockId: string, target?: PlanBuildTarget) => void;

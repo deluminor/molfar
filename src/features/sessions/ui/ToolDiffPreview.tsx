@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { ToolPreview } from "../model/session";
-import { FilePreview } from "../../files/ui/FilePreview";
-import { Popover } from "../../../shared/ui/Popover";
-import { X } from "../../../shared/ui/icons";
+import { FilePreview } from "@/features/files/ui/FilePreview";
+import { Popover } from "@/shared/ui/Popover";
+import { X } from "@/shared/ui/icons";
 
 type Props = {
   preview: ToolPreview;

@@ -16,7 +16,7 @@ import {
   StickyNote,
   Trash2,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -43,18 +43,18 @@ import {
   isFileReferenceText,
   messageFilesFromClipboard,
   nativeClipboardAttachments,
-} from "../../../platform/tauri/clipboard";
+} from "@/platform/tauri/clipboard";
 import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+} from "@/shared/lib/drag";
 import type { ContextUsage } from "../model/context-usage";
 import {
   loadProjectFiles,
   peekProjectFiles,
   recentOpenedFiles,
   subscribeProjectFiles,
-} from "../../files/model/file-index";
+} from "@/features/files/model/file-index";
 import {
   buildMentionIndex,
   fileMentionParts,
@@ -64,17 +64,17 @@ import {
   replaceMentionToken,
   type MentionIndex,
   type MentionToken,
-} from "../../files/model/file-mentions";
-import type { ProjectFile } from "../../../platform/tauri/fs";
+} from "@/features/files/model/file-mentions";
+import type { ProjectFile } from "@/platform/tauri/fs";
 import {
   composeInboxMessage,
   type InboxComposerCard,
-} from "../../inbox/model/github-tasks";
+} from "@/features/inbox/model/github-tasks";
 import type { HandoffComposerCard } from "../model/handoff";
 import {
   looksLikeProject,
   type RecentProject,
-} from "../../projects/model/recents";
+} from "@/features/projects/model/recents";
 import type {
   Attachment,
   HarnessId,
@@ -90,12 +90,12 @@ import type {
   UserQuestionPrompt,
   UserQuestionReply,
 } from "../model/user-question";
-import { isImeComposition } from "../../../shared/lib/keyboard";
+import { isImeComposition } from "@/shared/lib/keyboard";
 import {
   captureDraft,
   dropPastedText,
   insertRestoredText,
-} from "../../../shared/lib/draft-restore";
+} from "@/shared/lib/draft-restore";
 import {
   createBlankSkill,
   rankSkills,
@@ -106,33 +106,33 @@ import {
   slashTokenAt,
   type Skill,
   type SlashToken,
-} from "../../skills/model/skills";
+} from "@/features/skills/model/skills";
 import { AccessPicker } from "./AccessPicker";
 import { ComposerRunner } from "./ComposerRunner";
 import { ContextMeter } from "./ContextMeter";
 import { AttachmentChip } from "./AttachmentChip";
-import { BranchPicker } from "../../source-control/ui/BranchPicker";
-import { WorktreePicker } from "../../source-control/ui/WorktreePicker";
+import { BranchPicker } from "@/features/source-control/ui/BranchPicker";
+import { WorktreePicker } from "@/features/source-control/ui/WorktreePicker";
 import {
   isWorkspaceModeShortcut,
   WorkspaceIdentity,
   WorkspacePicker,
-} from "../../workspace/ui/WorkspacePicker";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { CwdPicker } from "../../projects/ui/CwdPicker";
+} from "@/features/workspace/ui/WorkspacePicker";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import { CwdPicker } from "@/features/projects/ui/CwdPicker";
 import { FileMentionPicker } from "./FileMentionPicker";
 import { McpServerPicker } from "./McpServerPicker";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { InboxMiniCard } from "../../inbox/ui/InboxMiniCard";
-import { NoteMiniCard } from "../../notes/ui/NoteMiniCard";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { InboxMiniCard } from "@/features/inbox/ui/InboxMiniCard";
+import { NoteMiniCard } from "@/features/notes/ui/NoteMiniCard";
 import { HandoffMiniCard } from "./HandoffMiniCard";
 import { ModelControlPills, ModelPicker } from "./ModelPicker";
 import { QuestionForm } from "./QuestionForm";
-import { SkillPicker } from "../../skills/ui/SkillPicker";
-import { pathKey, projectKey } from "../../../shared/lib/paths";
+import { SkillPicker } from "@/features/skills/ui/SkillPicker";
+import { pathKey, projectKey } from "@/shared/lib/paths";
 import { consumeQuoteRequest, type QuoteRequest } from "../model/quote-draft";
-import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
-import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
 import {
   COMPOSER_RUNNER_CHANGE_EVENT,
   loadComposerRunner,
@@ -140,7 +140,7 @@ import {
   loadNotesEnabled,
   subscribeModelControls,
   subscribeNotesEnabled,
-} from "../../settings/model/settings";
+} from "@/features/settings/model/settings";
 import {
   isNoteMentionPath,
   loadNotes,
@@ -149,10 +149,10 @@ import {
   notesAsProjectFiles,
   type Note,
   type NoteComposerCard,
-} from "../../notes";
-import { resolveTabGroupLogo } from "../../workspace/model/tab-groups";
+} from "@/features/notes";
+import { resolveTabGroupLogo } from "@/features/workspace/model/tab-groups";
 import { useComposerSkills } from "./use-composer-skills";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import { UsageLimitNotice } from "./UsageLimitNotice";
 import { consumePlanCommand, PLAN_COMMAND } from "../model/plan";
 import {
@@ -199,13 +199,13 @@ import {
   type McpTag,
 } from "../model/mcp-picker";
 import { getComposerMcpTags, setComposerMcpTags } from "../model/draft-cache";
-import { type McpConnection } from "../../settings/model/mcp";
+import { type McpConnection } from "@/features/settings/model/mcp";
 import {
   getCachedMcpSettings,
   loadMcpSettings,
   subscribeMcpSettings,
   type McpSettingsSnapshot,
-} from "../../settings/model/mcp-settings-cache";
+} from "@/features/settings/model/mcp-settings-cache";
 import type { LastTurnRecall } from "../model/edit-last-turn";
 
 type Props = {

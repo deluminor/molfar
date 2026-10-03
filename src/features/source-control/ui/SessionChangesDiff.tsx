@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Loader } from "../../../shared/ui/icons";
+import { AlertCircle, Loader } from "@/shared/ui/icons";
 import {
   sessionCheckpointFileDiff,
   sessionCheckpointStatus,
   subscribeReviewChanged,
   type CheckpointFile,
-} from "../../sessions/model/checkpoint";
-import { forEachConcurrent } from "../../../shared/lib/concurrent";
+} from "@/features/sessions/model/checkpoint";
+import { forEachConcurrent } from "@/shared/lib/concurrent";
 import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unified-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
 

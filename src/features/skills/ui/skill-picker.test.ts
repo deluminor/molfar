@@ -2,10 +2,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { SkillPicker } from "./SkillPicker";
-import { ompCommandsFromRpcData } from "../../../integrations/harness/providers/pi/pi-skills";
-import { PLAN_COMMAND } from "../../sessions/model/plan";
-import { COMPACT_COMMAND } from "../../sessions/model/compact";
-import { SESSION_FOLDER_COMMAND } from "../../sessions/model/session-folder-command";
+import { ompCommandsFromRpcData } from "@/integrations/harness/providers/pi/pi-skills";
+import { PLAN_COMMAND } from "@/features/sessions/model/plan";
+import { COMPACT_COMMAND } from "@/features/sessions/model/compact";
+import { SESSION_FOLDER_COMMAND } from "@/features/sessions/model/session-folder-command";
 import type { Skill } from "../model/skills";
 
 describe("native command picker", () => {

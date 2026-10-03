@@ -1,11 +1,11 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/provider-accounts";
+import { nativeModelId } from "@/features/sessions/model/models";
+import { sameProviderAccountId } from "@/features/providers/model/provider-accounts";
 import type {
   RuntimeMode,
   TaskListItem,
   TaskListMeta,
-} from "../../../../features/sessions/model/session";
-import { loadClaudeHooks } from "../../../../features/settings/model/settings";
+} from "@/features/sessions/model/session";
+import { loadClaudeHooks } from "@/features/settings/model/settings";
 import {
   killChild,
   resolveClaudeBinary,
@@ -76,7 +76,7 @@ import {
   questionPromptTitle,
   questionsFromUnknown,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/user-question";
+} from "@/features/sessions/model/user-question";
 import type {
   ApprovalDecision,
   CompactContextInput,

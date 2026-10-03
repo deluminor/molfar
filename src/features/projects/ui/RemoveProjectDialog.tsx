@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LAYER } from "../../../shared/lib/layers";
-import { prettyCwd } from "../../../shared/lib/paths";
+import { LAYER } from "@/shared/lib/layers";
+import { prettyCwd } from "@/shared/lib/paths";
 import { projectSessionCount } from "../model/project-data";
 
 type Props = {

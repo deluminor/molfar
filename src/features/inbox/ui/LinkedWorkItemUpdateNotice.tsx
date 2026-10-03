@@ -8,8 +8,8 @@ import {
   type LinkedWorkItemUpdateCard,
 } from "../model/linked-work-item-activity";
 import { formatRelativeTime } from "../model/github-tasks";
-import { announceLinkedActivity } from "../../settings/model/sounds";
-import { GlassBackdrop } from "../../../app/shell/GlassBackdrop";
+import { announceLinkedActivity } from "@/features/settings/model/sounds";
+import { GlassBackdrop } from "@/app/shell/GlassBackdrop";
 import {
   Archive,
   Check,
@@ -22,7 +22,7 @@ import {
   MessageSquare,
   Trash2,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 type Props = {
   sessionId: string;

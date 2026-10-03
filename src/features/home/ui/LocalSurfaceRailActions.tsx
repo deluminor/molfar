@@ -1,10 +1,10 @@
 import { useCallback, type ReactNode } from "react";
-import { RailAction } from "../../../app/shell/RailAction";
-import { Gauge, Home } from "../../../shared/ui/icons";
+import { RailAction } from "@/app/shell/RailAction";
+import { Gauge, Home } from "@/shared/ui/icons";
 import type {
   RailSurfaceId,
   RailSurfaceVisibility,
-} from "../../settings/model/project-rail";
+} from "@/features/settings/model/project-rail";
 
 /** Fork-only workspace surfaces opened from the project rail. */
 export type LocalSurfaceId = RailSurfaceId;

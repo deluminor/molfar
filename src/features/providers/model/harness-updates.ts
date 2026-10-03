@@ -1,10 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
 import {
   compareSemver,
   parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencode-protocol";
+} from "@/integrations/harness/providers/opencode/opencode-protocol";
 
 /**
  * Harnesses with an npm version feed and a self-updater Vatra can run.

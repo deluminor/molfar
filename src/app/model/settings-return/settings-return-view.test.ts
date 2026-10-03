@@ -3,7 +3,7 @@ import {
   captureSettingsReturnView,
   restoreSettingsReturnView,
 } from "./settings-return-view";
-import { RAIL_SURFACES_DEFAULT } from "../../../features/settings/model/project-rail";
+import { RAIL_SURFACES_DEFAULT } from "@/features/settings/model/project-rail";
 import type { SettingsReturnView } from "./types";
 
 function workspace(): SettingsReturnView {

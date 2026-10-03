@@ -3,7 +3,7 @@ import {
   type ConnectableInboxSource,
 } from "../model/inbox-filters";
 import { InboxProviderMark } from "./InboxProviderMark";
-import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 
 const WIDTH = 188;
 

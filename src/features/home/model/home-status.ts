@@ -1,5 +1,5 @@
-import type { Automation } from "../../automations/model/automations";
-import type { SessionSummary } from "../../sessions/data/session-store";
+import type { Automation } from "@/features/automations/model/automations";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   countEnabledAutomations,
   nextDueAutomationAt,

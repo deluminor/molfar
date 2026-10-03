@@ -11,8 +11,8 @@ import type {
   AccountStatusTone,
   AccountUsage,
 } from "../model/account-usage";
-import { RefreshCw } from "../../../shared/ui/icons";
-import { useShowRemainingUsage } from "../../settings/model/display-prefs";
+import { RefreshCw } from "@/shared/ui/icons";
+import { useShowRemainingUsage } from "@/features/settings/model/display-prefs";
 
 const STATUS_DOT: Record<AccountStatusTone, string> = {
   ready: "bg-emerald-400",

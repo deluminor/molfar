@@ -4,7 +4,7 @@ import {
   formatUsagePercent,
   type ProviderRateLimits,
   type RateLimitWindow,
-} from "../../providers/model/rate-limits";
+} from "@/features/providers/model/rate-limits";
 
 export type UsageProviderId = "claude" | "codex" | "cursor" | "antigravity";
 

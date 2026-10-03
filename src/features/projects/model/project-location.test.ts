@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resolveProjectLocation } from "../../../platform/tauri/fs";
+import { resolveProjectLocation } from "@/platform/tauri/fs";
 import {
   forgetProjectLocation,
   rememberProjectLocation,
   synchronizeProjectLocation,
 } from "./project-location";
 
-vi.mock("../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   resolveProjectLocation: vi.fn(),
 }));
 

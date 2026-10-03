@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { vaultAssetPath } from "../../../../platform/tauri/vault";
-import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
+import { vaultAssetPath } from "@/platform/tauri/vault";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { KnowledgeAlert } from "../KnowledgeAlert";
 
 export function KnowledgeAttachment({

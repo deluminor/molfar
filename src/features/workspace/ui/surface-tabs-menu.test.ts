@@ -11,17 +11,17 @@ const actions = vi.hoisted(() => ({
   revealPath: vi.fn(async () => {}),
 }));
 
-vi.mock("../../../platform/tauri/clipboard", () => ({
+vi.mock("@/platform/tauri/clipboard", () => ({
   copyText: actions.copyText,
 }));
 
-vi.mock("../../../platform/tauri/fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../platform/tauri/fs")>()),
+vi.mock("@/platform/tauri/fs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/platform/tauri/fs")>()),
   openPathWithDefaultApp: actions.openPathWithDefaultApp,
   revealPath: actions.revealPath,
 }));
 
-vi.mock("../../files/ui/FileTypeIcon", () => ({
+vi.mock("@/features/files/ui/FileTypeIcon", () => ({
   FileTypeIcon: ({ name }: { name: string }) =>
     createElement("span", { "data-icon": name }),
 }));

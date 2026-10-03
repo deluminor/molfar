@@ -1,5 +1,5 @@
-import { statFiles } from "../../../platform/tauri/fs";
-import { editorPathsEqual } from "../../search/model/search";
+import { statFiles } from "@/platform/tauri/fs";
+import { editorPathsEqual } from "@/features/search/model/search";
 
 const MAX_PATHS = 64;
 

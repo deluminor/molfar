@@ -19,8 +19,8 @@ vi.mock("@tauri-apps/api/event", () => ({
     return () => {};
   },
 }));
-vi.mock("../../../platform/tauri/fs", () => ({ notifyGitChanged: vi.fn() }));
-vi.mock("../../source-control/hooks/use-project-branches", () => ({
+vi.mock("@/platform/tauri/fs", () => ({ notifyGitChanged: vi.fn() }));
+vi.mock("@/features/source-control/hooks/use-project-branches", () => ({
   useProjectBranchesState: () => ({
     settled: true,
     branches: bridge.repo ? { current: "main" } : null,

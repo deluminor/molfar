@@ -5,12 +5,12 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { LocalSurfaceId } from "../../../features/home/ui/LocalSurfaceRailActions";
+import type { LocalSurfaceId } from "@/features/home/ui/LocalSurfaceRailActions";
 import {
   loadRailSurfaces,
   RAIL_SURFACES_DEFAULT,
   subscribeRailSurfaces,
-} from "../../../features/settings/model/project-rail";
+} from "@/features/settings/model/project-rail";
 import type { LocalSurfaceState } from "./types";
 import { visibleLocalSurface } from "./visible-local-surface";
 

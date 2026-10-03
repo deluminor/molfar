@@ -10,22 +10,22 @@ import {
   PinOff,
   Settings,
   Trash2,
-} from "../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   basename,
   listExternalEditors,
   openInExternalEditor,
   revealPath,
   type ExternalEditor,
-} from "../../platform/tauri/fs";
-import { IS_MAC, IS_WIN } from "../../platform/tauri/platform";
-import { projectKey, projectName } from "../../shared/lib/paths";
+} from "@/platform/tauri/fs";
+import { IS_MAC, IS_WIN } from "@/platform/tauri/platform";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadPinnedProjects,
   sameProjectPath,
   subscribeProjectPathsChanged,
   toggleProjectPin,
-} from "../../features/projects/model/recents";
+} from "@/features/projects/model/recents";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -41,7 +41,7 @@ import {
   saveTabGroupCustomColor,
   saveTabGroupLabel,
   saveTabGroupMascot,
-} from "../../features/workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 import {
   createProjectGroup,
   deleteProjectGroup,
@@ -53,29 +53,29 @@ import {
   setProjectGroupAssignment,
   updateProjectGroup,
   type ProjectGroup,
-} from "../../features/projects/model/project-groups";
-import { useTabGroupLogos } from "../../features/projects/hooks/use-tab-group-logos";
-import { ProjectBackgroundDialog } from "../../features/projects/ui/ProjectBackgroundDialog";
-import { RemoveProjectDialog } from "../../features/projects/ui/RemoveProjectDialog";
+} from "@/features/projects/model/project-groups";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { ProjectBackgroundDialog } from "@/features/projects/ui/ProjectBackgroundDialog";
+import { RemoveProjectDialog } from "@/features/projects/ui/RemoveProjectDialog";
 import {
   TabGroupMenu,
   type TabGroupMenuExtraItem,
-} from "../../features/workspace/ui/TabGroupMenu";
+} from "@/features/workspace/ui/TabGroupMenu";
 import {
   knownNotificationProject,
   type NotificationProject,
-} from "../../features/notifications/model/notification-projects";
-import { NotificationMuteDatePicker } from "../../features/notifications/ui/NotificationMuteDatePicker";
-import { Popover } from "../../shared/ui/Popover";
+} from "@/features/notifications/model/notification-projects";
+import { NotificationMuteDatePicker } from "@/features/notifications/ui/NotificationMuteDatePicker";
+import { Popover } from "@/shared/ui/Popover";
 import {
   notificationMuteActions,
   notificationMuteDeadline,
   notificationMuteStatus,
-} from "../../features/notifications/ui/notification-mute-actions";
-import { useProjectNotificationPreferences } from "../../features/notifications/hooks/use-project-notification-preferences";
-import { useNotificationProjects } from "../../features/notifications/hooks/use-notification-projects";
-import { updateNotificationPreferences } from "../../features/notifications/model/notification-preferences";
-import type { ExplorerMenuItem } from "../../features/files/ui/ExplorerMenu";
+} from "@/features/notifications/ui/notification-mute-actions";
+import { useProjectNotificationPreferences } from "@/features/notifications/hooks/use-project-notification-preferences";
+import { useNotificationProjects } from "@/features/notifications/hooks/use-notification-projects";
+import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
+import type { ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
 
 const REVEAL_LABEL = IS_MAC
   ? "Reveal in Finder"

@@ -6,7 +6,7 @@ import { getExternalTitleTabDrop } from "../model/pane-drop";
 import type { EditorPane, LayoutNode } from "../model/layout";
 import { PaneTree } from "./PaneTree";
 
-vi.mock("../../files/ui/FilePane", async () => {
+vi.mock("@/features/files/ui/FilePane", async () => {
   const { createElement } = await import("react");
   return {
     FilePane: ({
@@ -24,7 +24,7 @@ vi.mock("../../files/ui/FilePane", async () => {
   };
 });
 
-vi.mock("../../sessions/ui/SessionPane", () => ({ SessionPane: () => null }));
+vi.mock("@/features/sessions/ui/SessionPane", () => ({ SessionPane: () => null }));
 
 let container: HTMLDivElement;
 let root: Root;

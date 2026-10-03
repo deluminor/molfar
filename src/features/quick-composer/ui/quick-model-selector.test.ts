@@ -8,7 +8,7 @@ import {
   setHarnessModels,
   saveLastModelSettings,
   type AgentModel,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 
 vi.mock("@tauri-apps/api/event", () => ({
   emit: vi.fn().mockResolvedValue(undefined),

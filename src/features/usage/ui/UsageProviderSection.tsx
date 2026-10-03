@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatUsagePercent } from "../../providers/model/rate-limits";
+import { formatUsagePercent } from "@/features/providers/model/rate-limits";
 import {
   usageBarTone,
   usageWindowFooter,

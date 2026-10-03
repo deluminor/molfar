@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GitChangedFile } from "../../../platform/tauri/fs";
+import type { GitChangedFile } from "@/platform/tauri/fs";
 import {
   prioritizeWorkingTreeDiffEntries,
   workingTreeDiffEntries,

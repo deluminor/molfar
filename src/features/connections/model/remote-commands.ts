@@ -1,4 +1,4 @@
-import { setRemoteCommandRunner } from "../../../platform/tauri/fs";
+import { setRemoteCommandRunner } from "@/platform/tauri/fs";
 import { remoteMachineFor, remoteRequest } from "./connections";
 import { parseRemotePath, remotePath } from "./remote-projects";
 

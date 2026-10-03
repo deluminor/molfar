@@ -1,4 +1,4 @@
-import { HARNESSES, type HarnessId } from "../../sessions/model/session";
+import { HARNESSES, type HarnessId } from "@/features/sessions/model/session";
 import type {
   ArcadeMode,
   ArcadeSprite,

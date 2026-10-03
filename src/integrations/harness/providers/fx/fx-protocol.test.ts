@@ -13,7 +13,7 @@ import {
   readConfigOptions,
   sessionIdFromResult,
 } from "./fx-protocol";
-import { harnessSupportsAttachments } from "../../../../features/sessions/model/session";
+import { harnessSupportsAttachments } from "@/features/sessions/model/session";
 
 describe("fx protocol", () => {
   // fx's "ask" mode stops for every read and command, and we surface none of

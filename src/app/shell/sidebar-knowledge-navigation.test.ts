@@ -4,14 +4,14 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
-vi.mock("../../features/source-control/hooks/use-project-diff-stats", () => ({
+vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
   useProjectDiffStats: () => null,
 }));
-vi.mock("../../features/source-control/hooks/use-git-file-statuses", () => ({
+vi.mock("@/features/source-control/hooks/use-git-file-statuses", () => ({
   useGitFileStatuses: () => ({ files: new Map(), dirs: new Map() }),
 }));
 vi.mock("./SidebarUpdate", () => ({ SidebarUpdateFooter: () => null }));
-vi.mock("../../features/files/ui/FileTree", () => ({ FileTree: () => null }));
+vi.mock("@/features/files/ui/FileTree", () => ({ FileTree: () => null }));
 
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;

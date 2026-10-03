@@ -8,7 +8,7 @@ const auth = vi.hoisted(() => ({
   loginHarness: vi.fn<(_harness: string) => Promise<void>>(),
 }));
 
-vi.mock("../../../integrations/harness/core/auth", () => ({
+vi.mock("@/integrations/harness/core/auth", () => ({
   loginHarness: auth.loginHarness,
 }));
 

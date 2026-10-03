@@ -1,4 +1,4 @@
-import type { BuiltinSkill } from "../../skills/model/skills";
+import type { BuiltinSkill } from "@/features/skills/model/skills";
 
 export const ORCHESTRATOR_COMMAND: BuiltinSkill = {
   kind: "builtin",

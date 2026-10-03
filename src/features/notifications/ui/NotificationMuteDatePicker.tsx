@@ -7,7 +7,7 @@ import {
   DateTimePicker,
   parseLocalDateTime,
   toLocalDateTime,
-} from "../../../shared/ui/DateTimePicker";
+} from "@/shared/ui/DateTimePicker";
 
 type Props = {
   projectIds: readonly string[];

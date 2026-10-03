@@ -1,9 +1,9 @@
-import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   releaseNotesMarkdown,
   type ReleaseNotesTabSource,
 } from "../model/release-notes";
-import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 
 export function ReleaseNotesSurface({
   source,

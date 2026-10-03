@@ -6,24 +6,24 @@ import {
   newSession,
   sessionWorkCwd,
   type Session,
-} from "../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   setWorktreeFocus,
   useWorktreeFocus,
   worktreeFocus,
   type WorktreeFocus,
-} from "../../features/source-control/model/worktree-focus";
+} from "@/features/source-control/model/worktree-focus";
 import {
   sessionInWorktree,
   type Worktree,
-} from "../../features/source-control/model/worktrees";
+} from "@/features/source-control/model/worktrees";
 import {
   leafIds,
   newTab,
   splitPane,
   type WorkspaceTab,
-} from "../../features/workspace/model/layout";
-import { workspaceTabWorktree } from "../../features/workspace/model/workspace-tab-groups";
+} from "@/features/workspace/model/layout";
+import { workspaceTabWorktree } from "@/features/workspace/model/workspace-tab-groups";
 import { useWorkspaceNavigation } from "./use-workspace-navigation";
 
 const project = "/navigation-project";

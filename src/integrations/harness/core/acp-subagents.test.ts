@@ -3,7 +3,7 @@ import { AcpSubagents } from "./acp-subagents";
 import { eventsFromAcpUpdate as fxEvents } from "../providers/fx/fx-protocol";
 import { eventsFromAcpUpdate as grokEvents } from "../providers/grok/grok-protocol";
 import { applyHarnessEvent } from "./apply";
-import { newSession } from "../../../features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { HarnessEvent } from "./types";
 
 describe.each([

@@ -1,4 +1,4 @@
-import { IS_WIN } from "../../platform/tauri/platform";
+import { IS_WIN } from "@/platform/tauri/platform";
 
 /**
  * Convert a Tauri drag-drop position to CSS pixels. The API types it as

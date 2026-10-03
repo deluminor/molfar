@@ -7,7 +7,7 @@ import {
   Ungroup,
   X,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   Fragment,
   useEffect,
@@ -17,17 +17,17 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { normalizeHex } from "../../../shared/lib/color-utils";
-import { projectKey } from "../../../shared/lib/paths";
-import { clearProjectLogo, pickAndSetProjectLogo } from "../../projects/model/project-logos";
-import { PROJECT_MASCOTS, projectMascot } from "../../projects/model/project-mascots";
+import { normalizeHex } from "@/shared/lib/color-utils";
+import { projectKey } from "@/shared/lib/paths";
+import { clearProjectLogo, pickAndSetProjectLogo } from "@/features/projects/model/project-logos";
+import { PROJECT_MASCOTS, projectMascot } from "@/features/projects/model/project-mascots";
 import { TAB_GROUP_COLORS } from "../model/tab-groups";
-import { ColorPickerPopover, ColorSwatchRow } from "../../../shared/ui/ColorPickerPopover";
-import { Popover } from "../../../shared/ui/Popover";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { MOD } from "../../../platform/tauri/platform";
-import { ExplorerMenu, type ExplorerMenuItem } from "../../files/ui/ExplorerMenu";
+import { ColorPickerPopover, ColorSwatchRow } from "@/shared/ui/ColorPickerPopover";
+import { Popover } from "@/shared/ui/Popover";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { MOD } from "@/platform/tauri/platform";
+import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
 
 export type TabGroupMenuAction =
   | "new-tab"

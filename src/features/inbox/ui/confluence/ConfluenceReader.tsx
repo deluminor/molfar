@@ -1,8 +1,8 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { ReactNode } from "react";
-import { ExternalLink, LoaderCircle } from "../../../../shared/ui/icons";
-import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
-import { AgentMarkdown } from "../../../sessions/ui/AgentMarkdown";
+import { ExternalLink, LoaderCircle } from "@/shared/ui/icons";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import { confluenceFolderTocMarkdown } from "../../model/confluence/prompt";
 import type {
   ConfluenceNode,

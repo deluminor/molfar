@@ -1,10 +1,10 @@
-import type { WorkspaceMode, Session } from "../../sessions/model/session";
+import type { WorkspaceMode, Session } from "@/features/sessions/model/session";
 import type { QuickLaunch } from "./quick-composer";
 import {
   listWorktrees,
   type Worktree,
-} from "../../source-control/model/worktrees";
-import { pathKey } from "../../../shared/lib/paths";
+} from "@/features/source-control/model/worktrees";
+import { pathKey } from "@/shared/lib/paths";
 
 export type QuickWorkspace = {
   cwd: string | null;

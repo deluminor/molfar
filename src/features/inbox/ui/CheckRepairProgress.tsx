@@ -4,7 +4,7 @@ import {
   subscribeCiRepairs,
   type TrackedCiRepair,
 } from "../model/ci-repair-tracking";
-import { sameProjectPath } from "../../projects/model/recents";
+import { sameProjectPath } from "@/features/projects/model/recents";
 import {
   CheckCircle,
   ChevronRight,
@@ -13,7 +13,7 @@ import {
   LoaderCircle,
   MessageSquare,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import type { CheckRepair } from "./CheckRepairForm";
 import type { GithubPrChecksView } from "../hooks/use-github-pr-checks";
 import type {

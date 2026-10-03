@@ -4,8 +4,8 @@ import * as settings from "./settings";
 import * as appearance from "./appearance";
 
 const platform = vi.hoisted(() => ({ isWindows: true }));
-vi.mock("../../../platform/tauri/platform", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../platform/tauri/platform")>()),
+vi.mock("@/platform/tauri/platform", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/platform/tauri/platform")>()),
   get IS_WIN() {
     return platform.isWindows;
   },

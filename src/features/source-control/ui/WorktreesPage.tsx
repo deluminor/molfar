@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { DeleteWorktreeDialog } from "./DeleteWorktreeDialog";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
+import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";
 import {
   FolderOpen,
   FolderTree,
@@ -10,12 +10,12 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-} from "../../../shared/ui/icons";
-import { revealPath } from "../../../platform/tauri/fs";
+} from "@/shared/ui/icons";
+import { revealPath } from "@/platform/tauri/fs";
 import { useProjectWorktrees } from "../hooks/use-project-worktrees";
-import { isEqualOrInside, pathKey, prettyCwd, projectName } from "../../../shared/lib/paths";
-import { loadArchivedProjects, type RecentProject } from "../../projects/model/recents";
-import type { Session } from "../../sessions/model/session";
+import { isEqualOrInside, pathKey, prettyCwd, projectName } from "@/shared/lib/paths";
+import { loadArchivedProjects, type RecentProject } from "@/features/projects/model/recents";
+import type { Session } from "@/features/sessions/model/session";
 import {
   checkWorktreeRemoval,
   worktreeSessionIds,

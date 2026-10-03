@@ -1,4 +1,4 @@
-import { listAutomations } from "../../automations/model/automations";
+import { listAutomations } from "@/features/automations/model/automations";
 import { buildHomeStatus, type HomeStatus } from "./home-status";
 import {
   pickRecentAutomations,

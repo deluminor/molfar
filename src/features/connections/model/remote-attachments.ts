@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Attachment } from "../../sessions/model/session";
+import type { Attachment } from "@/features/sessions/model/session";
 import type { RemoteAttachment } from "./protocol";
 import { remoteRequest } from "./connections";
 

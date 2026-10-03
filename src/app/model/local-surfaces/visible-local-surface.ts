@@ -1,5 +1,5 @@
-import type { LocalSurfaceId } from "../../../features/home/ui/LocalSurfaceRailActions";
-import type { RailSurfaceVisibility } from "../../../features/settings/model/project-rail";
+import type { LocalSurfaceId } from "@/features/home/ui/LocalSurfaceRailActions";
+import type { RailSurfaceVisibility } from "@/features/settings/model/project-rail";
 
 export function visibleLocalSurface(
   surface: LocalSurfaceId | null,

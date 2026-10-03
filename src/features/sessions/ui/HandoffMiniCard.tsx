@@ -1,4 +1,4 @@
-import { ChevronRight, Replace, X } from "../../../shared/ui/icons";
+import { ChevronRight, Replace, X } from "@/shared/ui/icons";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
 import { HarnessIcon } from "./HarnessIcon";
 

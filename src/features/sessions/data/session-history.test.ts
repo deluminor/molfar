@@ -9,7 +9,7 @@ import {
 } from "./session-history";
 import { newSession } from "../model/session";
 import type { SessionSummary } from "./session-store";
-import type { OrchestrationRun } from "../../orchestration/model/orchestration";
+import type { OrchestrationRun } from "@/features/orchestration/model/orchestration";
 
 function summary(id: string, cwd: string, updatedAt = 1): SessionSummary {
   return {

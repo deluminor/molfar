@@ -7,7 +7,7 @@ import {
   saveLastModelChoice,
   savePickerProviderVisible,
   setHarnessModels,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import { initialQuickChoice, resolveQuickModel } from "./quick-composer";
 
 beforeEach(() => {

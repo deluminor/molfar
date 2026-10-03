@@ -7,17 +7,17 @@ import {
   type ReactNode,
 } from "react";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { Copy, Eye, FolderOpen, RefreshCw, Search, X } from "../../../shared/ui/icons";
+import { Copy, Eye, FolderOpen, RefreshCw, Search, X } from "@/shared/ui/icons";
 import { CreateSkillForm } from "./SkillPicker";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   MarkdownModeToggle,
   useMarkdownMode,
-} from "../../sessions/ui/MarkdownModeToggle";
-import { MarkdownSource } from "../../sessions/ui/AgentMarkdown";
+} from "@/features/sessions/ui/MarkdownModeToggle";
+import { MarkdownSource } from "@/features/sessions/ui/AgentMarkdown";
 import { SkillDocumentPreview } from "./SkillDocumentPreview";
-import { copyText } from "../../../platform/tauri/clipboard";
-import { listSkills, readTextFile, type DiscoveredSkill } from "../../../platform/tauri/fs";
+import { copyText } from "@/platform/tauri/clipboard";
+import { listSkills, readTextFile, type DiscoveredSkill } from "@/platform/tauri/fs";
 import {
   createBlankSkill,
   invalidateSkills,

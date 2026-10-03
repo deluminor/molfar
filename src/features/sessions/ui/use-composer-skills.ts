@@ -9,7 +9,7 @@ import {
   skillCatalogKey,
   type Skill,
   type SkillCatalogContext,
-} from "../../skills/model/skills";
+} from "@/features/skills/model/skills";
 import type { HarnessId } from "../model/session";
 
 export type ComposerSkillContextToken = {

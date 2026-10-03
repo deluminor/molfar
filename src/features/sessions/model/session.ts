@@ -1,11 +1,11 @@
 import { dropContextWindow, type ContextUsage } from "./context-usage";
 import type { UserQuestionPrompt } from "./user-question";
 import type { HandoffComposerCard } from "./handoff";
-import type { InboxComposerCard } from "../../inbox/model/github-tasks";
-import type { InboxAskContext } from "../../inbox/model/inbox-ask";
-import type { NoteCardMeta, NoteComposerCard } from "../../notes";
-import type { OrchestrationProposal } from "../../orchestration/model/orchestration-plan";
-import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linked-work-item-activity";
+import type { InboxComposerCard } from "@/features/inbox/model/github-tasks";
+import type { InboxAskContext } from "@/features/inbox/model/inbox-ask";
+import type { NoteCardMeta, NoteComposerCard } from "@/features/notes";
+import type { OrchestrationProposal } from "@/features/orchestration/model/orchestration-plan";
+import type { LinkedWorkItemUpdateCard } from "@/features/inbox/model/linked-work-item-activity";
 import {
   defaultSessionChoice,
   firstEnabledHarness,

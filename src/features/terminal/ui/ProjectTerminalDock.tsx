@@ -8,26 +8,26 @@ import {
   PanelRight,
   PanelTop,
   Plus,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ExplorerMenu } from "../../files/ui/ExplorerMenu";
-import { SurfaceTabs } from "../../workspace/ui/SurfaceTabs";
-import { IconButton } from "../../../app/shell/TitleBar";
+import { ExplorerMenu } from "@/features/files/ui/ExplorerMenu";
+import { SurfaceTabs } from "@/features/workspace/ui/SurfaceTabs";
+import { IconButton } from "@/app/shell/TitleBar";
 import {
   clampDockSize,
   defaultDockSize,
   isVerticalDock,
   type DockSide,
   type ProjectTerminalDock,
-} from "../../projects/model/project-terminal";
-import { MOD } from "../../../platform/tauri/platform";
+} from "@/features/projects/model/project-terminal";
+import { MOD } from "@/platform/tauri/platform";
 import type { TerminalMetaPatch } from "../model/terminal-tab";
-import { lazySurface } from "../../../shared/ui/lazy-surface";
+import { lazySurface } from "@/shared/ui/lazy-surface";
 
 const TerminalView = lazySurface(async () => {
   const module = await import("./TerminalView");

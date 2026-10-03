@@ -1,20 +1,20 @@
-import { fuzzyMatch } from "../../../shared/lib/fuzzy";
-import { projectName } from "../../../shared/lib/paths";
-import { sameProjectPath, type RecentProject } from "../../projects/model/recents";
+import { fuzzyMatch } from "@/shared/lib/fuzzy";
+import { projectName } from "@/shared/lib/paths";
+import { sameProjectPath, type RecentProject } from "@/features/projects/model/recents";
 import {
   HARNESSES,
   sessionDisplayTitle,
   type Block,
   type HarnessId,
   type Session,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 import type {
   SessionSearchHit,
   SessionSummary,
-} from "../../sessions/data/session-store";
-import type { RankedFile } from "../../files/model/file-index";
+} from "@/features/sessions/data/session-store";
+import type { RankedFile } from "@/features/files/model/file-index";
 import type { ProjectSearchMatch } from "./search";
-import { transcriptBlockText } from "../../sessions/model/transcript-find";
+import { transcriptBlockText } from "@/features/sessions/model/transcript-find";
 
 export type SearchScope = "all" | "conversations" | "files" | "projects";
 

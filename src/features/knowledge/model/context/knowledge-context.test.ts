@@ -4,7 +4,7 @@ import {
   composeNoteMessage,
   noteCardMeta,
   ADD_NOTE_TO_CHAT_EVENT,
-} from "../../../notes/notes";
+} from "@/features/notes/notes";
 import {
   knowledgeContextCard,
   requestKnowledgeContext,

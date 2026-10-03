@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { piSubagentEvents } from "./pi-subagents";
 import { applyHarnessEvent } from "../../core/apply";
-import { newSession } from "../../../../features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { HarnessEvent } from "../../core/types";
 
 function apply(events: HarnessEvent[]) {

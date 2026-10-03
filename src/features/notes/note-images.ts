@@ -3,8 +3,8 @@ import {
   attachmentsFromFiles,
   attachmentsFromPaths,
   revokeAttachment,
-} from "../sessions/model/attachments";
-import type { Attachment } from "../sessions/model/session";
+} from "@/features/sessions/model/attachments";
+import type { Attachment } from "@/features/sessions/model/session";
 
 export const NOTE_IMAGE_PREFIX = "/note-assets/";
 

@@ -2,20 +2,20 @@
 import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QuestionForm } from "../../../../features/sessions/ui/QuestionForm";
-import { ApprovalToasts } from "../../../../features/sessions/ui/ApprovalToasts";
-import { AgentTranscript } from "../../../../features/sessions/ui/AgentTranscript";
-import { hiddenApprovalNotices } from "../../../../features/notifications/model/approval-toast";
-import { useInputNotifications } from "../../../../features/notifications/hooks/use-input-notifications";
+import { QuestionForm } from "@/features/sessions/ui/QuestionForm";
+import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
+import { AgentTranscript } from "@/features/sessions/ui/AgentTranscript";
+import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
+import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import {
   newSession,
   type Session,
-} from "../../../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   probeNotificationPermission,
   saveNotificationsEnabled,
   setWindowFocused,
-} from "../../../../features/notifications/model/notifications";
+} from "@/features/notifications/model/notifications";
 import { applyHarnessEvent } from "../../core/apply";
 import type { HarnessEvent } from "../../core/types";
 import type * as ChildModule from "../../core/child";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { projectLogoSrc } from "../../projects/model/project-logos";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { projectLogoSrc } from "@/features/projects/model/project-logos";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -10,7 +10,7 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 
 export function loadQuickProjectAppearance() {
   return {

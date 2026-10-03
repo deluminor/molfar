@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { handleEditorFindKey } from "../editor/editor-search";
 import { FilePreviewSearch, findPreviewTextMatches } from "./FilePreviewSearch";
-import { saveKeybindingOverride } from "../../settings/model/settings";
+import { saveKeybindingOverride } from "@/features/settings/model/settings";
 
 const options = {
   caseSensitive: false,

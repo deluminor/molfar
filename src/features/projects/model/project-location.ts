@@ -1,8 +1,8 @@
 import {
   resolveProjectLocation,
   type ProjectLocation,
-} from "../../../platform/tauri/fs";
-import { pathKey } from "../../../shared/lib/paths";
+} from "@/platform/tauri/fs";
+import { pathKey } from "@/shared/lib/paths";
 import {
   isLocalProject,
   normalizeProjectPath,

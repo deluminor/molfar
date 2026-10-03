@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { emit } from "@tauri-apps/api/event";
-import { Check, RotateCcw, Search, Star, Zap } from "../../../shared/ui/icons";
+import { Check, RotateCcw, Search, Star, Zap } from "@/shared/ui/icons";
 import {
   findModel,
   getModelSnapshot,
@@ -24,14 +24,14 @@ import {
   subscribePickerVisibility,
   type AgentModel,
   type ModelPickerTab,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import {
   HARNESSES,
   HARNESS_TITLE,
   type HarnessId,
   type RuntimeMode,
-} from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+} from "@/features/sessions/model/session";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   filterQuickModels,
   QUICK_COMPOSER_CATALOG_REQUEST_EVENT,

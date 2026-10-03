@@ -1,10 +1,10 @@
-import { Folder, type IconComponent } from "../../../shared/ui/icons";
+import { Folder, type IconComponent } from "@/shared/ui/icons";
 import { useEffect, useState } from "react";
 import { projectLogoSrc } from "../model/project-logos";
 import {
   TAB_GROUP_LOGOS_CHANGED,
   tabGroupLogoDisplayRevision,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 
 type Props = {
   path?: string | null;

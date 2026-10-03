@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useProjectBranchesState } from "../hooks/use-project-branches";
-import { LAYER } from "../../../shared/lib/layers";
+import { LAYER } from "@/shared/lib/layers";
 import { createWorktree, type Worktree } from "../model/worktrees";
-import { prettyCwd } from "../../../shared/lib/paths";
-import { Modal } from "../../../shared/ui/Modal";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import { Loader } from "../../../shared/ui/icons";
+import { prettyCwd } from "@/shared/lib/paths";
+import { Modal } from "@/shared/ui/Modal";
+import { SearchableSelect } from "@/shared/ui/SearchableSelect";
+import { Loader } from "@/shared/ui/icons";
 
 export function CreateWorktreeDialog({
   cwd,

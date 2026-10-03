@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+} from "@/shared/lib/drag";
 import { Composer } from "./Composer";
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));

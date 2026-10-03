@@ -1,6 +1,6 @@
 import { javascript } from "@codemirror/lang-javascript";
 import { describe, expect, it } from "vitest";
-import { buildUnifiedFile } from "../../source-control/model/unified-diff";
+import { buildUnifiedFile } from "@/features/source-control/model/unified-diff";
 import { languageForPath } from "./editor-language";
 import {
   highlightDiffFile,

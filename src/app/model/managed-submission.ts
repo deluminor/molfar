@@ -1,4 +1,4 @@
-import type { ControlOutcome } from "../../features/orchestration/model/orchestration";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
 import type { SubmissionAcceptance } from "./submission-acceptance";
 
 /** Await acceptance and guarantee one terminal callback, including rejection

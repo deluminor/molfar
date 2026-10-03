@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Attachment } from "../../../features/sessions/model/session";
+import type { Attachment } from "@/features/sessions/model/session";
 import {
   ATTACHMENT_ONLY_PROMPT,
   attachmentPathText,
   promptBlocks,
-} from "../../../features/sessions/model/attachments";
+} from "@/features/sessions/model/attachments";
 import { buildClaudeUserMessage } from "../providers/claude/claude-protocol";
 import { buildPiPrompt, buildPiSteer } from "../providers/pi/pi-protocol";
 import { grokPromptBlocks } from "../providers/grok/grok-protocol";

@@ -6,9 +6,9 @@ import type {
   Session,
   TaskListItem,
   ToolPreview,
-} from "../../../features/sessions/model/session";
-import { mergeContextUsage } from "../../../features/sessions/model/context-usage";
-import { displayPath } from "../../../shared/lib/paths";
+} from "@/features/sessions/model/session";
+import { mergeContextUsage } from "@/features/sessions/model/context-usage";
+import { displayPath } from "@/shared/lib/paths";
 import {
   composeToolTitle,
   isFileTool,
@@ -17,9 +17,9 @@ import {
   stubFilePreview,
 } from "./preview";
 import { joinStreamText } from "./stream-text";
-import { taskListText } from "../../../features/sessions/model/task-list";
-import { isReviewablePlan } from "../../../features/sessions/model/plan";
-import { resolveModel } from "../../../features/sessions/model/models";
+import { taskListText } from "@/features/sessions/model/task-list";
+import { isReviewablePlan } from "@/features/sessions/model/plan";
+import { resolveModel } from "@/features/sessions/model/models";
 import type { HarnessEvent } from "./types";
 
 /** Apply one delivery batch without copying the transcript for every token. */

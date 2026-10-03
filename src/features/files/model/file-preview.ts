@@ -1,4 +1,4 @@
-import { basename } from "../../../platform/tauri/fs";
+import { basename } from "@/platform/tauri/fs";
 
 const IMAGE_EXTENSIONS = new Set([
   ".png",

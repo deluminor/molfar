@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   resetHarnessModelOverlays,
   setHarnessModels,
-} from "../../../features/sessions/model/models";
-import type { HarnessId } from "../../../features/sessions/model/session";
+} from "@/features/sessions/model/models";
+import type { HarnessId } from "@/features/sessions/model/session";
 import {
   HARNESS_IDLE_PARK_MS,
   bindHarnessSession,

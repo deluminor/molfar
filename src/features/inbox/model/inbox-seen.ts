@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { sameProjectPath } from "../../projects/model/recents";
+import { sameProjectPath } from "@/features/projects/model/recents";
 
 const KEY = "vatra.inboxSeen";
 const LEGACY_KEY = "vatra.inboxSeenAt";

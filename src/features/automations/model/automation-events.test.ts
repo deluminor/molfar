@@ -11,7 +11,7 @@ import {
   newAutomationDraft,
   type Automation,
 } from "./automations";
-import type { InboxItem } from "../../inbox/model/github-tasks";
+import type { InboxItem } from "@/features/inbox/model/github-tasks";
 
 const invoke = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));

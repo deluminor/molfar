@@ -7,10 +7,10 @@ import {
   Minus,
   Plus,
   RotateCcw,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { ExplorerMenu } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { copyText } from "../../../platform/tauri/clipboard";
+import { copyText } from "@/platform/tauri/clipboard";
 import { formatFileSize, sniffImageMime } from "../model/file-preview";
 import { watchFile } from "../model/file-watch";
 import {
@@ -18,9 +18,9 @@ import {
   copyFileToClipboard,
   readBinaryFile,
   revealPath,
-} from "../../../platform/tauri/fs";
-import { displayPath } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
+} from "@/platform/tauri/fs";
+import { displayPath } from "@/shared/lib/paths";
+import { IS_MAC } from "@/platform/tauri/platform";
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 16;

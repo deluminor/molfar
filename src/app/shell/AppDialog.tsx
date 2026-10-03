@@ -5,7 +5,7 @@ import {
   subscribeAppDialog,
   type AppDialogState,
 } from "../model/app-dialog";
-import { Modal } from "../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 
 export function AppDialog() {
   const dialog = useSyncExternalStore(

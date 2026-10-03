@@ -2,7 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { updateNotificationPreferences } from "../../notifications/model/notification-preferences";
+import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
 import { ApprovalToasts } from "./ApprovalToasts";
 
 type Notice = ComponentProps<typeof ApprovalToasts>["notices"][number];

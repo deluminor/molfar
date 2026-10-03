@@ -19,7 +19,7 @@ import {
   SOUNDS_DEFAULT,
   SOUNDS_VOLUME,
 } from "./sounds";
-import { updateNotificationPreferences } from "../../notifications/model/notification-preferences";
+import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
 
 const KEY = "vatra.sounds";
 

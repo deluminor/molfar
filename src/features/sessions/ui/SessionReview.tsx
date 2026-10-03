@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, FileDiff } from "../../../shared/ui/icons";
+import { ChevronDown, ChevronRight, FileDiff } from "@/shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   keepSessionChanges,
@@ -7,11 +7,11 @@ import {
   undoSessionChanges,
   type CheckpointFile,
 } from "../model/checkpoint";
-import { invalidateProjectFiles } from "../../files/model/file-index";
-import { invalidateWatchedFiles } from "../../files/model/file-watch";
-import { basename, notifyGitChanged, subscribeGitChanged } from "../../../platform/tauri/fs";
-import { formatInteger } from "../../../shared/lib/numbers";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+import { invalidateProjectFiles } from "@/features/files/model/file-index";
+import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
+import { basename, notifyGitChanged, subscribeGitChanged } from "@/platform/tauri/fs";
+import { formatInteger } from "@/shared/lib/numbers";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 
 type Props = {
   sessionId: string;

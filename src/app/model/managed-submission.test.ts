@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import type { ControlOutcome } from "../../features/orchestration/model/orchestration";
-import { ProjectNotFoundError } from "../../features/projects/model/project-location-error";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
+import { ProjectNotFoundError } from "@/features/projects/model/project-location-error";
 import { submitWithSettlement } from "./managed-submission";
 import { submitAfterProjectSync } from "./submission-acceptance";
 

@@ -15,12 +15,12 @@ vi.mock("@tauri-apps/plugin-opener", () => ({
   openUrl: actions.openUrl,
 }));
 
-vi.mock("../../../platform/tauri/clipboard", () => ({
+vi.mock("@/platform/tauri/clipboard", () => ({
   copyText: actions.copyText,
 }));
 
-vi.mock("../../../platform/tauri/fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../platform/tauri/fs")>()),
+vi.mock("@/platform/tauri/fs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/platform/tauri/fs")>()),
   openPathWithDefaultApp: actions.openPathWithDefaultApp,
   revealPath: actions.revealPath,
 }));

@@ -1,4 +1,4 @@
-import { Check, GitBranch, Plus, Search } from "../../../shared/ui/icons";
+import { Check, GitBranch, Plus, Search } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -15,12 +15,12 @@ import {
   isCheckoutBlockedByChanges,
   notifyGitChanged,
   type GitBranchInfo,
-} from "../../../platform/tauri/fs";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+} from "@/platform/tauri/fs";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { useProjectBranchesState } from "../hooks/use-project-branches";
 import { CreateBranchDialog } from "./CreateBranchDialog";
 import { GitPickerTrigger } from "./GitPickerTrigger";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import { SwitchBranchDialog } from "./SwitchBranchDialog";
 
 type Props = {

@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { Composer } from "./Composer";
-import { copyMessage } from "../../../platform/tauri/clipboard";
+import { copyMessage } from "@/platform/tauri/clipboard";
 
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }),

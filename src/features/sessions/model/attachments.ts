@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { basename, pickFiles as pickFilePaths } from "../../../platform/tauri/fs";
+import { basename, pickFiles as pickFilePaths } from "@/platform/tauri/fs";
 import type { Attachment, AttachmentKind } from "./session";
 
 export const MAX_ATTACHMENTS = 20;

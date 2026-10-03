@@ -1,6 +1,6 @@
-import { pathKey, projectName } from "../../../shared/lib/paths";
-import { looksLikeProject } from "../../projects/model/recents";
-import type { InboxItem } from "../../inbox/model/github-tasks";
+import { pathKey, projectName } from "@/shared/lib/paths";
+import { looksLikeProject } from "@/features/projects/model/recents";
+import type { InboxItem } from "@/features/inbox/model/github-tasks";
 
 export type NotificationProject = {
   id: string;

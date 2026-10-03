@@ -1,5 +1,5 @@
 import type { CiRepairRequest } from "./ci-repair";
-import { sameProjectPath } from "../../projects/model/recents";
+import { sameProjectPath } from "@/features/projects/model/recents";
 
 export type CiRepairOutcome = "completed" | "failed" | "cancelled";
 export type TrackedCiRepair = CiRepairRequest["target"] & {

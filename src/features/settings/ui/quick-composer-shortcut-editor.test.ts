@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SettingsView } from "./SettingsView";
 import { saveKeybindingOverride } from "../model/settings";
 
-vi.mock("../../../platform/tauri/platform", () => ({
+vi.mock("@/platform/tauri/platform", () => ({
   IS_MAC: true,
   IS_WIN: false,
   IS_LINUX: false,
@@ -26,7 +26,7 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("../../../app/model/app-dialog", () => ({
+vi.mock("@/app/model/app-dialog", () => ({
   confirmApp: vi.fn(async () => true),
 }));
 

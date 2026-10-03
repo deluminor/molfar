@@ -1,5 +1,5 @@
-import { homeDir } from "../../../../platform/tauri/fs";
-import { setHarnessModels } from "../../../../features/sessions/model/models";
+import { homeDir } from "@/platform/tauri/fs";
+import { setHarnessModels } from "@/features/sessions/model/models";
 import {
   killChild,
   spawnChild,

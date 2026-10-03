@@ -1,4 +1,4 @@
-import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
+import { NativePopupHost } from "@/shared/ui/NativePopupHost";
 import {
   useCallback,
   useContext,
@@ -7,12 +7,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
-import { useProjectWorktrees } from "../../source-control/hooks/use-project-worktrees";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { MOD, SHIFT } from "../../../platform/tauri/platform";
-import { prettyCwd } from "../../../shared/lib/paths";
-import type { WorkspaceMode } from "../../sessions/model/session";
+import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
+import { useProjectWorktrees } from "@/features/source-control/hooks/use-project-worktrees";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import { MOD, SHIFT } from "@/platform/tauri/platform";
+import { prettyCwd } from "@/shared/lib/paths";
+import type { WorkspaceMode } from "@/features/sessions/model/session";
 import {
   Check,
   ChevronRight,
@@ -22,15 +22,15 @@ import {
   Loader,
   Search,
   Settings,
-} from "../../../shared/ui/icons";
-import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
-import { Popover } from "../../../shared/ui/Popover";
-import { LAYER } from "../../../shared/lib/layers";
+} from "@/shared/ui/icons";
+import { GitPickerTrigger } from "@/features/source-control/ui/GitPickerTrigger";
+import { Popover } from "@/shared/ui/Popover";
+import { LAYER } from "@/shared/lib/layers";
 import {
   keybindingPressed,
   keybindingShortcutLabel,
   keybindingShortcutTokens,
-} from "../../settings/model/settings";
+} from "@/features/settings/model/settings";
 
 export const WORKSPACE_MODE_SHORTCUT = `${MOD}${SHIFT}G`;
 const WORKSPACE_SURFACES =

@@ -1,8 +1,8 @@
-import type { OrchestrationRun } from "../../orchestration/model/orchestration";
-import { summarizeOrchestration } from "../../orchestration/model/orchestration-summary";
-import { fuzzyMatch } from "../../../shared/lib/fuzzy";
-import { projectName } from "../../../shared/lib/paths";
-import { sameProjectPath } from "../../projects/model/recents";
+import type { OrchestrationRun } from "@/features/orchestration/model/orchestration";
+import { summarizeOrchestration } from "@/features/orchestration/model/orchestration-summary";
+import { fuzzyMatch } from "@/shared/lib/fuzzy";
+import { projectName } from "@/shared/lib/paths";
+import { sameProjectPath } from "@/features/projects/model/recents";
 import {
   sessionDisplayTitle,
   sessionDraftBlock,

@@ -11,7 +11,7 @@ const { invalidateWatchedFiles } = vi.hoisted(() => ({
   invalidateWatchedFiles: vi.fn(),
 }));
 
-vi.mock("../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   gitDiffIndex: vi.fn(),
   gitHistory: vi.fn(async () => []),
   gitPrStatus: vi.fn(async () => null),
@@ -33,17 +33,17 @@ vi.mock("../../../platform/tauri/fs", () => ({
   basename: (path: string) => path.split("/").pop() ?? path,
 }));
 
-vi.mock("../../../integrations/harness", () => ({
+vi.mock("@/integrations/harness", () => ({
   generateCommitMessage: vi.fn(async () => ""),
   generatePrContent: vi.fn(async () => null),
 }));
 
-vi.mock("../../files/model/file-watch", () => ({
+vi.mock("@/features/files/model/file-watch", () => ({
   invalidateWatchedFiles,
   nudgeWatchedFiles: vi.fn(),
 }));
 
-vi.mock("../../inbox/model/inbox-self-activity", () => ({
+vi.mock("@/features/inbox/model/inbox-self-activity", () => ({
   recordInboxSelfActivity: vi.fn(),
 }));
 
@@ -54,13 +54,13 @@ import {
   gitPull,
   gitPush,
   gitRangeContext,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   generateCommitMessage,
   generatePrContent,
-} from "../../../integrations/harness";
+} from "@/integrations/harness";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { GitDiffIndex } from "../../../platform/tauri/fs";
+import type { GitDiffIndex } from "@/platform/tauri/fs";
 
 function index(overrides: Partial<GitDiffIndex> = {}): GitDiffIndex {
   return {

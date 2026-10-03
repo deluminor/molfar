@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { projectKey } from "../../../shared/lib/paths";
+import { projectKey } from "@/shared/lib/paths";
 import {
   loadSessionFolders,
   saveSessionFolders,
-} from "../../sessions/model/session-folders";
+} from "@/features/sessions/model/session-folders";
 import {
   loadTabGroupLabels,
   saveTabGroupLabel,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 import {
   loadProjectChatBackgroundSettings,
   saveProjectChatBackgroundSettings,
@@ -16,7 +16,7 @@ import { rebaseProjectData } from "./project-data";
 import {
   loadProjectSidebarTab,
   saveProjectSidebarTab,
-} from "../../settings/model/project-sidebar-tab";
+} from "@/features/settings/model/project-sidebar-tab";
 import {
   loadProjectGroupAssignments,
   saveProjectGroups,

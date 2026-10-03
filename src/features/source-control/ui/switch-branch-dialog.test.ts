@@ -3,9 +3,9 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
 import { SwitchBranchDialog } from "./SwitchBranchDialog";
-import { generateCommitMessage } from "../../../integrations/harness";
+import { generateCommitMessage } from "@/integrations/harness";
 
-vi.mock("../../../integrations/harness", () => ({
+vi.mock("@/integrations/harness", () => ({
   generateCommitMessage: vi.fn(),
 }));
 

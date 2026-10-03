@@ -18,13 +18,13 @@ import {
   handleAgentApp,
   type AppSessionListing,
   type AppSessionPlacement,
-} from "../features/agent-app/model/agent-app";
-import type { CiRepairRequest } from "../features/inbox/model/ci-repair";
-import { ciRepairSessions } from "../features/inbox/model/ci-repair-sessions";
+} from "@/features/agent-app/model/agent-app";
+import type { CiRepairRequest } from "@/features/inbox/model/ci-repair";
+import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import {
   rebaseCiRepairs,
   trackCiRepair,
-} from "../features/inbox/model/ci-repair-tracking";
+} from "@/features/inbox/model/ci-repair-tracking";
 import {
   cancelScheduledFlush,
   scheduleHarnessFlush,
@@ -50,32 +50,32 @@ import {
   rememberOpenedFile,
   resolveFileOpenRequest,
   resolveOpenablePath,
-} from "../features/files/model/file-index";
-import { FilePicker } from "../features/files/ui/FilePicker";
-import { useInboxActivity } from "../features/inbox/hooks/use-inbox-unseen";
-import { HarnessUpdateNotice } from "../features/providers/ui/HarnessUpdateNotice";
+} from "@/features/files/model/file-index";
+import { FilePicker } from "@/features/files/ui/FilePicker";
+import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
+import { HarnessUpdateNotice } from "@/features/providers/ui/HarnessUpdateNotice";
 import {
   displayAttachments,
   prepareAttachments,
-} from "../features/sessions/model/attachments";
-import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
+} from "@/features/sessions/model/attachments";
+import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
 import {
   DeleteSessionDialog,
   type SessionDeleteChoice,
-} from "../features/sessions/ui/DeleteSessionDialog";
-import { ProviderSignInDialog } from "../features/sessions/ui/ProviderSignInDialog";
+} from "@/features/sessions/ui/DeleteSessionDialog";
+import { ProviderSignInDialog } from "@/features/sessions/ui/ProviderSignInDialog";
 import {
   loadProjectRailOpen,
   loadSessionSidebarOpen,
   saveProjectRailOpen,
   saveSessionSidebarOpen,
   type SidebarTabId,
-} from "../features/settings/model/appearance";
-import { resolveAppShortcut } from "../features/settings/model/app-shortcuts";
+} from "@/features/settings/model/appearance";
+import { resolveAppShortcut } from "@/features/settings/model/app-shortcuts";
 import {
   loadProjectSidebarTab,
   saveProjectSidebarTab,
-} from "../features/settings/model/project-sidebar-tab";
+} from "@/features/settings/model/project-sidebar-tab";
 import {
   applyUiScale,
   loadUiScale,
@@ -83,14 +83,14 @@ import {
   UI_SCALE_DEFAULT,
   zoomInUiScale,
   zoomOutUiScale,
-} from "../features/settings/model/ui-scale";
-import { resolveZoomKeybinding } from "../features/settings/model/zoom-keybinding";
-import { useProjectBranches } from "../features/source-control/hooks/use-project-branches";
+} from "@/features/settings/model/ui-scale";
+import { resolveZoomKeybinding } from "@/features/settings/model/zoom-keybinding";
+import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import {
   type WorktreeFocus,
   useWorktreeFocus,
   worktreeFocus,
-} from "../features/source-control/model/worktree-focus";
+} from "@/features/source-control/model/worktree-focus";
 import {
   assertWorktreeFilesClosed,
   checkWorktreeRemoval,
@@ -108,15 +108,15 @@ import {
   temporaryWorktreeBranchName,
   worktreeSessionIds,
   type Worktree,
-} from "../features/source-control/model/worktrees";
+} from "@/features/source-control/model/worktrees";
 import {
   basename,
   notifyGitChanged,
   pickFolders,
   type GitFileDiffKind,
   type GitHistoryCommit,
-} from "../platform/tauri/fs";
-import { HAS_NATIVE_GLASS, IS_MAC } from "../platform/tauri/platform";
+} from "@/platform/tauri/fs";
+import { HAS_NATIVE_GLASS, IS_MAC } from "@/platform/tauri/platform";
 import { getUpdatePrompt } from "./model/update-prompt";
 import { runUpdateFlow } from "./model/updater";
 import { MenuBar } from "./shell/MenuBar";
@@ -134,8 +134,8 @@ import {
   shellPath,
   workspaceIdentity,
   type ControlOutcome,
-} from "../features/orchestration/model/orchestration";
-import { discoverOrchestrationSettings } from "../features/orchestration/model/orchestration-catalog";
+} from "@/features/orchestration/model/orchestration";
+import { discoverOrchestrationSettings } from "@/features/orchestration/model/orchestration-catalog";
 import {
   completeOrchestrationProposal,
   completeOrRepairOrchestrationProposal,
@@ -145,18 +145,18 @@ import {
   validateOrchestrationSettings,
   withOrchestrationProposal,
   type OrchestrationProposal,
-} from "../features/orchestration/model/orchestration-plan";
+} from "@/features/orchestration/model/orchestration-plan";
 import {
   attachOrchestrationWorkers,
   consolidateOrchestrationTabs,
   prepareOrchestrationWorkerDetails,
   releaseOrchestrationWorker,
-} from "../features/orchestration/model/orchestration-workspace";
+} from "@/features/orchestration/model/orchestration-workspace";
 import {
   OrchestrationActions,
   OrchestrationWorkers,
   type OrchestrationWorkerDetail,
-} from "../features/orchestration/ui/orchestration-actions";
+} from "@/features/orchestration/ui/orchestration-actions";
 import {
   addTerminalToDock,
   applyDockGridStyle,
@@ -173,7 +173,7 @@ import {
   withDockSize,
   type DockSide,
   type ProjectTerminalDock as ProjectTerminal,
-} from "../features/projects/model/project-terminal";
+} from "@/features/projects/model/project-terminal";
 
 import {
   applyBtwHarnessEvent,
@@ -182,7 +182,7 @@ import {
   replaceBtwThread,
   sealBtwResponseBlocks,
   supportsBtwHarness,
-} from "../features/sessions/model/btw";
+} from "@/features/sessions/model/btw";
 import {
   appendPreparingHandoff,
   buildDeterministicHandoff,
@@ -201,18 +201,18 @@ import {
   userMessagesAfterHandoff,
   wrapHandoffPrompt,
   type HandoffComposerCard,
-} from "../features/sessions/model/handoff";
-import { requestOutgoingHandoff } from "../features/sessions/model/handoff-turn";
-import { modelsFor } from "../features/sessions/model/models";
+} from "@/features/sessions/model/handoff";
+import { requestOutgoingHandoff } from "@/features/sessions/model/handoff-turn";
+import { modelsFor } from "@/features/sessions/model/models";
 import {
   confirmCloseTerminal,
   confirmCloseTerminals,
-} from "../features/terminal/model/terminal-close";
+} from "@/features/terminal/model/terminal-close";
 import {
   listRunningTerminals,
   terminalTabLabel,
   type TerminalMetaPatch,
-} from "../features/terminal/model/terminal-tab";
+} from "@/features/terminal/model/terminal-tab";
 import {
   appendSteerUser,
   appendUser,
@@ -248,8 +248,8 @@ import {
   type ApprovalDecision,
   type HarnessEvent,
   type UserQuestionReply,
-} from "../integrations/harness";
-import { supportsHarnessLogin } from "../integrations/harness/core/auth-support";
+} from "@/integrations/harness";
+import { supportsHarnessLogin } from "@/integrations/harness/core/auth-support";
 
 import {
   closeLeaf,
@@ -296,17 +296,17 @@ import {
   type PaneEdge,
   type SplitDir,
   type WorkspaceTab,
-} from "../features/workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import {
   applyGroupedReorder,
   insertTabBesideActive,
   removeTabFromGroup,
   tabGroupProject,
-} from "../features/workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 
-import { isHarnessAvailable } from "../integrations/harness/core/availability";
+import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 
-import { mergeOrderedSubset, orderByIds } from "../shared/lib/reorder";
+import { mergeOrderedSubset, orderByIds } from "@/shared/lib/reorder";
 
 import {
   releaseNotesForVersion,
@@ -315,15 +315,15 @@ import {
 
 import { type WindowTransferPayload } from "./model/window-transfer";
 
-import { notifyDirsChanged } from "../features/files/model/file-tree";
+import { notifyDirsChanged } from "@/features/files/model/file-tree";
 import {
   invalidateWatchedFiles,
   nudgeWatchedFiles,
-} from "../features/files/model/file-watch";
+} from "@/features/files/model/file-watch";
 import {
   type EditorNavigationTarget,
   type OpenFileFn,
-} from "../features/search/model/search";
+} from "@/features/search/model/search";
 import {
   applySessionCheckpoint,
   beginSessionTurn,
@@ -334,11 +334,11 @@ import {
   notifyReviewChanged,
   prepareSessionCheckpoint,
   sessionCheckpointCleanupSafe,
-} from "../features/sessions/model/checkpoint";
+} from "@/features/sessions/model/checkpoint";
 import {
   createEditedResendAttempt,
   createEditedResendCoordinator,
-} from "../features/sessions/model/edit-last-turn";
+} from "@/features/sessions/model/edit-last-turn";
 import {
   mergeModelSettings,
   nativeModelId,
@@ -346,18 +346,18 @@ import {
   resolveModel,
   saveLastModelSettings,
   saveRecentModelChoice,
-} from "../features/sessions/model/models";
-import { isEditTool } from "../integrations/harness/core/preview";
+} from "@/features/sessions/model/models";
+import { isEditTool } from "@/integrations/harness/core/preview";
 
 import {
   rebaseProjectData,
   removeProjectData,
-} from "../features/projects/model/project-data";
+} from "@/features/projects/model/project-data";
 import {
   forgetProjectLocation,
   rememberProjectLocation,
   synchronizeProjectLocation,
-} from "../features/projects/model/project-location";
+} from "@/features/projects/model/project-location";
 import {
   archiveProject,
   forgetProject,
@@ -371,26 +371,26 @@ import {
   rememberProject,
   replaceProjectPath,
   sameProjectPath,
-} from "../features/projects/model/recents";
+} from "@/features/projects/model/recents";
 import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
   providerAccountExists,
   selectedProviderAccountId,
   supportsProviderAccounts,
   type ProviderAccountProvider,
-} from "../features/providers/model/provider-accounts";
-import { applyAddToChatRequest } from "../features/sessions/model/add-chat-to-workspace";
+} from "@/features/providers/model/provider-accounts";
+import { applyAddToChatRequest } from "@/features/sessions/model/add-chat-to-workspace";
 import {
   buildPlanPrompt,
   isProviderFailureText,
   planTitle,
   planTurnKey,
   planTurnPrompt,
-} from "../features/sessions/model/plan";
+} from "@/features/sessions/model/plan";
 import {
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,
-} from "../features/sessions/model/quote-draft";
+} from "@/features/sessions/model/quote-draft";
 import {
   canReplaceSessionTitle,
   formatSessionTitle,
@@ -420,9 +420,9 @@ import {
   type Session,
   type UsageLimit,
   type WorkspaceMode,
-} from "../features/sessions/model/session";
-import { createSessionRemover } from "../features/sessions/model/session-removal";
-import { shouldGenerateSessionTitle } from "../features/sessions/model/session-title";
+} from "@/features/sessions/model/session";
+import { createSessionRemover } from "@/features/sessions/model/session-removal";
+import { shouldGenerateSessionTitle } from "@/features/sessions/model/session-title";
 import {
   applyDetachPaneToTab,
   applyPlaceSessionOnPane,
@@ -434,7 +434,7 @@ import {
   switchSessionInTab,
   workspaceTabCwd,
   workspaceTabWorktree,
-} from "../features/workspace/model/workspace-tab-groups";
+} from "@/features/workspace/model/workspace-tab-groups";
 import {
   displayPath,
   isEqualOrInside,
@@ -442,16 +442,16 @@ import {
   projectName,
   rebasePath,
   resolveWorkspacePath,
-} from "../shared/lib/paths";
+} from "@/shared/lib/paths";
 
-import { claimInboxAutomationRuns } from "../features/automations/model/automation-events";
+import { claimInboxAutomationRuns } from "@/features/automations/model/automation-events";
 import {
   claimDueAutomations,
   recoverAutomationRuns,
   updateAutomationRun,
   type Automation,
   type AutomationRun,
-} from "../features/automations/model/automations";
+} from "@/features/automations/model/automations";
 import {
   ADD_NOTE_TO_CHAT_EVENT,
   composeNoteMessage,
@@ -459,26 +459,26 @@ import {
   NOTES_CHANGED_EVENT,
   upsertNote,
   type NoteComposerCard,
-} from "../features/notes";
-import { useInputNotifications } from "../features/notifications/hooks/use-input-notifications";
-import { useSessionReminders } from "../features/notifications/hooks/use-session-reminders";
-import { hiddenApprovalNotices } from "../features/notifications/model/approval-toast";
-import { syncDockBadge } from "../features/notifications/model/dock-badge";
+} from "@/features/notes";
+import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
+import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
+import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
+import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import {
   announceSessionFinished,
   loadNotificationsEnabled,
   NOTIFICATION_CLICK_EVENT,
   probeNotificationPermission,
   setWindowFocused,
-} from "../features/notifications/model/notifications";
-import { exhaustedWindowResetAt } from "../features/providers/model/rate-limits";
+} from "@/features/notifications/model/notifications";
+import { exhaustedWindowResetAt } from "@/features/providers/model/rate-limits";
 import {
   fetchClaudeRateLimits,
   fetchCodexRateLimits,
-} from "../features/providers/model/rate-limits-fetch";
-import { useQuickComposerLaunches } from "../features/quick-composer/hooks/use-quick-composer-launches";
-import type { QuickLaunch } from "../features/quick-composer/model/quick-composer";
-import { rememberLoadedSession } from "../features/sessions/data/session-cache";
+} from "@/features/providers/model/rate-limits-fetch";
+import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
+import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
+import { rememberLoadedSession } from "@/features/sessions/data/session-cache";
 import {
   deleteSession,
   discardDraftSessionRecord,
@@ -496,48 +496,48 @@ import {
   shouldPersistSession,
   upsertSession,
   type SessionSummary,
-} from "../features/sessions/data/session-store";
-import { archiveFocusedSession } from "../features/sessions/model/archive-shortcut";
-import { dropContextWindow } from "../features/sessions/model/context-usage";
-import { liveAgentsFromSessions } from "../features/sessions/model/live-agents";
-import { useUnseenFinishedSessions } from "../features/sessions/hooks/use-unseen-finished-sessions";
+} from "@/features/sessions/data/session-store";
+import { archiveFocusedSession } from "@/features/sessions/model/archive-shortcut";
+import { dropContextWindow } from "@/features/sessions/model/context-usage";
+import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
+import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import {
   canDispatchQueuedHead,
   dequeueQueuedMessage,
   queuedMessageForSubmit,
-} from "../features/sessions/model/message-queue";
+} from "@/features/sessions/model/message-queue";
 import {
   consumeOperatorCommand,
   operatorEnabledInThread,
-} from "../features/sessions/model/operator-command";
-import { preparePrompt } from "../features/sessions/model/prompt-preparation";
+} from "@/features/sessions/model/operator-command";
+import { preparePrompt } from "@/features/sessions/model/prompt-preparation";
 import {
   buildSecondOpinionRequest,
   harnessForTurn,
   SECOND_OPINION_TITLE,
   turnEditedFiles,
   turnUserRequest,
-} from "../features/sessions/model/second-opinion";
+} from "@/features/sessions/model/second-opinion";
 import {
   loadSessionFolders,
   placeSessionInFolder,
   saveSessionFolders,
   type SessionFolderTarget,
-} from "../features/sessions/model/session-folders";
-import { nativeSkillContextForSession } from "../features/sessions/model/session-skills";
+} from "@/features/sessions/model/session-folders";
+import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import {
   USAGE_LIMIT_RESUME_GRACE_MS,
   usageLimitResumeDue,
-} from "../features/sessions/model/usage-limit";
-import { ReminderNotices } from "../features/sessions/ui/ReminderNotices";
+} from "@/features/sessions/model/usage-limit";
+import { ReminderNotices } from "@/features/sessions/ui/ReminderNotices";
 import {
   TranscriptPool,
   TranscriptPoolOutlet,
-} from "../features/sessions/ui/TranscriptPool";
+} from "@/features/sessions/ui/TranscriptPool";
 import {
   isNativeCommandPrompt,
   warmNativeSkills,
-} from "../features/skills/model/skills";
+} from "@/features/skills/model/skills";
 import {
   adjacentItemId,
   deferUnhandledEscape,
@@ -547,7 +547,7 @@ import {
   tabCommand,
   tabCommandForKeybinding,
   tabCommandKeybinding,
-} from "../features/workspace/model/tab-keys";
+} from "@/features/workspace/model/tab-keys";
 import {
   canTabVisitBack,
   canTabVisitForward,
@@ -557,10 +557,10 @@ import {
   tabVisitBack,
   tabVisitForward,
   type TabVisitHistory,
-} from "../features/workspace/model/tab-visit-history";
+} from "@/features/workspace/model/tab-visit-history";
 
-import { listAutomations } from "../features/automations/model/automations";
-import { loadNotes } from "../features/notes";
+import { listAutomations } from "@/features/automations/model/automations";
+import { loadNotes } from "@/features/notes";
 
 import {
   cachedRemoteSessionSummary,
@@ -572,67 +572,67 @@ import {
   remotePendingWorktree,
   remoteSessionFor,
   remoteTabCwd,
-} from "../features/connections/model/connections";
-import type { HostSession } from "../features/connections/model/protocol";
+} from "@/features/connections/model/connections";
+import type { HostSession } from "@/features/connections/model/protocol";
 import {
   remotePath,
   remoteProjectFor,
-} from "../features/connections/model/remote-projects";
+} from "@/features/connections/model/remote-projects";
 import {
   buildRemotePlan,
   remoteSessionActions,
-} from "../features/connections/model/remote-session-actions";
-import { remoteSessionState } from "../features/connections/model/remote-session-state";
-import { AddRemoteProjectDialog } from "../features/connections/ui/AddRemoteProjectDialog";
+} from "@/features/connections/model/remote-session-actions";
+import { remoteSessionState } from "@/features/connections/model/remote-session-state";
+import { AddRemoteProjectDialog } from "@/features/connections/ui/AddRemoteProjectDialog";
 import {
   handleEditorFindKey,
   openFindInActiveEditor,
-} from "../features/files/editor/editor-search";
+} from "@/features/files/editor/editor-search";
 import {
   azureDevOpsWorkItemDetails,
   peekAzureDevOpsWorkItemDetails,
-} from "../features/inbox/model/azure-dev-ops";
+} from "@/features/inbox/model/azure-dev-ops";
 import {
   githubWorkItemThread,
   inboxComposerCard,
   type InboxItem,
-} from "../features/inbox/model/github-tasks";
+} from "@/features/inbox/model/github-tasks";
 import {
   gitlabWorkItemDetails,
   peekGitlabWorkItemDetails,
-} from "../features/inbox/model/gitlab";
-import { inboxAskKey, inboxAskPrompt } from "../features/inbox/model/inbox-ask";
-import type { ConnectableInboxSource } from "../features/inbox/model/inbox-filters";
-import type { InboxSessionPortal } from "../features/inbox/ui/InboxDiscussionPanel";
-import { requestTranscriptJump } from "../features/sessions/model/transcript-jump";
-import { SessionPane } from "../features/sessions/ui/SessionPane";
-import { SessionSurface } from "../features/sessions/ui/SessionSurface";
-import type { SettingsAnchor } from "../features/settings/ui/SettingsView";
-import { ProjectTerminalDock } from "../features/terminal/ui/ProjectTerminalDock";
-import { PaneTree } from "../features/workspace/ui/PaneTree";
-import { lazySurface } from "../shared/ui/lazy-surface";
+} from "@/features/inbox/model/gitlab";
+import { inboxAskKey, inboxAskPrompt } from "@/features/inbox/model/inbox-ask";
+import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
+import type { InboxSessionPortal } from "@/features/inbox/ui/InboxDiscussionPanel";
+import { requestTranscriptJump } from "@/features/sessions/model/transcript-jump";
+import { SessionPane } from "@/features/sessions/ui/SessionPane";
+import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
+import type { SettingsAnchor } from "@/features/settings/ui/SettingsView";
+import { ProjectTerminalDock } from "@/features/terminal/ui/ProjectTerminalDock";
+import { PaneTree } from "@/features/workspace/ui/PaneTree";
+import { lazySurface } from "@/shared/ui/lazy-surface";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
 import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-state";
 import { preloadNavigationWhenIdle } from "./model/preload-navigation";
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 
-import { inboxTrackerDescription } from "../features/inbox/model/inbox-context";
+import { inboxTrackerDescription } from "@/features/inbox/model/inbox-context";
 
-import { markLinkedSessionUpdateSeen } from "../features/inbox/model/linked-session-seen";
-import type { LinkedSessionUpdate } from "../features/inbox/model/linked-session-updates";
+import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
+import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
 import {
   completeLinkedWorkItemUpdateCard,
   failLinkedWorkItemUpdateCard,
   pendingLinkedWorkItemUpdateCard,
   type LinkedWorkItemUpdateCard,
-} from "../features/inbox/model/linked-work-item-activity";
+} from "@/features/inbox/model/linked-work-item-activity";
 import {
   linkedWorkItemFromAutomationEvent,
   linkedWorkItemFromInboxItem,
   resolveLinkedWorkItem,
-} from "../features/sessions/model/session-work-item";
+} from "@/features/sessions/model/session-work-item";
 
-import { loadRailSurfaces } from "../features/settings/model/project-rail";
+import { loadRailSurfaces } from "@/features/settings/model/project-rail";
 import {
   keybindingPressed,
   loadAutosave,
@@ -653,35 +653,35 @@ import {
   type CollapsedProjectRailMode,
   type FollowUpBehavior,
   type SettingsSectionId,
-} from "../features/settings/model/settings";
+} from "@/features/settings/model/settings";
 
 import {
   planProjectOpenRun,
   type ProjectOpenStep,
-} from "../features/projects/model/project-open-run";
+} from "@/features/projects/model/project-open-run";
 import {
   isBlankSession,
   reconcileProjectReturn,
   type ProjectReturnMemory,
-} from "../features/projects/model/project-return";
+} from "@/features/projects/model/project-return";
 import {
   historyWithLiveSessions,
   mergeHistorySummary,
   mergeProjectHistorySummary,
   replaceProjectHistory,
   summaryFromSession,
-} from "../features/sessions/data/session-history";
+} from "@/features/sessions/data/session-history";
 import {
   canAutoContinue,
   CONTINUE_PROMPT,
   inFlightRefs,
   inFlightSnapshotKey,
   shouldWriteInFlightSnapshot,
-} from "../features/sessions/model/in-flight";
+} from "@/features/sessions/model/in-flight";
 import {
   collectWorkspaceSnapshot,
   workspaceSnapshotKey,
-} from "../features/workspace/model/workspace-snapshot";
+} from "@/features/workspace/model/workspace-snapshot";
 import {
   bindResumedSessions,
   closeBusyWindow,
@@ -700,39 +700,39 @@ import type { InstalledUpdate } from "./model/update-notice";
 
 const SearchView = lazySurface(
   async () => {
-    const module = await import("../features/search/ui/SearchView");
+    const module = await import("@/features/search/ui/SearchView");
     return { default: module.SearchView };
   },
   { suspense: false },
 );
 const SettingsView = lazySurface(
   async () => {
-    const module = await import("../features/settings/ui/SettingsView");
+    const module = await import("@/features/settings/ui/SettingsView");
     return { default: module.SettingsView };
   },
   { suspense: false },
 );
 const InboxView = lazySurface(
   async () => {
-    const module = await import("../features/inbox/ui/InboxView");
+    const module = await import("@/features/inbox/ui/InboxView");
     return { default: module.InboxView };
   },
   { suspense: false },
 );
 const LinkedWorkItemPanel = lazySurface(async () => {
-  const module = await import("../features/inbox/ui/InboxView");
+  const module = await import("@/features/inbox/ui/InboxView");
   return { default: module.LinkedWorkItemPanel };
 });
 const NotesView = lazySurface(
   async () => {
-    const module = await import("../features/notes/ui/NotesView");
+    const module = await import("@/features/notes/ui/NotesView");
     return { default: module.NotesView };
   },
   { suspense: false },
 );
 const AutomationsView = lazySurface(
   async () => {
-    const module = await import("../features/automations/ui/AutomationsView");
+    const module = await import("@/features/automations/ui/AutomationsView");
     return { default: module.AutomationsView };
   },
   { suspense: false },

@@ -5,11 +5,11 @@ import {
   leafIds,
   newTab,
   type WorkspaceTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import {
   focusedWorkspaceTabCwd,
   openAddToChatSessionPane,
-} from "../../workspace/model/workspace-tab-groups";
+} from "@/features/workspace/model/workspace-tab-groups";
 
 export type AddChatToWorkspaceResult = {
   /** Updated sessions array including the new chat. */

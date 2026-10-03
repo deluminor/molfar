@@ -2,21 +2,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isRemoteProjectPath,
   sameProjectPath,
-} from "../../features/projects/model/recents";
-import { isBlankSession } from "../../features/projects/model/project-return";
-import type { Session } from "../../features/sessions/model/session";
+} from "@/features/projects/model/recents";
+import { isBlankSession } from "@/features/projects/model/project-return";
+import type { Session } from "@/features/sessions/model/session";
 import {
   setWorktreeFocus,
   worktreeFocus,
   type WorktreeFocus,
-} from "../../features/source-control/model/worktree-focus";
-import type { Worktree } from "../../features/source-control/model/worktrees";
-import type { WorkspaceTab } from "../../features/workspace/model/layout";
+} from "@/features/source-control/model/worktree-focus";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import type { WorkspaceTab } from "@/features/workspace/model/layout";
 import {
   filterTabsForProject,
   workspaceTabCwd,
-} from "../../features/workspace/model/workspace-tab-groups";
-import { pathKey } from "../../shared/lib/paths";
+} from "@/features/workspace/model/workspace-tab-groups";
+import { pathKey } from "@/shared/lib/paths";
 
 type Destination = { project: string; focus?: WorktreeFocus };
 type Request = Destination & { kind: "project" | "workspace" };

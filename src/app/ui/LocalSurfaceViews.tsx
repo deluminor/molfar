@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { HomeView } from "../../features/home/ui/HomeView";
-import type { LocalSurfaceId } from "../../features/home/ui/LocalSurfaceRailActions";
-import { KnowledgeView } from "../../features/knowledge/ui/KnowledgeView";
-import { UsageView } from "../../features/usage/ui/UsageView";
+import { HomeView } from "@/features/home/ui/HomeView";
+import type { LocalSurfaceId } from "@/features/home/ui/LocalSurfaceRailActions";
+import { KnowledgeView } from "@/features/knowledge/ui/KnowledgeView";
+import { UsageView } from "@/features/usage/ui/UsageView";
 
 type Props = {
   surface: LocalSurfaceId | null;

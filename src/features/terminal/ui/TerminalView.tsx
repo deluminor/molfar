@@ -7,7 +7,7 @@ import {
   spawnPty,
   subscribePty,
   writePty,
-} from "../../../platform/tauri/pty";
+} from "@/platform/tauri/pty";
 import { isOscColorQuery, oscColorReply } from "../model/terminal-chrome";
 import {
   isMacTerminalClearShortcut,
@@ -18,14 +18,14 @@ import {
   scanOscCwd,
   type TerminalMetaPatch,
 } from "../model/terminal-tab";
-import { isLightScheme, SCHEME_CHANGE_EVENT } from "../../settings/model/appearance";
+import { isLightScheme, SCHEME_CHANGE_EVENT } from "@/features/settings/model/appearance";
 import {
   applyTerminalChrome,
   fitTerminal,
   resetGridStretch,
   type TerminalFitMode,
 } from "../model/terminal-layout";
-import { IS_MAC } from "../../../platform/tauri/platform";
+import { IS_MAC } from "@/platform/tauri/platform";
 import "@xterm/xterm/css/xterm.css";
 
 type Props = {

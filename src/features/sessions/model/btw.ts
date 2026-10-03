@@ -1,6 +1,6 @@
-import { applyHarnessEvent } from "../../../integrations/harness/core/apply";
-import type { HarnessEvent } from "../../../integrations/harness/core/types";
-import { displayPath } from "../../../shared/lib/paths";
+import { applyHarnessEvent } from "@/integrations/harness/core/apply";
+import type { HarnessEvent } from "@/integrations/harness/core/types";
+import { displayPath } from "@/shared/lib/paths";
 import type {
   Attachment,
   Block,
@@ -9,7 +9,7 @@ import type {
   HarnessId,
 } from "./session";
 import { newSession } from "./session";
-import type { BuiltinSkill } from "../../skills/model/skills";
+import type { BuiltinSkill } from "@/features/skills/model/skills";
 import { harnessForTurn } from "./second-opinion";
 import { groupTurns } from "./transcript-activity";
 import { resolveModel } from "./models";

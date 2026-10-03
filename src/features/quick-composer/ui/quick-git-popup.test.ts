@@ -2,14 +2,14 @@
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { gitCheckout, gitCreateBranch } from "../../../platform/tauri/fs";
+import { gitCheckout, gitCreateBranch } from "@/platform/tauri/fs";
 import { QuickGitPopupPicker } from "./QuickGitPopup";
-import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
+import { NativePopupHost } from "@/shared/ui/NativePopupHost";
 import type { QuickGitRequest } from "../model/quick-git-popup";
 import type { QuickWorkspace } from "../model/quick-workspace";
 
 const git = vi.hoisted(() => ({ available: true, settled: true }));
-vi.mock("../../source-control/hooks/use-project-branches", () => ({
+vi.mock("@/features/source-control/hooks/use-project-branches", () => ({
   useProjectBranchesState: () => ({
     settled: git.settled,
     branches: git.available
@@ -24,7 +24,7 @@ vi.mock("../../source-control/hooks/use-project-branches", () => ({
       : null,
   }),
 }));
-vi.mock("../../source-control/hooks/use-project-worktrees", () => ({
+vi.mock("@/features/source-control/hooks/use-project-worktrees", () => ({
   useProjectWorktrees: () => ({
     data: {
       worktrees: [
@@ -39,7 +39,7 @@ vi.mock("../../source-control/hooks/use-project-worktrees", () => ({
     },
   }),
 }));
-vi.mock("../../../platform/tauri/fs", async (actual) => ({
+vi.mock("@/platform/tauri/fs", async (actual) => ({
   ...(await actual<object>()),
   gitCheckout: vi.fn().mockResolvedValue(undefined),
   gitCreateBranch: vi.fn(),

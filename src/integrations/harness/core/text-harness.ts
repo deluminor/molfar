@@ -1,6 +1,6 @@
-import type { HarnessId } from "../../../features/sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
 import { isHarnessAvailable } from "./availability";
-import type { PrContent } from "../../../features/source-control/model/git-text";
+import type { PrContent } from "@/features/source-control/model/git-text";
 import {
   generateHarnessCommitMessage,
   generateHarnessPrContent,

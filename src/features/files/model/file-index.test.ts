@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectFile } from "../../../platform/tauri/fs";
-import { listProjectFiles } from "../../../platform/tauri/fs";
+import type { ProjectFile } from "@/platform/tauri/fs";
+import { listProjectFiles } from "@/platform/tauri/fs";
 import {
   invalidateProjectFiles,
   loadProjectFiles,
@@ -37,8 +37,8 @@ const extra: ProjectFile = {
   relative: "pasted.ts",
 };
 
-vi.mock("../../../platform/tauri/fs", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../platform/tauri/fs")>();
+vi.mock("@/platform/tauri/fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/platform/tauri/fs")>();
   return {
     ...actual,
     listProjectFiles: vi.fn(async () => files),

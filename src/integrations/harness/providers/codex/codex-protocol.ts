@@ -5,16 +5,16 @@ import type {
   ToolPreview,
   TurnIntent,
   TurnMetrics,
-} from "../../../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   attachmentPath,
   attachmentPathText,
   isVisionImage,
   normalizeImageMime,
   promptText,
-} from "../../../../features/sessions/model/attachments";
-import { displayPath } from "../../../../shared/lib/paths";
-import { normalizeTaskListStatus } from "../../../../features/sessions/model/task-list";
+} from "@/features/sessions/model/attachments";
+import { displayPath } from "@/shared/lib/paths";
+import { normalizeTaskListStatus } from "@/features/sessions/model/task-list";
 import {
   composeToolTitle,
   extractToolPreview,

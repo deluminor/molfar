@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RAIL_SURFACES_DEFAULT } from "../../../features/settings/model/project-rail";
+import { RAIL_SURFACES_DEFAULT } from "@/features/settings/model/project-rail";
 import { visibleLocalSurface } from "./visible-local-surface";
 
 describe("visibleLocalSurface", () => {

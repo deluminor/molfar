@@ -5,9 +5,9 @@ import {
   type ChangeEvent,
   type MouseEvent,
 } from "react";
-import { AgentMarkdown } from "../../../sessions/ui/AgentMarkdown";
-import { X } from "../../../../shared/ui/icons";
-import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
+import { X } from "@/shared/ui/icons";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { prepareVaultPreview } from "../../model/document/prepare-vault-preview";
 import { useVaultAssets } from "../../hooks/documents/use-vault-assets";
 import { ACTION_FILLED, ICON_BUTTON } from "../constants";

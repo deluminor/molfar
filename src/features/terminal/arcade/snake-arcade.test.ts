@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HARNESSES } from "../../sessions/model/session";
+import { HARNESSES } from "@/features/sessions/model/session";
 import { LOGO_CELLS, createSnakeArcade } from "./snake-arcade";
 
 /** Roughly what a normal window gives us: 6px cells, a 192px-tall band. */

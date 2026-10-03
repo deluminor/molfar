@@ -1,4 +1,4 @@
-import { AiIdea, ChevronDown, Gauge, Maximize2, Zap } from "../../../shared/ui/icons";
+import { AiIdea, ChevronDown, Gauge, Maximize2, Zap } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -6,7 +6,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import {
   getModelSnapshot,
   resolveModel,

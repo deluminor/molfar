@@ -1,4 +1,4 @@
-import { RefreshCw, Search } from "../../../shared/ui/icons";
+import { RefreshCw, Search } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -16,16 +16,16 @@ import {
   rememberOpenedFile,
   type RankedFile,
 } from "../model/file-index";
-import { LAYER } from "../../../shared/lib/layers";
-import { fuzzyMatch, type FuzzyHit } from "../../../shared/lib/fuzzy";
+import { LAYER } from "@/shared/lib/layers";
+import { fuzzyMatch, type FuzzyHit } from "@/shared/lib/fuzzy";
 import {
   looksLikeProject,
-} from "../../projects/model/recents";
-import type { OpenFileFn } from "../../search/model/search";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+} from "@/features/projects/model/recents";
+import type { OpenFileFn } from "@/features/search/model/search";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { MatchText } from "../../../shared/ui/MatchText";
-import { MOD, SHIFT } from "../../../platform/tauri/platform";
+import { MatchText } from "@/shared/ui/MatchText";
+import { MOD, SHIFT } from "@/platform/tauri/platform";
 type Action = {
   id: string;
   label: string;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { SessionPaneProps } from "../../sessions/ui/SessionPane";
+import type { SessionPaneProps } from "@/features/sessions/ui/SessionPane";
 import type {
   Attachment,
   Block,
@@ -9,17 +9,17 @@ import type {
   Session,
   WorkspaceMode,
   PlanBuildTarget,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 import { uploadRemoteAttachments } from "../model/remote-attachments";
-import { temporaryWorktreeBranchName } from "../../source-control/model/worktrees";
-import type { AgentModel } from "../../sessions/model/models";
+import { temporaryWorktreeBranchName } from "@/features/source-control/model/worktrees";
+import type { AgentModel } from "@/features/sessions/model/models";
 import {
   ModelSourceContext,
   type ModelSource,
-} from "../../sessions/ui/model-source";
-import { notifyGitChanged } from "../../../platform/tauri/fs";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
+} from "@/features/sessions/ui/model-source";
+import { notifyGitChanged } from "@/platform/tauri/fs";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
 import { registerRemoteSessionActions } from "../model/remote-session-actions";
 import {
   clearPendingRemoteCommand,

@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyHarnessEvent } from "../../core/apply";
-import { newSession } from "../../../../features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import {
   foldableWork,
   foldedBlocks,
   groupTurnItems,
   workSummaryLine,
-} from "../../../../features/sessions/model/transcript-activity";
+} from "@/features/sessions/model/transcript-activity";
 
 const sent: string[] = [];
 const spawned: string[][] = [];
@@ -46,7 +46,7 @@ const {
   __claudeTestReset,
 } = await import("./claude");
 import type { HarnessEvent } from "../../core/types";
-import type { RuntimeMode, TurnIntent } from "../../../../features/sessions/model/session";
+import type { RuntimeMode, TurnIntent } from "@/features/sessions/model/session";
 
 function parse() {
   return sent.map((line) => JSON.parse(line) as Record<string, unknown>);

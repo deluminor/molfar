@@ -12,12 +12,12 @@ import {
   type PaneEdge,
   type WorkspaceTab,
 } from "./layout";
-import { projectName } from "../../../shared/lib/paths";
-import { sameProjectPath } from "../../projects/model/recents";
+import { projectName } from "@/shared/lib/paths";
+import { sameProjectPath } from "@/features/projects/model/recents";
 import {
   sessionWorkCwd,
   type Session,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 
 export function workspaceTabCwd(
   tab: WorkspaceTab,

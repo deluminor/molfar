@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { asRecord } from "../../../integrations/harness/providers/codex/codex-protocol";
-import { parsePiModelRef } from "../../../integrations/harness/providers/pi/pi-protocol";
+import { asRecord } from "@/integrations/harness/providers/codex/codex-protocol";
+import { parsePiModelRef } from "@/integrations/harness/providers/pi/pi-protocol";
 import {
   errorRateLimits,
   idleRateLimits,

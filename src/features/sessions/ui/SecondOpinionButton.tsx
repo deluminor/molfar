@@ -5,7 +5,7 @@ import {
   MessageMultiple,
   Replace,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -20,9 +20,9 @@ import {
   isHarnessAvailable,
   probeHarnessAvailability,
   subscribeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+} from "@/integrations/harness/core/availability";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   getModelSnapshot,
   getPickerVisibilitySnapshot,
@@ -35,7 +35,7 @@ import {
   subscribeModels,
   subscribePickerVisibility,
 } from "../model/models";
-import { LAYER } from "../../../shared/lib/layers";
+import { LAYER } from "@/shared/lib/layers";
 import { secondOpinionTargets } from "../model/second-opinion";
 import {
   HARNESS_TITLE,
@@ -43,7 +43,7 @@ import {
   type ModelTarget,
 } from "../model/session";
 import { HarnessIcon } from "./HarnessIcon";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 
 type Props = {
   from: HarnessId;

@@ -4,8 +4,8 @@ import {
   bindHarnessSession,
   forgetHarnessSession,
   isLiveHarness,
-} from "../../integrations/harness/core/registry";
-import { killAllChildren } from "../../integrations/harness/core/child";
+} from "@/integrations/harness/core/registry";
+import { killAllChildren } from "@/integrations/harness/core/child";
 import {
   hasInFlightSessions,
   inFlightRefs,
@@ -15,16 +15,16 @@ import {
   wasTurnInterrupted,
   workspaceFromResumed,
   type ResumedWorkspace,
-} from "../../features/sessions/model/in-flight";
-import { leafIds, type WorkspaceTab } from "../../features/workspace/model/layout";
-import { killPty } from "../../platform/tauri/pty";
+} from "@/features/sessions/model/in-flight";
+import { leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
+import { killPty } from "@/platform/tauri/pty";
 import {
   projectTerminalFileIds,
   type DockSide,
   type ProjectTerminalDock,
-} from "../../features/projects/model/project-terminal";
-import { sessionWorkCwd, type Session } from "../../features/sessions/model/session";
-import { sessionChildHarnesses } from "../../features/sessions/model/handoff";
+} from "@/features/projects/model/project-terminal";
+import { sessionWorkCwd, type Session } from "@/features/sessions/model/session";
+import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
 import {
   getSession,
   listInFlightSessions,
@@ -35,14 +35,14 @@ import {
   shouldPersistSession,
   upsertSession,
   type SessionSummary,
-} from "../../features/sessions/data/session-store";
+} from "@/features/sessions/data/session-store";
 import {
   collectWorkspaceSnapshot,
   hydrateWorkspaceSnapshot,
   parseWorkspaceSnapshot,
-} from "../../features/workspace/model/workspace-snapshot";
-import { lastProjectPath, normalizeProjectPath, sameProjectPath } from "../../features/projects/model/recents";
-import type { ProjectReturnMemory } from "../../features/projects/model/project-return";
+} from "@/features/workspace/model/workspace-snapshot";
+import { lastProjectPath, normalizeProjectPath, sameProjectPath } from "@/features/projects/model/recents";
+import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { confirmApp } from "./app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";
 import type { WindowTransferPayload } from "./window-transfer";

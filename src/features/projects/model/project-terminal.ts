@@ -5,17 +5,17 @@ import {
   type EditorPane,
   type FilePaneTab,
   type WorkspaceTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import {
   normalizeProjectPath,
   sameProjectPath,
 } from "./recents";
-import type { Session } from "../../sessions/model/session";
+import type { Session } from "@/features/sessions/model/session";
 import {
   applyTerminalMeta,
   type TerminalMetaPatch,
-} from "../../terminal/model/terminal-tab";
-import { workspaceTabCwd } from "../../workspace/model/workspace-tab-groups";
+} from "@/features/terminal/model/terminal-tab";
+import { workspaceTabCwd } from "@/features/workspace/model/workspace-tab-groups";
 
 export type DockSide = "top" | "bottom" | "left" | "right";
 

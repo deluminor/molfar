@@ -20,8 +20,8 @@ vi.mock("../hooks/use-project-branches", () => ({
     settled: true,
   })),
 }));
-vi.mock("../../../platform/tauri/fs", async (original) => ({
-  ...(await original<typeof import("../../../platform/tauri/fs")>()),
+vi.mock("@/platform/tauri/fs", async (original) => ({
+  ...(await original<typeof import("@/platform/tauri/fs")>()),
   subscribeGitChanged: (listener: () => void) => {
     window.addEventListener("test-git-changed", listener);
     return () => window.removeEventListener("test-git-changed", listener);
@@ -46,19 +46,19 @@ import {
   type Worktree,
   type Worktrees,
 } from "../model/worktrees";
-import { newFileTab, newTerminalFile } from "../../workspace/model/layout";
-import { gitCheckout, notifyGitChanged } from "../../../platform/tauri/fs";
+import { newFileTab, newTerminalFile } from "@/features/workspace/model/layout";
+import { gitCheckout, notifyGitChanged } from "@/platform/tauri/fs";
 import { useProjectBranchesState } from "../hooks/use-project-branches";
 import { WorktreePicker } from "./WorktreePicker";
 import {
   WORKSPACE_MODE_SHORTCUT,
   WorkspaceIdentity,
   WorkspacePicker,
-} from "../../workspace/ui/WorkspacePicker";
+} from "@/features/workspace/ui/WorkspacePicker";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
-import { FolderTree, GitBranch } from "../../../shared/ui/icons";
+import { FolderTree, GitBranch } from "@/shared/ui/icons";
 import { DeleteWorktreeDialog } from "./DeleteWorktreeDialog";
-import { DeleteSessionDialog } from "../../sessions/ui/DeleteSessionDialog";
+import { DeleteSessionDialog } from "@/features/sessions/ui/DeleteSessionDialog";
 import { WorktreesPage } from "./WorktreesPage";
 
 let container: HTMLDivElement;

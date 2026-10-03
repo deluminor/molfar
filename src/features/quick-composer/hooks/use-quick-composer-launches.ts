@@ -1,9 +1,9 @@
-import { probeHarnessAvailability } from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+import { probeHarnessAvailability } from "@/integrations/harness/core/availability";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type Event } from "@tauri-apps/api/event";
-import { loadQuickComposerEnabled } from "../../settings/model/settings";
+import { loadQuickComposerEnabled } from "@/features/settings/model/settings";
 import { launchReceiver } from "../model/launch-delivery";
 import { prepareQuickComposerWhenIdle } from "../model/prepare-quick-composer";
 import {

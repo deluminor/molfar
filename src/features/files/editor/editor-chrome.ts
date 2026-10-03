@@ -1,8 +1,8 @@
 import { syntaxHighlighting } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { cspStyleNonce } from "../../../shared/lib/csp";
-import type { ColorScheme } from "../../settings/model/appearance";
+import { cspStyleNonce } from "@/shared/lib/csp";
+import type { ColorScheme } from "@/features/settings/model/appearance";
 import { editorHighlightStyleFor } from "./editor-language";
 
 export {

@@ -7,24 +7,24 @@ import {
   useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { HARNESS_TITLE, type Block } from "../../sessions/model/session";
+import { HARNESS_TITLE, type Block } from "@/features/sessions/model/session";
 import type {
   OrchestrationChoice,
   ProposedTask,
 } from "../model/orchestration-plan";
 import { orchestrator } from "../model/orchestration";
-import { resizeComposer } from "../../sessions/model/composer-resize";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { resizeComposer } from "@/features/sessions/model/composer-resize";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   findModel,
   mergeModelSettings,
   modelEffortLabel,
   modelEffortSetting,
-} from "../../sessions/model/models";
-import { LAYER } from "../../../shared/lib/layers";
+} from "@/features/sessions/model/models";
+import { LAYER } from "@/shared/lib/layers";
 import { OrchestrationActions } from "./orchestration-actions";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { Popover } from "../../../shared/ui/Popover";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { Popover } from "@/shared/ui/Popover";
 import {
   Check,
   ChevronDown,
@@ -34,7 +34,7 @@ import {
   MessageMultiple,
   Play,
   Search,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 function AssignmentModel({
   task,

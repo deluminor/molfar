@@ -1,11 +1,11 @@
-import { NO_BRANCH_LABEL } from "../../features/source-control/model/worktrees";
+import { NO_BRANCH_LABEL } from "@/features/source-control/model/worktrees";
 import {
   type WorktreeFocus,
   inWorktreeFocus,
   useWorktreeFocus,
-} from "../../features/source-control/model/worktree-focus";
-import { SidebarWorktreeSwitcher } from "../../features/source-control/ui/SidebarWorktreeSwitcher";
-import { OrchestrationSidebarAgents } from "../../features/orchestration/ui/OrchestrationSidebarAgents";
+} from "@/features/source-control/model/worktree-focus";
+import { SidebarWorktreeSwitcher } from "@/features/source-control/ui/SidebarWorktreeSwitcher";
+import { OrchestrationSidebarAgents } from "@/features/orchestration/ui/OrchestrationSidebarAgents";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { alertApp, confirmApp } from "../model/app-dialog";
 import {
@@ -33,7 +33,7 @@ import {
   Settings,
   StickyNote,
   Zap,
-} from "../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   useEffect,
@@ -52,35 +52,35 @@ import {
   loadSidebarTabOrder,
   saveSidebarTabOrder,
   type SidebarTabId,
-} from "../../features/settings/model/appearance";
-import { formatInteger } from "../../shared/lib/numbers";
+} from "@/features/settings/model/appearance";
+import { formatInteger } from "@/shared/lib/numbers";
 import {
   type GitFileDiffKind,
   type GitHistoryCommit,
-} from "../../platform/tauri/fs";
-import { IS_MAC, MOD } from "../../platform/tauri/platform";
-import { copyText } from "../../platform/tauri/clipboard";
-import { resolveModel } from "../../features/sessions/model/models";
-import type { OpenFileFn } from "../../features/search/model/search";
-import { sessionDisplayTitle } from "../../features/sessions/model/session";
-import { nextUnseenFinishedSessions } from "../../features/sessions/model/session-done";
-import { orchestrationTaskLabel } from "../../features/orchestration/model/orchestration-summary";
+} from "@/platform/tauri/fs";
+import { IS_MAC, MOD } from "@/platform/tauri/platform";
+import { copyText } from "@/platform/tauri/clipboard";
+import { resolveModel } from "@/features/sessions/model/models";
+import type { OpenFileFn } from "@/features/search/model/search";
+import { sessionDisplayTitle } from "@/features/sessions/model/session";
+import { nextUnseenFinishedSessions } from "@/features/sessions/model/session-done";
+import { orchestrationTaskLabel } from "@/features/orchestration/model/orchestration-summary";
 import {
   orderedSessionActionIds,
   pruneSessionSelection,
   toggleSessionSelection,
-} from "../../features/sessions/model/session-selection";
+} from "@/features/sessions/model/session-selection";
 import {
   paneDropFromPoint,
   setExternalPaneDrop,
-} from "../../features/workspace/model/pane-drop";
-import type { PaneEdge } from "../../features/workspace/model/layout";
-import { suppressTextSelection } from "../../shared/lib/drag";
+} from "@/features/workspace/model/pane-drop";
+import type { PaneEdge } from "@/features/workspace/model/layout";
+import { suppressTextSelection } from "@/shared/lib/drag";
 import {
   compareSessionSummaries,
   filterSessionsByArchive,
   filterSessionsByQuery,
-} from "../../features/sessions/data/session-history";
+} from "@/features/sessions/data/session-history";
 import {
   addSessionToFolder,
   applySessionListDrop,
@@ -109,8 +109,8 @@ import {
   ungroupedSessions,
   type SessionFolder,
   type SessionListDropTarget,
-} from "../../features/sessions/model/session-folders";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../shared/lib/list-window";
+} from "@/features/sessions/model/session-folders";
+import { LIST_PAGE_SIZE, listWindowSize } from "@/shared/lib/list-window";
 import {
   filterSessionsByHarness,
   filterSessionsByStatus,
@@ -120,62 +120,62 @@ import {
   loadSessionSidebarFilters,
   saveSessionSidebarFilters,
   type SessionSidebarFilters,
-} from "../../features/sessions/model/session-filters";
+} from "@/features/sessions/model/session-filters";
 import type {
   HarnessId,
   LinkedWorkItem,
-} from "../../features/sessions/model/session";
-import type { LiveAgent } from "../../features/sessions/model/live-agents";
-import type { SessionSummary } from "../../features/sessions/data/session-store";
-import type { SettingsSectionId } from "../../features/settings/model/settings";
+} from "@/features/sessions/model/session";
+import type { LiveAgent } from "@/features/sessions/model/live-agents";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
+import type { SettingsSectionId } from "@/features/settings/model/settings";
 import type { InstalledUpdate } from "../model/update-notice";
-import { TAB_GROUP_COLORS } from "../../features/workspace/model/tab-groups";
-import { useDragResize } from "../../shared/hooks/use-drag-resize";
-import { paneWidthStorageKey } from "../../shared/lib/pane-width-storage";
-import { useGitFileStatuses } from "../../features/source-control/hooks/use-git-file-statuses";
-import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
-import { useProjectDiffStats } from "../../features/source-control/hooks/use-project-diff-stats";
-import { useSortable } from "../../shared/hooks/use-sortable";
-import { useAnimatedReorder } from "../../shared/hooks/use-animated-reorder";
-import { normalizeHex } from "../../shared/lib/color-utils";
+import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
+import { useGitFileStatuses } from "@/features/source-control/hooks/use-git-file-statuses";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
+import { useSortable } from "@/shared/hooks/use-sortable";
+import { useAnimatedReorder } from "@/shared/hooks/use-animated-reorder";
+import { normalizeHex } from "@/shared/lib/color-utils";
 import {
   collectRailProjects,
   looksLikeProject,
   isRemoteProjectPath,
   sameProjectPath,
   type RecentProject,
-} from "../../features/projects/model/recents";
+} from "@/features/projects/model/recents";
 import {
   ColorPickerPopover,
   ColorSwatchRow,
-} from "../../shared/ui/ColorPickerPopover";
+} from "@/shared/ui/ColorPickerPopover";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../features/files/ui/ExplorerMenu";
-import { FileTree } from "../../features/files/ui/FileTree";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { LiveAgentsPreview } from "../../features/sessions/ui/LiveAgentsPreview";
+} from "@/features/files/ui/ExplorerMenu";
+import { FileTree } from "@/features/files/ui/FileTree";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { LiveAgentsPreview } from "@/features/sessions/ui/LiveAgentsPreview";
 import { ProjectRail } from "./ProjectRail";
-import { InboxNotificationMenu } from "../../features/inbox/ui/InboxNotificationMenu";
+import { InboxNotificationMenu } from "@/features/inbox/ui/InboxNotificationMenu";
 import { RailAction } from "./RailAction";
-import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
+import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
 import { DevModeSlot, IconButton, TabVisitNav } from "./TitleBar";
-import { ProjectSearch } from "../../features/projects/ui/ProjectSearch";
-import { Popover } from "../../shared/ui/Popover";
-import { SearchableProjectPicker } from "../../features/projects/ui/SearchableProjectPicker";
+import { ProjectSearch } from "@/features/projects/ui/ProjectSearch";
+import { Popover } from "@/shared/ui/Popover";
+import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";
 import { useProjectMenu } from "./use-project-menu";
-import { SessionFiltersMenu } from "../../features/sessions/ui/SessionFiltersMenu";
-import { LinkSessionWorkItemDialog } from "../../features/sessions/ui/LinkSessionWorkItemDialog";
-import { sessionReminderPresets } from "../../features/sessions/ui/session-reminder-presets";
+import { SessionFiltersMenu } from "@/features/sessions/ui/SessionFiltersMenu";
+import { LinkSessionWorkItemDialog } from "@/features/sessions/ui/LinkSessionWorkItemDialog";
+import { sessionReminderPresets } from "@/features/sessions/ui/session-reminder-presets";
 import {
   formatReminderTime,
   reminderTime,
   type SessionReminder,
-} from "../../features/sessions/model/session-reminders";
-import { SessionsEmpty } from "../../features/sessions/ui/SessionsEmpty";
+} from "@/features/sessions/model/session-reminders";
+import { SessionsEmpty } from "@/features/sessions/ui/SessionsEmpty";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
-import { SourceControl } from "../../features/source-control/ui/SourceControl";
+import { SourceControl } from "@/features/source-control/ui/SourceControl";
 import { GithubStarPrompt } from "./GithubStarPrompt";
 import {
   refreshRemoteProjectSessions,
@@ -183,8 +183,8 @@ import {
   remotePendingWorktree,
   remoteSessionFor,
   useRemoteProjectSessions,
-} from "../../features/connections/model/connections";
-import { parseRemotePath, remotePath, remoteProjectFor } from "../../features/connections/model/remote-projects";
+} from "@/features/connections/model/connections";
+import { parseRemotePath, remotePath, remoteProjectFor } from "@/features/connections/model/remote-projects";
 
 const MIN_WIDTH = 260;
 const MAX_WIDTH = 560;

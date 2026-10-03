@@ -4,8 +4,8 @@ import {
   respondHarnessApproval,
   respondHarnessQuestion,
   sendHarnessTurn,
-} from "../../../integrations/harness/core/registry";
-import { mergeStream } from "../../../integrations/harness/core/stream-text";
+} from "@/integrations/harness/core/registry";
+import { mergeStream } from "@/integrations/harness/core/stream-text";
 import type { HarnessId } from "./session";
 
 const HANDOFF_TIMEOUT_MS = 45_000;

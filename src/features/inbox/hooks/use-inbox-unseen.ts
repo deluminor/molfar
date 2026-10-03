@@ -45,9 +45,9 @@ import {
 } from "../model/linked-session-seen";
 import { loadHiddenLinearTeamIds } from "../model/linear";
 import { JIRA_CHANGE_EVENT, loadHiddenJiraProjectIds } from "../model/jira";
-import type { RecentProject } from "../../projects/model/recents";
-import type { SessionSummary } from "../../sessions/data/session-store";
-import { playCue } from "../../settings/model/sounds";
+import type { RecentProject } from "@/features/projects/model/recents";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
+import { playCue } from "@/features/settings/model/sounds";
 import {
   InboxNotificationTracker,
   inboxNotificationSubject,
@@ -55,13 +55,13 @@ import {
 import {
   inboxNotificationProject,
   rememberNotificationProjects,
-} from "../../notifications/model/notification-projects";
+} from "@/features/notifications/model/notification-projects";
 import {
   allowsProjectNotificationIndicator,
   loadNotificationPreferences,
   subscribeNotificationPreferences,
   type NotificationSubject,
-} from "../../notifications/model/notification-preferences";
+} from "@/features/notifications/model/notification-preferences";
 import {
   consumeInboxSelfActivity,
   subscribeInboxSelfActivity,

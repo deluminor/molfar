@@ -6,15 +6,15 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { LoaderCircle, X } from "../../../shared/ui/icons";
+import { LoaderCircle, X } from "@/shared/ui/icons";
 import {
   formatRelativeTime,
   githubReviewStateLabel,
   inboxPersonAvatarUrl,
   type InboxProvider,
 } from "../model/github-tasks";
-import { MOD } from "../../../platform/tauri/platform";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { MOD } from "@/platform/tauri/platform";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 
 export type InboxReplyTarget = {
   id: string;

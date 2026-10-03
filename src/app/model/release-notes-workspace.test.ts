@@ -7,7 +7,7 @@ import {
   newTab,
   splitPane,
   type WorkspaceTab,
-} from "../../features/workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import {
   focusReleaseNotesTarget,
   planReleaseNotesOpen,

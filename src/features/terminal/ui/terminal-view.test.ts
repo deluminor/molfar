@@ -11,7 +11,7 @@ const pty = vi.hoisted(() => ({
   subscribePty: vi.fn(() => () => {}),
   getPtyStatus: vi.fn(async () => ({ foreground: null })),
 }));
-vi.mock("../../../platform/tauri/pty", () => pty);
+vi.mock("@/platform/tauri/pty", () => pty);
 vi.mock("../model/terminal-layout", () => ({
   fitTerminal: () => null,
   applyTerminalChrome: () => {},

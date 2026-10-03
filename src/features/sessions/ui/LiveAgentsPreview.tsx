@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { formatLiveElapsed, type LiveAgent } from "../model/live-agents";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -10,16 +10,16 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLabel,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
-import { Check, ChevronDown, ChevronUp, CircleAlert } from "../../../shared/ui/icons";
+} from "@/features/workspace/model/tab-groups";
+import { Check, ChevronDown, ChevronUp, CircleAlert } from "@/shared/ui/icons";
 import { HarnessIcon } from "./HarnessIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { TerminalSpinner } from "./TerminalSpinner";
 import {
   LIVE_AGENTS_MIN_COUNT_DEFAULT,
   loadLiveAgentsMinCount,
   subscribeLiveAgentsMinCount,
-} from "../../settings/model/project-rail";
+} from "@/features/settings/model/project-rail";
 
 const LIVE_AGENT_CAP = 4;
 

@@ -1,11 +1,11 @@
-import { lazySurface } from "../../../shared/ui/lazy-surface";
+import { lazySurface } from "@/shared/ui/lazy-surface";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { memo, useSyncExternalStore } from "react";
 import {
   MarkdownViewShell,
   useMarkdownMode,
-} from "../../sessions/ui/MarkdownModeToggle";
-import { SurfaceTabs } from "../../workspace/ui/SurfaceTabs";
+} from "@/features/sessions/ui/MarkdownModeToggle";
+import { SurfaceTabs } from "@/features/workspace/ui/SurfaceTabs";
 import {
   isAgentTab,
   isChangesTab,
@@ -17,26 +17,26 @@ import {
   isTerminalTab,
   type EditorPane,
   type FilePaneTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import { isImagePath } from "../model/file-preview";
-import type { TerminalMetaPatch } from "../../terminal/model/terminal-tab";
-import type { EditorNavigationTarget } from "../../search/model/search";
-import { editorPathsEqual } from "../../search/model/search";
-import type { PlanBuildTarget, Session } from "../../sessions/model/session";
-import { Play } from "../../../shared/ui/icons";
-import { BuildTargetButton } from "../../sessions/ui/SecondOpinionButton";
+import type { TerminalMetaPatch } from "@/features/terminal/model/terminal-tab";
+import type { EditorNavigationTarget } from "@/features/search/model/search";
+import { editorPathsEqual } from "@/features/search/model/search";
+import type { PlanBuildTarget, Session } from "@/features/sessions/model/session";
+import { Play } from "@/shared/ui/icons";
+import { BuildTargetButton } from "@/features/sessions/ui/SecondOpinionButton";
 import {
   loadDiffViewer,
   subscribeDiffViewer,
-} from "../../settings/model/settings";
-import { AgentTabView } from "../../sessions/ui/AgentTabView";
-import { MarkdownPreview } from "../../sessions/ui/AgentMarkdown";
+} from "@/features/settings/model/settings";
+import { AgentTabView } from "@/features/sessions/ui/AgentTabView";
+import { MarkdownPreview } from "@/features/sessions/ui/AgentMarkdown";
 import { BinaryFileView } from "./BinaryFileView";
-import { ReleaseNotesSurface } from "../../../app/ui/ReleaseNotesSurface";
-import { isRemoteProjectPath } from "../../projects/model/recents";
+import { ReleaseNotesSurface } from "@/app/ui/ReleaseNotesSurface";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
 
 const CommitDiff = lazySurface(async () => {
-  const module = await import("../../source-control/ui/CommitDiff");
+  const module = await import("@/features/source-control/ui/CommitDiff");
   return { default: module.CommitDiff };
 });
 const FileEditor = lazySurface(async () => {
@@ -44,15 +44,15 @@ const FileEditor = lazySurface(async () => {
   return { default: module.FileEditor };
 });
 const SessionChangesDiff = lazySurface(async () => {
-  const module = await import("../../source-control/ui/SessionChangesDiff");
+  const module = await import("@/features/source-control/ui/SessionChangesDiff");
   return { default: module.SessionChangesDiff };
 });
 const TerminalView = lazySurface(async () => {
-  const module = await import("../../terminal/ui/TerminalView");
+  const module = await import("@/features/terminal/ui/TerminalView");
   return { default: module.TerminalView };
 });
 const WorkingTreeDiff = lazySurface(async () => {
-  const module = await import("../../source-control/ui/WorkingTreeDiff");
+  const module = await import("@/features/source-control/ui/WorkingTreeDiff");
   return { default: module.WorkingTreeDiff };
 });
 

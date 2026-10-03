@@ -2,9 +2,9 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { notificationMuteActions } from "../../notifications/ui/notification-mute-actions";
+import { notificationMuteActions } from "@/features/notifications/ui/notification-mute-actions";
 import { TabGroupMenu } from "./TabGroupMenu";
-import { BellOff } from "../../../shared/ui/icons";
+import { BellOff } from "@/shared/ui/icons";
 
 let container: HTMLDivElement;
 let root: Root;

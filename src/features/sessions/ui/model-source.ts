@@ -10,8 +10,8 @@ import {
   hasProbedHarnessAvailability,
   isHarnessAvailable,
   probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+} from "@/integrations/harness/core/availability";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 
 /** Where the model picker gets its models and provider availability. The
  * default is this computer's catalog; a remote session supplies its host's. */

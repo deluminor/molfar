@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { gitDiffStats, subscribeGitChanged, type GitDiffStats } from "../../../platform/tauri/fs";
+import { gitDiffStats, subscribeGitChanged, type GitDiffStats } from "@/platform/tauri/fs";
 
 type Entry = {
   cwd: string;

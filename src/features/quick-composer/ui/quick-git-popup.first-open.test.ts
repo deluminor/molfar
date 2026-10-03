@@ -3,7 +3,7 @@ import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QuickGitPopup } from "./QuickGitPopup";
-import { gitBranches, type GitBranches } from "../../../platform/tauri/fs";
+import { gitBranches, type GitBranches } from "@/platform/tauri/fs";
 import type { QuickGitRequest } from "../model/quick-git-popup";
 
 const bridge = vi.hoisted(() => ({
@@ -21,7 +21,7 @@ vi.mock("@tauri-apps/api/event", () => ({
     return () => {};
   },
 }));
-vi.mock("../../../platform/tauri/fs", async (actual) => ({
+vi.mock("@/platform/tauri/fs", async (actual) => ({
   ...(await actual<object>()),
   gitBranches: vi.fn(),
   subscribeGitChanged: () => () => {},

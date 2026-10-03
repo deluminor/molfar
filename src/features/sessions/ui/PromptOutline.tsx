@@ -21,7 +21,7 @@ import {
   type OutlineBand,
 } from "../model/prompt-outline";
 import type { Block } from "../model/session";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 
 const OPEN_DELAY_MS = 25;
 const SCROLL_INSET_PX = 8;

@@ -4,8 +4,8 @@ import {
 } from "@codemirror/language";
 import { EditorState, type Extension } from "@codemirror/state";
 import { highlightCode } from "@lezer/highlight";
-import type { ColorScheme } from "../../settings/model/appearance";
-import type { UnifiedBlock, UnifiedLine } from "../../source-control/model/unified-diff";
+import type { ColorScheme } from "@/features/settings/model/appearance";
+import type { UnifiedBlock, UnifiedLine } from "@/features/source-control/model/unified-diff";
 import {
   languageForPath,
   syntaxTagHighlighter,

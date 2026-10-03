@@ -1,13 +1,13 @@
-import { applyFileMentionsToTurn } from "../../files/model/file-mentions";
-import { applyConfluenceToTurn } from "../../inbox/model/confluence/prompt";
-import { applyNotesToTurn } from "../../notes";
+import { applyFileMentionsToTurn } from "@/features/files/model/file-mentions";
+import { applyConfluenceToTurn } from "@/features/inbox/model/confluence/prompt";
+import { applyNotesToTurn } from "@/features/notes";
 import {
   applySkillsToTurn,
   warmNativeSkills,
   isNativeCommandPrompt,
   type SkillCatalogContext,
-} from "../../skills/model/skills";
-import { nativeCommandPrompt } from "../../../integrations/harness/core/native-commands";
+} from "@/features/skills/model/skills";
+import { nativeCommandPrompt } from "@/integrations/harness/core/native-commands";
 
 export async function preparePrompt(
   text: string,

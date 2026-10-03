@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 
 /** The working copy a project's sidebar is narrowed to. New sessions in that
  * project start there too. Kept for this run only: the app reopens on each

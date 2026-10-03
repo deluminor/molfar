@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useProjectWorktrees } from "../hooks/use-project-worktrees";
 import { useWorktreeFocus, type WorktreeFocus } from "../model/worktree-focus";
-import { pathKey, prettyCwd } from "../../../shared/lib/paths";
-import { Popover } from "../../../shared/ui/Popover";
+import { pathKey, prettyCwd } from "@/shared/lib/paths";
+import { Popover } from "@/shared/ui/Popover";
 import {
   Check,
   ChevronsUpDown,
   FolderTree,
   GitBranch,
   Loader,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 /** The sidebar title. Picking a worktree narrows the sidebar, and the
  * sessions opened from it, to that working copy and names it here. */

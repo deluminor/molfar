@@ -6,7 +6,7 @@ import {
   getExternalPaneDrop,
   setExternalTitleTabDrop,
   titleTabDropFromPoint,
-} from "../../features/workspace/model/pane-drop";
+} from "@/features/workspace/model/pane-drop";
 import { TitleBar, type Tab } from "./TitleBar";
 
 vi.mock("./WindowControls", () => ({ WindowControls: () => null }));

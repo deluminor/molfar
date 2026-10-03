@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
-import { MessageSquarePlus } from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
+import { MessageSquarePlus } from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
 import {
   formatEditorSelectionReference,
   type EditorCodeSelection,
 } from "../model/editor-selection";
-import { requestAddToChat } from "../../sessions/model/quote-draft";
+import { requestAddToChat } from "@/features/sessions/model/quote-draft";
 
 export type EditorSelectionTarget = EditorCodeSelection & {
   anchor: DOMRect;

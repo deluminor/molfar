@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FsEntry } from "../../../platform/tauri/fs";
+import type { FsEntry } from "@/platform/tauri/fs";
 import {
   forgetDir,
   listCachedDir,
@@ -23,8 +23,8 @@ function entry(name: string): FsEntry {
 
 const listDir = vi.fn<(path: string) => Promise<FsEntry[]>>();
 
-vi.mock("../../../platform/tauri/fs", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../platform/tauri/fs")>();
+vi.mock("@/platform/tauri/fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/platform/tauri/fs")>();
   return {
     ...actual,
     listDir: (path: string) => listDir(path),

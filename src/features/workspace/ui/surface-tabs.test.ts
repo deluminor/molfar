@@ -7,7 +7,7 @@ import {
   newSessionChangesTab,
   newTerminalFile,
 } from "../model/layout";
-import { releaseNotesTitle } from "../../../app/model/release-notes";
+import { releaseNotesTitle } from "@/app/model/release-notes";
 import {
   appendProblems,
   surfaceTabMenuItems,

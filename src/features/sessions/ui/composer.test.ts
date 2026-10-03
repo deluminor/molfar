@@ -20,7 +20,7 @@ vi.mock("@tauri-apps/api/core", async (importOriginal) => {
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }),
 }));
-vi.mock("../../source-control/hooks/use-project-branches", () => ({
+vi.mock("@/features/source-control/hooks/use-project-branches", () => ({
   useProjectBranchesState: () => ({
     branches: {
       current: "mc/greeting",
@@ -38,7 +38,7 @@ import { Composer, ComposerAction } from "./Composer";
 import {
   clearMcpSettingsCache,
   loadMcpSettings,
-} from "../../settings/model/mcp-settings-cache";
+} from "@/features/settings/model/mcp-settings-cache";
 import type { ComposerTurnOptions, Attachment } from "../model/session";
 import {
   clearComposerDraft,

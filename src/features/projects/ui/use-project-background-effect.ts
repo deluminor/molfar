@@ -3,8 +3,8 @@ import {
   isLightScheme,
   SCHEME_CHANGE_EVENT,
   type NewThreadBackgroundEffect,
-} from "../../settings/model/appearance";
-import { prepareNewThreadBackgroundEffect } from "../../settings/model/new-thread-background-effects";
+} from "@/features/settings/model/appearance";
+import { prepareNewThreadBackgroundEffect } from "@/features/settings/model/new-thread-background-effects";
 import { projectChatBackgroundSrc } from "../model/chat-background";
 
 function subscribeScheme(listener: () => void) {

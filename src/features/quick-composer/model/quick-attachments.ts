@@ -2,8 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   MAX_ATTACHMENTS,
   persistableAttachment,
-} from "../../sessions/model/attachments";
-import type { Attachment } from "../../sessions/model/session";
+} from "@/features/sessions/model/attachments";
+import type { Attachment } from "@/features/sessions/model/session";
 
 /** Paths survive the handoff to another webview; blob URLs do not. */
 export async function storeQuickAttachments(

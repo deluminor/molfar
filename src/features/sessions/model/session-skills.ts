@@ -1,5 +1,5 @@
 import { sessionWorkCwd, type HarnessId } from "./session";
-import { hasNativeCommands, type SkillCatalogContext } from "../../skills/model/skills";
+import { hasNativeCommands, type SkillCatalogContext } from "@/features/skills/model/skills";
 
 type SkillWarmupSession = {
   id?: string;

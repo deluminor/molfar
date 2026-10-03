@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   newSession,
   type Session,
-} from "../../../features/sessions/model/session";
-import { planTurnKey } from "../../../features/sessions/model/plan";
-import { sanitizeSessionForPersist } from "../../../features/sessions/data/session-store";
+} from "@/features/sessions/model/session";
+import { planTurnKey } from "@/features/sessions/model/plan";
+import { sanitizeSessionForPersist } from "@/features/sessions/data/session-store";
 import { previewFromTool } from "../providers/claude/claude-protocol";
 import {
   appendUser,

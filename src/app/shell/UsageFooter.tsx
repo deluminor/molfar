@@ -1,39 +1,39 @@
-import { RefreshCw, Terminal } from "../../shared/ui/icons";
+import { RefreshCw, Terminal } from "@/shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
-import { consumeCodexRateLimitResetCredit } from "../../features/providers/model/rate-limits-fetch";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { Popover, type PopoverDismissReason } from "@/shared/ui/Popover";
+import { consumeCodexRateLimitResetCredit } from "@/features/providers/model/rate-limits-fetch";
 import {
   errorRateLimits,
   unavailableRateLimits,
   type RateLimitProvider,
-} from "../../features/providers/model/rate-limits";
+} from "@/features/providers/model/rate-limits";
 import {
   getCachedRateLimits,
   loadRateLimits,
   setCachedRateLimits,
   useCachedRateLimits,
-} from "../../features/providers/model/rate-limits-cache";
+} from "@/features/providers/model/rate-limits-cache";
 import {
   HARNESS_LABEL,
   HARNESS_TITLE,
   type HarnessId,
-} from "../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   loginHarness,
   supportsHarnessLogin,
-} from "../../integrations/harness/core/auth";
+} from "@/integrations/harness/core/auth";
 import {
   runningTerminalChipLabel,
   type RunningTerminal,
-} from "../../features/terminal/model/terminal-tab";
-import { MOD } from "../../platform/tauri/platform";
+} from "@/features/terminal/model/terminal-tab";
+import { MOD } from "@/platform/tauri/platform";
 import { UsageProviderChip } from "./UsageProviderChip";
 import { PiUsage } from "./PiUsage";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,
-} from "../../features/sessions/ui/ProviderSignInPanel";
+} from "@/features/sessions/ui/ProviderSignInPanel";
 import {
   newProviderAccount,
   providerAccountExists,
@@ -43,7 +43,7 @@ import {
   selectedProviderAccountId,
   subscribeProviderAccounts,
   type ProviderAccountProvider,
-} from "../../features/providers/model/provider-accounts";
+} from "@/features/providers/model/provider-accounts";
 
 const CLOCK_MS = 30_000;
 

@@ -7,7 +7,7 @@ import {
   newTab,
   openEditorTab,
   type WorkspaceTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import { newSession, type Session } from "./session";
 import {
   removeSessionFromWorkspace,

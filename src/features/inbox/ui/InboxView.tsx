@@ -26,7 +26,7 @@ import {
   RefreshCw,
   Search,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -41,15 +41,15 @@ import {
 } from "./InboxFiltersMenu";
 import { InboxConnectMenu } from "./InboxConnectMenu";
 import { InboxProviderMark } from "./InboxProviderMark";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { Popover } from "../../../shared/ui/Popover";
-import { IconButton, OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useDragResize } from "../../../shared/hooks/use-drag-resize";
-import { paneWidthStorageKey } from "../../../shared/lib/pane-width-storage";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { Popover } from "@/shared/ui/Popover";
+import { IconButton, OverlayNav } from "@/app/shell/TitleBar";
+import { WindowControls } from "@/app/shell/WindowControls";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
 import {
   githubStatus,
   githubPrDiff,
@@ -105,18 +105,18 @@ import {
   type InboxSource,
 } from "../model/inbox-filters";
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
-import { copyText } from "../../../platform/tauri/clipboard";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { playCue } from "../../settings/model/sounds";
-import { sameProjectPath, type RecentProject } from "../../projects/model/recents";
-import { sessionDisplayTitle, type LinkedWorkItem } from "../../sessions/model/session";
-import type { SessionSummary } from "../../sessions/data/session-store";
+import { copyText } from "@/platform/tauri/clipboard";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { IS_MAC } from "@/platform/tauri/platform";
+import { playCue } from "@/features/settings/model/sounds";
+import { sameProjectPath, type RecentProject } from "@/features/projects/model/recents";
+import { sessionDisplayTitle, type LinkedWorkItem } from "@/features/sessions/model/session";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   inboxItemMatchesLinkedWorkItem,
   linkedWorkItemInboxKey,
   relatedSessionsForInboxItem,
-} from "../../sessions/model/session-work-item";
+} from "@/features/sessions/model/session-work-item";
 import {
   isInboxEntryUnseen,
   markInboxItemSeen,
@@ -124,7 +124,7 @@ import {
   rememberInboxItems,
   useInboxSeenTick,
 } from "../model/inbox-seen";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/list-window";
+import { LIST_PAGE_SIZE, listWindowSize } from "@/shared/lib/list-window";
 import {
   LINEAR_CHANGE_EVENT,
   linearConnected,
@@ -184,8 +184,8 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+} from "@/features/workspace/model/tab-groups";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import {
   InboxComments,
   InboxCommentForm,

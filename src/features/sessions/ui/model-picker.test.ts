@@ -3,7 +3,7 @@ import { act, createElement, type CSSProperties, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: () => true,
@@ -11,11 +11,11 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   subscribeHarnessAvailability: () => () => undefined,
 }));
 
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   refreshHarnessCatalogs: () => Promise.resolve(),
 }));
 
-vi.mock("../../../shared/ui/Popover", () => ({
+vi.mock("@/shared/ui/Popover", () => ({
   Popover: ({
     children,
     role,

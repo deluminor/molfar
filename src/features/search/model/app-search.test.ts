@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { newSession } from "../../sessions/model/session";
-import type { SessionSummary } from "../../sessions/data/session-store";
+import { newSession } from "@/features/sessions/model/session";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   conversationRowsFrom,
   filterHitsByProject,

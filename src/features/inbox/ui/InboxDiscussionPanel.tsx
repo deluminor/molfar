@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { PanelLeft, RotateCcw } from "../../../shared/ui/icons";
-import { IconButton } from "../../../app/shell/TitleBar";
-import { useDragResize } from "../../../shared/hooks/use-drag-resize";
-import { paneWidthStorageKey } from "../../../shared/lib/pane-width-storage";
+import { PanelLeft, RotateCcw } from "@/shared/ui/icons";
+import { IconButton } from "@/app/shell/TitleBar";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
 import { inboxItemRef, type InboxItem } from "../model/github-tasks";
 import { inboxAskKey } from "../model/inbox-ask";
 

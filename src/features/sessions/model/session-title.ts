@@ -1,4 +1,4 @@
-import { extractJsonObject, limitSection } from "../../../shared/lib/json-text";
+import { extractJsonObject, limitSection } from "@/shared/lib/json-text";
 
 const MESSAGE_LIMIT = 8_000;
 const TITLE_LIMIT = 50;

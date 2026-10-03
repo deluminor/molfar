@@ -38,7 +38,7 @@ import {
   normalizeProjectPath,
   sameProjectPath,
   type RecentProject,
-} from "../../projects/model/recents";
+} from "@/features/projects/model/recents";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
 
 export type GithubTaskKind = "issue" | "pr";

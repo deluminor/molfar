@@ -14,7 +14,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeLocal }));
 
 import { runRemoteCommand } from "./remote-commands";
 import { parseRemotePath, remotePath } from "./remote-projects";
-import { listDir, readBinaryFile, readTextFile, statFiles, writeTextFile } from "../../../platform/tauri/fs";
+import { listDir, readBinaryFile, readTextFile, statFiles, writeTextFile } from "@/platform/tauri/fs";
 
 beforeEach(() => {
   remoteRequest.mockReset();

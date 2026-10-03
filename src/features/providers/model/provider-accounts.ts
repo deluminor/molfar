@@ -1,5 +1,5 @@
-import { pathKey } from "../../../shared/lib/paths";
-import type { HarnessId } from "../../sessions/model/session";
+import { pathKey } from "@/shared/lib/paths";
+import type { HarnessId } from "@/features/sessions/model/session";
 
 const ACCOUNTS_KEY = "vatra.providerAccounts.v1";
 const SELECTIONS_KEY = "vatra.providerAccountSelections.v1";

@@ -1,18 +1,18 @@
 import { type ReactNode, useSyncExternalStore } from "react";
-import { basename } from "../../../platform/tauri/fs";
-import { projectKey } from "../../../shared/lib/paths";
-import { looksLikeProject } from "../../projects/model/recents";
+import { basename } from "@/platform/tauri/fs";
+import { projectKey } from "@/shared/lib/paths";
+import { looksLikeProject } from "@/features/projects/model/recents";
 import {
   loadTabGroupLabels,
   resolveTabGroupLabel,
   subscribeTabGroupLabels,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 import {
   loadGridArcadeEnabled,
   subscribeGridArcadeEnabled,
-} from "../../settings/model/settings";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { TerminalGridBackground } from "../../terminal/ui/TerminalGridBackground";
+} from "@/features/settings/model/settings";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { TerminalGridBackground } from "@/features/terminal/ui/TerminalGridBackground";
 
 type Props = {
   cwd: string;

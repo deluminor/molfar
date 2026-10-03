@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
-import { RATE_LIMIT_POLL_MS } from "../../features/providers/model/rate-limits";
+import { RATE_LIMIT_POLL_MS } from "@/features/providers/model/rate-limits";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";

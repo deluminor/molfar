@@ -1,4 +1,4 @@
-import { projectKey } from "../../../shared/lib/paths";
+import { projectKey } from "@/shared/lib/paths";
 import { clearProjectLogo } from "./project-logos";
 import { clearProjectChatBackground } from "./chat-background";
 import {
@@ -6,21 +6,21 @@ import {
   rebaseProjectChatBackgroundSetting,
 } from "./project-chat-background";
 import { normalizeProjectPath } from "./recents";
-import { deleteSession, listSessionsByProject } from "../../sessions/data/session-store";
+import { deleteSession, listSessionsByProject } from "@/features/sessions/data/session-store";
 import {
   clearTabGroupSettings,
   rebaseProjectTabGroupSettings,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 import {
   rebaseProjectGroupAssignment,
   removeProjectGroupAssignment,
 } from "./project-groups";
-import { rebaseSessionFolderSettings } from "../../sessions/model/session-folders";
-import { clearProjectProviders, rebaseProjectProviders } from "../../sessions/model/project-providers";
+import { rebaseSessionFolderSettings } from "@/features/sessions/model/session-folders";
+import { clearProjectProviders, rebaseProjectProviders } from "@/features/sessions/model/project-providers";
 import {
   clearProjectSidebarTab,
   rebaseProjectSidebarTab,
-} from "../../settings/model/project-sidebar-tab";
+} from "@/features/settings/model/project-sidebar-tab";
 
 /** Saved chats filed under this project, so the confirm prompt can count them. */
 export async function projectSessionCount(path: string): Promise<number> {

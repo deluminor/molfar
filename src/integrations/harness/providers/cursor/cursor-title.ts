@@ -2,7 +2,7 @@ import {
   buildThreadTitlePrompt,
   parseGeneratedSessionTitle,
   type GeneratedSessionTitle,
-} from "../../../../features/sessions/model/session-title";
+} from "@/features/sessions/model/session-title";
 import { runCursorTextPrompt } from "./cursor-text";
 
 const TITLE_TIMEOUT_MS = 45_000;

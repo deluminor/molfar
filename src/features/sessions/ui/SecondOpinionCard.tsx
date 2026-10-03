@@ -1,4 +1,4 @@
-import { ChevronRight } from "../../../shared/ui/icons";
+import { ChevronRight } from "@/shared/ui/icons";
 import { HARNESS_TITLE, type SecondOpinionMeta } from "../model/session";
 import { HarnessIcon } from "./HarnessIcon";
 

@@ -10,49 +10,49 @@ import {
   type ProviderRateLimits,
   type RateLimitResetCredit,
   type RateLimitWindow,
-} from "../../features/providers/model/rate-limits";
-import type { CodexRateLimitResetOutcome } from "../../features/providers/model/rate-limits-fetch";
-import { mascotPath, projectMascot } from "../../features/projects/model/project-mascots";
-import { projectKey, projectName } from "../../shared/lib/paths";
-import { HARNESS_TITLE, type HarnessId } from "../../features/sessions/model/session";
+} from "@/features/providers/model/rate-limits";
+import type { CodexRateLimitResetOutcome } from "@/features/providers/model/rate-limits-fetch";
+import { mascotPath, projectMascot } from "@/features/projects/model/project-mascots";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { HARNESS_TITLE, type HarnessId } from "@/features/sessions/model/session";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../features/workspace/model/tab-groups";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { ArrowLeft, Check, ChevronRight, Plus, RefreshCw } from "../../shared/ui/icons";
-import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
+} from "@/features/workspace/model/tab-groups";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { ArrowLeft, Check, ChevronRight, Plus, RefreshCw } from "@/shared/ui/icons";
+import { Popover, type PopoverDismissReason } from "@/shared/ui/Popover";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,
-} from "../../features/sessions/ui/ProviderSignInPanel";
+} from "@/features/sessions/ui/ProviderSignInPanel";
 import {
   supportsProviderAccounts,
   type ProviderAccount,
-} from "../../features/providers/model/provider-accounts";
+} from "@/features/providers/model/provider-accounts";
 import {
   accountStatus,
   accountUsageKey,
   bestAlternativeAccount,
   useProviderAccountUsage,
-} from "../../features/providers/model/account-usage";
+} from "@/features/providers/model/account-usage";
 import {
   AccountStatusLabel,
   barClass,
   meterWindows,
   UsageMeter,
-} from "../../features/providers/ui/ProviderAccountUsage";
+} from "@/features/providers/ui/ProviderAccountUsage";
 import {
   identityKey,
   identityOrganizationTag,
   useProviderAccountIdentities,
   type ProviderAccountIdentity,
-} from "../../features/providers/model/provider-account-identity";
-import { ProviderAccountSubtitle } from "../../features/providers/ui/ProviderAccountSubtitle";
-import { useShowRemainingUsage } from "../../features/settings/model/display-prefs";
+} from "@/features/providers/model/provider-account-identity";
+import { ProviderAccountSubtitle } from "@/features/providers/ui/ProviderAccountSubtitle";
+import { useShowRemainingUsage } from "@/features/settings/model/display-prefs";
 
 type UsageWindowEntry = {
   key: "session" | "weekly" | "monthly";

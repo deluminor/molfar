@@ -12,8 +12,8 @@ const actions = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock("../../../platform/tauri/fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../platform/tauri/fs")>()),
+vi.mock("@/platform/tauri/fs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/platform/tauri/fs")>()),
   copyFileToClipboard: actions.copyFileToClipboard,
   readBinaryFile: actions.readBinaryFile,
 }));
@@ -22,7 +22,7 @@ vi.mock("../model/file-watch", () => ({
   watchFile: () => () => {},
 }));
 
-vi.mock("../../../platform/tauri/platform", () => ({
+vi.mock("@/platform/tauri/platform", () => ({
   IS_MAC: true,
   IS_WIN: false,
 }));

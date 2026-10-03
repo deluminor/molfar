@@ -1,10 +1,10 @@
-import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
-import { Loader, WandSparkles, X } from "../../../shared/ui/icons";
+import { NativePopupHost } from "@/shared/ui/NativePopupHost";
+import { Loader, WandSparkles, X } from "@/shared/ui/icons";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { generateCommitMessage } from "../../../integrations/harness";
-import { LAYER } from "../../../shared/lib/layers";
-import { MOD } from "../../../platform/tauri/platform";
+import { generateCommitMessage } from "@/integrations/harness";
+import { LAYER } from "@/shared/lib/layers";
+import { MOD } from "@/platform/tauri/platform";
 
 type Busy = "stash" | "commit" | null;
 

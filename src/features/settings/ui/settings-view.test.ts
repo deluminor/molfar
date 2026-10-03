@@ -3,9 +3,9 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { confirmApp } from "../../../app/model/app-dialog";
+import { confirmApp } from "@/app/model/app-dialog";
 import { SettingsView } from "./SettingsView";
-import { rememberNotificationProjects } from "../../notifications/model/notification-projects";
+import { rememberNotificationProjects } from "@/features/notifications/model/notification-projects";
 import {
   SETTINGS_INDEX,
   SETTINGS_SECTIONS,
@@ -14,15 +14,15 @@ import {
 import {
   providerAccounts,
   saveProviderAccount,
-} from "../../providers/model/provider-accounts";
+} from "@/features/providers/model/provider-accounts";
 import {
   clearCachedRateLimits,
   setCachedRateLimits,
-} from "../../providers/model/rate-limits-cache";
+} from "@/features/providers/model/rate-limits-cache";
 import {
   HARNESSES,
   HARNESS_TITLE,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/display-prefs";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -36,10 +36,10 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("../../../app/model/app-dialog", () => ({
+vi.mock("@/app/model/app-dialog", () => ({
   confirmApp: vi.fn(async () => true),
 }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   isHarnessAvailable: (id: string) => id === "claude" || id === "cursor",
   hasProbedHarnessAvailability: () => true,
   getHarnessAvailabilitySnapshot: () => 0,

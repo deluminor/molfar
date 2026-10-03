@@ -1,4 +1,4 @@
-import { resolveWorkspaceFileReference } from "../../../shared/lib/paths";
+import { resolveWorkspaceFileReference } from "@/shared/lib/paths";
 
 type MarkdownNode = {
   type: string;

@@ -8,9 +8,9 @@ import {
   validateProposedTasks,
   type OrchestrationProposal,
 } from "./orchestration-plan";
-import { newSession } from "../../sessions/model/session";
-import { sanitizeSessionForPersist } from "../../sessions/data/session-store";
-import { stopStreaming } from "../../../integrations/harness/core/apply";
+import { newSession } from "@/features/sessions/model/session";
+import { sanitizeSessionForPersist } from "@/features/sessions/data/session-store";
+import { stopStreaming } from "@/integrations/harness/core/apply";
 
 const draft: OrchestrationProposal = {
   version: 1,

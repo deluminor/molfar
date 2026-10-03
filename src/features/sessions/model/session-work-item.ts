@@ -1,10 +1,10 @@
-import { gitPrStatus } from "../../../platform/tauri/fs";
+import { gitPrStatus } from "@/platform/tauri/fs";
 import {
   githubRepo,
   inboxIdentityKey,
   type InboxItem,
   type GithubTaskKind,
-} from "../../inbox/model/github-tasks";
+} from "@/features/inbox/model/github-tasks";
 import type { LinkedWorkItem } from "./session";
 import type { GeneratedWorkItemHint } from "./session-title";
 

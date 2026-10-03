@@ -35,7 +35,7 @@ const {
   __cursorTestReset,
 } = await import("./cursor");
 import type { HarnessEvent } from "../../core/types";
-import { newSession } from "../../../../features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import { applyHarnessEvent } from "../../core/apply";
 
 function parse() {

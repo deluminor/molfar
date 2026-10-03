@@ -1,10 +1,10 @@
-import { StickyNote } from "../../../shared/ui/icons";
+import { StickyNote } from "@/shared/ui/icons";
 import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
-import type { RankedFile } from "../../files/model/file-index";
-import { isNoteMentionPath } from "../../notes";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { MatchText } from "../../../shared/ui/MatchText";
+import type { RankedFile } from "@/features/files/model/file-index";
+import { isNoteMentionPath } from "@/features/notes";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { MatchText } from "@/shared/ui/MatchText";
 
 type Props = {
   files: RankedFile[];

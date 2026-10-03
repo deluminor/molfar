@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LinkedWorkItemUpdateCard } from "../model/linked-work-item-activity";
-import { resetSoundCues } from "../../settings/model/sounds";
+import { resetSoundCues } from "@/features/settings/model/sounds";
 import { LinkedWorkItemUpdateNotice } from "./LinkedWorkItemUpdateNotice";
 
 const { openUrl, play } = vi.hoisted(() => ({

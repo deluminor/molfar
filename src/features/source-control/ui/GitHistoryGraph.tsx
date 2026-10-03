@@ -6,14 +6,14 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ChevronDown, ChevronRight, GitBranch } from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { suppressTextSelection } from "../../../shared/lib/drag";
+import { ChevronDown, ChevronRight, GitBranch } from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { suppressTextSelection } from "@/shared/lib/drag";
 import {
   gitHistory,
   subscribeGitChanged,
   type GitHistoryCommit,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   GRAPH_ROW_PX,
   historyItemGraph,

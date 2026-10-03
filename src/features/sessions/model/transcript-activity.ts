@@ -6,13 +6,13 @@ import {
   isReadTool,
   isSearchTool,
   isWeakToolTitle,
-} from "../../../integrations/harness/core/preview";
-import { leafName } from "../../files/model/file-name";
+} from "@/integrations/harness/core/preview";
+import { leafName } from "@/features/files/model/file-name";
 import {
   displayPath,
   pathKey,
   resolveWorkspacePath,
-} from "../../../shared/lib/paths";
+} from "@/shared/lib/paths";
 import { INTERRUPT_MESSAGE } from "./in-flight";
 import type { Block, ToolPreview } from "./session";
 import { allModels } from "./models";

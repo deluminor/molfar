@@ -1,4 +1,4 @@
-import { ArrowDownCircle, Loader } from "../../shared/ui/icons";
+import { ArrowDownCircle, Loader } from "@/shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { APP_UPDATER_DISABLED } from "../model/fork-policy";
 import {

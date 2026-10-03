@@ -7,8 +7,8 @@ import {
   splitPane,
   type WorkspaceTab,
 } from "./layout";
-import { planProjectReturn } from "../../projects/model/project-return";
-import type { Session } from "../../sessions/model/session";
+import { planProjectReturn } from "@/features/projects/model/project-return";
+import type { Session } from "@/features/sessions/model/session";
 import {
   applyDetachPaneToTab,
   applyPlaceTabOnPane,

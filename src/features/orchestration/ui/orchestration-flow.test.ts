@@ -15,7 +15,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({ onFocusChanged: async () => () => {} }),
 }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   getHarnessAvailabilitySnapshot: () => 0,
   hasProbedHarnessAvailability: () => true,
   isHarnessAvailable: () => true,
@@ -23,13 +23,13 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
   probeHarnessAvailability: async () => {},
   subscribeHarnessAvailability: () => () => {},
 }));
-vi.mock("../../../integrations/harness/core/registry", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../integrations/harness/core/registry")>()),
+vi.mock("@/integrations/harness/core/registry", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/integrations/harness/core/registry")>()),
   refreshHarnessCatalogs: async () => {},
   isLiveHarness: () => true,
 }));
-vi.mock("../../sessions/ui/ModelPicker", () => ({ ModelPicker: () => null }));
-vi.mock("../../sessions/ui/SessionReview", () => ({
+vi.mock("@/features/sessions/ui/ModelPicker", () => ({ ModelPicker: () => null }));
+vi.mock("@/features/sessions/ui/SessionReview", () => ({
   SessionReview: ({ undoLocked }: { undoLocked: boolean }) =>
     createElement("div", { "data-review-undo-locked": String(undoLocked) }),
 }));
@@ -47,14 +47,14 @@ vi.mock("../model/orchestration", async (importOriginal) => ({
   },
 }));
 
-import { Composer } from "../../sessions/ui/Composer";
-import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
-import { SessionPane } from "../../sessions/ui/SessionPane";
+import { Composer } from "@/features/sessions/ui/Composer";
+import { AgentTranscript } from "@/features/sessions/ui/AgentTranscript";
+import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import {
   OrchestrationActions,
   OrchestrationWorkers,
 } from "./orchestration-actions";
-import { newSession } from "../../sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import {
   orchestrator,
   type OrchestrationRun,
@@ -66,7 +66,7 @@ import {
   modelsFor,
   setHarnessModels,
   resetHarnessModelOverlays,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import type { OrchestrationProposal } from "../model/orchestration-plan";
 import { invoke } from "@tauri-apps/api/core";
 

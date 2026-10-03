@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { pickVaultFolder } from "../../../../platform/tauri/vault";
-import { FolderOpen, FolderTree } from "../../../../shared/ui/icons";
-import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
+import { pickVaultFolder } from "@/platform/tauri/vault";
+import { FolderOpen, FolderTree } from "@/shared/ui/icons";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { ACTION_FILLED } from "../constants";
 import type { KnowledgeConnectProps } from "./types";
 

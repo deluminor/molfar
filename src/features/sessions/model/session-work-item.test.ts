@@ -7,7 +7,7 @@ import {
   inboxItemKey,
   type GithubWorkItem,
   type InboxItem,
-} from "../../inbox/model/github-tasks";
+} from "@/features/inbox/model/github-tasks";
 import {
   inboxItemMatchesLinkedWorkItem,
   linkedWorkItemInboxKey,

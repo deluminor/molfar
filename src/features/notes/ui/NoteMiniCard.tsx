@@ -1,13 +1,13 @@
-import { File, FolderTree, X } from "../../../shared/ui/icons";
+import { File, FolderTree, X } from "@/shared/ui/icons";
 import { useState } from "react";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
 import {
   noteSourceProject,
   type NoteCardMeta,
 } from "../notes";
-import { projectKey } from "../../../shared/lib/paths";
+import { projectKey } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -15,7 +15,7 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 
 type Props = {
   card: NoteCardMeta;

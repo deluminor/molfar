@@ -35,15 +35,15 @@ import {
   type Obstacle,
   type RunnerTrack,
 } from "../model/composer-runner";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+} from "@/features/workspace/model/tab-groups";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 
 type Props = {
   boxRef: RefObject<HTMLElement | null>;

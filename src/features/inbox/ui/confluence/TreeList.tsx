@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { LoaderCircle } from "../../../../shared/ui/icons";
+import { LoaderCircle } from "@/shared/ui/icons";
 import type { ConfluenceNode } from "../../model/confluence/types";
 import { TreeRow } from "./TreeRow";
 import type { ConfluenceTree, TreeState } from "./types";

@@ -2,8 +2,8 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { inboxItemKey, type InboxItem } from "../../inbox/model/github-tasks";
-import { isInboxEntryUnseen, markInboxItemSeen } from "../../inbox/model/inbox-seen";
+import { inboxItemKey, type InboxItem } from "@/features/inbox/model/github-tasks";
+import { isInboxEntryUnseen, markInboxItemSeen } from "@/features/inbox/model/inbox-seen";
 import {
   loadNotificationPreferences,
   updateNotificationPreferences,
@@ -13,7 +13,7 @@ import {
   rememberNotificationProjects,
 } from "../model/notification-projects";
 import { ProjectNotificationSettings } from "../ui/ProjectNotificationSettings";
-import { useInboxActivity, type InboxActivity } from "../../inbox/hooks/use-inbox-unseen";
+import { useInboxActivity, type InboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 
 // Only provider I/O and the audio device are replaced. Notification policy,
 // polling, persisted preferences, unread tracking, and Settings are real.
@@ -21,8 +21,8 @@ const { listInboxItems, play } = vi.hoisted(() => ({
   listInboxItems: vi.fn(),
   play: vi.fn(),
 }));
-vi.mock("../../inbox/model/github-tasks", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../inbox/model/github-tasks")>()),
+vi.mock("@/features/inbox/model/github-tasks", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/inbox/model/github-tasks")>()),
   listInboxItems,
 }));
 vi.mock("cuelume", () => ({ play, setEnabled: vi.fn(), setVolume: vi.fn() }));

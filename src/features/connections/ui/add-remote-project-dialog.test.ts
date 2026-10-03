@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { AddRemoteProjectDialog } from "./AddRemoteProjectDialog";
 import { remoteProjectFor } from "../model/remote-projects";
-import { isLocalProject, looksLikeProject } from "../../projects/model/recents";
+import { isLocalProject, looksLikeProject } from "@/features/projects/model/recents";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

@@ -3,8 +3,8 @@ import {
   type SessionFolderTarget,
   type SessionFolder,
 } from "../model/session-folders";
-import { Folder, Plus, X } from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { Folder, Plus, X } from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 
 type Props = {
   folders: SessionFolder[];

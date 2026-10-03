@@ -10,10 +10,10 @@ import {
   type OrchestrationRun,
   shellPath,
 } from "./orchestration";
-import { newSession } from "../../sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { OrchestrationProposal } from "./orchestration-plan";
 import { normalizeOrchestrationRun } from "./orchestration-state";
-import { previewFromToolPart } from "../../../integrations/harness/providers/opencode/opencode-protocol";
+import { previewFromToolPart } from "@/integrations/harness/providers/opencode/opencode-protocol";
 
 function setup() {
   const saved = new Map<string, OrchestrationRun>();

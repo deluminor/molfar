@@ -1,4 +1,4 @@
-import { Plus } from "../../../shared/ui/icons";
+import { Plus } from "@/shared/ui/icons";
 import {
   useEffect,
   useRef,
@@ -7,13 +7,13 @@ import {
   type ReactNode,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { isLocalProject } from "../../projects/model/recents";
+import { isLocalProject } from "@/features/projects/model/recents";
 import {
   isValidSkillName,
   slugSkillName,
   type Skill,
 } from "../model/skills";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 
 type Props = {
   skills: Skill[];

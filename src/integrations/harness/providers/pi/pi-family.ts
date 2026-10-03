@@ -1,7 +1,7 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { taskListFromToolInput } from "../../../../features/sessions/model/task-list";
-import { normalizeProjectPath } from "../../../../features/projects/model/recents";
-import type { UserQuestionReply } from "../../../../features/sessions/model/user-question";
+import { nativeModelId } from "@/features/sessions/model/models";
+import { taskListFromToolInput } from "@/features/sessions/model/task-list";
+import { normalizeProjectPath } from "@/features/projects/model/recents";
+import type { UserQuestionReply } from "@/features/sessions/model/user-question";
 import type {
   CommandContext,
   NativeCommand,

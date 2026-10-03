@@ -1,4 +1,4 @@
-import { sameProjectPath } from "../../projects/model/recents";
+import { sameProjectPath } from "@/features/projects/model/recents";
 
 const MAX_PENDING_AGE_MS = 10 * 60_000;
 

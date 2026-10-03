@@ -8,10 +8,10 @@ import {
   type AutomationTriggerKind,
   type DueAutomationRun,
 } from "./automations";
-import { inboxStartDraft, type InboxItem } from "../../inbox/model/github-tasks";
-import { sameProjectPath } from "../../projects/model/recents";
-import type { LinkedWorkItem } from "../../sessions/model/session";
-import { linkedWorkItemFromInboxItem } from "../../sessions/model/session-work-item";
+import { inboxStartDraft, type InboxItem } from "@/features/inbox/model/github-tasks";
+import { sameProjectPath } from "@/features/projects/model/recents";
+import type { LinkedWorkItem } from "@/features/sessions/model/session";
+import { linkedWorkItemFromInboxItem } from "@/features/sessions/model/session-work-item";
 
 export type InboxAutomationMatch = {
   automation: Automation;

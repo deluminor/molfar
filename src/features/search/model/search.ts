@@ -1,7 +1,7 @@
-import { invokeWorkspace } from "../../../platform/tauri/fs";
+import { invokeWorkspace } from "@/platform/tauri/fs";
 import { invoke } from "@tauri-apps/api/core";
-import { isLocalProject } from "../../projects/model/recents";
-import { pathKey, slash } from "../../../shared/lib/paths";
+import { isLocalProject } from "@/features/projects/model/recents";
+import { pathKey, slash } from "@/shared/lib/paths";
 
 export type ProjectSearchMatch = {
   path: string;

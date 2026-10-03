@@ -1,6 +1,6 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
+import { nativeModelId } from "@/features/sessions/model/models";
 import { AcpSubagents } from "../../core/acp-subagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import type { RuntimeMode } from "@/features/sessions/model/session";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -37,7 +37,7 @@ import type {
   SendTurnInput,
   SteerTurnInput,
 } from "../../core/types";
-import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/user-question";
+import { questionPromptTitle, type UserQuestionReply } from "@/features/sessions/model/user-question";
 
 type Live = {
   subagents: AcpSubagents;

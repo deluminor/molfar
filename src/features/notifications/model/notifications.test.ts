@@ -7,7 +7,7 @@ import {
   saveNotificationsEnabled,
   shouldNotify,
 } from "./notifications";
-import { newSession, type Session } from "../../sessions/model/session";
+import { newSession, type Session } from "@/features/sessions/model/session";
 
 const KEY = "vatra.notifications";
 

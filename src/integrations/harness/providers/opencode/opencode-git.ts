@@ -1,7 +1,7 @@
 import {
   gitRangeContext,
   gitStagedContext,
-} from "../../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   buildBranchNamePrompt,
   buildCommitMessagePrompt,
@@ -11,7 +11,7 @@ import {
   parseCommitMessage,
   parsePrContent,
   type PrContent,
-} from "../../../../features/source-control/model/git-text";
+} from "@/features/source-control/model/git-text";
 import { runOpenCodeTextPrompt } from "./opencode-text";
 
 const GIT_TIMEOUT_MS = 90_000;

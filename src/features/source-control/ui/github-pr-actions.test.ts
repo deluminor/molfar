@@ -3,8 +3,8 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../inbox/model/github-tasks", async (original) => ({
-  ...(await original<typeof import("../../inbox/model/github-tasks")>()),
+vi.mock("@/features/inbox/model/github-tasks", async (original) => ({
+  ...(await original<typeof import("@/features/inbox/model/github-tasks")>()),
   githubPrAction: vi.fn(),
 }));
 
@@ -12,8 +12,8 @@ import {
   githubPrAction,
   type GithubWorkItem,
   type InboxItem,
-} from "../../inbox/model/github-tasks";
-import { GithubPrActions } from "../../inbox/ui/InboxView";
+} from "@/features/inbox/model/github-tasks";
+import { GithubPrActions } from "@/features/inbox/ui/InboxView";
 
 let container: HTMLDivElement;
 let root: Root;

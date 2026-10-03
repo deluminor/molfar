@@ -1,6 +1,6 @@
-import { composeToolTitle } from "../../../integrations/harness/core/preview";
+import { composeToolTitle } from "@/integrations/harness/core/preview";
 import { isInFlightSession } from "./in-flight";
-import { displayPath } from "../../../shared/lib/paths";
+import { displayPath } from "@/shared/lib/paths";
 import {
   sessionDisplayTitle,
   type Block,

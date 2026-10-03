@@ -7,7 +7,7 @@ import {
   setWindowFocused,
 } from "./notifications";
 import { updateNotificationPreferences } from "./notification-preferences";
-import { newSession } from "../../sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 
 const { invoke, play } = vi.hoisted(() => ({ invoke: vi.fn(), play: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));

@@ -1,4 +1,4 @@
-import { pathKey } from "../../../shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import type { HarnessId } from "./session";
 
 /**

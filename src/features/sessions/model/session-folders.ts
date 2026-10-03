@@ -1,9 +1,9 @@
-import { isHexColor } from "../../../shared/lib/color-utils";
+import { isHexColor } from "@/shared/lib/color-utils";
 import { compareSessionSummaries } from "../data/session-history";
 import type { SessionSummary } from "../data/session-store";
-import { normalizeProjectPath } from "../../projects/model/recents";
-import { orderByIds } from "../../../shared/lib/reorder";
-import { TAB_GROUP_COLORS } from "../../workspace/model/tab-groups";
+import { normalizeProjectPath } from "@/features/projects/model/recents";
+import { orderByIds } from "@/shared/lib/reorder";
+import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
 
 const KEY = "vatra.sessionFolders";
 const CHANGE_EVENT = "vatra:session-folders-change";

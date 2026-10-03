@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../features/files/ui/ExplorerMenu";
-import { ALT, MOD, SHIFT } from "../../platform/tauri/platform";
+} from "@/features/files/ui/ExplorerMenu";
+import { ALT, MOD, SHIFT } from "@/platform/tauri/platform";
 import { APP_UPDATER_DISABLED } from "../model/fork-policy";
 import { runUpdateFlow } from "../model/updater";
 import {
@@ -14,7 +14,7 @@ import {
   saveAutosave,
   subscribeAutosave,
   subscribeKeybindings,
-} from "../../features/settings/model/settings";
+} from "@/features/settings/model/settings";
 
 type MenuKey = "file" | "view" | "terminal";
 

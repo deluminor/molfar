@@ -26,27 +26,27 @@ import {
   type Components,
 } from "streamdown";
 import type { PluggableList } from "unified";
-import { ExplorerMenu, type ExplorerMenuItem } from "../../files/ui/ExplorerMenu";
-import { FileActionError } from "../../files/ui/FileActionError";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { boundedCode } from "../../files/editor/code-highlight-plugin";
-import { createLazyMermaidPlugin } from "../../files/editor/mermaid-plugin";
+import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
+import { FileActionError } from "@/features/files/ui/FileActionError";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { boundedCode } from "@/features/files/editor/code-highlight-plugin";
+import { createLazyMermaidPlugin } from "@/features/files/editor/mermaid-plugin";
 import {
   displayPath,
   isExtensionlessFileName,
   resolveWorkspaceFileReference,
-} from "../../../shared/lib/paths";
-import type { EditorNavigation, OpenFileFn } from "../../search/model/search";
-import { remarkWorkspaceFileLinks } from "../../files/model/markdown-file-links";
-import { isAtxHeadingLine } from "../../files/model/markdown-source";
-import { useColorScheme } from "../../../shared/hooks/use-color-scheme";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { copyText } from "../../../platform/tauri/clipboard";
-import { openPathWithDefaultApp, revealPath } from "../../../platform/tauri/fs";
-import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl } from "../../inbox/model/inbox-media";
-import { isNoteImagePath } from "../../notes";
-import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
-import { InboxMedia } from "../../inbox/ui/InboxMedia";
+} from "@/shared/lib/paths";
+import type { EditorNavigation, OpenFileFn } from "@/features/search/model/search";
+import { remarkWorkspaceFileLinks } from "@/features/files/model/markdown-file-links";
+import { isAtxHeadingLine } from "@/features/files/model/markdown-source";
+import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { copyText } from "@/platform/tauri/clipboard";
+import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
+import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl } from "@/features/inbox/model/inbox-media";
+import { isNoteImagePath } from "@/features/notes";
+import { IS_MAC, IS_WIN } from "@/platform/tauri/platform";
+import { InboxMedia } from "@/features/inbox/ui/InboxMedia";
 import { rehypeHardBreaks } from "./hard-breaks";
 import { rehypeWordFade, usePacedText, useWordFading } from "./word-fade";
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectFile } from "../../../platform/tauri/fs";
+import type { ProjectFile } from "@/platform/tauri/fs";
 import { loadProjectFiles } from "./file-index";
 import {
   applyFileMentionsToTurn,

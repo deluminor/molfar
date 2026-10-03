@@ -1,4 +1,4 @@
-import { formatResetDuration } from "../../providers/model/rate-limits";
+import { formatResetDuration } from "@/features/providers/model/rate-limits";
 import type { Session } from "./session";
 
 /** Providers can still refuse right at the reset; give them a moment. */

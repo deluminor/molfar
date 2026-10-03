@@ -5,14 +5,14 @@ import {
   readTextFile,
   writeTextFile,
   type DiscoveredSkill,
-} from "../../../platform/tauri/fs";
-import { invalidateProjectFiles } from "../../files/model/file-index";
-import { joinPath } from "../../../shared/lib/paths";
-import { isLocalProject, normalizeProjectPath } from "../../projects/model/recents";
-import { isMarkdownBlockquotePosition } from "../../sessions/model/quote-draft";
-import type { HarnessId } from "../../sessions/model/session";
-import { getHarness } from "../../../integrations/harness/core/registry";
-import type { NativeCommand } from "../../../integrations/harness/core/native-commands";
+} from "@/platform/tauri/fs";
+import { invalidateProjectFiles } from "@/features/files/model/file-index";
+import { joinPath } from "@/shared/lib/paths";
+import { isLocalProject, normalizeProjectPath } from "@/features/projects/model/recents";
+import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
+import type { HarnessId } from "@/features/sessions/model/session";
+import { getHarness } from "@/integrations/harness/core/registry";
+import type { NativeCommand } from "@/integrations/harness/core/native-commands";
 import {
   CREATE_SKILL_BODY,
   CREATE_SKILL_DESCRIPTION,

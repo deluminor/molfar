@@ -1,4 +1,4 @@
-import { Check, ListEnd, Loader, Minus } from "../../../shared/ui/icons";
+import { Check, ListEnd, Loader, Minus } from "@/shared/ui/icons";
 import type { TaskListItem, TaskListItemStatus } from "../model/session";
 import { taskListProgressLabel } from "../model/task-list";
 

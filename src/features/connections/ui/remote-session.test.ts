@@ -6,9 +6,9 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   SessionPane,
   type SessionPaneProps,
-} from "../../sessions/ui/SessionPane";
-import type { Block, Session } from "../../sessions/model/session";
-import type { AgentModel } from "../../sessions/model/models";
+} from "@/features/sessions/ui/SessionPane";
+import type { Block, Session } from "@/features/sessions/model/session";
+import type { AgentModel } from "@/features/sessions/model/models";
 import { rememberRemoteProject } from "../model/remote-projects";
 import { preloadRemoteSession } from "./RemoteSession";
 import { rememberRemoteSession, remoteSessionFor } from "../model/connections";
@@ -25,7 +25,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }),
 }));
-vi.mock("../../sessions/ui/AgentTranscript", () => ({
+vi.mock("@/features/sessions/ui/AgentTranscript", () => ({
   AgentTranscript: ({
     blocks,
     busy,

@@ -4,14 +4,14 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import type { ProviderRateLimits } from "../../features/providers/model/rate-limits";
-import { projectKey } from "../../shared/lib/paths";
-import { saveTabGroupMascot } from "../../features/workspace/model/tab-groups";
+import type { ProviderRateLimits } from "@/features/providers/model/rate-limits";
+import { projectKey } from "@/shared/lib/paths";
+import { saveTabGroupMascot } from "@/features/workspace/model/tab-groups";
 import { needsProviderLogin, UsageProviderChip } from "./UsageProviderChip";
 import {
   saveMaskEmails,
   saveShowRemainingUsage,
-} from "../../features/settings/model/display-prefs";
+} from "@/features/settings/model/display-prefs";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),

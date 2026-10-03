@@ -1,4 +1,4 @@
-import { Maximize2, FolderTree } from "../../../../shared/ui/icons";
+import { Maximize2, FolderTree } from "@/shared/ui/icons";
 import type { KnowledgeGraphProps } from "../../model/graph/types";
 import { useKnowledgeGraph } from "./use-knowledge-graph";
 import "./graph.css";

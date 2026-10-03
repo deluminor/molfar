@@ -14,8 +14,8 @@ import {
   sessionWorkCwd,
   type Session,
 } from "../model/session";
-import { createNote, noteTitle } from "../../notes";
-import { loadNotesEnabled, subscribeNotesEnabled } from "../../settings/model/settings";
+import { createNote, noteTitle } from "@/features/notes";
+import { loadNotesEnabled, subscribeNotesEnabled } from "@/features/settings/model/settings";
 
 /**
  * One orchestration worker, watched from its lead's workspace.

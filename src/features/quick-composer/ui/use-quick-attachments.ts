@@ -15,18 +15,18 @@ import {
   MAX_ATTACHMENTS,
   pickAttachments,
   revokeAttachment,
-} from "../../sessions/model/attachments";
-import type { Attachment } from "../../sessions/model/session";
+} from "@/features/sessions/model/attachments";
+import type { Attachment } from "@/features/sessions/model/session";
 import {
   isFileReferenceText,
   nativeClipboardAttachments,
-} from "../../../platform/tauri/clipboard";
+} from "@/platform/tauri/clipboard";
 import { storeQuickAttachments } from "../model/quick-attachments";
 import {
   captureDraft,
   dropPastedText,
   insertRestoredText,
-} from "../../../shared/lib/draft-restore";
+} from "@/shared/lib/draft-restore";
 
 function releaseCaptures(files: Attachment[]) {
   const paths = files.flatMap((file) => (file.path ? [file.path] : []));

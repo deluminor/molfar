@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { newSession } from "../../features/sessions/model/session";
-import { newTab } from "../../features/workspace/model/layout";
-import { collectWorkspaceSnapshot } from "../../features/workspace/model/workspace-snapshot";
+import { newSession } from "@/features/sessions/model/session";
+import { newTab } from "@/features/workspace/model/layout";
+import { collectWorkspaceSnapshot } from "@/features/workspace/model/workspace-snapshot";
 
 const store = vi.hoisted(() => ({
   loadWorkspaceSnapshot: vi.fn(),
@@ -9,14 +9,14 @@ const store = vi.hoisted(() => ({
   getSession: vi.fn(),
   upsertSession: vi.fn(),
 }));
-vi.mock("../../features/sessions/data/session-store", async (original) => ({
+vi.mock("@/features/sessions/data/session-store", async (original) => ({
   ...(await original<
-    typeof import("../../features/sessions/data/session-store")
+    typeof import("@/features/sessions/data/session-store")
   >()),
   ...store,
 }));
-vi.mock("../../integrations/harness/core/registry", () => ({}));
-vi.mock("../../integrations/harness/core/child", () => ({}));
+vi.mock("@/integrations/harness/core/registry", () => ({}));
+vi.mock("@/integrations/harness/core/child", () => ({}));
 
 beforeEach(() => {
   vi.resetModules();

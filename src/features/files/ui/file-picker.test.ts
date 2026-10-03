@@ -42,7 +42,7 @@ vi.mock("../model/file-index", () => ({
   rememberOpenedFile: vi.fn(),
 }));
 
-vi.mock("../../projects/model/recents", () => ({
+vi.mock("@/features/projects/model/recents", () => ({
   looksLikeProject: (path: string) => path !== "~",
 }));
 

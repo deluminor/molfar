@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { HARNESS_TITLE, sessionDisplayTitle, type Session } from "../../sessions/model/session";
-import { loadSoundsEnabled, playCue } from "../../settings/model/sounds";
+import { HARNESS_TITLE, sessionDisplayTitle, type Session } from "@/features/sessions/model/session";
+import { loadSoundsEnabled, playCue } from "@/features/settings/model/sounds";
 import {
   allowsProjectNotification,
   type NotificationSubject,

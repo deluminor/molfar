@@ -14,7 +14,7 @@ import {
   Search,
   Settings,
   Zap,
-} from "../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -23,25 +23,25 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { useDragResize } from "../../shared/hooks/use-drag-resize";
-import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
-import { useProjectDiffStats } from "../../features/source-control/hooks/use-project-diff-stats";
-import { useAnimatedReorder } from "../../shared/hooks/use-animated-reorder";
-import { useTabGroupLogos } from "../../features/projects/hooks/use-tab-group-logos";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
+import { useAnimatedReorder } from "@/shared/hooks/use-animated-reorder";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
 import {
   loadProjectRailWidth,
   PROJECT_RAIL_WIDTH_DEFAULT,
   PROJECT_RAIL_WIDTH_MAX,
   PROJECT_RAIL_WIDTH_MIN,
   saveProjectRailWidth,
-} from "../../features/settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   basename,
   type GitDiffStats,
-} from "../../platform/tauri/fs";
-import { IS_MAC, MOD } from "../../platform/tauri/platform";
-import { formatInteger } from "../../shared/lib/numbers";
-import { pathKey, projectKey, projectName } from "../../shared/lib/paths";
+} from "@/platform/tauri/fs";
+import { IS_MAC, MOD } from "@/platform/tauri/platform";
+import { formatInteger } from "@/shared/lib/numbers";
+import { pathKey, projectKey, projectName } from "@/shared/lib/paths";
 import {
   collectRailProjects,
   loadPinnedProjects,
@@ -54,7 +54,7 @@ import {
   syncProjectRailOrder,
   toggleProjectPin,
   type RecentProject,
-} from "../../features/projects/model/recents";
+} from "@/features/projects/model/recents";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -64,7 +64,7 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../features/workspace/model/tab-groups";
+} from "@/features/workspace/model/tab-groups";
 import {
   loadProjectGroupAssignments,
   loadProjectGroups,
@@ -72,30 +72,30 @@ import {
   projectGroupIdForPath,
   updateProjectGroup,
   type ProjectGroup,
-} from "../../features/projects/model/project-groups";
-import type { LiveAgent } from "../../features/sessions/model/live-agents";
-import { LiveAgentsPreview } from "../../features/sessions/ui/LiveAgentsPreview";
-import { ProjectLogoIcon } from "../../features/projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../features/projects/ui/ProjectMascot";
+} from "@/features/projects/model/project-groups";
+import type { LiveAgent } from "@/features/sessions/model/live-agents";
+import { LiveAgentsPreview } from "@/features/sessions/ui/LiveAgentsPreview";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { RailAction, RailSearch } from "./RailAction";
 import { DevModeSlot, TabVisitNav } from "./TitleBar";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
 import type { InstalledUpdate } from "../model/update-notice";
 import { SettingsNav } from "./SettingsRail";
-import { Shimmer } from "../../shared/ui/Shimmer";
-import type { SettingsSectionId } from "../../features/settings/model/settings";
-import { InboxNotificationMenu } from "../../features/inbox/ui/InboxNotificationMenu";
-import { notificationMuteStatus } from "../../features/notifications/ui/notification-mute-actions";
-import { useProjectNotificationPreferences } from "../../features/notifications/hooks/use-project-notification-preferences";
-import { useNotificationProjects } from "../../features/notifications/hooks/use-notification-projects";
+import { Shimmer } from "@/shared/ui/Shimmer";
+import type { SettingsSectionId } from "@/features/settings/model/settings";
+import { InboxNotificationMenu } from "@/features/inbox/ui/InboxNotificationMenu";
+import { notificationMuteStatus } from "@/features/notifications/ui/notification-mute-actions";
+import { useProjectNotificationPreferences } from "@/features/notifications/hooks/use-project-notification-preferences";
+import { useNotificationProjects } from "@/features/notifications/hooks/use-notification-projects";
 import { GithubStarPrompt } from "./GithubStarPrompt";
-import { Popover } from "../../shared/ui/Popover";
-import { OPEN_REMOTE_PROJECT_EVENT } from "../../features/connections/model/connections";
+import { Popover } from "@/shared/ui/Popover";
+import { OPEN_REMOTE_PROJECT_EVENT } from "@/features/connections/model/connections";
 import {
   useRemoteMachineOnline,
   useRemoteMachines,
-} from "../../features/connections/model/connections";
-import { remoteProjectFor } from "../../features/connections/model/remote-projects";
+} from "@/features/connections/model/connections";
+import { remoteProjectFor } from "@/features/connections/model/remote-projects";
 import { useProjectMenu } from "./use-project-menu";
 
 type Props = {

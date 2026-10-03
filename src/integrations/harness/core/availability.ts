@@ -1,5 +1,5 @@
-import type { HarnessId } from "../../../features/sessions/model/session";
-import { HARNESSES } from "../../../features/sessions/model/session";
+import type { HarnessId } from "@/features/sessions/model/session";
+import { HARNESSES } from "@/features/sessions/model/session";
 import {
   resolveAntigravityBinary,
   resolveClaudeBinary,

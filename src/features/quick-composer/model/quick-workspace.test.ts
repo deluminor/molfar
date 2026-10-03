@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { newSession } from "../../sessions/model/session";
-import type { Worktree } from "../../source-control/model/worktrees";
+import { newSession } from "@/features/sessions/model/session";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 import { parseQuickLaunch } from "./quick-composer";
 import {
   applyQuickWorkspace,

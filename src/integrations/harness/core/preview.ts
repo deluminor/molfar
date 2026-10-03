@@ -1,5 +1,5 @@
-import type { ToolPreview, ToolPreviewKind, ToolPreviewLine } from "../../../features/sessions/model/session";
-import { displayPath } from "../../../shared/lib/paths";
+import type { ToolPreview, ToolPreviewKind, ToolPreviewLine } from "@/features/sessions/model/session";
+import { displayPath } from "@/shared/lib/paths";
 import {
   formatShellIntent,
   inferShellIntent,

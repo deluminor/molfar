@@ -9,7 +9,7 @@ import {
   NEW_THREAD_BACKGROUND_EFFECTS,
   type ChatBackgroundScope,
   type NewThreadBackgroundEffect,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 
 const KEY = "vatra:project-chat-backgrounds";
 

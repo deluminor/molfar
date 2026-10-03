@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
-import { Home } from "../../../shared/ui/icons";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { Home } from "@/shared/ui/icons";
 import { useHomeDashboard } from "../hooks/use-home-dashboard";
 import {
   useHomeLayoutEditing,

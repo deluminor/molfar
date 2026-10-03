@@ -2,23 +2,23 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatSessionTitle } from "../../features/sessions/model/session";
-import { formatReminderTime } from "../../features/sessions/model/session-reminders";
+import { formatSessionTitle } from "@/features/sessions/model/session";
+import { formatReminderTime } from "@/features/sessions/model/session-reminders";
 import { Sidebar } from "./Sidebar";
-import { loadSessionFolders } from "../../features/sessions/model/session-folders";
-import { useProjectDiffStats } from "../../features/source-control/hooks/use-project-diff-stats";
-import { copyText } from "../../platform/tauri/clipboard";
+import { loadSessionFolders } from "@/features/sessions/model/session-folders";
+import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
+import { copyText } from "@/platform/tauri/clipboard";
 
 // Keep native services out of these menu/input interaction tests.
-vi.mock("../../features/source-control/hooks/use-project-diff-stats", () => ({
+vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
   useProjectDiffStats: vi.fn(() => null),
 }));
-vi.mock("../../features/source-control/hooks/use-git-file-statuses", () => ({
+vi.mock("@/features/source-control/hooks/use-git-file-statuses", () => ({
   useGitFileStatuses: () => ({ files: new Map(), dirs: new Map() }),
 }));
 vi.mock("./SidebarUpdate", () => ({ SidebarUpdateFooter: () => null }));
-vi.mock("../../features/files/ui/FileTree", () => ({ FileTree: () => null }));
-vi.mock("../../platform/tauri/clipboard", () => ({
+vi.mock("@/features/files/ui/FileTree", () => ({ FileTree: () => null }));
+vi.mock("@/platform/tauri/clipboard", () => ({
   copyText: vi.fn().mockResolvedValue(undefined),
 }));
 

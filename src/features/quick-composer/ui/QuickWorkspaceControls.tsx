@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Folder, FolderTree } from "../../../shared/ui/icons";
-import { notifyGitChanged } from "../../../platform/tauri/fs";
-import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
-import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
+import { Folder, FolderTree } from "@/shared/ui/icons";
+import { notifyGitChanged } from "@/platform/tauri/fs";
+import { GitPickerTrigger } from "@/features/source-control/ui/GitPickerTrigger";
+import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
 import {
   QUICK_GIT_RESULT,
   type QuickGitKind,

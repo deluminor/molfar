@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { readVaultNote, saveVaultNote } from "../../../../platform/tauri/vault";
+import { readVaultNote, saveVaultNote } from "@/platform/tauri/vault";
 import type { VaultDocument, VaultSnapshot } from "../../model/vault/types";
 import type { NoteDraft } from "./types";
 import { readDrafts, retainDrafts } from "./draft-store";
@@ -7,7 +7,7 @@ import {
   detectLineEnding,
   normalizeLineBreaks,
   restoreLineEnding,
-} from "../../../files/editor/editor-doc";
+} from "@/features/files/editor/editor-doc";
 
 export function useVaultDocument(
   vaultId: string | undefined,

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from "../../../shared/ui/icons";
+import { ChevronDown, ChevronRight } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -7,19 +7,19 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { basename } from "../../../platform/tauri/fs";
-import { prettyCwd, prettyParent } from "../../../shared/lib/paths";
+import { basename } from "@/platform/tauri/fs";
+import { prettyCwd, prettyParent } from "@/shared/lib/paths";
 import {
   looksLikeProject,
   projectRailItems,
   sameProjectPath,
   type RecentProject,
 } from "../model/recents";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { LAYER } from "../../../shared/lib/layers";
-import { Popover } from "../../../shared/ui/Popover";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { LAYER } from "@/shared/lib/layers";
+import { Popover } from "@/shared/ui/Popover";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
-import { MOD } from "../../../platform/tauri/platform";
+import { MOD } from "@/platform/tauri/platform";
 
 type Props = {
   cwd: string;

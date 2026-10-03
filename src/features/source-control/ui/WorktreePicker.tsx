@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useProjectBranchesState } from "../hooks/use-project-branches";
 import { useProjectWorktrees } from "../hooks/use-project-worktrees";
-import { pathKey, prettyCwd } from "../../../shared/lib/paths";
+import { pathKey, prettyCwd } from "@/shared/lib/paths";
 import { NO_BRANCH_LABEL, type Worktree } from "../model/worktrees";
 import { BranchPicker } from "./BranchPicker";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { GitPickerTrigger } from "./GitPickerTrigger";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import {
   Check,
   FolderTree,
@@ -15,7 +15,7 @@ import {
   Plus,
   Search,
   Settings,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 export function WorktreePicker({
   cwd,

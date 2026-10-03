@@ -1,4 +1,4 @@
-import { isReleaseNotesTab, type WorkspaceTab } from "../../features/workspace/model/layout";
+import { isReleaseNotesTab, type WorkspaceTab } from "@/features/workspace/model/layout";
 
 export type ReleaseNotesOpenPlan =
   | { kind: "open" }

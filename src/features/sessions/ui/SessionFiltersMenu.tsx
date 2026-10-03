@@ -1,6 +1,6 @@
-import { Check } from "../../../shared/ui/icons";
+import { Check } from "@/shared/ui/icons";
 import { type ReactNode } from "react";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import {
   DEFAULT_SESSION_SIDEBAR_FILTERS,
   hasActiveSessionFilters,

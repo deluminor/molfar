@@ -1,12 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { alertApp } from "../../../app/model/app-dialog";
+import { alertApp } from "@/app/model/app-dialog";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   loadNotificationsEnabled,
   NOTIFICATIONS_CHANGE_EVENT,
 } from "../model/notifications";
-import { loadSoundsEnabled, SOUNDS_CHANGE_EVENT } from "../../settings/model/sounds";
+import { loadSoundsEnabled, SOUNDS_CHANGE_EVENT } from "@/features/settings/model/sounds";
 import {
   getProjectNotificationRule,
   subscribeNotificationPreferences,
@@ -22,7 +22,7 @@ import {
   setReminders,
   type ReminderTarget,
   type SessionReminder,
-} from "../../sessions/model/session-reminders";
+} from "@/features/sessions/model/session-reminders";
 
 export function useSessionReminders(
   onOpenSession: (sessionId: string) => Promise<void>,

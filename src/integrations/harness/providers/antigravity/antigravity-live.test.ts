@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HarnessEvent, SendTurnInput } from "../../core/types";
-import { modelsFor, resetHarnessModelOverlays } from "../../../../features/sessions/model/models";
+import { modelsFor, resetHarnessModelOverlays } from "@/features/sessions/model/models";
 
 const mock = vi.hoisted(() => {
   const listeners = new Map<string, (line: string) => void>();
@@ -26,7 +26,7 @@ const mock = vi.hoisted(() => {
     setConfigResult: null as unknown,
   };
 });
-vi.mock("../../../../platform/tauri/fs", () => ({ homeDir: async () => "/home/test" }));
+vi.mock("@/platform/tauri/fs", () => ({ homeDir: async () => "/home/test" }));
 vi.mock("../../core/child", () => ({
   resolveAntigravityBinary: async () => {
     if (mock.resolveGates) {

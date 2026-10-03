@@ -9,8 +9,8 @@ import {
   markInboxItemSeen,
   seedInboxSeenIfNeeded,
 } from "../model/inbox-seen";
-import { updateNotificationPreferences } from "../../notifications/model/notification-preferences";
-import type { SessionSummary } from "../../sessions/data/session-store";
+import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { markLinkedSessionUpdateSeen } from "../model/linked-session-seen";
 import {
   clearPendingInboxSelfActivity,
@@ -28,7 +28,7 @@ vi.mock("../model/github-tasks", async (importOriginal) => ({
   githubWorkItem,
   listInboxItems,
 }));
-vi.mock("../../settings/model/sounds", () => ({ playCue }));
+vi.mock("@/features/settings/model/sounds", () => ({ playCue }));
 
 const remote: InboxItem = {
   provider: "github",

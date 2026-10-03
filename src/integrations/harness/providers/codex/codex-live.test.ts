@@ -25,7 +25,7 @@ vi.mock("../../core/child", () => ({
   writeChild,
 }));
 
-vi.mock("../../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   saveGeneratedImage,
   deleteGeneratedImages,
 }));
@@ -43,7 +43,7 @@ const {
   __codexTestReset,
 } = await import("./codex");
 import type { HarnessEvent } from "../../core/types";
-import { newSession, type RuntimeMode, type TurnIntent } from "../../../../features/sessions/model/session";
+import { newSession, type RuntimeMode, type TurnIntent } from "@/features/sessions/model/session";
 import { applyHarnessEvent } from "../../core/apply";
 
 function parse() {

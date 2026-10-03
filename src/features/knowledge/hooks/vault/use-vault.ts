@@ -4,7 +4,7 @@ import {
   connectVault,
   disconnectVault,
   vaultStatus,
-} from "../../../../platform/tauri/vault";
+} from "@/platform/tauri/vault";
 import { parseVaultConnection } from "../../model/vault/parse-vault";
 import type { VaultConnection, VaultSnapshot } from "../../model/vault/types";
 import { listen } from "@tauri-apps/api/event";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newSession, type Block } from "../../sessions/model/session";
+import { newSession, type Block } from "@/features/sessions/model/session";
 import { sessionConversationPage } from "./session-conversation";
 
 function conversation(blocks: Block[]) {

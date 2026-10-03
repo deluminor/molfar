@@ -1,19 +1,19 @@
 // @vitest-environment happy-dom
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { newSession } from "../../sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import {
   resetHarnessModelOverlays,
   setHarnessModels,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import {
   loadSessionFolders,
   saveSessionFolders,
-} from "../../sessions/model/session-folders";
-import type { Note } from "../../notes";
-import type { Worktree } from "../../source-control/model/worktrees";
+} from "@/features/sessions/model/session-folders";
+import type { Note } from "@/features/notes";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 import { handleAgentApp, notePreview, type AgentAppHost } from "./agent-app";
 
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   isHarnessAvailable: (id: string) => id === "codex",
 }));
 

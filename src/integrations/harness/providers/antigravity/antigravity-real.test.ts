@@ -69,7 +69,7 @@ vi.mock("../../core/child", async () => {
     },
   };
 });
-vi.mock("../../../../platform/tauri/fs", () => ({ homeDir: async () => homedir() }));
+vi.mock("@/platform/tauri/fs", () => ({ homeDir: async () => homedir() }));
 
 const agy = await import("./antigravity");
 

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { newSession } from "../../sessions/model/session";
-import { shouldPersistSession } from "../../sessions/data/session-store";
+import { newSession } from "@/features/sessions/model/session";
+import { shouldPersistSession } from "@/features/sessions/data/session-store";
 import type { HostSession } from "./protocol";
 import { remoteSessionState } from "./remote-session-state";
 

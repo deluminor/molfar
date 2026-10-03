@@ -22,7 +22,7 @@ import {
   RefreshCw,
   Sparkles,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import type { GithubPrChecksView } from "../hooks/use-github-pr-checks";
 import {
   CHECK_STATES,

@@ -1,5 +1,5 @@
 import type { OrchestrationRun, TaskStatus } from "./orchestration";
-import { sessionNeedsInput, type HarnessId, type Session } from "../../sessions/model/session";
+import { sessionNeedsInput, type HarnessId, type Session } from "@/features/sessions/model/session";
 
 /** Small history projection; never includes prompts, results or credentials. */
 export type OrchestrationSummary = {

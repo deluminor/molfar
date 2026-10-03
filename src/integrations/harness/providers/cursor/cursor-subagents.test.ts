@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { newSession } from "../../../../features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import { applyHarnessEvent } from "../../core/apply";
 import type { StoredCursorSubagentRun } from "./cursor-store";
 import { cursorAgentLabel, recoverCursorSubagents } from "./cursor-subagents";

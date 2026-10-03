@@ -1,8 +1,8 @@
-import { leafIds, newTab, type WorkspaceTab } from "../../workspace/model/layout";
-import type { DockSide, ProjectTerminalDock } from "../../projects/model/project-terminal";
+import { leafIds, newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
+import type { DockSide, ProjectTerminalDock } from "@/features/projects/model/project-terminal";
 import { sessionNeedsInput, type Session } from "./session";
-import { stopStreaming } from "../../../integrations/harness/core/apply";
-import type { ProjectReturnMemory } from "../../projects/model/project-return";
+import { stopStreaming } from "@/integrations/harness/core/apply";
+import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 
 export const INTERRUPT_MESSAGE =
   "Turn interrupted when Vatra quit.";

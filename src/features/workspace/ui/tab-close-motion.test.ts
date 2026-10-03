@@ -3,9 +3,9 @@ import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SurfaceTabs } from "./SurfaceTabs";
-import { TitleBar, type Tab } from "../../../app/shell/TitleBar";
+import { TitleBar, type Tab } from "@/app/shell/TitleBar";
 
-vi.mock("../../../app/shell/WindowControls", () => ({ WindowControls: () => null }));
+vi.mock("@/app/shell/WindowControls", () => ({ WindowControls: () => null }));
 
 let container: HTMLDivElement;
 let root: Root;

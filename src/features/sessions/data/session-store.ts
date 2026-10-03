@@ -2,17 +2,17 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   isWeakToolTitle,
   titleFromToolInput,
-} from "../../../integrations/harness/core/preview";
-import { codexCommandPresentation } from "../../../integrations/harness/providers/codex/codex-protocol";
-import { recoverCursorSubagents } from "../../../integrations/harness/providers/cursor/cursor-subagents";
+} from "@/integrations/harness/core/preview";
+import { codexCommandPresentation } from "@/integrations/harness/providers/codex/codex-protocol";
+import { recoverCursorSubagents } from "@/integrations/harness/providers/cursor/cursor-subagents";
 import { persistableAttachment } from "../model/attachments";
 import type { ContextUsage } from "../model/context-usage";
-import { isRemoteProjectPath, normalizeProjectPath } from "../../projects/model/recents";
+import { isRemoteProjectPath, normalizeProjectPath } from "@/features/projects/model/recents";
 import {
   claudeShellCommands,
   ompActiveAssistantTexts,
   ompSessionInterjections,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   backfillOmpInterjections,
   ompStatusSplitTexts,
@@ -40,9 +40,9 @@ import type {
 
 import { HARNESSES, RUNTIME_MODES } from "../model/session";
 
-import { restoreOrchestrationProposal } from "../../orchestration/model/orchestration-plan";
+import { restoreOrchestrationProposal } from "@/features/orchestration/model/orchestration-plan";
 
-import type { OrchestrationSummary } from "../../orchestration/model/orchestration-summary";
+import type { OrchestrationSummary } from "@/features/orchestration/model/orchestration-summary";
 
 export type SessionSummary = {
   orchestrationLeadId?: string;

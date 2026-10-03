@@ -2,8 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   fetchClaudeRateLimits,
   fetchCodexRateLimits,
-} from "../../providers/model/rate-limits-fetch";
-import { selectedProviderAccountId } from "../../providers/model/provider-accounts";
+} from "@/features/providers/model/rate-limits-fetch";
+import { selectedProviderAccountId } from "@/features/providers/model/provider-accounts";
 import {
   cardFromAntigravityBody,
   cardFromCursorBody,

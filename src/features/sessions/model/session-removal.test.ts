@@ -6,7 +6,7 @@ import {
   openEditorTab,
   newTerminalFile,
   openTerminalTab,
-} from "../../workspace/model/layout";
+} from "@/features/workspace/model/layout";
 import { newSession, type Session } from "./session";
 import type { SessionWorkspaceRemoval } from "./session-workspace-lifecycle";
 import { createSessionRemover } from "./session-removal";

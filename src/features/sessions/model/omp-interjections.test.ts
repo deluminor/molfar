@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { OmpAssistantText, OmpInterjectionAnchor } from "../../../platform/tauri/fs";
+import type { OmpAssistantText, OmpInterjectionAnchor } from "@/platform/tauri/fs";
 import { backfillOmpInterjections, ompStatusSplitTexts } from "./omp-interjections";
 import { newSession, type Block } from "./session";
 import { getSession } from "../data/session-store";

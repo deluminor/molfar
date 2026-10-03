@@ -16,12 +16,12 @@ vi.mock("@tauri-apps/api/core", () => ({
     throw new Error(`unexpected ${command}`);
   }),
 }));
-vi.mock("../../../integrations/harness/core/availability", () => ({
+vi.mock("@/integrations/harness/core/availability", () => ({
   probeHarnessAvailability: vi.fn(async () => undefined),
   isHarnessAvailable: (id: string) => id === "claude",
 }));
 let installed = "2.1.284 (Claude Code)";
-vi.mock("../../../integrations/harness/core/child", () => ({
+vi.mock("@/integrations/harness/core/child", () => ({
   inspectHarnessBinary: vi.fn(async () => ({
     path: "/bin/claude",
     version: installed,
@@ -30,11 +30,11 @@ vi.mock("../../../integrations/harness/core/child", () => ({
     installed = "2.1.285 (Claude Code)";
   }),
 }));
-vi.mock("../../sessions/model/models", () => ({
+vi.mock("@/features/sessions/model/models", () => ({
   isPickerProviderVisible: () => true,
 }));
 const refreshHarnessCatalogs = vi.fn(async () => undefined);
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   refreshHarnessCatalogs: (...args: unknown[]) =>
     refreshHarnessCatalogs(...(args as [])),
 }));
@@ -53,7 +53,7 @@ vi.mock("@tauri-apps/api/event", () => ({
     },
   ),
 }));
-vi.mock("../../sessions/ui/HarnessIcon", () => ({ HarnessIcon: () => null }));
+vi.mock("@/features/sessions/ui/HarnessIcon", () => ({ HarnessIcon: () => null }));
 
 describe("HarnessUpdateNotice", () => {
   beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));

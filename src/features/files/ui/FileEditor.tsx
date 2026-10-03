@@ -31,19 +31,19 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
-} from "../../../shared/ui/icons";
-import { formatInteger } from "../../../shared/lib/numbers";
+} from "@/shared/ui/icons";
+import { formatInteger } from "@/shared/lib/numbers";
 import { minimalSetup } from "codemirror";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MarkdownViewShell,
   useMarkdownMode,
-} from "../../sessions/ui/MarkdownModeToggle";
-import { useColorScheme } from "../../../shared/hooks/use-color-scheme";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { isLightScheme } from "../../settings/model/appearance";
-import { loadAutosave, loadFormatOnSave } from "../../settings/model/settings";
-import { formatText } from "../../../shared/lib/format";
+} from "@/features/sessions/ui/MarkdownModeToggle";
+import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { isLightScheme } from "@/features/settings/model/appearance";
+import { loadAutosave, loadFormatOnSave } from "@/features/settings/model/settings";
+import { formatText } from "@/shared/lib/format";
 import {
   basename,
   gitDiffFiles,
@@ -54,15 +54,15 @@ import {
   subscribeGitChanged,
   writeTextFile,
   type GitFileDiffKind,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import { syncWatchedMtime, watchFile } from "../model/file-watch";
-import { displayPath } from "../../../shared/lib/paths";
-import type { EditorNavigation } from "../../search/model/search";
-import { MarkdownDocumentPreview } from "../../sessions/ui/MarkdownDocumentPreview";
+import { displayPath } from "@/shared/lib/paths";
+import type { EditorNavigation } from "@/features/search/model/search";
+import { MarkdownDocumentPreview } from "@/features/sessions/ui/MarkdownDocumentPreview";
 import {
   DiffCommentComposer,
   type DiffCommentComposerTarget,
-} from "../../source-control/ui/DiffCommentComposer";
+} from "@/features/source-control/ui/DiffCommentComposer";
 import { editorAutocomplete } from "../editor/editor-autocomplete";
 import { languageForPath, schemeExtensions } from "../editor/editor-chrome";
 import {

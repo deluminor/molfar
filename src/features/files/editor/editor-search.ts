@@ -26,8 +26,8 @@ import {
   type Panel,
   type ViewUpdate,
 } from "@codemirror/view";
-import { MOD, ALT, SHIFT } from "../../../platform/tauri/platform";
-import { keybindingPressed } from "../../settings/model/settings";
+import { MOD, ALT, SHIFT } from "@/platform/tauri/platform";
+import { keybindingPressed } from "@/features/settings/model/settings";
 import {
   handleFilePreviewFindKey,
   openFindInActiveFilePreview,

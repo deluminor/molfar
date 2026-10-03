@@ -1,4 +1,4 @@
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   getHarness: (id: string) =>
     id === "pi" || id === "omp"
       ? {
@@ -11,7 +11,7 @@ vi.mock("../../../integrations/harness/core/registry", () => ({
 }));
 
 import { describe, expect, it, vi } from "vitest";
-import type { Skill } from "../../skills/model/skills";
+import type { Skill } from "@/features/skills/model/skills";
 import {
   nextComposerSkillContextToken,
   pickerSkillLoadOptions,

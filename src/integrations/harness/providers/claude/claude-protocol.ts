@@ -4,23 +4,23 @@ import type {
   TaskListItem,
   ToolPreview,
   TurnMetrics,
-} from "../../../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   attachmentPathText,
   promptText,
-} from "../../../../features/sessions/model/attachments";
-import { parseResetTimestamp } from "../../../../features/providers/model/rate-limits";
+} from "@/features/sessions/model/attachments";
+import { parseResetTimestamp } from "@/features/providers/model/rate-limits";
 import {
   isTaskListToolName,
   normalizeTaskListStatus,
   taskListFromToolInput,
-} from "../../../../features/sessions/model/task-list";
+} from "@/features/sessions/model/task-list";
 import {
   questionPromptTitle,
   questionsFromUnknown,
   selectedAnswerLabels,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/user-question";
+} from "@/features/sessions/model/user-question";
 import {
   extractToolPreview,
   isAgentToolName,

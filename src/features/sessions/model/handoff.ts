@@ -1,7 +1,7 @@
-import { isEditTool } from "../../../integrations/harness/core/preview";
-import { compactCiRepairContext } from "../../inbox/model/ci-repair";
-import { limitSection } from "../../../shared/lib/json-text";
-import { displayPath } from "../../../shared/lib/paths";
+import { isEditTool } from "@/integrations/harness/core/preview";
+import { compactCiRepairContext } from "@/features/inbox/model/ci-repair";
+import { limitSection } from "@/shared/lib/json-text";
+import { displayPath } from "@/shared/lib/paths";
 import {
   HARNESS_TITLE,
   type Block,

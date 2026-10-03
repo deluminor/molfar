@@ -1,6 +1,6 @@
-import { listDir, type FsEntry } from "../../../platform/tauri/fs";
+import { listDir, type FsEntry } from "@/platform/tauri/fs";
 import { pathSegments } from "./file-name";
-import { joinPath, parentPath } from "../../../shared/lib/paths";
+import { joinPath, parentPath } from "@/shared/lib/paths";
 
 const expandedByProject = new Map<string, Set<string>>();
 const selectedByProject = new Map<string, string | null>();

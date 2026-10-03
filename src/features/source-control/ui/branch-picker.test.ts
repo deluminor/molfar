@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-vi.mock("../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   gitBranches: vi.fn(async () => ({
     current: "main",
     detached: false,
@@ -24,7 +24,7 @@ import {
   gitBranches,
   gitCheckout,
   gitCreateBranch,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 
 let container: HTMLDivElement;
 let root: Root;

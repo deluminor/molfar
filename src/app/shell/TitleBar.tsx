@@ -11,7 +11,7 @@ import {
   StickyNote,
   Terminal,
   X,
-} from "../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -23,31 +23,31 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { basename } from "../../platform/tauri/fs";
-import { looksLikeProject } from "../../features/projects/model/recents";
-import type { HarnessId } from "../../features/sessions/model/session";
-import { CwdPicker } from "../../features/projects/ui/CwdPicker";
-import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
+import { basename } from "@/platform/tauri/fs";
+import { looksLikeProject } from "@/features/projects/model/recents";
+import type { HarnessId } from "@/features/sessions/model/session";
+import { CwdPicker } from "@/features/projects/ui/CwdPicker";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   useAnimatedReorder,
   type ReorderExternalDrop,
-} from "../../shared/hooks/use-animated-reorder";
-import { useTabCloseMotion } from "../../features/workspace/hooks/use-tab-close-motion";
+} from "@/shared/hooks/use-animated-reorder";
+import { useTabCloseMotion } from "@/features/workspace/hooks/use-tab-close-motion";
 import { TabWidthMotion } from "./ClosingTab";
-import { FileTypeIcon } from "../../features/files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
+import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
 import { WindowControls } from "./WindowControls";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../platform/tauri/platform";
-import type { RecentProject } from "../../features/projects/model/recents";
-import { ExplorerMenu, type ExplorerMenuItem } from "../../features/files/ui/ExplorerMenu";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/platform/tauri/platform";
+import type { RecentProject } from "@/features/projects/model/recents";
+import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
 import {
   paneDropFromPoint,
   setExternalPaneDrop,
   useExternalTitleTabDrop,
-} from "../../features/workspace/model/pane-drop";
-import type { PaneEdge } from "../../features/workspace/model/layout";
+} from "@/features/workspace/model/pane-drop";
+import type { PaneEdge } from "@/features/workspace/model/layout";
 
 export type Tab = {
   id: string;

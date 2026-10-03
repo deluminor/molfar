@@ -1,27 +1,27 @@
-import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
+import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 import {
   confluencePage,
   listConfluenceChildren,
   listConfluenceSpaces,
   searchConfluence,
-} from "../../inbox/model/confluence/api";
-import { confluenceFolderTocMarkdown } from "../../inbox/model/confluence/prompt";
+} from "@/features/inbox/model/confluence/api";
+import { confluenceFolderTocMarkdown } from "@/features/inbox/model/confluence/prompt";
 import {
   normalizeNoteTags,
   noteTitle,
   type Note,
   type NoteUpsert,
-} from "../../notes";
-import { looksLikeProject } from "../../projects/model/recents";
-import type { QuickLaunch } from "../../quick-composer/model/quick-composer";
+} from "@/features/notes";
+import { looksLikeProject } from "@/features/projects/model/recents";
+import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import {
   mergeModelSettings,
   modelEffortSetting,
   modelsFor,
   preferredModelId,
   resolveModel,
-} from "../../sessions/model/models";
-import { consumeOperatorCommand } from "../../sessions/model/operator-command";
+} from "@/features/sessions/model/models";
+import { consumeOperatorCommand } from "@/features/sessions/model/operator-command";
 import {
   HARNESSES,
   RUNTIME_MODE_HINT,
@@ -29,15 +29,15 @@ import {
   RUNTIME_MODES,
   type HarnessId,
   type Session,
-} from "../../sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   loadSessionFolders,
   placeSessionInFolder,
   saveSessionFolders,
-} from "../../sessions/model/session-folders";
-import type { Worktree, Worktrees } from "../../source-control/model/worktrees";
-import { pathKey } from "../../../shared/lib/paths";
-import type { SplitDir } from "../../workspace/model/layout";
+} from "@/features/sessions/model/session-folders";
+import type { Worktree, Worktrees } from "@/features/source-control/model/worktrees";
+import { pathKey } from "@/shared/lib/paths";
+import type { SplitDir } from "@/features/workspace/model/layout";
 import { sessionConversationPage } from "./session-conversation";
 
 export type AppSessionListing = {

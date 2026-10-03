@@ -4,14 +4,14 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useProjectBackgroundEffect } from "./use-project-background-effect";
-import { prepareNewThreadBackgroundEffect } from "../../settings/model/new-thread-background-effects";
-import type { NewThreadBackgroundEffect } from "../../settings/model/appearance";
+import { prepareNewThreadBackgroundEffect } from "@/features/settings/model/new-thread-background-effects";
+import type { NewThreadBackgroundEffect } from "@/features/settings/model/appearance";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
   convertFileSrc: (path: string) => path,
 }));
-vi.mock("../../settings/model/new-thread-background-effects", () => ({
+vi.mock("@/features/settings/model/new-thread-background-effects", () => ({
   prepareNewThreadBackgroundEffect: vi.fn(async () => new Blob(["image"])),
   applyPreparedNewThreadBackground: vi.fn(),
   clearPreparedNewThreadBackground: vi.fn(),

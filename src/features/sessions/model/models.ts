@@ -4,7 +4,7 @@ import { loadProjectProviderSettings } from "./project-providers";
 import {
   hasProbedHarnessAvailability,
   isHarnessAvailable,
-} from "../../../integrations/harness/core/availability-state";
+} from "@/integrations/harness/core/availability-state";
 
 export type ModelSettingChoice = {
   value: string;

@@ -1,4 +1,4 @@
-import { modelsFor } from "../../../../features/sessions/model/models";
+import { modelsFor } from "@/features/sessions/model/models";
 import {
   killChild,
   resolveClaudeBinary,
@@ -27,7 +27,7 @@ import {
   tryParseJsonRecord,
   turnStatusFromResult,
 } from "./claude-protocol";
-import type { TurnIntent } from "../../../../features/sessions/model/session";
+import type { TurnIntent } from "@/features/sessions/model/session";
 import type { HarnessEvent } from "../../core/types";
 import { mergeStream } from "../../core/stream-text";
 

@@ -1,5 +1,5 @@
-import { fuzzyMatch } from "../../../shared/lib/fuzzy";
-import { isMarkdownBlockquotePosition } from "../../sessions/model/quote-draft";
+import { fuzzyMatch } from "@/shared/lib/fuzzy";
+import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
 import type { Skill } from "./skills";
 
 // Keep picker helpers independent of skill discovery for the floating composer.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   newSession,
   type Session,
-} from "../../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import { applyHarnessEvent, applyHarnessEvents } from "./apply";
 import type { HarnessEvent } from "./types";
 

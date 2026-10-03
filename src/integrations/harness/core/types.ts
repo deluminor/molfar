@@ -7,8 +7,8 @@ import type {
   ToolPreview,
   TurnIntent,
   TurnMetrics,
-} from "../../../features/sessions/model/session";
-import type { UserQuestion } from "../../../features/sessions/model/user-question";
+} from "@/features/sessions/model/session";
+import type { UserQuestion } from "@/features/sessions/model/user-question";
 
 export type HarnessEvent =
   | { type: "session.started" }

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { newFileTab, newTab, placePane, type WorkspaceTab } from "../../workspace/model/layout";
-import { newSession, type Session } from "../../sessions/model/session";
+import { newFileTab, newTab, placePane, type WorkspaceTab } from "@/features/workspace/model/layout";
+import { newSession, type Session } from "@/features/sessions/model/session";
 import { planProjectReturn, reconcileProjectReturn } from "./project-return";
 import {
   emptyTabVisitHistory,
   recordTabVisit,
   tabVisitBack,
-} from "../../workspace/model/tab-visit-history";
-import { removeSessionFromWorkspace } from "../../sessions/model/session-workspace-lifecycle";
-import { applyPlaceSessionOnPane } from "../../workspace/model/workspace-tab-groups";
+} from "@/features/workspace/model/tab-visit-history";
+import { removeSessionFromWorkspace } from "@/features/sessions/model/session-workspace-lifecycle";
+import { applyPlaceSessionOnPane } from "@/features/workspace/model/workspace-tab-groups";
 
 function chat(id: string, cwd: string): Session {
   return {

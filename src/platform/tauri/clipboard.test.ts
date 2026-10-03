@@ -7,7 +7,7 @@ import {
   attachmentsFromFiles,
   displayAttachments,
   persistableAttachment,
-} from "../../features/sessions/model/attachments";
+} from "@/features/sessions/model/attachments";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

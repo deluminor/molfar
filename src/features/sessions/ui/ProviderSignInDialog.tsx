@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { loginHarness } from "../../../integrations/harness/core/auth";
+import { loginHarness } from "@/integrations/harness/core/auth";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,

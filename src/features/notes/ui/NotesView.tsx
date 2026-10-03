@@ -1,4 +1,4 @@
-import { LoaderCircle, Plus, Search, File, Trash2, X } from "../../../shared/ui/icons";
+import { LoaderCircle, Plus, Search, File, Trash2, X } from "@/shared/ui/icons";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
   Fragment,
@@ -10,17 +10,17 @@ import {
   type DragEvent as ReactDragEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useMarkdownMode } from "../../sessions/ui/MarkdownModeToggle";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
-import { OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useDragResize } from "../../../shared/hooks/use-drag-resize";
-import { paneWidthStorageKey } from "../../../shared/lib/pane-width-storage";
-import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
-import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
-import { formatRelativeTime } from "../../inbox/model/github-tasks";
+import { useMarkdownMode } from "@/features/sessions/ui/MarkdownModeToggle";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";
+import { OverlayNav } from "@/app/shell/TitleBar";
+import { WindowControls } from "@/app/shell/WindowControls";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { formatRelativeTime } from "@/features/inbox/model/github-tasks";
 import {
   createNote,
   deleteNote,
@@ -42,9 +42,9 @@ import {
   saveNoteImagesFromPaths,
   type NoteImageAsset,
 } from "../note-images";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { looksLikeProject, type RecentProject } from "../../projects/model/recents";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { IS_MAC } from "@/platform/tauri/platform";
+import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -52,8 +52,8 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tab-groups";
-import { AgentMarkdown, MarkdownSourceHighlight } from "../../sessions/ui/AgentMarkdown";
+} from "@/features/workspace/model/tab-groups";
+import { AgentMarkdown, MarkdownSourceHighlight } from "@/features/sessions/ui/AgentMarkdown";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;

@@ -3,14 +3,14 @@ import type {
   RuntimeMode,
   ToolPreview,
   TurnMetrics,
-} from "../../../../features/sessions/model/session";
+} from "@/features/sessions/model/session";
 import {
   attachmentPath,
   attachmentPathText,
   isVisionImage,
   promptText,
-} from "../../../../features/sessions/model/attachments";
-import { isTaskListToolName } from "../../../../features/sessions/model/task-list";
+} from "@/features/sessions/model/attachments";
+import { isTaskListToolName } from "@/features/sessions/model/task-list";
 import { extractToolPreview } from "../../core/preview";
 import type { HarnessEvent } from "../../core/types";
 

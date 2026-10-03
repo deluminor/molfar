@@ -7,7 +7,7 @@ import { InboxView } from "./InboxView";
 import { inboxItemKey, type InboxItem } from "../model/github-tasks";
 import { isInboxEntryUnseen, seedInboxSeenIfNeeded } from "../model/inbox-seen";
 import { saveInboxConnections, saveInboxSource } from "../model/inbox-filters";
-import { updateNotificationPreferences } from "../../notifications/model/notification-preferences";
+import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
 
 const { listInboxItems } = vi.hoisted(() => ({ listInboxItems: vi.fn() }));
 vi.mock("../model/github-tasks", async (importOriginal) => ({

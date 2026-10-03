@@ -1,4 +1,4 @@
-import { ChevronDown, GripVertical, X } from "../../../shared/ui/icons";
+import { ChevronDown, GripVertical, X } from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -10,25 +10,25 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { Composer } from "./Composer";
-import type { Worktree } from "../../source-control/model/worktrees";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 import {
   orchestrationCheckoutCwd,
   orchestrator,
   sameCheckout,
-} from "../../orchestration/model/orchestration";
+} from "@/features/orchestration/model/orchestration";
 import { DiscussionEmpty } from "./DiscussionEmpty";
-import { LinkedWorkItemUpdateNotice } from "../../inbox/ui/LinkedWorkItemUpdateNotice";
+import { LinkedWorkItemUpdateNotice } from "@/features/inbox/ui/LinkedWorkItemUpdateNotice";
 import { SessionReview } from "./SessionReview";
 import { PromptOutline } from "./PromptOutline";
 import {
   canCompactHarnessContext,
   type ApprovalDecision,
   type UserQuestionReply,
-} from "../../../integrations/harness";
+} from "@/integrations/harness";
 import {
   looksLikeProject,
   type RecentProject,
-} from "../../projects/model/recents";
+} from "@/features/projects/model/recents";
 import {
   sessionDisplayTitle,
   sessionDraftBlock,
@@ -56,44 +56,44 @@ import {
 } from "../model/transcript-jump";
 import { EmptySession } from "./EmptySession";
 import { useComposerDockMotion } from "./use-composer-dock-motion";
-import { MOD } from "../../../platform/tauri/platform";
+import { MOD } from "@/platform/tauri/platform";
 import {
   acknowledgeQuoteRequest,
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,
   type QuoteRequest,
 } from "../model/quote-draft";
-import { createNote, noteTitle } from "../../notes";
+import { createNote, noteTitle } from "@/features/notes";
 import {
   loadNotesEnabled,
   subscribeNotesEnabled,
-} from "../../settings/model/settings";
+} from "@/features/settings/model/settings";
 import { getComposerDraft, setComposerDraft } from "../model/draft-cache";
 import { resolveModel } from "../model/models";
 import { isAstraModel } from "../model/astra-welcome";
 import { isOpus55Model } from "../model/opus-welcome";
 import { AstraWelcome } from "./AstraWelcome";
 import { OpusWelcome } from "./OpusWelcome";
-import { projectKey } from "../../../shared/lib/paths";
+import { projectKey } from "@/shared/lib/paths";
 import { canEditLastTurn, lastTurnRecall } from "../model/edit-last-turn";
 import {
   loadProjectChatBackgroundSettings,
   projectChatBackgroundImageRevision,
   projectChatBackgroundRevision,
   subscribeProjectChatBackground,
-} from "../../projects/model/project-chat-background";
-import { useProjectBackgroundEffect } from "../../projects/ui/use-project-background-effect";
-import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
+} from "@/features/projects/model/project-chat-background";
+import { useProjectBackgroundEffect } from "@/features/projects/ui/use-project-background-effect";
+import { GradientBlurBackground } from "@/features/settings/ui/GradientBlurBackground";
 import {
   loadChatBackgroundPath,
   loadNewThreadBackgroundEffect,
   subscribeChatBackgroundPath,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import type { SessionFolderTarget } from "../model/session-folders";
-import { markLinkedSessionUpdateSeen } from "../../inbox/model/linked-session-seen";
-import { RemoteSession } from "../../connections/ui/RemoteSession";
-import { isRemoteProjectPath } from "../../projects/model/recents";
-import type { HostSession } from "../../connections/model/protocol";
+import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
+import { RemoteSession } from "@/features/connections/ui/RemoteSession";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
+import type { HostSession } from "@/features/connections/model/protocol";
 
 export type SessionPaneProps = {
   session: Session;
