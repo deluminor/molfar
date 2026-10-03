@@ -7,6 +7,9 @@ import { newEditorPane, newFileTab } from "../../workspace/model/layout";
 import { invalidateWatchedFiles } from "../model/file-watch";
 import { FilePane } from "./FilePane";
 
+// Lazy CodeMirror language chunks can take longer than waitFor's 1s default when the suite runs in parallel.
+const LOAD_TIMEOUT = { timeout: 5_000 };
+
 const disk = vi.hoisted(() => ({ content: "" }));
 const invoke = vi.hoisted(() =>
   vi.fn(async (command: string) => {
@@ -31,7 +34,7 @@ vi.mock("@tauri-apps/api/core", async (original) => ({
   invoke,
 }));
 
-describe("file pane source navigation", () => {
+describe("file pane source navigation", { timeout: 20_000 }, () => {
   let root: Root;
   let container: HTMLDivElement;
   let paneProps: ComponentProps<typeof FilePane>;
@@ -85,19 +88,26 @@ describe("file pane source navigation", () => {
         await vi.dynamicImportSettled();
       });
       expect(container.querySelector(".cm-editor")).not.toBeNull();
-    });
+    }, LOAD_TIMEOUT);
     return EditorView.findFromDOM(
       container.querySelector<HTMLElement>(".cm-editor")!,
     )!;
   }
 
+  // Each attempt leaves act() so React commits the reload before the assertion runs.
+  async function settle(assertion: () => void) {
+    await vi.waitFor(async () => {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+      assertion();
+    }, LOAD_TIMEOUT);
+  }
+
   async function reload(path: string, view: EditorView, content: string) {
     disk.content = content;
-    await act(async () => {
-      invalidateWatchedFiles([path]);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
-    expect(view.state.doc.toString()).toBe(content);
+    await act(async () => invalidateWatchedFiles([path]));
+    await settle(() => expect(view.state.doc.toString()).toBe(content));
     await act(async () => {
       // Flush navigation scheduled after the document replacement.
       await new Promise<void>((resolve) =>
@@ -109,7 +119,10 @@ describe("file pane source navigation", () => {
   it("shows Markdown source and navigates to its referenced line", async () => {
     const view = await render("/repo/navigation.md", 2);
     await act(async () =>
-      vi.waitFor(() => expect(view.state.selection.main.head).toBe(12)),
+      vi.waitFor(
+        () => expect(view.state.selection.main.head).toBe(12),
+        LOAD_TIMEOUT,
+      ),
     );
     expect(
       container.querySelector(
@@ -129,10 +142,12 @@ describe("file pane source navigation", () => {
   it("clamps a stale source location to the last line instead of waiting forever", async () => {
     const view = await render("/repo/short.txt", 999);
     await act(async () =>
-      vi.waitFor(() =>
-        expect(
-          view.state.doc.lineAt(view.state.selection.main.head).number,
-        ).toBe(3),
+      vi.waitFor(
+        () =>
+          expect(
+            view.state.doc.lineAt(view.state.selection.main.head).number,
+          ).toBe(3),
+        LOAD_TIMEOUT,
       ),
     );
   });
@@ -146,24 +161,21 @@ describe("file pane source navigation", () => {
       vi.waitFor(() => {
         expect(view.state.doc.lines).toBe(1);
         expect(view.state.selection.main.head).toBe(1);
-      }),
+      }, LOAD_TIMEOUT),
     );
     await act(async () => {
       disk.content = "first line\nsecond line\nthird line";
       invalidateWatchedFiles(["/repo/growing.txt"]);
-      await new Promise((resolve) => setTimeout(resolve, 100));
     });
-    await act(async () =>
-      vi.waitFor(() => {
-        expect(view.state.doc.lines).toBe(3);
-        expect(
-          view.state.doc.lineAt(view.state.selection.main.head).number,
-        ).toBe(3);
-        expect(view.state.selection.main.head).toBe(
-          view.state.doc.line(3).from + 1,
-        );
-      }),
-    );
+    await settle(() => {
+      expect(view.state.doc.lines).toBe(3);
+      expect(view.state.doc.lineAt(view.state.selection.main.head).number).toBe(
+        3,
+      );
+      expect(view.state.selection.main.head).toBe(
+        view.state.doc.line(3).from + 1,
+      );
+    });
   });
 
   it("keeps file contents and the existing added/removed-line diff in the same pane", async () => {
@@ -173,7 +185,7 @@ describe("file pane source navigation", () => {
       vi.waitFor(() => {
         expect(container.textContent).toContain("+1");
         expect(container.textContent).toContain("-1");
-      }),
+      }, LOAD_TIMEOUT),
     );
   });
 
@@ -181,7 +193,10 @@ describe("file pane source navigation", () => {
     const path = "/repo/moved.txt";
     const view = await render(path, 2);
     await act(async () =>
-      vi.waitFor(() => expect(view.state.selection.main.head).toBe(12)),
+      vi.waitFor(
+        () => expect(view.state.selection.main.head).toBe(12),
+        LOAD_TIMEOUT,
+      ),
     );
     const anchor = view.state.doc.line(3).from;
     const button = document.createElement("button");
@@ -203,7 +218,10 @@ describe("file pane source navigation", () => {
     const path = "/repo/completed.txt";
     const view = await render(path, 2);
     await act(async () =>
-      vi.waitFor(() => expect(view.state.selection.main.head).toBe(12)),
+      vi.waitFor(
+        () => expect(view.state.selection.main.head).toBe(12),
+        LOAD_TIMEOUT,
+      ),
     );
     const focus = vi.spyOn(view, "focus");
 
@@ -217,10 +235,14 @@ describe("file pane source navigation", () => {
     "cancels a clamped pending navigation on %s before its line arrives",
     async (interaction) => {
       const path = `/repo/pending-${interaction}.txt`;
-      invoke.mockResolvedValueOnce("first line");
+      // Model the file itself: watcher stat calls may run before the initial read.
+      disk.content = "first line";
       const view = await render(path, 3);
       await act(async () =>
-        vi.waitFor(() => expect(view.state.selection.main.head).toBe(1)),
+        vi.waitFor(
+          () => expect(view.state.selection.main.head).toBe(1),
+          LOAD_TIMEOUT,
+        ),
       );
       const button = document.createElement("button");
       container.append(button);
@@ -248,7 +270,10 @@ describe("file pane source navigation", () => {
     const path = "/repo/revisit.txt";
     const view = await render(path, 2);
     await act(async () =>
-      vi.waitFor(() => expect(view.state.selection.main.head).toBe(12)),
+      vi.waitFor(
+        () => expect(view.state.selection.main.head).toBe(12),
+        LOAD_TIMEOUT,
+      ),
     );
     await act(async () => view.dispatch({ selection: { anchor: 0 } }));
     await act(async () =>
@@ -260,7 +285,10 @@ describe("file pane source navigation", () => {
       ),
     );
     await act(async () =>
-      vi.waitFor(() => expect(view.state.selection.main.head).toBe(12)),
+      vi.waitFor(
+        () => expect(view.state.selection.main.head).toBe(12),
+        LOAD_TIMEOUT,
+      ),
     );
   });
 });
