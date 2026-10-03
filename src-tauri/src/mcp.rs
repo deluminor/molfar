@@ -1169,7 +1169,8 @@ mod tests {
 
     #[test]
     fn discovery_preserves_codex_enablement() {
-        let root = std::env::temp_dir().join(format!("molfar-mcp-enabled-{}", uuid::Uuid::new_v4()));
+        let root =
+            std::env::temp_dir().join(format!("molfar-mcp-enabled-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&root).unwrap();
         let path = root.join("config.toml");
         std::fs::write(

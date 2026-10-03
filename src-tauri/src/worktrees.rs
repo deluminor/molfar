@@ -954,7 +954,11 @@ mod tests {
         assert_eq!(renamed.branch.as_deref(), Some("molfar/faster-worktrees"));
         assert!(git(
             &root,
-            &["rev-parse", "--verify", "refs/heads/molfar/faster-worktrees"]
+            &[
+                "rev-parse",
+                "--verify",
+                "refs/heads/molfar/faster-worktrees"
+            ]
         )
         .is_ok());
         assert!(rename_branch(&root, &root, "molfar/nope").is_err());
@@ -965,7 +969,9 @@ mod tests {
         assert_eq!(renamed.branch.as_deref(), Some("molfar/legacy-worktree"));
 
         let regular = create(&root, "feature/manual", "main", false).unwrap();
-        assert!(rename_branch(&root, Path::new(&regular.path), "molfar/should-not-change").is_err());
+        assert!(
+            rename_branch(&root, Path::new(&regular.path), "molfar/should-not-change").is_err()
+        );
     }
 
     #[test]

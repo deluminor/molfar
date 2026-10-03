@@ -810,9 +810,8 @@ mod tests {
             assert!(script.contains(&release));
             assert!(script.contains("molfar-host-"));
         }
-        assert!(
-            pairing_script(HostPlatform::Unix, "Desk").contains("$HOME/.molfar-host/bin/molfar-host")
-        );
+        assert!(pairing_script(HostPlatform::Unix, "Desk")
+            .contains("$HOME/.molfar-host/bin/molfar-host"));
     }
     #[test]
     fn bootstrap_is_versioned_and_only_explicit_upgrade_restarts_the_host() {
