@@ -1,83 +1,69 @@
-import { SPHERE_RING_SEGMENTS } from "./constants";
-import { nodeAngle, ringColor, ringPoint } from "./geometry";
-import type { SphereRing, Vec3 } from "./types";
+import type { BrandPalette } from "../brand-visual/types";
+import { SPHERE_RING_DOTS } from "./constants";
+import {
+  depthShade,
+  facesSide,
+  nodeAngle,
+  ringPoint,
+  trailStrength,
+} from "./geometry";
+import type { SphereRing, SphereSide, Vec3 } from "./types";
 
-export type RingSide = "back" | "front";
+type RingDot = Vec3 & { angle: number };
 
-const SEGMENT_COLORS = Array.from(
-  { length: SPHERE_RING_SEGMENTS },
-  (_, index) => ringColor(((index + 0.5) / SPHERE_RING_SEGMENTS) * Math.PI * 2),
+const DOT_ANGLES = Array.from(
+  { length: SPHERE_RING_DOTS },
+  (_, index) => (index / SPHERE_RING_DOTS) * Math.PI * 2,
 );
 
-const RUN_LENGTH = 3;
-
-const facing = (z: number, side: RingSide): boolean =>
-  side === "front" ? z >= 0 : z < 0;
-
-/** 0 behind the equator of the ring cage, rising smoothly to 1 toward the viewer. */
-function frontness(z: number, radius: number): number {
-  const t = Math.min(1, Math.max(0, z / (radius * 0.3)));
-
-  return t * t * (3 - 2 * t);
-}
-
-function strokeRun(
+function fillDot(
   context: CanvasRenderingContext2D,
-  points: readonly Vec3[],
-  from: number,
-  to: number,
+  x: number,
+  y: number,
+  radius: number,
 ): void {
   context.beginPath();
-  context.moveTo(points[from].x, points[from].y);
-  for (let index = from + 1; index <= to; index++)
-    context.lineTo(points[index].x, points[index].y);
-  context.stroke();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.fill();
 }
 
-export function drawRings(
-  context: CanvasRenderingContext2D,
+export function ringDots(
   rings: readonly SphereRing[],
   radius: number,
   seconds: number,
-  side: RingSide,
+): RingDot[][] {
+  return rings.map((ring) =>
+    DOT_ANGLES.map((angle) => ({
+      ...ringPoint(ring, angle, radius, seconds),
+      angle,
+    })),
+  );
+}
+
+export function drawRingDots(
+  context: CanvasRenderingContext2D,
+  rings: readonly SphereRing[],
+  dots: readonly (readonly RingDot[])[],
+  radius: number,
+  seconds: number,
+  palette: BrandPalette,
+  side: SphereSide,
 ): void {
-  const width = radius * 0.04;
+  const base = Math.max(0.6, radius * 0.0085);
 
-  context.lineCap = "butt";
-  context.lineJoin = "round";
+  rings.forEach((ring, ringIndex) => {
+    for (const dot of dots[ringIndex]) {
+      if (!facesSide(dot.z, side)) continue;
 
-  for (const ring of rings) {
-    const points = Array.from(
-      { length: SPHERE_RING_SEGMENTS + 1 },
-      (_, index) =>
-        ringPoint(
-          ring,
-          (index / SPHERE_RING_SEGMENTS) * Math.PI * 2,
-          radius,
-          seconds,
-        ),
-    );
+      const shade = depthShade(dot.z, radius);
+      const trail = trailStrength(ring, dot.angle, seconds);
+      const shimmer = 0.9 + Math.sin(seconds * 0.8 + dot.angle * 5) * 0.1;
 
-    // Short runs keep the colour and depth fade smooth with few overlapping joints.
-    for (let start = 0; start < SPHERE_RING_SEGMENTS; start += RUN_LENGTH) {
-      const end = Math.min(start + RUN_LENGTH, SPHERE_RING_SEGMENTS);
-      const z = (points[start].z + points[end].z) / 2;
-      if (!facing(z, side)) continue;
-
-      const front = frontness(z, radius);
-
-      context.strokeStyle = SEGMENT_COLORS[Math.floor((start + end) / 2)];
-      if (front > 0) {
-        context.globalAlpha = 0.16 * front;
-        context.lineWidth = width * 3.2;
-        strokeRun(context, points, start, end);
-      }
-
-      context.globalAlpha = 0.3 + 0.65 * front;
-      context.lineWidth = width * (0.6 + 0.4 * front);
-      strokeRun(context, points, start, end);
+      context.globalAlpha = (0.1 + shade * 0.5 + trail * 0.4) * shimmer;
+      context.fillStyle = trail > 0.35 ? palette.hot : palette.accent;
+      fillDot(context, dot.x, dot.y, base * (0.7 + shade * 0.6 + trail * 0.6));
     }
-  }
+  });
 }
 
 export function drawNodes(
@@ -85,41 +71,32 @@ export function drawNodes(
   rings: readonly SphereRing[],
   radius: number,
   seconds: number,
-  side: RingSide,
+  palette: BrandPalette,
+  side: SphereSide,
 ): void {
   for (const ring of rings) {
     const point = ringPoint(ring, nodeAngle(ring, seconds), radius, seconds);
-    if (!facing(point.z, side)) continue;
+    if (!facesSide(point.z, side)) continue;
 
-    const depth = 1 + point.z / (radius * 5);
-    const core = radius * 0.075 * depth;
-    const dim = side === "back" ? 0.35 : 1;
+    const shade = depthShade(point.z, radius);
+    const core = radius * 0.032 * (0.75 + shade * 0.5);
     const glow = context.createRadialGradient(
       point.x,
       point.y,
       0,
       point.x,
       point.y,
-      core * 2.6,
+      core * 3.4,
     );
 
-    glow.addColorStop(0, ring.nodeColor);
+    glow.addColorStop(0, palette.accent);
     glow.addColorStop(1, "transparent");
-    context.globalAlpha = 0.65 * dim;
+    context.globalAlpha = 0.2 + shade * 0.35;
     context.fillStyle = glow;
-    context.beginPath();
-    context.arc(point.x, point.y, core * 2.6, 0, Math.PI * 2);
-    context.fill();
+    fillDot(context, point.x, point.y, core * 3.4);
 
-    context.globalAlpha = dim;
-    context.fillStyle = ring.nodeColor;
-    context.beginPath();
-    context.arc(point.x, point.y, core, 0, Math.PI * 2);
-    context.fill();
-
-    context.fillStyle = "#ffffff";
-    context.beginPath();
-    context.arc(point.x, point.y, core * 0.42, 0, Math.PI * 2);
-    context.fill();
+    context.globalAlpha = 0.45 + shade * 0.5;
+    context.fillStyle = palette.hot;
+    fillDot(context, point.x, point.y, core);
   }
 }

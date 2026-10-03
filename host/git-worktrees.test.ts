@@ -119,8 +119,9 @@ it.each([false, true])("applies generated worktree names only to retained sessio
   ).rejects.toThrow("changed");
 });
 
-it("accepts current and legacy `mc/` automatic worktree branches", () => {
+it("accepts current and legacy automatic worktree branches", () => {
   expect(AUTO_WORKTREE_BRANCH.test("molfar/12345678")).toBe(true);
+  expect(AUTO_WORKTREE_BRANCH.test("vatra/12345678")).toBe(true);
   expect(AUTO_WORKTREE_BRANCH.test("mc/12345678")).toBe(true);
   expect(AUTO_WORKTREE_BRANCH.test("monocode/12345678")).toBe(false);
   expect(AUTO_WORKTREE_BRANCH.test("molfar/feature")).toBe(false);

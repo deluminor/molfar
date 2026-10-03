@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   advanceBrandTime,
   brandCanvasSize,
+  brandVisualStatus,
   shouldAnimateBrandVisual,
 } from "./animation";
 
@@ -26,6 +27,24 @@ describe("shouldAnimateBrandVisual", () => {
     ["the canvas has no height", { height: 0 }],
   ])("stays still when %s", (_, override) => {
     expect(shouldAnimateBrandVisual({ ...visible, ...override })).toBe(false);
+  });
+});
+
+describe("brandVisualStatus", () => {
+  it("reports running only while a frame loop runs", () => {
+    expect(brandVisualStatus(visible)).toBe("running");
+    expect(brandVisualStatus({ ...visible, hidden: true })).toBe("paused");
+    expect(brandVisualStatus({ ...visible, onScreen: false })).toBe("paused");
+    expect(brandVisualStatus({ ...visible, width: 0 })).toBe("paused");
+  });
+
+  it("reports still under reduced motion regardless of visibility", () => {
+    expect(brandVisualStatus({ ...visible, reducedMotion: true })).toBe(
+      "still",
+    );
+    expect(
+      brandVisualStatus({ ...visible, reducedMotion: true, hidden: true }),
+    ).toBe("still");
   });
 });
 

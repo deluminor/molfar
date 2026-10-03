@@ -1,24 +1,16 @@
 import { FIRE_STILL_SECONDS } from "../model/fire/constants";
 import { drawFireFrame } from "../model/fire/render";
-import type { FirePalette } from "../model/fire/types";
+import { readBrandPalette } from "../model/brand-visual/palette";
 import type {
   BrandCanvas,
   BrandCanvasOptions,
+  BrandPalette,
 } from "../model/brand-visual/types";
 import { useBrandCanvas } from "./useBrandCanvas";
 
-function readPalette(canvas: HTMLCanvasElement): FirePalette {
-  const style = getComputedStyle(canvas);
-
-  return {
-    accent: style.color,
-    hot: style.getPropertyValue("--color-content").trim() || "#ebebeb",
-  };
-}
-
-const FIRE_CANVAS: BrandCanvasOptions<FirePalette> = {
+const FIRE_CANVAS: BrandCanvasOptions<BrandPalette> = {
   stillSeconds: FIRE_STILL_SECONDS,
-  readTheme: readPalette,
+  readTheme: readBrandPalette,
   draw: (context, frame) =>
     drawFireFrame(
       context,

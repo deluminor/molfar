@@ -83,7 +83,7 @@ export function orchestrationWorktreeBranchName(id: string): string {
 export function namedWorktreeBranch(fragment: string): string | null {
   const clean = fragment
     .trim()
-    .replace(/^(?:molfar|mc)\/+/, "")
+    .replace(/^(?:molfar|vatra|mc|monocode)\/+/, "")
     .replace(/^\/+|\/+$/g, "");
   return clean ? `molfar/${clean}` : null;
 }

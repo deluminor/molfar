@@ -1,10 +1,17 @@
 import { BRAND_MAX_DPR, BRAND_MAX_FRAME_STEP_MS } from "./constants";
-import type { BrandMotionState } from "./types";
+import type { BrandMotionState, BrandVisualStatus } from "./types";
 
 export function shouldAnimateBrandVisual(state: BrandMotionState): boolean {
   if (state.hidden || state.reducedMotion || !state.onScreen) return false;
 
   return state.width > 0 && state.height > 0;
+}
+
+export function brandVisualStatus(state: BrandMotionState): BrandVisualStatus {
+  if (state.reducedMotion) return "still";
+  if (shouldAnimateBrandVisual(state)) return "running";
+
+  return "paused";
 }
 
 export function brandCanvasSize(

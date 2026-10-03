@@ -7,7 +7,9 @@ export interface BrandVisualSelectorProps {
   onChange: (value: BrandVisual) => void;
 }
 
-export type BrandVisualStatus = "pending" | "running" | "still";
+export type BrandPalette = { accent: string; hot: string };
+
+export type BrandVisualStatus = "pending" | "running" | "paused" | "still";
 
 export type BrandCanvas = {
   canvasRef: RefObject<HTMLCanvasElement | null>;

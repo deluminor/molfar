@@ -6,9 +6,9 @@ export const SphereVisual = memo(function SphereVisual(): ReactNode {
 
   return (
     <div
-      className="relative h-full w-full overflow-hidden"
+      className="relative h-full w-full overflow-hidden text-accent"
       role="img"
-      aria-label="Glass sphere with orbiting agent rings around a golden core"
+      aria-label="Glass sphere with orbiting rings of light around a guiding star"
       data-sphere-status={status}
     >
       <canvas

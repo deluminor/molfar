@@ -1,10 +1,9 @@
 import {
   SPHERE_CAMERA_TILT,
   SPHERE_PRECESSION_PERIOD,
-  SPHERE_RING_COLORS,
-  SPHERE_STAR_COUNT,
+  SPHERE_TRAIL_ARC,
 } from "./constants";
-import type { SphereRing, SphereStar, Vec3 } from "./types";
+import type { SphereRing, SphereSide, Vec3 } from "./types";
 
 function rotateX(point: Vec3, angle: number): Vec3 {
   const cos = Math.cos(angle);
@@ -102,32 +101,28 @@ export function meridianPoint(
   return toView(point, seconds);
 }
 
-/** Ring stroke colour by angle: violet at the far ends, cyan where it crosses the front. */
-export function ringColor(angle: number): string {
-  const t = Math.abs(Math.sin(angle));
-  const { edge, middle, peak } = SPHERE_RING_COLORS;
-  const [from, to, local] =
-    t < 0.6 ? [edge, middle, t / 0.6] : [middle, peak, (t - 0.6) / 0.4];
-  const channel = (index: number) =>
-    Math.round(from[index] + (to[index] - from[index]) * local);
-
-  return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
+export function facesSide(z: number, side: SphereSide): boolean {
+  return side === "front" ? z >= 0 : z < 0;
 }
 
-function hash(seed: number): number {
-  const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+/** 0 at the far side of a shell of the given radius, easing to 1 at the near side. */
+export function depthShade(z: number, radius: number): number {
+  const t = Math.min(1, Math.max(0, (z / radius + 1) / 2));
 
-  return value - Math.floor(value);
+  return t * t * (3 - 2 * t);
 }
 
-/** Deterministic star field in units of the shorter side, centred on the card. */
-export function createSphereStars(count = SPHERE_STAR_COUNT): SphereStar[] {
-  return Array.from({ length: count }, (_, index) => ({
-    x: hash(index + 1) - 0.5,
-    y: hash(index + 101) - 0.5,
-    radius: 0.0018 + hash(index + 201) * 0.0032,
-    opacity: 0.25 + hash(index + 301) * 0.5,
-    phase: hash(index + 401) * Math.PI * 2,
-    speed: 0.6 + hash(index + 501) * 1.4,
-  }));
+/** 1 right behind the node, fading to 0 at the end of its trail; 0 ahead of it. */
+export function trailStrength(
+  ring: SphereRing,
+  angle: number,
+  seconds: number,
+): number {
+  const full = Math.PI * 2;
+  const direction = Math.sign(ring.nodeSpeed) || 1;
+  const behind =
+    ((((nodeAngle(ring, seconds) - angle) * direction) % full) + full) % full;
+  if (behind > SPHERE_TRAIL_ARC) return 0;
+
+  return (1 - behind / SPHERE_TRAIL_ARC) ** 2;
 }

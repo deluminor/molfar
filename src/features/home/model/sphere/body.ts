@@ -1,124 +1,90 @@
-import { SPHERE_LATTICE_SEGMENTS, SPHERE_NEBULA } from "./constants";
-import { latitudePoint, meridianPoint } from "./geometry";
-import type { Vec3 } from "./types";
+import type { BrandPalette } from "../brand-visual/types";
+import { SPHERE_LATTICE_SEGMENTS } from "./constants";
+import { facesSide, latitudePoint, meridianPoint } from "./geometry";
+import type { SphereSide, Vec3 } from "./types";
 
-const LATITUDES = [-0.6, -0.2, 0.2, 0.6];
-const LONGITUDES = [0, Math.PI / 4, Math.PI / 2, (Math.PI * 3) / 4];
+const LATITUDES = [-0.6, 0, 0.6];
+const LONGITUDES = [0, Math.PI / 3, (Math.PI * 2) / 3];
+const LATTICE_STEPS = Array.from(
+  { length: SPHERE_LATTICE_SEGMENTS + 1 },
+  (_, index) => (index / SPHERE_LATTICE_SEGMENTS) * Math.PI * 2,
+);
 
-function strokeCurve(context: CanvasRenderingContext2D, points: Vec3[]): void {
-  for (let index = 0; index < points.length - 1; index++) {
-    const from = points[index];
-    const to = points[index + 1];
-
-    context.globalAlpha = (from.z + to.z) / 2 >= 0 ? 0.13 : 0.05;
-    context.beginPath();
-    context.moveTo(from.x, from.y);
-    context.lineTo(to.x, to.y);
-    context.stroke();
-  }
+export function latticeCurves(radius: number, seconds: number): Vec3[][] {
+  return [
+    ...LATITUDES.map((latitude) =>
+      LATTICE_STEPS.map((angle) =>
+        latitudePoint(latitude, angle, radius, seconds),
+      ),
+    ),
+    ...LONGITUDES.map((longitude) =>
+      LATTICE_STEPS.map((angle) =>
+        meridianPoint(longitude, angle, radius, seconds),
+      ),
+    ),
+  ];
 }
 
-function drawLattice(
+function traceSide(
   context: CanvasRenderingContext2D,
-  radius: number,
-  seconds: number,
+  curves: readonly (readonly Vec3[])[],
+  side: SphereSide,
 ): void {
-  const steps = Array.from(
-    { length: SPHERE_LATTICE_SEGMENTS + 1 },
-    (_, index) => (index / SPHERE_LATTICE_SEGMENTS) * Math.PI * 2,
-  );
+  context.beginPath();
 
-  context.strokeStyle = "#e9d5ff";
-  context.lineWidth = Math.max(0.5, radius * 0.008);
+  for (const points of curves) {
+    for (let index = 0; index < points.length - 1; index++) {
+      const from = points[index];
+      const to = points[index + 1];
+      if (!facesSide((from.z + to.z) / 2, side)) continue;
 
-  for (const latitude of LATITUDES) {
-    strokeCurve(
-      context,
-      steps.map((angle) => latitudePoint(latitude, angle, radius, seconds)),
-    );
-  }
-
-  for (const longitude of LONGITUDES) {
-    strokeCurve(
-      context,
-      steps.map((angle) => meridianPoint(longitude, angle, radius, seconds)),
-    );
+      context.moveTo(from.x, from.y);
+      context.lineTo(to.x, to.y);
+    }
   }
 }
 
-function fillCircle(
+function fillGlow(
   context: CanvasRenderingContext2D,
   radius: number,
-  style: CanvasGradient | string,
+  color: string,
   alpha: number,
 ): void {
+  const glow = context.createRadialGradient(0, 0, 0, 0, 0, radius);
+
+  glow.addColorStop(0, color);
+  glow.addColorStop(1, "transparent");
   context.globalAlpha = alpha;
-  context.fillStyle = style;
+  context.fillStyle = glow;
   context.beginPath();
   context.arc(0, 0, radius, 0, Math.PI * 2);
   context.fill();
 }
 
-export function drawSphereBody(
+/** Glass shell: a hairline lattice per side, plus the rim on the front pass. */
+export function drawShell(
   context: CanvasRenderingContext2D,
+  curves: readonly (readonly Vec3[])[],
   radius: number,
-  seconds: number,
+  palette: BrandPalette,
+  side: SphereSide,
 ): void {
-  const halo = context.createRadialGradient(
-    0,
-    0,
-    radius * 0.8,
-    0,
-    0,
-    radius * 1.7,
-  );
+  context.strokeStyle = palette.accent;
+  context.lineWidth = Math.max(0.55, radius * 0.0045);
+  context.globalAlpha = side === "front" ? 0.14 : 0.05;
+  traceSide(context, curves, side);
+  context.stroke();
 
-  halo.addColorStop(0, "rgba(139, 92, 246, 0.55)");
-  halo.addColorStop(1, "rgba(139, 92, 246, 0)");
-  fillCircle(context, radius * 1.7, halo, 1);
+  if (side === "back") return;
 
-  const pulse = 1 + Math.sin(seconds * 0.8) * 0.04;
-  const nebula = context.createRadialGradient(
-    0,
-    radius * 0.04,
-    0,
-    0,
-    radius * 0.04,
-    radius * pulse,
-  );
-
-  for (const [offset, color] of SPHERE_NEBULA)
-    nebula.addColorStop(offset, color);
-  fillCircle(context, radius, nebula, 1);
-
-  drawLattice(context, radius, seconds);
-
-  const shade = context.createRadialGradient(
-    -radius * 0.36,
-    -radius * 0.44,
-    0,
-    -radius * 0.36,
-    -radius * 0.44,
-    radius * 1.6,
-  );
-
-  shade.addColorStop(0.5, "rgba(5, 4, 15, 0)");
-  shade.addColorStop(1, "rgba(5, 4, 15, 0.5)");
-  fillCircle(context, radius, shade, 1);
-
-  const rim = context.createLinearGradient(-radius, -radius, radius, radius);
-
-  rim.addColorStop(0, "rgba(165, 243, 252, 0.95)");
-  rim.addColorStop(0.5, "rgba(139, 92, 246, 0.35)");
-  rim.addColorStop(1, "rgba(240, 171, 252, 0.8)");
-  context.strokeStyle = rim;
-  context.lineWidth = Math.max(0.8, radius * 0.014);
+  context.globalAlpha = 0.22;
+  context.lineWidth = Math.max(0.7, radius * 0.007);
   context.beginPath();
   context.arc(0, 0, radius, 0, Math.PI * 2);
   context.stroke();
 }
 
-function sparklePath(
+function starPath(
   context: CanvasRenderingContext2D,
   size: number,
   waist: number,
@@ -132,60 +98,28 @@ function sparklePath(
   context.closePath();
 }
 
-function rhombusPath(context: CanvasRenderingContext2D, size: number): void {
-  context.beginPath();
-  context.moveTo(0, -size);
-  context.lineTo(size * 0.78, 0);
-  context.lineTo(0, size);
-  context.lineTo(-size * 0.78, 0);
-  context.closePath();
-}
-
+/** The logo's guiding star: a four-point spark over a breathing accent glow. */
 export function drawCore(
   context: CanvasRenderingContext2D,
   radius: number,
   seconds: number,
+  palette: BrandPalette,
 ): void {
-  const breath = 1 + Math.sin(seconds * 1.3) * 0.06;
-  const glow = context.createRadialGradient(
-    0,
-    0,
-    0,
-    0,
-    0,
-    radius * 0.6 * breath,
-  );
+  const breath = 1 + Math.sin(seconds * 1.1) * 0.06;
 
-  glow.addColorStop(0, "rgba(253, 230, 138, 0.85)");
-  glow.addColorStop(0.4, "rgba(245, 158, 11, 0.35)");
-  glow.addColorStop(1, "rgba(245, 158, 11, 0)");
-  fillCircle(context, radius * 0.6 * breath, glow, 1);
+  fillGlow(context, radius * 0.95 * breath, palette.accent, 0.26);
+  fillGlow(context, radius * 0.42 * breath, palette.hot, 0.18);
 
   context.save();
   context.rotate(Math.sin(seconds * 0.35) * 0.12);
-  context.globalAlpha = 0.95;
-  context.fillStyle = "#fffaf0";
-  sparklePath(context, radius * 0.41 * breath, radius * 0.036);
+  context.globalAlpha = 0.88;
+  context.fillStyle = palette.hot;
+  starPath(context, radius * 0.22 * breath, radius * 0.022);
   context.fill();
 
-  const gold = context.createLinearGradient(
-    0,
-    -radius * 0.16,
-    0,
-    radius * 0.16,
-  );
-
-  gold.addColorStop(0, "#fff4c2");
-  gold.addColorStop(0.45, "#fcd34d");
-  gold.addColorStop(1, "#f59e0b");
-  context.globalAlpha = 1;
-  context.fillStyle = gold;
-  rhombusPath(context, radius * 0.16);
-  context.fill();
-
-  context.globalAlpha = 0.55;
-  context.fillStyle = "#7c2d12";
-  rhombusPath(context, radius * 0.07);
+  context.globalAlpha = 0.85;
+  context.fillStyle = palette.accent;
+  starPath(context, radius * 0.07, radius * 0.01);
   context.fill();
   context.restore();
 }

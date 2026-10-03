@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   advanceBrandTime,
   brandCanvasSize,
-  shouldAnimateBrandVisual,
+  brandVisualStatus,
 } from "../model/brand-visual/animation";
 import type {
   BrandCanvas,
@@ -70,17 +70,18 @@ export function useBrandCanvas<Theme>(
 
       if (motion.matches) seconds = options.stillSeconds;
       draw();
-      setStatus(motion.matches ? "still" : "running");
 
-      last = performance.now();
-      const animate = shouldAnimateBrandVisual({
+      const next = brandVisualStatus({
         hidden: document.hidden,
         reducedMotion: motion.matches,
         onScreen,
         width,
         height,
       });
-      if (animate) frame = requestAnimationFrame(tick);
+      setStatus(next);
+
+      last = performance.now();
+      if (next === "running") frame = requestAnimationFrame(tick);
     };
 
     const resizeObserver = new ResizeObserver(sync);

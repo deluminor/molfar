@@ -141,6 +141,10 @@ it("builds temporary and generated worktree branch names", () => {
   expect(namedWorktreeBranch("molfar/already-prefixed")).toBe(
     "molfar/already-prefixed",
   );
+  expect(namedWorktreeBranch("vatra/old-prefix")).toBe("molfar/old-prefix");
+  expect(namedWorktreeBranch("monocode/legacy-prefix")).toBe(
+    "molfar/legacy-prefix",
+  );
   expect(namedWorktreeBranch("mc/legacy-short")).toBe("molfar/legacy-short");
   expect(namedWorktreeBranch("  ")).toBeNull();
 });

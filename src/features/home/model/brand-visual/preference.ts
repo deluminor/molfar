@@ -1,7 +1,7 @@
 import { BRAND_VISUAL_STORAGE_KEY } from "./constants";
 import type { BrandVisual } from "./types";
 
-const DEFAULT_VISUAL: BrandVisual = "sphere";
+const DEFAULT_VISUAL: BrandVisual = "fire";
 
 export function parseBrandVisual(stored: string | null): BrandVisual {
   if (stored === "fire" || stored === "orb" || stored === "sphere")

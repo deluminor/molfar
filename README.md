@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="public/molfar.png" alt="MOLFAR logo" width="112" />
   <h1>MOLFAR</h1>
   <p><strong>Multi-Agent Orchestration Layer for Autonomous Reasoning</strong></p>
   <p>One local-first engineering workspace for coding agents, code, knowledge, worktrees, and automation.<br/>Claude Code, Codex, Cursor, and other coding agents side by side, on your machine.</p>
@@ -36,15 +35,15 @@
 
 ## TL;DR
 
-|                |                                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------------------- |
-| **What**       | Local-first engineering workspace and control plane for coding agents                                 |
-| **Providers**  | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent              |
-| **Cost**       | No hosted model and no token resale. MOLFAR drives the CLIs and subscriptions you already have        |
-| **Data**       | Sessions, project state, notes, knowledge links, and integration credentials stay on your machine     |
-| **Platforms**  | macOS (Apple Silicon and Intel), Windows, Linux (`.deb`, AppImage, `.rpm`)                            |
-| **Origin**     | Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT); independent project since    |
-| **Status**     | Early and actively developed; used daily as the author's primary engineering workspace               |
+|               |                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| **What**      | Local-first engineering workspace and control plane for coding agents                             |
+| **Providers** | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent          |
+| **Cost**      | No hosted model and no token resale. MOLFAR drives the CLIs and subscriptions you already have    |
+| **Data**      | Sessions, project state, notes, knowledge links, and integration credentials stay on your machine |
+| **Platforms** | macOS (Apple Silicon and Intel), Windows, Linux (`.deb`, AppImage, `.rpm`)                        |
+| **Origin**    | Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT); independent project since |
+| **Status**    | Early and actively developed; used daily as the author's primary engineering workspace            |
 
 ## Why MOLFAR
 
@@ -57,7 +56,7 @@ Working with several coding agents quickly turns into a pile of disconnected too
 
 The problem is not a lack of agents. It is the lack of a shared engineering environment around them. MOLFAR puts the agents inside the same project context as the code, terminal, tickets, and knowledge, so a task does not need constant copy-pasting between applications.
 
-The name is a nod to the *molfar* — the Carpathian wise man who reads signs and keeps knowledge. The acronym says what the product does: a layer that orchestrates many agents locally and keeps their reasoning grounded in your project.
+The name is a nod to the _molfar_ — the Carpathian wise man who reads signs and keeps knowledge. The acronym says what the product does: a layer that orchestrates many agents locally and keeps their reasoning grounded in your project.
 
 ## What it does
 
@@ -98,7 +97,7 @@ MOLFAR opens a local Obsidian vault directly — no plugin, no running Obsidian.
 - Source/Preview editing that preserves frontmatter and line endings;
 - **Add to agent context** attaches the saved revision as an explicit context card, so the agent works from exactly the text you reviewed.
 
-![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-close.png)
+![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-open.png)
 
 ### Notes
 
@@ -129,12 +128,12 @@ Global quick composer (`Cmd+Shift+Space` by default) · MCP server management fo
 
 Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
 
-| Layer                 | Responsibility                                                                                      |
-| --------------------- | --------------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them             |
-| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model        |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session persistence, host metrics, Atlassian requests, local control CLI      |
-| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine      |
+| Layer                 | Responsibility                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| **React UI**          | Sessions, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them         |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model    |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session persistence, host metrics, Atlassian requests, local control CLI  |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine |
 
 The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
 
@@ -299,22 +298,22 @@ Run agents on an always-on Windows, Linux, or macOS machine through MOLFAR Host 
 
 ## Development
 
-| Script                       | Description                                            |
-| ---------------------------- | ------------------------------------------------------ |
-| `npm run tauri -- dev`       | Desktop app in development mode                        |
-| `npm run dev`                | Vite frontend only (no native shell)                   |
-| `npm run tauri:stable`       | Tauri dev with stable config, no file watch            |
-| `npm run build`              | `tsc` + Vite production build                          |
-| `npm test`                   | Vitest once (`npm run test:watch` for watch mode)      |
-| `npm run check`              | Full gate: web checks + Rust fmt/clippy/tests          |
-| `npm run check:web`          | Vitest + `tsc --noEmit`                                |
-| `npm run check:rust`         | `cargo fmt --check`, clippy `-D warnings`, cargo test  |
-| `npm run build:linux`        | Linux `.deb` + AppImage bundles                        |
-| `npm run build:fedora`       | Linux `.rpm` bundle                                    |
-| `npm run build:windows`      | Windows NSIS installer                                 |
-| `npm run host:build`         | Build the experimental remote host                     |
-| `npm run test:host`          | Vitest for the remote host                             |
-| `npm run set-version`        | Set the app version in every manifest                  |
+| Script                  | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run tauri -- dev`  | Desktop app in development mode                       |
+| `npm run dev`           | Vite frontend only (no native shell)                  |
+| `npm run tauri:stable`  | Tauri dev with stable config, no file watch           |
+| `npm run build`         | `tsc` + Vite production build                         |
+| `npm test`              | Vitest once (`npm run test:watch` for watch mode)     |
+| `npm run check`         | Full gate: web checks + Rust fmt/clippy/tests         |
+| `npm run check:web`     | Vitest + `tsc --noEmit`                               |
+| `npm run check:rust`    | `cargo fmt --check`, clippy `-D warnings`, cargo test |
+| `npm run build:linux`   | Linux `.deb` + AppImage bundles                       |
+| `npm run build:fedora`  | Linux `.rpm` bundle                                   |
+| `npm run build:windows` | Windows NSIS installer                                |
+| `npm run host:build`    | Build the experimental remote host                    |
+| `npm run test:host`     | Vitest for the remote host                            |
+| `npm run set-version`   | Set the app version in every manifest                 |
 
 Feature logic lives next to its tests under `src/features/**`. A versioned pre-push hook runs `npm run check:web`; enable it once per clone with `git config core.hooksPath .githooks`.
 

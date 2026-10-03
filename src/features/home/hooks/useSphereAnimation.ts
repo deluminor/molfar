@@ -1,16 +1,24 @@
 import { SPHERE_STILL_SECONDS } from "../model/sphere/constants";
 import { drawSphereFrame } from "../model/sphere/render";
+import { readBrandPalette } from "../model/brand-visual/palette";
 import type {
   BrandCanvas,
   BrandCanvasOptions,
+  BrandPalette,
 } from "../model/brand-visual/types";
 import { useBrandCanvas } from "./useBrandCanvas";
 
-const SPHERE_CANVAS: BrandCanvasOptions<null> = {
+const SPHERE_CANVAS: BrandCanvasOptions<BrandPalette> = {
   stillSeconds: SPHERE_STILL_SECONDS,
-  readTheme: () => null,
+  readTheme: readBrandPalette,
   draw: (context, frame) =>
-    drawSphereFrame(context, frame.width, frame.height, frame.seconds),
+    drawSphereFrame(
+      context,
+      frame.width,
+      frame.height,
+      frame.seconds,
+      frame.theme,
+    ),
 };
 
 export function useSphereAnimation(): BrandCanvas {

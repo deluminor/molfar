@@ -9,14 +9,6 @@ export type SphereRing = {
   nodePhase: number;
   /** Angular speed of the node along its ring, in radians per second. */
   nodeSpeed: number;
-  nodeColor: string;
 };
 
-export type SphereStar = {
-  x: number;
-  y: number;
-  radius: number;
-  opacity: number;
-  phase: number;
-  speed: number;
-};
+export type SphereSide = "back" | "front";

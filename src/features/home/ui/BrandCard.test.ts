@@ -175,9 +175,11 @@ describe("sphere visual", () => {
 
     intersect(false);
     expect(frames.size).toBe(0);
+    expect(sphereStatus()).toBe("paused");
 
     intersect(true);
     expect(frames.size).toBe(1);
+    expect(sphereStatus()).toBe("running");
   });
 });
 
@@ -226,6 +228,7 @@ describe("fire visual", () => {
     hidden = true;
     act(() => document.dispatchEvent(new Event("visibilitychange")));
     expect(frames.size).toBe(0);
+    expect(fireStatus()).toBe("paused");
 
     hidden = false;
     act(() => document.dispatchEvent(new Event("visibilitychange")));

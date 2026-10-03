@@ -398,10 +398,10 @@ pub async fn git_orchestration_worktree_create(
         .map_err(|error| error.to_string())?
 }
 
-// Branches created by earlier builds keep the `mc/` prefix and must stay
-// manageable.
-const GENERATED_BRANCH_PREFIXES: [&str; 2] = ["molfar/", "mc/"];
-const ORCHESTRATION_BRANCH_PREFIXES: [&str; 2] = ["molfar/orch-", "mc/orch-"];
+// Branches created by earlier builds keep the `vatra/`, `mc/` and `monocode/`
+// prefixes and must stay manageable.
+const GENERATED_BRANCH_PREFIXES: [&str; 4] = ["molfar/", "vatra/", "mc/", "monocode/"];
+const ORCHESTRATION_BRANCH_PREFIXES: [&str; 3] = ["molfar/orch-", "vatra/orch-", "mc/orch-"];
 
 fn is_generated_branch(branch: &str) -> bool {
     GENERATED_BRANCH_PREFIXES
@@ -977,11 +977,13 @@ mod tests {
     #[test]
     fn recognizes_current_and_legacy_branch_prefixes() {
         assert!(is_generated_branch("molfar/12345678"));
+        assert!(is_generated_branch("vatra/12345678"));
         assert!(is_generated_branch("mc/12345678"));
-        assert!(!is_generated_branch("monocode/12345678"));
+        assert!(is_generated_branch("monocode/12345678"));
         assert!(!is_generated_branch("feature/molfar"));
 
         assert!(is_orchestration_branch("molfar/orch-task"));
+        assert!(is_orchestration_branch("vatra/orch-task"));
         assert!(is_orchestration_branch("mc/orch-task"));
         assert!(!is_orchestration_branch("molfar/task"));
         assert!(!is_orchestration_branch("monocode/orch-task"));

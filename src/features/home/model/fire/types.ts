@@ -5,5 +5,3 @@ export type FireParticle = {
   opacity: number;
   hot: boolean;
 };
-
-export type FirePalette = { accent: string; hot: string };

@@ -1,16 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { SPHERE_PRECESSION_PERIOD, SPHERE_RINGS } from "./constants";
 import {
-  createSphereStars,
+  SPHERE_PRECESSION_PERIOD,
+  SPHERE_RINGS,
+  SPHERE_TRAIL_ARC,
+} from "./constants";
+import {
+  depthShade,
+  facesSide,
   latitudePoint,
   nodeAngle,
   precessionAngle,
-  ringColor,
   ringPoint,
+  trailStrength,
 } from "./geometry";
+import type { SphereRing } from "./types";
 
 const length = ({ x, y, z }: { x: number; y: number; z: number }) =>
   Math.hypot(x, y, z);
+
+const forward: SphereRing = {
+  inclination: 0,
+  tilt: 0,
+  nodePhase: 1,
+  nodeSpeed: 0.5,
+};
 
 describe("sphere geometry", () => {
   it("keeps every ring point on its shell while the cage precesses", () => {
@@ -53,19 +66,45 @@ describe("sphere geometry", () => {
     expect(length(latitudePoint(0.6, 1.2, 50, 3))).toBeCloseTo(50);
   });
 
-  it("colours ring ends violet and the front crossing cyan", () => {
-    expect(ringColor(0)).toBe("rgb(124, 58, 237)");
-    expect(ringColor(Math.PI / 2)).toBe("rgb(103, 232, 249)");
+  it("splits points into back and front passes without overlap", () => {
+    expect(facesSide(0, "front")).toBe(true);
+    expect(facesSide(0, "back")).toBe(false);
+    expect(facesSide(-1, "back")).toBe(true);
   });
 
-  it("creates a stable star field inside the card", () => {
-    const stars = createSphereStars(12);
+  it("shades depth from the far side to the near side", () => {
+    expect(depthShade(-100, 100)).toBe(0);
+    expect(depthShade(0, 100)).toBeCloseTo(0.5);
+    expect(depthShade(100, 100)).toBe(1);
+    expect(depthShade(250, 100)).toBe(1);
+  });
+});
 
-    expect(stars).toEqual(createSphereStars(12));
-    for (const star of stars) {
-      expect(Math.abs(star.x)).toBeLessThanOrEqual(0.5);
-      expect(Math.abs(star.y)).toBeLessThanOrEqual(0.5);
-      expect(star.opacity).toBeGreaterThan(0);
-    }
+describe("trailStrength", () => {
+  it("glows brightest right behind the node and fades along the trail", () => {
+    const near = trailStrength(forward, 0.95, 0);
+    const far = trailStrength(forward, 1 - SPHERE_TRAIL_ARC * 0.8, 0);
+
+    expect(trailStrength(forward, 1, 0)).toBe(1);
+    expect(near).toBeGreaterThan(far);
+    expect(far).toBeGreaterThan(0);
+  });
+
+  it("leaves the arc ahead of the node and past the trail dark", () => {
+    expect(trailStrength(forward, 1.2, 0)).toBe(0);
+    expect(trailStrength(forward, 1 - SPHERE_TRAIL_ARC - 0.1, 0)).toBe(0);
+  });
+
+  it("follows the node backwards on counter-rotating rings", () => {
+    const backward = { ...forward, nodeSpeed: -0.5 };
+
+    expect(trailStrength(backward, 1.2, 0)).toBeGreaterThan(0);
+    expect(trailStrength(backward, 0.8, 0)).toBe(0);
+  });
+
+  it("wraps the trail across the zero angle", () => {
+    const atStart = { ...forward, nodePhase: 0.1 };
+
+    expect(trailStrength(atStart, Math.PI * 2 - 0.1, 0)).toBeGreaterThan(0);
   });
 });
