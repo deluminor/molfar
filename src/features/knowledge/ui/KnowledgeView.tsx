@@ -1,9 +1,8 @@
 import { useState, type ChangeEvent } from "react";
-import { OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { IS_MAC } from "../../../platform/tauri/platform";
+import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
 import { FolderTree, RefreshCw, Search } from "../../../shared/ui/icons";
 import { ModalPanel } from "../../../shared/ui/Modal";
+import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
 import { useVault } from "../hooks/vault/use-vault";
 import { useVaultDocument } from "../hooks/documents/use-vault-document";
 import { KnowledgeStatus } from "./KnowledgeStatus";
@@ -11,7 +10,8 @@ import { useKnowledgeContext } from "../hooks/documents/use-knowledge-context";
 import { KnowledgeGraph } from "./graph/KnowledgeGraph";
 import { useKnowledgeProjection } from "../hooks/graph/use-knowledge-projection";
 import { KnowledgeSidePanel } from "./side-panel/KnowledgeSidePanel";
-import { NO_NOTES } from "./constants";
+import { ACTION_FILLED, ICON_BUTTON, NO_NOTES } from "./constants";
+import { KnowledgeAlert } from "./KnowledgeAlert";
 import { KnowledgeConnect } from "./connect/KnowledgeConnect";
 import { KnowledgeTree } from "./tree/KnowledgeTree";
 import { KnowledgeAttachment } from "./document/KnowledgeAttachment";
@@ -19,12 +19,12 @@ import { KnowledgeDocument } from "./document/KnowledgeDocument";
 import type { KnowledgeViewProps, PendingExit } from "./types";
 import "./knowledge.css";
 import "./document/document.css";
-import "./connect/connect.css";
 
 export function KnowledgeView({
   onClose,
   onToggleSidebar,
   besideRail = false,
+  compactRail = false,
 }: KnowledgeViewProps) {
   const vault = useVault();
   const [query, setQuery] = useState("");
@@ -83,77 +83,79 @@ export function KnowledgeView({
   };
 
   return (
-    <div className="knowledge-view" data-beside-rail={besideRail}>
-      <header className="knowledge-titlebar" data-tauri-drag-region="deep">
-        <OverlayNav onBack={close} onToggleSidebar={onToggleSidebar} />
-        <FolderTree size={15} />
-        <strong>Knowledge</strong>
-        <span className="knowledge-titlebar-context">
-          {vault.connection?.name ?? "Connect your vault"}
-        </span>
-        {!IS_MAC && <WindowControls />}
-      </header>
-      {vault.error && (
-        <div className="knowledge-error" role="alert">
-          {vault.error}
-        </div>
-      )}
-      {context.error && (
-        <div className="knowledge-error" role="alert">
-          {context.error}
-        </div>
-      )}
-      {!vault.connection && (
+    <div
+      role="region"
+      aria-label="Knowledge"
+      data-app-knowledge
+      className="flex min-h-0 min-w-0 flex-1 flex-col text-content"
+    >
+      <SurfaceHeader
+        title="Knowledge"
+        icon={FolderTree}
+        besideRail={besideRail}
+        compactRail={compactRail}
+        onClose={close}
+        onToggleSidebar={onToggleSidebar}
+      />
+      {vault.error ? (
+        <KnowledgeAlert>{vault.error}</KnowledgeAlert>
+      ) : null}
+      {context.error ? (
+        <KnowledgeAlert>{context.error}</KnowledgeAlert>
+      ) : null}
+      {!vault.connection ? (
         <KnowledgeConnect busy={vault.busy} onConnect={vault.connect} />
-      )}
-      {vault.connection && (
+      ) : null}
+      {vault.connection ? (
         <>
-          <div className="knowledge-toolbar">
+          <div className="flex h-9 shrink-0 items-center gap-1 border-b border-stroke px-2">
             <button
-              className="knowledge-icon-button"
+              type="button"
+              className={ICON_BUTTON}
               aria-label="Toggle vault tree"
               aria-pressed={treeOpen}
               onClick={toggleTree}
             >
-              <FolderTree size={16} />
+              <FolderTree className="size-3.5" strokeWidth={1.75} />
             </button>
-            <label className="knowledge-search">
-              <Search size={14} />
+            <div className="relative flex h-7 min-w-0 flex-1 items-center">
+              <Search className="pointer-events-none absolute left-2 size-3 shrink-0 opacity-50" />
               <input
                 aria-label="Search vault"
                 placeholder="Find notes and files…"
                 value={query}
                 onChange={changeQuery}
+                spellCheck={false}
+                autoComplete="off"
+                className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] text-content outline-none placeholder:text-content/40 focus-visible:outline-2 focus-visible:outline-accent"
               />
-            </label>
-            <span className="knowledge-count">
+            </div>
+            <span className="knowledge-count shrink-0 px-1 text-[11px] tabular-nums text-content/45">
               {vault.snapshot?.notes.length.toLocaleString() ?? "…"} notes
             </span>
             <button
-              className="knowledge-icon-button"
+              type="button"
+              className={ICON_BUTTON}
               aria-label="Refresh vault"
               onClick={vault.refresh}
               disabled={vault.busy}
             >
-              <RefreshCw size={15} />
+              <RefreshCw className="size-3.5" strokeWidth={1.75} />
             </button>
-            <button
-              className="knowledge-button"
-              disabled={vault.busy}
-              onClick={disconnect}
-            >
+            <SecondaryButton disabled={vault.busy} onClick={disconnect}>
               Disconnect
-            </button>
+            </SecondaryButton>
           </div>
           <div
             className="knowledge-workspace"
-            data-document-open={Boolean(selectedPath)}
           >
-            {treeOpen && (
+            {treeOpen ? (
               <aside className="knowledge-files">
-                <div className="knowledge-files-heading">
-                  <span className="knowledge-eyebrow">VAULT EXPLORER</span>
-                  <span title={vault.connection.root}>
+                <div className="flex h-9 shrink-0 items-center border-b border-stroke px-3">
+                  <span
+                    className="min-w-0 truncate text-[12px] text-content"
+                    title={vault.connection.root}
+                  >
                     {vault.connection.name}
                   </span>
                 </div>
@@ -165,7 +167,7 @@ export function KnowledgeView({
                   onSelect={select}
                 />
               </aside>
-            )}
+            ) : null}
             <main className="knowledge-scene">
               <KnowledgeGraph
                 projection={graph.projection}
@@ -174,12 +176,14 @@ export function KnowledgeView({
                 selectedPath={selectedPath}
                 onSelect={select}
               />
-              <div className="knowledge-scene-caption">
-                <span>Explore connections</span>
+              <div className="pointer-events-none absolute inset-x-4 bottom-3.5 flex flex-col gap-0.5 text-[10px] text-content/45">
+                <span className="text-[12px] text-content/70">
+                  Explore connections
+                </span>
                 <span>Drag to orbit · Scroll to zoom · Select a note</span>
               </div>
             </main>
-            {selectedPath && (
+            {selectedPath ? (
               <KnowledgeSidePanel>
                 {markdown ? (
                   <KnowledgeDocument
@@ -201,7 +205,7 @@ export function KnowledgeView({
                   />
                 )}
               </KnowledgeSidePanel>
-            )}
+            ) : null}
           </div>
           <KnowledgeStatus
             vault={vault}
@@ -209,8 +213,8 @@ export function KnowledgeView({
             hasDirty={document.hasDirty}
           />
         </>
-      )}
-      {pendingExit && (
+      ) : null}
+      {pendingExit ? (
         <ModalPanel
           title={
             pendingExit === "disconnect"
@@ -220,18 +224,17 @@ export function KnowledgeView({
           onClose={cancelExit}
           size="sm"
         >
-          <p className="knowledge-confirm-copy">
+          <p className="px-4 pb-1 text-[13px] leading-relaxed text-content/70">
             {pendingExit === "disconnect"
               ? "Unsaved drafts will be discarded. Your vault files will stay unchanged."
               : "Your unsaved drafts will remain available when you return to Knowledge."}
           </p>
-          <div className="knowledge-confirm-actions">
-            <button className="knowledge-button" onClick={cancelExit}>
-              Stay
-            </button>
+          <div className="flex justify-end gap-2 px-4 pb-4 pt-3">
+            <SecondaryButton onClick={cancelExit}>Stay</SecondaryButton>
             <button
-              className="knowledge-button knowledge-primary"
-              onClick={confirmExit}
+              type="button"
+              className={`${ACTION_FILLED} h-6.5`}
+              onClick={() => void confirmExit()}
             >
               {pendingExit === "disconnect"
                 ? "Discard drafts and disconnect"
@@ -239,7 +242,7 @@ export function KnowledgeView({
             </button>
           </div>
         </ModalPanel>
-      )}
+      ) : null}
     </div>
   );
 }

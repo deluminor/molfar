@@ -5,32 +5,32 @@
   min-height: 220px;
   overflow: hidden;
 }
+
 .knowledge-graph-canvas {
   position: absolute;
   inset: 0;
 }
+
 .knowledge-graph-controls {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
+  z-index: 1;
 }
-.knowledge-graph-controls button {
-  background: var(--color-background-base);
-}
-.knowledge-graph-controls [aria-pressed="true"] {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
+
 .knowledge-graph-message {
   position: absolute;
   inset: 40% 12% auto;
   text-align: center;
   line-height: 1.8;
   color: var(--color-content);
+  font-size: 13px;
+  opacity: 0.7;
 }
+
 .knowledge-graph .graph-tooltip {
   color: var(--color-content);
   background: var(--color-background-base);
@@ -38,6 +38,7 @@
   border-radius: 6px;
   padding: 6px 9px;
 }
+
 @media (max-width: 768px) {
   .knowledge-graph-controls {
     top: 10px;
