@@ -1,6 +1,6 @@
 import { Inbox } from "../../../shared/ui/icons";
-import type { InboxProvider } from "../model/githubTasks";
-import type { InboxSource } from "../model/inboxFilters";
+import type { InboxProvider } from "../model/github-tasks";
+import type { InboxSource } from "../model/inbox-filters";
 
 export function InboxProviderMark({
   provider,

@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { splitMarkdownFrontmatter } from "../../../shared/lib/markdownFrontmatter";
+import { splitMarkdownFrontmatter } from "../../../shared/lib/markdown-frontmatter";
 import { ChevronDown, ChevronRight } from "../../../shared/ui/icons";
 import type { OpenFileFn } from "../../search/model/search";
 import { MarkdownPreview } from "./AgentMarkdown";

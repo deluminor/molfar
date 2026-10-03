@@ -5,7 +5,7 @@ import {
   inferShellIntent,
   rewriteReadableTitle,
   unwrapShellCommand,
-} from "./shellIntent";
+} from "./shell-intent";
 
 export const MAX_PREVIEW_LINES = 6;
 export const MAX_LINE_CHARS = 120;

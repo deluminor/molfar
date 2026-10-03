@@ -60,7 +60,7 @@ vi.mock("./graph-theme", () => ({
     muted: "muted",
   }),
 }));
-vi.mock("../../../../shared/hooks/useColorScheme", () => ({
+vi.mock("../../../../shared/hooks/use-color-scheme", () => ({
   useColorScheme: () => "dark",
 }));
 

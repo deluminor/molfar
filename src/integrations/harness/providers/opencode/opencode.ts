@@ -1,6 +1,6 @@
 import { modelContextWindow, nativeModelId } from "../../../../features/sessions/model/models";
 import type { RuntimeMode, TurnMetrics } from "../../../../features/sessions/model/session";
-import { taskListFromToolInput } from "../../../../features/sessions/model/taskList";
+import { taskListFromToolInput } from "../../../../features/sessions/model/task-list";
 import {
   closeHarnessSse,
   execChild,
@@ -15,7 +15,7 @@ import {
   OpenCodeClient,
   OpenCodeHttpError,
   type OpenCodeMessage,
-} from "./opencodeClient";
+} from "./opencode-client";
 import {
   appendOpenCodeAssistantTextDelta,
   asRecord,
@@ -42,13 +42,13 @@ import {
   toOpenCodePermissionReply,
   toolKindFromName,
   type OpenCodePart,
-} from "./opencodeProtocol";
+} from "./opencode-protocol";
 import {
   composeToolTitle,
   extractShellCommand,
   extractSkillName,
 } from "../../core/preview";
-import { streamTextDelta } from "../../core/streamText";
+import { streamTextDelta } from "../../core/stream-text";
 import type {
   ApprovalDecision,
   CompactContextInput,
@@ -65,7 +65,7 @@ import {
   selectedAnswerLabels,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "../../../../features/sessions/model/user-question";
 
 type PendingApproval = {
   id: string;

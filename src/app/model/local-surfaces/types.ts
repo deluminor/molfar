@@ -6,8 +6,8 @@ import type {
 } from "react";
 import type { LocalSurfaceId } from "../../../features/home/ui/LocalSurfaceRailActions";
 import type { SidebarTabId } from "../../../features/settings/model/appearance";
-import type { RailSurfaceVisibility } from "../../../features/settings/model/projectRail";
-import type { SessionSummary } from "../../../features/sessions/data/sessionStore";
+import type { RailSurfaceVisibility } from "../../../features/settings/model/project-rail";
+import type { SessionSummary } from "../../../features/sessions/data/session-store";
 import type { Session } from "../../../features/sessions/model/session";
 
 type SetFlag = Dispatch<SetStateAction<boolean>>;

@@ -1,5 +1,5 @@
 import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
+import { sameProviderAccountId } from "../../../../features/providers/model/provider-accounts";
 import type {
   RuntimeMode,
   TaskListItem,
@@ -69,14 +69,14 @@ import {
   type ClaudeAgentTaskNotification,
   type ClaudeCliSettings,
   type ClaudeControlRequest,
-} from "./claudeProtocol";
+} from "./claude-protocol";
 import { isAgentToolName } from "../../core/preview";
-import { joinStreamText, snapshotRemainder } from "../../core/streamText";
+import { joinStreamText, snapshotRemainder } from "../../core/stream-text";
 import {
   questionPromptTitle,
   questionsFromUnknown,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "../../../../features/sessions/model/user-question";
 import type {
   ApprovalDecision,
   CompactContextInput,

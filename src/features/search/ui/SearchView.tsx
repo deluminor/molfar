@@ -14,7 +14,7 @@ import { MatchText } from "../../../shared/ui/MatchText";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import {
   conversationRowsFrom,
   flattenGrouped,
@@ -28,13 +28,13 @@ import {
   searchSessionMessages,
   type AppSearchHit,
   type SearchScope,
-} from "../model/appSearch";
+} from "../model/app-search";
 import {
   loadProjectFiles,
   peekProjectFiles,
   rankProjectFiles,
   recentOpenedFiles,
-} from "../../files/model/fileIndex";
+} from "../../files/model/file-index";
 import { prettyCwd, projectName } from "../../../shared/lib/paths";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import { isLocalProject, type RecentProject } from "../../projects/model/recents";
@@ -48,7 +48,7 @@ import {
   cancelSessionSearch,
   searchSessions,
   type SessionSummary,
-} from "../../sessions/data/sessionStore";
+} from "../../sessions/data/session-store";
 
 const SCOPES: { id: SearchScope; label: string }[] = [
   { id: "all", label: "All" },

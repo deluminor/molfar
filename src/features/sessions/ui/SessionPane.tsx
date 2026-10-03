@@ -53,44 +53,44 @@ import {
   clearTranscriptJump,
   peekTranscriptJump,
   subscribeTranscriptJump,
-} from "../model/transcriptJump";
+} from "../model/transcript-jump";
 import { EmptySession } from "./EmptySession";
-import { useComposerDockMotion } from "./useComposerDockMotion";
+import { useComposerDockMotion } from "./use-composer-dock-motion";
 import { MOD } from "../../../platform/tauri/platform";
 import {
   acknowledgeQuoteRequest,
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,
   type QuoteRequest,
-} from "../model/quoteDraft";
+} from "../model/quote-draft";
 import { createNote, noteTitle } from "../../notes";
 import {
   loadNotesEnabled,
   subscribeNotesEnabled,
 } from "../../settings/model/settings";
-import { getComposerDraft, setComposerDraft } from "../model/draftCache";
+import { getComposerDraft, setComposerDraft } from "../model/draft-cache";
 import { resolveModel } from "../model/models";
-import { isAstraModel } from "../model/astraWelcome";
-import { isOpus55Model } from "../model/opusWelcome";
+import { isAstraModel } from "../model/astra-welcome";
+import { isOpus55Model } from "../model/opus-welcome";
 import { AstraWelcome } from "./AstraWelcome";
 import { OpusWelcome } from "./OpusWelcome";
 import { projectKey } from "../../../shared/lib/paths";
-import { canEditLastTurn, lastTurnRecall } from "../model/editLastTurn";
+import { canEditLastTurn, lastTurnRecall } from "../model/edit-last-turn";
 import {
   loadProjectChatBackgroundSettings,
   projectChatBackgroundImageRevision,
   projectChatBackgroundRevision,
   subscribeProjectChatBackground,
-} from "../../projects/model/projectChatBackground";
-import { useProjectBackgroundEffect } from "../../projects/ui/useProjectBackgroundEffect";
+} from "../../projects/model/project-chat-background";
+import { useProjectBackgroundEffect } from "../../projects/ui/use-project-background-effect";
 import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
 import {
   loadChatBackgroundPath,
   loadNewThreadBackgroundEffect,
   subscribeChatBackgroundPath,
 } from "../../settings/model/appearance";
-import type { SessionFolderTarget } from "../model/sessionFolders";
-import { markLinkedSessionUpdateSeen } from "../../inbox/model/linkedSessionSeen";
+import type { SessionFolderTarget } from "../model/session-folders";
+import { markLinkedSessionUpdateSeen } from "../../inbox/model/linked-session-seen";
 import { RemoteSession } from "../../connections/ui/RemoteSession";
 import { isRemoteProjectPath } from "../../projects/model/recents";
 import type { HostSession } from "../../connections/model/protocol";

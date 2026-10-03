@@ -1,8 +1,8 @@
 import { StickyNote } from "../../../shared/ui/icons";
 import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
-import type { RankedFile } from "../../files/model/fileIndex";
+import type { RankedFile } from "../../files/model/file-index";
 import { isNoteMentionPath } from "../../notes";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
 import { MatchText } from "../../../shared/ui/MatchText";
 

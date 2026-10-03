@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
-import { useWorktreeFocus, type WorktreeFocus } from "../model/worktreeFocus";
+import { useProjectWorktrees } from "../hooks/use-project-worktrees";
+import { useWorktreeFocus, type WorktreeFocus } from "../model/worktree-focus";
 import { pathKey, prettyCwd } from "../../../shared/lib/paths";
 import { Popover } from "../../../shared/ui/Popover";
 import {

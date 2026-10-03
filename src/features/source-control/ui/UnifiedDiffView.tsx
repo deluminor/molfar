@@ -18,19 +18,19 @@ import {
   useState,
 } from "react";
 import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useColorScheme } from "../../../shared/hooks/useColorScheme";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useColorScheme } from "../../../shared/hooks/use-color-scheme";
 import { formatInteger } from "../../../shared/lib/numbers";
 import type { ColorScheme } from "../../settings/model/appearance";
 import { basename } from "../../../platform/tauri/fs";
-import { highlightDiffFile, type SyntaxToken } from "../../files/editor/syntaxTokens";
+import { highlightDiffFile, type SyntaxToken } from "../../files/editor/syntax-tokens";
 import { DiffCommentComposer } from "./DiffCommentComposer";
 import {
   expandFold,
   type FoldReveal,
   type UnifiedBlock,
   type UnifiedLine,
-} from "../model/unifiedDiff";
+} from "../model/unified-diff";
 import {
   flattenVisibleRows,
   layoutRows,
@@ -41,7 +41,7 @@ import {
   windowRows,
   type DiffViewRow,
   type RowWindow,
-} from "../model/unifiedDiffWindow";
+} from "../model/unified-diff-window";
 
 export type UnifiedDiffFileModel = {
   id: string;

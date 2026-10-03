@@ -13,7 +13,7 @@ import {
   Sparkles,
   type IconComponent,
 } from "../../shared/ui/icons";
-import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
 import {
   settingsSectionsByGroup,
   type SettingsSectionId,

@@ -37,15 +37,15 @@ import {
   isProviderHidden,
   projectProvidersRevision,
   subscribeProjectProviders,
-} from "../model/projectProviders";
+} from "../model/project-providers";
 import {
   harnessUnavailableHint,
   subscribeHarnessAvailability,
   getHarnessAvailabilitySnapshot,
 } from "../../../integrations/harness/core/availability";
-import { useModelSource, type ModelSource } from "./modelSource";
+import { useModelSource, type ModelSource } from "./model-source";
 import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../model/session";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { LAYER } from "../../../shared/lib/layers";
 import { HarnessIcon } from "./HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";

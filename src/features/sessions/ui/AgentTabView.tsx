@@ -5,7 +5,7 @@ import {
   clearTranscriptJump,
   peekTranscriptJump,
   subscribeTranscriptJump,
-} from "../model/transcriptJump";
+} from "../model/transcript-jump";
 import { HarnessIcon } from "./HarnessIcon";
 import { findModel } from "../model/models";
 import {

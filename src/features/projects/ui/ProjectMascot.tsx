@@ -1,4 +1,4 @@
-import { MASCOT_GRID, projectMascot } from "../model/projectMascots";
+import { MASCOT_GRID, projectMascot } from "../model/project-mascots";
 
 type Props = {
   project: string;

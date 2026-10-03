@@ -4,8 +4,8 @@ import {
   type Session,
 } from "../../../features/sessions/model/session";
 import { planTurnKey } from "../../../features/sessions/model/plan";
-import { sanitizeSessionForPersist } from "../../../features/sessions/data/sessionStore";
-import { previewFromTool } from "../providers/claude/claudeProtocol";
+import { sanitizeSessionForPersist } from "../../../features/sessions/data/session-store";
+import { previewFromTool } from "../providers/claude/claude-protocol";
 import {
   appendUser,
   applyHarnessEvent,

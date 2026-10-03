@@ -106,56 +106,56 @@ export {
   respondAntigravityApproval,
   bindAntigravitySession,
 } from "./providers/antigravity/antigravity";
-export { generateCursorSessionTitle } from "./providers/cursor/cursorTitle";
-export { generateCodexSessionTitle } from "./providers/codex/codexTitle";
-export { generateOpenCodeSessionTitle } from "./providers/opencode/opencodeTitle";
-export { generateClaudeSessionTitle } from "./providers/claude/claudeTitle";
+export { generateCursorSessionTitle } from "./providers/cursor/cursor-title";
+export { generateCodexSessionTitle } from "./providers/codex/codex-title";
+export { generateOpenCodeSessionTitle } from "./providers/opencode/opencode-title";
+export { generateClaudeSessionTitle } from "./providers/claude/claude-title";
 export {
   generatePiSessionTitle,
   generateOmpSessionTitle,
-} from "./providers/pi/piTitle";
-export { generateGrokSessionTitle } from "./providers/grok/grokTitle";
+} from "./providers/pi/pi-title";
+export { generateGrokSessionTitle } from "./providers/grok/grok-title";
 export {
   generateCursorCommitMessage,
   generateCursorPrContent,
   stopCursorGitText,
-} from "./providers/cursor/cursorGit";
+} from "./providers/cursor/cursor-git";
 export {
   generateCodexCommitMessage,
   generateCodexPrContent,
-} from "./providers/codex/codexGit";
+} from "./providers/codex/codex-git";
 export {
   generateOpenCodeCommitMessage,
   generateOpenCodePrContent,
-} from "./providers/opencode/opencodeGit";
+} from "./providers/opencode/opencode-git";
 export {
   generateClaudeCommitMessage,
   generateClaudePrContent,
-} from "./providers/claude/claudeGit";
+} from "./providers/claude/claude-git";
 export {
   generateGrokCommitMessage,
   generateGrokPrContent,
-} from "./providers/grok/grokGit";
+} from "./providers/grok/grok-git";
 export {
   generateCommitMessage,
   generatePrContent,
   pickTextHarness,
   warmupText,
-} from "./core/textHarness";
-export { warmupCursorText } from "./providers/cursor/cursorText";
-export { warmupOpenCodeText } from "./providers/opencode/opencodeText";
-export { warmupClaudeText } from "./providers/claude/claudeText";
-export { warmupPiText, warmupOmpText } from "./providers/pi/piText";
-export { warmupGrokText } from "./providers/grok/grokText";
-export { refreshCursorCatalog } from "./providers/cursor/cursorCatalog";
-export { refreshCodexCatalog } from "./providers/codex/codexCatalog";
-export { refreshOpenCodeCatalog } from "./providers/opencode/opencodeCatalog";
-export { refreshClaudeCatalog } from "./providers/claude/claudeCatalog";
-export { refreshPiCatalog, refreshOmpCatalog } from "./providers/pi/piCatalog";
-export { refreshFxCatalog } from "./providers/fx/fxCatalog";
-export { refreshGrokCatalog } from "./providers/grok/grokCatalog";
-export { refreshHermesCatalog } from "./providers/hermes/hermesCatalog";
-export { refreshAntigravityCatalog } from "./providers/antigravity/antigravityCatalog";
+} from "./core/text-harness";
+export { warmupCursorText } from "./providers/cursor/cursor-text";
+export { warmupOpenCodeText } from "./providers/opencode/opencode-text";
+export { warmupClaudeText } from "./providers/claude/claude-text";
+export { warmupPiText, warmupOmpText } from "./providers/pi/pi-text";
+export { warmupGrokText } from "./providers/grok/grok-text";
+export { refreshCursorCatalog } from "./providers/cursor/cursor-catalog";
+export { refreshCodexCatalog } from "./providers/codex/codex-catalog";
+export { refreshOpenCodeCatalog } from "./providers/opencode/opencode-catalog";
+export { refreshClaudeCatalog } from "./providers/claude/claude-catalog";
+export { refreshPiCatalog, refreshOmpCatalog } from "./providers/pi/pi-catalog";
+export { refreshFxCatalog } from "./providers/fx/fx-catalog";
+export { refreshGrokCatalog } from "./providers/grok/grok-catalog";
+export { refreshHermesCatalog } from "./providers/hermes/hermes-catalog";
+export { refreshAntigravityCatalog } from "./providers/antigravity/antigravity-catalog";
 export { registerBuiltinHarnesses } from "./core/register";
 export {
   getHarnessAvailabilitySnapshot,
@@ -202,5 +202,5 @@ export type {
   UserQuestion,
   UserQuestionPrompt,
   UserQuestionReply,
-} from "../../features/sessions/model/userQuestion";
+} from "../../features/sessions/model/user-question";
 export type { HarnessAdapter, TextPromptInput } from "./core/registry";

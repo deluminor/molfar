@@ -18,12 +18,12 @@ import {
   listInboxItems,
   inboxItemStatus,
   inboxStartDraft,
-} from "./githubTasks";
-import { inboxTrackerDescription } from "./inboxContext";
+} from "./github-tasks";
+import { inboxTrackerDescription } from "./inbox-context";
 import {
   clearPendingInboxSelfActivity,
   consumeInboxSelfActivity,
-} from "./inboxSelfActivity";
+} from "./inbox-self-activity";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

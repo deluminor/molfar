@@ -1,4 +1,4 @@
-import { lazySurface } from "../../../shared/ui/lazySurface";
+import { lazySurface } from "../../../shared/ui/lazy-surface";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { memo, useSyncExternalStore } from "react";
 import {
@@ -18,8 +18,8 @@ import {
   type EditorPane,
   type FilePaneTab,
 } from "../../workspace/model/layout";
-import { isImagePath } from "../model/filePreview";
-import type { TerminalMetaPatch } from "../../terminal/model/terminalTab";
+import { isImagePath } from "../model/file-preview";
+import type { TerminalMetaPatch } from "../../terminal/model/terminal-tab";
 import type { EditorNavigationTarget } from "../../search/model/search";
 import { editorPathsEqual } from "../../search/model/search";
 import type { PlanBuildTarget, Session } from "../../sessions/model/session";

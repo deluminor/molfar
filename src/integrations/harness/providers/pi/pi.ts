@@ -9,8 +9,8 @@ import {
   setPiBinaryResolver as setFlavorBinaryResolver,
   steerTurn,
   stopSession,
-} from "./piFamily";
-import { PI_FLAVOR } from "./piFlavor";
+} from "./pi-family";
+import { PI_FLAVOR } from "./pi-flavor";
 import type {
   ApprovalDecision,
   CompactContextInput,

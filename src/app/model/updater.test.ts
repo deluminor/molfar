@@ -16,10 +16,10 @@ vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: mocks.relaunch }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: mocks.check }));
 vi.mock("../../features/settings/model/sounds", () => ({ announceUpdateAvailable: mocks.announce }));
-vi.mock("./appDialog", () => ({ alertApp: mocks.alertApp }));
-vi.mock("./updatePrompt", () => ({ openUpdatePrompt: mocks.openPrompt }));
-vi.mock("./updateNotice", () => ({ rememberInstalledUpdate: mocks.remember }));
-vi.mock("./forkPolicy", () => ({ APP_UPDATER_DISABLED: false }));
+vi.mock("./app-dialog", () => ({ alertApp: mocks.alertApp }));
+vi.mock("./update-prompt", () => ({ openUpdatePrompt: mocks.openPrompt }));
+vi.mock("./update-notice", () => ({ rememberInstalledUpdate: mocks.remember }));
+vi.mock("./fork-policy", () => ({ APP_UPDATER_DISABLED: false }));
 
 beforeEach(() => {
   vi.clearAllMocks();

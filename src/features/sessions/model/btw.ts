@@ -10,8 +10,8 @@ import type {
 } from "./session";
 import { newSession } from "./session";
 import type { BuiltinSkill } from "../../skills/model/skills";
-import { harnessForTurn } from "./secondOpinion";
-import { groupTurns } from "./transcriptActivity";
+import { harnessForTurn } from "./second-opinion";
+import { groupTurns } from "./transcript-activity";
 import { resolveModel } from "./models";
 
 /**

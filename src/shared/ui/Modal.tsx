@@ -10,10 +10,10 @@ import {
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
-import { useLockOverscroll } from "../hooks/useLockOverscroll";
+import { useLockOverscroll } from "../hooks/use-lock-overscroll";
 import { LAYER } from "../lib/layers";
 import { GlassBackdrop } from "../../app/shell/GlassBackdrop";
-import { pushModalEscape } from "./modalEscape";
+import { pushModalEscape } from "./modal-escape";
 
 export type ModalSize = "sm" | "md";
 

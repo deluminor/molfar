@@ -1,5 +1,5 @@
 import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
+import { AcpSubagents } from "../../core/acp-subagents";
 import type { RuntimeMode } from "../../../../features/sessions/model/session";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
@@ -23,7 +23,7 @@ import {
   resolveSettingConfigId,
   sessionIdFromResult,
   type SessionConfigOption,
-} from "./antigravityProtocol";
+} from "./antigravity-protocol";
 import type {
   ApprovalDecision,
   HarnessEvent,

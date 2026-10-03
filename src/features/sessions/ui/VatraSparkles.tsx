@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { useTurnCelebration } from "./turnCelebration";
+import { useTurnCelebration } from "./turn-celebration";
 
 // Longest sparkle delay plus duration, with a little slack for the fade.
 const CELEBRATE_MS = 3200;

@@ -9,12 +9,12 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { confirmApp } from "../../../app/model/appDialog";
+import { confirmApp } from "../../../app/model/app-dialog";
 import { OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
 import { gitBranches } from "../../../platform/tauri/fs";
 import { IS_MAC } from "../../../platform/tauri/platform";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { LAYER } from "../../../shared/lib/layers";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import {
@@ -44,16 +44,16 @@ import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import {
   AZUREDEVOPS_CHANGE_EVENT,
   azureDevOpsConnected,
-} from "../../inbox/model/azureDevOps";
+} from "../../inbox/model/azure-dev-ops";
 import {
   formatRelativeTime,
   githubStatus,
-} from "../../inbox/model/githubTasks";
+} from "../../inbox/model/github-tasks";
 import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../../inbox/model/gitlab";
 import { JIRA_CHANGE_EVENT, jiraConnected } from "../../inbox/model/jira";
 import { LINEAR_CHANGE_EVENT, linearConnected } from "../../inbox/model/linear";
 import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
+import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
 import {
   looksLikeProject,
   type RecentProject,
@@ -71,7 +71,7 @@ import {
 import {
   loadSessionFolders,
   subscribeSessionFolders,
-} from "../../sessions/model/sessionFolders";
+} from "../../sessions/model/session-folders";
 import { AccessPicker } from "../../sessions/ui/AccessPicker";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
@@ -89,7 +89,7 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+} from "../../workspace/model/tab-groups";
 import {
   AUTOMATION_WEEKDAYS,
   applyTriggers,
@@ -124,7 +124,7 @@ import {
   type AutomationTemplate,
   type AutomationTemplateCategoryId,
   type AutomationTemplateIcon,
-} from "../model/automationTemplates";
+} from "../model/automation-templates";
 
 type Props = {
   besideRail?: boolean;

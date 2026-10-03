@@ -23,7 +23,7 @@ import {
   Sparkles,
   type IconComponent,
 } from "../../../shared/ui/icons";
-import type { GithubPrChecksView } from "../hooks/useGithubPrChecks";
+import type { GithubPrChecksView } from "../hooks/use-github-pr-checks";
 import {
   CHECK_STATES,
   checkDuration,
@@ -38,7 +38,7 @@ import {
   type GithubPrChecksOverall,
   type GithubPrCheckState,
   type GithubCheckDetails,
-} from "../model/githubPrChecks";
+} from "../model/github-pr-checks";
 
 const TAB =
   "relative flex h-9 items-center gap-1.5 text-[12px] leading-none select-none";

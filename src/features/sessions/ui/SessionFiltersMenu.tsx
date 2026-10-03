@@ -6,7 +6,7 @@ import {
   hasActiveSessionFilters,
   type SessionSidebarFilters,
   type SessionTimeFilter,
-} from "../model/sessionFilters";
+} from "../model/session-filters";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
 import { HarnessIcon } from "./HarnessIcon";
 

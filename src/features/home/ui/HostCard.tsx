@@ -5,12 +5,12 @@ import {
   formatProcessCount,
   loadAsPercent,
   type HostStats,
-} from "../model/hostStats";
+} from "../model/host-stats";
 import {
   processSeriesAsPercent,
   sparklineGeometry,
   type HostSamplePoint,
-} from "../model/hostHistory";
+} from "../model/host-history";
 import { HomeCard } from "./HomeCard";
 
 type Props = {

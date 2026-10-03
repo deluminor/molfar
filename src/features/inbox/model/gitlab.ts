@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { recordInboxSelfActivity } from "./inboxSelfActivity";
+import { recordInboxSelfActivity } from "./inbox-self-activity";
 import { normalizeProjectPath } from "../../projects/model/recents";
 
 export type GitlabKind = "issue" | "pr";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { readBinaryFile } from "../../../platform/tauri/fs";
-import { formatFileSize, sniffImageMime } from "../../files/model/filePreview";
+import { formatFileSize, sniffImageMime } from "../../files/model/file-preview";
 import { ImageLightbox } from "../../../shared/ui/ImageLightbox";
 import type { GeneratedImageMeta } from "../model/session";
 

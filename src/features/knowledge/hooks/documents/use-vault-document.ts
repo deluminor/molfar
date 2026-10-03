@@ -7,7 +7,7 @@ import {
   detectLineEnding,
   normalizeLineBreaks,
   restoreLineEnding,
-} from "../../../files/editor/editorDoc";
+} from "../../../files/editor/editor-doc";
 
 export function useVaultDocument(
   vaultId: string | undefined,

@@ -7,8 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import { useProjectWorktrees } from "../../source-control/hooks/useProjectWorktrees";
+import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
+import { useProjectWorktrees } from "../../source-control/hooks/use-project-worktrees";
 import type { Worktree } from "../../source-control/model/worktrees";
 import { MOD, SHIFT } from "../../../platform/tauri/platform";
 import { prettyCwd } from "../../../shared/lib/paths";

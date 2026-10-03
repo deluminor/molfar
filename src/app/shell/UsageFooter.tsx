@@ -2,18 +2,18 @@ import { RefreshCw, Terminal } from "../../shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
 import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
-import { consumeCodexRateLimitResetCredit } from "../../features/providers/model/rateLimitsFetch";
+import { consumeCodexRateLimitResetCredit } from "../../features/providers/model/rate-limits-fetch";
 import {
   errorRateLimits,
   unavailableRateLimits,
   type RateLimitProvider,
-} from "../../features/providers/model/rateLimits";
+} from "../../features/providers/model/rate-limits";
 import {
   getCachedRateLimits,
   loadRateLimits,
   setCachedRateLimits,
   useCachedRateLimits,
-} from "../../features/providers/model/rateLimitsCache";
+} from "../../features/providers/model/rate-limits-cache";
 import {
   HARNESS_LABEL,
   HARNESS_TITLE,
@@ -26,7 +26,7 @@ import {
 import {
   runningTerminalChipLabel,
   type RunningTerminal,
-} from "../../features/terminal/model/terminalTab";
+} from "../../features/terminal/model/terminal-tab";
 import { MOD } from "../../platform/tauri/platform";
 import { UsageProviderChip } from "./UsageProviderChip";
 import { PiUsage } from "./PiUsage";
@@ -43,7 +43,7 @@ import {
   selectedProviderAccountId,
   subscribeProviderAccounts,
   type ProviderAccountProvider,
-} from "../../features/providers/model/providerAccounts";
+} from "../../features/providers/model/provider-accounts";
 
 const CLOCK_MS = 30_000;
 

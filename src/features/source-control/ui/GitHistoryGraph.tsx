@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { ChevronDown, ChevronRight, GitBranch } from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { suppressTextSelection } from "../../../shared/lib/drag";
 import {
   gitHistory,
@@ -20,7 +20,7 @@ import {
   layoutGitGraph,
   type GraphRef,
   type HistoryItemViewModel,
-} from "../model/gitGraph";
+} from "../model/git-graph";
 
 type Props = {
   cwd: string;

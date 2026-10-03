@@ -12,8 +12,8 @@ import {
   quickComposerShortcutLabel,
   shortcutFromKeyEvent,
   shortcutTokens,
-} from "../../quick-composer/model/quickComposerShortcut";
-import { readFlag, writeFlag } from "./storageFlags";
+} from "../../quick-composer/model/quick-composer-shortcut";
+import { readFlag, writeFlag } from "./storage-flags";
 
 const SECTION_KEY = "vatra.settingsSection";
 

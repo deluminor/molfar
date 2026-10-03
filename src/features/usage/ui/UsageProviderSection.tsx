@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { formatUsagePercent } from "../../providers/model/rateLimits";
+import { formatUsagePercent } from "../../providers/model/rate-limits";
 import {
   usageBarTone,
   usageWindowFooter,
   type UsageCardState,
   type UsageProviderId,
   type UsageWindow,
-} from "../model/usageCard";
+} from "../model/usage-card";
 
 const PROVIDER_TITLE: Record<UsageProviderId, string> = {
   claude: "Claude",

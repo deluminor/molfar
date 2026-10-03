@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { PanelLeft, RotateCcw } from "../../../shared/ui/icons";
 import { IconButton } from "../../../app/shell/TitleBar";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
-import { inboxItemRef, type InboxItem } from "../model/githubTasks";
-import { inboxAskKey } from "../model/inboxAsk";
+import { useDragResize } from "../../../shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "../../../shared/lib/pane-width-storage";
+import { inboxItemRef, type InboxItem } from "../model/github-tasks";
+import { inboxAskKey } from "../model/inbox-ask";
 
 export type InboxSessionPortal = { sessionId: string; host: HTMLElement };
 

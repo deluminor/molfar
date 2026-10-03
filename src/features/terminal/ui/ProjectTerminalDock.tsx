@@ -24,10 +24,10 @@ import {
   isVerticalDock,
   type DockSide,
   type ProjectTerminalDock,
-} from "../../projects/model/projectTerminal";
+} from "../../projects/model/project-terminal";
 import { MOD } from "../../../platform/tauri/platform";
-import type { TerminalMetaPatch } from "../model/terminalTab";
-import { lazySurface } from "../../../shared/ui/lazySurface";
+import type { TerminalMetaPatch } from "../model/terminal-tab";
+import { lazySurface } from "../../../shared/ui/lazy-surface";
 
 const TerminalView = lazySurface(async () => {
   const module = await import("./TerminalView");

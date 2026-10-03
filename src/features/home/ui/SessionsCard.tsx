@@ -1,6 +1,6 @@
 import { useCallback, type MouseEvent, type ReactNode } from "react";
 import { projectName } from "../../../shared/lib/paths";
-import type { RecentSessionRow } from "../model/recentSessions";
+import type { RecentSessionRow } from "../model/recent-sessions";
 import { HomeCard } from "./HomeCard";
 
 type Props = {

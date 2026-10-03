@@ -4,13 +4,13 @@ import { orchestrator } from "../model/orchestration";
 import {
   orchestrationTaskLabel,
   type OrchestrationSummary,
-} from "../model/orchestrationSummary";
+} from "../model/orchestration-summary";
 import { HARNESS_TITLE } from "../../sessions/model/session";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import {
   OrchestrationActions,
   OrchestrationWorkers,
-} from "./OrchestrationActions";
+} from "./orchestration-actions";
 import { Check, ChevronDown, ChevronRight, CircleAlert } from "../../../shared/ui/icons";
 import { TerminalSpinner } from "../../sessions/ui/TerminalSpinner";
 

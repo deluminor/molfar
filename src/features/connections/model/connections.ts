@@ -10,8 +10,8 @@ import {
   type SessionSyncChunk,
   type SessionSyncResponse,
 } from "./protocol";
-import { remoteProjectFor } from "./remoteProjects";
-import { withRemoteAttachmentPreviews } from "./remoteAttachmentPreviews";
+import { remoteProjectFor } from "./remote-projects";
+import { withRemoteAttachmentPreviews } from "./remote-attachment-previews";
 
 const CHANGE = "vatra:remote-machines";
 export const REMOTE_HISTORY_CHANGE = "vatra:remote-history";

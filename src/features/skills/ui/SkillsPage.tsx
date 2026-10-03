@@ -9,7 +9,7 @@ import {
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { Copy, Eye, FolderOpen, RefreshCw, Search, X } from "../../../shared/ui/icons";
 import { CreateSkillForm } from "./SkillPicker";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import {
   MarkdownModeToggle,
   useMarkdownMode,

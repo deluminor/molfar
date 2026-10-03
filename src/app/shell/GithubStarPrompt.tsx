@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import {
   githubVatraStarStatus,
   starVatraOnGithub,
-} from "../../features/inbox/model/githubTasks";
+} from "../../features/inbox/model/github-tasks";
 import { Loader, Star, X } from "../../shared/ui/icons";
 
 const VATRA_GITHUB_URL = "https://github.com/deluminor/vatra";

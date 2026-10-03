@@ -1,16 +1,16 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { homeDir } from "../../../platform/tauri/fs";
-import { supportsProviderAccounts } from "../../../features/providers/model/providerAccounts";
+import { supportsProviderAccounts } from "../../../features/providers/model/provider-accounts";
 import { HARNESS_TITLE, type HarnessId } from "../../../features/sessions/model/session";
 import * as child from "./child";
-import { harnessLoginArgs } from "./authSupport";
+import { harnessLoginArgs } from "./auth-support";
 
 export {
   harnessLoginArgs,
   isHarnessAuthError,
   latestTurnNeedsHarnessLogin,
   supportsHarnessLogin,
-} from "./authSupport";
+} from "./auth-support";
 
 const LOGIN_TIMEOUT_MS = 10 * 60_000;
 const LOGIN_CHILD_PREFIX = "vatra-provider-login-";

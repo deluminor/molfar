@@ -11,8 +11,8 @@ import {
 import { ExplorerMenu } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { copyText } from "../../../platform/tauri/clipboard";
-import { formatFileSize, sniffImageMime } from "../model/filePreview";
-import { watchFile } from "../model/fileWatch";
+import { formatFileSize, sniffImageMime } from "../model/file-preview";
+import { watchFile } from "../model/file-watch";
 import {
   basename,
   copyFileToClipboard,

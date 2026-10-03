@@ -6,7 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { opusStage } from "../model/opusWelcome";
+import { opusStage } from "../model/opus-welcome";
 import "./OpusWelcome.css";
 
 const DURATION_MS = 7000;

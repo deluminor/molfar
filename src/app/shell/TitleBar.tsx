@@ -27,12 +27,12 @@ import { basename } from "../../platform/tauri/fs";
 import { looksLikeProject } from "../../features/projects/model/recents";
 import type { HarnessId } from "../../features/sessions/model/session";
 import { CwdPicker } from "../../features/projects/ui/CwdPicker";
-import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
 import {
   useAnimatedReorder,
   type ReorderExternalDrop,
-} from "../../shared/hooks/useAnimatedReorder";
-import { useTabCloseMotion } from "../../features/workspace/hooks/useTabCloseMotion";
+} from "../../shared/hooks/use-animated-reorder";
+import { useTabCloseMotion } from "../../features/workspace/hooks/use-tab-close-motion";
 import { TabWidthMotion } from "./ClosingTab";
 import { FileTypeIcon } from "../../features/files/ui/FileTypeIcon";
 import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
@@ -46,7 +46,7 @@ import {
   paneDropFromPoint,
   setExternalPaneDrop,
   useExternalTitleTabDrop,
-} from "../../features/workspace/model/paneDrop";
+} from "../../features/workspace/model/pane-drop";
 import type { PaneEdge } from "../../features/workspace/model/layout";
 
 export type Tab = {

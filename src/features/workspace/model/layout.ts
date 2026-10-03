@@ -1,10 +1,10 @@
-import type { ReleaseNotesTabSource } from "../../../app/model/releaseNotes";
+import type { ReleaseNotesTabSource } from "../../../app/model/release-notes";
 import type { GitFileDiffKind } from "../../../platform/tauri/fs";
 import {
   applyTerminalMeta,
   defaultTerminalTitle,
   type TerminalMetaPatch,
-} from "../../terminal/model/terminalTab";
+} from "../../terminal/model/terminal-tab";
 import type { HarnessId } from "../../sessions/model/session";
 import { pathKey } from "../../../shared/lib/paths";
 

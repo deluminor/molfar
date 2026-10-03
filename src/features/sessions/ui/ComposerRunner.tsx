@@ -34,7 +34,7 @@ import {
   type Coin,
   type Obstacle,
   type RunnerTrack,
-} from "../model/composerRunner";
+} from "../model/composer-runner";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import {
   loadTabGroupColors,
@@ -42,7 +42,7 @@ import {
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+} from "../../workspace/model/tab-groups";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 
 type Props = {

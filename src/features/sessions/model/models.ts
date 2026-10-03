@@ -1,10 +1,10 @@
 import type { HarnessId } from "./session";
 import { HARNESSES } from "./session";
-import { loadProjectProviderSettings } from "./projectProviders";
+import { loadProjectProviderSettings } from "./project-providers";
 import {
   hasProbedHarnessAvailability,
   isHarnessAvailable,
-} from "../../../integrations/harness/core/availabilityState";
+} from "../../../integrations/harness/core/availability-state";
 
 export type ModelSettingChoice = {
   value: string;

@@ -96,7 +96,7 @@ See `docs/releasing.md` → Syncing from upstream.
 - `pnpm-lock.yaml` exists only in Vatra (upstream has none), so it never conflicts and silently goes stale. Whenever the sync changes `package.json` dependencies, also run `pnpm install --lockfile-only --ignore-scripts`. Check that the diff only touches the changed dependencies.
 - `CHANGELOG.md`: keep Vatra's history and Vatra's link references. Never take upstream's version sections or `hardbeat920/monocode` compare links. See step 6b for the `Unreleased` notes.
 - `.github/workflows/release.yml`, `scripts/release/`
-- `src/app/model/forkPolicy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`
+- `src/app/model/fork-policy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`
 - `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`
 - Host names in `host/` (`~/.vatra-host`, `vatra-host`, `com.vatra.host`, `Vatra Host-<SID>`, the `host.vatra` capability)
 - Product name and branding (`Vatra` must not regress to `MonoCode`), `README.md`, `NOTICE`, `LICENSE`. Upstream README sections that promote MonoCode (contributors badges, acknowledgments, MonoCode links) are not taken.

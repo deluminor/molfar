@@ -15,14 +15,14 @@ import {
   recentOpenedFiles,
   rememberOpenedFile,
   type RankedFile,
-} from "../model/fileIndex";
+} from "../model/file-index";
 import { LAYER } from "../../../shared/lib/layers";
 import { fuzzyMatch, type FuzzyHit } from "../../../shared/lib/fuzzy";
 import {
   looksLikeProject,
 } from "../../projects/model/recents";
 import type { OpenFileFn } from "../../search/model/search";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { MatchText } from "../../../shared/ui/MatchText";
 import { MOD, SHIFT } from "../../../platform/tauri/platform";

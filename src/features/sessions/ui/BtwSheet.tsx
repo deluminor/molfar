@@ -12,7 +12,7 @@ import {
   btwSurfaceHarness,
   sessionBtwThreads,
 } from "../model/btw";
-import { groupTurns } from "../model/transcriptActivity";
+import { groupTurns } from "../model/transcript-activity";
 import {
   DEFAULT_RUNTIME_MODE,
   HARNESS_TITLE,

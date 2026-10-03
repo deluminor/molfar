@@ -11,10 +11,10 @@ import { HARNESS_TITLE, type Block } from "../../sessions/model/session";
 import type {
   OrchestrationChoice,
   ProposedTask,
-} from "../model/orchestrationPlan";
+} from "../model/orchestration-plan";
 import { orchestrator } from "../model/orchestration";
-import { resizeComposer } from "../../sessions/model/composerResize";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { resizeComposer } from "../../sessions/model/composer-resize";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import {
   findModel,
   mergeModelSettings,
@@ -22,7 +22,7 @@ import {
   modelEffortSetting,
 } from "../../sessions/model/models";
 import { LAYER } from "../../../shared/lib/layers";
-import { OrchestrationActions } from "./OrchestrationActions";
+import { OrchestrationActions } from "./orchestration-actions";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";
 import {

@@ -19,15 +19,15 @@ import {
   markHarnessAvailabilityProbed,
   setHarnessAvailability,
   type HarnessAvailability,
-} from "./availabilityState";
+} from "./availability-state";
 
-export type { HarnessAvailability } from "./availabilityState";
+export type { HarnessAvailability } from "./availability-state";
 export {
   getHarnessAvailabilitySnapshot,
   hasProbedHarnessAvailability,
   isHarnessAvailable,
   subscribeHarnessAvailability,
-} from "./availabilityState";
+} from "./availability-state";
 
 /**
  * We only ever check whether the binary exists, never whether it is

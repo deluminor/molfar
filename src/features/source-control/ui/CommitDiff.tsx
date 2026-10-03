@@ -6,7 +6,7 @@ import {
   type GitChangedFile,
 } from "../../../platform/tauri/fs";
 import { forEachConcurrent } from "../../../shared/lib/concurrent";
-import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unifiedDiff";
+import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unified-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
 
 type Props = {

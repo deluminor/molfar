@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   loadNotificationPreferences,
   updateNotificationPreferences,
-} from "../model/notificationPreferences";
+} from "../model/notification-preferences";
 import {
   DateTimePicker,
   parseLocalDateTime,

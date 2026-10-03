@@ -6,12 +6,12 @@ import {
   loadTabGroupLabels,
   resolveTabGroupLabel,
   subscribeTabGroupLabels,
-} from "../../workspace/model/tabGroups";
+} from "../../workspace/model/tab-groups";
 import {
   loadGridArcadeEnabled,
   subscribeGridArcadeEnabled,
 } from "../../settings/model/settings";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { TerminalGridBackground } from "../../terminal/ui/TerminalGridBackground";
 
 type Props = {

@@ -12,7 +12,7 @@ import {
 import {
   compareSemver,
   parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
+} from "../../../integrations/harness/providers/opencode/opencode-protocol";
 import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
 import { LAYER } from "../../../shared/lib/layers";
 import { Check, Loader, X } from "../../../shared/ui/icons";
@@ -31,7 +31,7 @@ import {
   onHarnessUpdated,
   UPDATABLE_HARNESSES,
   type HarnessUpdate,
-} from "../model/harnessUpdates";
+} from "../model/harness-updates";
 
 /**
  * Shared by every mount in this window: a StrictMode remount must reuse the

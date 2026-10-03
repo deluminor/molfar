@@ -52,7 +52,7 @@ import type { ApprovalDecision } from "../../../integrations/harness";
 import {
   isHarnessAuthError,
   supportsHarnessLogin,
-} from "../../../integrations/harness/core/authSupport";
+} from "../../../integrations/harness/core/auth-support";
 import {
   isEditTool,
   isReadTool,
@@ -63,9 +63,9 @@ import { copyMessage } from "../../../platform/tauri/clipboard";
 import type { Attachment } from "../model/session";
 import { visibleUserPrompt } from "../../orchestration/model/orchestration";
 import { playCue } from "../../settings/model/sounds";
-import { legacyTaskListFromText } from "../model/taskList";
+import { legacyTaskListFromText } from "../model/task-list";
 import { resolveModel } from "../model/models";
-import { harnessForTurn } from "../model/secondOpinion";
+import { harnessForTurn } from "../model/second-opinion";
 import { Shimmer } from "../../../shared/ui/Shimmer";
 import {
   hasPendingApproval,
@@ -80,14 +80,14 @@ import {
   type TurnMetrics,
 } from "../model/session";
 import { HarnessIcon } from "./HarnessIcon";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useTranscriptLayout } from "../hooks/useTranscriptLayout";
-import { useTranscriptAnchor } from "../hooks/useTranscriptAnchor";
-import { useTranscriptSelection } from "../hooks/useTranscriptSelection";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useTranscriptLayout } from "../hooks/use-transcript-layout";
+import { useTranscriptAnchor } from "../hooks/use-transcript-anchor";
+import { useTranscriptSelection } from "../hooks/use-transcript-selection";
 import type { TranscriptLayout } from "../../settings/model/appearance";
 import { AgentMarkdown } from "./AgentMarkdown";
 import { TranscriptSelectionMenu } from "./TranscriptSelectionMenu";
-import { parseUserMessageLink } from "../model/linkPreview";
+import { parseUserMessageLink } from "../model/link-preview";
 import { UserLinkPreview } from "./UserLinkPreview";
 import {
   activityPhaseTitle,
@@ -122,23 +122,23 @@ import {
   type ActivityPhaseKind,
   type ToolCallState,
   type TurnItem,
-} from "../model/transcriptActivity";
-import { lastUserTurnBlock } from "../model/editLastTurn";
+} from "../model/transcript-activity";
+import { lastUserTurnBlock } from "../model/edit-last-turn";
 import {
   vatraToolCall,
   vatraWorkSummary,
   type VatraToolCall,
-} from "../model/vatraToolCall";
+} from "../model/vatra-tool-call";
 import {
   isOperatorUserTurn,
   operatorUserPrompt,
-} from "../model/operatorCommand";
+} from "../model/operator-command";
 import {
   clearTranscriptHighlights,
   paintTranscriptHighlights,
   transcriptMutationNeedsRepaint,
   transcriptWordRanges,
-} from "../model/transcriptHighlights";
+} from "../model/transcript-highlights";
 
 const NEAR_BOTTOM_PX = 16;
 /*

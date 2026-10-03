@@ -1,4 +1,4 @@
-import "./shared/lib/migrateLegacyStorageOnLoad";
+import "./shared/lib/migrate-legacy-storage-on-load";
 import React, { useLayoutEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { listen } from "@tauri-apps/api/event";
@@ -8,20 +8,20 @@ import {
   initAppearance,
 } from "./features/settings/model/appearance";
 import { initSounds } from "./features/settings/model/sounds";
-import { installModalEscape } from "./shared/ui/modalEscape";
+import { installModalEscape } from "./shared/ui/modal-escape";
 import {
   abortQuit,
   askQuitConfirmation,
   commitQuit,
   loadBootWorkspace,
   reportQuitPoll,
-} from "./app/model/appLifecycle";
+} from "./app/model/app-lifecycle";
 import { homeDir } from "./platform/tauri/fs";
 import { setHomeDir } from "./shared/lib/paths";
-import { consumeInstalledUpdate } from "./app/model/updateNotice";
-import { initializeProviderBinaryPaths } from "./features/providers/model/providerBinaryPaths";
+import { consumeInstalledUpdate } from "./app/model/update-notice";
+import { initializeProviderBinaryPaths } from "./features/providers/model/provider-binary-paths";
 // Lets file commands reach a connected machine for `remote://` paths.
-import "./features/connections/model/remoteCommands";
+import "./features/connections/model/remote-commands";
 import "./styles/index.css";
 
 performance.mark("vatra:bootstrap");

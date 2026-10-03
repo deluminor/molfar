@@ -6,8 +6,8 @@ import {
   linkedWorkItemUpdateSummary,
   type LinkedWorkItemActivityEntry,
   type LinkedWorkItemUpdateCard,
-} from "../model/linkedWorkItemActivity";
-import { formatRelativeTime } from "../model/githubTasks";
+} from "../model/linked-work-item-activity";
+import { formatRelativeTime } from "../model/github-tasks";
 import { announceLinkedActivity } from "../../settings/model/sounds";
 import { GlassBackdrop } from "../../../app/shell/GlassBackdrop";
 import {

@@ -20,7 +20,7 @@ import type { SendTurnInput } from "../src/integrations/harness/core/types";
 import type { RemoteProvider } from "../src/features/connections/model/protocol";
 
 const modelProbe = vi.hoisted(() => vi.fn());
-vi.mock("../src/integrations/harness/providers/codex/codexCatalog", () => ({
+vi.mock("../src/integrations/harness/providers/codex/codex-catalog", () => ({
   discoverCodexModels: modelProbe,
 }));
 // Catalog tests point the host at a stand-in provider CLI.

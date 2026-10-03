@@ -7,7 +7,7 @@ import {
 } from "react";
 import { ChevronDown, ChevronUp, Search, X } from "../../../shared/ui/icons";
 import type { Block } from "../model/session";
-import { findTranscriptBlocks } from "../model/transcriptFind";
+import { findTranscriptBlocks } from "../model/transcript-find";
 import { keybindingPressed } from "../../settings/model/settings";
 
 type Props = {

@@ -12,7 +12,7 @@ import {
   githubReviewStateLabel,
   inboxPersonAvatarUrl,
   type InboxProvider,
-} from "../model/githubTasks";
+} from "../model/github-tasks";
 import { MOD } from "../../../platform/tauri/platform";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 

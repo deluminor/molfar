@@ -3,7 +3,7 @@ import {
   getCiRepairs,
   subscribeCiRepairs,
   type TrackedCiRepair,
-} from "../model/ciRepairTracking";
+} from "../model/ci-repair-tracking";
 import { sameProjectPath } from "../../projects/model/recents";
 import {
   CheckCircle,
@@ -15,13 +15,13 @@ import {
   type IconComponent,
 } from "../../../shared/ui/icons";
 import type { CheckRepair } from "./CheckRepairForm";
-import type { GithubPrChecksView } from "../hooks/useGithubPrChecks";
+import type { GithubPrChecksView } from "../hooks/use-github-pr-checks";
 import type {
   GithubPrCheck,
   GithubPrChecks,
   GithubPrCheckState,
-} from "../model/githubPrChecks";
-import { githubActionsJobId } from "../model/githubPrChecks";
+} from "../model/github-pr-checks";
+import { githubActionsJobId } from "../model/github-pr-checks";
 
 type RepairState =
   | GithubPrCheckState

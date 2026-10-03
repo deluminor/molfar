@@ -10,17 +10,17 @@ import type {
   WorkspaceMode,
   PlanBuildTarget,
 } from "../../sessions/model/session";
-import { uploadRemoteAttachments } from "../model/remoteAttachments";
+import { uploadRemoteAttachments } from "../model/remote-attachments";
 import { temporaryWorktreeBranchName } from "../../source-control/model/worktrees";
 import type { AgentModel } from "../../sessions/model/models";
 import {
   ModelSourceContext,
   type ModelSource,
-} from "../../sessions/ui/modelSource";
+} from "../../sessions/ui/model-source";
 import { notifyGitChanged } from "../../../platform/tauri/fs";
 import type { Worktree } from "../../source-control/model/worktrees";
-import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import { registerRemoteSessionActions } from "../model/remoteSessionActions";
+import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
+import { registerRemoteSessionActions } from "../model/remote-session-actions";
 import {
   clearPendingRemoteCommand,
   loadRemoteSession,
@@ -37,13 +37,13 @@ import {
   savePendingRemoteCommand,
   useRemoteMachines,
 } from "../model/connections";
-import { parseRemotePath, remotePath, remoteProjectFor, type RemoteProject } from "../model/remoteProjects";
+import { parseRemotePath, remotePath, remoteProjectFor, type RemoteProject } from "../model/remote-projects";
 import {
   carryModelSettings,
   findRemoteModel,
   remoteModelControls,
   sameModelSettings,
-} from "../model/remoteModels";
+} from "../model/remote-models";
 import {
   isRemoteProvider,
   REMOTE_PROVIDERS,

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { MessageSquarePlus, X } from "../../../shared/ui/icons";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
-import { diffCommentLocation, formatDiffComment } from "../model/diffComment";
+import { diffCommentLocation, formatDiffComment } from "../model/diff-comment";
 import { MOD } from "../../../platform/tauri/platform";
-import { requestAddToChat } from "../../sessions/model/quoteDraft";
-import type { UnifiedLine } from "../model/unifiedDiff";
+import { requestAddToChat } from "../../sessions/model/quote-draft";
+import type { UnifiedLine } from "../model/unified-diff";
 
 export type DiffCommentComposerTarget = {
   line: UnifiedLine;

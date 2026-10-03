@@ -7,7 +7,7 @@ import type {
   TaskListItem,
   ToolPreview,
 } from "../../../features/sessions/model/session";
-import { mergeContextUsage } from "../../../features/sessions/model/contextUsage";
+import { mergeContextUsage } from "../../../features/sessions/model/context-usage";
 import { displayPath } from "../../../shared/lib/paths";
 import {
   composeToolTitle,
@@ -16,8 +16,8 @@ import {
   mergeToolPreview,
   stubFilePreview,
 } from "./preview";
-import { joinStreamText } from "./streamText";
-import { taskListText } from "../../../features/sessions/model/taskList";
+import { joinStreamText } from "./stream-text";
+import { taskListText } from "../../../features/sessions/model/task-list";
 import { isReviewablePlan } from "../../../features/sessions/model/plan";
 import { resolveModel } from "../../../features/sessions/model/models";
 import type { HarnessEvent } from "./types";

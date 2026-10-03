@@ -13,25 +13,25 @@ import type {
   CompactContextInput,
   ApprovalDecision,
 } from "../src/integrations/harness/core/types";
-import type { UserQuestionReply } from "../src/features/sessions/model/userQuestion";
+import type { UserQuestionReply } from "../src/features/sessions/model/user-question";
 import type { RemoteProvider } from "../src/features/connections/model/protocol";
-import type { GeneratedSessionTitle } from "../src/features/sessions/model/sessionTitle";
-import { generateCodexSessionTitle } from "../src/integrations/harness/providers/codex/codexTitle";
-import { generateClaudeSessionTitle } from "../src/integrations/harness/providers/claude/claudeTitle";
-import { generateCodexBranchName } from "../src/integrations/harness/providers/codex/codexGit";
-import { generateClaudeBranchName } from "../src/integrations/harness/providers/claude/claudeGit";
-import { generateCursorSessionTitle } from "../src/integrations/harness/providers/cursor/cursorTitle";
-import { generateGrokSessionTitle } from "../src/integrations/harness/providers/grok/grokTitle";
-import { generateOpenCodeSessionTitle } from "../src/integrations/harness/providers/opencode/opencodeTitle";
+import type { GeneratedSessionTitle } from "../src/features/sessions/model/session-title";
+import { generateCodexSessionTitle } from "../src/integrations/harness/providers/codex/codex-title";
+import { generateClaudeSessionTitle } from "../src/integrations/harness/providers/claude/claude-title";
+import { generateCodexBranchName } from "../src/integrations/harness/providers/codex/codex-git";
+import { generateClaudeBranchName } from "../src/integrations/harness/providers/claude/claude-git";
+import { generateCursorSessionTitle } from "../src/integrations/harness/providers/cursor/cursor-title";
+import { generateGrokSessionTitle } from "../src/integrations/harness/providers/grok/grok-title";
+import { generateOpenCodeSessionTitle } from "../src/integrations/harness/providers/opencode/opencode-title";
 import {
   generatePiSessionTitle,
   generateOmpSessionTitle,
-} from "../src/integrations/harness/providers/pi/piTitle";
+} from "../src/integrations/harness/providers/pi/pi-title";
 import {
   PI_FLAVOR,
   OMP_FLAVOR,
-} from "../src/integrations/harness/providers/pi/piFlavor";
-import { respondQuestion as respondPiQuestion } from "../src/integrations/harness/providers/pi/piFamily";
+} from "../src/integrations/harness/providers/pi/pi-flavor";
+import { respondQuestion as respondPiQuestion } from "../src/integrations/harness/providers/pi/pi-family";
 
 export interface HostProvider {
   send(input: SendTurnInput): Promise<void>;

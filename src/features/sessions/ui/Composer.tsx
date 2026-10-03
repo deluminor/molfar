@@ -38,7 +38,7 @@ import {
   pickAttachments,
   revokeAttachment,
 } from "../model/attachments";
-import { resizeComposer } from "../model/composerResize";
+import { resizeComposer } from "../model/composer-resize";
 import {
   isFileReferenceText,
   messageFilesFromClipboard,
@@ -48,13 +48,13 @@ import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,
 } from "../../../shared/lib/drag";
-import type { ContextUsage } from "../model/contextUsage";
+import type { ContextUsage } from "../model/context-usage";
 import {
   loadProjectFiles,
   peekProjectFiles,
   recentOpenedFiles,
   subscribeProjectFiles,
-} from "../../files/model/fileIndex";
+} from "../../files/model/file-index";
 import {
   buildMentionIndex,
   fileMentionParts,
@@ -64,12 +64,12 @@ import {
   replaceMentionToken,
   type MentionIndex,
   type MentionToken,
-} from "../../files/model/fileMentions";
+} from "../../files/model/file-mentions";
 import type { ProjectFile } from "../../../platform/tauri/fs";
 import {
   composeInboxMessage,
   type InboxComposerCard,
-} from "../../inbox/model/githubTasks";
+} from "../../inbox/model/github-tasks";
 import type { HandoffComposerCard } from "../model/handoff";
 import {
   looksLikeProject,
@@ -89,13 +89,13 @@ import { HARNESS_TITLE, harnessSupportsAttachments } from "../model/session";
 import type {
   UserQuestionPrompt,
   UserQuestionReply,
-} from "../model/userQuestion";
+} from "../model/user-question";
 import { isImeComposition } from "../../../shared/lib/keyboard";
 import {
   captureDraft,
   dropPastedText,
   insertRestoredText,
-} from "../../../shared/lib/draftRestore";
+} from "../../../shared/lib/draft-restore";
 import {
   createBlankSkill,
   rankSkills,
@@ -130,9 +130,9 @@ import { ModelControlPills, ModelPicker } from "./ModelPicker";
 import { QuestionForm } from "./QuestionForm";
 import { SkillPicker } from "../../skills/ui/SkillPicker";
 import { pathKey, projectKey } from "../../../shared/lib/paths";
-import { consumeQuoteRequest, type QuoteRequest } from "../model/quoteDraft";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
+import { consumeQuoteRequest, type QuoteRequest } from "../model/quote-draft";
+import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
+import { useProjectBranchesState } from "../../source-control/hooks/use-project-branches";
 import {
   COMPOSER_RUNNER_CHANGE_EVENT,
   loadComposerRunner,
@@ -150,27 +150,27 @@ import {
   type Note,
   type NoteComposerCard,
 } from "../../notes";
-import { resolveTabGroupLogo } from "../../workspace/model/tabGroups";
-import { useComposerSkills } from "./useComposerSkills";
+import { resolveTabGroupLogo } from "../../workspace/model/tab-groups";
+import { useComposerSkills } from "./use-composer-skills";
 import { Popover } from "../../../shared/ui/Popover";
 import { UsageLimitNotice } from "./UsageLimitNotice";
 import { consumePlanCommand, PLAN_COMMAND } from "../model/plan";
 import {
   consumeOperatorCommand,
   OPERATOR_COMMAND,
-} from "../model/operatorCommand";
+} from "../model/operator-command";
 import {
   consumeOrchestratorCommand,
   ORCHESTRATOR_COMMAND,
-} from "../model/orchestratorCommand";
-import { consumeDraftCommand, DRAFT_COMMAND } from "../model/draftCommand";
+} from "../model/orchestrator-command";
+import { consumeDraftCommand, DRAFT_COMMAND } from "../model/draft-command";
 import {
   leadingModeCommand,
   MODE_COMMAND_INDENT,
   ModeCommandPill,
   ModeCommandText,
   type ModeCommandToken,
-} from "./modeCommands";
+} from "./mode-commands";
 import {
   BTW_COMMAND,
   consumeBtwCommand,
@@ -183,30 +183,30 @@ import {
   isSessionFolderCommand,
   runsSessionFolderCommandOnSpace,
   SESSION_FOLDER_COMMAND,
-} from "../model/sessionFolderCommand";
+} from "../model/session-folder-command";
 import {
   loadSessionFolders,
   type SessionFolderTarget,
   type SessionFolder,
-} from "../model/sessionFolders";
+} from "../model/session-folders";
 import { SessionFolderPicker } from "./SessionFolderPicker";
-import { MCP_COMMAND, isMcpCommand } from "../model/mcpCommand";
+import { MCP_COMMAND, isMcpCommand } from "../model/mcp-command";
 import {
   mcpContextText,
   mcpTagParts,
   newMcpTag,
   taggedMcpServers,
   type McpTag,
-} from "../model/mcpPicker";
-import { getComposerMcpTags, setComposerMcpTags } from "../model/draftCache";
+} from "../model/mcp-picker";
+import { getComposerMcpTags, setComposerMcpTags } from "../model/draft-cache";
 import { type McpConnection } from "../../settings/model/mcp";
 import {
   getCachedMcpSettings,
   loadMcpSettings,
   subscribeMcpSettings,
   type McpSettingsSnapshot,
-} from "../../settings/model/mcpSettingsCache";
-import type { LastTurnRecall } from "../model/editLastTurn";
+} from "../../settings/model/mcp-settings-cache";
+import type { LastTurnRecall } from "../model/edit-last-turn";
 
 type Props = {
   enabled?: boolean;

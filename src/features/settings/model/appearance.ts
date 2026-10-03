@@ -1,12 +1,12 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { hslToRgb, isHexColor, type Rgb } from "../../../shared/lib/colorUtils";
+import { hslToRgb, isHexColor, type Rgb } from "../../../shared/lib/color-utils";
 import { IS_LINUX, IS_MAC } from "../../../platform/tauri/platform";
-import { readFlag, writeFlag } from "./storageFlags";
-import { applyUiScale, loadUiScale } from "./uiScale";
+import { readFlag, writeFlag } from "./storage-flags";
+import { applyUiScale, loadUiScale } from "./ui-scale";
 import {
   applyPreparedNewThreadBackground,
   clearPreparedNewThreadBackground,
-} from "./newThreadBackgroundEffects";
+} from "./new-thread-background-effects";
 
 const ACCENT_COLOR_KEY = "vatra.accentColor";
 const THEME_HUE_KEY = "vatra.themeHue";

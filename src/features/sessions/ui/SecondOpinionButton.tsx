@@ -22,7 +22,7 @@ import {
   subscribeHarnessAvailability,
 } from "../../../integrations/harness/core/availability";
 import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import {
   getModelSnapshot,
   getPickerVisibilitySnapshot,
@@ -36,7 +36,7 @@ import {
   subscribePickerVisibility,
 } from "../model/models";
 import { LAYER } from "../../../shared/lib/layers";
-import { secondOpinionTargets } from "../model/secondOpinion";
+import { secondOpinionTargets } from "../model/second-opinion";
 import {
   HARNESS_TITLE,
   type HarnessId,

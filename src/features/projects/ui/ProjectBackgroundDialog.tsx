@@ -22,14 +22,14 @@ import {
   clearProjectChatBackground,
   pickAndSaveProjectChatBackground,
   projectChatBackgroundSrc,
-} from "../model/chatBackground";
+} from "../model/chat-background";
 import {
   clearProjectChatBackgroundSetting,
   loadProjectChatBackgroundSettings,
   projectChatBackgroundImageRevision,
   saveProjectChatBackgroundSettings,
-} from "../model/projectChatBackground";
-import { useProjectBackgroundEffect } from "./useProjectBackgroundEffect";
+} from "../model/project-chat-background";
+import { useProjectBackgroundEffect } from "./use-project-background-effect";
 import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
 
 type Props = {

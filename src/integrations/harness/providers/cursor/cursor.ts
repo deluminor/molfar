@@ -1,8 +1,8 @@
 import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
+import { AcpSubagents } from "../../core/acp-subagents";
 import type { RuntimeMode } from "../../../../features/sessions/model/session";
 import { promptBlocks } from "../../../../features/sessions/model/attachments";
-import { isTaskListToolName, taskListFromToolInput } from "../../../../features/sessions/model/taskList";
+import { isTaskListToolName, taskListFromToolInput } from "../../../../features/sessions/model/task-list";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -16,13 +16,13 @@ import {
   readStoredCursorSubagentRuns,
   type StoredCursorToolCall,
   type StoredCursorSubagentRun,
-} from "./cursorStore";
+} from "./cursor-store";
 import {
   cursorAgentLabel,
   cursorSubagentEvents,
   kindFromCursorToolName,
-} from "./cursorSubagents";
-import { stopCursorTitleGeneration } from "./cursorTitle";
+} from "./cursor-subagents";
+import { stopCursorTitleGeneration } from "./cursor-title";
 import type {
   ApprovalDecision,
   HarnessEvent,
@@ -35,7 +35,7 @@ import {
   questionsFromUnknown,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "../../../../features/sessions/model/user-question";
 import {
   agentToolTitle,
   composeToolTitle,

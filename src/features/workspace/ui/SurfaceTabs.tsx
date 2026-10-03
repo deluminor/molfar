@@ -26,11 +26,11 @@ import {
 } from "../model/layout";
 import { displayPath } from "../../../shared/lib/paths";
 import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
-import { releaseNotesTitle } from "../../../app/model/releaseNotes";
-import { terminalTabLabel } from "../../terminal/model/terminalTab";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { useTabCloseMotion } from "../hooks/useTabCloseMotion";
+import { releaseNotesTitle } from "../../../app/model/release-notes";
+import { terminalTabLabel } from "../../terminal/model/terminal-tab";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useAnimatedReorder } from "../../../shared/hooks/use-animated-reorder";
+import { useTabCloseMotion } from "../hooks/use-tab-close-motion";
 import { TabWidthMotion } from "../../../app/shell/ClosingTab";
 import {
   ExplorerMenu,

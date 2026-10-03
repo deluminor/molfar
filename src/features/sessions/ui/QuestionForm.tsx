@@ -14,7 +14,7 @@ import {
   type UserQuestion,
   type UserQuestionPrompt,
   type UserQuestionReply,
-} from "../model/userQuestion";
+} from "../model/user-question";
 
 type Props = {
   prompt: UserQuestionPrompt;

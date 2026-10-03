@@ -1,12 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search, Settings } from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { HarnessIcon } from "./HarnessIcon";
 import {
   MCP_PROVIDER_LABELS,
   type McpConnection,
 } from "../../settings/model/mcp";
-import { mcpPickerServers } from "../model/mcpPicker";
+import { mcpPickerServers } from "../model/mcp-picker";
 import type { HarnessId } from "../model/session";
 
 export function McpServerPicker({

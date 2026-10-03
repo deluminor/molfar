@@ -23,7 +23,7 @@ portable-pty (vendor/portable-pty, Windows builds)
   MIT License; the full text is in vendor/portable-pty/LICENSE.md and in
   THIRD-PARTY-NOTICES-RUST.md of Windows builds.
 
-Visual Studio Code (portions of src/features/source-control/model/gitGraph.ts,
+Visual Studio Code (portions of src/features/source-control/model/git-graph.ts,
 derived from src/vs/workbench/contrib/scm/browser/scmHistory.ts)
   Copyright (c) Microsoft Corporation.
 

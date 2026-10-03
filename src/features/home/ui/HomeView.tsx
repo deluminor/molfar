@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
 import { Home } from "../../../shared/ui/icons";
-import { useHomeDashboard } from "../hooks/useHomeDashboard";
+import { useHomeDashboard } from "../hooks/use-home-dashboard";
 import {
   useHomeLayoutEditing,
   type HomeLayoutEditing,
-} from "../hooks/useHomeLayoutEditing";
-import { useHostStats } from "../hooks/useHostStats";
+} from "../hooks/use-home-layout-editing";
+import { useHostStats } from "../hooks/use-host-stats";
 import { AutomationsCard } from "./AutomationsCard";
 import { ClockCard } from "./ClockCard";
 import { BrandCard } from "./BrandCard";

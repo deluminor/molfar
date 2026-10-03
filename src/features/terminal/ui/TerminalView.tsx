@@ -8,23 +8,23 @@ import {
   subscribePty,
   writePty,
 } from "../../../platform/tauri/pty";
-import { isOscColorQuery, oscColorReply } from "../model/terminalChrome";
+import { isOscColorQuery, oscColorReply } from "../model/terminal-chrome";
 import {
   isMacTerminalClearShortcut,
   macTerminalShortcutData,
-} from "../model/terminalKeys";
+} from "../model/terminal-keys";
 import {
   defaultTerminalTitle,
   scanOscCwd,
   type TerminalMetaPatch,
-} from "../model/terminalTab";
+} from "../model/terminal-tab";
 import { isLightScheme, SCHEME_CHANGE_EVENT } from "../../settings/model/appearance";
 import {
   applyTerminalChrome,
   fitTerminal,
   resetGridStretch,
   type TerminalFitMode,
-} from "../model/terminalLayout";
+} from "../model/terminal-layout";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import "@xterm/xterm/css/xterm.css";
 

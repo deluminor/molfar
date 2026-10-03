@@ -1,4 +1,4 @@
-import { alertApp, confirmApp } from "../../../app/model/appDialog";
+import { alertApp, confirmApp } from "../../../app/model/app-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,
@@ -64,7 +64,7 @@ import {
   type GitPr,
 } from "../../../platform/tauri/fs";
 import type { HarnessId } from "../../sessions/model/session";
-import { recordInboxSelfActivity } from "../../inbox/model/inboxSelfActivity";
+import { recordInboxSelfActivity } from "../../inbox/model/inbox-self-activity";
 import {
   loadChangesView,
   saveChangesView,
@@ -74,10 +74,10 @@ import {
   generateCommitMessage,
   generatePrContent,
 } from "../../../integrations/harness";
-import { invalidateWatchedFiles } from "../../files/model/fileWatch";
+import { invalidateWatchedFiles } from "../../files/model/file-watch";
 import { MOD } from "../../../platform/tauri/platform";
-import { applyProjectDiffStats } from "../hooks/useProjectDiffStats";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { applyProjectDiffStats } from "../hooks/use-project-diff-stats";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { isRemoteProjectPath } from "../../projects/model/recents";
 
 const GIT_POLL_MS = 2000;

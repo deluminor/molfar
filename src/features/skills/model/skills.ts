@@ -6,25 +6,25 @@ import {
   writeTextFile,
   type DiscoveredSkill,
 } from "../../../platform/tauri/fs";
-import { invalidateProjectFiles } from "../../files/model/fileIndex";
+import { invalidateProjectFiles } from "../../files/model/file-index";
 import { joinPath } from "../../../shared/lib/paths";
 import { isLocalProject, normalizeProjectPath } from "../../projects/model/recents";
-import { isMarkdownBlockquotePosition } from "../../sessions/model/quoteDraft";
+import { isMarkdownBlockquotePosition } from "../../sessions/model/quote-draft";
 import type { HarnessId } from "../../sessions/model/session";
 import { getHarness } from "../../../integrations/harness/core/registry";
-import type { NativeCommand } from "../../../integrations/harness/core/nativeCommands";
+import type { NativeCommand } from "../../../integrations/harness/core/native-commands";
 import {
   CREATE_SKILL_BODY,
   CREATE_SKILL_DESCRIPTION,
   CREATE_SKILL_NAME,
-} from "./createSkill";
+} from "./create-skill";
 
 export {
   rankSkills,
   replaceSlashToken,
   slashTokenAt,
   type SlashToken,
-} from "./slashCommands";
+} from "./slash-commands";
 
 const DISABLED_SKILL_PATHS_KEY = "vatra.disabledSkillPaths";
 

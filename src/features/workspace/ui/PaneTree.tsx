@@ -14,7 +14,7 @@ import {
   titleTabDropFromPoint,
   useExternalPaneDrop,
   type TitleTabDropPosition,
-} from "../model/paneDrop";
+} from "../model/pane-drop";
 import type {
   ApprovalDecision,
   UserQuestionReply,
@@ -33,7 +33,7 @@ import {
   sameProjectPath,
   type RecentProject,
 } from "../../projects/model/recents";
-import type { TerminalMetaPatch } from "../../terminal/model/terminalTab";
+import type { TerminalMetaPatch } from "../../terminal/model/terminal-tab";
 import {
   sessionWorkCwd,
   type Attachment,
@@ -50,7 +50,7 @@ import {
 import { FilePane } from "../../files/ui/FilePane";
 import { SessionPane } from "../../sessions/ui/SessionPane";
 import type { TranscriptPool } from "../../sessions/ui/TranscriptPool";
-import type { SessionFolderTarget } from "../../sessions/model/sessionFolders";
+import type { SessionFolderTarget } from "../../sessions/model/session-folders";
 import type { Worktree } from "../../source-control/model/worktrees";
 
 type Shared = {

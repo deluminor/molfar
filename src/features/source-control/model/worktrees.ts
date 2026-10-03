@@ -3,7 +3,7 @@ import { appendReadyHandoff, buildDeterministicHandoff } from "../../sessions/mo
 import { invokeWorkspace, notifyGitChanged } from "../../../platform/tauri/fs";
 import { isFilesystemTab, type FilePaneTab } from "../../workspace/model/layout";
 import { isEqualOrInside, pathKey } from "../../../shared/lib/paths";
-import { isBlankSession } from "../../projects/model/projectReturn";
+import { isBlankSession } from "../../projects/model/project-return";
 import { newSession, sessionWorkCwd, type Session } from "../../sessions/model/session";
 
 export type Worktree = {

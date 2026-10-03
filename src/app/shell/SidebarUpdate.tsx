@@ -1,17 +1,17 @@
 import { ArrowDownCircle, Loader } from "../../shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { APP_UPDATER_DISABLED } from "../model/forkPolicy";
+import { APP_UPDATER_DISABLED } from "../model/fork-policy";
 import {
   installPendingUpdate,
   probeForUpdate,
   readAppVersion,
   type UpdaterSnapshot,
 } from "../model/updater";
-import type { InstalledUpdate } from "../model/updateNotice";
+import type { InstalledUpdate } from "../model/update-notice";
 import {
   shouldRecheckForUpdate,
   UPDATE_RECHECK_INTERVAL_MS,
-} from "../model/updateRecheck";
+} from "../model/update-recheck";
 import { UpdateRailCard } from "./UpdateRailCard";
 
 // The sidebar row only earns its space when there is something to act on: an

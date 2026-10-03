@@ -5,7 +5,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { hexToHsv, hsvToHex, normalizeHex, type Hsv } from "../lib/colorUtils";
+import { hexToHsv, hsvToHex, normalizeHex, type Hsv } from "../lib/color-utils";
 import { Pipette } from "./icons";
 
 type Props = {

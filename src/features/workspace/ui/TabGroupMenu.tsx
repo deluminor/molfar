@@ -17,11 +17,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { normalizeHex } from "../../../shared/lib/colorUtils";
+import { normalizeHex } from "../../../shared/lib/color-utils";
 import { projectKey } from "../../../shared/lib/paths";
-import { clearProjectLogo, pickAndSetProjectLogo } from "../../projects/model/projectLogos";
-import { PROJECT_MASCOTS, projectMascot } from "../../projects/model/projectMascots";
-import { TAB_GROUP_COLORS } from "../model/tabGroups";
+import { clearProjectLogo, pickAndSetProjectLogo } from "../../projects/model/project-logos";
+import { PROJECT_MASCOTS, projectMascot } from "../../projects/model/project-mascots";
+import { TAB_GROUP_COLORS } from "../model/tab-groups";
 import { ColorPickerPopover, ColorSwatchRow } from "../../../shared/ui/ColorPickerPopover";
 import { Popover } from "../../../shared/ui/Popover";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Clock, Gauge, Play, X } from "../../../shared/ui/icons";
 import type { UsageLimit } from "../model/session";
-import { formatUsageLimitReset } from "../model/usageLimit";
+import { formatUsageLimitReset } from "../model/usage-limit";
 
 const BUTTON =
   "flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 hover:bg-content/10 hover:text-content";

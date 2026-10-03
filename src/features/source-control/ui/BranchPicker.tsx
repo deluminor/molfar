@@ -16,8 +16,8 @@ import {
   notifyGitChanged,
   type GitBranchInfo,
 } from "../../../platform/tauri/fs";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useProjectBranchesState } from "../hooks/useProjectBranches";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useProjectBranchesState } from "../hooks/use-project-branches";
 import { CreateBranchDialog } from "./CreateBranchDialog";
 import { GitPickerTrigger } from "./GitPickerTrigger";
 import { Popover } from "../../../shared/ui/Popover";

@@ -2,7 +2,7 @@ import {
   buildCiRepairRequest,
   type CiRepairEvidence,
   type CiRepairRequest,
-} from "../model/ciRepair";
+} from "../model/ci-repair";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
 import {
   Check,
@@ -19,7 +19,7 @@ import {
   fetchGithubCheckDetails,
   githubActionsJobId,
   type GithubPrCheck,
-} from "../model/githubPrChecks";
+} from "../model/github-pr-checks";
 
 export type CheckRepair = {
   onOpenSession?: (sessionId: string) => void | Promise<void>;

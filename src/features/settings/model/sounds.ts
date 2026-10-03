@@ -1,10 +1,10 @@
 import { play, setEnabled, setVolume, type SoundName } from "cuelume";
-import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linkedWorkItemActivity";
+import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linked-work-item-activity";
 import {
   allowsProjectNotification,
   type NotificationSubject,
-} from "../../notifications/model/notificationPreferences";
-import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
+} from "../../notifications/model/notification-preferences";
+import { inboxNotificationProject } from "../../notifications/model/notification-projects";
 
 const KEY = "vatra.sounds";
 const ENABLED_AT_KEY = "vatra.soundsEnabledAt";

@@ -19,7 +19,7 @@ import {
   RIPPLE_SPAN,
   type OutlineAnchor,
   type OutlineBand,
-} from "../model/promptOutline";
+} from "../model/prompt-outline";
 import type { Block } from "../model/session";
 import { Popover } from "../../../shared/ui/Popover";
 

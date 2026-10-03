@@ -4,8 +4,8 @@ import { Popover } from "../../../shared/ui/Popover";
 import {
   formatEditorSelectionReference,
   type EditorCodeSelection,
-} from "../model/editorSelection";
-import { requestAddToChat } from "../../sessions/model/quoteDraft";
+} from "../model/editor-selection";
+import { requestAddToChat } from "../../sessions/model/quote-draft";
 
 export type EditorSelectionTarget = EditorCodeSelection & {
   anchor: DOMRect;

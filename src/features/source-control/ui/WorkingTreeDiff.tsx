@@ -12,15 +12,15 @@ import {
   type GitFileDiffKind,
 } from "../../../platform/tauri/fs";
 import { forEachConcurrent } from "../../../shared/lib/concurrent";
-import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unifiedDiff";
+import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unified-diff";
 import {
   prioritizeWorkingTreeDiffEntries,
   workingTreeDiffEntries,
   workingTreeDiffEntryLabel,
   workingTreeDiffFocusId,
-} from "../model/workingTreeDiff";
-import { stageChunkText } from "../../files/editor/editorGit";
-import { LINE_DIFF_CONFIG } from "../model/lineDiff";
+} from "../model/working-tree-diff";
+import { stageChunkText } from "../../files/editor/editor-git";
+import { LINE_DIFF_CONFIG } from "../model/line-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
 
 type Props = {

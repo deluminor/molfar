@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useProjectBranchesState } from "../hooks/useProjectBranches";
-import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
+import { useProjectBranchesState } from "../hooks/use-project-branches";
+import { useProjectWorktrees } from "../hooks/use-project-worktrees";
 import { pathKey, prettyCwd } from "../../../shared/lib/paths";
 import { NO_BRANCH_LABEL, type Worktree } from "../model/worktrees";
 import { BranchPicker } from "./BranchPicker";

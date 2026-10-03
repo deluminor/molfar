@@ -35,7 +35,7 @@ import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import {
   filterQuickModels,
   QUICK_COMPOSER_CATALOG_REQUEST_EVENT,
-} from "../model/quickComposer";
+} from "../model/quick-composer";
 
 type Props = {
   model: AgentModel;

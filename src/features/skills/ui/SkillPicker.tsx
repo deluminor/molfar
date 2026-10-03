@@ -13,7 +13,7 @@ import {
   slugSkillName,
   type Skill,
 } from "../model/skills";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 
 type Props = {
   skills: Skill[];

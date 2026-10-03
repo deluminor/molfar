@@ -1,6 +1,6 @@
 import { Check, CircleDot, GitPullRequest } from "../../../shared/ui/icons";
 import { type ReactNode } from "react";
-import type { InboxKind } from "../model/githubTasks";
+import type { InboxKind } from "../model/github-tasks";
 import {
   DEFAULT_INBOX_FILTERS,
   hasActiveInboxFilters,
@@ -9,7 +9,7 @@ import {
   type InboxSource,
   type InboxTimeFilter,
   type LinearProjectOption,
-} from "../model/inboxFilters";
+} from "../model/inbox-filters";
 import type { JiraProject } from "../model/jira";
 import type { LinearTeam } from "../model/linear";
 import { Popover } from "../../../shared/ui/Popover";

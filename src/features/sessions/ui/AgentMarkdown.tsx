@@ -29,26 +29,26 @@ import type { PluggableList } from "unified";
 import { ExplorerMenu, type ExplorerMenuItem } from "../../files/ui/ExplorerMenu";
 import { FileActionError } from "../../files/ui/FileActionError";
 import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { boundedCode } from "../../files/editor/codeHighlightPlugin";
-import { createLazyMermaidPlugin } from "../../files/editor/mermaidPlugin";
+import { boundedCode } from "../../files/editor/code-highlight-plugin";
+import { createLazyMermaidPlugin } from "../../files/editor/mermaid-plugin";
 import {
   displayPath,
   isExtensionlessFileName,
   resolveWorkspaceFileReference,
 } from "../../../shared/lib/paths";
 import type { EditorNavigation, OpenFileFn } from "../../search/model/search";
-import { remarkWorkspaceFileLinks } from "../../files/model/markdownFileLinks";
-import { isAtxHeadingLine } from "../../files/model/markdownSource";
-import { useColorScheme } from "../../../shared/hooks/useColorScheme";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { remarkWorkspaceFileLinks } from "../../files/model/markdown-file-links";
+import { isAtxHeadingLine } from "../../files/model/markdown-source";
+import { useColorScheme } from "../../../shared/hooks/use-color-scheme";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { openPathWithDefaultApp, revealPath } from "../../../platform/tauri/fs";
-import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl } from "../../inbox/model/inboxMedia";
+import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl } from "../../inbox/model/inbox-media";
 import { isNoteImagePath } from "../../notes";
 import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
 import { InboxMedia } from "../../inbox/ui/InboxMedia";
-import { rehypeHardBreaks } from "./hardBreaks";
-import { rehypeWordFade, usePacedText, useWordFading } from "./wordFade";
+import { rehypeHardBreaks } from "./hard-breaks";
+import { rehypeWordFade, usePacedText, useWordFading } from "./word-fade";
 
 const MERMAID_BASE_CONFIG = {
   startOnLoad: false,

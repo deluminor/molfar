@@ -1,4 +1,4 @@
-import { mascotPath } from "../../projects/model/projectMascots";
+import { mascotPath } from "../../projects/model/project-mascots";
 
 const GRID_W = 16;
 

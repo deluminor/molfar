@@ -1,4 +1,4 @@
-import type { RailSurfaceVisibility } from "../../../features/settings/model/projectRail";
+import type { RailSurfaceVisibility } from "../../../features/settings/model/project-rail";
 import type { SettingsReturnView } from "./types";
 
 export function captureSettingsReturnView(

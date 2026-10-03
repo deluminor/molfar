@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import type { GithubPrDiff } from "../model/githubTasks";
-import { mergePrDiff, parsePrPatch, type PrDiffFile } from "../../source-control/model/prDiff";
-import { blocksFromLines, type UnifiedLine } from "../../source-control/model/unifiedDiff";
+import type { GithubPrDiff } from "../model/github-tasks";
+import { mergePrDiff, parsePrPatch, type PrDiffFile } from "../../source-control/model/pr-diff";
+import { blocksFromLines, type UnifiedLine } from "../../source-control/model/unified-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "../../source-control/ui/UnifiedDiffView";
 
 type Props = {

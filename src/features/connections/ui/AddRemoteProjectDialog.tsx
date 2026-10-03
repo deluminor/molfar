@@ -8,7 +8,7 @@ import {
   remoteRequest,
   useRemoteMachines,
 } from "../model/connections";
-import { rememberRemoteProject } from "../model/remoteProjects";
+import { rememberRemoteProject } from "../model/remote-projects";
 import type { HostDirectory, HostProject } from "../model/protocol";
 
 /** Adds a project whose folder is on a connected machine. Sessions in it run

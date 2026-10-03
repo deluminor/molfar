@@ -1,6 +1,6 @@
 import { Check, ListEnd, Loader, Minus } from "../../../shared/ui/icons";
 import type { TaskListItem, TaskListItemStatus } from "../model/session";
-import { taskListProgressLabel } from "../model/taskList";
+import { taskListProgressLabel } from "../model/task-list";
 
 type Props = {
   items: TaskListItem[];

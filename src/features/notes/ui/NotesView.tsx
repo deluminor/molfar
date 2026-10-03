@@ -16,11 +16,11 @@ import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
 import { OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { formatRelativeTime } from "../../inbox/model/githubTasks";
+import { useDragResize } from "../../../shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "../../../shared/lib/pane-width-storage";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
+import { formatRelativeTime } from "../../inbox/model/github-tasks";
 import {
   createNote,
   deleteNote,
@@ -41,7 +41,7 @@ import {
   saveNoteImagesFromFiles,
   saveNoteImagesFromPaths,
   type NoteImageAsset,
-} from "../noteImages";
+} from "../note-images";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import { looksLikeProject, type RecentProject } from "../../projects/model/recents";
@@ -52,7 +52,7 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+} from "../../workspace/model/tab-groups";
 import { AgentMarkdown, MarkdownSourceHighlight } from "../../sessions/ui/AgentMarkdown";
 
 const MIN_WIDTH = 240;

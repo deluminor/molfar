@@ -1,11 +1,11 @@
-import { dropContextWindow, type ContextUsage } from "./contextUsage";
-import type { UserQuestionPrompt } from "./userQuestion";
+import { dropContextWindow, type ContextUsage } from "./context-usage";
+import type { UserQuestionPrompt } from "./user-question";
 import type { HandoffComposerCard } from "./handoff";
-import type { InboxComposerCard } from "../../inbox/model/githubTasks";
-import type { InboxAskContext } from "../../inbox/model/inboxAsk";
+import type { InboxComposerCard } from "../../inbox/model/github-tasks";
+import type { InboxAskContext } from "../../inbox/model/inbox-ask";
 import type { NoteCardMeta, NoteComposerCard } from "../../notes";
-import type { OrchestrationProposal } from "../../orchestration/model/orchestrationPlan";
-import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linkedWorkItemActivity";
+import type { OrchestrationProposal } from "../../orchestration/model/orchestration-plan";
+import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linked-work-item-activity";
 import {
   defaultSessionChoice,
   firstEnabledHarness,
@@ -13,7 +13,7 @@ import {
   preferredModelSettings,
   resolveModel,
 } from "./models";
-import { loadProjectProviderSettings } from "./projectProviders";
+import { loadProjectProviderSettings } from "./project-providers";
 
 export type HarnessId =
   | "claude"

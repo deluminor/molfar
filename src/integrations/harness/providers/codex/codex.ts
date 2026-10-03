@@ -1,11 +1,11 @@
 import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
+import { sameProviderAccountId } from "../../../../features/providers/model/provider-accounts";
 import {
   exhaustedWindowResetAt,
   parseCodexRateLimits,
-} from "../../../../features/providers/model/rateLimits";
+} from "../../../../features/providers/model/rate-limits";
 import type { RuntimeMode } from "../../../../features/sessions/model/session";
-import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
+import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/user-question";
 import {
   killChild,
   resolveCodexBinary,
@@ -27,12 +27,12 @@ import {
   stringField,
   toCodexApprovalDecision,
   type CodexApprovalKind,
-} from "./codexProtocol";
-import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
+} from "./codex-protocol";
+import { JsonRpcClient, type JsonRpcId } from "../../core/json-rpc";
 import { deleteGeneratedImages, saveGeneratedImage } from "../../../../platform/tauri/fs";
-import { codexQuestions, codexQuestionResponse } from "./codexQuestions";
-import { codexMcpConfirmation } from "./codexElicitation";
-import { snapshotRemainder } from "../../core/streamText";
+import { codexQuestions, codexQuestionResponse } from "./codex-questions";
+import { codexMcpConfirmation } from "./codex-elicitation";
+import { snapshotRemainder } from "../../core/stream-text";
 import type {
   ApprovalDecision,
   CompactContextInput,

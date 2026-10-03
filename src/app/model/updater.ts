@@ -6,11 +6,11 @@ import {
   type Update,
 } from "@tauri-apps/plugin-updater";
 import { announceUpdateAvailable } from "../../features/settings/model/sounds";
-import { alertApp } from "./appDialog";
-import { APP_UPDATER_DISABLED } from "./forkPolicy";
-import { formatUpdateDate } from "./releaseNotes";
-import { openUpdatePrompt } from "./updatePrompt";
-import { rememberInstalledUpdate } from "./updateNotice";
+import { alertApp } from "./app-dialog";
+import { APP_UPDATER_DISABLED } from "./fork-policy";
+import { formatUpdateDate } from "./release-notes";
+import { openUpdatePrompt } from "./update-prompt";
+import { rememberInstalledUpdate } from "./update-notice";
 
 const FORK_UPDATER_DISABLED_MESSAGE =
   "App updates are disabled in this fork so upstream builds cannot overwrite it.\n\nPull upstream with git, or build and install from this repository.";

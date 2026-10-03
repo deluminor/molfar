@@ -1,7 +1,7 @@
 import { nativeModelId } from "../../../../features/sessions/model/models";
 import type { RuntimeMode } from "../../../../features/sessions/model/session";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
-import { AcpSubagents } from "../../core/acpSubagents";
+import { AcpSubagents } from "../../core/acp-subagents";
 import {
   killChild,
   resolveHermesBinary,
@@ -20,13 +20,13 @@ import {
   hermesStderrAuthError,
   hermesStartupError,
   type HermesBackgroundDispatch,
-} from "./hermesProtocol";
+} from "./hermes-protocol";
 import {
   eventsFromAcpUpdate,
   permissionOptionId,
   permissionRequestFromAcp,
   pickAutoOption,
-} from "../grok/grokProtocol";
+} from "../grok/grok-protocol";
 import type {
   ApprovalDecision,
   HarnessEvent,

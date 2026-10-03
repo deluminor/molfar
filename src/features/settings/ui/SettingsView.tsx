@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ConnectionsSettings } from "../../connections/ui/ConnectionsSettings";
-import { confirmApp } from "../../../app/model/appDialog";
+import { confirmApp } from "../../../app/model/app-dialog";
 import {
   ArrowDownCircle,
   Check,
@@ -46,8 +46,8 @@ import { McpSettings } from "./McpSettings";
 import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
 import { RemoveProjectDialog } from "../../projects/ui/RemoveProjectDialog";
 import { WindowControls } from "../../../app/shell/WindowControls";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useColorScheme } from "../../../shared/hooks/useColorScheme";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useColorScheme } from "../../../shared/hooks/use-color-scheme";
 import {
   applyChatBackground,
   applyChatBackgroundEmptyOpacity,
@@ -132,7 +132,7 @@ import {
 import {
   pickAndSaveChatBackground,
   removeChatBackground,
-} from "../../projects/model/chatBackground";
+} from "../../projects/model/chat-background";
 import {
   applyUiScale,
   loadUiScale,
@@ -140,7 +140,7 @@ import {
   subscribeUiScale,
   UI_SCALE_DEFAULT,
   UI_SCALE_PERCENTS,
-} from "../model/uiScale";
+} from "../model/ui-scale";
 import {
   getHarnessAvailabilitySnapshot,
   harnessUnavailableHint,
@@ -157,12 +157,12 @@ import {
   providerBinaryPathChangePending,
   saveProviderBinaryPath,
   type ConfigurableBinaryProvider,
-} from "../../providers/model/providerBinaryPaths";
+} from "../../providers/model/provider-binary-paths";
 import {
   compareSemver,
   MINIMUM_OPENCODE_VERSION,
   parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
+} from "../../../integrations/harness/providers/opencode/opencode-protocol";
 import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
 import { loginHarness } from "../../../integrations/harness/core/auth";
 import {
@@ -207,7 +207,7 @@ import {
   setProjectDefaultProvider,
   setProjectProviderHidden,
   subscribeProjectProviders,
-} from "../../sessions/model/projectProviders";
+} from "../../sessions/model/project-providers";
 import {
   newProviderAccount,
   providerAccounts,
@@ -218,26 +218,26 @@ import {
   subscribeProviderAccounts,
   type ProviderAccount,
   type ProviderAccountProvider,
-} from "../../providers/model/providerAccounts";
-import { removeProviderAccountCredentials } from "../../providers/model/providerAccountCredentials";
+} from "../../providers/model/provider-accounts";
+import { removeProviderAccountCredentials } from "../../providers/model/provider-account-credentials";
 import {
   identityKey,
   identityOrganizationTag,
   useProviderAccountIdentities,
-} from "../../providers/model/providerAccountIdentity";
+} from "../../providers/model/provider-account-identity";
 import { ProviderAccountSubtitle } from "../../providers/ui/ProviderAccountSubtitle";
 import {
   saveMaskEmails,
   saveShowRemainingUsage,
   useMaskEmails,
   useShowRemainingUsage,
-} from "../model/displayPrefs";
+} from "../model/display-prefs";
 import {
   accountStatus,
   accountUsageKey,
   useProviderAccountUsage,
-} from "../../providers/model/accountUsage";
-import { clearCachedRateLimits } from "../../providers/model/rateLimitsCache";
+} from "../../providers/model/account-usage";
+import { clearCachedRateLimits } from "../../providers/model/rate-limits-cache";
 import {
   AccountStatusLabel,
   AccountUsageMeters,
@@ -246,13 +246,13 @@ import {
 import {
   loadSessionSidebarFilters,
   saveSessionSidebarFilters,
-} from "../../sessions/model/sessionFilters";
-import type { SessionSummary } from "../../sessions/data/sessionStore";
+} from "../../sessions/model/session-filters";
+import type { SessionSummary } from "../../sessions/data/session-store";
 import {
   clearInboxCache,
   githubStatus,
   type GithubStatus,
-} from "../../inbox/model/githubTasks";
+} from "../../inbox/model/github-tasks";
 import {
   disconnectGitlab,
   gitlabConnected,
@@ -262,7 +262,7 @@ import {
   azureDevOpsConnected,
   disconnectAzureDevOps,
   saveAzureDevOpsConfig,
-} from "../../inbox/model/azureDevOps";
+} from "../../inbox/model/azure-dev-ops";
 import {
   disconnectLinear,
   LINEAR_CHANGE_EVENT,
@@ -283,8 +283,8 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
+} from "../../workspace/model/tab-groups";
+import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import {
@@ -345,16 +345,16 @@ import {
   saveRailSurfaceVisible,
   type RailSurfaceId,
   type RailSurfaceVisibility,
-} from "../model/projectRail";
+} from "../model/project-rail";
 import { loadSoundsEnabled, playCue, saveSoundsEnabled } from "../model/sounds";
-import { setQuickComposerShortcut } from "../../quick-composer/model/quickComposer";
+import { setQuickComposerShortcut } from "../../quick-composer/model/quick-composer";
 import {
   isGlobalShortcut,
   QUICK_COMPOSER_DEFAULT_SHORTCUT,
   quickComposerShortcutLabel,
   quickComposerShortcutPreview,
   shortcutFromKeyEvent,
-} from "../../quick-composer/model/quickComposerShortcut";
+} from "../../quick-composer/model/quick-composer-shortcut";
 import {
   cachedNotificationPermission,
   loadNotificationsEnabled,
@@ -370,7 +370,7 @@ import {
   runUpdateFlow,
   type UpdaterSnapshot,
 } from "../../../app/model/updater";
-import { APP_UPDATER_DISABLED } from "../../../app/model/forkPolicy";
+import { APP_UPDATER_DISABLED } from "../../../app/model/fork-policy";
 
 import { SkillsPage } from "../../skills/ui/SkillsPage";
 import { ProjectNotificationSettings } from "../../notifications/ui/ProjectNotificationSettings";

@@ -14,7 +14,7 @@ import {
   type RemoteMachine,
   type SshSetup,
 } from "../model/protocol";
-import { hostUpdateReason } from "../model/hostUpdate";
+import { hostUpdateReason } from "../model/host-update";
 
 const input =
   "w-full rounded-lg border border-content/15 bg-content/3 px-3 py-2 text-[13px] outline-none focus:border-content/35";

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
 import { PrivateEmail } from "../../../shared/ui/PrivateEmail";
-import { clearInboxCache } from "../../inbox/model/githubTasks";
+import { clearInboxCache } from "../../inbox/model/github-tasks";
 import {
   disconnectJira,
   JIRA_CHANGE_EVENT,
@@ -16,7 +16,7 @@ import {
   type JiraStatus,
 } from "../../inbox/model/jira";
 import { clearConfluenceCache } from "../../inbox/model/confluence/api";
-import { notifyConfluenceChange } from "../../inbox/model/confluence/hiddenSpaces";
+import { notifyConfluenceChange } from "../../inbox/model/confluence/hidden-spaces";
 
 export function JiraSettings() {
   const [status, setStatus] = useState<JiraStatus | null>(null);

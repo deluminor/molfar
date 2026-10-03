@@ -35,7 +35,7 @@ import {
 import {
   setProjectDefaultProvider,
   setProjectProviderHidden,
-} from "./projectProviders";
+} from "./project-providers";
 
 const opus: AgentModel = {
   id: "claude:opus-5",

@@ -7,14 +7,14 @@ import {
 } from "react";
 import { Gauge, RefreshCw } from "../../../shared/ui/icons";
 import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
-import { refreshUsageCards } from "../model/fetchUsage";
+import { refreshUsageCards } from "../model/fetch-usage";
 import {
   usageBarTone,
   usageWindowFooter,
   type UsageCardState,
   type UsageProviderId,
   type UsageWindow,
-} from "../model/usageCard";
+} from "../model/usage-card";
 
 const PROVIDERS: { id: UsageProviderId; title: string }[] = [
   { id: "codex", title: "Codex" },

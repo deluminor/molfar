@@ -12,7 +12,7 @@ import {
   Trash2,
 } from "../../../shared/ui/icons";
 import { revealPath } from "../../../platform/tauri/fs";
-import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
+import { useProjectWorktrees } from "../hooks/use-project-worktrees";
 import { isEqualOrInside, pathKey, prettyCwd, projectName } from "../../../shared/lib/paths";
 import { loadArchivedProjects, type RecentProject } from "../../projects/model/recents";
 import type { Session } from "../../sessions/model/session";

@@ -4,8 +4,8 @@ import { loadSoundsEnabled, playCue } from "../../settings/model/sounds";
 import {
   allowsProjectNotification,
   type NotificationSubject,
-} from "./notificationPreferences";
-import { knownNotificationProject } from "./notificationProjects";
+} from "./notification-preferences";
+import { knownNotificationProject } from "./notification-projects";
 
 const KEY = "vatra.notifications";
 

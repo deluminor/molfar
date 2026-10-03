@@ -3,11 +3,11 @@ import {
   type WorktreeFocus,
   inWorktreeFocus,
   useWorktreeFocus,
-} from "../../features/source-control/model/worktreeFocus";
+} from "../../features/source-control/model/worktree-focus";
 import { SidebarWorktreeSwitcher } from "../../features/source-control/ui/SidebarWorktreeSwitcher";
 import { OrchestrationSidebarAgents } from "../../features/orchestration/ui/OrchestrationSidebarAgents";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { alertApp, confirmApp } from "../model/appDialog";
+import { alertApp, confirmApp } from "../model/app-dialog";
 import {
   Archive,
   Chatting,
@@ -63,24 +63,24 @@ import { copyText } from "../../platform/tauri/clipboard";
 import { resolveModel } from "../../features/sessions/model/models";
 import type { OpenFileFn } from "../../features/search/model/search";
 import { sessionDisplayTitle } from "../../features/sessions/model/session";
-import { nextUnseenFinishedSessions } from "../../features/sessions/model/sessionDone";
-import { orchestrationTaskLabel } from "../../features/orchestration/model/orchestrationSummary";
+import { nextUnseenFinishedSessions } from "../../features/sessions/model/session-done";
+import { orchestrationTaskLabel } from "../../features/orchestration/model/orchestration-summary";
 import {
   orderedSessionActionIds,
   pruneSessionSelection,
   toggleSessionSelection,
-} from "../../features/sessions/model/sessionSelection";
+} from "../../features/sessions/model/session-selection";
 import {
   paneDropFromPoint,
   setExternalPaneDrop,
-} from "../../features/workspace/model/paneDrop";
+} from "../../features/workspace/model/pane-drop";
 import type { PaneEdge } from "../../features/workspace/model/layout";
 import { suppressTextSelection } from "../../shared/lib/drag";
 import {
   compareSessionSummaries,
   filterSessionsByArchive,
   filterSessionsByQuery,
-} from "../../features/sessions/data/sessionHistory";
+} from "../../features/sessions/data/session-history";
 import {
   addSessionToFolder,
   applySessionListDrop,
@@ -109,8 +109,8 @@ import {
   ungroupedSessions,
   type SessionFolder,
   type SessionListDropTarget,
-} from "../../features/sessions/model/sessionFolders";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../shared/lib/listWindow";
+} from "../../features/sessions/model/session-folders";
+import { LIST_PAGE_SIZE, listWindowSize } from "../../shared/lib/list-window";
 import {
   filterSessionsByHarness,
   filterSessionsByStatus,
@@ -120,24 +120,24 @@ import {
   loadSessionSidebarFilters,
   saveSessionSidebarFilters,
   type SessionSidebarFilters,
-} from "../../features/sessions/model/sessionFilters";
+} from "../../features/sessions/model/session-filters";
 import type {
   HarnessId,
   LinkedWorkItem,
 } from "../../features/sessions/model/session";
-import type { LiveAgent } from "../../features/sessions/model/liveAgents";
-import type { SessionSummary } from "../../features/sessions/data/sessionStore";
+import type { LiveAgent } from "../../features/sessions/model/live-agents";
+import type { SessionSummary } from "../../features/sessions/data/session-store";
 import type { SettingsSectionId } from "../../features/settings/model/settings";
-import type { InstalledUpdate } from "../model/updateNotice";
-import { TAB_GROUP_COLORS } from "../../features/workspace/model/tabGroups";
-import { useDragResize } from "../../shared/hooks/useDragResize";
-import { paneWidthStorageKey } from "../../shared/lib/paneWidthStorage";
-import { useGitFileStatuses } from "../../features/source-control/hooks/useGitFileStatuses";
-import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
-import { useProjectDiffStats } from "../../features/source-control/hooks/useProjectDiffStats";
-import { useSortable } from "../../shared/hooks/useSortable";
-import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
-import { normalizeHex } from "../../shared/lib/colorUtils";
+import type { InstalledUpdate } from "../model/update-notice";
+import { TAB_GROUP_COLORS } from "../../features/workspace/model/tab-groups";
+import { useDragResize } from "../../shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "../../shared/lib/pane-width-storage";
+import { useGitFileStatuses } from "../../features/source-control/hooks/use-git-file-statuses";
+import { useLockOverscroll } from "../../shared/hooks/use-lock-overscroll";
+import { useProjectDiffStats } from "../../features/source-control/hooks/use-project-diff-stats";
+import { useSortable } from "../../shared/hooks/use-sortable";
+import { useAnimatedReorder } from "../../shared/hooks/use-animated-reorder";
+import { normalizeHex } from "../../shared/lib/color-utils";
 import {
   collectRailProjects,
   looksLikeProject,
@@ -164,15 +164,15 @@ import { DevModeSlot, IconButton, TabVisitNav } from "./TitleBar";
 import { ProjectSearch } from "../../features/projects/ui/ProjectSearch";
 import { Popover } from "../../shared/ui/Popover";
 import { SearchableProjectPicker } from "../../features/projects/ui/SearchableProjectPicker";
-import { useProjectMenu } from "./useProjectMenu";
+import { useProjectMenu } from "./use-project-menu";
 import { SessionFiltersMenu } from "../../features/sessions/ui/SessionFiltersMenu";
 import { LinkSessionWorkItemDialog } from "../../features/sessions/ui/LinkSessionWorkItemDialog";
-import { sessionReminderPresets } from "../../features/sessions/ui/sessionReminderPresets";
+import { sessionReminderPresets } from "../../features/sessions/ui/session-reminder-presets";
 import {
   formatReminderTime,
   reminderTime,
   type SessionReminder,
-} from "../../features/sessions/model/sessionReminders";
+} from "../../features/sessions/model/session-reminders";
 import { SessionsEmpty } from "../../features/sessions/ui/SessionsEmpty";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
 import { SourceControl } from "../../features/source-control/ui/SourceControl";
@@ -184,7 +184,7 @@ import {
   remoteSessionFor,
   useRemoteProjectSessions,
 } from "../../features/connections/model/connections";
-import { parseRemotePath, remotePath, remoteProjectFor } from "../../features/connections/model/remoteProjects";
+import { parseRemotePath, remotePath, remoteProjectFor } from "../../features/connections/model/remote-projects";
 
 const MIN_WIDTH = 260;
 const MAX_WIDTH = 560;

@@ -1,11 +1,11 @@
 import { CircleAlert } from "../../../shared/ui/icons";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { allowsProjectNotification } from "../../notifications/model/notificationPreferences";
-import { knownNotificationProject } from "../../notifications/model/notificationProjects";
-import { useProjectNotificationPreferences } from "../../notifications/hooks/useProjectNotificationPreferences";
+import { allowsProjectNotification } from "../../notifications/model/notification-preferences";
+import { knownNotificationProject } from "../../notifications/model/notification-projects";
+import { useProjectNotificationPreferences } from "../../notifications/hooks/use-project-notification-preferences";
 import type { ApprovalDecision } from "../../../integrations/harness";
-import type { PendingApprovalNotice } from "../../notifications/model/approvalToast";
+import type { PendingApprovalNotice } from "../../notifications/model/approval-toast";
 import { LAYER } from "../../../shared/lib/layers";
 import {
   HARNESS_TITLE,

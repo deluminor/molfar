@@ -15,7 +15,7 @@ import {
   sameProjectPath,
   type RecentProject,
 } from "../model/recents";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import { LAYER } from "../../../shared/lib/layers";
 import { Popover } from "../../../shared/ui/Popover";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";

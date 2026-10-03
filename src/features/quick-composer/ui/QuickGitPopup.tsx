@@ -12,13 +12,13 @@ import { BranchPicker } from "../../source-control/ui/BranchPicker";
 import {
   seedProjectBranches,
   useProjectBranchesState,
-} from "../../source-control/hooks/useProjectBranches";
+} from "../../source-control/hooks/use-project-branches";
 import { WorkspacePicker } from "../../workspace/ui/WorkspacePicker";
 import {
   QUICK_GIT_REQUEST,
   type QuickGitRequest,
-} from "../model/quickGitPopup";
-import type { QuickWorkspace } from "../model/quickWorkspace";
+} from "../model/quick-git-popup";
+import type { QuickWorkspace } from "../model/quick-workspace";
 
 export function QuickGitPopup({ onShown }: { onShown: () => void }) {
   const [request, setRequest] = useState<QuickGitRequest | null>(null);

@@ -201,7 +201,7 @@ fn build(
         "App: Settings",
         overrides,
     )?;
-    // Fork policy: keep in sync with src/app/model/forkPolicy.ts (APP_UPDATER_DISABLED).
+    // Fork policy: keep in sync with src/app/model/fork-policy.ts (APP_UPDATER_DISABLED).
     let app_updater_disabled = false;
     let check_for_updates = if !app_updater_disabled {
         Some(MenuItemBuilder::with_id("check_for_updates", "Check for Updates…").build(app)?)

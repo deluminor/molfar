@@ -1,13 +1,13 @@
-import { ensureClaudeRegistered } from "../providers/claude/claudeAdapter";
-import { ensureCodexRegistered } from "../providers/codex/codexAdapter";
-import { ensureCursorRegistered } from "../providers/cursor/cursorAdapter";
-import { ensureFxRegistered } from "../providers/fx/fxAdapter";
-import { ensureGrokRegistered } from "../providers/grok/grokAdapter";
-import { ensureHermesRegistered } from "../providers/hermes/hermesAdapter";
-import { ensureOpenCodeRegistered } from "../providers/opencode/opencodeAdapter";
-import { ensureOmpRegistered } from "../providers/omp/ompAdapter";
-import { ensurePiRegistered } from "../providers/pi/piAdapter";
-import { ensureAntigravityRegistered } from "../providers/antigravity/antigravityAdapter";
+import { ensureClaudeRegistered } from "../providers/claude/claude-adapter";
+import { ensureCodexRegistered } from "../providers/codex/codex-adapter";
+import { ensureCursorRegistered } from "../providers/cursor/cursor-adapter";
+import { ensureFxRegistered } from "../providers/fx/fx-adapter";
+import { ensureGrokRegistered } from "../providers/grok/grok-adapter";
+import { ensureHermesRegistered } from "../providers/hermes/hermes-adapter";
+import { ensureOpenCodeRegistered } from "../providers/opencode/opencode-adapter";
+import { ensureOmpRegistered } from "../providers/omp/omp-adapter";
+import { ensurePiRegistered } from "../providers/pi/pi-adapter";
+import { ensureAntigravityRegistered } from "../providers/antigravity/antigravity-adapter";
 
 /** Register all known live harness adapters. Idempotent. */
 export function registerBuiltinHarnesses(): void {

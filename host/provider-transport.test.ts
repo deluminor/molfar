@@ -12,9 +12,9 @@ import { HostChildBackend } from "./child-backend";
 import { HostStore } from "./store";
 import { HostEngine } from "./engine";
 import { hostProviders } from "./providers";
-import { discoverCodexModels } from "../src/integrations/harness/providers/codex/codexCatalog";
-import { discoverClaudeModels } from "../src/integrations/harness/providers/claude/claudeCatalog";
-import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness/providers/pi/piCatalog";
+import { discoverCodexModels } from "../src/integrations/harness/providers/codex/codex-catalog";
+import { discoverClaudeModels } from "../src/integrations/harness/providers/claude/claude-catalog";
+import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness/providers/pi/pi-catalog";
 import {
   acquireHarnessBridge,
   configureChildBackend,

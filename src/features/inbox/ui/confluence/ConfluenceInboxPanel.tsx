@@ -5,16 +5,16 @@ import {
   type ReactNode,
 } from "react";
 import { clearConfluenceCache } from "../../model/confluence/api";
-import { saveHiddenConfluenceSpaceIds } from "../../model/confluence/hiddenSpaces";
+import { saveHiddenConfluenceSpaceIds } from "../../model/confluence/hidden-spaces";
 import type { ConfluenceNode } from "../../model/confluence/types";
 import { ConfluenceListBody } from "./ConfluenceListBody";
 import { ConfluenceListHeader } from "./ConfluenceListHeader";
 import { ConfluenceReader } from "./ConfluenceReader";
 import { SpaceVisibility } from "./SpaceVisibility";
-import { useConfluenceChat } from "./useConfluenceChat";
-import { useConfluenceSearch } from "./useConfluenceSearch";
-import { useConfluenceSelection } from "./useConfluenceSelection";
-import { useConfluenceTree } from "./useConfluenceTree";
+import { useConfluenceChat } from "./use-confluence-chat";
+import { useConfluenceSearch } from "./use-confluence-search";
+import { useConfluenceSelection } from "./use-confluence-selection";
+import { useConfluenceTree } from "./use-confluence-tree";
 
 type Props = {
   cwd: string;

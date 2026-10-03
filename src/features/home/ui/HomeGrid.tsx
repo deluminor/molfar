@@ -12,7 +12,7 @@ import {
   HOME_LAYOUT_ROW_HEIGHT,
   normalizeHomeLayout,
   type HomeLayout,
-} from "../model/homeLayout";
+} from "../model/home-layout";
 
 type Props = {
   layout: HomeLayout;

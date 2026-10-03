@@ -5,7 +5,7 @@ import {
   type ExplorerMenuItem,
 } from "../../features/files/ui/ExplorerMenu";
 import { ALT, MOD, SHIFT } from "../../platform/tauri/platform";
-import { APP_UPDATER_DISABLED } from "../model/forkPolicy";
+import { APP_UPDATER_DISABLED } from "../model/fork-policy";
 import { runUpdateFlow } from "../model/updater";
 import {
   keybindingShortcutLabel,

@@ -24,8 +24,8 @@ import {
   validateFileName,
   wellFormedFileName,
   type NameIssue,
-} from "../model/fileName";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+} from "../model/file-name";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
 import {
   loadShowExcludedFiles,
   subscribeShowExcludedFiles,
@@ -44,10 +44,10 @@ import {
   saveExpanded,
   saveSelected,
   subscribeDirsChanged,
-} from "../model/fileTree";
+} from "../model/file-tree";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
-import { dragPointToClient } from "../../../shared/lib/dragPoint";
+import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remote-paths";
+import { dragPointToClient } from "../../../shared/lib/drag-point";
 import {
   basename,
   clipboardFilePaths,
@@ -62,7 +62,7 @@ import {
 import { displayPath, parentPath, rebasePath } from "../../../shared/lib/paths";
 import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../../platform/tauri/platform";
 import type { OpenFileFn } from "../../search/model/search";
-import type { GitStatusMap } from "../../source-control/hooks/useGitFileStatuses";
+import type { GitStatusMap } from "../../source-control/hooks/use-git-file-statuses";
 import {
   emitExplorerFilePointerDrag,
   setGrabbing,
@@ -70,7 +70,7 @@ import {
 } from "../../../shared/lib/drag";
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { confirmApp } from "../../../app/model/appDialog";
+import { confirmApp } from "../../../app/model/app-dialog";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
   modified: "text-amber-400",

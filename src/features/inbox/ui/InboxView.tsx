@@ -1,6 +1,6 @@
-import { useGithubPrChecks } from "../hooks/useGithubPrChecks";
-import { summarizePrChecks } from "../model/githubPrChecks";
-import type { CiRepairRequest } from "../model/ciRepair";
+import { useGithubPrChecks } from "../hooks/use-github-pr-checks";
+import { summarizePrChecks } from "../model/github-pr-checks";
+import type { CiRepairRequest } from "../model/ci-repair";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,
@@ -46,10 +46,10 @@ import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { Popover } from "../../../shared/ui/Popover";
 import { IconButton, OverlayNav } from "../../../app/shell/TitleBar";
 import { WindowControls } from "../../../app/shell/WindowControls";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
+import { useDragResize } from "../../../shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "../../../shared/lib/pane-width-storage";
+import { useLockOverscroll } from "../../../shared/hooks/use-lock-overscroll";
+import { useTabGroupLogos } from "../../projects/hooks/use-tab-group-logos";
 import {
   githubStatus,
   githubPrDiff,
@@ -81,7 +81,7 @@ import {
   type InboxItem,
   type InboxProviderErrors,
   type InboxQuery,
-} from "../model/githubTasks";
+} from "../model/github-tasks";
 import {
   applyInboxFilters,
   connectableInboxSources,
@@ -103,7 +103,7 @@ import {
   type ConnectableInboxSource,
   type InboxFilters,
   type InboxSource,
-} from "../model/inboxFilters";
+} from "../model/inbox-filters";
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { projectKey, projectName } from "../../../shared/lib/paths";
@@ -111,20 +111,20 @@ import { IS_MAC } from "../../../platform/tauri/platform";
 import { playCue } from "../../settings/model/sounds";
 import { sameProjectPath, type RecentProject } from "../../projects/model/recents";
 import { sessionDisplayTitle, type LinkedWorkItem } from "../../sessions/model/session";
-import type { SessionSummary } from "../../sessions/data/sessionStore";
+import type { SessionSummary } from "../../sessions/data/session-store";
 import {
   inboxItemMatchesLinkedWorkItem,
   linkedWorkItemInboxKey,
   relatedSessionsForInboxItem,
-} from "../../sessions/model/sessionWorkItem";
+} from "../../sessions/model/session-work-item";
 import {
   isInboxEntryUnseen,
   markInboxItemSeen,
   markInboxItemsSeen,
   rememberInboxItems,
   useInboxSeenTick,
-} from "../model/inboxSeen";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/listWindow";
+} from "../model/inbox-seen";
+import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/list-window";
 import {
   LINEAR_CHANGE_EVENT,
   linearConnected,
@@ -176,7 +176,7 @@ import {
   peekAzureDevOpsWorkItemDetails,
   peekAzureDevOpsWorkItemThread,
   type AzureDevOpsWorkItemThread,
-} from "../model/azureDevOps";
+} from "../model/azure-dev-ops";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -184,7 +184,7 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+} from "../../workspace/model/tab-groups";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 import {
   InboxComments,
@@ -200,7 +200,7 @@ import {
   InboxDiscussionPanel,
   type InboxSessionPortal,
 } from "./InboxDiscussionPanel";
-import { inboxAskKey } from "../model/inboxAsk";
+import { inboxAskKey } from "../model/inbox-ask";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;

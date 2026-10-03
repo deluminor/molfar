@@ -5,14 +5,14 @@ import {
   formatWindowLabel,
   type ProviderRateLimits,
   type RateLimitWindow,
-} from "../model/rateLimits";
+} from "../model/rate-limits";
 import type {
   AccountStatus,
   AccountStatusTone,
   AccountUsage,
-} from "../model/accountUsage";
+} from "../model/account-usage";
 import { RefreshCw } from "../../../shared/ui/icons";
-import { useShowRemainingUsage } from "../../settings/model/displayPrefs";
+import { useShowRemainingUsage } from "../../settings/model/display-prefs";
 
 const STATUS_DOT: Record<AccountStatusTone, string> = {
   ready: "bg-emerald-400",

@@ -3,7 +3,7 @@ import {
   workspaceForProject,
   quickWorkspaceLaunch,
   type QuickWorkspace,
-} from "../model/quickWorkspace";
+} from "../model/quick-workspace";
 import {
   useCallback,
   useEffect,
@@ -47,26 +47,26 @@ import {
 } from "../../sessions/model/session";
 import { Popover } from "../../../shared/ui/Popover";
 import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
-import { quickLaunchAttachments } from "../model/quickAttachments";
-import { useQuickAttachments } from "./useQuickAttachments";
+import { quickLaunchAttachments } from "../model/quick-attachments";
+import { useQuickAttachments } from "./use-quick-attachments";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { QuickModelSelector } from "./QuickModelSelector";
-import { useQuickPickerMotion } from "./useQuickPickerMotion";
-import { OPERATOR_COMMAND } from "../../sessions/model/operatorCommand";
-import { ORCHESTRATOR_COMMAND } from "../../sessions/model/orchestratorCommand";
+import { useQuickPickerMotion } from "./use-quick-picker-motion";
+import { OPERATOR_COMMAND } from "../../sessions/model/operator-command";
+import { ORCHESTRATOR_COMMAND } from "../../sessions/model/orchestrator-command";
 import { PLAN_COMMAND } from "../../sessions/model/plan";
-import { DRAFT_COMMAND } from "../../sessions/model/draftCommand";
+import { DRAFT_COMMAND } from "../../sessions/model/draft-command";
 import {
   leadingModeCommand,
   MODE_COMMAND_STYLES,
   ModeCommandText,
-} from "../../sessions/ui/modeCommands";
+} from "../../sessions/ui/mode-commands";
 import {
   rankSkills,
   replaceSlashToken,
   slashTokenAt,
   type SlashToken,
-} from "../../skills/model/slashCommands";
+} from "../../skills/model/slash-commands";
 import {
   applyQuickCatalog,
   filterQuickProjects,
@@ -79,7 +79,7 @@ import {
   rememberQuickProject,
   resolveQuickModel,
   type QuickLaunch,
-} from "../model/quickComposer";
+} from "../model/quick-composer";
 
 /** Tallest the prompt grows before it scrolls, in px. */
 const PROMPT_MAX_HEIGHT = 220;

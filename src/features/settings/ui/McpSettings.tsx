@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { confirmApp } from "../../../app/model/appDialog";
+import { confirmApp } from "../../../app/model/app-dialog";
 import {
   useCallback,
   useEffect,
@@ -31,7 +31,7 @@ import {
   subscribeMcpSettings,
   type McpServerRow,
   type McpSettingsSnapshot,
-} from "../model/mcpSettingsCache";
+} from "../model/mcp-settings-cache";
 
 type Scope = McpConnection["scope"];
 type ServerRow = McpServerRow;

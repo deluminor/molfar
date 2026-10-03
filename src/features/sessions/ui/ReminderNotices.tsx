@@ -11,10 +11,10 @@ import {
   formatReminderTime,
   reminderTime,
   type SessionReminder,
-} from "../model/sessionReminders";
+} from "../model/session-reminders";
 import { ExplorerMenu } from "../../files/ui/ExplorerMenu";
 import { Clock } from "../../../shared/ui/icons";
-import { sessionReminderPresets } from "./sessionReminderPresets";
+import { sessionReminderPresets } from "./session-reminder-presets";
 
 function subscribeNotifications(callback: () => void) {
   window.addEventListener(NOTIFICATIONS_CHANGE_EVENT, callback);
