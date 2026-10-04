@@ -65,8 +65,6 @@ import {
 } from "@/features/sessions/ui/DeleteSessionDialog";
 import { ProviderSignInDialog } from "@/features/sessions/ui/ProviderSignInDialog";
 import {
-  loadProjectRailOpen,
-  loadSessionSidebarOpen,
   saveProjectRailOpen,
   saveSessionSidebarOpen,
   type SidebarTabId,
@@ -654,7 +652,6 @@ import {
   keybindingPressed,
   loadAutosave,
   loadCloseToTray,
-  loadCollapsedProjectRailMode,
   loadDiffViewer,
   loadFileTabMode,
   loadFollowUpBehavior,
@@ -666,7 +663,6 @@ import {
   saveSettingsSection,
   subscribeLiveAgentsEnabled,
   subscribeNotesEnabled,
-  type CollapsedProjectRailMode,
   type FollowUpBehavior,
   type SettingsSectionId,
 } from "@/features/settings/model/settings";
@@ -972,6 +968,7 @@ function Workspace({
         resumed,
         history: bootHistory,
         historyCwd: bootHistoryCwd,
+        installedUpdate,
       }),
     ),
   );
@@ -1010,15 +1007,19 @@ function Workspace({
     setSettingsAnchor,
     setNotificationProjectPath,
     setNotificationSettingsRequest,
+    setProjectRailOpen,
+    setSessionSidebarOpen,
+    setCollapsedProjectRailMode,
+    setUpdateNotice,
+    setWhatsNewVersion,
+    setProviderSignInRequest,
+    setSessionDeleteDialog,
+    setRemoteProjectDialogOpen,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
   const sessions = useWorkspaceField(workspaceStore, "sessions");
-  const [sessionDeleteDialog, setSessionDeleteDialog] = useState<{
-    title: string;
-    unusedWorktree: string;
-    resolve: (choice: SessionDeleteChoice) => void;
-  }>();
+  const sessionDeleteDialog = useWorkspaceField(workspaceStore, "sessionDeleteDialog");
   const switchingWorktrees = useRef(new Map<string, string>());
   const removingWorktreePaths = useRef(new Set<string>());
   const deleteConfirmationPending = useRef(false);
@@ -1046,10 +1047,8 @@ function Workspace({
     (id: string) => tabProjectsRef.current.get(id),
     [],
   );
-  const [projectRailOpen, setProjectRailOpen] = useState(loadProjectRailOpen);
-  const [sessionSidebarOpen, setSessionSidebarOpen] = useState(
-    loadSessionSidebarOpen,
-  );
+  const projectRailOpen = useWorkspaceField(workspaceStore, "projectRailOpen");
+  const sessionSidebarOpen = useWorkspaceField(workspaceStore, "sessionSidebarOpen");
   const tabCloseScope = "project" as const;
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
@@ -1102,8 +1101,7 @@ function Workspace({
     loadLiveAgentsEnabled,
     () => true,
   );
-  const [collapsedProjectRailMode, setCollapsedProjectRailMode] =
-    useState<CollapsedProjectRailMode>(loadCollapsedProjectRailMode);
+  const collapsedProjectRailMode = useWorkspaceField(workspaceStore, "collapsedProjectRailMode");
   const settingsOpen = useWorkspaceField(workspaceStore, "settingsOpen");
   const settingsReturnViewRef = useRef<SettingsReturnView>({
     search: false,
@@ -1112,13 +1110,9 @@ function Workspace({
     automations: false,
     localSurface: null,
   });
-  const [updateNotice, setUpdateNotice] = useState(installedUpdate);
-  const [whatsNewVersion, setWhatsNewVersion] = useState<string | null>(null);
-  const [providerSignInRequest, setProviderSignInRequest] = useState<{
-    key: string;
-    sessionId: string;
-    harness: HarnessId;
-  } | null>(null);
+  const updateNotice = useWorkspaceField(workspaceStore, "updateNotice");
+  const whatsNewVersion = useWorkspaceField(workspaceStore, "whatsNewVersion");
+  const providerSignInRequest = useWorkspaceField(workspaceStore, "providerSignInRequest");
   const seenProviderSignInRequestsRef = useRef<Set<string> | null>(null);
   const seenProviderSignInRequests =
     seenProviderSignInRequestsRef.current ??
@@ -10089,7 +10083,7 @@ function Workspace({
     return () =>
       window.removeEventListener(OPEN_CONNECTIONS_EVENT, openConnections);
   }, [openSettings]);
-  const [remoteProjectDialogOpen, setRemoteProjectDialogOpen] = useState(false);
+  const remoteProjectDialogOpen = useWorkspaceField(workspaceStore, "remoteProjectDialogOpen");
   useEffect(() => {
     const open = () => setRemoteProjectDialogOpen(true);
     window.addEventListener(OPEN_REMOTE_PROJECT_EVENT, open);

@@ -2,7 +2,15 @@ import { lastProjectPath } from "@/features/projects/model/recents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import type { ResumedWorkspace } from "@/features/sessions/model/in-flight";
 import { newDefaultSession } from "@/features/sessions/model/session";
-import { loadSettingsSection } from "@/features/settings/model/settings";
+import {
+  loadProjectRailOpen,
+  loadSessionSidebarOpen,
+} from "@/features/settings/model/appearance";
+import {
+  loadCollapsedProjectRailMode,
+  loadSettingsSection,
+} from "@/features/settings/model/settings";
+import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { newTab } from "@/features/workspace/model/layout";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { WindowTransferPayload } from "../../model/window-transfer";
@@ -10,6 +18,8 @@ import { initialProjectsState } from "./initial-projects";
 import type { WorkspaceInitialState } from "./types";
 
 export type WorkspaceBoot = {
+  /** Update installed since the last launch, to announce. */
+  installedUpdate: InstalledUpdate | null;
   windowTransfer: WindowTransferPayload | null;
   resumed: ResumedWorkspace | null;
   /** Saved sessions of `historyCwd`, listed before the window opened. */
@@ -29,7 +39,8 @@ export function initialWorkspaceState(
 
   const session = newDefaultSession(lastProjectPath() ?? "~");
   const tab = newTab(session.id);
-  const { windowTransfer, resumed, history, historyCwd } = boot;
+  const { windowTransfer, resumed, history, historyCwd, installedUpdate } =
+    boot;
 
   return {
     ...projects,
@@ -68,5 +79,13 @@ export function initialWorkspaceState(
     settingsAnchor: null,
     notificationProjectPath: null,
     notificationSettingsRequest: 0,
+    projectRailOpen: loadProjectRailOpen(),
+    sessionSidebarOpen: loadSessionSidebarOpen(),
+    collapsedProjectRailMode: loadCollapsedProjectRailMode(),
+    updateNotice: installedUpdate,
+    whatsNewVersion: null,
+    providerSignInRequest: null,
+    sessionDeleteDialog: undefined,
+    remoteProjectDialogOpen: false,
   };
 }

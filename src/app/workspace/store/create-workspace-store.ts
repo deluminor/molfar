@@ -49,5 +49,13 @@ export function createWorkspaceStore(
       store,
       "notificationSettingsRequest",
     ),
+    setProjectRailOpen: fieldSetter(store, "projectRailOpen"),
+    setSessionSidebarOpen: fieldSetter(store, "sessionSidebarOpen"),
+    setCollapsedProjectRailMode: fieldSetter(store, "collapsedProjectRailMode"),
+    setUpdateNotice: fieldSetter(store, "updateNotice"),
+    setWhatsNewVersion: fieldSetter(store, "whatsNewVersion"),
+    setProviderSignInRequest: fieldSetter(store, "providerSignInRequest"),
+    setSessionDeleteDialog: fieldSetter(store, "sessionDeleteDialog"),
+    setRemoteProjectDialogOpen: fieldSetter(store, "remoteProjectDialogOpen"),
   }));
 }

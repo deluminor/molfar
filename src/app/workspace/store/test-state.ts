@@ -39,6 +39,14 @@ export function testWorkspaceState(
     settingsAnchor: null,
     notificationProjectPath: null,
     notificationSettingsRequest: 0,
+    projectRailOpen: true,
+    sessionSidebarOpen: true,
+    collapsedProjectRailMode: "compact",
+    updateNotice: null,
+    whatsNewVersion: null,
+    providerSignInRequest: null,
+    sessionDeleteDialog: undefined,
+    remoteProjectDialogOpen: false,
     ...overrides,
   };
 }

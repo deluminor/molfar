@@ -95,7 +95,15 @@
                   "setSettingsSection",
                   "setSettingsAnchor",
                   "setNotificationProjectPath",
-                  "setNotificationSettingsRequest"
+                  "setNotificationSettingsRequest",
+                  "setProjectRailOpen",
+                  "setSessionSidebarOpen",
+                  "setCollapsedProjectRailMode",
+                  "setUpdateNotice",
+                  "setWhatsNewVersion",
+                  "setProviderSignInRequest",
+                  "setSessionDeleteDialog",
+                  "setRemoteProjectDialogOpen"
                 ]
               }
             ]

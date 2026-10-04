@@ -20,6 +20,7 @@ describe("initialWorkspaceState", () => {
       resumed: null,
       history: [],
       historyCwd: null,
+      installedUpdate: null,
     });
 
     expect(state.sessions).toHaveLength(1);
@@ -54,6 +55,7 @@ describe("initialWorkspaceState", () => {
       },
       history: [],
       historyCwd: null,
+      installedUpdate: null,
     });
 
     expect(state.projectCwd).toBe("/work/resumed");
@@ -78,6 +80,7 @@ describe("initialWorkspaceState", () => {
       resumed: null,
       history: [],
       historyCwd: null,
+      installedUpdate: null,
     });
 
     expect(state.sessions).toEqual([session]);
@@ -103,6 +106,7 @@ describe("initialWorkspaceState", () => {
       resumed: null,
       history: [plain, linked],
       historyCwd: "/work/demo/",
+      installedUpdate: null,
     });
 
     expect(state.history).toEqual([plain, linked]);
@@ -119,6 +123,7 @@ describe("initialWorkspaceState", () => {
       resumed: null,
       history: [],
       historyCwd: null,
+      installedUpdate: null,
     });
 
     expect(state).toMatchObject({
@@ -131,6 +136,24 @@ describe("initialWorkspaceState", () => {
       workerDetailRequest: null,
     });
     expect(state.linkedWorkItemPanels.size).toBe(0);
+  });
+
+  it("announces an installed update and opens with no dialog", () => {
+    const state = initialWorkspaceState({
+      windowTransfer: null,
+      resumed: null,
+      history: [],
+      historyCwd: null,
+      installedUpdate: { version: "1.0.1" },
+    });
+
+    expect(state).toMatchObject({
+      updateNotice: { version: "1.0.1" },
+      whatsNewVersion: null,
+      providerSignInRequest: null,
+      sessionDeleteDialog: undefined,
+      remoteProjectDialogOpen: false,
+    });
   });
 });
 
