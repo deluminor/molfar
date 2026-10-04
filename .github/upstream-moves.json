@@ -66,6 +66,7 @@
     "src/app/shell/UsageProviderChip.test.ts": "src/app/shell/usage-provider-chip.test.ts",
     "src/app/shell/useProjectMenu.tsx": "src/app/shell/use-project-menu.tsx",
     "src/app/shell/WhatsNewDialog.test.ts": "src/app/shell/whats-new-dialog.test.ts",
+    "src/app/shell/WindowControls.tsx": "src/features/window-chrome/ui/WindowControls.tsx",
     "src/features/agent-app/model/agentApp.test.ts": "src/features/agent-app/model/agent-app.test.ts",
     "src/features/agent-app/model/agentApp.ts": "src/features/agent-app/model/agent-app.ts",
     "src/features/agent-app/model/sessionConversation.test.ts": "src/features/agent-app/model/session-conversation.test.ts",
@@ -742,7 +743,7 @@
         "src/integrations/harness/providers/codex/codex-rate-limits.ts",
         "src/integrations/harness/providers/opencode/opencode-usage.ts"
       ],
-      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) \u2192 src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits \u2192 rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt \u2192 rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers \u2192 src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage \u2192 providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits \u2192 providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage \u2192 providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
+      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) → src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits → rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt → rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers → src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage → providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits → providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage → providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
     },
     "src/features/sessions/model/models.test.ts": {
       "targets": [
@@ -762,7 +763,7 @@
         "src/integrations/harness/core/models/catalog-store.ts",
         "src/integrations/harness/core/models/resolve-model.ts"
       ],
-      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) \u2192 src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) \u2192 native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) \u2192 model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID \u2192 src/integrations/harness/core/models/catalog.ts; pickDefaultId \u2192 default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) \u2192 catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId \u2192 resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
+      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) → src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) → native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) → model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID → src/integrations/harness/core/models/catalog.ts; pickDefaultId → default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) → catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId → resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
     },
     "src/features/sessions/model/session.ts": {
       "targets": [
@@ -790,6 +791,15 @@
           "IconButton"
         ],
         "target": "src/shared/ui/IconButton.tsx"
+      },
+      {
+        "names": [
+          "OverlayNav",
+          "TabVisitNav",
+          "DevModeLabel",
+          "DevModeSlot"
+        ],
+        "target": "src/features/window-chrome/ui/OverlayNav.tsx"
       }
     ],
     "src/features/connections/model/connections.ts": [

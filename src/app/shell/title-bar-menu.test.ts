@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TitleBar, type Tab } from "./TitleBar";
 
-vi.mock("./WindowControls", () => ({ WindowControls: () => null }));
+vi.mock("@/features/window-chrome/ui/WindowControls", () => ({ WindowControls: () => null }));
 
 let container: HTMLDivElement;
 let root: Root;

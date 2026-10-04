@@ -156,7 +156,10 @@ import { ProjectRail } from "./ProjectRail";
 import { InboxNotificationMenu } from "@/features/inbox/ui/InboxNotificationMenu";
 import { RailAction } from "@/shared/ui/RailAction";
 import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
-import { DevModeSlot, TabVisitNav } from "./TitleBar";
+import {
+  DevModeSlot,
+  TabVisitNav,
+} from "@/features/window-chrome/ui/OverlayNav";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ProjectSearch } from "@/features/projects/ui/ProjectSearch";
 import { Popover } from "@/shared/ui/Popover";

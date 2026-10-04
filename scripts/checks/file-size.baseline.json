@@ -150,13 +150,13 @@
     "lines": 450
   },
   "src/app/shell/ProjectRail.tsx": {
-    "lines": 1225
+    "lines": 1228
   },
   "src/app/shell/Sidebar.tsx": {
-    "lines": 3706
+    "lines": 3709
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 1011
+    "lines": 917
   },
   "src/app/shell/UsageFooter.tsx": {
     "lines": 596

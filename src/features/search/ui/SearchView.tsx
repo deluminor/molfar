@@ -12,8 +12,8 @@ import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { MatchText } from "@/shared/ui/MatchText";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
-import { OverlayNav } from "@/app/shell/TitleBar";
-import { WindowControls } from "@/app/shell/WindowControls";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   conversationRowsFrom,

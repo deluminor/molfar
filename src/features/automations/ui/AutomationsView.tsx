@@ -10,8 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import { confirmApp } from "@/shared/lib/app-dialog";
-import { OverlayNav } from "@/app/shell/TitleBar";
-import { WindowControls } from "@/app/shell/WindowControls";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { gitBranches } from "@/platform/tauri/fs";
 import { IS_MAC } from "@/shared/lib/platform";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";

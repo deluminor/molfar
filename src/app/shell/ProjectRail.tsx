@@ -76,7 +76,10 @@ import { LiveAgentsPreview } from "@/features/sessions/ui/LiveAgentsPreview";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { RailAction, RailSearch } from "@/shared/ui/RailAction";
-import { DevModeSlot, TabVisitNav } from "./TitleBar";
+import {
+  DevModeSlot,
+  TabVisitNav,
+} from "@/features/window-chrome/ui/OverlayNav";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
 import type { InstalledUpdate } from "../model/update-notice";
 import { SettingsNav } from "./SettingsRail";

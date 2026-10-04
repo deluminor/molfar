@@ -2,32 +2,17 @@
   "src/features/agent-app/model/agent-app.ts": {
     "feature-internal:inbox": 2
   },
-  "src/features/automations/ui/AutomationsView.tsx": {
-    "layer:features->app": 2
-  },
   "src/features/files/ui/FilePane.tsx": {
     "layer:features->app": 1
-  },
-  "src/features/home/ui/SurfaceHeader.tsx": {
-    "layer:features->app": 2
   },
   "src/features/inbox/ui/inbox-notification-menu.test.ts": {
     "layer:features->app": 1
   },
-  "src/features/inbox/ui/InboxView.tsx": {
-    "layer:features->app": 2
-  },
   "src/features/inbox/ui/project-notification-menu.test.ts": {
     "layer:features->app": 1
   },
-  "src/features/notes/ui/NotesView.tsx": {
-    "layer:features->app": 2
-  },
   "src/features/projects/ui/project-groups.test.ts": {
     "layer:features->app": 1
-  },
-  "src/features/search/ui/SearchView.tsx": {
-    "layer:features->app": 2
   },
   "src/features/sessions/model/prompt-preparation.test.ts": {
     "feature-internal:inbox": 1
@@ -39,7 +24,7 @@
     "feature-internal:inbox": 2
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "layer:features->app": 3
+    "layer:features->app": 2
   },
   "src/features/workspace/model/layout.ts": {
     "layer:features->app": 1
@@ -60,10 +45,10 @@
     "layer:features->app": 1
   },
   "src/features/workspace/ui/tab-close-motion.test.ts": {
-    "layer:features->app": 2
+    "layer:features->app": 1
   },
   "src/features/workspace/ui/tab-middle-click.test.ts": {
-    "layer:features->app": 2
+    "layer:features->app": 1
   },
   "src/platform/tauri/clipboard.test.ts": {
     "layer:platform->features": 1

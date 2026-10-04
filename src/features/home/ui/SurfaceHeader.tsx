@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { OverlayNav } from "@/app/shell/TitleBar";
-import { WindowControls } from "@/app/shell/WindowControls";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { IS_MAC } from "@/shared/lib/platform";
 import type { IconComponent } from "@/shared/ui/icons";
 

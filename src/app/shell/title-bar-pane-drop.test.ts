@@ -9,7 +9,7 @@ import {
 } from "@/features/workspace/model/pane-drop";
 import { TitleBar, type Tab } from "./TitleBar";
 
-vi.mock("./WindowControls", () => ({ WindowControls: () => null }));
+vi.mock("@/features/window-chrome/ui/WindowControls", () => ({ WindowControls: () => null }));
 
 let container: HTMLDivElement;
 let root: Root;
