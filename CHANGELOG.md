@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Brand:** new app icon — geometric eye with slit pupil and two diagonal comet orbits (replaces the purple planet mark).
+
 ## [1.0.0] - 2026-10-04
 
 First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonomous Reasoning): a local-first engineering workspace for coding agents, code, knowledge, worktrees, and automation.
