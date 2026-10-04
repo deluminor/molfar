@@ -21,5 +21,9 @@ export function createWorkspaceStore(
     setProjectTerminals: fieldSetter(store, "projectTerminals"),
     setLastDockSide: fieldSetter(store, "lastDockSide"),
     setProjectTerminalFocused: fieldSetter(store, "projectTerminalFocused"),
+    setHistory: fieldSetter(store, "history"),
+    setStoredLinkedSessions: fieldSetter(store, "storedLinkedSessions"),
+    setLoadedProjects: fieldSetter(store, "loadedProjects"),
+    setHistoryErrorCwd: fieldSetter(store, "historyErrorCwd"),
   }));
 }

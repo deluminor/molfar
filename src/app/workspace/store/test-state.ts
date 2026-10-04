@@ -14,6 +14,10 @@ export function testWorkspaceState(
     projectTerminals: [],
     lastDockSide: null,
     projectTerminalFocused: false,
+    history: [],
+    storedLinkedSessions: [],
+    loadedProjects: new Set(),
+    historyErrorCwd: null,
     ...overrides,
   };
 }

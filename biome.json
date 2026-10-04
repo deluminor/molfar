@@ -70,7 +70,11 @@
                   "setTabVisitNav",
                   "setProjectTerminals",
                   "setLastDockSide",
-                  "setProjectTerminalFocused"
+                  "setProjectTerminalFocused",
+                  "setHistory",
+                  "setStoredLinkedSessions",
+                  "setLoadedProjects",
+                  "setHistoryErrorCwd"
                 ]
               }
             ]

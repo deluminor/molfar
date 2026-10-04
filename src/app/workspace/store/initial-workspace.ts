@@ -1,7 +1,9 @@
 import { lastProjectPath } from "@/features/projects/model/recents";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import type { ResumedWorkspace } from "@/features/sessions/model/in-flight";
 import { newDefaultSession } from "@/features/sessions/model/session";
 import { newTab } from "@/features/workspace/model/layout";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { WindowTransferPayload } from "../../model/window-transfer";
 import { initialProjectsState } from "./initial-projects";
 import type { WorkspaceInitialState } from "./types";
@@ -9,6 +11,9 @@ import type { WorkspaceInitialState } from "./types";
 export type WorkspaceBoot = {
   windowTransfer: WindowTransferPayload | null;
   resumed: ResumedWorkspace | null;
+  /** Saved sessions of `historyCwd`, listed before the window opened. */
+  history: SessionSummary[];
+  historyCwd: string | null;
 };
 
 /**
@@ -23,7 +28,7 @@ export function initialWorkspaceState(
 
   const session = newDefaultSession(lastProjectPath() ?? "~");
   const tab = newTab(session.id);
-  const { windowTransfer, resumed } = boot;
+  const { windowTransfer, resumed, history, historyCwd } = boot;
 
   return {
     ...projects,
@@ -35,5 +40,11 @@ export function initialWorkspaceState(
       windowTransfer?.projectTerminals ?? resumed?.projectTerminals ?? [],
     lastDockSide: resumed?.lastDockSide ?? null,
     projectTerminalFocused: false,
+    history,
+    storedLinkedSessions: history.filter((session) => session.linkedWorkItem),
+    loadedProjects: historyCwd
+      ? new Set([normalizeProjectPath(historyCwd)])
+      : new Set(),
+    historyErrorCwd: null,
   };
 }

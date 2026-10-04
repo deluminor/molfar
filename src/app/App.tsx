@@ -977,7 +977,14 @@ function Workspace({
   historyCwd: bootHistoryCwd = null,
 }: AppProps) {
   const [workspaceStore] = useState(() =>
-    createWorkspaceStore(initialWorkspaceState({ windowTransfer, resumed })),
+    createWorkspaceStore(
+      initialWorkspaceState({
+        windowTransfer,
+        resumed,
+        history: bootHistory,
+        historyCwd: bootHistoryCwd,
+      }),
+    ),
   );
   const {
     setProjectCwd,
@@ -989,6 +996,10 @@ function Workspace({
     setProjectTerminals,
     setLastDockSide,
     setProjectTerminalFocused,
+    setHistory,
+    setStoredLinkedSessions,
+    setLoadedProjects,
+    setHistoryErrorCwd,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -1146,34 +1157,21 @@ function Workspace({
   const [fileErrorCounts, setFileErrorCounts] = useState<Map<string, number>>(
     () => new Map(),
   );
-  const [history, setHistory] = useState<SessionSummary[]>(() => bootHistory);
+  const history = useWorkspaceField(workspaceStore, "history");
   const [, refreshRemoteTabTitles] = useState(0);
   useEffect(() => {
     const updated = () => refreshRemoteTabTitles((value) => value + 1);
     window.addEventListener(REMOTE_HISTORY_UPDATED, updated);
     return () => window.removeEventListener(REMOTE_HISTORY_UPDATED, updated);
   }, []);
-  const [storedLinkedSessions, setStoredLinkedSessions] = useState<
-    SessionSummary[]
-  >(() => bootHistory.filter((session) => session.linkedWorkItem));
-  /**
-   * Projects whose rows are already in `history`. This has to be state, not a
-   * ref: `sidebarCwd` is derived during render, so the frame that first shows
-   * a new project must already know the listing has not arrived yet.
-   */
+  const storedLinkedSessions = useWorkspaceField(workspaceStore, "storedLinkedSessions");
   const btwRequestsRef = useRef(
     new Map<string, { sessionId: string; controller: AbortController }>(),
   );
-  const [loadedProjects, setLoadedProjects] = useState<ReadonlySet<string>>(
-    () =>
-      bootHistoryCwd
-        ? new Set([normalizeProjectPath(bootHistoryCwd)])
-        : new Set(),
-  );
+  const loadedProjects = useWorkspaceField(workspaceStore, "loadedProjects");
   const loadedProjectsRef = useRef(loadedProjects);
   loadedProjectsRef.current = loadedProjects;
-  /** Project whose listing failed, so the error cannot leak to another one. */
-  const [historyErrorCwd, setHistoryErrorCwd] = useState<string | null>(null);
+  const historyErrorCwd = useWorkspaceField(workspaceStore, "historyErrorCwd");
 
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;

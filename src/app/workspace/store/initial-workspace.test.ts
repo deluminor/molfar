@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { rememberProject } from "@/features/projects/model/recents";
 import { newSession } from "@/features/sessions/model/session";
 import { newTab } from "@/features/workspace/model/layout";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { initialWorkspaceState } from "./initial-workspace";
 
 beforeEach(() => {
@@ -16,6 +17,8 @@ describe("initialWorkspaceState", () => {
     const state = initialWorkspaceState({
       windowTransfer: null,
       resumed: null,
+      history: [],
+      historyCwd: null,
     });
 
     expect(state.sessions).toHaveLength(1);
@@ -45,6 +48,8 @@ describe("initialWorkspaceState", () => {
         projectCwd: "/work/resumed",
         lastDockSide: "right",
       },
+      history: [],
+      historyCwd: null,
     });
 
     expect(state.projectCwd).toBe("/work/resumed");
@@ -67,10 +72,50 @@ describe("initialWorkspaceState", () => {
         dirtyFileIds: [],
       },
       resumed: null,
+      history: [],
+      historyCwd: null,
     });
 
     expect(state.sessions).toEqual([session]);
     expect(state.tabs).toEqual([tab]);
     expect(state.activeTabId).toBe(tab.id);
   });
+
+  it("lists the boot history and marks its project as loaded", () => {
+    const plain = summary("plain");
+    const linked = {
+      ...summary("linked"),
+      linkedWorkItem: {
+        kind: "issue" as const,
+        repo: "acme/app",
+        number: 7,
+        url: "https://github.com/acme/app/issues/7",
+      },
+    };
+
+    const state = initialWorkspaceState({
+      windowTransfer: null,
+      resumed: null,
+      history: [plain, linked],
+      historyCwd: "/work/demo/",
+    });
+
+    expect(state.history).toEqual([plain, linked]);
+    expect(state.storedLinkedSessions).toEqual([linked]);
+    expect([...state.loadedProjects]).toEqual(["/work/demo"]);
+    expect(state.historyErrorCwd).toBeNull();
+  });
 });
+
+function summary(id: string): SessionSummary {
+  return {
+    id,
+    cwd: "/work/demo",
+    harness: "claude",
+    model: "claude:sonnet-5",
+    runtimeMode: "supervised",
+    title: id,
+    createdAt: 1,
+    updatedAt: 1,
+  };
+}
