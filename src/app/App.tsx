@@ -29,6 +29,7 @@ import { createHarnessEventPipeline } from "./workspace/flows/harness-events/har
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
 import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
 import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
+import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -1349,10 +1350,17 @@ function Workspace({
     }),
   );
   const loadedSessionCache = useRef(new Map<string, Session>());
-  const sessionLoads = useRef(new Map<string, Promise<Session | null>>());
-  const sessionLoadEpochs = useRef(new Map<string, number>());
   const openingSessionIds = useRef(new Set<string>());
-  const activeSessionPrefetch = useRef<Promise<Session | null> | null>(null);
+  const sessionLoader = useStableFlow(() =>
+    createSessionLoader({
+      cache: loadedSessionCache.current,
+      opening: openingSessionIds.current,
+      get: getSession,
+      isRemoving: (sessionId) => removingSessionIds.current.has(sessionId),
+      isOpen: (sessionId) =>
+        sessionsRef.current.some((session) => session.id === sessionId),
+    }),
+  );
   const [transcriptPool] = useState(() => new TranscriptPool());
   const skipForgetSessionIds = useRef(new Set<string>());
   const importedSessionsApplied = useRef(false);
@@ -3752,52 +3760,8 @@ function Workspace({
     return true;
   }, []);
 
-  const invalidateLoadedSession = useCallback((sessionId: string) => {
-    openingSessionIds.current.delete(sessionId);
-    loadedSessionCache.current.delete(sessionId);
-    sessionLoads.current.delete(sessionId);
-    sessionLoadEpochs.current.set(
-      sessionId,
-      (sessionLoadEpochs.current.get(sessionId) ?? 0) + 1,
-    );
-  }, []);
-
-  const loadStoredSession = useCallback(
-    (sessionId: string): Promise<Session | null> => {
-      const cached = loadedSessionCache.current.get(sessionId);
-      if (cached) {
-        // The cache owns closed sessions only. Transfer this reference into
-        // live state instead of retaining a stale duplicate while it changes.
-        loadedSessionCache.current.delete(sessionId);
-        return Promise.resolve(cached);
-      }
-
-      const pending = sessionLoads.current.get(sessionId);
-      if (pending) return pending;
-
-      const epoch = sessionLoadEpochs.current.get(sessionId) ?? 0;
-      const loading = getSession(sessionId)
-        .then((loaded) => {
-          if (
-            !loaded ||
-            removingSessionIds.current.has(sessionId) ||
-            (sessionLoadEpochs.current.get(sessionId) ?? 0) !== epoch
-          ) {
-            return null;
-          }
-          return loaded;
-        })
-        .catch(() => null);
-      sessionLoads.current.set(sessionId, loading);
-      void loading.then(() => {
-        if (sessionLoads.current.get(sessionId) === loading) {
-          sessionLoads.current.delete(sessionId);
-        }
-      });
-      return loading;
-    },
-    [],
-  );
+  const invalidateLoadedSession = sessionLoader.invalidate;
+  const loadStoredSession = sessionLoader.load;
 
   const ensureOpenSession = useCallback(
     async (sessionId: string): Promise<Session | null> => {
@@ -3843,34 +3807,7 @@ function Workspace({
     [loadStoredSession, refreshHistory, sidebarCwd],
   );
 
-  const onPrefetchHistorySession = useCallback(
-    (sessionId: string) => {
-      if (
-        removingSessionIds.current.has(sessionId) ||
-        sessionsRef.current.some((session) => session.id === sessionId) ||
-        loadedSessionCache.current.has(sessionId) ||
-        sessionLoads.current.has(sessionId) ||
-        activeSessionPrefetch.current
-      ) {
-        return;
-      }
-      const loading = loadStoredSession(sessionId);
-      activeSessionPrefetch.current = loading;
-      void loading.then((loaded) => {
-        if (
-          loaded &&
-          !removingSessionIds.current.has(sessionId) &&
-          !sessionsRef.current.some((session) => session.id === sessionId)
-        ) {
-          rememberLoadedSession(loadedSessionCache.current, loaded);
-        }
-        if (activeSessionPrefetch.current === loading) {
-          activeSessionPrefetch.current = null;
-        }
-      });
-    },
-    [loadStoredSession],
-  );
+  const onPrefetchHistorySession = sessionLoader.prefetch;
 
   const revealLinkedSessionUpdate = useCallback(
     (sessionId: string, update: LinkedSessionUpdate) => {
@@ -4553,7 +4490,7 @@ function Workspace({
                     invalidateLoadedSession(id);
                 }
                 // Pending reads may still carry the deleted lead's ownership.
-                for (const id of sessionLoads.current.keys()) {
+                for (const id of sessionLoader.loadingIds()) {
                   invalidateLoadedSession(id);
                 }
                 sessionPersistence.mapPending((pending) =>
@@ -5380,7 +5317,7 @@ function Workspace({
       if (options.purgeData) {
         const cachedOrLoading = new Set([
           ...loadedSessionCache.current.keys(),
-          ...sessionLoads.current.keys(),
+          ...sessionLoader.loadingIds(),
         ]);
         for (const sessionId of cachedOrLoading) {
           invalidateLoadedSession(sessionId);

@@ -873,6 +873,12 @@
           "lastUserBlockId"
         ],
         "target": "src/domain/session/session-state.ts"
+      },
+      {
+        "names": [
+          "invalidateLoadedSession, loadStoredSession, onPrefetchHistorySession, sessionLoads, sessionLoadEpochs, activeSessionPrefetch (App: sessionLoader.invalidate / load / prefetch / loadingIds; loadedSessionCache and openingSessionIds stay refs passed in)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-loader.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
