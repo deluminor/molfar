@@ -1,6 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { hslToRgb, isHexColor, type Rgb } from "@/shared/lib/color-utils";
-import { IS_LINUX, IS_MAC } from "@/platform/tauri/platform";
+import { IS_LINUX, IS_MAC } from "@/shared/lib/platform";
 import { readFlag, writeFlag } from "@/shared/lib/storage-flags";
 import { applyUiScale, loadUiScale } from "./ui-scale";
 import {

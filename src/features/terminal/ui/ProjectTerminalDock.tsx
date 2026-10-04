@@ -25,7 +25,7 @@ import {
   type DockSide,
   type ProjectTerminalDock,
 } from "@/features/projects/model/project-terminal";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 import type { TerminalMetaPatch } from "../model/terminal-tab";
 import { lazySurface } from "@/shared/ui/lazy-surface";
 

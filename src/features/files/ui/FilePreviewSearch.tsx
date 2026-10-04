@@ -7,7 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { ALT, MOD, SHIFT } from "@/platform/tauri/platform";
+import { ALT, MOD, SHIFT } from "@/shared/lib/platform";
 import { ChevronDown, ChevronUp, X } from "@/shared/ui/icons";
 import { keybindingPressed } from "@/features/settings/model/settings";
 

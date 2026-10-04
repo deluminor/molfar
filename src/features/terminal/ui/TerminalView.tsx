@@ -25,7 +25,7 @@ import {
   resetGridStretch,
   type TerminalFitMode,
 } from "../model/terminal-layout";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import "@xterm/xterm/css/xterm.css";
 
 type Props = {

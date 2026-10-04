@@ -61,7 +61,7 @@ import {
 } from "../model/transcript-jump";
 import { EmptySession } from "./EmptySession";
 import { useComposerDockMotion } from "./use-composer-dock-motion";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 import {
   acknowledgeQuoteRequest,
   ADD_TO_CHAT_EVENT,

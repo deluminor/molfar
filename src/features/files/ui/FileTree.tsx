@@ -60,7 +60,7 @@ import {
 } from "@/platform/tauri/fs";
 import type { FsEntry } from "@/domain/files/file-entry";
 import { displayPath, parentPath, rebasePath } from "@/shared/lib/paths";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/platform/tauri/platform";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
 import type { OpenFileFn } from "@/features/search/model/search";
 import type { GitStatusMap } from "@/features/source-control/hooks/use-git-file-statuses";
 import {

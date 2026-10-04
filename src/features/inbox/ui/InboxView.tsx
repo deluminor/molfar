@@ -107,7 +107,7 @@ import {
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
 import { copyText } from "@/platform/tauri/clipboard";
 import { projectKey, projectName } from "@/shared/lib/paths";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import { playCue } from "@/features/settings/model/sounds";
 import { sameProjectPath, type RecentProject } from "@/features/projects/model/recents";
 import { sessionDisplayTitle } from "@/domain/session/title";

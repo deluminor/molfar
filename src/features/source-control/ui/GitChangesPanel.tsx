@@ -77,7 +77,7 @@ import {
   generatePrContent,
 } from "@/integrations/harness";
 import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 import { applyProjectDiffStats } from "../hooks/use-project-diff-stats";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { isRemoteProjectPath } from "@/features/projects/model/recents";

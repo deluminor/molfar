@@ -118,7 +118,7 @@ import {
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
-import { HAS_NATIVE_GLASS, IS_MAC } from "@/platform/tauri/platform";
+import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "./model/update-prompt";
 import { runUpdateFlow } from "./model/updater";
 import { MenuBar } from "./shell/MenuBar";

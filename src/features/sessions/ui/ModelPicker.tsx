@@ -54,7 +54,7 @@ import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { LAYER } from "@/shared/lib/layers";
 import { HarnessIcon } from "./HarnessIcon";
 import { Popover } from "@/shared/ui/Popover";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 import { keybindingPressed } from "@/features/settings/model/settings";
 import "./ModelPicker.css";
 

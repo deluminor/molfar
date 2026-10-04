@@ -27,7 +27,7 @@ import {
   runningTerminalChipLabel,
   type RunningTerminal,
 } from "@/features/terminal/model/terminal-tab";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 import { UsageProviderChip } from "./UsageProviderChip";
 import { PiUsage } from "./PiUsage";
 import {

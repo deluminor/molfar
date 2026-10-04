@@ -18,7 +18,7 @@ import {
   revealPath,
   type ExternalEditor,
 } from "@/platform/tauri/fs";
-import { IS_MAC, IS_WIN } from "@/platform/tauri/platform";
+import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadPinnedProjects,

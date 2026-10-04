@@ -10,7 +10,7 @@ import {
 import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
 import { useProjectWorktrees } from "@/features/source-control/hooks/use-project-worktrees";
 import type { Worktree } from "@/features/source-control/model/worktrees";
-import { MOD, SHIFT } from "@/platform/tauri/platform";
+import { MOD, SHIFT } from "@/shared/lib/platform";
 import { prettyCwd } from "@/shared/lib/paths";
 import type { WorkspaceMode } from "@/domain/session/session";
 import {

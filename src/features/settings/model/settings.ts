@@ -1,10 +1,4 @@
-import {
-  ALT,
-  IS_MAC,
-  IS_WIN,
-  MOD,
-  SHIFT,
-} from "@/platform/tauri/platform";
+import { ALT, IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
 import {
   canonicalShortcut,
   isGlobalShortcut,

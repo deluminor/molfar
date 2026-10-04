@@ -5,8 +5,8 @@ import * as claudeHooksSetting from "@/integrations/harness/providers/claude/cla
 import * as appearance from "./appearance";
 
 const platform = vi.hoisted(() => ({ isWindows: true }));
-vi.mock("@/platform/tauri/platform", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/platform/tauri/platform")>()),
+vi.mock("@/shared/lib/platform", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/lib/platform")>()),
   get IS_WIN() {
     return platform.isWindows;
   },

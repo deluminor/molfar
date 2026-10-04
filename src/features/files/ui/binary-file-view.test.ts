@@ -22,7 +22,7 @@ vi.mock("../model/file-watch", () => ({
   watchFile: () => () => {},
 }));
 
-vi.mock("@/platform/tauri/platform", () => ({
+vi.mock("@/shared/lib/platform", () => ({
   IS_MAC: true,
   IS_WIN: false,
 }));

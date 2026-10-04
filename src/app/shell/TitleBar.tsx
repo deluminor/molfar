@@ -42,7 +42,7 @@ import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
 import { WindowControls } from "./WindowControls";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/platform/tauri/platform";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
 import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
 import {
   paneDropFromPoint,

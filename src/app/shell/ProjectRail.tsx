@@ -37,7 +37,7 @@ import {
 } from "@/features/settings/model/appearance";
 import { basename } from "@/platform/tauri/fs";
 import type { GitDiffStats } from "@/domain/git/working-tree";
-import { IS_MAC, MOD } from "@/platform/tauri/platform";
+import { IS_MAC, MOD } from "@/shared/lib/platform";
 import { formatInteger } from "@/shared/lib/numbers";
 import { pathKey, projectKey, projectName } from "@/shared/lib/paths";
 import {

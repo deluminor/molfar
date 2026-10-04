@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import {
   applyAccentColor,
   applyThemeDarkLightness,

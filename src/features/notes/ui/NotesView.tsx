@@ -43,7 +43,7 @@ import {
   type NoteImageAsset,
 } from "../note-images";
 import { projectKey, projectName } from "@/shared/lib/paths";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
 import {
   loadTabGroupColors,

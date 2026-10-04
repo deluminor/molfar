@@ -13,7 +13,7 @@ import { confirmApp } from "@/app/model/app-dialog";
 import { OverlayNav } from "@/app/shell/TitleBar";
 import { WindowControls } from "@/app/shell/WindowControls";
 import { gitBranches } from "@/platform/tauri/fs";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { LAYER } from "@/shared/lib/layers";
 import { projectKey, projectName } from "@/shared/lib/paths";

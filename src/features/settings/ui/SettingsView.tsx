@@ -188,7 +188,7 @@ import {
   projectName,
 } from "@/shared/lib/paths";
 import { revealPath } from "@/platform/tauri/fs";
-import { IS_LINUX, IS_MAC, IS_WIN } from "@/platform/tauri/platform";
+import { IS_LINUX, IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import {
   loadArchivedProjects,
   looksLikeProject,

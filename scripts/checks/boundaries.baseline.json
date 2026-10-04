@@ -125,13 +125,7 @@
   "src/shared/hooks/use-color-scheme.ts": {
     "layer:shared->features": 1
   },
-  "src/shared/lib/drag-point.ts": {
-    "layer:shared->platform": 1
-  },
   "src/shared/lib/format.ts": {
-    "layer:shared->platform": 1
-  },
-  "src/shared/lib/paths.ts": {
     "layer:shared->platform": 1
   },
   "src/shared/ui/icons.test.ts": {

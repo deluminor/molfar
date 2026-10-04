@@ -20,7 +20,7 @@ import {
   revealPath,
 } from "@/platform/tauri/fs";
 import { displayPath } from "@/shared/lib/paths";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 16;

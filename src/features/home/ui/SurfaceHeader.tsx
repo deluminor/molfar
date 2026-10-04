@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { OverlayNav } from "@/app/shell/TitleBar";
 import { WindowControls } from "@/app/shell/WindowControls";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import type { IconComponent } from "@/shared/ui/icons";
 
 type Props = {

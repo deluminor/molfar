@@ -56,7 +56,7 @@ import {
 import { formatInteger } from "@/shared/lib/numbers";
 import type { GitHistoryCommit } from "@/platform/tauri/fs";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
-import { IS_MAC, MOD } from "@/platform/tauri/platform";
+import { IS_MAC, MOD } from "@/shared/lib/platform";
 import { copyText } from "@/platform/tauri/clipboard";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import type { OpenFileFn } from "@/features/search/model/search";

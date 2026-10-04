@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { syncNativeGlass } from "./appearance";
 
 const platform = vi.hoisted(() => ({ isLinux: false }));
-vi.mock("@/platform/tauri/platform", async (importOriginal) => ({
+vi.mock("@/shared/lib/platform", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("@/platform/tauri/platform")
+    typeof import("@/shared/lib/platform")
   >()),
   get IS_LINUX() {
     return platform.isLinux;

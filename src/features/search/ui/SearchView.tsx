@@ -36,7 +36,7 @@ import {
   recentOpenedFiles,
 } from "@/features/files/model/file-index";
 import { prettyCwd, projectName } from "@/shared/lib/paths";
-import { IS_MAC } from "@/platform/tauri/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import { isLocalProject, type RecentProject } from "@/features/projects/model/recents";
 import {
   cancelProjectSearch,

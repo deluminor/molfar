@@ -4,7 +4,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { generateCommitMessage } from "@/integrations/harness";
 import { LAYER } from "@/shared/lib/layers";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 
 type Busy = "stash" | "commit" | null;
 

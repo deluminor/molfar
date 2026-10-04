@@ -25,7 +25,7 @@ import {
   type FilePaneTab,
 } from "../model/layout";
 import { displayPath } from "@/shared/lib/paths";
-import { IS_MAC, IS_WIN } from "@/platform/tauri/platform";
+import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import { releaseNotesTitle } from "@/app/model/release-notes";
 import { terminalTabLabel } from "@/features/terminal/model/terminal-tab";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";

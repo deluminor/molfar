@@ -26,7 +26,7 @@ import { ColorPickerPopover, ColorSwatchRow } from "@/shared/ui/ColorPickerPopov
 import { Popover } from "@/shared/ui/Popover";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
-import { MOD } from "@/platform/tauri/platform";
+import { MOD } from "@/shared/lib/platform";
 import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
 
 export type TabGroupMenuAction =
