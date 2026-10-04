@@ -1,5 +1,5 @@
 import type { Session } from "@/domain/session/session";
-import type { HostSession } from "./protocol";
+import type { HostSession } from "@/domain/remote/protocol";
 import { remotePath, type RemoteProject } from "./remote-projects";
 
 /** Show the host's conversation in the app's ordinary session state while

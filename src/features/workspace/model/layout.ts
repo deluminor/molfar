@@ -1,5 +1,5 @@
 import type { ReleaseNotesTabSource } from "@/app/model/release-notes";
-import type { GitFileDiffKind } from "@/platform/tauri/fs";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import {
   applyTerminalMeta,
   defaultTerminalTitle,

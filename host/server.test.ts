@@ -17,7 +17,7 @@ import { createHostServer } from "./server";
 import { HostChildBackend } from "./child-backend";
 import { configureChildBackend } from "../src/integrations/harness/core/child";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import type { RemoteProvider } from "../src/domain/remote/protocol";
 
 const modelProbe = vi.hoisted(() => vi.fn());
 vi.mock("../src/integrations/harness/providers/codex/codex-catalog", () => ({

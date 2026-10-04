@@ -65,7 +65,7 @@ import {
   type MentionIndex,
   type MentionToken,
 } from "@/features/files/model/file-mentions";
-import type { ProjectFile } from "@/platform/tauri/fs";
+import type { ProjectFile } from "@/domain/files/file-entry";
 import {
   composeInboxMessage,
 } from "@/features/inbox/model/github-tasks";

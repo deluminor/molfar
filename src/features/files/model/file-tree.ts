@@ -1,4 +1,5 @@
-import { listDir, type FsEntry } from "@/platform/tauri/fs";
+import { listDir } from "@/platform/tauri/fs";
+import type { FsEntry } from "@/domain/files/file-entry";
 import { pathSegments } from "./file-name";
 import { joinPath, parentPath } from "@/shared/lib/paths";
 

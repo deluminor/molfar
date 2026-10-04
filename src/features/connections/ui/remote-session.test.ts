@@ -20,7 +20,7 @@ import type {
   HostModelCatalog,
   HostSession,
   RemoteMachine,
-} from "../model/protocol";
+} from "@/domain/remote/protocol";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/webview", () => ({

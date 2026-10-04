@@ -5,7 +5,7 @@ import {
   pendingRemoteFollowup,
   savePendingRemoteCommand,
 } from "./connections";
-import type { HostCommand } from "./protocol";
+import type { HostCommand } from "@/domain/remote/protocol";
 
 beforeEach(() => localStorage.clear());
 const create: HostCommand = {

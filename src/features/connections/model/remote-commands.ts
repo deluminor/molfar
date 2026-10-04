@@ -1,5 +1,6 @@
 import { setRemoteCommandRunner } from "@/platform/tauri/fs";
-import { remoteMachineFor, remoteRequest } from "./connections";
+import { remoteMachineFor } from "./connections";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 import { parseRemotePath, remotePath } from "./remote-projects";
 
 /** File commands a connected machine answers exactly as this computer does

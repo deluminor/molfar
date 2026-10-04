@@ -10,7 +10,8 @@ import type { PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import { uploadRemoteAttachments } from "../model/remote-attachments";
-import { temporaryWorktreeBranchName, type Worktree } from "@/features/source-control/model/worktrees";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import { temporaryWorktreeBranchName } from "@/domain/git/worktree-branch";
 import type { AgentModel } from "@/domain/models/agent-model";
 import {
   ModelSourceContext,
@@ -21,20 +22,20 @@ import { useProjectBranchesState } from "@/features/source-control/hooks/use-pro
 import { registerRemoteSessionActions } from "../model/remote-session-actions";
 import {
   clearPendingRemoteCommand,
-  loadRemoteSession,
   OPEN_CONNECTIONS_EVENT,
   pendingRemoteCommand,
   pendingRemoteFollowup,
   rememberRemotePendingWorktree,
   rememberRemoteSession,
   REMOTE_HISTORY_CHANGE,
-  remoteRequest,
   reportRemoteMachineStatus,
   remotePendingWorktree,
   remoteSessionFor,
   savePendingRemoteCommand,
   useRemoteMachines,
 } from "../model/connections";
+import { remoteRequest } from "@/integrations/remote/remote-request";
+import { loadRemoteSession } from "@/integrations/remote/session-sync";
 import { parseRemotePath, remotePath, remoteProjectFor, type RemoteProject } from "../model/remote-projects";
 import {
   carryModelSettings,
@@ -55,7 +56,7 @@ import {
   type RemoteAttachment,
   type RemoteMachine,
   type RemoteProvider,
-} from "../model/protocol";
+} from "@/domain/remote/protocol";
 
 export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
   remoteSession: boolean;

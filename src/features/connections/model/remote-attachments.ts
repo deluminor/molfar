@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Attachment } from "@/domain/session/attachment";
-import type { RemoteAttachment } from "./protocol";
-import { remoteRequest } from "./connections";
+import type { RemoteAttachment } from "@/domain/remote/protocol";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 // Keep each request well below the host's 4 MiB JSON limit.

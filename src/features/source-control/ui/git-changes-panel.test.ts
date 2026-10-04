@@ -60,7 +60,7 @@ import {
   generatePrContent,
 } from "@/integrations/harness";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { GitDiffIndex } from "@/platform/tauri/fs";
+import type { GitDiffIndex } from "@/domain/git/working-tree";
 
 function index(overrides: Partial<GitDiffIndex> = {}): GitDiffIndex {
   return {

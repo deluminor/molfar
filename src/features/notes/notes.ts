@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { fuzzyMatch } from "@/shared/lib/fuzzy";
-import type { ProjectFile } from "@/platform/tauri/fs";
+import type { ProjectFile } from "@/domain/files/file-entry";
 import type { RankedFile } from "@/features/files/model/file-index";
 import { projectName } from "@/shared/lib/paths";
 import { looksLikeProject } from "@/features/projects/model/recents";

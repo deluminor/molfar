@@ -13,10 +13,10 @@ import {
   linkedWorkItemInboxKey,
   linkedWorkItemFromAutomationEvent,
   linkedWorkItemFromInboxItem,
-  parseGithubWorkItemUrl,
   relatedSessionsForInboxItem,
   resolveLinkedWorkItem,
 } from "./session-work-item";
+import { parseGithubWorkItemUrl } from "@/domain/work-items/github-url";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

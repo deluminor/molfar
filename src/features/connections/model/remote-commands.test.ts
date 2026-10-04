@@ -9,7 +9,8 @@ const { remoteRequest, remoteMachineFor, invokeLocal } = vi.hoisted(() => ({
       : undefined,
   ),
 }));
-vi.mock("./connections", () => ({ remoteRequest, remoteMachineFor }));
+vi.mock("./connections", () => ({ remoteMachineFor }));
+vi.mock("@/integrations/remote/remote-request", () => ({ remoteRequest }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeLocal }));
 
 import { runRemoteCommand } from "./remote-commands";

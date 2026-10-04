@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import type { Attachment } from "@/domain/session/attachment";
-import type { RemoteAttachment } from "../src/features/connections/model/protocol";
+import type { RemoteAttachment } from "../src/domain/remote/protocol";
 import type { HostStore } from "./store";
 
 export const MAX_REMOTE_ATTACHMENT_BYTES = 20 * 1024 * 1024;

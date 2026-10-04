@@ -1,4 +1,5 @@
-import { listProjectFiles, type ProjectFile } from "@/platform/tauri/fs";
+import { listProjectFiles } from "@/platform/tauri/fs";
+import type { ProjectFile } from "@/domain/files/file-entry";
 import { subscribeDirsChanged } from "./file-tree";
 import { scorePath, type FuzzyHit } from "@/shared/lib/fuzzy";
 import { resolveWorkspacePath, slash } from "@/shared/lib/paths";

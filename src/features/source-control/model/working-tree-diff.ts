@@ -1,4 +1,7 @@
-import type { GitChangedFile, GitFileDiffKind } from "@/platform/tauri/fs";
+import type {
+  GitFileDiffKind,
+  GitChangedFile,
+} from "@/domain/git/working-tree";
 
 export type WorkingTreeDiffEntry = {
   id: string;

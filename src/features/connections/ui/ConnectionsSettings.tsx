@@ -5,15 +5,15 @@ import {
   connectMachine,
   disconnectMachine,
   refreshRemoteMachines,
-  remoteRequest,
   useRemoteMachines,
 } from "../model/connections";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 import {
   REMOTE_PROVIDERS,
   type HostDescriptor,
   type RemoteMachine,
   type SshSetup,
-} from "../model/protocol";
+} from "@/domain/remote/protocol";
 import { hostUpdateReason } from "../model/host-update";
 
 const input =

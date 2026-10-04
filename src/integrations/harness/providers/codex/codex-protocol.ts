@@ -6,10 +6,12 @@ import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPath,
   attachmentPathText,
+  promptText,
+} from "@/domain/session/attachment-prompt";
+import {
   isVisionImage,
   normalizeImageMime,
-  promptText,
-} from "@/features/sessions/model/attachments";
+} from "@/domain/session/attachment-mime";
 import { displayPath } from "@/shared/lib/paths";
 import {
   composeToolTitle,

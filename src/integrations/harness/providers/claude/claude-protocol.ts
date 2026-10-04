@@ -6,7 +6,7 @@ import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPathText,
   promptText,
-} from "@/features/sessions/model/attachments";
+} from "@/domain/session/attachment-prompt";
 import { parseResetTimestamp } from "@/features/providers/model/rate-limits";
 import {
   questionPromptTitle,

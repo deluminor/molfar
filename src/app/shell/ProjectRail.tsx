@@ -35,10 +35,8 @@ import {
   PROJECT_RAIL_WIDTH_MIN,
   saveProjectRailWidth,
 } from "@/features/settings/model/appearance";
-import {
-  basename,
-  type GitDiffStats,
-} from "@/platform/tauri/fs";
+import { basename } from "@/platform/tauri/fs";
+import type { GitDiffStats } from "@/domain/git/working-tree";
 import { IS_MAC, MOD } from "@/platform/tauri/platform";
 import { formatInteger } from "@/shared/lib/numbers";
 import { pathKey, projectKey, projectName } from "@/shared/lib/paths";
@@ -90,8 +88,8 @@ import { useProjectNotificationPreferences } from "@/features/notifications/hook
 import { useNotificationProjects } from "@/features/notifications/hooks/use-notification-projects";
 import { GithubStarPrompt } from "./GithubStarPrompt";
 import { Popover } from "@/shared/ui/Popover";
-import { OPEN_REMOTE_PROJECT_EVENT } from "@/features/connections/model/connections";
 import {
+  OPEN_REMOTE_PROJECT_EVENT,
   useRemoteMachineOnline,
   useRemoteMachines,
 } from "@/features/connections/model/connections";

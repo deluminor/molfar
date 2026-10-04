@@ -57,12 +57,14 @@ import {
   gitUnstageFile,
   notifyGitChanged,
   subscribeGitChanged,
-  type GitChangedFile,
-  type GitDiffIndex,
-  type GitFileDiffKind,
   type GitHistoryCommit,
-  type GitPr,
 } from "@/platform/tauri/fs";
+import type { GitPr } from "@/domain/git/pull-request";
+import type {
+  GitFileDiffKind,
+  GitChangedFile,
+  GitDiffIndex,
+} from "@/domain/git/working-tree";
 import type { HarnessId } from "@/domain/harness/harness";
 import { recordInboxSelfActivity } from "@/features/inbox/model/inbox-self-activity";
 import {

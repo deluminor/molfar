@@ -1,4 +1,4 @@
-import type { PromptContentBlock } from "@/features/sessions/model/attachments";
+import type { PromptContentBlock } from "@/domain/session/attachment-prompt";
 import type { AgentModel, ModelSetting, ModelSettingChoice } from "@/domain/models/agent-model";
 import type { ToolPreview } from "@/domain/session/agent-run";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";

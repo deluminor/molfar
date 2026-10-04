@@ -2,7 +2,7 @@ import {
   isRemoteProjectPath,
   REMOTE_PROJECT_PREFIX,
 } from "@/features/projects/model/recents";
-import type { HostProject } from "./protocol";
+import type { HostProject } from "@/domain/remote/protocol";
 
 /** A rail project whose folder lives on another machine. */
 export type RemoteProject = {

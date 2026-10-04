@@ -4,7 +4,7 @@ import type { TurnMetrics } from "@/domain/session/turn";
 import {
   attachmentPathText,
   promptText,
-} from "@/features/sessions/model/attachments";
+} from "@/domain/session/attachment-prompt";
 import type { AgentModel, ModelSetting } from "@/domain/models/agent-model";
 import { isTaskListToolName } from "@/domain/session/task-list";
 import type { PiFlavor } from "./pi-flavor";

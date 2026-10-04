@@ -10,7 +10,7 @@ import {
   saveExpanded,
   saveSelected,
 } from "../model/file-tree";
-import type { FsEntry } from "@/platform/tauri/fs";
+import type { FsEntry } from "@/domain/files/file-entry";
 import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,

@@ -8,9 +8,11 @@ import {
   gitStageFile,
   notifyGitChanged,
   subscribeGitChanged,
-  type GitChangedFile,
-  type GitFileDiffKind,
 } from "@/platform/tauri/fs";
+import type {
+  GitFileDiffKind,
+  GitChangedFile,
+} from "@/domain/git/working-tree";
 import { forEachConcurrent } from "@/shared/lib/concurrent";
 import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unified-diff";
 import {

@@ -8,7 +8,7 @@ import {
   REMOTE_PROVIDERS,
   type RemoteMachine,
   type SshSetup,
-} from "../model/protocol";
+} from "@/domain/remote/protocol";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 let container: HTMLDivElement;

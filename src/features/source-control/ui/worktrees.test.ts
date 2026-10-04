@@ -40,12 +40,14 @@ import {
   assertWorktreeFilesClosed,
   checkWorktreeRemoval,
   listWorktrees,
-  namedWorktreeBranch,
-  orchestrationWorktreeBranchName,
-  temporaryWorktreeBranchName,
   type Worktree,
   type Worktrees,
 } from "../model/worktrees";
+import {
+  namedWorktreeBranch,
+  orchestrationWorktreeBranchName,
+  temporaryWorktreeBranchName,
+} from "@/domain/git/worktree-branch";
 import { newFileTab, newTerminalFile } from "@/features/workspace/model/layout";
 import { gitCheckout, notifyGitChanged } from "@/platform/tauri/fs";
 import { useProjectBranchesState } from "../hooks/use-project-branches";

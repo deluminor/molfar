@@ -82,7 +82,7 @@ import {
 import type { SessionFolderTarget } from "../model/session-folders";
 import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import { RemoteSession } from "@/features/connections/ui/RemoteSession";
-import type { HostSession } from "@/features/connections/model/protocol";
+import type { HostSession } from "@/domain/remote/protocol";
 
 export type SessionPaneProps = {
   session: Session;

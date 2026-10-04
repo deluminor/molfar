@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { gitDiffStats, subscribeGitChanged, type GitDiffStats } from "@/platform/tauri/fs";
+import { gitDiffStats, subscribeGitChanged } from "@/platform/tauri/fs";
+import type { GitDiffStats } from "@/domain/git/working-tree";
 
 type Entry = {
   cwd: string;

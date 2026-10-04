@@ -2,10 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   attachmentsFromFiles,
   attachmentsFromPaths,
-  isAttachmentFolder,
   MAX_ATTACHMENTS,
   MAX_EMBED_BYTES,
 } from "@/features/sessions/model/attachments";
+import { isAttachmentFolder } from "@/domain/session/attachment-mime";
 import type { Attachment } from "@/domain/session/attachment";
 
 type CopiedFile = { name: string; mimeType: string; data: string };

@@ -53,8 +53,8 @@ import {
   readTextFile,
   subscribeGitChanged,
   writeTextFile,
-  type GitFileDiffKind,
 } from "@/platform/tauri/fs";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { syncWatchedMtime, watchFile } from "../model/file-watch";
 import { displayPath } from "@/shared/lib/paths";
 import type { EditorNavigation } from "@/features/search/model/search";

@@ -54,7 +54,8 @@ import {
   type SidebarTabId,
 } from "@/features/settings/model/appearance";
 import { formatInteger } from "@/shared/lib/numbers";
-import type { GitFileDiffKind, GitHistoryCommit } from "@/platform/tauri/fs";
+import type { GitHistoryCommit } from "@/platform/tauri/fs";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { IS_MAC, MOD } from "@/platform/tauri/platform";
 import { copyText } from "@/platform/tauri/clipboard";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
@@ -174,11 +175,11 @@ import { SourceControl } from "@/features/source-control/ui/SourceControl";
 import { GithubStarPrompt } from "./GithubStarPrompt";
 import {
   refreshRemoteProjectSessions,
-  remoteRequest,
   remotePendingWorktree,
   remoteSessionFor,
   useRemoteProjectSessions,
 } from "@/features/connections/model/connections";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 import { parseRemotePath, remotePath, remoteProjectFor } from "@/features/connections/model/remote-projects";
 
 const MIN_WIDTH = 260;

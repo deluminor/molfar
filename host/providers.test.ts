@@ -3,7 +3,7 @@ import {
   REMOTE_PROVIDERS,
   isRemoteProvider,
   requireHostDescriptor,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import { hostProviders } from "./providers";
 import { HARNESSES } from "@/domain/harness/harness";
 

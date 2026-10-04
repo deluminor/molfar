@@ -5,9 +5,9 @@ import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPath,
   attachmentPathText,
-  isVisionImage,
   promptText,
-} from "@/features/sessions/model/attachments";
+} from "@/domain/session/attachment-prompt";
+import { isVisionImage } from "@/domain/session/attachment-mime";
 import { isTaskListToolName } from "@/domain/session/task-list";
 import { extractToolPreview } from "../../core/preview";
 import type { HarnessEvent } from "../../core/types";

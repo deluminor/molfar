@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Modal } from "@/shared/ui/Modal";
 import type { LinkedWorkItem } from "@/domain/session/session";
-import { parseGithubWorkItemUrl } from "../model/session-work-item";
+import { parseGithubWorkItemUrl } from "@/domain/work-items/github-url";
 
 export function LinkSessionWorkItemDialog({
   initial,

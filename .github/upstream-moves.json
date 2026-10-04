@@ -74,8 +74,10 @@
     "src/features/automations/ui/AutomationsView.test.ts": "src/features/automations/ui/automations-view.test.ts",
     "src/features/connections/model/hostUpdate.test.ts": "src/features/connections/model/host-update.test.ts",
     "src/features/connections/model/hostUpdate.ts": "src/features/connections/model/host-update.ts",
-    "src/features/connections/model/remoteAttachmentPreviews.test.ts": "src/features/connections/model/remote-attachment-previews.test.ts",
-    "src/features/connections/model/remoteAttachmentPreviews.ts": "src/features/connections/model/remote-attachment-previews.ts",
+    "src/features/connections/model/protocol.test.ts": "src/domain/remote/protocol.test.ts",
+    "src/features/connections/model/protocol.ts": "src/domain/remote/protocol.ts",
+    "src/features/connections/model/remoteAttachmentPreviews.test.ts": "src/integrations/remote/attachment-previews.test.ts",
+    "src/features/connections/model/remoteAttachmentPreviews.ts": "src/integrations/remote/attachment-previews.ts",
     "src/features/connections/model/remoteAttachments.test.ts": "src/features/connections/model/remote-attachments.test.ts",
     "src/features/connections/model/remoteAttachments.ts": "src/features/connections/model/remote-attachments.ts",
     "src/features/connections/model/remoteCommands.test.ts": "src/features/connections/model/remote-commands.test.ts",
@@ -756,6 +758,21 @@
     }
   },
   "extractions": {
+    "src/features/connections/model/connections.ts": [
+      {
+        "names": [
+          "remoteRequest"
+        ],
+        "target": "src/integrations/remote/remote-request.ts"
+      },
+      {
+        "names": [
+          "syncRemoteSession",
+          "loadRemoteSession"
+        ],
+        "target": "src/integrations/remote/session-sync.ts"
+      }
+    ],
     "src/features/inbox/model/githubTasks.ts": [
       {
         "names": [
@@ -813,12 +830,94 @@
         "target": "src/domain/orchestration/proposal.ts"
       }
     ],
+    "src/features/search/model/search.ts": [
+      {
+        "names": [
+          "ProjectSearchMatch",
+          "ProjectSearchResult",
+          "ProjectSearchOptions"
+        ],
+        "target": "src/domain/search/project-search.ts"
+      }
+    ],
+    "src/features/sessions/model/attachments.ts": [
+      {
+        "names": [
+          "FOLDER_MIME",
+          "VISION_MIME",
+          "isVisionImage",
+          "normalizeImageMime",
+          "isAttachmentFolder"
+        ],
+        "target": "src/domain/session/attachment-mime.ts"
+      },
+      {
+        "names": [
+          "PromptContentBlock",
+          "ATTACHMENT_ONLY_PROMPT",
+          "promptText",
+          "promptBlocks",
+          "attachmentPath",
+          "attachmentPathText",
+          "contentBlockFor",
+          "fileUri"
+        ],
+        "target": "src/domain/session/attachment-prompt.ts"
+      }
+    ],
     "src/features/sessions/model/handoff.ts": [
       {
         "names": [
           "HandoffComposerCard"
         ],
         "target": "src/domain/session/handoff-card.ts"
+      }
+    ],
+    "src/features/sessions/model/sessionWorkItem.ts": [
+      {
+        "names": [
+          "GITHUB_URL_RE",
+          "validNumber",
+          "githubUrl",
+          "parseGithubWorkItemUrl"
+        ],
+        "target": "src/domain/work-items/github-url.ts"
+      }
+    ],
+    "src/features/source-control/model/worktrees.ts": [
+      {
+        "names": [
+          "temporaryWorktreeBranchName",
+          "orchestrationWorktreeBranchName",
+          "namedWorktreeBranch"
+        ],
+        "target": "src/domain/git/worktree-branch.ts"
+      }
+    ],
+    "src/platform/tauri/fs.ts": [
+      {
+        "names": [
+          "FsEntry",
+          "ProjectFile",
+          "FileMtime"
+        ],
+        "target": "src/domain/files/file-entry.ts"
+      },
+      {
+        "names": [
+          "GitDiffStats",
+          "GitChangedFile",
+          "GitDiffIndex",
+          "GitFileDiff",
+          "GitFileDiffKind"
+        ],
+        "target": "src/domain/git/working-tree.ts"
+      },
+      {
+        "names": [
+          "GitPr"
+        ],
+        "target": "src/domain/git/pull-request.ts"
       }
     ]
   },

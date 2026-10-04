@@ -8,7 +8,7 @@ import type {
   HostSessionSummary,
   RemoteProvider,
   SessionSync,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import type { LinkedWorkItem } from "@/domain/session/session";
 import { sessionNeedsInput } from "@/domain/session/session-state";
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FsEntry } from "@/platform/tauri/fs";
+import type { FsEntry } from "@/domain/files/file-entry";
 import {
   forgetDir,
   listCachedDir,

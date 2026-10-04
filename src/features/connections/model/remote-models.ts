@@ -5,7 +5,10 @@ import type {
 } from "@/domain/models/agent-model";
 import { MODELS } from "@/integrations/harness/core/models/catalog";
 import { CLAUDE_MODEL_CATALOG } from "@/integrations/harness/providers/claude/claude-catalog";
-import type { HostModelCatalog, RemoteProvider } from "./protocol";
+import type {
+  HostModelCatalog,
+  RemoteProvider,
+} from "@/domain/remote/protocol";
 
 export type RemoteModelControls = {
   /** The host's current catalog entry, when it lists this model. */

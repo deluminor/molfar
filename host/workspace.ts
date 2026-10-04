@@ -13,14 +13,14 @@ import {
 } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import type {
+  GitFileDiff,
   GitChangedFile,
   GitDiffIndex,
-  GitFileDiff,
-} from "../src/platform/tauri/fs";
+} from "@/domain/git/working-tree";
 import type {
   ProjectSearchMatch,
   ProjectSearchResult,
-} from "../src/features/search/model/search";
+} from "@/domain/search/project-search";
 
 const exec = promisify(execFile);
 const MAX_FILE = 1024 * 1024;

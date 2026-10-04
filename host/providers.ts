@@ -14,7 +14,7 @@ import type {
   ApprovalDecision,
 } from "../src/integrations/harness/core/types";
 import type { UserQuestionReply } from "../src/domain/session/user-question";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import type { RemoteProvider } from "../src/domain/remote/protocol";
 import type { GeneratedSessionTitle } from "../src/domain/session/generated-title";
 import { generateCodexSessionTitle } from "../src/integrations/harness/providers/codex/codex-title";
 import { generateClaudeSessionTitle } from "../src/integrations/harness/providers/claude/claude-title";

@@ -41,7 +41,7 @@ import { OMP_FLAVOR } from "../pi/pi-flavor";
 import type { HarnessEvent, SendTurnInput } from "../../core/types";
 import { applyHarnessEvent } from "../../core/apply";
 import { newSession } from "@/features/sessions/model/session";
-import { ATTACHMENT_ONLY_PROMPT } from "@/features/sessions/model/attachments";
+import { ATTACHMENT_ONLY_PROMPT } from "@/domain/session/attachment-prompt";
 
 function frame(sessionId: string, value: Record<string, unknown>) {
   transport.watchers.get(sessionId)?.(JSON.stringify(value));

@@ -26,7 +26,7 @@ import { createHostServer } from "./server";
 import {
   REMOTE_PROVIDERS,
   type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import { connectionInfo, installService, uninstallService } from "./service";
 import { version } from "../package.json";
 import { protectWindowsDirectory } from "./windows";

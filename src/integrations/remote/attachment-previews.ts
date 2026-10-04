@@ -1,4 +1,4 @@
-import type { HostSession } from "./protocol";
+import type { HostSession } from "@/domain/remote/protocol";
 
 type Chunk = { data: string; offset: number; size: number };
 const downloads = new Map<string, Promise<string>>();

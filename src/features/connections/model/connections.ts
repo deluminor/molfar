@@ -1,17 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import {
-  applySessionSync,
-  type HostCommand,
-  type HostSession,
-  type HostSessionSummary,
-  type RemoteMachine,
-  type SessionSync,
-  type SessionSyncChunk,
-  type SessionSyncResponse,
-} from "./protocol";
+import type {
+  HostCommand,
+  HostSessionSummary,
+  RemoteMachine,
+} from "@/domain/remote/protocol";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 import { remoteProjectFor } from "./remote-projects";
-import { withRemoteAttachmentPreviews } from "./remote-attachment-previews";
 
 const CHANGE = "molfar:remote-machines";
 export const REMOTE_HISTORY_CHANGE = "molfar:remote-history";
@@ -149,62 +144,6 @@ export const clearPendingRemoteCommand = (
   commandId: string,
 ) =>
   localStorage.removeItem(`${pendingPrefix(project, environment)}${commandId}`);
-
-export function remoteRequest<T>(
-  machineId: string,
-  method: string,
-  params: unknown = {},
-): Promise<T> {
-  return invoke<T>("remote_request", { machineId, method, params });
-}
-
-/** Reads one sync, assembling it from bounded pieces when the host chunks it. */
-async function syncRemoteSession(
-  machineId: string,
-  sessionId: string,
-  revision?: number,
-): Promise<SessionSync> {
-  const response = await remoteRequest<SessionSyncResponse>(
-    machineId,
-    "sessions.sync",
-    { sessionId, revision },
-  );
-  if (response.kind !== "chunked") return response;
-  const pieces: string[] = [];
-  let offset = 0;
-  while (offset < response.length) {
-    const { data } = await remoteRequest<SessionSyncChunk>(
-      machineId,
-      "sessions.syncChunk",
-      { sessionId, transfer: response.transfer, offset },
-    );
-    if (!data) throw new Error("Session transfer ended early");
-    pieces.push(data);
-    offset += data.length;
-  }
-  if (offset !== response.length)
-    throw new Error("Session transfer has an unexpected length");
-  return JSON.parse(pieces.join("")) as SessionSync;
-}
-
-/** Fetches only what changed since `known`; falls back to a full snapshot. */
-export async function loadRemoteSession(
-  machineId: string,
-  sessionId: string,
-  known?: HostSession,
-): Promise<HostSession> {
-  const sync = (revision?: number) =>
-    syncRemoteSession(machineId, sessionId, revision);
-  const update = await sync(known?.revision);
-  let snapshot: HostSession;
-  try {
-    snapshot = applySessionSync(known, update);
-  } catch {
-    snapshot = applySessionSync(undefined, await sync());
-  }
-  return withRemoteAttachmentPreviews(machineId, snapshot, known,
-    (params) => remoteRequest(machineId, "attachments.read", params));
-}
 
 /** The connected machine for an environment, from the last machine list read. */
 export function knownRemoteMachine(

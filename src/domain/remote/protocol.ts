@@ -1,8 +1,8 @@
-import type { Session, LinkedWorkItem } from "@/domain/session/session";
-import type { Block } from "@/domain/session/block";
-import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import type { UserQuestionReply } from "@/domain/session/user-question";
-import type { AgentModel } from "@/domain/models/agent-model";
+import type { Session, LinkedWorkItem } from "../session/session";
+import type { Block } from "../session/block";
+import type { RuntimeMode } from "../session/runtime-mode";
+import type { UserQuestionReply } from "../session/user-question";
+import type { AgentModel } from "../models/agent-model";
 
 export const HOST_PROTOCOL_VERSION = 1;
 export const REMOTE_PROVIDERS = [

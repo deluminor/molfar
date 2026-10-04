@@ -1,9 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
-import {
-  gitDiffIndex,
-  subscribeGitChanged,
-  type GitDiffIndex,
-} from "@/platform/tauri/fs";
+import { gitDiffIndex, subscribeGitChanged } from "@/platform/tauri/fs";
+import type { GitDiffIndex } from "@/domain/git/working-tree";
 import { subscribeDirsChanged } from "@/features/files/model/file-tree";
 import { parentPath } from "@/shared/lib/paths";
 

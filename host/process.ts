@@ -1,9 +1,8 @@
-import { createReadStream } from "node:fs";
+import { createReadStream, constants } from "node:fs";
 import { access, readlink, stat } from "node:fs/promises";
-import { constants } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, dirname, extname, join, basename } from "node:path";
-import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import type { RemoteProvider } from "../src/domain/remote/protocol";
 
 const npmEntries: Record<string, string> = {
   codex: "node_modules/@openai/codex/bin/codex.js",

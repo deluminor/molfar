@@ -53,12 +53,12 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 const { sendCodexTurn, steerCodexTurn, stopCodexSession, __codexTestReset } =
   await import("./codex");
-const {
-  ATTACHMENT_ONLY_PROMPT,
-  attachmentsFromPaths,
-  prepareAttachments,
-  promptBlocks,
-} = await import("@/features/sessions/model/attachments");
+const { attachmentsFromPaths, prepareAttachments } = await import(
+  "@/features/sessions/model/attachments"
+);
+const { ATTACHMENT_ONLY_PROMPT, promptBlocks } = await import(
+  "@/domain/session/attachment-prompt"
+);
 
 function completeTurn() {
   onLine!(

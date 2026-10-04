@@ -13,7 +13,7 @@ import type { ChildBackend } from "../src/integrations/harness/core/child";
 import {
   isRemoteProvider,
   type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import { providerLaunch, resolveProvider } from "./process";
 
 const exec = promisify(execFile);

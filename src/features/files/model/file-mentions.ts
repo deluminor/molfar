@@ -1,5 +1,5 @@
 import { loadProjectFiles, rankProjectFiles, type RankedFile } from "./file-index";
-import type { ProjectFile } from "@/platform/tauri/fs";
+import type { ProjectFile } from "@/domain/files/file-entry";
 import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
 
 export type MentionToken = {

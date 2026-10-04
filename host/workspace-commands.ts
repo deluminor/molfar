@@ -12,7 +12,12 @@ import {
 import { basename, dirname, extname, isAbsolute, relative, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { FileMtime, FsEntry, GitPr, ProjectFile } from "../src/platform/tauri/fs";
+import type { GitPr } from "@/domain/git/pull-request";
+import type {
+  FileMtime,
+  ProjectFile,
+  FsEntry,
+} from "@/domain/files/file-entry";
 import { hostWorktrees } from "./git-worktrees";
 import { createHostBranch, hostBranches, switchHostBranch } from "./git-branches";
 import type { HostStore } from "./store";

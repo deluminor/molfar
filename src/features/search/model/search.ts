@@ -2,30 +2,10 @@ import { invokeWorkspace } from "@/platform/tauri/fs";
 import { invoke } from "@tauri-apps/api/core";
 import { isLocalProject } from "@/features/projects/model/recents";
 import { pathKey, slash } from "@/shared/lib/paths";
-
-export type ProjectSearchMatch = {
-  path: string;
-  relative: string;
-  line: number;
-  column: number;
-  preview: string;
-};
-
-export type ProjectSearchResult = {
-  matches: ProjectSearchMatch[];
-  truncated: boolean;
-};
-
-export type ProjectSearchOptions = {
-  cwd: string;
-  query: string;
-  caseSensitive?: boolean;
-  wholeWord?: boolean;
-  regex?: boolean;
-  include?: string;
-  exclude?: string;
-  searchId: string;
-};
+import type {
+  ProjectSearchOptions,
+  ProjectSearchResult,
+} from "@/domain/search/project-search";
 
 export type EditorNavigation = {
   line: number;

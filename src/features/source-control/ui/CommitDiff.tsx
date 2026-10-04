@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Loader } from "@/shared/ui/icons";
-import {
-  gitCommitFileDiff,
-  gitCommitFiles,
-  type GitChangedFile,
-} from "@/platform/tauri/fs";
+import { gitCommitFileDiff, gitCommitFiles } from "@/platform/tauri/fs";
+import type { GitChangedFile } from "@/domain/git/working-tree";
 import { forEachConcurrent } from "@/shared/lib/concurrent";
 import { buildUnifiedFile, type UnifiedFileDiff } from "../model/unified-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";

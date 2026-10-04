@@ -10,7 +10,7 @@ import type {
   SessionSummary,
 } from "@/features/sessions/data/session-store";
 import type { RankedFile } from "@/features/files/model/file-index";
-import type { ProjectSearchMatch } from "./search";
+import type { ProjectSearchMatch } from "@/domain/search/project-search";
 import { transcriptBlockText } from "@/features/sessions/model/transcript-find";
 
 export type SearchScope = "all" | "conversations" | "files" | "projects";

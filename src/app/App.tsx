@@ -98,24 +98,26 @@ import {
   createWorktree,
   detachSessionWorktree,
   listWorktrees,
-  namedWorktreeBranch,
-  orchestrationWorktreeBranchName,
   removeOrchestrationBranch,
   removeOrchestrationWorktree,
   removeWorktree,
   renameWorktreeBranch,
   sessionInWorktree,
-  temporaryWorktreeBranchName,
   worktreeSessionIds,
   type Worktree,
 } from "@/features/source-control/model/worktrees";
 import {
+  namedWorktreeBranch,
+  orchestrationWorktreeBranchName,
+  temporaryWorktreeBranchName,
+} from "@/domain/git/worktree-branch";
+import {
   basename,
   notifyGitChanged,
   pickFolders,
-  type GitFileDiffKind,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/platform/tauri/platform";
 import { getUpdatePrompt } from "./model/update-prompt";
 import { runUpdateFlow } from "./model/updater";
@@ -539,7 +541,7 @@ import {
   remoteSessionFor,
   remoteTabCwd,
 } from "@/features/connections/model/connections";
-import type { HostSession } from "@/features/connections/model/protocol";
+import type { HostSession } from "@/domain/remote/protocol";
 import {
   remotePath,
   remoteProjectFor,

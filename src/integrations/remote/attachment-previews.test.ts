@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { withRemoteAttachmentPreviews } from "./remote-attachment-previews";
-import type { HostSession } from "./protocol";
+import { withRemoteAttachmentPreviews } from "./attachment-previews";
+import type { HostSession } from "@/domain/remote/protocol";
 
 const snapshot = (): HostSession => ({
   projectId: "project",

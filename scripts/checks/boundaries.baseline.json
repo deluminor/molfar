@@ -1,56 +1,4 @@
 {
-  "host/attachments.ts": {
-    "layer:host->features": 1
-  },
-  "host/browse.ts": {
-    "layer:host->features": 1
-  },
-  "host/child-backend.test.ts": {
-    "layer:host->features": 1
-  },
-  "host/child-backend.ts": {
-    "layer:host->features": 1
-  },
-  "host/cli.ts": {
-    "layer:host->features": 1
-  },
-  "host/engine.ts": {
-    "layer:host->features": 3
-  },
-  "host/large-sync.test.ts": {
-    "layer:host->features": 2
-  },
-  "host/process.ts": {
-    "layer:host->features": 1
-  },
-  "host/providers.test.ts": {
-    "layer:host->features": 1
-  },
-  "host/providers.ts": {
-    "layer:host->features": 1
-  },
-  "host/server.test.ts": {
-    "layer:host->features": 1
-  },
-  "host/server.ts": {
-    "layer:host->features": 2
-  },
-  "host/store.ts": {
-    "layer:host->features": 1
-  },
-  "host/sync-transfer.test.ts": {
-    "layer:host->features": 1
-  },
-  "host/sync-transfer.ts": {
-    "layer:host->features": 1
-  },
-  "host/workspace-commands.ts": {
-    "layer:host->platform": 1
-  },
-  "host/workspace.ts": {
-    "layer:host->features": 1,
-    "layer:host->platform": 1
-  },
   "src/features/agent-app/model/agent-app.ts": {
     "feature-internal:inbox": 2
   },
@@ -186,19 +134,10 @@
   "src/integrations/harness/core/child.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/core/file-attachments.test.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/core/registry.ts": {
     "layer:integrations->features": 1
   },
   "src/integrations/harness/core/text-harness.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/antigravity/antigravity-protocol.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/antigravity/antigravity-protocol.ts": {
     "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/claude/claude-git.ts": {
@@ -208,7 +147,7 @@
     "layer:integrations->features": 2
   },
   "src/integrations/harness/providers/claude/claude-protocol.ts": {
-    "layer:integrations->features": 2
+    "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/claude/claude.ts": {
     "layer:integrations->features": 2
@@ -225,9 +164,6 @@
   "src/integrations/harness/providers/codex/codex-live.test.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/providers/codex/codex-protocol.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/codex/codex.ts": {
     "layer:integrations->features": 2
   },
@@ -240,23 +176,11 @@
   "src/integrations/harness/providers/cursor/cursor-subagents.test.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/providers/cursor/cursor.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/fx/fx-protocol.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/grok/grok-git.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/providers/grok/grok-protocol.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/hermes/hermes-protocol.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/omp/omp-live.test.ts": {
-    "layer:integrations->features": 2
+    "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/opencode/opencode-git.ts": {
     "layer:integrations->features": 1
@@ -264,13 +188,7 @@
   "src/integrations/harness/providers/opencode/opencode-live.test.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/providers/opencode/opencode-protocol.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/pi/pi-family.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/pi/pi-protocol.ts": {
     "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/pi/pi-subagents.test.ts": {

@@ -11,11 +11,11 @@ import {
   HOST_PROTOCOL_VERSION,
   type HostModelCatalog,
   type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import { HostEngine } from "./engine";
 import { writeAttachmentChunk, readAttachmentChunk } from "./attachments";
 import type { LinkedWorkItem } from "@/domain/session/session";
-import { parseGithubWorkItemUrl } from "../src/features/sessions/model/session-work-item";
+import { parseGithubWorkItemUrl } from "@/domain/work-items/github-url";
 import { SyncTransfers } from "./sync-transfer";
 import { browseHostDirectories } from "./browse";
 import {

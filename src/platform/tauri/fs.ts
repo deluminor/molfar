@@ -3,6 +3,19 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { slash } from "@/shared/lib/paths";
 import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 import type { InterjectionMeta } from "@/domain/session/block-meta";
+import type {
+  FileMtime,
+  FsEntry,
+  ProjectFile,
+} from "@/domain/files/file-entry";
+import type {
+  GitDiffIndex,
+  GitChangedFile,
+  GitDiffStats,
+  GitFileDiffKind,
+  GitFileDiff,
+} from "@/domain/git/working-tree";
+import type { GitPr } from "@/domain/git/pull-request";
 
 export { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
@@ -89,13 +102,6 @@ export function claudeShellCommands(
   });
 }
 
-export type FsEntry = {
-  name: string;
-  path: string;
-  isDir: boolean;
-  ignored: boolean;
-};
-
 export type ProjectLocation = {
   path: string;
   identity: string;
@@ -126,13 +132,6 @@ export function openInExternalEditor(
 ): Promise<void> {
   return invoke<void>("open_in_external_editor", { editorId, cwd });
 }
-
-export type ProjectFile = {
-  name: string;
-  path: string;
-  relative: string;
-  isDir?: boolean;
-};
 
 export function listDir(path: string): Promise<FsEntry[]> {
   return invoke<FsEntry[]>("list_dir", { path });
@@ -172,40 +171,9 @@ export function listProjectFiles(cwd: string): Promise<ProjectFile[]> {
   return invoke<ProjectFile[]>("list_project_files", { cwd });
 }
 
-export type GitDiffStats = {
-  files: number;
-  additions: number;
-  deletions: number;
-};
-
 export function gitDiffStats(cwd: string): Promise<GitDiffStats> {
   return invoke<GitDiffStats>("git_diff_stats", { cwd });
 }
-
-export type GitChangedFile = {
-  path: string;
-  relative: string;
-  status: "modified" | "added" | "deleted" | "untracked" | string;
-  additions: number;
-  deletions: number;
-  staged: boolean;
-  unstaged: boolean;
-};
-
-export type GitDiffIndex = {
-  branch: string | null;
-  head: string | null;
-  files: GitChangedFile[];
-  additions: number;
-  deletions: number;
-  remote: string | null;
-  upstream: string | null;
-  defaultBranch: string | null;
-  ahead: number;
-  behind: number;
-  aheadOfDefault: number;
-  headPushed: boolean;
-};
 
 export function gitDiffIndex(cwd: string): Promise<GitDiffIndex> {
   return invoke<GitDiffIndex>("git_diff_index", { cwd });
@@ -215,18 +183,6 @@ export function gitDiffIndex(cwd: string): Promise<GitDiffIndex> {
 export function gitDiffFiles(cwd: string): Promise<GitDiffIndex> {
   return invoke<GitDiffIndex>("git_diff_files", { cwd });
 }
-
-export type GitFileDiff = {
-  path: string;
-  relative: string;
-  status: string;
-  original: string;
-  current: string;
-  binary: boolean;
-  tooLarge: boolean;
-};
-
-export type GitFileDiffKind = "staged" | "unstaged";
 
 export function gitFileDiff(
   cwd: string,
@@ -357,13 +313,6 @@ export type GitRangeContext = {
 export function gitRangeContext(cwd: string): Promise<GitRangeContext> {
   return invoke<GitRangeContext>("git_range_context", { cwd });
 }
-
-export type GitPr = {
-  number: number;
-  title: string;
-  url: string;
-  state: string;
-};
 
 export function gitPrStatus(cwd: string): Promise<GitPr | null> {
   return invoke<GitPr | null>("git_pr_status", { cwd });
@@ -533,11 +482,6 @@ export function readFilePreview(
     startLine,
   });
 }
-
-export type FileMtime = {
-  path: string;
-  mtimeMs: number | null;
-};
 
 export function statFiles(paths: string[]): Promise<FileMtime[]> {
   if (paths.length === 0) return Promise.resolve([]);

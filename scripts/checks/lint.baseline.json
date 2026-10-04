@@ -213,9 +213,6 @@
   "src/features/connections/model/connections.ts": {
     "lint/correctness/useExhaustiveDependencies": 11
   },
-  "src/features/connections/model/remote-attachment-previews.ts": {
-    "lint/style/noNonNullAssertion": 1
-  },
   "src/features/connections/model/remote-session-actions.ts": {
     "lint/suspicious/noConfusingVoidType": 2
   },
@@ -1381,6 +1378,9 @@
   },
   "src/integrations/harness/providers/pi/pi-title.ts": {
     "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/remote/attachment-previews.ts": {
+    "lint/style/noNonNullAssertion": 1
   },
   "src/platform/tauri/clipboard.test.ts": {
     "lint/style/noNonNullAssertion": 6

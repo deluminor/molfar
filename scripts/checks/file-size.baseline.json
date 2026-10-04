@@ -18,7 +18,7 @@
     "lines": 363
   },
   "host/workspace-commands.ts": {
-    "lines": 709
+    "lines": 714
   },
   "host/workspace.ts": {
     "lines": 843
@@ -135,7 +135,7 @@
     "lines": 1248
   },
   "src/app/App.tsx": {
-    "lines": 11697
+    "lines": 11699
   },
   "src/app/hooks/use-workspace-navigation.ts": {
     "lines": 288
@@ -150,10 +150,10 @@
     "lines": 450
   },
   "src/app/shell/ProjectRail.tsx": {
-    "lines": 1227
+    "lines": 1225
   },
   "src/app/shell/Sidebar.tsx": {
-    "lines": 3704
+    "lines": 3705
   },
   "src/app/shell/TitleBar.tsx": {
     "lines": 1080
@@ -180,7 +180,7 @@
     "lines": 2011
   },
   "src/features/connections/model/connections.ts": {
-    "lines": 449
+    "lines": 388
   },
   "src/features/connections/ui/AddRemoteProjectDialog.tsx": {
     "lines": 266
@@ -189,7 +189,7 @@
     "lines": 603
   },
   "src/features/connections/ui/RemoteSession.tsx": {
-    "lines": 1298
+    "lines": 1299
   },
   "src/features/files/editor/editor-editing.ts": {
     "lines": 363
@@ -207,7 +207,7 @@
     "lines": 862
   },
   "src/features/files/model/file-index.ts": {
-    "lines": 303
+    "lines": 304
   },
   "src/features/files/model/file-mentions.ts": {
     "lines": 361
@@ -315,7 +315,7 @@
     "lines": 331
   },
   "src/features/projects/ui/ProjectSearch.tsx": {
-    "lines": 404
+    "lines": 406
   },
   "src/features/projects/ui/SearchableProjectPicker.tsx": {
     "lines": 386
@@ -354,7 +354,7 @@
     "lines": 1245
   },
   "src/features/sessions/model/attachments.ts": {
-    "lines": 547
+    "lines": 430
   },
   "src/features/sessions/model/btw.ts": {
     "lines": 490
@@ -453,7 +453,7 @@
     "lines": 514
   },
   "src/features/source-control/ui/GitChangesPanel.tsx": {
-    "lines": 1719
+    "lines": 1721
   },
   "src/features/source-control/ui/GitHistoryGraph.tsx": {
     "lines": 380
@@ -462,7 +462,7 @@
     "lines": 1108
   },
   "src/features/source-control/ui/WorkingTreeDiff.tsx": {
-    "lines": 308
+    "lines": 310
   },
   "src/features/source-control/ui/WorktreePicker.tsx": {
     "lines": 338
@@ -531,7 +531,7 @@
     "lines": 667
   },
   "src/integrations/harness/providers/antigravity/antigravity-protocol.ts": {
-    "lines": 582
+    "lines": 585
   },
   "src/integrations/harness/providers/antigravity/antigravity.ts": {
     "lines": 835
@@ -552,7 +552,7 @@
     "lines": 303
   },
   "src/integrations/harness/providers/codex/codex-protocol.ts": {
-    "lines": 1383
+    "lines": 1385
   },
   "src/integrations/harness/providers/codex/codex-text.ts": {
     "lines": 478
@@ -579,7 +579,7 @@
     "lines": 531
   },
   "src/integrations/harness/providers/grok/grok-protocol.ts": {
-    "lines": 947
+    "lines": 950
   },
   "src/integrations/harness/providers/grok/grok-text.ts": {
     "lines": 360
@@ -618,7 +618,7 @@
     "lines": 284
   },
   "src/platform/tauri/fs.ts": {
-    "lines": 603
+    "lines": 547
   },
   "src/shared/hooks/use-animated-reorder.ts": {
     "lines": 283
