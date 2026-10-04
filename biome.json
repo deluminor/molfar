@@ -53,6 +53,19 @@
             "requireAscii": true
           }
         }
+      },
+      "correctness": {
+        "useExhaustiveDependencies": {
+          "level": "on",
+          "options": {
+            "hooks": [
+              {
+                "name": "useWorkspaceActions",
+                "stableResult": ["setProjectCwd", "setRecents"]
+              }
+            ]
+          }
+        }
       }
     }
   },

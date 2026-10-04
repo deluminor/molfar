@@ -123,6 +123,10 @@ import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { runUpdateFlow } from "@/features/updates/model/updater";
 import { MenuBar } from "./shell/MenuBar";
 import { Sidebar } from "./shell/Sidebar";
+import { useStore } from "zustand";
+import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
+import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
+import { initialProjectsState } from "./workspace/store/initial-projects";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
 import { AppDialog } from "./shell/AppDialog";
@@ -973,18 +977,12 @@ function Workspace({
   history: bootHistory = [],
   historyCwd: bootHistoryCwd = null,
 }: AppProps) {
-  const [projectCwd, setProjectCwd] = useState(
-    () =>
-      windowTransfer?.projectCwd ??
-      resumed?.projectCwd ??
-      lastProjectPath() ??
-      "~",
+  const [workspaceStore] = useState(() =>
+    createWorkspaceStore(initialProjectsState({ windowTransfer, resumed })),
   );
-  const [recents, setRecents] = useState(() =>
-    resumed?.projectCwd && looksLikeProject(resumed.projectCwd)
-      ? rememberProject(resumed.projectCwd)
-      : loadRecents(),
-  );
+  const { setProjectCwd, setRecents } = useWorkspaceActions(workspaceStore);
+  const projectCwd = useStore(workspaceStore, (state) => state.projectCwd);
+  const recents = useStore(workspaceStore, (state) => state.recents);
   const [seed] = useState(() => {
     const cwd = lastProjectPath() ?? "~";
     const session = newDefaultSession(cwd);
