@@ -855,6 +855,12 @@
           "foreground check inside enqueueHarnessEvent"
         ],
         "target": "src/app/workspace/flows/harness-events/foreground-session.ts"
+      },
+      {
+        "names": [
+          "refreshHistory (App keeps refreshHistory = refreshProjectHistory(workspaceStore, cwd, deps))"
+        ],
+        "target": "src/app/workspace/flows/session-history/refresh-history.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [

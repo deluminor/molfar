@@ -27,6 +27,7 @@ import {
 } from "@/features/inbox/model/ci-repair-tracking";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
+import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -676,7 +677,6 @@ import {
   historyWithLiveSessions,
   mergeHistorySummary,
   mergeProjectHistorySummary,
-  replaceProjectHistory,
   summaryFromSession,
 } from "@/features/sessions/data/session-history";
 import {
@@ -981,7 +981,6 @@ function Workspace({
     setHistory,
     setStoredLinkedSessions,
     setLoadedProjects,
-    setHistoryErrorCwd,
     setFilesSearchOpen,
     setEditorNavigation,
     setFilePickerOpen,
@@ -1146,8 +1145,6 @@ function Workspace({
     new Map<string, { sessionId: string; controller: AbortController }>(),
   );
   const loadedProjects = useWorkspaceField(workspaceStore, "loadedProjects");
-  const loadedProjectsRef = useRef(loadedProjects);
-  loadedProjectsRef.current = loadedProjects;
   const historyErrorCwd = useWorkspaceField(workspaceStore, "historyErrorCwd");
 
   const sessionsRef = useRef(sessions);
@@ -1891,30 +1888,14 @@ function Workspace({
     };
   }, [flushHarnessEvents, keepWorkspaceTab, readProjectReturnMemory]);
 
-  const refreshHistory = useCallback(async (cwd: string) => {
-    if (!cwd || cwd === "~") return;
-    // `history` holds every visited project's rows and the sidebar filters it
-    // by cwd, so a project loaded once paints from cache on the way back and
-    // revalidates quietly underneath the cards already on screen. Whether the
-    // first load is still pending is derived from `loadedProjects`, not
-    // tracked here — a status set from this effect lands a render too late to
-    // suppress the empty state.
-    const key = normalizeProjectPath(cwd);
-    setHistoryErrorCwd((prev) => (prev === key ? null : prev));
-    try {
-      const rows = await listSessionsByProject(cwd);
-      if (cwd !== sidebarCwdRef.current) return;
-      setHistory((current) => replaceProjectHistory(current, cwd, rows));
-      setLoadedProjects((prev) =>
-        prev.has(key) ? prev : new Set(prev).add(key),
-      );
-    } catch {
-      if (cwd !== sidebarCwdRef.current) return;
-      // A failed revalidate keeps the cached cards rather than replacing a
-      // good list with an error.
-      if (!loadedProjectsRef.current.has(key)) setHistoryErrorCwd(key);
-    }
-  }, []);
+  const refreshHistory = useCallback(
+    (cwd: string) =>
+      refreshProjectHistory(workspaceStore, cwd, {
+        list: listSessionsByProject,
+        sidebarCwd: () => sidebarCwdRef.current,
+      }),
+    [workspaceStore],
+  );
 
   useEffect(() => {
     void refreshHistory(sidebarCwd);
