@@ -3,9 +3,7 @@ import { useState } from "react";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
-import {
-  noteSourceProject,
-} from "../notes";
+import { noteSourceProject } from "../notes";
 import type { NoteCardMeta } from "@/domain/notes/note-card";
 import { projectKey } from "@/shared/lib/paths";
 import {

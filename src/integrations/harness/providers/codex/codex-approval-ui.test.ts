@@ -7,9 +7,7 @@ import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
 import { AgentTranscript } from "@/features/sessions/ui/AgentTranscript";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import {
   probeNotificationPermission,

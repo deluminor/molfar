@@ -25,13 +25,28 @@ import {
   type ApprovalDecision,
   type UserQuestionReply,
 } from "@/integrations/harness";
-import { looksLikeProject, type RecentProject, isRemoteProjectPath } from "@/features/projects/model/recents";
+import {
+  looksLikeProject,
+  type RecentProject,
+  isRemoteProjectPath,
+} from "@/features/projects/model/recents";
 import { sessionDisplayTitle } from "@/domain/session/title";
-import { sessionWorkCwd, sessionDraftBlock } from "@/domain/session/session-state";
-import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
+import {
+  sessionWorkCwd,
+  sessionDraftBlock,
+} from "@/domain/session/session-state";
+import type {
+  LinkedWorkItem,
+  Session,
+  WorkspaceMode,
+} from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
-import type { ModelTarget, PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type {
+  ModelTarget,
+  PlanBuildTarget,
+  ComposerTurnOptions,
+} from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import { sessionHasBtwThreads, supportsBtwHarness } from "../model/btw";

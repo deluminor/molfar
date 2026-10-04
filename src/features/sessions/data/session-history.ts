@@ -6,7 +6,7 @@ import { sameProjectPath } from "@/features/projects/model/recents";
 import { sessionDisplayTitle } from "@/domain/session/title";
 import {
   sessionDraftBlock,
-  sessionNeedsInput
+  sessionNeedsInput,
 } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import { shouldPersistSession, type SessionSummary } from "./session-store";

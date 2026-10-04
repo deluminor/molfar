@@ -65,7 +65,7 @@ import { OrchestrationSidebarAgents } from "./OrchestrationSidebarAgents";
 import {
   modelsFor,
   setHarnessModels,
-  resetHarnessModelOverlays
+  resetHarnessModelOverlays,
 } from "@/integrations/harness/core/models/catalog-store";
 import type { OrchestrationProposal } from "@/domain/orchestration/proposal";
 import { invoke } from "@tauri-apps/api/core";

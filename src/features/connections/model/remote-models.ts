@@ -1,7 +1,7 @@
 import type {
   AgentModel,
   ModelSetting,
-  ModelSettingChoice
+  ModelSettingChoice,
 } from "@/domain/models/agent-model";
 import { MODELS } from "@/integrations/harness/core/models/catalog";
 import { CLAUDE_MODEL_CATALOG } from "@/integrations/harness/providers/claude/claude-catalog";

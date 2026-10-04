@@ -1,4 +1,9 @@
-import type { LinkedWorkItemActivityCounts, LinkedWorkItemActivityEntry, LinkedWorkItemActivityKind, LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
+import type {
+  LinkedWorkItemActivityCounts,
+  LinkedWorkItemActivityEntry,
+  LinkedWorkItemActivityKind,
+  LinkedWorkItemUpdateCard,
+} from "@/domain/work-items/linked-activity";
 import {
   githubReviewStateLabel,
   type GithubWorkItemComment,

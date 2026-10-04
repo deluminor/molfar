@@ -1,9 +1,6 @@
 import { nativeModelId } from "../../core/models/resolve-model";
 import { sameProviderAccountId } from "@/features/providers/model/provider-accounts";
-import type {
-  TaskListItem,
-  TaskListMeta
-} from "@/domain/session/task-list";
+import type { TaskListItem, TaskListMeta } from "@/domain/session/task-list";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { loadClaudeHooks } from "@/features/settings/model/settings";
 import {

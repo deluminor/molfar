@@ -12,7 +12,10 @@ import {
   probeHarnessAvailability,
 } from "@/integrations/harness/core/availability";
 import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
-import { resetHarnessModelOverlays, setHarnessModels } from "@/integrations/harness/core/models/catalog-store";
+import {
+  resetHarnessModelOverlays,
+  setHarnessModels,
+} from "@/integrations/harness/core/models/catalog-store";
 
 afterEach(() => {
   resetHarnessModelOverlays();

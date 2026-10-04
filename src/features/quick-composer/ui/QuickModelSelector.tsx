@@ -21,12 +21,18 @@ import {
 } from "@/features/sessions/model/models";
 import {
   findModel,
-  getModelSnapshot, modelsFor, subscribeModels
+  getModelSnapshot,
+  modelsFor,
+  subscribeModels,
 } from "@/integrations/harness/core/models/catalog-store";
 import { modelEffortSetting } from "@/domain/models/model-settings";
 import type { AgentModel } from "@/domain/models/agent-model";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import {
+  HARNESS_TITLE,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   filterQuickModels,

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SessionPaneProps } from "@/features/sessions/ui/SessionPane";
-import type {
-  Session,
-  WorkspaceMode
-} from "@/domain/session/session";
+import type { Session, WorkspaceMode } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
-import type { PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type {
+  PlanBuildTarget,
+  ComposerTurnOptions,
+} from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import { uploadRemoteAttachments } from "../model/remote-attachments";

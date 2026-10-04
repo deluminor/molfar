@@ -4,7 +4,11 @@ import { limitSection } from "@/shared/lib/json-text";
 import { displayPath } from "@/shared/lib/paths";
 import type { Block } from "@/domain/session/block";
 import type { SecondOpinionMeta } from "@/domain/session/block-meta";
-import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import {
+  HARNESS_TITLE,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
 
 const USER_LIMIT = 400;
 const REPORT_LIMIT = 900;

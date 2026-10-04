@@ -31,9 +31,7 @@ import {
   type ProjectReturnMemory,
 } from "@/features/projects/model/project-return";
 import type { InboxAskContext } from "@/domain/work-items/inbox-ask-context";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
 import { HARNESSES, type HarnessId } from "@/domain/harness/harness";

@@ -2,9 +2,7 @@
 import { act, createElement, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import {

@@ -71,7 +71,11 @@ import { hasPendingApproval } from "@/domain/session/session-state";
 import type { Block } from "@/domain/session/block";
 import type { AgentStep, ToolPreview } from "@/domain/session/agent-run";
 import type { InterjectionMeta } from "@/domain/session/block-meta";
-import type { TurnMetrics, ModelTarget, PlanBuildTarget } from "@/domain/session/turn";
+import type {
+  TurnMetrics,
+  ModelTarget,
+  PlanBuildTarget,
+} from "@/domain/session/turn";
 import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";

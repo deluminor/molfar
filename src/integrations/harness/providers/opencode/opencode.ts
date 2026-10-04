@@ -1,4 +1,7 @@
-import { modelContextWindow, nativeModelId } from "../../core/models/resolve-model";
+import {
+  modelContextWindow,
+  nativeModelId,
+} from "../../core/models/resolve-model";
 import type { TurnMetrics } from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { taskListFromToolInput } from "@/domain/session/task-list";

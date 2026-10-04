@@ -9,7 +9,10 @@ import {
   validateOrchestrationSettings,
   validateProposedTasks,
 } from "./orchestration-plan";
-import type { OrchestrationChoice, OrchestrationProposal } from "@/domain/orchestration/proposal";
+import type {
+  OrchestrationChoice,
+  OrchestrationProposal,
+} from "@/domain/orchestration/proposal";
 import {
   normalizeOrchestrationRun,
   orchestrationCheckoutCwd,

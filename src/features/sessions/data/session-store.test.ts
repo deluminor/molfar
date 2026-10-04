@@ -2,9 +2,7 @@ import { appendUser, applyHarnessEvents } from "@/integrations/harness/core/appl
 import { describe, expect, it } from "vitest";
 import { mapCodexNotification } from "@/integrations/harness/providers/codex/codex-protocol";
 import { toolCallLabel } from "../model/transcript-activity";
-import {
-  newSession,
-} from "../model/session";
+import { newSession } from "../model/session";
 import type { Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type { BtwThread } from "@/domain/session/block-meta";

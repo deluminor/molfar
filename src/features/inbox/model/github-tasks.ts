@@ -40,7 +40,12 @@ import {
   type RecentProject,
 } from "@/features/projects/model/recents";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
-import type { GithubLabel, GithubTaskKind, InboxKind, InboxProvider } from "@/domain/work-items/work-item";
+import type {
+  GithubLabel,
+  GithubTaskKind,
+  InboxKind,
+  InboxProvider,
+} from "@/domain/work-items/work-item";
 import type { InboxComposerCard } from "@/domain/work-items/inbox-card";
 
 export type GithubPrAction =

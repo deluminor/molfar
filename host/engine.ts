@@ -16,7 +16,7 @@ import type {
 import {
   canReplaceSessionTitle,
   formatSessionTitle,
-  titleFromPrompt
+  titleFromPrompt,
 } from "@/domain/session/title";
 import type { Session } from "@/domain/session/session";
 import { RUNTIME_MODES } from "@/domain/session/runtime-mode";

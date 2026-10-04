@@ -11,7 +11,7 @@ import type { Block } from "@/domain/session/block";
 import { HARNESS_TITLE } from "@/domain/harness/harness";
 import type {
   OrchestrationChoice,
-  ProposedTask
+  ProposedTask,
 } from "@/domain/orchestration/proposal";
 import { orchestrator } from "../model/orchestration";
 import { resizeComposer } from "@/features/sessions/model/composer-resize";
@@ -20,7 +20,7 @@ import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-m
 import { findModel } from "@/integrations/harness/core/models/catalog-store";
 import {
   modelEffortLabel,
-  modelEffortSetting
+  modelEffortSetting,
 } from "@/domain/models/model-settings";
 import { LAYER } from "@/shared/lib/layers";
 import { OrchestrationActions } from "./orchestration-actions";

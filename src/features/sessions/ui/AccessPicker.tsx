@@ -11,7 +11,12 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { RUNTIME_MODE_HINT, RUNTIME_MODE_LABEL, RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
+import {
+  RUNTIME_MODE_HINT,
+  RUNTIME_MODE_LABEL,
+  RUNTIME_MODES,
+  type RuntimeMode,
+} from "@/domain/session/runtime-mode";
 import { Popover } from "@/shared/ui/Popover";
 
 type Props = {

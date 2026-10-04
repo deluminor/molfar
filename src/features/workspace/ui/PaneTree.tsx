@@ -35,10 +35,18 @@ import {
 } from "@/features/projects/model/recents";
 import type { TerminalMetaPatch } from "@/features/terminal/model/terminal-tab";
 import { sessionWorkCwd } from "@/domain/session/session-state";
-import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
+import type {
+  LinkedWorkItem,
+  Session,
+  WorkspaceMode,
+} from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
-import type { ModelTarget, PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type {
+  ModelTarget,
+  PlanBuildTarget,
+  ComposerTurnOptions,
+} from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import { FilePane } from "@/features/files/ui/FilePane";

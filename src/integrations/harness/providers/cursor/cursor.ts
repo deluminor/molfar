@@ -2,7 +2,10 @@ import { nativeModelId } from "../../core/models/resolve-model";
 import { AcpSubagents } from "../../core/acp-subagents";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { promptBlocks } from "@/domain/session/attachment-prompt";
-import { isTaskListToolName, taskListFromToolInput } from "@/domain/session/task-list";
+import {
+  isTaskListToolName,
+  taskListFromToolInput,
+} from "@/domain/session/task-list";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,

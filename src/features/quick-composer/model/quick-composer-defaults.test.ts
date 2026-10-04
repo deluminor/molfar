@@ -5,7 +5,11 @@ import {
   saveLastModelChoice,
   savePickerProviderVisible,
 } from "@/features/sessions/model/models";
-import { defaultModelId, resetHarnessModelOverlays, setHarnessModels } from "@/integrations/harness/core/models/catalog-store";
+import {
+  defaultModelId,
+  resetHarnessModelOverlays,
+  setHarnessModels,
+} from "@/integrations/harness/core/models/catalog-store";
 import { initialQuickChoice, resolveQuickModel } from "./quick-composer";
 
 beforeEach(() => {

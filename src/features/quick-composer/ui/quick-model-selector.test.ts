@@ -3,12 +3,10 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QuickModelSelector } from "./QuickModelSelector";
-import {
-  saveLastModelSettings,
-} from "@/features/sessions/model/models";
+import { saveLastModelSettings } from "@/features/sessions/model/models";
 import {
   resetHarnessModelOverlays,
-  setHarnessModels
+  setHarnessModels,
 } from "@/integrations/harness/core/models/catalog-store";
 import type { AgentModel } from "@/domain/models/agent-model";
 

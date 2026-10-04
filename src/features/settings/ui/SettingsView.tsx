@@ -175,7 +175,12 @@ import {
   savePickerProviderVisible,
 } from "@/features/sessions/model/models";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
-import { defaultModelId, getModelSnapshot, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import {
+  defaultModelId,
+  getModelSnapshot,
+  modelsFor,
+  subscribeModels,
+} from "@/integrations/harness/core/models/catalog-store";
 import {
   pathKey,
   prettyCwd,
@@ -192,7 +197,11 @@ import {
   type RecentProject,
 } from "@/features/projects/model/recents";
 import { sessionDisplayTitle } from "@/domain/session/title";
-import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import {
+  HARNESS_TITLE,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
 import {
   loadProjectProviderSettings,
   projectProvidersRevision,

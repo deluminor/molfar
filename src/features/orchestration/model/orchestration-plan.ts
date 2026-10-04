@@ -1,4 +1,8 @@
-import type { OrchestrationSettings, ProposedTask, OrchestrationProposal } from "@/domain/orchestration/proposal";
+import type {
+  OrchestrationSettings,
+  ProposedTask,
+  OrchestrationProposal,
+} from "@/domain/orchestration/proposal";
 import type { Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import { HARNESSES, type HarnessId } from "@/domain/harness/harness";

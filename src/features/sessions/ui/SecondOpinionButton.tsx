@@ -30,7 +30,12 @@ import {
   subscribePickerVisibility,
 } from "../model/models";
 import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-model";
-import { getModelSnapshot, hasLiveCatalog, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import {
+  getModelSnapshot,
+  hasLiveCatalog,
+  modelsFor,
+  subscribeModels,
+} from "@/integrations/harness/core/models/catalog-store";
 import { modelEffortSetting } from "@/domain/models/model-settings";
 import { LAYER } from "@/shared/lib/layers";
 import { secondOpinionTargets } from "../model/second-opinion";

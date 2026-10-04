@@ -66,9 +66,7 @@ import {
   type MentionToken,
 } from "@/features/files/model/file-mentions";
 import type { ProjectFile } from "@/domain/files/file-entry";
-import {
-  composeInboxMessage,
-} from "@/features/inbox/model/github-tasks";
+import { composeInboxMessage } from "@/features/inbox/model/github-tasks";
 import type { InboxComposerCard } from "@/domain/work-items/inbox-card";
 import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 import {
@@ -79,12 +77,16 @@ import type { WorkspaceMode } from "@/domain/session/session";
 import type {
   MessageQueueStatus,
   QueuedMessage,
-  UsageLimit
+  UsageLimit,
 } from "@/domain/session/message-queue";
 import type { Attachment } from "@/domain/session/attachment";
 import type { ComposerTurnOptions } from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import { type HarnessId, HARNESS_TITLE, harnessSupportsAttachments } from "@/domain/harness/harness";
+import {
+  type HarnessId,
+  HARNESS_TITLE,
+  harnessSupportsAttachments,
+} from "@/domain/harness/harness";
 import type {
   UserQuestionPrompt,
   UserQuestionReply,
@@ -140,7 +142,14 @@ import {
   subscribeModelControls,
   subscribeNotesEnabled,
 } from "@/features/settings/model/settings";
-import { isNoteMentionPath, loadNotes, peekNotes, rankNoteFiles, notesAsProjectFiles, type Note } from "@/features/notes/notes";
+import {
+  isNoteMentionPath,
+  loadNotes,
+  peekNotes,
+  rankNoteFiles,
+  notesAsProjectFiles,
+  type Note,
+} from "@/features/notes/notes";
 import type { NoteComposerCard } from "@/domain/notes/note-card";
 import { resolveTabGroupLogo } from "@/features/workspace/model/tab-groups";
 import { useComposerSkills } from "./use-composer-skills";

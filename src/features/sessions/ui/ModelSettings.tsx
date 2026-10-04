@@ -8,7 +8,10 @@ import {
 } from "react";
 import { Popover } from "@/shared/ui/Popover";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
-import { getModelSnapshot, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import {
+  getModelSnapshot,
+  subscribeModels,
+} from "@/integrations/harness/core/models/catalog-store";
 import type { ModelSetting } from "@/domain/models/agent-model";
 import type { HarnessId } from "@/domain/harness/harness";
 

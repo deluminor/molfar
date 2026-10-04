@@ -205,8 +205,16 @@ import {
 } from "@/features/sessions/model/handoff";
 import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 import { requestOutgoingHandoff } from "@/features/sessions/model/handoff-turn";
-import { preferredModelSettings, saveLastModelSettings, saveRecentModelChoice } from "@/features/sessions/model/models";
-import { mergeModelSettings, nativeModelId, resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import {
+  preferredModelSettings,
+  saveLastModelSettings,
+  saveRecentModelChoice,
+} from "@/features/sessions/model/models";
+import {
+  mergeModelSettings,
+  nativeModelId,
+  resolveModel,
+} from "@/integrations/harness/core/models/resolve-model";
 import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
 import {
   confirmCloseTerminal,
@@ -324,7 +332,10 @@ import {
   invalidateWatchedFiles,
   nudgeWatchedFiles,
 } from "@/features/files/model/file-watch";
-import type { EditorNavigationTarget, OpenFileFn } from "@/features/search/model/search";
+import type {
+  EditorNavigationTarget,
+  OpenFileFn,
+} from "@/features/search/model/search";
 import {
   applySessionCheckpoint,
   beginSessionTurn,
@@ -391,18 +402,41 @@ import {
 } from "@/features/sessions/model/session";
 import {
   canReplaceSessionTitle,
-  formatSessionTitle, sessionDisplayTitle,
-  titleFromPrompt
+  formatSessionTitle,
+  sessionDisplayTitle,
+  titleFromPrompt,
 } from "@/domain/session/title";
-import { sessionWorkCwd, removeSessionDraft, sessionDraftBlock, sessionNeedsInput } from "@/domain/session/session-state";
-import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
+import {
+  sessionWorkCwd,
+  removeSessionDraft,
+  sessionDraftBlock,
+  sessionNeedsInput,
+} from "@/domain/session/session-state";
+import type {
+  LinkedWorkItem,
+  Session,
+  WorkspaceMode,
+} from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type { UsageLimit } from "@/domain/session/message-queue";
 import type { Attachment } from "@/domain/session/attachment";
-import type { BtwThread, PlanStatus, SecondOpinionMeta } from "@/domain/session/block-meta";
-import type { ModelTarget, PlanBuildTarget, ComposerTurnOptions } from "@/domain/session/turn";
+import type {
+  BtwThread,
+  PlanStatus,
+  SecondOpinionMeta,
+} from "@/domain/session/block-meta";
+import type {
+  ModelTarget,
+  PlanBuildTarget,
+  ComposerTurnOptions,
+} from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import { HARNESS_LABEL, HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import {
+  HARNESS_LABEL,
+  HARNESS_TITLE,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
 import { createSessionRemover } from "@/features/sessions/model/session-removal";
 import { shouldGenerateSessionTitle } from "@/domain/session/generated-title";
 import {
@@ -427,8 +461,21 @@ import {
 } from "@/shared/lib/paths";
 
 import { claimInboxAutomationRuns } from "@/features/automations/model/automation-events";
-import { claimDueAutomations, recoverAutomationRuns, updateAutomationRun, type Automation, type AutomationRun, listAutomations } from "@/features/automations/model/automations";
-import { ADD_NOTE_TO_CHAT_EVENT, composeNoteMessage, NOTES_CHANGED_EVENT, upsertNote, loadNotes } from "@/features/notes/notes";
+import {
+  claimDueAutomations,
+  recoverAutomationRuns,
+  updateAutomationRun,
+  type Automation,
+  type AutomationRun,
+  listAutomations,
+} from "@/features/automations/model/automations";
+import {
+  ADD_NOTE_TO_CHAT_EVENT,
+  composeNoteMessage,
+  NOTES_CHANGED_EVENT,
+  upsertNote,
+  loadNotes,
+} from "@/features/notes/notes";
 import { noteCardMeta, type NoteComposerCard } from "@/domain/notes/note-card";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";

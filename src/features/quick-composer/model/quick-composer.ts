@@ -12,19 +12,23 @@ import {
   looksLikeProject,
   normalizeProjectPath,
 } from "@/features/projects/model/recents";
-import {
-  defaultSessionChoice,
-} from "@/features/sessions/model/models";
+import { defaultSessionChoice } from "@/features/sessions/model/models";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   hasLiveCatalog,
-  modelsFor, setHarnessModels
+  modelsFor,
+  setHarnessModels,
 } from "@/integrations/harness/core/models/catalog-store";
 import type { AgentModel } from "@/domain/models/agent-model";
 import type { WorkspaceMode } from "@/domain/session/session";
 import type { Attachment } from "@/domain/session/attachment";
 import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
-import { HARNESS_TITLE, harnessSupportsAttachments, HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import {
+  HARNESS_TITLE,
+  harnessSupportsAttachments,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
 
 /** Workspace windows hear this when the panel has a session for them. */
 export const QUICK_COMPOSER_LAUNCH_EVENT = "quick_composer_launch";

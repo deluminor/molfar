@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HarnessEvent, SendTurnInput } from "../../core/types";
-import { modelsFor, resetHarnessModelOverlays } from "../../core/models/catalog-store";
+import {
+  modelsFor,
+  resetHarnessModelOverlays,
+} from "../../core/models/catalog-store";
 
 const mock = vi.hoisted(() => {
   const listeners = new Map<string, (line: string) => void>();

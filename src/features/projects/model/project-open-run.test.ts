@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newTab } from "@/features/workspace/model/layout";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import type { HarnessId } from "@/domain/harness/harness";
 import { planProjectOpenRun, type ProjectOpenStep } from "./project-open-run";

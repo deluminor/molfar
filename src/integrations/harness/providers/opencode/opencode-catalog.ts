@@ -1,6 +1,10 @@
 import { homeDir } from "@/platform/tauri/fs";
 import { setHarnessModels } from "../../core/models/catalog-store";
-import type { AgentModel, ModelSetting, ModelSettingChoice } from "@/domain/models/agent-model";
+import type {
+  AgentModel,
+  ModelSetting,
+  ModelSettingChoice,
+} from "@/domain/models/agent-model";
 import { execChild, resolveOpenCodeBinary } from "../../core/child";
 import {
   compareSemver,

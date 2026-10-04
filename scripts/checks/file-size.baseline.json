@@ -135,7 +135,7 @@
     "lines": 1248
   },
   "src/app/App.tsx": {
-    "lines": 11699
+    "lines": 11746
   },
   "src/app/hooks/use-workspace-navigation.ts": {
     "lines": 288
@@ -156,10 +156,10 @@
     "lines": 3705
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 1080
+    "lines": 1083
   },
   "src/app/shell/UsageFooter.tsx": {
-    "lines": 592
+    "lines": 596
   },
   "src/app/shell/UsageProviderChip.tsx": {
     "lines": 1165
@@ -168,7 +168,7 @@
     "lines": 606
   },
   "src/features/agent-app/model/agent-app.ts": {
-    "lines": 667
+    "lines": 673
   },
   "src/features/automations/model/automation-templates.ts": {
     "lines": 363
@@ -222,7 +222,7 @@
     "lines": 1304
   },
   "src/features/files/ui/FilePane.tsx": {
-    "lines": 389
+    "lines": 396
   },
   "src/features/files/ui/FilePicker.tsx": {
     "lines": 463
@@ -243,7 +243,7 @@
     "lines": 285
   },
   "src/features/inbox/model/github-tasks.ts": {
-    "lines": 1227
+    "lines": 1232
   },
   "src/features/inbox/model/gitlab.ts": {
     "lines": 259
@@ -270,7 +270,7 @@
     "lines": 3247
   },
   "src/features/inbox/ui/LinkedWorkItemUpdateNotice.tsx": {
-    "lines": 301
+    "lines": 304
   },
   "src/features/notes/notes.ts": {
     "lines": 351
@@ -288,10 +288,10 @@
     "lines": 417
   },
   "src/features/orchestration/model/orchestration-plan.ts": {
-    "lines": 344
+    "lines": 348
   },
   "src/features/orchestration/model/orchestration.ts": {
-    "lines": 2162
+    "lines": 2165
   },
   "src/features/orchestration/ui/OrchestrationPreview.tsx": {
     "lines": 786
@@ -330,16 +330,16 @@
     "lines": 515
   },
   "src/features/providers/ui/HarnessUpdateNotice.tsx": {
-    "lines": 282
+    "lines": 286
   },
   "src/features/quick-composer/model/quick-composer.ts": {
-    "lines": 301
+    "lines": 305
   },
   "src/features/quick-composer/ui/QuickComposer.tsx": {
-    "lines": 879
+    "lines": 886
   },
   "src/features/quick-composer/ui/QuickModelSelector.tsx": {
-    "lines": 440
+    "lines": 446
   },
   "src/features/quick-composer/ui/use-quick-attachments.ts": {
     "lines": 288
@@ -351,19 +351,19 @@
     "lines": 673
   },
   "src/features/sessions/data/session-store.ts": {
-    "lines": 1245
+    "lines": 1239
   },
   "src/features/sessions/model/attachments.ts": {
     "lines": 430
   },
   "src/features/sessions/model/btw.ts": {
-    "lines": 490
+    "lines": 487
   },
   "src/features/sessions/model/composer-runner.ts": {
     "lines": 395
   },
   "src/features/sessions/model/handoff.ts": {
-    "lines": 467
+    "lines": 470
   },
   "src/features/sessions/model/models.ts": {
     "lines": 368
@@ -381,7 +381,7 @@
     "lines": 941
   },
   "src/features/sessions/ui/AgentTranscript.tsx": {
-    "lines": 3844
+    "lines": 3848
   },
   "src/features/sessions/ui/AstraWelcome.css": {
     "lines": 328
@@ -390,16 +390,16 @@
     "lines": 868
   },
   "src/features/sessions/ui/Composer.tsx": {
-    "lines": 2839
+    "lines": 2848
   },
   "src/features/sessions/ui/ComposerRunner.tsx": {
     "lines": 491
   },
   "src/features/sessions/ui/ModelPicker.tsx": {
-    "lines": 1587
+    "lines": 1594
   },
   "src/features/sessions/ui/ModelSettings.tsx": {
-    "lines": 257
+    "lines": 260
   },
   "src/features/sessions/ui/PromptOutline.tsx": {
     "lines": 382
@@ -408,10 +408,10 @@
     "lines": 383
   },
   "src/features/sessions/ui/SecondOpinionButton.tsx": {
-    "lines": 601
+    "lines": 606
   },
   "src/features/sessions/ui/SessionPane.tsx": {
-    "lines": 972
+    "lines": 987
   },
   "src/features/sessions/ui/SessionReview.tsx": {
     "lines": 269
@@ -432,7 +432,7 @@
     "lines": 645
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "lines": 4459
+    "lines": 4468
   },
   "src/features/skills/model/skills.ts": {
     "lines": 541
@@ -498,13 +498,13 @@
     "lines": 267
   },
   "src/features/workspace/model/workspace-snapshot.ts": {
-    "lines": 737
+    "lines": 735
   },
   "src/features/workspace/model/workspace-tab-groups.ts": {
     "lines": 479
   },
   "src/features/workspace/ui/PaneTree.tsx": {
-    "lines": 694
+    "lines": 702
   },
   "src/features/workspace/ui/SurfaceTabs.tsx": {
     "lines": 468
@@ -516,13 +516,13 @@
     "lines": 639
   },
   "src/integrations/harness/core/apply.ts": {
-    "lines": 1272
+    "lines": 1273
   },
   "src/integrations/harness/core/child.ts": {
     "lines": 541
   },
   "src/integrations/harness/core/preview.ts": {
-    "lines": 1086
+    "lines": 1090
   },
   "src/integrations/harness/core/registry.ts": {
     "lines": 541
@@ -531,7 +531,7 @@
     "lines": 667
   },
   "src/integrations/harness/providers/antigravity/antigravity-protocol.ts": {
-    "lines": 585
+    "lines": 589
   },
   "src/integrations/harness/providers/antigravity/antigravity.ts": {
     "lines": 835
@@ -540,37 +540,37 @@
     "lines": 578
   },
   "src/integrations/harness/providers/claude/claude-protocol.ts": {
-    "lines": 1186
+    "lines": 1191
   },
   "src/integrations/harness/providers/claude/claude-text.ts": {
     "lines": 447
   },
   "src/integrations/harness/providers/claude/claude.ts": {
-    "lines": 1821
+    "lines": 1818
   },
   "src/integrations/harness/providers/codex/codex-catalog.ts": {
-    "lines": 303
+    "lines": 307
   },
   "src/integrations/harness/providers/codex/codex-protocol.ts": {
-    "lines": 1385
+    "lines": 1388
   },
   "src/integrations/harness/providers/codex/codex-text.ts": {
     "lines": 478
   },
   "src/integrations/harness/providers/codex/codex.ts": {
-    "lines": 1376
+    "lines": 1379
   },
   "src/integrations/harness/providers/cursor/cursor-catalog.ts": {
-    "lines": 485
+    "lines": 489
   },
   "src/integrations/harness/providers/cursor/cursor-text.ts": {
     "lines": 422
   },
   "src/integrations/harness/providers/cursor/cursor.ts": {
-    "lines": 1642
+    "lines": 1645
   },
   "src/integrations/harness/providers/fx/fx-protocol.ts": {
-    "lines": 717
+    "lines": 721
   },
   "src/integrations/harness/providers/fx/fx-tool.ts": {
     "lines": 272
@@ -579,19 +579,19 @@
     "lines": 531
   },
   "src/integrations/harness/providers/grok/grok-protocol.ts": {
-    "lines": 950
+    "lines": 959
   },
   "src/integrations/harness/providers/grok/grok-text.ts": {
     "lines": 360
   },
   "src/integrations/harness/providers/grok/grok.ts": {
-    "lines": 636
+    "lines": 639
   },
   "src/integrations/harness/providers/hermes/hermes.ts": {
     "lines": 623
   },
   "src/integrations/harness/providers/opencode/opencode-catalog.ts": {
-    "lines": 259
+    "lines": 263
   },
   "src/integrations/harness/providers/opencode/opencode-client.ts": {
     "lines": 290
@@ -603,7 +603,7 @@
     "lines": 444
   },
   "src/integrations/harness/providers/opencode/opencode.ts": {
-    "lines": 1381
+    "lines": 1384
   },
   "src/integrations/harness/providers/pi/pi-family.ts": {
     "lines": 1292

@@ -8,7 +8,10 @@ import {
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { loadProjectProviderSettings } from "./project-providers";
 import { HARNESS_LABEL, type HarnessId } from "@/domain/harness/harness";
-import { DEFAULT_RUNTIME_MODE, type RuntimeMode } from "@/domain/session/runtime-mode";
+import {
+  DEFAULT_RUNTIME_MODE,
+  type RuntimeMode,
+} from "@/domain/session/runtime-mode";
 import type { Session } from "@/domain/session/session";
 
 export function newSession(

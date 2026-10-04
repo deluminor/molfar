@@ -24,7 +24,10 @@ import {
   type ReactNode,
 } from "react";
 import { basename } from "@/platform/tauri/fs";
-import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
+import {
+  looksLikeProject,
+  type RecentProject,
+} from "@/features/projects/model/recents";
 import type { HarnessId } from "@/domain/harness/harness";
 import { CwdPicker } from "@/features/projects/ui/CwdPicker";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";

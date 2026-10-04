@@ -6,7 +6,12 @@ import {
   Shield,
   Sparkles,
 } from "@/shared/ui/icons";
-import { RUNTIME_MODES, RUNTIME_MODE_HINT, RUNTIME_MODE_LABEL, type RuntimeMode } from "@/domain/session/runtime-mode";
+import {
+  RUNTIME_MODES,
+  RUNTIME_MODE_HINT,
+  RUNTIME_MODE_LABEL,
+  type RuntimeMode,
+} from "@/domain/session/runtime-mode";
 
 const ICONS = {
   supervised: Lock,

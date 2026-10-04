@@ -9,9 +9,7 @@ import {
 import { flushSessionCheckpoint } from "./checkpoint";
 import { isFilesystemTab, type WorkspaceTab } from "@/features/workspace/model/layout";
 import { orchestrator } from "@/features/orchestration/model/orchestration";
-import {
-  newSession,
-} from "./session";
+import { newSession } from "./session";
 import type { Session } from "@/domain/session/session";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";

@@ -1,7 +1,12 @@
 import type { Attachment } from "@/domain/session/attachment";
 import type { ToolPreview } from "@/domain/session/agent-run";
 import type { TurnMetrics } from "@/domain/session/turn";
-import { type TaskListItem, isTaskListToolName, normalizeTaskListStatus, taskListFromToolInput } from "@/domain/session/task-list";
+import {
+  type TaskListItem,
+  isTaskListToolName,
+  normalizeTaskListStatus,
+  taskListFromToolInput,
+} from "@/domain/session/task-list";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   attachmentPathText,

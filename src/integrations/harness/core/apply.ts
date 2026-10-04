@@ -3,7 +3,8 @@ import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
 import type {
   AgentRunMeta,
-  AgentStep, ToolPreview
+  AgentStep,
+  ToolPreview,
 } from "@/domain/session/agent-run";
 import { type TaskListItem, taskListText } from "@/domain/session/task-list";
 import { mergeContextUsage } from "@/domain/session/context-usage";

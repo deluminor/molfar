@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   resetHarnessModelOverlays,
-  setHarnessModels
+  setHarnessModels,
 } from "./models/catalog-store";
 import type { HarnessId } from "@/domain/harness/harness";
 import {

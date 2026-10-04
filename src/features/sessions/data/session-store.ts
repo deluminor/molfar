@@ -17,26 +17,20 @@ import {
   backfillOmpInterjections,
   ompStatusSplitTexts,
 } from "../model/omp-interjections";
-import type {
-  LinkedWorkItem,
-  Session
-} from "@/domain/session/session";
+import type { LinkedWorkItem, Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type { GeneratedImageMeta } from "@/domain/session/attachment";
-import type {
-  AgentRunMeta,
-  AgentStep
-} from "@/domain/session/agent-run";
+import type { AgentRunMeta, AgentStep } from "@/domain/session/agent-run";
 import type {
   BtwMessage,
-  BtwThread, HandoffMeta,
+  BtwThread,
+  HandoffMeta,
   HandoffStatus,
-  InterjectionMeta, SecondOpinionMeta, PlanBlockMeta
+  InterjectionMeta,
+  SecondOpinionMeta,
+  PlanBlockMeta,
 } from "@/domain/session/block-meta";
-import type {
-  TurnModel,
-  TurnMetrics
-} from "@/domain/session/turn";
+import type { TurnModel, TurnMetrics } from "@/domain/session/turn";
 import type { TaskListMeta } from "@/domain/session/task-list";
 import { type RuntimeMode, RUNTIME_MODES } from "@/domain/session/runtime-mode";
 import { type HarnessId, HARNESSES } from "@/domain/harness/harness";

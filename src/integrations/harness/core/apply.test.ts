@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import { planTurnKey } from "@/features/sessions/model/plan";
 import { sanitizeSessionForPersist } from "@/features/sessions/data/session-store";

@@ -5,7 +5,10 @@ import {
   parseCodexRateLimits,
 } from "@/features/providers/model/rate-limits";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import { questionPromptTitle, type UserQuestionReply } from "@/domain/session/user-question";
+import {
+  questionPromptTitle,
+  type UserQuestionReply,
+} from "@/domain/session/user-question";
 import {
   killChild,
   resolveCodexBinary,

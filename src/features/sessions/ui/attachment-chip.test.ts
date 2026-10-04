@@ -2,7 +2,10 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Attachment, GeneratedImageMeta } from "@/domain/session/attachment";
+import type {
+  Attachment,
+  GeneratedImageMeta,
+} from "@/domain/session/attachment";
 import * as fs from "@/platform/tauri/fs";
 import { GeneratedImage } from "./GeneratedImage";
 

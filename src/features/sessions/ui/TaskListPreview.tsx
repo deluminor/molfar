@@ -1,5 +1,9 @@
 import { Check, ListEnd, Loader, Minus } from "@/shared/ui/icons";
-import { type TaskListItem, type TaskListItemStatus, taskListProgressLabel } from "@/domain/session/task-list";
+import {
+  type TaskListItem,
+  type TaskListItemStatus,
+  taskListProgressLabel,
+} from "@/domain/session/task-list";
 
 type Props = {
   items: TaskListItem[];

@@ -3,10 +3,7 @@ import type { HarnessEvent } from "@/integrations/harness/core/types";
 import { displayPath } from "@/shared/lib/paths";
 import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
-import type {
-  BtwMessage,
-  BtwThread
-} from "@/domain/session/block-meta";
+import type { BtwMessage, BtwThread } from "@/domain/session/block-meta";
 import type { HarnessId } from "@/domain/harness/harness";
 import { newSession } from "./session";
 import type { BuiltinSkill } from "@/features/skills/model/skills";

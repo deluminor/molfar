@@ -4,7 +4,10 @@ import { limitSection } from "@/shared/lib/json-text";
 import { displayPath } from "@/shared/lib/paths";
 import type { PendingHarnessSwitch, Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type { HandoffMeta, SecondOpinionMeta } from "@/domain/session/block-meta";
+import type {
+  HandoffMeta,
+  SecondOpinionMeta,
+} from "@/domain/session/block-meta";
 import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 

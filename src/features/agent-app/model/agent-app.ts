@@ -6,13 +6,19 @@ import {
   searchConfluence,
 } from "@/features/inbox/model/confluence/api";
 import { confluenceFolderTocMarkdown } from "@/features/inbox/model/confluence/prompt";
-import { normalizeNoteTags, noteTitle, type Note, type NoteUpsert } from "@/features/notes/notes";
+import {
+  normalizeNoteTags,
+  noteTitle,
+  type Note,
+  type NoteUpsert,
+} from "@/features/notes/notes";
 import { looksLikeProject } from "@/features/projects/model/recents";
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
+import { preferredModelId } from "@/features/sessions/model/models";
 import {
-  preferredModelId,
-} from "@/features/sessions/model/models";
-import { mergeModelSettings, resolveModel } from "@/integrations/harness/core/models/resolve-model";
+  mergeModelSettings,
+  resolveModel,
+} from "@/integrations/harness/core/models/resolve-model";
 import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
 import { modelEffortSetting } from "@/domain/models/model-settings";
 import { consumeOperatorCommand } from "@/features/sessions/model/operator-command";
@@ -20,7 +26,7 @@ import type { Session } from "@/domain/session/session";
 import {
   RUNTIME_MODE_HINT,
   RUNTIME_MODE_LABEL,
-  RUNTIME_MODES
+  RUNTIME_MODES,
 } from "@/domain/session/runtime-mode";
 import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import {

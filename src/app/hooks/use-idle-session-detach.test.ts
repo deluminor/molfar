@@ -18,9 +18,7 @@ import {
 } from "@/features/sessions/data/session-store";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import {
   newTab,

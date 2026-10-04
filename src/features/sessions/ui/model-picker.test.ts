@@ -64,10 +64,11 @@ vi.mock("@/shared/ui/Popover", () => ({
 }));
 
 import { ModelControlPills, ModelPicker } from "./ModelPicker";
+import { saveRecentModelChoice } from "../model/models";
 import {
-  saveRecentModelChoice,
-} from "../model/models";
-import { resetHarnessModelOverlays, setHarnessModels } from "@/integrations/harness/core/models/catalog-store";
+  resetHarnessModelOverlays,
+  setHarnessModels,
+} from "@/integrations/harness/core/models/catalog-store";
 
 let container: HTMLDivElement;
 let root: Root;

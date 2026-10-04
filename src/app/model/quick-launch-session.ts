@@ -7,11 +7,9 @@ import { applyQuickWorkspace } from "@/features/quick-composer/model/quick-works
 import { prepareAttachments } from "@/features/sessions/model/attachments";
 import {
   mergeModelSettings,
-  resolveModel
+  resolveModel,
 } from "@/integrations/harness/core/models/resolve-model";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import type { Attachment } from "@/domain/session/attachment";
 import {

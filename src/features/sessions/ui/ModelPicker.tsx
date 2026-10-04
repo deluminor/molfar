@@ -28,7 +28,10 @@ import {
   subscribePickerVisibility,
   type ModelPickerTab,
 } from "../model/models";
-import { getModelSnapshot, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import {
+  getModelSnapshot,
+  subscribeModels,
+} from "@/integrations/harness/core/models/catalog-store";
 import { isEffortSettingId } from "@/domain/models/model-settings";
 import type { AgentModel, ModelSetting } from "@/domain/models/agent-model";
 import {
@@ -42,7 +45,11 @@ import {
   getHarnessAvailabilitySnapshot,
 } from "@/integrations/harness/core/availability";
 import { useModelSource, type ModelSource } from "./model-source";
-import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import {
+  HARNESS_TITLE,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { LAYER } from "@/shared/lib/layers";
 import { HarnessIcon } from "./HarnessIcon";

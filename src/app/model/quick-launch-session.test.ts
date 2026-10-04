@@ -4,9 +4,7 @@ import { rememberProject } from "@/features/projects/model/recents";
 import { ProjectNotFoundError } from "@/features/projects/model/project-location-error";
 import { launchReceiver } from "@/features/quick-composer/model/launch-delivery";
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
-import {
-  newSession,
-} from "@/features/sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import type { Attachment } from "@/domain/session/attachment";
 import {

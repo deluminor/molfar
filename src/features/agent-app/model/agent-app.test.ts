@@ -3,7 +3,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { newSession } from "@/features/sessions/model/session";
 import {
   resetHarnessModelOverlays,
-  setHarnessModels
+  setHarnessModels,
 } from "@/integrations/harness/core/models/catalog-store";
 import {
   loadSessionFolders,
