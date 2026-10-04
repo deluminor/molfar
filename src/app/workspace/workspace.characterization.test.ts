@@ -186,6 +186,34 @@ describe("Workspace history", () => {
     },
   );
 
+  it.each([
+    ["Archive", "session_set_archived"],
+    ["Delete", "session_delete"],
+  ] as const)(
+    "applies %s to an open session and starts its tab over",
+    async (item, command) => {
+      app = await renderApp({
+        project: "/work/demo",
+        routes: { session_upsert: (args) => args?.session },
+      });
+      await answeredSession("explain the build", "The build uses Vite.");
+      const sessionId = current().harness.turns[0]?.sessionId ?? "";
+      const card = () =>
+        current().host.querySelector(`[data-session-card="${sessionId}"]`);
+      await app.until(() => !!card());
+
+      const row = card();
+      if (!row) throw new Error("Open session is not listed");
+      await app.openContextMenu(row);
+      await app.chooseMenuItem(item);
+
+      await app.until(() => current().commands(command).length === 1);
+      expect(app.commands(command)[0]?.args).toMatchObject({ sessionId });
+      await app.until(() => shows("What should we work on in demo?"));
+      expect(shows("The build uses Vite.")).toBe(false);
+    },
+  );
+
   it("renames a saved session through its menu", async () => {
     app = await renderApp({
       project: "/work/demo",

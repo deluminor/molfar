@@ -213,6 +213,8 @@ export async function renderApp(
         root.unmount();
       });
       host.remove();
+      // Effects unlisten asynchronously; the mocked event plugin must outlive them.
+      await new Promise((resolve) => setTimeout(resolve, 50));
       clearMocks();
     },
   };
