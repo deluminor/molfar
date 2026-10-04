@@ -141,6 +141,13 @@ import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
 import { cycleTab, tabInSlot } from "./workspace/flows/tabs/tab-cycle";
+import {
+  activateTab as activateWorkspaceTab,
+  focusOpenSession as focusTabOfSession,
+  replaceBlankPaneWithSession as replaceBlankPane,
+  type TabFocusDeps,
+  type TabSelectReason,
+} from "./workspace/flows/tabs/tab-focus";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
@@ -311,7 +318,6 @@ import {
   pinEditorFile,
   previewWorkspaceFile,
   removePane,
-  replaceLeafId,
   resetTabToSession,
   setSplitRatio,
   siblingLeafId,
@@ -461,8 +467,6 @@ import {
   applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
   filterTabsForProject,
-  findOpenSessionTab,
-  focusedWorkspaceTabCwd,
   planWorkspaceTabClose,
   switchSessionInTab,
   workspaceTabCwd,
@@ -2036,52 +2040,29 @@ function Workspace({
     setSessions,
   });
 
+  const setActiveTabIdRef = useRef(setActiveTabId);
+  setActiveTabIdRef.current = setActiveTabId;
+  const tabFocusDeps = useStableFlow(
+    (): TabFocusDeps => ({
+      store: workspaceStore,
+      tabs: () => tabsRef.current,
+      sessions: () => sessionsRef.current,
+      activeTabId: () => activeTabIdRef.current,
+      projectCwd: () => projectCwdRef.current,
+      selectTab: (tabId, reason) => {
+        if (reason === "workspace") setActiveTabIdState(tabId);
+        else setActiveTabIdRef.current(tabId);
+      },
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      cache: loadedSessionCache.current,
+      persistence: sessionPersistence,
+      forgetHarness: (session) =>
+        void forgetHarnessSession(session.harness, session.id),
+    }),
+  );
   const activateTab = useCallback(
-    (
-      id: string,
-      paneId?: string,
-      reason: "session" | "workspace" = "session",
-    ) => {
-      const tab = tabsRef.current.find((entry) => entry.id === id);
-      const nextFocusedId =
-        tab &&
-        paneId &&
-        (leafIds(tab.layout).includes(paneId) ||
-          tab.editorPanes.some((entry) => entry.id === paneId) ||
-          (tab.terminalPanes ?? []).some((entry) => entry.id === paneId))
-          ? paneId
-          : tab?.focusedId;
-
-      if (reason === "workspace") setActiveTabIdState(id);
-      else setActiveTabId(id);
-      if (tab && nextFocusedId && nextFocusedId !== tab.focusedId) {
-        setTabs((prev) =>
-          prev.map((entry) =>
-            entry.id === id
-              ? { ...entry, focusedId: nextFocusedId, diffFocused: false }
-              : entry,
-          ),
-        );
-      }
-
-      if (tab) {
-        const focusedTab = nextFocusedId
-          ? { ...tab, focusedId: nextFocusedId }
-          : tab;
-        const cwd = focusedWorkspaceTabCwd(focusedTab, sessionsRef.current);
-        if (cwd && looksLikeProject(cwd)) {
-          const normalized = normalizeProjectPath(cwd);
-          if (!sameProjectPath(normalized, projectCwdRef.current)) {
-            setProjectCwd(normalized);
-            setRecents(rememberProject(normalized));
-          }
-        }
-      }
-      setComposerFocused(
-        !!nextFocusedId &&
-          sessionsRef.current.some((session) => session.id === nextFocusedId),
-      );
-    },
+    (tabId: string, paneId?: string, reason?: TabSelectReason) =>
+      activateWorkspaceTab(tabFocusDeps, tabId, paneId, reason),
     [],
   );
 
@@ -3655,65 +3636,15 @@ function Workspace({
     [activateTab],
   );
 
-  const focusOpenSession = useCallback((sessionId: string) => {
-    const tab = findOpenSessionTab(
-      tabsRef.current,
-      sessionsRef.current,
-      sessionId,
-    );
-    if (!tab) return false;
-    loadedSessionCache.current.delete(sessionId);
-    setActiveTabId(tab.id);
-    setTabs((prev) =>
-      prev.map((entry) =>
-        entry.id === tab.id ? { ...entry, focusedId: sessionId } : entry,
-      ),
-    );
-    setComposerFocused(true);
-    return true;
-  }, []);
+  const focusOpenSession = useCallback(
+    (sessionId: string) => focusTabOfSession(tabFocusDeps, sessionId),
+    [],
+  );
 
-  const replaceBlankPaneWithSession = useCallback((session: Session) => {
-    const tab =
-      tabsRef.current.find((entry) => entry.id === activeTabIdRef.current) ??
-      tabsRef.current[0];
-    if (!tab) return false;
-
-    const paneId = isBlankSession(
-      sessionsRef.current.find((entry) => entry.id === tab.focusedId),
-    )
-      ? tab.focusedId
-      : leafIds(tab.layout).find((id) =>
-          isBlankSession(sessionsRef.current.find((entry) => entry.id === id)),
-        );
-    if (!paneId || paneId === session.id) return false;
-
-    sessionPersistence.forgetSaved(paneId);
-    {
-      const blank = sessionsRef.current.find((entry) => entry.id === paneId);
-      if (blank) void forgetHarnessSession(blank.harness, paneId);
-    }
-    setSessions((prev) => {
-      const next = prev.filter((entry) => entry.id !== paneId);
-      return next.some((entry) => entry.id === session.id)
-        ? next
-        : [...next, session];
-    });
-    setTabs((prev) =>
-      prev.map((entry) =>
-        entry.id === tab.id
-          ? {
-              ...entry,
-              layout: replaceLeafId(entry.layout, paneId, session.id),
-              focusedId: session.id,
-            }
-          : entry,
-      ),
-    );
-    setActiveTabId(tab.id);
-    setComposerFocused(true);
-    return true;
-  }, []);
+  const replaceBlankPaneWithSession = useCallback(
+    (session: Session) => replaceBlankPane(tabFocusDeps, session),
+    [],
+  );
 
   const invalidateLoadedSession = sessionLoader.invalidate;
 

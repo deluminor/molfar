@@ -922,6 +922,12 @@
           "onNext/onPrev index wrap, onActivate slot lookup"
         ],
         "target": "src/app/workspace/flows/tabs/tab-cycle.ts"
+      },
+      {
+        "names": [
+          "activateTab, focusOpenSession, replaceBlankPaneWithSession bodies (App keeps the names; selectTab = setActiveTabId / setActiveTabIdState)"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-focus.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
