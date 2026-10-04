@@ -135,7 +135,7 @@
     "lines": 1248
   },
   "src/app/App.tsx": {
-    "lines": 11748
+    "lines": 11749
   },
   "src/app/hooks/use-workspace-navigation.ts": {
     "lines": 288
@@ -153,7 +153,7 @@
     "lines": 3709
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 917
+    "lines": 888
   },
   "src/app/shell/UsageFooter.tsx": {
     "lines": 596

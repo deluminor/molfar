@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Tab } from "@/app/shell/TitleBar";
+import type { Tab } from "./title-tab";
 import {
   addTabToGroup,
   addTabsToNewGroup,

@@ -2,8 +2,9 @@
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SurfaceTabs } from "./SurfaceTabs";
-import { TitleBar, type Tab } from "@/app/shell/TitleBar";
+import { SurfaceTabs } from "@/features/workspace/ui/SurfaceTabs";
+import { TitleBar } from "./TitleBar";
+import type { Tab } from "@/features/workspace/model/title-tab";
 
 vi.mock("@/features/window-chrome/ui/WindowControls", () => ({ WindowControls: () => null }));
 

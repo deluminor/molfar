@@ -2,15 +2,6 @@
   "src/features/agent-app/model/agent-app.ts": {
     "feature-internal:inbox": 2
   },
-  "src/features/inbox/ui/inbox-notification-menu.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/inbox/ui/project-notification-menu.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/projects/ui/project-groups.test.ts": {
-    "layer:features->app": 1
-  },
   "src/features/sessions/model/prompt-preparation.test.ts": {
     "feature-internal:inbox": 1
   },
@@ -19,18 +10,6 @@
   },
   "src/features/settings/ui/JiraSettings.tsx": {
     "feature-internal:inbox": 2
-  },
-  "src/features/workspace/model/tab-groups.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/workspace/model/tab-groups.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/workspace/ui/tab-close-motion.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/workspace/ui/tab-middle-click.test.ts": {
-    "layer:features->app": 1
   },
   "src/platform/tauri/clipboard.test.ts": {
     "layer:platform->features": 1

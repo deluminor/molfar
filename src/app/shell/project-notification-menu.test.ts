@@ -6,7 +6,7 @@ import {
   loadNotificationPreferences,
   updateNotificationPreferences,
 } from "@/features/notifications/model/notification-preferences";
-import { ProjectRail } from "@/app/shell/ProjectRail";
+import { ProjectRail } from "./ProjectRail";
 import { invoke } from "@tauri-apps/api/core";
 import { rememberNotificationProjects } from "@/features/notifications/model/notification-projects";
 

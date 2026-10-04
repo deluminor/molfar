@@ -8,9 +8,9 @@ import {
   loadProjectGroups,
   saveProjectGroupAssignments,
   saveProjectGroups,
-} from "../model/project-groups";
-import { savePinnedProjects } from "../model/recents";
-import { ProjectRail } from "@/app/shell/ProjectRail";
+} from "@/features/projects/model/project-groups";
+import { savePinnedProjects } from "@/features/projects/model/recents";
+import { ProjectRail } from "./ProjectRail";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 
 vi.mock("@tauri-apps/api/core", () => ({

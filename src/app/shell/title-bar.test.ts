@@ -4,8 +4,8 @@ import {
   tabStripOverflow,
   titleTabContextCloseIds,
   titleTabClosable,
-  type Tab,
 } from "./TitleBar";
+import type { Tab } from "@/features/workspace/model/title-tab";
 
 function tab(overrides: Partial<Tab> = {}): Tab {
   return {

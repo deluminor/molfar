@@ -214,13 +214,13 @@
     "src/features/inbox/ui/confluence/useConfluenceSelection.ts": "src/features/inbox/ui/confluence/use-confluence-selection.ts",
     "src/features/inbox/ui/confluence/useConfluenceTree.ts": "src/features/inbox/ui/confluence/use-confluence-tree.ts",
     "src/features/inbox/ui/InboxNotificationIndicators.test.ts": "src/features/inbox/ui/inbox-notification-indicators.test.ts",
-    "src/features/inbox/ui/InboxNotificationMenu.test.ts": "src/features/inbox/ui/inbox-notification-menu.test.ts",
+    "src/features/inbox/ui/InboxNotificationMenu.test.ts": "src/app/shell/inbox-notification-menu.test.ts",
     "src/features/inbox/ui/InboxPrChecks.test.ts": "src/features/inbox/ui/inbox-pr-checks.test.ts",
     "src/features/inbox/ui/InboxPrChecksRepair.test.ts": "src/features/inbox/ui/inbox-pr-checks-repair.test.ts",
     "src/features/inbox/ui/InboxView.test.ts": "src/features/inbox/ui/inbox-view.test.ts",
     "src/features/inbox/ui/LinkedWorkItemPanel.test.ts": "src/features/inbox/ui/linked-work-item-panel.test.ts",
     "src/features/inbox/ui/LinkedWorkItemUpdateNotice.test.ts": "src/features/inbox/ui/linked-work-item-update-notice.test.ts",
-    "src/features/inbox/ui/ProjectNotificationMenu.test.ts": "src/features/inbox/ui/project-notification-menu.test.ts",
+    "src/features/inbox/ui/ProjectNotificationMenu.test.ts": "src/app/shell/project-notification-menu.test.ts",
     "src/features/knowledge/ui/tree/KnowledgeTree.test.ts": "src/features/knowledge/ui/tree/knowledge-tree.test.ts",
     "src/features/notes/noteImages.test.ts": "src/features/notes/note-images.test.ts",
     "src/features/notes/noteImages.ts": "src/features/notes/note-images.ts",
@@ -277,7 +277,7 @@
     "src/features/projects/model/projectTerminal.test.ts": "src/features/projects/model/project-terminal.test.ts",
     "src/features/projects/model/projectTerminal.ts": "src/features/projects/model/project-terminal.ts",
     "src/features/projects/ui/ProjectBackgroundDialog.test.ts": "src/features/projects/ui/project-background-dialog.test.ts",
-    "src/features/projects/ui/ProjectGroups.test.ts": "src/features/projects/ui/project-groups.test.ts",
+    "src/features/projects/ui/ProjectGroups.test.ts": "src/app/shell/project-groups.test.ts",
     "src/features/projects/ui/useProjectBackgroundEffect.test.ts": "src/features/projects/ui/use-project-background-effect.test.ts",
     "src/features/projects/ui/useProjectBackgroundEffect.ts": "src/features/projects/ui/use-project-background-effect.ts",
     "src/features/providers/model/accountUsage.test.ts": "src/features/providers/model/account-usage.test.ts",
@@ -583,9 +583,9 @@
     "src/features/workspace/ui/PaneTreeTitleDrop.test.ts": "src/features/workspace/ui/pane-tree-title-drop.test.ts",
     "src/features/workspace/ui/SurfaceTabs.test.ts": "src/features/workspace/ui/surface-tabs.test.ts",
     "src/features/workspace/ui/SurfaceTabsMenu.test.ts": "src/features/workspace/ui/surface-tabs-menu.test.ts",
-    "src/features/workspace/ui/TabCloseMotion.test.ts": "src/features/workspace/ui/tab-close-motion.test.ts",
+    "src/features/workspace/ui/TabCloseMotion.test.ts": "src/app/shell/tab-close-motion.test.ts",
     "src/features/workspace/ui/TabGroupMenu.test.ts": "src/features/workspace/ui/tab-group-menu.test.ts",
-    "src/features/workspace/ui/TabMiddleClick.test.ts": "src/features/workspace/ui/tab-middle-click.test.ts",
+    "src/features/workspace/ui/TabMiddleClick.test.ts": "src/app/shell/tab-middle-click.test.ts",
     "src/integrations/harness/core/abortTextPrompt.test.ts": "src/integrations/harness/core/abort-text-prompt.test.ts",
     "src/integrations/harness/core/abortTextPrompt.ts": "src/integrations/harness/core/abort-text-prompt.ts",
     "src/integrations/harness/core/acpSubagents.test.ts": "src/integrations/harness/core/acp-subagents.test.ts",
@@ -803,6 +803,12 @@
           "DevModeSlot"
         ],
         "target": "src/features/window-chrome/ui/OverlayNav.tsx"
+      },
+      {
+        "names": [
+          "Tab"
+        ],
+        "target": "src/features/workspace/model/title-tab.ts"
       }
     ],
     "src/features/connections/model/connections.ts": [

@@ -7,20 +7,24 @@ import {
   updateNotificationPreferences,
 } from "@/features/notifications/model/notification-preferences";
 import { rememberNotificationProjects } from "@/features/notifications/model/notification-projects";
-import { ProjectRail } from "@/app/shell/ProjectRail";
+import { ProjectRail } from "./ProjectRail";
 import { invoke } from "@tauri-apps/api/core";
-import { inboxItemKey, listInboxItems, type InboxItem } from "../model/github-tasks";
+import {
+  inboxItemKey,
+  listInboxItems,
+  type InboxItem,
+} from "@/features/inbox/model/github-tasks";
 import {
   clearKnownInboxItems,
   isInboxEntryUnseen,
   markInboxItemsSeen,
   rememberInboxItems,
   seedInboxSeenIfNeeded,
-} from "../model/inbox-seen";
-import { useInboxActivity } from "../hooks/use-inbox-unseen";
+} from "@/features/inbox/model/inbox-seen";
+import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 
-vi.mock("../model/github-tasks", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../model/github-tasks")>()),
+vi.mock("@/features/inbox/model/github-tasks", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/inbox/model/github-tasks")>()),
   listInboxItems: vi.fn(),
 }));
 

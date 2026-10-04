@@ -1,4 +1,4 @@
-import type { Tab } from "@/app/shell/TitleBar";
+import type { Tab } from "./title-tab";
 import { projectKey, projectName } from "@/shared/lib/paths";
 import { knownProjectPaths, notifyProjectPathsChanged } from "@/features/projects/model/recents";
 
