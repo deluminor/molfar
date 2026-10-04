@@ -18,6 +18,13 @@ export function testWorkspaceState(
     storedLinkedSessions: [],
     loadedProjects: new Set(),
     historyErrorCwd: null,
+    filesSearchOpen: false,
+    editorNavigation: null,
+    filePickerOpen: false,
+    filePickerInitialQuery: "",
+    filePickerResetToken: 0,
+    dirtyFiles: new Set(),
+    fileErrorCounts: new Map(),
     ...overrides,
   };
 }

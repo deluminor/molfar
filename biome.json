@@ -74,7 +74,14 @@
                   "setHistory",
                   "setStoredLinkedSessions",
                   "setLoadedProjects",
-                  "setHistoryErrorCwd"
+                  "setHistoryErrorCwd",
+                  "setFilesSearchOpen",
+                  "setEditorNavigation",
+                  "setFilePickerOpen",
+                  "setFilePickerInitialQuery",
+                  "setFilePickerResetToken",
+                  "setDirtyFiles",
+                  "setFileErrorCounts"
                 ]
               }
             ]

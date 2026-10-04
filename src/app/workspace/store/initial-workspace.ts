@@ -46,5 +46,12 @@ export function initialWorkspaceState(
       ? new Set([normalizeProjectPath(historyCwd)])
       : new Set(),
     historyErrorCwd: null,
+    filesSearchOpen: false,
+    editorNavigation: null,
+    filePickerOpen: false,
+    filePickerInitialQuery: "",
+    filePickerResetToken: 0,
+    dirtyFiles: new Set(windowTransfer?.dirtyFileIds ?? []),
+    fileErrorCounts: new Map(),
   };
 }

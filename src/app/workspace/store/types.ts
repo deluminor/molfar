@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand/vanilla";
+import type { FilesActions, FilesState } from "./files-slice";
 import type { HistoryActions, HistoryState } from "./history-slice";
 import type { ProjectsActions, ProjectsState } from "./projects-slice";
 import type { SessionsActions, SessionsState } from "./sessions-slice";
@@ -9,13 +10,15 @@ export type WorkspaceInitialState = ProjectsState &
   SessionsState &
   TabsState &
   TerminalsState &
-  HistoryState;
+  HistoryState &
+  FilesState;
 
 export type WorkspaceActions = ProjectsActions &
   SessionsActions &
   TabsActions &
   TerminalsActions &
-  HistoryActions;
+  HistoryActions &
+  FilesActions;
 
 export type WorkspaceState = WorkspaceInitialState & WorkspaceActions;
 

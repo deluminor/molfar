@@ -336,10 +336,7 @@ import {
   invalidateWatchedFiles,
   nudgeWatchedFiles,
 } from "@/features/files/model/file-watch";
-import type {
-  EditorNavigationTarget,
-  OpenFileFn,
-} from "@/features/search/model/search";
+import type { OpenFileFn } from "@/features/search/model/search";
 import {
   applySessionCheckpoint,
   beginSessionTurn,
@@ -1000,6 +997,13 @@ function Workspace({
     setStoredLinkedSessions,
     setLoadedProjects,
     setHistoryErrorCwd,
+    setFilesSearchOpen,
+    setEditorNavigation,
+    setFilePickerOpen,
+    setFilePickerInitialQuery,
+    setFilePickerResetToken,
+    setDirtyFiles,
+    setFileErrorCounts,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -1043,7 +1047,7 @@ function Workspace({
   const tabCloseScope = "project" as const;
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
-  const [filesSearchOpen, setFilesSearchOpen] = useState(false);
+  const filesSearchOpen = useWorkspaceField(workspaceStore, "filesSearchOpen");
   const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [searchViewOpen, setSearchViewOpen] = useState(false);
   const [searchViewFocusToken, setSearchViewFocusToken] = useState(0);
@@ -1143,20 +1147,13 @@ function Workspace({
   >(null);
   const [notificationSettingsRequest, setNotificationSettingsRequest] =
     useState(0);
-  const [editorNavigation, setEditorNavigation] =
-    useState<EditorNavigationTarget | null>(null);
+  const editorNavigation = useWorkspaceField(workspaceStore, "editorNavigation");
   const editorNavigationToken = useRef(0);
-  const [filePickerOpen, setFilePickerOpen] = useState(false);
-  const [filePickerInitialQuery, setFilePickerInitialQuery] = useState("");
-  const [filePickerResetToken, setFilePickerResetToken] = useState(0);
-  const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(
-    () => new Set(windowTransfer?.dirtyFileIds ?? []),
-  );
-  // Not carried across a window transfer the way dirty state is: the editor
-  // re-lints whatever it mounts, so the counts rebuild themselves.
-  const [fileErrorCounts, setFileErrorCounts] = useState<Map<string, number>>(
-    () => new Map(),
-  );
+  const filePickerOpen = useWorkspaceField(workspaceStore, "filePickerOpen");
+  const filePickerInitialQuery = useWorkspaceField(workspaceStore, "filePickerInitialQuery");
+  const filePickerResetToken = useWorkspaceField(workspaceStore, "filePickerResetToken");
+  const dirtyFiles = useWorkspaceField(workspaceStore, "dirtyFiles");
+  const fileErrorCounts = useWorkspaceField(workspaceStore, "fileErrorCounts");
   const history = useWorkspaceField(workspaceStore, "history");
   const [, refreshRemoteTabTitles] = useState(0);
   useEffect(() => {

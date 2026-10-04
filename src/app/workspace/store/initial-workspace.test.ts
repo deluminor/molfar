@@ -31,7 +31,10 @@ describe("initialWorkspaceState", () => {
       projectTerminals: [],
       lastDockSide: null,
       projectTerminalFocused: false,
+      filePickerOpen: false,
+      editorNavigation: null,
     });
+    expect(state.dirtyFiles.size).toBe(0);
   });
 
   it("takes a resumed workspace and reopens its project", () => {
@@ -69,7 +72,7 @@ describe("initialWorkspaceState", () => {
         tabs: [tab],
         activeTabId: tab.id,
         projectCwd: "/work/moved",
-        dirtyFileIds: [],
+        dirtyFileIds: ["file:/work/moved/a.ts"],
       },
       resumed: null,
       history: [],
@@ -79,6 +82,7 @@ describe("initialWorkspaceState", () => {
     expect(state.sessions).toEqual([session]);
     expect(state.tabs).toEqual([tab]);
     expect(state.activeTabId).toBe(tab.id);
+    expect([...state.dirtyFiles]).toEqual(["file:/work/moved/a.ts"]);
   });
 
   it("lists the boot history and marks its project as loaded", () => {

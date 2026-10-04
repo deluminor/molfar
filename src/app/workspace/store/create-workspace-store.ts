@@ -25,5 +25,12 @@ export function createWorkspaceStore(
     setStoredLinkedSessions: fieldSetter(store, "storedLinkedSessions"),
     setLoadedProjects: fieldSetter(store, "loadedProjects"),
     setHistoryErrorCwd: fieldSetter(store, "historyErrorCwd"),
+    setFilesSearchOpen: fieldSetter(store, "filesSearchOpen"),
+    setEditorNavigation: fieldSetter(store, "editorNavigation"),
+    setFilePickerOpen: fieldSetter(store, "filePickerOpen"),
+    setFilePickerInitialQuery: fieldSetter(store, "filePickerInitialQuery"),
+    setFilePickerResetToken: fieldSetter(store, "filePickerResetToken"),
+    setDirtyFiles: fieldSetter(store, "dirtyFiles"),
+    setFileErrorCounts: fieldSetter(store, "fileErrorCounts"),
   }));
 }
