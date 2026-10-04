@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { searchConfluence } from "../../model/confluence/api";
-import type { ConfluenceNode } from "../../model/confluence/types";
+import { searchConfluence } from "@/features/confluence/model/api";
+import type { ConfluenceNode } from "@/features/confluence/model/types";
 import { errorText } from "./error-text";
 import type { SetError } from "./types";
 

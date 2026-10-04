@@ -15,8 +15,8 @@ import {
   type JiraProject,
   type JiraStatus,
 } from "@/features/inbox/model/jira";
-import { clearConfluenceCache } from "@/features/inbox/model/confluence/api";
-import { notifyConfluenceChange } from "@/features/inbox/model/confluence/hidden-spaces";
+import { clearConfluenceCache } from "@/features/confluence/model/api";
+import { notifyConfluenceChange } from "@/features/confluence/model/hidden-spaces";
 
 export function JiraSettings() {
   const [status, setStatus] = useState<JiraStatus | null>(null);

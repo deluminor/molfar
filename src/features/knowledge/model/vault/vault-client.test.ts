@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { pickVaultFolder } from "@/features/knowledge/model/vault/vault-client";
+import { pickVaultFolder } from "./vault-client";
 
 const dialog = vi.hoisted(() => ({ open: vi.fn() }));
 vi.mock("@tauri-apps/plugin-dialog", () => dialog);

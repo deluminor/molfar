@@ -1,14 +1,1 @@
-{
-  "src/features/agent-app/model/agent-app.ts": {
-    "feature-internal:inbox": 2
-  },
-  "src/features/sessions/model/prompt-preparation.test.ts": {
-    "feature-internal:inbox": 1
-  },
-  "src/features/sessions/model/prompt-preparation.ts": {
-    "feature-internal:inbox": 1
-  },
-  "src/features/settings/ui/JiraSettings.tsx": {
-    "feature-internal:inbox": 2
-  }
-}
+{}

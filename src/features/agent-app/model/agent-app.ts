@@ -4,8 +4,8 @@ import {
   listConfluenceChildren,
   listConfluenceSpaces,
   searchConfluence,
-} from "@/features/inbox/model/confluence/api";
-import { confluenceFolderTocMarkdown } from "@/features/inbox/model/confluence/prompt";
+} from "@/features/confluence/model/api";
+import { confluenceFolderTocMarkdown } from "@/features/confluence/model/prompt";
 import {
   normalizeNoteTags,
   noteTitle,

@@ -2,7 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConfluenceNode } from "../../model/confluence/types";
+import type { ConfluenceNode } from "@/features/confluence/model/types";
 import { ConfluenceListBody } from "./ConfluenceListBody";
 
 const node: ConfluenceNode = {

@@ -3,12 +3,12 @@ import type { ReactNode } from "react";
 import { ExternalLink, LoaderCircle } from "@/shared/ui/icons";
 import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
-import { confluenceFolderTocMarkdown } from "../../model/confluence/prompt";
+import { confluenceFolderTocMarkdown } from "@/features/confluence/model/prompt";
 import type {
   ConfluenceNode,
   ConfluencePage,
   ConfluenceSpace,
-} from "../../model/confluence/types";
+} from "@/features/confluence/model/types";
 import type { SelectedKind } from "./types";
 
 type Props = {

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { LoaderCircle } from "@/shared/ui/icons";
-import type { ConfluenceNode } from "../../model/confluence/types";
+import type { ConfluenceNode } from "@/features/confluence/model/types";
 import { TreeRow } from "./TreeRow";
 import type { ConfluenceTree, TreeState } from "./types";
 

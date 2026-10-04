@@ -1,4 +1,4 @@
-import type { ConfluenceNode } from "../../model/confluence/types";
+import type { ConfluenceNode } from "@/features/confluence/model/types";
 
 export type TreeState = {
   loading: boolean;

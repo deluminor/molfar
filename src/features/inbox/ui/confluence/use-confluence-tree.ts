@@ -3,16 +3,16 @@ import {
   clearConfluenceCache,
   confluenceChildrenCached,
   listConfluenceSpaces,
-} from "../../model/confluence/api";
-import { CONFLUENCE_CHANGE_EVENT } from "../../model/confluence/constants";
+} from "@/features/confluence/model/api";
+import { CONFLUENCE_CHANGE_EVENT } from "@/features/confluence/model/constants";
 import {
   loadHiddenConfluenceSpaceIds,
   visibleConfluenceSpaces,
-} from "../../model/confluence/hidden-spaces";
+} from "@/features/confluence/model/hidden-spaces";
 import type {
   ConfluenceNode,
   ConfluenceSpace,
-} from "../../model/confluence/types";
+} from "@/features/confluence/model/types";
 import { errorText } from "./error-text";
 import type {
   ChildrenQuery,

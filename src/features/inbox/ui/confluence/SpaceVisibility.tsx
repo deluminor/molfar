@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import type { ConfluenceSpace } from "../../model/confluence/types";
+import type { ConfluenceSpace } from "@/features/confluence/model/types";
 
 type Props = {
   spaces: readonly ConfluenceSpace[];

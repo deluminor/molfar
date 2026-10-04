@@ -4,9 +4,9 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { clearConfluenceCache } from "../../model/confluence/api";
-import { saveHiddenConfluenceSpaceIds } from "../../model/confluence/hidden-spaces";
-import type { ConfluenceNode } from "../../model/confluence/types";
+import { clearConfluenceCache } from "@/features/confluence/model/api";
+import { saveHiddenConfluenceSpaceIds } from "@/features/confluence/model/hidden-spaces";
+import type { ConfluenceNode } from "@/features/confluence/model/types";
 import { ConfluenceListBody } from "./ConfluenceListBody";
 import { ConfluenceListHeader } from "./ConfluenceListHeader";
 import { ConfluenceReader } from "./ConfluenceReader";

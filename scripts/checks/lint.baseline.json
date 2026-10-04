@@ -216,6 +216,9 @@
     "lint/correctness/useExhaustiveDependencies": 1,
     "lint/style/noNonNullAssertion": 1
   },
+  "src/features/confluence/model/mentions.ts": {
+    "lint/suspicious/noAssignInExpressions": 2
+  },
   "src/features/connections/model/connections.ts": {
     "lint/correctness/useExhaustiveDependencies": 11
   },
@@ -369,9 +372,6 @@
   },
   "src/features/inbox/hooks/use-inbox-unseen.ts": {
     "lint/correctness/useExhaustiveDependencies": 3
-  },
-  "src/features/inbox/model/confluence/mentions.ts": {
-    "lint/suspicious/noAssignInExpressions": 2
   },
   "src/features/inbox/model/github-tasks.test.ts": {
     "lint/style/noNonNullAssertion": 1

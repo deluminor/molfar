@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { RefreshCw, Search } from "@/shared/ui/icons";
-import type { ConfluenceSpace } from "../../model/confluence/types";
+import type { ConfluenceSpace } from "@/features/confluence/model/types";
 
 type Props = {
   searchInput: string;

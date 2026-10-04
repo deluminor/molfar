@@ -2,7 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConfluencePage } from "../../model/confluence/types";
+import type { ConfluencePage } from "@/features/confluence/model/types";
 import { ConfluenceReader } from "./ConfluenceReader";
 
 vi.mock("@/features/sessions/ui/AgentMarkdown", () => ({

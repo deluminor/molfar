@@ -17,7 +17,7 @@ vi.mock("@/features/notes/notes", () => ({
   applyNotesToTurn: mocks.applyNotesToTurn,
 }));
 
-vi.mock("@/features/inbox/model/confluence/prompt", () => ({
+vi.mock("@/features/confluence/model/prompt", () => ({
   applyConfluenceToTurn: mocks.applyConfluenceToTurn,
 }));
 

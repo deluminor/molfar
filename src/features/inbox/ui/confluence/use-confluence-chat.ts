@@ -3,19 +3,19 @@ import { requestAddToChat } from "@/features/sessions/model/quote-draft";
 import {
   confluenceChildrenCached,
   confluencePage,
-} from "../../model/confluence/api";
-import { isConfluenceFolderLike } from "../../model/confluence/kinds";
-import { confluenceMentionLabel } from "../../model/confluence/mentions";
+} from "@/features/confluence/model/api";
+import { isConfluenceFolderLike } from "@/features/confluence/model/kinds";
+import { confluenceMentionLabel } from "@/features/confluence/model/mentions";
 import {
   composeConfluenceMessage,
   confluenceFolderTocMarkdown,
-} from "../../model/confluence/prompt";
+} from "@/features/confluence/model/prompt";
 import type {
   ConfluenceChatCard,
   ConfluenceNode,
   ConfluencePage,
   ConfluenceSpace,
-} from "../../model/confluence/types";
+} from "@/features/confluence/model/types";
 import { errorText } from "./error-text";
 import type { SelectedKind, SetError } from "./types";
 

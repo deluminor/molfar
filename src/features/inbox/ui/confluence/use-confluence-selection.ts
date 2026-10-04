@@ -2,14 +2,14 @@ import { useCallback, useRef, useState } from "react";
 import {
   confluenceChildrenCached,
   confluencePage,
-} from "../../model/confluence/api";
-import { isConfluenceFolderLike } from "../../model/confluence/kinds";
-import { confluenceFolderTocMarkdown } from "../../model/confluence/prompt";
+} from "@/features/confluence/model/api";
+import { isConfluenceFolderLike } from "@/features/confluence/model/kinds";
+import { confluenceFolderTocMarkdown } from "@/features/confluence/model/prompt";
 import type {
   ConfluenceNode,
   ConfluencePage,
   ConfluenceSpace,
-} from "../../model/confluence/types";
+} from "@/features/confluence/model/types";
 import { errorText } from "./error-text";
 import type { SelectedKind, SetError } from "./types";
 
