@@ -621,7 +621,6 @@ import {
 } from "@/features/inbox/model/gitlab";
 import { inboxAskKey, inboxAskPrompt } from "@/features/inbox/model/inbox-ask";
 import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
-import type { InboxSessionPortal } from "@/features/inbox/ui/InboxDiscussionPanel";
 import { requestTranscriptJump } from "@/features/sessions/model/transcript-jump";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
@@ -662,7 +661,6 @@ import {
   loadKeybindingOverrides,
   loadLiveAgentsEnabled,
   loadNotesEnabled,
-  loadSettingsSection,
   matchCustomKeybinding,
   saveAutosave,
   saveSettingsSection,
@@ -755,12 +753,6 @@ const AutomationsView = lazySurface(
   },
   { suspense: false },
 );
-
-type LinkedWorkItemPanelState = {
-  item: LinkedWorkItem;
-  sessionId: string;
-  cwd: string;
-};
 
 type SubmitOptions = ComposerTurnOptions & {
   ciRepair?: CiRepairRequest;
@@ -1004,6 +996,20 @@ function Workspace({
     setFilePickerResetToken,
     setDirtyFiles,
     setFileErrorCounts,
+    setSearchViewOpen,
+    setSearchFocusToken,
+    setSearchViewFocusToken,
+    setInboxViewOpen,
+    setLinkedWorkItemPanels,
+    setInboxAskPortal,
+    setNotesViewOpen,
+    setInspectedWorkerId,
+    setWorkerDetailRequest,
+    setSettingsOpen,
+    setSettingsSection,
+    setSettingsAnchor,
+    setNotificationProjectPath,
+    setNotificationSettingsRequest,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -1048,13 +1054,11 @@ function Workspace({
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
   const filesSearchOpen = useWorkspaceField(workspaceStore, "filesSearchOpen");
-  const [searchFocusToken, setSearchFocusToken] = useState(0);
-  const [searchViewOpen, setSearchViewOpen] = useState(false);
-  const [searchViewFocusToken, setSearchViewFocusToken] = useState(0);
-  const [inboxViewOpen, setInboxViewOpen] = useState(false);
-  const [linkedWorkItemPanels, setLinkedWorkItemPanels] = useState<
-    ReadonlyMap<string, LinkedWorkItemPanelState>
-  >(() => new Map());
+  const searchFocusToken = useWorkspaceField(workspaceStore, "searchFocusToken");
+  const searchViewOpen = useWorkspaceField(workspaceStore, "searchViewOpen");
+  const searchViewFocusToken = useWorkspaceField(workspaceStore, "searchViewFocusToken");
+  const inboxViewOpen = useWorkspaceField(workspaceStore, "inboxViewOpen");
+  const linkedWorkItemPanels = useWorkspaceField(workspaceStore, "linkedWorkItemPanels");
   const linkedWorkItemPanelRequest = useRef(0);
   const closeLinkedWorkItemPanel = useCallback((sessionId: string) => {
     linkedWorkItemPanelRequest.current += 1;
@@ -1065,10 +1069,9 @@ function Workspace({
       return next;
     });
   }, []);
-  const [inboxAskPortal, setInboxAskPortal] =
-    useState<InboxSessionPortal | null>(null);
+  const inboxAskPortal = useWorkspaceField(workspaceStore, "inboxAskPortal");
   const openingInboxSessions = useRef(new Map<string, Promise<string>>());
-  const [notesViewOpen, setNotesViewOpen] = useState(false);
+  const notesViewOpen = useWorkspaceField(workspaceStore, "notesViewOpen");
   const localSurfaces = useLocalSurfaceState();
   const {
     localSurface,
@@ -1082,15 +1085,8 @@ function Workspace({
     setAutomationsViewOpen,
     railSurfaces,
   } = localSurfaces;
-  const [inspectedWorkerId, setInspectedWorkerId] = useState<string | null>(
-    null,
-  );
-  // Set while the lead's tab is still opening; the agent tab lands on the
-  // commit that brings it in.
-  const [workerDetailRequest, setWorkerDetailRequest] = useState<{
-    leadId: string;
-    workers: OrchestrationWorkerDetail[];
-  } | null>(null);
+  const inspectedWorkerId = useWorkspaceField(workspaceStore, "inspectedWorkerId");
+  const workerDetailRequest = useWorkspaceField(workspaceStore, "workerDetailRequest");
   const orchestrationRuns = useSyncExternalStore(
     orchestrator.subscribe,
     orchestrator.snapshot,
@@ -1108,7 +1104,7 @@ function Workspace({
   );
   const [collapsedProjectRailMode, setCollapsedProjectRailMode] =
     useState<CollapsedProjectRailMode>(loadCollapsedProjectRailMode);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpen = useWorkspaceField(workspaceStore, "settingsOpen");
   const settingsReturnViewRef = useRef<SettingsReturnView>({
     search: false,
     inbox: false,
@@ -1137,16 +1133,10 @@ function Workspace({
         return [providerSignInRequestKey(session)];
       }),
     ));
-  const [settingsSection, setSettingsSection] =
-    useState<SettingsSectionId>(loadSettingsSection);
-  const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(
-    null,
-  );
-  const [notificationProjectPath, setNotificationProjectPath] = useState<
-    string | null
-  >(null);
-  const [notificationSettingsRequest, setNotificationSettingsRequest] =
-    useState(0);
+  const settingsSection = useWorkspaceField(workspaceStore, "settingsSection");
+  const settingsAnchor = useWorkspaceField(workspaceStore, "settingsAnchor");
+  const notificationProjectPath = useWorkspaceField(workspaceStore, "notificationProjectPath");
+  const notificationSettingsRequest = useWorkspaceField(workspaceStore, "notificationSettingsRequest");
   const editorNavigation = useWorkspaceField(workspaceStore, "editorNavigation");
   const editorNavigationToken = useRef(0);
   const filePickerOpen = useWorkspaceField(workspaceStore, "filePickerOpen");

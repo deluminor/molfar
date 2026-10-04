@@ -81,7 +81,21 @@
                   "setFilePickerInitialQuery",
                   "setFilePickerResetToken",
                   "setDirtyFiles",
-                  "setFileErrorCounts"
+                  "setFileErrorCounts",
+                  "setSearchViewOpen",
+                  "setSearchFocusToken",
+                  "setSearchViewFocusToken",
+                  "setInboxViewOpen",
+                  "setLinkedWorkItemPanels",
+                  "setInboxAskPortal",
+                  "setNotesViewOpen",
+                  "setInspectedWorkerId",
+                  "setWorkerDetailRequest",
+                  "setSettingsOpen",
+                  "setSettingsSection",
+                  "setSettingsAnchor",
+                  "setNotificationProjectPath",
+                  "setNotificationSettingsRequest"
                 ]
               }
             ]

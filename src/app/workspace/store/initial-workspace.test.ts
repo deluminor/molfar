@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { rememberProject } from "@/features/projects/model/recents";
 import { newSession } from "@/features/sessions/model/session";
+import { saveSettingsSection } from "@/features/settings/model/settings";
 import { newTab } from "@/features/workspace/model/layout";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { initialWorkspaceState } from "./initial-workspace";
@@ -108,6 +109,28 @@ describe("initialWorkspaceState", () => {
     expect(state.storedLinkedSessions).toEqual([linked]);
     expect([...state.loadedProjects]).toEqual(["/work/demo"]);
     expect(state.historyErrorCwd).toBeNull();
+  });
+
+  it("opens with every surface closed and the last settings section", () => {
+    saveSettingsSection("appearance");
+
+    const state = initialWorkspaceState({
+      windowTransfer: null,
+      resumed: null,
+      history: [],
+      historyCwd: null,
+    });
+
+    expect(state).toMatchObject({
+      searchViewOpen: false,
+      inboxViewOpen: false,
+      notesViewOpen: false,
+      settingsOpen: false,
+      settingsSection: "appearance",
+      inspectedWorkerId: null,
+      workerDetailRequest: null,
+    });
+    expect(state.linkedWorkItemPanels.size).toBe(0);
   });
 });
 

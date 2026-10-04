@@ -2,6 +2,7 @@ import { lastProjectPath } from "@/features/projects/model/recents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import type { ResumedWorkspace } from "@/features/sessions/model/in-flight";
 import { newDefaultSession } from "@/features/sessions/model/session";
+import { loadSettingsSection } from "@/features/settings/model/settings";
 import { newTab } from "@/features/workspace/model/layout";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { WindowTransferPayload } from "../../model/window-transfer";
@@ -53,5 +54,19 @@ export function initialWorkspaceState(
     filePickerResetToken: 0,
     dirtyFiles: new Set(windowTransfer?.dirtyFileIds ?? []),
     fileErrorCounts: new Map(),
+    searchViewOpen: false,
+    searchFocusToken: 0,
+    searchViewFocusToken: 0,
+    inboxViewOpen: false,
+    linkedWorkItemPanels: new Map(),
+    inboxAskPortal: null,
+    notesViewOpen: false,
+    inspectedWorkerId: null,
+    workerDetailRequest: null,
+    settingsOpen: false,
+    settingsSection: loadSettingsSection(),
+    settingsAnchor: null,
+    notificationProjectPath: null,
+    notificationSettingsRequest: 0,
   };
 }

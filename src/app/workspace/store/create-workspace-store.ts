@@ -32,5 +32,22 @@ export function createWorkspaceStore(
     setFilePickerResetToken: fieldSetter(store, "filePickerResetToken"),
     setDirtyFiles: fieldSetter(store, "dirtyFiles"),
     setFileErrorCounts: fieldSetter(store, "fileErrorCounts"),
+    setSearchViewOpen: fieldSetter(store, "searchViewOpen"),
+    setSearchFocusToken: fieldSetter(store, "searchFocusToken"),
+    setSearchViewFocusToken: fieldSetter(store, "searchViewFocusToken"),
+    setInboxViewOpen: fieldSetter(store, "inboxViewOpen"),
+    setLinkedWorkItemPanels: fieldSetter(store, "linkedWorkItemPanels"),
+    setInboxAskPortal: fieldSetter(store, "inboxAskPortal"),
+    setNotesViewOpen: fieldSetter(store, "notesViewOpen"),
+    setInspectedWorkerId: fieldSetter(store, "inspectedWorkerId"),
+    setWorkerDetailRequest: fieldSetter(store, "workerDetailRequest"),
+    setSettingsOpen: fieldSetter(store, "settingsOpen"),
+    setSettingsSection: fieldSetter(store, "settingsSection"),
+    setSettingsAnchor: fieldSetter(store, "settingsAnchor"),
+    setNotificationProjectPath: fieldSetter(store, "notificationProjectPath"),
+    setNotificationSettingsRequest: fieldSetter(
+      store,
+      "notificationSettingsRequest",
+    ),
   }));
 }
