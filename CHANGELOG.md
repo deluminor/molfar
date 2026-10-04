@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-04
+
+### Changed
+
+- **brand:** consolidate visuals and support legacy worktrees
+
 ## [1.0.0] - 2026-10-04
 
 First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonomous Reasoning): a local-first engineering workspace for coding agents, code, knowledge, worktrees, and automation.
@@ -27,5 +33,6 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/deluminor/molfar/releases/tag/v1.0.1
 [1.0.0]: https://github.com/deluminor/molfar/releases/tag/v1.0.0
