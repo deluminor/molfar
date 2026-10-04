@@ -40,6 +40,12 @@ export type AppHarness = {
   visibleText(): string;
   /** Clicks the visible button whose text or aria-label is `label`. */
   click(label: string): Promise<void>;
+  /** Opens the context menu of an element, as a right click does. */
+  openContextMenu(element: Element): Promise<void>;
+  /** Clicks the open menu's item whose label starts with `label`. */
+  chooseMenuItem(label: string): Promise<void>;
+  /** Replaces a controlled input's value and presses Enter. */
+  submitInput(input: HTMLInputElement, value: string): Promise<void>;
   /** Types into the visible composer and presses Enter. */
   submitPrompt(text: string): Promise<void>;
   settle(ms?: number): Promise<void>;
@@ -209,6 +215,46 @@ export async function renderApp(
       if (!button) throw new Error(`No visible button labelled "${label}"`);
       await act(async () => {
         button.click();
+      });
+      await settle();
+    },
+    openContextMenu: async (element) => {
+      await act(async () => {
+        element.dispatchEvent(
+          new MouseEvent("contextmenu", {
+            bubbles: true,
+            clientX: 10,
+            clientY: 10,
+          }),
+        );
+      });
+      await settle();
+    },
+    chooseMenuItem: async (label) => {
+      const find = () =>
+        [
+          ...document.querySelectorAll<HTMLElement>(
+            "button, [role='menuitem']",
+          ),
+        ].find((item) => item.textContent?.trim().startsWith(label));
+      await until(() => !!find());
+      await act(async () => {
+        find()?.click();
+      });
+      await settle();
+    },
+    submitInput: async (input, value) => {
+      // React tracks controlled inputs through the native value setter.
+      const setValue = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      await act(async () => {
+        setValue?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        );
       });
       await settle();
     },

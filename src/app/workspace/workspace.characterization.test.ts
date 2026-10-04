@@ -156,6 +156,66 @@ describe("Workspace history", () => {
     expect(app.commands("session_upsert")).toHaveLength(0);
   });
 
+  it.each([
+    ["Pin", "session_set_pinned", { pinned: true }],
+    ["Archive", "session_set_archived", { archived: true }],
+    ["Delete", "session_delete", {}],
+  ] as const)(
+    "applies %s to a saved session from its menu",
+    async (item, command, args) => {
+      app = await renderApp({
+        project: "/work/demo",
+        routes: {
+          session_list_by_project: () => [
+            savedSession("saved-1", "Fix the flaky upload test"),
+          ],
+        },
+      });
+      await app.until(() => shows("Fix the flaky upload test"));
+      const row = historyLabel("Fix the flaky upload test");
+      if (!row) throw new Error("Saved session is not listed");
+
+      await app.openContextMenu(row);
+      await app.chooseMenuItem(item);
+
+      await app.until(() => current().commands(command).length === 1);
+      expect(app.commands(command)[0]?.args).toMatchObject({
+        sessionId: "saved-1",
+        ...args,
+      });
+    },
+  );
+
+  it("renames a saved session through its menu", async () => {
+    app = await renderApp({
+      project: "/work/demo",
+      routes: {
+        session_list_by_project: () => [
+          savedSession("saved-1", "Fix the flaky upload test"),
+        ],
+        session_get: () => savedRecord("saved-1"),
+        session_upsert: (args) => args?.session,
+      },
+    });
+    await app.until(() => shows("Fix the flaky upload test"));
+    const row = historyLabel("Fix the flaky upload test");
+    if (!row) throw new Error("Saved session is not listed");
+
+    await app.openContextMenu(row);
+    await app.chooseMenuItem("Rename");
+    const input = [...document.querySelectorAll("input")].find(
+      (field) => field.value === "Fix the flaky upload test",
+    );
+    if (!input) throw new Error("No rename field");
+    await app.submitInput(input, "Upload retries");
+
+    await app.until(() => upserts().length === 1);
+    expect(sessionOf(upserts()[0])).toMatchObject({
+      id: "saved-1",
+      title: "cursor · Upload retries",
+    });
+  });
+
   it("says when the project's sessions cannot be listed", async () => {
     app = await renderApp({
       project: "/work/demo",
@@ -419,21 +479,28 @@ function savedRecord(id: string) {
   };
 }
 
-/** The clickable sidebar row that shows a saved session's title. */
-function historyRow(title: string): HTMLElement | undefined {
-  const label = [...current().host.querySelectorAll<HTMLElement>("*")].find(
+/** The visible element that holds a saved session's title. */
+function historyLabel(title: string): HTMLElement | undefined {
+  return [...current().host.querySelectorAll<HTMLElement>("*")].find(
     (element) =>
       element.children.length === 0 &&
       element.textContent === title &&
       !element.closest('[aria-hidden="true"]'),
   );
+}
+
+/** The clickable sidebar row that shows a saved session's title. */
+function historyRow(title: string): HTMLElement | undefined {
+  const label = historyLabel(title);
   return (
     label?.closest<HTMLElement>("button, [role='button'], [data-session-id]") ??
     label
   );
 }
 
-type UpsertArgs = { session: { blocks: { role: string }[] } };
+type UpsertArgs = {
+  session: { id: string; title: string; blocks: { role: string }[] };
+};
 
 function upserts() {
   return current().commands("session_upsert");
