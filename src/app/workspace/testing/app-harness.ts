@@ -4,29 +4,12 @@ import { emit } from "@tauri-apps/api/event";
 import { clearMocks, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { vi } from "vitest";
 import type { HarnessId } from "@/domain/harness/harness";
-import type { HarnessAdapter } from "@/integrations/harness/core/registry";
-import type {
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-} from "@/integrations/harness/core/types";
 import { defaultIpcAnswer } from "./ipc-defaults";
+import { createFakeHarness, type FakeHarness } from "./fake-harness";
 
 export type IpcArgs = Record<string, unknown> | undefined;
 export type IpcRoute = (args: IpcArgs) => unknown;
 export type IpcCall = { command: string; args: IpcArgs };
-
-export type FakeHarness = {
-  adapter: HarnessAdapter;
-  turns: SendTurnInput[];
-  steers: SteerTurnInput[];
-  cancelled: string[];
-  approvals: Array<{ sessionId: string; requestId: number; decision: string }>;
-  /** Streams events into the running turn. */
-  send(event: HarnessEvent): void;
-  /** Settles the running turn. */
-  finish(): void;
-};
 
 export type AppHarness = {
   host: HTMLElement;
@@ -53,55 +36,6 @@ export type AppHarness = {
   until(condition: () => boolean, timeoutMs?: number): Promise<void>;
   unmount(): Promise<void>;
 };
-
-/** A live harness that records turns and lets the test drive their events. */
-export function createFakeHarness(id: HarnessId): FakeHarness {
-  const turns: SendTurnInput[] = [];
-  const steers: SteerTurnInput[] = [];
-  const cancelled: string[] = [];
-  const approvals: FakeHarness["approvals"] = [];
-  let finishTurn: (() => void) | undefined;
-  const adapter: HarnessAdapter = {
-    id,
-    live: true,
-    sendTurn: (input) => {
-      turns.push(input);
-      return new Promise<void>((resolve) => {
-        finishTurn = resolve;
-      });
-    },
-    steerTurn: async (input) => {
-      steers.push(input);
-    },
-    cancelTurn: async (sessionId) => {
-      cancelled.push(sessionId);
-      finishTurn?.();
-    },
-    respondApproval: (sessionId, requestId, decision) => {
-      approvals.push({ sessionId, requestId, decision });
-    },
-    stopSession: async () => {},
-    forgetSession: async () => {},
-    bindSession: () => {},
-  };
-
-  return {
-    adapter,
-    turns,
-    steers,
-    cancelled,
-    approvals,
-    send(event) {
-      const turn = turns[turns.length - 1];
-      if (!turn) throw new Error("No running turn to send an event into");
-      turn.onEvent(event);
-    },
-    finish() {
-      finishTurn?.();
-      finishTurn = undefined;
-    },
-  };
-}
 
 /**
  * Renders the real app against mocked Tauri IPC, windows and events. Modules

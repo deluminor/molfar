@@ -82,14 +82,9 @@ const EMPTY_TEXT = new Set([
   "write_attachment",
 ]);
 
-const EMPTY_RECORD = new Set([
-  "claude_shell_commands",
-]);
+const EMPTY_RECORD = new Set(["claude_shell_commands"]);
 
-const ZERO = new Set([
-  "harness_free_port",
-  "harness_spawn",
-]);
+const ZERO = new Set(["harness_free_port", "harness_spawn"]);
 
 export function defaultIpcAnswer(command: string): unknown {
   if (EMPTY_LIST.has(command)) return [];
