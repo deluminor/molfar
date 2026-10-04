@@ -1,123 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0" stop-color="#151036"/>
-      <stop offset="0.55" stop-color="#0d0a24"/>
-      <stop offset="1" stop-color="#07061a"/>
+    <linearGradient id="tile" x1="0.22" y1="0" x2="0.78" y2="1">
+      <stop offset="0" stop-color="#0a111b"/>
+      <stop offset="1" stop-color="#05080e"/>
     </linearGradient>
-    <radialGradient id="aura" cx="512" cy="512" r="470" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.5"/>
-      <stop offset="0.35" stop-color="#6d28d9" stop-opacity="0.24"/>
-      <stop offset="0.7" stop-color="#312e81" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#312e81" stop-opacity="0"/>
+    <radialGradient id="aura" cx="512" cy="512" r="290" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ab4d8" stop-opacity="0.15"/>
+      <stop offset="0.55" stop-color="#147898" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#147898" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="sphere" cx="512" cy="522" r="252" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffe7b0"/>
-      <stop offset="0.12" stop-color="#f6a85c"/>
-      <stop offset="0.3" stop-color="#c0399f"/>
-      <stop offset="0.56" stop-color="#6d28d9"/>
-      <stop offset="0.8" stop-color="#2e1f86"/>
-      <stop offset="1" stop-color="#18114d"/>
+    <radialGradient id="coreGlow" cx="512" cy="512" r="138" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e8faff" stop-opacity="0.72"/>
+      <stop offset="0.35" stop-color="#8adcf2" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#2a90b0" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="shade" cx="422" cy="402" r="403.20000000000005" gradientUnits="userSpaceOnUse">
-      <stop offset="0.5" stop-color="#05040f" stop-opacity="0"/>
-      <stop offset="1" stop-color="#05040f" stop-opacity="0.5"/>
+    <linearGradient id="lid" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7ad4f0" stop-opacity="0.7"/>
+      <stop offset="0.5" stop-color="#f5fcff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#7ad4f0" stop-opacity="0.7"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.5" r="0.68">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#dff6ff"/>
+      <stop offset="1" stop-color="#5eb8d4"/>
     </radialGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#a5f3fc" stop-opacity="0.95"/>
-      <stop offset="0.5" stop-color="#8b5cf6" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#f0abfc" stop-opacity="0.8"/>
+    <linearGradient id="cometNW" gradientUnits="userSpaceOnUse"
+      x1="224.79" y1="583.61"
+      x2="583.61" y2="224.79">
+      <stop offset="0" stop-color="#7ad4f5" stop-opacity="0"/>
+      <stop offset="0.22" stop-color="#8adcf5" stop-opacity="0.18"/>
+      <stop offset="0.5" stop-color="#b8ecff" stop-opacity="0.55"/>
+      <stop offset="0.78" stop-color="#e0f7ff" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="1"/>
     </linearGradient>
-    <linearGradient id="core" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff4c2"/>
-      <stop offset="0.45" stop-color="#fcd34d"/>
-      <stop offset="1" stop-color="#f59e0b"/>
+    <linearGradient id="cometSE" gradientUnits="userSpaceOnUse"
+      x1="799.21" y1="440.39"
+      x2="440.39" y2="799.21">
+      <stop offset="0" stop-color="#7ad4f5" stop-opacity="0"/>
+      <stop offset="0.22" stop-color="#8adcf5" stop-opacity="0.18"/>
+      <stop offset="0.5" stop-color="#b8ecff" stop-opacity="0.55"/>
+      <stop offset="0.78" stop-color="#e0f7ff" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="1"/>
     </linearGradient>
-    <radialGradient id="coreGlow" cx="512" cy="512" r="150" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fde68a" stop-opacity="0.85"/>
-      <stop offset="0.4" stop-color="#f59e0b" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="depth" gradientUnits="userSpaceOnUse" x1="0" y1="-60" x2="0" y2="60">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="1"/>
-    </linearGradient>
-    <mask id="ringDepth" maskUnits="userSpaceOnUse" x="-600" y="-600" width="1200" height="1200"><rect x="-600" y="-600" width="1200" height="1200" fill="url(#depth)"/></mask>
-    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-    <clipPath id="back"><rect x="-600" y="-600" width="1200" height="600"/></clipPath>
-    <clipPath id="front"><rect x="-600" y="0" width="1200" height="600"/></clipPath>
-    <clipPath id="ball"><circle cx="512" cy="512" r="252"/></clipPath>
-    <clipPath id="tileClip"><rect width="1024" height="1024" rx="228"/></clipPath>
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
-    <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
-    <linearGradient id="orbit0" gradientUnits="userSpaceOnUse" x1="-292" y1="0" x2="292" y2="0">
-      <stop offset="0" stop-color="#7c3aed"/>
-      <stop offset="0.32" stop-color="#a78bfa"/>
-      <stop offset="0.5" stop-color="#67e8f9"/>
-      <stop offset="0.68" stop-color="#a78bfa"/>
-      <stop offset="1" stop-color="#7c3aed"/>
-    </linearGradient>
-    <linearGradient id="orbit1" gradientUnits="userSpaceOnUse" x1="-292" y1="0" x2="292" y2="0">
-      <stop offset="0" stop-color="#7c3aed"/>
-      <stop offset="0.32" stop-color="#a78bfa"/>
-      <stop offset="0.5" stop-color="#67e8f9"/>
-      <stop offset="0.68" stop-color="#a78bfa"/>
-      <stop offset="1" stop-color="#7c3aed"/>
-    </linearGradient>
-    <linearGradient id="orbit2" gradientUnits="userSpaceOnUse" x1="-292" y1="0" x2="292" y2="0">
-      <stop offset="0" stop-color="#7c3aed"/>
-      <stop offset="0.32" stop-color="#a78bfa"/>
-      <stop offset="0.5" stop-color="#67e8f9"/>
-      <stop offset="0.68" stop-color="#a78bfa"/>
-      <stop offset="1" stop-color="#7c3aed"/>
-    </linearGradient>
+    <filter id="lidSoft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+    <filter id="coreSoft" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+    <filter id="orbitGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="headGlow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <clipPath id="clip"><rect width="1024" height="1024" rx="228"/></clipPath>
   </defs>
+
   <rect width="1024" height="1024" rx="228" fill="url(#tile)"/>
-  <g clip-path="url(#tileClip)">
+  <g clip-path="url(#clip)">
     <rect width="1024" height="1024" fill="url(#aura)"/>
-    <circle cx="180" cy="210" r="3.2" fill="#e0e7ff" opacity="0.55"/><circle cx="836" cy="176" r="2.6" fill="#e0e7ff" opacity="0.45"/><circle cx="880" cy="640" r="3.4" fill="#e0e7ff" opacity="0.5"/><circle cx="150" cy="760" r="2.4" fill="#e0e7ff" opacity="0.4"/><circle cx="300" cy="120" r="2" fill="#e0e7ff" opacity="0.35"/><circle cx="760" cy="880" r="2.2" fill="#e0e7ff" opacity="0.35"/><circle cx="912" cy="392" r="1.8" fill="#e0e7ff" opacity="0.3"/><circle cx="112" cy="470" r="2" fill="#e0e7ff" opacity="0.3"/><circle cx="640" cy="104" r="1.8" fill="#e0e7ff" opacity="0.3"/><circle cx="380" cy="912" r="1.8" fill="#e0e7ff" opacity="0.3"/>
-    <g transform="translate(512 512) scale(1.16) translate(-512 -512)">
-  
-  <circle cx="512" cy="512" r="286" fill="#8b5cf6" opacity="0.4" filter="url(#bloom)"/>
-  <circle cx="512" cy="512" r="252" fill="url(#sphere)"/>
-  <g clip-path="url(#ball)" fill="none" stroke="#e9d5ff" stroke-width="2.5" opacity="0.11">
-    <ellipse cx="512" cy="360.8" rx="201.6" ry="44.35"/><ellipse cx="512" cy="461.6" rx="246.91" ry="54.32"/><ellipse cx="512" cy="562.4" rx="246.91" ry="54.32"/><ellipse cx="512" cy="663.2" rx="201.6" ry="44.35"/><ellipse cx="512" cy="512" rx="95.76" ry="252"/><ellipse cx="512" cy="512" rx="196.56" ry="252"/>
-  </g>
-  <circle cx="512" cy="512" r="252" fill="url(#shade)"/>
-  <path d="M298 472 A 226 226 0 0 1 482 288 A 292 292 0 0 0 298 472 Z" fill="url(#gloss)" opacity="0.55" filter="url(#soft)"/>
-  <circle cx="512" cy="512" r="250.5" fill="none" stroke="url(#rim)" stroke-width="3.5"/>
-  
-  <circle cx="512" cy="512" r="150" fill="url(#coreGlow)"/>
-  <path d="M512 400 Q524 500 624 512 Q524 524 512 624 Q500 524 400 512 Q500 500 512 400 Z" fill="#fff7dd" opacity="0.9" filter="url(#soft)"/>
-  <path d="M512 408 Q521 503 616 512 Q521 521 512 616 Q503 521 408 512 Q503 503 512 408 Z" fill="#fffaf0"/>
-  <path d="M512 472 L543.2 512 L512 552 L480.8 512 Z" fill="url(#core)"/>
-  <path d="M512 494 L526.04 512 L512 530 L497.96 512 Z" fill="#7c2d12" opacity="0.55"/>
-  
-  <g transform="translate(512 512) rotate(-24)" mask="url(#ringDepth)">
-    <ellipse rx="292" ry="80.49" fill="none" stroke="url(#orbit0)" stroke-width="26" opacity="0.35" filter="url(#soft)"/>
-    <ellipse rx="292" ry="80.49" fill="none" stroke="url(#orbit0)" stroke-width="11"/>
-  </g>
-  <g transform="translate(512 512) rotate(36)" mask="url(#ringDepth)">
-    <ellipse rx="292" ry="118.77" fill="none" stroke="url(#orbit1)" stroke-width="26" opacity="0.35" filter="url(#soft)"/>
-    <ellipse rx="292" ry="118.77" fill="none" stroke="url(#orbit1)" stroke-width="11"/>
-  </g>
-  <g transform="translate(512 512) rotate(96)" mask="url(#ringDepth)">
-    <ellipse rx="292" ry="99.87" fill="none" stroke="url(#orbit2)" stroke-width="26" opacity="0.35" filter="url(#soft)"/>
-    <ellipse rx="292" ry="99.87" fill="none" stroke="url(#orbit2)" stroke-width="11"/>
-  </g>
-  
-  <circle cx="297.35" cy="651.62" r="40" fill="#67e8f9" opacity="0.6" filter="url(#bloom)"/>
-  <circle cx="297.35" cy="651.62" r="21" fill="#67e8f9"/>
-  <circle cx="297.35" cy="651.62" r="9" fill="#ffffff"/>
-  <circle cx="687.81" cy="708.65" r="40" fill="#f0abfc" opacity="0.6" filter="url(#bloom)"/>
-  <circle cx="687.81" cy="708.65" r="21" fill="#f0abfc"/>
-  <circle cx="687.81" cy="708.65" r="9" fill="#ffffff"/>
-  <circle cx="438.63" cy="366.45" r="40" fill="#fde68a" opacity="0.6" filter="url(#bloom)"/>
-  <circle cx="438.63" cy="366.45" r="21" fill="#fde68a"/>
-  <circle cx="438.63" cy="366.45" r="9" fill="#ffffff"/>
-  </g>
+
+    
+    <!-- soft tail glow -->
+    <path d="M 224.79 583.61 A 296 296 0 0 1 583.61 224.79" fill="none" stroke="#7ad4f5" stroke-width="6"
+          opacity="0.1" stroke-linecap="round" filter="url(#orbitGlow)"/>
+    <!-- body -->
+    <path d="M 224.79 583.61 A 296 296 0 0 1 583.61 224.79" fill="none" stroke="url(#cometNW)" stroke-width="2.35"
+          stroke-linecap="round"/>
+    <!-- head bloom + core -->
+    <circle cx="583.61" cy="224.79" r="14"
+            fill="#9ae4ff" opacity="0.4" filter="url(#headGlow)"/>
+    <circle cx="583.61" cy="224.79" r="6.2" fill="#eefbff"/>
+    <circle cx="583.61" cy="224.79" r="2.6" fill="#ffffff"/>
+    
+    <!-- soft tail glow -->
+    <path d="M 799.21 440.39 A 296 296 0 0 1 440.39 799.21" fill="none" stroke="#7ad4f5" stroke-width="6"
+          opacity="0.1" stroke-linecap="round" filter="url(#orbitGlow)"/>
+    <!-- body -->
+    <path d="M 799.21 440.39 A 296 296 0 0 1 440.39 799.21" fill="none" stroke="url(#cometSE)" stroke-width="2.35"
+          stroke-linecap="round"/>
+    <!-- head bloom + core -->
+    <circle cx="440.39" cy="799.21" r="14"
+            fill="#9ae4ff" opacity="0.4" filter="url(#headGlow)"/>
+    <circle cx="440.39" cy="799.21" r="6.2" fill="#eefbff"/>
+    <circle cx="440.39" cy="799.21" r="2.6" fill="#ffffff"/>
+
+    <circle cx="512" cy="512" r="138" fill="url(#coreGlow)"/>
+
+    <!-- eye: one path only; soft bloom uses same path with round join (no tip caps) -->
+    <path d="M 288 512
+  C 355 398, 425 348, 512 348
+  C 599 348, 669 398, 736 512
+  C 669 626, 599 676, 512 676
+  C 425 676, 355 626, 288 512 Z" fill="none" stroke="#8adcf5" stroke-width="12"
+          opacity="0.12" stroke-linejoin="round" filter="url(#lidSoft)"/>
+    <path d="M 288 512
+  C 355 398, 425 348, 512 348
+  C 599 348, 669 398, 736 512
+  C 669 626, 599 676, 512 676
+  C 425 676, 355 626, 288 512 Z" fill="none" stroke="url(#lid)" stroke-width="8.5"
+          stroke-linejoin="round"/>
+
+    <circle cx="512" cy="512" r="56" fill="#7ad4f0" opacity="0.22" filter="url(#coreSoft)"/>
+    <circle cx="512" cy="512" r="46" fill="url(#iris)"/>
+    <rect x="507" y="482" width="10" height="60" rx="5" fill="#071018" opacity="0.8"/>
   </g>
 </svg>
