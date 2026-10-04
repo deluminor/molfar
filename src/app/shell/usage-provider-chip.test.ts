@@ -4,7 +4,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import type { ProviderRateLimits } from "@/features/providers/model/rate-limits";
+import type { ProviderRateLimits } from "@/domain/rate-limits/rate-limit";
 import { projectKey } from "@/shared/lib/paths";
 import { saveTabGroupMascot } from "@/features/workspace/model/tab-groups";
 import { needsProviderLogin, UsageProviderChip } from "./UsageProviderChip";

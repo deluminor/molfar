@@ -1,6 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { homeDir } from "@/platform/tauri/fs";
-import { supportsProviderAccounts } from "@/features/providers/model/provider-accounts";
+import { supportsProviderAccounts } from "@/domain/harness/provider-account";
 import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import * as child from "./child";
 import { harnessLoginArgs } from "./auth-support";

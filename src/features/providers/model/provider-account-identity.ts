@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type {
   ProviderAccount,
   ProviderAccountProvider,
-} from "./provider-accounts";
+} from "@/domain/harness/provider-account";
 
 /** Identity the provider CLI cached on disk after sign-in. */
 export type ProviderAccountIdentity = {

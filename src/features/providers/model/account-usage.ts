@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { formatResetDuration } from "./rate-limits";
 import {
-  clampUsedPercent,
   exhaustedWindowResetAt,
-  formatResetDuration,
-  type ProviderRateLimits,
-} from "./rate-limits";
+  clampUsedPercent,
+} from "@/domain/rate-limits/rate-limit-window";
+import type { ProviderRateLimits } from "@/domain/rate-limits/rate-limit";
 import {
   getAllRateLimits,
   loadRateLimits,
   subscribeRateLimits,
 } from "./rate-limits-cache";
+import { providerAccounts } from "./provider-accounts";
 import {
   PROVIDER_ACCOUNT_PROVIDERS,
-  providerAccounts,
   type ProviderAccount,
   type ProviderAccountProvider,
-} from "./provider-accounts";
+} from "@/domain/harness/provider-account";
 import { identityKey } from "./provider-account-identity";
 
 const CLOCK_MS = 30_000;

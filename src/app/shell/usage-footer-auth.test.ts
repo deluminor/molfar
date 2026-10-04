@@ -27,7 +27,7 @@ vi.mock(
 import type {
   ProviderRateLimits,
   RateLimitProvider,
-} from "@/features/providers/model/rate-limits";
+} from "@/domain/rate-limits/rate-limit";
 import { clearCachedRateLimits } from "@/features/providers/model/rate-limits-cache";
 import { UsageFooter } from "./UsageFooter";
 

@@ -1,16 +1,18 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
-  clampUsedPercent,
   formatRateLimitWindowChipLabel,
   formatResetCountdown,
   formatResetDuration,
   formatUsagePercent,
   formatWindowLabel,
   rateLimitWindowTooltip,
-  type ProviderRateLimits,
-  type RateLimitResetCredit,
-  type RateLimitWindow,
 } from "@/features/providers/model/rate-limits";
+import { clampUsedPercent } from "@/domain/rate-limits/rate-limit-window";
+import type {
+  ProviderRateLimits,
+  RateLimitResetCredit,
+  RateLimitWindow,
+} from "@/domain/rate-limits/rate-limit";
 import type { CodexRateLimitResetOutcome } from "@/features/providers/model/rate-limits-fetch";
 import { mascotPath, projectMascot } from "@/features/projects/model/project-mascots";
 import { projectKey, projectName } from "@/shared/lib/paths";
@@ -32,7 +34,7 @@ import {
 import {
   supportsProviderAccounts,
   type ProviderAccount,
-} from "@/features/providers/model/provider-accounts";
+} from "@/domain/harness/provider-account";
 import {
   accountStatus,
   accountUsageKey,

@@ -11,7 +11,7 @@ import {
   parseCommitMessage,
   parsePrContent,
   type PrContent,
-} from "@/features/source-control/model/git-text";
+} from "@/domain/git/git-text";
 import { runOpenCodeTextPrompt } from "./opencode-text";
 
 const GIT_TIMEOUT_MS = 90_000;

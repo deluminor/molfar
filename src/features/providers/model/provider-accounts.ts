@@ -1,45 +1,15 @@
 import { pathKey } from "@/shared/lib/paths";
-import type { HarnessId } from "@/domain/harness/harness";
+import {
+  DEFAULT_PROVIDER_ACCOUNT_ID,
+  type ProviderAccountProvider,
+  type ProviderAccount,
+} from "@/domain/harness/provider-account";
 
 const ACCOUNTS_KEY = "molfar.providerAccounts.v1";
 const SELECTIONS_KEY = "molfar.providerAccountSelections.v1";
 const CHANGE_EVENT = "molfar-provider-accounts-changed";
 
-export const DEFAULT_PROVIDER_ACCOUNT_ID = "default";
 const DEFAULT_PROVIDER_ACCOUNT_LABEL = "Default account";
-
-/** Legacy sessions predate persisted account ids and belong to the default profile. */
-export function sameProviderAccountId(
-  left: string | undefined,
-  right: string | undefined,
-): boolean {
-  return (
-    (left ?? DEFAULT_PROVIDER_ACCOUNT_ID) ===
-    (right ?? DEFAULT_PROVIDER_ACCOUNT_ID)
-  );
-}
-
-/** Providers whose CLIs support isolated, locally named account profiles. */
-export const PROVIDER_ACCOUNT_PROVIDERS = [
-  "claude",
-  "codex",
-] as const satisfies readonly HarnessId[];
-
-export type ProviderAccountProvider =
-  (typeof PROVIDER_ACCOUNT_PROVIDERS)[number];
-
-export function supportsProviderAccounts(
-  provider: HarnessId,
-): provider is ProviderAccountProvider {
-  return PROVIDER_ACCOUNT_PROVIDERS.some((candidate) => candidate === provider);
-}
-
-export type ProviderAccount = {
-  id: string;
-  provider: ProviderAccountProvider;
-  label: string;
-  isDefault?: boolean;
-};
 
 type StoredAccounts = Partial<
   Record<ProviderAccountProvider, ProviderAccount[]>

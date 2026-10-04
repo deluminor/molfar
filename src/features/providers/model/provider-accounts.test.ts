@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  DEFAULT_PROVIDER_ACCOUNT_ID,
   newProviderAccount,
   providerAccountLabel,
   providerAccountExists,
@@ -12,6 +11,7 @@ import {
   selectedProviderAccountId,
   selectProviderAccount,
 } from "./provider-accounts";
+import { DEFAULT_PROVIDER_ACCOUNT_ID } from "@/domain/harness/provider-account";
 
 beforeEach(() => {
   localStorage.clear();

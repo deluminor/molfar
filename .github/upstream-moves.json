@@ -283,10 +283,8 @@
     "src/features/providers/model/providerAccountIdentity.ts": "src/features/providers/model/provider-account-identity.ts",
     "src/features/providers/model/providerAccounts.test.ts": "src/features/providers/model/provider-accounts.test.ts",
     "src/features/providers/model/providerAccounts.ts": "src/features/providers/model/provider-accounts.ts",
-    "src/features/providers/model/providerBinaryPaths.test.ts": "src/features/providers/model/provider-binary-paths.test.ts",
-    "src/features/providers/model/providerBinaryPaths.ts": "src/features/providers/model/provider-binary-paths.ts",
-    "src/features/providers/model/rateLimits.test.ts": "src/features/providers/model/rate-limits.test.ts",
-    "src/features/providers/model/rateLimits.ts": "src/features/providers/model/rate-limits.ts",
+    "src/features/providers/model/providerBinaryPaths.test.ts": "src/integrations/harness/core/provider-binary-paths.test.ts",
+    "src/features/providers/model/providerBinaryPaths.ts": "src/integrations/harness/core/provider-binary-paths.ts",
     "src/features/providers/model/rateLimitsCache.ts": "src/features/providers/model/rate-limits-cache.ts",
     "src/features/providers/model/rateLimitsFetch.test.ts": "src/features/providers/model/rate-limits-fetch.test.ts",
     "src/features/providers/model/rateLimitsFetch.ts": "src/features/providers/model/rate-limits-fetch.ts",
@@ -520,7 +518,7 @@
     "src/features/source-control/model/diffComment.ts": "src/features/source-control/model/diff-comment.ts",
     "src/features/source-control/model/gitGraph.test.ts": "src/features/source-control/model/git-graph.test.ts",
     "src/features/source-control/model/gitGraph.ts": "src/features/source-control/model/git-graph.ts",
-    "src/features/source-control/model/gitText.ts": "src/features/source-control/model/git-text.ts",
+    "src/features/source-control/model/gitText.ts": "src/domain/git/git-text.ts",
     "src/features/source-control/model/lineDiff.test.ts": "src/features/source-control/model/line-diff.test.ts",
     "src/features/source-control/model/lineDiff.ts": "src/features/source-control/model/line-diff.ts",
     "src/features/source-control/model/prDiff.test.ts": "src/features/source-control/model/pr-diff.test.ts",
@@ -718,6 +716,30 @@
     "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
   },
   "splits": {
+    "src/features/providers/model/rateLimits.test.ts": {
+      "targets": [
+        "src/features/providers/model/rate-limits.test.ts",
+        "src/domain/rate-limits/rate-limit-window.test.ts",
+        "src/integrations/harness/core/usage-window.test.ts",
+        "src/integrations/harness/providers/claude/claude-usage.test.ts",
+        "src/integrations/harness/providers/codex/codex-rate-limits.test.ts",
+        "src/integrations/harness/providers/opencode/opencode-usage.test.ts"
+      ],
+      "notes": "Each describe block moved next to the module it tests; formatter tests stay."
+    },
+    "src/features/providers/model/rateLimits.ts": {
+      "targets": [
+        "src/features/providers/model/rate-limits.ts",
+        "src/domain/rate-limits/rate-limit.ts",
+        "src/domain/rate-limits/rate-limit-state.ts",
+        "src/domain/rate-limits/rate-limit-window.ts",
+        "src/integrations/harness/core/usage-window.ts",
+        "src/integrations/harness/providers/claude/claude-usage.ts",
+        "src/integrations/harness/providers/codex/codex-rate-limits.ts",
+        "src/integrations/harness/providers/opencode/opencode-usage.ts"
+      ],
+      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) → src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits → rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt → rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers → src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage → providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits → providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage → providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
+    },
     "src/features/sessions/model/models.test.ts": {
       "targets": [
         "src/features/sessions/model/models.test.ts",
@@ -828,6 +850,19 @@
           "OrchestrationProposal"
         ],
         "target": "src/domain/orchestration/proposal.ts"
+      }
+    ],
+    "src/features/providers/model/providerAccounts.ts": [
+      {
+        "names": [
+          "DEFAULT_PROVIDER_ACCOUNT_ID",
+          "sameProviderAccountId",
+          "PROVIDER_ACCOUNT_PROVIDERS",
+          "ProviderAccountProvider",
+          "supportsProviderAccounts",
+          "ProviderAccount"
+        ],
+        "target": "src/domain/harness/provider-account.ts"
       }
     ],
     "src/features/search/model/search.ts": [

@@ -8,10 +8,10 @@ import {
   type PiUsageProvider,
 } from "@/features/providers/model/pi-usage";
 import {
-  idleRateLimits,
   RATE_LIMIT_MIN_REFETCH_MS,
   RATE_LIMIT_POLL_MS,
 } from "@/features/providers/model/rate-limits";
+import { idleRateLimits } from "@/domain/rate-limits/rate-limit-state";
 import { UsageProviderChip } from "./UsageProviderChip";
 
 export function PiUsage({ model, now }: { model?: string; now: number }) {

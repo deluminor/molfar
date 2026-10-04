@@ -2,7 +2,10 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProviderRateLimits, RateLimitWindow } from "./rate-limits";
+import type {
+  ProviderRateLimits,
+  RateLimitWindow,
+} from "@/domain/rate-limits/rate-limit";
 
 const fetches = vi.hoisted(() => ({
   claude: vi.fn<(accountId: string) => Promise<ProviderRateLimits>>(),
@@ -23,7 +26,7 @@ import {
   type AccountUsage,
 } from "./account-usage";
 import { clearCachedRateLimits, loadRateLimits } from "./rate-limits-cache";
-import type { ProviderAccount } from "./provider-accounts";
+import type { ProviderAccount } from "@/domain/harness/provider-account";
 
 const now = Date.parse("2026-09-25T12:00:00Z");
 const HOUR = 3_600_000;

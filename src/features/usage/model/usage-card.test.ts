@@ -3,7 +3,7 @@ import {
   SESSION_WINDOW_MINUTES,
   WEEKLY_WINDOW_MINUTES,
   type ProviderRateLimits,
-} from "@/features/providers/model/rate-limits";
+} from "@/domain/rate-limits/rate-limit";
 import {
   cardFromAntigravityBody,
   cardFromCursorBody,

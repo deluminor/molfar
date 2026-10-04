@@ -603,9 +603,6 @@
   "src/features/providers/model/provider-accounts.ts": {
     "lint/style/noNonNullAssertion": 1
   },
-  "src/features/providers/model/provider-binary-paths.test.ts": {
-    "lint/correctness/noUnusedVariables": 1
-  },
   "src/features/providers/ui/harness-update-notice.test.ts": {
     "lint/style/noNonNullAssertion": 2,
     "lint/suspicious/useIterableCallbackReturn": 1
@@ -1198,6 +1195,9 @@
   },
   "src/integrations/harness/core/models/catalog-store.ts": {
     "lint/suspicious/noAssignInExpressions": 2
+  },
+  "src/integrations/harness/core/provider-binary-paths.test.ts": {
+    "lint/correctness/noUnusedVariables": 1
   },
   "src/integrations/harness/core/registry.test.ts": {
     "lint/style/noNonNullAssertion": 1

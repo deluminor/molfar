@@ -1,9 +1,7 @@
 import { nativeModelId } from "../../core/models/resolve-model";
-import { sameProviderAccountId } from "@/features/providers/model/provider-accounts";
-import {
-  exhaustedWindowResetAt,
-  parseCodexRateLimits,
-} from "@/features/providers/model/rate-limits";
+import { sameProviderAccountId } from "@/domain/harness/provider-account";
+import { parseCodexRateLimits } from "./codex-rate-limits";
+import { exhaustedWindowResetAt } from "@/domain/rate-limits/rate-limit-window";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   questionPromptTitle,

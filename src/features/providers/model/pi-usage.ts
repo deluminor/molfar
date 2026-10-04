@@ -5,9 +5,11 @@ import {
   errorRateLimits,
   idleRateLimits,
   unavailableRateLimits,
-  type ProviderRateLimits,
-  type RateLimitWindow,
-} from "./rate-limits";
+} from "@/domain/rate-limits/rate-limit-state";
+import type {
+  ProviderRateLimits,
+  RateLimitWindow,
+} from "@/domain/rate-limits/rate-limit";
 
 export type PiUsageProvider = "anthropic" | "openai-codex";
 

@@ -11,7 +11,7 @@ import {
   parseCommitMessage,
   parsePrContent,
   type PrContent,
-} from "@/features/source-control/model/git-text";
+} from "@/domain/git/git-text";
 import { runCodexTextPrompt } from "./codex-text";
 
 const GIT_TIMEOUT_MS = 90_000;

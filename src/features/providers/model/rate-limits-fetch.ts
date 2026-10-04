@@ -1,13 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { homeDir } from "@/platform/tauri/fs";
+import { parseCodexRateLimits } from "@/integrations/harness/providers/codex/codex-rate-limits";
+import { parseOpencodeGoUsage } from "@/integrations/harness/providers/opencode/opencode-usage";
+import { parseClaudeOAuthUsage } from "@/integrations/harness/providers/claude/claude-usage";
 import {
   errorRateLimits,
-  parseClaudeOAuthUsage,
-  parseCodexRateLimits,
-  parseOpencodeGoUsage,
   unavailableRateLimits,
-  type ProviderRateLimits,
-} from "./rate-limits";
+} from "@/domain/rate-limits/rate-limit-state";
+import type { ProviderRateLimits } from "@/domain/rate-limits/rate-limit";
 import {
   killChild,
   resolveCodexBinary,

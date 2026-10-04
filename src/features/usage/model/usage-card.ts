@@ -1,10 +1,12 @@
 import {
-  clampUsedPercent,
   formatResetCountdown,
   formatUsagePercent,
-  type ProviderRateLimits,
-  type RateLimitWindow,
 } from "@/features/providers/model/rate-limits";
+import { clampUsedPercent } from "@/domain/rate-limits/rate-limit-window";
+import type {
+  ProviderRateLimits,
+  RateLimitWindow,
+} from "@/domain/rate-limits/rate-limit";
 
 export type UsageProviderId = "claude" | "codex" | "cursor" | "antigravity";
 

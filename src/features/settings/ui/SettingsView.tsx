@@ -157,7 +157,7 @@ import {
   providerBinaryPathChangePending,
   saveProviderBinaryPath,
   type ConfigurableBinaryProvider,
-} from "@/features/providers/model/provider-binary-paths";
+} from "@/integrations/harness/core/provider-binary-paths";
 import {
   compareSemver,
   MINIMUM_OPENCODE_VERSION,
@@ -213,14 +213,16 @@ import {
 import {
   newProviderAccount,
   providerAccounts,
-  PROVIDER_ACCOUNT_PROVIDERS,
   removeProviderAccount,
   renameProviderAccount,
   saveProviderAccount,
   subscribeProviderAccounts,
+} from "@/features/providers/model/provider-accounts";
+import {
+  PROVIDER_ACCOUNT_PROVIDERS,
   type ProviderAccount,
   type ProviderAccountProvider,
-} from "@/features/providers/model/provider-accounts";
+} from "@/domain/harness/provider-account";
 import { removeProviderAccountCredentials } from "@/features/providers/model/provider-account-credentials";
 import {
   identityKey,

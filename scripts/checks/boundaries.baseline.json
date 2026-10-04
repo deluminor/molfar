@@ -128,29 +128,11 @@
   "src/integrations/harness/core/apply.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/core/auth.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/core/child.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/core/registry.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/core/text-harness.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/claude/claude-git.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/claude/claude-live.test.ts": {
     "layer:integrations->features": 2
   },
-  "src/integrations/harness/providers/claude/claude-protocol.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/claude/claude.ts": {
-    "layer:integrations->features": 2
+    "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/codex/codex-approval-ui.test.ts": {
     "layer:integrations->features": 7
@@ -158,16 +140,7 @@
   "src/integrations/harness/providers/codex/codex-attachments.test.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/providers/codex/codex-git.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/codex/codex-live.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/codex/codex.ts": {
-    "layer:integrations->features": 2
-  },
-  "src/integrations/harness/providers/cursor/cursor-git.ts": {
     "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/cursor/cursor-live.test.ts": {
@@ -176,13 +149,7 @@
   "src/integrations/harness/providers/cursor/cursor-subagents.test.ts": {
     "layer:integrations->features": 1
   },
-  "src/integrations/harness/providers/grok/grok-git.ts": {
-    "layer:integrations->features": 1
-  },
   "src/integrations/harness/providers/omp/omp-live.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/opencode/opencode-git.ts": {
     "layer:integrations->features": 1
   },
   "src/integrations/harness/providers/opencode/opencode-live.test.ts": {

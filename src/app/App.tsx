@@ -377,12 +377,14 @@ import {
   sameProjectPath,
 } from "@/features/projects/model/recents";
 import {
-  DEFAULT_PROVIDER_ACCOUNT_ID,
   providerAccountExists,
   selectedProviderAccountId,
+} from "@/features/providers/model/provider-accounts";
+import {
   supportsProviderAccounts,
   type ProviderAccountProvider,
-} from "@/features/providers/model/provider-accounts";
+  DEFAULT_PROVIDER_ACCOUNT_ID,
+} from "@/domain/harness/provider-account";
 import { applyAddToChatRequest } from "@/features/sessions/model/add-chat-to-workspace";
 import {
   buildPlanPrompt,
@@ -488,7 +490,7 @@ import {
   probeNotificationPermission,
   setWindowFocused,
 } from "@/features/notifications/model/notifications";
-import { exhaustedWindowResetAt } from "@/features/providers/model/rate-limits";
+import { exhaustedWindowResetAt } from "@/domain/rate-limits/rate-limit-window";
 import {
   fetchClaudeRateLimits,
   fetchCodexRateLimits,

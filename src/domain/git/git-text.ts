@@ -1,4 +1,8 @@
-import { limitSection, parseJsonObject, stringField } from "@/shared/lib/json-text";
+import {
+  limitSection,
+  parseJsonObject,
+  stringField,
+} from "@/shared/lib/json-text";
 
 export type CommitMessage = {
   subject: string;

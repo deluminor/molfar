@@ -135,7 +135,7 @@
     "lines": 1248
   },
   "src/app/App.tsx": {
-    "lines": 11746
+    "lines": 11748
   },
   "src/app/hooks/use-workspace-navigation.ts": {
     "lines": 288
@@ -162,7 +162,7 @@
     "lines": 596
   },
   "src/app/shell/UsageProviderChip.tsx": {
-    "lines": 1165
+    "lines": 1167
   },
   "src/app/shell/use-project-menu.tsx": {
     "lines": 606
@@ -321,13 +321,10 @@
     "lines": 386
   },
   "src/features/providers/model/provider-accounts.ts": {
-    "lines": 289
+    "lines": 259
   },
   "src/features/providers/model/rate-limits-fetch.ts": {
     "lines": 300
-  },
-  "src/features/providers/model/rate-limits.ts": {
-    "lines": 515
   },
   "src/features/providers/ui/HarnessUpdateNotice.tsx": {
     "lines": 286
@@ -432,7 +429,7 @@
     "lines": 645
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "lines": 4468
+    "lines": 4470
   },
   "src/features/skills/model/skills.ts": {
     "lines": 541
@@ -486,7 +483,7 @@
     "lines": 456
   },
   "src/features/usage/model/usage-card.ts": {
-    "lines": 251
+    "lines": 253
   },
   "src/features/workspace/model/layout.ts": {
     "lines": 1434
@@ -558,7 +555,7 @@
     "lines": 478
   },
   "src/integrations/harness/providers/codex/codex.ts": {
-    "lines": 1379
+    "lines": 1377
   },
   "src/integrations/harness/providers/cursor/cursor-catalog.ts": {
     "lines": 489

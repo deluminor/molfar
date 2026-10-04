@@ -3,9 +3,11 @@ import {
   errorRateLimits,
   fetchingRateLimits,
   idleRateLimits,
-  type ProviderRateLimits,
-  type RateLimitProvider,
-} from "./rate-limits";
+} from "@/domain/rate-limits/rate-limit-state";
+import type {
+  ProviderRateLimits,
+  RateLimitProvider,
+} from "@/domain/rate-limits/rate-limit";
 import {
   fetchClaudeRateLimits,
   fetchCodexRateLimits,

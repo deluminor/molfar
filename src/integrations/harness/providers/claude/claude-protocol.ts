@@ -12,7 +12,7 @@ import {
   attachmentPathText,
   promptText,
 } from "@/domain/session/attachment-prompt";
-import { parseResetTimestamp } from "@/features/providers/model/rate-limits";
+import { parseResetTimestamp } from "../../core/usage-window";
 import {
   questionPromptTitle,
   questionsFromUnknown,

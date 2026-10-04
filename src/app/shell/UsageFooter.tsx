@@ -6,8 +6,8 @@ import { consumeCodexRateLimitResetCredit } from "@/features/providers/model/rat
 import {
   errorRateLimits,
   unavailableRateLimits,
-  type RateLimitProvider,
-} from "@/features/providers/model/rate-limits";
+} from "@/domain/rate-limits/rate-limit-state";
+import type { RateLimitProvider } from "@/domain/rate-limits/rate-limit";
 import {
   getCachedRateLimits,
   loadRateLimits,
@@ -42,8 +42,8 @@ import {
   selectProviderAccount,
   selectedProviderAccountId,
   subscribeProviderAccounts,
-  type ProviderAccountProvider,
 } from "@/features/providers/model/provider-accounts";
+import type { ProviderAccountProvider } from "@/domain/harness/provider-account";
 
 const CLOCK_MS = 30_000;
 

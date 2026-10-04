@@ -4,7 +4,7 @@ import type { TaskListMeta } from "@/domain/session/task-list";
 import type { HarnessId } from "@/domain/harness/harness";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import type { GeneratedSessionTitle } from "@/domain/session/generated-title";
-import type { PrContent } from "@/features/source-control/model/git-text";
+import type { PrContent } from "@/domain/git/git-text";
 import { hasLiveCatalog } from "./models/catalog-store";
 import type { UserQuestionReply } from "@/domain/session/user-question";
 import type { NativeCommandProvider } from "./native-commands";
