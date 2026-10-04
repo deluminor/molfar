@@ -59,6 +59,7 @@
           "level": "on",
           "options": {
             "hooks": [
+              { "name": "useStableFlow", "stableResult": true },
               {
                 "name": "useWorkspaceActions",
                 "stableResult": [

@@ -861,6 +861,18 @@
           "refreshHistory (App keeps refreshHistory = refreshProjectHistory(workspaceStore, cwd, deps))"
         ],
         "target": "src/app/workspace/flows/session-history/refresh-history.ts"
+      },
+      {
+        "names": [
+          "persistSession, the debounced persistence effect, lastPersisted, lastBoundProvider, lastPersistedUserBlock, observedSessions, pendingPersist (App: sessionPersistence.* \u2014 persist, observe, writePending, markImported, markSaved, forgetSaved, dropPending, forgetUserTurn, mapPending)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-persistence.ts"
+      },
+      {
+        "names": [
+          "lastUserBlockId"
+        ],
+        "target": "src/domain/session/session-state.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [

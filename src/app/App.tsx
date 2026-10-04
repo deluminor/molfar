@@ -28,6 +28,7 @@ import {
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
 import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
+import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -122,6 +123,7 @@ import { Sidebar } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
+import { useStableFlow } from "./workspace/hooks/use-stable-flow";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
@@ -409,6 +411,7 @@ import {
   removeSessionDraft,
   sessionDraftBlock,
   sessionNeedsInput,
+  lastUserBlockId,
 } from "@/domain/session/session-state";
 import type {
   LinkedWorkItem,
@@ -501,7 +504,6 @@ import {
   getSession,
   listLinkedSessions,
   listSessionsByProject,
-  persistFingerprint,
   rebaseProjectSessions,
   replaceInFlightSessions,
   saveWorkspaceSnapshot,
@@ -1330,15 +1332,22 @@ function Workspace({
   const tabVisitNav = useWorkspaceField(workspaceStore, "tabVisitNav");
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
-  const lastPersisted = useRef(new Map<string, string>());
-  const lastBoundProvider = useRef(new Map<string, string>());
-  const lastPersistedUserBlock = useRef(new Map<string, string>());
   const inFlightSyncKey = useRef<string | null>(null);
   const sawInFlight = useRef(false);
   const workspaceSyncKey = useRef<string | null>(null);
-  const observedSessions = useRef(new Map<string, Session>());
-  const pendingPersist = useRef(new Map<string, Session>());
   const removingSessionIds = useRef(new Set<string>());
+  const sessionPersistence = useStableFlow(() =>
+    createSessionPersistence({
+      upsert: upsertSession,
+      isBlocked: (sessionId) =>
+        removingSessionIds.current.has(sessionId) ||
+        switchingWorktrees.current.has(sessionId),
+      onSaved: (summary) => {
+        if (summary.cwd !== sidebarCwdRef.current) return;
+        setHistory((current) => mergeProjectHistorySummary(current, summary));
+      },
+    }),
+  );
   const loadedSessionCache = useRef(new Map<string, Session>());
   const sessionLoads = useRef(new Map<string, Promise<Session | null>>());
   const sessionLoadEpochs = useRef(new Map<string, number>());
@@ -1363,18 +1372,10 @@ function Workspace({
     const imported = windowTransfer?.sessions ?? resumed?.sessions;
     if (!imported?.length) return;
     importedSessionsApplied.current = true;
-    for (const session of imported) {
-      observedSessions.current.set(session.id, session);
-      lastPersisted.current.set(session.id, persistFingerprint(session));
-      const userId = lastUserBlockId(session);
-      if (userId) lastPersistedUserBlock.current.set(session.id, userId);
-      if (session.providerSessionId) {
-        lastBoundProvider.current.set(session.id, session.providerSessionId);
-      }
-    }
+    for (const session of imported) sessionPersistence.markImported(session);
   }, [windowTransfer, resumed]);
 
-  const [harnessEvents] = useState(() =>
+  const harnessEvents = useStableFlow(() =>
     createHarnessEventPipeline({
       readSessions: () => sessionsRef.current,
       commitSessions: (next) => {
@@ -1446,7 +1447,7 @@ function Workspace({
       stopBridge();
       harnessEvents.dispose();
     };
-  }, [resumed, readProjectReturnMemory, harnessEvents]);
+  }, [resumed, readProjectReturnMemory]);
 
   useEffect(() => {
     void probeHarnessAvailability();
@@ -1920,100 +1921,17 @@ function Workspace({
     prefetchProjectFiles(gitCwd);
   }, [gitCwd]);
 
-  const persistSession = useCallback((session: Session | undefined) => {
-    if (
-      !session ||
-      !shouldPersistSession(session) ||
-      removingSessionIds.current.has(session.id) ||
-      switchingWorktrees.current.has(session.id)
-    )
-      return;
-    const fingerprint = persistFingerprint(session);
-    // Leaving a session flushes it. An unchanged one would still rewrite and
-    // re-diff its whole transcript under the store lock, stalling the next load.
-    if (lastPersisted.current.get(session.id) === fingerprint) return;
-    void upsertSession(session)
-      .then((summary) => {
-        if (!summary) return;
-        lastPersisted.current.set(session.id, fingerprint);
-        if (summary.cwd === sidebarCwdRef.current) {
-          setHistory((current) => mergeProjectHistorySummary(current, summary));
-        }
-      })
-      .catch(() => undefined);
-  }, []);
+  const persistSession = sessionPersistence.persist;
 
   useEffect(() => {
-    const liveIds = new Set(sessions.map((session) => session.id));
-    const visibleIds = openSessionIds(tabsRef.current);
-    for (const session of sessions) {
-      if (
-        removingSessionIds.current.has(session.id) ||
-        switchingWorktrees.current.has(session.id)
-      )
-        continue;
-      if (observedSessions.current.get(session.id) === session) continue;
-      observedSessions.current.set(session.id, session);
-      const parked = !visibleIds.has(session.id);
-      const newlyBound =
-        !!session.providerSessionId &&
-        lastBoundProvider.current.get(session.id) !== session.providerSessionId;
-      const lastUserId = lastUserBlockId(session);
-      const newUserTurn =
-        !!lastUserId &&
-        lastPersistedUserBlock.current.get(session.id) !== lastUserId;
-      if (newlyBound && session.providerSessionId) {
-        lastBoundProvider.current.set(session.id, session.providerSessionId);
-      }
-      if (newUserTurn && lastUserId) {
-        lastPersistedUserBlock.current.set(session.id, lastUserId);
-      }
-      if ((newlyBound || newUserTurn) && shouldPersistSession(session)) {
-        persistSession(session);
-      }
-      if (
-        shouldPersistSession(session) &&
-        (!session.busy ||
-          parked ||
-          newlyBound ||
-          newUserTurn ||
-          !lastPersisted.current.has(session.id))
-      ) {
-        pendingPersist.current.set(session.id, session);
-      }
-    }
-    for (const sessionId of observedSessions.current.keys()) {
-      if (liveIds.has(sessionId)) continue;
-      observedSessions.current.delete(sessionId);
-      pendingPersist.current.delete(sessionId);
-    }
-    if (pendingPersist.current.size === 0) return;
-
-    const timer = window.setTimeout(() => {
-      const dirty = [...pendingPersist.current.values()];
-      pendingPersist.current.clear();
-      void Promise.all(
-        dirty.map(async (session) => {
-          if (
-            removingSessionIds.current.has(session.id) ||
-            switchingWorktrees.current.has(session.id)
-          )
-            return;
-          const fingerprint = persistFingerprint(session);
-          if (lastPersisted.current.get(session.id) === fingerprint) return;
-          const summary = await upsertSession(session).catch(() => null);
-          if (!summary) return;
-          lastPersisted.current.set(session.id, fingerprint);
-          if (summary.cwd === sidebarCwdRef.current) {
-            setHistory((current) =>
-              mergeProjectHistorySummary(current, summary),
-            );
-          }
-        }),
-      );
-    }, 650);
+    if (!sessionPersistence.observe(sessions, openSessionIds(tabsRef.current)))
+      return;
+    const timer = window.setTimeout(
+      () => void sessionPersistence.writePending(),
+      650,
+    );
     return () => window.clearTimeout(timer);
-  }, [persistSession, sessions]);
+  }, [sessions]);
 
   useEffect(() => {
     const refs = inFlightRefs(sessions, tabs);
@@ -2559,7 +2477,7 @@ function Workspace({
       const occupyPaneId =
         occupying && isBlankSession(occupying) ? occupying.id : undefined;
       if (occupyPaneId && occupying) {
-        lastPersisted.current.delete(occupyPaneId);
+        sessionPersistence.forgetSaved(occupyPaneId);
         void forgetHarnessSession(occupying.harness, occupyPaneId);
         setSessions((prev) =>
           prev.filter((session) => session.id !== occupyPaneId),
@@ -3807,7 +3725,7 @@ function Workspace({
         );
     if (!paneId || paneId === session.id) return false;
 
-    lastPersisted.current.delete(paneId);
+    sessionPersistence.forgetSaved(paneId);
     {
       const blank = sessionsRef.current.find((entry) => entry.id === paneId);
       if (blank) void forgetHarnessSession(blank.harness, paneId);
@@ -3914,7 +3832,7 @@ function Workspace({
           restored.blocks,
         );
       }
-      lastPersisted.current.set(restored.id, persistFingerprint(restored));
+      sessionPersistence.markSaved(restored);
       if (!sessionsRef.current.some((session) => session.id === restored.id)) {
         const next = [...sessionsRef.current, restored];
         sessionsRef.current = next;
@@ -4277,7 +4195,7 @@ function Workspace({
         );
 
       if (replaceTarget) {
-        lastPersisted.current.delete(targetId);
+        sessionPersistence.forgetSaved(targetId);
         const blank = sessionsRef.current.find(
           (entry) => entry.id === targetId,
         );
@@ -4332,7 +4250,7 @@ function Workspace({
       if (!result) return;
 
       if (blankTarget) {
-        lastPersisted.current.delete(blankTarget.id);
+        sessionPersistence.forgetSaved(blankTarget.id);
         void forgetHarnessSession(blankTarget.harness, blankTarget.id);
       }
       sessionsRef.current = result.sessions;
@@ -4378,7 +4296,7 @@ function Workspace({
         const saved = await upsertSession(updated).catch(() => null);
         if (saved) {
           rememberLoadedSession(loadedSessionCache.current, updated);
-          lastPersisted.current.set(sessionId, persistFingerprint(updated));
+          sessionPersistence.markSaved(updated);
         }
       }
       void refreshHistory(sidebarCwd);
@@ -4447,7 +4365,7 @@ function Workspace({
         for (const id of ids) {
           removingSessionIds.current.add(id);
           lockedIds.add(id);
-          pendingPersist.current.delete(id);
+          sessionPersistence.dropPending(id);
           invalidateLoadedSession(id);
         }
         for (const id of ids) {
@@ -4483,8 +4401,8 @@ function Workspace({
         }
         for (const id of affected) {
           invalidateLoadedSession(id);
-          pendingPersist.current.delete(id);
-          lastPersisted.current.delete(id);
+          sessionPersistence.dropPending(id);
+          sessionPersistence.forgetSaved(id);
         }
         sessionsRef.current = sessionsRef.current.map((session) =>
           affected.has(session.id)
@@ -4593,7 +4511,7 @@ function Workspace({
         }
       }
       invalidateLoadedSession(sessionId);
-      pendingPersist.current.delete(sessionId);
+      sessionPersistence.dropPending(sessionId);
       try {
         const remover = createSessionRemover({
           mode,
@@ -4638,12 +4556,9 @@ function Workspace({
                 for (const id of sessionLoads.current.keys()) {
                   invalidateLoadedSession(id);
                 }
-                for (const [id, pending] of pendingPersist.current) {
-                  pendingPersist.current.set(
-                    id,
-                    releaseOrchestrationWorker(pending, change.leadId),
-                  );
-                }
+                sessionPersistence.mapPending((pending) =>
+                  releaseOrchestrationWorker(pending, change.leadId),
+                );
                 const releaseSummary = (entry: SessionSummary) =>
                   entry.orchestrationLeadId === change.leadId
                     ? { ...entry, orchestrationLeadId: undefined }
@@ -4656,8 +4571,8 @@ function Workspace({
               }
 
               const { removal } = change;
-              lastPersisted.current.delete(sessionId);
-              pendingPersist.current.delete(sessionId);
+              sessionPersistence.forgetSaved(sessionId);
+              sessionPersistence.dropPending(sessionId);
               const closingFiles = filesInWorkspaceTabs(removal.closedTabs);
               setDirtyFiles((current) => {
                 const next = new Set(current);
@@ -5209,7 +5124,7 @@ function Workspace({
         );
       }
       switchingWorktrees.current.set(sessionId, tree.path);
-      pendingPersist.current.delete(sessionId);
+      sessionPersistence.dropPending(sessionId);
       try {
         const listed = await listWorktrees(current.cwd);
         if (!isCurrent()) return;
@@ -5276,7 +5191,7 @@ function Workspace({
         else workspacePins.current.delete(sessionId);
         if (latest.worktreeRemoved)
           await keepSessionChanges(sessionId, target.path);
-        pendingPersist.current.delete(sessionId);
+        sessionPersistence.dropPending(sessionId);
         if (shouldPersistSession(next)) await upsertSession(next);
         if (!isCurrent()) return;
         invalidateLoadedSession(sessionId);
@@ -5471,7 +5386,7 @@ function Workspace({
           invalidateLoadedSession(sessionId);
         }
         for (const session of projectSessions) {
-          pendingPersist.current.delete(session.id);
+          sessionPersistence.dropPending(session.id);
           if (session.busy) {
             turnGen.current.set(
               session.id,
@@ -5484,7 +5399,7 @@ function Workspace({
           for (const id of sessionChildHarnesses(session)) {
             void forgetHarnessSession(id, session.id);
           }
-          lastPersisted.current.delete(session.id);
+          sessionPersistence.forgetSaved(session.id);
         }
         void removeProjectData(normalized);
       } else {
@@ -5494,7 +5409,7 @@ function Workspace({
             rememberLoadedSession(loadedSessionCache.current, session);
           }
           persistSession(session);
-          pendingPersist.current.delete(session.id);
+          sessionPersistence.dropPending(session.id);
           for (const id of sessionChildHarnesses(session)) {
             void forgetHarnessSession(id, session.id);
           }
@@ -5599,11 +5514,9 @@ function Workspace({
           loadedSessionCache.current.set(id, { ...session, cwd: to });
         }
       }
-      for (const [id, session] of pendingPersist.current) {
-        if (sameProjectPath(session.cwd, from)) {
-          pendingPersist.current.set(id, { ...session, cwd: to });
-        }
-      }
+      sessionPersistence.mapPending((session) =>
+        sameProjectPath(session.cwd, from) ? { ...session, cwd: to } : session,
+      );
       setHistory((current) =>
         current.map((session) =>
           sameProjectPath(session.cwd, from)
@@ -5972,9 +5885,9 @@ function Workspace({
       if (!withoutDraft) return false;
 
       if (!shouldPersistSession(withoutDraft)) {
-        pendingPersist.current.delete(sessionId);
-        lastPersisted.current.delete(sessionId);
-        lastPersistedUserBlock.current.delete(sessionId);
+        sessionPersistence.dropPending(sessionId);
+        sessionPersistence.forgetSaved(sessionId);
+        sessionPersistence.forgetUserTurn(sessionId);
         invalidateLoadedSession(sessionId);
         setHistory((history) =>
           history.filter((session) => session.id !== sessionId),
@@ -11341,13 +11254,6 @@ function conversationTitle(session: Session): string {
     remote?.harness ?? session.harness,
   );
   return title === "New session" ? "" : title;
-}
-
-function lastUserBlockId(session: Session): string | undefined {
-  for (let i = session.blocks.length - 1; i >= 0; i--) {
-    if (session.blocks[i]?.role === "user") return session.blocks[i]?.id;
-  }
-  return undefined;
 }
 
 function providerSignInRequestKey(session: Session): string {

@@ -51,3 +51,10 @@ export function sessionWorkCwd(session: {
 }): string {
   return session.worktreeCwd || session.cwd;
 }
+
+export function lastUserBlockId(session: Session): string | undefined {
+  for (let i = session.blocks.length - 1; i >= 0; i--) {
+    if (session.blocks[i]?.role === "user") return session.blocks[i]?.id;
+  }
+  return undefined;
+}
