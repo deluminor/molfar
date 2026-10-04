@@ -94,12 +94,6 @@
   "src/app/model/release-notes-workspace.test.ts": {
     "lint/style/noNonNullAssertion": 2
   },
-  "src/app/model/release-notes.test.ts": {
-    "lint/style/noNonNullAssertion": 2
-  },
-  "src/app/model/updater.test.ts": {
-    "lint/style/noNonNullAssertion": 1
-  },
   "src/app/shell/github-star-prompt.test.ts": {
     "lint/style/noNonNullAssertion": 1
   },
@@ -1111,6 +1105,12 @@
   "src/features/terminal/ui/TerminalView.tsx": {
     "lint/a11y/noStaticElementInteractions": 1,
     "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/updates/model/release-notes.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/updates/model/updater.test.ts": {
+    "lint/style/noNonNullAssertion": 1
   },
   "src/features/usage/model/fetch-usage.ts": {
     "lint/style/noNonNullAssertion": 1

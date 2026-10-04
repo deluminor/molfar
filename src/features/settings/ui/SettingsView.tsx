@@ -375,8 +375,8 @@ import {
   readAppVersion,
   runUpdateFlow,
   type UpdaterSnapshot,
-} from "@/app/model/updater";
-import { APP_UPDATER_DISABLED } from "@/app/model/fork-policy";
+} from "@/features/updates/model/updater";
+import { APP_UPDATER_DISABLED } from "@/features/updates/model/fork-policy";
 
 import { SkillsPage } from "@/features/skills/ui/SkillsPage";
 import { ProjectNotificationSettings } from "@/features/notifications/ui/ProjectNotificationSettings";

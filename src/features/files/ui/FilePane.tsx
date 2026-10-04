@@ -38,7 +38,7 @@ import {
 import { AgentTabView } from "@/features/sessions/ui/AgentTabView";
 import { MarkdownPreview } from "@/features/sessions/ui/AgentMarkdown";
 import { BinaryFileView } from "./BinaryFileView";
-import { ReleaseNotesSurface } from "@/app/ui/ReleaseNotesSurface";
+import { ReleaseNotesSurface } from "@/features/updates/ui/ReleaseNotesSurface";
 import { isRemoteProjectPath } from "@/features/projects/model/recents";
 
 const CommitDiff = lazySurface(async () => {

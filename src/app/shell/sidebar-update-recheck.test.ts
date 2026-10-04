@@ -2,7 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { UPDATE_RECHECK_INTERVAL_MS } from "../model/update-recheck";
+import { UPDATE_RECHECK_INTERVAL_MS } from "@/features/updates/model/update-recheck";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
 
 const updater = vi.hoisted(() => ({
@@ -11,8 +11,8 @@ const updater = vi.hoisted(() => ({
   installPendingUpdate: vi.fn(),
 }));
 
-vi.mock("../model/fork-policy", () => ({ APP_UPDATER_DISABLED: false }));
-vi.mock("../model/updater", () => updater);
+vi.mock("@/features/updates/model/fork-policy", () => ({ APP_UPDATER_DISABLED: false }));
+vi.mock("@/features/updates/model/updater", () => updater);
 
 let container: HTMLDivElement;
 let root: Root;

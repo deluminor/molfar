@@ -4,9 +4,9 @@ import {
   getUpdatePrompt,
   subscribeUpdatePrompt,
   type UpdatePrompt,
-} from "../model/update-prompt";
-import { installFromPrompt } from "../model/update-prompt-install";
-import type { UpdaterSnapshot } from "../model/updater";
+} from "@/features/updates/model/update-prompt";
+import { installFromPrompt } from "@/features/updates/model/update-prompt-install";
+import type { UpdaterSnapshot } from "@/features/updates/model/updater";
 import { ReleaseNotesDialog } from "./ReleaseNotesDialog";
 import { UpdatePromptFooter } from "./UpdatePromptFooter";
 

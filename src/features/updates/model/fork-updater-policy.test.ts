@@ -15,11 +15,7 @@ vi.mock("@/features/settings/model/sounds", () => ({
 vi.mock("@/shared/lib/app-dialog", () => ({ alertApp }));
 vi.mock("./fork-policy", () => ({ APP_UPDATER_DISABLED: true }));
 
-import {
-  installPendingUpdate,
-  probeForUpdate,
-  runUpdateFlow,
-} from "./updater";
+import { installPendingUpdate, probeForUpdate, runUpdateFlow } from "./updater";
 
 describe("fork updater kill-switch", () => {
   afterEach(() => {

@@ -143,9 +143,6 @@
   "src/app/model/app-lifecycle.ts": {
     "lines": 539
   },
-  "src/app/model/updater.ts": {
-    "lines": 258
-  },
   "src/app/shell/MenuBar.tsx": {
     "lines": 450
   },
@@ -481,6 +478,9 @@
   },
   "src/features/terminal/ui/TerminalView.tsx": {
     "lines": 456
+  },
+  "src/features/updates/model/updater.ts": {
+    "lines": 258
   },
   "src/features/usage/model/usage-card.ts": {
     "lines": 253

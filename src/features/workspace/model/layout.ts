@@ -1,4 +1,4 @@
-import type { ReleaseNotesTabSource } from "@/app/model/release-notes";
+import type { ReleaseNotesTabSource } from "@/features/updates/model/release-notes";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import {
   applyTerminalMeta,

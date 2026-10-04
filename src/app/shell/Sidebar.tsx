@@ -124,7 +124,7 @@ import type { HarnessId } from "@/domain/harness/harness";
 import type { LiveAgent } from "@/features/sessions/model/live-agents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import type { SettingsSectionId } from "@/features/settings/model/settings";
-import type { InstalledUpdate } from "../model/update-notice";
+import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
 import { useDragResize } from "@/shared/hooks/use-drag-resize";
 import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";

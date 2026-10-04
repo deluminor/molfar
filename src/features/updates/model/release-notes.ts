@@ -1,4 +1,4 @@
-import bundledChangelog from "../../../CHANGELOG.md?raw";
+import bundledChangelog from "../../../../CHANGELOG.md?raw";
 
 export type ReleaseNotesTabSource = {
   version: string;

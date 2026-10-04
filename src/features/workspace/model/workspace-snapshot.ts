@@ -16,7 +16,7 @@ import {
   type SessionChangesSource,
   type WorkspaceTab,
 } from "./layout";
-import type { ReleaseNotesTabSource } from "@/app/model/release-notes";
+import type { ReleaseNotesTabSource } from "@/features/updates/model/release-notes";
 import {
   clampDockSize,
   isDockSide,

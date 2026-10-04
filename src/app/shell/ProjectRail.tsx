@@ -81,7 +81,7 @@ import {
   TabVisitNav,
 } from "@/features/window-chrome/ui/OverlayNav";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
-import type { InstalledUpdate } from "../model/update-notice";
+import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { SettingsNav } from "./SettingsRail";
 import { Shimmer } from "@/shared/ui/Shimmer";
 import type { SettingsSectionId } from "@/features/settings/model/settings";

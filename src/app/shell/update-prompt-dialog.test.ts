@@ -1,9 +1,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { closeUpdatePrompt, openUpdatePrompt } from "../model/update-prompt";
+import {
+  closeUpdatePrompt,
+  openUpdatePrompt,
+} from "@/features/updates/model/update-prompt";
 
-vi.mock("../model/updater", () => ({ installPendingUpdate: vi.fn() }));
+vi.mock("@/features/updates/model/updater", () => ({ installPendingUpdate: vi.fn() }));
 vi.mock("@/shared/ui/Modal", async () => {
   const { ModalPanel } = await vi.importActual<
     typeof import("@/shared/ui/Modal")

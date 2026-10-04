@@ -119,8 +119,8 @@ import {
 } from "@/platform/tauri/fs";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
-import { getUpdatePrompt } from "./model/update-prompt";
-import { runUpdateFlow } from "./model/updater";
+import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
+import { runUpdateFlow } from "@/features/updates/model/updater";
 import { MenuBar } from "./shell/MenuBar";
 import { Sidebar } from "./shell/Sidebar";
 import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
@@ -323,7 +323,7 @@ import { mergeOrderedSubset, orderByIds } from "@/shared/lib/reorder";
 import {
   releaseNotesForVersion,
   releaseNotesTitle,
-} from "./model/release-notes";
+} from "@/features/updates/model/release-notes";
 
 import type { WindowTransferPayload } from "./model/window-transfer";
 
@@ -713,7 +713,7 @@ import {
   setQuitWorkspace,
   type ResumedWorkspace,
 } from "./model/app-lifecycle";
-import type { InstalledUpdate } from "./model/update-notice";
+import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 
 const SearchView = lazySurface(
   async () => {

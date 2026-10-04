@@ -2,7 +2,7 @@ import {
   formatReleaseDate,
   presentReleaseNotes,
   releaseNotesTitle,
-} from "../model/release-notes";
+} from "@/features/updates/model/release-notes";
 import { ReleaseNotesBody, ReleaseNotesDialog } from "./ReleaseNotesDialog";
 
 type Props = {

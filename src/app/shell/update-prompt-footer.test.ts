@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { UpdaterSnapshot } from "../model/updater";
+import type { UpdaterSnapshot } from "@/features/updates/model/updater";
 import { UpdatePromptFooter } from "./UpdatePromptFooter";
 
 function render(snapshot: UpdaterSnapshot | null): string {

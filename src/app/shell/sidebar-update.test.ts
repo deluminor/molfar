@@ -1,7 +1,10 @@
 import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { UpdaterPhase, UpdaterSnapshot } from "../model/updater";
+import type {
+  UpdaterPhase,
+  UpdaterSnapshot,
+} from "@/features/updates/model/updater";
 import {
   SidebarUpdate,
   SidebarUpdateFooter,
@@ -21,9 +24,9 @@ vi.mock("@/shared/lib/app-dialog", () => ({
   alertApp: vi.fn(),
   confirmApp: vi.fn(),
 }));
-vi.mock("../model/fork-policy", () => ({ APP_UPDATER_DISABLED: false }));
-vi.mock("../model/updater", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../model/updater")>();
+vi.mock("@/features/updates/model/fork-policy", () => ({ APP_UPDATER_DISABLED: false }));
+vi.mock("@/features/updates/model/updater", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/updates/model/updater")>();
   return {
     ...actual,
     installPendingUpdate: (

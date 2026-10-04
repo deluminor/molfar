@@ -17,7 +17,7 @@ import {
 } from "@/app/model/app-lifecycle";
 import { homeDir } from "@/platform/tauri/fs";
 import { setHomeDir } from "@/shared/lib/paths";
-import { consumeInstalledUpdate } from "@/app/model/update-notice";
+import { consumeInstalledUpdate } from "@/features/updates/model/update-notice";
 import { initializeProviderBinaryPaths } from "@/integrations/harness/core/provider-binary-paths";
 // Lets file commands reach a connected machine for `remote://` paths.
 import "@/features/connections/model/remote-commands";
