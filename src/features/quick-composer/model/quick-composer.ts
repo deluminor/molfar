@@ -10,8 +10,8 @@ import {
   loadProjectRailOrder,
   loadRecents,
   looksLikeProject,
-  normalizeProjectPath,
 } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { defaultSessionChoice } from "@/features/sessions/model/models";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {

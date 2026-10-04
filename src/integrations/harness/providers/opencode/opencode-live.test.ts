@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "../../core/test-session";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { applyHarnessEvent } from "../../core/apply";
 
@@ -201,7 +201,7 @@ describe("OpenCode subagent trails", () => {
     expect(events.some((event) => event.type === "message.completed")).toBe(false);
     idle();
     await done;
-    const session = events.reduce(applyHarnessEvent, newSession("opencode", "/repo"));
+    const session = events.reduce(applyHarnessEvent, testSession("opencode", "/repo"));
     expect(session.blocks.find((block) => block.tool?.callId === "a")?.agentRun?.model).toBe("claude-haiku-4-5");
     expect(session.blocks.find((block) => block.tool?.callId === "a")?.agentRun?.steps).toEqual([
       expect.objectContaining({ text: "First child 69" }),
@@ -239,7 +239,7 @@ describe("OpenCode subagent trails", () => {
     part("unrelated", { id: "other", type: "text", messageID: "other_msg", text: "Other session" });
     idle();
     await done;
-    const session = events.reduce(applyHarnessEvent, newSession("opencode", "/repo"));
+    const session = events.reduce(applyHarnessEvent, testSession("opencode", "/repo"));
     const steps = session.blocks.find((block) => block.tool?.callId === "a")?.agentRun?.steps;
     expect(steps?.map((step) => step.text)).toEqual(["Trace imports", "Read auth.ts", "Subagent", "Nested answer"]);
     expect(steps?.find((step) => step.toolKind === "read")?.status).toBe("failed");
@@ -602,7 +602,7 @@ describe("OpenCode child permission routing", () => {
     for (const id of ["child_a", "child_b"]) {
       const session = events.reduce(
         applyHarnessEvent,
-        newSession("opencode", "/repo"),
+        testSession("opencode", "/repo"),
       );
       const request = session.pendingQuestion!;
       expect(request.questions[0].prompt).toBe(`Question from ${id}`);
@@ -618,7 +618,7 @@ describe("OpenCode child permission routing", () => {
       );
     }
     expect(
-      events.reduce(applyHarnessEvent, newSession("opencode", "/repo"))
+      events.reduce(applyHarnessEvent, testSession("opencode", "/repo"))
         .pendingQuestion,
     ).toBeUndefined();
     idle();
@@ -683,7 +683,7 @@ describe("OpenCode child permission routing", () => {
       });
       const session = events.reduce(
         applyHarnessEvent,
-        newSession("opencode", "/repo"),
+        testSession("opencode", "/repo"),
       );
       expect(
         session.blocks.find(
@@ -718,7 +718,7 @@ describe("OpenCode child permission routing", () => {
       });
       const resolved = events.reduce(
         applyHarnessEvent,
-        newSession("opencode", "/repo"),
+        testSession("opencode", "/repo"),
       );
       expect(
         resolved.blocks.find(

@@ -1,7 +1,8 @@
 import { newSessionForProject } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import { newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
-import { looksLikeProject, normalizeProjectPath } from "./recents";
+import { looksLikeProject } from "./recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { planProjectReturn, type ProjectReturnMemory } from "./project-return";
 
 export type ProjectOpenStep =

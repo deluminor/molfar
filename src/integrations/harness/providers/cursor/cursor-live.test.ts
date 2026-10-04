@@ -35,7 +35,7 @@ const {
   __cursorTestReset,
 } = await import("./cursor");
 import type { HarnessEvent } from "../../core/types";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "../../core/test-session";
 import { applyHarnessEvent } from "../../core/apply";
 
 function parse() {
@@ -203,7 +203,7 @@ describe("cursor background subagents", () => {
     await turn;
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("cursor", "/repo"),
+      testSession("cursor", "/repo"),
     );
     const row = session.blocks.find(
       (block) => block.tool?.callId === "call_agent",

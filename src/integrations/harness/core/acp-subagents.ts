@@ -1,5 +1,5 @@
 import type { HarnessEvent } from "./types";
-import { isFailedStatus } from "@/features/sessions/model/transcript-activity";
+import { isFailedStatus } from "@/domain/session/tool-status";
 import {
   agentToolTitle,
   isAgentTool,

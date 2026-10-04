@@ -2,7 +2,7 @@ import { nativeModelId } from "../../core/models/resolve-model";
 import { sameProviderAccountId } from "@/domain/harness/provider-account";
 import type { TaskListItem, TaskListMeta } from "@/domain/session/task-list";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import { loadClaudeHooks } from "@/features/settings/model/settings";
+import { loadClaudeHooks } from "./claude-hooks-setting";
 import {
   killChild,
   resolveClaudeBinary,

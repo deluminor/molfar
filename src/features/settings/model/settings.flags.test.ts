@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as settings from "./settings";
+import * as claudeHooksSetting from "@/integrations/harness/providers/claude/claude-hooks-setting";
 import * as appearance from "./appearance";
 
 const platform = vi.hoisted(() => ({ isWindows: true }));
@@ -82,8 +83,8 @@ describe.each([
   ],
   [
     "molfar.claudeHooks",
-    settings.loadClaudeHooks,
-    settings.saveClaudeHooks,
+    claudeHooksSetting.loadClaudeHooks,
+    claudeHooksSetting.saveClaudeHooks,
     true,
     undefined,
   ],

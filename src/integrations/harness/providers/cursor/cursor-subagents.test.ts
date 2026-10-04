@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "../../core/test-session";
 import { applyHarnessEvent } from "../../core/apply";
 import type { StoredCursorSubagentRun } from "./cursor-store";
 import { cursorAgentLabel, recoverCursorSubagents } from "./cursor-subagents";
@@ -34,7 +34,7 @@ beforeEach(() => {
 });
 
 function savedSession() {
-  let session = newSession("cursor", "/repo");
+  let session = testSession("cursor", "/repo");
   session.providerSessionId = "parent";
   session = applyHarnessEvent(session, {
     type: "tool.updated",

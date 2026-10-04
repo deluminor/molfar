@@ -23,7 +23,7 @@ import {
   type DockSide,
   type ProjectTerminalDock,
 } from "@/features/projects/model/project-terminal";
-import { normalizeProjectPath } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { pathKey } from "@/shared/lib/paths";
 import { parseRemotePath, remotePath } from "@/features/connections/model/remote-projects";
 import {

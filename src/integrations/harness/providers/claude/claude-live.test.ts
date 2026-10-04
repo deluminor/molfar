@@ -1,12 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyHarnessEvent } from "../../core/apply";
-import { newSession } from "@/features/sessions/model/session";
-import {
-  foldableWork,
-  foldedBlocks,
-  groupTurnItems,
-  workSummaryLine,
-} from "@/features/sessions/model/transcript-activity";
+import { testSession } from "../../core/test-session";
 
 const sent: string[] = [];
 const spawned: string[][] = [];
@@ -338,7 +332,7 @@ describe("claude streamed tool inputs", () => {
     );
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     const tool = session.blocks.find(
       (block) => block.tool?.callId === "toolu_shell",
@@ -401,7 +395,7 @@ describe("claude task tools", () => {
 
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     const lists = session.blocks.filter((block) => block.role === "tasks");
     expect(lists).toHaveLength(1);
@@ -460,7 +454,7 @@ describe("claude task tools", () => {
 
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     const lists = session.blocks.filter((block) => block.role === "tasks");
     expect(lists.at(-1)?.taskList?.items).toEqual([
@@ -513,7 +507,7 @@ describe("claude task tools", () => {
   function lastTaskItems(events: HarnessEvent[]) {
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     return session.blocks.filter((block) => block.role === "tasks").at(-1)
       ?.taskList?.items;
@@ -615,7 +609,7 @@ describe("claude task tools", () => {
     await first.turn;
     const restored = first.events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
 
     // App restart: all module state is gone; only the saved transcript remains.
@@ -675,7 +669,7 @@ describe("claude task tools", () => {
     await first.turn;
     return first.events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
   }
 
@@ -851,7 +845,7 @@ describe("claude assistant message boundaries", () => {
 
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     expect(session.blocks.map((block) => block.text)).toEqual([
       progress,
@@ -1011,7 +1005,7 @@ describe("claude subagents", () => {
     for (const id of ["child_a", "child_b"]) {
       const session = events.reduce(
         applyHarnessEvent,
-        newSession("claude", "/repo"),
+        testSession("claude", "/repo"),
       );
       const request = session.pendingQuestion!;
       expect(request.questions[0].prompt).toBe(`Question from ${id}`);
@@ -1047,7 +1041,7 @@ describe("claude subagents", () => {
       });
     }
     expect(
-      events.reduce(applyHarnessEvent, newSession("claude", "/repo"))
+      events.reduce(applyHarnessEvent, testSession("claude", "/repo"))
         .pendingQuestion,
     ).toBeUndefined();
     emit({ type: "result", subtype: "success", session_id: "sess_1" });
@@ -1079,7 +1073,7 @@ describe("claude subagents", () => {
       );
       const session = events.reduce(
         applyHarnessEvent,
-        newSession("claude", "/repo"),
+        testSession("claude", "/repo"),
       );
       const remaining = cancelled === "child_a" ? "child_b" : "child_a";
       expect(session.pendingQuestion?.questions[0].prompt).toBe(remaining);
@@ -1226,7 +1220,7 @@ describe("claude subagents", () => {
       });
       const session = events.reduce(
         applyHarnessEvent,
-        newSession("claude", "/repo"),
+        testSession("claude", "/repo"),
       );
       expect(
         session.blocks.find((block) => block.tool?.callId === "toolu_a")?.tool,
@@ -1272,7 +1266,7 @@ describe("claude subagents", () => {
     });
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     expect(
       session.blocks.filter((block) => block.tool?.kind === "agent"),
@@ -1298,7 +1292,7 @@ describe("claude subagents", () => {
 
     const finished = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     expect(
       finished.blocks.filter((block) => block.tool?.kind === "agent"),
@@ -1525,7 +1519,7 @@ describe("claude subagents", () => {
 
     expect(
       events
-        .reduce(applyHarnessEvent, newSession("claude", "/repo"))
+        .reduce(applyHarnessEvent, testSession("claude", "/repo"))
         .blocks.find((block) => block.tool?.callId === "toolu_agent")?.agentRun
         ?.model,
     ).toBe("claude-haiku-4-5");
@@ -1590,7 +1584,7 @@ describe("claude subagents", () => {
 
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     expect(
       session.blocks.find((block) => block.tool?.callId === "toolu_agent")
@@ -1734,7 +1728,7 @@ describe("claude background tasks", () => {
     // a row of its own, and the reply is a new message after it, once.
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     const turn1 = session.blocks.slice(1);
     const background = turn1.find((block) => block.tool?.background);
@@ -1750,16 +1744,7 @@ describe("claude background tasks", () => {
         .filter((block) => block.role === "assistant" || block.tool?.background)
         .map((block) => (block.tool?.background ? "[background]" : block.text)),
     ).toEqual(["waiting", "[background]", "It finished and printed done."]);
-    const items = groupTurnItems(turn1, { settled: true });
-    const fold = foldableWork(items);
-    const answer = items.at(-1);
-    expect(answer?.type === "block" && answer.block.text).toBe(
-      "It finished and printed done.",
-    );
-    // What Claude yielded with is its answer; the follow-up does not fold it.
-    expect(
-      (fold ? foldedBlocks(items, fold) : []).map((block) => block.text),
-    ).not.toContain("waiting");
+    // transcript-activity-background.test.ts folds this exact shape.
   });
 
   it("shows the waited-on command as a live row under Claude's last message", async () => {
@@ -1769,7 +1754,7 @@ describe("claude background tasks", () => {
 
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("claude", "/repo"),
+      testSession("claude", "/repo"),
     );
     const last = session.blocks.at(-1);
     expect(session.blocks.at(-2)?.text).toBe("waiting");
@@ -1778,11 +1763,8 @@ describe("claude background tasks", () => {
       status: "in_progress",
       kind: "execute",
     });
-    const items = groupTurnItems(session.blocks.slice(1));
-    const group = items.at(-1);
-    expect(group?.type === "activity" && workSummaryLine(group.blocks, true)).toBe(
-      "Running in background",
-    );
+    expect(last?.streaming).toBe(true);
+    // transcript-activity-background.test.ts folds this exact shape.
   });
 
   it("lets the turn go if a finished task never wakes Claude", async () => {
@@ -1924,7 +1906,7 @@ describe("claude plan permissions", () => {
     await turn;
     expect(settled).toBe(true);
 
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     for (const event of events) session = applyHarnessEvent(session, event);
     const plan = session.blocks.find((block) => block.role === "plan");
     expect(plan?.text).toContain("Rewrite the auth module.");

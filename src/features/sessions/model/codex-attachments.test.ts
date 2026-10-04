@@ -5,7 +5,7 @@ const sent: Array<{ method: string; params: { input?: unknown[] } }> = [];
 let onLine: ((line: string) => void) | undefined;
 let keepTurnOpen = false;
 
-vi.mock("../../core/child", () => ({
+vi.mock("@/integrations/harness/core/child", () => ({
   resolveCodexBinary: async () => ({ path: "/fake/codex" }),
   spawnChild: async () => undefined,
   killChild: async () => undefined,
@@ -52,9 +52,9 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 const { sendCodexTurn, steerCodexTurn, stopCodexSession, __codexTestReset } =
-  await import("./codex");
+  await import("@/integrations/harness/providers/codex/codex");
 const { attachmentsFromPaths, prepareAttachments } = await import(
-  "@/features/sessions/model/attachments"
+  "./attachments"
 );
 const { ATTACHMENT_ONLY_PROMPT, promptBlocks } = await import(
   "@/domain/session/attachment-prompt"

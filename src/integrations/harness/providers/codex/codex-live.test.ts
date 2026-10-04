@@ -43,7 +43,7 @@ const {
   __codexTestReset,
 } = await import("./codex");
 import type { HarnessEvent } from "../../core/types";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "../../core/test-session";
 import type { TurnIntent } from "@/domain/session/turn";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { applyHarnessEvent } from "../../core/apply";
@@ -226,7 +226,7 @@ describe("codex live turn sequence", () => {
       alt: "A clean product photo",
     });
     expect(
-      events.reduce(applyHarnessEvent, newSession("codex", "/repo")).blocks,
+      events.reduce(applyHarnessEvent, testSession("codex", "/repo")).blocks,
     ).toMatchObject([
       {
         role: "image",
@@ -384,7 +384,7 @@ describe("codex live turn sequence", () => {
     ).toBe(commentary + answer);
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("codex", "/repo"),
+      testSession("codex", "/repo"),
     );
     expect(session.blocks).toMatchObject([
       { role: "assistant", text: commentary, streaming: false },
@@ -518,7 +518,7 @@ describe("codex live turn sequence", () => {
     expect(settled).toHaveBeenCalledOnce();
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
+      testSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
     );
     expect(session.blocks).toMatchObject([
       { role: "assistant", text: "The answer", streaming: false },
@@ -573,7 +573,7 @@ describe("codex live turn sequence", () => {
     await turn;
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
+      testSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
     );
     expect(session.blocks).toContainEqual(
       expect.objectContaining({ role: "system", text: message }),
@@ -906,7 +906,7 @@ describe("codex live turn sequence", () => {
     );
     const session = events.reduce(
       applyHarnessEvent,
-      newSession("codex", "/repo"),
+      testSession("codex", "/repo"),
     );
     expect(session.pendingQuestion?.questions[0].prompt).toBe("child_b");
     expect(parse().some((message) => message.id === "child_a")).toBe(false);
@@ -1334,7 +1334,7 @@ describe("codex live turn sequence", () => {
     expect(parse().some((m) => m.id === 91)).toBe(false);
     const state = events.reduce(
       applyHarnessEvent,
-      newSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
+      testSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
     );
     expect(state.pendingQuestion?.autoResolveAt).toBeUndefined();
     respondCodexQuestion("codex-live", question.requestId, {
@@ -1378,7 +1378,7 @@ describe("codex live turn sequence", () => {
     expect(
       events.reduce(
         applyHarnessEvent,
-        newSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
+        testSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
       ).pendingQuestion,
     ).toBeUndefined();
     notify("turn/completed", { turn: { id: "turn_1", status: "completed" } });
@@ -1477,7 +1477,7 @@ describe("codex live turn sequence", () => {
       code: -32601,
     });
     const session = events.reduce(applyHarnessEvent, {
-      ...newSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
+      ...testSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
       busy: true,
     });
     expect(session.busy).toBe(true);
@@ -1966,7 +1966,7 @@ describe("codex subagents", () => {
     await turn;
 
     const run = events
-      .reduce(applyHarnessEvent, newSession("codex", "/repo"))
+      .reduce(applyHarnessEvent, testSession("codex", "/repo"))
       .blocks.find((block) => block.tool?.callId === "sa_1")?.agentRun;
     expect(run).toMatchObject({
       name: "Explore Auth subagent",

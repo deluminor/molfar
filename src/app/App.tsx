@@ -370,12 +370,12 @@ import {
   lastProjectPath,
   loadRecents,
   looksLikeProject,
-  normalizeProjectPath,
   projectRailItems,
   rememberProject,
   replaceProjectPath,
   sameProjectPath,
 } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import {
   providerAccountExists,
   selectedProviderAccountId,
@@ -388,11 +388,11 @@ import {
 import { applyAddToChatRequest } from "@/features/sessions/model/add-chat-to-workspace";
 import {
   buildPlanPrompt,
-  isProviderFailureText,
   planTitle,
-  planTurnKey,
   planTurnPrompt,
 } from "@/features/sessions/model/plan";
+import { isProviderFailureText } from "@/domain/session/plan";
+import { planTurnKey } from "@/domain/session/plan";
 import {
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,

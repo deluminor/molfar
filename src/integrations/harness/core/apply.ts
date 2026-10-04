@@ -17,7 +17,7 @@ import {
   stubFilePreview,
 } from "./preview";
 import { joinStreamText } from "./stream-text";
-import { isReviewablePlan } from "@/features/sessions/model/plan";
+import { isReviewablePlan } from "@/domain/session/plan";
 import { resolveModel } from "./models/resolve-model";
 import type { HarnessEvent } from "./types";
 

@@ -7,7 +7,8 @@ import { codexCommandPresentation } from "@/integrations/harness/providers/codex
 import { recoverCursorSubagents } from "@/integrations/harness/providers/cursor/cursor-subagents";
 import { persistableAttachment } from "../model/attachments";
 import type { ContextUsage } from "@/domain/session/context-usage";
-import { isRemoteProjectPath, normalizeProjectPath } from "@/features/projects/model/recents";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import {
   claudeShellCommands,
   ompActiveAssistantTexts,

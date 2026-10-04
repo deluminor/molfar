@@ -494,7 +494,7 @@
     "src/features/settings/model/projectRail.ts": "src/features/settings/model/project-rail.ts",
     "src/features/settings/model/projectSidebarTab.test.ts": "src/features/settings/model/project-sidebar-tab.test.ts",
     "src/features/settings/model/projectSidebarTab.ts": "src/features/settings/model/project-sidebar-tab.ts",
-    "src/features/settings/model/storageFlags.ts": "src/features/settings/model/storage-flags.ts",
+    "src/features/settings/model/storageFlags.ts": "src/shared/lib/storage-flags.ts",
     "src/features/settings/model/uiScale.test.ts": "src/features/settings/model/ui-scale.test.ts",
     "src/features/settings/model/uiScale.ts": "src/features/settings/model/ui-scale.ts",
     "src/features/settings/model/zoomKeybinding.test.ts": "src/features/settings/model/zoom-keybinding.test.ts",
@@ -611,8 +611,8 @@
     "src/integrations/harness/providers/claude/claudeText.ts": "src/integrations/harness/providers/claude/claude-text.ts",
     "src/integrations/harness/providers/claude/claudeTitle.ts": "src/integrations/harness/providers/claude/claude-title.ts",
     "src/integrations/harness/providers/codex/codexAdapter.ts": "src/integrations/harness/providers/codex/codex-adapter.ts",
-    "src/integrations/harness/providers/codex/codexApprovalUi.test.ts": "src/integrations/harness/providers/codex/codex-approval-ui.test.ts",
-    "src/integrations/harness/providers/codex/codexAttachments.test.ts": "src/integrations/harness/providers/codex/codex-attachments.test.ts",
+    "src/integrations/harness/providers/codex/codexApprovalUi.test.ts": "src/features/sessions/ui/codex-approval-ui.test.ts",
+    "src/integrations/harness/providers/codex/codexAttachments.test.ts": "src/features/sessions/model/codex-attachments.test.ts",
     "src/integrations/harness/providers/codex/codexCatalog.ts": "src/integrations/harness/providers/codex/codex-catalog.ts",
     "src/integrations/harness/providers/codex/codexElicitation.test.ts": "src/integrations/harness/providers/codex/codex-elicitation.test.ts",
     "src/integrations/harness/providers/codex/codexElicitation.ts": "src/integrations/harness/providers/codex/codex-elicitation.ts",
@@ -738,7 +738,7 @@
         "src/integrations/harness/providers/codex/codex-rate-limits.ts",
         "src/integrations/harness/providers/opencode/opencode-usage.ts"
       ],
-      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) → src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits → rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt → rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers → src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage → providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits → providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage → providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
+      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) \u2192 src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits \u2192 rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt \u2192 rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers \u2192 src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage \u2192 providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits \u2192 providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage \u2192 providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
     },
     "src/features/sessions/model/models.test.ts": {
       "targets": [
@@ -758,7 +758,7 @@
         "src/integrations/harness/core/models/catalog-store.ts",
         "src/integrations/harness/core/models/resolve-model.ts"
       ],
-      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) → src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) → native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) → model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID → src/integrations/harness/core/models/catalog.ts; pickDefaultId → default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) → catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId → resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
+      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) \u2192 src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) \u2192 native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) \u2192 model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID \u2192 src/integrations/harness/core/models/catalog.ts; pickDefaultId \u2192 default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) \u2192 catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId \u2192 resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
     },
     "src/features/sessions/model/session.ts": {
       "targets": [
@@ -852,6 +852,14 @@
         "target": "src/domain/orchestration/proposal.ts"
       }
     ],
+    "src/features/projects/model/recents.ts": [
+      {
+        "names": [
+          "normalizeProjectPath"
+        ],
+        "target": "src/shared/lib/project-path.ts"
+      }
+    ],
     "src/features/providers/model/providerAccounts.ts": [
       {
         "names": [
@@ -908,6 +916,24 @@
         "target": "src/domain/session/handoff-card.ts"
       }
     ],
+    "src/features/sessions/model/plan.ts": [
+      {
+        "names": [
+          "planTurnKey",
+          "isProviderFailureText",
+          "isReviewablePlan"
+        ],
+        "target": "src/domain/session/plan.ts"
+      }
+    ],
+    "src/features/sessions/model/session.ts": [
+      {
+        "names": [
+          "newSession (the Session literal; newSession now calls blankSession)"
+        ],
+        "target": "src/domain/session/blank-session.ts"
+      }
+    ],
     "src/features/sessions/model/sessionWorkItem.ts": [
       {
         "names": [
@@ -919,6 +945,25 @@
         "target": "src/domain/work-items/github-url.ts"
       }
     ],
+    "src/features/sessions/model/transcriptActivity.ts": [
+      {
+        "names": [
+          "isFailedStatus"
+        ],
+        "target": "src/domain/session/tool-status.ts"
+      }
+    ],
+    "src/features/settings/model/settings.ts": [
+      {
+        "names": [
+          "CLAUDE_HOOKS_KEY",
+          "CLAUDE_HOOKS_DEFAULT",
+          "loadClaudeHooks",
+          "saveClaudeHooks"
+        ],
+        "target": "src/integrations/harness/providers/claude/claude-hooks-setting.ts"
+      }
+    ],
     "src/features/source-control/model/worktrees.ts": [
       {
         "names": [
@@ -927,6 +972,22 @@
           "namedWorktreeBranch"
         ],
         "target": "src/domain/git/worktree-branch.ts"
+      }
+    ],
+    "src/integrations/harness/core/apply.test.ts": [
+      {
+        "names": [
+          "it(\"does not adopt a saved plan block when the turn counter starts over\")"
+        ],
+        "target": "src/features/sessions/data/session-store-plan-key.test.ts"
+      }
+    ],
+    "src/integrations/harness/providers/claude/claudeLive.test.ts": [
+      {
+        "names": [
+          "transcript folding assertions in \"claude background tasks\" (groupTurnItems, foldableWork, foldedBlocks, workSummaryLine)"
+        ],
+        "target": "src/features/sessions/model/transcript-activity-background.test.ts"
       }
     ],
     "src/platform/tauri/fs.ts": [

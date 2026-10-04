@@ -5,7 +5,7 @@ import {
   clearProjectChatBackgroundSetting,
   rebaseProjectChatBackgroundSetting,
 } from "./project-chat-background";
-import { normalizeProjectPath } from "./recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { deleteSession, listSessionsByProject } from "@/features/sessions/data/session-store";
 import {
   clearTabGroupSettings,

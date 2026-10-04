@@ -40,7 +40,7 @@ import { ompCommandProvider, respondQuestion } from "../pi/pi-family";
 import { OMP_FLAVOR } from "../pi/pi-flavor";
 import type { HarnessEvent, SendTurnInput } from "../../core/types";
 import { applyHarnessEvent } from "../../core/apply";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "../../core/test-session";
 import { ATTACHMENT_ONLY_PROMPT } from "@/domain/session/attachment-prompt";
 
 function frame(sessionId: string, value: Record<string, unknown>) {
@@ -199,7 +199,7 @@ describe("OMP command lifecycle over the real RPC multiplexer", () => {
         ] } };
         frame(sessionId, { type: "tool_execution_update", toolCallId: "spawn", partialResult: result });
         frame(sessionId, { type: "tool_execution_end", toolCallId: "spawn", result, isError: false });
-        const session = events.reduce(applyHarnessEvent, newSession(flavor, "/repo"));
+        const session = events.reduce(applyHarnessEvent, testSession(flavor, "/repo"));
         const row = session.blocks.find((block) => block.tool?.callId === "spawn");
         expect(row?.agentRun?.steps).toEqual([expect.objectContaining({ kind: "message", text: "Reading auth" })]);
         expect(row?.tool?.status).toBe("completed");
@@ -251,7 +251,7 @@ describe("OMP command lifecycle over the real RPC multiplexer", () => {
         // omp#12875: steering during bash can deliver an update after the end.
         frame(sessionId, update);
         const row = events
-          .reduce(applyHarnessEvent, newSession(flavor, "/repo"))
+          .reduce(applyHarnessEvent, testSession(flavor, "/repo"))
           .blocks.find((block) => block.tool?.callId === "sh");
         expect(row?.tool).toMatchObject({
           status: "completed",
@@ -416,7 +416,7 @@ describe("OMP command lifecycle over the real RPC multiplexer", () => {
       providerSessionId: "new-provider-session",
     });
     const session = {
-      ...newSession("omp"),
+      ...testSession("omp"),
       modelSettings: { existing: "keep" },
     };
     const updated = applyHarnessEvent(session, config);

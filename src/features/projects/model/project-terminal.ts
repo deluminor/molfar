@@ -6,10 +6,8 @@ import {
   type FilePaneTab,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
-import {
-  normalizeProjectPath,
-  sameProjectPath,
-} from "./recents";
+import { sameProjectPath } from "./recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { Session } from "@/domain/session/session";
 import {
   applyTerminalMeta,

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { readFlag, writeFlag } from "./storage-flags";
+import { readFlag, writeFlag } from "@/shared/lib/storage-flags";
 
 const SHOW_REMAINING_USAGE_KEY = "molfar.showRemainingUsage";
 const MASK_EMAILS_KEY = "molfar.maskEmails";

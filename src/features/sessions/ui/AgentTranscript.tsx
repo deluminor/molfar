@@ -97,7 +97,6 @@ import {
   groupTurnItems,
   groupTurns,
   initialThinkingIndex,
-  isFailedStatus,
   isIncompleteTool,
   isSubagentBlock,
   isThinkingBlock,
@@ -121,6 +120,7 @@ import {
   type ToolCallState,
   type TurnItem,
 } from "../model/transcript-activity";
+import { isFailedStatus } from "@/domain/session/tool-status";
 import { lastUserTurnBlock } from "../model/edit-last-turn";
 import {
   molfarToolCall,

@@ -42,7 +42,11 @@ import {
   hydrateWorkspaceSnapshot,
   parseWorkspaceSnapshot,
 } from "@/features/workspace/model/workspace-snapshot";
-import { lastProjectPath, normalizeProjectPath, sameProjectPath } from "@/features/projects/model/recents";
+import {
+  lastProjectPath,
+  sameProjectPath,
+} from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { confirmApp } from "./app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";

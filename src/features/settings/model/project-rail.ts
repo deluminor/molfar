@@ -1,4 +1,4 @@
-import { readFlag, writeFlag } from "./storage-flags";
+import { readFlag, writeFlag } from "@/shared/lib/storage-flags";
 
 export type RailSurfaceId = "home" | "usage" | "knowledge";
 

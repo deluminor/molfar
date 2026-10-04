@@ -13,6 +13,7 @@ import {
   type RuntimeMode,
 } from "@/domain/session/runtime-mode";
 import type { Session } from "@/domain/session/session";
+import { blankSession } from "@/domain/session/blank-session";
 
 export function newSession(
   harness: HarnessId = "claude",
@@ -22,16 +23,13 @@ export function newSession(
   modelSettings?: Record<string, string>,
 ): Session {
   const resolved = resolveModel(harness, model ?? preferredModelId(harness));
-  return {
-    id: crypto.randomUUID(),
+  return blankSession(
     harness,
-    model: resolved.id,
-    modelSettings: preferredModelSettings(resolved, modelSettings),
-    runtimeMode,
-    title: HARNESS_LABEL[harness],
     cwd,
-    blocks: [],
-  };
+    resolved.id,
+    preferredModelSettings(resolved, modelSettings),
+    runtimeMode,
+  );
 }
 
 /** New conversation using the Providers defaults. */

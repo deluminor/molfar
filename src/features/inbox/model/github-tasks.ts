@@ -35,10 +35,10 @@ import {
 } from "./azure-dev-ops";
 import {
   collectRailProjects,
-  normalizeProjectPath,
   sameProjectPath,
   type RecentProject,
 } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
 import type {
   GithubLabel,

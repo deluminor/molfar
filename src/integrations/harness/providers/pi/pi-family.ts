@@ -1,6 +1,6 @@
 import { nativeModelId } from "../../core/models/resolve-model";
 import { taskListFromToolInput } from "@/domain/session/task-list";
-import { normalizeProjectPath } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { UserQuestionReply } from "@/domain/session/user-question";
 import type {
   CommandContext,

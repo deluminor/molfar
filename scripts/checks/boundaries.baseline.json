@@ -113,54 +113,6 @@
   "src/features/workspace/ui/tab-middle-click.test.ts": {
     "layer:features->app": 2
   },
-  "src/integrations/harness/core/acp-subagents.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/core/acp-subagents.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/core/apply-batch.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/core/apply.test.ts": {
-    "layer:integrations->features": 3
-  },
-  "src/integrations/harness/core/apply.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/claude/claude-live.test.ts": {
-    "layer:integrations->features": 2
-  },
-  "src/integrations/harness/providers/claude/claude.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/codex/codex-approval-ui.test.ts": {
-    "layer:integrations->features": 7
-  },
-  "src/integrations/harness/providers/codex/codex-attachments.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/codex/codex-live.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/cursor/cursor-live.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/cursor/cursor-subagents.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/omp/omp-live.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/opencode/opencode-live.test.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/pi/pi-family.ts": {
-    "layer:integrations->features": 1
-  },
-  "src/integrations/harness/providers/pi/pi-subagents.test.ts": {
-    "layer:integrations->features": 1
-  },
   "src/platform/tauri/clipboard.test.ts": {
     "layer:platform->features": 1
   },

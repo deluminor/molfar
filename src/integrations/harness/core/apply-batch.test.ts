@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "./test-session";
 import type { Session } from "@/domain/session/session";
 import { applyHarnessEvent, applyHarnessEvents } from "./apply";
 import type { HarnessEvent } from "./types";
@@ -13,7 +13,7 @@ function content(session: Session) {
 
 function conversation(): Session {
   return {
-    ...newSession("codex", "/repo"),
+    ...testSession("codex", "/repo"),
     blocks: [
       { id: "user", role: "user", text: "Help" },
       { id: "reply", role: "assistant", text: "Hello", streaming: true },

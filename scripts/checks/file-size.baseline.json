@@ -141,7 +141,7 @@
     "lines": 288
   },
   "src/app/model/app-lifecycle.ts": {
-    "lines": 535
+    "lines": 539
   },
   "src/app/model/updater.ts": {
     "lines": 258
@@ -303,10 +303,10 @@
     "lines": 276
   },
   "src/features/projects/model/project-terminal.ts": {
-    "lines": 327
+    "lines": 325
   },
   "src/features/projects/model/recents.ts": {
-    "lines": 416
+    "lines": 413
   },
   "src/features/projects/ui/CwdPicker.tsx": {
     "lines": 413
@@ -348,7 +348,7 @@
     "lines": 673
   },
   "src/features/sessions/data/session-store.ts": {
-    "lines": 1239
+    "lines": 1240
   },
   "src/features/sessions/model/attachments.ts": {
     "lines": 430
@@ -372,7 +372,7 @@
     "lines": 679
   },
   "src/features/sessions/model/transcript-activity.ts": {
-    "lines": 1008
+    "lines": 998
   },
   "src/features/sessions/ui/AgentMarkdown.tsx": {
     "lines": 941
@@ -423,16 +423,16 @@
     "lines": 287
   },
   "src/features/settings/model/settings.ts": {
-    "lines": 1386
+    "lines": 1374
   },
   "src/features/settings/ui/McpSettings.tsx": {
     "lines": 645
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "lines": 4470
+    "lines": 4472
   },
   "src/features/skills/model/skills.ts": {
-    "lines": 541
+    "lines": 542
   },
   "src/features/skills/ui/SkillPicker.tsx": {
     "lines": 353

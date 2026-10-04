@@ -2,21 +2,21 @@
 import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QuestionForm } from "@/features/sessions/ui/QuestionForm";
-import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
-import { AgentTranscript } from "@/features/sessions/ui/AgentTranscript";
+import { QuestionForm } from "./QuestionForm";
+import { ApprovalToasts } from "./ApprovalToasts";
+import { AgentTranscript } from "./AgentTranscript";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
-import { newSession } from "@/features/sessions/model/session";
+import { newSession } from "../model/session";
 import type { Session } from "@/domain/session/session";
 import {
   probeNotificationPermission,
   saveNotificationsEnabled,
   setWindowFocused,
 } from "@/features/notifications/model/notifications";
-import { applyHarnessEvent } from "../../core/apply";
-import type { HarnessEvent } from "../../core/types";
-import type * as ChildModule from "../../core/child";
+import { applyHarnessEvent } from "@/integrations/harness/core/apply";
+import type { HarnessEvent } from "@/integrations/harness/core/types";
+import type * as ChildModule from "@/integrations/harness/core/child";
 
 const sent: Array<Record<string, unknown>> = [];
 let onLine: (line: string) => void;
@@ -26,7 +26,7 @@ const invoke = vi.hoisted(() =>
   }),
 );
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
-vi.mock("../../core/child", async (importOriginal) => {
+vi.mock("@/integrations/harness/core/child", async (importOriginal) => {
   const actual = await importOriginal<typeof ChildModule>();
   return {
     ...actual,
@@ -42,8 +42,8 @@ vi.mock("../../core/child", async (importOriginal) => {
     },
   };
 });
-const { codexAdapter } = await import("./codex-adapter");
-const { __codexTestReset } = await import("./codex");
+const { codexAdapter } = await import("@/integrations/harness/providers/codex/codex-adapter");
+const { __codexTestReset } = await import("@/integrations/harness/providers/codex/codex");
 
 function InputNotifications({ session }: { session: Session }) {
   useInputNotifications([session], "other");

@@ -18,6 +18,7 @@ import type { Block } from "@/domain/session/block";
 import type { ToolPreview } from "@/domain/session/agent-run";
 import { allModels } from "@/integrations/harness/core/models/catalog-store";
 import { molfarWorkSummary } from "./molfar-tool-call";
+import { isFailedStatus } from "@/domain/session/tool-status";
 
 export type ToolCallState = "pending" | "accepted" | "rejected";
 
@@ -29,17 +30,6 @@ export type TurnItem =
 
 export function needsApproval(block: Block): boolean {
   return !!block.approval && !block.approval.decided;
-}
-
-/** Statuses a provider uses for a call that did not work. */
-export function isFailedStatus(status?: string): boolean {
-  const value = status?.toLowerCase() ?? "";
-  return (
-    value === "failed" ||
-    value === "error" ||
-    value === "cancelled" ||
-    value === "canceled"
-  );
 }
 
 export function toolCallState(block: Block): ToolCallState {

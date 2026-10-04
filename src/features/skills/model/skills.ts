@@ -8,7 +8,8 @@ import {
 } from "@/platform/tauri/fs";
 import { invalidateProjectFiles } from "@/features/files/model/file-index";
 import { joinPath } from "@/shared/lib/paths";
-import { isLocalProject, normalizeProjectPath } from "@/features/projects/model/recents";
+import { isLocalProject } from "@/features/projects/model/recents";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
 import type { HarnessId } from "@/domain/harness/harness";
 import { getHarness } from "@/integrations/harness/core/registry";

@@ -3,7 +3,7 @@ import { AcpSubagents } from "./acp-subagents";
 import { eventsFromAcpUpdate as fxEvents } from "../providers/fx/fx-protocol";
 import { eventsFromAcpUpdate as grokEvents } from "../providers/grok/grok-protocol";
 import { applyHarnessEvent } from "./apply";
-import { newSession } from "@/features/sessions/model/session";
+import { testSession } from "./test-session";
 import type { HarnessEvent } from "./types";
 
 describe.each([
@@ -12,7 +12,7 @@ describe.each([
 ] as const)("%s subagents", (provider, parse) => {
   it("names delegated work and merges child tool updates without leaking prose", () => {
     const router = new AcpSubagents();
-    let session = newSession(provider, "/repo");
+    let session = testSession(provider, "/repo");
     const push = (update: Record<string, unknown>) => {
       const params = { sessionId: "parent", update };
       for (const event of router.route(params, parse(params)))
@@ -80,7 +80,7 @@ describe.each([
 
   it("keeps a failed child tool's output on its step, where it can be read", () => {
     const router = new AcpSubagents();
-    let session = newSession(provider, "/repo");
+    let session = testSession(provider, "/repo");
     const push = (update: Record<string, unknown>) => {
       const params = { sessionId: "parent", update };
       for (const event of router.route(params, parse(params)))
@@ -122,7 +122,7 @@ describe.each([
 
   it("leaves a settled child tool's result off its step", () => {
     const router = new AcpSubagents();
-    let session = newSession(provider, "/repo");
+    let session = testSession(provider, "/repo");
     const push = (update: Record<string, unknown>) => {
       const params = { sessionId: "parent", update };
       for (const event of router.route(params, parse(params)))

@@ -294,7 +294,6 @@ import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import {
   filterKeybindings,
   currentKeybindings,
-  loadClaudeHooks,
   loadCloseToTray,
   loadCollapsedProjectRailMode,
   loadComposerRunner,
@@ -310,7 +309,6 @@ import {
   loadQuickComposerEnabled,
   loadQuickComposerShortcut,
   loadTabAnimationsEnabled,
-  saveClaudeHooks,
   saveCloseToTray,
   saveCollapsedProjectRailMode,
   saveComposerRunner,
@@ -341,6 +339,10 @@ import {
   type SettingsSearchResult,
   type SettingsSectionId,
 } from "../model/settings";
+import {
+  loadClaudeHooks,
+  saveClaudeHooks,
+} from "@/integrations/harness/providers/claude/claude-hooks-setting";
 import {
   LIVE_AGENTS_MIN_COUNT_MAX,
   loadLiveAgentsMinCount,
