@@ -10,7 +10,7 @@ const confirmApp = vi.fn(async () => true);
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: unknown[]) => invoke(...args),
 }));
-vi.mock("@/app/model/app-dialog", () => ({
+vi.mock("@/shared/lib/app-dialog", () => ({
   confirmApp: (...args: unknown[]) => confirmApp(...args),
 }));
 

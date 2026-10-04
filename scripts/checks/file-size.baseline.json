@@ -153,10 +153,10 @@
     "lines": 1225
   },
   "src/app/shell/Sidebar.tsx": {
-    "lines": 3705
+    "lines": 3706
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 1083
+    "lines": 1011
   },
   "src/app/shell/UsageFooter.tsx": {
     "lines": 596
@@ -267,7 +267,7 @@
     "lines": 839
   },
   "src/features/inbox/ui/InboxView.tsx": {
-    "lines": 3247
+    "lines": 3248
   },
   "src/features/inbox/ui/LinkedWorkItemUpdateNotice.tsx": {
     "lines": 304

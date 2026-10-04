@@ -26,7 +26,7 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("@/app/model/app-dialog", () => ({
+vi.mock("@/shared/lib/app-dialog", () => ({
   confirmApp: vi.fn(async () => true),
 }));
 

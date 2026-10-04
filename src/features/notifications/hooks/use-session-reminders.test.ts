@@ -18,7 +18,7 @@ const { invoke, listen, alertApp } = vi.hoisted(() => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen }));
-vi.mock("@/app/model/app-dialog", () => ({ alertApp }));
+vi.mock("@/shared/lib/app-dialog", () => ({ alertApp }));
 vi.mock("@/features/settings/model/sounds", () => ({
   loadSoundsEnabled: () => false,
   SOUNDS_CHANGE_EVENT: "sounds-change",

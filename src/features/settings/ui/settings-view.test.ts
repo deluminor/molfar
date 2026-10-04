@@ -3,7 +3,7 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { confirmApp } from "@/app/model/app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import { SettingsView } from "./SettingsView";
 import { rememberNotificationProjects } from "@/features/notifications/model/notification-projects";
 import {
@@ -33,7 +33,7 @@ vi.mock("@tauri-apps/api/window", () => ({
   }),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
-vi.mock("@/app/model/app-dialog", () => ({
+vi.mock("@/shared/lib/app-dialog", () => ({
   confirmApp: vi.fn(async () => true),
 }));
 vi.mock("@/integrations/harness/core/availability", () => ({

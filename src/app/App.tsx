@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { alertApp, confirmApp, getAppDialog } from "./model/app-dialog";
+import { alertApp, confirmApp, getAppDialog } from "@/shared/lib/app-dialog";
 import {
   startTransition,
   Suspense,

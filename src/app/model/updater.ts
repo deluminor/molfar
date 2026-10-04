@@ -6,7 +6,7 @@ import {
   type Update,
 } from "@tauri-apps/plugin-updater";
 import { announceUpdateAvailable } from "@/features/settings/model/sounds";
-import { alertApp } from "./app-dialog";
+import { alertApp } from "@/shared/lib/app-dialog";
 import { APP_UPDATER_DISABLED } from "./fork-policy";
 import { formatUpdateDate } from "./release-notes";
 import { openUpdatePrompt } from "./update-prompt";

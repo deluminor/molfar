@@ -1,4 +1,4 @@
-import { confirmApp } from "@/app/model/app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import type { FilePaneTab } from "@/features/workspace/model/layout";
 import { getPtyStatus } from "@/platform/tauri/pty";
 import { terminalTabLabel } from "./terminal-tab";

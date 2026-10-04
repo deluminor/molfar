@@ -11,7 +11,7 @@ import type {
 } from "@/domain/work-items/linked-activity";
 import { formatRelativeTime } from "../model/github-tasks";
 import { announceLinkedActivity } from "@/features/settings/model/sounds";
-import { GlassBackdrop } from "@/app/shell/GlassBackdrop";
+import { GlassBackdrop } from "@/shared/ui/GlassBackdrop";
 import {
   Archive,
   Check,

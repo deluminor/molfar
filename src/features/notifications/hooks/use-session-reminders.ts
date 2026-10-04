@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { alertApp } from "@/app/model/app-dialog";
+import { alertApp } from "@/shared/lib/app-dialog";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   loadNotificationsEnabled,

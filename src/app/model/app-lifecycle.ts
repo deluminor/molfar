@@ -48,7 +48,7 @@ import {
 } from "@/features/projects/model/recents";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
-import { confirmApp } from "./app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";
 import type { WindowTransferPayload } from "./window-transfer";
 

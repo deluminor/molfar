@@ -31,7 +31,7 @@ import { terminalTabLabel } from "@/features/terminal/model/terminal-tab";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { useAnimatedReorder } from "@/shared/hooks/use-animated-reorder";
 import { useTabCloseMotion } from "../hooks/use-tab-close-motion";
-import { TabWidthMotion } from "@/app/shell/ClosingTab";
+import { TabWidthMotion } from "@/shared/ui/ClosingTab";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,

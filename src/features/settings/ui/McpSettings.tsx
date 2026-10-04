@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { confirmApp } from "@/app/model/app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import {
   useCallback,
   useEffect,

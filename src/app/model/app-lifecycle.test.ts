@@ -5,7 +5,7 @@ import { forgetHarnessSession } from "@/integrations/harness/core/registry";
 import { killAllChildren } from "@/integrations/harness/core/child";
 import { newSession } from "@/features/sessions/model/session";
 import { newTab } from "@/features/workspace/model/layout";
-import { confirmApp } from "./app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import {
   askQuitConfirmation,
   closeBusyWindow,
@@ -29,7 +29,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   ask: vi.fn().mockResolvedValue(true),
 }));
-vi.mock("./app-dialog", () => ({
+vi.mock("@/shared/lib/app-dialog", () => ({
   confirmApp: vi.fn().mockResolvedValue(true),
 }));
 vi.mock("./window-transfer-bootstrap", () => ({

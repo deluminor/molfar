@@ -3,15 +3,9 @@
     "feature-internal:inbox": 2
   },
   "src/features/automations/ui/AutomationsView.tsx": {
-    "layer:features->app": 3
+    "layer:features->app": 2
   },
   "src/features/files/ui/FilePane.tsx": {
-    "layer:features->app": 1
-  },
-  "src/features/files/ui/FileTree.tsx": {
-    "layer:features->app": 1
-  },
-  "src/features/home/ui/LocalSurfaceRailActions.tsx": {
     "layer:features->app": 1
   },
   "src/features/home/ui/SurfaceHeader.tsx": {
@@ -20,14 +14,8 @@
   "src/features/inbox/ui/inbox-notification-menu.test.ts": {
     "layer:features->app": 1
   },
-  "src/features/inbox/ui/InboxDiscussionPanel.tsx": {
-    "layer:features->app": 1
-  },
   "src/features/inbox/ui/InboxView.tsx": {
     "layer:features->app": 2
-  },
-  "src/features/inbox/ui/LinkedWorkItemUpdateNotice.tsx": {
-    "layer:features->app": 1
   },
   "src/features/inbox/ui/project-notification-menu.test.ts": {
     "layer:features->app": 1
@@ -35,16 +23,7 @@
   "src/features/notes/ui/NotesView.tsx": {
     "layer:features->app": 2
   },
-  "src/features/notifications/hooks/use-session-reminders.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/notifications/hooks/use-session-reminders.ts": {
-    "layer:features->app": 1
-  },
   "src/features/projects/ui/project-groups.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/providers/ui/HarnessUpdateNotice.tsx": {
     "layer:features->app": 1
   },
   "src/features/search/ui/SearchView.tsx": {
@@ -56,38 +35,11 @@
   "src/features/sessions/model/prompt-preparation.ts": {
     "feature-internal:inbox": 1
   },
-  "src/features/sessions/ui/BtwSheet.tsx": {
-    "layer:features->app": 1
-  },
   "src/features/settings/ui/JiraSettings.tsx": {
     "feature-internal:inbox": 2
   },
-  "src/features/settings/ui/mcp-settings.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/settings/ui/McpSettings.tsx": {
-    "layer:features->app": 1
-  },
-  "src/features/settings/ui/quick-composer-shortcut-editor.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/settings/ui/settings-view.test.ts": {
-    "layer:features->app": 1
-  },
   "src/features/settings/ui/SettingsView.tsx": {
-    "layer:features->app": 4
-  },
-  "src/features/source-control/ui/GitChangesPanel.tsx": {
-    "layer:features->app": 1
-  },
-  "src/features/terminal/model/terminal-close.test.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/terminal/model/terminal-close.ts": {
-    "layer:features->app": 1
-  },
-  "src/features/terminal/ui/ProjectTerminalDock.tsx": {
-    "layer:features->app": 1
+    "layer:features->app": 3
   },
   "src/features/workspace/model/layout.ts": {
     "layer:features->app": 1
@@ -105,7 +57,7 @@
     "layer:features->app": 1
   },
   "src/features/workspace/ui/SurfaceTabs.tsx": {
-    "layer:features->app": 2
+    "layer:features->app": 1
   },
   "src/features/workspace/ui/tab-close-motion.test.ts": {
     "layer:features->app": 2
@@ -130,12 +82,6 @@
   },
   "src/shared/ui/icons.test.ts": {
     "layer:shared->features": 1
-  },
-  "src/shared/ui/Modal.tsx": {
-    "layer:shared->app": 1
-  },
-  "src/shared/ui/Popover.tsx": {
-    "layer:shared->app": 1
   },
   "src/shared/ui/private-email.test.ts": {
     "layer:shared->features": 1

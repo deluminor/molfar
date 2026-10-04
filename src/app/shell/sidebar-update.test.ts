@@ -17,7 +17,7 @@ const updaterMocks = vi.hoisted(() => ({
 vi.mock("@tauri-apps/api/app", () => ({ getVersion: vi.fn() }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: vi.fn() }));
-vi.mock("../model/app-dialog", () => ({
+vi.mock("@/shared/lib/app-dialog", () => ({
   alertApp: vi.fn(),
   confirmApp: vi.fn(),
 }));

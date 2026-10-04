@@ -17,7 +17,7 @@ import {
 } from "react";
 import { ExplorerMenu } from "@/features/files/ui/ExplorerMenu";
 import { SurfaceTabs } from "@/features/workspace/ui/SurfaceTabs";
-import { IconButton } from "@/app/shell/TitleBar";
+import { IconButton } from "@/shared/ui/IconButton";
 import {
   clampDockSize,
   defaultDockSize,

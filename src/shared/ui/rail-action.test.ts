@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { RailAction } from "./RailAction";
-import { Inbox } from "@/shared/ui/icons";
+import { Inbox } from "./icons";
 
 it("opens Inbox context actions from the keyboard without navigating", () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

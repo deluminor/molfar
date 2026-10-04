@@ -75,7 +75,7 @@ import type { LiveAgent } from "@/features/sessions/model/live-agents";
 import { LiveAgentsPreview } from "@/features/sessions/ui/LiveAgentsPreview";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
-import { RailAction, RailSearch } from "./RailAction";
+import { RailAction, RailSearch } from "@/shared/ui/RailAction";
 import { DevModeSlot, TabVisitNav } from "./TitleBar";
 import { SidebarUpdateFooter } from "./SidebarUpdate";
 import type { InstalledUpdate } from "../model/update-notice";

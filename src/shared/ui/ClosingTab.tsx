@@ -4,7 +4,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { tabCloseDuration } from "@/shared/lib/motion";
+import { tabCloseDuration } from "../lib/motion";
 
 type Props = {
   phase: "opening" | "closing";

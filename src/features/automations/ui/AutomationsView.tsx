@@ -9,7 +9,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { confirmApp } from "@/app/model/app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import { OverlayNav } from "@/app/shell/TitleBar";
 import { WindowControls } from "@/app/shell/WindowControls";
 import { gitBranches } from "@/platform/tauri/fs";

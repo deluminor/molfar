@@ -1,5 +1,5 @@
 import { useCallback, type ReactNode } from "react";
-import { RailAction } from "@/app/shell/RailAction";
+import { RailAction } from "@/shared/ui/RailAction";
 import { Gauge, Home } from "@/shared/ui/icons";
 import type {
   RailSurfaceId,

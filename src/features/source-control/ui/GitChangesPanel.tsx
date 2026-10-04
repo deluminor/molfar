@@ -1,4 +1,4 @@
-import { alertApp, confirmApp } from "@/app/model/app-dialog";
+import { alertApp, confirmApp } from "@/shared/lib/app-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,

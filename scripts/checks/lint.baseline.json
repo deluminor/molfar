@@ -111,9 +111,6 @@
     "lint/a11y/useSemanticElements": 2,
     "lint/correctness/useExhaustiveDependencies": 2
   },
-  "src/app/shell/rail-action.test.ts": {
-    "lint/style/noNonNullAssertion": 1
-  },
   "src/app/shell/SettingsRail.tsx": {
     "lint/a11y/useAriaPropsSupportedByRole": 1
   },
@@ -1452,6 +1449,9 @@
     "lint/correctness/useExhaustiveDependencies": 1
   },
   "src/shared/ui/private-email.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/shared/ui/rail-action.test.ts": {
     "lint/style/noNonNullAssertion": 1
   },
   "src/shared/ui/searchable-select.test.ts": {

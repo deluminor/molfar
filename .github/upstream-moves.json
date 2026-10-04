@@ -8,8 +8,8 @@
     "src/app/hooks/useIdleSessionDetach.ts": "src/app/hooks/use-idle-session-detach.ts",
     "src/app/hooks/useWorkspaceNavigation.test.ts": "src/app/hooks/use-workspace-navigation.test.ts",
     "src/app/hooks/useWorkspaceNavigation.ts": "src/app/hooks/use-workspace-navigation.ts",
-    "src/app/model/appDialog.test.ts": "src/app/model/app-dialog.test.ts",
-    "src/app/model/appDialog.ts": "src/app/model/app-dialog.ts",
+    "src/app/model/appDialog.test.ts": "src/shared/lib/app-dialog.test.ts",
+    "src/app/model/appDialog.ts": "src/shared/lib/app-dialog.ts",
     "src/app/model/appLifecycle.test.ts": "src/app/model/app-lifecycle.test.ts",
     "src/app/model/appLifecycle.ts": "src/app/model/app-lifecycle.ts",
     "src/app/model/bootWorkspace.test.ts": "src/app/model/boot-workspace.test.ts",
@@ -44,9 +44,12 @@
     "src/app/model/windowTransfer.ts": "src/app/model/window-transfer.ts",
     "src/app/model/windowTransferBootstrap.ts": "src/app/model/window-transfer-bootstrap.ts",
     "src/app/shell/AppDialog.test.ts": "src/app/shell/app-dialog.test.ts",
+    "src/app/shell/ClosingTab.tsx": "src/shared/ui/ClosingTab.tsx",
     "src/app/shell/GithubStarPrompt.test.ts": "src/app/shell/github-star-prompt.test.ts",
+    "src/app/shell/GlassBackdrop.tsx": "src/shared/ui/GlassBackdrop.tsx",
     "src/app/shell/PiUsage.test.ts": "src/app/shell/pi-usage.test.ts",
-    "src/app/shell/RailAction.test.ts": "src/app/shell/rail-action.test.ts",
+    "src/app/shell/RailAction.test.ts": "src/shared/ui/rail-action.test.ts",
+    "src/app/shell/RailAction.tsx": "src/shared/ui/RailAction.tsx",
     "src/app/shell/SidebarKnowledgeNavigation.test.ts": "src/app/shell/sidebar-knowledge-navigation.test.ts",
     "src/app/shell/SidebarRename.test.ts": "src/app/shell/sidebar-rename.test.ts",
     "src/app/shell/SidebarUpdate.test.ts": "src/app/shell/sidebar-update.test.ts",
@@ -739,7 +742,7 @@
         "src/integrations/harness/providers/codex/codex-rate-limits.ts",
         "src/integrations/harness/providers/opencode/opencode-usage.ts"
       ],
-      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) → src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits → rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt → rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers → src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage → providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits → providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage → providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
+      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) \u2192 src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits \u2192 rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt \u2192 rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers \u2192 src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage \u2192 providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits \u2192 providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage \u2192 providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts."
     },
     "src/features/sessions/model/models.test.ts": {
       "targets": [
@@ -759,7 +762,7 @@
         "src/integrations/harness/core/models/catalog-store.ts",
         "src/integrations/harness/core/models/resolve-model.ts"
       ],
-      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) → src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) → native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) → model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID → src/integrations/harness/core/models/catalog.ts; pickDefaultId → default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) → catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId → resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
+      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) \u2192 src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) \u2192 native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) \u2192 model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID \u2192 src/integrations/harness/core/models/catalog.ts; pickDefaultId \u2192 default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) \u2192 catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId \u2192 resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
     },
     "src/features/sessions/model/session.ts": {
       "targets": [
@@ -781,6 +784,14 @@
     }
   },
   "extractions": {
+    "src/app/shell/TitleBar.tsx": [
+      {
+        "names": [
+          "IconButton"
+        ],
+        "target": "src/shared/ui/IconButton.tsx"
+      }
+    ],
     "src/features/connections/model/connections.ts": [
       {
         "names": [

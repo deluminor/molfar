@@ -4,7 +4,7 @@ import {
   settleAppDialog,
   subscribeAppDialog,
   type AppDialogState,
-} from "../model/app-dialog";
+} from "@/shared/lib/app-dialog";
 import { Modal } from "@/shared/ui/Modal";
 
 export function AppDialog() {

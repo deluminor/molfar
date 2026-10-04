@@ -1,4 +1,4 @@
-import type { IconComponent } from "@/shared/ui/icons";
+import type { IconComponent } from "./icons";
 
 type Props = {
   label: string;

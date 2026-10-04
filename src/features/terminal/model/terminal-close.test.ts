@@ -9,7 +9,7 @@ vi.mock("@/platform/tauri/pty", () => ({
   getPtyStatus: (...args: unknown[]) => getPtyStatus(...args),
 }));
 
-vi.mock("@/app/model/app-dialog", () => ({
+vi.mock("@/shared/lib/app-dialog", () => ({
   confirmApp: (...args: unknown[]) => confirmApp(...args),
 }));
 

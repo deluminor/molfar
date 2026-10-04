@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ConnectionsSettings } from "@/features/connections/ui/ConnectionsSettings";
-import { confirmApp } from "@/app/model/app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import {
   ArrowDownCircle,
   Check,

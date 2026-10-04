@@ -12,7 +12,7 @@ vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
 vi.mock("@/features/settings/model/sounds", () => ({
   announceUpdateAvailable: vi.fn(),
 }));
-vi.mock("./app-dialog", () => ({ alertApp }));
+vi.mock("@/shared/lib/app-dialog", () => ({ alertApp }));
 vi.mock("./fork-policy", () => ({ APP_UPDATER_DISABLED: true }));
 
 import {

@@ -7,7 +7,7 @@ import {
 import { SidebarWorktreeSwitcher } from "@/features/source-control/ui/SidebarWorktreeSwitcher";
 import { OrchestrationSidebarAgents } from "@/features/orchestration/ui/OrchestrationSidebarAgents";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { alertApp, confirmApp } from "../model/app-dialog";
+import { alertApp, confirmApp } from "@/shared/lib/app-dialog";
 import {
   Archive,
   Chatting,
@@ -154,9 +154,10 @@ import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { LiveAgentsPreview } from "@/features/sessions/ui/LiveAgentsPreview";
 import { ProjectRail } from "./ProjectRail";
 import { InboxNotificationMenu } from "@/features/inbox/ui/InboxNotificationMenu";
-import { RailAction } from "./RailAction";
+import { RailAction } from "@/shared/ui/RailAction";
 import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
-import { DevModeSlot, IconButton, TabVisitNav } from "./TitleBar";
+import { DevModeSlot, TabVisitNav } from "./TitleBar";
+import { IconButton } from "@/shared/ui/IconButton";
 import { ProjectSearch } from "@/features/projects/ui/ProjectSearch";
 import { Popover } from "@/shared/ui/Popover";
 import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";

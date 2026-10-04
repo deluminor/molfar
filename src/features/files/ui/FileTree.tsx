@@ -70,7 +70,7 @@ import {
 } from "@/shared/lib/drag";
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { confirmApp } from "@/app/model/app-dialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
   modified: "text-amber-400",
