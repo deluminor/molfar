@@ -183,6 +183,42 @@ describe("Workspace tabs", () => {
   });
 });
 
+describe("Workspace harness events", () => {
+  it("joins deltas that arrive together into one message", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await app.submitPrompt("explain the build");
+    await app.until(() => current().harness.turns.length === 1);
+
+    await app.drive(() => {
+      current().harness.send({ type: "message.delta", text: "The build " });
+      current().harness.send({ type: "message.delta", text: "uses " });
+      current().harness.send({ type: "message.delta", text: "Vite." });
+    });
+
+    await app.until(() => shows("The build uses Vite."));
+  });
+
+  it("applies a background tab's stream so it shows on return", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await app.submitPrompt("explain the build");
+    await app.until(() => current().harness.turns.length === 1);
+    await app.emit("new_tab");
+    await app.until(() => tabIds().length === 2);
+
+    await app.drive(() => {
+      current().harness.send({
+        type: "message.delta",
+        text: "Streamed while hidden.",
+      });
+      current().harness.send({ type: "message.completed" });
+      current().harness.finish();
+    });
+    await app.emit("prev_tab");
+
+    await app.until(() => shows("Streamed while hidden."));
+  });
+});
+
 describe("Workspace turn control", () => {
   it("steers a running turn with a follow-up instead of starting another", async () => {
     app = await renderApp({ project: "/work/demo" });
