@@ -14,5 +14,9 @@ export function createWorkspaceStore(
     ...initial,
     setProjectCwd: fieldSetter(store, "projectCwd"),
     setRecents: fieldSetter(store, "recents"),
+    setSessions: fieldSetter(store, "sessions"),
+    setTabs: fieldSetter(store, "tabs"),
+    setActiveTabId: fieldSetter(store, "activeTabId"),
+    setTabVisitNav: fieldSetter(store, "tabVisitNav"),
   }));
 }

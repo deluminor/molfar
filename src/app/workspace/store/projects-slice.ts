@@ -11,5 +11,3 @@ export type ProjectsActions = {
   setProjectCwd: (update: StateUpdate<string>) => void;
   setRecents: (update: StateUpdate<RecentProject[]>) => void;
 };
-
-export type ProjectsSlice = ProjectsState & ProjectsActions;

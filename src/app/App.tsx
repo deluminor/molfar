@@ -126,7 +126,7 @@ import { Sidebar } from "./shell/Sidebar";
 import { useStore } from "zustand";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
-import { initialProjectsState } from "./workspace/store/initial-projects";
+import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
 import { AppDialog } from "./shell/AppDialog";
@@ -978,20 +978,19 @@ function Workspace({
   historyCwd: bootHistoryCwd = null,
 }: AppProps) {
   const [workspaceStore] = useState(() =>
-    createWorkspaceStore(initialProjectsState({ windowTransfer, resumed })),
+    createWorkspaceStore(initialWorkspaceState({ windowTransfer, resumed })),
   );
-  const { setProjectCwd, setRecents } = useWorkspaceActions(workspaceStore);
+  const {
+    setProjectCwd,
+    setRecents,
+    setSessions,
+    setTabs,
+    setActiveTabId: setActiveTabIdState,
+    setTabVisitNav,
+  } = useWorkspaceActions(workspaceStore);
   const projectCwd = useStore(workspaceStore, (state) => state.projectCwd);
   const recents = useStore(workspaceStore, (state) => state.recents);
-  const [seed] = useState(() => {
-    const cwd = lastProjectPath() ?? "~";
-    const session = newDefaultSession(cwd);
-    const tab = newTab(session.id);
-    return { session, tab };
-  });
-  const [sessions, setSessions] = useState<Session[]>(
-    () => windowTransfer?.sessions ?? resumed?.sessions ?? [seed.session],
-  );
+  const sessions = useStore(workspaceStore, (state) => state.sessions);
   const [sessionDeleteDialog, setSessionDeleteDialog] = useState<{
     title: string;
     unusedWorktree: string;
@@ -1000,9 +999,7 @@ function Workspace({
   const switchingWorktrees = useRef(new Map<string, string>());
   const removingWorktreePaths = useRef(new Set<string>());
   const deleteConfirmationPending = useRef(false);
-  const [tabs, setTabs] = useState<WorkspaceTab[]>(
-    () => windowTransfer?.tabs ?? resumed?.tabs ?? [seed.tab],
-  );
+  const tabs = useStore(workspaceStore, (state) => state.tabs);
   const [projectTerminals, setProjectTerminals] = useState<ProjectTerminal[]>(
     () => windowTransfer?.projectTerminals ?? resumed?.projectTerminals ?? [],
   );
@@ -1013,9 +1010,7 @@ function Workspace({
   const lastDockSideRef = useRef(lastDockSide);
   lastDockSideRef.current = lastDockSide;
   const [projectTerminalFocused, setProjectTerminalFocused] = useState(false);
-  const [activeTabId, setActiveTabIdState] = useState(
-    () => windowTransfer?.activeTabId ?? resumed?.activeTabId ?? seed.tab.id,
-  );
+  const activeTabId = useStore(workspaceStore, (state) => state.activeTabId);
   const [composerFocused, setComposerFocused] = useState(() => {
     if (windowTransfer) return true;
     if (!resumed) return false;
@@ -1363,10 +1358,7 @@ function Workspace({
 
   const tabVisitRef = useRef(emptyTabVisitHistory(activeTabId));
   const tabVisitFromHistoryRef = useRef(false);
-  const [tabVisitNav, setTabVisitNav] = useState({
-    canBack: false,
-    canForward: false,
-  });
+  const tabVisitNav = useStore(workspaceStore, (state) => state.tabVisitNav);
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
   const lastPersisted = useRef(new Map<string, string>());

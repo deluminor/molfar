@@ -1,19 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type { RecentProject } from "@/features/projects/model/recents";
 import { createWorkspaceStore } from "./create-workspace-store";
-import type { WorkspaceInitialState } from "./types";
+import { testWorkspaceState } from "./test-state";
 
 const demo: RecentProject = { path: "/work/demo", openedAt: 1 };
 
-function initial(
-  overrides: Partial<WorkspaceInitialState> = {},
-): WorkspaceInitialState {
-  return { projectCwd: "~", recents: [], ...overrides };
-}
-
 describe("createWorkspaceStore", () => {
   it("starts from the initial state", () => {
-    const store = createWorkspaceStore(initial({ recents: [demo] }));
+    const store = createWorkspaceStore(testWorkspaceState({ recents: [demo] }));
 
     expect(store.getState()).toMatchObject({
       projectCwd: "~",
@@ -22,7 +16,7 @@ describe("createWorkspaceStore", () => {
   });
 
   it("sets a field from a value or from an updater of the previous value", () => {
-    const store = createWorkspaceStore(initial());
+    const store = createWorkspaceStore(testWorkspaceState());
 
     store.getState().setProjectCwd("/work/demo");
     store.getState().setRecents((previous) => [...previous, demo]);
@@ -32,7 +26,7 @@ describe("createWorkspaceStore", () => {
   });
 
   it("notifies subscribers once per change and not at all for the same value", () => {
-    const store = createWorkspaceStore(initial());
+    const store = createWorkspaceStore(testWorkspaceState());
     const listener = vi.fn();
     store.subscribe(listener);
 

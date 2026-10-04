@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createWorkspaceStore } from "../store/create-workspace-store";
+import { testWorkspaceState } from "../store/test-state";
 
 type BiomeHook = { name: string; stableResult: string[] };
 
@@ -16,10 +17,9 @@ function stableActionNames(): string[] {
 
 describe("useWorkspaceActions", () => {
   it("is declared stable in biome.json for exactly the store's actions", () => {
-    const state = createWorkspaceStore({
-      projectCwd: "~",
-      recents: [],
-    }).getState() as unknown as Record<string, unknown>;
+    const state = createWorkspaceStore(
+      testWorkspaceState(),
+    ).getState() as unknown as Record<string, unknown>;
     const actions = Object.keys(state).filter(
       (key) => typeof state[key] === "function",
     );

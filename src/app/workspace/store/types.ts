@@ -1,14 +1,12 @@
 import type { StoreApi } from "zustand/vanilla";
-import type {
-  ProjectsActions,
-  ProjectsSlice,
-  ProjectsState,
-} from "./projects-slice";
+import type { ProjectsActions, ProjectsState } from "./projects-slice";
+import type { SessionsActions, SessionsState } from "./sessions-slice";
+import type { TabsActions, TabsState } from "./tabs-slice";
 
-export type WorkspaceState = ProjectsSlice;
+export type WorkspaceInitialState = ProjectsState & SessionsState & TabsState;
 
-export type WorkspaceInitialState = ProjectsState;
+export type WorkspaceActions = ProjectsActions & SessionsActions & TabsActions;
 
-export type WorkspaceActions = ProjectsActions;
+export type WorkspaceState = WorkspaceInitialState & WorkspaceActions;
 
 export type WorkspaceStore = StoreApi<WorkspaceState>;

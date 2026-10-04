@@ -61,7 +61,14 @@
             "hooks": [
               {
                 "name": "useWorkspaceActions",
-                "stableResult": ["setProjectCwd", "setRecents"]
+                "stableResult": [
+                  "setProjectCwd",
+                  "setRecents",
+                  "setSessions",
+                  "setTabs",
+                  "setActiveTabId",
+                  "setTabVisitNav"
+                ]
               }
             ]
           }

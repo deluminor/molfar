@@ -13,8 +13,8 @@ import type { ProjectsState } from "./projects-slice";
  * last opened. A resumed project is remembered again so it leads the recents.
  */
 export function initialProjectsState(boot: {
-  windowTransfer: WindowTransferPayload | null;
-  resumed: ResumedWorkspace | null;
+  windowTransfer: Pick<WindowTransferPayload, "projectCwd"> | null;
+  resumed: Pick<ResumedWorkspace, "projectCwd"> | null;
 }): ProjectsState {
   const { windowTransfer, resumed } = boot;
   const projectCwd =
