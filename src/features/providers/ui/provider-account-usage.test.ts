@@ -43,9 +43,9 @@ it("flips the meter when another window turns on remaining usage", async () => {
   );
 
   await act(async () => {
-    localStorage.setItem("vatra.showRemainingUsage", "1");
+    localStorage.setItem("molfar.showRemainingUsage", "1");
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "vatra.showRemainingUsage" }),
+      new StorageEvent("storage", { key: "molfar.showRemainingUsage" }),
     );
   });
 

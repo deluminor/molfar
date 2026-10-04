@@ -529,8 +529,8 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
   try {
     await rpc.request("initialize", {
       clientInfo: {
-        name: "vatra",
-        title: "Vatra",
+        name: "molfar",
+        title: "MOLFAR",
         version: "0.1.0",
       },
       capabilities: {
@@ -765,7 +765,7 @@ function handleNotification(
   const mapped = mapCodexNotification(method, params);
   if (mapped.diagnostic) {
     console.debug(
-      `[vatra] codex ${live.threadId} ${method}`,
+      `[molfar] codex ${live.threadId} ${method}`,
       mapped.diagnostic,
     );
   }
@@ -1204,7 +1204,7 @@ async function handleServerRequest(
       if (!live.cancelled && !live.muteUpdates)
         live.onEvent({
           type: "status",
-          text: "This MCP server requested a form or browser sign-in that Vatra does not support yet. Complete it in the server's own interface.",
+          text: "This MCP server requested a form or browser sign-in that MOLFAR does not support yet. Complete it in the server's own interface.",
         });
       await live.rpc.respond(id, {
         action: "cancel",

@@ -740,7 +740,7 @@ export class HostEngine {
           if (live) live.value = saved;
         })
         .catch((error) =>
-          console.debug("[vatra] remote session title", error),
+          console.debug("[molfar] remote session title", error),
         );
     }
     const temporary = value.autoWorktreeBranch;
@@ -770,7 +770,7 @@ export class HostEngine {
           if (live) live.value = saved;
         })
         .catch((error) =>
-          console.debug("[vatra] remote worktree branch", error),
+          console.debug("[molfar] remote worktree branch", error),
         );
     }
   }

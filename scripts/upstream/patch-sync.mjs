@@ -80,7 +80,7 @@ function applyChange(cwd, range, map, change) {
   const retarget = resolved.action === PATH_ACTION.RETARGET;
   if (resolved.action !== PATH_ACTION.APPLY && !retarget) {
     const details = {
-      vatraPath: resolved.path,
+      molfarPath: resolved.path,
       targets: resolved.targets,
       notes: resolved.notes,
     };
@@ -112,9 +112,9 @@ function overallStatus(conflicts, pending) {
 
 /**
  * Applies upstream's changes since the last synced commit to the index and working tree, one path at
- * a time, and records `target` as synced. Vatra's `main` shares no commits with upstream, so a merge
+ * a time, and records `target` as synced. MOLFAR's `main` shares no commits with upstream, so a merge
  * would pull every upstream author into its history; a patch keeps the content and leaves authorship
- * to the sync commit. Paths Vatra moved are retargeted through the move map; paths it split or
+ * to the sync commit. Paths MOLFAR moved are retargeted through the move map; paths it split or
  * removed become pending ports instead of aborting the sync.
  */
 export function applyUpstreamPatch({ cwd, target }) {
@@ -156,12 +156,12 @@ export function applyUpstreamPatch({ cwd, target }) {
     if (outcome.kind === "pending") pending.push(outcome.entry);
     if (outcome.kind === "conflict") conflicts.push(outcome.target);
     if (outcome.retargeted)
-      retargeted.push({ upstream: change.source, vatra: outcome.target });
+      retargeted.push({ upstream: change.source, molfar: outcome.target });
     if (outcome.kind === "applied" && change.status === "A")
       added.push(outcome.target);
     const moved = extractionsFor(map, change.source);
     if (moved.length > 0 && outcome.kind !== "pending") {
-      extracted.push({ upstream: change.source, vatra: outcome.target, moved });
+      extracted.push({ upstream: change.source, molfar: outcome.target, moved });
     }
   }
 

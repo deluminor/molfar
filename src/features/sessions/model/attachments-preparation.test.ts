@@ -24,7 +24,7 @@ describe("file attachment preparation", () => {
   ])(
     "persists a pasted %s before handing it to the harness",
     async (name, mimeType) => {
-      const path = `/tmp/vatra-attachments/${name}`;
+      const path = `/tmp/molfar-attachments/${name}`;
       invoke.mockResolvedValue(path);
       const files = await attachmentsFromFiles([
         new File(["contents"], name, { type: mimeType }),

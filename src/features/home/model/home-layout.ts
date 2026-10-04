@@ -1,6 +1,6 @@
 /** Persistable Home dashboard grid layout (react-grid-layout units). */
 
-export const HOME_LAYOUT_STORAGE_KEY = "vatra.homeLayout.v1";
+export const HOME_LAYOUT_STORAGE_KEY = "molfar.homeLayout.v1";
 
 export const HOME_LAYOUT_COLS = 12;
 export const HOME_LAYOUT_ROW_HEIGHT = 40;

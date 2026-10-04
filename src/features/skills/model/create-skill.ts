@@ -1,15 +1,15 @@
-/** Bundled Vatra skill: teach the agent how to write portable SKILL.md files. */
+/** Bundled MOLFAR skill: teach the agent how to write portable SKILL.md files. */
 export const CREATE_SKILL_NAME = "create-skill";
 
 export const CREATE_SKILL_DESCRIPTION =
-  "Create a Vatra skill as a SKILL.md in .agents/skills. Use when the user wants to author, write, save, or scaffold a skill, or asks about skill format.";
+  "Create a MOLFAR skill as a SKILL.md in .agents/skills. Use when the user wants to author, write, save, or scaffold a skill, or asks about skill format.";
 
 export const CREATE_SKILL_BODY = `---
 name: create-skill
-description: Create a Vatra skill as a SKILL.md in .agents/skills. Use when the user wants to author, write, save, or scaffold a skill, or asks about skill format.
+description: Create a MOLFAR skill as a SKILL.md in .agents/skills. Use when the user wants to author, write, save, or scaffold a skill, or asks about skill format.
 ---
 
-# Create a Vatra skill
+# Create a MOLFAR skill
 
 Write a portable Agent Skill so every harness (Claude, Cursor, Codex, Grok Build, OpenCode, Pi, omp, fx, Hermes Agent) can load it.
 

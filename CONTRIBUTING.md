@@ -1,6 +1,6 @@
 # Contributing
 
-Vatra is early and I’m the only maintainer, so small and focused lands much faster than large and ambitious. Past that, the door is open - bug reports and fixes are genuinely welcome.
+MOLFAR is early and I’m the only maintainer, so small and focused lands much faster than large and ambitious. Past that, the door is open - bug reports and fixes are genuinely welcome.
 
 Please don’t open PRs that add a new provider right now. The existing harnesses still need to agree on a few patterns, and a new adapter would copy whatever is there today. See [New providers](#new-providers).
 
@@ -26,7 +26,7 @@ npm install
 npm run tauri dev
 ```
 
-One provider is enough. Vatra probes for each CLI at startup and disables the ones it can’t find, with a hint about how to install them, so a missing Codex doesn’t stop you from working on anything else.
+One provider is enough. MOLFAR probes for each CLI at startup and disables the ones it can’t find, with a hint about how to install them, so a missing Codex doesn’t stop you from working on anything else.
 
 ## Where things live
 
@@ -37,7 +37,7 @@ One provider is enough. Vatra probes for each CLI at startup and disables the on
 - `src/shared/` - reusable UI, hooks, and small utilities that contain no feature behavior
 - `src-tauri/src/` - the Rust side: PTYs, filesystem and git, session storage, native window
 
-`src/integrations/harness/` is the most useful place to start if you want to fix something real. Each folder under `providers/` has an adapter (`claude-adapter.ts`) that implements the shared `HarnessAdapter` lifecycle from `core/registry.ts`, and a protocol module (`claude-protocol.ts`) that translates the CLI’s output into Vatra’s own event types. The protocol modules are pure functions with unit tests beside them, so you can fix a Codex parsing bug with only Claude Code installed. That’s for the providers we already ship - please don’t add a new one yet.
+`src/integrations/harness/` is the most useful place to start if you want to fix something real. Each folder under `providers/` has an adapter (`claude-adapter.ts`) that implements the shared `HarnessAdapter` lifecycle from `core/registry.ts`, and a protocol module (`claude-protocol.ts`) that translates the CLI’s output into MOLFAR’s own event types. The protocol modules are pure functions with unit tests beside them, so you can fix a Codex parsing bug with only Claude Code installed. That’s for the providers we already ship - please don’t add a new one yet.
 
 ## Before you push
 

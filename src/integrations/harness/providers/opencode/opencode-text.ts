@@ -29,7 +29,7 @@ import { abortTextPromptRace } from "../../core/abort-text-prompt";
 import { streamTextDelta } from "../../core/stream-text";
 import type { HarnessEvent } from "../../core/types";
 
-const TEXT_CHILD_ID = "vatra-opencode-text";
+const TEXT_CHILD_ID = "molfar-opencode-text";
 const SERVER_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 

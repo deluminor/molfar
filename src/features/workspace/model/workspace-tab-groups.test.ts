@@ -276,9 +276,9 @@ describe("filterTabsForProject", () => {
 
 describe("planWorkspaceTabClose", () => {
   const sessions = [
-    session("m1", "/projects/vatra"),
+    session("m1", "/projects/molfar"),
     session("r1", "/projects/ruler"),
-    session("m2", "/projects/vatra"),
+    session("m2", "/projects/molfar"),
   ];
   const tabs = [tab("tm1", "m1"), tab("tr1", "r1"), tab("tm2", "m2")];
 
@@ -383,8 +383,8 @@ describe("planWorkspaceTabClose", () => {
 
 describe("applyPlaceSessionOnPane", () => {
   const sessions = [
-    session("m1", "/projects/vatra"),
-    session("m2", "/projects/vatra"),
+    session("m1", "/projects/molfar"),
+    session("m2", "/projects/molfar"),
     session("r1", "/projects/ruler"),
   ];
 
@@ -409,7 +409,7 @@ describe("applyPlaceSessionOnPane", () => {
   });
 
   it("replaces a blank target instead of splitting it", () => {
-    const blank = session("blank", "/projects/vatra");
+    const blank = session("blank", "/projects/molfar");
     const next = applyPlaceSessionOnPane({
       tabs: [tab("tm1", "blank")],
       sessions: [...sessions, blank],
@@ -462,9 +462,9 @@ describe("applyPlaceSessionOnPane", () => {
 
 describe("applyPlaceTabOnPane", () => {
   const sessions = [
-    session("target", "/projects/vatra"),
-    session("source", "/projects/vatra"),
-    session("other", "/projects/vatra"),
+    session("target", "/projects/molfar"),
+    session("source", "/projects/molfar"),
+    session("other", "/projects/molfar"),
   ];
 
   it("turns a separate tab into a split beside the target pane", () => {
@@ -485,8 +485,8 @@ describe("applyPlaceTabOnPane", () => {
 
   it("keeps every pane and the nested layout of the dragged tab", () => {
     const file = newFileTab(
-      "/projects/vatra/readme.md",
-      "/projects/vatra",
+      "/projects/molfar/readme.md",
+      "/projects/molfar",
     );
     const pane = { id: "editor", files: [file], activeFileId: file.id };
     const source: WorkspaceTab = {
@@ -522,7 +522,7 @@ describe("applyPlaceTabOnPane", () => {
   });
 
   it("replaces a blank target without leaving its session mounted", () => {
-    const blank = session("blank", "/projects/vatra");
+    const blank = session("blank", "/projects/molfar");
     const next = applyPlaceTabOnPane({
       tabs: [tab("target-tab", "blank"), tab("source-tab", "source")],
       sessions: [...sessions, blank],
@@ -569,8 +569,8 @@ describe("applyDetachPaneToTab", () => {
     (kind) => {
       const file =
         kind === "editor"
-          ? newFileTab("/projects/vatra/readme.md", "/projects/vatra")
-          : newTerminalFile("/projects/vatra");
+          ? newFileTab("/projects/molfar/readme.md", "/projects/molfar")
+          : newTerminalFile("/projects/molfar");
       const pane = { id: `${kind}-pane`, files: [file], activeFileId: file.id };
       const source: WorkspaceTab = {
         ...tab("source-tab", "chat"),

@@ -99,7 +99,7 @@ describe("editLastTurn", () => {
 
   it("restores /operator when editing an activation turn", () => {
     const session = chat([
-      { id: "u1", role: "user", text: "list notes", vatra: true },
+      { id: "u1", role: "user", text: "list notes", molfar: true },
       { id: "a1", role: "assistant", text: "Here they are." },
     ]);
     expect(lastTurnRecall(session)?.text).toBe("/operator list notes");

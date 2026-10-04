@@ -17,7 +17,7 @@ import { INTERRUPT_MESSAGE } from "./in-flight";
 import type { Block } from "@/domain/session/block";
 import type { ToolPreview } from "@/domain/session/agent-run";
 import { allModels } from "./models";
-import { vatraWorkSummary } from "./vatra-tool-call";
+import { molfarWorkSummary } from "./molfar-tool-call";
 
 export type ToolCallState = "pending" | "accepted" | "rejected";
 
@@ -852,7 +852,7 @@ function currentWorkKind(steps: Block[]): ActivityWorkKind | undefined {
  * "N notes" clause; a group holding nothing but notes is just that clause.
  */
 export function workSummaryLine(steps: Block[], live = false): string {
-  const appSummary = vatraWorkSummary(steps, live);
+  const appSummary = molfarWorkSummary(steps, live);
   if (appSummary) return appSummary;
   const tally = tallySteps(steps);
   const notes =

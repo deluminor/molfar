@@ -150,7 +150,7 @@ describe("orchestration proposals", () => {
     expect(prompt).toContain("do not edit files, start workers");
     expect(prompt).toContain('"model":"codex:test"');
     expect(prompt).toContain("until the user confirms");
-    expect(prompt).toContain("<vatra_proposal>");
+    expect(prompt).toContain("<molfar_proposal>");
     expect(prompt).toContain("fewest useful tasks");
     expect(prompt).toContain("Do not ask the user to assemble a team");
     expect(prompt).toContain("disjoint files");
@@ -161,21 +161,12 @@ describe("orchestration proposals", () => {
   it("turns the lead's structured response into a ready card without changing the discovered catalog", () => {
     const result = completeOrchestrationProposal(
       draft,
-      `Commentary\n<vatra_proposal>${JSON.stringify({ ...payload, settings: { choices: [] } })}</vatra_proposal>`,
+      `Commentary\n<molfar_proposal>${JSON.stringify({ ...payload, settings: { choices: [] } })}</molfar_proposal>`,
     );
     expect(result.status).toBe("ready");
     expect(result.tasks).toEqual(payload.tasks);
     expect(result.settings).toEqual(draft.settings);
     expect(result.author).toEqual(draft.author);
-  });
-  it("still reads a proposal tagged before the rename", () => {
-    const result = completeOrchestrationProposal(
-      draft,
-      `<monocode_proposal>${JSON.stringify({ ...payload, settings: { choices: [] } })}</monocode_proposal>`,
-    );
-
-    expect(result.status).toBe("ready");
-    expect(result.tasks).toEqual(payload.tasks);
   });
   it("validates discovered paths against the proposal's concrete worktree", () => {
     const worktreeDraft = {

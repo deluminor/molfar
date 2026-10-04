@@ -60,7 +60,7 @@ afterEach(async () => {
 });
 
 async function setup() {
-  const directory = mkdtempSync(join(tmpdir(), "vatra-large-sync-"));
+  const directory = mkdtempSync(join(tmpdir(), "molfar-large-sync-"));
   const store = new HostStore(join(directory, "host.db"));
   let turn: SendTurnInput | undefined;
   let finish = () => {};

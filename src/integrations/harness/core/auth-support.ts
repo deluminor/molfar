@@ -11,7 +11,7 @@ const LOGIN_ARGS: Partial<Record<HarnessId, readonly string[]>> = {
   codex: ["login"],
   cursor: ["login"],
   grok: ["login", "--oauth"],
-  // Vatra uses fx through Vercel AI Gateway. Choosing it explicitly avoids
+  // MOLFAR uses fx through Vercel AI Gateway. Choosing it explicitly avoids
   // leaving `fx login` waiting on a TTY-only provider picker.
   fx: ["login", "vercel"],
 };

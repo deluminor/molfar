@@ -715,7 +715,7 @@ export function Composer({
             ...(supportsBtwHarness(harness) ? [BTW_COMMAND] : []),
             ...skills.filter(
               (skill) =>
-                ![OPERATOR_COMMAND.name, "mono", "vatra"].includes(
+                ![OPERATOR_COMMAND.name, "mono", "molfar"].includes(
                   skill.name,
                 ) &&
                 (skill.kind === "native" ||
@@ -2030,7 +2030,7 @@ export function Composer({
               onManage={() => {
                 mcpInsertAt.current = null;
                 setMcpPickerOpen(false);
-                window.dispatchEvent(new Event("vatra:open-mcp-settings"));
+                window.dispatchEvent(new Event("molfar:open-mcp-settings"));
               }}
               onDismiss={(reason) => {
                 mcpInsertAt.current = null;
@@ -2448,7 +2448,7 @@ export function Composer({
                       <span className="min-w-0 flex-1">
                         <span className="block text-[13px]">Operator</span>
                         <span className="block truncate whitespace-nowrap text-[11px] leading-4 text-content/45">
-                          Give this thread access to Vatra
+                          Give this thread access to MOLFAR
                         </span>
                       </span>
                       {operatorActive ? (

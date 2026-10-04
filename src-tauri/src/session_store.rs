@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager, State};
 
+const DB_FILE: &str = "molfar.db";
+
 const MIGRATION_V1: &str = r#"
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
@@ -88,7 +90,7 @@ fn init_with(
     open: impl FnOnce(PathBuf) -> Result<SessionStore, String>,
     manage: impl FnOnce(SessionStore),
 ) -> Result<(), String> {
-    let store = open(crate::legacy_session_db::resolve(&data_dir()?))?;
+    let store = open(data_dir()?.join(DB_FILE))?;
     manage(store);
     Ok(())
 }
@@ -1986,14 +1988,14 @@ mod tests {
     #[test]
     fn startup_does_not_read_saved_transcripts() {
         let data_dir = std::env::temp_dir().join(format!(
-            "vatra-startup-transcripts-{}-{}",
+            "molfar-startup-transcripts-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
         ));
-        let path = data_dir.join("vatra.db");
+        let path = data_dir.join("molfar.db");
         {
             let store = SessionStore::open(path.clone()).unwrap();
             let conn = store.lock_conn().unwrap();
@@ -2794,7 +2796,7 @@ mod tests {
     #[test]
     fn upsert_snapshots_git_branch() {
         let dir = std::env::temp_dir().join(format!(
-            "vatra-session-git-{}-{}",
+            "molfar-session-git-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -2999,7 +3001,7 @@ mod tests {
     #[test]
     fn migrate_creates_workspace_tables_when_versions_already_recorded() {
         let path = std::env::temp_dir().join(format!(
-            "vatra-stale-migrations-{}-{}.db",
+            "molfar-stale-migrations-{}-{}.db",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -3057,7 +3059,7 @@ mod tests {
     #[test]
     fn migrate_restores_the_covering_index_when_versions_already_recorded() {
         let path = std::env::temp_dir().join(format!(
-            "vatra-stale-index-{}-{}.db",
+            "molfar-stale-index-{}-{}.db",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -3127,7 +3129,7 @@ mod tests {
     #[test]
     fn session_search_uses_a_query_only_read_connection() {
         let path = std::env::temp_dir().join(format!(
-            "vatra-session-read-conn-{}-{}.db",
+            "molfar-session-read-conn-{}-{}.db",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)

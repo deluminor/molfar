@@ -31,16 +31,16 @@ function writeMoveMap(map) {
   );
 }
 
-function moveInVatra(from, to) {
+function moveInMolfar(from, to) {
   repo.git("mv", from, to);
 }
 
 describe("applyUpstreamPatch with moved paths", () => {
-  it("retargets upstream edits to a path Vatra renamed and keeps Vatra's own edits", () => {
-    moveInVatra("src/fooBar.ts", "src/foo-bar.ts");
-    repo.write("src/foo-bar.ts", numberedLines(30, { 2: "vatra edit" }));
+  it("retargets upstream edits to a path MOLFAR renamed and keeps MOLFAR's own edits", () => {
+    moveInMolfar("src/fooBar.ts", "src/foo-bar.ts");
+    repo.write("src/foo-bar.ts", numberedLines(30, { 2: "molfar edit" }));
     writeMoveMap({ renames: { "src/fooBar.ts": "src/foo-bar.ts" } });
-    repo.commitAll("vatra rename");
+    repo.commitAll("molfar rename");
     repo.upstreamCommit("upstream edit", {
       "src/fooBar.ts": numberedLines(30, { 25: "upstream edit" }),
     });
@@ -49,22 +49,22 @@ describe("applyUpstreamPatch with moved paths", () => {
 
     expect(result.status).toBe(SYNC_STATUS.APPLIED);
     expect(result.retargeted).toEqual([
-      { upstream: "src/fooBar.ts", vatra: "src/foo-bar.ts" },
+      { upstream: "src/fooBar.ts", molfar: "src/foo-bar.ts" },
     ]);
     expect(repo.read("src/foo-bar.ts")).toBe(
-      numberedLines(30, { 2: "vatra edit", 25: "upstream edit" }),
+      numberedLines(30, { 2: "molfar edit", 25: "upstream edit" }),
     );
     expect(repo.exists("src/fooBar.ts")).toBe(false);
   });
 
-  it("applies paths Vatra extracted declarations from and reports where they went", () => {
+  it("applies paths MOLFAR extracted declarations from and reports where they went", () => {
     repo.write("src/types.ts", "export type Kind = 'a';\n");
     writeMoveMap({
       extractions: {
         "src/big.ts": [{ names: ["Kind"], target: "src/types.ts" }],
       },
     });
-    repo.commitAll("vatra extraction");
+    repo.commitAll("molfar extraction");
     repo.upstreamCommit("upstream edit", {
       "src/big.ts": numberedLines(30, { 20: "upstream edit" }),
     });
@@ -75,7 +75,7 @@ describe("applyUpstreamPatch with moved paths", () => {
     expect(result.extracted).toEqual([
       {
         upstream: "src/big.ts",
-        vatra: "src/big.ts",
+        molfar: "src/big.ts",
         moved: [{ names: ["Kind"], target: "src/types.ts" }],
       },
     ]);
@@ -95,7 +95,7 @@ describe("applyUpstreamPatch with moved paths", () => {
         },
       },
     });
-    repo.commitAll("vatra split");
+    repo.commitAll("molfar split");
     const head = repo.upstreamCommit("upstream edits", {
       "src/big.ts": numberedLines(30, { 5: "upstream edit" }),
       "keep.txt": "keep\nmore\n",
@@ -128,7 +128,7 @@ describe("applyUpstreamPatch with moved paths", () => {
         },
       },
     });
-    repo.commitAll("vatra shrink");
+    repo.commitAll("molfar shrink");
     repo.upstreamCommit("upstream edit", {
       "src/big.ts": numberedLines(30, { 25: "upstream edit" }),
     });
@@ -145,7 +145,7 @@ describe("applyUpstreamPatch with moved paths", () => {
     writeMoveMap({
       removed: { "src/big.ts": "dead code, nothing replaces it" },
     });
-    repo.commitAll("vatra removals");
+    repo.commitAll("molfar removals");
     repo.upstreamCommit("upstream edits", {
       "src/big.ts": numberedLines(30, { 1: "edit" }),
       "src/fooBar.ts": numberedLines(30, { 1: "edit" }),
@@ -162,10 +162,10 @@ describe("applyUpstreamPatch with moved paths", () => {
     ]);
   });
 
-  it("does not guess when upstream renames a path Vatra also moved", () => {
-    moveInVatra("src/fooBar.ts", "src/foo-bar.ts");
+  it("does not guess when upstream renames a path MOLFAR also moved", () => {
+    moveInMolfar("src/fooBar.ts", "src/foo-bar.ts");
     writeMoveMap({ renames: { "src/fooBar.ts": "src/foo-bar.ts" } });
-    repo.commitAll("vatra rename");
+    repo.commitAll("molfar rename");
     repo.upstreamCommit(
       "upstream rename",
       { "src/fooBaz.ts": numberedLines(30) },
@@ -178,7 +178,7 @@ describe("applyUpstreamPatch with moved paths", () => {
       expect.objectContaining({
         path: "src/fooBar.ts",
         upstreamPath: "src/fooBaz.ts",
-        vatraPath: "src/foo-bar.ts",
+        molfarPath: "src/foo-bar.ts",
         reason: PENDING_REASON.MOVED_AND_RENAMED,
       }),
     ]);
@@ -188,7 +188,7 @@ describe("applyUpstreamPatch with moved paths", () => {
   it("keeps earlier pending ports when a later range is applied on the same branch", () => {
     repo.git("rm", "-q", "src/big.ts");
     writeMoveMap({ removed: { "src/big.ts": "gone" } });
-    repo.commitAll("vatra removal");
+    repo.commitAll("molfar removal");
     repo.upstreamCommit("first", {
       "src/big.ts": numberedLines(30, { 1: "first" }),
     });

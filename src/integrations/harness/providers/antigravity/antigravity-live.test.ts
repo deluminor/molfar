@@ -260,7 +260,7 @@ describe.each(providers)("$id offline ACP transport", (provider) => {
     expect(modelsFor(provider.id).map((model) => model.nativeId)).toEqual(["m1", "m2"]);
     const probeId = mock.spawn.mock.calls
       .map(([id]) => id as string)
-      .find((id) => id.startsWith(`vatra-${provider.id}-probe-`));
+      .find((id) => id.startsWith(`molfar-${provider.id}-probe-`));
     expect(probeId).toBeTruthy();
     expect(mock.spawn).toHaveBeenCalledWith(
       probeId,

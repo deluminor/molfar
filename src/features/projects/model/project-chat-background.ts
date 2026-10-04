@@ -11,10 +11,10 @@ import {
   type NewThreadBackgroundEffect,
 } from "@/features/settings/model/appearance";
 
-const KEY = "vatra:project-chat-backgrounds";
+const KEY = "molfar:project-chat-backgrounds";
 
 export const PROJECT_CHAT_BACKGROUND_CHANGED =
-  "vatra:project-chat-background-changed";
+  "molfar:project-chat-background-changed";
 
 export type ProjectChatBackground = {
   path: string;

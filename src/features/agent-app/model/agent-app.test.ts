@@ -212,11 +212,7 @@ describe("agent app commands", () => {
       "sessions.draft",
       "sessions.start",
     ]) {
-      for (const prompt of [
-        "/operator list notes",
-        "/mono list notes",
-        "  /VATRA list notes",
-      ]) {
+      for (const prompt of ["/operator list notes", "  /OPERATOR list notes"]) {
         await expect(
           handleAgentApp(
             source,

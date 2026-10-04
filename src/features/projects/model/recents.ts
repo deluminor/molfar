@@ -1,12 +1,12 @@
 import { pathKey, prettyCwd, slash } from "@/shared/lib/paths";
 import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
-const KEY = "vatra.recentProjects";
-const RAIL_ORDER_KEY = "vatra.projectRailOrder";
-const RAIL_PINNED_KEY = "vatra.projectRailPinned";
-const ARCHIVED_KEY = "vatra.archivedProjects";
-const ARCHIVED_CHANGED = "vatra:archived-projects-changed";
-const PROJECT_PATHS_CHANGED = "vatra:project-paths-changed";
+const KEY = "molfar.recentProjects";
+const RAIL_ORDER_KEY = "molfar.projectRailOrder";
+const RAIL_PINNED_KEY = "molfar.projectRailPinned";
+const ARCHIVED_KEY = "molfar.archivedProjects";
+const ARCHIVED_CHANGED = "molfar:archived-projects-changed";
+const PROJECT_PATHS_CHANGED = "molfar:project-paths-changed";
 const MAX = 20;
 
 export type RecentProject = {

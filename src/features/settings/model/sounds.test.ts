@@ -21,7 +21,7 @@ import {
 } from "./sounds";
 import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
 
-const KEY = "vatra.sounds";
+const KEY = "molfar.sounds";
 
 function mockLocalStorage() {
   const data = new Map<string, string>();

@@ -1,4 +1,4 @@
-const KEY = "vatra.linkedSessionSeen";
+const KEY = "molfar.linkedSessionSeen";
 const MAX_ENTRIES = 500;
 
 type SeenMap = Record<string, number>;

@@ -48,14 +48,14 @@ beforeEach(mockBrowserStorage);
 
 describe("rebaseProjectData", () => {
   it("moves path-keyed project settings to the renamed folder", () => {
-    const from = "/work/vatra";
-    const to = "/work/vatra-personal";
+    const from = "/work/molfar";
+    const to = "/work/molfar-personal";
     const oldKey = projectKey(from);
     const newKey = projectKey(to);
 
     saveProjectGroups([{ id: "personal", name: "Personal", collapsed: false }]);
     setProjectGroupAssignment(from, "personal");
-    saveTabGroupLabel(oldKey, "My Vatra");
+    saveTabGroupLabel(oldKey, "My MOLFAR");
     saveProjectSidebarTab(from, "changes");
     saveProjectChatBackgroundSettings(oldKey, {
       path: "/images/background.png",
@@ -75,7 +75,7 @@ describe("rebaseProjectData", () => {
 
     rebaseProjectData(from, to);
 
-    expect(loadTabGroupLabels()).toEqual({ [newKey]: "My Vatra" });
+    expect(loadTabGroupLabels()).toEqual({ [newKey]: "My MOLFAR" });
     expect(loadProjectGroupAssignments()).toEqual({ [to]: "personal" });
     expect(loadProjectChatBackgroundSettings(oldKey)).toBeNull();
     expect(loadProjectChatBackgroundSettings(newKey)?.path).toBe(

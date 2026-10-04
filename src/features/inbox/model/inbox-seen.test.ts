@@ -11,7 +11,7 @@ import {
   seedInboxSeenIfNeeded,
 } from "./inbox-seen";
 
-const KEY = "vatra.inboxSeen";
+const KEY = "molfar.inboxSeen";
 
 function mockLocalStorage() {
   const data = new Map<string, string>();

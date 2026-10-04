@@ -491,27 +491,27 @@ describe("sidebar session IDs", () => {
     await act(async () => copyHarnessId.click());
     expect(copyText).toHaveBeenNthCalledWith(1, "harness-session-2");
 
-    const vatraMenu = openCopyIdMenu("session-2");
-    const copyVatraId = Array.from(
-      vatraMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
-    ).find((item) => item.textContent === "Vatra session ID")!;
-    expect(copyVatraId.disabled).toBe(false);
-    await act(async () => copyVatraId.click());
+    const molfarMenu = openCopyIdMenu("session-2");
+    const copyMolfarId = Array.from(
+      molfarMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+    ).find((item) => item.textContent === "MOLFAR session ID")!;
+    expect(copyMolfarId.disabled).toBe(false);
+    await act(async () => copyMolfarId.click());
     expect(copyText).toHaveBeenNthCalledWith(2, "session-2");
   });
 
-  it("keeps the Vatra ID available before the harness supplies an ID", async () => {
+  it("keeps the MOLFAR ID available before the harness supplies an ID", async () => {
     act(() => render());
     const copyMenu = openCopyIdMenu("session-1");
     const copyHarnessId = Array.from(
       copyMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
     ).find((item) => item.textContent === "Harness session ID")!;
-    const copyVatraId = Array.from(
+    const copyMolfarId = Array.from(
       copyMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
-    ).find((item) => item.textContent === "Vatra session ID")!;
+    ).find((item) => item.textContent === "MOLFAR session ID")!;
     expect(copyHarnessId.disabled).toBe(true);
-    expect(copyVatraId.disabled).toBe(false);
-    await act(async () => copyVatraId.click());
+    expect(copyMolfarId.disabled).toBe(false);
+    await act(async () => copyMolfarId.click());
     expect(copyText).toHaveBeenCalledExactlyOnceWith("session-1");
   });
 });
@@ -686,7 +686,7 @@ describe("sidebar reorder affordances", () => {
       },
     ];
     localStorage.setItem(
-      "vatra.sessionFolders",
+      "molfar.sessionFolders",
       JSON.stringify({
         "/workspace/project": [
           {
@@ -752,7 +752,7 @@ describe("sidebar pinned sessions", () => {
     expect(group.querySelector('[data-session-card="session-1"]')).toBeNull();
     expect(
       JSON.parse(
-        localStorage.getItem("vatra.pinnedSessionsCollapsed") ?? "{}",
+        localStorage.getItem("molfar.pinnedSessionsCollapsed") ?? "{}",
       ),
     ).toEqual({ "/workspace/project": true });
   });

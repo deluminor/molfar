@@ -3,8 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 
-export const AUTOMATIONS_CHANGED = "vatra:automations-changed";
-const LOCAL_CHANGED = "vatra:automations-local-changed";
+export const AUTOMATIONS_CHANGED = "molfar:automations-changed";
+const LOCAL_CHANGED = "molfar:automations-local-changed";
 
 export type AutomationWorkspaceMode = "current" | "worktree" | "existing";
 export type AutomationScheduleKind = "hourly" | "daily" | "weekdays" | "weekly";

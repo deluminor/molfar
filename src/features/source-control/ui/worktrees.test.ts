@@ -131,20 +131,21 @@ const result = (branch = "feature"): Worktrees => ({
 it("builds temporary and generated worktree branch names", () => {
   expect(
     temporaryWorktreeBranchName("12345678-90ab-cdef-1234-567890abcdef"),
-  ).toBe("vatra/12345678");
+  ).toBe("molfar/12345678");
   expect(orchestrationWorktreeBranchName("task-1234-5678-90ab")).toBe(
-    "vatra/orch-task12345678",
+    "molfar/orch-task12345678",
   );
   expect(namedWorktreeBranch("feature/faster-worktrees")).toBe(
-    "vatra/feature/faster-worktrees",
+    "molfar/feature/faster-worktrees",
   );
-  expect(namedWorktreeBranch("vatra/already-prefixed")).toBe(
-    "vatra/already-prefixed",
+  expect(namedWorktreeBranch("molfar/already-prefixed")).toBe(
+    "molfar/already-prefixed",
   );
+  expect(namedWorktreeBranch("vatra/old-prefix")).toBe("molfar/old-prefix");
   expect(namedWorktreeBranch("monocode/legacy-prefix")).toBe(
-    "vatra/legacy-prefix",
+    "molfar/legacy-prefix",
   );
-  expect(namedWorktreeBranch("mc/legacy-short")).toBe("vatra/legacy-short");
+  expect(namedWorktreeBranch("mc/legacy-short")).toBe("molfar/legacy-short");
   expect(namedWorktreeBranch("  ")).toBeNull();
 });
 

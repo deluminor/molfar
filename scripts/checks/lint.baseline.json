@@ -355,6 +355,9 @@
     "lint/a11y/noAriaHiddenOnFocusable": 1,
     "lint/suspicious/noArrayIndexKey": 2
   },
+  "src/features/home/ui/SphereVisual.tsx": {
+    "lint/a11y/noAriaHiddenOnFocusable": 1
+  },
   "src/features/home/ui/StatusCard.tsx": {
     "lint/a11y/useAriaPropsSupportedByRole": 1
   },
@@ -702,6 +705,9 @@
   "src/features/sessions/model/models.ts": {
     "lint/suspicious/noAssignInExpressions": 2
   },
+  "src/features/sessions/model/molfar-tool-call.ts": {
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
   "src/features/sessions/model/omp-interjections.test.ts": {
     "lint/style/noNonNullAssertion": 14
   },
@@ -723,9 +729,6 @@
   },
   "src/features/sessions/model/transcript-jump.test.ts": {
     "lint/style/noNonNullAssertion": 2
-  },
-  "src/features/sessions/model/vatra-tool-call.ts": {
-    "lint/suspicious/noPrototypeBuiltins": 1
   },
   "src/features/sessions/ui/agent-markdown-file-links.test.ts": {
     "lint/style/noNonNullAssertion": 8
@@ -860,6 +863,10 @@
     "lint/correctness/useExhaustiveDependencies": 11,
     "lint/suspicious/noArrayIndexKey": 1
   },
+  "src/features/sessions/ui/MolfarSparkles.tsx": {
+    "lint/a11y/noSvgWithoutTitle": 1,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
   "src/features/sessions/ui/OpusWelcome.tsx": {
     "lint/a11y/noSvgWithoutTitle": 1,
     "lint/suspicious/noArrayIndexKey": 3
@@ -946,10 +953,6 @@
   },
   "src/features/sessions/ui/UserLinkPreview.tsx": {
     "lint/a11y/useAriaPropsSupportedByRole": 2
-  },
-  "src/features/sessions/ui/VatraSparkles.tsx": {
-    "lint/a11y/noSvgWithoutTitle": 1,
-    "lint/suspicious/noArrayIndexKey": 1
   },
   "src/features/settings/model/mcp-settings-cache.ts": {
     "lint/style/noNonNullAssertion": 2,

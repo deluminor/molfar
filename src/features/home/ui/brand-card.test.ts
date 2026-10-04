@@ -37,7 +37,11 @@ function canvas2d(): typeof context {
     stroke: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
+    closePath: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    rotate: vi.fn(),
     createRadialGradient: () => ({ addColorStop: vi.fn() }),
+    createLinearGradient: () => ({ addColorStop: vi.fn() }),
     fillStyle: "",
     globalAlpha: 1,
   };
@@ -139,6 +143,50 @@ function fireStatus(): string | null | undefined {
     ?.getAttribute("data-fire-status");
 }
 
+function sphereStatus(): string | null | undefined {
+  return container
+    .querySelector("[data-sphere-status]")
+    ?.getAttribute("data-sphere-status");
+}
+
+describe("sphere visual", () => {
+  beforeEach(() => {
+    storage.set(BRAND_VISUAL_STORAGE_KEY, "sphere");
+  });
+
+  it("runs exactly one animation loop", () => {
+    renderCard();
+
+    expect(
+      container.querySelector('[aria-label^="Glass sphere"]'),
+    ).not.toBeNull();
+    expect(sphereStatus()).toBe("running");
+    expect(context.arc).toHaveBeenCalled();
+    expect(frames.size).toBe(1);
+  });
+
+  it("paints one still frame under reduced motion", () => {
+    reducedMotion = true;
+    renderCard();
+
+    expect(sphereStatus()).toBe("still");
+    expect(context.arc).toHaveBeenCalled();
+    expect(frames.size).toBe(0);
+  });
+
+  it("pauses off screen and resumes with a single loop", () => {
+    renderCard();
+
+    intersect(false);
+    expect(frames.size).toBe(0);
+    expect(sphereStatus()).toBe("paused");
+
+    intersect(true);
+    expect(frames.size).toBe(1);
+    expect(sphereStatus()).toBe("running");
+  });
+});
+
 describe("fire visual", () => {
   it("is the default and runs exactly one animation loop", () => {
     renderCard();
@@ -180,6 +228,7 @@ describe("fire visual", () => {
     hidden = true;
     act(() => document.dispatchEvent(new Event("visibilitychange")));
     expect(frames.size).toBe(0);
+    expect(fireStatus()).toBe("paused");
 
     hidden = false;
     act(() => document.dispatchEvent(new Event("visibilitychange")));
@@ -205,7 +254,7 @@ describe("fire visual", () => {
 });
 
 describe("visual selector", () => {
-  it("cycles fire and orb, keeping focus and one compact control", () => {
+  it("cycles fire, orb and sphere, keeping focus and one compact control", () => {
     renderCard();
     const button = selector();
 
@@ -218,8 +267,14 @@ describe("visual selector", () => {
 
     expect(selector()?.textContent).toBe("←orb→");
     expect(document.activeElement).toBe(selector());
-    expect(selector()?.getAttribute("aria-label")).toBe("orb: switch to Fire");
+    expect(selector()?.getAttribute("aria-label")).toBe("orb: switch to Sphere");
     expect(container.querySelector('[aria-label^="Campfire"]')).toBeNull();
+
+    act(() => selector()?.click());
+    expect(selector()?.getAttribute("aria-label")).toBe(
+      "sphere: switch to Fire",
+    );
+    expect(container.querySelector('[aria-label^="Orb"]')).toBeNull();
   });
 
   it("persists the choice and restores it after remount", () => {
@@ -234,17 +289,17 @@ describe("visual selector", () => {
     expect(selector()?.textContent).toBe("←orb→");
   });
 
-  it("migrates a stored dragon preference to fire", () => {
+  it("falls back to fire for an unknown stored preference", () => {
     storage.set(BRAND_VISUAL_STORAGE_KEY, "dragon");
     renderCard();
 
     expect(selector()?.textContent).toBe("←fire→");
   });
 
-  it("keeps exactly one active loop while switching both ways", () => {
+  it("keeps exactly one active loop while cycling every visual", () => {
     renderCard();
 
-    for (const visual of ["orb", "fire", "orb", "fire"]) {
+    for (const visual of ["orb", "sphere", "fire", "orb"]) {
       act(() => selector()?.click());
       expect(frames.size).toBe(1);
       expect(selector()?.textContent).toContain(visual);

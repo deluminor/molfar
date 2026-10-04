@@ -13,10 +13,10 @@ import { STATE_FILE } from "./patch-sync.mjs";
 
 /**
  * A throwaway repository with upstream history on `upstream` and a `main` that copies its tree
- * without sharing commits, mirroring how Vatra relates to MonoCode.
+ * without sharing commits, mirroring how MOLFAR relates to MonoCode.
  */
 export function createTestRepo() {
-  const root = mkdtempSync(join(tmpdir(), "vatra-patch-sync-"));
+  const root = mkdtempSync(join(tmpdir(), "molfar-patch-sync-"));
   writeFileSync(join(root, ".empty-gitconfig"), "");
 
   const git = (...args) =>
@@ -60,8 +60,8 @@ export function createTestRepo() {
     git("switch", "-q", "--orphan", "main");
     git("checkout", "-q", base, "--", ".");
     write(STATE_FILE, `${JSON.stringify({ syncedCommit: base }, null, 2)}\n`);
-    write("vatra.txt", "vatra only\n");
-    commitAll("start Vatra history");
+    write("molfar.txt", "molfar only\n");
+    commitAll("start MOLFAR history");
 
     return base;
   };

@@ -1,4 +1,4 @@
-const PANE_WIDTH_PREFIX = "vatra.paneWidth.";
+const PANE_WIDTH_PREFIX = "molfar.paneWidth.";
 
 export function paneWidthStorageKey(pane: string): string {
   return `${PANE_WIDTH_PREFIX}${pane}`;

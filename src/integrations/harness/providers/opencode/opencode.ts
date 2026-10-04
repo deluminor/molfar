@@ -435,7 +435,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     if (canResume) {
       await repairUnsupportedFileTurn(client, openCodeSession.id).catch(
         (error: unknown) =>
-          console.debug("[vatra] opencode attachment recovery", error),
+          console.debug("[molfar] opencode attachment recovery", error),
       );
     }
 
@@ -1332,7 +1332,7 @@ async function assertOpenCodeVersion(path: string, cwd: string): Promise<void> {
   const version = parseOpenCodeVersion(output);
   if (!version) {
     throw new Error(
-      `Unable to determine OpenCode version. Vatra requires v${MINIMUM_OPENCODE_VERSION} or newer.`,
+      `Unable to determine OpenCode version. MOLFAR requires v${MINIMUM_OPENCODE_VERSION} or newer.`,
     );
   }
   if (compareSemver(version, MINIMUM_OPENCODE_VERSION) < 0) {

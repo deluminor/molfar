@@ -402,7 +402,7 @@ describe("confirming reload", () => {
   it("allows reload after unsaved changes are confirmed", async () => {
     await expect(confirmReload(true)).resolves.toBe(true);
     expect(confirmApp).toHaveBeenCalledWith(
-      "Reload Vatra and discard unsaved changes?",
+      "Reload MOLFAR and discard unsaved changes?",
       {
         kind: "warning",
         okLabel: "Reload",

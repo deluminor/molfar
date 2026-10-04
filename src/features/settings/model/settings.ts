@@ -15,7 +15,7 @@ import {
 } from "@/features/quick-composer/model/quick-composer-shortcut";
 import { readFlag, writeFlag } from "./storage-flags";
 
-const SECTION_KEY = "vatra.settingsSection";
+const SECTION_KEY = "molfar.settingsSection";
 
 export type SettingsSectionId =
   | "general"
@@ -54,7 +54,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     group: "app",
     label: "General",
     description:
-      "The build you are running, how Vatra reaches you, and the panels it shows.",
+      "The build you are running, how MOLFAR reaches you, and the panels it shows.",
     keywords: "version update sounds notifications notes rail",
   },
   {
@@ -95,7 +95,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     group: "agents",
     label: "Providers",
     description:
-      "Provider accounts, agent CLIs Vatra can drive, and the model new sessions start with.",
+      "Provider accounts, agent CLIs MOLFAR can drive, and the model new sessions start with.",
     keywords:
       "account sign in login model harness claude codex gemini cli default hooks",
   },
@@ -565,19 +565,19 @@ export function saveSettingsSection(id: SettingsSectionId) {
   }
 }
 
-const COMPOSER_RUNNER_KEY = "vatra.composerRunner";
+const COMPOSER_RUNNER_KEY = "molfar.composerRunner";
 
-const FOLLOW_UP_BEHAVIOR_KEY = "vatra.followUpBehavior";
+const FOLLOW_UP_BEHAVIOR_KEY = "molfar.followUpBehavior";
 
-const COMPOSER_EFFORT_VISIBLE_KEY = "vatra.composerEffortVisible";
+const COMPOSER_EFFORT_VISIBLE_KEY = "molfar.composerEffortVisible";
 
-const MODEL_CONTROLS_KEY = "vatra.modelControls";
+const MODEL_CONTROLS_KEY = "molfar.modelControls";
 
-const FILE_TAB_MODE_KEY = "vatra.fileTabMode";
+const FILE_TAB_MODE_KEY = "molfar.fileTabMode";
 
-const TAB_ANIMATIONS_ENABLED_KEY = "vatra.tabAnimationsEnabled";
+const TAB_ANIMATIONS_ENABLED_KEY = "molfar.tabAnimationsEnabled";
 
-const COLLAPSED_PROJECT_RAIL_MODE_KEY = "vatra.collapsedProjectRailMode";
+const COLLAPSED_PROJECT_RAIL_MODE_KEY = "molfar.collapsedProjectRailMode";
 
 export type FollowUpBehavior = "steer" | "queue";
 
@@ -640,7 +640,7 @@ export const COLLAPSED_PROJECT_RAIL_MODE_DEFAULT: CollapsedProjectRailMode =
   "compact";
 
 export const COLLAPSED_PROJECT_RAIL_MODE_CHANGE_EVENT =
-  "vatra:collapsed-project-rail-mode-change";
+  "molfar:collapsed-project-rail-mode-change";
 
 export function loadCollapsedProjectRailMode(): CollapsedProjectRailMode {
   try {
@@ -686,7 +686,7 @@ export type ModelControls = "menu" | "beside";
 export const MODEL_CONTROLS_DEFAULT: ModelControls = "menu";
 
 /** Fired on `window` when the composer model controls setting flips. */
-export const MODEL_CONTROLS_CHANGE_EVENT = "vatra:model-controls-change";
+export const MODEL_CONTROLS_CHANGE_EVENT = "molfar:model-controls-change";
 
 export function loadModelControls(): ModelControls {
   try {
@@ -727,7 +727,7 @@ export function subscribeModelControls(onStoreChange: () => void) {
 export const COMPOSER_RUNNER_DEFAULT = true;
 
 /** Fired on `window` when the composer mascot setting flips. */
-export const COMPOSER_RUNNER_CHANGE_EVENT = "vatra:composer-runner-change";
+export const COMPOSER_RUNNER_CHANGE_EVENT = "molfar:composer-runner-change";
 
 export function loadComposerRunner(): boolean {
   return readFlag(COMPOSER_RUNNER_KEY) ?? COMPOSER_RUNNER_DEFAULT;
@@ -741,12 +741,12 @@ export function saveComposerRunner(value: boolean) {
   );
 }
 
-const NOTES_ENABLED_KEY = "vatra.notesEnabled";
+const NOTES_ENABLED_KEY = "molfar.notesEnabled";
 
 export const NOTES_ENABLED_DEFAULT = true;
 
 /** Fired on `window` when the Notes UI setting flips. */
-export const NOTES_ENABLED_CHANGE_EVENT = "vatra:notes-enabled-change";
+export const NOTES_ENABLED_CHANGE_EVENT = "molfar:notes-enabled-change";
 
 export function loadNotesEnabled(): boolean {
   return readFlag(NOTES_ENABLED_KEY) ?? NOTES_ENABLED_DEFAULT;
@@ -767,8 +767,8 @@ export function subscribeNotesEnabled(onStoreChange: () => void) {
     window.removeEventListener(NOTES_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
-const QUICK_COMPOSER_ENABLED_KEY = "vatra.quickComposerEnabled";
-const QUICK_COMPOSER_SHORTCUT_KEY = "vatra.quickComposerShortcut";
+const QUICK_COMPOSER_ENABLED_KEY = "molfar.quickComposerEnabled";
+const QUICK_COMPOSER_SHORTCUT_KEY = "molfar.quickComposerShortcut";
 
 export const QUICK_COMPOSER_ENABLED_DEFAULT = true;
 
@@ -803,13 +803,13 @@ export function saveQuickComposerShortcut(value: string) {
   }
 }
 
-const LIVE_AGENTS_ENABLED_KEY = "vatra.liveAgentsEnabled";
+const LIVE_AGENTS_ENABLED_KEY = "molfar.liveAgentsEnabled";
 
 export const LIVE_AGENTS_ENABLED_DEFAULT = true;
 
 /** Fired on `window` when the working-agents rail card setting flips. */
 export const LIVE_AGENTS_ENABLED_CHANGE_EVENT =
-  "vatra:live-agents-enabled-change";
+  "molfar:live-agents-enabled-change";
 
 export function loadLiveAgentsEnabled(): boolean {
   return readFlag(LIVE_AGENTS_ENABLED_KEY) ?? LIVE_AGENTS_ENABLED_DEFAULT;
@@ -832,7 +832,7 @@ export function subscribeLiveAgentsEnabled(onStoreChange: () => void) {
     window.removeEventListener(LIVE_AGENTS_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
-const CLOSE_TO_TRAY_KEY = "vatra.closeToTray";
+const CLOSE_TO_TRAY_KEY = "molfar.closeToTray";
 
 export const CLOSE_TO_TRAY_DEFAULT = true;
 
@@ -846,13 +846,13 @@ export function saveCloseToTray(value: boolean) {
   writeFlag(CLOSE_TO_TRAY_KEY, value);
 }
 
-const GRID_ARCADE_ENABLED_KEY = "vatra.gridArcadeEnabled";
+const GRID_ARCADE_ENABLED_KEY = "molfar.gridArcadeEnabled";
 
 export const GRID_ARCADE_ENABLED_DEFAULT = true;
 
 /** Fired on `window` when the empty-session games setting flips. */
 export const GRID_ARCADE_ENABLED_CHANGE_EVENT =
-  "vatra:grid-arcade-enabled-change";
+  "molfar:grid-arcade-enabled-change";
 
 export function loadGridArcadeEnabled(): boolean {
   return readFlag(GRID_ARCADE_ENABLED_KEY) ?? GRID_ARCADE_ENABLED_DEFAULT;
@@ -875,14 +875,14 @@ export function subscribeGridArcadeEnabled(onStoreChange: () => void) {
     window.removeEventListener(GRID_ARCADE_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
-const DIFF_VIEWER_KEY = "vatra.diffViewer";
+const DIFF_VIEWER_KEY = "molfar.diffViewer";
 
 export type DiffViewer = "editor" | "unified";
 
 export const DIFF_VIEWER_DEFAULT: DiffViewer = "editor";
 
 /** Fired on `window` when the working-tree diff layout flips. */
-export const DIFF_VIEWER_CHANGE_EVENT = "vatra:diff-viewer-change";
+export const DIFF_VIEWER_CHANGE_EVENT = "molfar:diff-viewer-change";
 
 function isDiffViewer(value: unknown): value is DiffViewer {
   return value === "editor" || value === "unified";
@@ -917,7 +917,7 @@ export function subscribeDiffViewer(onStoreChange: () => void) {
     window.removeEventListener(DIFF_VIEWER_CHANGE_EVENT, onStoreChange);
 }
 
-const FORMAT_ON_SAVE_KEY = "vatra.formatOnSave";
+const FORMAT_ON_SAVE_KEY = "molfar.formatOnSave";
 
 export const FORMAT_ON_SAVE_DEFAULT = true;
 
@@ -929,8 +929,8 @@ export function saveFormatOnSave(value: boolean) {
   writeFlag(FORMAT_ON_SAVE_KEY, value);
 }
 
-const AUTOSAVE_KEY = "vatra.autosave";
-const AUTOSAVE_CHANGE_EVENT = "vatra:autosave-change";
+const AUTOSAVE_KEY = "molfar.autosave";
+const AUTOSAVE_CHANGE_EVENT = "molfar:autosave-change";
 
 export const AUTOSAVE_DEFAULT = false;
 
@@ -960,7 +960,7 @@ export function subscribeAutosave(onStoreChange: () => void) {
   };
 }
 
-const CLAUDE_HOOKS_KEY = "vatra.claudeHooks";
+const CLAUDE_HOOKS_KEY = "molfar.claudeHooks";
 
 export const CLAUDE_HOOKS_DEFAULT = true;
 
@@ -1086,8 +1086,8 @@ export const KEYBINDINGS: KeybindingRow[] = [
   { command: "Editor: Replace", keys: `${MOD}${ALT}F`, when: "editorFocus" },
 ];
 
-const KEYBINDING_OVERRIDES_KEY = "vatra.keybindingOverrides";
-const KEYBINDINGS_CHANGE_EVENT = "vatra:keybindings-change";
+const KEYBINDING_OVERRIDES_KEY = "molfar.keybindingOverrides";
+const KEYBINDINGS_CHANGE_EVENT = "molfar:keybindings-change";
 
 export type KeybindingOverride = {
   disabled?: boolean;

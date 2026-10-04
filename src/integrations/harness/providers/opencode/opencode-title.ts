@@ -20,7 +20,7 @@ export async function generateOpenCodeSessionTitle(input: {
     });
     return parseGeneratedSessionTitle(output, input.message);
   } catch (error) {
-    console.debug("[vatra] session title", error);
+    console.debug("[molfar] session title", error);
     return null;
   }
 }

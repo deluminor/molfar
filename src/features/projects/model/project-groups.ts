@@ -3,8 +3,8 @@ import { PROJECT_MASCOTS } from "./project-mascots";
 import { TAB_GROUP_COLORS, tabGroupColor } from "@/features/workspace/model/tab-groups";
 import { notifyProjectPathsChanged } from "./recents";
 
-const GROUPS_KEY = "vatra.projectGroups";
-const ASSIGNMENTS_KEY = "vatra.projectGroupAssignments";
+const GROUPS_KEY = "molfar.projectGroups";
+const ASSIGNMENTS_KEY = "molfar.projectGroupAssignments";
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export type ProjectGroup = {

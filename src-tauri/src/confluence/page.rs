@@ -42,7 +42,7 @@ pub(super) fn unsupported_page(data: &Value, kind: &str, site: &str) -> Confluen
         parent_id: String::new(),
         url: content_url(site, kind, &id),
         body: format!(
-            "_This Confluence {kind} cannot be read as markdown in Vatra. Open it in Confluence instead._\n\n[{title}]({})",
+            "_This Confluence {kind} cannot be read as markdown in MOLFAR. Open it in Confluence instead._\n\n[{title}]({})",
             content_url(site, kind, &id)
         ),
         readable: false,
@@ -81,7 +81,7 @@ pub(super) fn unsupported_from_v1(data: &Value, kind: &str, site: &str) -> Confl
         parent_id: String::new(),
         url: url.clone(),
         body: format!(
-            "_This Confluence {kind} cannot be read as markdown in Vatra. Open it in Confluence instead._\n\n[{title}]({url})"
+            "_This Confluence {kind} cannot be read as markdown in MOLFAR. Open it in Confluence instead._\n\n[{title}]({url})"
         ),
         readable: false,
         truncated: false,

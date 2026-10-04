@@ -1,9 +1,9 @@
 import { pathKey } from "@/shared/lib/paths";
 import type { HarnessId } from "@/domain/harness/harness";
 
-const ACCOUNTS_KEY = "vatra.providerAccounts.v1";
-const SELECTIONS_KEY = "vatra.providerAccountSelections.v1";
-const CHANGE_EVENT = "vatra-provider-accounts-changed";
+const ACCOUNTS_KEY = "molfar.providerAccounts.v1";
+const SELECTIONS_KEY = "molfar.providerAccountSelections.v1";
+const CHANGE_EVENT = "molfar-provider-accounts-changed";
 
 export const DEFAULT_PROVIDER_ACCOUNT_ID = "default";
 const DEFAULT_PROVIDER_ACCOUNT_LABEL = "Default account";

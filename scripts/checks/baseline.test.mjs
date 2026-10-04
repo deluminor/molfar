@@ -103,7 +103,7 @@ describe("runRatchet", () => {
     });
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "vatra-ratchet-"));
+    dir = mkdtempSync(join(tmpdir(), "molfar-ratchet-"));
     baselinePath = join(dir, "baseline.json");
     vi.spyOn(console, "error").mockImplementation(() => {});
   });

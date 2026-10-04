@@ -9,7 +9,7 @@
     "lines": 926
   },
   "host/server.ts": {
-    "lines": 629
+    "lines": 626
   },
   "host/service.ts": {
     "lines": 275
@@ -48,13 +48,13 @@
     "lines": 275
   },
   "src-tauri/src/fs.rs": {
-    "lines": 8609
+    "lines": 8610
   },
   "src-tauri/src/gitlab.rs": {
     "lines": 1314
   },
   "src-tauri/src/harness.rs": {
-    "lines": 3959
+    "lines": 3948
   },
   "src-tauri/src/inbox_media.rs": {
     "lines": 350
@@ -63,7 +63,7 @@
     "lines": 972
   },
   "src-tauri/src/lib.rs": {
-    "lines": 665
+    "lines": 662
   },
   "src-tauri/src/linear.rs": {
     "lines": 944
@@ -75,7 +75,7 @@
     "lines": 805
   },
   "src-tauri/src/mcp.rs": {
-    "lines": 1216
+    "lines": 1217
   },
   "src-tauri/src/menu.rs": {
     "lines": 559
@@ -90,7 +90,7 @@
     "lines": 465
   },
   "src-tauri/src/pi_usage.rs": {
-    "lines": 617
+    "lines": 618
   },
   "src-tauri/src/pty.rs": {
     "lines": 834
@@ -108,7 +108,7 @@
     "lines": 564
   },
   "src-tauri/src/remote_ssh.rs": {
-    "lines": 924
+    "lines": 922
   },
   "src-tauri/src/remote.rs": {
     "lines": 728
@@ -117,7 +117,7 @@
     "lines": 679
   },
   "src-tauri/src/session_store.rs": {
-    "lines": 3530
+    "lines": 3532
   },
   "src-tauri/src/skills.rs": {
     "lines": 1123
@@ -132,7 +132,7 @@
     "lines": 352
   },
   "src-tauri/src/worktrees.rs": {
-    "lines": 1240
+    "lines": 1248
   },
   "src/app/App.tsx": {
     "lines": 11695
@@ -381,7 +381,7 @@
     "lines": 941
   },
   "src/features/sessions/ui/AgentTranscript.tsx": {
-    "lines": 3849
+    "lines": 3844
   },
   "src/features/sessions/ui/AstraWelcome.css": {
     "lines": 328

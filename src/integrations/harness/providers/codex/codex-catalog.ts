@@ -15,7 +15,7 @@ import {
 import { asRecord, stringField } from "./codex-protocol";
 import { JsonRpcClient } from "../../core/json-rpc";
 
-const PROBE_ID = "vatra-codex-probe";
+const PROBE_ID = "molfar-codex-probe";
 const DISCOVERY_TIMEOUT_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 12_000;
 
@@ -39,7 +39,7 @@ export function refreshCodexCatalog(): Promise<void> {
       if (models.length > 0) setHarnessModels("codex", models);
     })
     .catch((error: unknown) => {
-      console.debug("[vatra] codex catalog", error);
+      console.debug("[molfar] codex catalog", error);
     })
     .finally(() => {
       inflight = null;
@@ -84,8 +84,8 @@ export async function discoverCodexModels(
           "initialize",
           {
             clientInfo: {
-              name: "vatra",
-              title: "Vatra",
+              name: "molfar",
+              title: "MOLFAR",
               version: "0.1.0",
             },
             capabilities: { experimentalApi: true },

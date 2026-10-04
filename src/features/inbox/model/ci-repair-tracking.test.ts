@@ -129,7 +129,7 @@ it("updates subscribers when a repair finishes in another window", async () => {
     finish("completed");
     window.dispatchEvent(
       new StorageEvent("storage", {
-        key: `vatra.ciRepairs.v1.${first.getCiRepairs()[0].id}`,
+        key: `molfar.ciRepairs.v1.${first.getCiRepairs()[0].id}`,
       }),
     );
     expect(second.getCiRepairs()[0].phase).toBe("completed");

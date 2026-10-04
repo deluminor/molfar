@@ -127,7 +127,7 @@ let deletedSessions: string[];
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
-  localStorage.setItem("vatra.modelControls", "beside");
+  localStorage.setItem("molfar.modelControls", "beside");
   commands = [];
   host = undefined;
   syncDelay = undefined;
@@ -847,7 +847,7 @@ it("creates a host worktree through the composer and selects it", async () => {
       params: expect.objectContaining({
         projectId: "project",
         cwd: "/home/me/repo",
-        branch: expect.stringMatching(/^vatra\/[a-z0-9]+$/),
+        branch: expect.stringMatching(/^molfar\/[a-z0-9]+$/),
         base: "dev",
         existing: false,
       }),

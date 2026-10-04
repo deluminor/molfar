@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 it("lists and switches only clean existing local branches", async () => {
-  const cwd = mkdtempSync(join(tmpdir(), "vatra-host-branches-"));
+  const cwd = mkdtempSync(join(tmpdir(), "molfar-host-branches-"));
   dirs.push(cwd);
   const git = (...args: string[]) => execFileSync("git", args, { cwd });
   git("init");

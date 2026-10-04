@@ -19,8 +19,6 @@ mod harness_updates;
 mod home_host;
 mod inbox_media;
 mod jira;
-mod legacy_identity;
-mod legacy_session_db;
 mod linear;
 mod link_preview;
 #[cfg(target_os = "macos")]
@@ -56,7 +54,7 @@ mod windows;
 mod worktree_lifecycle;
 mod worktrees;
 
-// Phase 1 seam: spawn / kill harness children per Vatra thread.
+// Phase 1 seam: spawn / kill harness children per MOLFAR thread.
 // Adapters own the protocol; this host only supervises processes.
 
 /// Project directory for new sessions — prefer cwd, else home.
@@ -225,7 +223,6 @@ fn app_context() -> tauri::Context {
 pub fn run() {
     #[cfg(windows)]
     windows::initialize().expect("Failed to initialize Windows process safety");
-    legacy_identity::migrate();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -346,8 +343,8 @@ pub fn run() {
             fs::git_pr_status,
             fs::git_pr_create,
             fs::git_github_status,
-            fs::github_vatra_star_status,
-            fs::github_star_vatra,
+            fs::github_molfar_star_status,
+            fs::github_star_molfar,
             fs::git_github_repo,
             fs::git_github_repositories,
             fs::git_github_work_item,
@@ -573,7 +570,7 @@ pub fn run() {
             project_logo::forget_logo_file,
         ])
         .build(app_context())
-        .expect("error while building Vatra");
+        .expect("error while building MOLFAR");
 
     app.run(|handle, event| match event {
         #[cfg(target_os = "macos")]

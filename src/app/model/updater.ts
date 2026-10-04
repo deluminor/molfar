@@ -84,7 +84,7 @@ export async function runUpdateFlow(
   if (installInFlight) {
     if (manual) {
       await alertApp(
-        "An update is already downloading. Vatra will restart when it's ready.",
+        "An update is already downloading. MOLFAR will restart when it's ready.",
       );
     }
 
@@ -136,7 +136,7 @@ export async function runUpdateFlow(
       onProgress?.(idle);
       if (manual) {
         await alertApp(
-          "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/deluminor/vatra/releases/latest",
+          "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/deluminor/molfar/releases/latest",
         );
       }
       return idle;
@@ -181,7 +181,7 @@ export async function installPendingUpdate(
       phase: "error",
       currentVersion,
       availableVersion: update?.version,
-      error: `Vatra ${version} is no longer the pending update. Check for updates again.`,
+      error: `MOLFAR ${version} is no longer the pending update. Check for updates again.`,
     };
     onProgress?.(stale);
 

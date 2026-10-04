@@ -15,7 +15,7 @@ import {
   type SessionWorkspaceRemoval,
 } from "./session-workspace-lifecycle";
 
-function session(id: string, cwd = "/projects/vatra"): Session {
+function session(id: string, cwd = "/projects/molfar"): Session {
   return { ...newSession("cursor", cwd), id };
 }
 
@@ -40,8 +40,8 @@ function remove(input: {
 describe("removeSessionFromWorkspace", () => {
   it("closes the sole-session tab with its files instead of promoting them", () => {
     const file = newFileTab(
-      "/projects/vatra/README.md",
-      "/projects/vatra",
+      "/projects/molfar/README.md",
+      "/projects/molfar",
     );
     const closing = {
       ...tab("closing", "s1"),
@@ -70,8 +70,8 @@ describe("removeSessionFromWorkspace", () => {
 
   it("retains file panes and another conversation in a shared workspace", () => {
     const file = newFileTab(
-      "/projects/vatra/README.md",
-      "/projects/vatra",
+      "/projects/molfar/README.md",
+      "/projects/molfar",
     );
     const shared: WorkspaceTab = {
       ...tab("shared", "s1"),
@@ -117,14 +117,14 @@ describe("removeSessionFromWorkspace", () => {
   it("closes session-scoped changes with the session while preserving other files", () => {
     const sessionChanges = {
       id: "changes",
-      path: "/projects/vatra",
-      cwd: "/projects/vatra",
+      path: "/projects/molfar",
+      cwd: "/projects/molfar",
       review: true,
       sessionChanges: { sessionId: "s1" },
     };
     const readme = newFileTab(
-      "/projects/vatra/README.md",
-      "/projects/vatra",
+      "/projects/molfar/README.md",
+      "/projects/molfar",
     );
     const shared: WorkspaceTab = {
       ...tab("shared", "s1"),
@@ -172,23 +172,23 @@ describe("removeSessionFromWorkspace", () => {
 
   it("does not leave the project when closing its final tab in project scope", () => {
     const result = remove({
-      tabs: [tab("ruler", "r1"), tab("vatra", "s1")],
+      tabs: [tab("ruler", "r1"), tab("molfar", "s1")],
       sessions: [session("r1", "/projects/ruler"), session("s1")],
       sessionId: "s1",
-      activeTabId: "vatra",
+      activeTabId: "molfar",
       scope: "project",
     });
 
-    expect(result.tabs.map((entry) => entry.id)).toEqual(["ruler", "vatra"]);
-    expect(result.activeTabId).toBe("vatra");
+    expect(result.tabs.map((entry) => entry.id)).toEqual(["ruler", "molfar"]);
+    expect(result.activeTabId).toBe("molfar");
     expect(result.tabs[1]?.focusedId).toBe("replacement");
   });
   it("removes only the archived session's plans in a shared workspace", () => {
-    const own = newPlanTab("s1", "p1", "Own plan", "/projects/vatra");
-    const other = newPlanTab("s2", "p2", "Other plan", "/projects/vatra");
+    const own = newPlanTab("s1", "p1", "Own plan", "/projects/molfar");
+    const other = newPlanTab("s2", "p2", "Other plan", "/projects/molfar");
     const readme = newFileTab(
-      "/projects/vatra/README.md",
-      "/projects/vatra",
+      "/projects/molfar/README.md",
+      "/projects/molfar",
     );
     const shared: WorkspaceTab = {
       ...tab("shared", "s1"),
@@ -215,7 +215,7 @@ describe("removeSessionFromWorkspace", () => {
   });
 
   it("removes plan panes even after their conversation moved to another tab", () => {
-    const plan = newPlanTab("s1", "p1", "Plan", "/projects/vatra");
+    const plan = newPlanTab("s1", "p1", "Plan", "/projects/molfar");
     const other = openEditorTab(tab("other", "s2"), plan);
     const result = remove({
       tabs: [tab("own", "s1"), other],
@@ -230,7 +230,7 @@ describe("removeSessionFromWorkspace", () => {
   });
 
   it("replaces a standalone plan pane without leaving a dangling layout leaf", () => {
-    const plan = newPlanTab("s1", "p1", "Plan", "/projects/vatra");
+    const plan = newPlanTab("s1", "p1", "Plan", "/projects/molfar");
     const only: WorkspaceTab = {
       ...tab("only", "editor"),
       editorPanes: [{ id: "editor", files: [plan], activeFileId: plan.id }],

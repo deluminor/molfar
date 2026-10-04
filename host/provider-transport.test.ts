@@ -83,7 +83,7 @@ describe("existing providers over headless process I/O", () => {
   let engine: HostEngine;
   beforeAll(async () => {
     directory = realpathSync(
-      mkdtempSync(join(tmpdir(), "vatra-provider-test-")),
+      mkdtempSync(join(tmpdir(), "molfar-provider-test-")),
     );
     const binary = join(directory, "provider.cjs");
     writeFileSync(binary, fixture, { mode: 0o700 });

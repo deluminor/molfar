@@ -287,25 +287,13 @@ describe("persisting a subagent's trail", () => {
 describe("sanitizeSessionForPersist", () => {
   it("keeps the stripped /operator turn marker for later turns", () => {
     const submitted = appendUser(newSession("codex", "/repo"), "list notes", [], {
-      vatra: true,
+      molfar: true,
     });
     expect(sanitizeSessionForPersist(submitted).blocks[0]).toMatchObject({
       role: "user",
       text: "list notes",
-      vatra: true,
+      molfar: true,
     });
-  });
-
-  it("rewrites the pre-rename /operator marker to the current field", () => {
-    const session = newSession("codex", "/repo");
-    session.blocks = [
-      { id: "saved", role: "user", text: "list notes", monocode: true },
-    ];
-
-    const [block] = sanitizeSessionForPersist(session).blocks;
-
-    expect(block).toMatchObject({ vatra: true });
-    expect(block).not.toHaveProperty("monocode");
   });
 
   it("persists the request ID for an agent-sent follow-up", () => {
@@ -640,7 +628,7 @@ describe("sanitizeSessionForPersist", () => {
       {
         id: "i1",
         role: "system",
-        text: "Turn interrupted when Vatra quit.",
+        text: "Turn interrupted when MOLFAR quit.",
         notice: "interrupt",
       },
       {

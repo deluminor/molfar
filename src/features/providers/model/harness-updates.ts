@@ -7,7 +7,7 @@ import {
 } from "@/integrations/harness/providers/opencode/opencode-protocol";
 
 /**
- * Harnesses with an npm version feed and a self-updater Vatra can run.
+ * Harnesses with an npm version feed and a self-updater MOLFAR can run.
  */
 export const UPDATABLE_HARNESSES: ReadonlySet<HarnessId> = new Set([
   "claude",

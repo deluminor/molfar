@@ -171,7 +171,7 @@ export async function askQuitConfirmation(
       // Stays native: the coordinator may pick a window it just opened for a
       // tray Quit, before its workspace (and the in-app dialog host) mounts.
       confirmed = await ask(quitWhileBusyMessage(inFlight), {
-        title: "Vatra",
+        title: "MOLFAR",
         kind: "warning",
         okLabel: "Quit",
       });
@@ -363,7 +363,7 @@ export async function confirmReload(
   hasUnsavedFiles: boolean,
 ): Promise<boolean> {
   if (!hasUnsavedFiles) return true;
-  return confirmApp("Reload Vatra and discard unsaved changes?", {
+  return confirmApp("Reload MOLFAR and discard unsaved changes?", {
     kind: "warning",
     okLabel: "Reload",
   });

@@ -9,7 +9,7 @@ import {
   sameProjectPath,
 } from "./recents";
 
-const KEY = "vatra.projectLocations";
+const KEY = "molfar.projectLocations";
 
 type StoredProjectLocation = {
   path: string;

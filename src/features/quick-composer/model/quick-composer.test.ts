@@ -120,11 +120,11 @@ describe("orderQuickProjects", () => {
 });
 
 describe("filterQuickProjects", () => {
-  const projects = ["/Users/me/code/vatra", "/Users/me/work/api"];
+  const projects = ["/Users/me/code/molfar", "/Users/me/work/api"];
 
   it("matches the project name or its parent folder", () => {
-    expect(filterQuickProjects(projects, "vat")).toEqual([
-      "/Users/me/code/vatra",
+    expect(filterQuickProjects(projects, "mol")).toEqual([
+      "/Users/me/code/molfar",
     ]);
     expect(filterQuickProjects(projects, "work")).toEqual([
       "/Users/me/work/api",

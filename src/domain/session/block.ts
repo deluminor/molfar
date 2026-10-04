@@ -41,10 +41,8 @@ export type Block = {
   providerTurnId?: string;
   /** User turn saved to the session but not submitted to the harness yet. */
   draft?: boolean;
-  /** This user turn activated Vatra app access for its thread. */
-  vatra?: boolean;
-  /** Pre-rename spelling of `vatra` in saved sessions; read only, never written. */
-  monocode?: boolean;
+  /** This user turn activated MOLFAR app access for its thread. */
+  molfar?: boolean;
   /** The Plan or Orchestrator mode this user turn was sent in. */
   intent?: Extract<TurnIntent, "plan" | "orchestrate">;
   /** Stable CLI request that submitted this turn, for safe retries. */

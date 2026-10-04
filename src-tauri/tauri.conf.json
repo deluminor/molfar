@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Vatra",
-  "version": "1.0.3",
-  "identifier": "com.vatra.desktop",
+  "productName": "MOLFAR",
+  "version": "1.0.0",
+  "identifier": "com.molfar.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Vatra",
+        "title": "MOLFAR",
         "width": 1280,
         "height": 800,
         "minWidth": 800,
@@ -76,7 +76,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkxNzA5RTEyODg0NjU3RjkKUldUNVYwYUlFcDV3a2ZiTUVIRGxVNHNaY09CVFNPYmcxYytUYTZodkZPa3R5ZnhjOW1jMVJ3Q0UK",
       "endpoints": [
-        "https://github.com/deluminor/vatra/releases/latest/download/latest.json"
+        "https://github.com/deluminor/molfar/releases/latest/download/latest.json"
       ]
     }
   }

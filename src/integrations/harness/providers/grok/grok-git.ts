@@ -62,7 +62,7 @@ export async function generateGrokPrContent(
     });
     parsed = parsePrContent(output);
   } catch (error) {
-    console.debug("[vatra] pr content", error);
+    console.debug("[molfar] pr content", error);
   }
   const title =
     parsed?.title ||
@@ -88,7 +88,7 @@ export async function generateGrokBranchName(
     });
     return parseBranchName(output);
   } catch (error) {
-    console.debug("[vatra] branch name", error);
+    console.debug("[molfar] branch name", error);
     return null;
   }
 }

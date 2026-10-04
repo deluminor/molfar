@@ -48,12 +48,12 @@ function sortKeys(record) {
   );
 }
 
-/** Declarations Vatra moved out of `path` (which still exists), for whoever ports a change to it. */
+/** Declarations MOLFAR moved out of `path` (which still exists), for whoever ports a change to it. */
 export function extractionsFor(map, path) {
   return map.extractions[path] ?? [];
 }
 
-/** Where an upstream change to `path` (a pre-refactor path) has to go in Vatra's tree. */
+/** Where an upstream change to `path` (a pre-refactor path) has to go in MOLFAR's tree. */
 export function resolvePath(cwd, map, path) {
   const split = map.splits[path];
   if (split)

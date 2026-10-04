@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { HarnessId } from "@/domain/harness/harness";
 
-export const REMINDERS_CHANGED = "vatra:reminders-changed";
-export const REMINDER_OPEN = "vatra:reminder-open";
+export const REMINDERS_CHANGED = "molfar:reminders-changed";
+export const REMINDER_OPEN = "molfar:reminder-open";
 
 export type SessionReminder = {
   sessionId: string;

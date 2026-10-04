@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
-const USAGE: &str = r#"Vatra local control — supervise this orchestration run from the lead agent.
+const USAGE: &str = r#"MOLFAR local control — supervise this orchestration run from the lead agent.
 
 Usage: {exe} control ACTION [--json JSON | --input FILE|-] [--request-id ID]
 
@@ -56,7 +56,7 @@ for corrections -> review each task -> finish.
 
 When paused, list, get and wait still return the reason and recovery steps.
 Do not keep polling or retry mutations. Explain the pause and ask the user to
-click Resume in Vatra. Resume continues interrupted workers in their
+click Resume in MOLFAR. Resume continues interrupted workers in their
 retained checkouts. A policy-blocked worker remains stopped until message,
 retry or cancel explicitly resolves it.
 
@@ -71,10 +71,10 @@ failed response reports the ID it used whenever the outcome is unknown — a
 timeout, say. Retry that exact call with --request-id ID; retrying a delegate
 under a fresh ID instead would queue a second worker.
 
-Tasks run inside the Vatra app, not in this process. Exiting this CLI, or a
+Tasks run inside the MOLFAR app, not in this process. Exiting this CLI, or a
 failure here, never cancels a task that was already accepted.
 
-Vatra sets VATRA_CONTROL_ENDPOINT and VATRA_CONTROL_TOKEN for the lead
+MOLFAR sets MOLFAR_CONTROL_ENDPOINT and MOLFAR_CONTROL_TOKEN for the lead
 agent's process only. They are already in your environment; never print them.
 "#;
 
@@ -100,7 +100,7 @@ const APP_ACTIONS: [&str; 16] = [
     "confluence.list",
     "confluence.read",
 ];
-const APP_USAGE: &str = r#"Vatra app access — use in a thread enabled by /operator.
+const APP_USAGE: &str = r#"MOLFAR app access — use in a thread enabled by /operator.
 
 Usage: {exe} app ACTION [--json JSON | --input FILE|-] [--request-id ID]
 
@@ -117,7 +117,7 @@ Actions:
                   A busy session is rejected. Reuse --request-id on retries.
   sessions.draft {"sessionId":"...","prompt":"..."}
                   Save an unsent draft in an idle project session. Existing
-                  drafts are preserved; send or remove one in Vatra first.
+                  drafts are preserved; send or remove one in MOLFAR first.
                   Reuse --request-id on retries.
   sessions.start {"prompt":"...","harness":"codex","model":"codex:...",
                   "effort":"high","reveal":false,
@@ -164,7 +164,7 @@ Actions:
   confluence.read   {"id":"..."}  Page markdown, or folder table of contents.
 
 The output is one JSON line: {"ok":true,"result":...} or {"ok":false,"error":"..."}.
-Use --input - to pass JSON on stdin. Never print Vatra credentials.
+Use --input - to pass JSON on stdin. Never print MOLFAR credentials.
 Keep the same --request-id when retrying a call after an uncertain result.
 "#;
 
@@ -193,14 +193,14 @@ fn quoted(value: &str) -> String {
 pub fn help() -> String {
     let exe = std::env::current_exe()
         .map(|path| quoted(&path.to_string_lossy()))
-        .unwrap_or_else(|_| "vatra".into());
+        .unwrap_or_else(|_| "molfar".into());
     USAGE.replace("{exe}", &exe)
 }
 
 pub fn app_help() -> String {
     let exe = std::env::current_exe()
         .map(|path| quoted(&path.to_string_lossy()))
-        .unwrap_or_else(|_| "vatra".into());
+        .unwrap_or_else(|_| "molfar".into());
     APP_USAGE.replace("{exe}", &exe)
 }
 
@@ -293,34 +293,34 @@ fn sent(error: impl Into<String>) -> Failure {
 
 fn send(action: &str, input: &Value, request_id: &str, app_mode: bool) -> Result<Value, Failure> {
     let endpoint_key = if app_mode {
-        "VATRA_APP_ENDPOINT"
+        "MOLFAR_APP_ENDPOINT"
     } else {
-        "VATRA_CONTROL_ENDPOINT"
+        "MOLFAR_CONTROL_ENDPOINT"
     };
     let token_key = if app_mode {
-        "VATRA_APP_TOKEN"
+        "MOLFAR_APP_TOKEN"
     } else {
-        "VATRA_CONTROL_TOKEN"
+        "MOLFAR_CONTROL_TOKEN"
     };
     let endpoint = std::env::var(endpoint_key).map_err(|_| {
         unsent(if app_mode {
-            "No Vatra app connection. Start this agent turn in Vatra."
+            "No MOLFAR app connection. Start this agent turn in MOLFAR."
         } else {
-            "No Vatra connection. Confirm the Orchestrator proposal in Vatra first."
+            "No MOLFAR connection. Confirm the Orchestrator proposal in MOLFAR first."
         })
     })?;
     let token = std::env::var(token_key)
-        .map_err(|_| unsent("No Vatra session credential. Start the agent from Vatra."))?;
+        .map_err(|_| unsent("No MOLFAR session credential. Start the agent from MOLFAR."))?;
     let address: SocketAddr = endpoint
         .parse()
-        .map_err(|_| unsent("Invalid Vatra endpoint"))?;
+        .map_err(|_| unsent("Invalid MOLFAR endpoint"))?;
     if !address.ip().is_loopback() {
-        return Err(unsent("Vatra control only connects to localhost"));
+        return Err(unsent("MOLFAR control only connects to localhost"));
     }
     let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(3))
         .map_err(|error| {
             unsent(format!(
-                "Cannot connect to Vatra at {address}: {error}. The app may have restarted, or this agent's sandbox may be blocking localhost."
+                "Cannot connect to MOLFAR at {address}: {error}. The app may have restarted, or this agent's sandbox may be blocking localhost."
             ))
         })?;
     stream
@@ -340,11 +340,11 @@ fn send(action: &str, input: &Value, request_id: &str, app_mode: bool) -> Result
     BufReader::new(stream)
         .take(max_response + 1)
         .read_line(&mut line)
-        .map_err(|e| sent(format!("No reply from Vatra: {e}")))?;
+        .map_err(|e| sent(format!("No reply from MOLFAR: {e}")))?;
     if line.len() > max_response as usize {
-        return Err(sent("Vatra response is too large"));
+        return Err(sent("MOLFAR response is too large"));
     }
-    serde_json::from_str(&line).map_err(|_| sent("Vatra returned an invalid response"))
+    serde_json::from_str(&line).map_err(|_| sent("MOLFAR returned an invalid response"))
 }
 
 fn read_capped(mut source: impl Read) -> Result<String, String> {
@@ -515,18 +515,18 @@ mod tests {
     #[test]
     fn quotes_the_control_path_only_when_the_shell_needs_it() {
         assert_eq!(
-            quoted("/Applications/Vatra.app/Contents/MacOS/vatra"),
-            "/Applications/Vatra.app/Contents/MacOS/vatra"
+            quoted("/Applications/MOLFAR.app/Contents/MacOS/molfar"),
+            "/Applications/MOLFAR.app/Contents/MacOS/molfar"
         );
-        assert_eq!(quoted("/Users/a b/Vatra"), "'/Users/a b/Vatra'");
-        assert_eq!(quoted("C:\\Tools\\vatra.exe"), "C:\\Tools\\vatra.exe");
+        assert_eq!(quoted("/Users/a b/MOLFAR"), "'/Users/a b/MOLFAR'");
+        assert_eq!(quoted("C:\\Tools\\molfar.exe"), "C:\\Tools\\molfar.exe");
         assert_eq!(
-            quoted("C:\\Program Files\\Vatra\\vatra.exe"),
-            "\"C:\\Program Files\\Vatra\\vatra.exe\""
+            quoted("C:\\Program Files\\MOLFAR\\molfar.exe"),
+            "\"C:\\Program Files\\MOLFAR\\molfar.exe\""
         );
         // A backslash escapes in a POSIX shell, so bare would rewrite the path.
-        assert_eq!(quoted("/Users/a\\b/Vatra"), "'/Users/a\\b/Vatra'");
-        assert_eq!(quoted("/Users/it's/Vatra"), r"'/Users/it'\''s/Vatra'");
+        assert_eq!(quoted("/Users/a\\b/MOLFAR"), "'/Users/a\\b/MOLFAR'");
+        assert_eq!(quoted("/Users/it's/MOLFAR"), r"'/Users/it'\''s/MOLFAR'");
     }
     #[test]
     fn app_mode_exposes_only_app_actions_and_safe_request_ids() {

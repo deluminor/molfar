@@ -90,7 +90,7 @@ beforeEach(() => {
 });
 
 describe("provider-aware skill catalog", () => {
-  it("uses Pi discovery without adding Vatra's built-in row", async () => {
+  it("uses Pi discovery without adding MOLFAR's built-in row", async () => {
     const catalog = await loadSkills({ harness: "pi", cwd: "/repo/" });
 
     expect(mocks.discoverPiSkills).toHaveBeenCalledWith("/repo");
@@ -352,10 +352,10 @@ describe("file skill visibility preferences", () => {
   });
 
   it("tolerates malformed and mixed stored preferences", (): void => {
-    storage.set("vatra.disabledSkillPaths", "invalid json");
+    storage.set("molfar.disabledSkillPaths", "invalid json");
     expect(loadDisabledSkillPaths()).toEqual([]);
     storage.set(
-      "vatra.disabledSkillPaths",
+      "molfar.disabledSkillPaths",
       JSON.stringify([path, null, 42]),
     );
     expect(loadDisabledSkillPaths()).toEqual([path]);

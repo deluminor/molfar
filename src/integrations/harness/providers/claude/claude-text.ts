@@ -31,7 +31,7 @@ import type { TurnIntent } from "@/domain/session/turn";
 import type { HarnessEvent } from "../../core/types";
 import { mergeStream } from "../../core/stream-text";
 
-const TEXT_CHILD_ID = "vatra-claude-text";
+const TEXT_CHILD_ID = "molfar-claude-text";
 const INIT_TIMEOUT_MS = 8_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 const TEXT_MODEL = "claude-haiku-4-5";

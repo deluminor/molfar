@@ -1,4 +1,4 @@
-const INSTALLED_UPDATE_KEY = "vatra.installedUpdate";
+const INSTALLED_UPDATE_KEY = "molfar.installedUpdate";
 
 export type UpdateNoticeStore = Pick<
   Storage,

@@ -41,7 +41,7 @@ describe("updater", () => {
       currentVersion: "0.1.23",
     });
     expect(alertApp).toHaveBeenCalledWith(
-      expect.stringContaining("https://github.com/deluminor/vatra/releases/latest"),
+      expect.stringContaining("https://github.com/deluminor/molfar/releases/latest"),
     );
   });
 

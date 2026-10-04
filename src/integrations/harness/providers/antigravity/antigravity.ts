@@ -454,7 +454,7 @@ async function startLive(input: SendTurnInput, life: number): Promise<Live> {
       if (live || !retired()) emit({ type: "session.ended", code });
     },
     (line) => {
-      console.debug("[vatra] antigravity stderr", line);
+      console.debug("[molfar] antigravity stderr", line);
     },
   );
 
@@ -477,7 +477,7 @@ async function startLive(input: SendTurnInput, life: number): Promise<Live> {
         {
           protocolVersion: 1,
           clientCapabilities: CLIENT_CAPABILITIES,
-          clientInfo: { name: "vatra", version: "0.1.0" },
+          clientInfo: { name: "molfar", version: "0.1.0" },
         },
         INIT_TIMEOUT_MS,
       );

@@ -18,7 +18,7 @@ import {
 import { asRecord } from "@/integrations/harness/providers/codex/codex-protocol";
 import { JsonRpcClient } from "@/integrations/harness/core/json-rpc";
 
-const USAGE_CHILD_ID = "vatra-codex-usage";
+const USAGE_CHILD_ID = "molfar-codex-usage";
 const DISCOVERY_TIMEOUT_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 12_000;
 
@@ -255,8 +255,8 @@ async function runCodexAccountRequest<T>(
           "initialize",
           {
             clientInfo: {
-              name: "vatra",
-              title: "Vatra",
+              name: "molfar",
+              title: "MOLFAR",
               version: "0.1.0",
             },
             capabilities: { experimentalApi: true },

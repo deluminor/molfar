@@ -3,7 +3,7 @@ import type { HarnessId } from "@/domain/harness/harness";
 
 export type ConfigurableBinaryProvider = HarnessId;
 
-const STORAGE_KEY = "vatra.providerBinaryPaths.v1";
+const STORAGE_KEY = "molfar.providerBinaryPaths.v1";
 
 type StoredBinaryPaths = Partial<Record<ConfigurableBinaryProvider, string>>;
 

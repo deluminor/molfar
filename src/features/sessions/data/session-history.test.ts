@@ -34,7 +34,7 @@ describe("historyWithLiveSessions", () => {
     status: "active",
     allowedHarnesses: ["codex"],
     maxWorkers: 2,
-    cli: "vatra",
+    cli: "molfar",
     continuations: 0,
     requests: {},
     tasks: ["worker-a", "worker-b"].map((id) => ({
@@ -184,17 +184,17 @@ describe("historyWithLiveSessions", () => {
   });
 
   it("stamps composer git onto a live session that is not persisted yet", () => {
-    const session = newSession("cursor", "/tmp/vatra");
+    const session = newSession("cursor", "/tmp/molfar");
     session.blocks = [{ id: "u1", role: "user", text: "hello" }];
     session.busy = true;
 
-    const rows = historyWithLiveSessions([], [session], "/tmp/vatra", {
-      repo: "vatra",
+    const rows = historyWithLiveSessions([], [session], "/tmp/molfar", {
+      repo: "molfar",
       branch: "main",
     });
     expect(rows[0]).toMatchObject({
       id: session.id,
-      repo: "vatra",
+      repo: "molfar",
       branch: "main",
     });
   });
@@ -203,7 +203,7 @@ describe("historyWithLiveSessions", () => {
     const history = [
       {
         ...summary("a1", "/tmp/agent-terminal"),
-        repo: "vatra",
+        repo: "molfar",
         branch: "main",
       },
     ];
@@ -219,7 +219,7 @@ describe("historyWithLiveSessions", () => {
     );
     const live = rows.find((row) => row.id === session.id);
     expect(live).toMatchObject({
-      repo: "vatra",
+      repo: "molfar",
       branch: "fix-gutter",
     });
   });
@@ -231,12 +231,12 @@ describe("historyWithLiveSessions", () => {
     session.branch = "feat/picker";
 
     const rows = historyWithLiveSessions([], [session], "/tmp/agent-terminal", {
-      repo: "vatra",
+      repo: "molfar",
       branch: "main",
     });
     expect(rows[0]).toMatchObject({
       id: session.id,
-      repo: "vatra",
+      repo: "molfar",
       branch: "feat/picker",
     });
   });

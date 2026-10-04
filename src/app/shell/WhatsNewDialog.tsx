@@ -28,7 +28,7 @@ export function WhatsNewDialog({ version, onClose }: Props) {
   return (
     <ReleaseNotesDialog
       title="What's new"
-      description={`Vatra ${version}${date ? ` · ${date}` : ""}`}
+      description={`MOLFAR ${version}${date ? ` · ${date}` : ""}`}
       label={releaseNotesTitle(version)}
       markdown={notes?.markdown ?? null}
       onClose={onClose}

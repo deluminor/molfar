@@ -32,7 +32,7 @@ import {
 import { flushSync } from "react-dom";
 import { AttachmentChip } from "./AttachmentChip";
 import { GeneratedImage } from "./GeneratedImage";
-import { VatraSparkles } from "./VatraSparkles";
+import { MolfarSparkles } from "./MolfarSparkles";
 import { OrchestratorConstellation } from "./OrchestratorConstellation";
 import { PlanStepsBurst } from "./PlanStepsBurst";
 import { FilePreview } from "@/features/files/ui/FilePreview";
@@ -119,14 +119,11 @@ import {
 } from "../model/transcript-activity";
 import { lastUserTurnBlock } from "../model/edit-last-turn";
 import {
-  vatraToolCall,
-  vatraWorkSummary,
-  type VatraToolCall,
-} from "../model/vatra-tool-call";
-import {
-  isOperatorUserTurn,
-  operatorUserPrompt,
-} from "../model/operator-command";
+  molfarToolCall,
+  molfarWorkSummary,
+  type MolfarToolCall,
+} from "../model/molfar-tool-call";
+import { isOperatorUserTurn } from "../model/operator-command";
 import {
   clearTranscriptHighlights,
   paintTranscriptHighlights,
@@ -1606,11 +1603,9 @@ function UserMessageBlock({
   const textRef = useRef<HTMLElement>(null);
   const card = block.secondOpinion;
   const note = block.noteCard;
-  const vatra = isOperatorUserTurn(block);
+  const molfar = isOperatorUserTurn(block);
   const text =
-    card && card.kind !== "handoff"
-      ? ""
-      : visibleUserPrompt(vatra ? operatorUserPrompt(block) : block.text);
+    card && card.kind !== "handoff" ? "" : visibleUserPrompt(block.text);
   const messageLink = text ? parseUserMessageLink(text) : null;
   const displayText = messageLink
     ? `${messageLink.beforeText}${messageLink.afterText}`
@@ -1686,7 +1681,7 @@ function UserMessageBlock({
       >
         <div
           data-draft={block.draft ? "true" : undefined}
-          data-vatra={vatra ? "true" : undefined}
+          data-molfar={molfar ? "true" : undefined}
           className={`user-message-bubble relative min-w-0 px-3 py-2 font-sans text-content transition-[background-color] duration-200 ${
             block.draft
               ? "border border-dashed border-content/30 bg-content/4"
@@ -1797,8 +1792,8 @@ function UserMessageBlock({
               </span>
             </div>
           ) : null}
-          {vatra ? (
-            <VatraSparkles blockId={block.id} startedAt={block.startedAt} />
+          {molfar ? (
+            <MolfarSparkles blockId={block.id} startedAt={block.startedAt} />
           ) : block.intent === "plan" ? (
             <PlanStepsBurst blockId={block.id} startedAt={block.startedAt} />
           ) : block.intent === "orchestrate" ? (
@@ -2224,7 +2219,7 @@ function ActivityPhaseGroup({
   }, [phase.steps]);
   const turnFor = useStepQueue();
   const title = activityPhaseTitle(phase, active);
-  const vatraPhase = !!vatraWorkSummary(phase.steps, active);
+  const molfarPhase = !!molfarWorkSummary(phase.steps, active);
   // Opening a group on purpose is also how you read the line that titled it,
   // whole. The auto-open while it runs is a live view, not a reading one, and
   // a one-line note the header already shows in full has nothing to add.
@@ -2239,7 +2234,7 @@ function ActivityPhaseGroup({
   if (!phase.headline && phase.steps.length === 1) {
     return (
       <div className="flex min-w-0 items-start gap-1.5">
-        {vatraPhase ? null : (
+        {molfarPhase ? null : (
           <ActivityPhaseIcon kind={phase.kind} className="mt-[7px]" />
         )}
         <div className="min-w-0 flex-1">
@@ -2294,8 +2289,8 @@ function ActivityPhaseGroup({
          * between them leaves both half-drawn on top of each other.
          */}
         <span className="relative flex size-3.5 shrink-0 items-center justify-center">
-          {vatraPhase ? (
-            <VatraMark className="size-3.5 group-hover:opacity-0" />
+          {molfarPhase ? (
+            <MolfarMark className="size-3.5 group-hover:opacity-0" />
           ) : (
             <ActivityPhaseIcon
               kind={phase.kind}
@@ -3084,10 +3079,10 @@ function ActivityToolRow({
   onOpenDiff?: (path: string) => void;
 }) {
   const [errorOpen, setErrorOpen] = useState(false);
-  const appCall = vatraToolCall(block);
+  const appCall = molfarToolCall(block);
   if (appCall) {
     return (
-      <VatraCallRow block={block} call={appCall} onApproval={onApproval} />
+      <MolfarCallRow block={block} call={appCall} onApproval={onApproval} />
     );
   }
   const label = toolCallLabel(block, cwd);
@@ -3160,18 +3155,18 @@ function ActivityToolRow({
   );
 }
 
-function VatraMark({ className = "size-4" }: { className?: string }) {
-  return <img src="/vatra.png" alt="" className={`shrink-0 ${className}`} />;
+function MolfarMark({ className = "size-4" }: { className?: string }) {
+  return <img src="/molfar.png" alt="" className={`shrink-0 ${className}`} />;
 }
 
-/** Vatra commands read like the other activity rows; failures expose their output. */
-function VatraCallRow({
+/** MOLFAR commands read like the other activity rows; failures expose their output. */
+function MolfarCallRow({
   block,
   call,
   onApproval,
 }: {
   block: Block;
-  call: VatraToolCall;
+  call: MolfarToolCall;
   onApproval?: (requestId: number, decision: ApprovalDecision) => void;
 }) {
   const state = toolCallState(block);
@@ -3180,7 +3175,7 @@ function VatraCallRow({
   const [errorOpen, setErrorOpen] = useState(false);
   const hasError = state === "rejected" && !!output;
   const pendingApproval = needsApproval(block);
-  const command = `vatra app ${call.action}`;
+  const command = `molfar app ${call.action}`;
   const verb = pendingApproval
     ? "Run"
     : state === "pending"
@@ -3197,7 +3192,7 @@ function VatraCallRow({
         className={`flex min-w-0 max-w-full items-center gap-1 rounded bg-content/6 px-1 font-mono text-[13px] ${state === "rejected" ? "text-red-400" : "text-content/70"}`}
         title={command}
       >
-        <VatraMark className="size-3.5" />
+        <MolfarMark className="size-3.5" />
         <span className="min-w-0 truncate">{command}</span>
       </span>
       <ToolCallStatusIcon state={state} />
@@ -3210,12 +3205,12 @@ function VatraCallRow({
     </>
   );
   return (
-    <div data-vatra-tool-call={call.action} className="min-w-0">
+    <div data-molfar-tool-call={call.action} className="min-w-0">
       {hasError ? (
         <button
           type="button"
           aria-expanded={errorOpen}
-          aria-label={`${errorOpen ? "Hide" : "Show"} error details for Vatra: ${call.label}`}
+          aria-label={`${errorOpen ? "Hide" : "Show"} error details for MOLFAR: ${call.label}`}
           onClick={() => setErrorOpen((value) => !value)}
           className="flex w-full min-w-0 items-center gap-1.5 py-1 text-left"
         >
@@ -3372,11 +3367,11 @@ function ToolCall({
 
   const frame = embedded ? "py-0.5" : "px-4 py-1";
 
-  const appCall = vatraToolCall(block);
+  const appCall = molfarToolCall(block);
   if (appCall) {
     return (
       <div className={frame}>
-        <VatraCallRow block={block} call={appCall} onApproval={onApproval} />
+        <MolfarCallRow block={block} call={appCall} onApproval={onApproval} />
       </div>
     );
   }

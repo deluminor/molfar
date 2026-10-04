@@ -3,7 +3,7 @@ import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
 import type { EditedResendRejection } from "@/domain/session/turn";
 import type { HarnessId } from "@/domain/harness/harness";
-import { isOperatorUserTurn, operatorUserPrompt } from "./operator-command";
+import { isOperatorUserTurn } from "./operator-command";
 
 /** Harnesses that can rewind provider state before resending an edited prompt. */
 export function harnessSupportsEditLastTurn(harness: HarnessId): boolean {
@@ -158,9 +158,7 @@ export function lastTurnRecall(session: Session): LastTurnRecall | null {
   const block = lastUserTurnBlock(session.blocks);
   if (!block?.text.trim() && !block?.attachments?.length) return null;
   return {
-    text: isOperatorUserTurn(block)
-      ? `/operator ${operatorUserPrompt(block)}`
-      : block.text,
+    text: isOperatorUserTurn(block) ? `/operator ${block.text}` : block.text,
     attachments: block.attachments ?? [],
   };
 }

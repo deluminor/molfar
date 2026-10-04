@@ -13,7 +13,7 @@ import {
   modelsFromSessionNew,
 } from "./antigravity-protocol";
 
-const PROBE_ID = "vatra-antigravity-probe";
+const PROBE_ID = "molfar-antigravity-probe";
 const REQUEST_TIMEOUT_MS = 12_000;
 let inflight: Promise<void> | null = null;
 
@@ -25,7 +25,7 @@ export function refreshAntigravityCatalog(): Promise<void> {
     })
     .catch((error: unknown) => {
       // Preserve the last live catalog (or startup seeds) when offline/logged out.
-      console.debug("[vatra] antigravity catalog", error);
+      console.debug("[molfar] antigravity catalog", error);
     })
     .finally(() => {
       inflight = null;
@@ -74,7 +74,7 @@ export async function discoverAntigravityModels(workingDirectory?: string) {
           // session/new, leaving the catalog with nothing to enumerate.
           session: { configOptions: { boolean: {} } },
         },
-        clientInfo: { name: "vatra", version: "0.1.0" },
+        clientInfo: { name: "molfar", version: "0.1.0" },
       },
       REQUEST_TIMEOUT_MS,
     );

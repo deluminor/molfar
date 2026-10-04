@@ -57,7 +57,7 @@ pub fn atomic_write(
     let parent = destination
         .parent()
         .ok_or("File has no parent directory.")?;
-    let temporary = parent.join(format!(".vatra-{}.tmp", uuid::Uuid::new_v4()));
+    let temporary = parent.join(format!(".molfar-{}.tmp", uuid::Uuid::new_v4()));
     let result = (|| {
         let mut file = OpenOptions::new()
             .create_new(true)

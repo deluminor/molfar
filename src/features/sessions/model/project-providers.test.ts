@@ -63,7 +63,7 @@ describe("project provider settings", () => {
   it("drops the project entry once nothing is overridden", () => {
     setProjectProviderHidden("/repo/a", "cursor", true);
     setProjectProviderHidden("/repo/a", "cursor", false);
-    expect(storage.get("vatra.projectProviderSettings.v1")).toBe("{}");
+    expect(storage.get("molfar.projectProviderSettings.v1")).toBe("{}");
   });
 
   it("clears and rebases project entries", () => {
@@ -80,9 +80,9 @@ describe("project provider settings", () => {
   });
 
   it("ignores malformed storage", () => {
-    storage.set("vatra.projectProviderSettings.v1", "{not json");
+    storage.set("molfar.projectProviderSettings.v1", "{not json");
     expect(loadProjectProviderSettings("/repo/a")).toEqual({});
-    storage.set("vatra.projectProviderSettings.v1", JSON.stringify([1, 2]));
+    storage.set("molfar.projectProviderSettings.v1", JSON.stringify([1, 2]));
     expect(loadProjectProviderSettings("/repo/a")).toEqual({});
   });
 

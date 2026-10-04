@@ -8,7 +8,7 @@ import {
   saveProjectChatBackgroundSettings,
 } from "./project-chat-background";
 
-const KEY = "vatra:project-chat-backgrounds";
+const KEY = "molfar:project-chat-backgrounds";
 
 function mockBrowserStorage() {
   const data = new Map<string, string>();
@@ -114,7 +114,7 @@ describe("project chat background settings", () => {
   });
 
   it("stores effects independently and preserves older project images", () => {
-    localStorage.setItem("vatra.newThreadBackgroundEffect", "ascii");
+    localStorage.setItem("molfar.newThreadBackgroundEffect", "ascii");
     saveProjectChatBackgroundSettings("/work/alpha", {
       path: "/backgrounds/alpha.webp",
       emptyOpacity: 0.2,

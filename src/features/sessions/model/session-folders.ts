@@ -5,10 +5,10 @@ import { normalizeProjectPath } from "@/features/projects/model/recents";
 import { orderByIds } from "@/shared/lib/reorder";
 import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
 
-const KEY = "vatra.sessionFolders";
-const CHANGE_EVENT = "vatra:session-folders-change";
-const PINNED_COLLAPSED_KEY = "vatra.pinnedSessionsCollapsed";
-const REMINDERS_COLLAPSED_KEY = "vatra.reminderSessionsCollapsed";
+const KEY = "molfar.sessionFolders";
+const CHANGE_EVENT = "molfar:session-folders-change";
+const PINNED_COLLAPSED_KEY = "molfar.pinnedSessionsCollapsed";
+const REMINDERS_COLLAPSED_KEY = "molfar.reminderSessionsCollapsed";
 
 export type SessionFolder = {
   id: string;

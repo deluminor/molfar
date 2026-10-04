@@ -1,6 +1,9 @@
 {
   "refactorBase": "4995f498d49a8e38d4dc2b1430cd3d21f9ddf1ef",
   "renames": {
+    "docs/architecture/vatra-system.archify.html": "docs/architecture/molfar-system.archify.html",
+    "docs/architecture/vatra-system.architecture.json": "docs/architecture/molfar-system.architecture.json",
+    "docs/architecture/vatra-system.html": "docs/architecture/molfar-system.html",
     "src/app/hooks/useIdleSessionDetach.test.ts": "src/app/hooks/use-idle-session-detach.test.ts",
     "src/app/hooks/useIdleSessionDetach.ts": "src/app/hooks/use-idle-session-detach.ts",
     "src/app/hooks/useWorkspaceNavigation.test.ts": "src/app/hooks/use-workspace-navigation.test.ts",
@@ -140,6 +143,8 @@
     "src/features/home/hooks/useHomeLayoutEditing.ts": "src/features/home/hooks/use-home-layout-editing.ts",
     "src/features/home/hooks/useHostStats.ts": "src/features/home/hooks/use-host-stats.ts",
     "src/features/home/hooks/useOrbAnimation.ts": "src/features/home/hooks/use-orb-animation.ts",
+    "src/features/home/model/fire/animation.test.ts": "src/features/home/model/brand-visual/animation.test.ts",
+    "src/features/home/model/fire/animation.ts": "src/features/home/model/brand-visual/animation.ts",
     "src/features/home/model/homeChrome.test.ts": "src/features/home/model/home-chrome.test.ts",
     "src/features/home/model/homeData.test.ts": "src/features/home/model/home-data.test.ts",
     "src/features/home/model/homeData.ts": "src/features/home/model/home-data.ts",
@@ -420,8 +425,8 @@
     "src/features/sessions/model/usageLimit.ts": "src/features/sessions/model/usage-limit.ts",
     "src/features/sessions/model/userQuestion.test.ts": "src/domain/session/user-question.test.ts",
     "src/features/sessions/model/userQuestion.ts": "src/domain/session/user-question.ts",
-    "src/features/sessions/model/vatraToolCall.test.ts": "src/features/sessions/model/vatra-tool-call.test.ts",
-    "src/features/sessions/model/vatraToolCall.ts": "src/features/sessions/model/vatra-tool-call.ts",
+    "src/features/sessions/model/vatraToolCall.test.ts": "src/features/sessions/model/molfar-tool-call.test.ts",
+    "src/features/sessions/model/vatraToolCall.ts": "src/features/sessions/model/molfar-tool-call.ts",
     "src/features/sessions/ui/AgentMarkdown.test.ts": "src/features/sessions/ui/agent-markdown.test.ts",
     "src/features/sessions/ui/AgentMarkdownFileLinks.test.ts": "src/features/sessions/ui/agent-markdown-file-links.test.ts",
     "src/features/sessions/ui/AgentMarkdownMenu.test.ts": "src/features/sessions/ui/agent-markdown-menu.test.ts",
@@ -472,6 +477,7 @@
     "src/features/sessions/ui/useComposerSkills.test.ts": "src/features/sessions/ui/use-composer-skills.test.ts",
     "src/features/sessions/ui/useComposerSkills.ts": "src/features/sessions/ui/use-composer-skills.ts",
     "src/features/sessions/ui/UserLinkPreview.test.ts": "src/features/sessions/ui/user-link-preview.test.ts",
+    "src/features/sessions/ui/VatraSparkles.tsx": "src/features/sessions/ui/MolfarSparkles.tsx",
     "src/features/sessions/ui/wordFade.test.ts": "src/features/sessions/ui/word-fade.test.ts",
     "src/features/sessions/ui/wordFade.tsx": "src/features/sessions/ui/word-fade.tsx",
     "src/features/settings/model/appShortcuts.test.ts": "src/features/settings/model/app-shortcuts.test.ts",
@@ -694,12 +700,9 @@
     "src/shared/lib/dragPoint.test.ts": "src/shared/lib/drag-point.test.ts",
     "src/shared/lib/dragPoint.ts": "src/shared/lib/drag-point.ts",
     "src/shared/lib/jsonText.ts": "src/shared/lib/json-text.ts",
-    "src/shared/lib/legacyStorageMigration.test.ts": "src/shared/lib/legacy-storage-migration.test.ts",
-    "src/shared/lib/legacyStorageMigration.ts": "src/shared/lib/legacy-storage-migration.ts",
     "src/shared/lib/listWindow.test.ts": "src/shared/lib/list-window.test.ts",
     "src/shared/lib/listWindow.ts": "src/shared/lib/list-window.ts",
     "src/shared/lib/markdownFrontmatter.ts": "src/shared/lib/markdown-frontmatter.ts",
-    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "src/shared/lib/migrate-legacy-storage-on-load.ts",
     "src/shared/lib/paneWidthStorage.test.ts": "src/shared/lib/pane-width-storage.test.ts",
     "src/shared/lib/paneWidthStorage.ts": "src/shared/lib/pane-width-storage.ts",
     "src/shared/lib/remotePaths.ts": "src/shared/lib/remote-paths.ts",
@@ -800,6 +803,19 @@
     ]
   },
   "removed": {
-    "src/features/notes/index.ts": "Barrel removed (Vatra forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly."
+    "docs/architecture/images/vatra-system.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/architecture/images/molfar-system.png.",
+    "docs/brand/vatra-app.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-app.svg.",
+    "docs/brand/vatra-glyph.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-glyph.svg.",
+    "docs/brand/vatra.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar.svg.",
+    "public/vatra.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): public/molfar.png.",
+    "src-tauri/src/legacy_identity/copy.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_identity/legacy_process.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_identity/mod.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_identity/tests.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_session_db.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src/features/notes/index.ts": "Barrel removed (MOLFAR forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly.",
+    "src/shared/lib/legacyStorageMigration.test.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src/shared/lib/legacyStorageMigration.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply."
   }
 }

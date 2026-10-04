@@ -15,8 +15,8 @@ afterEach(() => {
 });
 
 describe("paneWidthStorage", () => {
-  it("namespaces keys under vatra.paneWidth", () => {
-    expect(KEY).toBe("vatra.paneWidth.test");
+  it("namespaces keys under molfar.paneWidth", () => {
+    expect(KEY).toBe("molfar.paneWidth.test");
   });
 
   it("round-trips a rounded width", () => {

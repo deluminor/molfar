@@ -1379,10 +1379,7 @@ const KILL_ESCALATE: Duration = Duration::from_secs(2);
 const KILL_ALL_GRACE: Duration = Duration::from_millis(300);
 #[cfg(not(windows))]
 const KILL_ALL_KILL_WAIT: Duration = Duration::from_millis(150);
-const HARNESS_PARENT_ENV: &str = "VATRA_HARNESS_PARENT";
-/// Marker MonoCode set before the rename; its orphans must stay reapable.
-#[cfg(any(unix, test))]
-const LEGACY_HARNESS_PARENT_ENV: &str = "MONOCODE_HARNESS_PARENT";
+const HARNESS_PARENT_ENV: &str = "MOLFAR_HARNESS_PARENT";
 
 /// An interactive shell has to source the user's whole rc file; nvm alone can
 /// take a second.
@@ -1604,7 +1601,7 @@ struct ProcessSnapshot {
     harness_parent: Option<u32>,
 }
 
-/// Kill harness trees left behind by a previous Vatra that exited
+/// Kill harness trees left behind by a previous MOLFAR that exited
 /// before SIGKILL ran (crash, force-quit, or the detached escalate thread).
 /// Off-thread: the sweep shells out to `ps` and then waits on a SIGKILL, and
 /// launch would otherwise hold the first window for both. Nothing this run
@@ -1708,9 +1705,7 @@ fn parse_ps_row(line: &str) -> Option<ProcessSnapshot> {
 
 #[cfg(any(unix, test))]
 fn harness_parent_from_bytes(buf: &[u8]) -> Option<u32> {
-    [HARNESS_PARENT_ENV, LEGACY_HARNESS_PARENT_ENV]
-        .into_iter()
-        .find_map(|name| marker_value(buf, name))
+    marker_value(buf, HARNESS_PARENT_ENV)
 }
 
 #[cfg(any(unix, test))]
@@ -2648,7 +2643,7 @@ mod windows_launcher_tests {
 
     #[test]
     fn npm_shell_shim_does_not_hide_windows_launcher() {
-        let dir = std::env::temp_dir().join(format!("vatra-launcher-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-launcher-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let bare = dir.join("agent");
         let cmd = dir.join("agent.cmd");
@@ -3283,7 +3278,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let root =
-            std::env::temp_dir().join(format!("vatra-mcp-binaries-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("molfar-mcp-binaries-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&root).unwrap();
         let host = HarnessHost::new();
         let mut paths = HashMap::new();
@@ -3383,7 +3378,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let dir =
-            std::env::temp_dir().join(format!("vatra-configured-binaries-{}", std::process::id()));
+            std::env::temp_dir().join(format!("molfar-configured-binaries-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let codex = dir.join("codex");
@@ -3490,7 +3485,7 @@ mod tests {
     fn which_in_path_takes_the_first_executable_hit() {
         use std::os::unix::fs::PermissionsExt;
 
-        let dir = std::env::temp_dir().join(format!("vatra-which-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-which-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let (empty, unreadable, real) = (dir.join("a"), dir.join("b"), dir.join("c"));
         for sub in [&empty, &unreadable, &real] {
@@ -3557,7 +3552,7 @@ mod tests {
     fn resolve_gui_binary_finds_a_binary_on_the_gui_path() {
         use std::os::unix::fs::PermissionsExt;
 
-        let dir = std::env::temp_dir().join(format!("vatra-gui-bin-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-gui-bin-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let target = dir.join("gh");
@@ -3572,7 +3567,7 @@ mod tests {
 
     #[test]
     fn cursor_agent_accepts_symlink_named_agent() {
-        let dir = std::env::temp_dir().join(format!("vatra-agent-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-agent-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("cursor-agent-pack")).unwrap();
         let target = dir.join("cursor-agent-pack/cursor-agent");
@@ -3586,7 +3581,7 @@ mod tests {
 
     #[test]
     fn pi_accepts_coding_agent_and_rejects_other_pi() {
-        let dir = std::env::temp_dir().join(format!("vatra-pi-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-pi-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -3614,7 +3609,7 @@ mod tests {
 
     #[test]
     fn omp_accepts_rpc_capable_binary_and_rejects_other_names() {
-        let dir = std::env::temp_dir().join(format!("vatra-omp-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-omp-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -3645,7 +3640,7 @@ mod tests {
 
     #[test]
     fn fx_accepts_vercel_agent_and_rejects_json_viewer() {
-        let dir = std::env::temp_dir().join(format!("vatra-fx-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-fx-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -3670,7 +3665,7 @@ mod tests {
     /// missed them and silently fell back to spawning `fx --help`.
     #[test]
     fn fx_marker_is_found_past_the_first_chunk() {
-        let dir = std::env::temp_dir().join(format!("vatra-fx-deep-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-fx-deep-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -3692,7 +3687,7 @@ mod tests {
 
     #[test]
     fn grok_accepts_official_install_path_and_markers() {
-        let dir = std::env::temp_dir().join(format!("vatra-grok-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-grok-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let home = dir.join(".grok/bin");
         std::fs::create_dir_all(&home).unwrap();
@@ -3717,7 +3712,7 @@ mod tests {
     #[cfg(unix)]
     fn antigravity_resolver_prefers_executable_wrapper_and_tracks_orphans() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("vatra-agy-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-agy-{}", std::process::id()));
         std::fs::create_dir_all(dir.join("bin")).unwrap();
         let wrapper = dir.join("bin/agy_acp_server.par");
         let server = dir.join("agy_acp_server.par");
@@ -3796,7 +3791,7 @@ mod windows_binary_tests {
     #[test]
     fn configured_binary_path_accepts_windows_shim_extension() {
         let dir = std::env::temp_dir().join(format!(
-            "vatra-configured-windows-binary-{}",
+            "molfar-configured-windows-binary-{}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&dir);
@@ -3848,7 +3843,7 @@ mod reap_logic_tests {
     #[test]
     fn parse_ps_row_reads_harness_parent_from_env_tail() {
         let parsed = parse_ps_row(
-            " 27129 21504 /Users/n/cursor-agent acp PATH=/usr/bin VATRA_HARNESS_PARENT=21504 HOME=/tmp",
+            " 27129 21504 /Users/n/cursor-agent acp PATH=/usr/bin MOLFAR_HARNESS_PARENT=21504 HOME=/tmp",
         )
         .unwrap();
         assert_eq!(parsed.pid, 27129);
@@ -3875,12 +3870,6 @@ mod reap_logic_tests {
         buf.extend_from_slice(HARNESS_PARENT_ENV.as_bytes());
         buf.extend_from_slice(b"=21504\0HOME=/tmp\0");
         assert_eq!(harness_parent_from_bytes(&buf), Some(21504));
-    }
-
-    #[test]
-    fn harness_parent_from_bytes_reads_the_legacy_marker() {
-        let buf = b"PATH=/usr/bin\0MONOCODE_HARNESS_PARENT=31337\0HOME=/tmp\0";
-        assert_eq!(harness_parent_from_bytes(buf), Some(31337));
     }
 
     #[test]
@@ -3940,7 +3929,7 @@ mod reap_logic_tests {
     #[test]
     fn parse_ps_pid_command_does_not_treat_the_binary_as_ppid() {
         let (pid, command) = parse_ps_pid_command(
-            " 27129 /Users/n/cursor-agent acp PATH=/usr/bin VATRA_HARNESS_PARENT=21504 HOME=/tmp",
+            " 27129 /Users/n/cursor-agent acp PATH=/usr/bin MOLFAR_HARNESS_PARENT=21504 HOME=/tmp",
         )
         .unwrap();
         assert_eq!(pid, 27129);

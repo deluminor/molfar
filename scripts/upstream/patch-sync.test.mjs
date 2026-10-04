@@ -32,17 +32,17 @@ describe("applyUpstreamPatch", () => {
     expect(result.added).toEqual(["new.txt"]);
     expect(repo.read("app.txt")).toBe("one\ntwo\nthree\nfour\n");
     expect(repo.read("new.txt")).toBe("added upstream\n");
-    expect(repo.read("vatra.txt")).toBe("vatra only\n");
+    expect(repo.read("molfar.txt")).toBe("molfar only\n");
     expect(readSyncState(repo.root).syncedCommit).toBe(head);
     expect(
       repo.git("diff", "--cached", "--name-only").split("\n").sort(),
     ).toEqual([STATE_FILE, "app.txt", "new.txt"].sort());
   });
 
-  it("merges upstream edits into lines Vatra also changed elsewhere in the file", () => {
+  it("merges upstream edits into lines MOLFAR also changed elsewhere in the file", () => {
     repo.setUp();
     repo.write("app.txt", "ONE\ntwo\nthree\n");
-    repo.commitAll("vatra edit");
+    repo.commitAll("molfar edit");
     repo.upstreamCommit("upstream edit", { "app.txt": "one\ntwo\nTHREE\n" });
 
     const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
@@ -53,8 +53,8 @@ describe("applyUpstreamPatch", () => {
 
   it("leaves conflict markers and reports the paths when both sides changed the same line", () => {
     repo.setUp();
-    repo.write("app.txt", "one\nVATRA\nthree\n");
-    repo.commitAll("vatra edit");
+    repo.write("app.txt", "one\nMOLFAR\nthree\n");
+    repo.commitAll("molfar edit");
     repo.upstreamCommit("upstream edit", {
       "app.txt": "one\nUPSTREAM\nthree\n",
     });
@@ -68,8 +68,8 @@ describe("applyUpstreamPatch", () => {
 
   it("keeps applying other paths after one path conflicts", () => {
     repo.setUp({ "a.txt": "one\ntwo\n", "b.txt": "one\ntwo\n" });
-    repo.write("a.txt", "one\nVATRA\n");
-    repo.commitAll("vatra edit");
+    repo.write("a.txt", "one\nMOLFAR\n");
+    repo.commitAll("molfar edit");
     repo.upstreamCommit("upstream edits", {
       "a.txt": "one\nUPSTREAM\n",
       "b.txt": "one\ntwo\nthree\n",
@@ -82,7 +82,7 @@ describe("applyUpstreamPatch", () => {
     expect(repo.read("b.txt")).toBe("one\ntwo\nthree\n");
   });
 
-  it("applies upstream renames of paths Vatra kept in place", () => {
+  it("applies upstream renames of paths MOLFAR kept in place", () => {
     repo.setUp({ "old.txt": "one\ntwo\nthree\nfour\nfive\n" });
     repo.upstreamCommit(
       "rename",

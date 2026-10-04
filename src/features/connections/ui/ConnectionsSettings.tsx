@@ -217,7 +217,7 @@ export function ConnectionsSettings() {
           await remoteRequest(machine.id, "devices.revokeSelf");
         } catch (reason) {
           throw new Error(
-            `Could not revoke access, so ${machine.name} was not removed: ${String(reason)}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with vatra-host devices and vatra-host revoke <device-id>.`,
+            `Could not revoke access, so ${machine.name} was not removed: ${String(reason)}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with molfar-host devices and molfar-host revoke <device-id>.`,
           );
         }
       }
@@ -243,7 +243,7 @@ export function ConnectionsSettings() {
           </h2>
           <p className="mt-1 text-[12px] leading-relaxed text-content/45">
             Run agents on another computer and return to them from your laptop.
-            The host keeps working when you close Vatra here.
+            The host keeps working when you close MOLFAR here.
           </p>
         </div>
         {!adding && (
@@ -341,11 +341,11 @@ export function ConnectionsSettings() {
                   <p>
                     To stop the host and turn off its background service, run{" "}
                     <code className="rounded bg-content/10 px-1">
-                      ~/.vatra-host/bin/vatra-host service uninstall
+                      ~/.molfar-host/bin/molfar-host service uninstall
                     </code>{" "}
                     on that machine (
                     <code className="rounded bg-content/10 px-1">
-                      %USERPROFILE%\.vatra-host\bin\vatra-host.cmd service
+                      %USERPROFILE%\.molfar-host\bin\molfar-host.cmd service
                       uninstall
                     </code>{" "}
                     on Windows). Its sessions and history are kept.
@@ -442,7 +442,7 @@ export function ConnectionsSettings() {
             </label>
           </details>
           <p className="text-[12px] leading-relaxed text-content/45">
-            Vatra installs and starts its background host, then connects
+            MOLFAR installs and starts its background host, then connects
             securely. Your SSH keys and config are used automatically. Enable
             SSH on the host and sign in to Codex or Claude Code there. On
             Windows and Mac, keep the host’s desktop account signed in and the

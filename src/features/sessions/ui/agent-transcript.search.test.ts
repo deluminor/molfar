@@ -136,12 +136,12 @@ it("paints matching words and clears them when find closes", () => {
   });
   expect(
     registry
-      .get("vatra-transcript-search-current")
+      .get("molfar-transcript-search-current")
       ?.ranges.map((range) => range.toString()),
   ).toEqual(["can you"]);
   expect(
     registry
-      .get("vatra-transcript-search-match")
+      .get("molfar-transcript-search-match")
       ?.ranges.map((range) => range.toString()),
   ).toEqual(["can you"]);
 

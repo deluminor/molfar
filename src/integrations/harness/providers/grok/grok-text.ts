@@ -16,7 +16,7 @@ import { abortTextPromptRace } from "../../core/abort-text-prompt";
 import { mergeStream } from "../../core/stream-text";
 import type { HarnessEvent } from "../../core/types";
 
-const TEXT_CHILD_ID = "vatra-grok-text";
+const TEXT_CHILD_ID = "molfar-grok-text";
 const INIT_TIMEOUT_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 20_000;
 
@@ -209,7 +209,7 @@ async function startLive(
       {
         protocolVersion: 1,
         clientCapabilities: CLIENT_CAPABILITIES,
-        clientInfo: { name: "vatra-text", version: "0.1.0" },
+        clientInfo: { name: "molfar-text", version: "0.1.0" },
       },
       INIT_TIMEOUT_MS,
     );
