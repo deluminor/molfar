@@ -378,6 +378,29 @@ describe("Workspace tab visits", () => {
     await app.until(() => shows("Two.") && !shows("One."));
   });
 
+  it("focuses the tab of a session chosen in the sidebar", async () => {
+    app = await renderApp({
+      project: "/work/demo",
+      routes: { session_upsert: (args) => args?.session },
+    });
+    await answeredSession("first", "One.");
+    const firstId = current().harness.turns[0]?.sessionId ?? "";
+    await app.emit("new_tab");
+    await answeredSession("second", "Two.");
+    const card = () =>
+      current().host.querySelector<HTMLElement>(
+        `[data-session-card="${firstId}"]`,
+      );
+    await app.until(() => !!card());
+
+    await app.drive(() => {
+      card()?.click();
+    });
+
+    await app.until(() => shows("One.") && !shows("Two."));
+    expect(tabIds()).toHaveLength(2);
+  });
+
   it("activates a tab by its position", async () => {
     app = await renderApp({ project: "/work/demo" });
     await answeredSession("first", "One.");
