@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { readVaultNote, saveVaultNote } from "@/platform/tauri/vault";
+import { readVaultNote, saveVaultNote } from "../../model/vault/vault-client";
 import type { VaultDocument, VaultSnapshot } from "../../model/vault/types";
 import type { NoteDraft } from "./types";
 import { readDrafts, retainDrafts } from "./draft-store";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMaskEmails } from "@/features/settings/model/display-prefs";
+import { useMaskEmails } from "../model/display-prefs";
 
 /**
  * With email masking on, keep account emails private in screenshots until

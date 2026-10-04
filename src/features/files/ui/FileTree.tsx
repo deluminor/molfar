@@ -49,7 +49,6 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 import { dragPointToClient } from "@/shared/lib/drag-point";
 import {
-  basename,
   clipboardFilePaths,
   copyPath,
   createPath,
@@ -58,6 +57,7 @@ import {
   renamePath,
   revealPath,
 } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import type { FsEntry } from "@/domain/files/file-entry";
 import { displayPath, parentPath, rebasePath } from "@/shared/lib/paths";
 import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";

@@ -336,7 +336,7 @@
     "lines": 446
   },
   "src/features/quick-composer/ui/use-quick-attachments.ts": {
-    "lines": 288
+    "lines": 286
   },
   "src/features/search/model/app-search.ts": {
     "lines": 464
@@ -348,7 +348,7 @@
     "lines": 1240
   },
   "src/features/sessions/model/attachments.ts": {
-    "lines": 430
+    "lines": 432
   },
   "src/features/sessions/model/btw.ts": {
     "lines": 487
@@ -408,7 +408,7 @@
     "lines": 987
   },
   "src/features/sessions/ui/SessionReview.tsx": {
-    "lines": 269
+    "lines": 270
   },
   "src/features/sessions/ui/UserLinkPreview.tsx": {
     "lines": 583
@@ -504,7 +504,7 @@
     "lines": 702
   },
   "src/features/workspace/ui/SurfaceTabs.tsx": {
-    "lines": 468
+    "lines": 465
   },
   "src/features/workspace/ui/TabGroupMenu.tsx": {
     "lines": 497
@@ -611,11 +611,8 @@
   "src/integrations/harness/providers/pi/pi-text.ts": {
     "lines": 371
   },
-  "src/platform/tauri/clipboard.ts": {
-    "lines": 284
-  },
   "src/platform/tauri/fs.ts": {
-    "lines": 547
+    "lines": 540
   },
   "src/shared/hooks/use-animated-reorder.ts": {
     "lines": 283
@@ -624,7 +621,7 @@
     "lines": 274
   },
   "src/shared/lib/paths.ts": {
-    "lines": 285
+    "lines": 293
   },
   "src/shared/ui/ColorPickerPopover.tsx": {
     "lines": 256

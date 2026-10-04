@@ -14,11 +14,11 @@ import { copyText } from "@/platform/tauri/clipboard";
 import { formatFileSize, sniffImageMime } from "../model/file-preview";
 import { watchFile } from "../model/file-watch";
 import {
-  basename,
   copyFileToClipboard,
   readBinaryFile,
   revealPath,
 } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import { displayPath } from "@/shared/lib/paths";
 import { IS_MAC } from "@/shared/lib/platform";
 

@@ -39,7 +39,7 @@ import {
 import type { EditorNavigation, OpenFileFn } from "@/features/search/model/search";
 import { remarkWorkspaceFileLinks } from "@/features/files/model/markdown-file-links";
 import { isAtxHeadingLine } from "@/features/files/model/markdown-source";
-import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { useColorScheme } from "@/features/settings/hooks/use-color-scheme";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { copyText } from "@/platform/tauri/clipboard";
 import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";

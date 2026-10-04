@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { pickVaultFolder } from "@/platform/tauri/vault";
+import { pickVaultFolder } from "../../model/vault/vault-client";
 import { FolderOpen, FolderTree } from "@/shared/ui/icons";
 import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { ACTION_FILLED } from "../constants";

@@ -691,11 +691,14 @@
     "src/integrations/harness/providers/pi/piText.test.ts": "src/integrations/harness/providers/pi/pi-text.test.ts",
     "src/integrations/harness/providers/pi/piText.ts": "src/integrations/harness/providers/pi/pi-text.ts",
     "src/integrations/harness/providers/pi/piTitle.ts": "src/integrations/harness/providers/pi/pi-title.ts",
+    "src/platform/tauri/clipboard.test.ts": "src/features/sessions/model/message-clipboard.test.ts",
     "src/platform/tauri/platform.ts": "src/shared/lib/platform.ts",
+    "src/platform/tauri/vault.test.ts": "src/features/knowledge/model/vault/vault-client.test.ts",
+    "src/platform/tauri/vault.ts": "src/features/knowledge/model/vault/vault-client.ts",
     "src/shared/hooks/useAnimatedReorder.test.ts": "src/shared/hooks/use-animated-reorder.test.ts",
     "src/shared/hooks/useAnimatedReorder.ts": "src/shared/hooks/use-animated-reorder.ts",
     "src/shared/hooks/useAnimatedReorderConcurrency.test.ts": "src/shared/hooks/use-animated-reorder-concurrency.test.ts",
-    "src/shared/hooks/useColorScheme.ts": "src/shared/hooks/use-color-scheme.ts",
+    "src/shared/hooks/useColorScheme.ts": "src/features/settings/hooks/use-color-scheme.ts",
     "src/shared/hooks/useDragResize.test.ts": "src/shared/hooks/use-drag-resize.test.ts",
     "src/shared/hooks/useDragResize.ts": "src/shared/hooks/use-drag-resize.ts",
     "src/shared/hooks/useLockOverscroll.test.ts": "src/shared/hooks/use-lock-overscroll.test.ts",
@@ -720,7 +723,8 @@
     "src/shared/ui/Modal.test.ts": "src/shared/ui/modal.test.ts",
     "src/shared/ui/modalEscape.test.ts": "src/shared/ui/modal-escape.test.ts",
     "src/shared/ui/modalEscape.ts": "src/shared/ui/modal-escape.ts",
-    "src/shared/ui/PrivateEmail.test.ts": "src/shared/ui/private-email.test.ts",
+    "src/shared/ui/PrivateEmail.test.ts": "src/features/settings/ui/private-email.test.ts",
+    "src/shared/ui/PrivateEmail.tsx": "src/features/settings/ui/PrivateEmail.tsx",
     "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
   },
   "splits": {
@@ -937,6 +941,13 @@
           "fileUri"
         ],
         "target": "src/domain/session/attachment-prompt.ts"
+      },
+      {
+        "names": [
+          "MAX_ATTACHMENTS",
+          "MAX_EMBED_BYTES"
+        ],
+        "target": "src/domain/session/attachment-limits.ts"
       }
     ],
     "src/features/sessions/model/handoff.ts": [
@@ -1021,6 +1032,16 @@
         "target": "src/features/sessions/model/transcript-activity-background.test.ts"
       }
     ],
+    "src/platform/tauri/clipboard.ts": [
+      {
+        "names": [
+          "NativeClipboardPaste",
+          "attachmentsFromClipboardPaths",
+          "nativeClipboardAttachments"
+        ],
+        "target": "src/features/sessions/model/clipboard-attachments.ts"
+      }
+    ],
     "src/platform/tauri/fs.ts": [
       {
         "names": [
@@ -1045,6 +1066,20 @@
           "GitPr"
         ],
         "target": "src/domain/git/pull-request.ts"
+      },
+      {
+        "names": [
+          "basename"
+        ],
+        "target": "src/shared/lib/paths.ts"
+      }
+    ],
+    "src/shared/ui/icons.test.ts": [
+      {
+        "names": [
+          "it(\"optically insets the detailed Hermes artwork at UI icon sizes\")"
+        ],
+        "target": "src/features/sessions/ui/harness-icon.test.ts"
       }
     ]
   },

@@ -13,7 +13,6 @@ vi.mock("@tauri-apps/api/webview", () => ({
 }));
 vi.mock("@/platform/tauri/fs", () => ({
   pickFiles: vi.fn(),
-  basename: (path: string) => path.split("/").pop(),
 }));
 let api: ReturnType<typeof useQuickAttachments>;
 let root: Root;

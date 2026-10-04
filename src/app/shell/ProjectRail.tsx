@@ -35,7 +35,7 @@ import {
   PROJECT_RAIL_WIDTH_MIN,
   saveProjectRailWidth,
 } from "@/features/settings/model/appearance";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import type { GitDiffStats } from "@/domain/git/working-tree";
 import { IS_MAC, MOD } from "@/shared/lib/platform";
 import { formatInteger } from "@/shared/lib/numbers";

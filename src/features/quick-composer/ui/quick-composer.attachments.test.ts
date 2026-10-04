@@ -26,7 +26,6 @@ vi.mock("@tauri-apps/api/event", () => ({
 }));
 vi.mock("@/platform/tauri/fs", () => ({
   pickFiles: async () => ["/tmp/image.png"],
-  basename: (path: string) => path.split("/").pop(),
   subscribeGitChanged: () => () => {},
   gitBranches: async () => null,
 }));

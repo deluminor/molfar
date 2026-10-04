@@ -12,12 +12,12 @@ import {
   Trash2,
 } from "@/shared/ui/icons";
 import {
-  basename,
   listExternalEditors,
   openInExternalEditor,
   revealPath,
   type ExternalEditor,
 } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import { projectKey, projectName } from "@/shared/lib/paths";
 import {

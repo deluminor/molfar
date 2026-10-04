@@ -7,7 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import { prettyCwd, prettyParent } from "@/shared/lib/paths";
 import {
   looksLikeProject,

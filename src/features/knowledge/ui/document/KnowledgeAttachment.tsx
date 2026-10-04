@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { vaultAssetPath } from "@/platform/tauri/vault";
+import { vaultAssetPath } from "../../model/vault/vault-client";
 import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { KnowledgeAlert } from "../KnowledgeAlert";
 

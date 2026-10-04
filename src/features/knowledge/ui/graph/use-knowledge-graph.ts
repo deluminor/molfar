@@ -4,7 +4,7 @@ import type {
   LinkObject,
   NodeObject,
 } from "3d-force-graph";
-import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { useColorScheme } from "@/features/settings/hooks/use-color-scheme";
 import type { KnowledgeGraphProjection } from "../../model/graph/types";
 import { graphFocus } from "../../model/graph/graph-focus";
 import { CAMERA_DISTANCE_PER_NODE } from "./constants";

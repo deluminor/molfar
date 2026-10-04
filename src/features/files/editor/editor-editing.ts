@@ -20,7 +20,7 @@ import {
   type DecorationSet,
 } from "@codemirror/view";
 import type { SyntaxNode } from "@lezer/common";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 
 export const editorMatching: Extension = [bracketMatching(), matchingTags()];
 

@@ -4,12 +4,8 @@ import {
   parseVaultConnection,
   parseVaultDocument,
   parseVaultSnapshot,
-} from "@/features/knowledge/model/vault/parse-vault";
-import type {
-  VaultConnection,
-  VaultDocument,
-  VaultSnapshot,
-} from "@/features/knowledge/model/vault/types";
+} from "./parse-vault";
+import type { VaultConnection, VaultDocument, VaultSnapshot } from "./types";
 
 export async function vaultStatus(): Promise<VaultConnection | null> {
   const value = await invoke<unknown>("vault_status");

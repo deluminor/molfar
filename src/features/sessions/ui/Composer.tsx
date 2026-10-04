@@ -42,8 +42,8 @@ import { resizeComposer } from "../model/composer-resize";
 import {
   isFileReferenceText,
   messageFilesFromClipboard,
-  nativeClipboardAttachments,
 } from "@/platform/tauri/clipboard";
+import { nativeClipboardAttachments } from "../model/clipboard-attachments";
 import {
   EXPLORER_FILE_POINTER_DRAG_EVENT,
   type ExplorerFilePointerDragDetail,

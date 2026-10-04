@@ -30,7 +30,6 @@ vi.mock("@/platform/tauri/fs", () => ({
   gitRangeContext: vi.fn(),
   notifyGitChanged: vi.fn(),
   subscribeGitChanged: () => () => {},
-  basename: (path: string) => path.split("/").pop() ?? path,
 }));
 
 vi.mock("@/integrations/harness", () => ({

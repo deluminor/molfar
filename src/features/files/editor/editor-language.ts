@@ -7,7 +7,7 @@ import {
 import type { Extension } from "@codemirror/state";
 import { tagHighlighter, tags, type Highlighter } from "@lezer/highlight";
 import type { ColorScheme } from "@/features/settings/model/appearance";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 
 const HIGHLIGHT_TAGS = {
   keyword: [

@@ -7,10 +7,10 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 import {
   attachmentsFromFiles,
   attachmentsFromPaths,
-  MAX_EMBED_BYTES,
   persistableAttachment,
   prepareAttachments,
 } from "./attachments";
+import { MAX_EMBED_BYTES } from "@/domain/session/attachment-limits";
 
 beforeEach(() => {
   invoke.mockReset();

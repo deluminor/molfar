@@ -696,6 +696,9 @@
   "src/features/sessions/model/edit-last-turn.test.ts": {
     "lint/style/noNonNullAssertion": 3
   },
+  "src/features/sessions/model/message-clipboard.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
   "src/features/sessions/model/molfar-tool-call.ts": {
     "lint/suspicious/noPrototypeBuiltins": 1
   },
@@ -966,6 +969,9 @@
   },
   "src/features/settings/ui/McpSettings.tsx": {
     "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/settings/ui/private-email.test.ts": {
+    "lint/style/noNonNullAssertion": 1
   },
   "src/features/settings/ui/quick-composer-shortcut-editor.test.ts": {
     "lint/style/noNonNullAssertion": 10
@@ -1379,9 +1385,6 @@
   "src/integrations/remote/attachment-previews.ts": {
     "lint/style/noNonNullAssertion": 1
   },
-  "src/platform/tauri/clipboard.test.ts": {
-    "lint/style/noNonNullAssertion": 6
-  },
   "src/platform/tauri/clipboard.ts": {
     "lint/style/noNonNullAssertion": 1,
     "lint/suspicious/noShadowRestrictedNames": 1
@@ -1447,9 +1450,6 @@
   },
   "src/shared/ui/Popover.tsx": {
     "lint/correctness/useExhaustiveDependencies": 1
-  },
-  "src/shared/ui/private-email.test.ts": {
-    "lint/style/noNonNullAssertion": 1
   },
   "src/shared/ui/rail-action.test.ts": {
     "lint/style/noNonNullAssertion": 1

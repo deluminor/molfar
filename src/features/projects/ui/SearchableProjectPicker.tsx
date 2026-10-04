@@ -5,7 +5,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import { prettyParent, projectKey, projectName } from "@/shared/lib/paths";
 import {
   looksLikeProject,

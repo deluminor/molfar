@@ -1,13 +1,16 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import { copyMessage, messageFilesFromClipboard } from "./clipboard";
+import {
+  copyMessage,
+  messageFilesFromClipboard,
+} from "@/platform/tauri/clipboard";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  MAX_EMBED_BYTES,
   attachmentsFromFiles,
   displayAttachments,
   persistableAttachment,
-} from "@/features/sessions/model/attachments";
+} from "./attachments";
+import { MAX_EMBED_BYTES } from "@/domain/session/attachment-limits";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

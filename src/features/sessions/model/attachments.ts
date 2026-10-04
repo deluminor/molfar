@@ -1,14 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
-import { basename, pickFiles as pickFilePaths } from "@/platform/tauri/fs";
+import { pickFiles as pickFilePaths } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import type { Attachment, AttachmentKind } from "@/domain/session/attachment";
 import {
   FOLDER_MIME,
   isVisionImage,
   normalizeImageMime,
 } from "@/domain/session/attachment-mime";
-
-export const MAX_ATTACHMENTS = 20;
-export const MAX_EMBED_BYTES = 20 * 1024 * 1024;
+import {
+  MAX_ATTACHMENTS,
+  MAX_EMBED_BYTES,
+} from "@/domain/session/attachment-limits";
 
 type PathInfo = {
   path: string;

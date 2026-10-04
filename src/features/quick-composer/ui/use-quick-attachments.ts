@@ -12,15 +12,13 @@ import {
   attachmentsFromFiles,
   attachmentsFromPaths,
   filesFromClipboard,
-  MAX_ATTACHMENTS,
   pickAttachments,
   revokeAttachment,
 } from "@/features/sessions/model/attachments";
+import { MAX_ATTACHMENTS } from "@/domain/session/attachment-limits";
 import type { Attachment } from "@/domain/session/attachment";
-import {
-  isFileReferenceText,
-  nativeClipboardAttachments,
-} from "@/platform/tauri/clipboard";
+import { isFileReferenceText } from "@/platform/tauri/clipboard";
+import { nativeClipboardAttachments } from "@/features/sessions/model/clipboard-attachments";
 import { storeQuickAttachments } from "../model/quick-attachments";
 import {
   captureDraft,

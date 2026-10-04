@@ -1,8 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import {
-  MAX_ATTACHMENTS,
-  persistableAttachment,
-} from "@/features/sessions/model/attachments";
+import { persistableAttachment } from "@/features/sessions/model/attachments";
+import { MAX_ATTACHMENTS } from "@/domain/session/attachment-limits";
 import type { Attachment } from "@/domain/session/attachment";
 
 /** Paths survive the handoff to another webview; blob URLs do not. */

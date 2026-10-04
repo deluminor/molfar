@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { vaultAssetPath } from "@/platform/tauri/vault";
+import { vaultAssetPath } from "../../model/vault/vault-client";
 import { vaultPreviewAssetPaths } from "../../model/document/prepare-vault-preview";
 
 export function useVaultAssets(vaultId: string | undefined, markdown: string) {

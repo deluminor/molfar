@@ -1,5 +1,5 @@
 import { type ReactNode, useSyncExternalStore } from "react";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import { projectKey } from "@/shared/lib/paths";
 import { looksLikeProject } from "@/features/projects/model/recents";
 import {

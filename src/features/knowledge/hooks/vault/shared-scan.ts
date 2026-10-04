@@ -1,4 +1,4 @@
-import { scanVault } from "@/platform/tauri/vault";
+import { scanVault } from "../../model/vault/vault-client";
 import type { VaultSnapshot } from "../../model/vault/types";
 
 let inflight: { vaultId: string; promise: Promise<VaultSnapshot> } | null =

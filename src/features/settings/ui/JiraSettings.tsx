@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { SecondaryButton } from "@/shared/ui/SecondaryButton";
-import { PrivateEmail } from "@/shared/ui/PrivateEmail";
+import { PrivateEmail } from "./PrivateEmail";
 import { clearInboxCache } from "@/features/inbox/model/github-tasks";
 import {
   disconnectJira,

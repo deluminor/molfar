@@ -7,11 +7,8 @@ import {
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { copyText } from "@/platform/tauri/clipboard";
-import {
-  basename,
-  openPathWithDefaultApp,
-  revealPath,
-} from "@/platform/tauri/fs";
+import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import {
   isAgentTab,
   isChangesTab,

@@ -9,7 +9,8 @@ import {
 } from "../model/checkpoint";
 import { invalidateProjectFiles } from "@/features/files/model/file-index";
 import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
-import { basename, notifyGitChanged, subscribeGitChanged } from "@/platform/tauri/fs";
+import { notifyGitChanged, subscribeGitChanged } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import { formatInteger } from "@/shared/lib/numbers";
 import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 

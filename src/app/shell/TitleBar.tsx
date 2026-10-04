@@ -22,7 +22,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { basename } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import {
   looksLikeProject,
   type RecentProject,

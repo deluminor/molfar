@@ -112,11 +112,11 @@ import {
   temporaryWorktreeBranchName,
 } from "@/domain/git/worktree-branch";
 import {
-  basename,
   notifyGitChanged,
   pickFolders,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";

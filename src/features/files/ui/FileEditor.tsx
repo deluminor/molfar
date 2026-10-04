@@ -39,13 +39,12 @@ import {
   MarkdownViewShell,
   useMarkdownMode,
 } from "@/features/sessions/ui/MarkdownModeToggle";
-import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { useColorScheme } from "@/features/settings/hooks/use-color-scheme";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { isLightScheme } from "@/features/settings/model/appearance";
 import { loadAutosave, loadFormatOnSave } from "@/features/settings/model/settings";
 import { formatText } from "@/shared/lib/format";
 import {
-  basename,
   gitDiffFiles,
   gitFileDiff,
   gitStageContents,
@@ -54,6 +53,7 @@ import {
   subscribeGitChanged,
   writeTextFile,
 } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { syncWatchedMtime, watchFile } from "../model/file-watch";
 import { displayPath } from "@/shared/lib/paths";

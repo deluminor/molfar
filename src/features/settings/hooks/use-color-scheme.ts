@@ -4,7 +4,7 @@ import {
   resolveColorScheme,
   SCHEME_CHANGE_EVENT,
   type ColorScheme,
-} from "@/features/settings/model/appearance";
+} from "../model/appearance";
 
 /** Subscribes to color scheme changes triggered by applyThemePreference(). */
 export function useColorScheme(): ColorScheme {

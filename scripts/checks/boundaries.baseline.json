@@ -10,29 +10,5 @@
   },
   "src/features/settings/ui/JiraSettings.tsx": {
     "feature-internal:inbox": 2
-  },
-  "src/platform/tauri/clipboard.test.ts": {
-    "layer:platform->features": 1
-  },
-  "src/platform/tauri/clipboard.ts": {
-    "layer:platform->features": 1
-  },
-  "src/platform/tauri/vault.ts": {
-    "layer:platform->features": 2
-  },
-  "src/shared/hooks/use-color-scheme.ts": {
-    "layer:shared->features": 1
-  },
-  "src/shared/lib/format.ts": {
-    "layer:shared->platform": 1
-  },
-  "src/shared/ui/icons.test.ts": {
-    "layer:shared->features": 1
-  },
-  "src/shared/ui/private-email.test.ts": {
-    "layer:shared->features": 1
-  },
-  "src/shared/ui/PrivateEmail.tsx": {
-    "layer:shared->features": 1
   }
 }

@@ -47,7 +47,7 @@ import { InboxProviderMark } from "@/features/inbox/ui/InboxProviderMark";
 import { RemoveProjectDialog } from "@/features/projects/ui/RemoveProjectDialog";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
-import { useColorScheme } from "@/shared/hooks/use-color-scheme";
+import { useColorScheme } from "../hooks/use-color-scheme";
 import {
   applyChatBackground,
   applyChatBackgroundEmptyOpacity,

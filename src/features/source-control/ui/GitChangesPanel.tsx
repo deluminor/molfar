@@ -39,7 +39,6 @@ import {
   saveGraphPanelHeight,
 } from "./GitHistoryGraph";
 import {
-  basename,
   gitCommit,
   gitDiffIndex,
   gitDiscardAll,
@@ -59,6 +58,7 @@ import {
   subscribeGitChanged,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
+import { basename } from "@/shared/lib/paths";
 import type { GitPr } from "@/domain/git/pull-request";
 import type {
   GitFileDiffKind,
