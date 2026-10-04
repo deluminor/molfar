@@ -8,6 +8,7 @@ import type { HarnessAdapter } from "@/integrations/harness/core/registry";
 import type {
   HarnessEvent,
   SendTurnInput,
+  SteerTurnInput,
 } from "@/integrations/harness/core/types";
 import { defaultIpcAnswer } from "./ipc-defaults";
 
@@ -18,6 +19,9 @@ export type IpcCall = { command: string; args: IpcArgs };
 export type FakeHarness = {
   adapter: HarnessAdapter;
   turns: SendTurnInput[];
+  steers: SteerTurnInput[];
+  cancelled: string[];
+  approvals: Array<{ sessionId: string; requestId: number; decision: string }>;
   /** Streams events into the running turn. */
   send(event: HarnessEvent): void;
   /** Settles the running turn. */
@@ -34,6 +38,8 @@ export type AppHarness = {
   drive(action: () => void): Promise<void>;
   /** Text of what is on screen, without panes kept mounted behind aria-hidden. */
   visibleText(): string;
+  /** Clicks the visible button whose text or aria-label is `label`. */
+  click(label: string): Promise<void>;
   /** Types into the visible composer and presses Enter. */
   submitPrompt(text: string): Promise<void>;
   settle(ms?: number): Promise<void>;
@@ -43,6 +49,9 @@ export type AppHarness = {
 /** A live harness that records turns and lets the test drive their events. */
 export function createFakeHarness(id: HarnessId): FakeHarness {
   const turns: SendTurnInput[] = [];
+  const steers: SteerTurnInput[] = [];
+  const cancelled: string[] = [];
+  const approvals: FakeHarness["approvals"] = [];
   let finishTurn: (() => void) | undefined;
   const adapter: HarnessAdapter = {
     id,
@@ -53,11 +62,16 @@ export function createFakeHarness(id: HarnessId): FakeHarness {
         finishTurn = resolve;
       });
     },
-    steerTurn: async () => {},
-    cancelTurn: async () => {
+    steerTurn: async (input) => {
+      steers.push(input);
+    },
+    cancelTurn: async (sessionId) => {
+      cancelled.push(sessionId);
       finishTurn?.();
     },
-    respondApproval: () => {},
+    respondApproval: (sessionId, requestId, decision) => {
+      approvals.push({ sessionId, requestId, decision });
+    },
     stopSession: async () => {},
     forgetSession: async () => {},
     bindSession: () => {},
@@ -66,6 +80,9 @@ export function createFakeHarness(id: HarnessId): FakeHarness {
   return {
     adapter,
     turns,
+    steers,
+    cancelled,
+    approvals,
     send(event) {
       const turn = turns[turns.length - 1];
       if (!turn) throw new Error("No running turn to send an event into");
@@ -159,6 +176,19 @@ export async function renderApp(
         hidden.remove();
       }
       return copy.textContent ?? "";
+    },
+    click: async (label) => {
+      const button = [...host.querySelectorAll<HTMLElement>("button")].find(
+        (candidate) =>
+          !candidate.closest('[aria-hidden="true"]') &&
+          (candidate.getAttribute("aria-label") === label ||
+            candidate.textContent?.trim() === label),
+      );
+      if (!button) throw new Error(`No visible button labelled "${label}"`);
+      await act(async () => {
+        button.click();
+      });
+      await settle();
     },
     submitPrompt: async (text) => {
       const field = [

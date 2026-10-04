@@ -130,6 +130,29 @@ describe("Workspace tabs", () => {
     expect(app.commands("session_delete")).toHaveLength(0);
   });
 
+  it("reorders tabs when one is dragged past its neighbour", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await answeredSession("first", "One.");
+    await app.emit("new_tab");
+    await answeredSession("second", "Two.");
+    const [first, second] = tabIds(app.host);
+    layOutTabsInARow(app.host);
+
+    await app.drive(() => {
+      const handle = app?.host.querySelector(
+        "[data-title-tab-id] .reorder-item",
+      );
+      handle?.dispatchEvent(pointer("pointerdown", 50));
+      window.dispatchEvent(pointer("pointermove", 180));
+    });
+    await app.drive(() => {
+      window.dispatchEvent(pointer("pointerup", 180));
+    });
+    await app.settle(400);
+
+    expect(tabIds(app.host)).toEqual([second, first]);
+  });
+
   it("moves between tabs with next_tab and prev_tab", async () => {
     app = await renderApp({ project: "/work/demo" });
     await answeredSession("first", "One.");
@@ -150,6 +173,79 @@ describe("Workspace tabs", () => {
   });
 });
 
+describe("Workspace turn control", () => {
+  it("steers a running turn with a follow-up instead of starting another", async () => {
+    app = await renderApp({ project: "/work/demo" });
+
+    await app.submitPrompt("explain the build");
+    await app.submitPrompt("also check the tests");
+
+    expect(app.harness.turns).toHaveLength(1);
+    expect(app.harness.steers).toHaveLength(1);
+    expect(app.harness.steers[0]).toMatchObject({
+      text: "also check the tests",
+    });
+  });
+
+  it("cancels the running turn from the Stop button", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await app.submitPrompt("explain the build");
+    const sessionId = app.harness.turns[0]?.sessionId;
+
+    await app.click("Stop");
+
+    expect(app.harness.cancelled).toEqual([sessionId]);
+  });
+
+  it("answers an approval request from the transcript", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await app.submitPrompt("run the tests");
+    const sessionId = app.harness.turns[0]?.sessionId;
+
+    await app.drive(() => {
+      app?.harness.send({
+        type: "approval.requested",
+        requestId: 7,
+        title: "Run npm test",
+        kind: "execute",
+      });
+    });
+    await app.click("Allow");
+
+    expect(app.harness.approvals).toEqual([
+      { sessionId, requestId: 7, decision: "allow" },
+    ]);
+  });
+});
+
+describe("Workspace panes", () => {
+  it("splits the focused pane on split_right", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await answeredSession("explain the build", "The build uses Vite.");
+
+    await app.emit("split_right");
+
+    expect(app.host.querySelectorAll("[data-pane-id]")).toHaveLength(2);
+  });
+
+  it("closes other tabs, then starts the last one over on close all", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await answeredSession("first", "One.");
+    await app.emit("new_tab");
+    await answeredSession("second", "Two.");
+    const [, second] = tabIds(app.host);
+
+    await app.emit("close_other_tabs");
+    expect(tabIds(app.host)).toEqual([second]);
+
+    // Close All keeps the active tab and starts it over on a blank session.
+    await app.emit("close_all_tabs");
+    expect(tabIds(app.host)).toEqual([second]);
+    expect(app.visibleText()).toContain("What should we work on in demo?");
+    expect(app.visibleText()).not.toContain("Two.");
+  });
+});
+
 describe("Workspace terminal", () => {
   it("starts a project terminal on toggle_terminal", async () => {
     app = await renderApp({ project: "/work/demo" });
@@ -162,6 +258,32 @@ describe("Workspace terminal", () => {
     expect(spawned[0]?.args).toMatchObject({ cwd: "/work/demo" });
   });
 });
+
+function pointer(type: string, clientX: number): Event {
+  return new PointerEvent(type, {
+    bubbles: true,
+    button: 0,
+    clientX,
+    clientY: 16,
+    pointerId: 1,
+  });
+}
+
+/** happy-dom has no layout: give each title tab a 100px slot in a row. */
+function layOutTabsInARow(host: HTMLElement) {
+  const tabs = host.querySelectorAll<HTMLElement>(
+    "[data-title-tab-id] .reorder-item",
+  );
+  tabs.forEach((tab, index) => {
+    const left = index * 100;
+    const rect = { left, right: left + 100, width: 100, x: left };
+    tab.getBoundingClientRect = () =>
+      ({ ...rect, top: 0, bottom: 32, height: 32, y: 0 }) as DOMRect;
+    tab.setPointerCapture = () => {};
+    tab.hasPointerCapture = () => true;
+    tab.releasePointerCapture = () => {};
+  });
+}
 
 type UpsertArgs = { session: { blocks: { role: string }[] } };
 
