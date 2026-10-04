@@ -148,6 +148,17 @@ import {
   type TabFocusDeps,
   type TabSelectReason,
 } from "./workspace/flows/tabs/tab-focus";
+import {
+  appendTab as appendWorkspaceTab,
+  insertBeside as insertTabBeside,
+  insertBesideActive as insertTabBesideActiveTab,
+  movePaneTo,
+  openSessionTab as openWorkspaceSessionTab,
+  reorderPaneFiles,
+  reorderTabs as reorderWorkspaceTabs,
+  splitFocusedPane,
+  type TabLayoutDeps,
+} from "./workspace/flows/tabs/tab-layout";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
@@ -299,7 +310,6 @@ import {
   isTerminalTab,
   leaf,
   leafIds,
-  movePane,
   neighborLeafId,
   newAgentTab,
   newEditorWorkspaceTab,
@@ -333,15 +343,13 @@ import {
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
 import {
-  applyGroupedReorder,
-  insertTabBesideActive,
   removeTabFromGroup,
   tabGroupProject,
 } from "@/features/workspace/model/tab-groups";
 
 import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 
-import { mergeOrderedSubset, orderByIds } from "@/shared/lib/reorder";
+import { orderByIds } from "@/shared/lib/reorder";
 
 import {
   releaseNotesForVersion,
@@ -2071,30 +2079,35 @@ function Workspace({
   }, [activeTabId, tabs]);
 
   /** `cwd` scopes group inheritance: a tab from another project starts alone. */
+  const tabLayoutDeps = useStableFlow(
+    (): TabLayoutDeps => ({
+      store: workspaceStore,
+      activeTabId: () => activeTabIdRef.current,
+      projectOfTab,
+    }),
+  );
   const insertBeside = useCallback(
     (
       prev: WorkspaceTab[],
       tab: WorkspaceTab,
       anchorId: string | undefined,
       cwd?: string,
-    ) =>
-      insertTabBesideActive(prev, tab, anchorId, (id) =>
-        id === tab.id ? (cwd ? projectName(cwd) : undefined) : projectOfTab(id),
-      ),
-    [projectOfTab],
+    ) => insertTabBeside(tabLayoutDeps, prev, tab, anchorId, cwd),
+    [],
   );
-
   const insertBesideActive = useCallback(
     (prev: WorkspaceTab[], tab: WorkspaceTab, cwd?: string) =>
-      insertBeside(prev, tab, activeTabIdRef.current, cwd),
-    [insertBeside],
+      insertTabBesideActiveTab(tabLayoutDeps, prev, tab, cwd),
+    [],
   );
-
   const appendTab = useCallback(
-    (tab: WorkspaceTab, cwd?: string) => {
-      setTabs((prev) => insertBesideActive(prev, tab, cwd));
-    },
-    [insertBesideActive],
+    (tab: WorkspaceTab, cwd?: string) => appendWorkspaceTab(tabLayoutDeps, tab, cwd),
+    [],
+  );
+  const openSessionTab = useCallback(
+    (session: Session, cwd: string) =>
+      openWorkspaceSessionTab(tabLayoutDeps, session, cwd),
+    [],
   );
 
   const onSelectProviderAccount = useCallback(
@@ -2126,13 +2139,11 @@ function Workspace({
         ),
         providerAccountId: accountId,
       };
-      const tab = newTab(session.id);
-      setSessions((current) => [...current, session]);
-      appendTab(tab, active.cwd);
+      const tab = openSessionTab(session, active.cwd);
       setActiveTabId(tab.id);
       setComposerFocused(true);
     },
-    [active, appendTab],
+    [active, openSessionTab],
   );
 
   const onOpenWhatsNew = useCallback((version: string) => {
@@ -2154,12 +2165,9 @@ function Workspace({
           ? { worktreeCwd: focus.path, branch: focus.branch ?? undefined }
           : {}),
       };
-      const tab = newTab(session.id);
-      setSessions((prev) => [...prev, session]);
-      appendTab(tab, cwd);
-      return tab.id;
+      return openSessionTab(session, cwd).id;
     },
-    [appendTab, sessionDefaults?.runtimeMode],
+    [openSessionTab, sessionDefaults?.runtimeMode],
   );
 
   const onNew = useCallback(() => {
@@ -2175,15 +2183,13 @@ function Workspace({
         ? { worktreeCwd: focus.path, branch: focus.branch ?? undefined }
         : {}),
     };
-    const tab = newTab(session.id);
-    setSessions((prev) => [...prev, session]);
-    appendTab(tab, cwd);
+    const tab = openSessionTab(session, cwd);
     setActiveTabId(tab.id);
     setComposerFocused(true);
     return session.id;
   }, [
     active?.cwd,
-    appendTab,
+    openSessionTab,
     sessionDefaults?.cwd,
     sessionDefaults?.runtimeMode,
     projectCwd,
@@ -2210,13 +2216,11 @@ function Workspace({
       // Reserve a dedicated tab immediately. An apparently blank remote tab
       // may hold composer text or a create/upload that the host has not accepted.
       const session = newDefaultSession(project, sessionDefaults?.runtimeMode);
-      const tab = newTab(session.id);
       rememberRemoteSession(session.id, remoteSessionId);
-      setSessions((prev) => [...prev, session]);
-      appendTab(tab, project);
+      const tab = openSessionTab(session, project);
       setActiveTabId(tab.id);
     },
-    [activateTab, appendTab, sessionDefaults?.runtimeMode],
+    [activateTab, openSessionTab, sessionDefaults?.runtimeMode],
   );
 
   const onStartInboxItem = useCallback(
@@ -2239,9 +2243,7 @@ function Workspace({
           inboxCard: inboxComposerCard(item, description),
           ...(linkedWorkItem ? { linkedWorkItem } : {}),
         };
-        const tab = newTab(session.id);
-        setSessions((prev) => [...prev, session]);
-        appendTab(tab, cwd);
+        const tab = openSessionTab(session, cwd);
         setActiveTabId(tab.id);
         setComposerFocused(true);
       };
@@ -2250,7 +2252,7 @@ function Workspace({
     },
     [
       active?.cwd,
-      appendTab,
+      openSessionTab,
       sessionDefaults?.cwd,
       sessionDefaults?.runtimeMode,
       projectCwd,
@@ -2278,15 +2280,13 @@ function Workspace({
         ...(title ? { title } : {}),
         noteCard: card,
       };
-      const tab = newTab(session.id);
-      setSessions((prev) => [...prev, session]);
-      appendTab(tab, cwd);
+      const tab = openSessionTab(session, cwd);
       setActiveTabId(tab.id);
       setComposerFocused(true);
     },
     [
       active?.cwd,
-      appendTab,
+      openSessionTab,
       sessionDefaults?.cwd,
       sessionDefaults?.runtimeMode,
       projectCwd,
@@ -2369,20 +2369,16 @@ function Workspace({
         sessionDefaults?.cwd ?? projectCwd,
         sessionDefaults?.runtimeMode,
       );
-      setSessions((prev) => [...prev, session]);
-      setTabs((prev) =>
-        prev.map((t) => {
-          if (t.id !== activeTab.id) return t;
-          return {
-            ...t,
-            layout: splitPane(t.layout, t.focusedId, dir, session.id),
-            focusedId: session.id,
-          };
-        }),
-      );
+      splitFocusedPane(workspaceStore, activeTab.id, dir, session);
       setComposerFocused(true);
     },
-    [activeTab, projectCwd, sessionDefaults?.cwd, sessionDefaults?.runtimeMode],
+    [
+      activeTab,
+      projectCwd,
+      sessionDefaults?.cwd,
+      sessionDefaults?.runtimeMode,
+      workspaceStore,
+    ],
   );
 
   const focusProjectTerminal = useCallback(() => {
@@ -3564,58 +3560,21 @@ function Workspace({
   }, [onShowSourceControl]);
 
   const onReorderTabs = useCallback(
-    (ids: string[], movedId?: string) => {
-      setTabs((prev) => {
-        const visibleIds = new Set(ids);
-        const visibleTabs = prev.filter((tab) => visibleIds.has(tab.id));
-        if (movedId) {
-          const reordered = applyGroupedReorder(
-            visibleTabs,
-            ids,
-            movedId,
-            projectOfTab,
-          );
-          return reordered ? mergeOrderedSubset(prev, reordered) : prev;
-        }
-        return mergeOrderedSubset(prev, orderByIds(visibleTabs, ids));
-      });
-    },
-    [projectOfTab],
+    (ids: string[], movedId?: string) =>
+      reorderWorkspaceTabs(tabLayoutDeps, ids, movedId),
+    [],
   );
 
-  const onReorderFiles = useCallback((paneId: string, ids: string[]) => {
-    setTabs((prev) =>
-      prev.map((tab) => {
-        const found = findSurfacePane(tab, paneId);
-        if (!found) return tab;
-        return withSurfacePanes(
-          tab,
-          found.kind,
-          surfacePanes(tab, found.kind).map((pane) =>
-            pane.id === paneId
-              ? { ...pane, files: orderByIds(pane.files, ids) }
-              : pane,
-          ),
-        );
-      }),
-    );
-  }, []);
+  const onReorderFiles = useCallback(
+    (paneId: string, ids: string[]) =>
+      reorderPaneFiles(workspaceStore, paneId, ids),
+    [workspaceStore],
+  );
 
   const onMovePane = useCallback(
-    (fromId: string, toId: string, edge: PaneEdge) => {
-      setTabs((prev) =>
-        prev.map((tab) => {
-          return leafIds(tab.layout).includes(fromId)
-            ? {
-                ...tab,
-                layout: movePane(tab.layout, fromId, toId, edge),
-                focusedId: fromId,
-              }
-            : tab;
-        }),
-      );
-    },
-    [],
+    (fromId: string, toId: string, edge: PaneEdge) =>
+      movePaneTo(workspaceStore, fromId, toId, edge),
+    [workspaceStore],
   );
 
   const onDetachPane = useCallback(
@@ -4651,9 +4610,7 @@ function Workspace({
           current.runtimeMode,
           current.modelSettings,
         );
-        const tab = newTab(session.id);
-        setSessions((prev) => [...prev, session]);
-        appendTab(tab, normalized);
+        const tab = openSessionTab(session, normalized);
         setActiveTabId(tab.id);
         setComposerFocused(true);
         return;
@@ -4706,7 +4663,7 @@ function Workspace({
       });
       notifyReviewChanged(sessionId);
     },
-    [appendTab, projectOfTab],
+    [openSessionTab, projectOfTab],
   );
 
   const onBranchChange = useCallback(
