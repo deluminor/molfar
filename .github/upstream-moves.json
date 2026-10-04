@@ -910,6 +910,18 @@
           "ensureOpenSession body (openSavedSession; provider binding stays in App as bindProvider)"
         ],
         "target": "src/app/workspace/flows/session-history/open-saved-session.ts"
+      },
+      {
+        "names": [
+          "tabVisitRef, tabVisitFromHistoryRef, commitTabVisit, the visit-recording effect, onVisitBack/onVisitForward stepping (App: tabVisits.sync / step via visitTab)"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-visits.ts"
+      },
+      {
+        "names": [
+          "onNext/onPrev index wrap, onActivate slot lookup"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-cycle.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [

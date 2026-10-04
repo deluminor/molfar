@@ -139,6 +139,8 @@ import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
+import { cycleTab, tabInSlot } from "./workspace/flows/tabs/tab-cycle";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
@@ -580,18 +582,6 @@ import {
   tabCommandKeybinding,
 } from "@/features/workspace/model/tab-keys";
 import {
-  canTabVisitBack,
-  canTabVisitForward,
-  emptyTabVisitHistory,
-  pruneTabVisitHistory,
-  recordTabVisit,
-  tabVisitBack,
-  tabVisitForward,
-  type TabVisitHistory,
-} from "@/features/workspace/model/tab-visit-history";
-
-
-import {
   cachedRemoteSessionSummary,
   OPEN_CONNECTIONS_EVENT,
   OPEN_REMOTE_PROJECT_EVENT,
@@ -983,7 +973,6 @@ function Workspace({
     setSessions,
     setTabs,
     setActiveTabId: setActiveTabIdState,
-    setTabVisitNav,
     setProjectTerminals,
     setLastDockSide,
     setProjectTerminalFocused,
@@ -1334,8 +1323,9 @@ function Workspace({
     readProjectReturnMemory();
   }, [activeTabId, tabs, sessions, readProjectReturnMemory]);
 
-  const tabVisitRef = useRef(emptyTabVisitHistory(activeTabId));
-  const tabVisitFromHistoryRef = useRef(false);
+  const tabVisits = useStableFlow(() =>
+    createTabVisits(workspaceStore, activeTabId),
+  );
   const tabVisitNav = useWorkspaceField(workspaceStore, "tabVisitNav");
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
@@ -2095,27 +2085,9 @@ function Workspace({
     [],
   );
 
-  const commitTabVisit = useCallback((history: TabVisitHistory) => {
-    tabVisitRef.current = history;
-    const canBack = canTabVisitBack(history);
-    const canForward = canTabVisitForward(history);
-    setTabVisitNav((prev) =>
-      prev.canBack === canBack && prev.canForward === canForward
-        ? prev
-        : { canBack, canForward },
-    );
-  }, []);
-
   useEffect(() => {
-    const openIds = new Set(tabs.map((tab) => tab.id));
-    let next = pruneTabVisitHistory(tabVisitRef.current, openIds, activeTabId);
-    if (tabVisitFromHistoryRef.current) {
-      tabVisitFromHistoryRef.current = false;
-    } else if (next.current !== activeTabId) {
-      next = recordTabVisit(next, activeTabId);
-    }
-    commitTabVisit(pruneTabVisitHistory(next, openIds, activeTabId));
-  }, [activeTabId, commitTabVisit, tabs]);
+    tabVisits.sync(new Set(tabs.map((tab) => tab.id)), activeTabId);
+  }, [activeTabId, tabs]);
 
   /** `cwd` scopes group inheritance: a tab from another project starts alone. */
   const insertBeside = useCallback(
@@ -3439,56 +3411,33 @@ function Workspace({
   ]);
 
   const onNext = useCallback(() => {
-    const index = deckProjectTabs.findIndex((t) => t.id === activeTabId);
-    if (index >= 0)
-      activateTab(deckProjectTabs[(index + 1) % deckProjectTabs.length].id);
+    const tab = cycleTab(deckProjectTabs, activeTabId, 1);
+    if (tab) activateTab(tab.id);
   }, [activateTab, activeTabId, deckProjectTabs]);
 
   const onPrev = useCallback(() => {
-    const index = deckProjectTabs.findIndex((t) => t.id === activeTabId);
-    if (index >= 0) {
-      activateTab(
-        deckProjectTabs[
-          (index - 1 + deckProjectTabs.length) % deckProjectTabs.length
-        ].id,
-      );
-    }
+    const tab = cycleTab(deckProjectTabs, activeTabId, -1);
+    if (tab) activateTab(tab.id);
   }, [activateTab, activeTabId, deckProjectTabs]);
 
-  const onVisitBack = useCallback(() => {
-    const openIds = new Set(tabsRef.current.map((tab) => tab.id));
-    const pruned = pruneTabVisitHistory(
-      tabVisitRef.current,
-      openIds,
-      activeTabIdRef.current,
-    );
-    const next = tabVisitBack(pruned);
-    if (!next || !openIds.has(next.current)) return;
-    tabVisitFromHistoryRef.current = true;
-    commitTabVisit(next);
-    activateTab(next.current);
-  }, [activateTab, commitTabVisit]);
-
-  const onVisitForward = useCallback(() => {
-    const openIds = new Set(tabsRef.current.map((tab) => tab.id));
-    const pruned = pruneTabVisitHistory(
-      tabVisitRef.current,
-      openIds,
-      activeTabIdRef.current,
-    );
-    const next = tabVisitForward(pruned);
-    if (!next || !openIds.has(next.current)) return;
-    tabVisitFromHistoryRef.current = true;
-    commitTabVisit(next);
-    activateTab(next.current);
-  }, [activateTab, commitTabVisit]);
+  const visitTab = useCallback(
+    (direction: "back" | "forward") => {
+      const openTabIds = new Set(tabsRef.current.map((tab) => tab.id));
+      const tabId = tabVisits.step(
+        direction,
+        openTabIds,
+        activeTabIdRef.current,
+      );
+      if (tabId) activateTab(tabId);
+    },
+    [activateTab],
+  );
+  const onVisitBack = useCallback(() => visitTab("back"), [visitTab]);
+  const onVisitForward = useCallback(() => visitTab("forward"), [visitTab]);
 
   const onActivate = useCallback(
     (slot: number) => {
-      const tab =
-        slot < 0
-          ? deckProjectTabs[deckProjectTabs.length - 1]
-          : deckProjectTabs[slot];
+      const tab = tabInSlot(deckProjectTabs, slot);
       if (tab) activateTab(tab.id);
     },
     [activateTab, deckProjectTabs],
