@@ -25,11 +25,8 @@ import {
   rebaseCiRepairs,
   trackCiRepair,
 } from "@/features/inbox/model/ci-repair-tracking";
-import {
-  cancelScheduledFlush,
-  scheduleHarnessFlush,
-  type ScheduledFlush,
-} from "./model/harness-flush";
+import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
+import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -231,7 +228,6 @@ import {
   appendSteerUser,
   appendUser,
   applyHarnessEvent,
-  applyHarnessEvents,
   bindHarnessSession,
   cancelHarnessTurn,
   canCompactHarnessContext,
@@ -1352,10 +1348,6 @@ function Workspace({
   const openingSessionIds = useRef(new Set<string>());
   const activeSessionPrefetch = useRef<Promise<Session | null> | null>(null);
   const [transcriptPool] = useState(() => new TranscriptPool());
-  // Tokens arrive many times per frame; apply them once so React/markdown aren't
-  // recomputed for every delta.
-  const harnessQueued = useRef(new Map<string, HarnessEvent[]>());
-  const harnessFlush = useRef<ScheduledFlush | null>(null);
   const skipForgetSessionIds = useRef(new Set<string>());
   const importedSessionsApplied = useRef(false);
   const projectLocationSyncs = useRef(
@@ -1385,22 +1377,26 @@ function Workspace({
     }
   }, [windowTransfer, resumed]);
 
-  const flushHarnessEvents = useCallback(() => {
-    cancelScheduledFlush(harnessFlush.current);
-    harnessFlush.current = null;
-    const batches = harnessQueued.current;
-    if (batches.size === 0) return;
-    harnessQueued.current = new Map();
-    const prev = sessionsRef.current;
-    const next = prev.map((session) => {
-      const events = batches.get(session.id);
-      return events ? applyHarnessEvents(session, events) : session;
-    });
-    if (!next.some((session, index) => session !== prev[index])) return;
-    sessionsRef.current = next;
-    syncDockBadge(next);
-    setSessions(next);
-  }, []);
+  const [harnessEvents] = useState(() =>
+    createHarnessEventPipeline({
+      readSessions: () => sessionsRef.current,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        syncDockBadge(next);
+        setSessions(next);
+      },
+      isForeground: (sessionId) =>
+        isForegroundSession(sessionId, {
+          hidden: document.hidden,
+          ...foregroundSurfaceRef.current,
+          activeTab: tabsRef.current.find(
+            (entry) => entry.id === activeTabIdRef.current,
+          ),
+        }),
+    }),
+  );
+  const flushHarnessEvents = harnessEvents.flush;
+  const enqueueHarnessEvent = harnessEvents.enqueue;
 
   const stopSessionForRemoval = useCallback(
     async (sessionId: string): Promise<Session | undefined> => {
@@ -1421,72 +1417,6 @@ function Workspace({
       return sessionsRef.current.find((session) => session.id === sessionId);
     },
     [flushHarnessEvents],
-  );
-
-  const applyApprovalEvent = useCallback(
-    (sessionId: string, event: HarnessEvent) => {
-      const queued = harnessQueued.current.get(sessionId) ?? [];
-      harnessQueued.current.delete(sessionId);
-      const events = [...queued, event];
-      const prev = sessionsRef.current;
-      const next = prev.map((session) =>
-        session.id === sessionId
-          ? applyHarnessEvents(session, events)
-          : session,
-      );
-      if (!next.some((session, index) => session !== prev[index])) return;
-      sessionsRef.current = next;
-      syncDockBadge(next);
-      setSessions(next);
-    },
-    [],
-  );
-
-  const enqueueHarnessEvent = useCallback(
-    (sessionId: string, event: HarnessEvent) => {
-      if (
-        event.type === "approval.requested" ||
-        event.type === "approval.resolved" ||
-        event.type === "question.asked" ||
-        event.type === "question.resolved"
-      ) {
-        applyApprovalEvent(sessionId, event);
-        return;
-      }
-      const queued = harnessQueued.current;
-      const events = queued.get(sessionId);
-      if (events) events.push(event);
-      else queued.set(sessionId, [event]);
-      const tab = tabsRef.current.find(
-        (entry) => entry.id === activeTabIdRef.current,
-      );
-      const foreground =
-        !document.hidden &&
-        // Inbox owns its session surfaces outside the workspace tab tree.
-        (foregroundSurfaceRef.current.inboxSessionId === sessionId ||
-          (foregroundSurfaceRef.current.workspaceVisible &&
-            !!tab &&
-            (leafIds(tab.layout).includes(sessionId) ||
-              tab.editorPanes.some((pane) =>
-                pane.files.some(
-                  (file) =>
-                    file.id === pane.activeFileId &&
-                    file.agent?.sessionId === sessionId,
-                ),
-              ))));
-      // A visible stream must not wait for a background-only timer.
-      if (foreground && harnessFlush.current?.kind === "timeout") {
-        cancelScheduledFlush(harnessFlush.current);
-        harnessFlush.current = null;
-      }
-      if (!harnessFlush.current) {
-        harnessFlush.current = scheduleHarnessFlush(
-          flushHarnessEvents,
-          foreground,
-        );
-      }
-    },
-    [applyApprovalEvent, flushHarnessEvents],
   );
 
   useEffect(() => {
@@ -1517,10 +1447,9 @@ function Workspace({
       window.removeEventListener("pagehide", reap);
       window.removeEventListener("beforeunload", reap);
       stopBridge();
-      cancelScheduledFlush(harnessFlush.current);
-      harnessFlush.current = null;
+      harnessEvents.dispose();
     };
-  }, [resumed, readProjectReturnMemory]);
+  }, [resumed, readProjectReturnMemory, harnessEvents]);
 
   useEffect(() => {
     void probeHarnessAvailability();
