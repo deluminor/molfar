@@ -40,6 +40,10 @@ import {
   type SessionRemovalChangeDeps,
 } from "./workspace/flows/session-history/session-removal-change";
 import { findUnusedSessionWorktree } from "./workspace/flows/session-history/unused-worktree";
+import {
+  openSavedSession,
+  type OpenSavedSessionDeps,
+} from "./workspace/flows/session-history/open-saved-session";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -3763,32 +3767,27 @@ function Workspace({
   }, []);
 
   const invalidateLoadedSession = sessionLoader.invalidate;
-  const loadStoredSession = sessionLoader.load;
 
-  const ensureOpenSession = useCallback(
-    async (sessionId: string): Promise<Session | null> => {
-      const open = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (open) return open;
-
-      openingSessionIds.current.add(sessionId);
-      const restored = await loadStoredSession(sessionId);
-      if (!restored || removingSessionIds.current.has(sessionId)) {
-        openingSessionIds.current.delete(sessionId);
-        void refreshHistory(sidebarCwd);
-        return null;
-      }
-      loadedSessionCache.current.delete(sessionId);
-      const appeared = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (appeared) return appeared;
-      if (
-        !restored.worktreeRemoved &&
-        restored.providerSessionId &&
-        isLiveHarness(restored.harness)
-      ) {
+  const openSavedSessionDeps = useStableFlow(
+    (): OpenSavedSessionDeps => ({
+      openSessions: () => sessionsRef.current,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        setSessions(next);
+      },
+      loader: sessionLoader,
+      opening: openingSessionIds.current,
+      cache: loadedSessionCache.current,
+      isRemoving: (sessionId) => removingSessionIds.current.has(sessionId),
+      persistence: sessionPersistence,
+      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
+      bindProvider: (restored) => {
+        if (
+          restored.worktreeRemoved ||
+          !restored.providerSessionId ||
+          !isLiveHarness(restored.harness)
+        )
+          return;
         bindHarnessSession(
           restored.harness,
           restored.id,
@@ -3797,16 +3796,12 @@ function Workspace({
           restored.providerAccountId,
           restored.blocks,
         );
-      }
-      sessionPersistence.markSaved(restored);
-      if (!sessionsRef.current.some((session) => session.id === restored.id)) {
-        const next = [...sessionsRef.current, restored];
-        sessionsRef.current = next;
-        setSessions(next);
-      }
-      return restored;
-    },
-    [loadStoredSession, refreshHistory, sidebarCwd],
+      },
+    }),
+  );
+  const ensureOpenSession = useCallback(
+    (sessionId: string) => openSavedSession(openSavedSessionDeps, sessionId),
+    [],
   );
 
   const onPrefetchHistorySession = sessionLoader.prefetch;
