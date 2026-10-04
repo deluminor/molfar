@@ -363,6 +363,41 @@ describe("Workspace harness events", () => {
   });
 });
 
+describe("Workspace tab visits", () => {
+  it("goes back and forward through visited tabs", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await answeredSession("first", "One.");
+    await app.emit("new_tab");
+    await answeredSession("second", "Two.");
+    await app.until(() => shows("Two."));
+
+    await app.emit("back_tab");
+    await app.until(() => shows("One.") && !shows("Two."));
+
+    await app.emit("forward_tab");
+    await app.until(() => shows("Two.") && !shows("One."));
+  });
+
+  it("activates a tab by its position", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await answeredSession("first", "One.");
+    await app.emit("new_tab");
+    await answeredSession("second", "Two.");
+
+    await app.drive(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "1",
+          code: "Digit1",
+          ctrlKey: true,
+          bubbles: true,
+        }),
+      );
+    });
+    await app.until(() => shows("One.") && !shows("Two."));
+  });
+});
+
 describe("Workspace turn control", () => {
   it("steers a running turn with a follow-up instead of starting another", async () => {
     app = await renderApp({ project: "/work/demo" });
