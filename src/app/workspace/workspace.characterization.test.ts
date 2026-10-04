@@ -131,6 +131,31 @@ describe("Workspace history", () => {
     });
   });
 
+  it("opens a saved session from the sidebar with its transcript", async () => {
+    app = await renderApp({
+      project: "/work/demo",
+      routes: {
+        session_list_by_project: () => [
+          savedSession("saved-1", "Fix the flaky upload test"),
+        ],
+        session_get: (args) =>
+          args?.sessionId === "saved-1" ? savedRecord("saved-1") : null,
+      },
+    });
+    await app.until(() => shows("Fix the flaky upload test"));
+
+    await app.drive(() => {
+      historyRow("Fix the flaky upload test")?.click();
+    });
+
+    await app.until(() => shows("The upload retries were racing."));
+    expect(app.commands("session_get")[0]?.args).toMatchObject({
+      sessionId: "saved-1",
+    });
+    await app.settle(1_000);
+    expect(app.commands("session_upsert")).toHaveLength(0);
+  });
+
   it("says when the project's sessions cannot be listed", async () => {
     app = await renderApp({
       project: "/work/demo",
@@ -381,6 +406,31 @@ function savedSession(id: string, title: string) {
     createdAt: 1,
     updatedAt: 1,
   };
+}
+
+function savedRecord(id: string) {
+  return {
+    ...savedSession(id, "Fix the flaky upload test"),
+    modelSettings: {},
+    blocks: [
+      { id: "u1", role: "user", text: "Fix the flaky upload test" },
+      { id: "a1", role: "assistant", text: "The upload retries were racing." },
+    ],
+  };
+}
+
+/** The clickable sidebar row that shows a saved session's title. */
+function historyRow(title: string): HTMLElement | undefined {
+  const label = [...current().host.querySelectorAll<HTMLElement>("*")].find(
+    (element) =>
+      element.children.length === 0 &&
+      element.textContent === title &&
+      !element.closest('[aria-hidden="true"]'),
+  );
+  return (
+    label?.closest<HTMLElement>("button, [role='button'], [data-session-id]") ??
+    label
+  );
 }
 
 type UpsertArgs = { session: { blocks: { role: string }[] } };
