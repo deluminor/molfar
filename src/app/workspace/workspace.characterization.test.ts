@@ -114,6 +114,37 @@ describe("Workspace submit", () => {
   });
 });
 
+describe("Workspace history", () => {
+  it("lists the project's saved sessions in the sidebar", async () => {
+    app = await renderApp({
+      project: "/work/demo",
+      routes: {
+        session_list_by_project: () => [
+          savedSession("saved-1", "Fix the flaky upload test"),
+        ],
+      },
+    });
+
+    await app.until(() => shows("Fix the flaky upload test"));
+    expect(app.commands("session_list_by_project")[0]?.args).toMatchObject({
+      cwd: "/work/demo",
+    });
+  });
+
+  it("says when the project's sessions cannot be listed", async () => {
+    app = await renderApp({
+      project: "/work/demo",
+      routes: {
+        session_list_by_project: () => {
+          throw new Error("store locked");
+        },
+      },
+    });
+
+    await app.until(() => shows("Couldn’t load sessions"));
+  });
+});
+
 describe("Workspace tabs", () => {
   it("shows a blank new tab in place of the blank one it was opened from", async () => {
     app = await renderApp();
@@ -337,6 +368,19 @@ function layOutTabsInARow(host: HTMLElement) {
     tab.hasPointerCapture = () => true;
     tab.releasePointerCapture = () => {};
   });
+}
+
+function savedSession(id: string, title: string) {
+  return {
+    id,
+    cwd: "/work/demo",
+    harness: "cursor",
+    model: "cursor:composer-2.5",
+    runtimeMode: "supervised",
+    title,
+    createdAt: 1,
+    updatedAt: 1,
+  };
 }
 
 type UpsertArgs = { session: { blocks: { role: string }[] } };
