@@ -30,6 +30,11 @@ import { isForegroundSession } from "./workspace/flows/harness-events/foreground
 import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
 import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
 import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
+import {
+  pinSession,
+  renameSession,
+  type SessionActionsDeps,
+} from "./workspace/flows/session-history/session-actions";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -4203,42 +4208,24 @@ function Workspace({
     [],
   );
 
-  const onRenameHistorySession = useCallback(
-    async (sessionId: string, displayTitle: string) => {
-      const trimmed = displayTitle.trim();
-      if (!trimmed) return;
-      invalidateLoadedSession(sessionId);
+  const sessionActionDeps = useStableFlow(
+    (): SessionActionsDeps => ({
+      store: workspaceStore,
+      openSessions: () => sessionsRef.current,
+      loader: sessionLoader,
+      persistence: sessionPersistence,
+      cache: loadedSessionCache.current,
+      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
+      getSession,
+      upsertSession,
+      setSessionPinned,
+    }),
+  );
 
-      const open = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (open) {
-        const title = formatSessionTitle(open.harness, trimmed);
-        const updated = { ...open, title };
-        setSessions((prev) =>
-          prev.map((session) => (session.id === sessionId ? updated : session)),
-        );
-        loadedSessionCache.current.delete(sessionId);
-        persistSession(updated);
-      } else {
-        const restored = await getSession(sessionId).catch(() => null);
-        if (!restored) {
-          void refreshHistory(sidebarCwd);
-          return;
-        }
-        const updated = {
-          ...restored,
-          title: formatSessionTitle(restored.harness, trimmed),
-        };
-        const saved = await upsertSession(updated).catch(() => null);
-        if (saved) {
-          rememberLoadedSession(loadedSessionCache.current, updated);
-          sessionPersistence.markSaved(updated);
-        }
-      }
-      void refreshHistory(sidebarCwd);
-    },
-    [invalidateLoadedSession, persistSession, refreshHistory, sidebarCwd],
+  const onRenameHistorySession = useCallback(
+    (sessionId: string, displayTitle: string) =>
+      renameSession(sessionActionDeps, sessionId, displayTitle),
+    [],
   );
 
   const checkOpenWorktreeFiles = useCallback((path: string) => {
@@ -4665,26 +4652,8 @@ function Workspace({
   );
 
   const onPinHistorySession = useCallback(
-    async (sessionId: string, pinned: boolean) => {
-      const open = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (open && shouldPersistSession(open)) {
-        await upsertSession(open).catch(() => undefined);
-      }
-      await setSessionPinned(sessionId, pinned).catch(() => undefined);
-      setHistory((current) => {
-        const existing = current.find((entry) => entry.id === sessionId);
-        if (existing) {
-          return mergeProjectHistorySummary(current, { ...existing, pinned });
-        }
-        if (!open) return current;
-        return mergeProjectHistorySummary(current, {
-          ...summaryFromSession(open),
-          pinned,
-        });
-      });
-    },
+    (sessionId: string, pinned: boolean) =>
+      pinSession(sessionActionDeps, sessionId, pinned),
     [],
   );
 

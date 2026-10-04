@@ -879,6 +879,13 @@
           "invalidateLoadedSession, loadStoredSession, onPrefetchHistorySession, sessionLoads, sessionLoadEpochs, activeSessionPrefetch (App: sessionLoader.invalidate / load / prefetch / loadingIds; loadedSessionCache and openingSessionIds stay refs passed in)"
         ],
         "target": "src/app/workspace/flows/session-history/session-loader.ts"
+      },
+      {
+        "names": [
+          "onRenameHistorySession body (renameSession)",
+          "onPinHistorySession body (pinSession)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-actions.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
