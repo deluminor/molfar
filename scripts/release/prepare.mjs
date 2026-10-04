@@ -11,7 +11,7 @@ import { readVersion, setVersion } from "./set-version.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const repository = process.env.GITHUB_REPOSITORY || "deluminor/molfar";
-const UPSTREAM_REF = "refs/remotes/origin/upstream-main";
+const UPSTREAM_REF = "refs/remotes/upstream/main";
 
 /** Empty when git fails: a missing tag or an unborn range is an expected answer here. */
 function tryGit(...args) {
