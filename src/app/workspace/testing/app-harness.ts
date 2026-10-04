@@ -43,6 +43,8 @@ export type AppHarness = {
   /** Types into the visible composer and presses Enter. */
   submitPrompt(text: string): Promise<void>;
   settle(ms?: number): Promise<void>;
+  /** Lets React work until `condition` holds; fails after `timeoutMs`. */
+  until(condition: () => boolean, timeoutMs?: number): Promise<void>;
   unmount(): Promise<void>;
 };
 
@@ -151,6 +153,23 @@ export async function renderApp(
       await new Promise((resolve) => setTimeout(resolve, ms));
     });
   };
+  const until = async (condition: () => boolean, timeoutMs = 15_000) => {
+    const deadline = Date.now() + timeoutMs;
+    while (!condition()) {
+      if (Date.now() > deadline)
+        throw new Error(`Condition not met within ${timeoutMs}ms`);
+      await settle(25);
+    }
+  };
+  const visibleComposer = () =>
+    [
+      ...host.querySelectorAll<HTMLTextAreaElement>(
+        "textarea.composer-field:not([disabled])",
+      ),
+    ].find((candidate) => !candidate.closest('[aria-hidden="true"]'));
+
+  // Booting is IPC-driven and its timing depends on machine load.
+  await until(() => !!visibleComposer());
   await settle();
 
   return {
@@ -178,12 +197,15 @@ export async function renderApp(
       return copy.textContent ?? "";
     },
     click: async (label) => {
-      const button = [...host.querySelectorAll<HTMLElement>("button")].find(
-        (candidate) =>
-          !candidate.closest('[aria-hidden="true"]') &&
-          (candidate.getAttribute("aria-label") === label ||
-            candidate.textContent?.trim() === label),
-      );
+      const find = () =>
+        [...host.querySelectorAll<HTMLElement>("button")].find(
+          (candidate) =>
+            !candidate.closest('[aria-hidden="true"]') &&
+            (candidate.getAttribute("aria-label") === label ||
+              candidate.textContent?.trim() === label),
+        );
+      await until(() => !!find());
+      const button = find();
       if (!button) throw new Error(`No visible button labelled "${label}"`);
       await act(async () => {
         button.click();
@@ -191,11 +213,8 @@ export async function renderApp(
       await settle();
     },
     submitPrompt: async (text) => {
-      const field = [
-        ...host.querySelectorAll<HTMLTextAreaElement>(
-          "textarea.composer-field:not([disabled])",
-        ),
-      ].find((candidate) => !candidate.closest('[aria-hidden="true"]'));
+      await until(() => !!visibleComposer());
+      const field = visibleComposer();
       if (!field) throw new Error("No enabled composer on screen");
       await act(async () => {
         field.focus();
@@ -208,6 +227,7 @@ export async function renderApp(
       await settle();
     },
     settle,
+    until,
     unmount: async () => {
       await act(async () => {
         root.unmount();
