@@ -2,37 +2,40 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { newSession } from "./session";
 import type { HarnessId } from "@/domain/harness/harness";
 import {
-  MODELS,
   coerceModelPickerTab,
-  defaultModelId,
   defaultSessionChoice,
-  encodeModelLaunchId,
   firstEnabledHarness,
-  hasLiveCatalog,
   isPickerProviderVisible,
   loadDefaultModels,
   loadHiddenPickerProviders,
   loadLastModelChoice,
   loadLastModelSettings,
   loadRecentModelChoices,
-  mergeModelSettings,
-  modelEffortSetting,
   modelPickerTabs,
-  nativeModelId,
   preferredModelId,
   preferredModelSettings,
-  resetHarnessModelOverlays,
-  resolveModel,
   saveDefaultModel,
   saveLastModelChoice,
   saveLastModelSettings,
   savePickerProviderVisible,
   saveRecentModelChoice,
-  setHarnessModels,
   showProviderInModelPicker,
   stepModelPickerTab,
-  type AgentModel,
 } from "./models";
+import {
+  encodeModelLaunchId,
+  mergeModelSettings,
+  nativeModelId,
+  resolveModel,
+} from "@/integrations/harness/core/models/resolve-model";
+import {
+  defaultModelId,
+  hasLiveCatalog,
+  resetHarnessModelOverlays,
+  setHarnessModels,
+} from "@/integrations/harness/core/models/catalog-store";
+import { modelEffortSetting } from "@/domain/models/model-settings";
+import type { AgentModel } from "@/domain/models/agent-model";
 import {
   setProjectDefaultProvider,
   setProjectProviderHidden,
@@ -627,94 +630,5 @@ describe("live catalog overlays", () => {
     const alias = resolveModel("claude", "claude:opus");
     expect(alias.id).toBe("claude:opus");
     expect(nativeModelId(alias)).toBe("opus");
-  });
-});
-
-/**
- * A bundled entry may omit `nativeId`, which means "the key minus the harness
- * prefix is the native id" (`opencode:glm-5` → `glm-5`). An explicit `""` means
- * "omit --model and let the CLI choose", which is a real value.
- */
-function expectedNative(id: string, nativeId?: string): string {
-  if (nativeId !== undefined) return nativeId;
-  const colon = id.indexOf(":");
-  return colon >= 0 ? id.slice(colon + 1) : id;
-}
-
-function bundledByHarness(): Map<string, AgentModel[]> {
-  const grouped = new Map<string, AgentModel[]>();
-  for (const model of MODELS) {
-    const list = grouped.get(model.harness) ?? [];
-    list.push(model);
-    grouped.set(model.harness, list);
-  }
-  return grouped;
-}
-
-describe("every bundled model resolves to its own native id", () => {
-  beforeEach(() => resetHarnessModelOverlays());
-
-  it("with no live catalog (first turn after launch)", () => {
-    const wrong: string[] = [];
-    for (const [harness, models] of bundledByHarness()) {
-      for (const model of models) {
-        const got = nativeModelId(model.id);
-        const want = expectedNative(model.id, model.nativeId);
-        if (got !== want) {
-          wrong.push(`${harness}  ${model.id}  want ${want}  got ${got}`);
-        }
-      }
-    }
-    expect(wrong).toEqual([]);
-  });
-
-  it("with a live catalog that dropped the model (stale overlay)", () => {
-    const wrong: string[] = [];
-    for (const [harness, models] of bundledByHarness()) {
-      setHarnessModels(harness as never, [models[0]]);
-      for (const model of models) {
-        const got = nativeModelId(model.id);
-        const want = expectedNative(model.id, model.nativeId);
-        if (got !== want) {
-          wrong.push(`${harness}  ${model.id}  want ${want}  got ${got}`);
-        }
-      }
-      resetHarnessModelOverlays();
-    }
-    expect(wrong).toEqual([]);
-  });
-
-  it("resolveModel never returns a model from another harness", () => {
-    const wrong: string[] = [];
-    for (const [harness, models] of bundledByHarness()) {
-      setHarnessModels(harness as never, [models[0]]);
-      for (const model of models) {
-        const resolved = resolveModel(harness as never, model.id);
-        if (resolved.harness !== harness) {
-          wrong.push(
-            `${harness}  ${model.id}  resolved to ${resolved.id} (${resolved.harness})`,
-          );
-        }
-      }
-      resetHarnessModelOverlays();
-    }
-    expect(wrong).toEqual([]);
-  });
-
-  it("encodeModelLaunchId never drops a provider prefix", () => {
-    const wrong: string[] = [];
-    for (const [harness, models] of bundledByHarness()) {
-      setHarnessModels(harness as never, [models[0]]);
-      for (const model of models) {
-        const launch = encodeModelLaunchId(model.id, { effort: "high" });
-        const base = launch.split("[")[0];
-        const want = expectedNative(model.id, model.nativeId);
-        if (base !== want) {
-          wrong.push(`${harness}  ${model.id}  want ${want}  got ${base}`);
-        }
-      }
-      resetHarnessModelOverlays();
-    }
-    expect(wrong).toEqual([]);
   });
 });

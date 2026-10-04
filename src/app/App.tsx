@@ -203,7 +203,9 @@ import {
 } from "@/features/sessions/model/handoff";
 import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 import { requestOutgoingHandoff } from "@/features/sessions/model/handoff-turn";
-import { modelsFor, mergeModelSettings, nativeModelId, preferredModelSettings, resolveModel, saveLastModelSettings, saveRecentModelChoice } from "@/features/sessions/model/models";
+import { preferredModelSettings, saveLastModelSettings, saveRecentModelChoice } from "@/features/sessions/model/models";
+import { mergeModelSettings, nativeModelId, resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
 import {
   confirmCloseTerminal,
   confirmCloseTerminals,

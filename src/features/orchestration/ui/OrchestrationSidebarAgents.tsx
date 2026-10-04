@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState, useSyncExternalStore } from "react";
-import { findModel } from "@/features/sessions/model/models";
+import { findModel } from "@/integrations/harness/core/models/catalog-store";
 import { orchestrator } from "../model/orchestration";
 import {
   orchestrationTaskLabel,

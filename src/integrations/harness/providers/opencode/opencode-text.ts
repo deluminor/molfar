@@ -1,4 +1,4 @@
-import { modelsFor } from "@/features/sessions/model/models";
+import { modelsFor } from "../../core/models/catalog-store";
 import type { TurnIntent } from "@/domain/session/turn";
 import {
   execChild,

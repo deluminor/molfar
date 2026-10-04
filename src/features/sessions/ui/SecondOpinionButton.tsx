@@ -24,17 +24,14 @@ import {
 import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
-  getModelSnapshot,
   getPickerVisibilitySnapshot,
-  hasLiveCatalog,
   isPickerProviderVisible,
-  mergeModelSettings,
-  modelEffortSetting,
-  modelsFor,
   preferredModelId,
-  subscribeModels,
   subscribePickerVisibility,
 } from "../model/models";
+import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-model";
+import { getModelSnapshot, hasLiveCatalog, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import { modelEffortSetting } from "@/domain/models/model-settings";
 import { LAYER } from "@/shared/lib/layers";
 import { secondOpinionTargets } from "../model/second-opinion";
 import type { ModelTarget } from "@/domain/session/turn";

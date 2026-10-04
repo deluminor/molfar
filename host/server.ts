@@ -50,7 +50,8 @@ import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness
 import { discoverFxModels } from "../src/integrations/harness/providers/fx/fx-catalog";
 import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermes-catalog";
 import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravity-catalog";
-import { setHarnessModels, type AgentModel } from "../src/features/sessions/model/models";
+import { setHarnessModels } from "@/integrations/harness/core/models/catalog-store";
+import type { AgentModel } from "@/domain/models/agent-model";
 import {
   resolveAntigravityBinary,
   resolveClaudeBinary,

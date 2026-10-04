@@ -1,5 +1,5 @@
 import { promptBlocks, type PromptContentBlock } from "@/features/sessions/model/attachments";
-import type { AgentModel } from "@/features/sessions/model/models";
+import type { AgentModel } from "@/domain/models/agent-model";
 import type { Attachment } from "@/domain/session/attachment";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 

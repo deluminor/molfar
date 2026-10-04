@@ -11,7 +11,7 @@ import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import { uploadRemoteAttachments } from "../model/remote-attachments";
 import { temporaryWorktreeBranchName, type Worktree } from "@/features/source-control/model/worktrees";
-import type { AgentModel } from "@/features/sessions/model/models";
+import type { AgentModel } from "@/domain/models/agent-model";
 import {
   ModelSourceContext,
   type ModelSource,

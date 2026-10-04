@@ -1,5 +1,5 @@
 import type { PromptContentBlock } from "@/features/sessions/model/attachments";
-import type { AgentModel, ModelSetting, ModelSettingChoice } from "@/features/sessions/model/models";
+import type { AgentModel, ModelSetting, ModelSettingChoice } from "@/domain/models/agent-model";
 import type { ToolPreview } from "@/domain/session/agent-run";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { normalizeTaskListStatus } from "@/domain/session/task-list";

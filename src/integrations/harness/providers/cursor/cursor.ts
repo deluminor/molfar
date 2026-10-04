@@ -1,4 +1,4 @@
-import { nativeModelId } from "@/features/sessions/model/models";
+import { nativeModelId } from "../../core/models/resolve-model";
 import { AcpSubagents } from "../../core/acp-subagents";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { promptBlocks } from "@/features/sessions/model/attachments";

@@ -16,12 +16,12 @@ import type {
 import { orchestrator } from "../model/orchestration";
 import { resizeComposer } from "@/features/sessions/model/composer-resize";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-model";
+import { findModel } from "@/integrations/harness/core/models/catalog-store";
 import {
-  findModel,
-  mergeModelSettings,
   modelEffortLabel,
-  modelEffortSetting,
-} from "@/features/sessions/model/models";
+  modelEffortSetting
+} from "@/domain/models/model-settings";
 import { LAYER } from "@/shared/lib/layers";
 import { OrchestrationActions } from "./orchestration-actions";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";

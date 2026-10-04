@@ -7,12 +7,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { Popover } from "@/shared/ui/Popover";
-import {
-  getModelSnapshot,
-  resolveModel,
-  subscribeModels,
-  type ModelSetting,
-} from "../model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { getModelSnapshot, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import type { ModelSetting } from "@/domain/models/agent-model";
 import type { HarnessId } from "@/domain/harness/harness";
 
 type Props = {

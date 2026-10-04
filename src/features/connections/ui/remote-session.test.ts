@@ -9,7 +9,7 @@ import {
 } from "@/features/sessions/ui/SessionPane";
 import type { Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type { AgentModel } from "@/features/sessions/model/models";
+import type { AgentModel } from "@/domain/models/agent-model";
 import { rememberRemoteProject } from "../model/remote-projects";
 import { preloadRemoteSession } from "./RemoteSession";
 import { rememberRemoteSession, remoteSessionFor } from "../model/connections";

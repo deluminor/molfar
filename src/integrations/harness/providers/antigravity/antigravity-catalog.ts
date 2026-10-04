@@ -1,5 +1,5 @@
 import { homeDir } from "@/platform/tauri/fs";
-import { setHarnessModels } from "@/features/sessions/model/models";
+import { setHarnessModels } from "../../core/models/catalog-store";
 import { AcpClient } from "../../core/acp";
 import {
   killChild,

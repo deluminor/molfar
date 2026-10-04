@@ -1,9 +1,9 @@
 import type {
   AgentModel,
   ModelSetting,
-  ModelSettingChoice,
-} from "@/features/sessions/model/models";
-import { MODELS } from "@/features/sessions/model/models";
+  ModelSettingChoice
+} from "@/domain/models/agent-model";
+import { MODELS } from "@/integrations/harness/core/models/catalog";
 import { CLAUDE_MODEL_CATALOG } from "@/integrations/harness/providers/claude/claude-catalog";
 import type { HostModelCatalog, RemoteProvider } from "./protocol";
 

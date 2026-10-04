@@ -59,7 +59,7 @@ import {
   subscribeNotesEnabled,
 } from "@/features/settings/model/settings";
 import { getComposerDraft, setComposerDraft } from "../model/draft-cache";
-import { resolveModel } from "../model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { isAstraModel } from "../model/astra-welcome";
 import { isOpus55Model } from "../model/opus-welcome";
 import { AstraWelcome } from "./AstraWelcome";

@@ -1,5 +1,5 @@
 import { HARNESSES } from "@/domain/harness/harness";
-import { modelsFor } from "@/features/sessions/model/models";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
 import {
   isHarnessAvailable,
   probeHarnessAvailability,

@@ -12,7 +12,7 @@ import { newSession } from "./session";
 import type { BuiltinSkill } from "@/features/skills/model/skills";
 import { harnessForTurn } from "./second-opinion";
 import { groupTurns } from "./transcript-activity";
-import { resolveModel } from "./models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 
 /**
  * Harnesses with an isolated text runner suitable for read-only side

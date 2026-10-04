@@ -31,13 +31,15 @@ import {
   loadQuickProjectAppearance,
 } from "./QuickProjectIcon";
 import {
-  getModelSnapshot,
-  subscribeModels,
-  mergeModelSettings,
   loadLastModelSettings,
   saveLastModelSettings,
   saveRecentModelChoice,
 } from "@/features/sessions/model/models";
+import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-model";
+import {
+  getModelSnapshot,
+  subscribeModels
+} from "@/integrations/harness/core/models/catalog-store";
 import { DEFAULT_RUNTIME_MODE, type RuntimeMode } from "@/domain/session/runtime-mode";
 import { HARNESS_TITLE, harnessSupportsAttachments, type HarnessId } from "@/domain/harness/harness";
 import { Popover } from "@/shared/ui/Popover";

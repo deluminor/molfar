@@ -4,11 +4,13 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QuickModelSelector } from "./QuickModelSelector";
 import {
-  resetHarnessModelOverlays,
-  setHarnessModels,
   saveLastModelSettings,
-  type AgentModel,
 } from "@/features/sessions/model/models";
+import {
+  resetHarnessModelOverlays,
+  setHarnessModels
+} from "@/integrations/harness/core/models/catalog-store";
+import type { AgentModel } from "@/domain/models/agent-model";
 
 vi.mock("@tauri-apps/api/event", () => ({
   emit: vi.fn().mockResolvedValue(undefined),

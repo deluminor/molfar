@@ -1,4 +1,4 @@
-import { nativeModelId } from "@/features/sessions/model/models";
+import { nativeModelId } from "../../core/models/resolve-model";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import { AcpSubagents } from "../../core/acp-subagents";

@@ -1,8 +1,6 @@
 import { homeDir } from "@/platform/tauri/fs";
-import {
-  setHarnessModels,
-  type AgentModel,
-} from "@/features/sessions/model/models";
+import { setHarnessModels } from "../../core/models/catalog-store";
+import type { AgentModel } from "@/domain/models/agent-model";
 import { AcpClient } from "../../core/acp";
 import {
   killChild,

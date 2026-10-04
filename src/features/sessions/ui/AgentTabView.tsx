@@ -7,7 +7,7 @@ import {
   subscribeTranscriptJump,
 } from "../model/transcript-jump";
 import { HarnessIcon } from "./HarnessIcon";
-import { findModel } from "../model/models";
+import { findModel } from "@/integrations/harness/core/models/catalog-store";
 import { sessionDisplayTitle } from "@/domain/session/title";
 import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";

@@ -64,10 +64,10 @@ import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjec
 import {
   defaultSessionChoice,
   firstEnabledHarness,
-  modelsFor,
   preferredModelId,
-  resolveModel,
 } from "@/features/sessions/model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
 import {
   loadSessionFolders,
   subscribeSessionFolders,

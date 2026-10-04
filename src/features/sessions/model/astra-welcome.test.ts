@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AgentModel } from "./models";
+import type { AgentModel } from "@/domain/models/agent-model";
 import { isAstraModel } from "./astra-welcome";
 
 const astra: AgentModel = {

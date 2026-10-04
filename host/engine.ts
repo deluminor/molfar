@@ -7,7 +7,7 @@ import {
   applyHarnessEvent,
   stopStreaming,
 } from "../src/integrations/harness/core/apply";
-import { resolveModel } from "../src/features/sessions/model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { isVisionImage } from "../src/features/sessions/model/attachments";
 import type {
   HarnessEvent,

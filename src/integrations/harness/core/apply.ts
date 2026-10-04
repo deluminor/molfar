@@ -17,7 +17,7 @@ import {
 } from "./preview";
 import { joinStreamText } from "./stream-text";
 import { isReviewablePlan } from "@/features/sessions/model/plan";
-import { resolveModel } from "@/features/sessions/model/models";
+import { resolveModel } from "./models/resolve-model";
 import type { HarnessEvent } from "./types";
 
 /** Apply one delivery batch without copying the transcript for every token. */

@@ -1,4 +1,4 @@
-import { nativeModelId } from "@/features/sessions/model/models";
+import { nativeModelId } from "../../core/models/resolve-model";
 import { taskListFromToolInput } from "@/domain/session/task-list";
 import { normalizeProjectPath } from "@/features/projects/model/recents";
 import type { UserQuestionReply } from "@/domain/session/user-question";

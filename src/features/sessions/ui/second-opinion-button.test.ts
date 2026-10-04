@@ -21,7 +21,7 @@ vi.mock("@/integrations/harness/core/registry", () => ({
 
 import { SecondOpinionButton } from "./SecondOpinionButton";
 import { isHarnessAvailable } from "@/integrations/harness/core/availability";
-import { resetHarnessModelOverlays, setHarnessModels } from "../model/models";
+import { resetHarnessModelOverlays, setHarnessModels } from "@/integrations/harness/core/models/catalog-store";
 
 let container: HTMLDivElement;
 let root: Root;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AgentModel } from "./models";
+import type { AgentModel } from "@/domain/models/agent-model";
 import { isOpus55Model, opusStage } from "./opus-welcome";
 
 const opus: AgentModel = {

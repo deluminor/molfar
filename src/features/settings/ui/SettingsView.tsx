@@ -166,19 +166,16 @@ import {
 import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 import { loginHarness } from "@/integrations/harness/core/auth";
 import {
-  defaultModelId,
   firstEnabledHarness,
-  getModelSnapshot,
   loadDefaultModels,
   loadHiddenPickerProviders,
   loadLastModelChoice,
-  modelsFor,
-  resolveModel,
   saveDefaultModel,
   saveLastModelChoice,
   savePickerProviderVisible,
-  subscribeModels,
 } from "@/features/sessions/model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { defaultModelId, getModelSnapshot, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
 import {
   pathKey,
   prettyCwd,

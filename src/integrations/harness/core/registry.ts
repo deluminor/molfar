@@ -5,7 +5,7 @@ import type { HarnessId } from "@/domain/harness/harness";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import type { GeneratedSessionTitle } from "@/domain/session/generated-title";
 import type { PrContent } from "@/features/source-control/model/git-text";
-import { hasLiveCatalog } from "@/features/sessions/model/models";
+import { hasLiveCatalog } from "./models/catalog-store";
 import type { UserQuestionReply } from "@/domain/session/user-question";
 import type { NativeCommandProvider } from "./native-commands";
 import type {

@@ -64,7 +64,7 @@ import type { Attachment } from "@/domain/session/attachment";
 import { visibleUserPrompt } from "@/features/orchestration/model/orchestration";
 import { playCue } from "@/features/settings/model/sounds";
 import { legacyTaskListFromText } from "@/domain/session/task-list";
-import { resolveModel } from "../model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { harnessForTurn } from "../model/second-opinion";
 import { Shimmer } from "@/shared/ui/Shimmer";
 import { hasPendingApproval } from "@/domain/session/session-state";

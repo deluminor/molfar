@@ -1,4 +1,4 @@
-import type { AgentModel } from "./models";
+import type { AgentModel } from "@/domain/models/agent-model";
 
 export function isAstraModel(model: AgentModel): boolean {
   return [model.id, model.nativeId, model.name].some(

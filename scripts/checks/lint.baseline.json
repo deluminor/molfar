@@ -702,9 +702,6 @@
   "src/features/sessions/model/edit-last-turn.test.ts": {
     "lint/style/noNonNullAssertion": 3
   },
-  "src/features/sessions/model/models.ts": {
-    "lint/suspicious/noAssignInExpressions": 2
-  },
   "src/features/sessions/model/molfar-tool-call.ts": {
     "lint/suspicious/noPrototypeBuiltins": 1
   },
@@ -1201,6 +1198,9 @@
   },
   "src/integrations/harness/core/json-rpc.ts": {
     "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/core/models/catalog-store.ts": {
+    "lint/suspicious/noAssignInExpressions": 2
   },
   "src/integrations/harness/core/registry.test.ts": {
     "lint/style/noNonNullAssertion": 1

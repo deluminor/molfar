@@ -14,12 +14,13 @@ import {
 } from "@/features/projects/model/recents";
 import {
   defaultSessionChoice,
-  hasLiveCatalog,
-  modelsFor,
-  resolveModel,
-  setHarnessModels,
-  type AgentModel,
 } from "@/features/sessions/model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import {
+  hasLiveCatalog,
+  modelsFor, setHarnessModels
+} from "@/integrations/harness/core/models/catalog-store";
+import type { AgentModel } from "@/domain/models/agent-model";
 import type { WorkspaceMode } from "@/domain/session/session";
 import type { Attachment } from "@/domain/session/attachment";
 import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";

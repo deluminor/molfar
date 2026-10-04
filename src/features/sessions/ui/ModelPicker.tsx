@@ -20,19 +20,17 @@ import {
 } from "react";
 import {
   coerceModelPickerTab,
-  getModelSnapshot,
   getPickerVisibilitySnapshot,
-  isEffortSettingId,
   loadFavoriteModels,
   loadRecentModelChoices,
   saveFavoriteModels,
   showProviderInModelPicker,
-  subscribeModels,
   subscribePickerVisibility,
-  type AgentModel,
   type ModelPickerTab,
-  type ModelSetting,
 } from "../model/models";
+import { getModelSnapshot, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import { isEffortSettingId } from "@/domain/models/model-settings";
+import type { AgentModel, ModelSetting } from "@/domain/models/agent-model";
 import {
   isProviderHidden,
   projectProvidersRevision,

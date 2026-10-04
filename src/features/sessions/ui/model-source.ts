@@ -1,10 +1,10 @@
 import { createContext, useContext } from "react";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   findModel,
-  modelsFor,
-  resolveModel,
-  type AgentModel,
-} from "../model/models";
+  modelsFor
+} from "@/integrations/harness/core/models/catalog-store";
+import type { AgentModel } from "@/domain/models/agent-model";
 import type { HarnessId } from "@/domain/harness/harness";
 import {
   hasProbedHarnessAvailability,

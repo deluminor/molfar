@@ -11,20 +11,20 @@ import {
 import { emit } from "@tauri-apps/api/event";
 import { Check, RotateCcw, Search, Star, Zap } from "@/shared/ui/icons";
 import {
-  findModel,
-  getModelSnapshot,
   getPickerVisibilitySnapshot,
   loadFavoriteModels,
-  modelEffortSetting,
-  modelsFor,
   preferredModelSettings,
   saveFavoriteModels,
   showProviderInModelPicker,
-  subscribeModels,
   subscribePickerVisibility,
-  type AgentModel,
   type ModelPickerTab,
 } from "@/features/sessions/model/models";
+import {
+  findModel,
+  getModelSnapshot, modelsFor, subscribeModels
+} from "@/integrations/harness/core/models/catalog-store";
+import { modelEffortSetting } from "@/domain/models/model-settings";
+import type { AgentModel } from "@/domain/models/agent-model";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { HARNESS_TITLE, HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";

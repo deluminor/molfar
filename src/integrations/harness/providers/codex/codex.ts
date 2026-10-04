@@ -1,4 +1,4 @@
-import { nativeModelId } from "@/features/sessions/model/models";
+import { nativeModelId } from "../../core/models/resolve-model";
 import { sameProviderAccountId } from "@/features/providers/model/provider-accounts";
 import {
   exhaustedWindowResetAt,

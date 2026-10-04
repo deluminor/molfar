@@ -16,7 +16,7 @@ import {
 import { INTERRUPT_MESSAGE } from "./in-flight";
 import type { Block } from "@/domain/session/block";
 import type { ToolPreview } from "@/domain/session/agent-run";
-import { allModels } from "./models";
+import { allModels } from "@/integrations/harness/core/models/catalog-store";
 import { molfarWorkSummary } from "./molfar-tool-call";
 
 export type ToolCallState = "pending" | "accepted" | "rejected";

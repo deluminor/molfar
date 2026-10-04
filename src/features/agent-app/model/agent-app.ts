@@ -10,12 +10,11 @@ import { normalizeNoteTags, noteTitle, type Note, type NoteUpsert } from "@/feat
 import { looksLikeProject } from "@/features/projects/model/recents";
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import {
-  mergeModelSettings,
-  modelEffortSetting,
-  modelsFor,
   preferredModelId,
-  resolveModel,
 } from "@/features/sessions/model/models";
+import { mergeModelSettings, resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
+import { modelEffortSetting } from "@/domain/models/model-settings";
 import { consumeOperatorCommand } from "@/features/sessions/model/operator-command";
 import type { Session } from "@/domain/session/session";
 import {

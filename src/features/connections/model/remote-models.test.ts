@@ -5,7 +5,7 @@ import {
   remoteModelControls,
   sameModelSettings,
 } from "./remote-models";
-import type { AgentModel } from "@/features/sessions/model/models";
+import type { AgentModel } from "@/domain/models/agent-model";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

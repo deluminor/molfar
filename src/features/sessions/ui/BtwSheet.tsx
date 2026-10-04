@@ -5,7 +5,8 @@ import { Composer } from "./Composer";
 import { AgentTranscript } from "./AgentTranscript";
 import { GlassBackdrop } from "@/app/shell/GlassBackdrop";
 import { BtwQuestionBurst, type BurstRect } from "./BtwQuestionBurst";
-import { preferredModelSettings, resolveModel } from "../model/models";
+import { preferredModelSettings } from "../model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   btwOpenTargetTurnId,
   btwThreadBlocks,

@@ -5,7 +5,7 @@ import {
   attachmentPathText,
   promptText,
 } from "@/features/sessions/model/attachments";
-import type { AgentModel, ModelSetting } from "@/features/sessions/model/models";
+import type { AgentModel, ModelSetting } from "@/domain/models/agent-model";
 import { isTaskListToolName } from "@/domain/session/task-list";
 import type { PiFlavor } from "./pi-flavor";
 import { extractToolPreview, titleFromToolInput } from "../../core/preview";

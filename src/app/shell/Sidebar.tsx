@@ -57,7 +57,7 @@ import { formatInteger } from "@/shared/lib/numbers";
 import type { GitFileDiffKind, GitHistoryCommit } from "@/platform/tauri/fs";
 import { IS_MAC, MOD } from "@/platform/tauri/platform";
 import { copyText } from "@/platform/tauri/clipboard";
-import { resolveModel } from "@/features/sessions/model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import type { OpenFileFn } from "@/features/search/model/search";
 import { sessionDisplayTitle } from "@/domain/session/title";
 import { nextUnseenFinishedSessions } from "@/features/sessions/model/session-done";

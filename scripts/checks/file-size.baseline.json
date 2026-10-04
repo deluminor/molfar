@@ -9,7 +9,7 @@
     "lines": 926
   },
   "host/server.ts": {
-    "lines": 626
+    "lines": 627
   },
   "host/service.ts": {
     "lines": 275
@@ -135,7 +135,7 @@
     "lines": 1248
   },
   "src/app/App.tsx": {
-    "lines": 11695
+    "lines": 11697
   },
   "src/app/hooks/use-workspace-navigation.ts": {
     "lines": 288
@@ -168,7 +168,7 @@
     "lines": 606
   },
   "src/features/agent-app/model/agent-app.ts": {
-    "lines": 668
+    "lines": 667
   },
   "src/features/automations/model/automation-templates.ts": {
     "lines": 363
@@ -333,10 +333,10 @@
     "lines": 282
   },
   "src/features/quick-composer/model/quick-composer.ts": {
-    "lines": 300
+    "lines": 301
   },
   "src/features/quick-composer/ui/QuickComposer.tsx": {
-    "lines": 877
+    "lines": 879
   },
   "src/features/quick-composer/ui/QuickModelSelector.tsx": {
     "lines": 440
@@ -366,7 +366,7 @@
     "lines": 467
   },
   "src/features/sessions/model/models.ts": {
-    "lines": 1002
+    "lines": 368
   },
   "src/features/sessions/model/omp-interjections.ts": {
     "lines": 362
@@ -387,7 +387,7 @@
     "lines": 328
   },
   "src/features/sessions/ui/BtwSheet.tsx": {
-    "lines": 867
+    "lines": 868
   },
   "src/features/sessions/ui/Composer.tsx": {
     "lines": 2839
@@ -396,10 +396,10 @@
     "lines": 491
   },
   "src/features/sessions/ui/ModelPicker.tsx": {
-    "lines": 1589
+    "lines": 1587
   },
   "src/features/sessions/ui/ModelSettings.tsx": {
-    "lines": 260
+    "lines": 257
   },
   "src/features/sessions/ui/PromptOutline.tsx": {
     "lines": 382
@@ -408,7 +408,7 @@
     "lines": 383
   },
   "src/features/sessions/ui/SecondOpinionButton.tsx": {
-    "lines": 604
+    "lines": 601
   },
   "src/features/sessions/ui/SessionPane.tsx": {
     "lines": 972
@@ -432,7 +432,7 @@
     "lines": 645
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "lines": 4462
+    "lines": 4459
   },
   "src/features/skills/model/skills.ts": {
     "lines": 541
@@ -537,7 +537,7 @@
     "lines": 835
   },
   "src/integrations/harness/providers/claude/claude-catalog.ts": {
-    "lines": 581
+    "lines": 578
   },
   "src/integrations/harness/providers/claude/claude-protocol.ts": {
     "lines": 1186
@@ -549,7 +549,7 @@
     "lines": 1821
   },
   "src/integrations/harness/providers/codex/codex-catalog.ts": {
-    "lines": 307
+    "lines": 303
   },
   "src/integrations/harness/providers/codex/codex-protocol.ts": {
     "lines": 1383
@@ -561,7 +561,7 @@
     "lines": 1376
   },
   "src/integrations/harness/providers/cursor/cursor-catalog.ts": {
-    "lines": 489
+    "lines": 485
   },
   "src/integrations/harness/providers/cursor/cursor-text.ts": {
     "lines": 422
@@ -591,7 +591,7 @@
     "lines": 623
   },
   "src/integrations/harness/providers/opencode/opencode-catalog.ts": {
-    "lines": 263
+    "lines": 259
   },
   "src/integrations/harness/providers/opencode/opencode-client.ts": {
     "lines": 290

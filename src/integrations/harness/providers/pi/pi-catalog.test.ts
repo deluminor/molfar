@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/platform/tauri/fs", () => ({
   homeDir: vi.fn(async () => "/home/test"),
 }));
-vi.mock("@/features/sessions/model/models", () => ({
+vi.mock("../../core/models/catalog-store", () => ({
   setHarnessModels: vi.fn(),
 }));
 vi.mock("../../core/child", () => ({
