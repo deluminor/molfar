@@ -69,7 +69,7 @@
     "lint/complexity/useOptionalChain": 3,
     "lint/correctness/noUnsafeFinally": 2,
     "lint/correctness/useExhaustiveDependencies": 95,
-    "lint/style/noNonNullAssertion": 9,
+    "lint/style/noNonNullAssertion": 8,
     "lint/suspicious/noAssignInExpressions": 1,
     "lint/suspicious/useIterableCallbackReturn": 1
   },

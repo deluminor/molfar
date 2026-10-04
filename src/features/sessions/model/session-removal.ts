@@ -41,7 +41,7 @@ type ReplacementSeed = {
   modelSettings?: Record<string, string>;
 };
 
-type WorkspaceChange =
+export type SessionRemovalChange =
   | { type: "stopped"; session: Session }
   | { type: "orchestrationReleased"; leadId: string }
   | {
@@ -52,7 +52,7 @@ type WorkspaceChange =
       savedSummary?: SessionSummary;
     };
 
-type SessionRemovalMode = "archive" | "delete";
+export type SessionRemovalMode = "archive" | "delete";
 
 type SessionRemovalOptions = {
   mode: SessionRemovalMode;
@@ -60,7 +60,7 @@ type SessionRemovalOptions = {
   replacement: ReplacementSeed;
   workspace: {
     snapshot(): Workspace;
-    apply(change: WorkspaceChange): void;
+    apply(change: SessionRemovalChange): void;
   };
   confirm(tabs: WorkspaceTab[], mode: SessionRemovalMode): Promise<boolean>;
   stop(sessionId: string): Promise<unknown>;

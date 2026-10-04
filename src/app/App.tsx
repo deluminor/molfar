@@ -35,6 +35,11 @@ import {
   renameSession,
   type SessionActionsDeps,
 } from "./workspace/flows/session-history/session-actions";
+import {
+  applySessionRemovalChange,
+  type SessionRemovalChangeDeps,
+} from "./workspace/flows/session-history/session-removal-change";
+import { findUnusedSessionWorktree } from "./workspace/flows/session-history/unused-worktree";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
@@ -161,7 +166,6 @@ import {
   attachOrchestrationWorkers,
   consolidateOrchestrationTabs,
   prepareOrchestrationWorkerDetails,
-  releaseOrchestrationWorker,
 } from "@/features/orchestration/model/orchestration-workspace";
 import {
   OrchestrationActions,
@@ -683,7 +687,6 @@ import {
 } from "@/features/projects/model/project-return";
 import {
   historyWithLiveSessions,
-  mergeHistorySummary,
   mergeProjectHistorySummary,
   summaryFromSession,
 } from "@/features/sessions/data/session-history";
@@ -713,6 +716,7 @@ import {
   type ResumedWorkspace,
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
+import { filesInWorkspaceTabs } from "@/features/workspace/model/tab-files";
 
 const SearchView = lazySurface(
   async () => {
@@ -893,13 +897,6 @@ function openSessionIds(tabs: WorkspaceTab[]): Set<string> {
     for (const id of leafIds(tab.layout)) ids.add(id);
   }
   return ids;
-}
-
-function filesInWorkspaceTabs(tabs: readonly WorkspaceTab[]): FilePaneTab[] {
-  return tabs.flatMap((tab) => [
-    ...tab.editorPanes.flatMap((pane) => pane.files),
-    ...(tab.terminalPanes ?? []).flatMap((pane) => pane.files),
-  ]);
 }
 
 /** In-app confirm. `window.confirm` is swallowed when a macOS menu accelerator fires. */
@@ -4375,6 +4372,30 @@ function Workspace({
     ],
   );
 
+  const activateTabRef = useRef(activateTab);
+  activateTabRef.current = activateTab;
+  const removalChangeDeps = useStableFlow(
+    (): SessionRemovalChangeDeps => ({
+      store: workspaceStore,
+      openSessions: () => sessionsRef.current,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        setSessions(next);
+      },
+      commitTabs: (next) => {
+        tabsRef.current = next;
+        setTabs(next);
+      },
+      activeTabId: () => activeTabIdRef.current,
+      activateTab: (tabId) => activateTabRef.current(tabId),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      loader: sessionLoader,
+      persistence: sessionPersistence,
+      cache: loadedSessionCache.current,
+      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
+    }),
+  );
+
   const onRemoveHistorySession = useCallback(
     async (
       sessionId: string,
@@ -4399,27 +4420,11 @@ function Workspace({
       let deleteWorktreePath: string | undefined;
       if (mode === "delete" && !skipDeleteConfirm) {
         deleteConfirmationPending.current = true;
-        let unusedWorktree: string | undefined;
-        if (seed?.worktreeCwd) {
-          try {
-            const { worktrees } = await listWorktrees(seed.cwd);
-            const tree = worktrees.find(
-              (entry) => pathKey(entry.path) === pathKey(seed.worktreeCwd!),
-            );
-            if (
-              tree &&
-              !tree.isMain &&
-              !tree.locked &&
-              tree.branch &&
-              worktreeSessionIds(tree, sessionsRef.current).every(
-                (id) => id === sessionId,
-              )
-            )
-              unusedWorktree = tree.path;
-          } catch {
-            // A failed lookup must never offer filesystem cleanup.
-          }
-        }
+        const unusedWorktree = await findUnusedSessionWorktree(
+          sessionId,
+          seed,
+          sessionsRef.current,
+        );
         if (!unusedWorktree) {
           deleteConfirmationPending.current = false;
         } else {
@@ -4454,96 +4459,12 @@ function Workspace({
               activeTabId: activeTabIdRef.current,
               dirtyFiles: dirtyFilesRef.current,
             }),
-            apply: (change) => {
-              if (change.type === "stopped") {
-                const next = sessionsRef.current.map((session) =>
-                  session.id === sessionId ? change.session : session,
-                );
-                sessionsRef.current = next;
-                setSessions(next);
-                return;
-              }
-
-              if (change.type === "orchestrationReleased") {
-                const released = sessionsRef.current.map((session) =>
-                  releaseOrchestrationWorker(session, change.leadId),
-                );
-                sessionsRef.current = released;
-                setSessions(released);
-                for (const [id, cached] of loadedSessionCache.current) {
-                  if (
-                    releaseOrchestrationWorker(cached, change.leadId) !== cached
-                  )
-                    invalidateLoadedSession(id);
-                }
-                // Pending reads may still carry the deleted lead's ownership.
-                for (const id of sessionLoader.loadingIds()) {
-                  invalidateLoadedSession(id);
-                }
-                sessionPersistence.mapPending((pending) =>
-                  releaseOrchestrationWorker(pending, change.leadId),
-                );
-                const releaseSummary = (entry: SessionSummary) =>
-                  entry.orchestrationLeadId === change.leadId
-                    ? { ...entry, orchestrationLeadId: undefined }
-                    : entry;
-                setHistory((current) => current.map(releaseSummary));
-                setStoredLinkedSessions((current) =>
-                  current.map(releaseSummary),
-                );
-                return;
-              }
-
-              const { removal } = change;
-              sessionPersistence.forgetSaved(sessionId);
-              sessionPersistence.dropPending(sessionId);
-              const closingFiles = filesInWorkspaceTabs(removal.closedTabs);
-              setDirtyFiles((current) => {
-                const next = new Set(current);
-                for (const file of closingFiles) next.delete(file.id);
-                return next;
-              });
-              sessionsRef.current = removal.sessions;
-              tabsRef.current = removal.tabs;
-              setSessions(removal.sessions);
-              setTabs(removal.tabs);
-              if (removal.activeTabId !== activeTabIdRef.current) {
-                activateTab(removal.activeTabId);
-              }
-              const activeTab = removal.tabs.find(
-                (tab) => tab.id === removal.activeTabId,
-              );
-              setComposerFocused(
-                removal.sessions.some(
-                  (session) => session.id === activeTab?.focusedId,
-                ),
-              );
-              if (change.mode === "archive") {
-                if (change.session && shouldPersistSession(change.session)) {
-                  rememberLoadedSession(
-                    loadedSessionCache.current,
-                    change.session,
-                  );
-                }
-                const archived =
-                  change.savedSummary ??
-                  summary ??
-                  (change.session && summaryFromSession(change.session));
-                if (archived) {
-                  setHistory((current) =>
-                    mergeHistorySummary(current, {
-                      ...archived,
-                      archived: true,
-                    }),
-                  );
-                }
-              } else {
-                setHistory((current) =>
-                  current.filter((entry) => entry.id !== sessionId),
-                );
-                void refreshHistory(sidebarCwd);
-              }
-            },
+            apply: (change) =>
+              applySessionRemovalChange(
+                removalChangeDeps,
+                { sessionId, summary },
+                change,
+              ),
           },
           confirm: async (closedTabs, removalMode) => {
             const files = filesInWorkspaceTabs(closedTabs);
@@ -4588,10 +4509,8 @@ function Workspace({
       }
     },
     [
-      activateTab,
       history,
       invalidateLoadedSession,
-      refreshHistory,
       sidebarCwd,
       stopSessionForRemoval,
       tabCloseScope,
