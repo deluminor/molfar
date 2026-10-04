@@ -53,6 +53,13 @@ jobs:
         with:
           node-version: 24
 
+      # prepare.mjs excludes MonoCode commits via refs/remotes/upstream/main
+      - name: Fetch MonoCode upstream
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git remote add upstream https://github.com/hardbeat920/monocode.git 2>/dev/null || git remote set-url upstream https://github.com/hardbeat920/monocode.git
+          git fetch --no-tags --quiet upstream main
+
       - name: Bump version and write release notes
         id: bump
         if: github.event_name == 'workflow_dispatch'

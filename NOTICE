@@ -6,8 +6,7 @@ distributed under the MIT License. The original copyright notice and
 permission notice are retained in LICENSE. MOLFAR is maintained in its own
 repository with its own releases and architecture, and selected MonoCode
 changes are still ported into it. MonoCode's authors and contributors, and
-the full history of their work, are listed in the MonoCode repository and
-mirrored on this repository's `upstream-main` branch.
+the full history of their work, are listed in the MonoCode repository.
 
 Each desktop build embeds THIRD-PARTY-NOTICES.md with the licenses of the
 JavaScript dependencies bundled into the app, and THIRD-PARTY-NOTICES-RUST.md
