@@ -123,9 +123,9 @@ import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { runUpdateFlow } from "@/features/updates/model/updater";
 import { MenuBar } from "./shell/MenuBar";
 import { Sidebar } from "./shell/Sidebar";
-import { useStore } from "zustand";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
+import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
@@ -179,7 +179,6 @@ import {
   withDockSide,
   withDockSize,
   type DockSide,
-  type ProjectTerminalDock as ProjectTerminal,
 } from "@/features/projects/model/project-terminal";
 
 import {
@@ -987,10 +986,13 @@ function Workspace({
     setTabs,
     setActiveTabId: setActiveTabIdState,
     setTabVisitNav,
+    setProjectTerminals,
+    setLastDockSide,
+    setProjectTerminalFocused,
   } = useWorkspaceActions(workspaceStore);
-  const projectCwd = useStore(workspaceStore, (state) => state.projectCwd);
-  const recents = useStore(workspaceStore, (state) => state.recents);
-  const sessions = useStore(workspaceStore, (state) => state.sessions);
+  const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
+  const recents = useWorkspaceField(workspaceStore, "recents");
+  const sessions = useWorkspaceField(workspaceStore, "sessions");
   const [sessionDeleteDialog, setSessionDeleteDialog] = useState<{
     title: string;
     unusedWorktree: string;
@@ -999,18 +1001,13 @@ function Workspace({
   const switchingWorktrees = useRef(new Map<string, string>());
   const removingWorktreePaths = useRef(new Set<string>());
   const deleteConfirmationPending = useRef(false);
-  const tabs = useStore(workspaceStore, (state) => state.tabs);
-  const [projectTerminals, setProjectTerminals] = useState<ProjectTerminal[]>(
-    () => windowTransfer?.projectTerminals ?? resumed?.projectTerminals ?? [],
-  );
-  /** Dock side a brand-new project's terminal starts with, persisted in the workspace snapshot. */
-  const [lastDockSide, setLastDockSide] = useState<DockSide | null>(
-    () => resumed?.lastDockSide ?? null,
-  );
+  const tabs = useWorkspaceField(workspaceStore, "tabs");
+  const projectTerminals = useWorkspaceField(workspaceStore, "projectTerminals");
+  const lastDockSide = useWorkspaceField(workspaceStore, "lastDockSide");
   const lastDockSideRef = useRef(lastDockSide);
   lastDockSideRef.current = lastDockSide;
-  const [projectTerminalFocused, setProjectTerminalFocused] = useState(false);
-  const activeTabId = useStore(workspaceStore, (state) => state.activeTabId);
+  const projectTerminalFocused = useWorkspaceField(workspaceStore, "projectTerminalFocused");
+  const activeTabId = useWorkspaceField(workspaceStore, "activeTabId");
   const [composerFocused, setComposerFocused] = useState(() => {
     if (windowTransfer) return true;
     if (!resumed) return false;
@@ -1358,7 +1355,7 @@ function Workspace({
 
   const tabVisitRef = useRef(emptyTabVisitHistory(activeTabId));
   const tabVisitFromHistoryRef = useRef(false);
-  const tabVisitNav = useStore(workspaceStore, (state) => state.tabVisitNav);
+  const tabVisitNav = useWorkspaceField(workspaceStore, "tabVisitNav");
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
   const lastPersisted = useRef(new Map<string, string>());

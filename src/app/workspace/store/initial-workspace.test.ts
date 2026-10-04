@@ -24,6 +24,11 @@ describe("initialWorkspaceState", () => {
     expect(state.tabs[0]?.focusedId).toBe(state.sessions[0]?.id);
     expect(state.activeTabId).toBe(state.tabs[0]?.id);
     expect(state.tabVisitNav).toEqual({ canBack: false, canForward: false });
+    expect(state).toMatchObject({
+      projectTerminals: [],
+      lastDockSide: null,
+      projectTerminalFocused: false,
+    });
   });
 
   it("takes a resumed workspace and reopens its project", () => {
@@ -38,6 +43,7 @@ describe("initialWorkspaceState", () => {
         tabs: [tab],
         activeTabId: tab.id,
         projectCwd: "/work/resumed",
+        lastDockSide: "right",
       },
     });
 
@@ -45,6 +51,7 @@ describe("initialWorkspaceState", () => {
     expect(state.sessions).toEqual([session]);
     expect(state.tabs).toEqual([tab]);
     expect(state.activeTabId).toBe(tab.id);
+    expect(state.lastDockSide).toBe("right");
   });
 
   it("takes a transferred window's sessions and tabs as they are", () => {

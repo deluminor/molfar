@@ -67,7 +67,10 @@
                   "setSessions",
                   "setTabs",
                   "setActiveTabId",
-                  "setTabVisitNav"
+                  "setTabVisitNav",
+                  "setProjectTerminals",
+                  "setLastDockSide",
+                  "setProjectTerminalFocused"
                 ]
               }
             ]

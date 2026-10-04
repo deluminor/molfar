@@ -18,5 +18,8 @@ export function createWorkspaceStore(
     setTabs: fieldSetter(store, "tabs"),
     setActiveTabId: fieldSetter(store, "activeTabId"),
     setTabVisitNav: fieldSetter(store, "tabVisitNav"),
+    setProjectTerminals: fieldSetter(store, "projectTerminals"),
+    setLastDockSide: fieldSetter(store, "lastDockSide"),
+    setProjectTerminalFocused: fieldSetter(store, "projectTerminalFocused"),
   }));
 }

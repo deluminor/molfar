@@ -11,6 +11,9 @@ export function testWorkspaceState(
     tabs: [],
     activeTabId: "",
     tabVisitNav: { canBack: false, canForward: false },
+    projectTerminals: [],
+    lastDockSide: null,
+    projectTerminalFocused: false,
     ...overrides,
   };
 }

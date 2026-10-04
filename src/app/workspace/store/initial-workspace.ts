@@ -31,5 +31,9 @@ export function initialWorkspaceState(
     tabs: windowTransfer?.tabs ?? resumed?.tabs ?? [tab],
     activeTabId: windowTransfer?.activeTabId ?? resumed?.activeTabId ?? tab.id,
     tabVisitNav: { canBack: false, canForward: false },
+    projectTerminals:
+      windowTransfer?.projectTerminals ?? resumed?.projectTerminals ?? [],
+    lastDockSide: resumed?.lastDockSide ?? null,
+    projectTerminalFocused: false,
   };
 }
