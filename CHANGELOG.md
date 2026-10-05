@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-05
+
 ### Changed
 
 - **Brand:** darker app icon — glowing reptile eye with a fibrous iris on a near-black tile, one comet orbit and a faint astrolabe ring; reads clearly in the Dock at small sizes. The macOS asset catalog (`Assets.car`) is rebuilt so the Dock picks it up.
@@ -37,6 +39,7 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/deluminor/molfar/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/deluminor/molfar/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/deluminor/molfar/releases/tag/v1.0.0
