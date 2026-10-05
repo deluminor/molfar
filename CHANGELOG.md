@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Brand:** darker app icon — glowing reptile eye with a fibrous iris on a near-black tile, one comet orbit and a faint astrolabe ring; reads clearly in the Dock at small sizes. The macOS asset catalog (`Assets.car`) is rebuilt so the Dock picks it up.
+
 ## [1.0.1] - 2026-10-04
 
 ### Changed
