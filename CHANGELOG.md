@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-10-07
+
 ### Added
 
 - **Companion**: pair a phone or iPad with this desktop over Tailscale (Settings → Companion, QR code) to follow Familiars and open sessions, send messages and photos, answer approvals and questions, switch permission modes, start new sessions, browse the Knowledge vault, and read or add notes while MOLFAR runs. The gateway is off by default, binds only loopback or the Tailscale address, and stores only hashes of per-device tokens. See [docs/companion.md](docs/companion.md).
+- **companion:** add gateway for pairing phones and tablets
 
 ## [1.0.4] - 2026-10-07
 
@@ -123,7 +126,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/deluminor/molfar/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/deluminor/molfar/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/deluminor/molfar/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/deluminor/molfar/compare/v1.0.1...v1.0.2
