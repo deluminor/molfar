@@ -294,16 +294,16 @@ import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { PixelMascot } from "../../projects/ui/PixelMascot";
 import {
-  defaultMonoName,
-  listMonos,
-  monoLook,
-  monoProjectsPhrase,
-  monosSnapshot,
-  subscribeMonos,
-  type Mono,
-} from "../../monos/model/mono";
-import { resetMonoDefaults } from "../../monos/model/monoFiles";
-import { ConfirmReset } from "../../monos/ui/ConfirmReset";
+  defaultFamiliarName,
+  listFamiliars,
+  familiarLook,
+  familiarProjectsPhrase,
+  familiarsSnapshot,
+  subscribeFamiliars,
+  type Familiar,
+} from "../../familiars/model/familiar";
+import { resetFamiliarDefaults } from "../../familiars/model/familiarFiles";
+import { ConfirmReset } from "../../familiars/ui/ConfirmReset";
 import {
   filterKeybindings,
   currentKeybindings,
@@ -319,7 +319,7 @@ import {
   loadLiveAgentsEnabled,
   loadModelControls,
   loadNotesEnabled,
-  loadMonosEnabled,
+  loadFamiliarsEnabled,
   loadKeybindingOverrides,
   loadQuickComposerEnabled,
   loadQuickComposerShortcut,
@@ -336,8 +336,8 @@ import {
   saveLiveAgentsEnabled,
   saveModelControls,
   saveNotesEnabled,
-  saveMonosEnabled,
-  subscribeMonosEnabled,
+  saveFamiliarsEnabled,
+  subscribeFamiliarsEnabled,
   saveKeybindingOverride,
   validateKeybindingShortcut,
   saveQuickComposerEnabled,
@@ -583,8 +583,8 @@ export function SettingsView({
               ) : null}
               {section === "chat" ? <ChatPage /> : null}
               {section === "keybindings" ? <KeybindingsPage /> : null}
-              {section === "monos" ? (
-                <MonosPage />
+              {section === "familiars" ? (
+                <FamiliarsPage />
               ) : null}
               {section === "mcp" ? (
                 <McpSettings cwd={cwd} recents={recents} />
@@ -4041,37 +4041,37 @@ function formatDate(value: number): string {
   }
 }
 
-/** Monos on or off, and each Mono the user has. */
-function MonosPage() {
+/** Familiars on or off, and each Familiar the user has. */
+function FamiliarsPage() {
   const enabled = useSyncExternalStore(
-    subscribeMonosEnabled,
-    loadMonosEnabled,
+    subscribeFamiliarsEnabled,
+    loadFamiliarsEnabled,
     () => true,
   );
-  const snapshot = useSyncExternalStore(subscribeMonos, monosSnapshot);
-  const monos = useMemo(() => listMonos(), [snapshot]);
+  const snapshot = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  const familiars = useMemo(() => listFamiliars(), [snapshot]);
 
   return (
     <>
-      <Group title="Monos">
+      <Group title="Familiars">
         <Row
-          id="monos-enabled"
-          label="Show monos"
+          id="familiars-enabled"
+          label="Show familiars"
           description="Agents of your own on the project rail. Each works on the projects you give it, remembers what matters and picks up habits it runs on its own. Turn this off to hide them."
         >
-          <Toggle label="Show monos" on={enabled} onChange={saveMonosEnabled} />
+          <Toggle label="Show familiars" on={enabled} onChange={saveFamiliarsEnabled} />
         </Row>
       </Group>
       <Group
-        id="mono-list"
-        title="Your monos"
-        description="Add one with the plus beside Monos on the rail. Choose its projects from its details."
+        id="familiar-list"
+        title="Your familiars"
+        description="Add one with the plus beside Familiars on the rail. Choose its projects from its details."
       >
-        {monos.length ? (
-          monos.map((mono) => <MonoRow key={mono.id} mono={mono} />)
+        {familiars.length ? (
+          familiars.map((familiar) => <FamiliarRow key={familiar.id} familiar={familiar} />)
         ) : (
           <p className="px-4 py-3.5 text-[12px] text-content/45">
-            No monos yet.
+            No familiars yet.
           </p>
         )}
       </Group>
@@ -4079,8 +4079,8 @@ function MonosPage() {
   );
 }
 
-function MonoRow({ mono }: { mono: Mono }) {
-  const look = monoLook(mono);
+function FamiliarRow({ familiar }: { familiar: Familiar }) {
+  const look = familiarLook(familiar);
   return (
     <Row
       label={
@@ -4096,17 +4096,17 @@ function MonoRow({ mono }: { mono: Mono }) {
       }
       description={
         look.projects.length
-          ? `Works on ${monoProjectsPhrase(look.projects)}`
+          ? `Works on ${familiarProjectsPhrase(look.projects)}`
           : "No projects yet"
       }
     >
       <ConfirmReset
-        label="Reset Mono"
+        label="Reset Familiar"
         title={`Reset ${look.name} to its defaults?`}
-        body={`Its soul goes back to the default and its name to ${defaultMonoName(look.mascot)}. Changes to its soul can't be recovered.`}
+        body={`Its soul goes back to the default and its name to ${defaultFamiliarName(look.mascot)}. Changes to its soul can't be recovered.`}
         kept="Its conversation, projects, memory and habits will be kept."
-        failure="Could not reset the Mono."
-        onConfirm={() => resetMonoDefaults(mono.id)}
+        failure="Could not reset the Familiar."
+        onConfirm={() => resetFamiliarDefaults(familiar.id)}
       >
         {(open, ref) => (
           <button

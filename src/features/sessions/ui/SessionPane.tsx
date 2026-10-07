@@ -61,22 +61,22 @@ import {
 } from "../model/transcriptJump";
 import { EmptySession } from "./EmptySession";
 import {
-  monoForSession,
-  monoLook,
-  monosSnapshot,
-  subscribeMonos,
-} from "../../monos/model/mono";
-import { MonoHeader } from "../../monos/ui/MonoHeader";
-import { MonoComposer } from "../../monos/ui/MonoComposer";
-import { MonoUsageLimitNotice } from "../../monos/ui/MonoUsageLimitNotice";
+  familiarForSession,
+  familiarLook,
+  familiarsSnapshot,
+  subscribeFamiliars,
+} from "../../familiars/model/familiar";
+import { FamiliarHeader } from "../../familiars/ui/FamiliarHeader";
+import { FamiliarComposer } from "../../familiars/ui/FamiliarComposer";
+import { FamiliarUsageLimitNotice } from "../../familiars/ui/FamiliarUsageLimitNotice";
 import { QuestionForm } from "./QuestionForm";
 import {
-  monoMessageDeliveries,
-  monoPendingTranscriptBlocks,
-} from "../../monos/model/monoMessaging";
+  familiarMessageDeliveries,
+  familiarPendingTranscriptBlocks,
+} from "../../familiars/model/familiarMessaging";
 import { MessageQueue } from "./MessageQueue";
-import { useMonoTranscript } from "../../monos/hooks/useMonoTranscript";
-import { MONO_PAGE_TURNS } from "../data/sessionStore";
+import { useFamiliarTranscript } from "../../familiars/hooks/useFamiliarTranscript";
+import { FAMILIAR_PAGE_TURNS } from "../data/sessionStore";
 import { useComposerDockMotion } from "./useComposerDockMotion";
 import { MOD } from "../../../platform/tauri/platform";
 import {
@@ -105,7 +105,7 @@ import {
   subscribeProjectChatBackground,
 } from "../../projects/model/projectChatBackground";
 import { useProjectBackgroundEffect } from "../../projects/ui/useProjectBackgroundEffect";
-import { monoChatBackground } from "../../monos/model/monoBackground";
+import { familiarChatBackground } from "../../familiars/model/familiarBackground";
 import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
 import {
   loadChatBackgroundPath,
@@ -128,12 +128,12 @@ export type SessionPaneProps = {
   inSplit: boolean;
   composerFocused: boolean;
   composerFocusToken?: number;
-  onShowMonoActivity?: (
+  onShowFamiliarActivity?: (
     sessionId: string,
     turnId: string,
     blocks: Block[],
   ) => void;
-  monoActivityTurnId?: string;
+  familiarActivityTurnId?: string;
   recents: RecentProject[];
   hideProjectPicker?: boolean;
   onFocus: (sessionId: string) => void;
@@ -330,8 +330,8 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onQuestionInteraction,
   onOpenFile,
   onOpenDiff,
-  onShowMonoActivity,
-  monoActivityTurnId,
+  onShowFamiliarActivity,
+  familiarActivityTurnId,
   onOpenPlan,
   onBuildPlan,
   onSecondOpinion,
@@ -358,14 +358,14 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const title = sessionDisplayTitle(session.title, session.harness);
   const isEmpty = session.blocks.length === 0;
   const messageDeliveries = useMemo(
-    () => monoMessageDeliveries(session),
+    () => familiarMessageDeliveries(session),
     [session.queuedMessages, session.queueStatus],
   );
   const recallLastTurnRef = useRef<(() => void) | null>(null);
   const remote = remoteSession;
-  // A Mono's chat is a running conversation; what was said stays said.
+  // A Familiar's chat is a running conversation; what was said stays said.
   const editLastTurnSupported =
-    !remote && !monoForSession(session.id) && canEditLastTurn(session);
+    !remote && !familiarForSession(session.id) && canEditLastTurn(session);
   const turnRecall = editLastTurnSupported ? lastTurnRecall(session) : null;
   const draftBlock = sessionDraftBlock(session);
   useSyncExternalStore(
@@ -384,12 +384,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
     loadNewThreadBackgroundEffect,
   );
   // Renames, instructions and mascot picks re-render the agent's look.
-  useSyncExternalStore(subscribeMonos, monosSnapshot);
-  const mono = monoForSession(session.id);
-  const agent = mono ? monoLook(mono) : undefined;
-  // A Mono shows only its own background, never the project's or the app's.
-  const projectBackground = mono
-    ? monoChatBackground(mono.id)
+  useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  const familiar = familiarForSession(session.id);
+  const agent = familiar ? familiarLook(familiar) : undefined;
+  // A Familiar shows only its own background, never the project's or the app's.
+  const projectBackground = familiar
+    ? familiarChatBackground(familiar.id)
     : loadProjectChatBackgroundSettings(projectKey(session.cwd));
   const projectBackgroundUrl = useProjectBackgroundEffect(
     projectBackground?.path ?? null,
@@ -492,9 +492,9 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const onJumpToBottomReady = useCallback((jump: () => void) => {
     jumpToBottomRef.current = jump;
   }, []);
-  const monoTranscript = useMonoTranscript(
+  const familiarTranscript = useFamiliarTranscript(
     session,
-    !!monoForSession(session.id),
+    !!familiarForSession(session.id),
   );
   const revealBlockRef = useRef<((blockId: string) => boolean) | null>(null);
   const onRevealReady = useCallback((reveal: (blockId: string) => boolean) => {
@@ -519,13 +519,13 @@ const LocalSessionPane = memo(function LocalSessionPane({
     async (blockId: string | null, query?: string) => {
       if (navigateBlockRef.current?.(blockId, query)) return true;
       if (!blockId) return false;
-      if (!(await monoTranscript.reveal(blockId))) return false;
+      if (!(await familiarTranscript.reveal(blockId))) return false;
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve()),
       );
       return navigateBlockRef.current?.(blockId, query) ?? false;
     },
-    [monoTranscript.reveal],
+    [familiarTranscript.reveal],
   );
   const jumpRequest = useSyncExternalStore(
     subscribeTranscriptJump,
@@ -865,7 +865,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
             {remoteSessionLoading ? null : isEmpty ? (
               agent ? (
                 <div className="scrollbar-none h-full min-h-0 overflow-y-auto">
-                  <MonoHeader agent={agent} greeting />
+                  <FamiliarHeader agent={agent} greeting />
                 </div>
               ) : session.inboxAsk ? (
                 <div className="scrollbar-none h-full min-h-0 overflow-y-auto">
@@ -898,27 +898,27 @@ const LocalSessionPane = memo(function LocalSessionPane({
                 >
                   <AgentTranscript
                     blocks={
-                      agent && !monoTranscript.viewingOlderPage
-                        ? monoPendingTranscriptBlocks(
+                      agent && !familiarTranscript.viewingOlderPage
+                        ? familiarPendingTranscriptBlocks(
                             session,
-                            monoTranscript.blocks,
+                            familiarTranscript.blocks,
                           )
-                        : monoTranscript.blocks
+                        : familiarTranscript.blocks
                     }
-                    historicalBlockIds={monoTranscript.historicalBlockIds}
-                    initialTurns={agent ? MONO_PAGE_TURNS : undefined}
-                    pageSize={agent ? MONO_PAGE_TURNS : undefined}
-                    hasEarlier={monoTranscript.hasEarlier}
+                    historicalBlockIds={familiarTranscript.historicalBlockIds}
+                    initialTurns={agent ? FAMILIAR_PAGE_TURNS : undefined}
+                    pageSize={agent ? FAMILIAR_PAGE_TURNS : undefined}
+                    hasEarlier={familiarTranscript.hasEarlier}
                     loadEarlierOnScroll={!!agent}
                     onLoadEarlier={
-                      agent ? monoTranscript.loadEarlier : undefined
+                      agent ? familiarTranscript.loadEarlier : undefined
                     }
                     onReturnToLatest={
-                      monoTranscript.viewingOlderPage
-                        ? monoTranscript.latest
+                      familiarTranscript.viewingOlderPage
+                        ? familiarTranscript.latest
                         : undefined
                     }
-                    busy={!!session.busy && !monoTranscript.viewingOlderPage}
+                    busy={!!session.busy && !familiarTranscript.viewingOlderPage}
                     visible={visible}
                     cwd={workCwd}
                     agentName={agent?.name}
@@ -930,13 +930,13 @@ const LocalSessionPane = memo(function LocalSessionPane({
                       agent ? () => onResumeQueue(session.id) : undefined
                     }
                     onShowWork={
-                      agent && onShowMonoActivity
+                      agent && onShowFamiliarActivity
                         ? (turnId, blocks) =>
-                            onShowMonoActivity(session.id, turnId, blocks)
+                            onShowFamiliarActivity(session.id, turnId, blocks)
                         : undefined
                     }
-                    activeWorkTurnId={monoActivityTurnId}
-                    // A Mono's turn keeps copy, save as note and the time.
+                    activeWorkTurnId={familiarActivityTurnId}
+                    // A Familiar's turn keeps copy, save as note and the time.
                     daySeparators={!!agent}
                     hideTurnMetrics={!!agent}
                     harness={session.harness}
@@ -1002,7 +1002,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     onScrollerChange={setTranscriptScroller}
                     editingLastTurn={editingLastTurn}
                     onEditLastTurn={
-                      editLastTurnSupported && !monoTranscript.viewingOlderPage
+                      editLastTurnSupported && !familiarTranscript.viewingOlderPage
                         ? () => {
                             onFocus(session.id);
                             recallLastTurnRef.current?.();
@@ -1013,7 +1013,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                       remote ||
                       session.inboxAsk ||
                       session.worktreeRemoved ||
-                      monoTranscript.viewingOlderPage ||
+                      familiarTranscript.viewingOlderPage ||
                       draftBlock ? undefined : (
                         <SessionReview
                           sessionId={session.id}
@@ -1044,7 +1044,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     visible={visible}
                     focused={focused}
                     onNavigate={navigateBlock}
-                    onSearch={monoTranscript.search}
+                    onSearch={familiarTranscript.search}
                     side={
                       session.linkedWorkItemUpdateCard &&
                       session.linkedWorkItemUpdateCard.status !== "loading"
@@ -1053,7 +1053,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     }
                   />
                 ) : null}
-                {/* One mark per message would crowd a Mono's endless chat. */}
+                {/* One mark per message would crowd a Familiar's endless chat. */}
                 {agent ? null : (
                   <PromptOutline
                     blocks={session.blocks}
@@ -1066,8 +1066,8 @@ const LocalSessionPane = memo(function LocalSessionPane({
                 <TranscriptJumpToBottom
                   visibility={jumpVisibility}
                   onJump={() => {
-                    if (monoTranscript.viewingOlderPage) {
-                      monoTranscript.latest();
+                    if (familiarTranscript.viewingOlderPage) {
+                      familiarTranscript.latest();
                       requestAnimationFrame(() => jumpToBottomRef.current?.());
                     } else jumpToBottomRef.current?.();
                   }}
@@ -1086,7 +1086,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                 <>
                   <MessageQueue
                     messages={(session.queuedMessages ?? []).filter(
-                      (message) => !!message.monoSessionCompletion,
+                      (message) => !!message.familiarSessionCompletion,
                     )}
                     status={session.queueStatus}
                     sendingId={session.sendingQueuedMessageId}
@@ -1106,7 +1106,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     />
                   ) : null}
                   {session.usageLimit ? (
-                    <MonoUsageLimitNotice
+                    <FamiliarUsageLimitNotice
                       session={session}
                       onModelChange={(harness, model) =>
                         onModelChange(session.id, harness, model)
@@ -1123,7 +1123,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                       }
                     />
                   ) : null}
-                  <MonoComposer
+                  <FamiliarComposer
                     key={session.id}
                     sessionId={session.id}
                     name={agent.name}

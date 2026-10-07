@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed **Monos** to **Familiars** across the product, code, and docs (MOLFAR branding for the upstream Mono agents feature). Existing localStorage keys, the `monos/` data folder, and SQLite `mono_*` transcript tables migrate automatically on first use.
+
 ## [1.0.3] - 2026-10-07
 
 ### Added

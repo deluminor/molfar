@@ -42,15 +42,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Mono transcript pages", () => {
+describe("Familiar transcript pages", () => {
   const messages = (start: number, count: number): Block[] => Array.from({ length: count }, (_, i) => ({ id: `user-${start + i}`, role: "user", text: `Message ${start + i}` }));
 
-  it("renders ten Mono turns while ordinary sessions retain twenty", () => {
+  it("renders ten Familiar turns while ordinary sessions retain twenty", () => {
     const blocks = messages(0, 30);
     act(() => root.render(createElement(AgentTranscript, { key: "normal", blocks })));
     expect(container.querySelectorAll(".transcript-turn")).toHaveLength(20);
     expect(container.textContent).toContain("Load earlier messages");
-    act(() => root.render(createElement(AgentTranscript, { key: "mono", blocks, initialTurns: 10, pageSize: 10, loadEarlierOnScroll: true, bottomAligned: true })));
+    act(() => root.render(createElement(AgentTranscript, { key: "familiar", blocks, initialTurns: 10, pageSize: 10, loadEarlierOnScroll: true, bottomAligned: true })));
     expect(container.querySelectorAll(".transcript-turn")).toHaveLength(10);
     expect(container.textContent).not.toContain("Message 19");
     expect(container.textContent).not.toContain("Load earlier messages");
@@ -427,7 +427,7 @@ describe("transcript scrolling", () => {
     expect(geometry.top).toBe(700);
   });
 
-  it("keeps an opening Mono pinned through scroll events queued before layout settles", () => {
+  it("keeps an opening Familiar pinned through scroll events queued before layout settles", () => {
     const showJump = vi.fn();
     act(() => root.render(createElement(AgentTranscript, {
       blocks: Array.from({ length: 10 }, (_, i): Block => ({ id: `u${i}`, role: "user", text: `Question ${i}` })),
@@ -459,7 +459,7 @@ describe("transcript scrolling", () => {
   });
 
   it.each([false, true])(
-    "keeps manual Mono scrolling near the bottom unpinned (busy: %s)",
+    "keeps manual Familiar scrolling near the bottom unpinned (busy: %s)",
     (busy) => {
       const blocks: Block[] = [
         { id: "user", role: "user", text: "Explain auth" },

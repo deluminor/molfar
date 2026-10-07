@@ -51,8 +51,8 @@ afterEach(async () => {
 
 describe("project background dialog", () => {
   it("offers only the image when locked to a dimmed Haze", async () => {
-    saveProjectChatBackgroundSettings("mono:a", {
-      path: "/backgrounds/mono.png",
+    saveProjectChatBackgroundSettings("familiar:a", {
+      path: "/backgrounds/familiar.png",
       emptyOpacity: 0.24,
       sessionOpacity: 0.24,
       scope: "all",
@@ -62,8 +62,8 @@ describe("project background dialog", () => {
     await act(async () =>
       root.render(
         createElement(ProjectBackgroundDialog, {
-          project: "mono:a",
-          name: "MonoCrab",
+          project: "familiar:a",
+          name: "FamiliarCrab",
           locked: true,
           onClose: vi.fn(),
         }),

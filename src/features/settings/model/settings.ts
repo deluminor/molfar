@@ -26,7 +26,7 @@ export type SettingsSectionId =
   | "providers"
   | "mcp"
   | "skills"
-  | "monos"
+  | "familiars"
   | "inbox"
   | "worktrees"
   | "archive";
@@ -118,12 +118,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     keywords: "skill instructions prompt",
   },
   {
-    id: "monos",
+    id: "familiars",
     group: "agents",
-    label: "Monos",
+    label: "Familiars",
     description:
       "The resident agent beside your tabs, and which projects have one.",
-    keywords: "mono resident agent mascot claim project title bar",
+    keywords: "familiar resident agent mascot claim project title bar",
   },
   {
     id: "inbox",
@@ -186,16 +186,16 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "claude tools connections oauth authenticate login add remove",
   },
   {
-    id: "monos-enabled",
-    section: "monos",
-    label: "Show monos",
-    keywords: "mono agent rail hide",
+    id: "familiars-enabled",
+    section: "familiars",
+    label: "Show familiars",
+    keywords: "familiar agent rail hide",
   },
   {
-    id: "mono-list",
-    section: "monos",
-    label: "Your monos",
-    keywords: "mono reset soul name projects",
+    id: "familiar-list",
+    section: "familiars",
+    label: "Your familiars",
+    keywords: "familiar reset soul name projects",
   },
   {
     id: "project-worktrees",
@@ -803,31 +803,49 @@ export function subscribeNotesEnabled(onStoreChange: () => void) {
     window.removeEventListener(NOTES_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
-const MONOS_ENABLED_KEY = "molfar.monosEnabled";
+const FAMILIARS_ENABLED_KEY = "molfar.familiarsEnabled";
+const LEGACY_MONOS_ENABLED_KEY = "molfar.monosEnabled";
 
-export const MONOS_ENABLED_DEFAULT = true;
+export const FAMILIARS_ENABLED_DEFAULT = true;
 
-/** Fired on `window` when monos are shown or hidden. */
-export const MONOS_ENABLED_CHANGE_EVENT = "molfar:monos-enabled-change";
+/** Fired on `window` when familiars are shown or hidden. */
+export const FAMILIARS_ENABLED_CHANGE_EVENT = "molfar:familiars-enabled-change";
 
-/** Whether monos show in the title bar at all, across every project. */
-export function loadMonosEnabled(): boolean {
-  return readFlag(MONOS_ENABLED_KEY) ?? MONOS_ENABLED_DEFAULT;
+/** Whether familiars show in the title bar at all, across every project. */
+export function loadFamiliarsEnabled(): boolean {
+  const current = readFlag(FAMILIARS_ENABLED_KEY);
+  if (current != null) return current;
+  const legacy = readFlag(LEGACY_MONOS_ENABLED_KEY);
+  if (legacy != null) {
+    writeFlag(FAMILIARS_ENABLED_KEY, legacy);
+    try {
+      localStorage.removeItem(LEGACY_MONOS_ENABLED_KEY);
+    } catch {
+      // private mode
+    }
+    return legacy;
+  }
+  return FAMILIARS_ENABLED_DEFAULT;
 }
 
-export function saveMonosEnabled(value: boolean) {
-  writeFlag(MONOS_ENABLED_KEY, value);
+export function saveFamiliarsEnabled(value: boolean) {
+  writeFlag(FAMILIARS_ENABLED_KEY, value);
+  try {
+    localStorage.removeItem(LEGACY_MONOS_ENABLED_KEY);
+  } catch {
+    // private mode
+  }
   if (typeof window === "undefined") return;
   window.dispatchEvent(
-    new CustomEvent<boolean>(MONOS_ENABLED_CHANGE_EVENT, { detail: value }),
+    new CustomEvent<boolean>(FAMILIARS_ENABLED_CHANGE_EVENT, { detail: value }),
   );
 }
 
-export function subscribeMonosEnabled(onStoreChange: () => void) {
+export function subscribeFamiliarsEnabled(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
-  window.addEventListener(MONOS_ENABLED_CHANGE_EVENT, onStoreChange);
+  window.addEventListener(FAMILIARS_ENABLED_CHANGE_EVENT, onStoreChange);
   return () =>
-    window.removeEventListener(MONOS_ENABLED_CHANGE_EVENT, onStoreChange);
+    window.removeEventListener(FAMILIARS_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
 const QUICK_COMPOSER_ENABLED_KEY = "molfar.quickComposerEnabled";
@@ -1072,7 +1090,7 @@ export const KEYBINDINGS: KeybindingRow[] = [
     when: "Always",
   },
   { command: "App: Switch Model", keys: `${MOD}.`, when: "Always" },
-  { command: "App: Toggle Mono", keys: `${MOD}I`, when: "Project with a mono" },
+  { command: "App: Toggle Familiar", keys: `${MOD}I`, when: "Project with a familiar" },
   {
     command: "Composer: Toggle Workspace",
     keys: `${MOD}${SHIFT}G`,

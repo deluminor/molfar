@@ -89,16 +89,16 @@ Start from a template (code review, security scan, incident triage, documentatio
 
 ![Automation templates and the list of scheduled runs](docs/architecture/images/automations.png)
 
-### Monos: persistent agents with memory and habits
+### Familiars: persistent agents with memory and habits
 
-A **Mono** is a long-lived agent on the project rail with its own conversation, assigned projects, name, pixel mascot, and color. The conversation survives app restarts, provider switches, and usage limits.
+A **Familiar** is a long-lived agent on the project rail with its own conversation, assigned projects, name, pixel mascot, and color. The conversation survives app restarts, provider switches, and usage limits.
 
-- **Soul** — editable Markdown standing instructions (`SOUL.md`); the Mono changes them only when asked.
+- **Soul** — editable Markdown standing instructions (`SOUL.md`); the Familiar changes them only when asked.
 - **Memory** — dated facts and preferences carried across conversations, with topic notes and a searchable archive instead of loading everything into every turn.
 - **Habits** — recurring tasks (hourly, daily, weekdays, weekly, local time) that run in background sessions while MOLFAR is open and post to the chat only when there is something worth reporting. Suggested habits wait for you to start them.
-- **Delegation** — through the local `app` CLI a Mono starts, reads, and messages sessions, manages worktrees, folders, and notes across its projects, and gets one consolidated report when delegated work finishes.
+- **Delegation** — through the local `app` CLI a Familiar starts, reads, and messages sessions, manages worktrees, folders, and notes across its projects, and gets one consolidated report when delegated work finishes.
 
-Soul and memory files live in the app's data folder. Settings → Monos can hide them or reset a Mono's name and instructions.
+Soul and memory files live in the app's data folder. Settings → Familiars can hide them or reset a Familiar's name and instructions.
 
 ### Knowledge: local Obsidian vaults as agent context
 
@@ -112,7 +112,7 @@ MOLFAR opens a local Obsidian vault directly — no plugin, no running Obsidian.
 
 ### Notes
 
-Project-scoped Markdown notes for decisions, checklists, and context worth reusing. Notes support tags, Source/Preview, **Add to chat**, and `@` mentions in the composer; agents with `/operator` access and Monos can list, read, create, and edit them.
+Project-scoped Markdown notes for decisions, checklists, and context worth reusing. Notes support tags, Source/Preview, **Add to chat**, and `@` mentions in the composer; agents with `/operator` access and Familiars can list, read, create, and edit them.
 
 ![Notes view with a tagged note in preview mode](docs/architecture/images/notes.png)
 
@@ -141,9 +141,9 @@ Interactive diagrams: [system overview](docs/architecture/molfar-system.html) ·
 
 | Layer                 | Responsibility                                                                                  |
 | --------------------- | ----------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Monos, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them  |
+| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them  |
 | **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model    |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Mono persistence, host metrics, Atlassian, local control CLI  |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI  |
 | **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine |
 
 The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
@@ -167,7 +167,7 @@ src/
 │   ├── inbox/           # Connectors incl. Confluence Docs
 │   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
 │   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
-│   ├── monos/           # Persistent agents: soul, memory, habits
+│   ├── familiars/           # Persistent agents: soul, memory, habits
 │   ├── orchestration/   # Lead/worker runs
 │   ├── agent-app/       # /operator app-tool surface
 │   └── …                # files, notes, terminal, automations, source-control, usage, settings
@@ -175,7 +175,7 @@ src/
 ├── platform/tauri/      # Browser ↔ Tauri adapters
 ├── shared/              # Reusable UI primitives (no feature logic)
 └── styles/              # Global CSS + design tokens
-src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, monos, control CLI
+src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, familiars, control CLI
 host/                    # Experimental remote host (Node) for always-on agent machines
 docs/
 ├── architecture/        # Interactive HTML diagrams, JSON sources, README images
@@ -189,7 +189,7 @@ docs/
 - **Rust owns sensitive integration calls.** Atlassian requests run in the Tauri core, so the stored credential is not exposed to the UI.
 - **Explicit permission modes.** Every session and automation declares how much authority its agent has.
 - **Scoped `/operator` access.** App control is granted per thread and only during an active agent turn.
-- **Unattended Mono habits.** Habit runs use full tool access in background sessions, so a habit is scheduled only after you start it. Runs execute one at a time, skip schedules missed by more than two hours, and stop on working-time or unanswered-approval limits; provider approvals surface in the Mono's chat.
+- **Unattended Familiar habits.** Habit runs use full tool access in background sessions, so a habit is scheduled only after you start it. Runs execute one at a time, skip schedules missed by more than two hours, and stop on working-time or unanswered-approval limits; provider approvals surface in the Familiar's chat.
 - **Worktree isolation.** Parallel tasks can run in separate Git checkouts.
 - **Reviewed knowledge injection.** Knowledge reaches an agent only through context you select and submit.
 
@@ -292,7 +292,7 @@ Type `/operator` at the start of a composer message to enable MOLFAR access in t
 - `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
 - `confluence.search` / `confluence.list` / `confluence.read` read Confluence through the connected Atlassian account.
 
-Monos always have this CLI in their own conversation, plus Mono-only actions: `soul.read` / `soul.update`, `memory.read` / `memory.search` / `memory.add` / `memory.replace` / `memory.remove`, `habits.list` / `habits.add` / `habits.update` / `habits.run` / `habits.remove`, and `chat.card` for PR, session, choice, and habit-suggestion cards. Habit runs and other sessions cannot change a Mono's soul.
+Familiars always have this CLI in their own conversation, plus Familiar-only actions: `soul.read` / `soul.update`, `memory.read` / `memory.search` / `memory.add` / `memory.replace` / `memory.remove`, `habits.list` / `habits.add` / `habits.update` / `habits.run` / `habits.remove`, and `chat.card` for PR, session, choice, and habit-suggestion cards. Habit runs and other sessions cannot change a Familiar's soul.
 
 Orchestration workers keep their scoped `control` workflow and do not receive this app access.
 

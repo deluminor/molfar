@@ -610,7 +610,7 @@ describe("settings navigation", () => {
       "providers",
       "mcp",
       "skills",
-      "monos",
+      "familiars",
       "inbox",
       "archive",
       "worktrees",

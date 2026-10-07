@@ -67,11 +67,11 @@ describe.each([
     "molfar:live-agents-enabled-change",
   ],
   [
-    "molfar.monosEnabled",
-    settings.loadMonosEnabled,
-    settings.saveMonosEnabled,
+    "molfar.familiarsEnabled",
+    settings.loadFamiliarsEnabled,
+    settings.saveFamiliarsEnabled,
     true,
-    "molfar:monos-enabled-change",
+    "molfar:familiars-enabled-change",
   ],
   [
     "molfar.closeToTray",

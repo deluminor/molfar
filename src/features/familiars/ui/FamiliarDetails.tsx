@@ -1,0 +1,242 @@
+import { useEffect, useState, type ReactNode } from "react";
+import type { HarnessId } from "../../sessions/model/session";
+import { ModelPicker, ModelSettingRows } from "../../sessions/ui/ModelPicker";
+import type { FamiliarLook, FamiliarState } from "../model/familiar";
+import {
+  loadFamiliarFiles,
+  subscribeFamiliarFiles,
+  type FamiliarFiles,
+} from "../model/familiarFiles";
+import { IconButton } from "../../../app/shell/TitleBar";
+import { Plus } from "../../../shared/ui/icons";
+import { HABITS_MAX } from "../model/familiarHabits";
+import { memoryLines } from "../model/familiarMemory";
+import { HabitPage } from "./HabitPage";
+import { NewHabitPage } from "./NewHabitPage";
+import { FamiliarProjects } from "./FamiliarProjects";
+import { FamiliarSettingsPage } from "./FamiliarSettingsPage";
+import { habitActions, HabitsList, useHabits } from "./FamiliarHabits";
+import { MemoryPage, SoulPage } from "./FamiliarFilePages";
+import { PageHeader, Property } from "./familiarPanelParts";
+import { PanelStack, type StackPage } from "./PanelStack";
+import { FamiliarSidebar, FamiliarSidebarHeader } from "./FamiliarSidebar";
+
+/** A page opened directly from Details, or one habit inside its list. */
+type Route =
+  | { kind: "habits" | "soul" | "memory" | "new-habit" }
+  | { kind: "habit"; id: string };
+
+type Props = {
+  open: boolean;
+  familiarId: string;
+  /** Its conversation's folder, which the model picker reads settings from. */
+  cwd: string;
+  agent: FamiliarLook;
+  state: FamiliarState;
+  harness: HarnessId;
+  model: string;
+  modelSettings: Record<string, string>;
+  onModelChange: (harness: HarnessId, model: string) => void;
+  onModelSettingsChange: (settings: Record<string, string>) => void;
+  onClose: () => void;
+  onReset?: () => Promise<void>;
+  windowControls?: ReactNode;
+};
+
+/**
+ * The Familiar's profile, model and projects in one panel. Its habits, soul and
+ * memory open directly as pages that slide over it.
+ */
+export function FamiliarDetails({
+  open,
+  familiarId,
+  cwd,
+  agent,
+  state,
+  harness,
+  model,
+  modelSettings,
+  onModelChange,
+  onModelSettingsChange,
+  onClose,
+  onReset,
+  windowControls,
+}: Props) {
+  const files = useFamiliarFiles(familiarId, state.status);
+  const habits = useHabits(familiarId, state.status);
+  const actions = habitActions(familiarId);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  // Another Familiar starts at its own front page.
+  useEffect(() => setRoutes([]), [familiarId]);
+  const push = (route: Route) => setRoutes((current) => [...current, route]);
+  const back = () => setRoutes((current) => current.slice(0, -1));
+
+  const pages: StackPage[] = routes.flatMap((route, depth): StackPage[] => {
+    if (route.kind === "habits")
+      return [
+        {
+          key: "habits",
+          node: (
+            <div className="flex min-h-0 flex-1 flex-col" data-familiar-habits>
+              <PageHeader title="Habits" onBack={back}>
+                <IconButton
+                  label={
+                    (habits?.length ?? 0) >= HABITS_MAX
+                      ? `At most ${HABITS_MAX} habits`
+                      : "New habit"
+                  }
+                  disabled={!habits || habits.length >= HABITS_MAX}
+                  onClick={() => push({ kind: "new-habit" })}
+                >
+                  <Plus className="size-3.5" strokeWidth={1.75} />
+                </IconButton>
+              </PageHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-none px-2 py-2">
+                <HabitsList
+                  habits={habits}
+                  actions={actions}
+                  onOpen={(id) => push({ kind: "habit", id })}
+                />
+              </div>
+            </div>
+          ),
+        },
+      ];
+    if (route.kind === "soul")
+      return [
+        {
+          key: "soul",
+          node: (
+            <SoulPage
+              familiarId={familiarId}
+              agent={agent}
+              files={files}
+              onBack={back}
+            />
+          ),
+        },
+      ];
+    if (route.kind === "memory")
+      return [
+        {
+          key: "memory",
+          node: <MemoryPage familiarId={familiarId} files={files} onBack={back} />,
+        },
+      ];
+    if (route.kind === "new-habit")
+      return [
+        {
+          key: "new-habit",
+          node: <NewHabitPage familiarId={familiarId} onBack={back} onCreated={back} />,
+        },
+      ];
+    if (route.kind !== "habit") return [];
+    // A habit removed while open closes its page.
+    const habit = habits?.find((entry) => entry.id === route.id);
+    if (!habit) return [];
+    return [
+      {
+        key: `habit:${route.id}:${depth}`,
+        node: (
+          <HabitPage
+            habit={habit}
+            color={agent.color}
+            cwd={cwd}
+            onBack={back}
+            onRunNow={() => actions.runNow(habit.id)}
+            onToggle={() => actions.toggle(habit.id)}
+            onRemove={() => {
+              actions.remove(habit.id);
+              back();
+            }}
+          />
+        ),
+      },
+    ];
+  });
+
+  return (
+    <FamiliarSidebar
+      open={open}
+      kind="details"
+      label={`${agent.name} details`}
+      color={agent.color}
+      windowControls={windowControls}
+    >
+      <PanelStack pages={pages}>
+        {/* Pages replace this header too, keeping their back button at the top. */}
+        <FamiliarSidebarHeader title="Details" onClose={onClose} />
+        <FamiliarSettingsPage
+          familiarId={familiarId}
+          agent={agent}
+          onOpen={(page) => push({ kind: page })}
+          onReset={onReset}
+          counts={{
+            habits: habits?.length,
+            memory: files ? memoryLines(files.memory).length : undefined,
+          }}
+        >
+          <dl className="flex flex-col gap-0.5 border-t border-stroke px-4 py-3">
+            <Property label="Model">
+              <ModelPicker
+                harness={harness}
+                model={model}
+                values={modelSettings}
+                project={cwd}
+                hideSettings
+                side="bottom"
+                variant="plain"
+                onChange={onModelChange}
+                onSettingsChange={onModelSettingsChange}
+              />
+            </Property>
+            <ModelSettingRows
+              harness={harness}
+              model={model}
+              values={modelSettings}
+              side="bottom"
+              onSettingsChange={onModelSettingsChange}
+              row={({ label, control }) => (
+                <Property label={label}>{control}</Property>
+              )}
+            />
+            <Property label="Projects">
+              <FamiliarProjects familiarId={familiarId} projects={agent.projects} />
+            </Property>
+          </dl>
+        </FamiliarSettingsPage>
+      </PanelStack>
+    </FamiliarSidebar>
+  );
+}
+
+/** The agent's files, reloaded when it finishes a turn or the app regains focus. */
+function useFamiliarFiles(
+  familiarId: string,
+  status: FamiliarState["status"],
+): FamiliarFiles | undefined {
+  const [files, setFiles] = useState<FamiliarFiles>();
+  const working = status === "working";
+  useEffect(() => {
+    let live = true;
+    const refresh = () => {
+      void loadFamiliarFiles(familiarId)
+        .then((next) => {
+          if (live) setFiles(next);
+        })
+        .catch((error) =>
+          console.warn("Could not load the Familiar's files", error),
+        );
+    };
+    refresh();
+    const stop = subscribeFamiliarFiles(refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      live = false;
+      stop();
+      window.removeEventListener("focus", refresh);
+    };
+    // A turn ending is when the agent may have written to its memory.
+  }, [familiarId, working]);
+  return files;
+}

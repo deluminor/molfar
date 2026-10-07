@@ -509,7 +509,7 @@ pub fn session_delete(
         .unwrap_or_default();
     image_paths.extend(persisted_paths);
     image_paths.extend(
-        crate::mono_transcript::generated_image_paths(&conn, &session_id)
+        crate::familiar_transcript::generated_image_paths(&conn, &session_id)
             .map_err(|e| e.to_string())?,
     );
     delete_session(&conn, &session_id).map_err(|e| e.to_string())?;
@@ -970,7 +970,7 @@ fn migrate(conn: &Connection) -> rusqlite::Result<()> {
     crate::reminders::ensure_table(conn)?;
     crate::automations::ensure_tables(conn)?;
     ensure_orchestration_history(conn)?;
-    crate::mono_transcript::ensure_tables(conn)?;
+    crate::familiar_transcript::ensure_tables(conn)?;
     Ok(())
 }
 
@@ -1310,8 +1310,8 @@ fn search_sessions_sql(include_archived: bool, cwd_scoped: bool) -> String {
                  OR CASE WHEN octet_length(blocks_json) <= ?2
                          THEN LOWER(blocks_json) LIKE LOWER(?1) ESCAPE '\\'
                          ELSE 0 END
-                 OR EXISTS(SELECT 1 FROM mono_blocks
-                           WHERE mono_blocks.session_id = sessions.id
+                 OR EXISTS(SELECT 1 FROM familiar_blocks
+                           WHERE familiar_blocks.session_id = sessions.id
                              AND search_text LIKE LOWER(?1) ESCAPE '\\'))",
     );
     if !include_archived {
@@ -1436,20 +1436,21 @@ fn search_sessions_with_connection(
                 String::from_utf8_lossy(value.as_bytes().map_err(|e| e.to_string())?).into_owned()
             }
         };
-        let blocks = if crate::mono_transcript::is_indexed(conn, &id).map_err(|e| e.to_string())? {
-            crate::mono_transcript::matching_blocks(
-                conn,
-                &id,
-                &needle,
-                MAX_MESSAGE_HITS - messages.len(),
-            )
-            .map_err(|e| e.to_string())?
-        } else {
-            let Ok(blocks) = serde_json::from_str::<Value>(&blocks_raw) else {
-                continue;
+        let blocks =
+            if crate::familiar_transcript::is_indexed(conn, &id).map_err(|e| e.to_string())? {
+                crate::familiar_transcript::matching_blocks(
+                    conn,
+                    &id,
+                    &needle,
+                    MAX_MESSAGE_HITS - messages.len(),
+                )
+                .map_err(|e| e.to_string())?
+            } else {
+                let Ok(blocks) = serde_json::from_str::<Value>(&blocks_raw) else {
+                    continue;
+                };
+                blocks
             };
-            blocks
-        };
         for hit in block_hits(&blocks, &needle) {
             messages.push(SessionSearchHit {
                 kind: "message".into(),
@@ -2055,20 +2056,20 @@ mod tests {
     use std::sync::atomic::AtomicUsize;
 
     #[test]
-    fn search_keeps_older_mono_messages_available_after_conversion() {
+    fn search_keeps_older_familiar_messages_available_after_conversion() {
         let store = SessionStore::open_in_memory().unwrap();
         let conn = store.lock_conn().unwrap();
-        let mut mono = sample("mono", "/tmp/a", "Mono");
-        mono.blocks = json!([{ "id":"old", "role":"user", "text":"Archived needle" }, { "id":"answer", "role":"assistant", "text":"Done" }]);
-        upsert_session(&conn, &mono).unwrap();
-        crate::mono_transcript::migrate_transcript(&conn, "mono").unwrap();
+        let mut familiar = sample("familiar", "/tmp/a", "Familiar");
+        familiar.blocks = json!([{ "id":"old", "role":"user", "text":"Archived needle" }, { "id":"answer", "role":"assistant", "text":"Done" }]);
+        upsert_session(&conn, &familiar).unwrap();
+        crate::familiar_transcript::migrate_transcript(&conn, "familiar").unwrap();
         let result = search_sessions(
             &conn,
             &SessionSearchOptions {
                 query: "Archived needle".into(),
                 cwd: None,
                 include_archived: false,
-                search_owner: "mono-search".into(),
+                search_owner: "familiar-search".into(),
             },
         )
         .unwrap();

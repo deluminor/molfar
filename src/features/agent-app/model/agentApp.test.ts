@@ -105,13 +105,13 @@ function fixture() {
     notes: vi.fn(async () => [note]),
     note: vi.fn(async (id) => (id === note.id ? note : null)),
     saveNote: vi.fn(async (input) => ({ ...note, ...input })),
-    isMono: () => false,
+    isFamiliar: () => false,
   };
   return { source, host };
 }
 
 describe("agent app commands", () => {
-  it("allows session inspection in a Mono's projects when its chat lives at home", () => {
+  it("allows session inspection in a Familiar's projects when its chat lives at home", () => {
     const { source } = fixture();
     source.cwd = "/home/user";
     const projects = ["/code/app", "/code/site"];
@@ -126,9 +126,9 @@ describe("agent app commands", () => {
     expect(canAccessAgentAppProject(source, "/code/app")).toBe(false);
   });
 
-  it.each([undefined, true])("reports completion of Mono launches with notifyOnComplete=%s", async (notifyOnComplete) => {
+  it.each([undefined, true])("reports completion of Familiar launches with notifyOnComplete=%s", async (notifyOnComplete) => {
     const { source, host } = fixture();
-    host.isMono = (id) => id === source.id;
+    host.isFamiliar = (id) => id === source.id;
     expect(
       await handleAgentApp(
         source,
@@ -165,9 +165,9 @@ describe("agent app commands", () => {
     );
   });
 
-  it("does not monitor a Mono's unsent draft by default", async () => {
+  it("does not monitor a Familiar's unsent draft by default", async () => {
     const { source, host } = fixture();
-    host.isMono = (id) => id === source.id;
+    host.isFamiliar = (id) => id === source.id;
     const result = await handleAgentApp(
       source,
       "draft",
@@ -183,7 +183,7 @@ describe("agent app commands", () => {
     );
   });
 
-  it.each([false, true])("leaves non-Mono launches unmonitored when habitRun=%s", async (habitRun) => {
+  it.each([false, true])("leaves non-Familiar launches unmonitored when habitRun=%s", async (habitRun) => {
     const { source, host } = fixture();
     host.isHabitRun = () => habitRun;
     const result = await handleAgentApp(
@@ -200,9 +200,9 @@ describe("agent app commands", () => {
     );
   });
 
-  it("reports completion of a sent follow-up to its calling Mono", async () => {
+  it("reports completion of a sent follow-up to its calling Familiar", async () => {
     const { source, host } = fixture();
-    host.isMono = (id) => id === source.id;
+    host.isFamiliar = (id) => id === source.id;
     expect(
       await handleAgentApp(
         source,
@@ -230,9 +230,9 @@ describe("agent app commands", () => {
     { reveal: true, notifyOnComplete: true },
     { reveal: true, draft: true },
     { reveal: true, placement: "right", besideSessionId: "other" },
-  ])("keeps Mono-launched sessions in the background for %j", async (options) => {
+  ])("keeps Familiar-launched sessions in the background for %j", async (options) => {
     const { source, host } = fixture();
-    host.isMono = (id) => id === source.id;
+    host.isFamiliar = (id) => id === source.id;
     await handleAgentApp(
       source,
       "background",
@@ -248,7 +248,7 @@ describe("agent app commands", () => {
 
   it("reports completion by default through split placement", async () => {
     const { source, host } = fixture();
-    host.isMono = (id) => id === source.id;
+    host.isFamiliar = (id) => id === source.id;
     await handleAgentApp(
       source,
       "monitored-split",
@@ -290,12 +290,12 @@ describe("agent app commands", () => {
       await expect(
         handleAgentApp(
           source,
-          "not-mono",
+          "not-familiar",
           action,
           { ...input, notifyOnComplete: true },
           host,
         ),
-      ).rejects.toThrow("only available in a Mono");
+      ).rejects.toThrow("only available in a Familiar");
       expect(host.start).not.toHaveBeenCalled();
       expect(host.send).not.toHaveBeenCalled();
       await handleAgentApp(
@@ -310,7 +310,7 @@ describe("agent app commands", () => {
 
   it("rejects completion reports for an unsent draft", async () => {
     const { source, host } = fixture();
-    host.isMono = () => true;
+    host.isFamiliar = () => true;
     await expect(
       handleAgentApp(
         source,
@@ -327,10 +327,10 @@ describe("agent app commands", () => {
     expect(host.start).not.toHaveBeenCalled();
   });
 
-  it("lets a Mono page its own chat without requiring a project", async () => {
+  it("lets a Familiar page its own chat without requiring a project", async () => {
     const { source, host } = fixture();
-    host.isMono = (id) => id === source.id;
-    host.readConversation = vi.fn(async () => ({ sessionId: source.id, title: "Mono", busy: false, hasDraft: false, turns: [], nextBefore: "older" }));
+    host.isFamiliar = (id) => id === source.id;
+    host.readConversation = vi.fn(async () => ({ sessionId: source.id, title: "Familiar", busy: false, hasDraft: false, turns: [], nextBefore: "older" }));
     const options = { before: "cursor", limit: 3, maxChars: 1200 };
     expect(await handleAgentApp(source, "own-chat", "sessions.read", { sessionId: source.id, ...options }, host)).toMatchObject({ nextBefore: "older" });
     expect(host.readConversation).toHaveBeenCalledWith(source, options);
@@ -580,8 +580,8 @@ describe("agent app commands", () => {
   ])("inherits a worktree only when launching in the source project: %s", async (project, expectedWorktree) => {
     const { source, host } = fixture();
     source.worktreeCwd = "/tmp/project-worktrees/source";
-    host.isMono = () => true;
-    host.monoOf = () => ({ id: "mono", projects: [source.cwd, "/tmp/other"] });
+    host.isFamiliar = () => true;
+    host.familiarOf = () => ({ id: "familiar", projects: [source.cwd, "/tmp/other"] });
     await handleAgentApp(source, "launch", "sessions.start", {
       prompt: "Review the project",
       project,
@@ -592,11 +592,11 @@ describe("agent app commands", () => {
     expect(launch.worktreeCwd).toBe(expectedWorktree);
   });
 
-  it("validates an explicit worktree in the Mono's selected project", async () => {
+  it("validates an explicit worktree in the Familiar's selected project", async () => {
     const { source, host } = fixture();
     source.worktreeCwd = "/tmp/project-worktrees/source";
-    host.isMono = () => true;
-    host.monoOf = () => ({ id: "mono", projects: [source.cwd, "/tmp/other"] });
+    host.isFamiliar = () => true;
+    host.familiarOf = () => ({ id: "familiar", projects: [source.cwd, "/tmp/other"] });
     const chosen = "/tmp/other-worktrees/feature";
     vi.mocked(host.worktrees).mockResolvedValue({
       worktrees: [{ ...featureWorktree, path: chosen }],

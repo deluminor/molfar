@@ -12,6 +12,8 @@ mod control;
 pub mod control_cli;
 mod cursor_store;
 mod external_editor;
+mod familiar;
+mod familiar_transcript;
 mod fs;
 mod gitlab;
 mod harness;
@@ -27,8 +29,6 @@ mod macos;
 mod macos_background;
 mod mcp;
 mod menu;
-mod mono;
-mod mono_transcript;
 mod notes;
 mod notifications;
 mod pasteboard;
@@ -488,10 +488,10 @@ pub fn run() {
             session_store::session_search,
             session_store::cancel_session_search,
             session_store::session_get,
-            mono_transcript::mono_session_get,
-            mono_transcript::mono_session_page,
-            mono_transcript::mono_session_upsert,
-            mono_transcript::mono_session_find,
+            familiar_transcript::familiar_session_get,
+            familiar_transcript::familiar_session_page,
+            familiar_transcript::familiar_session_upsert,
+            familiar_transcript::familiar_session_find,
             session_store::session_delete,
             session_store::session_set_archived,
             session_store::session_set_pinned,
@@ -515,9 +515,9 @@ pub fn run() {
             vault::vault_save,
             vault::vault_disconnect,
             vault::vault_asset_path,
-            mono::mono_load,
-            mono::mono_read,
-            mono::mono_save,
+            familiar::familiar_load,
+            familiar::familiar_read,
+            familiar::familiar_save,
             checkpoint::session_checkpoint_ensure,
             checkpoint::session_checkpoint_prepare,
             checkpoint::session_checkpoint_capture,

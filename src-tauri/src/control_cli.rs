@@ -117,9 +117,9 @@ const APP_USAGE: &str = r#"MOLFAR app access — use in a thread enabled by /ope
 
 Usage: {exe} app ACTION [--json JSON | --input FILE|-] [--request-id ID]
 
-A Mono works on several projects: add "project":"<path or name>" to the
+A Familiar works on several projects: add "project":"<path or name>" to the
 sessions.*, worktrees.* and folders.* actions to choose which one. It may be
-left out when the Mono has a single project.
+left out when the Familiar has a single project.
 
 Actions:
   models.list    {}  Available providers, models, settings and permission modes.
@@ -133,7 +133,7 @@ Actions:
                   Submit a follow-up to an idle session in this project.
                   A busy session is rejected. Reuse --request-id on retries.
                   Optional notifyOnComplete:true asks for a completion report
-                  in the calling Mono's chat. It waits until that Mono is idle.
+                  in the calling Familiar's chat. It waits until that Familiar is idle.
   sessions.draft {"sessionId":"...","prompt":"..."}
                   Save an unsent draft in an idle project session. Existing
                   drafts are preserved; send or remove one in MOLFAR first.
@@ -149,14 +149,14 @@ Actions:
                   session in this project, including one just created. Set
                   draft:true to save the prompt unsent; no agent turn runs.
                   Otherwise the turn is submitted.
-                  Submitted sessions notify the calling Mono by default when
-                  this turn completes, fails or is cancelled. The Mono reviews
+                  Submitted sessions notify the calling Familiar by default when
+                  this turn completes, fails or is cancelled. The Familiar reviews
                   it and reports back once idle. Set notifyOnComplete:false
                   when the user asks not to receive a report. Drafts do not
                   notify; notifyOnComplete:true cannot be combined with draft:true.
-                  Sessions monitored during the same Mono turn form one group:
+                  Sessions monitored during the same Familiar turn form one group:
                   their results arrive together after every session stops.
-                  The Mono reviews the whole group and gives one combined report.
+                  The Familiar reviews the whole group and gives one combined report.
                   Returns after creation/acceptance, not agent completion;
                   use its ID with folders.move immediately. Optional model,
                   effort, modelSettings, permission mode and workspace choice
@@ -189,13 +189,13 @@ Actions:
                   List root pages in a space, or children of a page/folder.
                   parentKind is optional (page|folder); omit to try both.
   confluence.read   {"id":"..."}  Page markdown, or folder table of contents.
-  soul.read      {}  Mono's own conversation only. Current SOUL.md text and hash.
+  soul.read      {}  Familiar's own conversation only. Current SOUL.md text and hash.
   soul.update    {"text":"<complete Markdown>","expectedHash":"<hash from soul.read>"}
                   Update your standing instructions only when the user asks.
                   Preserve the other instructions. If the file changed since
                   soul.read, read it again and reapply the requested changes.
-                  Habit runs and other sessions cannot change a Mono's soul.
-  memory.read    {"topic":"releases"}  Mono only. Without topic:
+                  Habit runs and other sessions cannot change a Familiar's soul.
+  memory.read    {"topic":"releases"}  Familiar only. Without topic:
                   MEMORY.md, how much of it loads, and the topic names.
   memory.search  {"query":"release tags","since":"7d"}
                   Entries across MEMORY.md, topic notes and the archive that
@@ -209,7 +209,7 @@ Actions:
                   Strike the one entry containing find through and add fact.
   memory.remove  {"find":"text of the entry","topic":"..."}
                   Delete the one entry containing find, for a wrong entry.
-  habits.list    {}  Mono only. Your habits: what each does, when it runs
+  habits.list    {}  Familiar only. Your habits: what each does, when it runs
                   next, and how its last run went.
   habits.add     {"name":"Morning CI check","instructions":"...",
                   "schedule":{"kind":"weekdays","time":"09:00"}}
@@ -222,7 +222,7 @@ Actions:
                   "schedule":{...},"enabled":false}  Change or pause one.
   habits.run     {"id":"..."}  Run one within a minute, to try it out.
   habits.remove  {"id":"..."}
-  chat.card      Mono or habit only. Post a card to the Mono's chat:
+  chat.card      Familiar or habit only. Post a card to the Familiar's chat:
                   {"type":"pr","repo":"owner/repo","number":123,"note":"..."}
                   {"type":"session","sessionId":"...","note":"..."}
                   {"type":"choices","options":["First choice","Second choice"]}

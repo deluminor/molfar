@@ -448,7 +448,7 @@ type UserTurnExtra = {
   molfar?: boolean;
   intent?: Block["intent"];
   appRequestId?: string;
-  monoSessionCompletion?: Block["monoSessionCompletion"];
+  familiarSessionCompletion?: Block["familiarSessionCompletion"];
 };
 
 function userTurnFields(extra?: UserTurnExtra) {
@@ -460,8 +460,8 @@ function userTurnFields(extra?: UserTurnExtra) {
     ...(extra?.molfar ? { molfar: true } : {}),
     ...(extra?.intent ? { intent: extra.intent } : {}),
     ...(extra?.appRequestId ? { appRequestId: extra.appRequestId } : {}),
-    ...(extra?.monoSessionCompletion
-      ? { monoSessionCompletion: extra.monoSessionCompletion }
+    ...(extra?.familiarSessionCompletion
+      ? { familiarSessionCompletion: extra.familiarSessionCompletion }
       : {}),
   };
 }
@@ -745,7 +745,7 @@ function upsertKeyedStatus(
   const trimmed = text.trim();
   const turnStart = lastMatchingBlock(
     session.blocks,
-    // Mono outbox bubbles and mid-turn follow-ups do not start a new turn.
+    // Familiar outbox bubbles and mid-turn follow-ups do not start a new turn.
     (block) =>
       block.role === "user" &&
       (block.sentAt == null || block.startedAt != null) &&

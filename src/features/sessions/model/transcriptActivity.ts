@@ -343,18 +343,18 @@ function groupTranscriptTurns(
     if (block.internal && !managed) {
       // Older completion deliveries lost their marker but kept the receipt ID.
       const completion =
-        block.monoSessionCompletion ||
+        block.familiarSessionCompletion ||
         (block.role === "user" &&
-          block.appRequestId?.startsWith("mono-completion-"));
+          block.appRequestId?.startsWith("familiar-completion-"));
       if (completion) {
         if (current.length > 0) turns.push(current);
-        // Mono replies need a stable turn before their first output arrives.
+        // Familiar replies need a stable turn before their first output arrives.
         // Keep the hidden prompt as its identity and timing, not visible text.
         current = retainCompletionPrompts ? [block] : [];
       }
       continue;
     }
-    if (block.role === "handoff" || block.monoHabit) {
+    if (block.role === "handoff" || block.familiarHabit) {
       if (current.length > 0) turns.push(current);
       turns.push([block]);
       current = [];
@@ -371,7 +371,7 @@ function groupTranscriptTurns(
 }
 
 /** Follow-ups belong to one conversation burst even when work lands between them. */
-export function groupMonoTurns(blocks: Block[], managed = false): Block[][] {
+export function groupFamiliarTurns(blocks: Block[], managed = false): Block[][] {
   const groups: Block[][] = [];
   for (const turn of groupTranscriptTurns(blocks, managed, true)) {
     const previous = groups[groups.length - 1];
@@ -443,12 +443,12 @@ export function groupTurnItems(
 }
 
 /**
- * A Mono keeps its opening message and reply outside one compact work group.
+ * A Familiar keeps its opening message and reply outside one compact work group.
  * Live narration stays in the group; settling reveals the trailing reply.
  * Cards, notices and interjections keep their
  * own rows, and work resumed after a yielded reply does not absorb that reply.
  */
-export function groupMonoTurnItems(
+export function groupFamiliarTurnItems(
   blocks: Block[],
   options?: { live?: boolean },
 ): TurnItem[] {

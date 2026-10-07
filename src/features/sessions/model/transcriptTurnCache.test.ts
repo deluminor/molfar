@@ -91,7 +91,7 @@ describe("transcript turn cache", () => {
     expect(cache.group(blocks.slice())).toBe(before);
   });
 
-  it("caches Mono follow-ups together and updates when inline work changes", () => {
+  it("caches Familiar follow-ups together and updates when inline work changes", () => {
     const cache = new TranscriptTurnCache();
     const blocks: Block[] = [
       { id: "u", role: "user", text: "Inspect this" },
@@ -100,16 +100,16 @@ describe("transcript turn cache", () => {
       { id: "reply", role: "assistant", text: "Done" },
     ];
     expect(cache.group(blocks)).toHaveLength(2);
-    const monoTurns = cache.group(blocks, false, true);
-    expect(monoTurns).toHaveLength(1);
-    expect(monoTurns[0]).toEqual(blocks);
-    const items = cache.turnItems(monoTurns[0], true, { inlineWork: true });
-    expect(cache.group(blocks.slice(), false, true)).toBe(monoTurns);
-    expect(cache.turnItems(monoTurns[0], true, { inlineWork: true })).toBe(items);
+    const familiarTurns = cache.group(blocks, false, true);
+    expect(familiarTurns).toHaveLength(1);
+    expect(familiarTurns[0]).toEqual(blocks);
+    const items = cache.turnItems(familiarTurns[0], true, { inlineWork: true });
+    expect(cache.group(blocks.slice(), false, true)).toBe(familiarTurns);
+    expect(cache.turnItems(familiarTurns[0], true, { inlineWork: true })).toBe(items);
     expect(cache.group(blocks)).toHaveLength(2);
   });
 
-  it("keeps cached Mono narration distinct from ordinary and settled work", () => {
+  it("keeps cached Familiar narration distinct from ordinary and settled work", () => {
     const cache = new TranscriptTurnCache();
     const turn: Block[] = [
       { id: "u", role: "user", text: "Inspect this" },
@@ -142,7 +142,7 @@ describe("transcript turn cache", () => {
         role: "user",
         text: "Private completion prompt",
         internal: true,
-        appRequestId: "mono-completion-result",
+        appRequestId: "familiar-completion-result",
       },
       { id: "reply", role: "assistant", text: "Done" },
     ];

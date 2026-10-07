@@ -97,7 +97,7 @@ import {
 } from "../../features/connections/model/connections";
 import { remoteProjectFor } from "../../features/connections/model/remoteProjects";
 import { useProjectMenu } from "./useProjectMenu";
-import { MonoRailSection, type MonoRailProps } from "./MonoRailSection";
+import { FamiliarRailSection, type FamiliarRailProps } from "./FamiliarRailSection";
 
 type Props = {
   visible?: boolean;
@@ -137,8 +137,8 @@ type Props = {
   onOpenWhatsNew?: (version: string) => void;
   onDismissUpdate?: () => void;
   extraActions?: ReactNode;
-  /** The Monos section above the projects; absent while Monos are off. */
-  monos?: MonoRailProps;
+  /** The Familiars section above the projects; absent while Familiars are off. */
+  familiars?: FamiliarRailProps;
 };
 
 export function ProjectRail({
@@ -179,7 +179,7 @@ export function ProjectRail({
   onOpenWhatsNew,
   onDismissUpdate,
   extraActions,
-  monos,
+  familiars,
 }: Props) {
   const resize = useDragResize({
     min: PROJECT_RAIL_WIDTH_MIN,
@@ -350,7 +350,7 @@ export function ProjectRail({
     notesActive ||
     knowledgeActive ||
     automationsActive ||
-    !!monos?.activeId;
+    !!familiars?.activeId;
   const pinnedIds = sections.pinned.map((item) => item.path);
   const projectIds = groupedProjectSections.ungrouped.map((item) => item.path);
   const pinnedSortable = useAnimatedReorder(pinnedIds, onReorderPinned, "y");
@@ -446,10 +446,10 @@ export function ProjectRail({
             }}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-none pb-2"
           >
-            {monos ? (
-              <MonoRailSection
-                {...monos}
-                introAvailable={visible && !!monos.introAvailable}
+            {familiars ? (
+              <FamiliarRailSection
+                {...familiars}
+                introAvailable={visible && !!familiars.introAvailable}
               />
             ) : null}
 

@@ -318,7 +318,7 @@ describe("AgentTranscript collapsed work", () => {
     expect(markup).not.toContain("Claude Opus 5 worked for 9s");
   });
 
-  it("credits a Mono's turns to the Mono, whichever model ran them", () => {
+  it("credits a Familiar's turns to the Familiar, whichever model ran them", () => {
     const blocks: Block[] = [
       {
         id: "user",
@@ -336,17 +336,17 @@ describe("AgentTranscript collapsed work", () => {
     const markup = renderToStaticMarkup(
       createElement(AgentTranscript, {
         blocks,
-        agentName: "MonoCat",
+        agentName: "FamiliarCat",
         harness: "claude",
         model: "claude:opus-5",
       }),
     );
 
-    expect(markup).toContain("MonoCat worked for 9s");
+    expect(markup).toContain("FamiliarCat worked for 9s");
     expect(markup).not.toContain("Claude Sonnet 5 worked for 9s");
   });
 
-  it("marks when a Mono's messages were sent, and keeps its footer to copy, note and time", () => {
+  it("marks when a Familiar's messages were sent, and keeps its footer to copy, note and time", () => {
     const now = new Date(2026, 9, 5, 12).getTime();
     vi.setSystemTime(now);
     const turn = (id: string, startedAt: number): Block[] => [
@@ -368,7 +368,7 @@ describe("AgentTranscript collapsed work", () => {
     const markup = renderToStaticMarkup(
       createElement(AgentTranscript, {
         blocks,
-        agentName: "MonoCat",
+        agentName: "FamiliarCat",
         daySeparators: true,
         hideTurnMetrics: true,
         onSaveNote: () => {},
@@ -827,14 +827,14 @@ describe("AgentTranscript collapsed work", () => {
   });
 });
 
-describe("Mono inline work", () => {
-  function renderMono(blocks: Block[], busy = false) {
+describe("Familiar inline work", () => {
+  function renderFamiliar(blocks: Block[], busy = false) {
     return renderToStaticMarkup(
       createElement(AgentTranscript, {
         blocks,
         busy,
         inlineWork: true,
-        agentName: "MonoCat",
+        agentName: "FamiliarCat",
         onApproval: () => {},
       }),
     );
@@ -871,17 +871,17 @@ describe("Mono inline work", () => {
             ]
           : []),
       ];
-      const markup = renderMono(blocks, busy);
+      const markup = renderFamiliar(blocks, busy);
       const first = markup.indexOf("I will check the first part.");
       const summary = markup.indexOf(
         busy ? "Running command…" : "Ran 3 commands",
       );
-      expect(first).toBeGreaterThan(markup.indexOf("MonoCat"));
+      expect(first).toBeGreaterThan(markup.indexOf("FamiliarCat"));
       expect(summary).toBeGreaterThan(first);
       expect(markup).not.toContain(
         "The first part passed. Checking the next part.",
       );
-      expect(markup.match(/data-mono-work/g)).toHaveLength(1);
+      expect(markup.match(/data-familiar-work/g)).toHaveLength(1);
       if (!busy)
         expect(markup.indexOf("Everything passed.")).toBeGreaterThan(summary);
       expect(markup).not.toContain("hidden-detail-");
@@ -894,7 +894,7 @@ describe("Mono inline work", () => {
   it.each([true, false])(
     "keeps a single tool call behind its summary (busy=%s)",
     (busy) => {
-      const markup = renderMono(
+      const markup = renderFamiliar(
         [
           { id: "user", role: "user", text: "Run this", durationMs: 1_000 },
           {
@@ -918,13 +918,13 @@ describe("Mono inline work", () => {
       durationMs: 1_000,
     };
     const approval = tool("approval", { requestId: 1 });
-    const waiting = renderMono([user, approval], true);
+    const waiting = renderFamiliar([user, approval], true);
     expect(waiting).toContain("hidden-detail-approval");
     expect(waiting).toContain("Allow</button>");
     expect(waiting).toContain("Deny</button>");
     expect(waiting).toContain("Waiting for approval…");
     expect(waiting).not.toContain('aria-label="Show the steps');
-    const approved = renderMono([
+    const approved = renderFamiliar([
       user,
       {
         ...approval,
@@ -938,7 +938,7 @@ describe("Mono inline work", () => {
   });
 
   it("keeps delegated tool work compact, including failed runs", () => {
-    const markup = renderMono([
+    const markup = renderFamiliar([
       { id: "user", role: "user", text: "Delegate this", durationMs: 1_000 },
       { id: "intro", role: "assistant", text: "I will ask for a review." },
       {

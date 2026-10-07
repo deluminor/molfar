@@ -49,8 +49,8 @@ import { TerminalSpinner } from "./TerminalSpinner";
 import { Popover } from "../../../shared/ui/Popover";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { PixelMascot } from "../../projects/ui/PixelMascot";
-import type { MonoLook } from "../../monos/model/mono";
-import type { MessageDelivery } from "../../monos/model/monoMessaging";
+import type { FamiliarLook } from "../../familiars/model/familiar";
+import type { MessageDelivery } from "../../familiars/model/familiarMessaging";
 import type { ApprovalDecision } from "../../../integrations/harness";
 import {
   isHarnessAuthError,
@@ -94,8 +94,8 @@ import { useBottomChatMotion } from "../hooks/useBottomChatMotion";
 import { useTranscriptSelection } from "../hooks/useTranscriptSelection";
 import type { TranscriptLayout } from "../../settings/model/appearance";
 import { AgentMarkdown } from "./AgentMarkdown";
-import { MonoWorkTicker } from "./MonoWorkTicker";
-import { monoWorkStatus } from "../model/monoWorkStatus";
+import { FamiliarWorkTicker } from "./FamiliarWorkTicker";
+import { familiarWorkStatus } from "../model/familiarWorkStatus";
 import { isEmojiOnlyMessage } from "../model/emojiMessage";
 import { attachmentPreviewSrc } from "../model/attachments";
 import { TranscriptSelectionMenu } from "./TranscriptSelectionMenu";
@@ -180,17 +180,17 @@ type Props = {
   onReturnToLatest?: () => void;
   busy?: boolean;
   cwd?: string;
-  /** Who the turns are by, in place of the model: a Mono's name. */
+  /** Who the turns are by, in place of the model: a Familiar's name. */
   agentName?: string;
-  /** A Mono's mascot and color, in place of the provider's mark. */
-  agentMascot?: Pick<MonoLook, "mascot" | "color">;
+  /** A Familiar's mascot and color, in place of the provider's mark. */
+  agentMascot?: Pick<FamiliarLook, "mascot" | "color">;
   /** Keeps short conversations at the bottom and skips prompt-to-top anchoring. */
   bottomAligned?: boolean;
   /** Shows intermediate narration and tools as one rolling work status. */
   inlineWork?: boolean;
   messageDeliveries?: ReadonlyMap<string, MessageDelivery>;
   onRetryMessage?: (blockId: string) => void;
-  /** Inspect a Mono turn in the activity sidebar. */
+  /** Inspect a Familiar turn in the activity sidebar. */
   onShowWork?: (turnId: string, blocks: Block[]) => void;
   activeWorkTurnId?: string;
   /** Marks when each message was sent, for one conversation kept over days. */
@@ -395,7 +395,7 @@ function AgentTranscriptComponent({
   const syncPinned = useCallback(
     (el: HTMLElement) => {
       // Layout and our own pins also queue scroll events. Those events must
-      // not stop a Mono following the end before its layout has settled.
+      // not stop a Familiar following the end before its layout has settled.
       // Upward wheel, touch, keyboard and scrollbar input release the pin.
       if (bottomAligned && stickToBottom.current) {
         lastScrollTop.current = el.scrollTop;
@@ -462,7 +462,7 @@ function AgentTranscriptComponent({
     (el: HTMLDivElement | null) => {
       scroller.current = el;
       setScrollerEl(el);
-      // The Mono already has overscroll-none. Prefer native scrolling where
+      // The Familiar already has overscroll-none. Prefer native scrolling where
       // supported so its first wheel event need not wait on a blocking listener.
       const nativeOverscroll =
         bottomAligned && CSS.supports?.("overscroll-behavior", "none");
@@ -601,7 +601,7 @@ function AgentTranscriptComponent({
   // A scheduled update can land while the chat's own turn is still running.
   const activeTurnIndex = turns.reduce(
     (latest, turn, index) =>
-      turn[0].monoHabit || turn[0].role === "handoff" ? latest : index,
+      turn[0].familiarHabit || turn[0].role === "handoff" ? latest : index,
     -1,
   );
   const firstVisibleTurn = Math.max(0, turns.length - visibleTurnCount);
@@ -875,7 +875,7 @@ function AgentTranscriptComponent({
   return (
     <div
       ref={setScroller}
-      className={`agent-transcript h-full overflow-y-auto overscroll-none [overflow-anchor:none] font-mono text-[13px] leading-5${bottomAligned ? " mono-transcript-fades scrollbar-none" : ""}`}
+      className={`agent-transcript h-full overflow-y-auto overscroll-none [overflow-anchor:none] font-mono text-[13px] leading-5${bottomAligned ? " familiar-transcript-fades scrollbar-none" : ""}`}
     >
       <TranscriptContent bottomAligned={bottomAligned}>
         {onReturnToLatest ? (
@@ -927,10 +927,10 @@ function AgentTranscriptComponent({
         {visibleTurns.map((turn, turnIndex) => {
           const isLastTurn = firstVisibleTurn + turnIndex === turns.length - 1;
           const userBlock = inlineWork
-            ? monoTurnUserBlock(turn, messageDeliveries)
+            ? familiarTurnUserBlock(turn, messageDeliveries)
             : turnUserBlock(turn, managed);
-          const habit = turn[0].monoHabit;
-          // Older saved reports may have lost their habit tag. A Mono's
+          const habit = turn[0].familiarHabit;
+          // Older saved reports may have lost their habit tag. A Familiar's
           // standalone reply still needs its identity and response actions.
           const standaloneReply =
             !userBlock && !!(agentName || habit) && turn.some(isProseBlock);
@@ -956,7 +956,7 @@ function AgentTranscriptComponent({
           const previousTurn = turns[firstVisibleTurn + turnIndex - 1];
           const previousAt = previousTurn
             ? (turnUserBlock(previousTurn, managed)?.startedAt ??
-              previousTurn[0].monoHabit?.at ??
+              previousTurn[0].familiarHabit?.at ??
               previousTurn[0].startedAt)
             : undefined;
           const stampAt =
@@ -997,7 +997,7 @@ function AgentTranscriptComponent({
           // the last: the mark, and the clock beside it. It never moves, so a
           // turn settling does not shuffle the layout around the answer.
           const live = visible && !settled && !preparingHandoff;
-          // A Mono's turns are its own, whichever model ran them.
+          // A Familiar's turns are its own, whichever model ran them.
           const turnModelName =
             agentName ??
             turnModel?.name ??
@@ -1076,7 +1076,7 @@ function AgentTranscriptComponent({
               />
             ) : item.type !== "block" ? (
               inlineWork ? (
-                <MonoWorkGroup
+                <FamiliarWorkGroup
                   key={item.blocks[0].id}
                   blocks={item.blocks}
                   cwd={cwd}
@@ -2089,7 +2089,7 @@ function UserMessageBlock({
     : bubbleTail && block.sentAt != null
       ? "pt-1 pb-5"
       : "pt-1.5 pb-5";
-  // A Mono's chat shows sent images above the bubble, like photos in a
+  // A Familiar's chat shows sent images above the bubble, like photos in a
   // messaging app; only other files stay inside it.
   const photos =
     bubbleTail && chat && !block.draft
@@ -2199,7 +2199,7 @@ function UserMessageBlock({
         ) : null}
       </div>
     ) : null;
-  // In a Mono's chat a few emoji stand alone, like a reaction: no bubble,
+  // In a Familiar's chat a few emoji stand alone, like a reaction: no bubble,
   // time or actions.
   if (
     bubbleTail &&
@@ -2806,7 +2806,7 @@ function useLivePhaseScroll(
   }, [el, enabled, pin]);
 }
 
-type MonoWorkGroupProps = Pick<
+type FamiliarWorkGroupProps = Pick<
   ActivityPhasesProps,
   "cwd" | "onApproval" | "onOpenFile" | "onOpenDiff"
 > & {
@@ -2816,9 +2816,9 @@ type MonoWorkGroupProps = Pick<
   expanded?: boolean;
 };
 
-/** A Mono's work stays compact and opens its trail in the activity sidebar. */
-const MonoWorkGroup = memo(
-  function MonoWorkGroup({
+/** A Familiar's work stays compact and opens its trail in the activity sidebar. */
+const FamiliarWorkGroup = memo(
+  function FamiliarWorkGroup({
     blocks,
     active,
     cwd,
@@ -2827,23 +2827,23 @@ const MonoWorkGroup = memo(
     onOpenDiff,
     onOpen,
     expanded,
-  }: MonoWorkGroupProps) {
+  }: FamiliarWorkGroupProps) {
     return (
-      <div data-mono-work className="flex min-w-0 flex-col px-4">
+      <div data-familiar-work className="flex min-w-0 flex-col px-4">
         {onOpen ? (
           <button
             type="button"
             aria-label={expanded ? "Hide activity" : "Show activity"}
             aria-expanded={expanded}
             onClick={onOpen}
-            className="group/mono-work flex min-w-0 items-center text-left outline-none focus-visible:ring-1 focus-visible:ring-accent rounded"
+            className="group/familiar-work flex min-w-0 items-center text-left outline-none focus-visible:ring-1 focus-visible:ring-accent rounded"
           >
             <span className="min-w-0 flex-1">
-              <MonoWorkTicker status={monoWorkStatus(blocks, active)} />
+              <FamiliarWorkTicker status={familiarWorkStatus(blocks, active)} />
             </span>
           </button>
         ) : (
-          <MonoWorkTicker status={monoWorkStatus(blocks, active)} />
+          <FamiliarWorkTicker status={familiarWorkStatus(blocks, active)} />
         )}
         {blocks.filter(needsApproval).map((block) => (
           <ToolCall
@@ -2867,7 +2867,7 @@ const MonoWorkGroup = memo(
 );
 
 /** Full turn activity in transcript order, without the chat's work folding. */
-export function MonoActivityTrail({
+export function FamiliarActivityTrail({
   blocks,
   live = false,
   cwd,
@@ -2906,26 +2906,26 @@ export function MonoActivityTrail({
           return (
             <li
               key={first.id}
-              data-mono-activity-block={first.id}
+              data-familiar-activity-block={first.id}
               className="min-w-0 px-1 text-content/80"
             >
               <AgentMarkdown
                 text={first.text}
                 cwd={cwd}
                 onOpenFile={onOpenFile}
-                className="mono-run-report"
+                className="familiar-run-report"
               />
             </li>
           );
         return (
           <li
             key={first.id}
-            className="mono-activity-steps flex min-w-0 flex-col px-1"
+            className="familiar-activity-steps flex min-w-0 flex-col px-1"
           >
             {segment.blocks.map((block, step) => (
               <div
                 key={block.id}
-                data-mono-activity-block={block.id}
+                data-familiar-activity-block={block.id}
                 className="relative min-w-0 pl-4"
               >
                 {/* The rail runs between the steps' dots, not past the ends. */}
@@ -4557,7 +4557,7 @@ function turnUserBlock(blocks: Block[], managed = false): Block | undefined {
   return undefined;
 }
 
-function monoTurnUserBlock(
+function familiarTurnUserBlock(
   blocks: Block[],
   deliveries?: ReadonlyMap<string, MessageDelivery>,
 ): Block | undefined {

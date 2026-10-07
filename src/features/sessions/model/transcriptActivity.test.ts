@@ -9,7 +9,7 @@ import {
   firstFoldableIndex,
   foldableWork,
   foldedBlocks,
-  groupMonoTurnItems,
+  groupFamiliarTurnItems,
   groupTurnItems,
   groupTurns,
   hasRunningSubagent,
@@ -108,25 +108,25 @@ function irc(id: string, text = "new message in #general"): Block {
   };
 }
 
-describe("groupMonoTurnItems", () => {
+describe("groupFamiliarTurnItems", () => {
   it("keeps live narration compact until the turn settles", () => {
     const blocks = [
       note("intro", "Checking."),
       shell("first"),
       note("reply", "The result."),
     ];
-    expect(groupMonoTurnItems(blocks, { live: true })).toMatchObject([
+    expect(groupFamiliarTurnItems(blocks, { live: true })).toMatchObject([
       { type: "block", block: { id: "intro" } },
       { type: "activity", blocks: [{ id: "first" }, { id: "reply" }] },
     ]);
-    expect(groupMonoTurnItems(blocks).at(-1)).toMatchObject({
+    expect(groupFamiliarTurnItems(blocks).at(-1)).toMatchObject({
       type: "block",
       block: { id: "reply" },
     });
   });
 
   it("keeps the opening and trailing reply around one chronological work group", () => {
-    const items = groupMonoTurnItems([
+    const items = groupFamiliarTurnItems([
       { id: "user", role: "user", text: "Inspect" },
       note("intro", "I will inspect the files."),
       shell("first"),
@@ -149,7 +149,7 @@ describe("groupMonoTurnItems", () => {
 
   it("groups a tool-first turn without promoting its first progress note to an opening", () => {
     expect(
-      groupMonoTurnItems([
+      groupFamiliarTurnItems([
         shell("first"),
         note("progress", "Trying another approach."),
         shell("second"),
@@ -170,12 +170,12 @@ describe("groupMonoTurnItems", () => {
       shell("first"),
       note("progress", "Checking more."),
     ];
-    expect(groupMonoTurnItems(blocks).at(-1)).toMatchObject({
+    expect(groupFamiliarTurnItems(blocks).at(-1)).toMatchObject({
       type: "block",
       block: { id: "progress" },
     });
     expect(
-      groupMonoTurnItems([...blocks, shell("second", "in_progress")]).at(-1),
+      groupFamiliarTurnItems([...blocks, shell("second", "in_progress")]).at(-1),
     ).toMatchObject({
       type: "activity",
       blocks: [{ id: "first" }, { id: "progress" }, { id: "second" }],
@@ -191,7 +191,7 @@ describe("groupMonoTurnItems", () => {
     };
     const card: Block = { id: "plan", role: "plan", text: "The plan" };
     const incoming = irc("incoming");
-    const items = groupMonoTurnItems([
+    const items = groupFamiliarTurnItems([
       shell("first"),
       notice,
       card,
@@ -215,7 +215,7 @@ describe("groupMonoTurnItems", () => {
       tool: { kind: "shell", status: "completed", background: true },
     };
     expect(
-      groupMonoTurnItems([
+      groupFamiliarTurnItems([
         shell("first"),
         note("yielded", "The task is still running."),
         background,
@@ -230,8 +230,8 @@ describe("groupMonoTurnItems", () => {
   });
 
   it("keeps direct replies and empty turns intact", () => {
-    expect(groupMonoTurnItems([])).toEqual([]);
-    expect(groupMonoTurnItems([note("answer", "Hello.")])).toMatchObject([
+    expect(groupFamiliarTurnItems([])).toEqual([]);
+    expect(groupFamiliarTurnItems([note("answer", "Hello.")])).toMatchObject([
       { type: "block", block: { id: "answer" } },
     ]);
   });
@@ -480,13 +480,13 @@ describe("turnCopyText", () => {
 
 describe("groupTurns", () => {
   it("keeps habit reports and relayed approvals outside conversation turns", () => {
-    const monoHabit = { id: "habit", name: "Morning check", at: 1_000 };
+    const familiarHabit = { id: "habit", name: "Morning check", at: 1_000 };
     const turns = groupTurns([
       { id: "user", role: "user", text: "Review" },
       { id: "answer", role: "assistant", text: "Reviewed." },
-      { id: "report", role: "assistant", text: "CI failed.", monoHabit },
-      { id: "approval", role: "approval", text: "Allow command", monoHabit },
-      { id: "next-report", role: "assistant", text: "CI passed.", monoHabit },
+      { id: "report", role: "assistant", text: "CI failed.", familiarHabit },
+      { id: "approval", role: "approval", text: "Allow command", familiarHabit },
+      { id: "next-report", role: "assistant", text: "CI passed.", familiarHabit },
       { id: "next-user", role: "user", text: "Thanks" },
     ]);
     expect(turns.map((turn) => turn.map((block) => block.id))).toEqual([
