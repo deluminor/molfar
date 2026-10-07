@@ -1,24 +1,26 @@
 #!/usr/bin/env node
 // Usage: node scripts/release/open-pr.mjs --base <branch> --head <branch> --title <text> --body <text> --expected-sha <sha>
-// Opens (or reuses) the release PR after a fresh head push. GitHub's createPullRequest
-// GraphQL often races the new ref and reports "No commits between base and head";
-// this waits until the compare API sees the tip, then retries create.
+// Opens (or reuses) the release PR after a fresh head push. GitHub's GraphQL
+// createPullRequest often races a force-pushed release head (REST compare can
+// already show ahead_by > 0 while GraphQL still reports "No commits between").
+// Wait on the compare API, then create via REST — and retry with backoff.
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_WAIT_ATTEMPTS = 30;
 const DEFAULT_WAIT_MS = 2000;
-const DEFAULT_CREATE_ATTEMPTS = 10;
-const DEFAULT_CREATE_MS = 2000;
+const DEFAULT_CREATE_ATTEMPTS = 15;
+const DEFAULT_CREATE_MS = 3000;
 
-/** GraphQL createPullRequest race right after pushing a new release head. */
+/** GitHub PR-create race right after pushing a new or force-updated release head. */
 export function isCreatePullRequestRaceError(message) {
   const text = String(message ?? "");
   return (
     /No commits between/i.test(text) ||
     /Head sha can't be blank/i.test(text) ||
     /Base sha can't be blank/i.test(text) ||
-    /Head ref must be a branch/i.test(text)
+    /Head ref must be a branch/i.test(text) ||
+    /A pull request already exists/i.test(text)
   );
 }
 
@@ -84,6 +86,53 @@ export function waitForHeadAhead(options) {
 }
 
 /**
+ * Build the `head` value for REST `POST /repos/{owner}/{repo}/pulls`.
+ * Same-repo PRs need `owner:branch` so GitHub does not resolve the head against
+ * a fork of the authenticated user.
+ *
+ * @param {string} repository `owner/name`
+ * @param {string} head branch name or `owner:branch`
+ */
+export function restHeadRef(repository, head) {
+  const trimmed = head.trim();
+  if (trimmed.includes(":")) return trimmed;
+  const owner = repository.split("/")[0]?.trim();
+  if (!owner) {
+    throw new Error(`repository must be owner/name, got: ${repository}`);
+  }
+  return `${owner}:${trimmed}`;
+}
+
+/**
+ * @param {{
+ *   repository: string;
+ *   base: string;
+ *   head: string;
+ *   title: string;
+ *   body: string;
+ *   apiJson: (path: string, init?: { method?: string; fields?: Record<string, string> }) => unknown;
+ * }} options
+ * @returns {string} PR HTML URL
+ */
+export function createPullRequestRest(options) {
+  const { repository, base, head, title, body, apiJson } = options;
+  const created = apiJson(`repos/${repository}/pulls`, {
+    method: "POST",
+    fields: {
+      title,
+      body,
+      head: restHeadRef(repository, head),
+      base,
+    },
+  });
+  const url = String(created?.html_url ?? "").trim();
+  if (!url) {
+    throw new Error("REST pull request create returned no html_url");
+  }
+  return url;
+}
+
+/**
  * @param {{
  *   base: string;
  *   head: string;
@@ -122,20 +171,29 @@ export function openOrReusePullRequest(options) {
 
     try {
       const url = createPr().trim();
-      if (!url) throw new Error("gh pr create returned an empty URL");
+      if (!url) throw new Error("pull request create returned an empty URL");
       if (attempt > 1) {
         console.error(`Opened pull request after ${attempt} create attempt(s): ${url}`);
       }
       return url;
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
+      // Concurrent create: another attempt (or a prior run) won — reuse it.
+      if (/A pull request already exists/i.test(lastError)) {
+        const raced = listOpenPrUrl();
+        if (raced) {
+          console.error(`Reusing pull request created concurrently: ${raced}`);
+          return raced;
+        }
+      }
       if (!isCreatePullRequestRaceError(lastError) || attempt === createAttempts) {
         throw new Error(lastError);
       }
+      const backoff = delayMs * attempt;
       console.error(
-        `createPullRequest race (attempt ${attempt}/${createAttempts}): ${lastError.split("\n")[0]}`,
+        `pull request create race (attempt ${attempt}/${createAttempts}): ${lastError.split("\n")[0]}`,
       );
-      delay(delayMs);
+      delay(backoff);
     }
   }
 
@@ -159,6 +217,21 @@ function gh(args, { allowFailure = false } = {}) {
     const stdout = error?.stdout?.toString?.()?.trim() || "";
     throw new Error(stderr || stdout || (error instanceof Error ? error.message : String(error)));
   }
+}
+
+/**
+ * @param {string} path
+ * @param {{ method?: string; fields?: Record<string, string> }} [init]
+ */
+function ghApiJson(path, init = {}) {
+  const args = ["api", path];
+  if (init.method) {
+    args.push("--method", init.method);
+  }
+  for (const [key, value] of Object.entries(init.fields ?? {})) {
+    args.push("-f", `${key}=${value}`);
+  }
+  return JSON.parse(gh(args));
 }
 
 function parseArgs(argv) {
@@ -214,7 +287,7 @@ export function main(argv = process.argv.slice(2)) {
     head,
     expectedSha,
     apiJson(path) {
-      return JSON.parse(gh(["api", path]));
+      return ghApiJson(path);
     },
   });
 
@@ -226,6 +299,8 @@ export function main(argv = process.argv.slice(2)) {
         [
           "pr",
           "list",
+          "--repo",
+          repository,
           "--base",
           base,
           "--head",
@@ -242,18 +317,14 @@ export function main(argv = process.argv.slice(2)) {
       return listed || null;
     },
     createPr() {
-      return gh([
-        "pr",
-        "create",
-        "--base",
+      return createPullRequestRest({
+        repository,
         base,
-        "--head",
         head,
-        "--title",
         title,
-        "--body",
         body,
-      ]);
+        apiJson: ghApiJson,
+      });
     },
   });
 
