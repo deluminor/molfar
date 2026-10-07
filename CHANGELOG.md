@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-10-07
+
 ### Changed
 
 - **Home** host metrics keep a longer sample history (150 points instead of 60), so CPU/memory charts retain more recent activity.
 - **Companion** pairing offer stacks the QR code and instructions in one column and centers the setup steps for clearer layout on narrow Settings panes.
+- **companion:** stack QR offer layout and center instructions
 
 ## [1.0.5] - 2026-10-07
 
@@ -131,7 +134,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/deluminor/molfar/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/deluminor/molfar/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/deluminor/molfar/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/deluminor/molfar/compare/v1.0.2...v1.0.3
