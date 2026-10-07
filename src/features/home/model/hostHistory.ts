@@ -2,7 +2,7 @@ import { clampPercent, loadAsPercent, type HostStats } from "./hostStats";
 
 export { clampPercent } from "./hostStats";
 
-export const HOST_HISTORY_LIMIT = 60;
+export const HOST_HISTORY_LIMIT = 150;
 
 export type HostSamplePoint = {
   cpuPercent: number;
