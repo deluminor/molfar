@@ -96,9 +96,9 @@ jobs:
           EXPECTED_SHA="$(git rev-parse HEAD)"
           git push --force-with-lease origin "HEAD:refs/heads/$RELEASE_HEAD"
 
-          # GitHub's createPullRequest GraphQL races a brand-new head ref and
-          # reports "No commits between main and release/vX.Y.Z". Wait until
-          # the compare API sees the tip, then create (or reuse) the PR.
+          # GitHub's GraphQL createPullRequest races a force-pushed release head
+          # (REST compare can already be ahead). Wait for compare, then open or
+          # reuse the PR via REST in scripts/release/open-pr.mjs.
           PR_URL="$(node scripts/release/open-pr.mjs \
             --repository "$GITHUB_REPOSITORY" \
             --base "$RELEASE_BRANCH" \
