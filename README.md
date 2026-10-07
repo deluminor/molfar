@@ -129,7 +129,7 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 ### Also inside
 
-Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
+[Phone and tablet companion](docs/companion.md) over Tailscale · Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Architecture
 
@@ -338,7 +338,7 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
 
-The next major step is an **iPad and iOS companion** that connects to a running MOLFAR host: monitor sessions, approve permission requests, inspect agent activity, and steer ongoing work remotely.
+The first **iPad and iOS companion** ships as the Molfar module of BitChain: it pairs with a running desktop over Tailscale to follow Familiars and sessions, answer approvals, and send messages, photos and dictation ([docs/companion.md](docs/companion.md)). Next: push notifications for approvals and starting sessions from the phone.
 
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 
