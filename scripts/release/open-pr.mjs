@@ -1,9 +1,8 @@
-#!/usr/bin/env node
 // Usage: node scripts/release/open-pr.mjs --base <branch> --head <branch> --title <text> --body <text> --expected-sha <sha>
 // Opens (or reuses) the release PR after a fresh head push. GitHub's GraphQL
 // createPullRequest often races a force-pushed release head (REST compare can
 // already show ahead_by > 0 while GraphQL still reports "No commits between").
-// Wait on the compare API, then create via REST — and retry with backoff.
+// Wait on the compare API, then create via REST -- and retry with backoff.
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -157,7 +156,7 @@ export function openOrReusePullRequest(options) {
 
   const existing = listOpenPrUrl();
   if (existing) {
-    console.error(`Reusing open pull request ${existing} for ${head} → ${base}.`);
+    console.error(`Reusing open pull request ${existing} for ${head} -> ${base}.`);
     return existing;
   }
 
@@ -165,7 +164,7 @@ export function openOrReusePullRequest(options) {
   for (let attempt = 1; attempt <= createAttempts; attempt += 1) {
     const reused = listOpenPrUrl();
     if (reused) {
-      console.error(`Reusing open pull request ${reused} for ${head} → ${base}.`);
+      console.error(`Reusing open pull request ${reused} for ${head} -> ${base}.`);
       return reused;
     }
 
@@ -178,7 +177,7 @@ export function openOrReusePullRequest(options) {
       return url;
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
-      // Concurrent create: another attempt (or a prior run) won — reuse it.
+      // Concurrent create: another attempt (or a prior run) won -- reuse it.
       if (/A pull request already exists/i.test(lastError)) {
         const raced = listOpenPrUrl();
         if (raced) {
