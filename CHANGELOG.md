@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-07
+
 ### Changed
 
 - Renamed **Monos** to **Familiars** across the product, code, and docs (MOLFAR branding for the upstream Mono agents feature). Existing localStorage keys, the `monos/` data folder, and SQLite `mono_*` transcript tables migrate automatically on first use.
@@ -117,7 +119,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/deluminor/molfar/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/deluminor/molfar/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/deluminor/molfar/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/deluminor/molfar/compare/v1.0.0...v1.0.1
