@@ -338,7 +338,7 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
 
-The first **iPad and iOS companion** ships as the Molfar module of BitChain: it pairs with a running desktop over Tailscale to follow Familiars and sessions, answer approvals, and send messages, photos and dictation ([docs/companion.md](docs/companion.md)). Next: push notifications for approvals and starting sessions from the phone.
+The first **iPad and iOS companion** ships as the Molfar module of BitChain: it pairs with a running desktop over Tailscale to follow Familiars and sessions, answer approvals, start sessions, browse Knowledge, and send messages, photos and dictation ([docs/companion.md](docs/companion.md)).
 
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 
