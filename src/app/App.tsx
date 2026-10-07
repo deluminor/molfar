@@ -636,7 +636,6 @@ import {
 
 import { listAutomations } from "../features/automations/model/automations";
 import { createNote, getNote, loadNotes } from "../features/notes";
-import { useCompanionAlerts } from "../features/companion/hooks/useCompanionAlerts";
 import { useCompanionBridge } from "../features/companion/hooks/useCompanionBridge";
 import { readVaultNote, scanVault, vaultStatus } from "../platform/tauri/vault";
 import {
@@ -9862,12 +9861,6 @@ function Workspace({
 
   const unseenFinishedRef = useRef(unseenFinishedIds);
   unseenFinishedRef.current = unseenFinishedIds;
-  const companionFamiliars = useMemo(
-    () => (familiarsEnabled ? listFamiliars() : []),
-    // familiarsSnap changes whenever the roster does.
-    [familiarsEnabled, familiarsSnap],
-  );
-  useCompanionAlerts(sessions, companionFamiliars);
   useCompanionBridge({
     sessions: () => sessionsRef.current,
     familiars: () => (familiarsEnabled ? listFamiliars() : []),

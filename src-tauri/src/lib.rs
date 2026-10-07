@@ -292,7 +292,6 @@ pub fn run() {
             companion::companion_pair_cancel,
             companion::companion_revoke,
             companion::companion_reply,
-            companion::companion_notify,
             control::control_enable,
             control::control_disable,
             control::control_reply,

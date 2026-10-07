@@ -1,6 +1,6 @@
 # Companion (phone and tablet)
 
-The Companion gateway lets a paired phone or iPad follow and steer this desktop while MOLFAR is running: Familiars and their conversations, open project sessions, new sessions, approvals and clarifying questions with push alerts, permission modes, notes, and the Knowledge vault. The client is the **Molfar** module of the BitChain iOS app.
+The Companion gateway lets a paired phone or iPad follow and steer this desktop while MOLFAR is running: Familiars and their conversations, open project sessions, new sessions, approvals and clarifying questions, permission modes, notes, and the Knowledge vault. The client is the **Molfar** module of the BitChain iOS app.
 
 Nothing runs when the laptop sleeps or MOLFAR is closed. The phone then shows the last overview it saw and says the laptop is asleep.
 
@@ -46,20 +46,11 @@ BitChain keeps the token in the iOS Keychain (this device only) and asks for Fac
 | `vault.index` / `vault.read`                 | List the connected Obsidian vault and read a note with links and backlinks |
 | `notes.list` / `notes.read` / `notes.create` | Search, read, and add MOLFAR notes                                         |
 
-`POST /v1/push` registers (or clears, with `null`) the device's Expo push token. `GET /v1/host` returns the same CPU, memory and load figures as Home. `GET /v1/hello` answers without a token and reveals only that this is MOLFAR and its protocol version.
+`GET /v1/host` returns the same CPU, memory and load figures as Home. `GET /v1/hello` answers without a token and reveals only that this is MOLFAR and its protocol version.
 
 Habit runs, orchestration workers and Inbox asks are never exposed. Requests are executed by the main window with the same submit, approval and question paths as the desktop UI, so a message from the phone appears in the desktop transcript like any other.
 
 The protocol lives in `src/features/companion/model/protocol.ts`. Bump `COMPANION_PROTOCOL_VERSION` (and `PROTOCOL_VERSION` in `companion.rs`) when a field changes meaning or disappears; adding optional fields does not need a bump.
-
-## Push notifications
-
-When a Familiar or project session starts waiting on an approval or a clarifying question, MOLFAR sends one alert per request to every paired device that registered a push token. Tapping the alert opens that conversation in BitChain.
-
-- Alerts go through the Expo push service to Apple, so a short title and one line (the tool or the question) leave this computer. Turn off **Show what is waiting** to send a generic line instead.
-- **Only when MOLFAR is not the active window** (on by default) keeps the phone quiet while you are at the laptop.
-- A token Apple reports as no longer registered is dropped automatically.
-- BitChain needs an EAS project ID (`eas init`) to obtain an Expo push token.
 
 ## New sessions and Knowledge
 
@@ -76,4 +67,4 @@ When a Familiar or project session starts waiting on an approval or a clarifying
 
 ## Not yet
 
-Editing vault notes from the phone, full-text vault search, and file attachments other than photos.
+Editing vault notes from the phone, full-text vault search, file attachments other than photos, and push notifications (Apple Personal Team builds cannot sign Push Notifications).

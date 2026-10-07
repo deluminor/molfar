@@ -15,7 +15,7 @@ import type {
  * Bump the version when a field changes meaning or disappears. Adding optional
  * fields does not need a bump; clients ignore what they do not know.
  */
-export const COMPANION_PROTOCOL_VERSION = 1;
+export const COMPANION_PROTOCOL_VERSION = 2;
 
 /** 8×8 SVG path data for each frame, so clients draw the same sprite. */
 export type CompanionMascot = { name: string; rest: string; talk: string };

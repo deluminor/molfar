@@ -19,10 +19,7 @@ type CompanionStatus = {
     name: string;
     createdAt: number;
     lastSeenAt: number | null;
-    push: boolean;
   }[];
-  notifyWhenAway: boolean;
-  notifyDetails: boolean;
 };
 
 type PairingOffer = {
@@ -111,10 +108,7 @@ export function CompanionSettings() {
     }
   };
 
-  const configure = (
-    enabled: boolean,
-    alerts: Pick<CompanionStatus, "notifyWhenAway" | "notifyDetails"> = status!,
-  ) =>
+  const configure = (enabled: boolean) =>
     run(async () => {
       const parsed = Number(port);
       if (!Number.isInteger(parsed) || parsed < 1024 || parsed > 65535)
@@ -127,8 +121,6 @@ export function CompanionSettings() {
             mode,
             port: parsed,
             publicUrl: publicUrl.trim() || null,
-            notifyWhenAway: alerts.notifyWhenAway,
-            notifyDetails: alerts.notifyDetails,
           },
         }),
       );
@@ -158,7 +150,6 @@ export function CompanionSettings() {
             </>
           )}
         </section>
-        <section data-setting-id="companion-alerts" />
         <section data-setting-id="companion-devices" />
       </div>
     );
@@ -276,36 +267,6 @@ export function CompanionSettings() {
         </div>
       </section>
 
-      <section data-setting-id="companion-alerts" className="flex flex-col gap-3">
-        <div className="min-w-0">
-          <h2 className="text-[13px] font-semibold text-content">Notifications</h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-content/45">
-            Paired phones that allowed notifications hear about new approvals and questions.
-            Alerts travel through Expo and Apple push, so only a short title and line leave
-            this computer.
-          </p>
-        </div>
-        {(
-          [
-            ["notifyWhenAway", "Only when MOLFAR is not the active window"],
-            ["notifyDetails", "Show what is waiting (tool or question) in the alert"],
-          ] as const
-        ).map(([key, label]) => (
-          <label key={key} className="flex items-center gap-3 text-[13px] text-content/80">
-            <input
-              type="checkbox"
-              className="size-4 accent-current"
-              checked={status[key]}
-              disabled={busy}
-              onChange={(event) =>
-                void configure(status.enabled, { ...status, [key]: event.target.checked })
-              }
-            />
-            {label}
-          </label>
-        ))}
-      </section>
-
       <section data-setting-id="companion-devices" className="flex flex-col gap-4">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
@@ -365,7 +326,6 @@ export function CompanionSettings() {
                   <div className="mt-0.5 text-[12px] text-content/45">
                     Paired {new Date(device.createdAt).toLocaleDateString()} · last seen{" "}
                     {ago(device.lastSeenAt)}
-                    {device.push ? " · notifications on" : ""}
                   </div>
                 </div>
                 <button
