@@ -14,24 +14,58 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
 
-![MOLFAR Home dashboard](docs/architecture/images/home.png)
+## Architecture
+
+![MOLFAR system architecture — React UI, Tauri core, Companion gateway, agent harness, Atlassian, and local store](docs/architecture/images/molfar-system.png)
+
+Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
+
+| Layer                 | Responsibility                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
+
+The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
+
+| Concern             | Technology                                            |
+| ------------------- | ----------------------------------------------------- |
+| Desktop runtime     | Tauri 2                                               |
+| UI                  | React 19, Vite 7, Tailwind CSS 4, TypeScript (strict) |
+| Native runtime      | Rust (stable)                                         |
+| Editor / terminal   | CodeMirror 6, xterm.js                                |
+| Markdown / diagrams | Streamdown, Mermaid                                   |
+| Knowledge graph     | 3d-force-graph (WebGL)                                |
+| Home visuals        | Canvas 2D renderers, no extra dependencies            |
+| Tests               | Vitest, cargo test, clippy `-D warnings`              |
+
+```
+src/
+├── app/                 # Shell composition, window chrome, startup, updates
+├── features/            # Product slices (UI + model + tests per feature)
+│   ├── sessions/        # Composer, transcripts, BTW, second opinion
+│   ├── inbox/           # Connectors incl. Confluence Docs
+│   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
+│   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
+│   ├── familiars/           # Persistent agents: soul, memory, habits
+│   ├── orchestration/   # Lead/worker runs
+│   ├── agent-app/       # /operator app-tool surface
+│   └── …                # files, notes, terminal, automations, source-control, usage, settings
+├── integrations/harness/ # Provider-independent core + per-CLI adapters
+├── platform/tauri/      # Browser ↔ Tauri adapters
+├── shared/              # Reusable UI primitives (no feature logic)
+└── styles/              # Global CSS + design tokens
+src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, familiars, control CLI
+host/                    # Experimental remote host (Node) for always-on agent machines
+docs/
+├── architecture/        # Interactive HTML diagrams, JSON sources, README images
+└── brand/               # Logo, app-icon and installer artwork sources (SVG)
+```
 
 > **MOLFAR** brings agents, projects, worktrees, tickets, knowledge, automation, and developer tooling into one desktop environment. It drives the provider CLIs you already use and keeps project state, sessions, and credentials on your machine.
 >
 > Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT), MOLFAR is an independent project with its own repository, releases, and architecture, and it still ports selected upstream changes.
-
-## Table of Contents
-
-- [TL;DR](#tldr)
-- [Why MOLFAR](#why-molfar)
-- [What it does](#what-it-does)
-- [Architecture](#architecture)
-- [Security and execution model](#security-and-execution-model)
-- [Getting started](#getting-started)
-- [Reference](#reference)
-- [Development](#development)
-- [Direction](#direction)
-- [License and attribution](#license-and-attribution)
 
 ## TL;DR
 
@@ -59,6 +93,8 @@ The problem is not a lack of agents. It is the lack of a shared engineering envi
 The name is a nod to the _molfar_ — the Carpathian wise man who reads signs and keeps knowledge. The acronym says what the product does: a layer that orchestrates many agents locally and keeps their reasoning grounded in your project.
 
 ## What it does
+
+![MOLFAR Home dashboard](docs/architecture/images/home.png)
 
 ### Sessions: every agent, one workspace
 
@@ -108,6 +144,7 @@ MOLFAR opens a local Obsidian vault directly — no plugin, no running Obsidian.
 - Source/Preview editing that preserves frontmatter and line endings;
 - **Add to agent context** attaches the saved revision as an explicit context card, so the agent works from exactly the text you reviewed.
 
+![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-close.png)
 ![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-open.png)
 
 ### Notes
@@ -138,55 +175,6 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 ### Also inside
 
 Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
-
-## Architecture
-
-![MOLFAR system architecture — React UI, Tauri core, Companion gateway, agent harness, Atlassian, and local store](docs/architecture/images/molfar-system.png)
-
-Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
-
-| Layer                 | Responsibility                                                                                     |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
-| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
-| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
-
-The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
-
-| Concern             | Technology                                            |
-| ------------------- | ----------------------------------------------------- |
-| Desktop runtime     | Tauri 2                                               |
-| UI                  | React 19, Vite 7, Tailwind CSS 4, TypeScript (strict) |
-| Native runtime      | Rust (stable)                                         |
-| Editor / terminal   | CodeMirror 6, xterm.js                                |
-| Markdown / diagrams | Streamdown, Mermaid                                   |
-| Knowledge graph     | 3d-force-graph (WebGL)                                |
-| Home visuals        | Canvas 2D renderers, no extra dependencies            |
-| Tests               | Vitest, cargo test, clippy `-D warnings`              |
-
-```
-src/
-├── app/                 # Shell composition, window chrome, startup, updates
-├── features/            # Product slices (UI + model + tests per feature)
-│   ├── sessions/        # Composer, transcripts, BTW, second opinion
-│   ├── inbox/           # Connectors incl. Confluence Docs
-│   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
-│   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
-│   ├── familiars/           # Persistent agents: soul, memory, habits
-│   ├── orchestration/   # Lead/worker runs
-│   ├── agent-app/       # /operator app-tool surface
-│   └── …                # files, notes, terminal, automations, source-control, usage, settings
-├── integrations/harness/ # Provider-independent core + per-CLI adapters
-├── platform/tauri/      # Browser ↔ Tauri adapters
-├── shared/              # Reusable UI primitives (no feature logic)
-└── styles/              # Global CSS + design tokens
-src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, familiars, control CLI
-host/                    # Experimental remote host (Node) for always-on agent machines
-docs/
-├── architecture/        # Interactive HTML diagrams, JSON sources, README images
-└── brand/               # Logo, app-icon and installer artwork sources (SVG)
-```
 
 ## Security and execution model
 
