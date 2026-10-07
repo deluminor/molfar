@@ -5,7 +5,7 @@
     "title": "MOLFAR System Overview",
     "locale": "en",
     "quality_profile": "showcase",
-    "viewBox": [1180, 720],
+    "viewBox": [1200, 700],
     "views": [
       {
         "id": "agent-turn",
@@ -23,7 +23,13 @@
         "id": "operator-control",
         "label": "Operator and local state",
         "focus": ["ui", "control", "store", "harness"],
-        "note": "/operator gives the agent a scoped app CLI while sessions and notes stay local."
+        "note": "/operator gives the agent a scoped app CLI while sessions, Familiars, and notes stay local."
+      },
+      {
+        "id": "companion-path",
+        "label": "Companion over Tailscale",
+        "focus": ["phone", "companion", "ui", "tauri", "store"],
+        "note": "A paired phone or iPad reaches the local Companion gateway over Tailscale; the desktop bridge executes the same paths as the UI."
       }
     ]
   },
@@ -33,8 +39,16 @@
       "type": "external",
       "label": "User",
       "sublabel": "Desktop operator",
-      "pos": [40, 300],
-      "size": [130, 64]
+      "pos": [36, 270],
+      "size": [124, 60]
+    },
+    {
+      "id": "phone",
+      "type": "external",
+      "label": "Phone / iPad",
+      "sublabel": "BitChain Molfar",
+      "pos": [36, 450],
+      "size": [124, 60]
     },
     {
       "id": "ui",
@@ -42,50 +56,59 @@
       "label": "React UI",
       "sublabel": "Vite + feature slices",
       "brand": "react",
-      "pos": [240, 300],
-      "size": [150, 72],
-      "tag": "sessions · inbox · home"
+      "pos": [230, 264],
+      "size": [148, 70],
+      "tag": "sessions · familiars · home"
     },
     {
       "id": "inbox",
       "type": "frontend",
       "label": "Inbox",
       "sublabel": "Issues + Docs",
-      "pos": [240, 120],
-      "size": [150, 64]
+      "pos": [230, 96],
+      "size": [148, 60]
+    },
+    {
+      "id": "companion",
+      "type": "backend",
+      "label": "Companion Gateway",
+      "sublabel": "pair · RPC · host",
+      "pos": [230, 450],
+      "size": [148, 60],
+      "tag": "Tailscale bound"
     },
     {
       "id": "control",
       "type": "backend",
       "label": "App / Control CLI",
       "sublabel": "/operator tools",
-      "pos": [240, 480],
-      "size": [150, 64]
+      "pos": [480, 500],
+      "size": [148, 60]
     },
     {
       "id": "tauri",
       "type": "backend",
       "label": "Tauri Core",
       "sublabel": "Rust commands",
-      "pos": [480, 300],
-      "size": [150, 72],
-      "tag": "PTY · FS · git"
+      "pos": [480, 264],
+      "size": [148, 70],
+      "tag": "PTY · FS · git · host"
     },
     {
       "id": "harness",
       "type": "backend",
       "label": "Agent Harness",
       "sublabel": "Provider adapters",
-      "pos": [720, 300],
-      "size": [150, 72]
+      "pos": [730, 264],
+      "size": [148, 70]
     },
     {
       "id": "store",
       "type": "database",
       "label": "Local Store",
-      "sublabel": "Sessions · notes",
-      "pos": [480, 480],
-      "size": [150, 64]
+      "sublabel": "Sessions · Familiars",
+      "pos": [730, 450],
+      "size": [148, 60]
     },
     {
       "id": "atlassian",
@@ -93,28 +116,33 @@
       "label": "Atlassian Cloud",
       "sublabel": "Jira + Confluence",
       "brand": "jira",
-      "pos": [480, 120],
-      "size": [150, 64]
+      "pos": [480, 96],
+      "size": [148, 60]
     },
     {
       "id": "providers",
       "type": "external",
       "label": "Provider CLIs",
       "sublabel": "Claude · Codex · Cursor…",
-      "pos": [960, 300],
-      "size": [160, 72]
+      "pos": [970, 264],
+      "size": [156, 70]
     }
   ],
   "boundaries": [
     {
       "kind": "region",
       "label": "MOLFAR desktop process",
-      "wraps": ["ui", "inbox", "control", "tauri", "harness", "store"]
+      "wraps": ["ui", "inbox", "companion", "control", "tauri", "harness", "store"]
     },
     {
       "kind": "security-group",
       "label": "Credential boundary",
       "wraps": ["tauri", "atlassian"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Companion trust boundary",
+      "wraps": ["phone", "companion"]
     }
   ],
   "connections": [
@@ -124,6 +152,22 @@
       "to": "ui",
       "label": "interact",
       "variant": "emphasis"
+    },
+    {
+      "id": "phone-to-companion",
+      "from": "phone",
+      "to": "companion",
+      "label": "Tailscale RPC",
+      "variant": "security"
+    },
+    {
+      "id": "companion-to-ui",
+      "from": "companion",
+      "to": "ui",
+      "label": "bridge",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
     },
     {
       "id": "ui-to-inbox",
@@ -155,7 +199,7 @@
       "variant": "security",
       "fromSide": "top",
       "toSide": "bottom",
-      "labelDy": -66
+      "labelDy": -56
     },
     {
       "id": "tauri-to-harness",
@@ -177,8 +221,7 @@
       "label": "/operator",
       "variant": "dashed",
       "fromSide": "bottom",
-      "toSide": "top",
-      "labelDy": 24
+      "toSide": "left"
     },
     {
       "id": "control-to-store",
@@ -193,8 +236,7 @@
       "to": "store",
       "label": "persist",
       "fromSide": "bottom",
-      "toSide": "top",
-      "labelDy": 24
+      "toSide": "left"
     }
   ],
   "cards": [
@@ -202,24 +244,24 @@
       "dot": "cyan",
       "title": "Desktop shell",
       "items": [
-        "React 19 feature slices render sessions, Inbox, Home, and settings",
-        "Tauri 2 owns filesystem, PTY, git, and native window behavior"
+        "React slices: sessions, Familiars, Inbox, Home, settings",
+        "Tauri owns FS, PTY, git, host metrics, and the window"
       ]
     },
     {
       "dot": "emerald",
       "title": "Agent path",
       "items": [
-        "Harness adapters normalize provider CLI protocols into MOLFAR events",
-        "MOLFAR does not sell tokens — it drives CLIs you already authenticate"
+        "Harness adapters normalize provider CLI protocols",
+        "MOLFAR drives CLIs you already authenticate — no sold tokens"
       ]
     },
     {
       "dot": "rose",
-      "title": "MOLFAR additions",
+      "title": "Companion and local trust",
       "items": [
-        "Confluence Docs browse and agent tools reuse Jira Atlassian credentials",
-        "Home brand visuals switch between Sphere, Fire and Orb"
+        "Phones reach a Tailscale-bound gateway; only token hashes stored",
+        "Familiars and notes stay local; Confluence reuses Jira credentials"
       ]
     }
   ]

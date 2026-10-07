@@ -141,18 +141,16 @@ Global quick composer (`Cmd+Shift+Space` by default) · MCP server management fo
 
 ## Architecture
 
-<p align="center">
-  <img src="docs/architecture/images/molfar-system.png" alt="MOLFAR system architecture — React UI, Tauri core, agent harness, Atlassian, and local store" width="900" />
-</p>
+![MOLFAR system architecture — React UI, Tauri core, Companion gateway, agent harness, Atlassian, and local store](docs/architecture/images/molfar-system.png)
 
 Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
 
-| Layer                 | Responsibility                                                                                  |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them  |
-| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model    |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI  |
-| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine |
+| Layer                 | Responsibility                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
 
 The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
 
