@@ -88,14 +88,22 @@ jobs:
           git config user.email "${OWNER_ID}+${OWNER}@users.noreply.github.com"
 
           RELEASE_HEAD="release/${TAG}"
-          git switch -c "$RELEASE_HEAD"
+          # Re-runs after a createPullRequest race leave this branch behind;
+          # switch -C resets it onto the freshly prepared bump commit.
+          git switch -C "$RELEASE_HEAD"
           git add CHANGELOG.md package.json package-lock.json Cargo.toml Cargo.lock src-tauri/tauri.conf.json
           git commit -m "chore(release): $TAG"
+          EXPECTED_SHA="$(git rev-parse HEAD)"
           git push --force-with-lease origin "HEAD:refs/heads/$RELEASE_HEAD"
 
-          PR_URL="$(gh pr create \
+          # GitHub's createPullRequest GraphQL races a brand-new head ref and
+          # reports "No commits between main and release/vX.Y.Z". Wait until
+          # the compare API sees the tip, then create (or reuse) the PR.
+          PR_URL="$(node scripts/release/open-pr.mjs \
+            --repository "$GITHUB_REPOSITORY" \
             --base "$RELEASE_BRANCH" \
             --head "$RELEASE_HEAD" \
+            --expected-sha "$EXPECTED_SHA" \
             --title "chore(release): $TAG" \
             --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`main\` stays PR-only.")"
 

@@ -17,7 +17,7 @@ The workflow then:
   - subjects without a conventional prefix;
   - commits that edited `CHANGELOG.md` themselves, since they already wrote their notes;
   - MonoCode commits reachable from `upstream/main`, which the sync PR describes under `Unreleased`;
-- opens a `release/vX.Y.Z` branch, squash-merges a PR into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
+- opens a `release/vX.Y.Z` branch, waits until GitHub's compare API sees that head (GraphQL `createPullRequest` often races a brand-new ref), opens or reuses the PR, squash-merges it into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
 - builds macOS (arm64 + x64), Windows, Linux (`.deb`, AppImage, `.rpm`) and the six host packages from that tag;
 - publishes the GitHub release with the changelog section as its body, plus `latest.json` for in-app updates.
 
