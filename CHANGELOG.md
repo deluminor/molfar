@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Companion**: pair a phone or iPad with this desktop over Tailscale (Settings → Companion, QR code) to follow Familiars and open sessions, send messages and photos, answer approvals and questions, switch permission modes, start new sessions, browse the Knowledge vault, get push alerts for new approvals and questions, and read or add notes while MOLFAR runs. The gateway is off by default, binds only loopback or the Tailscale address, and stores only hashes of per-device tokens. See [docs/companion.md](docs/companion.md).
+
 ## [1.0.4] - 2026-10-07
 
 ### Changed

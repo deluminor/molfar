@@ -60,7 +60,7 @@ fn to_stats(sample: Sample) -> HostStats {
     }
 }
 
-fn sample_host() -> Result<HostStats, String> {
+pub(crate) fn sample_host() -> Result<HostStats, String> {
     let mut system = system()
         .lock()
         .map_err(|_| "Host stats sampler is unavailable".to_string())?;

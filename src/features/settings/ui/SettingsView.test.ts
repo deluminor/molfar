@@ -876,6 +876,7 @@ describe("settings search", () => {
       options().map((item) => item.querySelector("span")!.textContent),
     ).toEqual([
       "Notifications",
+      "Companion notifications",
       "Project notifications",
       "Claude Code hooks",
       "General",

@@ -20,6 +20,7 @@ const SECTION_KEY = "molfar.settingsSection";
 export type SettingsSectionId =
   | "general"
   | "connections"
+  | "companion"
   | "appearance"
   | "keybindings"
   | "chat"
@@ -64,6 +65,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     label: "Connections",
     description: "Connect your machines and run agents remotely through SSH.",
     keywords: "ssh remote host machine server environment always on",
+  },
+  {
+    id: "companion",
+    group: "app",
+    label: "Companion",
+    description:
+      "Pair your phone or tablet to follow and steer MOLFAR from anywhere on your tailnet.",
+    keywords: "phone iphone ipad mobile tablet bitchain tailscale pair qr remote control",
   },
   {
     id: "appearance",
@@ -173,6 +182,24 @@ export type SettingsEntry = {
 };
 
 export const SETTINGS_INDEX: SettingsEntry[] = [
+  {
+    id: "companion-gateway",
+    section: "companion",
+    label: "Companion gateway",
+    keywords: "phone mobile tailscale serve port",
+  },
+  {
+    id: "companion-alerts",
+    section: "companion",
+    label: "Companion notifications",
+    keywords: "push notification approval phone alert",
+  },
+  {
+    id: "companion-devices",
+    section: "companion",
+    label: "Paired devices",
+    keywords: "phone iphone ipad pair qr revoke",
+  },
   {
     id: "remote-machines",
     section: "connections",
