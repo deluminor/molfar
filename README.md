@@ -116,6 +116,14 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 ![Notes view with a tagged note in preview mode](docs/architecture/images/notes.png)
 
+### Companion: iPhone and iPad over Tailscale
+
+Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
+
+![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred.png)
+
+![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
+
 ### Orchestration and `/operator`
 
 - **Orchestration** lets a lead agent decompose a larger task into coordinated worker sessions, each in its own checkout.
@@ -129,7 +137,7 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 ### Also inside
 
-[Phone and tablet companion](docs/companion.md) over Tailscale · Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Architecture
 
@@ -337,8 +345,6 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 ## Direction
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
-
-The first **iPad and iOS companion** ships as the Molfar module of BitChain: it pairs with a running desktop over Tailscale to follow Familiars and sessions, answer approvals, start sessions, browse Knowledge, and send messages, photos and dictation ([docs/companion.md](docs/companion.md)).
 
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 
