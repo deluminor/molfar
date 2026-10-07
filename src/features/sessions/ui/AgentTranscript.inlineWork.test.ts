@@ -55,7 +55,7 @@ function render(
 }
 
 function status() {
-  return container.querySelector('[data-mono-work] [role="status"] .sr-only')
+  return container.querySelector('[data-familiar-work] [role="status"] .sr-only')
     ?.textContent;
 }
 
@@ -74,7 +74,7 @@ it("keeps the opening and reply outside a noninteractive work summary", () => {
     { id: "answer", role: "assistant", text: "Everything passed." },
   ]);
   expect(status()).toBe("Ran 2 commands");
-  const work = container.querySelector("[data-mono-work]")!;
+  const work = container.querySelector("[data-familiar-work]")!;
   expect(work.querySelector("button")).toBeNull();
   act(() => work.dispatchEvent(new MouseEvent("click", { bubbles: true })));
   expect(container.textContent).not.toContain("Trying another approach.");
@@ -83,7 +83,7 @@ it("keeps the opening and reply outside a noninteractive work summary", () => {
   expect(container.textContent).toContain("Everything passed.");
 });
 
-it("opens activity from the work summary while keeping the Mono duration label noninteractive", () => {
+it("opens activity from the work summary while keeping the Familiar duration label noninteractive", () => {
   const onShowWork = vi.fn();
   const blocks: Block[] = [
     { id: "earlier", role: "user", text: "Earlier turn" },
@@ -126,7 +126,7 @@ it("keeps streamed progress inside the status row and reveals the final reply wh
     { id: "intro", role: "assistant", text: "I will inspect the files." },
   ];
   render([...opening, tool("first", "in_progress")], { busy: true });
-  const group = container.querySelector("[data-mono-work]");
+  const group = container.querySelector("[data-familiar-work]");
   expect(status()).toBe("Running command…");
   const narrated: Block[] = [
     ...opening,
@@ -155,7 +155,7 @@ it("keeps streamed progress inside the status row and reveals the final reply wh
   render(worked, { busy: true });
   settleTicker();
   expect(status()).toBe("Pondering…");
-  expect(container.querySelector("[data-mono-work]")).toBe(group);
+  expect(container.querySelector("[data-familiar-work]")).toBe(group);
   expect(container.querySelector('[data-chat-message="answer"]')).toBeNull();
   render(worked.map((block) => ({ ...block, streaming: false })));
   settleTicker();
@@ -224,12 +224,12 @@ it("marks the compact group for search without expanding its commands or narrati
     '[data-transcript-search-current="true"]',
   );
   expect(current).toHaveLength(1);
-  expect(current[0].querySelector("[data-mono-work]")).not.toBeNull();
+  expect(current[0].querySelector("[data-familiar-work]")).not.toBeNull();
   expect(container.textContent).not.toContain("Trying another approach.");
-  expect(container.querySelector("[data-mono-work] button")).toBeNull();
+  expect(container.querySelector("[data-familiar-work] button")).toBeNull();
 });
 
-it("keeps interrupted Mono messages together above one working indicator", () => {
+it("keeps interrupted Familiar messages together above one working indicator", () => {
   const blocks: Block[] = [
     {
       id: "first-message",
@@ -259,12 +259,12 @@ it("keeps interrupted Mono messages together above one working indicator", () =>
     ),
   ).toEqual(["first-message", "second-message", "third-message"]);
   expect(turn.querySelectorAll('[data-message-stack="true"]')).toHaveLength(2);
-  expect(turn.querySelectorAll("[data-mono-work]")).toHaveLength(1);
+  expect(turn.querySelectorAll("[data-familiar-work]")).toHaveLength(1);
   const rows = [...turn.querySelectorAll("[data-transcript-search-item]")];
   expect(
     rows.slice(0, 3).every((row) => row.querySelector("[data-prompt-anchor]")),
   ).toBe(true);
-  expect(rows[3].querySelector("[data-mono-work]")).not.toBeNull();
+  expect(rows[3].querySelector("[data-familiar-work]")).not.toBeNull();
   render([...blocks, { id: "answer", role: "assistant", text: "Done" }], {
     ...props,
     busy: false,

@@ -1,7 +1,7 @@
 import type { Block } from "./session";
 import {
-  groupMonoTurnItems,
-  groupMonoTurns,
+  groupFamiliarTurnItems,
+  groupFamiliarTurns,
   groupTurnItems,
   groupTurns,
   type TurnItem,
@@ -24,7 +24,7 @@ export class TranscriptTurnCache {
       return this.turns;
     const previous = new Map(this.turns.map((turn) => [turn[0].id, turn]));
     const grouped = inlineWork
-      ? groupMonoTurns(blocks, managed)
+      ? groupFamiliarTurns(blocks, managed)
       : groupTurns(blocks, managed);
     const next = grouped.map((turn) => {
       const before = previous.get(turn[0].id);
@@ -58,7 +58,7 @@ export class TranscriptTurnCache {
       (block) => !block.orchestration && (managed || !block.internal),
     );
     const items = inlineWork
-      ? groupMonoTurnItems(blocks, { live: !settled })
+      ? groupFamiliarTurnItems(blocks, { live: !settled })
       : groupTurnItems(blocks, { settled });
     if (!variants) {
       variants = new Map();

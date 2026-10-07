@@ -648,7 +648,7 @@ html.has-chat-background.chat-background-effect-ready.chat-background-gradient-b
   background-color: color-mix(in srgb, var(--color-accent) 62%, transparent);
 }
 
-/* Match the Mono transcript's soft edge fade on overflowing tab text. */
+/* Match the Familiar transcript's soft edge fade on overflowing tab text. */
 .tab-label[data-overflow="true"] {
   --tab-label-mask: linear-gradient(
     to right,
@@ -678,21 +678,21 @@ html.has-chat-background.chat-background-effect-ready.chat-background-gradient-b
   padding-bottom: 2.5rem;
 }
 
-.mono-transcript-fades {
-  --mono-transcript-mask: linear-gradient(
+.familiar-transcript-fades {
+  --familiar-transcript-mask: linear-gradient(
     to bottom,
     transparent,
     #000 1.5rem,
     #000 calc(100% - 2rem),
     transparent
   );
-  -webkit-mask-image: var(--mono-transcript-mask);
-  mask-image: var(--mono-transcript-mask);
+  -webkit-mask-image: var(--familiar-transcript-mask);
+  mask-image: var(--familiar-transcript-mask);
 }
 
-/* Mono history is already paged in groups of ten. Lay out those turns at
+/* Familiar history is already paged in groups of ten. Lay out those turns at
    their real heights so opening and scrolling never correct placeholders. */
-.mono-transcript-fades .transcript-turn {
+.familiar-transcript-fades .transcript-turn {
   content-visibility: visible;
   contain-intrinsic-block-size: none;
 }
@@ -2351,7 +2351,7 @@ header[data-tauri-drag-region] button {
 }
 
 /* The agent's name pill, which the mascot stands on. */
-.mono-pill {
+.familiar-pill {
   border-color: color-mix(in srgb, var(--color-content) 14%, transparent);
   background: color-mix(in srgb, var(--color-content) 6%, transparent);
 }
@@ -2482,7 +2482,7 @@ html.theme-light.has-user-accent .agent-chat-user-bubble {
   color: var(--color-content);
 }
 
-html.theme-light .mono-pill {
+html.theme-light .familiar-pill {
   background: #fff;
   border-color: rgb(0 0 0 / 0.06);
   box-shadow:
@@ -2495,32 +2495,32 @@ html.theme-light .mono-pill {
    paragraph itself would match every block. */
 /* A habit run's report, read inside its row on the habit page: the row's
    own size and rhythm, with lists hung just inside the text's left edge. */
-.mono-run-report.agent-markdown {
+.familiar-run-report.agent-markdown {
   font-size: 12px;
   line-height: 20px;
 }
 
-.mono-run-report.agent-markdown p,
-.mono-run-report.agent-markdown li {
+.familiar-run-report.agent-markdown p,
+.familiar-run-report.agent-markdown li {
   margin-block: 0;
 }
 
-.mono-run-report.agent-markdown > * + * {
+.familiar-run-report.agent-markdown > * + * {
   margin-top: 8px;
 }
 
-.mono-run-report.agent-markdown [data-streamdown="ordered-list"],
-.mono-run-report.agent-markdown [data-streamdown="unordered-list"] {
+.familiar-run-report.agent-markdown [data-streamdown="ordered-list"],
+.familiar-run-report.agent-markdown [data-streamdown="unordered-list"] {
   margin-block: 0;
   padding-inline-start: 14px;
 }
 
-.mono-run-report.agent-markdown li + li {
+.familiar-run-report.agent-markdown li + li {
   margin-top: 2px;
 }
 
 /* The activity panel is narrow: its steps read at the panel's size. */
-.mono-activity-steps .text-sm {
+.familiar-activity-steps .text-sm {
   font-size: 12px;
   line-height: 18px;
 }
@@ -2643,36 +2643,36 @@ html.theme-light .mono-pill {
   }
 }
 
-/* Mono intro: the mascots march in and line up, then the user's mono drops
+/* Familiar intro: the mascots march in and line up, then the user's familiar drops
    into the spotlight. Every step holds its end state, so reduced motion just
    skips to the final scene. */
-.mono-intro-march {
-  animation: mono-intro-march 700ms var(--delay) cubic-bezier(0.2, 0.8, 0.3, 1)
+.familiar-intro-march {
+  animation: familiar-intro-march 700ms var(--delay) cubic-bezier(0.2, 0.8, 0.3, 1)
     both;
 }
 
-.mono-intro-march .mono-intro-hop {
-  animation: mono-intro-hop 175ms var(--delay) ease-out 4 alternate;
+.familiar-intro-march .familiar-intro-hop {
+  animation: familiar-intro-hop 175ms var(--delay) ease-out 4 alternate;
 }
 
-.mono-intro-drop {
+.familiar-intro-drop {
   transform-origin: bottom center;
-  animation: mono-intro-drop 650ms 1350ms ease-in both;
+  animation: familiar-intro-drop 650ms 1350ms ease-in both;
 }
 
-@keyframes mono-intro-march {
+@keyframes familiar-intro-march {
   from {
     transform: translateX(var(--from));
   }
 }
 
-@keyframes mono-intro-hop {
+@keyframes familiar-intro-hop {
   to {
     transform: translateY(-5px);
   }
 }
 
-@keyframes mono-intro-drop {
+@keyframes familiar-intro-drop {
   0% {
     transform: translateY(-240px);
   }
@@ -2692,11 +2692,11 @@ html.theme-light .mono-pill {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mono-intro * {
+  .familiar-intro * {
     animation-duration: 1ms !important;
     animation-delay: 0s !important;
   }
-  .mono-intro .mono-intro-hop {
+  .familiar-intro .familiar-intro-hop {
     animation: none !important;
   }
 }
@@ -3154,31 +3154,31 @@ html.theme-light .mono-pill {
   }
 }
 
-.mono-details-panel[data-open="false"] {
+.familiar-details-panel[data-open="false"] {
   display: none;
 }
 
-/* A Mono's activity rolls through one clipped line without moving the chat. */
-.mono-work-ticker {
+/* A Familiar's activity rolls through one clipped line without moving the chat. */
+.familiar-work-ticker {
   height: 24px;
   overflow: hidden;
 }
 
-.mono-work-ticker-track {
+.familiar-work-ticker-track {
   display: flex;
   flex-direction: column;
 }
 
-.mono-work-ticker-row {
+.familiar-work-ticker-row {
   height: 24px;
   flex-shrink: 0;
 }
 
-.mono-work-ticker-track[data-moving="true"] {
-  animation: mono-work-tick 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.familiar-work-ticker-track[data-moving="true"] {
+  animation: familiar-work-tick 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes mono-work-tick {
+@keyframes familiar-work-tick {
   from {
     transform: translateY(0);
   }
@@ -3188,7 +3188,7 @@ html.theme-light .mono-pill {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mono-work-ticker-track[data-moving="true"] {
+  .familiar-work-ticker-track[data-moving="true"] {
     animation: none;
     transform: translateY(-24px);
   }

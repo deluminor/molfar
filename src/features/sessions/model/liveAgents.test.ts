@@ -28,12 +28,12 @@ function edit(id: string, path = "src/App.tsx", status = "in_progress"): Block {
 }
 
 describe("liveAgentsFromSessions", () => {
-  it("excludes Mono activity while keeping regular working and finished sessions", () => {
+  it("excludes Familiar activity while keeping regular working and finished sessions", () => {
     const working = chat("/repo", { id: "working", busy: true });
     const done = chat("/repo", { id: "done" });
-    const monoWorking = chat("~", { id: "mono-working", busy: true });
-    const monoWaiting = chat("~", {
-      id: "mono-waiting",
+    const familiarWorking = chat("~", { id: "familiar-working", busy: true });
+    const familiarWaiting = chat("~", {
+      id: "familiar-waiting",
       blocks: [{
         id: "approval",
         role: "approval",
@@ -41,11 +41,11 @@ describe("liveAgentsFromSessions", () => {
         approval: { requestId: 1 },
       }],
     });
-    const monoDone = chat("~", { id: "mono-done" });
+    const familiarDone = chat("~", { id: "familiar-done" });
     const agents = liveAgentsFromSessions(
-      [monoWaiting, monoWorking, monoDone, done, working],
-      new Set([monoDone.id, done.id]),
-      new Set([monoWorking.id, monoWaiting.id, monoDone.id]),
+      [familiarWaiting, familiarWorking, familiarDone, done, working],
+      new Set([familiarDone.id, done.id]),
+      new Set([familiarWorking.id, familiarWaiting.id, familiarDone.id]),
     );
     expect(agents.map((agent) => agent.id)).toEqual([working.id, done.id]);
     expect(agents[1].done).toBe(true);

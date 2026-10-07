@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { isMonoSession } from "../../monos/model/mono";
+import { isFamiliarSession } from "../../familiars/model/familiar";
 import {
   isWeakToolTitle,
   titleFromToolInput,
@@ -76,7 +76,7 @@ export type SessionSummary = {
 };
 
 type SessionRecord = {
-  monoTranscript?: Session["monoTranscript"];
+  familiarTranscript?: Session["familiarTranscript"];
   orchestrationLeadId?: string;
   id: string;
   cwd: string;
@@ -131,8 +131,8 @@ export function shouldPersistSession(session: Session): boolean {
     !isRemoteProjectPath(session.cwd) &&
     session.cwd !== "~" &&
     (session.blocks.some((block) => block.role === "user") ||
-      (isMonoSession(session.id) &&
-        (session.blocks.length > 0 || !!session.monoTranscript)))
+      (isFamiliarSession(session.id) &&
+        (session.blocks.length > 0 || !!session.familiarTranscript)))
   );
 }
 
@@ -183,11 +183,11 @@ function persistableMeta(
   };
 }
 
-function sanitizeMonoSessionCompletion(
+function sanitizeFamiliarSessionCompletion(
   value: unknown,
-): Block["monoSessionCompletion"] {
+): Block["familiarSessionCompletion"] {
   if (!value || typeof value !== "object") return undefined;
-  const completion = value as NonNullable<Block["monoSessionCompletion"]>;
+  const completion = value as NonNullable<Block["familiarSessionCompletion"]>;
   if (
     typeof completion.sessionId !== "string" ||
     !isPersistableId(completion.sessionId) ||
@@ -205,6 +205,24 @@ function sanitizeMonoSessionCompletion(
       ? { sessionCount: completion.sessionCount }
       : {}),
   };
+}
+
+/** Upstream Mono field names still present in transcripts saved before the rename. */
+type LegacyFamiliarFields = {
+  familiarHabit?: Block["familiarHabit"];
+  familiarSessionCompletion?: Block["familiarSessionCompletion"];
+  monoHabit?: Block["familiarHabit"];
+  monoSessionCompletion?: Block["familiarSessionCompletion"];
+};
+
+function legacyFamiliarHabit(
+  block: LegacyFamiliarFields,
+): Block["familiarHabit"] | undefined {
+  return block.familiarHabit ?? block.monoHabit;
+}
+
+function legacyFamiliarSessionCompletion(block: LegacyFamiliarFields): unknown {
+  return block.familiarSessionCompletion ?? block.monoSessionCompletion;
 }
 
 /** Pending images need their bytes until delivery; object URLs never survive reloads. */
@@ -248,8 +266,8 @@ function sanitizeQueuedMessages(value: unknown): QueuedMessage[] {
         })
       : [];
     const noteMeta = sanitizeNoteCard(message.noteCard);
-    const completion = sanitizeMonoSessionCompletion(
-      message.monoSessionCompletion,
+    const completion = sanitizeFamiliarSessionCompletion(
+      legacyFamiliarSessionCompletion(message),
     );
     const noteCard =
       noteMeta && typeof message.noteCard?.body === "string"
@@ -281,7 +299,7 @@ function sanitizeQueuedMessages(value: unknown): QueuedMessage[] {
         attachments,
         ...(noteCard ? { noteCard } : {}),
         ...(handoffCard ? { handoffCard } : {}),
-        ...(completion ? { monoSessionCompletion: completion } : {}),
+        ...(completion ? { familiarSessionCompletion: completion } : {}),
         ...(["default", "plan", "build", "orchestrate"].includes(
           message.intent ?? "",
         )
@@ -376,12 +394,12 @@ export async function upsertSession(
   if (!shouldPersistSession(session) || deletedSessionIds.has(session.id)) {
     return null;
   }
-  const mono = !!session.monoTranscript || isMonoSession(session.id);
-  const snapshot = mono
-    ? session.blocks.filter((block) => monoPersistedBlock(block) !== null)
+  const familiar = !!session.familiarTranscript || isFamiliarSession(session.id);
+  const snapshot = familiar
+    ? session.blocks.filter((block) => familiarPersistedBlock(block) !== null)
     : session.blocks;
-  // Mono writes sanitize only the changed suffix inside the serialized queue.
-  const payload = mono
+  // Familiar writes sanitize only the changed suffix inside the serialized queue.
+  const payload = familiar
     ? persistableMeta(session)
     : sanitizeSessionForPersist(session);
   if (session.orchestrationLeadId) {
@@ -391,8 +409,8 @@ export async function upsertSession(
   }
   const summary = await enqueueSessionWrite(session.id, async () => {
     if (deletedSessionIds.has(session.id)) return null;
-    if (mono) {
-      const previous = monoSavedBlocks.get(session.id);
+    if (familiar) {
+      const previous = familiarSavedBlocks.get(session.id);
       let same = 0;
       if (previous) {
         while (
@@ -404,11 +422,11 @@ export async function upsertSession(
       }
       const changed =
         !previous || same !== previous.length || same !== snapshot.length;
-      const summary = await invoke<SessionSummary>("mono_session_upsert", {
+      const summary = await invoke<SessionSummary>("familiar_session_upsert", {
         session: {
           ...payload,
           blocks: changed
-            ? snapshot.slice(same).map((block) => monoPersistedBlock(block)!)
+            ? snapshot.slice(same).map((block) => familiarPersistedBlock(block)!)
             : [],
         },
         afterBlockId: same > 0 ? snapshot[same - 1].id : null,
@@ -416,12 +434,12 @@ export async function upsertSession(
           same === 0
             ? previous !== undefined
               ? (previous[0]?.id ?? null)
-              : (session.monoTranscript?.firstBlockId ?? null)
+              : (session.familiarTranscript?.firstBlockId ?? null)
             : null,
         blocksChanged: changed,
         appendOnly: previous?.length === 0,
       });
-      monoSavedBlocks.set(session.id, snapshot);
+      familiarSavedBlocks.set(session.id, snapshot);
       return summary;
     }
     return invoke<SessionSummary>("session_upsert", {
@@ -545,31 +563,31 @@ export function cancelSessionSearch(searchOwner: string): Promise<void> {
   return invoke<void>("cancel_session_search", { searchOwner });
 }
 
-const monoSavedBlocks = new Map<string, Block[]>();
-const monoBlockPayloads = new WeakMap<Block, Block | null>();
-function monoPersistedBlock(block: Block): Block | null {
-  if (monoBlockPayloads.has(block)) return monoBlockPayloads.get(block)!;
+const familiarSavedBlocks = new Map<string, Block[]>();
+const familiarBlockPayloads = new WeakMap<Block, Block | null>();
+function familiarPersistedBlock(block: Block): Block | null {
+  if (familiarBlockPayloads.has(block)) return familiarBlockPayloads.get(block)!;
   const payload = sanitizeBlock(block);
-  monoBlockPayloads.set(block, payload);
+  familiarBlockPayloads.set(block, payload);
   return payload;
 }
 
-export const MONO_PAGE_TURNS = 10;
-export type MonoTranscriptPage = {
+export const FAMILIAR_PAGE_TURNS = 10;
+export type FamiliarTranscriptPage = {
   blocks: Block[];
   before: number | null;
   hasNewer: boolean;
 };
 
-export async function getMonoTranscriptPage(
+export async function getFamiliarTranscriptPage(
   sessionId: string,
   options: {
     before?: number;
     beforeBlockId?: string;
     aroundBlockId?: string;
   } = {},
-): Promise<MonoTranscriptPage> {
-  const page = await invoke<MonoTranscriptPage>("mono_session_page", {
+): Promise<FamiliarTranscriptPage> {
+  const page = await invoke<FamiliarTranscriptPage>("familiar_session_page", {
     sessionId,
     before: options.before ?? null,
     beforeBlockId: options.beforeBlockId ?? null,
@@ -583,23 +601,23 @@ export async function getMonoTranscriptPage(
   };
 }
 
-export function findMonoTranscript(
+export function findFamiliarTranscript(
   sessionId: string,
   query: string,
 ): Promise<string[]> {
-  return invoke("mono_session_find", { sessionId, query });
+  return invoke("familiar_session_find", { sessionId, query });
 }
 
 export async function getSession(sessionId: string): Promise<Session | null> {
   const record = await invoke<SessionRecord | null>(
-    isMonoSession(sessionId) ? "mono_session_get" : "session_get",
+    isFamiliarSession(sessionId) ? "familiar_session_get" : "session_get",
     {
       sessionId,
     },
   );
   if (!record) return null;
   const session = recordToSession(record);
-  if (session.monoTranscript) monoSavedBlocks.set(sessionId, session.blocks);
+  if (session.familiarTranscript) familiarSavedBlocks.set(sessionId, session.blocks);
   if (session.harness === "claude" && session.providerSessionId) {
     const toolIds = shellPlaceholderIds(session.blocks);
     if (toolIds.length) {
@@ -751,7 +769,7 @@ export async function deleteSession(
     await enqueueSessionWrite(sessionId, () =>
       invoke<void>("session_delete", { sessionId, imagePaths }),
     );
-    monoSavedBlocks.delete(sessionId);
+    familiarSavedBlocks.delete(sessionId);
     const tombstone = setTimeout(
       () => deletedSessionIds.delete(sessionId),
       60_000,
@@ -770,7 +788,7 @@ export async function discardDraftSessionRecord(
   await enqueueSessionWrite(sessionId, () =>
     invoke<void>("session_delete", { sessionId, imagePaths: [] }),
   );
-  monoSavedBlocks.delete(sessionId);
+  familiarSavedBlocks.delete(sessionId);
 }
 
 export async function setSessionArchived(
@@ -886,19 +904,20 @@ function sanitizeBlock(
   if (image) next.image = image;
   if (block.startedAt != null) next.startedAt = block.startedAt;
   if (block.durationMs != null) next.durationMs = block.durationMs;
+  const familiarHabit = legacyFamiliarHabit(block);
   if (
     (block.role === "assistant" || block.role === "approval") &&
-    typeof block.monoHabit?.id === "string" &&
-    block.monoHabit.id.trim() &&
-    typeof block.monoHabit.name === "string" &&
-    block.monoHabit.name.trim() &&
-    typeof block.monoHabit.at === "number" &&
-    Number.isFinite(block.monoHabit.at)
+    typeof familiarHabit?.id === "string" &&
+    familiarHabit.id.trim() &&
+    typeof familiarHabit.name === "string" &&
+    familiarHabit.name.trim() &&
+    typeof familiarHabit.at === "number" &&
+    Number.isFinite(familiarHabit.at)
   ) {
-    next.monoHabit = {
-      id: block.monoHabit.id,
-      name: block.monoHabit.name,
-      at: block.monoHabit.at,
+    next.familiarHabit = {
+      id: familiarHabit.id,
+      name: familiarHabit.name,
+      at: familiarHabit.at,
     };
   }
   if (block.role === "user" && typeof block.sentAt === "number")
@@ -935,9 +954,11 @@ function sanitizeBlock(
   // Without this the transcript would show the app's orchestration turns as
   // the user's own after a reload.
   if (block.role === "user" && block.internal) next.internal = true;
-  const completion = sanitizeMonoSessionCompletion(block.monoSessionCompletion);
+  const completion = sanitizeFamiliarSessionCompletion(
+    legacyFamiliarSessionCompletion(block),
+  );
   if (block.role === "user" && block.internal && completion)
-    next.monoSessionCompletion = completion;
+    next.familiarSessionCompletion = completion;
   const turnMetrics = sanitizeTurnMetrics(block.turnMetrics);
   if (block.role === "user" && turnMetrics) next.turnMetrics = turnMetrics;
   if (block.tool) next.tool = block.tool;
@@ -1397,7 +1418,7 @@ function recordToSession(record: SessionRecord): Session {
     ...(queuedMessages.length
       ? { queuedMessages, queueStatus: "paused" as const }
       : {}),
-    ...(record.monoTranscript ? { monoTranscript: record.monoTranscript } : {}),
+    ...(record.familiarTranscript ? { familiarTranscript: record.familiarTranscript } : {}),
     busy: false,
     orchestrationLeadId:
       record.orchestrationLeadId ??

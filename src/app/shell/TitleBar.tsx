@@ -41,10 +41,10 @@ import { TabLabel } from "../../shared/ui/TabLabel";
 import { WindowControls } from "./WindowControls";
 import { PixelMascot } from "../../features/projects/ui/PixelMascot";
 import {
-  MONO_STATUS_LABEL,
-  type MonoLook,
-  type MonoState,
-} from "../../features/monos/model/mono";
+  FAMILIAR_STATUS_LABEL,
+  type FamiliarLook,
+  type FamiliarState,
+} from "../../features/familiars/model/familiar";
 import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../platform/tauri/platform";
 import type { RecentProject } from "../../features/projects/model/recents";
 import {
@@ -93,12 +93,12 @@ type Props = {
   activeId: string;
   cwd: string;
   /**
-   * The Mono filling the main area. It takes the tabs' place, and nothing
+   * The Familiar filling the main area. It takes the tabs' place, and nothing
    * project-scoped belongs beside it.
    */
-  mono?: { look: MonoLook; state: MonoState };
-  onShowMonoDetails?: () => void;
-  /** The full-height Mono details panel owns these while it is open. */
+  familiar?: { look: FamiliarLook; state: FamiliarState };
+  onShowFamiliarDetails?: () => void;
+  /** The full-height Familiar details panel owns these while it is open. */
   hideWindowControls?: boolean;
   projectRailOpen?: boolean;
   sessionSidebarOpen?: boolean;
@@ -617,8 +617,8 @@ function TitleBarComponent({
   tabs,
   activeId,
   cwd,
-  mono,
-  onShowMonoDetails,
+  familiar,
+  onShowFamiliarDetails,
   hideWindowControls = false,
   projectRailOpen = true,
   sessionSidebarOpen = true,
@@ -865,18 +865,18 @@ function TitleBarComponent({
   const showProjectButton =
     railClosed && Boolean(onSelectProject) && !showCurrentProject;
   const showTrailingActions =
-    !mono &&
+    !familiar &&
     projectless &&
     railClosed &&
     Boolean(onOpenInbox || onOpenNotes || onOpenSettings);
   const trailingControls =
     showTrailingActions ||
-    (mono && onShowMonoDetails) ||
+    (familiar && onShowFamiliarDetails) ||
     (!IS_MAC && !hideWindowControls) ? (
       <div className="flex h-full shrink-0 items-stretch">
-        {mono && onShowMonoDetails ? (
+        {familiar && onShowFamiliarDetails ? (
           <div className="flex items-center px-3">
-            <IconButton label="Show Mono details" onClick={onShowMonoDetails}>
+            <IconButton label="Show Familiar details" onClick={onShowFamiliarDetails}>
               <PanelRightToggle className="size-3.5" strokeWidth={1.75} />
             </IconButton>
           </div>
@@ -910,15 +910,15 @@ function TitleBarComponent({
   return (
     <header
       className={`flex h-10 shrink-0 select-none items-stretch border-b border-stroke${
-        compactRail && !mono ? " body-glass" : ""
+        compactRail && !familiar ? " body-glass" : ""
       }`}
       data-tauri-drag-region="deep"
     >
       {compactRail ? (
         <div
           data-compact-title-nav
-          // A full Mono's title bar starts beside the 48px compact rail.
-          className={`flex shrink-0 items-center ${mono ? "pl-[22px]" : "pl-[70px]"}`}
+          // A full Familiar's title bar starts beside the 48px compact rail.
+          className={`flex shrink-0 items-center ${familiar ? "pl-[22px]" : "pl-[70px]"}`}
         >
           <TabVisitNav
             canGoBack={canGoBack}
@@ -974,8 +974,8 @@ function TitleBarComponent({
           showProjectButton ? " border-l border-stroke" : ""
         }`}
       >
-        {mono ? (
-          <MonoTitle look={mono.look} state={mono.state} />
+        {familiar ? (
+          <FamiliarTitle look={familiar.look} state={familiar.state} />
         ) : (
           <div
             className="relative h-full min-w-0 flex-1 overflow-hidden"
@@ -1100,11 +1100,11 @@ function TitleBarComponent({
 
 export const TitleBar = memo(TitleBarComponent);
 
-/** In a Mono's view the title bar names it and shows its status. */
-function MonoTitle({ look, state }: { look: MonoLook; state: MonoState }) {
+/** In a Familiar's view the title bar names it and shows its status. */
+function FamiliarTitle({ look, state }: { look: FamiliarLook; state: FamiliarState }) {
   return (
     <div
-      data-mono-title
+      data-familiar-title
       className="flex min-w-0 flex-1 items-center gap-2 px-4"
     >
       <PixelMascot
@@ -1118,12 +1118,12 @@ function MonoTitle({ look, state }: { look: MonoLook; state: MonoState }) {
         {look.name}
       </span>
       <span
-        data-mono-status={state.status}
+        data-familiar-status={state.status}
         className={`shrink-0 text-[12px] ${
           state.status === "needs-you" ? "text-accent" : "text-content/45"
         }`}
       >
-        {MONO_STATUS_LABEL[state.status]}
+        {FAMILIAR_STATUS_LABEL[state.status]}
       </span>
     </div>
   );

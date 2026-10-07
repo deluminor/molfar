@@ -181,15 +181,15 @@ import { SidebarUpdateFooter } from "./SidebarUpdate";
 import { SourceControl } from "../../features/source-control/ui/SourceControl";
 import { GithubStarPrompt } from "./GithubStarPrompt";
 import {
-  isMonoSession,
-  listMonos,
-  monoLook,
-  monosSnapshot,
-  subscribeMonos,
-} from "../../features/monos/model/mono";
-import type { PickerMonos } from "../../features/projects/ui/SearchableProjectPicker";
-import { isHabitRun } from "../../features/monos/model/monoHabits";
-import type { MonoRailProps } from "./MonoRailSection";
+  isFamiliarSession,
+  listFamiliars,
+  familiarLook,
+  familiarsSnapshot,
+  subscribeFamiliars,
+} from "../../features/familiars/model/familiar";
+import type { PickerFamiliars } from "../../features/projects/ui/SearchableProjectPicker";
+import { isHabitRun } from "../../features/familiars/model/familiarHabits";
+import type { FamiliarRailProps } from "./FamiliarRailSection";
 import {
   refreshRemoteProjectSessions,
   remoteRequest,
@@ -340,10 +340,10 @@ type Props = {
   onOpenWhatsNew?: (version: string) => void;
   onDismissUpdate?: () => void;
   railExtraActions?: ReactNode;
-  /** The Monos on the rail; absent while Monos are off. */
-  monos?: MonoRailProps;
-  /** A Mono fills the main area, which has no project sidebar. */
-  monoViewActive?: boolean;
+  /** The Familiars on the rail; absent while Familiars are off. */
+  familiars?: FamiliarRailProps;
+  /** A Familiar fills the main area, which has no project sidebar. */
+  familiarViewActive?: boolean;
 };
 
 function SidebarComponent({
@@ -438,8 +438,8 @@ function SidebarComponent({
   onOpenWhatsNew,
   onDismissUpdate,
   railExtraActions,
-  monos,
-  monoViewActive = false,
+  familiars,
+  familiarViewActive = false,
 }: Props) {
   const remoteProject = isRemoteProjectPath(cwd);
   const tab: SidebarTabId = requestedTab;
@@ -654,14 +654,14 @@ function SidebarComponent({
     : pending && sessions.length === 0;
   const worktreeFocus = useWorktreeFocus(cwd);
   const focusedWorktree = remoteProject ? undefined : worktreeFocus;
-  useSyncExternalStore(subscribeMonos, monosSnapshot);
+  useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
   const listedSessions = mergeFolderSessionSummaries(
     projectSessions,
     remoteProject ? [] : openSessions,
     sessionFolders,
   ).filter(
     (session) =>
-      !isMonoSession(session.id) &&
+      !isFamiliarSession(session.id) &&
       !("ephemeral" in session && session.ephemeral) &&
       !isHabitRun(session.id) &&
       !session.orchestrationLeadId &&
@@ -800,14 +800,14 @@ function SidebarComponent({
     knowledgeActive ||
     automationsActive ||
     settingsOpen;
-  // A remembered Mono sits underneath these views; select it only while visible.
-  const railMonos = monos
-    ? { ...monos, activeId: otherViewActive ? undefined : monos.activeId }
+  // A remembered Familiar sits underneath these views; select it only while visible.
+  const railFamiliars = familiars
+    ? { ...familiars, activeId: otherViewActive ? undefined : familiars.activeId }
     : undefined;
   // A blank session has no project to browse, so the shell stands alone until
   // one is picked — whether or not the rail is open.
   const sidebarAvailable =
-    !otherViewActive && !monoViewActive && inProject;
+    !otherViewActive && !familiarViewActive && inProject;
   const sidebarVisible = open && sidebarAvailable;
   // With the sidebar collapsed beside the compact rail, its tab shortcuts
   // open the sidebar temporarily until the user clicks away.
@@ -2270,8 +2270,8 @@ function SidebarComponent({
           onTogglePanel={onToggleProjectRail}
           onLeaveActive={onGoBack}
           titleBarAbove={titleBarAbove}
-          monos={railMonos}
-          monoViewActive={monoViewActive}
+          familiars={railFamiliars}
+          familiarViewActive={familiarViewActive}
         />
       ) : null}
       {railMounted.current && onSelectProject && onOpenProject ? (
@@ -2313,7 +2313,7 @@ function SidebarComponent({
           onOpenWhatsNew={onOpenWhatsNew}
           onDismissUpdate={onDismissUpdate}
           extraActions={railExtraActions}
-          monos={railMonos}
+          familiars={railFamiliars}
         />
       ) : null}
       {sidebarVisible ? sidebarContent : null}
@@ -2527,8 +2527,8 @@ function CompactProjectRail({
   onTogglePanel,
   onLeaveActive,
   titleBarAbove,
-  monos,
-  monoViewActive = false,
+  familiars,
+  familiarViewActive = false,
 }: {
   cwd: string;
   recents: RecentProject[];
@@ -2558,26 +2558,26 @@ function CompactProjectRail({
   onTogglePanel?: () => void;
   onLeaveActive?: () => void;
   titleBarAbove: boolean;
-  /** Monos have no row here, so the project button lists them too. */
-  monos?: MonoRailProps;
-  /** A Mono fills the main area: no workspace tab is the current one. */
-  monoViewActive?: boolean;
+  /** Familiars have no row here, so the project button lists them too. */
+  familiars?: FamiliarRailProps;
+  /** A Familiar fills the main area: no workspace tab is the current one. */
+  familiarViewActive?: boolean;
 }) {
-  const monosSnap = useSyncExternalStore(subscribeMonos, monosSnapshot);
-  const pickerMonos = useMemo((): PickerMonos | undefined => {
-    if (!monos) return undefined;
+  const familiarsSnap = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  const pickerFamiliars = useMemo((): PickerFamiliars | undefined => {
+    if (!familiars) return undefined;
     return {
-      items: listMonos().map((mono) => ({
-        id: mono.id,
-        ...monoLook(mono),
-        status: monos.states.get(mono.id)?.status ?? "idle",
+      items: listFamiliars().map((familiar) => ({
+        id: familiar.id,
+        ...familiarLook(familiar),
+        status: familiars.states.get(familiar.id)?.status ?? "idle",
       })),
-      activeId: monos.activeId,
-      onOpen: monos.onOpen,
-      onCreate: monos.onCreate,
+      activeId: familiars.activeId,
+      onOpen: familiars.onOpen,
+      onCreate: familiars.onCreate,
     };
     // The roster is read through its snapshot.
-  }, [monos, monosSnap]);
+  }, [familiars, familiarsSnap]);
   const [inboxMenu, setInboxMenu] = useState<{ x: number; y: number } | null>(
     null,
   );
@@ -2590,7 +2590,7 @@ function CompactProjectRail({
     !notesActive &&
     !knowledgeActive &&
     !automationsActive &&
-    !monoViewActive;
+    !familiarViewActive;
   const openWorkspaceTab = (nextTab: SidebarTab) => {
     if (!workspaceActive) onLeaveActive?.();
     onTabChange(nextTab);
@@ -2635,7 +2635,7 @@ function CompactProjectRail({
             onOpenProject={onOpenProject}
             onRemoveProject={onRemoveProject}
             onOpenNotificationSettings={onOpenNotificationSettings}
-            monos={pickerMonos}
+            familiars={pickerFamiliars}
           />
         ) : null}
         <div

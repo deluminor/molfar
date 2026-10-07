@@ -8,11 +8,11 @@ import {
   stopStreaming,
 } from "../../../integrations/harness/core/apply";
 import { copyMessage } from "../../../platform/tauri/clipboard";
-import { acknowledgeMonoMessage } from "../../monos/model/monoMessaging";
+import { acknowledgeFamiliarMessage } from "../../familiars/model/familiarMessaging";
 import {
-  enqueueMonoSessionCompletion,
-  monoSessionCompletionMessage,
-} from "../../monos/model/monoSessionCompletion";
+  enqueueFamiliarSessionCompletion,
+  familiarSessionCompletionMessage,
+} from "../../familiars/model/familiarSessionCompletion";
 import { sanitizeSessionForPersist } from "../data/sessionStore";
 import { newSession, type Block } from "../model/session";
 import { AgentTranscript } from "./AgentTranscript";
@@ -30,7 +30,7 @@ const report: Block = {
   id: "report",
   role: "assistant",
   text: "CI failed on main.",
-  monoHabit: { id: "habit", name: "Morning check", at: postedAt },
+  familiarHabit: { id: "habit", name: "Morning check", at: postedAt },
 };
 
 beforeEach(() => {
@@ -104,7 +104,7 @@ it("gives a standalone habit report its mascot, name, posting time and response 
 });
 
 it.each(["current", "older"])(
-  "shows a delivered completion report as a separate Mono reply in %s saved chats",
+  "shows a delivered completion report as a separate Familiar reply in %s saved chats",
   async (version) => {
     let session = appendUser(newSession("codex", "/tmp"), "Review the API");
     session = applyHarnessEvent(session, {
@@ -112,20 +112,20 @@ it.each(["current", "older"])(
       text: "I have started the review. I will let you know when it finishes.",
     });
     session = stopStreaming(session);
-    const notification = monoSessionCompletionMessage({
+    const notification = familiarSessionCompletionMessage({
       requestId: "review",
       sessionId: "worker",
       project: "/tmp",
       prompt: "Review the API",
       outcome: { status: "completed", text: "The API fix passed all tests." },
     });
-    session = enqueueMonoSessionCompletion(session, notification);
-    session = acknowledgeMonoMessage(session, notification, {
+    session = enqueueFamiliarSessionCompletion(session, notification);
+    session = acknowledgeFamiliarMessage(session, notification, {
       mode: "new-turn",
       cards: {
         internal: true,
         appRequestId: notification.id,
-        monoSessionCompletion: notification.monoSessionCompletion,
+        familiarSessionCompletion: notification.familiarSessionCompletion,
       },
     });
     session = applyHarnessEvent(session, {
@@ -138,7 +138,7 @@ it.each(["current", "older"])(
         ...session,
         blocks: session.blocks.map((block) =>
           block.id === notification.id
-            ? { ...block, monoSessionCompletion: undefined }
+            ? { ...block, familiarSessionCompletion: undefined }
             : block,
         ),
       };
@@ -213,15 +213,15 @@ it.each(["current", "older"])(
         "Captain Awesome worked for 20s",
       );
     };
-    const notification = monoSessionCompletionMessage({
+    const notification = familiarSessionCompletionMessage({
       requestId: "review",
       sessionId: "worker",
       project: "/tmp",
       prompt: "Quick review",
       outcome: { status: "completed", text: "The checkout is clean." },
     });
-    session = acknowledgeMonoMessage(
-      enqueueMonoSessionCompletion(session, notification),
+    session = acknowledgeFamiliarMessage(
+      enqueueFamiliarSessionCompletion(session, notification),
       notification,
       {
         mode: "new-turn",
@@ -229,7 +229,7 @@ it.each(["current", "older"])(
           internal: true,
           appRequestId: notification.id,
           ...(version === "current"
-            ? { monoSessionCompletion: notification.monoSessionCompletion }
+            ? { familiarSessionCompletion: notification.familiarSessionCompletion }
             : {}),
         },
       },
@@ -319,7 +319,7 @@ it("keeps a posted report actionable while the conversation is still running", a
 });
 
 it("renders the identity and actions for older standalone reports missing their habit tag", () => {
-  const { monoHabit: _habit, ...legacy } = report;
+  const { familiarHabit: _habit, ...legacy } = report;
   render([legacy]);
   expect(container.querySelector(".pixel-mascot")).not.toBeNull();
   expect(container.textContent).toContain("Captain Awesome");
