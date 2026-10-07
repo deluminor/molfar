@@ -1,4 +1,5 @@
 import type { Familiar } from "../../familiars/model/familiar";
+import type { QuickLaunch } from "../../quick-composer/model/quickComposer";
 import type { Note } from "../../notes/notes";
 import {
   RUNTIME_MODES,
@@ -16,6 +17,12 @@ import {
   TRANSCRIPT_LIMIT_DEFAULT,
   TRANSCRIPT_LIMIT_MAX,
 } from "./companionView";
+import {
+  CompanionLaunchError,
+  companionLaunch,
+  companionSessionOptions,
+} from "./companionLaunch";
+import { createCompanionVault, type VaultAccess } from "./companionVault";
 import {
   COMPANION_PROTOCOL_VERSION,
   type CompanionImage,
@@ -43,6 +50,11 @@ export type CompanionDeps = {
   setRuntimeMode: (sessionId: string, mode: RuntimeMode) => void;
   approve: (sessionId: string, requestId: number, decision: "allow" | "deny") => void;
   answer: (sessionId: string, requestId: number, reply: UserQuestionReply) => void;
+  /** Starts a new project session in the background; `id` becomes its session ID. */
+  launch: (launch: QuickLaunch, id: string) => Promise<void>;
+  /** The permission mode new sessions start with on the desktop. */
+  defaultRuntimeMode: () => RuntimeMode;
+  vault: VaultAccess;
   notes: {
     list: () => Promise<Note[]>;
     read: (id: string) => Promise<Note | null>;
@@ -148,6 +160,14 @@ function transcriptOrUnchanged(
 
 export function createCompanionExecutor(deps: CompanionDeps) {
   const newId = deps.newId ?? (() => crypto.randomUUID());
+  const vault = createCompanionVault(deps.vault);
+
+  const railProject = (input: Record<string, unknown>) => {
+    const project = id(input, "project");
+    const match = deps.projects().find((path) => path === project);
+    if (!match) throw new CompanionError("Choose one of the projects on the rail");
+    return match;
+  };
 
   const live = (sessionId: string) =>
     deps.sessions().find((session) => session.id === sessionId);
@@ -266,6 +286,35 @@ export function createCompanionExecutor(deps: CompanionDeps) {
           throw new CompanionError('reply.kind must be "answered" or "skipped"');
         deps.answer(session.id, requestId, reply as UserQuestionReply);
         return { answered: true };
+      }
+      case "session.options":
+        return companionSessionOptions(railProject(input), deps.defaultRuntimeMode());
+      case "session.start": {
+        const attachments = parseImages(input.images, newId);
+        const prompt = messageText(input, attachments.length > 0);
+        let launch: QuickLaunch;
+        try {
+          launch = companionLaunch(input, {
+            projects: deps.projects(),
+            defaultRuntimeMode: deps.defaultRuntimeMode(),
+            attachments,
+            prompt,
+          });
+        } catch (error) {
+          if (error instanceof CompanionLaunchError) throw new CompanionError(error.message);
+          throw error;
+        }
+        const sessionId = `companion-${newId()}`;
+        await deps.launch(launch, sessionId);
+        return { sessionId };
+      }
+      case "vault.index":
+        return vault.index();
+      case "vault.read": {
+        const path = input.path;
+        if (typeof path !== "string" || !path || path.length > 4096)
+          throw new CompanionError("path is required");
+        return vault.read(path);
       }
       case "notes.list": {
         const query =

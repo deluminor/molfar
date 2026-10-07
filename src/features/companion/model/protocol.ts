@@ -113,6 +113,41 @@ export type CompanionNoteSummary = {
   updatedAt: number;
 };
 
+export type CompanionSessionOptions = {
+  project: string;
+  defaults: { harness: string; model: string; runtimeMode: RuntimeMode };
+  /** Installed providers only. */
+  harnesses: {
+    id: string;
+    label: string;
+    models: {
+      id: string;
+      name: string;
+      effort?: { value: string; options: { value: string; label: string }[] };
+    }[];
+  }[];
+};
+
+export type CompanionVaultIndex =
+  | { connected: false }
+  | {
+      connected: true;
+      name: string;
+      notes: { path: string; title: string; tags: string[]; aliases: string[] }[];
+      truncated: boolean;
+    };
+
+export type CompanionVaultNote = {
+  path: string;
+  title: string;
+  tags: string[];
+  body: string;
+  truncated: boolean;
+  /** Links in the note that resolve to other notes, as written in the source. */
+  links: { target: string; path: string }[];
+  backlinks: { path: string; title: string }[];
+};
+
 export type CompanionRequest =
   | { action: "overview"; input: Record<string, never> }
   | {
@@ -144,6 +179,22 @@ export type CompanionRequest =
       action: "question.answer";
       input: { sessionId: string; requestId: number; reply: UserQuestionReply };
     }
+  | { action: "session.options"; input: { project: string } }
+  | {
+      action: "session.start";
+      input: {
+        project: string;
+        text: string;
+        images?: CompanionImage[];
+        harness?: string;
+        model?: string;
+        effort?: string;
+        runtimeMode?: RuntimeMode;
+        workspaceMode?: "current" | "worktree";
+      };
+    }
+  | { action: "vault.index"; input: Record<string, never> }
+  | { action: "vault.read"; input: { path: string } }
   | { action: "notes.list"; input: { query?: string } }
   | { action: "notes.read"; input: { id: string } }
   | {

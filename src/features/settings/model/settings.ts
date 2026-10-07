@@ -189,6 +189,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "phone mobile tailscale serve port",
   },
   {
+    id: "companion-alerts",
+    section: "companion",
+    label: "Companion notifications",
+    keywords: "push notification approval phone alert",
+  },
+  {
     id: "companion-devices",
     section: "companion",
     label: "Paired devices",

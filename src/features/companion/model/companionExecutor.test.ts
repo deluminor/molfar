@@ -6,6 +6,11 @@ import type { Block, Session } from "../../sessions/model/session";
 import { createCompanionExecutor, type CompanionDeps } from "./companionExecutor";
 import type { CompanionOverview, CompanionTranscript } from "./protocol";
 
+vi.mock("../../../integrations/harness/core/availability", async (original) => ({
+  ...(await original<object>()),
+  isHarnessAvailable: (id: string) => id === "claude" || id === "codex",
+}));
+
 function session(overrides: Partial<Session> & { id: string }): Session {
   return {
     harness: "claude",
@@ -47,6 +52,13 @@ function setup(sessions: Session[], extra: Partial<CompanionDeps> = {}) {
     setRuntimeMode: vi.fn(),
     approve: vi.fn(),
     answer: vi.fn(),
+    launch: vi.fn(async () => undefined),
+    defaultRuntimeMode: () => "supervised" as const,
+    vault: {
+      status: vi.fn(async () => null),
+      scan: vi.fn(),
+      read: vi.fn(),
+    },
     notes: {
       list: vi.fn(async () => [] as Note[]),
       read: vi.fn(async () => null),
@@ -222,4 +234,98 @@ describe("notes", () => {
 it("rejects unknown actions", async () => {
   const { handle } = setup([]);
   await expect(handle("sessions.delete", {})).rejects.toThrow("Unknown action");
+});
+
+describe("new sessions", () => {
+  it("starts a quiet session in a rail project with the chosen mode", async () => {
+    const { deps, handle } = setup([]);
+    const result = await handle("session.start", {
+      project: "/code/app",
+      text: "Fix the flaky test",
+      harness: "claude",
+      runtimeMode: "full-access",
+      workspaceMode: "worktree",
+    });
+    expect(result).toEqual({ sessionId: "companion-att-1" });
+    expect(deps.launch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: "/code/app",
+        prompt: "Fix the flaky test",
+        harness: "claude",
+        runtimeMode: "full-access",
+        workspaceMode: "worktree",
+        reveal: false,
+      }),
+      "companion-att-1",
+    );
+  });
+
+  it("refuses projects off the rail, unknown models and empty prompts", async () => {
+    const { deps, handle } = setup([]);
+    await expect(
+      handle("session.start", { project: "/etc", text: "hi" }),
+    ).rejects.toThrow("projects on the rail");
+    await expect(
+      handle("session.start", { project: "/code/app", text: "hi", harness: "claude", model: "nope" }),
+    ).rejects.toThrow("Unknown model");
+    await expect(
+      handle("session.start", { project: "/code/app", text: " " }),
+    ).rejects.toThrow("Write something");
+    expect(deps.launch).not.toHaveBeenCalled();
+  });
+
+  it("lists providers and defaults for a project", async () => {
+    const { handle } = setup([]);
+    const options = (await handle("session.options", { project: "/code/app" })) as {
+      harnesses: { id: string; models: unknown[] }[];
+      defaults: { runtimeMode: string };
+    };
+    expect(options.harnesses.find((h) => h.id === "claude")?.models.length).toBeGreaterThan(0);
+    expect(options.defaults.runtimeMode).toBe("supervised");
+  });
+});
+
+describe("knowledge vault", () => {
+  const connection = { id: "v1", name: "Brain", root: "/vault" };
+  const snapshot = {
+    connection,
+    entries: [],
+    warnings: [],
+    truncated: false,
+    notes: [
+      { path: "Ideas/Molfar.md", title: "Molfar", aliases: [], tags: ["ai"], links: [{ target: "Tailscale", kind: "wiki" as const }] },
+      { path: "Tailscale.md", title: "Tailscale", aliases: [], tags: [], links: [] },
+      { path: "Daily.md", title: "Daily", aliases: [], tags: [], links: [{ target: "Ideas/Molfar", kind: "wiki" as const }] },
+    ],
+  };
+
+  it("says when no vault is connected", async () => {
+    const { handle } = setup([]);
+    expect(await handle("vault.index", {})).toEqual({ connected: false });
+  });
+
+  it("indexes notes and reads one with resolved links and backlinks", async () => {
+    const scan = vi.fn(async () => snapshot);
+    const { handle } = setup([], {
+      vault: {
+        status: vi.fn(async () => connection),
+        scan,
+        read: vi.fn(async (_id: string, path: string) => ({ path, body: "See [[Tailscale]]", revision: "r" })),
+      },
+    });
+    const index = (await handle("vault.index", {})) as { notes: { path: string }[] };
+    expect(index.notes.map((n) => n.path)).toEqual(["Daily.md", "Ideas/Molfar.md", "Tailscale.md"]);
+    expect(await handle("vault.read", { path: "Ideas/Molfar.md" })).toEqual({
+      path: "Ideas/Molfar.md",
+      title: "Molfar",
+      tags: ["ai"],
+      body: "See [[Tailscale]]",
+      truncated: false,
+      links: [{ target: "Tailscale", path: "Tailscale.md" }],
+      backlinks: [{ path: "Daily.md", title: "Daily" }],
+    });
+    // One scan serves both calls.
+    expect(scan).toHaveBeenCalledTimes(1);
+    await expect(handle("vault.read", { path: "../etc/passwd" })).rejects.toThrow("not in the vault");
+  });
 });

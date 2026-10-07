@@ -57,6 +57,9 @@ struct Device {
     token_sha256: String,
     created_at: u64,
     last_seen_at: Option<u64>,
+    /// Expo push token the phone registered, for approval and question alerts.
+    #[serde(default)]
+    push_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,10 +76,20 @@ struct Stored {
     public_url: Option<String>,
     #[serde(default)]
     devices: Vec<Device>,
+    /// Push only while this computer's MOLFAR window is not in front.
+    #[serde(default = "yes")]
+    notify_when_away: bool,
+    /// Include what is waiting (tool, question) in the notification text.
+    #[serde(default = "yes")]
+    notify_details: bool,
 }
 
 fn default_port() -> u16 {
     DEFAULT_PORT
+}
+
+fn yes() -> bool {
+    true
 }
 
 impl Default for Stored {
@@ -87,6 +100,8 @@ impl Default for Stored {
             port: DEFAULT_PORT,
             public_url: None,
             devices: Vec::new(),
+            notify_when_away: true,
+            notify_details: true,
         }
     }
 }
@@ -126,6 +141,7 @@ pub struct DeviceInfo {
     name: String,
     created_at: u64,
     last_seen_at: Option<u64>,
+    push: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -149,6 +165,8 @@ pub struct CompanionStatus {
     error: Option<String>,
     tailscale: TailscaleInfo,
     devices: Vec<DeviceInfo>,
+    notify_when_away: bool,
+    notify_details: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -169,6 +187,10 @@ pub struct CompanionConfig {
     mode: BindMode,
     port: u16,
     public_url: Option<String>,
+    #[serde(default = "yes")]
+    notify_when_away: bool,
+    #[serde(default = "yes")]
+    notify_details: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -381,8 +403,11 @@ fn status_of(snapshot: Snapshot) -> CompanionStatus {
                 name: device.name.clone(),
                 created_at: device.created_at,
                 last_seen_at: device.last_seen_at,
+                push: device.push_token.is_some(),
             })
             .collect(),
+        notify_when_away: stored.notify_when_away,
+        notify_details: stored.notify_details,
     }
 }
 
@@ -556,6 +581,10 @@ fn route(host: &CompanionHost, app: &AppHandle, request: &mut tiny_http::Request
                     Ok(stats) => Reply::ok(json!({"ok": true, "result": stats})),
                     Err(error) => Reply::error(500, &error),
                 },
+                (tiny_http::Method::Post, "/v1/push") => match read_json(request, SMALL_BODY) {
+                    Ok(body) => register_push(host, &device, &body),
+                    Err(reply) => reply,
+                },
                 (tiny_http::Method::Post, "/v1/rpc") => match read_json(request, RPC_BODY) {
                     Ok(body) => rpc(host, app, &device, body),
                     Err(reply) => reply,
@@ -639,6 +668,7 @@ fn pair(host: &CompanionHost, body: &Value) -> Reply {
         token_sha256: sha256_hex(&token),
         created_at: now,
         last_seen_at: Some(now),
+        push_token: None,
     };
     let device_id = device.id.clone();
     inner.stored.devices.push(device);
@@ -653,6 +683,81 @@ fn pair(host: &CompanionHost, body: &Value) -> Reply {
         "protocol": PROTOCOL_VERSION,
         "name": machine_name(),
     }))
+}
+
+fn valid_push_token(token: &str) -> bool {
+    let inner = token
+        .strip_prefix("ExponentPushToken[")
+        .or_else(|| token.strip_prefix("ExpoPushToken["))
+        .and_then(|rest| rest.strip_suffix(']'));
+    inner.is_some_and(|inner| {
+        !inner.is_empty()
+            && inner.len() <= 200
+            && inner
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    })
+}
+
+/// The phone's Expo push token, or `null` to stop alerts to it.
+fn register_push(host: &CompanionHost, device: &str, body: &Value) -> Reply {
+    let token = match body.get("token") {
+        Some(Value::Null) | None => None,
+        Some(Value::String(token)) if valid_push_token(token) => Some(token.clone()),
+        _ => return Reply::error(400, "token must be an Expo push token or null"),
+    };
+    let Ok(mut inner) = host.inner.lock() else {
+        return Reply::error(500, "Companion unavailable");
+    };
+    let Some(entry) = inner
+        .stored
+        .devices
+        .iter_mut()
+        .find(|entry| entry.id == device)
+    else {
+        return Reply::error(401, "This device is not paired");
+    };
+    entry.push_token = token;
+    match write_store(&inner.path, &inner.stored) {
+        Ok(()) => Reply::ok(json!({"ok": true})),
+        Err(error) => Reply::error(500, &error),
+    }
+}
+
+const EXPO_PUSH_URL: &str = "https://exp.host/--/api/v2/push/send";
+
+/// Expo answers per message; a token Apple no longer knows is dropped.
+fn dead_tokens(tokens: &[String], response: &Value) -> Vec<String> {
+    let Some(results) = response.get("data").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    tokens
+        .iter()
+        .zip(results)
+        .filter(|(_, result)| {
+            result.pointer("/details/error").and_then(Value::as_str) == Some("DeviceNotRegistered")
+        })
+        .map(|(token, _)| token.clone())
+        .collect()
+}
+
+fn push_messages(tokens: &[String], title: &str, body: &str, data: &Value) -> Value {
+    Value::Array(
+        tokens
+            .iter()
+            .map(|token| {
+                json!({
+                    "to": token,
+                    "title": title,
+                    "body": body,
+                    "data": data,
+                    "sound": "default",
+                    "priority": "high",
+                    "interruptionLevel": "time-sensitive",
+                })
+            })
+            .collect(),
+    )
 }
 
 fn rpc(host: &CompanionHost, app: &AppHandle, device: &str, body: Value) -> Reply {
@@ -737,6 +842,8 @@ pub fn companion_configure(
     inner.stored.mode = config.mode;
     inner.stored.port = config.port;
     inner.stored.public_url = public_url;
+    inner.stored.notify_when_away = config.notify_when_away;
+    inner.stored.notify_details = config.notify_details;
     if let Err(error) = write_store(&inner.path, &inner.stored) {
         inner.stored = previous;
         return Err(error);
@@ -813,6 +920,85 @@ pub fn companion_revoke(
     Ok(status_of(snapshot))
 }
 
+/// Tells paired phones that something is waiting on the user. Text is short and
+/// may be replaced with a generic line when details are turned off.
+#[tauri::command(async)]
+pub fn companion_notify(
+    app: AppHandle,
+    host: State<'_, CompanionHost>,
+    title: String,
+    body: String,
+    data: Value,
+) -> Result<(), String> {
+    let (tokens, details, when_away) = {
+        let inner = lock(&host)?;
+        if !inner.stored.enabled {
+            return Ok(());
+        }
+        let tokens: Vec<String> = inner
+            .stored
+            .devices
+            .iter()
+            .filter_map(|device| device.push_token.clone())
+            .collect();
+        (
+            tokens,
+            inner.stored.notify_details,
+            inner.stored.notify_when_away,
+        )
+    };
+    if tokens.is_empty() {
+        return Ok(());
+    }
+    if when_away
+        && app
+            .get_webview_window("main")
+            .and_then(|window| window.is_focused().ok())
+            .unwrap_or(false)
+    {
+        return Ok(());
+    }
+    let title: String = title.chars().take(120).collect();
+    let body: String = if details {
+        body.chars().take(240).collect()
+    } else {
+        "Open BitChain to see what is waiting.".into()
+    };
+    let messages = push_messages(&tokens, &title, &body, &data);
+    let host = host.inner().clone();
+    std::thread::spawn(move || {
+        let response = ureq::post(EXPO_PUSH_URL)
+            .set("Accept", "application/json")
+            .set("Content-Type", "application/json")
+            .timeout(Duration::from_secs(15))
+            .send_string(&messages.to_string());
+        let Ok(response) = response else { return };
+        let Ok(text) = response.into_string() else {
+            return;
+        };
+        let Ok(value) = serde_json::from_str::<Value>(&text) else {
+            return;
+        };
+        let dead = dead_tokens(&tokens, &value);
+        if dead.is_empty() {
+            return;
+        }
+        if let Ok(mut inner) = host.inner.lock() {
+            for device in inner.stored.devices.iter_mut() {
+                if device
+                    .push_token
+                    .as_ref()
+                    .is_some_and(|token| dead.contains(token))
+                {
+                    device.push_token = None;
+                }
+            }
+            let _ = write_store(&inner.path, &inner.stored);
+        }
+    });
+    Ok(())
+}
+
 #[tauri::command]
 pub fn companion_reply(
     window: WebviewWindow,
@@ -861,6 +1047,73 @@ mod tests {
             assert!(code.bytes().all(|b| PAIR_ALPHABET.contains(&b)));
         }
         assert_eq!(normalize_code(" ab-cd 23 "), "ABCD23");
+    }
+
+    #[test]
+    fn accepts_only_expo_push_tokens() {
+        assert!(valid_push_token("ExponentPushToken[abc-DEF_123]"));
+        assert!(valid_push_token("ExpoPushToken[xyz]"));
+        assert!(!valid_push_token("ExponentPushToken[]"));
+        assert!(!valid_push_token("ExponentPushToken[a b]"));
+        assert!(!valid_push_token("https://evil.example"));
+    }
+
+    #[test]
+    fn drops_tokens_apple_no_longer_knows() {
+        let tokens = vec!["A".to_string(), "B".to_string()];
+        let response = json!({"data": [
+            {"status": "ok", "id": "1"},
+            {"status": "error", "details": {"error": "DeviceNotRegistered"}}
+        ]});
+        assert_eq!(dead_tokens(&tokens, &response), vec!["B".to_string()]);
+        let messages = push_messages(
+            &tokens,
+            "Vedmid needs you",
+            "Approve rm -rf dist",
+            &json!({"k": 1}),
+        );
+        assert_eq!(messages[1]["to"], "B");
+        assert_eq!(messages[0]["priority"], "high");
+    }
+
+    #[test]
+    fn devices_register_and_clear_push_tokens() {
+        let dir = temp_dir();
+        let host = host_with(&dir);
+        let paired = pair(&host, &json!({"code": "ABCD2345", "name": "iPad"}));
+        let device = paired.body["deviceId"].as_str().unwrap().to_string();
+        assert_eq!(
+            register_push(&host, &device, &json!({"token": "ExponentPushToken[t1]"})).status,
+            200
+        );
+        assert_eq!(
+            host.inner.lock().unwrap().stored.devices[0]
+                .push_token
+                .as_deref(),
+            Some("ExponentPushToken[t1]")
+        );
+        assert_eq!(
+            register_push(&host, &device, &json!({"token": "nope"})).status,
+            400
+        );
+        assert_eq!(
+            register_push(&host, &device, &json!({"token": null})).status,
+            200
+        );
+        assert!(host.inner.lock().unwrap().stored.devices[0]
+            .push_token
+            .is_none());
+        assert_eq!(
+            register_push(&host, "other", &json!({"token": null})).status,
+            401
+        );
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn older_stores_keep_alerts_on() {
+        let stored: Stored = serde_json::from_str(r#"{"enabled": true, "devices": []}"#).unwrap();
+        assert!(stored.notify_when_away && stored.notify_details);
     }
 
     #[test]
