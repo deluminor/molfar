@@ -634,7 +634,12 @@ import {
 } from "../features/workspace/model/tabVisitHistory";
 
 import { listAutomations } from "../features/automations/model/automations";
-import { loadNotes } from "../features/notes";
+import { createNote, getNote, loadNotes } from "../features/notes";
+import { useCompanionBridge } from "../features/companion/hooks/useCompanionBridge";
+import {
+  companionProjectLabel,
+  companionProjectPaths,
+} from "../features/companion/model/companionProjects";
 
 import {
   cachedRemoteSessionSummary,
@@ -9851,6 +9856,47 @@ function Workspace({
     },
     [],
   );
+
+  const unseenFinishedRef = useRef(unseenFinishedIds);
+  unseenFinishedRef.current = unseenFinishedIds;
+  useCompanionBridge({
+    sessions: () => sessionsRef.current,
+    familiars: () => (familiarsEnabled ? listFamiliars() : []),
+    projects: companionProjectPaths,
+    projectLabel: companionProjectLabel,
+    unseen: () => unseenFinishedRef.current,
+    openFamiliar: async (familiarId) =>
+      (await ensureFamiliarSession(familiarId, {
+        home: homeDir,
+        load: ensureOpenSession,
+        create: (path) => newDefaultSession(path, sessionDefaults?.runtimeMode),
+        add: (created) => {
+          sessionsRef.current = [...sessionsRef.current, created];
+          setSessions(sessionsRef.current);
+        },
+      })) ?? undefined,
+    openSession: async (sessionId) =>
+      (await ensureOpenSession(sessionId)) ?? undefined,
+    submit: (sessionId, text, attachments) => {
+      const accepted = submitSessionRef.current(sessionId, text, attachments);
+      if (typeof accepted === "boolean") return accepted;
+      void accepted.catch(() => undefined);
+      return true;
+    },
+    stop: (sessionId) => onStop(sessionId),
+    setRuntimeMode: onRuntimeModeChange,
+    approve: onApproval,
+    answer: onQuestionReply,
+    notes: {
+      list: () => loadNotes(true),
+      read: getNote,
+      create: async (input) => {
+        const note = await createNote(input);
+        window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
+        return note;
+      },
+    },
+  });
 
   const onQuestionInteraction = useCallback(
     (sessionId: string, requestId: number) => {

@@ -7,6 +7,7 @@ mod automations;
 mod azure_devops;
 mod chat_background;
 mod checkpoint;
+mod companion;
 mod confluence;
 mod control;
 pub mod control_cli;
@@ -247,6 +248,9 @@ pub fn run() {
             harness::reap_orphaned_harness_processes();
             session_store::init(app.handle())?;
             control::init(app.handle())?;
+            if let Err(error) = companion::init(app.handle()) {
+                eprintln!("[companion] {error}");
+            }
             reminders::init(app.handle());
             checkpoint::init(app.handle())?;
             menu::install(app.handle())?;
@@ -282,6 +286,12 @@ pub fn run() {
             remote::remote_ssh_poll,
             remote::remote_ssh_answer,
             remote::remote_ssh_cancel,
+            companion::companion_status,
+            companion::companion_configure,
+            companion::companion_pair_start,
+            companion::companion_pair_cancel,
+            companion::companion_revoke,
+            companion::companion_reply,
             control::control_enable,
             control::control_disable,
             control::control_reply,

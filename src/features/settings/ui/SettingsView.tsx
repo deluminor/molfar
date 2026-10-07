@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ConnectionsSettings } from "../../connections/ui/ConnectionsSettings";
+import { CompanionSettings } from "../../companion/ui/CompanionSettings";
 import { confirmApp } from "../../../app/model/appDialog";
 import {
   ArrowDownCircle,
@@ -578,6 +579,7 @@ export function SettingsView({
                 <GeneralPage onOpenWhatsNew={onOpenWhatsNew} />
               ) : null}
               {section === "connections" ? <ConnectionsSettings /> : null}
+              {section === "companion" ? <CompanionSettings /> : null}
               {section === "appearance" ? (
                 <AppearancePage appearance={appearance} />
               ) : null}

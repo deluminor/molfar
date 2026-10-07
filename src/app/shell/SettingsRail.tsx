@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Palette,
   SlidersHorizontal,
+  SmartPhone,
   Sparkles,
   type IconComponent,
 } from "../../shared/ui/icons";
@@ -23,6 +24,7 @@ import {
 const SECTION_ICONS: Record<SettingsSectionId, IconComponent> = {
   general: SlidersHorizontal,
   connections: Internet,
+  companion: SmartPhone,
   appearance: Palette,
   keybindings: Keyboard,
   chat: MessageSquare,
