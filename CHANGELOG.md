@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Home** host metrics keep a longer sample history (150 points instead of 60), so CPU/memory charts retain more recent activity.
+- **Companion** pairing offer stacks the QR code and instructions in one column and centers the setup steps for clearer layout on narrow Settings panes.
+
 ## [1.0.5] - 2026-10-07
 
 ### Added
