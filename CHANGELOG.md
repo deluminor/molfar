@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-07
+
 ### Added
 
 - **Monos** are persistent agents on the project rail, each with its own conversation and assigned projects. Create and reorder them, choose a name, animated pixel mascot, color, and chat background, and return to the same conversation across app restarts. Monos also appear in the project picker; Settings → Monos can hide them or reset a Mono's name and standing instructions. In MonoCode #773.
@@ -111,7 +113,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/deluminor/molfar/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/deluminor/molfar/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/deluminor/molfar/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/deluminor/molfar/releases/tag/v1.0.0
