@@ -1,6 +1,7 @@
 import type { Familiar } from "../../familiars/model/familiar";
 import type { QuickLaunch } from "../../quick-composer/model/quickComposer";
 import type { Note } from "../../notes/notes";
+import type { SessionSummary } from "../../sessions/data/sessionStore";
 import {
   RUNTIME_MODES,
   type Attachment,
@@ -11,9 +12,8 @@ import type { UserQuestionReply } from "../../sessions/model/userQuestion";
 import {
   companionFamiliar,
   companionProjects,
-  companionSession,
   companionTranscript,
-  sortSessions,
+  mergeOpenSessions,
   TRANSCRIPT_LIMIT_DEFAULT,
   TRANSCRIPT_LIMIT_MAX,
 } from "./companionView";
@@ -35,6 +35,11 @@ import {
 /** What the executor needs from the running app. App.tsx supplies the live versions. */
 export type CompanionDeps = {
   sessions: () => readonly Session[];
+  /**
+   * Project session history already loaded on the desktop (every visited
+   * project). Merged into overview so phones see chats that are not open tabs.
+   */
+  sessionHistory?: () => readonly SessionSummary[];
   familiars: () => readonly Familiar[];
   /** Rail projects, in rail order. */
   projects: () => readonly string[];
@@ -211,17 +216,12 @@ export function createCompanionExecutor(deps: CompanionDeps) {
     const familiarSessionIds = new Set(
       deps.familiars().flatMap((familiar) => (familiar.sessionId ? [familiar.sessionId] : [])),
     );
-    const projectSessions = sortSessions(
-      sessions
-        .filter(
-          (session) =>
-            !familiarSessionIds.has(session.id) &&
-            !session.ephemeral &&
-            !session.orchestrationLeadId &&
-            !session.inboxAsk,
-        )
-        .map((session) => companionSession(session, deps.projectLabel)),
-    );
+    const projectSessions = mergeOpenSessions({
+      live: sessions,
+      history: deps.sessionHistory?.() ?? [],
+      familiarSessionIds,
+      label: deps.projectLabel,
+    });
     return {
       protocol: COMPANION_PROTOCOL_VERSION,
       generatedAt: Date.now(),

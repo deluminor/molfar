@@ -5,6 +5,7 @@ import {
 } from "../../familiars/model/familiar";
 import { projectMascot } from "../../projects/model/projectMascots";
 import { sameProjectPath } from "../../projects/model/recents";
+import type { SessionSummary } from "../../sessions/data/sessionStore";
 import type { Block, Session } from "../../sessions/model/session";
 import { projectName } from "../../../shared/lib/paths";
 import type {
@@ -18,6 +19,8 @@ import type {
 
 export const TRANSCRIPT_LIMIT_DEFAULT = 80;
 export const TRANSCRIPT_LIMIT_MAX = 200;
+/** Soft cap so a large history does not drown the phone overview. */
+export const OPEN_SESSIONS_CAP = 50;
 const PREVIEW_CHARS = 160;
 /** A phone never needs a whole tool dump or a book-length reply in one poll. */
 const BLOCK_TEXT_MAX = 24_000;
@@ -172,7 +175,7 @@ export function companionSession(
   const state = familiarState(session);
   return {
     id: session.id,
-    title: session.title,
+    title: session.title || "Untitled",
     project: projectRef(session.cwd, label),
     harness: session.harness,
     model: session.model,
@@ -181,6 +184,69 @@ export function companionSession(
     ...(state.activity ? { activity: state.activity } : {}),
     ...(session.branch ? { branch: session.branch } : {}),
   };
+}
+
+/** History row for a session that is not currently loaded in memory. */
+export function companionSessionFromSummary(
+  summary: SessionSummary,
+  label?: (path: string) => string,
+): CompanionSession {
+  return {
+    id: summary.id,
+    title: summary.title || "Untitled",
+    project: projectRef(summary.cwd, label),
+    harness: summary.harness,
+    model: summary.model,
+    runtimeMode: summary.runtimeMode,
+    status: "idle",
+    ...(summary.branch ? { branch: summary.branch } : {}),
+  };
+}
+
+function isListedProjectSession(session: Session): boolean {
+  return !session.ephemeral && !session.orchestrationLeadId && !session.inboxAsk;
+}
+
+function isListedHistoryRow(row: SessionSummary): boolean {
+  return !row.archived && !row.draft && !row.orchestrationLeadId;
+}
+
+/**
+ * Live workspace sessions plus recent project history, so every paired phone
+ * sees the same Open sessions list — not only tabs currently mounted in memory.
+ */
+export function mergeOpenSessions(options: {
+  live: readonly Session[];
+  history: readonly SessionSummary[];
+  familiarSessionIds: ReadonlySet<string>;
+  label?: (path: string) => string;
+  cap?: number;
+}): CompanionSession[] {
+  const liveIds = new Set<string>();
+  const fromLive: CompanionSession[] = [];
+
+  for (const session of options.live) {
+    if (
+      options.familiarSessionIds.has(session.id) ||
+      !isListedProjectSession(session)
+    ) {
+      continue;
+    }
+    liveIds.add(session.id);
+    fromLive.push(companionSession(session, options.label));
+  }
+
+  const fromHistory: CompanionSession[] = [];
+  for (const row of options.history) {
+    if (liveIds.has(row.id) || options.familiarSessionIds.has(row.id)) continue;
+    if (!isListedHistoryRow(row)) continue;
+    fromHistory.push(companionSessionFromSummary(row, options.label));
+  }
+
+  return sortSessions([...fromLive, ...fromHistory]).slice(
+    0,
+    options.cap ?? OPEN_SESSIONS_CAP,
+  );
 }
 
 const STATUS_RANK = { "needs-you": 0, working: 1, idle: 2 } as const;
