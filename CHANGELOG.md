@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-10-08
+
+### Added
+
+- **companion:** merge project history into phone overview
+
 ## [1.0.6] - 2026-10-07
 
 ### Changed
@@ -134,7 +140,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/deluminor/molfar/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/deluminor/molfar/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/deluminor/molfar/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/deluminor/molfar/compare/v1.0.3...v1.0.4
