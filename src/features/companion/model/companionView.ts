@@ -183,6 +183,7 @@ export function companionSession(
     status: state.status,
     ...(state.activity ? { activity: state.activity } : {}),
     ...(session.branch ? { branch: session.branch } : {}),
+    ...(typeof session.updatedAt === "number" ? { updatedAt: session.updatedAt } : {}),
   };
 }
 
@@ -200,6 +201,7 @@ export function companionSessionFromSummary(
     runtimeMode: summary.runtimeMode,
     status: "idle",
     ...(summary.branch ? { branch: summary.branch } : {}),
+    ...(typeof summary.updatedAt === "number" ? { updatedAt: summary.updatedAt } : {}),
   };
 }
 
@@ -252,9 +254,11 @@ export function mergeOpenSessions(options: {
 const STATUS_RANK = { "needs-you": 0, working: 1, idle: 2 } as const;
 
 export function sortSessions(sessions: CompanionSession[]): CompanionSession[] {
-  return [...sessions].sort(
-    (a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status],
-  );
+  return [...sessions].sort((a, b) => {
+    const byStatus = STATUS_RANK[a.status] - STATUS_RANK[b.status];
+    if (byStatus !== 0) return byStatus;
+    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+  });
 }
 
 export function companionProjects(

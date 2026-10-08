@@ -46,6 +46,8 @@ export type CompanionSession = {
   status: FamiliarStatus;
   activity?: string;
   branch?: string;
+  /** Last activity on the desktop, ms epoch. Optional for older snapshots. */
+  updatedAt?: number;
 };
 
 export type CompanionProject = CompanionProjectRef & {
@@ -128,12 +130,22 @@ export type CompanionSessionOptions = {
   }[];
 };
 
+/** A wiki/markdown link that resolved to another note in the vault. */
+export type CompanionVaultLink = { target: string; path: string };
+
 export type CompanionVaultIndex =
   | { connected: false }
   | {
       connected: true;
       name: string;
-      notes: { path: string; title: string; tags: string[]; aliases: string[] }[];
+      notes: {
+        path: string;
+        title: string;
+        tags: string[];
+        aliases: string[];
+        /** Resolved outgoing links — enough for the phone's knowledge graph. */
+        links: CompanionVaultLink[];
+      }[];
       truncated: boolean;
     };
 
@@ -143,8 +155,10 @@ export type CompanionVaultNote = {
   tags: string[];
   body: string;
   truncated: boolean;
+  /** SHA of the on-disk body; required for `vault.write`. */
+  revision: string;
   /** Links in the note that resolve to other notes, as written in the source. */
-  links: { target: string; path: string }[];
+  links: CompanionVaultLink[];
   backlinks: { path: string; title: string }[];
 };
 
@@ -195,6 +209,10 @@ export type CompanionRequest =
     }
   | { action: "vault.index"; input: Record<string, never> }
   | { action: "vault.read"; input: { path: string } }
+  | {
+      action: "vault.write";
+      input: { path: string; body: string; ifRevision: string };
+    }
   | { action: "notes.list"; input: { query?: string } }
   | { action: "notes.read"; input: { id: string } }
   | {

@@ -20,6 +20,7 @@ function session(overrides: Partial<Session> & { id: string }): Session {
     title: "Session",
     cwd: "/code/app",
     blocks: [],
+    updatedAt: 1_000,
     ...overrides,
   } as Session;
 }
@@ -58,6 +59,7 @@ function setup(sessions: Session[], extra: Partial<CompanionDeps> = {}) {
       status: vi.fn(async () => null),
       scan: vi.fn(),
       read: vi.fn(),
+      save: vi.fn(),
     },
     notes: {
       list: vi.fn(async () => [] as Note[]),
@@ -106,7 +108,9 @@ describe("overview", () => {
       status: "needs-you",
       activity: "Approve rm -rf build",
       project: { path: "/code/app", name: "app" },
+      updatedAt: 1_000,
     });
+    expect(overview.sessions[1]).toMatchObject({ id: "idle", updatedAt: 1_000 });
     expect(overview.projects).toEqual([
       { path: "/code/app", name: "app", working: 0, needsYou: 1 },
       { path: "/code/site", name: "site", working: 0, needsYou: 0 },
@@ -158,7 +162,17 @@ describe("overview", () => {
       status: "idle",
       branch: "main",
       project: { path: "/code/site", name: "site" },
+      updatedAt: 2,
     });
+  });
+
+  it("orders same-status sessions by updatedAt descending", async () => {
+    const { handle } = setup([
+      session({ id: "older", title: "Older idle", updatedAt: 10 }),
+      session({ id: "newer", title: "Newer idle", updatedAt: 90 }),
+    ]);
+    const overview = (await handle("overview", {})) as CompanionOverview;
+    expect(overview.sessions.map((entry) => entry.id)).toEqual(["newer", "older"]);
   });
 });
 
@@ -358,22 +372,95 @@ describe("knowledge vault", () => {
       vault: {
         status: vi.fn(async () => connection),
         scan,
-        read: vi.fn(async (_id: string, path: string) => ({ path, body: "See [[Tailscale]]", revision: "r" })),
+        read: vi.fn(async (_id: string, path: string) => ({
+          path,
+          body: "See [[Tailscale]]",
+          revision: "r",
+        })),
+        save: vi.fn(),
       },
     });
-    const index = (await handle("vault.index", {})) as { notes: { path: string }[] };
-    expect(index.notes.map((n) => n.path)).toEqual(["Daily.md", "Ideas/Molfar.md", "Tailscale.md"]);
+    const index = (await handle("vault.index", {})) as {
+      notes: { path: string; links: { target: string; path: string }[] }[];
+    };
+    expect(index.notes.map((n) => n.path)).toEqual([
+      "Daily.md",
+      "Ideas/Molfar.md",
+      "Tailscale.md",
+    ]);
+    expect(index.notes.find((n) => n.path === "Ideas/Molfar.md")?.links).toEqual([
+      { target: "Tailscale", path: "Tailscale.md" },
+    ]);
     expect(await handle("vault.read", { path: "Ideas/Molfar.md" })).toEqual({
       path: "Ideas/Molfar.md",
       title: "Molfar",
       tags: ["ai"],
       body: "See [[Tailscale]]",
       truncated: false,
+      revision: "r",
       links: [{ target: "Tailscale", path: "Tailscale.md" }],
       backlinks: [{ path: "Daily.md", title: "Daily" }],
     });
     // One scan serves both calls.
     expect(scan).toHaveBeenCalledTimes(1);
-    await expect(handle("vault.read", { path: "../etc/passwd" })).rejects.toThrow("not in the vault");
+    await expect(handle("vault.read", { path: "../etc/passwd" })).rejects.toThrow(
+      "not in the vault",
+    );
+  });
+
+  it("writes a note when the revision matches and rejects conflicts", async () => {
+    const scan = vi.fn(async () => snapshot);
+    const save = vi
+      .fn()
+      .mockResolvedValueOnce({
+        path: "Tailscale.md",
+        body: "Updated",
+        revision: "r2",
+      })
+      .mockRejectedValueOnce(
+        new Error("CONFLICT: Note changed on disk. Reload before saving."),
+      );
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce({
+        path: "Tailscale.md",
+        body: "Updated",
+        revision: "r2",
+      });
+    const { handle } = setup([], {
+      vault: {
+        status: vi.fn(async () => connection),
+        scan,
+        read,
+        save,
+      },
+    });
+    expect(
+      await handle("vault.write", {
+        path: "Tailscale.md",
+        body: "Updated",
+        ifRevision: "r1",
+      }),
+    ).toMatchObject({
+      path: "Tailscale.md",
+      body: "Updated",
+      revision: "r2",
+      truncated: false,
+    });
+    expect(save).toHaveBeenCalledWith("v1", "Tailscale.md", "Updated", "r1");
+    await expect(
+      handle("vault.write", {
+        path: "Tailscale.md",
+        body: "Again",
+        ifRevision: "stale",
+      }),
+    ).rejects.toThrow(/CONFLICT/);
+    await expect(
+      handle("vault.write", {
+        path: "../etc/passwd",
+        body: "x",
+        ifRevision: "r",
+      }),
+    ).rejects.toThrow("not in the vault");
   });
 });
