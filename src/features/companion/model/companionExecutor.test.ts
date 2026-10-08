@@ -112,6 +112,54 @@ describe("overview", () => {
       { path: "/code/site", name: "site", working: 0, needsYou: 0 },
     ]);
   });
+
+  it("merges project history so phones see sessions that are not open tabs", async () => {
+    const { handle } = setup([session({ id: "live", title: "Live tab" })], {
+      sessionHistory: () => [
+        {
+          id: "from-disk",
+          cwd: "/code/site",
+          harness: "claude",
+          model: "opus",
+          runtimeMode: "supervised",
+          title: "Saved on disk",
+          createdAt: 1,
+          updatedAt: 2,
+          branch: "main",
+        },
+        {
+          id: "live",
+          cwd: "/code/app",
+          harness: "claude",
+          model: "opus",
+          runtimeMode: "supervised",
+          title: "Duplicate of live",
+          createdAt: 1,
+          updatedAt: 2,
+        },
+        {
+          id: "archived",
+          cwd: "/code/app",
+          harness: "claude",
+          model: "opus",
+          runtimeMode: "supervised",
+          title: "Old",
+          createdAt: 1,
+          updatedAt: 2,
+          archived: true,
+        },
+      ],
+    });
+    const overview = (await handle("overview", {})) as CompanionOverview;
+
+    expect(overview.sessions.map((entry) => entry.id)).toEqual(["live", "from-disk"]);
+    expect(overview.sessions[1]).toMatchObject({
+      title: "Saved on disk",
+      status: "idle",
+      branch: "main",
+      project: { path: "/code/site", name: "site" },
+    });
+  });
 });
 
 describe("transcripts", () => {

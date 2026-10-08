@@ -9863,6 +9863,9 @@ function Workspace({
   unseenFinishedRef.current = unseenFinishedIds;
   useCompanionBridge({
     sessions: () => sessionsRef.current,
+    // History spans visited projects; phones need it so Open sessions is not
+    // limited to tabs currently mounted in memory.
+    sessionHistory: () => history,
     familiars: () => (familiarsEnabled ? listFamiliars() : []),
     projects: companionProjectPaths,
     projectLabel: companionProjectLabel,
