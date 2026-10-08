@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **companion:** merge project history into phone overview
+- **Companion**: the phone overview **Open sessions** list now includes recent chats from visited project history on the desktop, not only tabs currently open in memory. Live sessions win when both sources list the same chat; the list is capped at 50 so a large history does not crowd the phone.
 
 ## [1.0.6] - 2026-10-07
 
