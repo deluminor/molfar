@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { notesFromCommits, prepareChangelog, resolveNextVersion } from "./changelog.mjs";
+import { prepareChangelog, resolveNextVersion } from "./changelog.mjs";
 import { readVersion, setVersion } from "./set-version.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -30,9 +30,7 @@ function lines(output) {
   return output ? output.split("\n") : [];
 }
 
-// Upstream MonoCode commits arrive through sync merges and are described by
-// the sync's Unreleased notes; their subjects (and their v0.x tags) must not
-// leak into MOLFAR's generated notes or previous-release lookup.
+// Upstream MonoCode v0.x tags must not become the previous-release lookup.
 function upstreamExclusion() {
   return tryGit("rev-parse", "-q", "--verify", UPSTREAM_REF) ? [`^${UPSTREAM_REF}`] : [];
 }
@@ -47,20 +45,6 @@ function previousReleaseTag(exclusion) {
     "--merged", "HEAD", "--no-merged", UPSTREAM_REF, "--sort=-v:refname",
   );
   return lines(tags)[0] ?? "";
-}
-
-/** MOLFAR's own commit subjects; commits that edited CHANGELOG.md already wrote their notes. */
-function commitSubjectsSince(previousTag, exclusion) {
-  const base = previousTag || tryGit("log", "-1", "--format=%H", "--", "CHANGELOG.md");
-  const range = [base ? `${base}..HEAD` : "HEAD", ...exclusion];
-
-  const documented = new Set(lines(tryGit("log", "--no-merges", "--format=%H", ...range, "--", "CHANGELOG.md")));
-  const commits = lines(tryGit("log", "--no-merges", "--format=%H %s", ...range));
-
-  return commits
-    .map((commit) => commit.split(/ (.*)/s))
-    .filter(([hash]) => !documented.has(hash))
-    .map(([, subject]) => subject ?? "");
 }
 
 const request = process.argv[2];
@@ -83,12 +67,13 @@ try {
   const prepared = prepareChangelog(readFileSync(changelogPath, "utf8"), {
     version,
     date: new Date().toISOString().slice(0, 10),
-    generated: notesFromCommits(commitSubjectsSince(previousTag, exclusion)),
     previousTag,
     repository,
   });
   if (!prepared) {
-    throw new Error("Nothing to release: add notes under ## [Unreleased] or land feat/fix commits first");
+    throw new Error(
+      "Nothing to release: write user-facing notes under ## [Unreleased] in CHANGELOG.md first",
+    );
   }
 
   writeFileSync(changelogPath, prepared.changelog);

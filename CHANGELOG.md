@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **companion:** add vault.write and overview session updatedAt
+- **Companion**: paired phones can save edits to Knowledge vault notes, with revision checks so a stale overwrite is rejected. Open sessions on the phone overview include last-updated times so chats sort and group by recency within each project.
 
 ## [1.0.7] - 2026-10-08
 
@@ -25,14 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Home** host metrics keep a longer sample history (150 points instead of 60), so CPU/memory charts retain more recent activity.
 - **Companion** pairing offer stacks the QR code and instructions in one column and centers the setup steps for clearer layout on narrow Settings panes.
-- **companion:** stack QR offer layout and center instructions
 
 ## [1.0.5] - 2026-10-07
 
 ### Added
 
 - **Companion**: pair a phone or iPad with this desktop over Tailscale (Settings → Companion, QR code) to follow Familiars and open sessions, send messages and photos, answer approvals and questions, switch permission modes, start new sessions, browse the Knowledge vault, and read or add notes while MOLFAR runs. The gateway is off by default, binds only loopback or the Tailscale address, and stores only hashes of per-device tokens. See [docs/companion.md](docs/companion.md).
-- **companion:** add gateway for pairing phones and tablets
 
 ## [1.0.4] - 2026-10-07
 

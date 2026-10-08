@@ -5,18 +5,13 @@ MOLFAR ships its own releases from the `main` branch of `deluminor/molfar`: desk
 ## Cut a release
 
 1. Merge the work into `main` and make sure CI is green.
-2. Optional: write the notes under `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added, Changed, Fixed, Removed).
+2. **Required:** write user-facing notes under `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added, Changed, Fixed, Removed). Use product language — what the user sees — not commit subjects or API names. The release refuses to cut if Unreleased is empty.
 3. **Actions → Release → Run workflow**, branch `main`, version `patch`, `minor`, `major`, or an exact `X.Y.Z`.
 
 The workflow then:
 
 - bumps `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` and `tauri.conf.json` (`scripts/release/prepare.mjs`);
-- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes are combined, section by section, with notes generated from MOLFAR's conventional commits since the previous MOLFAR tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert` → Changed). These commits are left out of the generated notes:
-  - `chore`, `ci`, `docs`, `test`, `build`, `style` and merge commits;
-  - commits scoped `release`, `sync` or `license`, which change tooling or notices rather than the app — describe user-visible license changes under `Unreleased` yourself;
-  - subjects without a conventional prefix;
-  - commits that edited `CHANGELOG.md` themselves, since they already wrote their notes;
-  - MonoCode commits reachable from `upstream/main`, which the sync PR describes under `Unreleased`;
+- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes become that section (and Unreleased is cleared). Notes are never generated from commit subjects;
 - opens a `release/vX.Y.Z` branch, waits until GitHub's compare API sees that head, opens or reuses the PR via the REST pulls API (GraphQL `createPullRequest` often still races a force-pushed ref even after compare is ahead), squash-merges it into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
 - builds macOS (arm64 + x64), Windows, Linux (`.deb`, AppImage, `.rpm`) and the six host packages from that tag;
 - publishes the GitHub release with the changelog section as its body, plus `latest.json` for in-app updates.
