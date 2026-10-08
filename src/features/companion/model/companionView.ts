@@ -171,6 +171,7 @@ export function projectRef(
 export function companionSession(
   session: Session,
   label?: (path: string) => string,
+  updatedAt?: number,
 ): CompanionSession {
   const state = familiarState(session);
   return {
@@ -183,7 +184,7 @@ export function companionSession(
     status: state.status,
     ...(state.activity ? { activity: state.activity } : {}),
     ...(session.branch ? { branch: session.branch } : {}),
-    ...(typeof session.updatedAt === "number" ? { updatedAt: session.updatedAt } : {}),
+    ...(typeof updatedAt === "number" ? { updatedAt } : {}),
   };
 }
 
@@ -226,6 +227,9 @@ export function mergeOpenSessions(options: {
 }): CompanionSession[] {
   const liveIds = new Set<string>();
   const fromLive: CompanionSession[] = [];
+  const historyUpdatedAt = new Map(
+    options.history.map((row) => [row.id, row.updatedAt] as const),
+  );
 
   for (const session of options.live) {
     if (
@@ -235,7 +239,9 @@ export function mergeOpenSessions(options: {
       continue;
     }
     liveIds.add(session.id);
-    fromLive.push(companionSession(session, options.label));
+    fromLive.push(
+      companionSession(session, options.label, historyUpdatedAt.get(session.id)),
+    );
   }
 
   const fromHistory: CompanionSession[] = [];

@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Familiar } from "../../familiars/model/familiar";
 import type { Note } from "../../notes/notes";
+import type { SessionSummary } from "../../sessions/data/sessionStore";
 import type { Block, Session } from "../../sessions/model/session";
 import { createCompanionExecutor, type CompanionDeps } from "./companionExecutor";
 import type { CompanionOverview, CompanionTranscript } from "./protocol";
@@ -20,9 +21,23 @@ function session(overrides: Partial<Session> & { id: string }): Session {
     title: "Session",
     cwd: "/code/app",
     blocks: [],
+    ...overrides,
+  };
+}
+
+function historyRow(
+  overrides: Partial<SessionSummary> & { id: string },
+): SessionSummary {
+  return {
+    cwd: "/code/app",
+    harness: "claude",
+    model: "opus",
+    runtimeMode: "supervised",
+    title: "Session",
+    createdAt: 1,
     updatedAt: 1_000,
     ...overrides,
-  } as Session;
+  };
 }
 
 const block = (overrides: Partial<Block> & { id: string }): Block => ({
@@ -76,20 +91,35 @@ beforeEach(() => localStorage.clear());
 
 describe("overview", () => {
   it("lists Familiars with their state and project sessions busiest first", async () => {
-    const { handle } = setup([
-      session({
-        id: "fam-session",
-        busy: true,
-        blocks: [block({ id: "a", text: "Looking at the failing build", streaming: true })],
-      }),
-      session({ id: "idle", title: "Idle one" }),
-      session({
-        id: "waiting",
-        title: "Needs approval",
-        blocks: [block({ id: "t", role: "tool", approval: { requestId: 7 }, tool: { title: "rm -rf build" } })],
-      }),
-      session({ id: "habit", ephemeral: true }),
-    ]);
+    const { handle } = setup(
+      [
+        session({
+          id: "fam-session",
+          busy: true,
+          blocks: [block({ id: "a", text: "Looking at the failing build", streaming: true })],
+        }),
+        session({ id: "idle", title: "Idle one" }),
+        session({
+          id: "waiting",
+          title: "Needs approval",
+          blocks: [
+            block({
+              id: "t",
+              role: "tool",
+              approval: { requestId: 7 },
+              tool: { title: "rm -rf build" },
+            }),
+          ],
+        }),
+        session({ id: "habit", ephemeral: true }),
+      ],
+      {
+        sessionHistory: () => [
+          historyRow({ id: "idle", title: "Idle one" }),
+          historyRow({ id: "waiting", title: "Needs approval" }),
+        ],
+      },
+    );
     const overview = (await handle("overview", {})) as CompanionOverview;
 
     expect(overview.familiars).toMatchObject([
@@ -120,43 +150,30 @@ describe("overview", () => {
   it("merges project history so phones see sessions that are not open tabs", async () => {
     const { handle } = setup([session({ id: "live", title: "Live tab" })], {
       sessionHistory: () => [
-        {
+        historyRow({
           id: "from-disk",
           cwd: "/code/site",
-          harness: "claude",
-          model: "opus",
-          runtimeMode: "supervised",
           title: "Saved on disk",
-          createdAt: 1,
           updatedAt: 2,
           branch: "main",
-        },
-        {
+        }),
+        historyRow({
           id: "live",
-          cwd: "/code/app",
-          harness: "claude",
-          model: "opus",
-          runtimeMode: "supervised",
           title: "Duplicate of live",
-          createdAt: 1,
           updatedAt: 2,
-        },
-        {
+        }),
+        historyRow({
           id: "archived",
-          cwd: "/code/app",
-          harness: "claude",
-          model: "opus",
-          runtimeMode: "supervised",
           title: "Old",
-          createdAt: 1,
           updatedAt: 2,
           archived: true,
-        },
+        }),
       ],
     });
     const overview = (await handle("overview", {})) as CompanionOverview;
 
     expect(overview.sessions.map((entry) => entry.id)).toEqual(["live", "from-disk"]);
+    expect(overview.sessions[0]).toMatchObject({ id: "live", updatedAt: 2 });
     expect(overview.sessions[1]).toMatchObject({
       title: "Saved on disk",
       status: "idle",
@@ -167,10 +184,18 @@ describe("overview", () => {
   });
 
   it("orders same-status sessions by updatedAt descending", async () => {
-    const { handle } = setup([
-      session({ id: "older", title: "Older idle", updatedAt: 10 }),
-      session({ id: "newer", title: "Newer idle", updatedAt: 90 }),
-    ]);
+    const { handle } = setup(
+      [
+        session({ id: "older", title: "Older idle" }),
+        session({ id: "newer", title: "Newer idle" }),
+      ],
+      {
+        sessionHistory: () => [
+          historyRow({ id: "older", title: "Older idle", updatedAt: 10 }),
+          historyRow({ id: "newer", title: "Newer idle", updatedAt: 90 }),
+        ],
+      },
+    );
     const overview = (await handle("overview", {})) as CompanionOverview;
     expect(overview.sessions.map((entry) => entry.id)).toEqual(["newer", "older"]);
   });
