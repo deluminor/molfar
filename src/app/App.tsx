@@ -637,7 +637,12 @@ import {
 import { listAutomations } from "../features/automations/model/automations";
 import { createNote, getNote, loadNotes } from "../features/notes";
 import { useCompanionBridge } from "../features/companion/hooks/useCompanionBridge";
-import { readVaultNote, scanVault, vaultStatus } from "../platform/tauri/vault";
+import {
+  readVaultNote,
+  saveVaultNote,
+  scanVault,
+  vaultStatus,
+} from "../platform/tauri/vault";
 import {
   companionProjectLabel,
   companionProjectPaths,
@@ -9894,7 +9899,12 @@ function Workspace({
     answer: onQuestionReply,
     launch: (launch, id) => launchQuickSessionRef.current(launch, id),
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
-    vault: { status: vaultStatus, scan: scanVault, read: readVaultNote },
+    vault: {
+      status: vaultStatus,
+      scan: scanVault,
+      read: readVaultNote,
+      save: saveVaultNote,
+    },
     notes: {
       list: () => loadNotes(true),
       read: getNote,

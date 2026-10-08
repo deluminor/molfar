@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Familiar } from "../../familiars/model/familiar";
 import type { Note } from "../../notes/notes";
+import type { SessionSummary } from "../../sessions/data/sessionStore";
 import type { Block, Session } from "../../sessions/model/session";
 import { createCompanionExecutor, type CompanionDeps } from "./companionExecutor";
 import type { CompanionOverview, CompanionTranscript } from "./protocol";
@@ -21,7 +22,22 @@ function session(overrides: Partial<Session> & { id: string }): Session {
     cwd: "/code/app",
     blocks: [],
     ...overrides,
-  } as Session;
+  };
+}
+
+function historyRow(
+  overrides: Partial<SessionSummary> & { id: string },
+): SessionSummary {
+  return {
+    cwd: "/code/app",
+    harness: "claude",
+    model: "opus",
+    runtimeMode: "supervised",
+    title: "Session",
+    createdAt: 1,
+    updatedAt: 1_000,
+    ...overrides,
+  };
 }
 
 const block = (overrides: Partial<Block> & { id: string }): Block => ({
@@ -58,6 +74,7 @@ function setup(sessions: Session[], extra: Partial<CompanionDeps> = {}) {
       status: vi.fn(async () => null),
       scan: vi.fn(),
       read: vi.fn(),
+      save: vi.fn(),
     },
     notes: {
       list: vi.fn(async () => [] as Note[]),
@@ -74,20 +91,35 @@ beforeEach(() => localStorage.clear());
 
 describe("overview", () => {
   it("lists Familiars with their state and project sessions busiest first", async () => {
-    const { handle } = setup([
-      session({
-        id: "fam-session",
-        busy: true,
-        blocks: [block({ id: "a", text: "Looking at the failing build", streaming: true })],
-      }),
-      session({ id: "idle", title: "Idle one" }),
-      session({
-        id: "waiting",
-        title: "Needs approval",
-        blocks: [block({ id: "t", role: "tool", approval: { requestId: 7 }, tool: { title: "rm -rf build" } })],
-      }),
-      session({ id: "habit", ephemeral: true }),
-    ]);
+    const { handle } = setup(
+      [
+        session({
+          id: "fam-session",
+          busy: true,
+          blocks: [block({ id: "a", text: "Looking at the failing build", streaming: true })],
+        }),
+        session({ id: "idle", title: "Idle one" }),
+        session({
+          id: "waiting",
+          title: "Needs approval",
+          blocks: [
+            block({
+              id: "t",
+              role: "tool",
+              approval: { requestId: 7 },
+              tool: { title: "rm -rf build" },
+            }),
+          ],
+        }),
+        session({ id: "habit", ephemeral: true }),
+      ],
+      {
+        sessionHistory: () => [
+          historyRow({ id: "idle", title: "Idle one" }),
+          historyRow({ id: "waiting", title: "Needs approval" }),
+        ],
+      },
+    );
     const overview = (await handle("overview", {})) as CompanionOverview;
 
     expect(overview.familiars).toMatchObject([
@@ -106,7 +138,9 @@ describe("overview", () => {
       status: "needs-you",
       activity: "Approve rm -rf build",
       project: { path: "/code/app", name: "app" },
+      updatedAt: 1_000,
     });
+    expect(overview.sessions[1]).toMatchObject({ id: "idle", updatedAt: 1_000 });
     expect(overview.projects).toEqual([
       { path: "/code/app", name: "app", working: 0, needsYou: 1 },
       { path: "/code/site", name: "site", working: 0, needsYou: 0 },
@@ -116,49 +150,54 @@ describe("overview", () => {
   it("merges project history so phones see sessions that are not open tabs", async () => {
     const { handle } = setup([session({ id: "live", title: "Live tab" })], {
       sessionHistory: () => [
-        {
+        historyRow({
           id: "from-disk",
           cwd: "/code/site",
-          harness: "claude",
-          model: "opus",
-          runtimeMode: "supervised",
           title: "Saved on disk",
-          createdAt: 1,
           updatedAt: 2,
           branch: "main",
-        },
-        {
+        }),
+        historyRow({
           id: "live",
-          cwd: "/code/app",
-          harness: "claude",
-          model: "opus",
-          runtimeMode: "supervised",
           title: "Duplicate of live",
-          createdAt: 1,
           updatedAt: 2,
-        },
-        {
+        }),
+        historyRow({
           id: "archived",
-          cwd: "/code/app",
-          harness: "claude",
-          model: "opus",
-          runtimeMode: "supervised",
           title: "Old",
-          createdAt: 1,
           updatedAt: 2,
           archived: true,
-        },
+        }),
       ],
     });
     const overview = (await handle("overview", {})) as CompanionOverview;
 
     expect(overview.sessions.map((entry) => entry.id)).toEqual(["live", "from-disk"]);
+    expect(overview.sessions[0]).toMatchObject({ id: "live", updatedAt: 2 });
     expect(overview.sessions[1]).toMatchObject({
       title: "Saved on disk",
       status: "idle",
       branch: "main",
       project: { path: "/code/site", name: "site" },
+      updatedAt: 2,
     });
+  });
+
+  it("orders same-status sessions by updatedAt descending", async () => {
+    const { handle } = setup(
+      [
+        session({ id: "older", title: "Older idle" }),
+        session({ id: "newer", title: "Newer idle" }),
+      ],
+      {
+        sessionHistory: () => [
+          historyRow({ id: "older", title: "Older idle", updatedAt: 10 }),
+          historyRow({ id: "newer", title: "Newer idle", updatedAt: 90 }),
+        ],
+      },
+    );
+    const overview = (await handle("overview", {})) as CompanionOverview;
+    expect(overview.sessions.map((entry) => entry.id)).toEqual(["newer", "older"]);
   });
 });
 
@@ -358,22 +397,95 @@ describe("knowledge vault", () => {
       vault: {
         status: vi.fn(async () => connection),
         scan,
-        read: vi.fn(async (_id: string, path: string) => ({ path, body: "See [[Tailscale]]", revision: "r" })),
+        read: vi.fn(async (_id: string, path: string) => ({
+          path,
+          body: "See [[Tailscale]]",
+          revision: "r",
+        })),
+        save: vi.fn(),
       },
     });
-    const index = (await handle("vault.index", {})) as { notes: { path: string }[] };
-    expect(index.notes.map((n) => n.path)).toEqual(["Daily.md", "Ideas/Molfar.md", "Tailscale.md"]);
+    const index = (await handle("vault.index", {})) as {
+      notes: { path: string; links: { target: string; path: string }[] }[];
+    };
+    expect(index.notes.map((n) => n.path)).toEqual([
+      "Daily.md",
+      "Ideas/Molfar.md",
+      "Tailscale.md",
+    ]);
+    expect(index.notes.find((n) => n.path === "Ideas/Molfar.md")?.links).toEqual([
+      { target: "Tailscale", path: "Tailscale.md" },
+    ]);
     expect(await handle("vault.read", { path: "Ideas/Molfar.md" })).toEqual({
       path: "Ideas/Molfar.md",
       title: "Molfar",
       tags: ["ai"],
       body: "See [[Tailscale]]",
       truncated: false,
+      revision: "r",
       links: [{ target: "Tailscale", path: "Tailscale.md" }],
       backlinks: [{ path: "Daily.md", title: "Daily" }],
     });
     // One scan serves both calls.
     expect(scan).toHaveBeenCalledTimes(1);
-    await expect(handle("vault.read", { path: "../etc/passwd" })).rejects.toThrow("not in the vault");
+    await expect(handle("vault.read", { path: "../etc/passwd" })).rejects.toThrow(
+      "not in the vault",
+    );
+  });
+
+  it("writes a note when the revision matches and rejects conflicts", async () => {
+    const scan = vi.fn(async () => snapshot);
+    const save = vi
+      .fn()
+      .mockResolvedValueOnce({
+        path: "Tailscale.md",
+        body: "Updated",
+        revision: "r2",
+      })
+      .mockRejectedValueOnce(
+        new Error("CONFLICT: Note changed on disk. Reload before saving."),
+      );
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce({
+        path: "Tailscale.md",
+        body: "Updated",
+        revision: "r2",
+      });
+    const { handle } = setup([], {
+      vault: {
+        status: vi.fn(async () => connection),
+        scan,
+        read,
+        save,
+      },
+    });
+    expect(
+      await handle("vault.write", {
+        path: "Tailscale.md",
+        body: "Updated",
+        ifRevision: "r1",
+      }),
+    ).toMatchObject({
+      path: "Tailscale.md",
+      body: "Updated",
+      revision: "r2",
+      truncated: false,
+    });
+    expect(save).toHaveBeenCalledWith("v1", "Tailscale.md", "Updated", "r1");
+    await expect(
+      handle("vault.write", {
+        path: "Tailscale.md",
+        body: "Again",
+        ifRevision: "stale",
+      }),
+    ).rejects.toThrow(/CONFLICT/);
+    await expect(
+      handle("vault.write", {
+        path: "../etc/passwd",
+        body: "x",
+        ifRevision: "r",
+      }),
+    ).rejects.toThrow("not in the vault");
   });
 });

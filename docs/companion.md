@@ -52,6 +52,8 @@ Habit runs, orchestration workers and Inbox asks are never exposed. Requests are
 
 The protocol lives in `src/features/companion/model/protocol.ts`. Bump `COMPANION_PROTOCOL_VERSION` (and `PROTOCOL_VERSION` in `companion.rs`) when a field changes meaning or disappears; adding optional fields does not need a bump.
 
+Overview `sessions` include optional `updatedAt` (ms epoch) so the phone can group open sessions by day per project. Older desktops omit it; clients fall back to a flat list.
+
 ## New sessions and Knowledge
 
 `session.start` builds the same launch as the `app` CLI's `sessions.start`: one of the rail's projects, an installed provider, a known model and effort, any of the four permission modes, and the current checkout or a new worktree. The session starts in the background without taking focus on the desktop and appears in Open sessions.

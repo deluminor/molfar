@@ -316,6 +316,24 @@ export function createCompanionExecutor(deps: CompanionDeps) {
           throw new CompanionError("path is required");
         return vault.read(path);
       }
+      case "vault.write": {
+        const path = input.path;
+        const body = input.body;
+        const ifRevision = input.ifRevision;
+        if (typeof path !== "string" || !path || path.length > 4096)
+          throw new CompanionError("path is required");
+        if (typeof body !== "string") throw new CompanionError("body is required");
+        if (body.length > 2 * 1024 * 1024)
+          throw new CompanionError("Note exceeds the 2 MiB limit");
+        if (typeof ifRevision !== "string" || !ifRevision)
+          throw new CompanionError("ifRevision is required");
+        try {
+          return await vault.write(path, body, ifRevision);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new CompanionError(message);
+        }
+      }
       case "notes.list": {
         const query =
           typeof input.query === "string" ? input.query.trim().toLowerCase() : "";

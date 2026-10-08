@@ -171,6 +171,7 @@ export function projectRef(
 export function companionSession(
   session: Session,
   label?: (path: string) => string,
+  updatedAt?: number,
 ): CompanionSession {
   const state = familiarState(session);
   return {
@@ -183,6 +184,7 @@ export function companionSession(
     status: state.status,
     ...(state.activity ? { activity: state.activity } : {}),
     ...(session.branch ? { branch: session.branch } : {}),
+    ...(typeof updatedAt === "number" ? { updatedAt } : {}),
   };
 }
 
@@ -200,6 +202,7 @@ export function companionSessionFromSummary(
     runtimeMode: summary.runtimeMode,
     status: "idle",
     ...(summary.branch ? { branch: summary.branch } : {}),
+    ...(typeof summary.updatedAt === "number" ? { updatedAt: summary.updatedAt } : {}),
   };
 }
 
@@ -224,6 +227,9 @@ export function mergeOpenSessions(options: {
 }): CompanionSession[] {
   const liveIds = new Set<string>();
   const fromLive: CompanionSession[] = [];
+  const historyUpdatedAt = new Map(
+    options.history.map((row) => [row.id, row.updatedAt] as const),
+  );
 
   for (const session of options.live) {
     if (
@@ -233,7 +239,9 @@ export function mergeOpenSessions(options: {
       continue;
     }
     liveIds.add(session.id);
-    fromLive.push(companionSession(session, options.label));
+    fromLive.push(
+      companionSession(session, options.label, historyUpdatedAt.get(session.id)),
+    );
   }
 
   const fromHistory: CompanionSession[] = [];
@@ -252,9 +260,11 @@ export function mergeOpenSessions(options: {
 const STATUS_RANK = { "needs-you": 0, working: 1, idle: 2 } as const;
 
 export function sortSessions(sessions: CompanionSession[]): CompanionSession[] {
-  return [...sessions].sort(
-    (a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status],
-  );
+  return [...sessions].sort((a, b) => {
+    const byStatus = STATUS_RANK[a.status] - STATUS_RANK[b.status];
+    if (byStatus !== 0) return byStatus;
+    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+  });
 }
 
 export function companionProjects(
