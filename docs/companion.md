@@ -58,7 +58,7 @@ Overview `sessions` include optional `updatedAt` (ms epoch) so the phone can gro
 
 `session.start` builds the same launch as the `app` CLI's `sessions.start`: one of the rail's projects, an installed provider, a known model and effort, any of the four permission modes, and the current checkout or a new worktree. The session starts in the background without taking focus on the desktop and appears in Open sessions.
 
-`vault.index` lists up to 5,000 notes of the vault connected in Knowledge. `vault.read` returns one note (capped at 128 KiB, like **Add to agent context**), the links that resolve to other notes, and its backlinks. Both reuse the desktop's scanner; one snapshot is kept for a minute. The phone can only read the vault.
+`vault.index` lists up to 5,000 notes of the vault connected in Knowledge. `vault.read` returns one note (capped at 128 KiB, like **Add to agent context**), the links that resolve to other notes, its backlinks, and a revision for concurrency. `vault.write` saves an edited body when `ifRevision` still matches the on-disk note. Index and read reuse the desktop's scanner; one snapshot is kept for a minute.
 
 ## Limits
 
@@ -69,4 +69,4 @@ Overview `sessions` include optional `updatedAt` (ms epoch) so the phone can gro
 
 ## Not yet
 
-Editing vault notes from the phone, full-text vault search, file attachments other than photos, and push notifications (Apple Personal Team builds cannot sign Push Notifications).
+Full-text vault search, file attachments other than photos, and push notifications (Apple Personal Team builds cannot sign Push Notifications).

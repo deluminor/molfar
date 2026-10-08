@@ -1,16 +1,5 @@
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 const UNRELEASED_HEADING = /^## \[Unreleased\][^\n]*\n/m;
-const CONVENTIONAL = /^(\w+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/;
-
-/** Keep a Changelog sections, in display order, for conventional commit types. */
-const SECTIONS = [
-  { title: "Added", types: ["feat"] },
-  { title: "Changed", types: ["perf", "refactor", "revert"] },
-  { title: "Fixed", types: ["fix"] },
-];
-const SKIPPED_TYPES = new Set(["build", "chore", "ci", "docs", "style", "test"]);
-const SKIPPED_SCOPES = new Set(["license", "release", "sync"]);
-const SECTION_ORDER = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"];
 
 export function parseVersion(version) {
   const match = SEMVER.exec(version);
@@ -86,40 +75,6 @@ export function unreleasedNotes(changelog) {
   return changelog.slice(bounds.bodyStart, bounds.end).trim();
 }
 
-function describeCommit(subject) {
-  const match = CONVENTIONAL.exec(subject.trim());
-  if (!match) return null;
-
-  const [, type, scope, breaking, description] = match;
-  const internal = SKIPPED_TYPES.has(type) || SKIPPED_SCOPES.has(scope);
-  if (internal && !breaking) return null;
-
-  const section = SECTIONS.find((candidate) => candidate.types.includes(type))?.title ?? "Changed";
-  const prefix = breaking ? "**Breaking:** " : "";
-  const scoped = scope ? `**${scope}:** ` : "";
-  return { section, text: `${prefix}${scoped}${description}` };
-}
-
-/** Changelog body built from commit subjects; null when nothing user-facing changed. */
-export function notesFromCommits(subjects) {
-  const grouped = new Map();
-  for (const subject of subjects) {
-    if (!subject.trim() || /^Merge (pull request|branch|remote-tracking)/.test(subject)) continue;
-
-    const entry = describeCommit(subject);
-    if (!entry) continue;
-
-    const items = grouped.get(entry.section) ?? [];
-    if (!items.includes(entry.text)) items.push(entry.text);
-    grouped.set(entry.section, items);
-  }
-
-  const blocks = SECTIONS.map((section) => section.title)
-    .filter((title) => grouped.has(title))
-    .map((title) => `### ${title}\n\n${grouped.get(title).map((item) => `- ${item}`).join("\n")}`);
-  return blocks.length > 0 ? blocks.join("\n\n") : null;
-}
-
 function updateLinks(changelog, { version, previousTag, repository }) {
   const base = `https://github.com/${repository}`;
   const unreleased = `[Unreleased]: ${base}/compare/v${version}...HEAD`;
@@ -133,62 +88,15 @@ function updateLinks(changelog, { version, previousTag, repository }) {
   return `${changelog.trimEnd()}\n\n${unreleased}\n${released}\n`;
 }
 
-/** Splits notes into prose before the first `###` and that section's list items. */
-function parseNotes(notes) {
-  const sections = new Map();
-  const preamble = [];
-  let items = null;
-
-  for (const line of notes.split("\n")) {
-    const heading = /^### (.+)$/.exec(line);
-    if (heading) {
-      const title = heading[1].trim();
-      items = sections.get(title) ?? [];
-      sections.set(title, items);
-    } else if (!items) {
-      preamble.push(line);
-    } else if (line.trim() && (line.startsWith("- ") || items.length === 0)) {
-      items.push(line);
-    } else if (line.trim()) {
-      items[items.length - 1] += `\n${line}`;
-    }
-  }
-
-  return { preamble: preamble.join("\n").trim(), sections };
-}
-
-function combineNotes(unreleased, generated) {
-  if (!unreleased || !generated) return unreleased || generated;
-
-  const notes = parseNotes(unreleased);
-  for (const [title, items] of parseNotes(generated).sections) {
-    const existing = notes.sections.get(title) ?? [];
-    notes.sections.set(title, [...existing, ...items.filter((item) => !existing.includes(item))]);
-  }
-
-  const titles = [...notes.sections.keys()].sort((a, b) => {
-    const rank = (title) => (SECTION_ORDER.includes(title) ? SECTION_ORDER.indexOf(title) : SECTION_ORDER.length);
-    return rank(a) - rank(b);
-  });
-  const blocks = titles.map((title) => `### ${title}\n\n${notes.sections.get(title).join("\n")}`);
-  return [notes.preamble, ...blocks].filter(Boolean).join("\n\n");
-}
-
-function notesSource(unreleased, generated) {
-  if (unreleased && generated) return "unreleased+commits";
-  return unreleased ? "unreleased" : "commits";
-}
-
 /**
  * Turns the changelog into its released form for `version`: an existing
- * section is kept, else the Unreleased notes and the notes `generated` from
- * commits are combined. Returns null when there is nothing to release.
+ * section is kept, else the Unreleased notes are promoted. Returns null when
+ * Unreleased is empty — release notes must be written by hand.
  */
-export function prepareChangelog(changelog, { version, date, generated, previousTag, repository }) {
+export function prepareChangelog(changelog, { version, date, previousTag, repository }) {
   if (releaseNotes(changelog, version) != null) return { changelog, source: "existing" };
 
-  const unreleased = unreleasedNotes(changelog);
-  const body = combineNotes(unreleased, generated);
+  const body = unreleasedNotes(changelog);
   if (!body) return null;
 
   const section = `## [${version}] - ${date}\n\n${body}\n\n`;
@@ -204,6 +112,6 @@ export function prepareChangelog(changelog, { version, date, generated, previous
 
   return {
     changelog: updateLinks(next, { version, previousTag, repository }),
-    source: notesSource(unreleased, generated),
+    source: "unreleased",
   };
 }
