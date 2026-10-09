@@ -484,29 +484,8 @@ jobs:
       - run: npm ci
 
       - name: Write updater release config
-        env:
-          TAURI_UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
-          TAURI_UPDATER_ENDPOINT: ${{ secrets.TAURI_UPDATER_ENDPOINT }}
-          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
         run: |
-          node <<'NODE'
-          const { writeFileSync } = require("node:fs");
-          const pubkey = process.env.TAURI_UPDATER_PUBKEY || "";
-          const { updaterEndpoint } = require("./scripts/release-channel.cjs");
-          const endpoint = updaterEndpoint(process.env);
-          if (!pubkey || !endpoint) {
-            console.error("TAURI_UPDATER_PUBKEY and an updater endpoint are required");
-            process.exit(1);
-          }
-          writeFileSync(
-            process.env.RUNNER_TEMP + "/tauri.release.conf.json",
-            JSON.stringify(
-              { plugins: { updater: { pubkey, endpoints: [endpoint] } } },
-              null,
-              2,
-            ),
-          );
-          NODE
+          printf '%s\n' '{"bundle":{"createUpdaterArtifacts":true}}' > "$RUNNER_TEMP/tauri.release.conf.json"
 
       # Same as `npm run build:linux`, with the updater config merged in.
       # npm would append extra args to the repack script, not tauri build.
