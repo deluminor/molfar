@@ -14,6 +14,9 @@ fn main() {
             std::env::args().skip(2).collect(),
         ));
     }
+    if std::env::args().nth(1).as_deref() == Some("connectors-mcp") {
+        std::process::exit(molfar_lib::connectors_mcp::run());
+    }
     #[cfg(all(debug_assertions, target_os = "macos"))]
     molfar_lib::ensure_macos_dev_bundle();
     molfar_lib::run()

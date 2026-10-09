@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Connectors MCP**: when Jira is connected in Settings, harness sessions (Cursor, Grok, fx, Antigravity, Hermes) and interactive Claude receive a `molfar-connectors` MCP server with Jira + Confluence tools. Provider-local MCP configs from disk are merged in — sessions no longer wipe tools with an empty `mcpServers` list. Secrets stay in the existing vault file; Codex `config.toml` is not modified.
 - **Companion**: paired phones can attach files (PDF, Markdown, text, JSON/XML, and common source) alongside photos when messaging a Familiar or a session, including when starting one. Up to six files per send, about 10 MB each. See [docs/companion.md](docs/companion.md).
 - Floating Familiar chats have a **Familiar rail** for switching conversations and creating a new Familiar without closing the window. The wider window keeps the rail beside the chat, and its selection stays in sync with the macOS menu bar.
 - Document artifacts open in an animated sheet inside a floating Familiar chat, with the same formatted reader and file links as the main window.

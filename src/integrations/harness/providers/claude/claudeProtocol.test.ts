@@ -153,6 +153,29 @@ describe("buildClaudeSpawnArgs", () => {
     expect(args).not.toContain("--permission-prompt-tool");
   });
 
+  it("supplements interactive MCP without strict wipe", () => {
+    const args = buildClaudeSpawnArgs({
+      mcpConfig: {
+        mcpServers: {
+          "molfar-connectors": {
+            command: "/app/molfar",
+            args: ["connectors-mcp"],
+          },
+        },
+      },
+    });
+    expect(args).not.toContain("--strict-mcp-config");
+    const config = args[args.indexOf("--mcp-config") + 1];
+    expect(JSON.parse(config)).toEqual({
+      mcpServers: {
+        "molfar-connectors": {
+          command: "/app/molfar",
+          args: ["connectors-mcp"],
+        },
+      },
+    });
+  });
+
   it("locks isolated read-only prompts to plan mode", () => {
     const args = buildClaudeSpawnArgs({
       isolated: true,

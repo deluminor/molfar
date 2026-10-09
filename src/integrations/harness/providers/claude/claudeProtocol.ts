@@ -250,6 +250,8 @@ export function buildClaudeSpawnArgs(input: {
   includePartialMessages?: boolean;
   maxTurns?: number;
   isolated?: boolean;
+  /** Supplement only — never paired with `--strict-mcp-config` on interactive. */
+  mcpConfig?: { mcpServers: Record<string, Record<string, unknown>> };
 }): string[] {
   const args = [
     "--output-format",
@@ -279,6 +281,10 @@ export function buildClaudeSpawnArgs(input: {
   } else {
     args.push(`--setting-sources=${CLAUDE_SETTING_SOURCES}`);
     args.push("--settings", JSON.stringify(settings));
+    const servers = input.mcpConfig?.mcpServers;
+    if (servers && Object.keys(servers).length > 0) {
+      args.push("--mcp-config", JSON.stringify({ mcpServers: servers }));
+    }
   }
   if (input.model) args.push("--model", input.model);
   if (input.effort) args.push("--effort", input.effort);

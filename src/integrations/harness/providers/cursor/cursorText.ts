@@ -7,6 +7,7 @@ import {
   watchChild,
 } from "../../core/child";
 import { abortTextPromptRace } from "../../core/abortTextPrompt";
+import { loadSessionMcpServers } from "../../core/sessionMcpServers";
 import { mergeStream } from "../../core/streamText";
 import type { HarnessEvent } from "../../core/types";
 
@@ -225,10 +226,11 @@ async function openSession(
   model: string,
   modelSettings?: Record<string, string>,
 ): Promise<void> {
+  const mcpServers = await loadSessionMcpServers("cursor", cwd);
   const setup = await session.acp.request<{
     sessionId?: string;
     configOptions?: unknown;
-  }>("session/new", { cwd, mcpServers: [] }, REQUEST_TIMEOUT_MS);
+  }>("session/new", { cwd, mcpServers }, REQUEST_TIMEOUT_MS);
   const acpSessionId = setup.sessionId?.trim();
   if (!acpSessionId) throw new Error("Cursor did not return a session id");
 

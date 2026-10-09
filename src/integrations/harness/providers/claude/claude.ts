@@ -16,6 +16,11 @@ import {
   writeChild,
 } from "../../core/child";
 import {
+  loadSessionMcpServers,
+  MOLFAR_CONNECTORS_SERVER_NAME,
+  toClaudeMcpConfig,
+} from "../../core/sessionMcpServers";
+import {
   askUserQuestionAllowInput,
   asRecord,
   assistantMessageId,
@@ -468,11 +473,20 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     providerSessionId: claudeSessionId,
     tasks: claudeTasks,
   });
-  const launch = launchOptions(
-    input,
-    canResume ? resume?.sessionId : undefined,
-    claudeSessionId,
+  const sessionMcp = await loadSessionMcpServers("claude", input.cwd);
+  const connectorsOnly = sessionMcp.filter(
+    (server) => server.name === MOLFAR_CONNECTORS_SERVER_NAME,
   );
+  const launch = {
+    ...launchOptions(
+      input,
+      canResume ? resume?.sessionId : undefined,
+      claudeSessionId,
+    ),
+    ...(connectorsOnly.length > 0
+      ? { mcpConfig: toClaudeMcpConfig(connectorsOnly) }
+      : {}),
+  };
 
   const live: Live = {
     cwd: input.cwd,

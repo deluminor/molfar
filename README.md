@@ -174,7 +174,7 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 
 ### Also inside
 
-Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence tools when Atlassian is connected; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Security and execution model
 
