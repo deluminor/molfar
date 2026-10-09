@@ -2,11 +2,13 @@ use tauri::Manager;
 
 mod account_identity;
 mod app_identity;
+mod artifacts;
 mod atlassian_adf;
 mod automations;
 mod azure_devops;
 mod chat_background;
 mod checkpoint;
+mod codex_familiar_store;
 mod companion;
 mod confluence;
 mod control;
@@ -14,6 +16,8 @@ pub mod control_cli;
 mod cursor_store;
 mod external_editor;
 mod familiar;
+#[cfg(target_os = "macos")]
+mod familiar_chat;
 mod familiar_transcript;
 mod fs;
 mod gitlab;
@@ -224,6 +228,8 @@ fn app_context() -> tauri::Context {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "macos")]
+    macos::register_spellcheck_default();
     #[cfg(windows)]
     windows::initialize().expect("Failed to initialize Windows process safety");
     let app = tauri::Builder::default()
@@ -233,10 +239,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                .with_denylist(&[
-                    window::QUICK_COMPOSER_LABEL,
-                    window::QUICK_COMPOSER_GIT_LABEL,
-                ])
+                .with_filter(window::is_workspace_window)
                 .build(),
         )
         .manage(harness::HarnessHost::new())
@@ -259,6 +262,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 quick_composer::init(app.handle())?;
+                familiar_chat::init(app.handle())?;
                 macos::install_dock_menu(app.handle());
                 if let Some(window) = app.get_webview_window("main") {
                     macos::install(&window);
@@ -467,6 +471,9 @@ pub fn run() {
             harness::harness_resolve_antigravity,
             harness::harness_free_port,
             harness::harness_spawn,
+            codex_familiar_store::codex_familiar_store_prepare,
+            codex_familiar_store::codex_familiar_store_copy,
+            codex_familiar_store::codex_familiar_store_restore_agent_state,
             harness::harness_write,
             harness::harness_kill,
             harness::harness_kill_all,
@@ -514,6 +521,10 @@ pub fn run() {
             notes::notes_list,
             notes::notes_get,
             notes::notes_upsert,
+            artifacts::artifacts_list,
+            artifacts::artifacts_get,
+            artifacts::artifacts_upsert,
+            artifacts::artifacts_delete,
             notes::notes_delete,
             notes::notes_save_image,
             notes::notes_image_path,
@@ -578,6 +589,28 @@ pub fn run() {
             quick_composer::git_popup::quick_git_complete,
             #[cfg(target_os = "macos")]
             quick_composer::git_popup::quick_composer_dismiss,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_sync,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_publish,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_state,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_ready,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_action,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_take,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_accept,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_reply,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_keep_alive,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_switch,
+            #[cfg(target_os = "macos")]
+            familiar_chat::mono_menu_bar_set_visible,
             window_transfer::stage_window_transfer,
             window_transfer::take_window_transfer,
             chat_background::save_chat_background,
@@ -593,11 +626,15 @@ pub fn run() {
 
     app.run(|handle, event| match event {
         #[cfg(target_os = "macos")]
-        tauri::RunEvent::Reopen {
-            has_visible_windows: false,
-            ..
-        } => {
-            let _ = window::show_hidden_or_open_new(handle);
+        tauri::RunEvent::Reopen { .. } => {
+            // A visible floating panel must not make a hidden workspace
+            // unreachable from the Dock.
+            if !window::workspace_windows(handle)
+                .iter()
+                .any(|window| window.is_visible().unwrap_or(false))
+            {
+                let _ = window::show_hidden_or_open_new(handle);
+            }
         }
         tauri::RunEvent::Ready => {
             #[cfg(target_os = "macos")]
@@ -619,6 +656,8 @@ pub fn run() {
                 .iter()
                 .any(|window| window.label() != label);
             control::window_closed(handle, &label);
+            #[cfg(target_os = "macos")]
+            familiar_chat::window_closed(handle, &label);
             if !other_window {
                 reap_harness_children(handle);
             }

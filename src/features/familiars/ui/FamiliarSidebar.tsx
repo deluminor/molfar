@@ -5,8 +5,9 @@ import { PanelRightToggle } from "../../../shared/ui/icons";
 
 const MIN_WIDTH = 340;
 let rememberedWidth = MIN_WIDTH;
+let rememberedArtifactWidth = 560;
 
-/** The shared frame for a Familiar's details and turn activity. */
+/** The shared frame for a Familiar's details and turn sidebars. */
 export function FamiliarSidebar({
   open,
   kind,
@@ -16,20 +17,26 @@ export function FamiliarSidebar({
   children,
 }: {
   open: boolean;
-  kind: "details" | "activity";
+  kind: "details" | "activity" | "sessions" | "artifact" | "changes";
   label: string;
   color: string;
   windowControls?: ReactNode;
   children: ReactNode;
 }) {
+  // Readers (documents, diffs) need room; the turn sidebars stay narrow.
+  const reader = kind === "artifact" || kind === "changes";
   const resize = useDragResize({
-    min: MIN_WIDTH,
-    max: () => Math.min(440, Math.round(window.innerWidth * 0.4)),
-    defaultWidth: MIN_WIDTH,
-    initial: rememberedWidth,
+    min: reader ? 360 : MIN_WIDTH,
+    max: () =>
+      reader
+        ? Math.min(840, Math.round(window.innerWidth * 0.58))
+        : Math.min(440, Math.round(window.innerWidth * 0.4)),
+    defaultWidth: reader ? 560 : MIN_WIDTH,
+    initial: reader ? rememberedArtifactWidth : rememberedWidth,
     direction: "left",
     onCommit: (width) => {
-      rememberedWidth = width;
+      if (reader) rememberedArtifactWidth = width;
+      else rememberedWidth = width;
     },
   });
   return (
@@ -40,6 +47,9 @@ export function FamiliarSidebar({
       inert={!open || undefined}
       data-familiar-details={kind === "details" ? "" : undefined}
       data-familiar-activity={kind === "activity" ? "" : undefined}
+      data-familiar-sessions={kind === "sessions" ? "" : undefined}
+      data-familiar-artifact={kind === "artifact" ? "" : undefined}
+      data-familiar-changes={kind === "changes" ? "" : undefined}
       data-open={open}
       style={
         {
@@ -69,10 +79,15 @@ export function FamiliarSidebar({
 
 export function FamiliarSidebarHeader({
   title,
+  heading,
   onClose,
+  actions,
 }: {
   title: string;
+  /** Richer content in place of the plain title text. */
+  heading?: ReactNode;
   onClose: () => void;
+  actions?: ReactNode;
 }) {
   return (
     <header
@@ -81,9 +96,10 @@ export function FamiliarSidebarHeader({
       data-tauri-drag-region="deep"
     >
       <h3 className="flex min-w-0 flex-1 items-center pl-4 text-[13px] font-medium text-content">
-        {title}
+        {heading ?? title}
       </h3>
       <div className="flex shrink-0 items-center gap-0.5 px-3">
+        {actions}
         <IconButton
           label={`Hide ${title.toLowerCase()}`}
           active

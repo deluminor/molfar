@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { isImeComposition } from "../../../shared/lib/keyboard";
 import { ChevronRight } from "../../../shared/ui/icons";
 import { PixelMascot } from "../../projects/ui/PixelMascot";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
@@ -11,21 +12,19 @@ import {
   updateFamiliar,
   type FamiliarLook,
 } from "../model/familiar";
-import { ConfirmReset } from "./ConfirmReset";
 import { ColorPicker, MascotPicker, PageHeader } from "./familiarPanelParts";
 
-export type SettingsPage = "habits" | "soul" | "memory";
+export type SettingsPage = "habits" | "soul" | "memory" | "settings";
 
 /**
- * Who the Familiar is: its face and name up top, then what it does, who it is
- * and what it remembers, each a page of its own.
+ * Who the Familiar is: its face and name up top, then what it does, who it is,
+ * what it remembers and its settings, each a page of its own.
  */
 export function FamiliarSettingsPage({
   familiarId,
   agent,
   onOpen,
   onBack,
-  onReset,
   counts,
   children,
 }: {
@@ -35,7 +34,6 @@ export function FamiliarSettingsPage({
   counts?: { habits?: number; memory?: number };
   onOpen: (page: SettingsPage) => void;
   onBack?: () => void;
-  onReset?: () => Promise<void>;
   /** Model and project controls, alongside the profile on the front panel. */
   children?: ReactNode;
 }) {
@@ -91,34 +89,13 @@ export function FamiliarSettingsPage({
             onClick={() => onOpen("memory")}
           />
         </nav>
-        {onReset ? (
-          <div className="mt-auto p-2">
-            <ConfirmReset
-              label="Reset conversation"
-              title={`Reset ${agent.name}'s conversation?`}
-              body="All messages in this Familiar's conversation will be deleted and any active reply will be stopped. This can't be undone."
-              kept="Its soul, memory and habits will be kept."
-              failure="Could not reset the conversation."
-              onConfirm={onReset}
-            >
-              {(open, ref) => (
-                <button
-                  ref={ref}
-                  type="button"
-                  onClick={open}
-                  className="flex w-full flex-col rounded-lg px-3 py-2 text-left hover:bg-content/5"
-                >
-                  <span className="text-[13px] leading-5 text-red-400">
-                    Reset conversation
-                  </span>
-                  <span className="text-[12px] leading-5 text-content/40">
-                    Clear all messages and start fresh
-                  </span>
-                </button>
-              )}
-            </ConfirmReset>
-          </div>
-        ) : null}
+        <div className="mt-auto p-2">
+          <NavRow
+            label="Settings"
+            description="Its sessions, and resetting its chat."
+            onClick={() => onOpen("settings")}
+          />
+        </div>
       </div>
     </div>
   );
@@ -195,7 +172,9 @@ function NameField({ familiarId, fallback }: { familiarId: string; fallback: str
         save();
       }}
       onKeyDown={(event) => {
-        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Enter" && !isImeComposition(event.nativeEvent)) {
+          event.currentTarget.blur();
+        }
         if (event.key === "Escape") {
           setDraft(saved());
           event.currentTarget.blur();

@@ -21,6 +21,7 @@ export default defineConfig(async ({ mode }) => {
         input: {
           main: "index.html",
           quickComposer: "quick-composer.html",
+          monoChat: "familiar-chat.html",
         },
       },
     },

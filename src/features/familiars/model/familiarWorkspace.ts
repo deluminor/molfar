@@ -20,7 +20,8 @@ const openingFamiliars = new Map<string, Promise<Session | undefined>>();
 
 /**
  * Load the Familiar's conversation without opening or replacing a workspace tab.
- * A new one starts in the home folder: no single project is its own.
+ * A new one starts with Auto permissions in the home folder: no single
+ * project is its own.
  */
 export function ensureFamiliarSession(
   familiarId: string,
@@ -53,7 +54,7 @@ async function loadFamiliarSession(
   const home = await host.home();
   // Removed while the home folder was looked up.
   if (!findFamiliar(familiarId)) return undefined;
-  const session = host.create(home);
+  const session: Session = { ...host.create(home), runtimeMode: "auto" };
   saveFamiliarSessionId(familiarId, session.id);
   host.add(session);
   return session;

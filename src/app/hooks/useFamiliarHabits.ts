@@ -12,6 +12,10 @@ import {
 } from "../../features/familiars/model/familiar";
 import { loadFamiliarFiles } from "../../features/familiars/model/familiarFiles";
 import {
+  artifactCards,
+  type ArtifactCard,
+} from "../../features/artifacts/artifacts";
+import {
   afterRun,
   claimHabit,
   clearHabitRun,
@@ -55,6 +59,7 @@ export type FamiliarHabitHost = {
     habit: Habit,
     text: string,
     title: string,
+    artifacts?: ArtifactCard[],
   ): void;
   /** Puts an approval the run is waiting on to the user, in the Familiar's chat. */
   askApproval(
@@ -201,6 +206,9 @@ export function useFamiliarHabits(host: FamiliarHabitHost, enabled = true) {
       const reply =
         finalReply(host.sessions().find((s) => s.id === run.id)) ||
         outcome.text;
+      const artifacts = artifactCards(
+        host.sessions().find((s) => s.id === run.id)?.blocks ?? [],
+      );
       host.endApprovals(run.id);
       await host.remove(run.id).catch(() => undefined);
       clearHabitRun(run.id);
@@ -208,7 +216,7 @@ export function useFamiliarHabits(host: FamiliarHabitHost, enabled = true) {
 
       const report =
         outcome.status === "completed" ? habitReport(reply) : undefined;
-      if (report) host.post(familiarSessionId, habit, report, look.name);
+      if (report) host.post(familiarSessionId, habit, report, look.name, artifacts);
       await updateHabits(familiarId, (habits) => ({
         habits: habits.map((entry) =>
           entry.id === habit.id

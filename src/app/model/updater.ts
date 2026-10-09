@@ -1,4 +1,4 @@
-import { getVersion } from "@tauri-apps/api/app";
+import { BundleType, getBundleType, getVersion } from "@tauri-apps/api/app";
 import { relaunch } from "@tauri-apps/plugin-process";
 import {
   check,
@@ -24,6 +24,8 @@ export type UpdaterSnapshot = {
   availableVersion?: string;
   progress?: number;
   error?: string;
+  /** Set on Linux .deb/.rpm installs, which update through apt/dnf. */
+  packageManaged?: PackageManagedInstall;
 };
 
 // A stalled request would otherwise pin the phase at "checking" until restart.
@@ -33,6 +35,40 @@ let pendingUpdate: Update | null = null;
 // Several surfaces (sidebar, Settings, app menu) can start an install, each with
 // its own snapshot, so the guard against a second download lives here.
 let installInFlight = false;
+
+const RELEASES_URL = "https://github.com/deluminor/molfar/releases/latest";
+
+/**
+ * Linux `.deb` and `.rpm` installs belong to apt/dnf. The release feed only
+ * publishes an AppImage target, so the plugin reports no matching platform
+ * for them; surface that as "update through your package manager" instead of
+ * a raw error, and never self-install.
+ */
+export type PackageManagedInstall = "deb" | "rpm";
+
+export async function packageManagedInstall(): Promise<PackageManagedInstall | null> {
+  let type: string | null;
+  try {
+    type = await getBundleType();
+  } catch {
+    return null;
+  }
+  if (type === BundleType.Deb) return "deb";
+  if (type === BundleType.Rpm) return "rpm";
+  return null;
+}
+
+export function packageManagerHint(kind: PackageManagedInstall): string {
+  return kind === "deb"
+    ? `Download one .deb from ${RELEASES_URL} and run: sudo apt install ./MOLFAR_X.Y.Z_amd64.deb\nReplace the file name with the one you downloaded.`
+    : `Download one .rpm from ${RELEASES_URL} and run: sudo dnf install ./MOLFAR-X.Y.Z-1.x86_64.rpm\nReplace the file name with the one you downloaded.`;
+}
+
+function isTargetMissingError(error: unknown): boolean {
+  const text = error instanceof Error ? error.message : String(error);
+  // tauri-plugin-updater Error::TargetsNotFound / Error::TargetNotFound.
+  return /none of the fallback platforms|the platform `[^`]*` was not found/i.test(text);
+}
 
 function isUpdaterNotConfiguredError(error: unknown): boolean {
   const text = error instanceof Error ? error.message : String(error);
@@ -54,6 +90,11 @@ export async function probeForUpdate(): Promise<Update | null> {
   }
 
   if (installInFlight) return null;
+
+  if (await packageManagedInstall()) {
+    pendingUpdate = null;
+    return null;
+  }
 
   const update = await check({ timeout: UPDATE_CHECK_TIMEOUT_MS });
   pendingUpdate = update;
@@ -98,6 +139,21 @@ export async function runUpdateFlow(
   const base: UpdaterSnapshot = { phase: "checking", currentVersion };
   onProgress?.(base);
 
+  const managed = await packageManagedInstall();
+  if (managed) {
+    pendingUpdate = null;
+    const idle: UpdaterSnapshot = {
+      phase: "idle",
+      currentVersion,
+      packageManaged: managed,
+    };
+    onProgress?.(idle);
+    if (manual) {
+      await alertApp(packageManagerHint(managed));
+    }
+    return idle;
+  }
+
   try {
     const update = await check({ timeout: UPDATE_CHECK_TIMEOUT_MS });
     if (!update) {
@@ -136,7 +192,20 @@ export async function runUpdateFlow(
       onProgress?.(idle);
       if (manual) {
         await alertApp(
-          "Automatic updates aren't configured for this build.\n\nDownload releases at https://github.com/deluminor/molfar/releases/latest",
+          `Automatic updates aren't configured for this build.\n\nDownload releases at ${RELEASES_URL}`,
+        );
+      }
+      return idle;
+    }
+
+    if (isTargetMissingError(err)) {
+      // The feed has no build for this platform/installer yet.
+      pendingUpdate = null;
+      const idle: UpdaterSnapshot = { phase: "idle", currentVersion };
+      onProgress?.(idle);
+      if (manual) {
+        await alertApp(
+          `Automatic updates aren't available for this install yet.\n\nDownload releases at ${RELEASES_URL}`,
         );
       }
       return idle;

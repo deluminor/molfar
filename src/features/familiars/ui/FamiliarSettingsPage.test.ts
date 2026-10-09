@@ -13,6 +13,7 @@ vi.mock("../model/familiarFiles", async (original) => ({
 
 const { FamiliarSettingsPage } = await import("./FamiliarSettingsPage");
 const { MemoryPage } = await import("./FamiliarFilePages");
+const { FamiliarPreferencesPage } = await import("./FamiliarPreferencesPage");
 
 let root: Root;
 let container: HTMLElement;
@@ -85,10 +86,9 @@ it("shows how many habits and facts it has once they load", () => {
 });
 
 function renderReset(onReset: () => Promise<void>) {
-  act(() => root.render(createElement(FamiliarSettingsPage, {
+  act(() => root.render(createElement(FamiliarPreferencesPage, {
     familiarId: "familiar-1",
     agent,
-    onOpen: vi.fn(),
     onBack: vi.fn(),
     onReset,
   })));
