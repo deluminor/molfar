@@ -460,6 +460,8 @@ jobs:
     name: Linux packages
     needs: prepare
     runs-on: ubuntu-22.04
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -627,6 +629,8 @@ jobs:
     name: Windows packages
     needs: prepare
     runs-on: windows-latest
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
