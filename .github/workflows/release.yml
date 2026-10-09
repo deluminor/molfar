@@ -385,7 +385,7 @@ jobs:
           fi
           verify_release() {
             local expected_draft="$1"
-            gh release view "$TAG" --json isDraft,assets > "$RUNNER_TEMP/release-state.json"
+            gh release view "$TAG" --json isDraft,isPrerelease,assets > "$RUNNER_TEMP/release-state.json"
             node - "$RUNNER_TEMP/release-state.json" "$expected_draft" "${RELEASE_FILES[@]}" <<'NODE'
           const fs = require("node:fs");
           const path = require("node:path");
