@@ -225,7 +225,11 @@ fn set_launch_background(window: &WebviewWindow, r: u8, g: u8, b: u8) {
         return;
     };
     set_glass_backing(&ns_window, false);
-    ns_window.setOpaque(!window.label().starts_with(crate::window::FAMILIAR_CHAT_PREFIX));
+    ns_window.setOpaque(
+        !window
+            .label()
+            .starts_with(crate::window::FAMILIAR_CHAT_PREFIX),
+    );
     set_native_background(
         window,
         &ns_window,
@@ -317,7 +321,10 @@ fn floating_corner_mask() -> Retained<NSImage> {
 }
 
 fn set_native_background(window: &WebviewWindow, native: &NSWindow, color: &NSColor) {
-    if window.label().starts_with(crate::window::FAMILIAR_CHAT_PREFIX) {
+    if window
+        .label()
+        .starts_with(crate::window::FAMILIAR_CHAT_PREFIX)
+    {
         if let Some(layer) = native.contentView().and_then(|view| {
             view.subviews()
                 .iter()
@@ -444,7 +451,10 @@ fn set_glass_backing(window: &NSWindow, enabled: bool) {
 fn apply_blur(window: &WebviewWindow, radius: u8) {
     // This API blurs the window rectangle independently of CALayer clipping.
     // The floating panel's masked AppKit material owns its backdrop instead.
-    let radius = if window.label().starts_with(crate::window::FAMILIAR_CHAT_PREFIX) {
+    let radius = if window
+        .label()
+        .starts_with(crate::window::FAMILIAR_CHAT_PREFIX)
+    {
         0
     } else {
         radius

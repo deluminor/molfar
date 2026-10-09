@@ -2,20 +2,22 @@ use tauri::Manager;
 
 mod account_identity;
 mod app_identity;
-mod atlassian_adf;
 mod artifacts;
+mod atlassian_adf;
 mod automations;
 mod azure_devops;
 mod chat_background;
 mod checkpoint;
+mod codex_familiar_store;
 mod companion;
 mod confluence;
-mod codex_familiar_store;
 mod control;
 pub mod control_cli;
 mod cursor_store;
 mod external_editor;
 mod familiar;
+#[cfg(target_os = "macos")]
+mod familiar_chat;
 mod familiar_transcript;
 mod fs;
 mod gitlab;
@@ -32,8 +34,6 @@ mod macos;
 mod macos_background;
 mod mcp;
 mod menu;
-#[cfg(target_os = "macos")]
-mod familiar_chat;
 mod notes;
 mod notifications;
 mod pasteboard;

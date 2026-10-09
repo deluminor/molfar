@@ -865,8 +865,10 @@ pub fn harness_spawn(
                 && account.as_ref().is_some_and(|a| a.provider == "codex")
                 && args.first().is_some_and(|a| a == "app-server") =>
         {
-            let store =
-                crate::codex_familiar_store::prepare(&app, account.as_ref().map(|a| a.id.as_str()))?;
+            let store = crate::codex_familiar_store::prepare(
+                &app,
+                account.as_ref().map(|a| a.id.as_str()),
+            )?;
             let private_path = serde_json::to_string(&store.home).map_err(|e| e.to_string())?;
             // Explicit config takes precedence over CODEX_SQLITE_HOME. Override
             // both so a user's sqlite_home cannot index Monos in the Codex app.

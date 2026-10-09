@@ -157,7 +157,10 @@ pub fn codex_familiar_store_restore_agent_state(
     restore_agent_edges(&home, &thread_id)
 }
 
-pub(crate) fn prepare(app: &AppHandle, account_id: Option<&str>) -> Result<FamiliarCodexStore, String> {
+pub(crate) fn prepare(
+    app: &AppHandle,
+    account_id: Option<&str>,
+) -> Result<FamiliarCodexStore, String> {
     let (source, home) = locations(app, account_id)?;
     prepare_files(&source, &home)?;
     let auth = prepare_keyring(&source, &home)?;

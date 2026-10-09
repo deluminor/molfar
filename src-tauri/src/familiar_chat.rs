@@ -275,10 +275,12 @@ fn menu(
         .build(app)?;
     let mut builder = MenuBuilder::new(app).item(&header).separator();
     if monos.is_empty() {
-        let empty =
-            MenuItemBuilder::with_id("familiar-chat-empty", "Create a Familiar in MOLFAR to chat here")
-                .enabled(false)
-                .build(app)?;
+        let empty = MenuItemBuilder::with_id(
+            "familiar-chat-empty",
+            "Create a Familiar in MOLFAR to chat here",
+        )
+        .enabled(false)
+        .build(app)?;
         builder = builder.item(&empty);
     } else {
         for mono in monos {
@@ -748,7 +750,11 @@ pub fn familiar_chat_take(app: AppHandle, window: WebviewWindow) -> Result<Vec<R
 }
 
 #[tauri::command]
-pub fn familiar_chat_accept(app: AppHandle, window: WebviewWindow, id: u32) -> Result<bool, String> {
+pub fn familiar_chat_accept(
+    app: AppHandle,
+    window: WebviewWindow,
+    id: u32,
+) -> Result<bool, String> {
     workspace(&window)?;
     Ok(app
         .state::<MonoChatState>()
