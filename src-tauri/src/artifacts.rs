@@ -104,7 +104,7 @@ fn delete_artifact(conn: &Connection, id: &str) -> rusqlite::Result<()> {
     // Update paginated Familiar history and older full-session transcripts in the
     // same transaction. Reply text and all unrelated metadata stay intact.
     tx.execute(
-        "UPDATE mono_blocks SET block_json = json_set(block_json, '$.artifactCards',
+        "UPDATE familiar_blocks SET block_json = json_set(block_json, '$.artifactCards',
            (SELECT json_group_array(json(card.value))
             FROM json_each(block_json, '$.artifactCards') AS card
             WHERE json_extract(card.value, '$.id') != ?1))
@@ -341,7 +341,13 @@ mod tests {
             json!([{ "id": "keep", "kind": "document", "title": "Other" }])
         );
         assert_eq!(blocks[1], session.blocks[1]);
-        let raw: String = conn.query_row("SELECT block_json FROM mono_blocks WHERE session_id = 'mono' AND block_id = 'turn'", [], |row| row.get(0)).unwrap();
+        let raw: String = conn
+            .query_row(
+                "SELECT block_json FROM familiar_blocks WHERE session_id = 'mono' AND block_id = 'turn'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
         assert_eq!(serde_json::from_str::<Value>(&raw).unwrap(), blocks[0]);
         // An older client save still contains both references, but the deleted
         // card is filtered before it reaches storage again.
