@@ -216,7 +216,8 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     id: "familiar-list",
     section: "familiars",
     label: "Your familiars",
-    keywords: "familiar reset soul name projects",
+    keywords:
+      "familiar reset soul name projects sessions sidebar visibility hidden show menu bar",
   },
   {
     id: "project-worktrees",
@@ -867,6 +868,55 @@ export function subscribeFamiliarsEnabled(onStoreChange: () => void) {
   window.addEventListener(FAMILIARS_ENABLED_CHANGE_EVENT, onStoreChange);
   return () =>
     window.removeEventListener(FAMILIARS_ENABLED_CHANGE_EVENT, onStoreChange);
+}
+
+const FAMILIAR_MENU_BAR_KEY = "molfar.familiarMenuBarIcon";
+const LEGACY_MONO_MENU_BAR_KEY = "monocode.monoMenuBarIcon";
+
+/** Fired on `window` when the menu bar icon is shown or hidden. */
+export const FAMILIAR_MENU_BAR_CHANGE_EVENT = "molfar:familiar-menu-bar-change";
+/** @deprecated Prefer FAMILIAR_MENU_BAR_CHANGE_EVENT */
+export const MONO_MENU_BAR_CHANGE_EVENT = FAMILIAR_MENU_BAR_CHANGE_EVENT;
+
+export function loadFamiliarMenuBarIcon(): boolean {
+  const value = readFlag(FAMILIAR_MENU_BAR_KEY);
+  if (value === true || value === false) return value;
+  const legacy = readFlag(LEGACY_MONO_MENU_BAR_KEY);
+  if (legacy === true || legacy === false) return legacy;
+  return true;
+}
+
+/** @deprecated Prefer loadFamiliarMenuBarIcon */
+export function loadMonoMenuBarIcon(): boolean {
+  return loadFamiliarMenuBarIcon();
+}
+
+export function saveFamiliarMenuBarIcon(value: boolean) {
+  writeFlag(FAMILIAR_MENU_BAR_KEY, value);
+  try {
+    localStorage.removeItem(LEGACY_MONO_MENU_BAR_KEY);
+  } catch {
+    // private mode
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(FAMILIAR_MENU_BAR_CHANGE_EVENT));
+}
+
+/** @deprecated Prefer saveFamiliarMenuBarIcon */
+export function saveMonoMenuBarIcon(value: boolean) {
+  saveFamiliarMenuBarIcon(value);
+}
+
+export function subscribeFamiliarMenuBarIcon(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(FAMILIAR_MENU_BAR_CHANGE_EVENT, onStoreChange);
+  return () =>
+    window.removeEventListener(FAMILIAR_MENU_BAR_CHANGE_EVENT, onStoreChange);
+}
+
+/** @deprecated Prefer subscribeFamiliarMenuBarIcon */
+export function subscribeMonoMenuBarIcon(onStoreChange: () => void) {
+  return subscribeFamiliarMenuBarIcon(onStoreChange);
 }
 
 const QUICK_COMPOSER_ENABLED_KEY = "molfar.quickComposerEnabled";

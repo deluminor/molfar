@@ -165,6 +165,10 @@ export type HarnessSessionInput = {
   modelSettings?: Record<string, string>;
   providerAccountId?: string;
   runtimeMode: RuntimeMode;
+  /** Keep provider context in memory; MOLFAR owns the saved transcript. */
+  ephemeral?: boolean;
+  /** Persist Codex context in MOLFAR's private Mono store. */
+  codexStore?: "mono";
   intent?: TurnIntent;
   /**
    * This session drives MOLFAR's control CLI, which reaches the app over

@@ -5,12 +5,7 @@ import { leafIds, newTab, splitPane } from "../../workspace/model/layout";
 import { planWorkspaceTabClose } from "../../workspace/model/workspaceTabGroups";
 import { createFamiliar, findFamiliar, saveFamiliarName, saveFamiliarSessionId } from "./familiar";
 import { planAgentContext, recordAgentContext } from "./familiarFiles";
-import {
-  loadFamiliarBaseline,
-  loadFamiliarRotation,
-  saveFamiliarBaseline,
-  saveFamiliarRotation,
-} from "./familiarRotation";
+import { loadFamiliarRotation, saveFamiliarRotation } from "./familiarRotation";
 import {
   detachFamiliarTabs,
   ensureFamiliarSession,
@@ -41,7 +36,7 @@ function familiarFor(cwd: string, sessionId: string): string {
 const sessionOf = (familiarId: string) => findFamiliar(familiarId)?.sessionId;
 
 it("loads an existing resident conversation without creating a session", async () => {
-  const agent = chat("resident");
+  const agent = { ...chat("resident"), runtimeMode: "full-access" as const };
   const familiarId = familiarFor(agent.cwd, agent.id);
   const host = {
     home: vi.fn().mockResolvedValue("/home"),
@@ -55,7 +50,7 @@ it("loads an existing resident conversation without creating a session", async (
   expect(host.add).not.toHaveBeenCalled();
 });
 
-it("starts a new Familiar's conversation in the home folder, once", async () => {
+it("starts a new Familiar's conversation with Auto permissions in the home folder, once", async () => {
   const familiarId = createFamiliar(["/project"]).id;
   const host = {
     home: vi.fn().mockResolvedValue("/home"),
@@ -65,6 +60,7 @@ it("starts a new Familiar's conversation in the home folder, once", async () => 
   };
   const agent = (await ensureFamiliarSession(familiarId, host))!;
   expect(agent.cwd).toBe("/home");
+  expect(agent.runtimeMode).toBe("auto");
   expect(sessionOf(familiarId)).toBe(agent.id);
   expect(host.add).toHaveBeenCalledExactlyOnceWith(agent);
   host.load.mockResolvedValue(agent);
@@ -126,6 +122,7 @@ it("allows retrying an open after the home lookup fails", async () => {
 it("deletes the Familiar's chat before replacing it with an empty provider session", async () => {
   const current = {
     ...chat("resident"),
+    runtimeMode: "auto-accept-edits" as const,
     busy: true,
     providerSessionId: "old-provider",
     providerAccountId: "old-account",
@@ -150,8 +147,6 @@ it("deletes the Familiar's chat before replacing it with an empty provider sessi
   };
   saveFamiliarRotation(current.id, rotation);
   saveFamiliarRotation("other-familiar", rotation);
-  saveFamiliarBaseline(current.id, current.harness, 20_000);
-  saveFamiliarBaseline("other-familiar", current.harness, 25_000);
 
   const stopped = { ...current, busy: false };
   const stop = vi.fn(async () => stopped);
@@ -180,13 +175,11 @@ it("deletes the Familiar's chat before replacing it with an empty provider sessi
   expect(sessionOf(familiarId)).toBe(fresh.id);
   expect(findFamiliar(familiarId)?.name).toBe("Broski");
   expect(loadFamiliarRotation(current.id)).toBeUndefined();
-  expect(loadFamiliarBaseline(current.id, current.harness)).toBeUndefined();
   expect(
     planAgentContext(current.id, current.providerSessionId, files),
   ).toEqual({ soul: true, memory: true });
   expect(sessionOf(otherId)).toBe("other-familiar");
   expect(loadFamiliarRotation("other-familiar")).toEqual(rotation);
-  expect(loadFamiliarBaseline("other-familiar", current.harness)).toBe(25_000);
   expect(planAgentContext("other-familiar", "other-provider", files)).toEqual({
     soul: false,
     memory: false,

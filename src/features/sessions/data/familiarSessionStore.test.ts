@@ -13,6 +13,7 @@ import {
   FamiliarSessionCompletionBatches,
 } from "../../familiars/model/familiarSessionCompletion";
 import { canSteerQueuedHead } from "../model/messageQueue";
+import { recordArtifactCard } from "../../artifacts/artifacts";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("../../familiars/model/familiar", () => ({
@@ -51,6 +52,25 @@ function saved(session: Session) {
 }
 
 describe("Familiar database pagination and writes", () => {
+  it("keeps document references on the source turn after saving and reopening", async () => {
+    let session = await load();
+    const card = {
+      id: "artifact-report",
+      kind: "document" as const,
+      title: "PR review",
+      summary: "Merge ready",
+    };
+    const before = persistFingerprint(session);
+    session = recordArtifactCard(session, session.blocks[0].id, card);
+    expect(persistFingerprint(session)).not.toBe(before);
+    call.mockResolvedValueOnce(saved(session));
+    await upsertSession(session);
+    const payload = (call.mock.calls.at(-1)![1] as { session: Session }).session;
+    expect(payload.blocks[0].artifactCards).toEqual([card]);
+    call.mockResolvedValueOnce(saved(payload));
+    const restored = (await getSession(session.id))!;
+    expect(restored.blocks[0].artifactCards).toEqual([card]);
+  });
   it("preserves all results and the session count in a combined report across queue and transcript saves", async () => {
     const session = await load();
     const batches = new FamiliarSessionCompletionBatches((_, message) => {

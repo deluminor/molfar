@@ -24,6 +24,8 @@ build/
 target/
 gen/schemas/
 coverage/
+playwright-report/
+test-results/
 .vite/
 .turbo/
 *.tsbuildinfo
@@ -62,3 +64,6 @@ docs/specs
 docs/other
 docs/adr
 .upstream-pending/
+
+# Local document preview mockup
+/work/mono-document-preview.html

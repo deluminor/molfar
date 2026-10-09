@@ -662,6 +662,7 @@ function SidebarComponent({
   ).filter(
     (session) =>
       !isFamiliarSession(session.id) &&
+      !session.sidebarHidden &&
       !("ephemeral" in session && session.ephemeral) &&
       !isHabitRun(session.id) &&
       !session.orchestrationLeadId &&

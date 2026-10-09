@@ -147,7 +147,7 @@ function props(transcriptPool?: TranscriptPool): SessionPaneProps {
   };
 }
 
-it("routes a Familiar work-summary click to its session and selected turn", () => {
+it("routes a Familiar footer activity click to its session and selected turn", () => {
   const pane = props();
   pane.session.blocks = [
     { id: "user", role: "user", text: "Inspect", durationMs: 23000 },
@@ -156,10 +156,56 @@ it("routes a Familiar work-summary click to its session and selected turn", () =
   ];
   const onShowFamiliarActivity = vi.fn();
   act(() => root.render(createElement(SessionPane, { ...pane, onShowFamiliarActivity })));
-  act(() => container.querySelector<HTMLButtonElement>('[data-familiar-work] button')!.click());
+  act(() => container.querySelector<HTMLButtonElement>('[data-turn-actions] [aria-label="Show activity"]')!.click());
   expect(onShowFamiliarActivity).toHaveBeenCalledWith("chat", "user", pane.session.blocks);
   act(() => root.render(createElement(SessionPane, { ...pane, onShowFamiliarActivity, familiarActivityTurnId: "user" })));
-  expect(container.querySelector('[data-familiar-work] button')?.getAttribute("aria-expanded")).toBe("true");
+  expect(container.querySelector('[data-turn-actions] [aria-label="Hide activity"]')?.getAttribute("aria-expanded")).toBe("true");
+});
+
+it("routes launched sessions from a Familiar footer to its session and turn", () => {
+  const pane = props();
+  pane.session.blocks[0] = {
+    ...pane.session.blocks[0],
+    familiarSpawnedSessions: [
+      {
+        sessionId: "app-review",
+        cwd: "/repo",
+        title: "Review",
+        harness: "codex",
+        model: "gpt-6",
+      },
+    ],
+  };
+  const onShowFamiliarSessions = vi.fn();
+  act(() =>
+    root.render(createElement(SessionPane, { ...pane, onShowFamiliarSessions })),
+  );
+  act(() =>
+    container
+      .querySelector<HTMLButtonElement>(
+        '[data-turn-actions] [aria-label="Show sessions"]',
+      )!
+      .click(),
+  );
+  expect(onShowFamiliarSessions).toHaveBeenCalledWith(
+    "chat",
+    "user",
+    pane.session.blocks,
+  );
+  act(() =>
+    root.render(
+      createElement(SessionPane, {
+        ...pane,
+        onShowFamiliarSessions,
+        familiarSessionsTurnId: "user",
+      }),
+    ),
+  );
+  expect(
+    container
+      .querySelector('[aria-label="Hide sessions"]')
+      ?.getAttribute("aria-expanded"),
+  ).toBe("true");
 });
 
 it("renders older replies immediately when scrolling up loads a Familiar page", async () => {

@@ -166,6 +166,9 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Select release channel
+        run: node scripts/release-channel.cjs
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
@@ -391,6 +394,10 @@ jobs:
             console.error("GitHub Release publication state is unexpected.");
             process.exit(1);
           }
+          if (release.isPrerelease !== (process.env.RELEASE_PRERELEASE === "true")) {
+            console.error("GitHub Release channel is unexpected.");
+            process.exit(1);
+          }
           const names = new Set(release.assets.map((asset) => asset.name));
           for (const file of process.argv.slice(4)) {
             const name = path.basename(file);
@@ -464,6 +471,9 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Select release channel
+        run: node scripts/release-channel.cjs
+
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux system dependencies
@@ -471,8 +481,58 @@ jobs:
 
       - run: npm ci
 
+      - name: Write updater release config
+        env:
+          TAURI_UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
+          TAURI_UPDATER_ENDPOINT: ${{ secrets.TAURI_UPDATER_ENDPOINT }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        run: |
+          node <<'NODE'
+          const { writeFileSync } = require("node:fs");
+          const pubkey = process.env.TAURI_UPDATER_PUBKEY || "";
+          const { updaterEndpoint } = require("./scripts/release-channel.cjs");
+          const endpoint = updaterEndpoint(process.env);
+          if (!pubkey || !endpoint) {
+            console.error("TAURI_UPDATER_PUBKEY and an updater endpoint are required");
+            process.exit(1);
+          }
+          writeFileSync(
+            process.env.RUNNER_TEMP + "/tauri.release.conf.json",
+            JSON.stringify(
+              { plugins: { updater: { pubkey, endpoints: [endpoint] } } },
+              null,
+              2,
+            ),
+          );
+          NODE
+
+      # Same as `npm run build:linux`, with the updater config merged in.
+      # npm would append extra args to the repack script, not tauri build.
       - name: Build Linux packages
-        run: npm run build:linux
+        run: |
+          set -euo pipefail
+          npx tauri build --bundles deb,appimage --config "$RUNNER_TEMP/tauri.release.conf.json"
+          bash scripts/repack-appimage.sh
+
+      - name: Assert AppImage uses host libraries
+        run: bash scripts/assert-appimage-host-libs.sh
+
+      # Sign after repack-appimage.sh: a signature Tauri wrote during the
+      # build would cover the pre-repack file and fail updater verification.
+      - name: Sign AppImage for the updater
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          appimage=(target/release/bundle/appimage/*.AppImage)
+          if (( ${#appimage[@]} != 1 )); then
+            echo "Expected exactly one AppImage" >&2
+            exit 1
+          fi
+          npx tauri signer sign "${appimage[0]}"
+          test -s "${appimage[0]}.sig"
 
       - name: Stage Linux packages
         run: |
@@ -484,8 +544,12 @@ jobs:
             echo "Expected exactly one .deb and one AppImage" >&2
             exit 1
           fi
+          if [[ ! -s "${appimage[0]}.sig" ]]; then
+            echo "Missing AppImage updater signature" >&2
+            exit 1
+          fi
           mkdir -p release-artifacts
-          cp "${deb[0]}" "${appimage[0]}" release-artifacts/
+          cp "${deb[0]}" "${appimage[0]}" "${appimage[0]}.sig" release-artifacts/
 
       - name: Upload Linux packages
         uses: actions/upload-artifact@v7
@@ -573,6 +637,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Select release channel
+        run: node scripts/release-channel.cjs
 
       - uses: dtolnay/rust-toolchain@stable
 

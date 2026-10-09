@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { HarnessId } from "../../sessions/model/session";
+import type { HarnessId, RuntimeMode } from "../../sessions/model/session";
+import { AccessPicker } from "../../sessions/ui/AccessPicker";
 import { ModelPicker, ModelSettingRows } from "../../sessions/ui/ModelPicker";
 import type { FamiliarLook, FamiliarState } from "../model/familiar";
 import {
@@ -14,6 +15,7 @@ import { memoryLines } from "../model/familiarMemory";
 import { HabitPage } from "./HabitPage";
 import { NewHabitPage } from "./NewHabitPage";
 import { FamiliarProjects } from "./FamiliarProjects";
+import { FamiliarPreferencesPage } from "./FamiliarPreferencesPage";
 import { FamiliarSettingsPage } from "./FamiliarSettingsPage";
 import { habitActions, HabitsList, useHabits } from "./FamiliarHabits";
 import { MemoryPage, SoulPage } from "./FamiliarFilePages";
@@ -23,7 +25,7 @@ import { FamiliarSidebar, FamiliarSidebarHeader } from "./FamiliarSidebar";
 
 /** A page opened directly from Details, or one habit inside its list. */
 type Route =
-  | { kind: "habits" | "soul" | "memory" | "new-habit" }
+  | { kind: "habits" | "soul" | "memory" | "settings" | "new-habit" }
   | { kind: "habit"; id: string };
 
 type Props = {
@@ -36,16 +38,19 @@ type Props = {
   harness: HarnessId;
   model: string;
   modelSettings: Record<string, string>;
+  runtimeMode: RuntimeMode;
+  busy?: boolean;
   onModelChange: (harness: HarnessId, model: string) => void;
   onModelSettingsChange: (settings: Record<string, string>) => void;
+  onRuntimeModeChange: (mode: RuntimeMode) => void;
   onClose: () => void;
   onReset?: () => Promise<void>;
   windowControls?: ReactNode;
 };
 
 /**
- * The Familiar's profile, model and projects in one panel. Its habits, soul and
- * memory open directly as pages that slide over it.
+ * The Familiar's profile, model, permissions and projects in one panel. Its habits,
+ * soul, memory and settings open directly as pages that slide over it.
  */
 export function FamiliarDetails({
   open,
@@ -56,8 +61,11 @@ export function FamiliarDetails({
   harness,
   model,
   modelSettings,
+  runtimeMode,
+  busy = false,
   onModelChange,
   onModelSettingsChange,
+  onRuntimeModeChange,
   onClose,
   onReset,
   windowControls,
@@ -123,6 +131,20 @@ export function FamiliarDetails({
           node: <MemoryPage familiarId={familiarId} files={files} onBack={back} />,
         },
       ];
+    if (route.kind === "settings")
+      return [
+        {
+          key: "settings",
+          node: (
+            <FamiliarPreferencesPage
+              familiarId={familiarId}
+              agent={agent}
+              onBack={back}
+              onReset={onReset}
+            />
+          ),
+        },
+      ];
     if (route.kind === "new-habit")
       return [
         {
@@ -170,7 +192,6 @@ export function FamiliarDetails({
           familiarId={familiarId}
           agent={agent}
           onOpen={(page) => push({ kind: page })}
-          onReset={onReset}
           counts={{
             habits: habits?.length,
             memory: files ? memoryLines(files.memory).length : undefined,
@@ -200,6 +221,15 @@ export function FamiliarDetails({
                 <Property label={label}>{control}</Property>
               )}
             />
+            <Property label="Permissions">
+              <AccessPicker
+                value={runtimeMode}
+                onChange={onRuntimeModeChange}
+                busy={busy}
+                side="bottom"
+                variant="plain"
+              />
+            </Property>
             <Property label="Projects">
               <FamiliarProjects familiarId={familiarId} projects={agent.projects} />
             </Property>

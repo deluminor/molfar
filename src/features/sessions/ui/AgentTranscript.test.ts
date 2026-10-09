@@ -48,14 +48,20 @@ describe("AgentTranscript collapsed work", () => {
     expect(markup).toContain('data-molfar="true"');
     expect(markup).toContain("list my notes");
     expect(markup).not.toContain("/operator");
+
+    const legacy = render([
+      { id: "old", role: "user", text: "/molfar list my notes" },
+    ]);
+    expect(legacy).toContain('data-molfar="true"');
+    expect(legacy).not.toContain("/molfar");
   });
 
-  it("shows MOLFAR CLI actions instead of their long shell commands", () => {
+  it("shows Molfar CLI actions instead of their long shell commands", () => {
     const command =
-      "/repo/target/debug/MOLFAR.app/Contents/MacOS/molfar";
+      "/repo/target/debug/Molfar.app/Contents/MacOS/molfar";
     const markup = render(
       [
-        { id: "user", role: "user", text: "list my notes", molfar: true },
+        { id: "user", role: "user", text: "/molfar list my notes" },
         {
           id: "help",
           role: "tool",
@@ -79,10 +85,10 @@ describe("AgentTranscript collapsed work", () => {
     expect(markup).toContain("Ran");
     expect(markup).toContain("Running");
     expect(markup).not.toContain("Contents/MacOS/molfar");
-    expect(markup).not.toContain("Show error details for MOLFAR");
+    expect(markup).not.toContain("Show error details for Molfar");
   });
 
-  it("shows the full command before approving a MOLFAR CLI call", () => {
+  it("shows the full command before approving a Molfar CLI call", () => {
     const command = "molfar app sessions.send --json '{\"prompt\":\"private-marker\"}'";
     const markup = renderToStaticMarkup(
       createElement(AgentTranscript, {
@@ -127,7 +133,7 @@ describe("AgentTranscript collapsed work", () => {
 
   it("keeps a failed MOLFAR call compact until its error is opened", () => {
     const markup = render([
-      { id: "user", role: "user", text: "list notes", molfar: true },
+      { id: "user", role: "user", text: "/molfar list notes" },
       {
         id: "notes",
         role: "tool",
@@ -828,7 +834,7 @@ describe("AgentTranscript collapsed work", () => {
 });
 
 describe("Familiar inline work", () => {
-  function renderFamiliar(blocks: Block[], busy = false) {
+  function renderMono(blocks: Block[], busy = false) {
     return renderToStaticMarkup(
       createElement(AgentTranscript, {
         blocks,
@@ -841,7 +847,7 @@ describe("Familiar inline work", () => {
   }
 
   it.each([true, false])(
-    "keeps the opening and reply around one combined work summary (busy=%s)",
+    "keeps narration hidden and shows the final reply only after completion (busy=%s)",
     (busy) => {
       const blocks: Block[] = [
         { id: "user", role: "user", text: "Check this", durationMs: 9_000 },
@@ -871,19 +877,18 @@ describe("Familiar inline work", () => {
             ]
           : []),
       ];
-      const markup = renderFamiliar(blocks, busy);
-      const first = markup.indexOf("I will check the first part.");
-      const summary = markup.indexOf(
-        busy ? "Running command…" : "Ran 3 commands",
+      const markup = renderMono(blocks, busy);
+      const header = markup.indexOf(
+        busy ? "Running command…" : "FamiliarCat worked for 9s",
       );
-      expect(first).toBeGreaterThan(markup.indexOf("FamiliarCat"));
-      expect(summary).toBeGreaterThan(first);
+      expect(header).toBeGreaterThanOrEqual(markup.indexOf("FamiliarCat"));
+      expect(markup).not.toContain("I will check the first part.");
       expect(markup).not.toContain(
         "The first part passed. Checking the next part.",
       );
       expect(markup.match(/data-familiar-work/g)).toHaveLength(1);
       if (!busy)
-        expect(markup.indexOf("Everything passed.")).toBeGreaterThan(summary);
+        expect(markup.indexOf("Everything passed.")).toBeGreaterThan(header);
       expect(markup).not.toContain("hidden-detail-");
       expect(markup).not.toContain('aria-label="Show the work"');
       expect(markup).not.toContain("aria-expanded");
@@ -892,9 +897,9 @@ describe("Familiar inline work", () => {
   );
 
   it.each([true, false])(
-    "keeps a single tool call behind its summary (busy=%s)",
+    "keeps a single tool call in the activity trail (busy=%s)",
     (busy) => {
-      const markup = renderFamiliar(
+      const markup = renderMono(
         [
           { id: "user", role: "user", text: "Run this", durationMs: 1_000 },
           {
@@ -904,13 +909,15 @@ describe("Familiar inline work", () => {
         ],
         busy,
       );
-      expect(markup).toContain(busy ? "Running command…" : "Ran a command");
+      expect(markup).toContain(
+        busy ? "Running command…" : "FamiliarCat worked for 1s",
+      );
       expect(markup).not.toContain("hidden-detail-single");
       expect(markup).not.toContain("aria-expanded");
     },
   );
 
-  it("keeps approval controls available, then returns the call to its summary", () => {
+  it("keeps approval controls available, then returns the call to the activity trail", () => {
     const user: Block = {
       id: "user",
       role: "user",
@@ -918,13 +925,13 @@ describe("Familiar inline work", () => {
       durationMs: 1_000,
     };
     const approval = tool("approval", { requestId: 1 });
-    const waiting = renderFamiliar([user, approval], true);
+    const waiting = renderMono([user, approval], true);
     expect(waiting).toContain("hidden-detail-approval");
     expect(waiting).toContain("Allow</button>");
     expect(waiting).toContain("Deny</button>");
     expect(waiting).toContain("Waiting for approval…");
     expect(waiting).not.toContain('aria-label="Show the steps');
-    const approved = renderFamiliar([
+    const approved = renderMono([
       user,
       {
         ...approval,
@@ -932,13 +939,13 @@ describe("Familiar inline work", () => {
         tool: { kind: "shell", status: "completed" },
       },
     ]);
-    expect(approved).toContain("Ran a command");
+    expect(approved).toContain("FamiliarCat worked for 1s");
     expect(approved).not.toContain("hidden-detail-approval");
     expect(approved).not.toContain("Allow</button>");
   });
 
   it("keeps delegated tool work compact, including failed runs", () => {
-    const markup = renderFamiliar([
+    const markup = renderMono([
       { id: "user", role: "user", text: "Delegate this", durationMs: 1_000 },
       { id: "intro", role: "assistant", text: "I will ask for a review." },
       {
@@ -959,8 +966,8 @@ describe("Familiar inline work", () => {
       },
       { id: "answer", role: "assistant", text: "The review could not finish." },
     ]);
-    expect(markup).toContain("I will ask for a review.");
-    expect(markup).toContain("Subagent failed");
+    expect(markup).not.toContain("I will ask for a review.");
+    expect(markup).not.toContain("Subagent failed");
     expect(markup).toContain("The review could not finish.");
     expect(markup).not.toContain("Private provider failure detail");
     expect(markup).not.toContain("Private delegated work");
@@ -978,7 +985,7 @@ describe("worker assignment prompts", () => {
             id: "u1",
             role: "user",
             internal: true,
-            text: "Review the current branch against main.\n\n<molfar_assignment>\nYou are a worker managed by a MOLFAR lead. Your assigned write scope is: src/App.tsx.\n</molfar_assignment>",
+            text: "Review the current branch against main.\n\n<molfar_assignment>\nYou are a worker managed by a Molfar lead. Your assigned write scope is: src/App.tsx.\n</molfar_assignment>",
           },
           { id: "a1", role: "assistant", text: "Looking now" },
         ],
@@ -987,6 +994,6 @@ describe("worker assignment prompts", () => {
     expect(markup).toContain("Review the current branch against main.");
     expect(markup).toContain("Looking now");
     expect(markup).not.toContain("molfar_assignment");
-    expect(markup).not.toContain("You are a worker managed by a MOLFAR lead");
+    expect(markup).not.toContain("You are a worker managed by a Molfar lead");
   });
 });

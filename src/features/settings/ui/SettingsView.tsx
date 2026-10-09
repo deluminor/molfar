@@ -175,6 +175,7 @@ import {
   defaultModelId,
   firstEnabledHarness,
   getModelSnapshot,
+  hasLiveCatalog,
   loadDefaultModels,
   loadHiddenPickerProviders,
   loadLastModelChoice,
@@ -301,6 +302,7 @@ import {
   familiarProjectsPhrase,
   familiarsSnapshot,
   subscribeFamiliars,
+  updateFamiliar,
   type Familiar,
 } from "../../familiars/model/familiar";
 import { resetFamiliarDefaults } from "../../familiars/model/familiarFiles";
@@ -321,7 +323,10 @@ import {
   loadModelControls,
   loadNotesEnabled,
   loadFamiliarsEnabled,
+  loadFamiliarMenuBarIcon,
   loadKeybindingOverrides,
+  saveFamiliarMenuBarIcon,
+  subscribeFamiliarMenuBarIcon,
   loadQuickComposerEnabled,
   loadQuickComposerShortcut,
   loadTabAnimationsEnabled,
@@ -387,6 +392,8 @@ import {
 } from "../../notifications/model/notifications";
 import {
   installPendingUpdate,
+  packageManagedInstall,
+  packageManagerHint,
   readAppVersion,
   runUpdateFlow,
   type UpdaterSnapshot,
@@ -1825,10 +1832,16 @@ function UpdateRow({
 
   useEffect(() => {
     let cancelled = false;
-    void readAppVersion().then((currentVersion) => {
-      if (cancelled) return;
-      setSnapshot((current) => ({ ...current, currentVersion }));
-    });
+    void Promise.all([readAppVersion(), packageManagedInstall()]).then(
+      ([currentVersion, packageManaged]) => {
+        if (cancelled) return;
+        setSnapshot((current) => ({
+          ...current,
+          currentVersion,
+          packageManaged: packageManaged ?? undefined,
+        }));
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -1860,7 +1873,9 @@ function UpdateRow({
               ? (snapshot.error ?? "Update check failed.")
               : APP_UPDATER_DISABLED
                 ? "This fork does not install updates from the upstream release feed."
-                : "MOLFAR updates itself from the release feed.";
+                : snapshot.packageManaged
+                  ? packageManagerHint(snapshot.packageManaged)
+                  : "MOLFAR updates itself from the release feed.";
 
   return (
     <Row
@@ -3806,9 +3821,9 @@ function ProviderRow({
     models.length > 0 ? resolveModel(harness, selectedModel) : null;
 
   useEffect(() => {
-    if (!available || models.length > 0) return;
+    if (!available || hasLiveCatalog(harness)) return;
     void refreshHarnessCatalogs([harness]);
-  }, [available, harness, models.length]);
+  }, [available, harness]);
 
   return (
     <Row
@@ -3835,6 +3850,14 @@ function ProviderRow({
           label={`${HARNESS_TITLE[harness]} model`}
           value={current.id}
           onChange={(next) => onModelChange(harness, next)}
+          onOpen={() => {
+            // Opening the dropdown is an explicit refresh: fallbacks keep
+            // `models` non-empty, and routine refreshes skip once a live
+            // catalog exists, so force this one past that skip.
+            if (available) {
+              void refreshHarnessCatalogs([harness], { force: true });
+            }
+          }}
           options={models.map((item) => ({
             value: item.id,
             label: item.name,
@@ -4050,6 +4073,11 @@ function FamiliarsPage() {
     loadFamiliarsEnabled,
     () => true,
   );
+  const menuBarIcon = useSyncExternalStore(
+    subscribeFamiliarMenuBarIcon,
+    loadFamiliarMenuBarIcon,
+    () => true,
+  );
   const snapshot = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
   const familiars = useMemo(() => listFamiliars(), [snapshot]);
 
@@ -4063,11 +4091,24 @@ function FamiliarsPage() {
         >
           <Toggle label="Show familiars" on={enabled} onChange={saveFamiliarsEnabled} />
         </Row>
+        {IS_MAC && (
+          <Row
+            id="familiar-menu-bar-icon"
+            label="Menu bar icon"
+            description="Chat with a Familiar or open the quick composer from the macOS menu bar. Turn this off to hide the icon."
+          >
+            <Toggle
+              label="Menu bar icon"
+              on={menuBarIcon}
+              onChange={saveFamiliarMenuBarIcon}
+            />
+          </Row>
+        )}
       </Group>
       <Group
         id="familiar-list"
         title="Your familiars"
-        description="Add one with the plus beside Familiars on the rail. Choose its projects from its details."
+        description="Choose whether new sessions started by each Familiar appear in the sidebar. Hidden sessions remain saved and can be opened from the Familiar's chat. Add a Familiar with the plus on the rail and choose its projects from its details."
       >
         {familiars.length ? (
           familiars.map((familiar) => <FamiliarRow key={familiar.id} familiar={familiar} />)
@@ -4102,6 +4143,16 @@ function FamiliarRow({ familiar }: { familiar: Familiar }) {
           : "No projects yet"
       }
     >
+      <Toggle
+        label={`Show sessions started by ${look.name} in sidebar`}
+        on={familiar.showStartedSessionsInSidebar !== false}
+        onChange={(on) =>
+          updateFamiliar(familiar.id, (entry) => ({
+            ...entry,
+            showStartedSessionsInSidebar: on,
+          }))
+        }
+      />
       <ConfirmReset
         label="Reset Familiar"
         title={`Reset ${look.name} to its defaults?`}
@@ -4449,11 +4500,13 @@ function Select({
   value,
   options,
   onChange,
+  onOpen,
 }: {
   label: string;
   value: string;
   options: { value: string; label: string; icon?: ReactNode }[];
   onChange: (value: string) => void;
+  onOpen?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(() =>
@@ -4479,6 +4532,11 @@ function Select({
       ),
     );
   }, [open, value, options]);
+
+  useEffect(() => {
+    if (open) onOpen?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

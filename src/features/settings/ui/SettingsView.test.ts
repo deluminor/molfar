@@ -24,6 +24,12 @@ import {
   HARNESS_TITLE,
 } from "../../sessions/model/session";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/displayPrefs";
+import {
+  createFamiliar,
+  findFamiliar,
+  familiarLook,
+  updateFamiliar,
+} from "../../familiars/model/familiar";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => undefined),
@@ -116,8 +122,31 @@ afterEach(async () => {
 });
 
 describe("settings pages", () => {
-  it("keeps account emails blurred until clicked and hides them when settings reopen", async () => {
-    saveMaskEmails(true);
+  it("saves each Familiar's session visibility and restores it when settings reopen", async () => {
+    const mono = createFamiliar();
+    const other = createFamiliar();
+    const toggle = (id: string) =>
+      container.querySelector<HTMLButtonElement>(
+        `[role="switch"][aria-label="Show sessions started by ${familiarLook(findFamiliar(id)!).name} in sidebar"]`,
+      )!;
+    await render("familiars");
+    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("true");
+    expect(toggle(other.id).getAttribute("aria-checked")).toBe("true");
+    await act(async () => toggle(mono.id).click());
+    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("false");
+    expect(findFamiliar(mono.id)?.showStartedSessionsInSidebar).toBe(false);
+    expect(toggle(other.id).getAttribute("aria-checked")).toBe("true");
+    await render("general");
+    await render("familiars");
+    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("false");
+    await act(async () => updateFamiliar(mono.id, (entry) => ({
+      ...entry,
+      showStartedSessionsInSidebar: true,
+    })));
+    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("blurs account emails by default and hides them when settings reopen", async () => {
     vi.mocked(invoke).mockImplementation(async (command, args) => {
       if (command === "provider_account_identity") {
         const { provider } = args as { provider: string };
@@ -154,6 +183,7 @@ describe("settings pages", () => {
   });
 
   it("shows used usage and plain emails until the options are turned on", async () => {
+    saveMaskEmails(false);
     vi.mocked(invoke).mockImplementation(async (command) =>
       command === "provider_account_identity"
         ? { email: "user@example.com", plan: "Pro" }
