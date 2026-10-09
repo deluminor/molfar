@@ -11,6 +11,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/sessionMcpServers";
 import { modelsFromHermesSession } from "./hermesProtocol";
 
 const PROBE_ID = "molfar-hermes-probe";
@@ -80,9 +81,10 @@ export async function discoverHermesModels(
           },
           REQUEST_TIMEOUT_MS,
         );
+        const mcpServers = await loadSessionMcpServers("hermes", cwd);
         const created = await acp.request<unknown>(
           "session/new",
-          { cwd, mcpServers: [] },
+          { cwd, mcpServers },
           REQUEST_TIMEOUT_MS,
         );
         return modelsFromHermesSession(created);

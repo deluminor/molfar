@@ -14,6 +14,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/sessionMcpServers";
 
 const PROBE_ID = "molfar-cursor-probe";
 const DISCOVERY_TIMEOUT_MS = 15_000;
@@ -99,9 +100,10 @@ async function discoverViaAcp(workingDirectory?: string): Promise<AgentModel[]> 
       const models = modelsFromListAvailable(listed);
       if (models.length > 0) return models;
 
+      const mcpServers = await loadSessionMcpServers("cursor", cwd);
       const created = await acp.request<unknown>(
         "session/new",
-        { cwd, mcpServers: [] },
+        { cwd, mcpServers },
         REQUEST_TIMEOUT_MS,
       );
       return modelsFromSessionNew(created);

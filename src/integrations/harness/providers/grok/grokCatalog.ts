@@ -9,6 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/sessionMcpServers";
 import {
   fallbackGrokModels,
   grokAuthMethodId,
@@ -114,7 +115,7 @@ async function discoverViaAcp(workingDirectory?: string) {
       }
       const created = await acp.request(
         "session/new",
-        { cwd, mcpServers: [] },
+        { cwd, mcpServers: await loadSessionMcpServers("grok", cwd) },
         REQUEST_TIMEOUT_MS,
       );
       return modelsFromSessionNew(created);

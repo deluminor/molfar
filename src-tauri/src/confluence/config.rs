@@ -21,6 +21,10 @@ pub(super) fn config_path(app: &AppHandle) -> Result<PathBuf, String> {
         .join("jira-config.json"))
 }
 
+pub(crate) fn disk_config_path() -> Result<PathBuf, String> {
+    Ok(crate::app_identity::app_data_dir()?.join("jira-config.json"))
+}
+
 pub(super) fn normalize_site(raw: &str) -> Result<String, String> {
     let raw = raw.trim().trim_end_matches('/');
     if raw.is_empty() {
@@ -47,26 +51,39 @@ pub(super) fn normalize_site(raw: &str) -> Result<String, String> {
     })
 }
 
-pub(super) fn read_config(app: &AppHandle) -> Result<Option<AtlassianConfig>, String> {
-    let path = config_path(app)?;
+fn parse_config_raw(raw: &str) -> Result<Option<AtlassianConfig>, String> {
+    let mut config: AtlassianConfig =
+        serde_json::from_str(raw).map_err(|_| "Jira settings are invalid".to_string())?;
+    config.site = normalize_site(&config.site)?;
+    config.email = config.email.trim().to_string();
+    config.token = config.token.trim().to_string();
+    if config.token.is_empty() || config.email.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(config))
+    }
+}
+
+fn read_config_at(path: &std::path::Path) -> Result<Option<AtlassianConfig>, String> {
     match fs::read_to_string(path) {
-        Ok(raw) => {
-            let mut config: AtlassianConfig =
-                serde_json::from_str(&raw).map_err(|_| "Jira settings are invalid".to_string())?;
-            config.site = normalize_site(&config.site)?;
-            config.email = config.email.trim().to_string();
-            config.token = config.token.trim().to_string();
-            if config.token.is_empty() || config.email.is_empty() {
-                Ok(None)
-            } else {
-                Ok(Some(config))
-            }
-        }
+        Ok(raw) => parse_config_raw(&raw),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(error) => Err(error.to_string()),
     }
 }
 
+pub(super) fn read_config(app: &AppHandle) -> Result<Option<AtlassianConfig>, String> {
+    read_config_at(&config_path(app)?)
+}
+
+pub(crate) fn read_disk_config() -> Result<Option<AtlassianConfig>, String> {
+    read_config_at(&disk_config_path()?)
+}
+
 pub(super) fn require_config(app: &AppHandle) -> Result<AtlassianConfig, String> {
     read_config(app)?.ok_or_else(|| "Connect Jira in Settings to use Confluence".to_string())
+}
+
+pub(crate) fn require_disk_config() -> Result<AtlassianConfig, String> {
+    read_disk_config()?.ok_or_else(|| "Connect Jira in Settings to use Confluence".to_string())
 }

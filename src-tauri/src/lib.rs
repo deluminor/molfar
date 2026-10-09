@@ -11,6 +11,7 @@ mod checkpoint;
 mod codex_familiar_store;
 mod companion;
 mod confluence;
+pub mod connectors_mcp;
 mod control;
 pub mod control_cli;
 mod cursor_store;
@@ -33,6 +34,7 @@ mod macos;
 #[cfg(target_os = "macos")]
 mod macos_background;
 mod mcp;
+mod mcp_session;
 mod menu;
 mod notes;
 mod notifications;
@@ -460,6 +462,7 @@ pub fn run() {
             harness::claude_mcp_list,
             mcp::mcp_discover,
             mcp::mcp_add,
+            mcp_session::session_mcp_servers,
             harness::claude_mcp_add,
             harness::claude_mcp_remove,
             harness::mcp_provider_login,

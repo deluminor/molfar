@@ -8,6 +8,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/sessionMcpServers";
 import {
   antigravitySpawnCwd,
   modelsFromSessionNew,
@@ -79,9 +80,10 @@ export async function discoverAntigravityModels(workingDirectory?: string) {
       REQUEST_TIMEOUT_MS,
     );
     // Authentication stays in the provider's Terminal UI; never start OAuth here.
+    const mcpServers = await loadSessionMcpServers("antigravity", cwd);
     const created = await acp.request(
       "session/new",
-      { cwd, mcpServers: [] },
+      { cwd, mcpServers },
       REQUEST_TIMEOUT_MS,
     );
     return modelsFromSessionNew(created);

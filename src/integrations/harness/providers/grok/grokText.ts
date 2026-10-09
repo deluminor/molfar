@@ -14,6 +14,7 @@ import {
   TEXT_MODEL,
 } from "./grokProtocol";
 import { abortTextPromptRace } from "../../core/abortTextPrompt";
+import { loadSessionMcpServers } from "../../core/sessionMcpServers";
 import { mergeStream } from "../../core/streamText";
 import type { HarnessEvent } from "../../core/types";
 
@@ -243,7 +244,7 @@ async function openSession(
 ): Promise<void> {
   const setup = await session.acp.request<{ sessionId?: string }>(
     "session/new",
-    { cwd, mcpServers: [] },
+    { cwd, mcpServers: await loadSessionMcpServers("grok", cwd) },
     REQUEST_TIMEOUT_MS,
   );
   const acpSessionId = setup.sessionId?.trim();
