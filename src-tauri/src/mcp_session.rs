@@ -57,11 +57,7 @@ fn provider_local_servers(provider: &str, home: &Path, project: &Path) -> Vec<Va
     let mut servers = Vec::new();
     match provider {
         "cursor" => {
-            collect_json_file(
-                &mut servers,
-                &home.join(".cursor/mcp.json"),
-                "mcpServers",
-            );
+            collect_json_file(&mut servers, &home.join(".cursor/mcp.json"), "mcpServers");
             for directory in project_ancestors(project, home) {
                 collect_json_file(
                     &mut servers,
@@ -161,10 +157,7 @@ fn to_acp_server(name: &str, config: &Value) -> Option<Value> {
     if url.trim().is_empty() {
         return None;
     }
-    let transport = config
-        .get("type")
-        .and_then(Value::as_str)
-        .unwrap_or("http");
+    let transport = config.get("type").and_then(Value::as_str).unwrap_or("http");
     let type_name = if transport == "sse" { "sse" } else { "http" };
     let headers = header_entries(config.get("headers"));
     Some(json!({
@@ -305,10 +298,7 @@ mod tests {
         assert_eq!(entry["name"], "docs");
         assert_eq!(entry["command"], "npx");
         assert_eq!(entry["args"], json!(["-y", "pkg"]));
-        assert_eq!(
-            entry["env"],
-            json!([{ "name": "TOKEN", "value": "x" }])
-        );
+        assert_eq!(entry["env"], json!([{ "name": "TOKEN", "value": "x" }]));
         assert!(entry.get("type").is_none());
     }
 
@@ -357,10 +347,7 @@ mod tests {
 
     #[test]
     fn cursor_project_mcp_json_is_collected() {
-        let root = std::env::temp_dir().join(format!(
-            "molfar-mcp-session-{}",
-            std::process::id()
-        ));
+        let root = std::env::temp_dir().join(format!("molfar-mcp-session-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join(".cursor")).unwrap();
         fs::write(

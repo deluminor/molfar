@@ -269,4 +269,3 @@ pub(crate) fn mcp_read(id: &str) -> Result<serde_json::Value, String> {
         "spaceKey": page.space_key,
     }))
 }
-
