@@ -36,7 +36,7 @@ BitChain keeps the token in the iOS Keychain (this device only) and asks for Fac
 | -------------------------------------------- | -------------------------------------------------------------------------- |
 | `overview`                                   | Familiars (mascot, color, status, last line), open sessions, rail projects |
 | `familiar.transcript` / `session.transcript` | Recent blocks; `ifRevision` returns `{ unchanged }` when nothing changed   |
-| `familiar.send` / `session.send`             | Text and up to six JPEG/PNG/WebP/GIF photos, through the desktop composer  |
+| `familiar.send` / `session.send`             | Text, up to six JPEG/PNG/WebP/GIF photos, and/or up to six files (see Limits), through the desktop composer |
 | `approval.respond`                           | Allow or deny a pending approval, including habit approvals                |
 | `question.answer`                            | Answer or skip a clarifying question                                       |
 | `session.mode`                               | Switch to any of the four permission modes                                 |
@@ -62,11 +62,13 @@ Overview `sessions` include optional `updatedAt` (ms epoch) so the phone can gro
 
 ## Limits
 
-- Request bodies: 8 KiB for pairing, 64 MiB for RPCs (photos travel as base64). Each photo is capped at about 10 MB.
+- Request bodies: 8 KiB for pairing, 64 MiB for RPCs (photos and files travel as base64). Each photo or file is capped at about 10 MB of base64.
+- `images`: at most 6; JPEG, PNG, WebP, GIF only. Shape: `{ name, mimeType, data }` (base64).
+- `files`: at most 6 on the same RPCs that accept `images` (`familiar.send`, `session.send`, `session.start`). Same shape as images. Allowlist: `application/pdf`; `text/plain`, `text/markdown`, `text/csv`, `text/html`, `text/xml`; `application/json`, `application/xml`; and common source files when `mimeType` is `text/*` or `application/*` and the name ends in `ts`, `tsx`, `js`, `jsx`, `mjs`, `cjs`, `py`, `rs`, `go`, `swift`, `java`, `kt`, `c`, `h`, `cpp`, `hpp`, `cs`, `rb`, `php`, `sh`, `sql`, `yaml`, `yml`, `toml`, `md`, `css`, or `scss`. Video and audio are rejected. Mapped to desktop attachments with `kind: "file"`. Text may be empty when photos or files are present.
 - At most 32 RPCs in flight; each waits up to 30 s for the main window.
 - At most 16 paired devices.
 - The phone polls: every 1.2 s while a turn runs, 4 s otherwise, 5 s for the overview, and 20 s while the laptop is unreachable. Polling stops while BitChain is in the background.
 
 ## Not yet
 
-Full-text vault search, file attachments other than photos, and push notifications (Apple Personal Team builds cannot sign Push Notifications).
+Full-text vault search and push notifications (Apple Personal Team builds cannot sign Push Notifications).

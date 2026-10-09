@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Companion**: paired phones can attach files (PDF, Markdown, text, JSON/XML, and common source) alongside photos on Familiar and session messages — up to six files per send, about 10 MB each. See [docs/companion.md](docs/companion.md).
+
 ## [1.0.8] - 2026-10-08
 
 ### Added

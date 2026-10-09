@@ -25,6 +25,7 @@ import {
 import { createCompanionVault, type VaultAccess } from "./companionVault";
 import {
   COMPANION_PROTOCOL_VERSION,
+  type CompanionFile,
   type CompanionImage,
   type CompanionNoteSummary,
   type CompanionOverview,
@@ -70,8 +71,48 @@ export type CompanionDeps = {
 
 const TEXT_MAX = 64_000;
 const IMAGES_MAX = 6;
+const FILES_MAX = 6;
 const IMAGE_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-// Base64 inflates by 4/3; this keeps one photo under the desktop's 20 MiB cap.
+const FILE_MIMES = new Set([
+  "application/pdf",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+  "text/html",
+  "text/xml",
+  "application/json",
+  "application/xml",
+]);
+const CODE_EXTENSIONS = new Set([
+  "ts",
+  "tsx",
+  "js",
+  "jsx",
+  "mjs",
+  "cjs",
+  "py",
+  "rs",
+  "go",
+  "swift",
+  "java",
+  "kt",
+  "c",
+  "h",
+  "cpp",
+  "hpp",
+  "cs",
+  "rb",
+  "php",
+  "sh",
+  "sql",
+  "yaml",
+  "yml",
+  "toml",
+  "md",
+  "css",
+  "scss",
+]);
+// Base64 inflates by 4/3; this keeps one attachment under the desktop's 20 MiB cap.
 const IMAGE_BASE64_MAX = 14_000_000;
 
 export class CompanionError extends Error {}
@@ -102,6 +143,37 @@ function requestNumber(input: Record<string, unknown>): number {
   return value as number;
 }
 
+function isBase64Payload(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    !!value &&
+    value.length <= IMAGE_BASE64_MAX &&
+    /^[A-Za-z0-9+/]+=*$/.test(value)
+  );
+}
+
+function fileExtension(name: string): string | undefined {
+  const dot = name.lastIndexOf(".");
+  if (dot < 0 || dot === name.length - 1) return undefined;
+  return name.slice(dot + 1).toLowerCase();
+}
+
+function isAllowedFileMime(mimeType: string, name: string): boolean {
+  const mime = mimeType.toLowerCase();
+  if (mime.startsWith("video/") || mime.startsWith("audio/")) return false;
+  if (FILE_MIMES.has(mime)) return true;
+  const ext = fileExtension(name);
+  if (!ext || !CODE_EXTENSIONS.has(ext)) return false;
+  return mime.startsWith("text/") || mime.startsWith("application/");
+}
+
+function unsupportedFileMessage(mimeType: string): string {
+  const mime = mimeType.toLowerCase();
+  if (mime.startsWith("video/") || mime.startsWith("audio/"))
+    return "Video and audio attachments are not supported";
+  return "Unsupported file type. Allowed: PDF, text, and common source files";
+}
+
 export function parseImages(
   value: unknown,
   newId: () => string,
@@ -113,12 +185,7 @@ export function parseImages(
     const image = record(raw, `images[${index}]`) as Partial<CompanionImage>;
     if (typeof image.mimeType !== "string" || !IMAGE_MIMES.has(image.mimeType))
       throw new CompanionError("Only JPEG, PNG, WebP and GIF images are supported");
-    if (
-      typeof image.data !== "string" ||
-      !image.data ||
-      image.data.length > IMAGE_BASE64_MAX ||
-      !/^[A-Za-z0-9+/]+=*$/.test(image.data)
-    )
+    if (!isBase64Payload(image.data))
       throw new CompanionError("Image data must be base64 under 10 MB");
     const name =
       typeof image.name === "string" && image.name.trim()
@@ -135,11 +202,42 @@ export function parseImages(
   });
 }
 
-function messageText(input: Record<string, unknown>, hasImages: boolean): string {
+export function parseFiles(
+  value: unknown,
+  newId: () => string,
+): Attachment[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > FILES_MAX)
+    throw new CompanionError(`files must be a list of at most ${FILES_MAX}`);
+  return value.map((raw, index) => {
+    const file = record(raw, `files[${index}]`) as Partial<CompanionFile>;
+    if (typeof file.mimeType !== "string" || !file.mimeType)
+      throw new CompanionError(unsupportedFileMessage(""));
+    if (!isBase64Payload(file.data))
+      throw new CompanionError("File data must be base64 under 10 MB");
+    const name =
+      typeof file.name === "string" && file.name.trim()
+        ? file.name.trim().slice(0, 120)
+        : `file-${index + 1}`;
+    if (!isAllowedFileMime(file.mimeType, name))
+      throw new CompanionError(unsupportedFileMessage(file.mimeType));
+    return {
+      id: newId(),
+      name,
+      mimeType: file.mimeType,
+      kind: "file" as const,
+      size: Math.floor((file.data.length * 3) / 4),
+      data: file.data,
+    };
+  });
+}
+
+function messageText(input: Record<string, unknown>, hasAttachments: boolean): string {
   const text = typeof input.text === "string" ? input.text.trim() : "";
   if (text.length > TEXT_MAX)
     throw new CompanionError(`text must be under ${TEXT_MAX} characters`);
-  if (!text && !hasImages) throw new CompanionError("Write something or attach a photo");
+  if (!text && !hasAttachments)
+    throw new CompanionError("Write something or attach a photo or file");
   return text;
 }
 
@@ -203,7 +301,7 @@ export function createCompanionExecutor(deps: CompanionDeps) {
   const send = (session: Session, input: Record<string, unknown>) => {
     if (session.worktreeRemoved)
       throw new CompanionError("Choose a working copy on the desktop first");
-    const attachments = parseImages(input.images, newId);
+    const attachments = [...parseImages(input.images, newId), ...parseFiles(input.files, newId)];
     const text = messageText(input, attachments.length > 0);
     if (!deps.submit(session.id, text, attachments))
       throw new CompanionError("MOLFAR could not send this message now. Try again shortly.");
@@ -290,7 +388,7 @@ export function createCompanionExecutor(deps: CompanionDeps) {
       case "session.options":
         return companionSessionOptions(railProject(input), deps.defaultRuntimeMode());
       case "session.start": {
-        const attachments = parseImages(input.images, newId);
+        const attachments = [...parseImages(input.images, newId), ...parseFiles(input.files, newId)];
         const prompt = messageText(input, attachments.length > 0);
         let launch: QuickLaunch;
         try {

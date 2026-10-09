@@ -107,6 +107,9 @@ export type CompanionUnchanged = { unchanged: true; revision: string };
 
 export type CompanionImage = { name: string; mimeType: string; data: string };
 
+/** Non-photo attachment; same wire shape as `CompanionImage`. */
+export type CompanionFile = { name: string; mimeType: string; data: string };
+
 export type CompanionNoteSummary = {
   id: string;
   title: string;
@@ -170,7 +173,12 @@ export type CompanionRequest =
     }
   | {
       action: "familiar.send";
-      input: { familiarId: string; text: string; images?: CompanionImage[] };
+      input: {
+        familiarId: string;
+        text: string;
+        images?: CompanionImage[];
+        files?: CompanionFile[];
+      };
     }
   | {
       action: "session.transcript";
@@ -178,7 +186,12 @@ export type CompanionRequest =
     }
   | {
       action: "session.send";
-      input: { sessionId: string; text: string; images?: CompanionImage[] };
+      input: {
+        sessionId: string;
+        text: string;
+        images?: CompanionImage[];
+        files?: CompanionFile[];
+      };
     }
   | { action: "session.stop"; input: { sessionId: string } }
   | {
@@ -200,6 +213,7 @@ export type CompanionRequest =
         project: string;
         text: string;
         images?: CompanionImage[];
+        files?: CompanionFile[];
         harness?: string;
         model?: string;
         effort?: string;

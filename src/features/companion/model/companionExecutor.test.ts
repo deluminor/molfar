@@ -4,7 +4,11 @@ import type { Familiar } from "../../familiars/model/familiar";
 import type { Note } from "../../notes/notes";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
 import type { Block, Session } from "../../sessions/model/session";
-import { createCompanionExecutor, type CompanionDeps } from "./companionExecutor";
+import {
+  createCompanionExecutor,
+  parseFiles,
+  type CompanionDeps,
+} from "./companionExecutor";
 import type { CompanionOverview, CompanionTranscript } from "./protocol";
 
 vi.mock("../../../integrations/harness/core/availability", async (original) => ({
@@ -256,6 +260,53 @@ describe("sending", () => {
     ]);
   });
 
+  it("sends files alone and with photos", async () => {
+    let n = 0;
+    const { deps, handle } = setup([session({ id: "fam-session" })], {
+      newId: () => `att-${++n}`,
+    });
+    await handle("familiar.send", {
+      familiarId: "fam-1",
+      text: "",
+      files: [{ name: "notes.md", mimeType: "text/markdown", data: "aGVsbG8=" }],
+    });
+    expect(deps.submit).toHaveBeenCalledWith("fam-session", "", [
+      {
+        id: "att-1",
+        name: "notes.md",
+        mimeType: "text/markdown",
+        kind: "file",
+        size: 6,
+        data: "aGVsbG8=",
+      },
+    ]);
+
+    await handle("familiar.send", {
+      familiarId: "fam-1",
+      text: "both",
+      images: [{ name: "shot.jpg", mimeType: "image/jpeg", data: "aGVsbG8=" }],
+      files: [{ name: "app.ts", mimeType: "text/plain", data: "aGVsbG8=" }],
+    });
+    expect(deps.submit).toHaveBeenLastCalledWith("fam-session", "both", [
+      {
+        id: "att-2",
+        name: "shot.jpg",
+        mimeType: "image/jpeg",
+        kind: "image",
+        size: 6,
+        data: "aGVsbG8=",
+      },
+      {
+        id: "att-3",
+        name: "app.ts",
+        mimeType: "text/plain",
+        kind: "file",
+        size: 6,
+        data: "aGVsbG8=",
+      },
+    ]);
+  });
+
   it("rejects empty messages, foreign image types and refused submits", async () => {
     const { handle } = setup([session({ id: "s" })], { submit: vi.fn(() => false) });
     await expect(handle("session.send", { sessionId: "s", text: "  " })).rejects.toThrow("Write something");
@@ -266,6 +317,72 @@ describe("sending", () => {
       }),
     ).rejects.toThrow("Only JPEG");
     await expect(handle("session.send", { sessionId: "s", text: "go" })).rejects.toThrow("could not send");
+  });
+});
+
+describe("parseFiles", () => {
+  it("accepts PDF, text and code extensions", () => {
+    expect(
+      parseFiles(
+        [
+          { name: "doc.pdf", mimeType: "application/pdf", data: "aGVsbG8=" },
+          { name: "data.json", mimeType: "application/json", data: "e30=" },
+          { name: "main.py", mimeType: "text/x-python", data: "cA==" },
+        ],
+        () => "id",
+      ),
+    ).toEqual([
+      {
+        id: "id",
+        name: "doc.pdf",
+        mimeType: "application/pdf",
+        kind: "file",
+        size: 6,
+        data: "aGVsbG8=",
+      },
+      {
+        id: "id",
+        name: "data.json",
+        mimeType: "application/json",
+        kind: "file",
+        size: 3,
+        data: "e30=",
+      },
+      {
+        id: "id",
+        name: "main.py",
+        mimeType: "text/x-python",
+        kind: "file",
+        size: 3,
+        data: "cA==",
+      },
+    ]);
+  });
+
+  it("rejects video, unknown binaries and oversize payloads", () => {
+    expect(() =>
+      parseFiles(
+        [{ name: "clip.mp4", mimeType: "video/mp4", data: "aGVsbG8=" }],
+        () => "id",
+      ),
+    ).toThrow("Video and audio");
+    expect(() =>
+      parseFiles(
+        [{ name: "blob.bin", mimeType: "application/octet-stream", data: "aGVsbG8=" }],
+        () => "id",
+      ),
+    ).toThrow("Unsupported file type");
+    expect(() =>
+      parseFiles(
+        [{ name: "huge.txt", mimeType: "text/plain", data: "A".repeat(14_000_001) }],
+        () => "id",
+      ),
+    ).toThrow("base64 under 10 MB");
+    expect(() => parseFiles(Array.from({ length: 7 }, () => ({
+      name: "a.txt",
+      mimeType: "text/plain",
+      data: "YQ==",
+    })), () => "id")).toThrow("at most 6");
   });
 });
 
