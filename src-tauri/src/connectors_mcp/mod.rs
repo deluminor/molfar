@@ -45,12 +45,8 @@ pub fn run() -> i32 {
 
 fn handle_message(message: &Value) -> Option<String> {
     let method = message.get("method").and_then(Value::as_str)?;
-    let id = message.get("id").cloned();
-
     // Notifications have no id — acknowledge silently.
-    if id.is_none() {
-        return None;
-    }
+    let id = message.get("id").cloned()?;
 
     let result = match method {
         "initialize" => Ok(json!({
