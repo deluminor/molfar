@@ -85,14 +85,14 @@ it("shows live cards, updates their status and opens the selected session", asyn
   expect(container.querySelector("aside")?.getAttribute("aria-label")).toBe(
     "MonoInvader sessions",
   );
-  expect(container.querySelectorAll("[data-mono-session]")).toHaveLength(1);
+  expect(container.querySelectorAll("[data-familiar-session]")).toHaveLength(1);
   expect(container.textContent).toContain("PR #799 review");
   expect(container.textContent).toContain("Working");
   expect(container.textContent).not.toContain("Unrelated");
   await render([{ ...child, busy: false }]);
   expect(container.textContent).toContain("Ready");
   await act(async () =>
-    container.querySelector<HTMLButtonElement>("[data-mono-session]")!.click(),
+    container.querySelector<HTMLButtonElement>("[data-familiar-session]")!.click(),
   );
   expect(onOpenSession).toHaveBeenCalledWith(launch.sessionId);
   act(() =>
@@ -127,7 +127,7 @@ it("loads closed sessions across projects and preserves archived cards", async (
   expect(container.textContent).toContain("Archived");
   expect(container.textContent).toContain("Another project");
   expect(
-    container.querySelector<HTMLButtonElement>("[data-mono-session]")!.disabled,
+    container.querySelector<HTMLButtonElement>("[data-familiar-session]")!.disabled,
   ).toBe(false);
 });
 
@@ -142,7 +142,7 @@ it("keeps the link usable after a session moves to another project", async () =>
   expect(container.textContent).toContain("Moved review");
   expect(container.textContent).toContain("moved");
   expect(
-    container.querySelector<HTMLButtonElement>("[data-mono-session]")!.disabled,
+    container.querySelector<HTMLButtonElement>("[data-familiar-session]")!.disabled,
   ).toBe(false);
 });
 
@@ -151,7 +151,7 @@ it("keeps deleted launches visible as unavailable and does not offer to open the
   expect(container.textContent).toContain(launch.title);
   expect(container.textContent).toContain("No longer available");
   const button = container.querySelector<HTMLButtonElement>(
-    "[data-mono-session]",
+    "[data-familiar-session]",
   )!;
   expect(button.disabled).toBe(true);
   act(() => button.click());
@@ -164,7 +164,7 @@ it("allows opening when status lookup fails and reports navigation errors", asyn
   await render();
   expect(container.textContent).toContain("Status unavailable");
   await act(async () =>
-    container.querySelector<HTMLButtonElement>("[data-mono-session]")!.click(),
+    container.querySelector<HTMLButtonElement>("[data-familiar-session]")!.click(),
   );
   expect(container.querySelector('[role="alert"]')?.textContent).toBe(
     "Could not restore session",
@@ -195,4 +195,55 @@ it("shows a draft and then an approval without treating either as completed", as
     },
   ]);
   expect(container.textContent).toContain("Needs input");
+});
+
+it("slides a shown session over the list with back, workspace and hide", async () => {
+  const onBack = vi.fn();
+  const onOpenInWorkspace = vi
+    .fn()
+    .mockRejectedValue(new Error("This session is no longer available."));
+  const props = {
+    agent,
+    launches: [launch],
+    sessions: [],
+    onOpenSession,
+    onBack,
+    onOpenInWorkspace,
+    onClose,
+  };
+  await act(async () => root.render(createElement(MonoSessionsPanel, props)));
+  const panel = container.querySelector("[data-familiar-sessions]")!;
+  await act(async () =>
+    root.render(
+      createElement(MonoSessionsPanel, {
+        ...props,
+        shown: {
+          sessionId: launch.sessionId,
+          title: "Review latest PR",
+          pane: createElement("p", { "data-pane": "" }, "Session pane"),
+        },
+      }),
+    ),
+  );
+  expect(
+    panel.querySelector("[data-familiar-launched-session] [data-pane]"),
+  ).not.toBeNull();
+  // The list stays beneath, out of reach while the session covers it.
+  const list = panel.querySelector("[data-familiar-session]")!;
+  expect(list.closest("[inert]")).not.toBeNull();
+  const button = (label: string) =>
+    panel
+      .querySelector<HTMLButtonElement>(`[data-familiar-launched-session]`)!
+      .parentElement!.querySelector<HTMLButtonElement>(
+        `button[aria-label="${label}"]`,
+      )!;
+  act(() => button("Back").click());
+  expect(onBack).toHaveBeenCalledOnce();
+  act(() => button("Hide sessions").click());
+  expect(onClose).toHaveBeenCalledOnce();
+  await act(async () => button("Open in workspace").click());
+  expect(onOpenInWorkspace).toHaveBeenCalledWith(launch.sessionId);
+  expect(panel.querySelector('[role="alert"]')?.textContent).toBe(
+    "This session is no longer available.",
+  );
 });

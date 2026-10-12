@@ -5,6 +5,7 @@ import {
   allowsProjectNotification,
   type NotificationSubject,
 } from "./notificationPreferences";
+import { familiarReplyText } from "../../familiars/model/familiarReaction";
 import { knownNotificationProject } from "./notificationProjects";
 
 const KEY = "molfar.notifications";
@@ -203,7 +204,7 @@ export function notificationText(
   return {
     title,
     subtitle,
-    body: clip(reply?.text || `${harness} finished`),
+    body: clip((reply && familiarReplyText(reply.text)) || `${harness} finished`),
   };
 }
 

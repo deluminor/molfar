@@ -30,6 +30,9 @@ vi.mock("../../features/familiars/model/familiar", () => ({
   listFamiliars: () =>
     ["first", "second"].map((id) => ({ id, sessionId: `chat-${id}` })),
   familiarLook: () => ({ name: "Familiar", mascot: "crab", color: "#aaf" }),
+  familiarState: (session: Session) => ({
+    status: session.busy ? "working" : "idle",
+  }),
 }));
 
 let container: HTMLDivElement;
@@ -158,6 +161,27 @@ it("stops publishing when Monos are disabled", async () => {
       ([command]) => command === "familiar_chat_publish",
     ),
   ).toBe(false);
+});
+
+it("resyncs the roster with each Familiar's status for the rail", async () => {
+  await act(async () => root.render(createElement(Harness, { sessions })));
+  native.invoke.mockClear();
+  sessions = sessions.map((session, index) =>
+    index ? session : { ...session, busy: false },
+  );
+  await act(async () => root.render(createElement(Harness, { sessions })));
+  const sync = native.invoke.mock.calls.find(
+    ([command]) => command === "familiar_chat_sync",
+  )?.[1];
+  expect(
+    sync.monos.map((familiar: { id: string; status: string }) => [
+      familiar.id,
+      familiar.status,
+    ]),
+  ).toEqual([
+    ["first", "idle"],
+    ["second", "working"],
+  ]);
 });
 
 it("shows or hides the menu bar icon to match the setting", async () => {

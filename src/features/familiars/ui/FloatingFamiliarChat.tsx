@@ -28,6 +28,7 @@ import {
   type FloatingFamiliarView,
 } from "../model/floatingFamiliar";
 import { FamiliarComposer } from "./FamiliarComposer";
+import { FamiliarStatusDot } from "./FamiliarRailMascot";
 import { FamiliarStatus } from "./FamiliarStatus";
 import { FAMILIAR_PAGE_TURNS } from "../../sessions/data/sessionStore";
 
@@ -343,6 +344,11 @@ function MonoRail({
                 className="pointer-events-none size-7"
               />
             </button>
+            <FamiliarStatusDot
+              status={mono.status}
+              color={mono.color}
+              className="pointer-events-none top-0.5 right-2.5 size-2"
+            />
           </div>
         );
       })}
@@ -441,7 +447,7 @@ function FloatingConversation({
           onOpenArtifact={onOpenArtifact}
           onOpenDiff={() => void action({ kind: "reveal" })}
           onShowWork={() => void action({ kind: "reveal" })}
-          onShowSessions={() => void action({ kind: "reveal" })}
+          onOpenSession={() => void action({ kind: "reveal" })}
         />
       </div>
       {session.pendingQuestion ? (

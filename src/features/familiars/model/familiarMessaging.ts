@@ -3,7 +3,10 @@ import {
   appendUser,
 } from "../../../integrations/harness/core/apply";
 import { displayAttachments } from "../../sessions/model/attachments";
-import { dequeueQueuedMessage } from "../../sessions/model/messageQueue";
+import {
+  canDispatchQueuedHead,
+  dequeueQueuedMessage,
+} from "../../sessions/model/messageQueue";
 import type {
   Attachment,
   Block,
@@ -98,6 +101,16 @@ export function familiarMessageDeliveries(
           ...(message.error ? { error: message.error } : {}),
         },
       ]),
+  );
+}
+
+/** Ready reports deliver in the background; only waiting or failed ones need a queue row. */
+export function visibleFamiliarCompletionMessages(
+  session: Session,
+): QueuedMessage[] {
+  const ready = canDispatchQueuedHead(session);
+  return (session.queuedMessages ?? []).filter(
+    (message) => !!message.familiarSessionCompletion && (!ready || !!message.error),
   );
 }
 

@@ -16,7 +16,10 @@ vi.mock("./Composer", () => ({ Composer: () => null }));
 vi.mock("../../familiars/ui/FamiliarComposer", () => ({
   FamiliarComposer: probes.composer,
 }));
-vi.mock("./SessionReview", () => ({ SessionReview: probes.review }));
+vi.mock("./SessionReview", () => ({
+  SessionReview: probes.review,
+  SessionChangesButton: probes.review,
+}));
 vi.mock("../data/sessionStore", async (original) => ({
   ...(await original<typeof import("../data/sessionStore")>()),
   getFamiliarTranscriptPage: vi.fn(),
@@ -151,18 +154,47 @@ it("routes a Familiar footer activity click to its session and selected turn", (
   const pane = props();
   pane.session.blocks = [
     { id: "user", role: "user", text: "Inspect", durationMs: 23000 },
-    { id: "call", role: "tool", text: "ls", tool: { kind: "shell", status: "completed" } },
+    {
+      id: "call",
+      role: "tool",
+      text: "ls",
+      tool: { kind: "shell", status: "completed" },
+    },
     { id: "reply", role: "assistant", text: "Done" },
   ];
   const onShowFamiliarActivity = vi.fn();
-  act(() => root.render(createElement(SessionPane, { ...pane, onShowFamiliarActivity })));
-  act(() => container.querySelector<HTMLButtonElement>('[data-turn-actions] [aria-label="Show activity"]')!.click());
-  expect(onShowFamiliarActivity).toHaveBeenCalledWith("chat", "user", pane.session.blocks);
-  act(() => root.render(createElement(SessionPane, { ...pane, onShowFamiliarActivity, familiarActivityTurnId: "user" })));
-  expect(container.querySelector('[data-turn-actions] [aria-label="Hide activity"]')?.getAttribute("aria-expanded")).toBe("true");
+  act(() =>
+    root.render(createElement(SessionPane, { ...pane, onShowFamiliarActivity })),
+  );
+  act(() =>
+    container
+      .querySelector<HTMLButtonElement>(
+        '[data-turn-actions] [aria-label="Show activity"]',
+      )!
+      .click(),
+  );
+  expect(onShowFamiliarActivity).toHaveBeenCalledWith(
+    "chat",
+    "user",
+    pane.session.blocks,
+  );
+  act(() =>
+    root.render(
+      createElement(SessionPane, {
+        ...pane,
+        onShowFamiliarActivity,
+        familiarActivityTurnId: "user",
+      }),
+    ),
+  );
+  expect(
+    container
+      .querySelector('[data-turn-actions] [aria-label="Hide activity"]')
+      ?.getAttribute("aria-expanded"),
+  ).toBe("true");
 });
 
-it("routes launched sessions from a Familiar footer to its session and turn", () => {
+it("routes a launched session's card to the Familiar, its turn and the session", () => {
   const pane = props();
   pane.session.blocks[0] = {
     ...pane.session.blocks[0],
@@ -176,35 +208,44 @@ it("routes launched sessions from a Familiar footer to its session and turn", ()
       },
     ],
   };
-  const onShowFamiliarSessions = vi.fn();
+  const onOpenFamiliarSession = vi.fn();
+  const familiarLaunchedSessions = new Map([
+    ["app-review", { state: "working" as const, title: "Review" }],
+  ]);
   act(() =>
-    root.render(createElement(SessionPane, { ...pane, onShowFamiliarSessions })),
+    root.render(
+      createElement(SessionPane, {
+        ...pane,
+        onOpenFamiliarSession,
+        familiarLaunchedSessions,
+      }),
+    ),
   );
-  act(() =>
-    container
-      .querySelector<HTMLButtonElement>(
-        '[data-turn-actions] [aria-label="Show sessions"]',
-      )!
-      .click(),
-  );
-  expect(onShowFamiliarSessions).toHaveBeenCalledWith(
+  const card = container.querySelector<HTMLButtonElement>(
+    '[data-launched-session="app-review"]',
+  )!;
+  expect(card.dataset.state).toBe("working");
+  act(() => card.click());
+  expect(onOpenFamiliarSession).toHaveBeenCalledWith(
     "chat",
     "user",
     pane.session.blocks,
+    "app-review",
   );
   act(() =>
     root.render(
       createElement(SessionPane, {
         ...pane,
-        onShowFamiliarSessions,
-        familiarSessionsTurnId: "user",
+        onOpenFamiliarSession,
+        familiarLaunchedSessions,
+        openFamiliarSessionId: "app-review",
       }),
     ),
   );
   expect(
     container
-      .querySelector('[aria-label="Hide sessions"]')
-      ?.getAttribute("aria-expanded"),
+      .querySelector('[data-launched-session="app-review"]')
+      ?.getAttribute("aria-pressed"),
   ).toBe("true");
 });
 
@@ -220,7 +261,8 @@ it("renders older replies immediately when scrolling up loads a Familiar page", 
     hasNewer: true,
   });
   act(() => root.render(createElement(SessionPane, pane)));
-  const scroller = container.querySelector<HTMLDivElement>(".agent-transcript")!;
+  const scroller =
+    container.querySelector<HTMLDivElement>(".agent-transcript")!;
   await act(async () => {
     scroller.dispatchEvent(new WheelEvent("wheel", { deltaY: -100 }));
   });

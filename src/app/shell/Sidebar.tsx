@@ -183,13 +183,21 @@ import { GithubStarPrompt } from "./GithubStarPrompt";
 import {
   isFamiliarSession,
   listFamiliars,
+  FAMILIAR_STATUS_LABEL,
   familiarLook,
   familiarsSnapshot,
   subscribeFamiliars,
+  type FamiliarStatus,
 } from "../../features/familiars/model/familiar";
+import { FamiliarRailMascot } from "../../features/familiars/ui/FamiliarRailMascot";
+import { useRailFamiliarsPinned } from "../../features/settings/model/displayPrefs";
 import type { PickerFamiliars } from "../../features/projects/ui/SearchableProjectPicker";
 import { isHabitRun } from "../../features/familiars/model/familiarHabits";
-import type { FamiliarRailProps } from "./FamiliarRailSection";
+import {
+  unreadBadge,
+  unreadLabel,
+  type FamiliarRailProps,
+} from "./FamiliarRailSection";
 import {
   refreshRemoteProjectSessions,
   remoteRequest,
@@ -2565,20 +2573,26 @@ function CompactProjectRail({
   familiarViewActive?: boolean;
 }) {
   const familiarsSnap = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  const familiarsPinned = useRailFamiliarsPinned();
+  const familiarItems = useMemo(() => {
+    if (!familiars) return [];
+    return listFamiliars().map((familiar) => ({
+      id: familiar.id,
+      ...familiarLook(familiar),
+      status: familiars.states.get(familiar.id)?.status ?? "idle",
+    }));
+    // The roster is read through its snapshot.
+  }, [familiars, familiarsSnap]);
   const pickerFamiliars = useMemo((): PickerFamiliars | undefined => {
     if (!familiars) return undefined;
     return {
-      items: listFamiliars().map((familiar) => ({
-        id: familiar.id,
-        ...familiarLook(familiar),
-        status: familiars.states.get(familiar.id)?.status ?? "idle",
-      })),
+      // Pinned Familiars have their own buttons; the picker keeps "New familiar".
+      items: familiarsPinned ? [] : familiarItems,
       activeId: familiars.activeId,
       onOpen: familiars.onOpen,
       onCreate: familiars.onCreate,
     };
-    // The roster is read through its snapshot.
-  }, [familiars, familiarsSnap]);
+  }, [familiars, familiarItems, familiarsPinned]);
   const [inboxMenu, setInboxMenu] = useState<{ x: number; y: number } | null>(
     null,
   );
@@ -2625,6 +2639,38 @@ function CompactProjectRail({
           icon={PanelLeft}
           onClick={onTogglePanel}
         />
+        {familiars && familiarsPinned && familiarItems.length ? (
+          <>
+            <div
+              role="group"
+              aria-label="Familiars"
+              data-compact-rail-familiars
+              className="flex flex-col items-center gap-1.5"
+            >
+              {familiarItems.map((familiar) => (
+                <CompactRailFamiliar
+                  key={familiar.id}
+                  name={familiar.name}
+                  mascot={familiar.mascot}
+                  color={familiar.color}
+                  status={familiar.status}
+                  active={familiar.id === familiars.activeId}
+                  unseen={
+                    familiar.id === familiars.activeId
+                      ? 0
+                      : (familiars.unseenCounts?.get(familiar.id) ?? 0)
+                  }
+                  onClick={() => familiars.onOpen(familiar.id)}
+                />
+              ))}
+            </div>
+            <span
+              aria-hidden
+              data-compact-rail-familiars-divider
+              className="h-px w-6 shrink-0 bg-stroke"
+            />
+          </>
+        ) : null}
         {onSelectProject ? (
           <SearchableProjectPickerWithMenu
             cwd={cwd}
@@ -2720,6 +2766,53 @@ function CompactProjectRail({
         />
       ) : null}
     </nav>
+  );
+}
+
+function CompactRailFamiliar({
+  name,
+  mascot,
+  color,
+  status,
+  active,
+  unseen,
+  onClick,
+}: {
+  name: string;
+  mascot: string;
+  color: string;
+  status: FamiliarStatus;
+  active: boolean;
+  /** Replies the user has not read. */
+  unseen: number;
+  onClick: () => void;
+}) {
+  const label = `${name}, ${FAMILIAR_STATUS_LABEL[status]}`;
+  return (
+    <button
+      type="button"
+      title={`${name}\n${FAMILIAR_STATUS_LABEL[status]}`}
+      aria-label={unseen ? `${label}, ${unreadLabel(unseen)}` : label}
+      aria-current={active ? "true" : undefined}
+      data-compact-rail-familiar
+      onClick={onClick}
+      className={`relative grid size-8 shrink-0 place-items-center rounded-md active:scale-[0.97] ${
+        active
+          ? "bg-selection"
+          : "opacity-65 hover:bg-content/10 hover:opacity-100"
+      }`}
+    >
+      <FamiliarRailMascot name={mascot} color={color} status={status} />
+      {unseen ? (
+        <span
+          aria-hidden
+          data-familiar-unread={unseen}
+          className="absolute -right-0.5 -top-0.5 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-background-base px-0.5 text-[9px] font-medium tabular-nums leading-none text-content/80 ring-1 ring-content/15"
+        >
+          {unreadBadge(unseen)}
+        </span>
+      ) : null}
+    </button>
   );
 }
 

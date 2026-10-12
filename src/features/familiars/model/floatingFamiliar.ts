@@ -2,7 +2,7 @@ import type { ApprovalDecision } from "../../../integrations/harness";
 import type { Attachment, Session } from "../../sessions/model/session";
 import type { UserQuestionReply } from "../../sessions/model/userQuestion";
 import { displayAttachments } from "../../sessions/model/attachments";
-import { listFamiliars, familiarLook } from "./familiar";
+import { listFamiliars, familiarLook, familiarState, type FamiliarStatus } from "./familiar";
 import { pixelLayers } from "../../projects/model/pixelMascots";
 
 export const FLOATING_FAMILIAR_CHANGED = "familiar_chat_changed";
@@ -13,6 +13,7 @@ export type FloatingFamiliarEntry = {
   mascot: string;
   color: string;
   sessionId: string | null;
+  status: FamiliarStatus;
 };
 export type FloatingFamiliarView = {
   monos: FloatingFamiliarEntry[];
@@ -38,13 +39,20 @@ export type FloatingFamiliarRequest = {
   action: FloatingFamiliarAction;
 };
 
-export function floatingFamiliarRoster(enabled: boolean): FloatingFamiliarEntry[] {
+export function floatingFamiliarRoster(
+  enabled: boolean,
+  sessions: readonly Session[] = [],
+): FloatingFamiliarEntry[] {
   return enabled
-    ? listFamiliars().map((mono) => ({
-        id: mono.id,
-        ...familiarLook(mono),
-        sessionId: mono.sessionId ?? null,
-      }))
+    ? listFamiliars().map((familiar) => {
+        const session = sessions.find((s) => s.id === familiar.sessionId);
+        return {
+          id: familiar.id,
+          ...familiarLook(familiar),
+          sessionId: familiar.sessionId ?? null,
+          status: session ? familiarState(session).status : "idle",
+        };
+      })
     : [];
 }
 

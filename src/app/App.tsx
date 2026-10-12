@@ -13,6 +13,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useStableValue } from "../shared/hooks/useStableValue";
 import { flushSync } from "react-dom";
 import { sessionConversationPage } from "../features/agent-app/model/sessionConversation";
 import { readFamiliarConversation } from "../features/familiars/model/familiarConversation";
@@ -77,8 +78,11 @@ import { FamiliarDetails } from "../features/familiars/ui/FamiliarDetails";
 import { FamiliarActivityPanel } from "../features/familiars/ui/FamiliarActivityPanel";
 import { MonoSessionsPanel } from "../features/familiars/ui/FamiliarSessionsPanel";
 import {
+  launchedSessionState,
   familiarSpawnedSessions,
   recordFamiliarSpawnedSession,
+  type LaunchedSessionState,
+  type LaunchedSessionView,
 } from "../features/familiars/model/familiarSpawnedSessions";
 import { groupFamiliarTurns } from "../features/sessions/model/transcriptActivity";
 import {
@@ -274,6 +278,7 @@ import {
   startHarnessBridge,
   steerHarnessTurn,
   stopHarnessSession,
+  configureHarnessIdlePark,
   stopHarnessTextPrompts,
   stopStreaming,
   type ApprovalDecision,
@@ -359,6 +364,7 @@ import {
   applySessionCheckpoint,
   beginSessionTurn,
   captureSessionCheckpoint,
+  finishSessionTurn,
   flushSessionCheckpoint,
   forgetSessionCheckpoint,
   keepSessionChanges,
@@ -379,6 +385,7 @@ import {
   saveRecentModelChoice,
 } from "../features/sessions/model/models";
 import { isEditTool } from "../integrations/harness/core/preview";
+import { sessionEditPaths } from "../features/sessions/model/checkpointEdits";
 
 import {
   rebaseProjectData,
@@ -411,6 +418,7 @@ import {
   type ProviderAccountProvider,
 } from "../features/providers/model/providerAccounts";
 import { applyAddToChatRequest } from "../features/sessions/model/addChatToWorkspace";
+import { newWorkspaceSession } from "./model/newWorkspaceSession";
 import {
   buildPlanPrompt,
   isProviderFailureText,
@@ -449,6 +457,7 @@ import {
   type PlanStatus,
   type RuntimeMode,
   type SecondOpinionMeta,
+  type FamiliarSpawnedSession,
   type Session,
   type UsageLimit,
   type WorkspaceMode,
@@ -539,6 +548,7 @@ import { archiveFocusedSession } from "../features/sessions/model/archiveShortcu
 import { dropContextWindow } from "../features/sessions/model/contextUsage";
 import { liveAgentsFromSessions } from "../features/sessions/model/liveAgents";
 import { useUnseenFinishedSessions } from "../features/sessions/hooks/useUnseenFinishedSessions";
+import { useUnseenReplyCounts } from "../features/sessions/hooks/useUnseenReplyCounts";
 import {
   canDispatchQueuedHead,
   canSteerQueuedHead,
@@ -752,6 +762,7 @@ import {
   loadDiffViewer,
   loadFileTabMode,
   loadFollowUpBehavior,
+  loadIdleAgentLimit,
   loadKeybindingOverrides,
   loadLiveAgentsEnabled,
   loadNotesEnabled,
@@ -780,6 +791,7 @@ import {
   mergeHistorySummary,
   mergeProjectHistorySummary,
   replaceProjectHistory,
+  sameSessionSummaries,
   summaryFromSession,
 } from "../features/sessions/data/sessionHistory";
 import {
@@ -1172,6 +1184,20 @@ function Workspace({
     useState<FamiliarActivitySelection | null>(null);
   const [monoSessions, setMonoSessions] =
     useState<FamiliarActivitySelection | null>(null);
+  // A launched session shown in the sessions sidebar. It belongs to the list
+  // it was opened from, so reopening or closing that list leaves it.
+  const [familiarShownSession, setFamiliarShownSession] = useState<{
+    from: FamiliarActivitySelection;
+    sessionId: string;
+  } | null>(null);
+  // Whether the shown session, rather than the Familiar's chat, holds focus.
+  const [familiarShownSessionFocused, setFamiliarShownSessionFocused] = useState(false);
+  const shownFamiliarSessionId =
+    familiarViewId && monoSessions && familiarShownSession?.from === monoSessions
+      ? familiarShownSession.sessionId
+      : undefined;
+  const shownFamiliarSessionIdRef = useRef(shownFamiliarSessionId);
+  shownFamiliarSessionIdRef.current = shownFamiliarSessionId;
   const onShowFamiliarActivity = useCallback(
     (sessionId: string, turnId: string, blocks: Block[]) => {
       setFamiliarDetailsOpen(false);
@@ -1179,20 +1205,6 @@ function Workspace({
       setMonoChanges(null);
       setMonoSessions(null);
       setFamiliarActivity((previous) =>
-        previous?.sessionId === sessionId && previous.turnId === turnId
-          ? null
-          : { sessionId, turnId, blocks },
-      );
-    },
-    [],
-  );
-  const onShowFamiliarSessions = useCallback(
-    (sessionId: string, turnId: string, blocks: Block[]) => {
-      setFamiliarDetailsOpen(false);
-      setMonoArtifact(null);
-      setMonoChanges(null);
-      setFamiliarActivity(null);
-      setMonoSessions((previous) =>
         previous?.sessionId === sessionId && previous.turnId === turnId
           ? null
           : { sessionId, turnId, blocks },
@@ -1518,6 +1530,8 @@ function Workspace({
   const foregroundSurfaceRef = useRef<{
     workspaceVisible: boolean;
     standaloneSessionId?: string;
+    /** A session shown beside the Familiar's chat. */
+    sideSessionId?: string;
   }>({ workspaceVisible: true });
   foregroundSurfaceRef.current = {
     workspaceVisible:
@@ -1534,6 +1548,14 @@ function Workspace({
           !automationsViewOpen &&
           !settingsOpen
         ? (familiarViewId ?? undefined)
+        : undefined,
+    sideSessionId:
+      !inboxViewOpen &&
+      !searchViewOpen &&
+      !notesViewOpen &&
+      !automationsViewOpen &&
+      !settingsOpen
+        ? shownFamiliarSessionId
         : undefined,
   };
   const notesViewOpenRef = useRef(notesViewOpen);
@@ -1633,6 +1655,7 @@ function Workspace({
           // Standalone conversations live outside the workspace tab tree.
           return (
             foregroundSurfaceRef.current.standaloneSessionId === sessionId ||
+            foregroundSurfaceRef.current.sideSessionId === sessionId ||
             (foregroundSurfaceRef.current.workspaceVisible &&
               !!tab &&
               (leafIds(tab.layout).includes(sessionId) ||
@@ -1658,6 +1681,13 @@ function Workspace({
         },
       ),
   );
+  // Cap warm agent CLIs, sparing the conversations on screen.
+  useEffect(() => {
+    configureHarnessIdlePark({
+      limit: loadIdleAgentLimit,
+      keep: harnessEvents.isForeground,
+    });
+  }, [harnessEvents]);
   const skipForgetSessionIds = useRef(new Set<string>());
   const importedSessionsApplied = useRef(false);
   const projectLocationSyncs = useRef(
@@ -1701,10 +1731,12 @@ function Workspace({
       turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
       flushHarnessEvents();
       await Promise.all(
-        sessionChildHarnesses(open).map((harness) =>
-          cancelHarnessTurn(harness, sessionId).catch(() => undefined),
-        ),
+        sessionChildHarnesses(open).map(async (harness) => {
+          await cancelHarnessTurn(harness, sessionId).catch(() => undefined);
+          await stopHarnessSession(harness, sessionId);
+        }),
       );
+      await finishSessionTurn(sessionId, sessionWorkCwd(open));
       flushHarnessEvents();
       return sessionsRef.current.find((session) => session.id === sessionId);
     },
@@ -2007,7 +2039,8 @@ function Workspace({
     if (
       active?.harness === "claude" ||
       active?.harness === "codex" ||
-      active?.harness === "opencode"
+      active?.harness === "opencode" ||
+      active?.harness === "devin"
     ) {
       return [active.harness];
     }
@@ -2104,7 +2137,9 @@ function Workspace({
 
   const activeSessionId = inboxViewOpen
     ? inboxAskPortal?.sessionId
-    : (familiarViewSession?.id ?? active?.id);
+    : shownFamiliarSessionId && familiarShownSessionFocused
+      ? shownFamiliarSessionId
+      : (familiarViewSession?.id ?? active?.id);
   const activeSessionIdRef = useRef(activeSessionId);
   activeSessionIdRef.current = activeSessionId;
 
@@ -2125,8 +2160,22 @@ function Workspace({
     busySessionIds,
     activeSessionId,
   );
+  const familiarSessionIds = useMemo(
+    () =>
+      new Set(
+        listFamiliars().flatMap((familiar) => (familiar.sessionId ? [familiar.sessionId] : [])),
+      ),
+    // The roster is read through its snapshot.
+    [familiarsSnap],
+  );
+  // How many replies each Familiar has that the user has not read, for the rail.
+  const familiarReplies = useUnseenReplyCounts(
+    familiarSessionIds,
+    busySessionIds,
+    activeSessionId,
+  );
 
-  const liveAgents = useMemo(
+  const liveAgentRows = useMemo(
     () =>
       liveAgentsEnabled
         ? liveAgentsFromSessions(
@@ -2141,6 +2190,8 @@ function Workspace({
         : [],
     [liveAgentsEnabled, promptableSessions, unseenFinishedIds, familiarsSnap],
   );
+  // Rebuilt for every streamed batch; identity only moves when a row does.
+  const liveAgents = useStableValue(liveAgentRows);
 
   const hiddenApprovalToasts = useMemo(
     () =>
@@ -2217,6 +2268,7 @@ function Workspace({
     familiarViewId,
     inboxViewOpen,
     inboxAskPortal?.sessionId,
+    shownFamiliarSessionId,
     searchViewOpen,
     notesViewOpen,
     automationsViewOpen,
@@ -2704,27 +2756,15 @@ function Workspace({
     setInboxViewOpen(false);
     setNotesViewOpen(false);
     setAutomationsViewOpen(false);
-    const cwd = active?.cwd ?? sessionDefaults?.cwd ?? projectCwd;
-    const focus = worktreeFocus(cwd);
-    const session = {
-      ...newDefaultSession(cwd, sessionDefaults?.runtimeMode),
-      ...(focus && pathKey(focus.path) !== pathKey(cwd)
-        ? { worktreeCwd: focus.path, branch: focus.branch ?? undefined }
-        : {}),
-    };
+    const cwd = sidebarCwd;
+    const session = newWorkspaceSession(cwd, sessionDefaults?.runtimeMode);
     const tab = newTab(session.id);
     setSessions((prev) => [...prev, session]);
     appendTab(tab, cwd);
     setActiveTabId(tab.id);
     setComposerFocused(true);
     return session.id;
-  }, [
-    active?.cwd,
-    appendTab,
-    sessionDefaults?.cwd,
-    sessionDefaults?.runtimeMode,
-    projectCwd,
-  ]);
+  }, [appendTab, sessionDefaults?.runtimeMode, sidebarCwd]);
 
   const onSelectRemoteSession = useCallback(
     (project: string, remoteSessionId: string) => {
@@ -4050,10 +4090,25 @@ function Workspace({
   const onFocusPane = useCallback(
     (paneId: string) => {
       if (paneId === familiarViewIdRef.current) {
+        setFamiliarShownSessionFocused(false);
         setProjectTerminalFocused(false);
         setComposerFocused(true);
         return;
       }
+      if (paneId === shownFamiliarSessionIdRef.current) {
+        setFamiliarShownSessionFocused(true);
+        setProjectTerminalFocused(false);
+        setComposerFocused(true);
+        return;
+      }
+      // Over the Familiar, only its sidebar holds panes outside the workspace: a
+      // launched session sliding away as another opens. Its late focus must
+      // not close the Familiar and send that session to its project.
+      if (
+        familiarViewIdRef.current &&
+        !tabsRef.current.some((tab) => leafIds(tab.layout).includes(paneId))
+      )
+        return;
       closeFamiliarView();
       if (
         tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
@@ -4868,6 +4923,52 @@ function Workspace({
       await onSelectHistorySession(sessionId);
     },
     [ensureOpenSession, closeFamiliarView, setSidebarTab, onSelectHistorySession],
+  );
+
+  // Show a launched session in the Familiar's sidebar, where it can be followed,
+  // answered or stopped without leaving the chat.
+  const onShowFamiliarLaunchedSession = useCallback(
+    async (from: FamiliarActivitySelection, sessionId: string) => {
+      const session = await ensureOpenSession(sessionId);
+      if (!session) throw new Error("This session is no longer available.");
+      setFamiliarShownSession({ from, sessionId });
+      setFamiliarShownSessionFocused(true);
+      setProjectTerminalFocused(false);
+      setComposerFocused(true);
+    },
+    [ensureOpenSession],
+  );
+  // A card in the Familiar's chat opens its session straight in the sidebar, with
+  // the turn's list behind it to go back to; the open card's click closes it.
+  const onOpenFamiliarSession = useCallback(
+    async (
+      familiarSessionId: string,
+      turnId: string,
+      blocks: Block[],
+      launchedId: string,
+    ) => {
+      if (shownFamiliarSessionIdRef.current === launchedId) {
+        setMonoSessions(null);
+        return;
+      }
+      const from = { sessionId: familiarSessionId, turnId, blocks };
+      // Load it first, then switch in one step: the sidebar goes straight
+      // from the session it shows to this one, never through the list.
+      const session = await ensureOpenSession(launchedId).catch(() => null);
+      if (familiarViewIdRef.current !== familiarSessionId) return;
+      setFamiliarDetailsOpen(false);
+      setMonoArtifact(null);
+      setMonoChanges(null);
+      setFamiliarActivity(null);
+      setMonoSessions(from);
+      // One that is gone leaves the list open, which says so.
+      if (!session) return;
+      setFamiliarShownSession({ from, sessionId: launchedId });
+      setFamiliarShownSessionFocused(true);
+      setProjectTerminalFocused(false);
+      setComposerFocused(true);
+    },
+    [ensureOpenSession],
   );
 
   const openReminderSession = useCallback(
@@ -7746,10 +7847,22 @@ function Workspace({
           });
         };
 
-        if (!current.inboxAsk && !orchestrator.forSession(sessionId)) {
-          await beginSessionTurn(sessionId, workCwd).catch(() => undefined);
+        const checkpointTurnId =
+          !current.inboxAsk && !orchestrator.forSession(sessionId)
+            ? await beginSessionTurn(
+                sessionId,
+                workCwd,
+                sessionEditPaths(current.blocks),
+              )
+            : undefined;
+        if (turnGen.current.get(sessionId) !== gen) {
+          if (checkpointTurnId) {
+            await finishSessionTurn(sessionId, workCwd, {
+              turnId: checkpointTurnId,
+            });
+          }
+          return;
         }
-        if (turnGen.current.get(sessionId) !== gen) return;
         let buildSucceeded = false;
         try {
           const prepared = await prepareAttachments(attachments);
@@ -8009,6 +8122,18 @@ function Workspace({
           }
           providerFailureSeen = true;
         } finally {
+          // A failed provider can leave its process writing after the event
+          // stream ends. Stop it before recording the final workspace state.
+          if (providerFailureSeen && turnGen.current.get(sessionId) === gen) {
+            await stopHarnessSession(current.harness, sessionId).catch(
+              () => undefined,
+            );
+          }
+          if (checkpointTurnId) {
+            await finishSessionTurn(sessionId, workCwd, {
+              turnId: checkpointTurnId,
+            });
+          }
           if (turnGen.current.get(sessionId) !== gen) return;
           flushHarnessEvents();
           controlOutcome = {
@@ -8021,14 +8146,6 @@ function Workspace({
             text: controlText.trim(),
             ...(providerFailureSeen ? { error: controlOutcome.error } : {}),
           };
-          // A failed provider can leave its process alive with a dead event
-          // stream or poisoned turn state. Park it now; the next prompt will
-          // reconnect and resume through a fresh transport.
-          if (providerFailureSeen) {
-            await stopHarnessSession(current.harness, sessionId).catch(
-              () => undefined,
-            );
-          }
           await flushSessionCheckpoint(sessionId);
           setSessions((prev) =>
             prev.map((s) => {
@@ -8246,11 +8363,13 @@ function Workspace({
           familiarHabit: { id: habit.id, name: habit.name, at: Date.now() },
           ...(artifacts?.length ? { artifactCards: artifacts } : {}),
         },
-        (posted) =>
+        (posted) => {
+          familiarReplies.noteReply(familiarId);
           void announceSessionFinished(
             { ...posted, title: name },
             familiarId === activeSessionIdRef.current,
-          ),
+          );
+        },
       ),
     // The chat shows it like any approval, and the usual approval banner
     // fires for the Familiar; the answer is routed back in onApproval.
@@ -8482,6 +8601,7 @@ function Workspace({
       deliveryId: string,
       placement?: AppSessionPlacement,
       onSettled?: (outcome: ControlOutcome) => void,
+      openTab?: boolean,
     ) =>
       acceptQuickLaunch(
         launch,
@@ -8552,6 +8672,7 @@ function Workspace({
             flushSync(() => onSaveDraft(id, prompt, attachments, requestId)),
         },
         placement,
+        openTab,
       ),
     [appendTab, submitSession, onSaveDraft],
   );
@@ -9981,10 +10102,19 @@ function Workspace({
       turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
       flushHarnessEvents();
       const cancelling = Promise.all(
-        (session ? sessionChildHarnesses(session) : []).map((id) =>
-          cancelHarnessTurn(id, sessionId),
-        ),
+        (session ? sessionChildHarnesses(session) : []).map(async (id) => {
+          try {
+            await cancelHarnessTurn(id, sessionId);
+          } finally {
+            await stopHarnessSession(id, sessionId);
+          }
+        }),
       );
+      const checkpointFinished = session
+        ? finishSessionTurn(sessionId, sessionWorkCwd(session), {
+            after: cancelling.catch(() => undefined),
+          })
+        : Promise.resolve();
       void cancelling.catch(console.error);
       setSessions((prev) =>
         prev.map((s) => {
@@ -10008,7 +10138,7 @@ function Workspace({
       } else {
         notifyReviewChanged(sessionId);
       }
-      return cancelling;
+      return Promise.all([cancelling, checkpointFinished]);
     },
     [flushHarnessEvents],
   );
@@ -10631,6 +10761,22 @@ function Workspace({
           ? groupFamiliarTurns(source.blocks)
           : [];
         const sourceTurnId = sourceTurns[sourceTurns.length - 1]?.[0]?.id;
+        const rememberSession = (entry: FamiliarSpawnedSession) => {
+          if (!sourceTurnId) return;
+          const next = sessionsRef.current.map((session) =>
+            session.id === source.id
+              ? recordFamiliarSpawnedSession(session, sourceTurnId, entry)
+              : session,
+          );
+          if (
+            next.every(
+              (session, index) => session === sessionsRef.current[index],
+            )
+          )
+            return;
+          sessionsRef.current = next;
+          setSessions(next);
+        };
         const monitorCompletion = (
           familiarId: string,
           sessionId: string,
@@ -10685,32 +10831,18 @@ function Workspace({
           {
             start: async (launch, id, placement, notifyFamiliarId) => {
               const rememberLaunch = () => {
-                if (!sourceTurnId) return;
                 const created =
                   sessionsRef.current.find((session) => session.id === id) ??
                   existing;
-                const next = sessionsRef.current.map((session) =>
-                  session.id === source.id
-                    ? recordFamiliarSpawnedSession(session, sourceTurnId, {
-                        sessionId: id,
-                        cwd: created?.cwd ?? launch.cwd,
-                        title:
-                          created?.title ?? launch.prompt.trim().slice(0, 300),
-                        harness: created?.harness ?? launch.harness,
-                        model:
-                          created?.model ??
-                          resolveModel(launch.harness, launch.model).id,
-                      })
-                    : session,
-                );
-                if (
-                  next.every(
-                    (session, index) => session === sessionsRef.current[index],
-                  )
-                )
-                  return;
-                sessionsRef.current = next;
-                setSessions(next);
+                rememberSession({
+                  sessionId: id,
+                  cwd: created?.cwd ?? launch.cwd,
+                  title: created?.title ?? launch.prompt.trim().slice(0, 300),
+                  harness: created?.harness ?? launch.harness,
+                  model:
+                    created?.model ??
+                    resolveModel(launch.harness, launch.model).id,
+                });
               };
               const open = sessionsRef.current.find(
                 (session) => session.id === id,
@@ -10751,11 +10883,14 @@ function Workspace({
                   )
                 : undefined;
               try {
+                // A Familiar's sessions open from its chat, not as workspace
+                // tabs, unless it places one beside an open pane.
                 await launchQuickSessionRef.current(
                   launch,
                   id,
                   placement,
                   onSettled,
+                  !isFamiliarSession(source.id) || !!placement,
                 );
                 rememberLaunch();
                 onSettled?.accept();
@@ -10821,6 +10956,18 @@ function Workspace({
                 orchestrator.run(id)
               )
                 throw new Error("Session is unavailable in this project");
+              const rememberFollowUp = () => {
+                const current =
+                  sessionsRef.current.find((session) => session.id === id) ??
+                  target;
+                rememberSession({
+                  sessionId: id,
+                  cwd: current.cwd,
+                  title: current.title,
+                  harness: current.harness,
+                  model: current.model,
+                });
+              };
               const previous = target.blocks.find(
                 (block) => block.appRequestId === requestId,
               );
@@ -10831,6 +10978,7 @@ function Workspace({
                   );
                 if (previous.draft)
                   throw new Error("Request ID belongs to an unsent draft");
+                rememberFollowUp();
                 return { alreadySubmitted: true };
               }
               if (target.busy)
@@ -10866,6 +11014,7 @@ function Workspace({
                 onSettled?.discard();
                 throw new Error("Session could not accept the follow-up");
               }
+              rememberFollowUp();
               onSettled?.accept();
               return { alreadySubmitted: false };
             },
@@ -11269,7 +11418,7 @@ function Workspace({
     [history, sidebarCwd],
   );
 
-  const sidebarHistory = useMemo(
+  const sidebarHistoryRows = useMemo(
     () =>
       historyWithLiveSessions(
         history,
@@ -11293,6 +11442,10 @@ function Workspace({
       sidebarCwd,
       orchestrationRuns,
     ],
+  );
+  const sidebarHistory = useStableValue(
+    sidebarHistoryRows,
+    sameSessionSummaries,
   );
   const {
     unseen: inboxUnseen,
@@ -11335,7 +11488,7 @@ function Workspace({
     () => ciRepairSessions(history, sessions),
     [history, sessions],
   );
-  const openProjectSessions = useMemo(
+  const openProjectSessionRows = useMemo(
     () =>
       sessions
         .filter(
@@ -11356,6 +11509,10 @@ function Workspace({
           }),
         ),
     [projectBranches, sessions, sidebarCwd],
+  );
+  const openProjectSessions = useStableValue(
+    openProjectSessionRows,
+    sameSessionSummaries,
   );
 
   const onToggleSidebar = useCallback(() => {
@@ -11981,6 +12138,9 @@ function Workspace({
       // A rebound zoom chord may be Option-only, so it is resolved outside the
       // Cmd/Ctrl guard that only the browser-standard defaults need.
       const zoom = resolveZoomKeybinding(e);
+      // An image preview under the pointer zooms the image instead; its own
+      // listener runs next.
+      if (zoom && document.querySelector("[data-image-zoom]")) return;
       if (zoom) {
         e.preventDefault();
         e.stopPropagation();
@@ -12501,6 +12661,78 @@ function Workspace({
         windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
       />
     ) : null;
+  // Status for the cards of the sessions the open Familiar launched, rebuilt only
+  // when one changes state or title rather than on every streamed token. One
+  // that is no longer open cannot be running, so it reads as done.
+  const familiarViewBlocks = familiarViewSession?.blocks;
+  const familiarLaunches = useMemo(
+    () => (familiarViewBlocks ? familiarSpawnedSessions(familiarViewBlocks) : []),
+    [familiarViewBlocks],
+  );
+  // A card names its session as the sidebar does. One that is not open has
+  // its saved title fetched, rather than the prompt it was launched with, so
+  // opening it does not rename the card.
+  const [storedLaunchTitles, setStoredLaunchTitles] = useState<
+    ReadonlyMap<string, string>
+  >(() => new Map());
+  const unopenedLaunchesKey = JSON.stringify(
+    familiarLaunches.flatMap((launch) =>
+      storedLaunchTitles.has(launch.sessionId) ||
+      sessions.some((entry) => entry.id === launch.sessionId)
+        ? []
+        : [launch.sessionId],
+    ),
+  );
+  useEffect(() => {
+    const ids: string[] = JSON.parse(unopenedLaunchesKey);
+    if (ids.length === 0) return;
+    let current = true;
+    void Promise.all(ids.map((id) => getSession(id).catch(() => null))).then(
+      (stored) => {
+        if (!current) return;
+        setStoredLaunchTitles((previous) => {
+          const next = new Map(previous);
+          stored.forEach((session, index) =>
+            next.set(ids[index], session?.title ?? ""),
+          );
+          return next;
+        });
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [unopenedLaunchesKey]);
+  const familiarLaunchesKey = JSON.stringify(
+    familiarLaunches.map((launch) => {
+      const live = sessions.find((entry) => entry.id === launch.sessionId);
+      return live
+        ? [launch.sessionId, launchedSessionState(live), live.title]
+        : [
+            launch.sessionId,
+            "done",
+            storedLaunchTitles.get(launch.sessionId) || launch.title,
+          ];
+    }),
+  );
+  const familiarLaunchedSessions = useMemo(
+    () =>
+      new Map<string, LaunchedSessionView>(
+        (
+          JSON.parse(familiarLaunchesKey) as [
+            string,
+            LaunchedSessionState,
+            string,
+          ][]
+        ).map(([id, state, title]) => [id, { state, title }]),
+      ),
+    [familiarLaunchesKey],
+  );
+  const familiarShownSessionPane = shownFamiliarSessionId
+    ? sessions.find((session) => session.id === shownFamiliarSessionId)
+    : undefined;
+  const familiarShownSessionActive =
+    !!familiarShownSessionPane && familiarShownSessionFocused;
   const monoSessionsPanel =
     familiarViewFamiliar && selectedMonoSessions ? (
       <MonoSessionsPanel
@@ -12509,25 +12741,106 @@ function Workspace({
         launches={familiarSpawnedSessions(selectedMonoSessions.blocks)}
         sessions={sessions}
         history={history}
-        onOpenSession={onOpenMonoLaunchedSession}
+        onOpenSession={(sessionId) =>
+          monoSessions
+            ? onShowFamiliarLaunchedSession(monoSessions, sessionId)
+            : undefined
+        }
+        shown={
+          familiarShownSessionPane
+            ? {
+                sessionId: familiarShownSessionPane.id,
+                title: sessionDisplayTitle(
+                  familiarShownSessionPane.title,
+                  familiarShownSessionPane.harness,
+                ),
+                pane: (
+                  <SessionPane
+                    {...sessionPaneProps}
+                    session={familiarShownSessionPane}
+                    // The Familiar view covers the workspace, so a review opens
+                    // beside the chat rather than in a hidden tab.
+                    onOpenDiff={onOpenMonoDiff}
+                    visible={familiarCovers}
+                    focused={familiarShownSessionActive && !projectTerminalFocused}
+                    inSplit={false}
+                    addToChatTarget={false}
+                    composerFocused={
+                      familiarShownSessionActive &&
+                      composerFocused &&
+                      !projectTerminalFocused
+                    }
+                    composerFocusToken={composerFocusToken}
+                  />
+                ),
+              }
+            : undefined
+        }
+        onBack={() => {
+          setFamiliarShownSession(null);
+          setFamiliarShownSessionFocused(false);
+        }}
+        onOpenInWorkspace={onOpenMonoLaunchedSession}
         onClose={() => setMonoSessions(null)}
         windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
       />
     ) : null;
-  const familiarRail = useMemo(() => {
+  const familiarRailState = useMemo(() => {
     const states = new Map<string, FamiliarState>();
-    const unseen = new Set<string>();
+    const unseen = new Map<string, number>();
     for (const familiar of listFamiliars()) {
       const session = familiar.sessionId
         ? sessions.find((entry) => entry.id === familiar.sessionId)
         : undefined;
       if (session) states.set(familiar.id, familiarState(session));
-      if (familiar.sessionId && unseenFinishedIds.has(familiar.sessionId))
-        unseen.add(familiar.id);
+      const count = familiar.sessionId
+        ? familiarReplies.counts.get(familiar.sessionId)
+        : undefined;
+      if (count) unseen.set(familiar.id, count);
     }
     return { states, unseen };
     // The roster is read through its snapshot.
-  }, [familiarsSnap, sessions, unseenFinishedIds]);
+  }, [familiarsSnap, sessions, familiarReplies.counts]);
+  const familiarRail = useStableValue(familiarRailState);
+  const busyProjectPaths = useStableValue(
+    promptableSessions.flatMap((session) =>
+      session.busy && session.cwd ? [session.cwd] : [],
+    ),
+  );
+  const onOpenRailFamiliar = useCallback(
+    (familiarId: string) => void onOpenFamiliar(familiarId),
+    [onOpenFamiliar],
+  );
+  const onDeleteRailFamiliar = useCallback(
+    (familiarId: string) => void onDeleteFamiliar(familiarId),
+    [onDeleteFamiliar],
+  );
+  // The memoized sidebar only skips a streamed batch if this keeps identity.
+  const sidebarFamiliars = useMemo(
+    () =>
+      familiarsEnabled
+        ? {
+            activeId: familiarViewFamiliar?.id,
+            states: familiarRail.states,
+            unseenCounts: familiarRail.unseen,
+            onOpen: onOpenRailFamiliar,
+            onCreate: onCreateFamiliar,
+            onDelete: onDeleteRailFamiliar,
+            // Release notes come first; the intro waits its turn.
+            introAvailable: !whatsNewVersion,
+          }
+        : undefined,
+    [
+      familiarsEnabled,
+      familiarViewFamiliar?.id,
+      familiarRail,
+      onOpenRailFamiliar,
+      onCreateFamiliar,
+      onDeleteRailFamiliar,
+      whatsNewVersion,
+    ],
+  );
+  const onDismissUpdate = useCallback(() => setUpdateNotice(null), []);
 
   const chromeSurfaceOpen =
     searchViewOpen ||
@@ -12675,28 +12988,13 @@ function Workspace({
               }
               textHarness={pickTextHarness(active?.harness)}
               recents={recents}
-              busyProjectPaths={promptableSessions.flatMap((session) =>
-                session.busy && session.cwd ? [session.cwd] : [],
-              )}
+              busyProjectPaths={busyProjectPaths}
               liveAgents={liveAgents}
               onSelectAgent={onSelectLiveAgent}
               onSelectProject={onSelectProject}
               onOpenProject={pickProject}
               onRemoveProject={onRemoveProject}
-              familiars={
-                familiarsEnabled
-                  ? {
-                      activeId: familiarViewFamiliar?.id,
-                      states: familiarRail.states,
-                      unseenIds: familiarRail.unseen,
-                      onOpen: (familiarId) => void onOpenFamiliar(familiarId),
-                      onCreate: onCreateFamiliar,
-                      onDelete: (familiarId) => void onDeleteFamiliar(familiarId),
-                      // Release notes come first; the intro waits its turn.
-                      introAvailable: !whatsNewVersion,
-                    }
-                  : undefined
-              }
+              familiars={sidebarFamiliars}
               familiarViewActive={familiarCovers}
               onNew={onNew}
               openSessions={openProjectSessions}
@@ -12732,7 +13030,7 @@ function Workspace({
               onCloseSettings={onCloseSettings}
               updateNotice={updateNotice}
               onOpenWhatsNew={onOpenWhatsNew}
-              onDismissUpdate={() => setUpdateNotice(null)}
+              onDismissUpdate={onDismissUpdate}
             />
 
             <div className="body-glass flex min-h-0 min-w-0 flex-1 flex-col">
@@ -12936,14 +13234,17 @@ function Workspace({
                                       session={session}
                                       visible={visible}
                                       focused={
-                                        visible && !projectTerminalFocused
+                                        visible &&
+                                        !projectTerminalFocused &&
+                                        !familiarShownSessionActive
                                       }
                                       inSplit={false}
                                       addToChatTarget={visible}
                                       composerFocused={
                                         visible &&
                                         composerFocused &&
-                                        !projectTerminalFocused
+                                        !projectTerminalFocused &&
+                                        !familiarShownSessionActive
                                       }
                                       composerFocusToken={composerFocusToken}
                                       onShowFamiliarActivity={onShowFamiliarActivity}
@@ -12953,10 +13254,13 @@ function Workspace({
                                       familiarActivityTurnId={
                                         selectedFamiliarActivity?.turnId
                                       }
-                                      onShowFamiliarSessions={onShowFamiliarSessions}
-                                      familiarSessionsTurnId={
-                                        selectedMonoSessions?.turnId
+                                      onOpenFamiliarSession={onOpenFamiliarSession}
+                                      familiarLaunchedSessions={
+                                        visible
+                                          ? familiarLaunchedSessions
+                                          : undefined
                                       }
+                                      openFamiliarSessionId={shownFamiliarSessionId}
                                     />
                                   </div>
                                 );
