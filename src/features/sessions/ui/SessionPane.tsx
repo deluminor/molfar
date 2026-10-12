@@ -19,7 +19,8 @@ import {
 } from "../../orchestration/model/orchestration";
 import { DiscussionEmpty } from "./DiscussionEmpty";
 import { LinkedWorkItemUpdateNotice } from "../../inbox/ui/LinkedWorkItemUpdateNotice";
-import { SessionReview } from "./SessionReview";
+import { SessionChangesButton, SessionReview } from "./SessionReview";
+import { sessionEditPaths } from "../model/checkpointEdits";
 import { PromptOutline } from "./PromptOutline";
 import {
   canCompactHarnessContext,
@@ -68,11 +69,15 @@ import {
 } from "../../familiars/model/familiar";
 import { FamiliarHeader } from "../../familiars/ui/FamiliarHeader";
 import { FamiliarComposer } from "../../familiars/ui/FamiliarComposer";
+import type { LaunchedSessionView } from "../../familiars/model/familiarSpawnedSessions";
+import { ModelControlPills, ModelPicker } from "./ModelPicker";
+import { ContextMeter } from "./ContextMeter";
 import { FamiliarUsageLimitNotice } from "../../familiars/ui/FamiliarUsageLimitNotice";
 import { QuestionForm } from "./QuestionForm";
 import {
   familiarMessageDeliveries,
   familiarPendingTranscriptBlocks,
+  visibleFamiliarCompletionMessages,
 } from "../../familiars/model/familiarMessaging";
 import { MessageQueue } from "./MessageQueue";
 import { useFamiliarTranscript } from "../../familiars/hooks/useFamiliarTranscript";
@@ -134,12 +139,17 @@ export type SessionPaneProps = {
     blocks: Block[],
   ) => void;
   familiarActivityTurnId?: string;
-  onShowFamiliarSessions?: (
+  /** Open a session a Familiar's turn launched, in the Familiar's sidebar. */
+  onOpenFamiliarSession?: (
     sessionId: string,
     turnId: string,
     blocks: Block[],
+    launchedId: string,
   ) => void;
-  familiarSessionsTurnId?: string;
+  /** Live status of the sessions this Familiar launched, by id. */
+  familiarLaunchedSessions?: ReadonlyMap<string, LaunchedSessionView>;
+  /** The launched session open in the Familiar's sidebar. */
+  openFamiliarSessionId?: string;
   recents: RecentProject[];
   hideProjectPicker?: boolean;
   onFocus: (sessionId: string) => void;
@@ -343,8 +353,9 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onCommitChanges,
   onShowFamiliarActivity,
   familiarActivityTurnId,
-  onShowFamiliarSessions,
-  familiarSessionsTurnId,
+  onOpenFamiliarSession,
+  familiarLaunchedSessions,
+  openFamiliarSessionId,
   onOpenPlan,
   onBuildPlan,
   onSecondOpinion,
@@ -370,6 +381,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
   );
   const title = sessionDisplayTitle(session.title, session.harness);
   const isEmpty = session.blocks.length === 0;
+  const editedPaths = useMemo(
+    () => (session.busy ? undefined : sessionEditPaths(session.blocks)),
+    [session.blocks, session.busy],
+  );
   const messageDeliveries = useMemo(
     () => familiarMessageDeliveries(session),
     [session.queuedMessages, session.queueStatus],
@@ -614,6 +629,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
     return () => window.removeEventListener(ADD_TO_CHAT_EVENT, onAdd);
   }, [addSelectionToChat, addToChatTarget]);
   const workCwd = sessionWorkCwd(session);
+  const reviewHidden =
+    remote ||
+    !!session.inboxAsk ||
+    !!session.worktreeRemoved ||
+    familiarTranscript.viewingOlderPage ||
+    !!draftBlock;
   const showDeckProjectPicker = isEmpty && !looksLikeProject(session.cwd);
   // The agent's input always sits at the bottom, like a chat.
   const dockComposer =
@@ -954,13 +975,19 @@ const LocalSessionPane = memo(function LocalSessionPane({
                         : undefined
                     }
                     activeWorkTurnId={familiarActivityTurnId}
-                    onShowSessions={
-                      agent && onShowFamiliarSessions
-                        ? (turnId, blocks) =>
-                            onShowFamiliarSessions(session.id, turnId, blocks)
+                    onOpenSession={
+                      agent && onOpenFamiliarSession
+                        ? (turnId, blocks, launchedId) =>
+                            onOpenFamiliarSession(
+                              session.id,
+                              turnId,
+                              blocks,
+                              launchedId,
+                            )
                         : undefined
                     }
-                    activeSessionsTurnId={familiarSessionsTurnId}
+                    launchedSessions={familiarLaunchedSessions}
+                    openSessionId={openFamiliarSessionId}
                     // A Familiar's turn keeps copy, save as note and the time.
                     daySeparators={!!agent}
                     hideTurnMetrics={!!agent}
@@ -1034,14 +1061,23 @@ const LocalSessionPane = memo(function LocalSessionPane({
                           }
                         : undefined
                     }
+                    editTurnAction={
+                      reviewHidden || !agent ? undefined : (
+                        <SessionChangesButton
+                          sessionId={session.id}
+                          editedPaths={editedPaths}
+                          cwd={workCwd}
+                          enabled={visible}
+                          busy={!!session.busy}
+                          onOpenDiff={onOpenDiff}
+                        />
+                      )
+                    }
                     latestTurnAccessory={
-                      remote ||
-                      session.inboxAsk ||
-                      session.worktreeRemoved ||
-                      familiarTranscript.viewingOlderPage ||
-                      draftBlock ? undefined : (
+                      reviewHidden || agent ? undefined : (
                         <SessionReview
                           sessionId={session.id}
+                          editedPaths={editedPaths}
                           cwd={workCwd}
                           enabled={visible}
                           busy={!!session.busy}
@@ -1111,9 +1147,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
               {agent ? (
                 <>
                   <MessageQueue
-                    messages={(session.queuedMessages ?? []).filter(
-                      (message) => !!message.familiarSessionCompletion,
-                    )}
+                    messages={visibleFamiliarCompletionMessages(session)}
                     status={session.queueStatus}
                     sendingId={session.sendingQueuedMessageId}
                     onDelete={(messageId) =>
@@ -1167,6 +1201,41 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     onFocus={() => onFocus(session.id)}
                     onSubmit={(text, attachments) =>
                       onSubmit(session.id, text, attachments)
+                    }
+                    controls={
+                      <>
+                        <ModelPicker
+                          harness={session.harness}
+                          model={session.model}
+                          values={session.modelSettings}
+                          allowedHarnesses={allowedModelHarnesses}
+                          project={workCwd}
+                          hideSettings
+                          hotkeys={focused && !btw.open}
+                          variant="text"
+                          onChange={(harness, model) =>
+                            onModelChange(session.id, harness, model)
+                          }
+                          onSettingsChange={(settings) =>
+                            onModelSettingsChange(session.id, settings)
+                          }
+                        />
+                        <ModelControlPills
+                          harness={session.harness}
+                          model={session.model}
+                          values={session.modelSettings}
+                          variant="text"
+                          onSettingsChange={(settings) =>
+                            onModelSettingsChange(session.id, settings)
+                          }
+                        />
+                        {/* A Familiar is one long conversation; this is how full
+                            its current thread is. It rotates threads itself,
+                            so there is nothing to compact here. */}
+                        <div className="grid size-6.5 place-items-center rounded-md transition-colors hover:bg-content/8">
+                          <ContextMeter usage={session.context} />
+                        </div>
+                      </>
                     }
                   />
                 </>

@@ -87,3 +87,19 @@ it("lists familiars once there are some, with the plus in the header", () => {
   expect(container.querySelector("[data-familiar-add]")).toBeNull();
   expect(container.querySelectorAll('[aria-label="New familiar"]')).toHaveLength(1);
 });
+
+it("counts a familiar's unread replies, except the one open", () => {
+  const familiar = createFamiliar();
+  const badge = () => container.querySelector("[data-familiar-unread]");
+  render({ unseenCounts: new Map([[familiar.id, 3]]) });
+  expect(badge()?.textContent).toBe("3");
+  expect(
+    container.querySelector(`[aria-label*="3 new replies"]`),
+  ).not.toBeNull();
+
+  render({ unseenCounts: new Map([[familiar.id, 120]]) });
+  expect(badge()?.textContent).toBe("99+");
+
+  render({ activeId: familiar.id, unseenCounts: new Map([[familiar.id, 3]]) });
+  expect(badge()).toBeNull();
+});

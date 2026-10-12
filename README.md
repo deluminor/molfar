@@ -72,7 +72,7 @@ docs/
 |               |                                                                                                   |
 | ------------- | ------------------------------------------------------------------------------------------------- |
 | **What**      | Local-first engineering workspace and control plane for coding agents                             |
-| **Providers** | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent          |
+| **Providers** | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent, Devin   |
 | **Cost**      | No hosted model and no token resale. MOLFAR drives the CLIs and subscriptions you already have    |
 | **Data**      | Sessions, project state, notes, knowledge links, and integration credentials stay on your machine |
 | **Platforms** | macOS (Apple Silicon and Intel), Windows, Linux (`.deb`, AppImage, `.rpm`)                        |
@@ -214,6 +214,7 @@ MOLFAR probes for each CLI at startup and disables the ones it cannot find. One 
 - [omp](https://omp.sh) — `curl -fsSL https://omp.sh/install | sh`
 - [fx](https://fx.sh) — `curl -fsSL https://fx.sh/setup.sh | bash` then `fx login`
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — install script, then `hermes model`
+- [Devin CLI](https://docs.devin.ai/cli) — macOS/Linux: `curl -fsSL https://cli.devin.ai/install.sh | bash` (or `brew install --cask devin-cli`); Windows PowerShell: `irm https://static.devin.ai/cli/setup.ps1 | iex`; then run `devin auth login` (MOLFAR reuses that login)
 
 ### Build from source
 

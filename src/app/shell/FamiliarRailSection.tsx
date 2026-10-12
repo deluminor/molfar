@@ -41,8 +41,8 @@ export type FamiliarRailProps = {
   activeId?: string;
   /** What each Familiar is doing, by Familiar id; missing reads as idle. */
   states: ReadonlyMap<string, FamiliarState>;
-  /** Familiars that finished something the user has not looked at yet. */
-  unseenIds?: ReadonlySet<string>;
+  /** Replies each Familiar has that the user has not looked at yet, by Familiar id. */
+  unseenCounts?: ReadonlyMap<string, number>;
   onOpen: (familiarId: string) => void;
   onCreate: () => void;
   onDelete: (familiarId: string) => void;
@@ -52,6 +52,15 @@ export type FamiliarRailProps = {
 
 const IDLE: FamiliarState = { status: "idle" };
 
+/** A Familiar's unread count as its badge shows it. */
+export function unreadBadge(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
+export function unreadLabel(count: number): string {
+  return count === 1 ? "1 new reply" : `${count} new replies`;
+}
+
 /**
  * The user's Familiars, above the projects. Each opens like a project does, but
  * into its conversation; none belongs to a project, so they get a section of
@@ -60,7 +69,7 @@ const IDLE: FamiliarState = { status: "idle" };
 export function FamiliarRailSection({
   activeId,
   states,
-  unseenIds,
+  unseenCounts,
   onOpen,
   onCreate,
   onDelete,
@@ -126,7 +135,7 @@ export function FamiliarRailSection({
           const look = familiarLook(familiar);
           const state = states.get(familiar.id) ?? IDLE;
           const selected = familiar.id === activeId;
-          const unseen = !selected && !!unseenIds?.has(familiar.id);
+          const unseen = selected ? 0 : (unseenCounts?.get(familiar.id) ?? 0);
           const projects = look.projects.length
             ? familiarProjectsPhrase(look.projects)
             : "No projects yet";
@@ -174,7 +183,14 @@ export function FamiliarRailSection({
               <button
                 type="button"
                 title={[look.name, projects, status].filter(Boolean).join("\n")}
-                aria-label={[look.name, status ?? "idle", projects].join(", ")}
+                aria-label={[
+                  look.name,
+                  status ?? "idle",
+                  unseen ? unreadLabel(unseen) : undefined,
+                  projects,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
                 aria-current={selected ? "true" : undefined}
                 className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
               >
@@ -199,8 +215,11 @@ export function FamiliarRailSection({
                 {unseen ? (
                   <span
                     aria-hidden
-                    className="size-1.5 shrink-0 rounded-full bg-content/60 group-hover:hidden group-has-[:focus-visible]:hidden"
-                  />
+                    data-familiar-unread={unseen}
+                    className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-content/15 px-1 text-[10px] font-medium tabular-nums leading-none text-content/80 group-hover:hidden group-has-[:focus-visible]:hidden"
+                  >
+                    {unreadBadge(unseen)}
+                  </span>
                 ) : null}
               </button>
               <button

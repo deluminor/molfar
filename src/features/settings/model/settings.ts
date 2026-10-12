@@ -213,6 +213,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "familiar agent rail hide",
   },
   {
+    id: "rail-familiars-pinned",
+    section: "familiars",
+    label: "Pin familiars to the icon rail",
+    keywords: "familiar rail compact collapsed icons top divider project picker",
+  },
+  {
     id: "familiar-list",
     section: "familiars",
     label: "Your familiars",
@@ -416,6 +422,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
       "effort thinking reasoning fast service tier model picker composer",
   },
   {
+    id: "composer-autocorrect",
+    section: "chat",
+    label: "Autocorrect",
+    keywords: "spelling spell check autocorrect typo macos composer",
+  },
+  {
     id: "composer-mascot",
     section: "chat",
     label: "Composer mascot",
@@ -444,7 +456,7 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     section: "providers",
     label: "Agent CLIs",
     keywords:
-      "codex opencode cursor grok pi omp fx hermes antigravity binary path",
+      "codex opencode cursor grok pi omp fx hermes antigravity devin binary path",
   },
   {
     id: "provider-accounts",
@@ -470,6 +482,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     section: "providers",
     label: "Claude Code hooks",
     keywords: "pretooluse settings.json block command notification",
+  },
+  {
+    id: "idle-agents",
+    section: "providers",
+    label: "Keep idle agents ready",
+    keywords: "memory ram cpu performance process warm park background",
   },
   {
     id: "project-notifications",
@@ -1122,6 +1140,33 @@ export function loadClaudeHooks(): boolean {
 
 export function saveClaudeHooks(value: boolean) {
   writeFlag(CLAUDE_HOOKS_KEY, value);
+}
+
+const IDLE_AGENT_LIMIT_KEY = "molfar.idleAgentLimit";
+
+/** How many finished conversations keep their agent CLI warm. */
+export const IDLE_AGENT_LIMITS = [0, 1, 2, 3, 5] as const;
+export type IdleAgentLimit = (typeof IDLE_AGENT_LIMITS)[number];
+export const IDLE_AGENT_LIMIT_DEFAULT: IdleAgentLimit = 3;
+
+export function loadIdleAgentLimit(): IdleAgentLimit {
+  try {
+    const raw = Number(localStorage.getItem(IDLE_AGENT_LIMIT_KEY) ?? NaN);
+    return (
+      IDLE_AGENT_LIMITS.find((limit) => limit === raw) ??
+      IDLE_AGENT_LIMIT_DEFAULT
+    );
+  } catch {
+    return IDLE_AGENT_LIMIT_DEFAULT;
+  }
+}
+
+export function saveIdleAgentLimit(value: IdleAgentLimit) {
+  try {
+    localStorage.setItem(IDLE_AGENT_LIMIT_KEY, String(value));
+  } catch {
+    // private mode / quota
+  }
 }
 
 const CTRL = IS_MAC ? "⌃" : "Ctrl+";
