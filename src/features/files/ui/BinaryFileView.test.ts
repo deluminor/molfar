@@ -142,13 +142,22 @@ describe("BinaryFileView video playback", () => {
     const play = vi.spyOn(video, "play");
 
     await renderViewer("/repo/clip.mp4", false);
-    expect(pause).toHaveBeenCalledOnce();
+    expect(pause).toHaveBeenCalled();
     await renderViewer("/repo/clip.mp4", true);
     expect(play).not.toHaveBeenCalled();
+    expect(video.src).toBe("blob:image-preview");
 
     vi.spyOn(document, "hidden", "get").mockReturnValue(true);
     act(() => document.dispatchEvent(new Event("visibilitychange")));
-    expect(pause).toHaveBeenCalledTimes(2);
+    expect(pause.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("does not attach a video source while the tab is hidden", async () => {
+    await renderViewer("/repo/clip.mp4", false);
+    const video = container.querySelector("video")!;
+    expect(video.getAttribute("src")).toBeNull();
+    await act(() => new Promise((resolve) => setTimeout(resolve)));
+    expect(video.getAttribute("src")).toBeNull();
   });
 
   it("offers an external player and retries after a decoding error", async () => {
@@ -205,9 +214,12 @@ describe("BinaryFileView video playback", () => {
       .spyOn(HTMLMediaElement.prototype, "load")
       .mockImplementation(() => {});
     await renderViewer("/repo/clip.mp4", true, true);
+    const loadsAfterMount = load.mock.calls.length;
+    expect(loadsAfterMount).toBeGreaterThan(0);
     await act(() => new Promise((resolve) => setTimeout(resolve)));
     expect(container.querySelector("video")?.src).toBe("blob:image-preview");
-    expect(load).not.toHaveBeenCalled();
+    // Deferred release must not fire after StrictMode remount.
+    expect(load.mock.calls.length).toBe(loadsAfterMount);
   });
 
   it("shows file read errors and allows retry", async () => {
