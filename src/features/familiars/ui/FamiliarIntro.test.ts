@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PROJECT_MASCOTS } from "../../projects/model/projectMascots";
-import { FamiliarIntroPopover, familiarIntroCrowd } from "./FamiliarIntro";
+import { FamiliarIntroCard, familiarIntroCrowd } from "./FamiliarIntro";
 
 let root: Root;
 let container: HTMLElement;
@@ -35,16 +35,15 @@ it("brings every other mascot to line up behind the user's familiar", () => {
   expect(crowd.map((mascot) => mascot.color)).not.toContain(look.color);
 });
 
-it("creates the first familiar or puts it off", () => {
+it("creates the first familiar or hides familiars", () => {
   const onCreate = vi.fn();
-  const onLater = vi.fn();
+  const onHide = vi.fn();
   act(() =>
     root.render(
-      createElement(FamiliarIntroPopover, {
-        anchor: container,
+      createElement(FamiliarIntroCard, {
         look,
         onCreate,
-        onLater,
+        onHide,
       }),
     ),
   );
@@ -54,17 +53,10 @@ it("creates the first familiar or puts it off", () => {
     document.body.querySelectorAll("[data-familiar-intro-stage] svg"),
   ).toHaveLength(PROJECT_MASCOTS.length);
 
-  act(() => button("Create your familiar").click());
+  act(() => button("Create familiar").click());
   expect(onCreate).toHaveBeenCalledOnce();
-  act(() => button("Not now").click());
-  expect(onLater).toHaveBeenCalledOnce();
-
-  // Only a choice puts it away.
-  act(() => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    document.body.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true }),
-    );
-  });
-  expect(document.body.textContent).toContain("Meet Familiars");
+  act(() =>
+    document.body.querySelector<HTMLElement>('[role="switch"]')!.click(),
+  );
+  expect(onHide).toHaveBeenCalledOnce();
 });

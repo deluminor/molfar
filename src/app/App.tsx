@@ -48,6 +48,7 @@ import { useIdleSessionDetach } from "./hooks/useIdleSessionDetach";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import { submitWithSettlement } from "./model/managedSubmission";
 import { acceptQuickLaunch } from "./model/quickLaunchSession";
+import { updateSessionState } from "./model/sessionState";
 import {
   captureSettingsReturnView,
   restoreSettingsReturnView,
@@ -74,9 +75,12 @@ import {
 } from "../features/sessions/model/attachments";
 import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
 import { WindowControls } from "./shell/WindowControls";
-import { FamiliarDetails } from "../features/familiars/ui/FamiliarDetails";
-import { FamiliarActivityPanel } from "../features/familiars/ui/FamiliarActivityPanel";
-import { MonoSessionsPanel } from "../features/familiars/ui/FamiliarSessionsPanel";
+import {
+  FamiliarOverview,
+  type FamiliarOverviewTab,
+} from "../features/familiars/ui/FamiliarOverview";
+import { FamiliarSettingsDialog } from "../features/familiars/ui/FamiliarSettingsDialog";
+import { FamiliarActivityView } from "../features/familiars/ui/FamiliarActivityView";
 import {
   launchedSessionState,
   familiarSpawnedSessions,
@@ -136,6 +140,7 @@ import {
   renameWorktreeBranch,
   sessionInWorktree,
   temporaryWorktreeBranchName,
+  worktreeDeletedExternally,
   worktreeSessionIds,
   type Worktree,
 } from "../features/source-control/model/worktrees";
@@ -344,6 +349,7 @@ import { isHarnessAvailable } from "../integrations/harness/core/availability";
 
 import { mergeOrderedSubset, orderByIds } from "../shared/lib/reorder";
 
+import { useSessionChangeTotals } from "../features/sessions/ui/SessionReview";
 import {
   releaseNotesForVersion,
   releaseNotesTitle,
@@ -572,11 +578,13 @@ import {
   findFamiliar,
   isFamiliarSession,
   listFamiliars,
+  loadOpenFamiliar,
   familiarForSession,
   familiarLook,
   familiarsSnapshot,
   familiarState,
   removeFamiliar,
+  saveOpenFamiliar,
   subscribeFamiliars,
   type FamiliarState,
 } from "../features/familiars/model/familiar";
@@ -597,6 +605,7 @@ import {
   habitPostsContext,
   habitRunFamiliar,
   isHabitRun,
+  noteHabitRunLaunch,
   relayApproval,
   takeRelayedApproval,
   loadHabits,
@@ -634,15 +643,12 @@ import {
 import {
   getArtifact,
   saveArtifact,
+  artifactCards,
   recordArtifactCard,
   removeArtifactCard,
   ARTIFACT_DELETED_EVENT,
 } from "../features/artifacts/artifacts";
-import {
-  MonoChangesPanel,
-  type MonoChangesRequest,
-} from "../features/familiars/ui/FamiliarChangesPanel";
-import { ArtifactPanel } from "../features/artifacts/ui/ArtifactPanel";
+import type { MonoChangesRequest } from "../features/familiars/ui/FamiliarChangesView";
 import {
   isNativeCommandPrompt,
   warmNativeSkills,
@@ -695,6 +701,7 @@ import type { HostSession } from "../features/connections/model/protocol";
 import {
   remotePath,
   remoteProjectFor,
+  remoteSessionGitCwd,
 } from "../features/connections/model/remoteProjects";
 import {
   buildRemotePlan,
@@ -1130,37 +1137,27 @@ function Workspace({
     () => windowTransfer?.activeTabId ?? resumed?.activeTabId ?? seed.tab.id,
   );
   const [familiarViewId, setFamiliarViewId] = useState<string | null>(null);
-  const [familiarDetailsOpen, setFamiliarDetailsOpen] = useState(false);
-  const [monoArtifact, setMonoArtifact] = useState<{
-    sessionId: string;
-    id: string;
-  } | null>(null);
-  const monoArtifactOpener = useRef<HTMLElement | null>(null);
-  const onOpenMonoArtifact = useCallback((sessionId: string, id: string) => {
-    monoArtifactOpener.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    setFamiliarDetailsOpen(false);
-    setFamiliarActivity(null);
-    setMonoSessions(null);
-    setMonoChanges(null);
-    setMonoArtifact({ sessionId, id });
+  // A Familiar opens with its overview beside the chat until it is hidden.
+  const [familiarOverviewOpen, setFamiliarOverviewOpen] = useState(true);
+  const [familiarOverviewTab, setFamiliarOverviewTab] =
+    useState<FamiliarOverviewTab>("sessions");
+  const familiarOverviewOpenRef = useRef(familiarOverviewOpen);
+  familiarOverviewOpenRef.current = familiarOverviewOpen;
+  const familiarOverviewTabRef = useRef(familiarOverviewTab);
+  familiarOverviewTabRef.current = familiarOverviewTab;
+  // The Familiar whose settings dialog is open; another Familiar's view closes it.
+  const [familiarSettingsFor, setFamiliarSettingsFor] = useState<string | null>(null);
+  // A document opened from the chat shows on the overview's Documents tab,
+  // the same page the tab opens it on.
+  const onOpenMonoArtifact = useCallback((_sessionId: string, id: string) => {
+    setFamiliarShownSession(null);
+    setFamiliarOverviewDocument(id);
+    setFamiliarOverviewTab("documents");
+    setFamiliarOverviewOpen(true);
   }, []);
-  const onCloseMonoArtifact = useCallback(() => {
-    setMonoArtifact(null);
-    monoArtifactOpener.current?.focus();
-  }, []);
-  const [monoChanges, setMonoChanges] = useState<{
-    sessionId: string;
-    cwd: string;
-    request: MonoChangesRequest;
-  } | null>(null);
-  const monoChangesOpener = useRef<HTMLElement | null>(null);
-  const onCloseMonoChanges = useCallback(() => {
-    setMonoChanges(null);
-    monoChangesOpener.current?.focus();
-  }, []);
+  // What the overview's Changes tab was last asked to show.
+  const [familiarChangesRequest, setFamiliarChangesRequest] =
+    useState<MonoChangesRequest>({});
   useEffect(() => {
     const listening = listen<string>(
       ARTIFACT_DELETED_EVENT,
@@ -1173,7 +1170,7 @@ function Workspace({
           sessionsRef.current = updated;
           setSessions(updated);
         }
-        setMonoArtifact((current) => (current?.id === id ? null : current));
+        setFamiliarOverviewDocument((current) => (current === id ? null : current));
       },
     );
     return () => {
@@ -1182,30 +1179,39 @@ function Workspace({
   }, []);
   const [familiarActivity, setFamiliarActivity] =
     useState<FamiliarActivitySelection | null>(null);
-  const [monoSessions, setMonoSessions] =
-    useState<FamiliarActivitySelection | null>(null);
-  // A launched session shown in the sessions sidebar. It belongs to the list
-  // it was opened from, so reopening or closing that list leaves it.
-  const [familiarShownSession, setFamiliarShownSession] = useState<{
-    from: FamiliarActivitySelection;
-    sessionId: string;
-  } | null>(null);
+  // A launched session or a document open over the overview's list. Hiding
+  // the overview leaves them, so it opens on its list again.
+  const [familiarShownSession, setFamiliarShownSession] = useState<string | null>(null);
+  const [familiarOverviewDocument, setFamiliarOverviewDocument] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (familiarOverviewOpen) return;
+    setFamiliarShownSession(null);
+    setFamiliarOverviewDocument(null);
+  }, [familiarOverviewOpen]);
   // Whether the shown session, rather than the Familiar's chat, holds focus.
   const [familiarShownSessionFocused, setFamiliarShownSessionFocused] = useState(false);
   const shownFamiliarSessionId =
-    familiarViewId && monoSessions && familiarShownSession?.from === monoSessions
-      ? familiarShownSession.sessionId
+    familiarViewId && familiarOverviewOpen && familiarShownSession
+      ? familiarShownSession
       : undefined;
   const shownFamiliarSessionIdRef = useRef(shownFamiliarSessionId);
   shownFamiliarSessionIdRef.current = shownFamiliarSessionId;
+  // A turn's activity shows on the overview's Activity tab; picking the shown
+  // one again clears it.
   const onShowFamiliarActivity = useCallback(
     (sessionId: string, turnId: string, blocks: Block[]) => {
-      setFamiliarDetailsOpen(false);
-      setMonoArtifact(null);
-      setMonoChanges(null);
-      setMonoSessions(null);
+      const shown =
+        familiarOverviewOpenRef.current && familiarOverviewTabRef.current === "activity";
+      setFamiliarShownSession(null);
+      setFamiliarOverviewDocument(null);
+      setFamiliarOverviewTab("activity");
+      setFamiliarOverviewOpen(true);
       setFamiliarActivity((previous) =>
-        previous?.sessionId === sessionId && previous.turnId === turnId
+        shown &&
+        previous?.sessionId === sessionId &&
+        previous.turnId === turnId
           ? null
           : { sessionId, turnId, blocks },
       );
@@ -1218,11 +1224,9 @@ function Workspace({
   const closeFamiliarView = useCallback(() => {
     familiarViewRequest.current += 1;
     familiarViewIdRef.current = null;
+    saveOpenFamiliar(undefined);
     setFamiliarViewId(null);
     setFamiliarActivity(null);
-    setMonoSessions(null);
-    setMonoArtifact(null);
-    setMonoChanges(null);
   }, []);
   const [composerFocused, setComposerFocused] = useState(() => {
     if (windowTransfer) return true;
@@ -1669,15 +1673,23 @@ function Workspace({
           );
         },
         (batches) => {
-          const prev = sessionsRef.current;
-          const next = prev.map((session) => {
-            const events = batches.get(session.id);
-            return events ? applyHarnessEvents(session, events) : session;
-          });
-          if (!next.some((session, index) => session !== prev[index])) return;
-          sessionsRef.current = next;
-          syncDockBadge(next);
-          setSessions(next);
+          const previous = sessionsRef.current;
+          const next = updateSessionState(
+            sessionsRef,
+            setSessions,
+            (current) => {
+              const updated = current.map((session) => {
+                const events = batches.get(session.id);
+                return events ? applyHarnessEvents(session, events) : session;
+              });
+              return updated.some(
+                (session, index) => session !== current[index],
+              )
+                ? updated
+                : current;
+            },
+          );
+          if (next !== previous) syncDockBadge(next);
         },
       ),
   );
@@ -1991,17 +2003,33 @@ function Workspace({
       ? active.branch || gitCwdBranches?.current || undefined
       : undefined;
   const remoteFilesProject = remoteProjectFor(sidebarCwd);
+  // The host checkout the remote tab is aimed at — the attached session's
+  // work path or a worktree picked before the first message.
+  const remoteTabCheckout = remoteFilesProject
+    ? remoteTabCwd(sidebarCwd, active?.id)
+    : undefined;
   const filesCwd = remoteFilesProject
     ? isRemoteProjectPath(gitCwd)
       ? gitCwd
       : remotePath(
           remoteFilesProject.environmentId,
-          remoteTabCwd(sidebarCwd, active?.id) ??
+          remoteTabCheckout ??
             (gitCwd && gitCwd !== sidebarCwd ? gitCwd : remoteFilesProject.cwd),
         )
     : gitCwd;
-  const gitCwdRef = useRef(filesCwd);
-  gitCwdRef.current = filesCwd;
+  // Git follows the session's own work path (a linked worktree included),
+  // never the terminal-following files cwd: a remote session working in a
+  // separate worktree diffed the main checkout and showed "No file changes".
+  const gitRootCwd = remoteFilesProject
+    ? remoteSessionGitCwd(
+        remoteFilesProject,
+        gitCwd,
+        sidebarCwd,
+        remoteTabCheckout,
+      )
+    : gitCwd;
+  const gitCwdRef = useRef(gitRootCwd);
+  gitCwdRef.current = gitRootCwd;
   const projectBranches = useProjectBranches(
     sidebarCwd,
     Boolean(sidebarCwd) && sidebarCwd !== "~",
@@ -2688,14 +2716,16 @@ function Workspace({
 
   const onSelectProviderAccount = useCallback(
     (provider: ProviderAccountProvider, accountId: string) => {
-      if (!active || active.harness !== provider) return;
-      const currentId = active.providerAccountId ?? DEFAULT_PROVIDER_ACCOUNT_ID;
-      if (currentId === accountId) return;
+      const current = sessionsRef.current.find(
+        (session) => session.id === active?.id,
+      );
+      if (!current || current.harness !== provider) return;
 
-      if (active.blocks.length === 0 && !active.busy) {
-        setSessions((current) =>
-          current.map((session) =>
-            session.id === active.id
+      if (current.blocks.length === 0 && !current.busy) {
+        if (current.providerAccountId === accountId) return;
+        updateSessionState(sessionsRef, setSessions, (sessions) =>
+          sessions.map((session) =>
+            session.id === current.id
               ? { ...session, providerAccountId: accountId }
               : session,
           ),
@@ -2703,25 +2733,32 @@ function Workspace({
         return;
       }
 
+      const currentId =
+        current.providerAccountId ?? DEFAULT_PROVIDER_ACCOUNT_ID;
+      if (currentId === accountId) return;
+
       // Provider thread ids are account-owned. Keep the current conversation
       // pinned to its account and open a clean one for the selected profile.
       const session = {
         ...newSession(
-          active.harness,
-          active.cwd,
-          active.model,
-          active.runtimeMode,
-          active.modelSettings,
+          current.harness,
+          current.cwd,
+          current.model,
+          current.runtimeMode,
+          current.modelSettings,
         ),
         providerAccountId: accountId,
       };
       const tab = newTab(session.id);
-      setSessions((current) => [...current, session]);
-      appendTab(tab, active.cwd);
+      updateSessionState(sessionsRef, setSessions, (sessions) => [
+        ...sessions,
+        session,
+      ]);
+      appendTab(tab, current.cwd);
       setActiveTabId(tab.id);
       setComposerFocused(true);
     },
-    [active, appendTab],
+    [active?.id, appendTab],
   );
 
   const onOpenWhatsNew = useCallback((version: string) => {
@@ -3047,29 +3084,6 @@ function Workspace({
   const onNewTerminal = useCallback(() => {
     onOpenTerminal(terminalCwd);
   }, [terminalCwd, onOpenTerminal]);
-
-  const onShowProjectTerminal = useCallback(() => {
-    leaveCoveringFamiliar();
-    const dock = findProjectTerminal(projectTerminalsRef.current, projectCwd);
-    if (dock && dock.pane.files.length > 0) {
-      if (!dock.open) {
-        setProjectTerminals((prev) =>
-          mapProjectTerminal(prev, projectCwd, (entry) =>
-            withDockOpen(entry, true),
-          ),
-        );
-      }
-      focusProjectTerminal();
-      return;
-    }
-    onOpenTerminal(terminalCwd);
-  }, [
-    terminalCwd,
-    focusProjectTerminal,
-    leaveCoveringFamiliar,
-    onOpenTerminal,
-    projectCwd,
-  ]);
 
   const onNewTerminalInSession = useCallback(
     (sessionId: string) => {
@@ -4191,38 +4205,27 @@ function Workspace({
     [activeTabId],
   );
 
-  // A Familiar view covers the workspace, so its session changes open beside the
-  // chat instead of in a project tab hidden behind it.
-  const openMonoChanges = useCallback(
-    (
-      session: { sessionId: string; cwd: string },
-      request: MonoChangesRequest,
-    ) => {
-      monoChangesOpener.current =
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null;
-      setFamiliarDetailsOpen(false);
-      setFamiliarActivity(null);
-      setMonoSessions(null);
-      setMonoArtifact(null);
-      setMonoChanges({ ...session, request });
-    },
-    [],
-  );
+  // A Familiar view covers the workspace, so its session changes open on the
+  // overview's Changes tab instead of in a project tab hidden behind it.
+  const openMonoChanges = useCallback((request: MonoChangesRequest) => {
+    setFamiliarShownSession(null);
+    setFamiliarOverviewDocument(null);
+    setFamiliarChangesRequest(request);
+    setFamiliarOverviewTab("changes");
+    setFamiliarOverviewOpen(true);
+  }, []);
   const onOpenMonoDiff = useCallback(
     (path?: string, session?: { sessionId: string; cwd: string }) => {
       if (!session) {
         onOpenDiff(path);
         return;
       }
-      openMonoChanges(session, { path, tab: "changes" });
+      openMonoChanges({ path });
     },
     [onOpenDiff, openMonoChanges],
   );
   const onCommitMonoChanges = useCallback(
-    (session: { sessionId: string; cwd: string }) =>
-      openMonoChanges(session, { tab: "commit" }),
+    () => openMonoChanges({}),
     [openMonoChanges],
   );
 
@@ -4747,9 +4750,6 @@ function Workspace({
   const onOpenFamiliar = useCallback(
     async (familiarId: string) => {
       setFamiliarActivity(null);
-      setMonoSessions(null);
-      setMonoArtifact(null);
-      setMonoChanges(null);
       workspaceNavigation.cancel();
       const request = ++familiarViewRequest.current;
       setSearchViewOpen(false);
@@ -4767,7 +4767,15 @@ function Workspace({
         },
       });
       if (!session || request !== familiarViewRequest.current) return;
+      // What the last Familiar had open over its overview is its own; another
+      // Familiar opens on its list.
+      if (familiarViewIdRef.current !== session.id) {
+        setFamiliarShownSession(null);
+        setFamiliarShownSessionFocused(false);
+        setFamiliarOverviewDocument(null);
+      }
       familiarViewIdRef.current = session.id;
+      saveOpenFamiliar(familiarId);
       setFamiliarViewId(session.id);
       setProjectTerminalFocused(false);
       setComposerFocused(true);
@@ -4775,6 +4783,18 @@ function Workspace({
     },
     [ensureOpenSession, workspaceNavigation.cancel],
   );
+
+  // A Familiar open when the app last closed opens again; a moved window keeps
+  // what it carried.
+  const reopenedFamiliar = useRef(false);
+  useEffect(() => {
+    if (reopenedFamiliar.current) return;
+    reopenedFamiliar.current = true;
+    if (windowTransfer || !familiarsEnabled) return;
+    const familiarId = loadOpenFamiliar();
+    if (familiarId && findFamiliar(familiarId)) void onOpenFamiliar(familiarId);
+    else if (familiarId) saveOpenFamiliar(undefined);
+  }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
 
   /** The shortcut opens the last Familiar, or the first on the rail. */
   const onToggleFamiliar = useCallback(() => {
@@ -4792,8 +4812,9 @@ function Workspace({
 
   /** A new Familiar opens straight away, ready to be told what it works on. */
   const onCreateFamiliar = useCallback(() => {
-    setFamiliarDetailsOpen(true);
-    void onOpenFamiliar(createFamiliar().id);
+    const familiarId = createFamiliar().id;
+    setFamiliarSettingsFor(familiarId);
+    void onOpenFamiliar(familiarId);
   }, [onOpenFamiliar]);
 
   const onResetFamiliar = useCallback(
@@ -4925,50 +4946,42 @@ function Workspace({
     [ensureOpenSession, closeFamiliarView, setSidebarTab, onSelectHistorySession],
   );
 
-  // Show a launched session in the Familiar's sidebar, where it can be followed,
-  // answered or stopped without leaving the chat.
-  const onShowFamiliarLaunchedSession = useCallback(
-    async (from: FamiliarActivitySelection, sessionId: string) => {
-      const session = await ensureOpenSession(sessionId);
-      if (!session) throw new Error("This session is no longer available.");
-      setFamiliarShownSession({ from, sessionId });
+  // A launched session opens over the overview, where it can be followed,
+  // answered or stopped without leaving the chat. Back lands on every session
+  // the Familiar started; opening the one already shown hides it again.
+  const showFamiliarLaunchedSession = useCallback(
+    async (familiarSessionId: string, launchedId: string) => {
+      if (shownFamiliarSessionIdRef.current === launchedId) {
+        setFamiliarShownSession(null);
+        return;
+      }
+      // Load it first, then switch in one step: the overview goes straight
+      // from what it shows to this session, never through the list.
+      const session = await ensureOpenSession(launchedId).catch(() => null);
+      if (familiarViewIdRef.current !== familiarSessionId) return;
+      setFamiliarOverviewTab("sessions");
+      setFamiliarOverviewDocument(null);
+      setFamiliarOverviewOpen(true);
+      // One that is gone leaves the sessions list open, which says so.
+      if (!session) {
+        setFamiliarShownSession(null);
+        return;
+      }
+      setFamiliarShownSession(launchedId);
       setFamiliarShownSessionFocused(true);
       setProjectTerminalFocused(false);
       setComposerFocused(true);
     },
     [ensureOpenSession],
   );
-  // A card in the Familiar's chat opens its session straight in the sidebar, with
-  // the turn's list behind it to go back to; the open card's click closes it.
   const onOpenFamiliarSession = useCallback(
-    async (
+    (
       familiarSessionId: string,
-      turnId: string,
-      blocks: Block[],
+      _turnId: string,
+      _blocks: Block[],
       launchedId: string,
-    ) => {
-      if (shownFamiliarSessionIdRef.current === launchedId) {
-        setMonoSessions(null);
-        return;
-      }
-      const from = { sessionId: familiarSessionId, turnId, blocks };
-      // Load it first, then switch in one step: the sidebar goes straight
-      // from the session it shows to this one, never through the list.
-      const session = await ensureOpenSession(launchedId).catch(() => null);
-      if (familiarViewIdRef.current !== familiarSessionId) return;
-      setFamiliarDetailsOpen(false);
-      setMonoArtifact(null);
-      setMonoChanges(null);
-      setFamiliarActivity(null);
-      setMonoSessions(from);
-      // One that is gone leaves the list open, which says so.
-      if (!session) return;
-      setFamiliarShownSession({ from, sessionId: launchedId });
-      setFamiliarShownSessionFocused(true);
-      setProjectTerminalFocused(false);
-      setComposerFocused(true);
-    },
-    [ensureOpenSession],
+    ) => showFamiliarLaunchedSession(familiarSessionId, launchedId),
+    [showFamiliarLaunchedSession],
   );
 
   const openReminderSession = useCallback(
@@ -8093,16 +8106,18 @@ function Workspace({
           }
           if (turnGen.current.get(sessionId) !== gen) return;
           if (wrap) {
-            setSessions((prev) =>
-              prev.map((s) => {
-                if (s.id !== sessionId) return s;
-                const ready = isPreparingHandoff(s)
-                  ? completeHandoff(s, wrap.text)
-                  : s;
-                // A command owns its arguments; deliver the recap with the next chat prompt.
-                return rawCommand ? ready : consumeHandoff(ready);
-              }),
-            );
+            // Settle the ref too: the flush in `finally` rebuilds sessions from
+            // it, and a stale ref would drop the consumed flag and resend the
+            // recap with every later turn.
+            sessionsRef.current = sessionsRef.current.map((s) => {
+              if (s.id !== sessionId) return s;
+              const ready = isPreparingHandoff(s)
+                ? completeHandoff(s, wrap.text)
+                : s;
+              // A command owns its arguments; deliver the recap with the next chat prompt.
+              return rawCommand ? ready : consumeHandoff(ready);
+            });
+            setSessions(sessionsRef.current);
           }
           buildSucceeded = true;
         } catch (error: unknown) {
@@ -8182,6 +8197,27 @@ function Workspace({
                 : finalized;
             }),
           );
+          // A worktree removed outside the app fails every turn. Detach the
+          // session as an in-app removal would, so it can pick a new checkout.
+          const worktreePath = current.worktreeCwd;
+          if (providerFailureSeen && worktreePath) {
+            void worktreeDeletedExternally(worktreePath)
+              .then((deleted) => {
+                if (!deleted || switchingWorktrees.current.has(sessionId))
+                  return;
+                // Through the ref too, or a pending event flush puts it back.
+                sessionsRef.current = sessionsRef.current.map((s) =>
+                  s.id === sessionId &&
+                  !s.busy &&
+                  !s.worktreeRemoved &&
+                  s.worktreeCwd === worktreePath
+                    ? detachSessionWorktree(s, s.cwd, worktreePath)
+                    : s,
+                );
+                setSessions(sessionsRef.current);
+              })
+              .catch(() => undefined);
+          }
           // Next tick: the flush above has rendered by then, so the banner
           // quotes the reply's final text rather than the previous batch.
           window.setTimeout(() => {
@@ -8353,7 +8389,7 @@ function Workspace({
       );
       setSessions(sessionsRef.current);
     },
-    post: (familiarId, habit, text, name, artifacts) =>
+    post: (familiarId, habit, text, name, artifacts, launches) =>
       appendToFamiliar(
         familiarId,
         {
@@ -8362,6 +8398,7 @@ function Workspace({
           text,
           familiarHabit: { id: habit.id, name: habit.name, at: Date.now() },
           ...(artifacts?.length ? { artifactCards: artifacts } : {}),
+          ...(launches?.length ? { familiarSpawnedSessions: launches } : {}),
         },
         (posted) => {
           familiarReplies.noteReply(familiarId);
@@ -10762,6 +10799,12 @@ function Workspace({
           : [];
         const sourceTurnId = sourceTurns[sourceTurns.length - 1]?.[0]?.id;
         const rememberSession = (entry: FamiliarSpawnedSession) => {
+          // A habit run is thrown away when it ends; its launches go on the
+          // report it posts to the Familiar's chat instead.
+          if (isHabitRun(source.id)) {
+            noteHabitRunLaunch(source.id, entry);
+            return;
+          }
           if (!sourceTurnId) return;
           const next = sessionsRef.current.map((session) =>
             session.id === source.id
@@ -12597,59 +12640,46 @@ function Workspace({
     familiarActivity,
     familiarViewSession,
   );
-  const selectedMonoSessions = resolveFamiliarActivity(
-    monoSessions,
-    familiarViewSession,
+  // The chat marks the turn whose activity the overview is showing.
+  const familiarActivityShownTurnId =
+    familiarOverviewOpen && familiarOverviewTab === "activity"
+      ? selectedFamiliarActivity?.turnId
+      : undefined;
+  const familiarViewBlocks = familiarViewSession?.blocks;
+  const familiarViewBusy = !!familiarViewSession?.busy;
+  const familiarViewCwd = familiarViewSession ? sessionWorkCwd(familiarViewSession) : "";
+  const familiarEditedPaths = useMemo(
+    () =>
+      familiarViewBlocks && !familiarViewBusy
+        ? sessionEditPaths(familiarViewBlocks)
+        : undefined,
+    [familiarViewBlocks, familiarViewBusy],
   );
-  const familiarSidebarOpen =
-    familiarDetailsOpen ||
-    !!selectedFamiliarActivity ||
-    !!selectedMonoSessions ||
-    (monoArtifact?.sessionId === familiarViewSession?.id && !!monoArtifact) ||
-    (monoChanges?.sessionId === familiarViewSession?.id && !!monoChanges);
-  const familiarDetailsPanel =
-    familiarViewFamiliar && familiarViewSession ? (
-      <FamiliarDetails
-        key={familiarViewFamiliar.id}
-        open={
-          familiarDetailsOpen &&
-          !selectedFamiliarActivity &&
-          !selectedMonoSessions &&
-          monoArtifact?.sessionId !== familiarViewSession.id &&
-          monoChanges?.sessionId !== familiarViewSession.id
-        }
-        familiarId={familiarViewFamiliar.id}
-        cwd={familiarViewSession.cwd}
-        agent={familiarLook(familiarViewFamiliar)}
-        state={familiarState(familiarViewSession)}
-        harness={familiarViewSession.harness}
-        model={familiarViewSession.model}
-        modelSettings={familiarViewSession.modelSettings}
-        runtimeMode={familiarViewSession.runtimeMode}
-        busy={!!familiarViewSession.busy}
-        onModelChange={(harness, model) =>
-          onModelChange(familiarViewSession.id, harness, model)
-        }
-        onModelSettingsChange={(settings) =>
-          onModelSettingsChange(familiarViewSession.id, settings)
-        }
-        onRuntimeModeChange={(mode) =>
-          onRuntimeModeChange(familiarViewSession.id, mode)
-        }
-        onClose={() => setFamiliarDetailsOpen(false)}
-        onReset={() => onResetFamiliar(familiarViewSession.id)}
-        windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
-      />
-    ) : null;
-  const familiarActivityPanel =
-    familiarViewFamiliar && familiarViewSession && selectedFamiliarActivity ? (
-      <FamiliarActivityPanel
-        key={`${familiarViewFamiliar.id}:${selectedFamiliarActivity.turnId}`}
-        agent={familiarLook(familiarViewFamiliar)}
+  // The session's changes, on the overview's tab instead of under a message.
+  const familiarChangeTotals = useSessionChangeTotals(
+    familiarViewSession?.id ?? "",
+    familiarViewCwd,
+    {
+      enabled: !familiarViewSession?.worktreeRemoved,
+      busy: familiarViewBusy,
+      editedPaths: familiarEditedPaths,
+    },
+  );
+  const familiarLaunches = useMemo(
+    () => (familiarViewBlocks ? familiarSpawnedSessions(familiarViewBlocks) : []),
+    [familiarViewBlocks],
+  );
+  const familiarDocuments = useMemo(
+    () => (familiarViewBlocks ? artifactCards(familiarViewBlocks) : []),
+    [familiarViewBlocks],
+  );
+  const familiarActivityView =
+    familiarViewSession && selectedFamiliarActivity ? (
+      <FamiliarActivityView
+        key={selectedFamiliarActivity.turnId}
         blocks={selectedFamiliarActivity.blocks}
         live={selectedFamiliarActivity.live}
         cwd={sessionWorkCwd(familiarViewSession)}
-        onClose={() => setFamiliarActivity(null)}
         onApproval={
           familiarViewSession.worktreeRemoved
             ? undefined
@@ -12658,17 +12688,11 @@ function Workspace({
         }
         onOpenFile={onOpenFile}
         onOpenDiff={onOpenDiff}
-        windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
       />
     ) : null;
   // Status for the cards of the sessions the open Familiar launched, rebuilt only
   // when one changes state or title rather than on every streamed token. One
   // that is no longer open cannot be running, so it reads as done.
-  const familiarViewBlocks = familiarViewSession?.blocks;
-  const familiarLaunches = useMemo(
-    () => (familiarViewBlocks ? familiarSpawnedSessions(familiarViewBlocks) : []),
-    [familiarViewBlocks],
-  );
   // A card names its session as the sidebar does. One that is not open has
   // its saved title fetched, rather than the prompt it was launched with, so
   // opening it does not rename the card.
@@ -12733,56 +12757,110 @@ function Workspace({
     : undefined;
   const familiarShownSessionActive =
     !!familiarShownSessionPane && familiarShownSessionFocused;
-  const monoSessionsPanel =
-    familiarViewFamiliar && selectedMonoSessions ? (
-      <MonoSessionsPanel
-        key={`${familiarViewFamiliar.id}:${selectedMonoSessions.turnId}`}
+  const familiarShownSessionView = familiarShownSessionPane
+    ? {
+        sessionId: familiarShownSessionPane.id,
+        title: sessionDisplayTitle(
+          familiarShownSessionPane.title,
+          familiarShownSessionPane.harness,
+        ),
+        pane: (
+          <SessionPane
+            {...sessionPaneProps}
+            session={familiarShownSessionPane}
+            // The Familiar view covers the workspace, so a review opens
+            // beside the chat rather than in a hidden tab.
+            onOpenDiff={onOpenMonoDiff}
+            // The Familiar runs this session; handing it off or asking for a
+            // second opinion belongs in its own tab.
+            onSecondOpinion={undefined}
+            onHandoff={undefined}
+            visible={familiarCovers}
+            focused={familiarShownSessionActive && !projectTerminalFocused}
+            inSplit={false}
+            addToChatTarget={false}
+            composerFocused={
+              familiarShownSessionActive &&
+              composerFocused &&
+              !projectTerminalFocused
+            }
+            composerFocusToken={composerFocusToken}
+          />
+        ),
+      }
+    : undefined;
+  const familiarOverviewPanel =
+    familiarViewFamiliar && familiarViewSession ? (
+      <FamiliarOverview
+        key={familiarViewFamiliar.id}
+        open={familiarOverviewOpen}
+        familiarId={familiarViewFamiliar.id}
+        cwd={familiarViewSession.cwd}
         agent={familiarLook(familiarViewFamiliar)}
-        launches={familiarSpawnedSessions(selectedMonoSessions.blocks)}
+        state={familiarState(familiarViewSession)}
+        launches={familiarLaunches}
         sessions={sessions}
         history={history}
+        documents={familiarDocuments}
+        activity={familiarActivityView}
+        changes={{
+          sessionId: familiarViewSession.id,
+          cwd: familiarViewCwd,
+          totals: familiarChangeTotals,
+          request: familiarChangesRequest,
+          textHarness: familiarViewSession.harness,
+          projects: familiarViewFamiliar.projects,
+        }}
+        tab={familiarOverviewTab}
+        onTabChange={setFamiliarOverviewTab}
         onOpenSession={(sessionId) =>
-          monoSessions
-            ? onShowFamiliarLaunchedSession(monoSessions, sessionId)
-            : undefined
+          showFamiliarLaunchedSession(familiarViewSession.id, sessionId)
         }
-        shown={
-          familiarShownSessionPane
-            ? {
-                sessionId: familiarShownSessionPane.id,
-                title: sessionDisplayTitle(
-                  familiarShownSessionPane.title,
-                  familiarShownSessionPane.harness,
-                ),
-                pane: (
-                  <SessionPane
-                    {...sessionPaneProps}
-                    session={familiarShownSessionPane}
-                    // The Familiar view covers the workspace, so a review opens
-                    // beside the chat rather than in a hidden tab.
-                    onOpenDiff={onOpenMonoDiff}
-                    visible={familiarCovers}
-                    focused={familiarShownSessionActive && !projectTerminalFocused}
-                    inSplit={false}
-                    addToChatTarget={false}
-                    composerFocused={
-                      familiarShownSessionActive &&
-                      composerFocused &&
-                      !projectTerminalFocused
-                    }
-                    composerFocusToken={composerFocusToken}
-                  />
-                ),
-              }
-            : undefined
-        }
-        onBack={() => {
+        shownSession={familiarShownSessionView}
+        // Back lands on every session it started.
+        onBackFromSession={() => {
           setFamiliarShownSession(null);
           setFamiliarShownSessionFocused(false);
         }}
-        onOpenInWorkspace={onOpenMonoLaunchedSession}
-        onClose={() => setMonoSessions(null)}
+        onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
+        onOpenDocument={(id) => {
+          setFamiliarShownSession(null);
+          setFamiliarOverviewDocument(id);
+        }}
+        shownDocumentId={familiarOverviewDocument ?? undefined}
+        onBackFromDocument={() => setFamiliarOverviewDocument(null)}
+        onOpenFile={onOpenFile}
+        onClose={() => setFamiliarOverviewOpen(false)}
         windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
+      />
+    ) : null;
+  const familiarSettingsDialog =
+    familiarCovers &&
+    familiarViewFamiliar &&
+    familiarViewSession &&
+    familiarSettingsFor === familiarViewFamiliar.id ? (
+      <FamiliarSettingsDialog
+        key={familiarViewFamiliar.id}
+        familiarId={familiarViewFamiliar.id}
+        agent={familiarLook(familiarViewFamiliar)}
+        status={familiarState(familiarViewSession).status}
+        cwd={familiarViewSession.cwd}
+        harness={familiarViewSession.harness}
+        model={familiarViewSession.model}
+        modelSettings={familiarViewSession.modelSettings}
+        runtimeMode={familiarViewSession.runtimeMode}
+        busy={!!familiarViewSession.busy}
+        onModelChange={(harness, model) =>
+          onModelChange(familiarViewSession.id, harness, model)
+        }
+        onModelSettingsChange={(settings) =>
+          onModelSettingsChange(familiarViewSession.id, settings)
+        }
+        onRuntimeModeChange={(mode) =>
+          onRuntimeModeChange(familiarViewSession.id, mode)
+        }
+        onReset={() => onResetFamiliar(familiarViewSession.id)}
+        onClose={() => setFamiliarSettingsFor(null)}
       />
     ) : null;
   const familiarRailState = useMemo(() => {
@@ -12826,8 +12904,6 @@ function Workspace({
             onOpen: onOpenRailFamiliar,
             onCreate: onCreateFamiliar,
             onDelete: onDeleteRailFamiliar,
-            // Release notes come first; the intro waits its turn.
-            introAvailable: !whatsNewVersion,
           }
         : undefined,
     [
@@ -12837,7 +12913,6 @@ function Workspace({
       onOpenRailFamiliar,
       onCreateFamiliar,
       onDeleteRailFamiliar,
-      whatsNewVersion,
     ],
   );
   const onDismissUpdate = useCallback(() => setUpdateNotice(null), []);
@@ -12862,18 +12937,18 @@ function Workspace({
           ? { look: familiarLook(familiarViewFamiliar), state: familiarState(familiarViewSession) }
           : undefined
       }
-      onShowFamiliarDetails={
-        familiarCovers && !familiarDetailsOpen
-          ? () => {
-              setFamiliarActivity(null);
-              setMonoSessions(null);
-              setFamiliarDetailsOpen(true);
-              setMonoArtifact(null);
-              setMonoChanges(null);
-            }
+      onToggleFamiliarOverview={
+        familiarCovers
+          ? () => setFamiliarOverviewOpen(!familiarOverviewOpen)
           : undefined
       }
-      hideWindowControls={familiarCovers && familiarSidebarOpen && !!familiarDetailsPanel}
+      familiarOverviewOpen={familiarOverviewOpen}
+      onOpenFamiliarSettings={
+        familiarCovers && familiarViewFamiliar
+          ? () => setFamiliarSettingsFor(familiarViewFamiliar.id)
+          : undefined
+      }
+      hideWindowControls={familiarCovers && familiarOverviewOpen && !!familiarOverviewPanel}
       activeId={familiarViewSession ? "" : activeTabId}
       cwd={sidebarCwd}
       projectRailOpen={projectRailOpen}
@@ -13252,7 +13327,7 @@ function Workspace({
                                       onOpenDiff={onOpenMonoDiff}
                                       onCommitChanges={onCommitMonoChanges}
                                       familiarActivityTurnId={
-                                        selectedFamiliarActivity?.turnId
+                                        familiarActivityShownTurnId
                                       }
                                       onOpenFamiliarSession={onOpenFamiliarSession}
                                       familiarLaunchedSessions={
@@ -13297,38 +13372,8 @@ function Workspace({
                       ))}
                     </main>
                   </div>
-                  {familiarCovers ? familiarDetailsPanel : null}
-                  {familiarCovers ? familiarActivityPanel : null}
-                  {familiarCovers ? monoSessionsPanel : null}
-                  {familiarViewFamiliar &&
-                  monoArtifact &&
-                  monoArtifact.sessionId === familiarViewSession?.id ? (
-                    <ArtifactPanel
-                      key={monoArtifact.id}
-                      id={monoArtifact.id}
-                      color={familiarViewFamiliar.color}
-                      onClose={onCloseMonoArtifact}
-                      onOpenFile={onOpenFile}
-                      windowControls={
-                        familiarCovers && !IS_MAC ? <WindowControls /> : undefined
-                      }
-                    />
-                  ) : null}
-                  {familiarViewFamiliar &&
-                  monoChanges &&
-                  monoChanges.sessionId === familiarViewSession?.id ? (
-                    <MonoChangesPanel
-                      sessionId={monoChanges.sessionId}
-                      cwd={monoChanges.cwd}
-                      request={monoChanges.request}
-                      color={familiarViewFamiliar.color}
-                      textHarness={familiarViewSession?.harness}
-                      onClose={onCloseMonoChanges}
-                      windowControls={
-                        familiarCovers && !IS_MAC ? <WindowControls /> : undefined
-                      }
-                    />
-                  ) : null}
+                  {familiarCovers ? familiarOverviewPanel : null}
+                  {familiarSettingsDialog}
                 </div>
               </div>
               {searchViewOpen ? (
@@ -13482,15 +13527,18 @@ function Workspace({
                       ? onNewTerminal
                       : undefined
                   }
-                  onShowTerminal={
+                  onToggleProjectTerminal={
                     !familiarCovers && isLocalProject(projectCwd)
-                      ? onShowProjectTerminal
+                      ? onToggleProjectTerminal
                       : undefined
                   }
                   projectTerminalActive={
                     !familiarCovers &&
                     !!currentProjectDock &&
                     currentProjectDock.pane.files.length > 0
+                  }
+                  projectTerminalOpen={
+                    !familiarCovers && !!currentProjectDock?.open
                   }
                 />
               )}

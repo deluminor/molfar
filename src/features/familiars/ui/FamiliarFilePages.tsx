@@ -1,11 +1,13 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isImeComposition } from "../../../shared/lib/keyboard";
 import { IconButton } from "../../../app/shell/TitleBar";
 import { Pencil, Plus, StickyNote, Trash2 } from "../../../shared/ui/icons";
-import type { FamiliarLook } from "../model/familiar";
+import type { FamiliarLook, FamiliarState } from "../model/familiar";
 import {
   FamiliarFileConflict,
   editFamiliarFile,
+  loadFamiliarFiles,
+  subscribeFamiliarFiles,
   type FamiliarFiles,
 } from "../model/familiarFiles";
 import {
@@ -60,7 +62,7 @@ export function SoulPage({
   familiarId: string;
   agent: FamiliarLook;
   files: FamiliarFiles | undefined;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-familiar-soul>
@@ -93,7 +95,7 @@ export function MemoryPage({
 }: {
   familiarId: string;
   files: FamiliarFiles | undefined;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<MemoryFact>();
@@ -390,4 +392,35 @@ function FactEditor({
       />
     </div>
   );
+}
+
+/** The agent's files, reloaded when it finishes a turn or the app regains focus. */
+export function useFamiliarFiles(
+  familiarId: string,
+  status: FamiliarState["status"],
+): FamiliarFiles | undefined {
+  const [files, setFiles] = useState<FamiliarFiles>();
+  const working = status === "working";
+  useEffect(() => {
+    let live = true;
+    const refresh = () => {
+      void loadFamiliarFiles(familiarId)
+        .then((next) => {
+          if (live) setFiles(next);
+        })
+        .catch((error) =>
+          console.warn("Could not load the Familiar's files", error),
+        );
+    };
+    refresh();
+    const stop = subscribeFamiliarFiles(refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      live = false;
+      stop();
+      window.removeEventListener("focus", refresh);
+    };
+    // A turn ending is when the agent may have written to its memory.
+  }, [familiarId, working]);
+  return files;
 }

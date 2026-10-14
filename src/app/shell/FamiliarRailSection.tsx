@@ -10,7 +10,8 @@ import { Popover, type PopoverAnchor } from "../../shared/ui/Popover";
 import { Shimmer } from "../../shared/ui/Shimmer";
 import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
 import { FamiliarRailMascot } from "../../features/familiars/ui/FamiliarRailMascot";
-import { FamiliarIntroPopover } from "../../features/familiars/ui/FamiliarIntro";
+import { FamiliarIntroCard } from "../../features/familiars/ui/FamiliarIntro";
+import { saveFamiliarsEnabled } from "../../features/settings/model/settings";
 import { ProjectBackgroundDialog } from "../../features/projects/ui/ProjectBackgroundDialog";
 import { familiarBackgroundKey } from "../../features/familiars/model/familiarBackground";
 import {
@@ -19,11 +20,9 @@ import {
 } from "../../features/familiars/ui/familiarPanelParts";
 import {
   defaultFamiliarName,
-  dismissFamiliarIntro,
   findFamiliar,
   listFamiliars,
   FAMILIAR_STATUS_LABEL,
-  familiarIntroDismissed,
   nextFamiliarLook,
   familiarLook,
   familiarProjectsPhrase,
@@ -46,8 +45,6 @@ export type FamiliarRailProps = {
   onOpen: (familiarId: string) => void;
   onCreate: () => void;
   onDelete: (familiarId: string) => void;
-  /** Whether the intro may show now, when there is no Familiar yet. */
-  introAvailable?: boolean;
 };
 
 const IDLE: FamiliarState = { status: "idle" };
@@ -73,19 +70,26 @@ export function FamiliarRailSection({
   onOpen,
   onCreate,
   onDelete,
-  introAvailable = false,
 }: FamiliarRailProps) {
   const snapshot = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
   const familiars = useMemo(() => listFamiliars(), [snapshot]);
-  const [addButton, setAddButton] = useState<HTMLButtonElement | null>(null);
-  // Shown once ever, and only the user's choice puts it away.
-  const showIntro =
-    introAvailable && familiars.length === 0 && !familiarIntroDismissed();
   const ids = familiars.map((familiar) => familiar.id);
   const sortable = useAnimatedReorder(ids, reorderFamiliars, "y");
   const [menu, setMenu] = useState<{ id: string; anchor: PopoverAnchor }>();
   const [background, setBackground] = useState<string>();
   const backgroundFamiliar = background ? findFamiliar(background) : undefined;
+
+  // With no Familiar yet, the card stands in for the section.
+  if (familiars.length === 0)
+    return (
+      <div className="mb-2 shrink-0" data-familiar-rail>
+        <FamiliarIntroCard
+          look={nextFamiliarLook(familiars)}
+          onCreate={onCreate}
+          onHide={() => saveFamiliarsEnabled(false)}
+        />
+      </div>
+    );
 
   return (
     <div className="mb-2 shrink-0" data-familiar-rail>
@@ -93,44 +97,17 @@ export function FamiliarRailSection({
         <span className="min-w-0 flex-1 truncate px-1 text-xs leading-5 text-content/50">
           Familiars
         </span>
-        {/* With none yet, the row below is the way to add one. */}
-        {familiars.length ? (
-          <button
-            type="button"
-            title="New familiar"
-            aria-label="New familiar"
-            onClick={onCreate}
-            className="grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/8 hover:text-content"
-          >
-            <Plus className="size-3.5" strokeWidth={1.75} />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          title="New familiar"
+          aria-label="New familiar"
+          onClick={onCreate}
+          className="grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/8 hover:text-content"
+        >
+          <Plus className="size-3.5" strokeWidth={1.75} />
+        </button>
       </div>
-      {showIntro && addButton ? (
-        <FamiliarIntroPopover
-          anchor={addButton}
-          look={nextFamiliarLook(familiars)}
-          onCreate={() => {
-            dismissFamiliarIntro();
-            onCreate();
-          }}
-          onLater={dismissFamiliarIntro}
-        />
-      ) : null}
       <div className="flex flex-col gap-px px-2">
-        {familiars.length === 0 ? (
-          <button
-            ref={setAddButton}
-            type="button"
-            data-familiar-add
-            title="New familiar"
-            aria-label="New familiar"
-            onClick={onCreate}
-            className="grid h-8 w-full cursor-default place-items-center rounded-md border border-dashed border-content/15 text-content/50 hover:border-content/30 hover:bg-content/5 hover:text-content"
-          >
-            <Plus className="size-3.5" strokeWidth={1.75} />
-          </button>
-        ) : null}
         {familiars.map((familiar) => {
           const look = familiarLook(familiar);
           const state = states.get(familiar.id) ?? IDLE;
@@ -216,7 +193,7 @@ export function FamiliarRailSection({
                   <span
                     aria-hidden
                     data-familiar-unread={unseen}
-                    className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-content/15 px-1 text-[10px] font-medium tabular-nums leading-none text-content/80 group-hover:hidden group-has-[:focus-visible]:hidden"
+                    className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-accent px-1 text-[10px] font-medium tabular-nums leading-none text-white group-hover:hidden group-has-[:focus-visible]:hidden"
                   >
                     {unreadBadge(unseen)}
                   </span>

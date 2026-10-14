@@ -2880,7 +2880,13 @@ function KeybindingsPage() {
               >
                 {row.command}
               </span>
-              {row.command === "App: Quick Composer" ? (
+              {row.fixed ? (
+                <span className="w-40 shrink-0">
+                  <span className="inline-block h-6 w-28 truncate rounded-md border border-content/10 px-1.5 font-mono text-[11px] leading-6 text-content/60">
+                    {row.keys}
+                  </span>
+                </span>
+              ) : row.command === "App: Quick Composer" ? (
                 <QuickComposerShortcutEditor />
               ) : (
                 <KeybindingShortcutEditor
@@ -4209,7 +4215,7 @@ function FamiliarRow({ familiar }: { familiar: Familiar }) {
     >
       <Toggle
         label={`Show sessions started by ${look.name} in sidebar`}
-        on={familiar.showStartedSessionsInSidebar !== false}
+        on={familiar.showStartedSessionsInSidebar === true}
         onChange={(on) =>
           updateFamiliar(familiar.id, (entry) => ({
             ...entry,

@@ -56,4 +56,22 @@ describe("modalEscape", () => {
     popover.remove();
     pop();
   });
+
+  it("leaves Escape to an open dialog popover when focus is elsewhere", () => {
+    const close = vi.fn();
+    const pop = pushModalEscape({ current: close });
+    const popover = document.createElement("div");
+    popover.setAttribute("data-dialog-popover", "");
+    document.body.append(popover);
+
+    const event = pressEscape();
+
+    expect(close).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+
+    popover.remove();
+    pressEscape();
+    expect(close).toHaveBeenCalledTimes(1);
+    pop();
+  });
 });
