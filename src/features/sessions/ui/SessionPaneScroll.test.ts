@@ -18,7 +18,6 @@ vi.mock("../../familiars/ui/FamiliarComposer", () => ({
 }));
 vi.mock("./SessionReview", () => ({
   SessionReview: probes.review,
-  SessionChangesButton: probes.review,
 }));
 vi.mock("../data/sessionStore", async (original) => ({
   ...(await original<typeof import("../data/sessionStore")>()),

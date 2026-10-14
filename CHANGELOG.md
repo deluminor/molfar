@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Familiars and habit runs can create **HTML visual artifacts** with `app artifacts.write` using `kind: "html"`, alongside Markdown documents. Visuals run in a sandboxed frame, follow the app's theme, fit their content height, and refresh when revised. Scripts and public HTTPS assets load; access to the app, fetch requests, nested frames, and form submissions are blocked.
+- Familiar replies show linked **local images and videos inline**, including workspace-relative references. Images open in the file viewer when clicked, videos have playback controls, and a file that cannot be displayed falls back to its link.
+- The Familiar overview's Sessions tab has **search and filters** for provider, status, time, archived and unavailable sessions. Sessions appear newest first, load more pages as the list nears its end, and empty states explain what to do.
+- MOLFAR **reopens the last open Familiar on launch** when it still exists and Familiars are enabled. Closing the Familiar clears that choice.
+- An **Activity** tab in the Familiar overview shows a turn's work trail with a Working or Finished status; selecting a chat turn's activity opens it.
+- Sessions started by a **habit run** are listed on the report it posts to the Familiar's chat, and a run that only started sessions still posts a report.
+- A **sound** plays when an agent asks a question or needs approval, using the existing sound settings. From MonoCode #801.
+- **Terminal hyperlinks**, including OSC 8 links, open in the default browser. From MonoCode #782.
+- Project groups can be **reordered by dragging**. From MonoCode #787.
+- The editor highlights **`.env`, Vue, Svelte, SCSS, Sass and Less** files. From MonoCode #915 and #892.
+- Markdown and SVG files remember the last **Preview or Source** choice, including after a restart; review tabs still open in Source. From MonoCode #929.
+- Settings → Keybindings lists **Escape** as the fixed shortcut that stops a busy session. From MonoCode #897.
+- The compact project rail shows **instant tooltips** with diff stats and shortcuts, and the Sessions tab shows a dot when a finished reply is unseen.
+- Plan **usage chips** appear in the Familiar composer.
+
+### Changed
+
+- A unified **Familiar overview** replaces the separate details, sessions, artifacts and changes sidebars, with Sessions, Documents, Habits, Changes and Activity tabs. It opens beside the chat by default, toggles from the title bar, starts 400 pixels wide, and resizes up to 960 pixels or 62% of the window.
+- Familiar settings open in a **dialog** from the title bar, with General, Soul and Memory sections. Clicking the mascot opens the mascot and color popover, and the name field sits beneath it.
+- Sessions a Familiar starts **stay out of the project sidebar** unless **Show sessions in sidebar** is turned on in that Familiar's settings, and open over the overview's session list with Back, Open in workspace and Hide overview controls.
+- The overview's **Changes** tab groups repositories into project tabs, uses the repository's real Git staging area shared with the Changes panel, and opens a changed file in an inline diff editor.
+- Documents and visuals open in the overview's **Documents** tab; reply cards are compact title chips with document or chart icons.
+- Familiar session cards show the model's provider mark beside the branch; habits are grouped into Up next today, Done today and Later.
+- The Familiar intro is an **inline rail card** with a switch to hide Familiars, instead of a one-time popover.
+- New conversations show an empty context ring; the folded Changes tab icon shows a dot when there are changes; the rail unread badge uses the accent color.
+- Handoff and second-opinion actions are hidden in the Familiar view, chat bubbles no longer have messaging-style tails, and the Familiar composer compacts its tools and model pills in narrow chats.
+- The model picker groups models by provider for omp, Pi and Hermes, and Claude model labels are shortened to show their versions. From MonoCode #765 and #937.
+- Pi and Codex show token totals for the **whole turn**, not just the last request. From MonoCode #884.
+- Branch and commit menus use the shared popover.
+
+### Fixed
+
+- Background agent updates no longer drop pending session changes when several arrive before React renders.
+- Switching Familiars clears the previous Familiar's open session, document, search and filters; session and habit lists no longer flash blank, and session and artifact cards fit narrow panes.
+- Popovers opened from dialogs stay above them, and Escape closes the popover before the dialog.
+- A saved Claude version shows its model settings on first open. From MonoCode #938.
+- Git diffs read quoted paths literally. From MonoCode #815.
+- In SSH remote projects, a session in a linked worktree diffs that worktree instead of the main checkout. From MonoCode #887.
+- A session whose worktree was deleted outside the app can pick a new checkout instead of failing every turn. From MonoCode #883.
+- Pi waits for asynchronously registered provider models, and omp loads extensions while probing its model catalog. From MonoCode #921 and #846.
+- Punctuation-only assistant text no longer adds empty rows to the transcript. From MonoCode #763.
+- A consumed handoff recap is no longer resent on every later turn. From MonoCode #880.
+- The footer Terminal button toggles the terminal dock and shows its pressed state. From MonoCode #784.
+- Icon buttons and tabs in the title bar and Familiar overview have consistent sizes.
+
 ## [1.0.11] - 2026-10-12
 
 ### Added

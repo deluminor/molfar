@@ -123,27 +123,28 @@ afterEach(async () => {
 
 describe("settings pages", () => {
   it("saves each Familiar's session visibility and restores it when settings reopen", async () => {
-    const mono = createFamiliar();
+    const familiar = createFamiliar();
     const other = createFamiliar();
     const toggle = (id: string) =>
       container.querySelector<HTMLButtonElement>(
         `[role="switch"][aria-label="Show sessions started by ${familiarLook(findFamiliar(id)!).name} in sidebar"]`,
       )!;
     await render("familiars");
-    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("true");
-    expect(toggle(other.id).getAttribute("aria-checked")).toBe("true");
-    await act(async () => toggle(mono.id).click());
-    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("false");
-    expect(findFamiliar(mono.id)?.showStartedSessionsInSidebar).toBe(false);
-    expect(toggle(other.id).getAttribute("aria-checked")).toBe("true");
+    // Off until turned on: a Familiar's sessions stay in its overview.
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("false");
+    expect(toggle(other.id).getAttribute("aria-checked")).toBe("false");
+    await act(async () => toggle(familiar.id).click());
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("true");
+    expect(findFamiliar(familiar.id)?.showStartedSessionsInSidebar).toBe(true);
+    expect(toggle(other.id).getAttribute("aria-checked")).toBe("false");
     await render("general");
     await render("familiars");
-    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("false");
-    await act(async () => updateFamiliar(mono.id, (entry) => ({
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("true");
+    await act(async () => updateFamiliar(familiar.id, (entry) => ({
       ...entry,
-      showStartedSessionsInSidebar: true,
+      showStartedSessionsInSidebar: false,
     })));
-    expect(toggle(mono.id).getAttribute("aria-checked")).toBe("true");
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("false");
   });
 
   it("blurs account emails by default and hides them when settings reopen", async () => {
@@ -927,6 +928,17 @@ describe("settings search", () => {
     expect(options()).toHaveLength(0);
     expect(input.value).toBe("");
     expect(onSelectSection).not.toHaveBeenCalled();
+  });
+
+  it("lists Escape stopping a session without a recorder", async () => {
+    await render("keybindings");
+    const row = [...container.querySelectorAll("span")].find(
+      (span) => span.textContent === "Session: Stop",
+    )?.parentElement;
+    expect(row?.textContent).toContain("Esc");
+    expect(
+      container.querySelector('[aria-label="Change Session: Stop shortcut"]'),
+    ).toBeNull();
   });
 
   it("records a custom keybinding from the key cell", async () => {

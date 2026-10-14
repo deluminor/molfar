@@ -41,7 +41,7 @@ export type Familiar = {
   color: string;
   /** Project folders it works on, in the order they were added. */
   projects: string[];
-  /** New sessions appear in the project sidebar unless explicitly disabled. */
+  /** New sessions stay out of the project sidebar unless turned on. */
   showStartedSessionsInSidebar?: boolean;
   /** Files the sessions it starts into a sidebar folder named after it. */
   useSidebarFolders?: boolean;
@@ -57,7 +57,6 @@ export type Familiar = {
 const ROSTER_KEY = "molfar:familiar-roster";
 const FAMILIARS_CHANGED = "molfar:familiars-changed";
 export const HANDED_KEY = "molfar:familiar-handed";
-const INTRO_DISMISSED_KEY = "molfar:familiar-intro-dismissed";
 
 /** Storage from when each project had one Familiar, keyed by project. */
 const LEGACY_AGENTS_KEY = "molfar:familiars";
@@ -72,7 +71,6 @@ const MONO_KEYS: [string, string][] = [
   ["molfar:mono-handed", HANDED_KEY],
   ["molfar:monos", LEGACY_AGENTS_KEY],
   ["molfar:mono-profiles", LEGACY_PROFILES_KEY],
-  ["molfar:mono-intro-dismissed", INTRO_DISMISSED_KEY],
 ];
 
 /** And from before Familiars had their name. */
@@ -281,22 +279,24 @@ export function createFamiliar(projects: readonly string[] = []): Familiar {
   return familiar;
 }
 
-/** Whether the user passed on the intro that meets them before any Familiar. */
-export function familiarIntroDismissed(): boolean {
+const OPEN_FAMILIAR_KEY = "molfar:open-familiar";
+
+/** The Familiar whose conversation was open, so the next launch reopens it. */
+export function loadOpenFamiliar(): string | undefined {
   try {
-    return localStorage.getItem(INTRO_DISMISSED_KEY) === "1";
+    return localStorage.getItem(OPEN_FAMILIAR_KEY) ?? undefined;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
-export function dismissFamiliarIntro(): void {
+export function saveOpenFamiliar(familiarId: string | undefined): void {
   try {
-    localStorage.setItem(INTRO_DISMISSED_KEY, "1");
+    if (familiarId) localStorage.setItem(OPEN_FAMILIAR_KEY, familiarId);
+    else localStorage.removeItem(OPEN_FAMILIAR_KEY);
   } catch {
-    // It shows again next launch; harmless.
+    // The next launch opens the workspace instead; harmless.
   }
-  window.dispatchEvent(new CustomEvent(FAMILIARS_CHANGED));
 }
 
 function uniqueProjects(paths: readonly string[]): string[] {
@@ -390,7 +390,7 @@ export function familiarsSnapshot(): string {
   try {
     return `${localStorage.getItem(ROSTER_KEY) ?? ""}|${JSON.stringify(
       loadTabGroupLabels(),
-    )}|${familiarIntroDismissed()}`;
+    )}`;
   } catch {
     return "";
   }

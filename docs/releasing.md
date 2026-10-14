@@ -48,6 +48,8 @@ MOLFAR is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** 
 
 `.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `upstream/main` as a three-way patch to the working tree and index, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, or `3` if MonoCode rewrote its history.
 
+Before applying, the patch is translated through MOLFAR's renames (`scripts/upstream/rename-map.mjs`, currently Monos → Familiars): upstream paths follow MOLFAR's renamed files and directories, relative imports are rewritten to match, and each identifier or word containing a renamed term takes the spelling MOLFAR uses — first in the target file, then across the tree — so names MOLFAR deliberately kept (persisted keys such as `mono_id`, `font-mono`) stay as they are. Identifiers MOLFAR has never seen take the renamed spelling. MOLFAR-owned and license files apply verbatim. `apply.mjs` lists every remapped path under `remapped`. When MOLFAR renames another upstream concept, add a rule to `RENAMES`.
+
 Every sync, including one that applies cleanly, also:
 
 - renames MonoCode identifiers that upstream code brings in to MOLFAR's: `monocode.*` storage keys and `monocode:*` events become `molfar.*` / `molfar:*`, and the same goes for component names and user-facing text. Upstream issue links keep their MonoCode names;

@@ -120,6 +120,61 @@ describe("applyUpstreamPatch", () => {
     expect(read("app.txt")).toContain("<<<<<<<");
   });
 
+  it("applies upstream edits to files and identifiers MOLFAR renamed", () => {
+    setUp();
+    git("switch", "-q", "upstream");
+    write("src/monos/MonoPanel.ts", 'import { listMonos } from "./mono";\nexport const a = listMonos();\n');
+    write("src/monos/mono.ts", "export const listMonos = () => [];\nexport const monoId = 1;\n");
+    const base = commitAll("upstream monos");
+    git("switch", "-q", "main");
+    git("checkout", "-q", base, "--", "src");
+    git("mv", "src/monos", "src/familiars");
+    git("mv", "src/familiars/MonoPanel.ts", "src/familiars/FamiliarPanel.ts");
+    git("mv", "src/familiars/mono.ts", "src/familiars/familiar.ts");
+    write("src/familiars/FamiliarPanel.ts", 'import { listFamiliars } from "./familiar";\nexport const a = listFamiliars();\n');
+    write("src/familiars/familiar.ts", "export const listFamiliars = () => [];\nexport const monoId = 1;\n");
+    write(STATE_FILE, `${JSON.stringify({ syncedCommit: base }, null, 2)}\n`);
+    commitAll("rename monos to familiars");
+    git("switch", "-q", "upstream");
+    write("src/monos/MonoPanel.ts", 'import { listMonos } from "./mono";\nexport const a = listMonos();\nexport const b = 2;\n');
+    write("src/monos/mono.ts", "export const listMonos = () => [];\nexport const monoId = 1;\nexport const monoName = \"Mono\";\n");
+    write("src/monos/MonoOverview.ts", 'import { monoId } from "./mono";\nexport const title = "Mono overview";\n');
+    commitAll("upstream edits");
+    git("switch", "-q", "main");
+
+    const result = applyUpstreamPatch({ cwd: root, target: "upstream" });
+
+    expect(result.status).toBe(SYNC_STATUS.APPLIED);
+    expect(read("src/familiars/FamiliarPanel.ts")).toBe(
+      'import { listFamiliars } from "./familiar";\nexport const a = listFamiliars();\nexport const b = 2;\n',
+    );
+    expect(read("src/familiars/familiar.ts")).toBe(
+      'export const listFamiliars = () => [];\nexport const monoId = 1;\nexport const familiarName = "Familiar";\n',
+    );
+    expect(read("src/familiars/FamiliarOverview.ts")).toBe(
+      'import { monoId } from "./familiar";\nexport const title = "Familiar overview";\n',
+    );
+    expect(result.remapped).toContain("src/monos/MonoOverview.ts -> src/familiars/FamiliarOverview.ts");
+  });
+
+  it("keeps a file upstream deleted when MOLFAR changed it, and reports it", () => {
+    setUp();
+    write("app.txt", "one\nMOLFAR\nthree\n");
+    commitAll("molfar edit");
+    git("switch", "-q", "upstream");
+    git("rm", "-q", "app.txt");
+    write("LICENSE", "Copyright (c) Nick\nCopyright (c) Upstream\n");
+    commitAll("upstream delete");
+    git("switch", "-q", "main");
+
+    const result = applyUpstreamPatch({ cwd: root, target: "upstream" });
+
+    expect(result.status).toBe(SYNC_STATUS.CONFLICTS);
+    expect(result.unapplied).toEqual([{ path: "app.txt", reason: "deleted upstream, changed in MOLFAR" }]);
+    expect(read("app.txt")).toBe("one\nMOLFAR\nthree\n");
+    expect(read("LICENSE")).toBe("Copyright (c) Nick\nCopyright (c) Upstream\n");
+  });
+
   it("reports up to date without touching the tree", () => {
     const base = setUp();
 

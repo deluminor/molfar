@@ -35,10 +35,7 @@ import {
   PROJECT_RAIL_WIDTH_MIN,
   saveProjectRailWidth,
 } from "../../features/settings/model/appearance";
-import {
-  basename,
-  type GitDiffStats,
-} from "../../platform/tauri/fs";
+import { basename, type GitDiffStats } from "../../platform/tauri/fs";
 import { IS_MAC, MOD } from "../../platform/tauri/platform";
 import { formatInteger } from "../../shared/lib/numbers";
 import { pathKey, projectKey, projectName } from "../../shared/lib/paths";
@@ -70,6 +67,7 @@ import {
   loadProjectGroups,
   projectGroupColor,
   projectGroupIdForPath,
+  reorderProjectGroups,
   updateProjectGroup,
   type ProjectGroup,
 } from "../../features/projects/model/projectGroups";
@@ -353,8 +351,14 @@ export function ProjectRail({
     !!familiars?.activeId;
   const pinnedIds = sections.pinned.map((item) => item.path);
   const projectIds = groupedProjectSections.ungrouped.map((item) => item.path);
+  const groupIds = groupedProjectSections.grouped.map(({ group }) => group.id);
+  const groupSortable = useAnimatedReorder(groupIds, reorderProjectGroups, "y");
   const pinnedSortable = useAnimatedReorder(pinnedIds, onReorderPinned, "y");
-  const projectSortable = useAnimatedReorder(projectIds, onReorderProjects, "y");
+  const projectSortable = useAnimatedReorder(
+    projectIds,
+    onReorderProjects,
+    "y",
+  );
   return (
     <nav
       ref={resize.setPaneRef}
@@ -446,12 +450,7 @@ export function ProjectRail({
             }}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-none pb-2"
           >
-            {familiars ? (
-              <FamiliarRailSection
-                {...familiars}
-                introAvailable={visible && !!familiars.introAvailable}
-              />
-            ) : null}
+            {familiars ? <FamiliarRailSection {...familiars} /> : null}
 
             {sections.pinned.length > 0 ? (
               <ProjectSection
@@ -487,6 +486,7 @@ export function ProjectRail({
                     <ProjectGroupSection
                       key={group.id}
                       group={group}
+                      groupSortable={groupSortable}
                       items={items}
                       muteStatuses={muteStatuses}
                       cwd={cwd}
@@ -714,8 +714,10 @@ function ProjectSectionHeader({
   );
 }
 
+/** One collapsible group in the rail; its header row is the drag handle for reordering groups. */
 function ProjectGroupSection({
   group,
+  groupSortable,
   items,
   muteStatuses,
   cwd,
@@ -736,6 +738,7 @@ function ProjectGroupSection({
   groupMascots,
 }: {
   group: ProjectGroup;
+  groupSortable: SortableHandle;
   items: RecentProject[];
   muteStatuses: ReadonlyMap<string, string | null>;
   cwd: string;
@@ -769,7 +772,8 @@ function ProjectGroupSection({
 
   return (
     <div
-      className={`shrink-0 overflow-hidden rounded-md ${
+      ref={(el) => groupSortable.setItemRef(group.id, el)}
+      className={`reorder-item relative shrink-0 overflow-hidden rounded-md ${
         expanded ? "mb-1.5 bg-content/5" : ""
       }`}
       data-project-group={group.id}
@@ -777,10 +781,15 @@ function ProjectGroupSection({
       aria-label={group.name}
     >
       <div
-        className="project-reorder-item group relative flex h-8 items-stretch rounded-md px-2 opacity-65 cursor-default"
+        className="project-reorder-item group relative flex h-8 touch-none items-stretch rounded-md px-2 opacity-65 cursor-default"
+        onPointerDown={(event) =>
+          groupSortable.onItemPointerDown(group.id, event)
+        }
         onContextMenu={(event) => {
           event.preventDefault();
-          event.currentTarget.querySelector<HTMLButtonElement>("button")?.focus();
+          event.currentTarget
+            .querySelector<HTMLButtonElement>("button")
+            ?.focus();
           openMenu(event.currentTarget, event.clientX, event.clientY);
         }}
       >
@@ -789,7 +798,10 @@ function ProjectGroupSection({
           aria-expanded={!group.collapsed}
           aria-label={`${group.name}, ${countLabel}`}
           title={`${group.name} · ${countLabel}`}
-          onClick={onToggleCollapsed}
+          onClick={() => {
+            if (groupSortable.consumeClick()) return;
+            onToggleCollapsed();
+          }}
           className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
         >
           <div className="grid size-4 shrink-0 place-items-center">
@@ -954,9 +966,7 @@ function ProjectCard({
       ref={(el) => sortable.setItemRef(item.path, el)}
       data-selected={selected || undefined}
       className={`reorder-item project-reorder-item group relative flex touch-none items-stretch rounded-md px-2 h-8 ${
-        selected
-          ? "bg-selection-strong text-content"
-          : "opacity-65"
+        selected ? "bg-selection-strong text-content" : "opacity-65"
       } cursor-default`}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
@@ -977,7 +987,8 @@ function ProjectCard({
         if (
           event.key !== "ContextMenu" &&
           !(event.shiftKey && event.key === "F10")
-        ) return;
+        )
+          return;
         event.preventDefault();
         event.stopPropagation();
         const rect = event.currentTarget.getBoundingClientRect();
@@ -987,7 +998,9 @@ function ProjectCard({
       <button
         type="button"
         title={muteStatus ? `${cardTitle}\n${muteStatus}` : cardTitle}
-        aria-label={muteStatus ? `${cardAriaLabel}, ${muteStatus}` : cardAriaLabel}
+        aria-label={
+          muteStatus ? `${cardAriaLabel}, ${muteStatus}` : cardAriaLabel
+        }
         aria-current={selected ? "true" : undefined}
         className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
       >
@@ -1031,7 +1044,11 @@ function ProjectCard({
             aria-label={connection}
             className="relative grid size-4 shrink-0 place-items-center text-content/45"
           >
-            <Internet className="size-3" strokeWidth={1.75} aria-hidden="true" />
+            <Internet
+              className="size-3"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
             <span
               aria-hidden="true"
               className={`absolute right-0 bottom-0 size-1.5 rounded-full ring-1 ring-background-base ${
@@ -1047,7 +1064,11 @@ function ProjectCard({
             title={muteStatus}
             className="grid size-4 shrink-0 place-items-center text-amber-400"
           >
-            <BellOff className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
+            <BellOff
+              className="size-3.5"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
           </span>
         ) : null}
       </button>

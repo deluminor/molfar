@@ -5,6 +5,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
+import { useProjectAppearance } from "../hooks/useProjectAppearance";
 import { basename } from "../../../platform/tauri/fs";
 import {
   prettyParent,
@@ -15,14 +16,9 @@ import {
   looksLikeProject,
   projectRailItems,
   sameProjectPath,
-  subscribeProjectPathsChanged,
   type RecentProject,
 } from "../model/recents";
 import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupLabel,
   resolveTabGroupLogo,
@@ -53,24 +49,6 @@ export type PickerFamiliars = {
   onOpen: (familiarId: string) => void;
   onCreate?: () => void;
 };
-
-function loadAppearance() {
-  return {
-    groupLabels: loadTabGroupLabels(),
-    groupColors: loadTabGroupColors(),
-    groupCustomColors: loadTabGroupCustomColors(),
-    groupMascots: loadTabGroupMascots(),
-  };
-}
-
-function useProjectAppearance() {
-  const [appearance, setAppearance] = useState(loadAppearance);
-  useEffect(
-    () => subscribeProjectPathsChanged(() => setAppearance(loadAppearance())),
-    [],
-  );
-  return appearance;
-}
 
 type Props = {
   cwd: string;
@@ -152,11 +130,24 @@ export function SearchableProjectPicker({
       <button
         type="button"
         title={
-          activeFamiliar
-            ? `${activeFamiliar.name}\n${FAMILIAR_STATUS_LABEL[activeFamiliar.status ?? "idle"]}`
-            : inProject
-              ? cwd
-              : undefined
+          compact
+            ? undefined
+            : activeFamiliar
+              ? `${activeFamiliar.name}\n${FAMILIAR_STATUS_LABEL[activeFamiliar.status ?? "idle"]}`
+              : inProject
+                ? cwd
+                : undefined
+        }
+        // The compact rail draws its own instant tooltip from these.
+        data-rail-tip={
+          compact
+            ? (activeFamiliar?.name ?? (inProject ? label : action))
+            : undefined
+        }
+        data-rail-tip-detail={
+          compact && activeFamiliar
+            ? FAMILIAR_STATUS_LABEL[activeFamiliar.status ?? "idle"]
+            : undefined
         }
         aria-label={
           activeFamiliar
