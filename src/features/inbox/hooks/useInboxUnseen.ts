@@ -17,10 +17,12 @@ import {
   type InboxProvider,
 } from "../model/githubTasks";
 import {
-  applyInboxFilters,
-  inboxFetchState,
-  loadInboxFilters,
+  applyInboxFiltersBySource,
+  loadInboxFiltersBySource,
   pruneInboxFilters,
+  widestInboxFetchParams,
+  type InboxFiltersBySource,
+  type InboxSource,
 } from "../model/inboxFilters";
 import {
   inboxHasUnseenItems,
@@ -176,10 +178,15 @@ export function useInboxActivity(
       pulling = true;
       lastPulledAt.current = Date.now();
       const projectPaths = projects.map((project) => project.path);
-      const filters = pruneInboxFilters(loadInboxFilters(), projectPaths);
+      const bySource = loadInboxFiltersBySource();
+      const pruned = { ...bySource } as InboxFiltersBySource;
+      for (const source of Object.keys(bySource) as InboxSource[]) {
+        pruned[source] = pruneInboxFilters(bySource[source], projectPaths);
+      }
+      const widest = widestInboxFetchParams(pruned);
       const query: InboxQuery = {
-        assignedToMe: filters.assignedToMe,
-        state: inboxFetchState(filters),
+        assignedToMe: widest.assignedToMe,
+        state: widest.state,
         search: "",
         linearHiddenTeamIds: loadHiddenLinearTeamIds(),
         jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
@@ -187,7 +194,7 @@ export function useInboxActivity(
       try {
         const listed = await listInboxItems(projects, query, { force });
         if (cancelled) return;
-        const visible = applyInboxFilters(listed.items, filters, "");
+        const visible = applyInboxFiltersBySource(listed.items, pruned, "");
         rememberNotificationProjects(
           listed.items.map(inboxNotificationProject),
         );

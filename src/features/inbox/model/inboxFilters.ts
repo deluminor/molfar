@@ -118,8 +118,13 @@ export function resolveInboxSource(
 }
 
 const FILTERS_KEY = "molfar.inboxFilters";
+const FILTERS_BY_SOURCE_KEY = "molfar.inboxFilters.bySource.v1";
 const SOURCE_KEY = "molfar.inboxSource";
 const CONNECTIONS_KEY = "molfar.inboxConnections";
+
+const INBOX_FILTER_SOURCES = Object.keys(INBOX_SOURCE_LABELS) as InboxSource[];
+
+export type InboxFiltersBySource = Record<InboxSource, InboxFilters>;
 
 const UNKNOWN_CONNECTIONS: InboxSourceConnections = {
   github: null,
@@ -186,46 +191,130 @@ export function saveInboxConnections(connections: InboxSourceConnections) {
   }
 }
 
+function parseInboxFilters(value: unknown): InboxFilters {
+  if (!value || typeof value !== "object") return DEFAULT_INBOX_FILTERS;
+  const parsed = value as Partial<InboxFilters>;
+  return {
+    assignedToMe: parsed.assignedToMe === true,
+    hiddenProjects: Array.isArray(parsed.hiddenProjects)
+      ? parsed.hiddenProjects.filter(
+          (path): path is string =>
+            typeof path === "string" && path.length > 0,
+        )
+      : [],
+    hiddenLinearProjects: Array.isArray(parsed.hiddenLinearProjects)
+      ? parsed.hiddenLinearProjects.filter(
+          (id): id is string => typeof id === "string" && id.length > 0,
+        )
+      : [],
+    hiddenKinds: Array.isArray(parsed.hiddenKinds)
+      ? parsed.hiddenKinds.filter(isGithubInboxKind)
+      : [],
+    time: isTimeFilter(parsed.time) ? parsed.time : "all",
+    status: {
+      open: parsed.status?.open === true,
+      draft: parsed.status?.draft === true,
+      closed: parsed.status?.closed === true,
+      merged: parsed.status?.merged === true,
+    },
+  };
+}
+
+function defaultFiltersBySource(seed: InboxFilters): InboxFiltersBySource {
+  return Object.fromEntries(
+    INBOX_FILTER_SOURCES.map((source) => [source, seed]),
+  ) as InboxFiltersBySource;
+}
+
+/** Legacy single-blob filters — used only to seed by-source migration. */
 export function loadInboxFilters(): InboxFilters {
   try {
     const raw = localStorage.getItem(FILTERS_KEY);
     if (!raw) return DEFAULT_INBOX_FILTERS;
-    const parsed = JSON.parse(raw) as Partial<InboxFilters>;
-    return {
-      assignedToMe: parsed.assignedToMe === true,
-      hiddenProjects: Array.isArray(parsed.hiddenProjects)
-        ? parsed.hiddenProjects.filter(
-            (path): path is string =>
-              typeof path === "string" && path.length > 0,
-          )
-        : [],
-      hiddenLinearProjects: Array.isArray(parsed.hiddenLinearProjects)
-        ? parsed.hiddenLinearProjects.filter(
-            (id): id is string => typeof id === "string" && id.length > 0,
-          )
-        : [],
-      hiddenKinds: Array.isArray(parsed.hiddenKinds)
-        ? parsed.hiddenKinds.filter(isGithubInboxKind)
-        : [],
-      time: isTimeFilter(parsed.time) ? parsed.time : "all",
-      status: {
-        open: parsed.status?.open === true,
-        draft: parsed.status?.draft === true,
-        closed: parsed.status?.closed === true,
-        merged: parsed.status?.merged === true,
-      },
-    };
+    return parseInboxFilters(JSON.parse(raw) as unknown);
   } catch {
     return DEFAULT_INBOX_FILTERS;
   }
 }
 
+export function loadInboxFiltersBySource(): InboxFiltersBySource {
+  try {
+    const raw = localStorage.getItem(FILTERS_BY_SOURCE_KEY);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const record = parsed as Partial<Record<InboxSource, unknown>>;
+        const next = defaultFiltersBySource(DEFAULT_INBOX_FILTERS);
+        for (const source of INBOX_FILTER_SOURCES) {
+          if (source in record) {
+            next[source] = parseInboxFilters(record[source]);
+          }
+        }
+        return next;
+      }
+    }
+  } catch {
+    // fall through to migration
+  }
+  return defaultFiltersBySource(loadInboxFilters());
+}
+
+export function loadInboxFiltersForSource(source: InboxSource): InboxFilters {
+  return loadInboxFiltersBySource()[source] ?? DEFAULT_INBOX_FILTERS;
+}
+
+export function saveInboxFiltersForSource(
+  source: InboxSource,
+  filters: InboxFilters,
+): void {
+  const next = { ...loadInboxFiltersBySource(), [source]: filters };
+  try {
+    localStorage.setItem(FILTERS_BY_SOURCE_KEY, JSON.stringify(next));
+  } catch {
+    // private mode / quota
+  }
+}
+
+/** @deprecated Prefer saveInboxFiltersForSource — kept for callers that still write one blob. */
 export function saveInboxFilters(filters: InboxFilters) {
   try {
     localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
   } catch {
     // private mode / quota
   }
+}
+
+/**
+ * Widest fetch params across tabs so the shared list cache can satisfy every
+ * source's client-side filters (assignedToMe=false and state=all win).
+ */
+export function widestInboxFetchParams(
+  bySource: InboxFiltersBySource,
+): { assignedToMe: boolean; state: "open" | "all" } {
+  let assignedToMe = true;
+  let state: "open" | "all" = "open";
+  for (const source of INBOX_FILTER_SOURCES) {
+    const filters = bySource[source] ?? DEFAULT_INBOX_FILTERS;
+    if (!filters.assignedToMe) assignedToMe = false;
+    if (inboxFetchState(filters) === "all") state = "all";
+  }
+  return { assignedToMe, state };
+}
+
+/** Apply each item's provider filters; items without a matching source use defaults. */
+export function applyInboxFiltersBySource(
+  items: readonly InboxItem[],
+  bySource: InboxFiltersBySource,
+  query: string,
+  now = Date.now(),
+): InboxItem[] {
+  return items.filter((item) => {
+    const source = item.provider as InboxSource;
+    const filters = bySource[source] ?? DEFAULT_INBOX_FILTERS;
+    return (
+      applyInboxFilters([item], filters, query, now, source).length > 0
+    );
+  });
 }
 
 export function pruneInboxFilters(

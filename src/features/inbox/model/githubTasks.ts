@@ -89,6 +89,12 @@ export type InboxItem = Omit<GithubWorkItem, "kind"> & {
   stateType?: string;
   /** GitLab To-Do action that caused this item to need attention. */
   attentionReason?: string;
+  /** Jira issue type display name (Epic, Story, Task, …). */
+  issueType?: string;
+  /** Jira hierarchy level when present. */
+  issueTypeHierarchyLevel?: number | null;
+  /** Jira parent issue key when nested under another issue. */
+  parentKey?: string;
 };
 
 export type GithubWorkItemDetails = {
@@ -980,6 +986,9 @@ function jiraIssueToInboxItem(issue: JiraIssue): InboxItem {
     teamId: issue.teamId,
     teamName: issue.teamName,
     projectPath: issue.projectPath || "",
+    issueType: issue.issueType?.trim() || undefined,
+    issueTypeHierarchyLevel: issue.issueTypeHierarchyLevel ?? undefined,
+    parentKey: issue.parentKey?.trim() || undefined,
   };
 }
 

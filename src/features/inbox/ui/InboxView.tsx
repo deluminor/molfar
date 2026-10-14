@@ -7,6 +7,7 @@ import {
   CheckCheck,
   CheckCircle,
   ChevronDown,
+  ChevronRight,
   CircleDot,
   CircleX,
   Copy,
@@ -87,21 +88,28 @@ import {
   loadInboxConnections,
   linearProjectOptions,
   inboxFetchState,
-  loadInboxFilters,
+  loadInboxFiltersBySource,
   loadInboxSource,
   pruneInboxFilters,
-  saveInboxFilters,
+  saveInboxFiltersForSource,
   resolveInboxSource,
   saveInboxConnections,
   saveInboxSource,
   visibleInboxSources,
+  widestInboxFetchParams,
   INBOX_SOURCE_LABELS,
   isConfluenceSource,
   isTrackerSource,
   type ConnectableInboxSource,
   type InboxFilters,
+  type InboxFiltersBySource,
   type InboxSource,
 } from "../model/inboxFilters";
+import {
+  buildJiraIssueTree,
+  defaultExpandedJiraKeys,
+  flattenJiraIssueTree,
+} from "../model/jiraIssueTree";
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { projectKey, projectName } from "../../../shared/lib/paths";
@@ -280,13 +288,16 @@ function InboxProjectMark({
 
 function peekInboxForRail(recents: RecentProject[], cwd: string) {
   const projects = inboxProjectsForRail(recents, cwd);
-  const filters = pruneInboxFilters(
-    loadInboxFilters(),
-    projects.map((project) => project.path),
-  );
+  const paths = projects.map((project) => project.path);
+  const bySource = loadInboxFiltersBySource();
+  const pruned: typeof bySource = { ...bySource };
+  for (const source of Object.keys(bySource) as (keyof typeof bySource)[]) {
+    pruned[source] = pruneInboxFilters(bySource[source], paths);
+  }
+  const widest = widestInboxFetchParams(pruned);
   return peekInboxList(projects, {
-    assignedToMe: filters.assignedToMe,
-    state: inboxFetchState(filters),
+    assignedToMe: widest.assignedToMe,
+    state: widest.state,
     search: "",
     linearHiddenTeamIds: loadHiddenLinearTeamIds(),
     jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
@@ -443,7 +454,9 @@ export function InboxView({
     targetSelectionKey,
   );
   const [targetItem, setTargetItem] = useState<InboxItem | null>(null);
-  const [filters, setFilters] = useState(loadInboxFilters);
+  const [filtersBySource, setFiltersBySource] = useState(
+    loadInboxFiltersBySource,
+  );
   const [connections, setConnections] = useState(loadInboxConnections);
   const [source, setSource] = useState(() =>
     resolveInboxSource(loadInboxSource(), connections),
@@ -475,10 +488,10 @@ export function InboxView({
   const activeFilters = useMemo(
     () =>
       pruneInboxFilters(
-        filters,
+        filtersBySource[source],
         projects.map((project) => project.path),
       ),
-    [filters, projects],
+    [filtersBySource, projects, source],
   );
   const filtersActive = hasActiveInboxFilters(
     activeFilters,
@@ -807,13 +820,46 @@ export function InboxView({
   const sourceError =
     source === "confluence" ? null : (providerErrors[source] ?? null);
 
+  const jiraTree = useMemo(
+    () => (source === "jira" ? buildJiraIssueTree(visibleItems) : []),
+    [source, visibleItems],
+  );
+  const [jiraExpanded, setJiraExpanded] = useState<Set<string>>(() => new Set());
+  const jiraExpandSeed = useRef("");
+  useEffect(() => {
+    if (source !== "jira") return;
+    const seed = jiraTree.map((node) => inboxItemKey(node.item)).join("\0");
+    if (seed === jiraExpandSeed.current) return;
+    jiraExpandSeed.current = seed;
+    setJiraExpanded(defaultExpandedJiraKeys(jiraTree));
+  }, [jiraTree, source]);
+
+  const jiraRows = useMemo(
+    () =>
+      source === "jira" ? flattenJiraIssueTree(jiraTree, jiraExpanded) : null,
+    [jiraExpanded, jiraTree, source],
+  );
+  const listRows = useMemo(
+    () =>
+      jiraRows ??
+      visibleItems.map((item) => ({
+        item,
+        depth: 0,
+        hasChildren: false,
+        expanded: false,
+      })),
+    [jiraRows, visibleItems],
+  );
+
   const selectedByKey = visibleItems.find(
     (item) => inboxItemKey(item) === selectedKey,
   );
   const waitingForTarget =
     !!targetSelectionKey && selectedKey === targetSelectionKey;
   const selected =
-    selectedByKey ?? (waitingForTarget ? null : visibleItems[0]) ?? null;
+    selectedByKey ??
+    (waitingForTarget ? null : listRows[0]?.item ?? visibleItems[0]) ??
+    null;
   const updateInboxItem = useCallback((next: InboxItem) => {
     const key = inboxItemKey(next);
     setItems((current) =>
@@ -823,9 +869,17 @@ export function InboxView({
       current && inboxItemKey(current) === key ? next : current,
     );
   }, []);
-  const shownItemCount = listWindowSize(visibleItems.length, listLimit);
-  const shownItems = visibleItems.slice(0, shownItemCount);
-  const hasMoreItems = shownItemCount < visibleItems.length;
+  const shownItemCount = listWindowSize(listRows.length, listLimit);
+  const shownRows = listRows.slice(0, shownItemCount);
+  const hasMoreItems = shownItemCount < listRows.length;
+  const toggleJiraExpand = useCallback((key: string) => {
+    setJiraExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     setListLimit(LIST_PAGE_SIZE);
@@ -878,8 +932,11 @@ export function InboxView({
       next,
       projects.map((project) => project.path),
     );
-    setFilters(pruned);
-    saveInboxFilters(pruned);
+    setFiltersBySource((current: InboxFiltersBySource) => ({
+      ...current,
+      [source]: pruned,
+    }));
+    saveInboxFiltersForSource(source, pruned);
   };
 
   const onSourceChange = (next: InboxSource) => {
@@ -1050,7 +1107,8 @@ export function InboxView({
           </p>
         ) : (
           <ul className="flex flex-col gap-0.5 p-1.5">
-            {shownItems.map((item) => {
+            {shownRows.map((row) => {
+              const item = row.item;
               const key = inboxItemKey(item);
               const projectId = projectKey(item.projectPath);
               const relatedSessions = relatedSessionsForInboxItem(
@@ -1061,6 +1119,14 @@ export function InboxView({
                 <li key={key}>
                   <InboxCard
                     item={item}
+                    depth={row.depth}
+                    hasChildren={row.hasChildren}
+                    expanded={row.expanded}
+                    onToggleExpand={
+                      row.hasChildren
+                        ? () => toggleJiraExpand(key)
+                        : undefined
+                    }
                     active={selected != null && key === inboxItemKey(selected)}
                     logoPath={resolveTabGroupLogo(projectId, logos)}
                     mascotName={resolveTabGroupMascot(projectId, groupMascots)}
@@ -1548,6 +1614,10 @@ export function inboxStatusMark(item: InboxItem): InboxStatusMark {
 
 function InboxCard({
   item,
+  depth = 0,
+  hasChildren = false,
+  expanded = false,
+  onToggleExpand,
   active,
   logoPath,
   mascotName,
@@ -1556,6 +1626,10 @@ function InboxCard({
   onSelect,
 }: {
   item: InboxItem;
+  depth?: number;
+  hasChildren?: boolean;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
   active: boolean;
   logoPath: string | null;
   mascotName: string | null;
@@ -1565,12 +1639,15 @@ function InboxCard({
 }) {
   useInboxSeenTick();
   const status = inboxStatusMark(item);
+  const issueType = item.provider === "jira" ? item.issueType?.trim() : "";
   const kindLabel =
     item.kind === "pr"
       ? item.provider === "gitlab"
         ? "Merge request"
         : "Pull request"
-      : "Issue";
+      : issueType
+        ? issueType
+        : "Issue";
   const time = formatRelativeTime(item.updatedAt);
   const name = projectName(item.projectPath);
   const tracker = item.provider === "linear" || item.provider === "jira";
@@ -1583,89 +1660,112 @@ function InboxCard({
     key: inboxItemKey(item),
     updatedAt: item.updatedAt,
   });
+  const indentPx = 10 + depth * 12;
 
   return (
-    <button
-      type="button"
-      title={item.title}
-      aria-current={active ? "true" : undefined}
-      aria-label={`${status.label} ${kindLabel.toLowerCase()} ${inboxItemRef(
-        item,
-      )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`}
-      onClick={onSelect}
-      className={`flex w-full flex-col rounded-md border px-2.5 py-2 text-left ${
+    <div
+      className={`flex w-full items-start rounded-md border ${
         active
           ? "border-transparent bg-selection text-content"
           : "border-transparent text-content/80 hover:bg-content/5 hover:text-content"
       }`}
+      style={{ paddingLeft: indentPx }}
     >
-      <span className="flex items-center gap-2">
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <InboxProviderMark
-            provider={item.provider}
-            className="size-3.5 shrink-0"
-          />
-          <status.Icon
-            className={`size-3 shrink-0 ${status.className}`}
-            strokeWidth={1.75}
-          />
-          <span className="min-w-0 truncate text-[11px] text-content/50">
-            {kindLabel} · {inboxItemRef(item)}
-            {attentionLabel ? ` · ${attentionLabel}` : ""}
-          </span>
-        </span>
-        {relatedSessionCount > 0 || time || unseen ? (
-          <span className="flex shrink-0 items-center gap-1.5">
-            {relatedSessionCount > 0 ? (
-              <span
-                title={`${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}`}
-                className="inline-flex items-center gap-0.5 text-[11px] tabular-nums text-accent"
-              >
-                <MessageMultiple className="size-3" strokeWidth={1.75} />
-                {relatedSessionCount}
-              </span>
-            ) : null}
-            {time ? (
-              <span className="text-[11px] tabular-nums text-content/45">
-                {time}
-              </span>
-            ) : null}
-            {unseen ? (
-              <span aria-hidden className="size-1.5 rounded-full bg-accent" />
-            ) : null}
-          </span>
-        ) : null}
-      </span>
-      <span className="mt-1 line-clamp-1 text-[13px] font-semibold leading-snug text-content">
-        {item.title}
-      </span>
-      <span className="mt-1 flex min-w-0 items-center gap-2">
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
-          {tracker || !item.projectPath ? null : logoPath ? (
-            <ProjectLogoIcon
-              path={logoPath}
-              className="size-3.5 shrink-0 rounded-sm"
-              imageClassName="size-3.5"
-            />
+      {hasChildren ? (
+        <button
+          type="button"
+          aria-label={expanded ? "Collapse" : "Expand"}
+          aria-expanded={expanded}
+          className="mt-2.5 grid size-5 shrink-0 place-items-center rounded-sm text-content/45 hover:bg-content/10 hover:text-content"
+          onClick={onToggleExpand}
+        >
+          {expanded ? (
+            <ChevronDown className="size-3" strokeWidth={2} />
           ) : (
-            <ProjectMascot
-              project={name}
-              color={mascotColor}
-              name={mascotName}
-              className="size-3 shrink-0"
-            />
+            <ChevronRight className="size-3" strokeWidth={2} />
           )}
-          <span className="min-w-0 truncate">{source}</span>
-        </span>
-        {item.labels.length > 0 ? (
-          <span className="flex min-w-0 shrink-0 items-center gap-1">
-            {item.labels.slice(0, 2).map((label) => (
-              <InboxLabel key={label.name} label={label} compact />
-            ))}
+        </button>
+      ) : depth > 0 ? (
+        <span aria-hidden className="mt-2.5 size-5 shrink-0" />
+      ) : null}
+      <button
+        type="button"
+        title={item.title}
+        aria-current={active ? "true" : undefined}
+        aria-label={`${status.label} ${kindLabel.toLowerCase()} ${inboxItemRef(
+          item,
+        )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`}
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 flex-col rounded-md px-2.5 py-2 text-left"
+      >
+        <span className="flex items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            <InboxProviderMark
+              provider={item.provider}
+              className="size-3.5 shrink-0"
+            />
+            <status.Icon
+              className={`size-3 shrink-0 ${status.className}`}
+              strokeWidth={1.75}
+            />
+            <span className="min-w-0 truncate text-[11px] text-content/50">
+              {kindLabel} · {inboxItemRef(item)}
+              {attentionLabel ? ` · ${attentionLabel}` : ""}
+            </span>
           </span>
-        ) : null}
-      </span>
-    </button>
+          {relatedSessionCount > 0 || time || unseen ? (
+            <span className="flex shrink-0 items-center gap-1.5">
+              {relatedSessionCount > 0 ? (
+                <span
+                  title={`${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}`}
+                  className="inline-flex items-center gap-0.5 text-[11px] tabular-nums text-accent"
+                >
+                  <MessageMultiple className="size-3" strokeWidth={1.75} />
+                  {relatedSessionCount}
+                </span>
+              ) : null}
+              {time ? (
+                <span className="text-[11px] tabular-nums text-content/45">
+                  {time}
+                </span>
+              ) : null}
+              {unseen ? (
+                <span aria-hidden className="size-1.5 rounded-full bg-accent" />
+              ) : null}
+            </span>
+          ) : null}
+        </span>
+        <span className="mt-1 line-clamp-1 text-[13px] font-semibold leading-snug text-content">
+          {item.title}
+        </span>
+        <span className="mt-1 flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
+            {tracker || !item.projectPath ? null : logoPath ? (
+              <ProjectLogoIcon
+                path={logoPath}
+                className="size-3.5 shrink-0 rounded-sm"
+                imageClassName="size-3.5"
+              />
+            ) : (
+              <ProjectMascot
+                project={name}
+                color={mascotColor}
+                name={mascotName}
+                className="size-3 shrink-0"
+              />
+            )}
+            <span className="min-w-0 truncate">{source}</span>
+          </span>
+          {item.labels.length > 0 ? (
+            <span className="flex min-w-0 shrink-0 items-center gap-1">
+              {item.labels.slice(0, 2).map((label) => (
+                <InboxLabel key={label.name} label={label} compact />
+              ))}
+            </span>
+          ) : null}
+        </span>
+      </button>
+    </div>
   );
 }
 
