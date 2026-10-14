@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   applyInboxFilters,
+  applyInboxFiltersBySource,
   DEFAULT_INBOX_FILTERS,
   filterInboxByKind,
   filterInboxByLinearProject,
@@ -12,12 +13,17 @@ import {
   inboxFetchState,
   LINEAR_NO_PROJECT,
   linearProjectOptions,
+  loadInboxFiltersBySource,
+  loadInboxFiltersForSource,
   pruneInboxFilters,
   connectableInboxSources,
   loadInboxConnections,
   resolveInboxSource,
   saveInboxConnections,
+  saveInboxFilters,
+  saveInboxFiltersForSource,
   visibleInboxSources,
+  widestInboxFetchParams,
 } from "./inboxFilters";
 import type { InboxItem } from "./githubTasks";
 
@@ -662,6 +668,85 @@ function mockLocalStorage() {
     configurable: true,
   });
 }
+
+describe("inbox filters by source", () => {
+  beforeEach(mockLocalStorage);
+
+  it("migrates the legacy global blob onto every source", () => {
+    saveInboxFilters({ ...DEFAULT_INBOX_FILTERS, assignedToMe: true });
+    const bySource = loadInboxFiltersBySource();
+    expect(bySource.github.assignedToMe).toBe(true);
+    expect(bySource.jira.assignedToMe).toBe(true);
+    expect(bySource.linear.assignedToMe).toBe(true);
+  });
+
+  it("keeps per-source writes isolated", () => {
+    saveInboxFiltersForSource("jira", {
+      ...DEFAULT_INBOX_FILTERS,
+      assignedToMe: true,
+    });
+    saveInboxFiltersForSource("github", {
+      ...DEFAULT_INBOX_FILTERS,
+      assignedToMe: false,
+      time: "7d",
+    });
+    expect(loadInboxFiltersForSource("jira").assignedToMe).toBe(true);
+    expect(loadInboxFiltersForSource("github")).toEqual({
+      ...DEFAULT_INBOX_FILTERS,
+      assignedToMe: false,
+      time: "7d",
+    });
+  });
+
+  it("widens fetch params across tabs", () => {
+    const bySource = loadInboxFiltersBySource();
+    bySource.jira = { ...DEFAULT_INBOX_FILTERS, assignedToMe: true };
+    bySource.github = {
+      ...DEFAULT_INBOX_FILTERS,
+      assignedToMe: false,
+      status: { ...DEFAULT_INBOX_FILTERS.status, closed: true },
+    };
+    expect(widestInboxFetchParams(bySource)).toEqual({
+      assignedToMe: false,
+      state: "all",
+    });
+  });
+
+  it("applies each provider's own filters", () => {
+    const bySource = loadInboxFiltersBySource();
+    bySource.jira = { ...DEFAULT_INBOX_FILTERS, assignedToMe: true };
+    bySource.github = {
+      ...DEFAULT_INBOX_FILTERS,
+      status: { ...DEFAULT_INBOX_FILTERS.status, closed: true },
+    };
+    const rows = [
+      item({
+        number: 1,
+        provider: "jira",
+        kind: "jira",
+        stateType: "indeterminate",
+        updatedAt: "2026-08-27T10:00:00Z",
+      }),
+      item({
+        number: 2,
+        provider: "github",
+        kind: "issue",
+        state: "open",
+        updatedAt: "2026-08-27T10:00:00Z",
+      }),
+      item({
+        number: 3,
+        provider: "github",
+        kind: "issue",
+        state: "closed",
+        updatedAt: "2026-08-27T10:00:00Z",
+      }),
+    ];
+    expect(
+      applyInboxFiltersBySource(rows, bySource, "").map((row) => row.number),
+    ).toEqual([1, 3]);
+  });
+});
 
 describe("inbox connection cache", () => {
   const KEY = "molfar.inboxConnections";

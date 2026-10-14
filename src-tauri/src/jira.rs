@@ -12,8 +12,15 @@ use crate::atlassian_adf::rich_text;
 const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 const DEFAULT_LIMIT: u32 = 40;
 const COMMENT_LIMIT: u32 = 50;
-const ISSUE_FIELDS: [&str; 6] = [
-    "summary", "status", "updated", "labels", "assignee", "project",
+const ISSUE_FIELDS: [&str; 8] = [
+    "summary",
+    "status",
+    "updated",
+    "labels",
+    "assignee",
+    "project",
+    "issuetype",
+    "parent",
 ];
 
 #[derive(Serialize)]
@@ -73,6 +80,12 @@ pub struct JiraIssue {
     pub team_id: String,
     pub team_name: String,
     pub project_path: String,
+    /// Jira issue type display name (Epic, Story, Task, …).
+    pub issue_type: String,
+    /// Jira hierarchy level when present (Epic often 1, Story/Task 0, Sub-task -1).
+    pub issue_type_hierarchy_level: Option<i64>,
+    /// Parent issue key when this issue nests under another.
+    pub parent_key: String,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -452,6 +465,7 @@ fn parse_jira_issue(node: &Value, site: &str) -> Option<JiraIssue> {
         })
         .unwrap_or_default();
     let (assignee, avatar_url) = person_fields(fields.get("assignee"));
+    let issue_type = fields.get("issuetype");
     Some(JiraIssue {
         provider: "jira".into(),
         kind: "jira".into(),
@@ -482,6 +496,16 @@ fn parse_jira_issue(node: &Value, site: &str) -> Option<JiraIssue> {
             .and_then(|value| string_field(value, "name"))
             .unwrap_or_default(),
         project_path: String::new(),
+        issue_type: issue_type
+            .and_then(|value| string_field(value, "name"))
+            .unwrap_or_default(),
+        issue_type_hierarchy_level: issue_type
+            .and_then(|value| value.get("hierarchyLevel"))
+            .and_then(Value::as_i64),
+        parent_key: fields
+            .get("parent")
+            .and_then(|value| string_field(value, "key"))
+            .unwrap_or_default(),
         id,
         identifier: key,
     })
@@ -932,7 +956,9 @@ mod tests {
                         "displayName": "Maya",
                         "avatarUrls": { "48x48": "https://avatar.example/maya.png" }
                     },
-                    "project": { "id": "10000", "key": "ENG", "name": "Engineering" }
+                    "project": { "id": "10000", "key": "ENG", "name": "Engineering" },
+                    "issuetype": { "name": "Story", "hierarchyLevel": 0 },
+                    "parent": { "key": "ENG-1", "fields": { "summary": "Auth epic" } }
                 }
             }, { "id": "10043" }]
         });
@@ -957,6 +983,9 @@ mod tests {
         assert_eq!(item.repo, "ENG");
         assert_eq!(item.team_id, "10000");
         assert_eq!(item.team_name, "Engineering");
+        assert_eq!(item.issue_type, "Story");
+        assert_eq!(item.issue_type_hierarchy_level, Some(0));
+        assert_eq!(item.parent_key, "ENG-1");
     }
 
     #[test]

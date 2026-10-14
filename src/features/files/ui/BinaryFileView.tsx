@@ -215,24 +215,34 @@ function VideoView({
   const releaseSource = useRef(0);
   useEffect(() => {
     const video = videoRef.current;
-    // A StrictMode replay runs this again straight after the cleanup. Keep the
-    // load in flight: aborting and restarting it in one task can leave Linux
-    // WebKit's media pipeline stalled without metadata or an error.
-    window.clearTimeout(releaseSource.current);
-    if (video && !video.hasAttribute("src")) {
-      video.src = url;
+    if (!video) return;
+
+    const release = () => {
+      if (!video.getAttribute("src")) return;
+      video.removeAttribute("src");
       video.load();
-    }
-    return () => {
-      if (!video) return;
-      video.pause();
-      // Free the decoder once the element is really gone.
-      releaseSource.current = window.setTimeout(() => {
-        video.removeAttribute("src");
-        video.load();
-      });
     };
-  }, [url, failed]);
+
+    // Defer release across StrictMode's cleanup→remount tick, and never start
+    // decoding a hidden tab: two concurrent pipelines can leave Linux WebKit
+    // stalled with no metadata and no media error.
+    window.clearTimeout(releaseSource.current);
+    if (visible) {
+      if (!video.getAttribute("src")) {
+        video.src = url;
+        video.load();
+      }
+    } else {
+      video.pause();
+      releaseSource.current = window.setTimeout(release);
+    }
+
+    return () => {
+      video.pause();
+      window.clearTimeout(releaseSource.current);
+      releaseSource.current = window.setTimeout(release);
+    };
+  }, [url, failed, visible]);
 
   if (failed) {
     return (
@@ -253,7 +263,6 @@ function VideoView({
       <div className="flex min-h-0 flex-1 items-center justify-center bg-black/80 p-4">
         <video
           ref={videoRef}
-          src={url}
           controls
           playsInline
           preload="metadata"
