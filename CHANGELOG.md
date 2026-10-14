@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.12] - 2026-10-14
+
 ### Added
 
 - Familiars and habit runs can create **HTML visual artifacts** with `app artifacts.write` using `kind: "html"`, alongside Markdown documents. Visuals run in a sandboxed frame, follow the app's theme, fit their content height, and refresh when revised. Scripts and public HTTPS assets load; access to the app, fetch requests, nested frames, and form submissions are blocked.
@@ -362,7 +364,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.11...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.12...HEAD
+[1.0.12]: https://github.com/deluminor/molfar/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/deluminor/molfar/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/deluminor/molfar/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/deluminor/molfar/compare/v1.0.8...v1.0.9
