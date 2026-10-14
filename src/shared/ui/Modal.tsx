@@ -14,17 +14,20 @@ import { useLockOverscroll } from "../hooks/useLockOverscroll";
 import { LAYER } from "../lib/layers";
 import { GlassBackdrop } from "../../app/shell/GlassBackdrop";
 import { pushModalEscape } from "./modalEscape";
+import { InDialog } from "./Popover";
 
-export type ModalSize = "sm" | "md";
+export type ModalSize = "sm" | "md" | "lg";
 
 const WIDTH: Record<ModalSize, string> = {
   sm: "w-[min(420px,calc(100vw-24px))]",
   md: "w-[min(560px,calc(100vw-24px))]",
+  lg: "w-[min(880px,calc(100vw-24px))]",
 };
 
 const TOP: Record<ModalSize, string> = {
   sm: "top-[22%]",
   md: "top-[10%]",
+  lg: "top-[8%]",
 };
 
 type Props = {
@@ -133,7 +136,7 @@ export function ModalPanel({
             ref={lockOverscroll}
             className="min-h-0 flex-1 overflow-y-auto overscroll-none"
           >
-            {children}
+            <InDialog.Provider value>{children}</InDialog.Provider>
           </div>
           {footer ? (
             <footer className="shrink-0 border-t border-content/7 px-4 py-3">

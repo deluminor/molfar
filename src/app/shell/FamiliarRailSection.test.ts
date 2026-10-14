@@ -3,6 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createFamiliar } from "../../features/familiars/model/familiar";
+import { loadFamiliarsEnabled } from "../../features/settings/model/settings";
 import { FamiliarRailSection } from "./FamiliarRailSection";
 
 let root: Root;
@@ -47,44 +48,25 @@ const button = (label: string) =>
     (entry) => entry.textContent === label,
   )!;
 
-it("offers a new familiar in place of the list, and meets a new user beside it", () => {
-  const onCreate = render({ introAvailable: true });
-  const add = container.querySelector("[data-familiar-add]");
-  expect(add?.getAttribute("aria-label")).toBe("New familiar");
-  expect(add?.textContent).toBe("");
-  expect(container.querySelectorAll('[aria-label="New familiar"]')).toHaveLength(1);
+it("shows the intro card in place of the list while there is no familiar", () => {
+  const onCreate = render();
   expect(intro()).not.toBeNull();
+  expect(container.querySelector('[aria-label="New familiar"]')).toBeNull();
 
-  act(() => button("Create your familiar").click());
+  act(() => button("Create familiar").click());
   expect(onCreate).toHaveBeenCalledOnce();
-  expect(intro()).toBeNull();
 });
 
-it("meets the user only once, whichever way they choose", () => {
-  render({ introAvailable: true });
-  act(() => button("Create your familiar").click());
-  act(() => root.unmount());
-  root = createRoot(container);
-  render({ introAvailable: true });
-  expect(intro()).toBeNull();
-});
-
-it("stops meeting the user once they pass on it", () => {
-  render({ introAvailable: true });
-  act(() => button("Not now").click());
-  expect(intro()).toBeNull();
-  act(() => root.unmount());
-  root = createRoot(container);
-  render({ introAvailable: true });
-  expect(intro()).toBeNull();
-  expect(container.querySelector("[data-familiar-add]")).not.toBeNull();
+it("turns familiars off from the intro's switch", () => {
+  render();
+  act(() => container.querySelector<HTMLElement>('[role="switch"]')!.click());
+  expect(loadFamiliarsEnabled()).toBe(false);
 });
 
 it("lists familiars once there are some, with the plus in the header", () => {
   createFamiliar();
-  render({ introAvailable: true });
+  render();
   expect(intro()).toBeNull();
-  expect(container.querySelector("[data-familiar-add]")).toBeNull();
   expect(container.querySelectorAll('[aria-label="New familiar"]')).toHaveLength(1);
 });
 

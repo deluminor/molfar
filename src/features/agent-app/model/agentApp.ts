@@ -38,11 +38,12 @@ import {
   saveSessionFolders,
   setFolderCustomColor,
 } from "../../sessions/model/sessionFolders";
-import type {
-  Artifact,
-  ArtifactCard,
-  ArtifactKind,
-  ArtifactUpsert,
+import {
+  ARTIFACT_KINDS,
+  type Artifact,
+  type ArtifactCard,
+  type ArtifactKind,
+  type ArtifactUpsert,
 } from "../../artifacts/artifacts";
 import type { Worktree, Worktrees } from "../../source-control/model/worktrees";
 import { pathKey, projectName } from "../../../shared/lib/paths";
@@ -483,7 +484,7 @@ function startLaunch(
   return {
     cwd,
     prompt,
-    ...(host.familiarOf?.(source.id)?.showStartedSessionsInSidebar === false
+    ...(host.familiarOf?.(source.id)?.showStartedSessionsInSidebar !== true
       ? { sidebarHidden: true }
       : {}),
     ...(draft ? { draft: true } : {}),
@@ -850,8 +851,10 @@ async function handleHabits(
 }
 
 function artifactKind(value: unknown): ArtifactKind {
-  if (value === undefined || value === "document") return "document";
-  throw new Error('Unsupported artifact kind; only "document" is supported');
+  if (value === undefined) return "document";
+  if (ARTIFACT_KINDS.includes(value as ArtifactKind))
+    return value as ArtifactKind;
+  throw new Error('Unsupported artifact kind; use "document" or "html"');
 }
 
 async function handleArtifacts(

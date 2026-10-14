@@ -70,16 +70,14 @@ it("renames Mono storage keys onto Familiar ones", async () => {
   ];
   const stored = stubStorage([
     ["molfar:mono-roster", JSON.stringify(roster)],
-    ["molfar:mono-intro-dismissed", "1"],
     [
       "molfar:project-chat-backgrounds",
       JSON.stringify({ "mono:f1": { path: "/bg.png" } }),
     ],
   ]);
-  const { listFamiliars, familiarIntroDismissed } = await import("./familiar");
+  const { listFamiliars } = await import("./familiar");
 
   expect(listFamiliars()).toEqual(roster);
-  expect(familiarIntroDismissed()).toBe(true);
   expect(stored.has("molfar:mono-roster")).toBe(false);
   expect(stored.get("molfar:familiar-roster")).toBe(JSON.stringify(roster));
   expect(JSON.parse(stored.get("molfar:project-chat-backgrounds")!)).toEqual({

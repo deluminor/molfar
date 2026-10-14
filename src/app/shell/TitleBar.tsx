@@ -5,7 +5,6 @@ import {
   DashboardSquare,
   Inbox,
   PanelLeft,
-  PanelRightToggle,
   Settings,
   StickyNote,
   Terminal,
@@ -100,8 +99,11 @@ type Props = {
    * project-scoped belongs beside it.
    */
   familiar?: { look: FamiliarLook; state: FamiliarState };
-  onShowFamiliarDetails?: () => void;
-  /** The full-height Familiar details panel owns these while it is open. */
+  /** Shows or hides the Familiar's overview panel beside its chat. */
+  onToggleFamiliarOverview?: () => void;
+  familiarOverviewOpen?: boolean;
+  onOpenFamiliarSettings?: () => void;
+  /** The full-height Familiar panel owns these while it is open. */
   hideWindowControls?: boolean;
   projectRailOpen?: boolean;
   sessionSidebarOpen?: boolean;
@@ -506,7 +508,7 @@ export function IconButton({
             }
           : undefined
       }
-      className={`grid size-6.5 place-items-center rounded-md ${
+      className={`grid size-6 place-items-center rounded-md ${
         disabled
           ? "text-content/25"
           : accent
@@ -621,7 +623,9 @@ function TitleBarComponent({
   activeId,
   cwd,
   familiar,
-  onShowFamiliarDetails,
+  onToggleFamiliarOverview,
+  familiarOverviewOpen = false,
+  onOpenFamiliarSettings,
   hideWindowControls = false,
   projectRailOpen = true,
   sessionSidebarOpen = true,
@@ -889,14 +893,36 @@ function TitleBarComponent({
     Boolean(onOpenInbox || onOpenNotes || onOpenSettings);
   const trailingControls =
     showTrailingActions ||
-    (familiar && onShowFamiliarDetails) ||
+    (familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings)) ||
     (!IS_MAC && !hideWindowControls) ? (
       <div className="flex h-full shrink-0 items-stretch">
-        {familiar && onShowFamiliarDetails ? (
-          <div className="flex items-center px-3">
-            <IconButton label="Show Familiar details" onClick={onShowFamiliarDetails}>
-              <PanelRightToggle className="size-3.5" strokeWidth={1.75} />
-            </IconButton>
+        {familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings) ? (
+          <div className="flex items-center gap-1 px-3">
+            {onToggleFamiliarOverview ? (
+              <button
+                type="button"
+                aria-pressed={familiarOverviewOpen}
+                title={familiarOverviewOpen ? "Hide overview" : "Show overview"}
+                data-tauri-drag-region="false"
+                onClick={onToggleFamiliarOverview}
+                className={`flex h-6 items-center gap-1.5 rounded-md px-2 text-[12px] ${
+                  familiarOverviewOpen
+                    ? "bg-content/10 text-content"
+                    : "bg-content/5 text-content/70 hover:bg-content/8 hover:text-content"
+                }`}
+              >
+                <DashboardSquare className="size-3.5" strokeWidth={1.75} />
+                Overview
+              </button>
+            ) : null}
+            {onOpenFamiliarSettings ? (
+              <IconButton
+                label={`${familiar.look.name} settings`}
+                onClick={onOpenFamiliarSettings}
+              >
+                <Settings className="size-3.5" strokeWidth={1.75} />
+              </IconButton>
+            ) : null}
           </div>
         ) : null}
         {showTrailingActions ? (

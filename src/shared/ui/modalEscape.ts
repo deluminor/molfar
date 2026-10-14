@@ -7,8 +7,10 @@ function onKeyDown(event: KeyboardEvent): void {
   const top = stack[stack.length - 1];
   if (!top || event.key !== "Escape" || event.defaultPrevented) return;
   if (
-    event.target instanceof Element &&
-    event.target.closest("[data-dialog-popover]")
+    (event.target instanceof Element &&
+      event.target.closest("[data-dialog-popover]")) ||
+    // A popover open from the dialog's controls takes Escape first.
+    document.querySelector("[data-dialog-popover]")
   )
     return;
 
