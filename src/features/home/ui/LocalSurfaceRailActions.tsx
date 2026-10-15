@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from "react";
 import { RailAction } from "../../../app/shell/RailAction";
-import { Gauge, Home } from "../../../shared/ui/icons";
+import { Gauge, Home, Kanban } from "../../../shared/ui/icons";
 import type {
   RailSurfaceId,
   RailSurfaceVisibility,
@@ -22,6 +22,7 @@ export function LocalSurfaceRailActions({
 }: Props): ReactNode {
   const openHome = useCallback(() => onOpen("home"), [onOpen]);
   const openUsage = useCallback(() => onOpen("usage"), [onOpen]);
+  const openBoard = useCallback(() => onOpen("board"), [onOpen]);
 
   return (
     <>
@@ -39,6 +40,14 @@ export function LocalSurfaceRailActions({
           icon={Gauge}
           onClick={openUsage}
           active={active === "usage"}
+        />
+      ) : null}
+      {visible.board ? (
+        <RailAction
+          label="Board"
+          icon={Kanban}
+          onClick={openBoard}
+          active={active === "board"}
         />
       ) : null}
     </>

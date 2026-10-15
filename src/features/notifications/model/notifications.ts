@@ -281,6 +281,38 @@ async function announceSession(
   if (!sent) playCue(finished ? "turnFinished" : "inputRequested", subject);
 }
 
+/**
+ * A banner for an app surface rather than a session (the Task Board). The
+ * click payload is `target`, so the window can route it.
+ */
+export async function notifyApp(notice: {
+  target: string;
+  title: string;
+  subtitle: string;
+  body: string;
+}): Promise<boolean> {
+  const decision = shouldNotify({
+    enabled: loadNotificationsEnabled(),
+    permission,
+    windowFocused,
+    sessionVisible: false,
+  });
+  if (!decision) return false;
+  try {
+    await invoke("show_notification", {
+      sessionId: notice.target,
+      title: notice.title,
+      subtitle: notice.subtitle,
+      body: notice.body,
+      sound: loadSoundsEnabled(),
+    });
+    return true;
+  } catch (error: unknown) {
+    console.error("Notification could not be shown", { target: notice.target, error });
+    return false;
+  }
+}
+
 async function notifyProjectSession(
   session: Session,
   event: NotificationEvent,

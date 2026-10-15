@@ -296,6 +296,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "project rail shortcut vault obsidian notes hide show",
   },
   {
+    id: "rail-board",
+    section: "general",
+    label: "Board",
+    keywords: "project rail shortcut task board kanban pipeline grill review hide show",
+  },
+  {
     id: "file-tabs",
     section: "general",
     label: "File tabs",

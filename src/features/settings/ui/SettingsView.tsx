@@ -1045,6 +1045,17 @@ function GeneralPage({
             onChange={(next) => onRailSurfaceVisible("knowledge", next)}
           />
         </Row>
+        <Row
+          id="rail-board"
+          label="Board"
+          description="Task pipeline: grill, implement, review and deliver cards across projects."
+        >
+          <Toggle
+            label="Board"
+            on={railSurfaces.board}
+            onChange={(next) => onRailSurfaceVisible("board", next)}
+          />
+        </Row>
       </Group>
 
       <Group title="About">

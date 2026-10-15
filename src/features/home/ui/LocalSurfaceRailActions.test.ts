@@ -25,7 +25,7 @@ function buttons(): HTMLButtonElement[] {
   return [...container.querySelectorAll("button")];
 }
 
-it("renders Home before Usage and marks only the active surface", () => {
+it("renders Home, Usage and Board and marks only the active surface", () => {
   act(() =>
     root.render(
       createElement(LocalSurfaceRailActions, {
@@ -39,6 +39,7 @@ it("renders Home before Usage and marks only the active surface", () => {
   expect(buttons().map((button) => button.getAttribute("aria-label"))).toEqual([
     "Home",
     "Usage",
+    "Board",
   ]);
   expect(home.className).not.toContain("bg-selection");
   expect(usage.className).toContain("bg-selection");
@@ -74,5 +75,6 @@ it("leaves out surfaces hidden in Settings", () => {
 
   expect(buttons().map((button) => button.getAttribute("aria-label"))).toEqual([
     "Usage",
+    "Board",
   ]);
 });
