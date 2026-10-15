@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.14] - 2026-10-15
+
 ### Added
 
 - Delivered Task Board cards can be **Archived** from the card drawer. They leave the active board and remain under the Archived filter; unfinished cards still use Reject.
@@ -383,7 +385,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.13...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.14...HEAD
+[1.0.14]: https://github.com/deluminor/molfar/compare/v1.0.13...v1.0.14
 [1.0.13]: https://github.com/deluminor/molfar/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/deluminor/molfar/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/deluminor/molfar/compare/v1.0.10...v1.0.11
