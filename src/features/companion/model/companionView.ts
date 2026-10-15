@@ -207,7 +207,9 @@ export function companionSessionFromSummary(
 }
 
 function isListedProjectSession(session: Session): boolean {
-  return !session.ephemeral && !session.orchestrationLeadId && !session.inboxAsk;
+  return (
+    !session.ephemeral && !session.orchestrationLeadId && !session.inboxAsk && !session.taskCardId
+  );
 }
 
 function isListedHistoryRow(row: SessionSummary): boolean {

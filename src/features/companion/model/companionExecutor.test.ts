@@ -247,6 +247,39 @@ describe("transcripts", () => {
   });
 });
 
+describe("task board", () => {
+  const stage = session({ id: "stage", taskCardId: "card-1", busy: true, blocks: [block({ id: "b", role: "assistant", text: "grilling" })] });
+
+  it("keeps stage sessions out of overview and the plain session actions", async () => {
+    const { handle } = setup([stage, session({ id: "open" })]);
+    const overview = (await handle("overview", {})) as CompanionOverview;
+
+    expect(overview.sessions.map((entry) => entry.id)).toEqual(["open"]);
+    expect(overview.capabilities).toEqual([]);
+    await expect(handle("session.transcript", { sessionId: "stage" })).rejects.toThrow("Session not found");
+  });
+
+  it("delegates board actions and reaches a stage session through its card", async () => {
+    const board = {
+      handle: vi.fn(async () => ({ cards: [] })),
+      stageSession: vi.fn(async () => "stage"),
+      attention: vi.fn(async () => 2),
+    };
+    const { handle } = setup([stage], { board });
+
+    expect(await handle("board.list", {})).toEqual({ cards: [] });
+    const overview = (await handle("overview", {})) as CompanionOverview;
+    expect(overview).toMatchObject({ boardAttention: 2, capabilities: ["board"] });
+    const transcript = (await handle("board.session", { id: "card-1", runId: "r1", op: "transcript" })) as CompanionTranscript;
+    expect(transcript.blocks.map((entry) => entry.text)).toEqual(["grilling"]);
+  });
+
+  it("reports the board as unavailable without the engine", async () => {
+    const { handle } = setup([]);
+    await expect(handle("board.list", {})).rejects.toThrow("Task Board is unavailable");
+  });
+});
+
 describe("sending", () => {
   it("sends text and photos to a Familiar", async () => {
     const { deps, handle } = setup([session({ id: "fam-session" })]);

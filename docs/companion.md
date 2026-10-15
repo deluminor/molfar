@@ -48,7 +48,7 @@ BitChain keeps the token in the iOS Keychain (this device only) and asks for Fac
 
 `GET /v1/host` returns the same CPU, memory and load figures as Home. `GET /v1/hello` answers without a token and reveals only that this is MOLFAR and its protocol version.
 
-Habit runs, orchestration workers and Inbox asks are never exposed. Requests are executed by the main window with the same submit, approval and question paths as the desktop UI, so a message from the phone appears in the desktop transcript like any other.
+Habit runs, orchestration workers, Inbox asks and Task Board stage sessions are never exposed through these actions. Requests are executed by the main window with the same submit, approval and question paths as the desktop UI, so a message from the phone appears in the desktop transcript like any other.
 
 The protocol lives in `src/features/companion/model/protocol.ts`. Bump `COMPANION_PROTOCOL_VERSION` (and `PROTOCOL_VERSION` in `companion.rs`) when a field changes meaning or disappears; adding optional fields does not need a bump.
 
@@ -59,6 +59,22 @@ Overview `sessions` include optional `updatedAt` (ms epoch) so the phone can gro
 `session.start` builds the same launch as the `app` CLI's `sessions.start`: one of the rail's projects, an installed provider, a known model and effort, any of the four permission modes, and the current checkout or a new worktree. The session starts in the background without taking focus on the desktop and appears in Open sessions.
 
 `vault.index` lists up to 5,000 notes of the vault connected in Knowledge. `vault.read` returns one note (capped at 128 KiB, like **Add to agent context**), the links that resolve to other notes, its backlinks, and a revision for concurrency. `vault.write` saves an edited body when `ifRevision` still matches the on-disk note. Index and read reuse the desktop's scanner; one snapshot is kept for a minute.
+
+## Task Board
+
+When the board engine runs on this desktop, `overview` carries `capabilities: ["board"]` and `boardAttention`, the number of cards waiting on the user (a plan or final-review gate, a failed stage, or a pending approval or question).
+
+| RPC action       | Effect                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| `board.list`     | Cards with column, run state, `needsYou`, `stalled`, counters and `updatedAt`; `project`, `archived` filters |
+| `board.card`     | One card: fields, `legalMoves`, stage runs, artifact list with the latest body of each kind, diff file stats; `diffFile` adds that file's patch |
+| `board.artifact` | An older artifact version's body (`id`, `kind`, `version`)                                        |
+| `board.create`   | A new Backlog card in a rail project                                                             |
+| `board.move`     | Drag-and-drop: moves that need no input (`start`, `approvePlan`, `back`); others answer `needs_input` |
+| `board.action`   | Every gate action: `start`, `answer`, `requestChanges`, `approvePlan`, `rework`, `deliver`, `retry`, `back`, `cancel`, `reject` |
+| `board.session`  | `op` `transcript` / `approval` / `answer` for one of the card's stage runs (`id`, `runId`)        |
+
+`board.move` and `board.action` require `ifUpdatedAt`, the card's `updatedAt` as last read; a stale value fails with `conflict:`. Board errors start with a code (`invalid_input`, `not_found`, `conflict`, `illegal_transition`, `needs_input`) followed by a colon. The full client contract lives in the Task Board spec (`docs/specs/task-board/companion-contract.md`, local).
 
 ## Limits
 
