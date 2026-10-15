@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A global **Task Board** on the project rail runs each card through Grill, Plan approval, Implement, Code review, Final review and Rework. Every agent stage runs in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review leave the checkout untouched, Implement and Rework commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch.
+- Each board column picks its **model, effort and permission mode**; cards can override them on retry, and at most three stages run at once by default. Stages use the hub skills for their job, Code review drafts the pull request description, and stage sessions appear in the project's session list.
+- Cards waiting at a gate or failed show a **count badge** on the Board rail action and on the macOS Dock (alongside pending session input). Gate and failure events raise a project banner that respects mute settings.
+- Paired Companion phones can drive the board with **`board.*`** actions and see board attention in the overview.
+
 ## [1.0.12] - 2026-10-14
 
 ### Added
 
-- A global **Task Board** on the project rail runs each task card through Grill, Plan approval, Implement, Code review, Final review and Rework, every agent stage in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review must leave the checkout untouched, Implement and Rework must commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch. Each agent column picks its model, effort and permission mode, cards can override them on retry, and at most three stages run at once by default. Each stage runs the hub skills for its job, Code review drafts the pull request description, and stage sessions appear in the project's session list. Paired phones get `board.*` Companion actions.
+- Inbox keeps **filters per provider tab** instead of one global set, so GitHub, Jira and the other sources each remember their own filters.
+- Jira issues in the inbox show an **expandable parent/child tree** with issue-type labels.
 - Familiars and habit runs can create **HTML visual artifacts** with `app artifacts.write` using `kind: "html"`, alongside Markdown documents. Visuals run in a sandboxed frame, follow the app's theme, fit their content height, and refresh when revised. Scripts and public HTTPS assets load; access to the app, fetch requests, nested frames, and form submissions are blocked.
 - Familiar replies show linked **local images and videos inline**, including workspace-relative references. Images open in the file viewer when clicked, videos have playback controls, and a file that cannot be displayed falls back to its link.
 - The Familiar overview's Sessions tab has **search and filters** for provider, status, time, archived and unavailable sessions. Sessions appear newest first, load more pages as the list nears its end, and empty states explain what to do.
