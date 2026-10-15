@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.13] - 2026-10-15
+
 ### Added
 
 - A global **Task Board** on the project rail runs each card through Grill, Plan approval, Implement, Code review, Final review and Rework. Every agent stage runs in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review leave the checkout untouched, Implement and Rework commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch.
@@ -373,7 +375,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.12...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.13...HEAD
+[1.0.13]: https://github.com/deluminor/molfar/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/deluminor/molfar/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/deluminor/molfar/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/deluminor/molfar/compare/v1.0.9...v1.0.10

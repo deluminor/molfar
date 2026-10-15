@@ -2585,7 +2585,7 @@ dependencies = [
 
 [[package]]
 name = "molfar"
-version = "1.0.12"
+version = "1.0.13"
 dependencies = [
  "arboard",
  "base64 0.22.1",
