@@ -157,9 +157,11 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
 
+![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
+
 ![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred.png)
 
-![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
+![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred2.png)
 
 ### Orchestration and `/operator`
 
