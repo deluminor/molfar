@@ -22,7 +22,7 @@ Interactive diagrams: [system overview](docs/architecture/molfar-system.html) ·
 
 | Layer                 | Responsibility                                                                                     |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
+| **React UI**          | Board, Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
 | **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
 | **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
 | **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
@@ -44,6 +44,7 @@ The important boundary is the **harness layer**: provider CLIs stay native to th
 src/
 ├── app/                 # Shell composition, window chrome, startup, updates
 ├── features/            # Product slices (UI + model + tests per feature)
+│   ├── task-board/      # Global Kanban: stages, artifacts, delivery
 │   ├── sessions/        # Composer, transcripts, BTW, second opinion
 │   ├── inbox/           # Connectors incl. Confluence Docs
 │   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
@@ -56,7 +57,7 @@ src/
 ├── platform/tauri/      # Browser ↔ Tauri adapters
 ├── shared/              # Reusable UI primitives (no feature logic)
 └── styles/              # Global CSS + design tokens
-src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, familiars, control CLI
+src-tauri/src/           # Rust: PTY, FS, git, task board, inbox, jira, confluence, vault, familiars, control CLI
 host/                    # Experimental remote host (Node) for always-on agent machines
 docs/
 ├── architecture/        # Interactive HTML diagrams, JSON sources, README images
@@ -95,6 +96,19 @@ The name is a nod to the _molfar_ — the Carpathian wise man who reads signs an
 ## What it does
 
 ![MOLFAR Home dashboard](docs/architecture/images/home.png)
+
+### Board: Kanban that runs the agent loop
+
+A global **Task Board** on the project rail turns a task into a staged pipeline instead of an open-ended chat. Cards move through **Backlog → Grill → Plan approval → Implement → Code review → Final review → Done**, with **Rework** when review sends work back. Each agent stage runs in a fresh hidden session inside the card's own Git worktree; stages hand off only through versioned **spec, plan, report, and review** artifacts.
+
+- Per-column **model, effort, and permission mode**, with per-card overrides on retry.
+- **Plan approval** and **final review** always wait for you — approve, request changes, deliver as a pull request, squash-merge, or keep the branch.
+- Waiting and failed cards surface as a **count badge** on the Board rail action and on the macOS Dock; delivered cards can be **Archived** so Done stays lean.
+- Paired Companion phones can drive the same board actions while you are away from the desk.
+
+![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board1.png)
+
+![Delivered Board card with stage timeline, acceptance criteria, and pull request link](docs/architecture/images/board2.png)
 
 ### Sessions: every agent, one workspace
 
@@ -155,7 +169,7 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 ### Companion: iPhone and iPad over Tailscale
 
-Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
+Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, Task Board gates, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
 
 ![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
 

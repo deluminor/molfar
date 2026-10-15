@@ -133,10 +133,14 @@ export function transition(card: CardPosition, action: BoardActionType): Transit
   if (card.archived) return { ok: false, reason: "The card is archived." };
 
   if (action === "reject") {
-    const finished = card.columnId === "done";
-    const busy = card.runState === "running";
-    if (finished || busy) return refuse(action, card);
-    return move(card.columnId, "idle", ["cleanupWorktree"], true);
+    if (card.runState === "running") return refuse(action, card);
+    // Done cards archive without further cleanup; delivery already dropped the worktree.
+    return move(
+      card.columnId,
+      "idle",
+      card.columnId === "done" ? [] : ["cleanupWorktree"],
+      true,
+    );
   }
 
   return agentTransition(card, action) ?? gateTransition(card, action) ?? refuse(action, card);
