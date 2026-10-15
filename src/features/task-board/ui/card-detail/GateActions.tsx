@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { confirmApp } from "../../../../app/model/appDialog";
-import { GitMerge, GitPullRequest, GitBranch, Play, RotateCcw, Square, Trash2, Undo2, Check } from "../../../../shared/ui/icons";
+import { Archive, GitMerge, GitPullRequest, GitBranch, Play, RotateCcw, Square, Trash2, Undo2, Check } from "../../../../shared/ui/icons";
 import { isAgentStage } from "../../constants/columns";
 import { transition } from "../../model/transitions";
 import type { OwnerAction } from "../../services/actions";
@@ -30,13 +30,19 @@ export function GateActions({ card, openDelivery, github, onAct }: Props): React
   const [override, setOverride] = useState<StageModelConfig | undefined>(undefined);
   const allowed = (action: OwnerAction["type"]) => transition(card, action === "deliver" ? "deliverStart" : action).ok;
   const methods = github === false ? DELIVERY.filter((entry) => entry.method === "keep") : DELIVERY;
+  const delivered = card.columnId === "done";
 
-  const reject = async () => {
-    const ok = await confirmApp("Archive this card? Its worktree is deleted, and its branch too unless it was pushed.", {
-      title: "Reject card",
-      okLabel: "Reject",
-      kind: "warning",
-    });
+  const archive = async () => {
+    const ok = await confirmApp(
+      delivered
+        ? "Archive this card? It leaves the board and stays available under Archived."
+        : "Archive this card? Its worktree is deleted, and its branch too unless it was pushed.",
+      {
+        title: delivered ? "Archive card" : "Reject card",
+        okLabel: delivered ? "Archive" : "Reject",
+        kind: "warning",
+      },
+    );
     if (ok) await onAct({ type: "reject" });
   };
 
@@ -48,7 +54,7 @@ export function GateActions({ card, openDelivery, github, onAct }: Props): React
     await onAct({ type: "deliver", method });
   };
 
-  if (card.archived || card.columnId === "done") return null;
+  if (card.archived) return null;
 
   return (
     <div className="flex shrink-0 flex-col gap-2 border-t border-stroke bg-content/[0.02] px-4 py-3">
@@ -112,8 +118,9 @@ export function GateActions({ card, openDelivery, github, onAct }: Props): React
         ) : null}
         <div className="flex-1" />
         {allowed("reject") ? (
-          <button type="button" onClick={() => void reject()} className={DANGER_BUTTON}>
-            <Trash2 className="size-3.5" strokeWidth={1.75} /> Reject
+          <button type="button" onClick={() => void archive()} className={DANGER_BUTTON}>
+            {delivered ? <Archive className="size-3.5" strokeWidth={1.75} /> : <Trash2 className="size-3.5" strokeWidth={1.75} />}
+            {delivered ? "Archive" : "Reject"}
           </button>
         ) : null}
       </div>

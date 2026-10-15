@@ -7,13 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Delivered Task Board cards can be **Archived** from the card drawer. They leave the active board and remain under the Archived filter; unfinished cards still use Reject.
+
+### Changed
+
+- The Board rail **waiting count** sits on the right of the row—same trailing slot as Familiar unread badges—instead of a left-side pill beside the icon. Inbox dots and Search shortcuts still use that trailing slot when there is no count.
+
 ## [1.0.13] - 2026-10-15
 
 ### Added
 
 - A global **Task Board** on the project rail runs each card through Grill, Plan approval, Implement, Code review, Final review and Rework. Every agent stage runs in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review leave the checkout untouched, Implement and Rework commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch.
 - Each board column picks its **model, effort and permission mode**; cards can override them on retry, and at most three stages run at once by default. Stages use the hub skills for their job, Code review drafts the pull request description, and stage sessions appear in the project's session list.
-- Cards waiting at a gate or failed show a **count badge** on the Board rail action and on the macOS Dock (alongside pending session input). Gate and failure events raise a project banner that respects mute settings.
+- Cards waiting at a gate or failed surface as a **count badge** on the Board rail action and on the macOS Dock, sharing the Dock total with sessions that need input. Gate and failure events also raise a project banner that respects mute settings.
 - Paired Companion phones can drive the board with **`board.*`** actions and see board attention in the overview.
 
 ## [1.0.12] - 2026-10-14

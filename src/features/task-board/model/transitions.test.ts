@@ -42,6 +42,7 @@ describe("transition", () => {
     ["implement", "queued", "cancel", "implement/failed"],
     ["final_review", "idle", "reject", "final_review/idle/archived"],
     ["backlog", "idle", "reject", "backlog/idle/archived"],
+    ["done", "idle", "reject", "done/idle/archived"],
   ])("%s/%s + %s → %s", (column, state, action, expected) => {
     expect(next(column, state, action)).toBe(expected);
   });
@@ -57,10 +58,15 @@ describe("transition", () => {
     ["final_review", "running", "deliverStart"],
     ["final_review", "idle", "editTask"],
     ["implement", "running", "reject"],
-    ["done", "idle", "reject"],
     ["done", "idle", "start"],
   ])("refuses %s/%s + %s", (column, state, action) => {
     expect(transition(at(column, state), action).ok).toBe(false);
+  });
+
+  it("archives a done card without cleanup side effects", () => {
+    const result = transition(at("done"), "reject");
+    expect(result.ok && result.effects).toEqual([]);
+    expect(result.ok && result.archived).toBe(true);
   });
 
   it("refuses everything on an archived card", () => {
