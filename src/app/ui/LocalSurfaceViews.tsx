@@ -3,6 +3,13 @@ import { HomeView } from "../../features/home/ui/HomeView";
 import type { LocalSurfaceId } from "../../features/home/ui/LocalSurfaceRailActions";
 import { KnowledgeView } from "../../features/knowledge/ui/KnowledgeView";
 import { UsageView } from "../../features/usage/ui/UsageView";
+import type { TaskBoardRuntime } from "../../features/task-board/hooks/use-task-board-engine";
+import { lazySurface } from "../../shared/ui/lazySurface";
+
+const BoardView = lazySurface(async () => {
+  const module = await import("../../features/task-board/ui/BoardView");
+  return { default: module.BoardView };
+});
 
 type Props = {
   surface: LocalSurfaceId | null;
@@ -13,6 +20,7 @@ type Props = {
   onToggleSidebar: () => void;
   onOpenSession: (sessionId: string) => void;
   onOpenAutomation: (automationId: string) => void;
+  taskBoard: TaskBoardRuntime;
 };
 
 export function LocalSurfaceViews({
@@ -24,7 +32,22 @@ export function LocalSurfaceViews({
   onToggleSidebar,
   onOpenSession,
   onOpenAutomation,
+  taskBoard,
 }: Props): ReactNode {
+  if (surface === "board") {
+    return (
+      <BoardView
+        runtime={taskBoard}
+        projects={projectPaths}
+        besideRail={besideRail}
+        compactRail={compactRail}
+        onClose={onClose}
+        onToggleSidebar={onToggleSidebar}
+        onOpenSession={onOpenSession}
+      />
+    );
+  }
+
   if (surface === "knowledge") {
     return (
       <KnowledgeView

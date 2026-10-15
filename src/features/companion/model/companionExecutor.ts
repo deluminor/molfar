@@ -17,12 +17,10 @@ import {
   TRANSCRIPT_LIMIT_DEFAULT,
   TRANSCRIPT_LIMIT_MAX,
 } from "./companionView";
-import {
-  CompanionLaunchError,
-  companionLaunch,
-  companionSessionOptions,
-} from "./companionLaunch";
+import { companionLaunch, companionSessionOptions } from "./companionLaunch";
+import { LaunchChoiceError } from "../../sessions/model/launch-choice";
 import { createCompanionVault, type VaultAccess } from "./companionVault";
+import type { CompanionBoard } from "./companion-board";
 import {
   COMPANION_PROTOCOL_VERSION,
   type CompanionFile,
@@ -67,6 +65,8 @@ export type CompanionDeps = {
     create: (input: { title?: string; body: string; tags?: string[] }) => Promise<Note>;
   };
   newId?: () => string;
+  /** Task Board RPCs; absent in windows that do not run the board engine. */
+  board?: CompanionBoard;
 };
 
 const TEXT_MAX = 64_000;
@@ -278,8 +278,8 @@ export function createCompanionExecutor(deps: CompanionDeps) {
   /** Project sessions only: Familiars are reached by their own ID. */
   const projectSession = async (sessionId: string): Promise<Session> => {
     const session = live(sessionId) ?? (await deps.openSession(sessionId));
-    if (!session || session.ephemeral || session.orchestrationLeadId || session.inboxAsk)
-      throw new CompanionError("Session not found");
+    const hidden = session?.ephemeral || session?.orchestrationLeadId || session?.inboxAsk || session?.taskCardId;
+    if (!session || hidden) throw new CompanionError("Session not found");
     return session;
   };
 
@@ -296,6 +296,41 @@ export function createCompanionExecutor(deps: CompanionDeps) {
     const familiar = deps.familiars().find((entry) => entry.sessionId === sessionId);
     if (familiar) return familiarSession(familiar.id);
     return projectSession(sessionId);
+  };
+
+  const respondApproval = (session: Session, input: Record<string, unknown>) => {
+    const requestId = requestNumber(input);
+    if (input.decision !== "allow" && input.decision !== "deny")
+      throw new CompanionError('decision must be "allow" or "deny"');
+    const pending = session.blocks.some(
+      (block) => block.approval?.requestId === requestId && !block.approval.decided,
+    );
+    if (!pending) throw new CompanionError("This approval was already answered");
+    deps.approve(session.id, requestId, input.decision);
+    return { answered: true };
+  };
+
+  const answerQuestion = (session: Session, input: Record<string, unknown>) => {
+    const requestId = requestNumber(input);
+    if (session.pendingQuestion?.requestId !== requestId)
+      throw new CompanionError("This question was already answered");
+    const reply = record(input.reply, "reply");
+    if (reply.kind !== "answered" && reply.kind !== "skipped")
+      throw new CompanionError('reply.kind must be "answered" or "skipped"');
+    deps.answer(session.id, requestId, reply as UserQuestionReply);
+    return { answered: true };
+  };
+
+  /** A card's stage session, reachable only through the card that owns it. */
+  const boardSession = async (input: Record<string, unknown>) => {
+    if (!deps.board) throw new CompanionError("Task Board is unavailable");
+    const sessionId = await deps.board.stageSession(input);
+    const session = live(sessionId) ?? (await deps.openSession(sessionId));
+    if (!session) throw new CompanionError("Session not found");
+    if (input.op === "transcript") return transcriptOrUnchanged(session, input);
+    if (input.op === "approval") return respondApproval(session, input);
+    if (input.op === "answer") return answerQuestion(session, input);
+    throw new CompanionError('op must be "transcript", "approval" or "answer"');
   };
 
   const send = (session: Session, input: Record<string, unknown>) => {
@@ -338,9 +373,19 @@ export function createCompanionExecutor(deps: CompanionDeps) {
 
   return async function handle(action: string, rawInput: unknown): Promise<unknown> {
     const input = record(rawInput ?? {});
+    if (action === "board.session") return boardSession(input);
+    if (action.startsWith("board.")) {
+      if (!deps.board) throw new CompanionError("Task Board is unavailable");
+      return deps.board.handle(action, input);
+    }
     switch (action) {
-      case "overview":
-        return overview();
+      case "overview": {
+        const boardAttention = await deps.board?.attention().catch((error: unknown) => {
+          console.error("Companion: Task Board attention count failed", error);
+          return undefined;
+        });
+        return { ...overview(), ...(boardAttention === undefined ? {} : { boardAttention }), capabilities: deps.board ? ["board"] : [] };
+      }
       case "familiar.transcript":
         return transcriptOrUnchanged(await familiarSession(id(input, "familiarId")), input);
       case "familiar.send":
@@ -362,29 +407,10 @@ export function createCompanionExecutor(deps: CompanionDeps) {
         deps.setRuntimeMode(session.id, mode as RuntimeMode);
         return { runtimeMode: mode };
       }
-      case "approval.respond": {
-        const session = await answerable(id(input, "sessionId"));
-        const requestId = requestNumber(input);
-        if (input.decision !== "allow" && input.decision !== "deny")
-          throw new CompanionError('decision must be "allow" or "deny"');
-        const pending = session.blocks.some(
-          (block) => block.approval?.requestId === requestId && !block.approval.decided,
-        );
-        if (!pending) throw new CompanionError("This approval was already answered");
-        deps.approve(session.id, requestId, input.decision);
-        return { answered: true };
-      }
-      case "question.answer": {
-        const session = await answerable(id(input, "sessionId"));
-        const requestId = requestNumber(input);
-        if (session.pendingQuestion?.requestId !== requestId)
-          throw new CompanionError("This question was already answered");
-        const reply = record(input.reply, "reply");
-        if (reply.kind !== "answered" && reply.kind !== "skipped")
-          throw new CompanionError('reply.kind must be "answered" or "skipped"');
-        deps.answer(session.id, requestId, reply as UserQuestionReply);
-        return { answered: true };
-      }
+      case "approval.respond":
+        return respondApproval(await answerable(id(input, "sessionId")), input);
+      case "question.answer":
+        return answerQuestion(await answerable(id(input, "sessionId")), input);
       case "session.options":
         return companionSessionOptions(railProject(input), deps.defaultRuntimeMode());
       case "session.start": {
@@ -399,7 +425,7 @@ export function createCompanionExecutor(deps: CompanionDeps) {
             prompt,
           });
         } catch (error) {
-          if (error instanceof CompanionLaunchError) throw new CompanionError(error.message);
+          if (error instanceof LaunchChoiceError) throw new CompanionError(error.message);
           throw error;
         }
         const sessionId = `companion-${newId()}`;

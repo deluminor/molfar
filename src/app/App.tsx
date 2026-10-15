@@ -47,6 +47,12 @@ import { HarnessEventQueue } from "./model/harnessFlush";
 import { useIdleSessionDetach } from "./hooks/useIdleSessionDetach";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import { submitWithSettlement } from "./model/managedSubmission";
+import { createTaskBoardSessionPort } from "./model/task-board-session-port";
+import { createCompanionBoard } from "../features/companion/model/companion-board";
+import { useTaskBoardEngine } from "../features/task-board/hooks/use-task-board-engine";
+import { useBoardAttention } from "../features/task-board/hooks/use-board-attention";
+import { requestBoardFocus } from "../features/task-board/model/board-focus";
+import { boardNoticeCard } from "../features/task-board/services/notify";
 import { acceptQuickLaunch } from "./model/quickLaunchSession";
 import { updateSessionState } from "./model/sessionState";
 import {
@@ -515,7 +521,10 @@ import {
 import { useInputNotifications } from "../features/notifications/hooks/useInputNotifications";
 import { useSessionReminders } from "../features/notifications/hooks/useSessionReminders";
 import { hiddenApprovalNotices } from "../features/notifications/model/approvalToast";
-import { syncDockBadge } from "../features/notifications/model/dockBadge";
+import {
+  syncBoardDockBadge,
+  syncDockBadge,
+} from "../features/notifications/model/dockBadge";
 import {
   announceSessionFinished,
   loadNotificationsEnabled,
@@ -8225,8 +8234,9 @@ function Workspace({
               (s) => s.id === sessionId,
             );
             const visible = sessionId === activeSessionIdRef.current;
-            // A habit's hidden run speaks through its Familiar's chat instead.
-            if (finished && !isHabitRun(sessionId))
+            // A habit's hidden run speaks through its Familiar's chat, and a
+            // Task Board stage through the board, instead.
+            if (finished && !isHabitRun(sessionId) && !finished.taskCardId)
               void announceSessionFinished(finished, visible);
           }, 0);
           notifyReviewChanged(sessionId);
@@ -8716,6 +8726,28 @@ function Workspace({
   useQuickComposerLaunches(launchQuickSession);
   const launchQuickSessionRef = useRef(launchQuickSession);
   launchQuickSessionRef.current = launchQuickSession;
+  const taskBoardSessions = useMemo(
+    () =>
+      createTaskBoardSessionPort({
+        launch: (launch, id, onSettled) =>
+          launchQuickSessionRef.current(launch, id, undefined, onSettled, false),
+        sessions: () => sessionsRef.current,
+        loadSession: getSession,
+        stop: async (id) => {
+          await flushSync(() => stopSessionRef.current(id));
+          flushHarnessEvents();
+        },
+        wait: (ms) => new Promise((resolve) => window.setTimeout(resolve, ms)),
+      }),
+    [],
+  );
+  const isMainWindow = useMemo(() => getCurrentWindow().label === "main", []);
+  const taskBoard = useTaskBoardEngine(taskBoardSessions, isMainWindow, companionProjectPaths);
+  const boardAttention = useBoardAttention(taskBoard.ports.store);
+  const railBadges = useMemo(() => ({ board: boardAttention }), [boardAttention]);
+  useEffect(() => {
+    if (isMainWindow) syncBoardDockBadge(boardAttention);
+  }, [isMainWindow, boardAttention]);
   const submitSessionRef = useRef(submitSession);
   submitSessionRef.current = submitSession;
   const saveDraftRef = useRef(onSaveDraft);
@@ -10287,7 +10319,9 @@ function Workspace({
 
   const unseenFinishedRef = useRef(unseenFinishedIds);
   unseenFinishedRef.current = unseenFinishedIds;
+  const companionBoard = useMemo(() => createCompanionBoard(taskBoard), [taskBoard]);
   useCompanionBridge({
+    board: companionBoard,
     sessions: () => sessionsRef.current,
     // History spans visited projects; phones need it so Open sessions is not
     // limited to tabs currently mounted in memory.
@@ -10946,7 +10980,7 @@ function Workspace({
               const stored = await listSessionsByProject(cwd);
               const byId = new Map<string, AppSessionListing>();
               for (const session of stored) {
-                if (session.orchestrationLeadId) continue;
+                if (session.orchestrationLeadId || session.taskCardId) continue;
                 byId.set(session.id, {
                   id: session.id,
                   title: session.title,
@@ -10960,6 +10994,7 @@ function Workspace({
               for (const session of sessionsRef.current) {
                 if (
                   session.orchestrationLeadId ||
+                  session.taskCardId ||
                   isHabitRun(session.id) ||
                   !sameProjectPath(session.cwd, cwd)
                 )
@@ -11783,6 +11818,7 @@ function Workspace({
   }, []);
 
   const {
+    onOpenLocalSurface,
     onOpenKnowledge,
     onLeaveLocalSurface,
     onOpenHomeSession,
@@ -11800,6 +11836,7 @@ function Workspace({
     sessionsRef,
     history,
     onSelectHistorySession,
+    railBadges,
   });
 
   const onOpenAutomationSession = useCallback(
@@ -12081,6 +12118,13 @@ function Workspace({
     [onSelectProject],
   );
 
+  const onOpenBoardCard = useCallback(
+    (cardId: string) => {
+      requestBoardFocus(cardId);
+      onOpenLocalSurface("board");
+    },
+    [onOpenLocalSurface],
+  );
   const actions = useRef({
     onNewFocused,
     onArchiveFocusedSession,
@@ -12112,6 +12156,7 @@ function Workspace({
     onNavigateProjectList,
     openSettings,
     onOpenApprovalSession,
+    onOpenBoardCard,
   });
   actions.current = {
     onNewFocused,
@@ -12144,6 +12189,7 @@ function Workspace({
     onNavigateProjectList,
     openSettings,
     onOpenApprovalSession,
+    onOpenBoardCard,
   };
 
   const debounce = useRef({ name: "", at: 0 });
@@ -12447,14 +12493,19 @@ function Workspace({
       }),
       // Every window hears the click; only the one holding the session acts.
       listen<string>(NOTIFICATION_CLICK_EVENT, ({ payload: sessionId }) => {
-        if (!sessionsRef.current.some((s) => s.id === sessionId)) return;
+        const boardCard = boardNoticeCard(sessionId);
+        const handled = boardCard
+          ? isMainWindow
+          : sessionsRef.current.some((s) => s.id === sessionId);
+        if (!handled) return;
         const win = getCurrentWindow();
         // Windows leaves a minimized window minimized when it is only focused.
         void win
           .unminimize()
           .then(() => win.setFocus())
           .catch(() => {});
-        actions.current.onOpenApprovalSession(sessionId);
+        if (boardCard) actions.current.onOpenBoardCard(boardCard);
+        else actions.current.onOpenApprovalSession(sessionId);
       }),
       listen("zoom_in", () => {
         const next = zoomInUiScale(loadUiScale());
@@ -13459,6 +13510,7 @@ function Workspace({
                 onToggleSidebar={onToggleSidebar}
                 onOpenSession={onOpenHomeSession}
                 onOpenAutomation={onOpenHomeAutomation}
+                taskBoard={taskBoard}
               />
               {automationsSurfaceOpen ? (
                 <AutomationsView

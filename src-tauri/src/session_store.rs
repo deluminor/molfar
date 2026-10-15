@@ -131,6 +131,8 @@ pub struct SessionUpsert {
     pub linked_work_item: Option<Value>,
     #[serde(default)]
     pub automation_id: Option<String>,
+    #[serde(default)]
+    pub task_card_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,6 +174,8 @@ pub struct SessionSummary {
     pub linked_work_item: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub automation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_card_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -211,6 +215,8 @@ pub struct SessionRecord {
     pub linked_work_item: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub automation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_card_id: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -237,6 +243,11 @@ pub fn session_upsert(
     if let Some(automation_id) = &session.automation_id {
         if !automation_id.is_empty() {
             validate_id(automation_id, "automation")?;
+        }
+    }
+    if let Some(task_card_id) = &session.task_card_id {
+        if !task_card_id.is_empty() {
+            validate_id(task_card_id, "task card")?;
         }
     }
     if !session.model_settings.is_object() {
@@ -785,6 +796,7 @@ fn migrate(conn: &Connection) -> rusqlite::Result<()> {
         ("queued_messages_json", "TEXT NOT NULL DEFAULT '[]'"),
         ("queue_status", "TEXT"),
         ("sidebar_hidden", "INTEGER NOT NULL DEFAULT 0"),
+        ("task_card_id", "TEXT"),
     ] {
         ensure_session_column(conn, column, decl)?;
     }
@@ -948,6 +960,24 @@ fn migrate(conn: &Connection) -> rusqlite::Result<()> {
             params![now_millis()],
         )?;
     }
+    if current < 20 {
+        // Task Board stage sessions carry their card; keep the projection
+        // inside the covering index.
+        ensure_session_column(conn, "task_card_id", "TEXT")?;
+        conn.execute_batch(
+            "DROP INDEX IF EXISTS sessions_cwd_cover_idx;
+             CREATE INDEX sessions_cwd_cover_idx
+               ON sessions (cwd, has_user_message, updated_at DESC, id, harness,
+                            model, runtime_mode, title, provider_session_id,
+                            created_at, branch, archived, pinned,
+                            linked_work_item_json, worktree_cwd, worktree_removed,
+                            is_draft, automation_id, sidebar_hidden, task_card_id);",
+        )?;
+        conn.execute(
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (20, ?1)",
+            params![now_millis()],
+        )?;
+    }
     // Create even when a version row already exists (another build may have
     // used the same numbers, or a previous run recorded the version without
     // the table). Restore writes into these; missing tables look like a
@@ -987,11 +1017,12 @@ fn migrate(conn: &Connection) -> rusqlite::Result<()> {
                         model, runtime_mode, title, provider_session_id,
                         created_at, branch, archived, pinned,
                         linked_work_item_json, worktree_cwd, worktree_removed,
-                        is_draft, automation_id, sidebar_hidden);",
+                        is_draft, automation_id, sidebar_hidden, task_card_id);",
     )?;
     crate::notes::ensure_notes_table(conn)?;
     crate::reminders::ensure_table(conn)?;
     crate::automations::ensure_tables(conn)?;
+    crate::task_board::ensure_tables(conn)?;
     ensure_orchestration_history(conn)?;
     crate::familiar_transcript::ensure_tables(conn)?;
     Ok(())
@@ -1138,6 +1169,11 @@ pub(crate) fn upsert_session(
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty());
+    let task_card_id = session
+        .task_card_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let provider_session_id = session
         .provider_session_id
         .as_ref()
@@ -1212,8 +1248,9 @@ pub(crate) fn upsert_session(
            provider_session_id, blocks_json, created_at, updated_at, branch,
            context_used, context_window, worktree_cwd, has_user_message,
            linked_work_item_json, provider_account_id, worktree_removed, is_draft,
-           automation_id, queued_messages_json, queue_status, sidebar_hidden
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)
+           automation_id, queued_messages_json, queue_status, sidebar_hidden,
+           task_card_id
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)
          ON CONFLICT(id) DO UPDATE SET
            cwd = excluded.cwd,
            harness = excluded.harness,
@@ -1236,7 +1273,8 @@ pub(crate) fn upsert_session(
            automation_id = excluded.automation_id,
            queued_messages_json = excluded.queued_messages_json,
            queue_status = excluded.queue_status,
-           sidebar_hidden = excluded.sidebar_hidden",
+           sidebar_hidden = excluded.sidebar_hidden,
+           task_card_id = excluded.task_card_id",
         params![
             session.id,
             session.cwd,
@@ -1262,6 +1300,7 @@ pub(crate) fn upsert_session(
             queued_messages_json,
             session.queue_status,
             i64::from(session.sidebar_hidden),
+            task_card_id,
         ],
     )?;
 
@@ -1290,6 +1329,7 @@ pub(crate) fn upsert_session(
         draft: is_draft,
         linked_work_item: session.linked_work_item.clone(),
         automation_id: automation_id.map(str::to_owned),
+        task_card_id: task_card_id.map(str::to_owned),
     })
 }
 
@@ -1638,7 +1678,7 @@ fn list_by_project(conn: &Connection, cwd: &str) -> rusqlite::Result<Vec<Session
                 created_at, updated_at, branch, archived, pinned,
                 linked_work_item_json,
                 (SELECT summary FROM orchestration_sidebar WHERE lead_id = sessions.id), worktree_cwd,
-                worktree_removed, is_draft, automation_id, sidebar_hidden
+                worktree_removed, is_draft, automation_id, sidebar_hidden, task_card_id
          FROM sessions
          WHERE cwd = ?1
            AND has_user_message = 1
@@ -1679,6 +1719,7 @@ fn list_by_project(conn: &Connection, cwd: &str) -> rusqlite::Result<Vec<Session
             draft: row.get::<_, i64>(16)? != 0,
             linked_work_item,
             automation_id: nonempty(row.get(17)?),
+            task_card_id: nonempty(row.get(19)?),
         })
     })?;
     rows.collect()
@@ -1690,7 +1731,7 @@ fn list_linked(conn: &Connection) -> rusqlite::Result<Vec<SessionSummary>> {
                 created_at, updated_at, branch, archived, pinned,
                 linked_work_item_json,
                 (SELECT summary FROM orchestration_sidebar WHERE lead_id = sessions.id), worktree_cwd,
-                worktree_removed, is_draft, automation_id, sidebar_hidden
+                worktree_removed, is_draft, automation_id, sidebar_hidden, task_card_id
          FROM sessions
          WHERE has_user_message = 1
            AND linked_work_item_json IS NOT NULL
@@ -1725,6 +1766,7 @@ fn list_linked(conn: &Connection) -> rusqlite::Result<Vec<SessionSummary>> {
             draft: row.get::<_, i64>(16)? != 0,
             linked_work_item: optional_json(row.get(12)?),
             automation_id: nonempty(row.get(17)?),
+            task_card_id: nonempty(row.get(19)?),
         })
     })?;
     rows.collect()
@@ -1933,7 +1975,8 @@ fn get_session_record(
                 provider_session_id, {blocks}, created_at, updated_at,
                 context_used, context_window, branch, worktree_cwd,
                 linked_work_item_json, provider_account_id, worktree_removed,
-                automation_id, queued_messages_json, queue_status, sidebar_hidden
+                automation_id, queued_messages_json, queue_status, sidebar_hidden,
+                task_card_id
          FROM sessions
          WHERE id = ?1 AND inbox_ask IS NULL"
         ),
@@ -1983,6 +2026,7 @@ fn get_session_record(
                 linked_work_item: optional_json(row.get(15)?),
                 provider_account_id: row.get(16)?,
                 automation_id: nonempty(row.get(18)?),
+                task_card_id: nonempty(row.get(22)?),
                 created_at: row.get(9)?,
                 updated_at: row.get(10)?,
             })
@@ -2188,6 +2232,7 @@ mod tests {
             worktree_removed: false,
             linked_work_item: None,
             automation_id: None,
+            task_card_id: None,
         }
     }
 
@@ -2324,7 +2369,7 @@ mod tests {
                        ON sessions (cwd, has_user_message, updated_at DESC, id, harness,
                                     model, runtime_mode, title, provider_session_id,
                                     created_at, branch, archived, pinned, linked_work_item_json);
-                     DELETE FROM schema_migrations WHERE version IN (16, 17, 18, 19);",
+                     DELETE FROM schema_migrations WHERE version IN (16, 17, 18, 19, 20);",
                 )
                 .unwrap();
                 migrate(&conn).unwrap();
@@ -2567,6 +2612,20 @@ mod tests {
             get_session(&conn, "s1").unwrap().unwrap().linked_work_item,
             None
         );
+    }
+
+    #[test]
+    fn task_card_id_round_trips_on_the_full_record() {
+        let store = SessionStore::open_in_memory().unwrap();
+        let conn = store.conn.lock().unwrap();
+        let mut row = sample("s1", "/tmp/a", "#1 Board");
+        row.task_card_id = Some("card-1".into());
+        upsert_session(&conn, &row).unwrap();
+
+        let stored = get_session(&conn, "s1").unwrap().unwrap();
+        assert_eq!(stored.task_card_id.as_deref(), Some("card-1"));
+        // Stage sessions are ordinary project sessions in the sidebar.
+        assert_eq!(list_by_project(&conn, "/tmp/a").unwrap().len(), 1);
     }
 
     #[test]

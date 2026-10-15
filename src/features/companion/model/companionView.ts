@@ -207,11 +207,13 @@ export function companionSessionFromSummary(
 }
 
 function isListedProjectSession(session: Session): boolean {
-  return !session.ephemeral && !session.orchestrationLeadId && !session.inboxAsk;
+  return (
+    !session.ephemeral && !session.orchestrationLeadId && !session.inboxAsk && !session.taskCardId
+  );
 }
 
 function isListedHistoryRow(row: SessionSummary): boolean {
-  return !row.archived && !row.draft && !row.orchestrationLeadId;
+  return !row.archived && !row.draft && !row.orchestrationLeadId && !row.taskCardId;
 }
 
 /**

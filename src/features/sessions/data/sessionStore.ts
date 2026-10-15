@@ -76,6 +76,7 @@ export type SessionSummary = {
   draft?: boolean;
   linkedWorkItem?: LinkedWorkItem;
   automationId?: string;
+  taskCardId?: string;
 };
 
 type SessionRecord = {
@@ -101,6 +102,7 @@ type SessionRecord = {
   worktreeRemoved?: boolean;
   linkedWorkItem?: LinkedWorkItem | null;
   automationId?: string | null;
+  taskCardId?: string | null;
   createdAt: number;
   updatedAt: number;
 };
@@ -126,6 +128,7 @@ type SessionUpsertPayload = {
   worktreeRemoved?: boolean;
   linkedWorkItem?: LinkedWorkItem;
   automationId?: string;
+  taskCardId?: string;
 };
 
 /** Only real chats belong in project history — blank tabs stay ephemeral. */
@@ -185,6 +188,9 @@ function persistableMeta(
     ...(linkedWorkItem ? { linkedWorkItem } : {}),
     ...(session.automationId && isPersistableId(session.automationId)
       ? { automationId: session.automationId }
+      : {}),
+    ...(session.taskCardId && isPersistableId(session.taskCardId)
+      ? { taskCardId: session.taskCardId }
       : {}),
   };
 }
@@ -1428,6 +1434,9 @@ function normalizeSummary(summary: SessionSummary): SessionSummary {
     isPersistableId(summary.automationId)
       ? { automationId: summary.automationId }
       : {}),
+    ...(typeof summary.taskCardId === "string" && isPersistableId(summary.taskCardId)
+      ? { taskCardId: summary.taskCardId }
+      : {}),
   };
 }
 
@@ -1476,6 +1485,9 @@ function recordToSession(record: SessionRecord): Session {
     ...(linkedWorkItem ? { linkedWorkItem } : {}),
     ...(record.automationId && isPersistableId(record.automationId)
       ? { automationId: record.automationId }
+      : {}),
+    ...(record.taskCardId && isPersistableId(record.taskCardId)
+      ? { taskCardId: record.taskCardId }
       : {}),
     ...(contextFromRecord(record) ?? {}),
   };

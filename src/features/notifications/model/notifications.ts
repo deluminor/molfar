@@ -281,6 +281,60 @@ async function announceSession(
   if (!sent) playCue(finished ? "turnFinished" : "inputRequested", subject);
 }
 
+/**
+ * A banner for an app surface rather than a session (the Task Board). The
+ * click payload is `target`, so the window can route it.
+ */
+export async function notifyApp(notice: {
+  target: string;
+  title: string;
+  subtitle: string;
+  body: string;
+}): Promise<boolean> {
+  const decision = shouldNotify({
+    enabled: loadNotificationsEnabled(),
+    permission,
+    windowFocused,
+    sessionVisible: false,
+  });
+  if (!decision) return false;
+  try {
+    await invoke("show_notification", {
+      sessionId: notice.target,
+      title: notice.title,
+      subtitle: notice.subtitle,
+      body: notice.body,
+      sound: loadSoundsEnabled(),
+    });
+    return true;
+  } catch (error: unknown) {
+    console.error("Notification could not be shown", { target: notice.target, error });
+    return false;
+  }
+}
+
+/**
+ * An app event about a project (a Task Board gate or failure). It follows the
+ * project's mute and "needs input" preferences like session banners, and
+ * falls back to the in-app sound when no banner is shown.
+ */
+export async function announceProjectEvent(notice: {
+  target: string;
+  projectCwd: string;
+  title: string;
+  subtitle: string;
+  body: string;
+}): Promise<void> {
+  const project = knownNotificationProject(notice.projectCwd);
+  const subject: NotificationSubject | undefined = project
+    ? { projectId: project.id, category: "agentInput", occurredAt: Date.now() }
+    : undefined;
+  if (subject && !allowsProjectNotification(subject)) return;
+
+  const sent = await notifyApp(notice);
+  if (!sent && subject) playCue("inputRequested", subject);
+}
+
 async function notifyProjectSession(
   session: Session,
   event: NotificationEvent,

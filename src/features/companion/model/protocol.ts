@@ -4,6 +4,7 @@ import type {
   BlockRole,
   RuntimeMode,
 } from "../../sessions/model/session";
+import type { LaunchOptions } from "../../sessions/model/launch-choice";
 import type {
   UserQuestion,
   UserQuestionReply,
@@ -62,8 +63,12 @@ export type CompanionOverview = {
   generatedAt: number;
   familiars: CompanionFamiliar[];
   projects: CompanionProject[];
-  /** Open project sessions, busiest first. Familiar conversations and habit runs are left out. */
+  /** Open project sessions, busiest first. Familiar conversations, habit runs and Task Board stages are left out. */
   sessions: CompanionSession[];
+  /** Task Board cards waiting on the user; present when the board runs on this desktop. */
+  boardAttention?: number;
+  /** Optional feature flags; "board" means the `board.*` actions are available. */
+  capabilities?: string[];
 };
 
 export type CompanionBlock = {
@@ -118,20 +123,7 @@ export type CompanionNoteSummary = {
   updatedAt: number;
 };
 
-export type CompanionSessionOptions = {
-  project: string;
-  defaults: { harness: string; model: string; runtimeMode: RuntimeMode };
-  /** Installed providers only. */
-  harnesses: {
-    id: string;
-    label: string;
-    models: {
-      id: string;
-      name: string;
-      effort?: { value: string; options: { value: string; label: string }[] };
-    }[];
-  }[];
-};
+export type CompanionSessionOptions = LaunchOptions;
 
 /** A wiki/markdown link that resolved to another note in the vault. */
 export type CompanionVaultLink = { target: string; path: string };
