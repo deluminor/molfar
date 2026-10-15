@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
 
+https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
+
 ## Architecture
 
 ![MOLFAR system architecture — React UI, Tauri core, Companion gateway, agent harness, Atlassian, and local store](docs/architecture/images/molfar-system.png)
