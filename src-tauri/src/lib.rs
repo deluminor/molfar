@@ -55,6 +55,7 @@ mod search;
 mod session_store;
 mod skills;
 pub mod ssh_askpass;
+mod task_board;
 #[cfg(target_os = "macos")]
 mod trackpad_zoom;
 #[cfg(target_os = "windows")]
@@ -349,6 +350,21 @@ pub fn run() {
             reminders::reminder_take_open,
             reminders::reminder_register_window,
             reminders::reminder_open,
+            task_board::task_board_cards_list,
+            task_board::task_board_card_get,
+            task_board::task_board_card_create,
+            task_board::task_board_card_update,
+            task_board::task_board_card_delete,
+            task_board::task_board_claim_next,
+            task_board::task_board_runs_list,
+            task_board::task_board_runs_running,
+            task_board::task_board_run_create,
+            task_board::task_board_run_update,
+            task_board::task_board_artifacts_list,
+            task_board::task_board_artifact_read,
+            task_board::task_board_artifact_write,
+            task_board::task_board_settings_get,
+            task_board::task_board_settings_set,
             automations::automations_list,
             automations::automations_upsert,
             automations::automations_delete,
@@ -386,6 +402,9 @@ pub fn run() {
             fs::git_pull,
             fs::git_sync,
             fs::git_range_context,
+            fs::git_range_diff,
+            fs::git_snapshot,
+            fs::git_default_branch_name,
             fs::git_pr_status,
             fs::git_pr_create,
             fs::git_github_status,
@@ -453,6 +472,7 @@ pub fn run() {
             worktrees::git_worktree_remove,
             worktrees::git_orchestration_worktree_remove,
             worktrees::git_orchestration_branch_remove,
+            worktrees::git_task_branch_remove,
             fs::create_path,
             fs::rename_path,
             fs::delete_path,

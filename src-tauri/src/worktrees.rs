@@ -790,6 +790,40 @@ pub async fn git_orchestration_branch_remove(cwd: String, branch: String) -> Res
     .map_err(|error| error.to_string())?
 }
 
+const TASK_BRANCH_PREFIX: &str = "molfar/task-";
+
+/// Deletes a Task Board branch once its worktree is gone, unless it was pushed:
+/// a pushed branch may back an open pull request. Returns whether it was deleted.
+fn remove_task_branch(root: &Path, branch: &str) -> Result<bool, String> {
+    let branch = branch.trim();
+    if !branch.starts_with(TASK_BRANCH_PREFIX) {
+        return Err("Only Task Board branches can be removed here".into());
+    }
+    git(root, &["check-ref-format", "--branch", branch])?;
+    let branch_ref = format!("refs/heads/{branch}");
+    if git(root, &["rev-parse", "--verify", &branch_ref]).is_err() {
+        return Ok(true);
+    }
+    if list(root)?
+        .iter()
+        .any(|tree| tree.branch.as_deref() == Some(branch))
+    {
+        return Err("The task branch still has a worktree".into());
+    }
+    let upstream = format!("{branch}@{{upstream}}");
+    if git(root, &["rev-parse", "--abbrev-ref", &upstream]).is_ok() {
+        return Ok(false);
+    }
+    git(root, &["branch", "-D", branch]).map(|_| true)
+}
+
+#[tauri::command]
+pub async fn git_task_branch_remove(cwd: String, branch: String) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || remove_task_branch(&expand_home(&cwd), &branch))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -821,6 +855,40 @@ mod tests {
         )
         .unwrap();
         Repo(dir)
+    }
+
+    #[test]
+    fn task_branch_removal_keeps_pushed_and_foreign_branches() {
+        let repo = repo();
+        let root = repo.0.join("repo");
+        let remote = repo.0.join("remote.git");
+        git_checked(&repo.0, &["init", "--bare", "remote.git"]).unwrap();
+        git_checked(
+            &root,
+            &["remote", "add", "origin", &remote.to_string_lossy()],
+        )
+        .unwrap();
+        git_checked(&root, &["branch", "molfar/task-aaa111-local"]).unwrap();
+        git_checked(&root, &["branch", "molfar/task-bbb222-pushed"]).unwrap();
+        git_checked(
+            &root,
+            &["push", "-u", "origin", "molfar/task-bbb222-pushed"],
+        )
+        .unwrap();
+
+        assert!(remove_task_branch(&root, "molfar/task-aaa111-local").unwrap());
+        assert!(!remove_task_branch(&root, "molfar/task-bbb222-pushed").unwrap());
+        assert!(remove_task_branch(&root, "main").is_err());
+        assert!(remove_task_branch(&root, "molfar/task-gone").unwrap());
+        assert!(git(
+            &root,
+            &[
+                "rev-parse",
+                "--verify",
+                "refs/heads/molfar/task-bbb222-pushed"
+            ]
+        )
+        .is_ok());
     }
 
     #[test]

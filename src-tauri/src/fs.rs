@@ -1166,6 +1166,35 @@ pub async fn git_range_context(cwd: String) -> Result<GitRangeContext, String> {
         .map_err(|e| e.to_string())?
 }
 
+/// The repository's default branch name (`main`, `master`, …), local form.
+#[tauri::command]
+pub async fn git_default_branch_name(cwd: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = expand_home(&cwd);
+        let remote = git_remote_name(&root);
+        git_default_branch(&root, remote.as_deref())
+            .ok_or_else(|| "Could not resolve the default branch".to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Commits and diff between a fixed base commit and HEAD, for task cards.
+#[tauri::command]
+pub async fn git_range_diff(cwd: String, base: String) -> Result<GitRangeContext, String> {
+    tauri::async_runtime::spawn_blocking(move || git_range_diff_for(&expand_home(&cwd), &base))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// HEAD plus porcelain status for the task board's read-only and commit checks.
+#[tauri::command]
+pub async fn git_snapshot(cwd: String) -> Result<GitSnapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || git_snapshot_for(&expand_home(&cwd)))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct GitPr {
@@ -2913,21 +2942,98 @@ fn git_range_context_for(root: &Path) -> Result<GitRangeContext, String> {
         }
         _ => default_branch.clone(),
     };
+    let mut context = range_context_between(root, &base_ref, head)?;
+    if context.commit_summary.trim().is_empty() && context.diff_patch.trim().is_empty() {
+        return Err("No commits to include in a pull request".into());
+    }
+    context.base = default_branch;
+    Ok(context)
+}
+
+fn range_context_between(
+    root: &Path,
+    base_ref: &str,
+    head: String,
+) -> Result<GitRangeContext, String> {
     let spec = format!("{base_ref}...HEAD");
     let commit_summary =
         git_run(root, &["log", "--format=%s", &format!("{base_ref}..HEAD")]).unwrap_or_default();
     let diff_summary = git_run(root, &["diff", "--stat", &spec]).unwrap_or_default();
     let diff_patch = git_run(root, &["diff", "--no-ext-diff", &spec]).unwrap_or_default();
-    if commit_summary.trim().is_empty() && diff_patch.trim().is_empty() {
-        return Err("No commits to include in a pull request".into());
-    }
     Ok(GitRangeContext {
-        base: default_branch,
+        base: base_ref.to_string(),
         head,
         commit_summary,
         diff_summary,
         diff_patch,
     })
+}
+
+/// A task card's commits and diff against the commit it started from. Unlike
+/// `git_range_context`, an empty range is a valid answer here.
+fn git_range_diff_for(root: &Path, base: &str) -> Result<GitRangeContext, String> {
+    if base.is_empty() || base.starts_with('-') || base.contains("..") {
+        return Err("Invalid base commit".into());
+    }
+    let commit = format!("{base}^{{commit}}");
+    if git_output(root, &["rev-parse", "--verify", "--quiet", &commit]).is_none() {
+        return Err(format!("Base commit {base} is not in this repository"));
+    }
+    let head = git_run(root, &["rev-parse", "HEAD"])
+        .map(|sha| sha.trim().to_string())
+        .ok_or_else(|| "Could not read HEAD".to_string())?;
+    range_context_between(root, base, head)
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct GitSnapshot {
+    pub head: String,
+    pub porcelain: String,
+    /// Hash of every uncommitted byte: tracked changes and untracked files.
+    pub fingerprint: String,
+}
+
+/// HEAD and the full working-tree status, compared before and after a task
+/// stage to prove a read-only stage left the checkout untouched.
+fn git_snapshot_for(root: &Path) -> Result<GitSnapshot, String> {
+    let head = git_run(root, &["rev-parse", "HEAD"])
+        .map(|sha| sha.trim().to_string())
+        .ok_or_else(|| "Could not read HEAD".to_string())?;
+    let porcelain = git_run(root, &["status", "--porcelain=v1", "--untracked-files=all"])
+        .ok_or_else(|| "Could not read the working tree status".to_string())?;
+    let fingerprint = working_tree_fingerprint(root)?;
+    Ok(GitSnapshot {
+        head,
+        porcelain,
+        fingerprint,
+    })
+}
+
+/// Status lines only say a file is dirty; this also changes when an already
+/// dirty file is edited again.
+fn working_tree_fingerprint(root: &Path) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+
+    let diff = git_output(root, &["diff", "HEAD", "--binary", "--no-ext-diff"])
+        .ok_or_else(|| "Could not read the working tree diff".to_string())?;
+    let untracked = git_output(root, &["ls-files", "-o", "--exclude-standard", "-z"])
+        .ok_or_else(|| "Could not list untracked files".to_string())?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&diff);
+    for path in untracked
+        .split(|byte| *byte == 0)
+        .filter(|path| !path.is_empty())
+    {
+        hasher.update(path);
+        let relative = String::from_utf8_lossy(path);
+        match std::fs::read(root.join(relative.as_ref())) {
+            Ok(bytes) => hasher.update(&bytes),
+            Err(error) => hasher.update(error.to_string().as_bytes()),
+        }
+    }
+    Ok(format!("{:x}", hasher.finalize()))
 }
 
 fn git_pr_status_for(root: &Path) -> Option<GitPr> {
@@ -7096,6 +7202,57 @@ mod tests {
             && git(dir, &["config", "user.email", "molfar@test"])
             && git(dir, &["config", "commit.gpgsign", "false"])
             && git(dir, &["config", "core.autocrlf", "false"])
+    }
+
+    #[test]
+    fn git_snapshot_tracks_head_and_dirty_files() {
+        let dir = tmp("git-snapshot");
+        if !init_git(&dir.0, "main", None) {
+            return;
+        }
+        std::fs::write(dir.0.join("a.txt"), "one").unwrap();
+        assert!(git(&dir.0, &["add", "."]) && git(&dir.0, &["commit", "-m", "init"]));
+
+        let clean = git_snapshot_for(&dir.0).unwrap();
+        std::fs::write(dir.0.join("b.txt"), "two").unwrap();
+        std::fs::write(dir.0.join("a.txt"), "edited").unwrap();
+        let dirty = git_snapshot_for(&dir.0).unwrap();
+        std::fs::write(dir.0.join("a.txt"), "edited again").unwrap();
+        std::fs::write(dir.0.join("b.txt"), "three").unwrap();
+        let dirtier = git_snapshot_for(&dir.0).unwrap();
+
+        assert_eq!(clean.head.len(), 40);
+        assert!(clean.porcelain.is_empty());
+        assert_eq!(dirty.head, clean.head);
+        assert!(dirty.porcelain.contains("b.txt"));
+        assert_eq!(dirtier.porcelain, dirty.porcelain);
+        assert_ne!(dirtier.fingerprint, dirty.fingerprint);
+        assert_eq!(
+            git_snapshot_for(&dir.0).unwrap().fingerprint,
+            dirtier.fingerprint
+        );
+    }
+
+    #[test]
+    fn git_range_diff_compares_against_a_fixed_base() {
+        let dir = tmp("git-range-diff");
+        if !init_git(&dir.0, "main", None) {
+            return;
+        }
+        std::fs::write(dir.0.join("a.txt"), "one").unwrap();
+        assert!(git(&dir.0, &["add", "."]) && git(&dir.0, &["commit", "-m", "init"]));
+        let base = git_snapshot_for(&dir.0).unwrap().head;
+
+        let empty = git_range_diff_for(&dir.0, &base).unwrap();
+        std::fs::write(dir.0.join("a.txt"), "two").unwrap();
+        assert!(git(&dir.0, &["commit", "-am", "feat: change a"]));
+        let changed = git_range_diff_for(&dir.0, &base).unwrap();
+
+        assert!(empty.diff_patch.is_empty());
+        assert!(changed.commit_summary.contains("feat: change a"));
+        assert!(changed.diff_patch.contains("+two"));
+        assert!(git_range_diff_for(&dir.0, "--output=/tmp/x").is_err());
+        assert!(git_range_diff_for(&dir.0, "0000000000000000000000000000000000000000").is_err());
     }
 
     #[test]
