@@ -374,6 +374,17 @@ export function gitRangeContext(cwd: string): Promise<GitRangeContext> {
   return invoke<GitRangeContext>("git_range_context", { cwd });
 }
 
+/** Local checkouts only: the remote host does not proxy these two commands. */
+export function gitRangeDiff(cwd: string, base: string): Promise<GitRangeContext> {
+  return invokeLocal<GitRangeContext>("git_range_diff", { cwd, base });
+}
+
+export type GitSnapshot = { head: string; porcelain: string; fingerprint: string };
+
+export function gitSnapshot(cwd: string): Promise<GitSnapshot> {
+  return invokeLocal<GitSnapshot>("git_snapshot", { cwd });
+}
+
 export type GitPr = {
   number: number;
   title: string;

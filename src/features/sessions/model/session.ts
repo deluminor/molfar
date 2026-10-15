@@ -514,6 +514,8 @@ export type Session = {
   linkedWorkItem?: LinkedWorkItem;
   /** Automation that created or last launched this session. */
   automationId?: string;
+  /** Task Board card whose stage this session runs; hidden from normal lists. */
+  taskCardId?: string;
   /** New linked-item activity shown above the composer. In-memory, one-shot. */
   linkedWorkItemUpdateCard?: LinkedWorkItemUpdateCard;
   /** Note chip shown above the composer. In-memory, one-shot. */
