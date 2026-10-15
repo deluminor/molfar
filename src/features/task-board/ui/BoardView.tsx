@@ -2,13 +2,17 @@ import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode 
 import { Kanban } from "../../../shared/ui/icons";
 import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
 import { BOARD_COLUMNS, isAgentStage } from "../constants/columns";
-import { useBoardDrag } from "../hooks/use-board-drag";
+import { useBoardDrag, type BoardDrag } from "../hooks/use-board-drag";
+import { DROP_LABEL } from "../constants/column-look";
+import { needsYou } from "../model/attention";
+import { HARNESSES, type HarnessId } from "../../sessions/model/session";
+import "./task-board.css";
 import { useTaskBoard } from "../hooks/use-task-board";
 import type { TaskBoardRuntime } from "../hooks/use-task-board-engine";
 import { boardFocus, requestBoardFocus, subscribeBoardFocus } from "../model/board-focus";
 import { cardStatus } from "../model/card-status";
 import type { DropTarget } from "../model/transitions";
-import type { Card } from "../types/card";
+import type { BoardColumn as BoardColumnId, Card } from "../types/card";
 import type { AgentStage, StageModelConfig } from "../types/stage";
 import { BoardColumn } from "./board/BoardColumn";
 import { BoardCard } from "./board/BoardCard";
@@ -19,6 +23,17 @@ import { detailIntent, type DetailIntent } from "./card-detail/detail-intent";
 import { NewCardDialog } from "./NewCardDialog";
 
 const CLOCK_MS = 30_000;
+
+function knownHarness(value: string | undefined): HarnessId | undefined {
+  return HARNESSES.find((harness) => harness === value);
+}
+
+/** null while nothing is dragged; the drop's label where it may land; false elsewhere. */
+function dropState(drag: BoardDrag, column: BoardColumnId): string | false | null {
+  if (!drag.draggingId) return null;
+  const target = drag.targets.get(column);
+  return target ? (DROP_LABEL[target.action] ?? "Drop here") : false;
+}
 
 type Props = {
   runtime: TaskBoardRuntime;
@@ -77,15 +92,23 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
     [board.settings, runtime],
   );
 
+  const inputPending = (card: Card) => {
+    const run = board.running.get(card.id);
+    return Boolean(run?.sessionId && runtime.needsInput(run.sessionId));
+  };
+  const running = board.cards.filter((card) => card.runState === "running").length;
+  const waiting = board.cards.filter((card) => needsYou(card, inputPending(card))).length;
+  const modelProject = project ?? projects[0];
+
   const renderCard = (card: Card) => {
     const run = board.running.get(card.id);
-    const needsInput = Boolean(run?.sessionId && runtime.needsInput(run.sessionId));
-    const status = cardStatus(card, run, { now, stallMinutes: board.settings?.stallMinutes ?? 45, needsInput });
+    const status = cardStatus(card, run, { now, stallMinutes: board.settings?.stallMinutes ?? 45, needsInput: inputPending(card) });
     return (
       <BoardCard
         key={card.id}
         card={card}
         status={status}
+        harness={knownHarness(run?.harness)}
         selected={card.id === selectedId}
         draggable={!archived}
         dragging={drag.draggingId === card.id}
@@ -112,6 +135,8 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
         projects={projects}
         project={project}
         archived={archived}
+        running={running}
+        waiting={waiting}
         onProject={setProject}
         onArchived={setArchived}
         onSettings={() => setEditingSettings(true)}
@@ -124,14 +149,15 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
       ) : null}
 
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 gap-2 overflow-x-auto px-3 pb-3" aria-busy={board.loading}>
+        <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-auto px-4 pb-4" aria-busy={board.loading}>
           {BOARD_COLUMNS.map((column) => (
             <BoardColumn
               key={column}
               column={column}
               cards={board.byColumn.get(column) ?? []}
-              dropAllowed={drag.draggingId ? drag.targets.has(column) : null}
+              drop={dropState(drag, column)}
               modelConfig={isAgentStage(column) ? board.settings?.columns[column] : undefined}
+              modelProject={modelProject}
               onModelChange={(config) => {
                 if (isAgentStage(column)) saveColumn(column, config);
               }}
@@ -143,7 +169,6 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
         </div>
         {selectedId ? (
           <CardDetailDrawer
-            key={`${selectedId}:${intent ?? ""}`}
             runtime={runtime}
             cardId={selectedId}
             intent={intent}

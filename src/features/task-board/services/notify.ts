@@ -1,4 +1,4 @@
-import { notifyApp } from "../../notifications/model/notifications";
+import { announceProjectEvent } from "../../notifications/model/notifications";
 import type { BoardNotice, NotifyPort } from "./ports";
 
 /** Notification click payloads with this prefix open the board on a card. */
@@ -16,8 +16,9 @@ export function boardNoticeCard(target: string): string | null {
 
 export const systemBoardNotifier: NotifyPort = {
   notify(notice) {
-    void notifyApp({
+    void announceProjectEvent({
       target: `${BOARD_NOTICE_PREFIX}${notice.cardId}`,
+      projectCwd: notice.projectCwd,
       title: notice.title,
       subtitle: SUBTITLE[notice.kind],
       body: notice.body,

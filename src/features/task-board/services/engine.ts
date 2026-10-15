@@ -111,6 +111,7 @@ export class TaskBoardEngine {
       const card = await this.ports.store.getCard(run.cardId);
       this.ports.notify.notify({
         cardId: run.cardId,
+        projectCwd: card?.projectCwd ?? "",
         kind: "stalled",
         title: card ? `#${card.number} ${card.title}` : "Task Board",
         body: `The ${run.stage.replace("_", " ")} stage has run for ${settings.stallMinutes}+ minutes.`,

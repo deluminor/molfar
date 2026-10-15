@@ -1,5 +1,5 @@
 import type { ControlOutcome } from "../../orchestration/model/orchestration";
-import { isAgentStage, READ_ONLY_STAGES } from "../constants/columns";
+import { COLUMN_LABEL, isAgentStage, READ_ONLY_STAGES } from "../constants/columns";
 import { dirtyCheckoutError } from "../model/checkout-checks";
 import { stageInputs } from "../model/prompts/inputs";
 import { TEMPLATE_VERSION } from "../model/prompts/shared";
@@ -78,7 +78,7 @@ export async function startStage(
     if (!(await stillCurrent(ports, card.id, run.id))) return;
 
     await ports.sessions.launch(
-      { sessionId, cardId: card.id, stage, cwd, projectCwd: card.projectCwd, title: `#${card.number} ${card.title}`, choice },
+      { sessionId, cardId: card.id, stage, cwd, projectCwd: card.projectCwd, title: `#${card.number} · ${COLUMN_LABEL[stage]} · ${card.title}`, choice },
       prompt,
       (outcome) => settled(run.id, card.id, outcome),
     );

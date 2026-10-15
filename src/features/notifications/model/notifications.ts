@@ -313,6 +313,28 @@ export async function notifyApp(notice: {
   }
 }
 
+/**
+ * An app event about a project (a Task Board gate or failure). It follows the
+ * project's mute and "needs input" preferences like session banners, and
+ * falls back to the in-app sound when no banner is shown.
+ */
+export async function announceProjectEvent(notice: {
+  target: string;
+  projectCwd: string;
+  title: string;
+  subtitle: string;
+  body: string;
+}): Promise<void> {
+  const project = knownNotificationProject(notice.projectCwd);
+  const subject: NotificationSubject | undefined = project
+    ? { projectId: project.id, category: "agentInput", occurredAt: Date.now() }
+    : undefined;
+  if (subject && !allowsProjectNotification(subject)) return;
+
+  const sent = await notifyApp(notice);
+  if (!sent && subject) playCue("inputRequested", subject);
+}
+
 async function notifyProjectSession(
   session: Session,
   event: NotificationEvent,

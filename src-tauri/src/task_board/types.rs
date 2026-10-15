@@ -16,7 +16,7 @@ pub(crate) const RUN_STATUSES: [&str; 5] =
     ["running", "succeeded", "failed", "cancelled", "interrupted"];
 pub(crate) const DISPATCHES: [&str; 4] =
     ["accepted", "session_prepared", "turn_submitted", "settled"];
-pub(crate) const ARTIFACT_KINDS: [&str; 9] = [
+pub(crate) const ARTIFACT_KINDS: [&str; 10] = [
     "task",
     "spec",
     "plan",
@@ -26,6 +26,7 @@ pub(crate) const ARTIFACT_KINDS: [&str; 9] = [
     "review",
     "rework_brief",
     "delivery",
+    "pr_description",
 ];
 pub(crate) const ARTIFACT_SOURCES: [&str; 3] = ["stage", "user", "engine"];
 pub(crate) const RUNTIME_MODES: [&str; 4] =

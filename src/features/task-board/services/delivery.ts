@@ -38,11 +38,15 @@ async function publish(ports: EnginePorts, card: Card, method: DeliveryMethod): 
 
   record.prUrl = previous?.prUrl;
   if (!record.prUrl) {
-    const docs = await readLatest(ports.store, card.id, ["spec", "impl_report", "review"]);
+    const docs = await readLatest(ports.store, card.id, ["spec", "impl_report", "review", "pr_description"]);
     const review = docs.review ? parseReview(docs.review.body) : undefined;
     record.prUrl = await ports.git.createPullRequest(cwd, {
       title: pullRequestTitle(card, docs.spec?.body),
-      body: pullRequestBody(card, docs.impl_report?.body, review?.ok ? review.review : undefined),
+      body: pullRequestBody(card, {
+        prDescription: docs.pr_description?.body,
+        implReport: docs.impl_report?.body,
+        review: review?.ok ? review.review : undefined,
+      }),
       base: card.baseRef ?? (await ports.git.defaultBranch(card.projectCwd)),
       head: card.branch ?? "",
     });

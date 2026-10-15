@@ -10,6 +10,8 @@ const card = (page: Page, id: string) => page.locator(`[data-card-id="${id}"]`);
 const lane = (page: Page, name: string) => page.locator(`section[aria-label^="${name},"]`);
 
 test.beforeEach(async ({ page }) => {
+  // Motion makes cards "unstable" for Playwright, which then re-scrolls the board mid-drag.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/tests/browser/task-board.html");
   await expect(page.locator("[data-card-id]")).toHaveCount(2);
 });
@@ -64,3 +66,18 @@ test("the Move to menu offers only legal targets and runs the same action", asyn
   await menu.selectOption("grill");
   await expect.poll(() => column(page, backlog)).toBe("grill");
 });
+
+for (const tab of ["Plan", "Spec", "Task"]) {
+  test(`the ${tab} tab scrolls to its end`, async ({ page }) => {
+    const { gate } = await ids(page);
+    await card(page, gate).click();
+    const drawer = page.getByRole("complementary", { name: /Card #2/ });
+    await drawer.getByRole("tab", { name: tab }).click();
+    const panel = drawer.getByRole("tabpanel");
+    await panel.hover();
+    for (let step = 0; step < 30; step++) await page.mouse.wheel(0, 600);
+
+    const lastLine = tab === "Task" ? drawer.getByText("Acceptance criteria") : drawer.getByText("Detail line for section 40.");
+    await expect(lastLine).toBeInViewport();
+  });
+}

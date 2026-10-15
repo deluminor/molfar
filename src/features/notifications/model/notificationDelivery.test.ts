@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
 import {
+  announceProjectEvent,
   announceSessionFinished,
   announceSessionInput,
   notifySession,
@@ -99,4 +100,24 @@ it("plays the input cue only when the question banner is not sent", async () => 
   updateNotificationPreferences(["local:/work"], { mutedUntil: null });
   await announceSessionInput(session, event, false);
   expect(play).toHaveBeenCalledTimes(1);
+});
+
+it("shows a board banner for a project and routes its click to the card", async () => {
+  await announceProjectEvent({
+    target: "task-board:card-1",
+    projectCwd: "/work/app",
+    title: "#1 Board",
+    subtitle: "Task Board · Waiting for you",
+    body: "Plan ready for approval.",
+  });
+
+  expect(invoke).toHaveBeenCalledWith("show_notification", expect.objectContaining({ sessionId: "task-board:card-1", title: "#1 Board" }));
+});
+
+it("keeps board events quiet for a muted project", async () => {
+  updateNotificationPreferences(["local:/private"], { mutedUntil: null });
+  await announceProjectEvent({ target: "task-board:card-1", projectCwd: "/private", title: "t", subtitle: "s", body: "b" });
+
+  expect(invoke.mock.calls.filter(([command]) => command === "show_notification")).toEqual([]);
+  expect(play).not.toHaveBeenCalled();
 });

@@ -46,6 +46,7 @@ export type SessionPort = {
 
 export type BoardNotice = {
   cardId: string;
+  projectCwd: string;
   title: string;
   body: string;
   kind: "gate" | "failed" | "stalled";

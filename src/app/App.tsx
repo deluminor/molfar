@@ -50,6 +50,7 @@ import { submitWithSettlement } from "./model/managedSubmission";
 import { createTaskBoardSessionPort } from "./model/task-board-session-port";
 import { createCompanionBoard } from "../features/companion/model/companion-board";
 import { useTaskBoardEngine } from "../features/task-board/hooks/use-task-board-engine";
+import { useBoardAttention } from "../features/task-board/hooks/use-board-attention";
 import { requestBoardFocus } from "../features/task-board/model/board-focus";
 import { boardNoticeCard } from "../features/task-board/services/notify";
 import { acceptQuickLaunch } from "./model/quickLaunchSession";
@@ -520,7 +521,10 @@ import {
 import { useInputNotifications } from "../features/notifications/hooks/useInputNotifications";
 import { useSessionReminders } from "../features/notifications/hooks/useSessionReminders";
 import { hiddenApprovalNotices } from "../features/notifications/model/approvalToast";
-import { syncDockBadge } from "../features/notifications/model/dockBadge";
+import {
+  syncBoardDockBadge,
+  syncDockBadge,
+} from "../features/notifications/model/dockBadge";
 import {
   announceSessionFinished,
   loadNotificationsEnabled,
@@ -8739,6 +8743,11 @@ function Workspace({
   );
   const isMainWindow = useMemo(() => getCurrentWindow().label === "main", []);
   const taskBoard = useTaskBoardEngine(taskBoardSessions, isMainWindow, companionProjectPaths);
+  const boardAttention = useBoardAttention(taskBoard.ports.store);
+  const railBadges = useMemo(() => ({ board: boardAttention }), [boardAttention]);
+  useEffect(() => {
+    if (isMainWindow) syncBoardDockBadge(boardAttention);
+  }, [isMainWindow, boardAttention]);
   const submitSessionRef = useRef(submitSession);
   submitSessionRef.current = submitSession;
   const saveDraftRef = useRef(onSaveDraft);
@@ -10971,7 +10980,7 @@ function Workspace({
               const stored = await listSessionsByProject(cwd);
               const byId = new Map<string, AppSessionListing>();
               for (const session of stored) {
-                if (session.orchestrationLeadId) continue;
+                if (session.orchestrationLeadId || session.taskCardId) continue;
                 byId.set(session.id, {
                   id: session.id,
                   title: session.title,
@@ -11827,6 +11836,7 @@ function Workspace({
     sessionsRef,
     history,
     onSelectHistorySession,
+    railBadges,
   });
 
   const onOpenAutomationSession = useCallback(

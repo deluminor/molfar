@@ -1,8 +1,8 @@
-import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { projectName } from "../../../shared/lib/paths";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Modal } from "../../../shared/ui/Modal";
 import type { NewCard } from "../services/card-create";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "./button-styles";
+import { ProjectFilterMenu } from "./ProjectFilterMenu";
 
 type Props = {
   projects: readonly string[];
@@ -12,7 +12,6 @@ type Props = {
 };
 
 export function NewCardDialog({ projects, initialProject, onCreate, onClose }: Props): ReactNode {
-  const ids = useId();
   const titleRef = useRef<HTMLInputElement>(null);
   const [project, setProject] = useState(initialProject ?? projects[0] ?? "");
   const [title, setTitle] = useState("");
@@ -41,21 +40,10 @@ export function NewCardDialog({ projects, initialProject, onCreate, onClose }: P
   return (
     <Modal title="New task" size="md" onClose={onClose} initialFocusRef={titleRef}>
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3 px-4 pb-4 pt-3">
-        <label className={FIELD_LABEL} htmlFor={`${ids}-project`}>
+        <div className={FIELD_LABEL}>
           Project
-          <select
-            id={`${ids}-project`}
-            value={project}
-            onChange={(event) => setProject(event.target.value)}
-            className={FIELD}
-          >
-            {projects.map((path) => (
-              <option key={path} value={path}>
-                {projectName(path)}
-              </option>
-            ))}
-          </select>
-        </label>
+          <ProjectFilterMenu projects={projects} project={project || null} onChange={(next) => setProject(next ?? "")} allowAll={false} block />
+        </div>
 
         <label className={FIELD_LABEL}>
           Title

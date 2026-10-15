@@ -6,6 +6,7 @@ import {
   outputContract,
   renderInputs,
   rules,
+  skills,
   type StagePromptContext,
 } from "./shared";
 
@@ -29,6 +30,19 @@ const IMPL_REPORT_FORMAT = [
   "## Checks run and results (lint, typecheck, tests)",
   "## Deviations from the plan",
   "## Follow-ups",
+].join("\n");
+const PR_DESCRIPTION_FORMAT = [
+  "### Summary",
+  "<what changes for the user and why, in two or three sentences>",
+  "",
+  "### Scope",
+  "- <grouped bullets of what the diff actually does>",
+  "",
+  "### Notes for reviewers",
+  "- <decisions, deferred scope, risks; omit the section if there is nothing real to say>",
+  "",
+  "### Testing",
+  "- <only checks that were actually run, with results>",
 ].join("\n");
 const REVIEW_FORMAT = [
   "Verdict: APPROVE | CHANGES_REQUESTED",
@@ -77,7 +91,13 @@ function codeReview(context: StagePromptContext): string[] {
     "tests, security issues, broken contracts and deviations from the plan. Anchor every finding to file:line.",
     "Use APPROVE only when nothing blocking or major remains.",
     "",
-    outputContract([{ kind: "review", format: REVIEW_FORMAT }]),
+    "Also write the pull request description for this change, grounded in the diff, the spec and the",
+    "implementation report: English, no emojis, no filler, no attribution.",
+    "",
+    outputContract([
+      { kind: "review", format: REVIEW_FORMAT },
+      { kind: "pr_description", format: PR_DESCRIPTION_FORMAT },
+    ]),
   ];
 }
 
@@ -111,6 +131,7 @@ export function buildStagePrompt(stage: AgentStage, context: StagePromptContext)
 
   return [
     header(context, ROLE[stage]),
+    skills(stage),
     rules(READ_ONLY_STAGES.includes(stage)),
     renderInputs(context, [...contract.required, ...contract.optional]),
     ...body[stage](),

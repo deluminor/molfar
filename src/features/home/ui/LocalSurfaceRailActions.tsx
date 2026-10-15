@@ -13,12 +13,15 @@ type Props = {
   active: LocalSurfaceId | null;
   visible: RailSurfaceVisibility;
   onOpen: (id: LocalSurfaceId) => void;
+  /** Items waiting on the user per surface, e.g. Task Board cards at a gate. */
+  badges?: Partial<Record<LocalSurfaceId, number>>;
 };
 
 export function LocalSurfaceRailActions({
   active,
   visible,
   onOpen,
+  badges = {},
 }: Props): ReactNode {
   const openHome = useCallback(() => onOpen("home"), [onOpen]);
   const openUsage = useCallback(() => onOpen("usage"), [onOpen]);
@@ -45,9 +48,11 @@ export function LocalSurfaceRailActions({
       {visible.board ? (
         <RailAction
           label="Board"
+          ariaLabel={badges.board ? `Board, ${badges.board} waiting on you` : "Board"}
           icon={Kanban}
           onClick={openBoard}
           active={active === "board"}
+          badge={badges.board || undefined}
         />
       ) : null}
     </>

@@ -7,7 +7,8 @@ export type ArtifactKind =
   | "impl_report"
   | "review"
   | "rework_brief"
-  | "delivery";
+  | "delivery"
+  | "pr_description";
 
 export type ArtifactSource = "stage" | "user" | "engine";
 

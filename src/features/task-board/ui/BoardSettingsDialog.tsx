@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Modal } from "../../../shared/ui/Modal";
 import type { BoardSettings } from "../types/settings";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "./button-styles";
+import { NotificationsRow } from "./NotificationsRow";
 
 type Props = {
   settings: BoardSettings;
@@ -53,6 +54,7 @@ export function BoardSettingsDialog({ settings, onSave, onClose }: Props): React
             className={`${FIELD} tabular-nums`}
           />
         </label>
+        <NotificationsRow />
         <p className="text-[12px] leading-5 text-content/45">
           Each agent column picks its model from the chip under its title. Cards can override it when you retry.
         </p>

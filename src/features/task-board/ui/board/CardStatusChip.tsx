@@ -20,13 +20,16 @@ const LOOK: Record<CardStatusKind, { icon: IconComponent; className: string }> =
 
 export function CardStatusChip({ status }: { status: NonNullable<CardStatus> }): ReactNode {
   const { icon: Icon, className } = LOOK[status.kind];
-  const spinning = status.kind === "running" ? "animate-spin motion-reduce:animate-none" : "";
+  const motion: Partial<Record<CardStatusKind, string>> = {
+    running: "animate-spin motion-reduce:animate-none",
+    needs_you: "task-board-breathe",
+  };
 
   return (
     <span
       className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium tabular-nums ${className}`}
     >
-      <Icon className={`size-3 ${spinning}`} strokeWidth={2} />
+      <Icon className={`size-3 ${motion[status.kind] ?? ""}`} strokeWidth={2} />
       {status.label}
     </span>
   );

@@ -48,14 +48,14 @@ function setup(overrides: Partial<TaskBoardSessionDeps> = {}) {
 }
 
 describe("task board session port", () => {
-  it("launches a hidden, card-linked session in the card's worktree", async () => {
+  it("launches a titled, card-linked session in the card's worktree", async () => {
     const { port, deps } = setup();
     await port.launch(stage, "prompt", () => undefined);
 
     expect(deps.launch).toHaveBeenCalledWith(
       expect.objectContaining({
-        sidebarHidden: true,
         taskCardId: "card-1",
+        title: "#1 Board",
         cwd: "/code/app",
         worktreeCwd: "/worktrees/task",
         harness: "claude",

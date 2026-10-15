@@ -8,19 +8,37 @@ export function pullRequestTitle(card: Pick<Card, "title">, spec: string | undef
   return (spec && specPrTitle(spec)) || card.title;
 }
 
-/** PR description from the card's own artifacts; no attribution, no names. */
+/** Nests a stage document under a section: its top title goes, its headings drop below `###`. */
+function nested(markdown: string): string {
+  const lines = markdown.trim().split("\n");
+  const body = /^#\s/.test(lines[0] ?? "") ? lines.slice(1) : lines;
+  return body
+    .map((line) => line.replace(/^(#{1,4})(\s)/, (_, hashes: string, space: string) => `${"#".repeat(Math.min(hashes.length + 2, 6))}${space}`))
+    .join("\n")
+    .trim();
+}
+
+function reviewLine(review: Review | undefined): string | undefined {
+  if (!review) return undefined;
+  const count = review.findings.length;
+  return `Code review: **${review.verdict === "APPROVE" ? "approved" : "changes requested"}**, ${count} finding${count === 1 ? "" : "s"}.`;
+}
+
+/**
+ * The PR description from the card's own artifacts; no attribution, no names.
+ * Code review writes a reviewer-ready description; older cards fall back to
+ * a summary built from the task and the implementation report.
+ */
 export function pullRequestBody(
   card: Pick<Card, "number" | "description">,
-  implReport: string | undefined,
-  review: Review | undefined,
+  docs: { prDescription?: string; implReport?: string; review?: Review },
 ): string {
-  const sections = [`## Summary\n\n${card.description.trim()}`];
-  if (implReport) sections.push(`## Implementation\n\n${implReport.trim()}`);
-  if (review) {
-    const open = review.findings.length;
-    sections.push(`## Review\n\nVerdict: ${review.verdict} (${open} finding${open === 1 ? "" : "s"})`);
-  }
-  sections.push(`Task Board card #${card.number}.`);
+  const footer = ["---", [reviewLine(docs.review), `Task Board card #${card.number}.`].filter(Boolean).join(" ")].join("\n\n");
+  if (docs.prDescription?.trim()) return `${docs.prDescription.trim()}\n\n${footer}`.slice(0, MAX_BODY);
+
+  const sections = [`### Summary\n\n${card.description.trim()}`];
+  if (docs.implReport) sections.push(`### Implementation\n\n${nested(docs.implReport)}`);
+  sections.push(footer);
   return sections.join("\n\n").slice(0, MAX_BODY);
 }
 

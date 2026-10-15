@@ -35,8 +35,8 @@ async function settledText(deps: TaskBoardSessionDeps, sessionId: string): Promi
 
 function quickLaunch(launch: StageLaunch, prompt: string): QuickLaunch {
   return {
-    sidebarHidden: true,
     taskCardId: launch.cardId,
+    title: launch.title,
     prompt,
     cwd: launch.projectCwd,
     worktreeCwd: launch.cwd,

@@ -47,6 +47,9 @@ async function seed() {
   const gate = await createCard(fake.ports, { ...input, title: "Plan card" });
   const plan = fake.board.cards.get(gate.id);
   if (plan) fake.board.cards.set(gate.id, { ...plan, columnId: "plan_approval" });
+  const sections = Array.from({ length: 40 }, (_, index) => `## Section ${index + 1}\n\nDetail line for section ${index + 1}.`);
+  await fake.ports.store.writeArtifact({ cardId: gate.id, kind: "plan", source: "stage", body: `# Plan\n\n${sections.join("\n\n")}` });
+  await fake.ports.store.writeArtifact({ cardId: gate.id, kind: "spec", source: "stage", body: `# Spec\n\n${sections.join("\n\n")}` });
   Object.assign(window, {
     ids: { backlog: backlog.id, gate: gate.id },
     column: (id: string) => fake.board.cards.get(id)?.columnId,

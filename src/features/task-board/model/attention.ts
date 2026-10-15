@@ -15,3 +15,11 @@ export function needsYou(card: Pick<Card, "columnId" | "runState" | "archived">,
   if (MANUAL_GATES.includes(card.columnId) && card.runState === "idle") return true;
   return card.runState === "running" && sessionNeedsInput;
 }
+
+/**
+ * Cards waiting on the user by board state alone: a manual gate or a failure.
+ * Sessions waiting on an approval are counted by the session badge already.
+ */
+export function boardAttentionCount(cards: readonly Pick<Card, "columnId" | "runState" | "archived">[]): number {
+  return cards.filter((card) => needsYou(card, false)).length;
+}

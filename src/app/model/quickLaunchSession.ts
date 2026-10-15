@@ -81,6 +81,7 @@ export async function acceptQuickLaunch(
   session.id = deliveryId;
   if (!existing && launch.sidebarHidden) session.sidebarHidden = true;
   if (!existing && launch.taskCardId) session.taskCardId = launch.taskCardId;
+  if (!existing && launch.title) session.title = launch.title;
   if (launch.modelSettings) {
     session.modelSettings = mergeModelSettings(
       resolveModel(session.harness, session.model),

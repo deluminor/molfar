@@ -72,6 +72,7 @@ export async function settleStage(
     if (MANUAL_GATES.includes(next.columnId))
       ports.notify.notify({
         cardId,
+        projectCwd: next.projectCwd,
         kind: "gate",
         title: `#${next.number} ${next.title}`,
         body: next.columnId === "plan_approval" ? "Plan ready for approval." : "Ready for final review.",

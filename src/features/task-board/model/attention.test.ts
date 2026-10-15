@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isStalled, needsYou } from "./attention";
+import { boardAttentionCount, isStalled, needsYou } from "./attention";
 import { pullRequestBody, pullRequestNumber, pullRequestTitle } from "./delivery-text";
 
 describe("attention", () => {
@@ -23,18 +23,38 @@ describe("attention", () => {
   });
 });
 
+describe("boardAttentionCount", () => {
+  it("counts gates and failures, not running or archived cards", () => {
+    const cards = [
+      { columnId: "plan_approval", runState: "idle", archived: false },
+      { columnId: "implement", runState: "failed", archived: false },
+      { columnId: "implement", runState: "running", archived: false },
+      { columnId: "final_review", runState: "idle", archived: true },
+      { columnId: "backlog", runState: "idle", archived: false },
+    ] as const;
+    expect(boardAttentionCount(cards)).toBe(2);
+  });
+});
+
 describe("delivery text", () => {
   it("prefers the spec's PR title", () => {
     expect(pullRequestTitle({ title: "Board" }, '---\npr_title: "feat: board"\n---')).toBe("feat: board");
     expect(pullRequestTitle({ title: "Board" }, undefined)).toBe("Board");
   });
 
-  it("builds a body from the card's artifacts only", () => {
-    const body = pullRequestBody({ number: 3, description: "Do it" }, "Report", {
-      verdict: "APPROVE",
-      findings: [],
-    });
-    expect(body).toBe("## Summary\n\nDo it\n\n## Implementation\n\nReport\n\n## Review\n\nVerdict: APPROVE (0 findings)\n\nTask Board card #3.");
+  it("uses the review's PR description with a verdict footer", () => {
+    const body = pullRequestBody(
+      { number: 3, description: "Do it" },
+      { prDescription: "### Summary\n\nAdds X.", review: { verdict: "APPROVE", findings: [] } },
+    );
+    expect(body).toBe("### Summary\n\nAdds X.\n\n---\n\nCode review: **approved**, 0 findings. Task Board card #3.");
+  });
+
+  it("falls back to the task and a nested implementation report", () => {
+    const body = pullRequestBody({ number: 3, description: "Do it" }, { implReport: "# Implementation report\n## Summary\nDone." });
+    expect(body).toContain("### Summary\n\nDo it");
+    expect(body).toContain("### Implementation\n\n#### Summary\nDone.");
+    expect(body).not.toMatch(/^# /m);
   });
 
   it("reads PR numbers from GitHub URLs", () => {

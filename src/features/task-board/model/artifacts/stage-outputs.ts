@@ -9,7 +9,7 @@ type OutputContract = { required: ArtifactKind[]; optional: ArtifactKind[] };
 export const STAGE_OUTPUTS: Record<AgentStage, OutputContract> = {
   grill: { required: ["spec", "plan"], optional: ["questions"] },
   implement: { required: ["impl_report"], optional: [] },
-  code_review: { required: ["review"], optional: [] },
+  code_review: { required: ["review"], optional: ["pr_description"] },
   rework: { required: ["impl_report"], optional: [] },
 };
 

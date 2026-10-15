@@ -76,6 +76,7 @@ export type SessionSummary = {
   draft?: boolean;
   linkedWorkItem?: LinkedWorkItem;
   automationId?: string;
+  taskCardId?: string;
 };
 
 type SessionRecord = {
@@ -1432,6 +1433,9 @@ function normalizeSummary(summary: SessionSummary): SessionSummary {
     ...(typeof summary.automationId === "string" &&
     isPersistableId(summary.automationId)
       ? { automationId: summary.automationId }
+      : {}),
+    ...(typeof summary.taskCardId === "string" && isPersistableId(summary.taskCardId)
+      ? { taskCardId: summary.taskCardId }
       : {}),
   };
 }

@@ -213,7 +213,7 @@ function isListedProjectSession(session: Session): boolean {
 }
 
 function isListedHistoryRow(row: SessionSummary): boolean {
-  return !row.archived && !row.draft && !row.orchestrationLeadId;
+  return !row.archived && !row.draft && !row.orchestrationLeadId && !row.taskCardId;
 }
 
 /**

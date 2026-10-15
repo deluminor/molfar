@@ -174,6 +174,8 @@ pub struct SessionSummary {
     pub linked_work_item: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub automation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_card_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -959,8 +961,8 @@ fn migrate(conn: &Connection) -> rusqlite::Result<()> {
         )?;
     }
     if current < 20 {
-        // Task Board stage sessions stay out of project history; the filter
-        // must stay inside the covering index.
+        // Task Board stage sessions carry their card; keep the projection
+        // inside the covering index.
         ensure_session_column(conn, "task_card_id", "TEXT")?;
         conn.execute_batch(
             "DROP INDEX IF EXISTS sessions_cwd_cover_idx;
@@ -1327,6 +1329,7 @@ pub(crate) fn upsert_session(
         draft: is_draft,
         linked_work_item: session.linked_work_item.clone(),
         automation_id: automation_id.map(str::to_owned),
+        task_card_id: task_card_id.map(str::to_owned),
     })
 }
 
@@ -1370,7 +1373,6 @@ fn search_sessions_sql(include_archived: bool, cwd_scoped: bool) -> String {
     sql.push_str(
         " WHERE id NOT IN (SELECT id FROM sessions WHERE inbox_ask IS NOT NULL)
             AND has_user_message = 1
-            AND task_card_id IS NULL
             AND (LOWER(title) LIKE LOWER(?1) ESCAPE '\\'
                  OR CASE WHEN octet_length(blocks_json) <= ?2
                          THEN LOWER(blocks_json) LIKE LOWER(?1) ESCAPE '\\'
@@ -1676,11 +1678,10 @@ fn list_by_project(conn: &Connection, cwd: &str) -> rusqlite::Result<Vec<Session
                 created_at, updated_at, branch, archived, pinned,
                 linked_work_item_json,
                 (SELECT summary FROM orchestration_sidebar WHERE lead_id = sessions.id), worktree_cwd,
-                worktree_removed, is_draft, automation_id, sidebar_hidden
+                worktree_removed, is_draft, automation_id, sidebar_hidden, task_card_id
          FROM sessions
          WHERE cwd = ?1
            AND has_user_message = 1
-           AND task_card_id IS NULL
            AND id NOT IN (SELECT id FROM sessions WHERE inbox_ask IS NOT NULL)
            AND id NOT IN (SELECT session_id FROM orchestration_workers)
          ORDER BY updated_at DESC, id ASC",
@@ -1718,6 +1719,7 @@ fn list_by_project(conn: &Connection, cwd: &str) -> rusqlite::Result<Vec<Session
             draft: row.get::<_, i64>(16)? != 0,
             linked_work_item,
             automation_id: nonempty(row.get(17)?),
+            task_card_id: nonempty(row.get(19)?),
         })
     })?;
     rows.collect()
@@ -1729,11 +1731,10 @@ fn list_linked(conn: &Connection) -> rusqlite::Result<Vec<SessionSummary>> {
                 created_at, updated_at, branch, archived, pinned,
                 linked_work_item_json,
                 (SELECT summary FROM orchestration_sidebar WHERE lead_id = sessions.id), worktree_cwd,
-                worktree_removed, is_draft, automation_id, sidebar_hidden
+                worktree_removed, is_draft, automation_id, sidebar_hidden, task_card_id
          FROM sessions
          WHERE has_user_message = 1
            AND linked_work_item_json IS NOT NULL
-           AND task_card_id IS NULL
            AND id NOT IN (SELECT id FROM sessions WHERE inbox_ask IS NOT NULL)
            AND id NOT IN (SELECT session_id FROM orchestration_workers)
          ORDER BY updated_at DESC, id ASC",
@@ -1765,6 +1766,7 @@ fn list_linked(conn: &Connection) -> rusqlite::Result<Vec<SessionSummary>> {
             draft: row.get::<_, i64>(16)? != 0,
             linked_work_item: optional_json(row.get(12)?),
             automation_id: nonempty(row.get(17)?),
+            task_card_id: nonempty(row.get(19)?),
         })
     })?;
     rows.collect()
@@ -2383,7 +2385,6 @@ mod tests {
                  FROM sessions
                  WHERE cwd = ?1
                    AND has_user_message = 1
-                   AND task_card_id IS NULL
                    AND id NOT IN (SELECT id FROM sessions WHERE inbox_ask IS NOT NULL)
                    AND id NOT IN (SELECT session_id FROM orchestration_workers)
                  ORDER BY updated_at DESC, id ASC",
@@ -2623,21 +2624,8 @@ mod tests {
 
         let stored = get_session(&conn, "s1").unwrap().unwrap();
         assert_eq!(stored.task_card_id.as_deref(), Some("card-1"));
-        assert!(list_by_project(&conn, "/tmp/a").unwrap().is_empty());
-
-        for cwd in [None, Some("/tmp/a".to_string())] {
-            let found = search_sessions(
-                &conn,
-                &SessionSearchOptions {
-                    query: "Board".into(),
-                    cwd,
-                    include_archived: true,
-                    search_owner: String::new(),
-                },
-            )
-            .unwrap();
-            assert!(found.hits.is_empty());
-        }
+        // Stage sessions are ordinary project sessions in the sidebar.
+        assert_eq!(list_by_project(&conn, "/tmp/a").unwrap().len(), 1);
     }
 
     #[test]

@@ -48,5 +48,11 @@ export async function failStage(
   if (runId && (await latestRun(ports.store, cardId))?.id !== runId) return;
 
   const { card: failed } = await transitionCard(ports.store, cardId, "stageFailed", () => ({ lastError: message }));
-  ports.notify.notify({ cardId, kind: "failed", title: `#${failed.number} ${failed.title}`, body: message });
+  ports.notify.notify({
+    cardId,
+    projectCwd: failed.projectCwd,
+    kind: "failed",
+    title: `#${failed.number} ${failed.title}`,
+    body: message,
+  });
 }

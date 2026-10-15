@@ -3,6 +3,8 @@ import type { ArtifactDoc, ArtifactKind } from "../../types/artifact";
 import type { AgentStage } from "../../types/stage";
 import { stageInputs } from "./inputs";
 import type { PromptCard, StagePromptContext } from "./shared";
+import { skillNamesInText } from "../../../skills/model/skills";
+import { STAGE_SKILLS } from "../../constants/skills";
 import { buildStagePrompt } from "./stages";
 
 const card: PromptCard = {
@@ -52,6 +54,18 @@ describe("buildStagePrompt", () => {
       expect(prompt).not.toMatch(/erik/i);
     },
   );
+
+  it.each<AgentStage>(["grill", "implement", "code_review", "rework"])(
+    "%s invokes exactly its hub skills as recognised /skill tokens",
+    (stage) => {
+      const named = skillNamesInText(buildStagePrompt(stage, context())).filter((name) => name.startsWith("d-"));
+      expect(named).toEqual([...STAGE_SKILLS[stage]]);
+    },
+  );
+
+  it("asks code review for a pull request description", () => {
+    expect(buildStagePrompt("code_review", context())).toContain("<<<MOLFAR:pr_description>>>");
+  });
 
   it("states the output contract with markers", () => {
     const grill = buildStagePrompt("grill", context());

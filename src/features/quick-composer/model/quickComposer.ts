@@ -56,6 +56,8 @@ export type QuickLaunch = {
   sidebarHidden?: boolean;
   /** Task Board card whose stage this session runs. */
   taskCardId?: string;
+  /** A fixed title; a set title also stops the generated one replacing it. */
+  title?: string;
   prompt: string;
   /** Create an unsent user draft instead of starting an agent turn. */
   draft?: boolean;

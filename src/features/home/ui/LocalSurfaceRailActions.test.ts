@@ -78,3 +78,19 @@ it("leaves out surfaces hidden in Settings", () => {
     "Board",
   ]);
 });
+
+it("badges Board with the cards waiting on the user", () => {
+  act(() =>
+    root.render(
+      createElement(LocalSurfaceRailActions, {
+        active: null,
+        visible: RAIL_SURFACES_DEFAULT,
+        onOpen: vi.fn(),
+        badges: { board: 3 },
+      }),
+    ),
+  );
+  const board = buttons().find((button) => button.getAttribute("aria-label")?.startsWith("Board"));
+  expect(board?.getAttribute("aria-label")).toBe("Board, 3 waiting on you");
+  expect(board?.textContent).toContain("3");
+});
