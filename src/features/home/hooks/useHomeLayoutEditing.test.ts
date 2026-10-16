@@ -41,9 +41,33 @@ function stubMatchMedia(matches: boolean): void {
   }));
 }
 
+/** Fresh storage each test — some cases replace localStorage with a throwing stub. */
+function stubLocalStorage(): void {
+  const data = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    value: {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        data.set(key, value);
+      },
+      removeItem: (key: string) => {
+        data.delete(key);
+      },
+      clear: () => {
+        data.clear();
+      },
+      key: (index: number) => [...data.keys()][index] ?? null,
+      get length() {
+        return data.size;
+      },
+    },
+    configurable: true,
+  });
+}
+
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  localStorage.clear();
+  stubLocalStorage();
   stubMatchMedia(true);
   container = document.createElement("div");
   root = createRoot(container);
@@ -124,5 +148,33 @@ describe("useHomeLayoutEditing visibility", () => {
 
     expect(editing().hidden).toEqual([]);
     expect(editing().layout.map((item) => item.i)).toContain("matrix");
+  });
+
+  it("keeps React state when reset cannot clear storage", async () => {
+    await render();
+    await act(async () => editing().onHideWidget("git"));
+    expect(editing().hidden).toEqual(["git"]);
+
+    const prior = window.localStorage;
+    Object.defineProperty(globalThis, "localStorage", {
+      value: {
+        getItem: (key: string) => prior.getItem(key),
+        setItem: (key: string, value: string) => prior.setItem(key, value),
+        removeItem: () => {
+          throw new Error("denied");
+        },
+        clear: () => prior.clear(),
+        key: (index: number) => prior.key(index),
+        get length() {
+          return prior.length;
+        },
+      },
+      configurable: true,
+    });
+
+    await act(async () => editing().onResetLayout());
+
+    expect(editing().hidden).toEqual(["git"]);
+    expect(editing().layout.map((item) => item.i)).not.toContain("git");
   });
 });
