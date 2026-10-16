@@ -93,6 +93,29 @@ function mergeSnapshots(
   return next ?? current;
 }
 
+/** Saved filters and the widest query the background poll fetches with. */
+export function inboxActivityRequest(projectPaths: readonly string[]): {
+  pruned: InboxFiltersBySource;
+  query: InboxQuery;
+} {
+  const bySource = loadInboxFiltersBySource();
+  const pruned = { ...bySource } as InboxFiltersBySource;
+  for (const source of Object.keys(bySource) as InboxSource[]) {
+    pruned[source] = pruneInboxFilters(bySource[source], projectPaths);
+  }
+  const widest = widestInboxFetchParams(pruned);
+  return {
+    pruned,
+    query: {
+      assignedToMe: widest.assignedToMe,
+      state: widest.state,
+      search: "",
+      linearHiddenTeamIds: loadHiddenLinearTeamIds(),
+      jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
+    },
+  };
+}
+
 export type InboxActivity = {
   unseen: boolean;
   linkedSessionUpdateIds: ReadonlySet<string>;
@@ -177,20 +200,9 @@ export function useInboxActivity(
       }
       pulling = true;
       lastPulledAt.current = Date.now();
-      const projectPaths = projects.map((project) => project.path);
-      const bySource = loadInboxFiltersBySource();
-      const pruned = { ...bySource } as InboxFiltersBySource;
-      for (const source of Object.keys(bySource) as InboxSource[]) {
-        pruned[source] = pruneInboxFilters(bySource[source], projectPaths);
-      }
-      const widest = widestInboxFetchParams(pruned);
-      const query: InboxQuery = {
-        assignedToMe: widest.assignedToMe,
-        state: widest.state,
-        search: "",
-        linearHiddenTeamIds: loadHiddenLinearTeamIds(),
-        jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
-      };
+      const { pruned, query } = inboxActivityRequest(
+        projects.map((project) => project.path),
+      );
       try {
         const listed = await listInboxItems(projects, query, { force });
         if (cancelled) return;
