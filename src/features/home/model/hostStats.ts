@@ -41,3 +41,10 @@ export function loadAsPercent(load: number | null, cpuCount: number): number {
   if (load == null || !Number.isFinite(load) || cpuCount <= 0) return 0;
   return clampPercent((load / cpuCount) * 100);
 }
+
+export const HOST_PRESSURE_WARN_PERCENT = 85;
+
+/** Visual-only warning threshold for CPU / RAM. */
+export function isHostPressureHigh(percent: number): boolean {
+  return Number.isFinite(percent) && percent >= HOST_PRESSURE_WARN_PERCENT;
+}
