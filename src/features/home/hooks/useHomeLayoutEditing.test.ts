@@ -100,4 +100,29 @@ describe("useHomeLayoutEditing visibility", () => {
     expect(editing().layout.map((item) => item.i)).not.toContain("inbox");
     expect(editing().layout.every((item) => item.w === 12)).toBe(true);
   });
+
+  it("keeps React state when persist fails", async () => {
+    await render();
+    const prior = window.localStorage;
+    Object.defineProperty(globalThis, "localStorage", {
+      value: {
+        getItem: (key: string) => prior.getItem(key),
+        setItem: () => {
+          throw new Error("quota");
+        },
+        removeItem: (key: string) => prior.removeItem(key),
+        clear: () => prior.clear(),
+        key: (index: number) => prior.key(index),
+        get length() {
+          return prior.length;
+        },
+      },
+      configurable: true,
+    });
+
+    await act(async () => editing().onHideWidget("matrix"));
+
+    expect(editing().hidden).toEqual([]);
+    expect(editing().layout.map((item) => item.i)).toContain("matrix");
+  });
 });

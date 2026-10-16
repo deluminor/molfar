@@ -109,6 +109,7 @@ describe("homeLayout persistence", () => {
       h: 5,
     });
     expect(localStorage.getItem(HOME_LAYOUT_STORAGE_KEY)).not.toBeNull();
+    expect(localStorage.getItem(HOME_LAYOUT_LEGACY_STORAGE_KEY)).toBeNull();
   });
 
   it("ignores unknown hidden ids and never hides every widget", () => {
@@ -129,6 +130,42 @@ describe("homeLayout persistence", () => {
   it("falls back when storage is corrupt", () => {
     localStorage.setItem(HOME_LAYOUT_STORAGE_KEY, "{not-json");
     expect(loadHomeLayoutState()).toEqual(DEFAULT_HOME_LAYOUT_STATE);
+  });
+
+  it("falls back to a valid v1 layout when v2 JSON is corrupt", () => {
+    localStorage.setItem(HOME_LAYOUT_STORAGE_KEY, "{not-json");
+    localStorage.setItem(
+      HOME_LAYOUT_LEGACY_STORAGE_KEY,
+      JSON.stringify([{ i: "host", x: 1, y: 2, w: 6, h: 4 }]),
+    );
+    const loaded = loadHomeLayoutState();
+    expect(loaded.hidden).toEqual([]);
+    expect(loaded.layout.find((item) => item.i === "host")).toMatchObject({
+      x: 1,
+      y: 2,
+      w: 6,
+      h: 4,
+    });
+    expect(localStorage.getItem(HOME_LAYOUT_LEGACY_STORAGE_KEY)).toBeNull();
+  });
+
+  it("does not report success when setItem throws", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: {
+        getItem: () => null,
+        setItem: () => {
+          throw new Error("quota");
+        },
+        removeItem: () => undefined,
+        clear: () => undefined,
+        key: () => null,
+        length: 0,
+      },
+      configurable: true,
+    });
+    expect(
+      saveHomeLayoutState({ layout: DEFAULT_HOME_LAYOUT, hidden: ["matrix"] }),
+    ).toBe(false);
   });
 
   it("reset clears both keys and shows every widget", () => {

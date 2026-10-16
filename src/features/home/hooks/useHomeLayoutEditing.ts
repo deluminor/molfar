@@ -62,8 +62,8 @@ export function useHomeLayoutEditing(): HomeLayoutEditing {
     (next: (current: HomeLayoutState) => HomeLayoutState, persist: boolean) => {
       setState((current) => {
         const updated = next(current);
-        if (persist && updated !== current) saveHomeLayoutState(updated);
-        return updated;
+        if (!persist || updated === current) return updated;
+        return saveHomeLayoutState(updated) ? updated : current;
       });
     },
     [],

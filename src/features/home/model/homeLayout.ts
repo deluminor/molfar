@@ -226,14 +226,33 @@ export function visibleHomeLayout(
   return base.filter((item) => !state.hidden.includes(item.i));
 }
 
+function clearLegacyHomeLayout(): void {
+  try {
+    localStorage.removeItem(HOME_LAYOUT_LEGACY_STORAGE_KEY);
+  } catch (error) {
+    console.error("Failed to clear legacy home layout:", error);
+  }
+}
+
+function migrateLegacyHomeLayout(legacyRaw: string): HomeLayoutState {
+  const migrated = parseHomeLayoutState(JSON.parse(legacyRaw) as unknown);
+  saveHomeLayoutState(migrated);
+  clearLegacyHomeLayout();
+  return migrated;
+}
+
 function readStoredState(): HomeLayoutState {
   const raw = localStorage.getItem(HOME_LAYOUT_STORAGE_KEY);
-  if (raw != null) return parseHomeLayoutState(JSON.parse(raw) as unknown);
+  if (raw != null) {
+    try {
+      return parseHomeLayoutState(JSON.parse(raw) as unknown);
+    } catch (error) {
+      console.error("Failed to parse home layout v2; trying legacy:", error);
+    }
+  }
   const legacy = localStorage.getItem(HOME_LAYOUT_LEGACY_STORAGE_KEY);
   if (legacy == null) return DEFAULT_HOME_LAYOUT_STATE;
-  const migrated = parseHomeLayoutState(JSON.parse(legacy) as unknown);
-  saveHomeLayoutState(migrated);
-  return migrated;
+  return migrateLegacyHomeLayout(legacy);
 }
 
 /** Reads v2 state, migrating a v1 layout once; corrupt storage yields defaults. */
@@ -246,16 +265,21 @@ export function loadHomeLayoutState(): HomeLayoutState {
   }
 }
 
-/** Persists only position/size and hidden ids; mins are reapplied on load. */
-export function saveHomeLayoutState(state: HomeLayoutState): void {
+/**
+ * Persists only position/size and hidden ids; mins are reapplied on load.
+ * @returns false when storage rejects the write so callers can keep prior state.
+ */
+export function saveHomeLayoutState(state: HomeLayoutState): boolean {
   const payload = {
     layout: state.layout.map(({ i, x, y, w, h }) => ({ i, x, y, w, h })),
     hidden: state.hidden,
   };
   try {
     localStorage.setItem(HOME_LAYOUT_STORAGE_KEY, JSON.stringify(payload));
+    return true;
   } catch (error) {
     console.error("Failed to save home layout:", error);
+    return false;
   }
 }
 
