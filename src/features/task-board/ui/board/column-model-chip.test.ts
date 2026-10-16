@@ -16,6 +16,14 @@ vi.mock("./StageModelEditor", () => ({
     ),
 }));
 
+vi.mock("./StageSkillsEditor", () => ({
+  StageSkillsEditor: () => createElement("div", { "data-stage-skills": "" }),
+}));
+
+vi.mock("../../../../platform/tauri/fs", () => ({
+  listSkills: vi.fn(async () => []),
+}));
+
 import { ColumnModelChip } from "./ColumnModelChip";
 
 let container: HTMLDivElement;
@@ -37,7 +45,19 @@ afterEach(() => {
 describe("ColumnModelChip", () => {
   it("keeps the popover open for a click inside a portalled picker menu", () => {
     const onChange = vi.fn();
-    act(() => root.render(createElement(ColumnModelChip, { label: "Grill", config: undefined, project: "/code/app", onChange })));
+    act(() =>
+      root.render(
+        createElement(ColumnModelChip, {
+          label: "Grill",
+          stage: "grill",
+          config: undefined,
+          skills: undefined,
+          project: "/code/app",
+          onChange,
+          onSkillsChange: vi.fn(),
+        }),
+      ),
+    );
     act(() => container.querySelector("button")?.click());
 
     const option = document.querySelector("[data-model-picker] button");

@@ -7,6 +7,8 @@ use super::types::{RUNTIME_MODES, STAGES};
 use super::validate::one_of;
 
 const MAX_LABEL: usize = 200;
+const MAX_SKILL_NAME: usize = 64;
+const MAX_SKILLS_PER_COLUMN: usize = 32;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -23,6 +25,9 @@ pub struct StageModelConfig {
 pub struct BoardSettings {
     #[serde(default)]
     pub columns: BTreeMap<String, StageModelConfig>,
+    /// Explicit skill lists per agent column. Absent key → client auto-detects.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub column_skills: BTreeMap<String, Vec<String>>,
     #[serde(default = "default_concurrency")]
     pub max_concurrent_stages: i64,
     #[serde(default = "default_stall_minutes")]
@@ -41,6 +46,7 @@ impl Default for BoardSettings {
     fn default() -> Self {
         Self {
             columns: BTreeMap::new(),
+            column_skills: BTreeMap::new(),
             max_concurrent_stages: default_concurrency(),
             stall_minutes: default_stall_minutes(),
         }
@@ -59,6 +65,34 @@ pub(crate) fn validate_config(config: &StageModelConfig) -> Result<(), String> {
     Ok(())
 }
 
+fn valid_skill_name(name: &str) -> bool {
+    if name.is_empty() || name.len() > MAX_SKILL_NAME {
+        return false;
+    }
+    let mut chars = name.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if !first.is_ascii_lowercase() && !first.is_ascii_digit() {
+        return false;
+    }
+    let mut prev_hyphen = false;
+    for ch in chars {
+        if ch == '-' {
+            if prev_hyphen {
+                return false;
+            }
+            prev_hyphen = true;
+            continue;
+        }
+        if !ch.is_ascii_lowercase() && !ch.is_ascii_digit() {
+            return false;
+        }
+        prev_hyphen = false;
+    }
+    !prev_hyphen
+}
+
 fn validate(settings: &BoardSettings) -> Result<(), String> {
     if !(1..=10).contains(&settings.max_concurrent_stages) {
         return Err("Concurrent stages must be between 1 and 10.".into());
@@ -69,6 +103,17 @@ fn validate(settings: &BoardSettings) -> Result<(), String> {
     for (stage, config) in &settings.columns {
         one_of(stage, &STAGES, "column")?;
         validate_config(config)?;
+    }
+    for (stage, skills) in &settings.column_skills {
+        one_of(stage, &STAGES, "column")?;
+        if skills.len() > MAX_SKILLS_PER_COLUMN {
+            return Err("Too many skills for one column.".into());
+        }
+        for name in skills {
+            if !valid_skill_name(name) {
+                return Err(format!("Invalid skill name: {name}"));
+            }
+        }
     }
     Ok(())
 }

@@ -20,12 +20,14 @@ type Props = {
   runtime: TaskBoardRuntime;
   cardId: string;
   intent: DetailIntent;
+  /** Bumps on every intent request, so a repeated drop reopens the drawer fresh. */
+  intentSeq: number;
   onClose: () => void;
   onOpenSession: (sessionId: string) => void;
   onMove: (card: Card, target: DropTarget) => void;
 };
 
-type ContentProps = Omit<Props, "cardId"> & { card: Card; detail: CardDetail };
+type ContentProps = Omit<Props, "cardId" | "intentSeq"> & { card: Card; detail: CardDetail };
 
 function CardDetailContent({ runtime, card, detail, intent, onClose, onOpenSession, onMove }: ContentProps): ReactNode {
   const [tab, setTab] = useState<DetailTab>(() => initialTab(intent));
@@ -97,7 +99,7 @@ function CardDetailContent({ runtime, card, detail, intent, onClose, onOpenSessi
 }
 
 /** The selected card beside the board; Escape closes it. */
-export function CardDetailDrawer({ runtime, cardId, ...rest }: Props): ReactNode {
+export function CardDetailDrawer({ runtime, cardId, intentSeq, ...rest }: Props): ReactNode {
   const detail = useCardDetail(runtime.ports.store, cardId);
   const { onClose } = rest;
 
@@ -113,7 +115,7 @@ export function CardDetailDrawer({ runtime, cardId, ...rest }: Props): ReactNode
   return (
     <DetailPanelFrame label={card ? `Card #${card.number}` : "Card"}>
       {card ? (
-        <CardDetailContent key={`${card.id}:${rest.intent ?? ""}`} runtime={runtime} card={card} detail={detail} {...rest} />
+        <CardDetailContent key={`${card.id}:${rest.intent ?? ""}:${intentSeq}`} runtime={runtime} card={card} detail={detail} {...rest} />
       ) : (
         <div className="grid flex-1 place-items-center text-[13px] text-content/40">{detail.error ?? "Loading…"}</div>
       )}

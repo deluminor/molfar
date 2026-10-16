@@ -1,4 +1,4 @@
-import type { DragEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { COLUMN_LABEL, isAgentStage } from "../../constants/columns";
 import { COLUMN_LOOK, KIND_TONE } from "../../constants/column-look";
 import type { BoardColumn as ColumnId, Card } from "../../types/card";
@@ -11,11 +11,13 @@ type Props = {
   cards: readonly Card[];
   /** null while nothing is dragged; otherwise the label of the drop here, or false. */
   drop: string | false | null;
+  /** The pointer is over this column right now. */
+  over: boolean;
   modelConfig: StageModelConfig | undefined;
+  columnSkills: readonly string[] | undefined;
   modelProject: string | undefined;
   onModelChange: (config: StageModelConfig | undefined) => void;
-  onDragOver: (event: DragEvent) => void;
-  onDrop: (event: DragEvent) => void;
+  onSkillsChange: (skills: string[] | undefined) => void;
   renderCard: (card: Card) => ReactNode;
 };
 
@@ -30,8 +32,9 @@ const EMPTY_HINT: Partial<Record<ColumnId, string>> = {
   done: "Delivered cards rest here",
 };
 
-function frameClass(drop: string | false | null): string {
+function frameClass(drop: string | false | null, over: boolean): string {
   if (drop === null) return "border-stroke bg-content/[0.025]";
+  if (drop && over) return "border-accent bg-accent/[0.1] shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_28%,transparent)]";
   if (drop) return "border-accent/55 bg-accent/[0.05] shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_14%,transparent)]";
   return "border-stroke bg-content/[0.015] opacity-45";
 }
@@ -40,11 +43,12 @@ export function BoardColumn({
   column,
   cards,
   drop,
+  over,
   modelConfig,
+  columnSkills,
   modelProject,
   onModelChange,
-  onDragOver,
-  onDrop,
+  onSkillsChange,
   renderCard,
 }: Props): ReactNode {
   const label = COLUMN_LABEL[column];
@@ -53,9 +57,8 @@ export function BoardColumn({
   return (
     <section
       aria-label={`${label}, ${cards.length} card${cards.length === 1 ? "" : "s"}`}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      className={`relative flex h-full w-[288px] shrink-0 flex-col rounded-2xl border transition-[border-color,background-color,opacity,box-shadow] duration-200 motion-reduce:transition-none ${frameClass(drop)}`}
+      data-board-column={column}
+      className={`relative flex h-full w-[288px] shrink-0 flex-col rounded-2xl border transition-[border-color,background-color,opacity,box-shadow] duration-200 motion-reduce:transition-none ${frameClass(drop, over)}`}
     >
       <header className="flex shrink-0 flex-col gap-2 px-3 pb-2.5 pt-3">
         <div className="flex items-center gap-2">
@@ -68,7 +71,15 @@ export function BoardColumn({
           </span>
         </div>
         {isAgentStage(column) ? (
-          <ColumnModelChip label={label} config={modelConfig} project={modelProject} onChange={onModelChange} />
+          <ColumnModelChip
+            label={label}
+            stage={column}
+            config={modelConfig}
+            skills={columnSkills}
+            project={modelProject}
+            onChange={onModelChange}
+            onSkillsChange={onSkillsChange}
+          />
         ) : (
           <ColumnNote column={column} />
         )}

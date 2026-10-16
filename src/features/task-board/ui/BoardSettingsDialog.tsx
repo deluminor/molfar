@@ -56,7 +56,8 @@ export function BoardSettingsDialog({ settings, onSave, onClose }: Props): React
         </label>
         <NotificationsRow />
         <p className="text-[12px] leading-5 text-content/45">
-          Each agent column picks its model from the chip under its title. Cards can override it when you retry.
+          Each agent column picks its model and skills from the chip under its title. Cards can override the
+          model when you retry.
         </p>
         {error ? (
           <p role="alert" className="text-[12px] text-rose-300">

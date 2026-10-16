@@ -120,7 +120,11 @@ const ROLE: Record<AgentStage, string> = {
   rework: "Rework",
 };
 
-export function buildStagePrompt(stage: AgentStage, context: StagePromptContext): string {
+export function buildStagePrompt(
+  stage: AgentStage,
+  context: StagePromptContext,
+  skillNames: readonly string[] = [],
+): string {
   const contract = stageInputs(stage, context.card.grillRound);
   const body: Record<AgentStage, () => string[]> = {
     grill: () => grill(context),
@@ -131,9 +135,11 @@ export function buildStagePrompt(stage: AgentStage, context: StagePromptContext)
 
   return [
     header(context, ROLE[stage]),
-    skills(stage),
+    skills(skillNames),
     rules(READ_ONLY_STAGES.includes(stage)),
     renderInputs(context, [...contract.required, ...contract.optional]),
     ...body[stage](),
-  ].join("\n\n");
+  ]
+    .filter((section) => section.length > 0)
+    .join("\n\n");
 }
