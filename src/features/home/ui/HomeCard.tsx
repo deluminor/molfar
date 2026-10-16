@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { HomeCardHideControl } from "./HomeCardEditContext";
 
 type Props = {
   title: string;
@@ -30,6 +31,7 @@ export function HomeCard({
           className="flex-1 border-t border-dashed border-accent/20"
         />
         {actions}
+        <HomeCardHideControl />
       </header>
       <div className="home-card-body relative min-h-0 flex-1">{children}</div>
     </section>
