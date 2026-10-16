@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Each Task Board agent column can pick which **skills** it runs. The column model chip auto-detects hub names (`d-grill`, `grill`, and the same pattern for the other stages), lets you toggle curated skills, add extras from the project catalog, and reset back to auto-detect. Missing skills warn on the chip and are skipped when a stage starts.
+- Sessions and Familiars with app access can **list and create** Task Board cards through `board.list` and `board.create`. A session only files cards in its own project; a Familiar only in its projects. Reuse `--request-id` on retries to get the same card instead of a duplicate. The built-in `/create-board-task` skill does the same on demand.
+
+### Changed
+
+- Dragging cards on the Task Board uses **pointer events** with a drag ghost and edge autoscroll, so drops work reliably in the macOS desktop build instead of being swallowed by native HTML5 drag.
+
+### Fixed
+
+- Starting a card from Backlog again after a failed Grill no longer asks for missing later-round artifacts (`spec`, `plan`, `answers`). Fresh starts reset to grill round 1, and a stuck card whose round was already past 1 falls back to first-grill inputs when those files are gone.
+
 ## [1.0.14] - 2026-10-15
 
 ### Added
