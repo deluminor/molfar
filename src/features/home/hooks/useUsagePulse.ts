@@ -10,7 +10,7 @@ import {
 import { usagePulseRows, type UsagePulseRow } from "../model/usagePulse";
 
 /** Reads the shared rate-limit cache the footer chips use; loads each account at most once. */
-export function useUsagePulse(): UsagePulseRow[] {
+export function useUsagePulse(enabled = true): UsagePulseRow[] {
   const claudeAccountId = selectedProviderAccountId("claude", undefined);
   const codexAccountId = selectedProviderAccountId("codex", undefined);
   const claude = useCachedRateLimits("claude", claudeAccountId);
@@ -19,6 +19,7 @@ export function useUsagePulse(): UsagePulseRow[] {
   const devin = useCachedRateLimits("devin");
 
   useEffect(() => {
+    if (!enabled) return;
     if (providerAccountExists("claude", claudeAccountId)) {
       void loadRateLimits("claude", claudeAccountId);
     }
@@ -27,10 +28,10 @@ export function useUsagePulse(): UsagePulseRow[] {
     }
     void loadRateLimits("opencode");
     void loadRateLimits("devin");
-  }, [claudeAccountId, codexAccountId]);
+  }, [enabled, claudeAccountId, codexAccountId]);
 
   return useMemo(
-    () => usagePulseRows([claude, codex, opencode, devin]),
-    [claude, codex, opencode, devin],
+    () => (enabled ? usagePulseRows([claude, codex, opencode, devin]) : []),
+    [enabled, claude, codex, opencode, devin],
   );
 }

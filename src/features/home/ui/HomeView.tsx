@@ -92,9 +92,12 @@ export function HomeView({
   const host = useHostStats();
   const dashboard = useHomeDashboard(projectPaths);
   const layoutEditing = useHomeLayoutEditing();
-  const usage = useUsagePulse();
-  const inbox = useInboxPulse(projectPaths, projectCwd);
-  const git = useGitPulse(projectCwd);
+  const usageEnabled = !layoutEditing.hidden.includes("usage");
+  const inboxEnabled = !layoutEditing.hidden.includes("inbox");
+  const gitEnabled = !layoutEditing.hidden.includes("git");
+  const usage = useUsagePulse(usageEnabled);
+  const inbox = useInboxPulse(projectPaths, projectCwd, inboxEnabled);
+  const git = useGitPulse(projectCwd, gitEnabled);
 
   const widgets: HomeWidgets = {
     clock: <ClockCard />,

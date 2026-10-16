@@ -13,17 +13,10 @@ import {
   listInboxItems,
   type GithubWorkItem,
   type InboxItem,
-  type InboxQuery,
   type InboxProvider,
 } from "../model/githubTasks";
-import {
-  applyInboxFiltersBySource,
-  loadInboxFiltersBySource,
-  pruneInboxFilters,
-  widestInboxFetchParams,
-  type InboxFiltersBySource,
-  type InboxSource,
-} from "../model/inboxFilters";
+import { applyInboxFiltersBySource } from "../model/inboxFilters";
+import { inboxActivityRequest } from "../model/inboxActivityRequest";
 import {
   inboxHasUnseenItems,
   rememberInboxItems,
@@ -42,8 +35,7 @@ import {
   linkedSessionSeenAt,
   subscribeLinkedSessionSeen,
 } from "../model/linkedSessionSeen";
-import { loadHiddenLinearTeamIds } from "../model/linear";
-import { JIRA_CHANGE_EVENT, loadHiddenJiraProjectIds } from "../model/jira";
+import { JIRA_CHANGE_EVENT } from "../model/jira";
 import type { RecentProject } from "../../projects/model/recents";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
 import { playCue } from "../../settings/model/sounds";
@@ -91,29 +83,6 @@ function mergeSnapshots(
     next.set(key, item);
   }
   return next ?? current;
-}
-
-/** Saved filters and the widest query the background poll fetches with. */
-export function inboxActivityRequest(projectPaths: readonly string[]): {
-  pruned: InboxFiltersBySource;
-  query: InboxQuery;
-} {
-  const bySource = loadInboxFiltersBySource();
-  const pruned = { ...bySource } as InboxFiltersBySource;
-  for (const source of Object.keys(bySource) as InboxSource[]) {
-    pruned[source] = pruneInboxFilters(bySource[source], projectPaths);
-  }
-  const widest = widestInboxFetchParams(pruned);
-  return {
-    pruned,
-    query: {
-      assignedToMe: widest.assignedToMe,
-      state: widest.state,
-      search: "",
-      linearHiddenTeamIds: loadHiddenLinearTeamIds(),
-      jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
-    },
-  };
 }
 
 export type InboxActivity = {

@@ -19,10 +19,14 @@ async function readGitPulse(cwd: string): Promise<GitPulse | null> {
 }
 
 /** Selected project's git state; refreshed when the window regains focus. */
-export function useGitPulse(cwd: string): GitPulseState {
+export function useGitPulse(cwd: string, enabled = true): GitPulseState {
   const [state, setState] = useState<GitPulseState>({ status: "loading" });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ status: "loading" });
+      return;
+    }
     if (!cwd) {
       setState({ status: "unavailable" });
       return;
@@ -50,7 +54,7 @@ export function useGitPulse(cwd: string): GitPulseState {
       cancelled = true;
       window.removeEventListener("focus", load);
     };
-  }, [cwd]);
+  }, [cwd, enabled]);
 
   return state;
 }
