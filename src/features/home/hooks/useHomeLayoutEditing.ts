@@ -108,7 +108,8 @@ export function useHomeLayoutEditing(): HomeLayoutEditing {
   }, []);
 
   const onResetLayout = useCallback((): void => {
-    setState(resetHomeLayoutState());
+    const next = resetHomeLayoutState();
+    if (next) setState(next);
   }, []);
 
   return {

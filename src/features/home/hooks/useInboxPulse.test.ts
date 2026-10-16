@@ -15,7 +15,8 @@ vi.mock("../../inbox/model/githubTasks", async (importOriginal) => ({
   inboxProjectsForRail: (
     recents: readonly { path: string; openedAt: number }[],
     _cwd: string,
-  ) => recents.map((recent) => ({ path: recent.path, openedAt: recent.openedAt })),
+  ) =>
+    recents.map((recent) => ({ path: recent.path, openedAt: recent.openedAt })),
 }));
 
 vi.mock("../../inbox/model/inboxActivityRequest", () => ({
@@ -98,8 +99,8 @@ afterEach(async () => {
 
 describe("useInboxPulse", () => {
   it("clears prior rows while a refetch for new paths is in flight", async () => {
-    let resolveFirst: ((value: { items: InboxItem[]; errors: object }) => void)
-      | undefined;
+    let resolveFirst:
+      ((value: { items: InboxItem[]; errors: object }) => void) | undefined;
     listInboxItems.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -130,5 +131,29 @@ describe("useInboxPulse", () => {
     await render(["/a"], "/a", false);
     expect(listInboxItems).not.toHaveBeenCalled();
     expect(latest).toEqual({ status: "loading" });
+  });
+
+  it("treats empty items with provider errors as unavailable, not clear", async () => {
+    listInboxItems.mockResolvedValueOnce({
+      items: [],
+      errors: { github: "rate limited" },
+    });
+    await render(["/a"], "/a");
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(latest).toEqual({ status: "unavailable" });
+  });
+
+  it("treats a truly empty inbox as ready with no rows", async () => {
+    listInboxItems.mockResolvedValueOnce({ items: [], errors: {} });
+    await render(["/a"], "/a");
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(latest).toEqual({
+      status: "ready",
+      pulse: { attentionCount: 0, rows: [] },
+    });
   });
 });

@@ -33,16 +33,21 @@ function Row({
   );
 }
 
+function emptyCopy(
+  cwd: string,
+  status: Exclude<GitPulseState["status"], "ready">,
+): string {
+  if (status === "loading") return "Loading…";
+  if (status === "error") return "Git unavailable";
+  return cwd ? "No git repository" : "No project selected";
+}
+
 export function GitPulseCard({ cwd, state }: Props): ReactNode {
   if (state.status !== "ready") {
     return (
       <HomeCard title="Git">
         <p className="font-mono text-[12px] text-content/45">
-          {state.status === "loading"
-            ? "Loading…"
-            : cwd
-              ? "No git repository"
-              : "No project selected"}
+          {emptyCopy(cwd, state.status)}
         </p>
       </HomeCard>
     );

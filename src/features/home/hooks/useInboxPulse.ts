@@ -62,7 +62,13 @@ export function useInboxPulse(
     listInboxItems(projects, query)
       .then((listed) => {
         if (cancelled) return;
-        setItems(applyInboxFiltersBySource(listed.items, pruned, ""));
+        const visible = applyInboxFiltersBySource(listed.items, pruned, "");
+        // Empty + provider errors is "unavailable", not a falsely clear inbox.
+        if (visible.length === 0 && Object.keys(listed.errors).length > 0) {
+          setItems("error");
+          return;
+        }
+        setItems(visible);
       })
       .catch((error: unknown) => {
         console.error("Failed to load Home inbox pulse:", error);

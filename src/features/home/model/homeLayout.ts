@@ -236,8 +236,8 @@ function clearLegacyHomeLayout(): void {
 
 function migrateLegacyHomeLayout(legacyRaw: string): HomeLayoutState {
   const migrated = parseHomeLayoutState(JSON.parse(legacyRaw) as unknown);
-  saveHomeLayoutState(migrated);
-  clearLegacyHomeLayout();
+  // Keep v1 until v2 lands — a failed write must not discard the user's layout.
+  if (saveHomeLayoutState(migrated)) clearLegacyHomeLayout();
   return migrated;
 }
 
@@ -283,13 +283,17 @@ export function saveHomeLayoutState(state: HomeLayoutState): boolean {
   }
 }
 
-/** Clears stored layout (both versions) and returns the all-visible default. */
-export function resetHomeLayoutState(): HomeLayoutState {
+/**
+ * Clears stored layout (both versions) and returns the all-visible default.
+ * @returns null when storage rejects the clear so callers keep prior UI state.
+ */
+export function resetHomeLayoutState(): HomeLayoutState | null {
   try {
     localStorage.removeItem(HOME_LAYOUT_STORAGE_KEY);
     localStorage.removeItem(HOME_LAYOUT_LEGACY_STORAGE_KEY);
+    return DEFAULT_HOME_LAYOUT_STATE;
   } catch (error) {
     console.error("Failed to clear home layout:", error);
+    return null;
   }
-  return DEFAULT_HOME_LAYOUT_STATE;
 }

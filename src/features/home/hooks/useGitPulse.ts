@@ -5,6 +5,7 @@ import { gitPulse, type GitPulse } from "../model/gitPulse";
 export type GitPulseState =
   | { status: "loading" }
   | { status: "unavailable" }
+  | { status: "error" }
   | { status: "ready"; pulse: GitPulse };
 
 async function readGitPulse(cwd: string): Promise<GitPulse | null> {
@@ -33,17 +34,21 @@ export function useGitPulse(cwd: string, enabled = true): GitPulseState {
     }
 
     let cancelled = false;
+    let generation = 0;
+
     const load = (): void => {
+      const requestId = ++generation;
       readGitPulse(cwd)
         .then((pulse) => {
-          if (cancelled) return;
+          if (cancelled || requestId !== generation) return;
           setState(
             pulse ? { status: "ready", pulse } : { status: "unavailable" },
           );
         })
         .catch((error: unknown) => {
           console.error("Failed to load Home git pulse:", { cwd, error });
-          if (!cancelled) setState({ status: "unavailable" });
+          if (cancelled || requestId !== generation) return;
+          setState({ status: "error" });
         });
     };
 

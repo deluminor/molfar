@@ -168,12 +168,63 @@ describe("homeLayout persistence", () => {
     ).toBe(false);
   });
 
+  it("keeps the v1 key when migrate cannot persist v2", () => {
+    const legacy = JSON.stringify([{ i: "status", x: 8, y: 3, w: 4, h: 5 }]);
+    const data = new Map<string, string>([
+      [HOME_LAYOUT_LEGACY_STORAGE_KEY, legacy],
+    ]);
+    Object.defineProperty(globalThis, "localStorage", {
+      value: {
+        getItem: (key: string) => data.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          if (key === HOME_LAYOUT_STORAGE_KEY) throw new Error("quota");
+          data.set(key, value);
+        },
+        removeItem: (key: string) => {
+          data.delete(key);
+        },
+        clear: () => data.clear(),
+        key: (index: number) => [...data.keys()][index] ?? null,
+        get length() {
+          return data.size;
+        },
+      },
+      configurable: true,
+    });
+
+    const loaded = loadHomeLayoutState();
+    expect(loaded.layout.find((item) => item.i === "status")).toMatchObject({
+      x: 8,
+      y: 3,
+    });
+    expect(localStorage.getItem(HOME_LAYOUT_LEGACY_STORAGE_KEY)).toBe(legacy);
+    expect(localStorage.getItem(HOME_LAYOUT_STORAGE_KEY)).toBeNull();
+  });
+
   it("reset clears both keys and shows every widget", () => {
     saveHomeLayoutState({ layout: DEFAULT_HOME_LAYOUT, hidden: ["git"] });
     localStorage.setItem(HOME_LAYOUT_LEGACY_STORAGE_KEY, "[]");
     expect(resetHomeLayoutState()).toEqual(DEFAULT_HOME_LAYOUT_STATE);
     expect(localStorage.getItem(HOME_LAYOUT_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(HOME_LAYOUT_LEGACY_STORAGE_KEY)).toBeNull();
+  });
+
+  it("returns null when reset cannot clear storage", () => {
+    saveHomeLayoutState({ layout: DEFAULT_HOME_LAYOUT, hidden: ["git"] });
+    Object.defineProperty(globalThis, "localStorage", {
+      value: {
+        getItem: () => null,
+        setItem: () => undefined,
+        removeItem: () => {
+          throw new Error("denied");
+        },
+        clear: () => undefined,
+        key: () => null,
+        length: 0,
+      },
+      configurable: true,
+    });
+    expect(resetHomeLayoutState()).toBeNull();
   });
 });
 
