@@ -1,6 +1,7 @@
 /** Persistable Home dashboard grid layout (react-grid-layout units). */
 
-export const HOME_LAYOUT_STORAGE_KEY = "molfar.homeLayout.v1";
+export const HOME_LAYOUT_STORAGE_KEY = "molfar.homeLayout.v2";
+export const HOME_LAYOUT_LEGACY_STORAGE_KEY = "molfar.homeLayout.v1";
 
 export const HOME_LAYOUT_COLS = 12;
 export const HOME_LAYOUT_ROW_HEIGHT = 40;
@@ -14,6 +15,9 @@ export const HOME_WIDGET_IDS = [
   "status",
   "brand",
   "host",
+  "usage",
+  "inbox",
+  "git",
   "sessions",
   "automations",
   "matrix",
@@ -33,7 +37,8 @@ export type HomeLayoutItem = {
 
 export type HomeLayout = readonly HomeLayoutItem[];
 
-type PersistableItem = {
+/** Position/size as RGL reports it; `i` may be any string until parsed. */
+export type HomeLayoutUpdate = {
   i: string;
   x: number;
   y: number;
@@ -46,9 +51,12 @@ const DEFAULT_BY_ID: Record<HomeWidgetId, HomeLayoutItem> = {
   status: { i: "status", x: 4, y: 0, w: 4, h: 4, minW: 2, minH: 3 },
   brand: { i: "brand", x: 8, y: 0, w: 4, h: 9, minW: 2, minH: 4 },
   host: { i: "host", x: 0, y: 4, w: 8, h: 5, minW: 4, minH: 3 },
-  sessions: { i: "sessions", x: 0, y: 9, w: 6, h: 4, minW: 3, minH: 3 },
-  automations: { i: "automations", x: 6, y: 9, w: 6, h: 4, minW: 3, minH: 3 },
-  matrix: { i: "matrix", x: 0, y: 13, w: 12, h: 5, minW: 4, minH: 3 },
+  usage: { i: "usage", x: 0, y: 9, w: 4, h: 4, minW: 2, minH: 3 },
+  inbox: { i: "inbox", x: 4, y: 9, w: 4, h: 4, minW: 2, minH: 3 },
+  git: { i: "git", x: 8, y: 9, w: 4, h: 4, minW: 2, minH: 3 },
+  sessions: { i: "sessions", x: 0, y: 13, w: 6, h: 4, minW: 3, minH: 3 },
+  automations: { i: "automations", x: 6, y: 13, w: 6, h: 4, minW: 3, minH: 3 },
+  matrix: { i: "matrix", x: 0, y: 17, w: 12, h: 5, minW: 4, minH: 3 },
 };
 
 /** Wide default matching the previous hardcoded Home grid. */
@@ -62,9 +70,12 @@ export const NARROW_HOME_LAYOUT: HomeLayout = [
   { i: "status", x: 0, y: 4, w: 12, h: 4, minW: 12, minH: 3 },
   { i: "brand", x: 0, y: 8, w: 12, h: 7, minW: 12, minH: 4 },
   { i: "host", x: 0, y: 15, w: 12, h: 5, minW: 12, minH: 3 },
-  { i: "sessions", x: 0, y: 20, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "automations", x: 0, y: 24, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "matrix", x: 0, y: 28, w: 12, h: 5, minW: 12, minH: 3 },
+  { i: "usage", x: 0, y: 20, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "inbox", x: 0, y: 24, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "git", x: 0, y: 28, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "sessions", x: 0, y: 32, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "automations", x: 0, y: 36, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "matrix", x: 0, y: 40, w: 12, h: 5, minW: 12, minH: 3 },
 ];
 
 function isHomeWidgetId(value: string): value is HomeWidgetId {
@@ -135,31 +146,112 @@ export function parseHomeLayout(value: unknown): HomeLayout {
 
 /** Merges an RGL callback layout with default min sizes. */
 export function normalizeHomeLayout(
-  items: readonly PersistableItem[],
+  items: readonly HomeLayoutUpdate[],
 ): HomeLayout {
   return parseHomeLayout(items);
 }
 
-/** Reads the wide layout from localStorage, or the default. */
-export function loadHomeLayout(): HomeLayout {
+/** Visible-only RGL updates overwrite their ids; hidden widgets keep their geometry. */
+export function mergeHomeLayout(
+  current: HomeLayout,
+  updates: readonly HomeLayoutUpdate[],
+): HomeLayout {
+  return parseHomeLayout([...current, ...updates]);
+}
+
+/** Layout geometry for every widget plus the ids the user turned off. */
+export type HomeLayoutState = {
+  layout: HomeLayout;
+  hidden: readonly HomeWidgetId[];
+};
+
+export const DEFAULT_HOME_LAYOUT_STATE: HomeLayoutState = {
+  layout: DEFAULT_HOME_LAYOUT,
+  hidden: [],
+};
+
+function parseHidden(value: unknown): HomeWidgetId[] {
+  if (!Array.isArray(value)) return [];
+  const ids = HOME_WIDGET_IDS.filter((id) => value.includes(id));
+  return ids.length >= HOME_WIDGET_IDS.length ? [] : ids;
+}
+
+/** Accepts the v2 `{ layout, hidden }` object or a bare v1 layout array. */
+export function parseHomeLayoutState(value: unknown): HomeLayoutState {
+  if (Array.isArray(value))
+    return { layout: parseHomeLayout(value), hidden: [] };
+  if (value == null || typeof value !== "object") {
+    return DEFAULT_HOME_LAYOUT_STATE;
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    layout: parseHomeLayout(record.layout),
+    hidden: parseHidden(record.hidden),
+  };
+}
+
+export function canHideHomeWidget(
+  state: HomeLayoutState,
+  id: HomeWidgetId,
+): boolean {
+  if (state.hidden.includes(id)) return false;
+  return HOME_WIDGET_IDS.length - state.hidden.length > 1;
+}
+
+/** Returns the same state when hiding would leave Home empty. */
+export function hideHomeWidget(
+  state: HomeLayoutState,
+  id: HomeWidgetId,
+): HomeLayoutState {
+  if (!canHideHomeWidget(state, id)) return state;
+  return { ...state, hidden: parseHidden([...state.hidden, id]) };
+}
+
+export function showHomeWidget(
+  state: HomeLayoutState,
+  id: HomeWidgetId,
+): HomeLayoutState {
+  if (!state.hidden.includes(id)) return state;
+  return {
+    ...state,
+    hidden: state.hidden.filter((hiddenId) => hiddenId !== id),
+  };
+}
+
+/** Items RGL should render: `base` defaults to the stored wide layout. */
+export function visibleHomeLayout(
+  state: HomeLayoutState,
+  base: HomeLayout = state.layout,
+): HomeLayout {
+  return base.filter((item) => !state.hidden.includes(item.i));
+}
+
+function readStoredState(): HomeLayoutState {
+  const raw = localStorage.getItem(HOME_LAYOUT_STORAGE_KEY);
+  if (raw != null) return parseHomeLayoutState(JSON.parse(raw) as unknown);
+  const legacy = localStorage.getItem(HOME_LAYOUT_LEGACY_STORAGE_KEY);
+  if (legacy == null) return DEFAULT_HOME_LAYOUT_STATE;
+  const migrated = parseHomeLayoutState(JSON.parse(legacy) as unknown);
+  saveHomeLayoutState(migrated);
+  return migrated;
+}
+
+/** Reads v2 state, migrating a v1 layout once; corrupt storage yields defaults. */
+export function loadHomeLayoutState(): HomeLayoutState {
   try {
-    const raw = localStorage.getItem(HOME_LAYOUT_STORAGE_KEY);
-    if (raw == null) return DEFAULT_HOME_LAYOUT;
-    return parseHomeLayout(JSON.parse(raw) as unknown);
-  } catch {
-    return DEFAULT_HOME_LAYOUT;
+    return readStoredState();
+  } catch (error) {
+    console.error("Failed to load home layout:", error);
+    return DEFAULT_HOME_LAYOUT_STATE;
   }
 }
 
-/** Persists only position/size; mins are reapplied on load. */
-export function saveHomeLayout(layout: HomeLayout): void {
-  const payload: PersistableItem[] = layout.map(({ i, x, y, w, h }) => ({
-    i,
-    x,
-    y,
-    w,
-    h,
-  }));
+/** Persists only position/size and hidden ids; mins are reapplied on load. */
+export function saveHomeLayoutState(state: HomeLayoutState): void {
+  const payload = {
+    layout: state.layout.map(({ i, x, y, w, h }) => ({ i, x, y, w, h })),
+    hidden: state.hidden,
+  };
   try {
     localStorage.setItem(HOME_LAYOUT_STORAGE_KEY, JSON.stringify(payload));
   } catch (error) {
@@ -167,12 +259,13 @@ export function saveHomeLayout(layout: HomeLayout): void {
   }
 }
 
-/** Clears stored layout and returns the default. */
-export function resetHomeLayout(): HomeLayout {
+/** Clears stored layout (both versions) and returns the all-visible default. */
+export function resetHomeLayoutState(): HomeLayoutState {
   try {
     localStorage.removeItem(HOME_LAYOUT_STORAGE_KEY);
+    localStorage.removeItem(HOME_LAYOUT_LEGACY_STORAGE_KEY);
   } catch (error) {
     console.error("Failed to clear home layout:", error);
   }
-  return DEFAULT_HOME_LAYOUT;
+  return DEFAULT_HOME_LAYOUT_STATE;
 }
