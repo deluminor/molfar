@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Working agents strip cards get a quiet **X** to stop that session without opening it (working, needs approval, and done).
 - Task Board stages copy their input artifacts into the worktree's git-ignored `.molfar/board/` and list those paths in a short handoff manifest, so prompts no longer paste full artifact bodies.
 - Long task descriptions and acceptance criteria on the card **Overview** collapse behind a fade with **Show more** and **Show less**.
 - Home **Edit layout** can **hide and show widgets**; hidden ones sit in a strip until restored, and the arrangement persists across restarts. New **Usage**, **Inbox**, and **Git** pulse cards summarize plan pressure, open inbox items, and the selected project's branch state. **Status**, **Automations**, and **Host** highlight actionable rows, failed runs, and high load more clearly.

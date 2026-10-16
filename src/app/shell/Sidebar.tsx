@@ -317,6 +317,7 @@ type Props = {
   busyProjectPaths?: Iterable<string>;
   liveAgents?: LiveAgent[];
   onSelectAgent?: (sessionId: string) => void;
+  onStopAgent?: (sessionId: string) => void;
   onSelectProject?: (path: string) => void;
   onOpenProject?: () => void;
   onRemoveProject?: (path: string, options: { purgeData: boolean }) => void;
@@ -417,6 +418,7 @@ function SidebarComponent({
   busyProjectPaths,
   liveAgents = [],
   onSelectAgent,
+  onStopAgent,
   onSelectProject,
   onOpenProject,
   onRemoveProject,
@@ -2216,6 +2218,7 @@ function SidebarComponent({
               agents={liveAgents}
               activeSessionId={activeSessionId}
               onSelect={onSelectAgent}
+              onStop={onStopAgent}
               bottomSpacing={compactRailVisible}
             />
             <SidebarUpdateFooter
@@ -2364,6 +2367,7 @@ function SidebarComponent({
           liveAgents={liveAgents}
           activeSessionId={activeSessionId}
           onSelectAgent={onSelectAgent}
+          onStopAgent={onStopAgent}
           canGoBack={canGoBack}
           canGoForward={canGoForward}
           onGoBack={onGoBack}
