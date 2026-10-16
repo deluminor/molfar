@@ -5,12 +5,15 @@
 mod artifacts;
 mod cards;
 mod claim;
+mod materialize;
 mod runs;
 mod schema;
 mod settings;
 mod types;
 mod validate;
 
+#[cfg(test)]
+mod materialize_tests;
 #[cfg(test)]
 mod tests;
 
@@ -20,6 +23,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::session_store::{now_millis, SessionStore};
 use artifacts::ArtifactWrite;
+use materialize::InputRef;
 use settings::BoardSettings;
 use types::{ArtifactMeta, Card, CardCreate, CardPatch, StageRun, StageRunCreate, StageRunPatch};
 
@@ -190,6 +194,19 @@ pub fn task_board_artifact_write(
     let meta = artifacts::write(&mut *store.lock_conn()?, &base, &input, now_millis())?;
     changed(&app);
     Ok(meta)
+}
+
+/// Copies stage inputs into the card's worktree so the session reads them as files.
+#[tauri::command(async)]
+pub fn task_board_inputs_materialize(
+    app: AppHandle,
+    store: State<'_, SessionStore>,
+    card_id: String,
+    inputs: Vec<InputRef>,
+) -> Result<Vec<String>, String> {
+    let base = artifact_base(&app)?;
+    let prepared = materialize::prepare(&*store.lock_conn()?, &base, &card_id, &inputs)?;
+    materialize::write(&prepared)
 }
 
 #[tauri::command(async)]

@@ -363,6 +363,7 @@ pub fn run() {
             task_board::task_board_artifacts_list,
             task_board::task_board_artifact_read,
             task_board::task_board_artifact_write,
+            task_board::task_board_inputs_materialize,
             task_board::task_board_settings_get,
             task_board::task_board_settings_set,
             automations::automations_list,

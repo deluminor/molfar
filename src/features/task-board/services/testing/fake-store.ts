@@ -11,6 +11,8 @@ export function createFakeStore(clock: () => number) {
   const cards = new Map<string, Card>();
   const runs = new Map<string, StageRun>();
   const artifacts: (ArtifactMeta & { body: string })[] = [];
+  /** What each card's worktree `.molfar/board/` holds after the latest materialization. */
+  const handoff = new Map<string, { path: string; body: string }[]>();
   let settings: BoardSettings = { columns: {}, maxConcurrentStages: 3, stallMinutes: 45 };
   let ids = 0;
 
@@ -135,6 +137,17 @@ export function createFakeStore(clock: () => number) {
       artifacts.push({ ...meta, body: input.body });
       return meta;
     },
+    async materializeInputs(cardId, inputs) {
+      if (!cards.get(cardId)?.worktreePath) throw new Error("Card has no worktree.");
+      const files = await Promise.all(
+        inputs.map(async ({ kind, version }) => ({
+          path: `.molfar/board/${kind}-v${version}.md`,
+          body: await store.readArtifact(cardId, kind, version),
+        })),
+      );
+      handoff.set(cardId, files);
+      return files.map((file) => file.path);
+    },
     async getSettings() {
       return copy(settings);
     },
@@ -147,5 +160,7 @@ export function createFakeStore(clock: () => number) {
   const latest = (cardId: string, kind: ArtifactMeta["kind"]) =>
     artifacts.filter((entry) => entry.cardId === cardId && entry.kind === kind).pop();
 
-  return { store, cards, runs, artifacts, latest };
+  const handoffText = (cardId: string) => (handoff.get(cardId) ?? []).map((file) => file.body).join("\n");
+
+  return { store, cards, runs, artifacts, latest, handoff, handoffText };
 }

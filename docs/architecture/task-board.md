@@ -16,7 +16,10 @@ A global Kanban board whose agent stages each run in a fresh, hidden session. Sp
 
 ## Stage contract
 
-- The engine inlines input artifacts into the prompt; the stage returns its artifacts between
+- The engine copies the stage's input artifacts from app data into the worktree's git-ignored
+  `.molfar/board/<kind>-v<version>.md` (`task_board_inputs_materialize`) and the prompt lists them as a
+  manifest; bodies are never inlined. The folder holds a `.gitignore` of `*`, so checkout guards ignore it.
+- The stage returns its artifacts between
   `<<<MOLFAR:kind>>>` / `<<<END:kind>>>` markers in its final message. The session port captures the full
   turn text at settlement (the settlement outcome alone is capped at 20 000 characters).
 - Grill and Code review run in `auto` mode; HEAD and `git status --porcelain` must match before and after.

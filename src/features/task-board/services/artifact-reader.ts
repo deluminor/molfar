@@ -1,4 +1,4 @@
-import type { ArtifactDoc, ArtifactKind, ArtifactMeta } from "../types/artifact";
+import type { ArtifactDoc, ArtifactKind, ArtifactMeta, ArtifactRef } from "../types/artifact";
 import type { BoardStorePort } from "./ports";
 
 export function latestVersions(metas: readonly ArtifactMeta[]): Map<ArtifactKind, number> {
@@ -9,17 +9,26 @@ export function latestVersions(metas: readonly ArtifactMeta[]): Map<ArtifactKind
   return latest;
 }
 
+/** Latest version of each requested kind, in request order; kinds without any version are skipped. */
+export async function latestRefs(
+  store: BoardStorePort,
+  cardId: string,
+  kinds: readonly ArtifactKind[],
+): Promise<ArtifactRef[]> {
+  const latest = latestVersions(await store.listArtifacts(cardId));
+  return kinds.flatMap((kind) => {
+    const version = latest.get(kind);
+    return version ? [{ kind, version }] : [];
+  });
+}
+
 /** Latest version of each requested kind; kinds without any version are skipped. */
 export async function readLatest(
   store: BoardStorePort,
   cardId: string,
   kinds: readonly ArtifactKind[],
 ): Promise<Partial<Record<ArtifactKind, ArtifactDoc>>> {
-  const latest = latestVersions(await store.listArtifacts(cardId));
-  const wanted = kinds.flatMap((kind) => {
-    const version = latest.get(kind);
-    return version ? [{ kind, version }] : [];
-  });
+  const wanted = await latestRefs(store, cardId, kinds);
   const docs = await Promise.all(
     wanted.map(async ({ kind, version }) => ({
       kind,

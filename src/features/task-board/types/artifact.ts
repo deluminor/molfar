@@ -23,7 +23,12 @@ export type ArtifactMeta = {
   createdAt: number;
 };
 
-export type ArtifactDoc = { kind: ArtifactKind; version: number; body: string };
+export type ArtifactRef = { kind: ArtifactKind; version: number };
+
+export type ArtifactDoc = ArtifactRef & { body: string };
+
+/** An artifact copied into a stage's checkout; `path` is relative to the checkout root. */
+export type HandoffFile = ArtifactRef & { path: string };
 
 export type FindingSeverity = "blocking" | "major" | "minor" | "nit";
 

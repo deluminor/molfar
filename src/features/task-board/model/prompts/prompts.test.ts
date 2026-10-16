@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ArtifactDoc, ArtifactKind } from "../../types/artifact";
+import type { ArtifactKind } from "../../types/artifact";
 import type { AgentStage } from "../../types/stage";
 import { stageInputs } from "./inputs";
 import type { PromptCard, StagePromptContext } from "./shared";
@@ -20,13 +20,12 @@ const card: PromptCard = {
 
 const KINDS: ArtifactKind[] = ["task", "spec", "plan", "questions", "answers", "impl_report", "review", "rework_brief"];
 
-function context(overrides: Partial<PromptCard> = {}): StagePromptContext {
-  const inputs: Partial<Record<ArtifactKind, ArtifactDoc>> = {};
-  for (const kind of KINDS) inputs[kind] = { kind, version: 2, body: `BODY-${kind}` };
-  return { card: { ...card, ...overrides }, inputs, headSha: "b".repeat(40) };
+function context(overrides: Partial<PromptCard> = {}, kinds: readonly ArtifactKind[] = KINDS): StagePromptContext {
+  const files = kinds.map((kind) => ({ kind, version: 2, path: `.molfar/board/${kind}-v2.md` }));
+  return { card: { ...card, ...overrides }, files, headSha: "b".repeat(40) };
 }
 
-const included = (prompt: string) => KINDS.filter((kind) => prompt.includes(`BODY-${kind}`));
+const listed = (prompt: string) => KINDS.filter((kind) => prompt.includes(`\`.molfar/board/${kind}-v2.md\``));
 
 describe("buildStagePrompt", () => {
   it.each<[AgentStage, Partial<PromptCard>, ArtifactKind[]]>([
@@ -35,8 +34,18 @@ describe("buildStagePrompt", () => {
     ["implement", {}, ["task", "spec", "plan"]],
     ["code_review", {}, ["task", "spec", "plan", "impl_report"]],
     ["rework", {}, ["task", "spec", "plan", "impl_report", "review", "rework_brief"]],
-  ])("%s %o inlines exactly its inputs", (stage, overrides, kinds) => {
-    expect(included(buildStagePrompt(stage, context(overrides))).sort()).toEqual([...kinds].sort());
+  ])("%s %o lists its handoff files", (stage, overrides, kinds) => {
+    const contract = stageInputs(stage, overrides.grillRound ?? 1);
+    expect([...contract.required, ...contract.optional].sort()).toEqual([...kinds].sort());
+    expect(listed(buildStagePrompt(stage, context(overrides, kinds))).sort()).toEqual([...kinds].sort());
+  });
+
+  it("describes each handoff file by kind and version instead of inlining bodies", () => {
+    const prompt = buildStagePrompt("implement", context({}, ["task", "spec", "plan"]));
+
+    expect(prompt).toContain("## Handoff files");
+    expect(prompt).toContain("| `.molfar/board/plan-v2.md` | plan | v2 | The implementation plan |");
+    expect(prompt).not.toContain("## Inputs");
   });
 
   it("marks read-only stages and asks writing stages to commit", () => {
