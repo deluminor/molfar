@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.15] - 2026-10-16
+
 ### Added
 
 - Each Task Board agent column can pick which **skills** it runs. The column model chip auto-detects hub names (`d-grill`, `grill`, and the same pattern for the other stages), lets you toggle curated skills, add extras from the project catalog, and reset back to auto-detect. Missing skills warn on the chip and are skipped when a stage starts.
@@ -398,7 +400,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.14...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.15...HEAD
+[1.0.15]: https://github.com/deluminor/molfar/compare/v1.0.14...v1.0.15
 [1.0.14]: https://github.com/deluminor/molfar/compare/v1.0.13...v1.0.14
 [1.0.13]: https://github.com/deluminor/molfar/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/deluminor/molfar/compare/v1.0.11...v1.0.12
