@@ -254,9 +254,10 @@ fn settings_default_and_validate() {
 
     let mut saved = defaults;
     saved.stall_minutes = 30;
-    saved
-        .column_skills
-        .insert("code_review".into(), vec!["d-code-review".into(), "code-review".into()]);
+    saved.column_skills.insert(
+        "code_review".into(),
+        vec!["d-code-review".into(), "code-review".into()],
+    );
     settings::set(&conn, &saved).unwrap();
     let loaded = settings::get(&conn).unwrap();
     assert_eq!(loaded.stall_minutes, 30);
