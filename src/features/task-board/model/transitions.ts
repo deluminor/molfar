@@ -22,6 +22,7 @@ export type BoardActionType =
 
 export type TransitionEffect =
   | "ensureWorktree"
+  | "resetGrillRound"
   | "nextGrillRound"
   | "nextReworkCycle"
   | "stopSession"
@@ -103,8 +104,10 @@ function gateTransition(card: CardPosition, action: BoardActionType): Transition
   const { columnId: column, runState: state } = card;
   const idle = state === "idle";
 
+  // Fresh starts always begin at grill round 1. Incrementing here broke retries that
+  // went backlog → start → fail → back → start (round 2 with no prior artifacts).
   if (column === "backlog" && idle && action === "start")
-    return move("grill", "queued", ["ensureWorktree", "nextGrillRound"]);
+    return move("grill", "queued", ["ensureWorktree", "resetGrillRound"]);
   if (action === "editTask" && idle && (column === "backlog" || column === "plan_approval"))
     return move(column, "idle");
 

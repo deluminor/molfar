@@ -1,4 +1,4 @@
-import { memo, type DragEvent, type ReactNode } from "react";
+import { memo, type DragEvent, type PointerEvent, type ReactNode } from "react";
 import { projectName } from "../../../../shared/lib/paths";
 import { GitBranch, RotateCcw } from "../../../../shared/ui/icons";
 import { ProjectMark } from "../../../projects/ui/ProjectMark";
@@ -18,8 +18,7 @@ type Props = {
   draggable: boolean;
   dragging: boolean;
   onOpen: (cardId: string) => void;
-  onDragStart: (cardId: string, event: DragEvent) => void;
-  onDragEnd: () => void;
+  onDragStart: (cardId: string, event: PointerEvent<HTMLElement>) => void;
 };
 
 /** A slim inset pill plus a faint wash, so the status reads without a hard edge. */
@@ -34,6 +33,11 @@ const STRIPE: Record<CardStatusKind, { bar: string; wash: string }> = {
 
 function shortBranch(branch: string): string {
   return branch.replace(/^molfar\/task-[a-z0-9]+-?/, "") || branch;
+}
+
+/** A nested image or link would start a native drag and cancel the pointer drag. */
+function preventNativeDrag(event: DragEvent): void {
+  event.preventDefault();
 }
 
 function frameClass(selected: boolean, dragging: boolean): string {
@@ -51,7 +55,6 @@ export const BoardCard = memo(function BoardCard({
   dragging,
   onOpen,
   onDragStart,
-  onDragEnd,
 }: Props): ReactNode {
   const reworkWarning = card.reworkCycle >= REWORK_WARNING_CYCLE;
   const running = status?.kind === "running";
@@ -60,10 +63,9 @@ export const BoardCard = memo(function BoardCard({
     <button
       type="button"
       data-card-id={card.id}
-      draggable={draggable}
       onClick={() => onOpen(card.id)}
-      onDragStart={(event) => onDragStart(card.id, event)}
-      onDragEnd={onDragEnd}
+      onPointerDown={draggable ? (event) => onDragStart(card.id, event) : undefined}
+      onDragStart={preventNativeDrag}
       aria-label={`#${card.number} ${card.title}${status ? `, ${status.label}` : ""}`}
       className={`task-board-card group relative isolate flex w-full shrink-0 cursor-pointer flex-col gap-2 overflow-hidden rounded-xl border py-2.5 pl-3.5 pr-3 text-left outline-none transition-[background-color,border-color,opacity,transform,box-shadow] duration-200 ease-[var(--motion-ease-out)] focus-visible:ring-2 focus-visible:ring-accent/70 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${frameClass(selected, dragging)}`}
     >

@@ -78,9 +78,15 @@ describe("transition", () => {
     const cancel = transition(at("grill", "running"), "cancel");
     const deliver = transition(at("final_review", "running"), "deliver");
 
-    expect(start.ok && start.effects).toEqual(["ensureWorktree", "nextGrillRound"]);
+    expect(start.ok && start.effects).toEqual(["ensureWorktree", "resetGrillRound"]);
     expect(cancel.ok && cancel.effects).toEqual(["stopSession"]);
     expect(deliver.ok && deliver.effects).toContain("cleanupWorktree");
+  });
+
+  it("increments the grill round only when returning from plan approval", () => {
+    const changes = transition(at("plan_approval"), "requestChanges");
+    expect(changes.ok && changes.effects).toContain("nextGrillRound");
+    expect(changes.ok && changes.effects).not.toContain("resetGrillRound");
   });
 });
 

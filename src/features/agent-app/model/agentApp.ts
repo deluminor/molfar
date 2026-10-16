@@ -46,6 +46,8 @@ import {
   type ArtifactUpsert,
 } from "../../artifacts/artifacts";
 import type { Worktree, Worktrees } from "../../source-control/model/worktrees";
+import type { TaskBoardRuntime } from "../../task-board/hooks/use-task-board-engine";
+import { createBoardCard, listBoardCards } from "./agentAppBoard";
 import { pathKey, projectName } from "../../../shared/lib/paths";
 import type { SplitDir } from "../../workspace/model/layout";
 import {
@@ -141,6 +143,8 @@ export type AgentAppHost = {
   artifact?(id: string): Promise<Artifact | null>;
   saveArtifact?(artifact: ArtifactUpsert): Promise<Artifact>;
   postArtifact?(sourceSessionId: string, card: ArtifactCard): void | Promise<void>;
+  /** The Task Board; absent where this window cannot reach it. */
+  board?: TaskBoardRuntime;
   /** Whether the session is a Familiar's own conversation, which owns memory. */
   isFamiliar(sessionId: string): boolean;
   /**
@@ -220,6 +224,11 @@ const FIELDS = new Map<string, readonly string[]>([
   ["confluence.search", ["query", "spaceKey", "limit"]],
   ["confluence.list", ["spaceKey", "spaceId", "parentId", "parentKind"]],
   ["confluence.read", ["id"]],
+  ["board.list", ["archived", "project"]],
+  [
+    "board.create",
+    ["title", "description", "acceptanceCriteria", "baseRef", "project"],
+  ],
   ["artifacts.list", ["kind", "limit", "offset"]],
   ["artifacts.read", ["id"]],
   ["artifacts.write", ["id", "kind", "title", "body", "summary"]],
@@ -346,6 +355,11 @@ function requireProject(
   if (own) return own;
   if (familiar.projects.length === 1) return familiar.projects[0];
   throw new Error(`Pass "project" to choose one. Yours: ${choices()}`);
+}
+
+function requireBoard(host: AgentAppHost): TaskBoardRuntime {
+  if (!host.board) throw new Error("Task Board is unavailable in this window");
+  return host.board;
 }
 
 /** A Familiar's chat lives outside its projects; project access follows its roster. */
@@ -1154,6 +1168,36 @@ export async function handleAgentApp(
         draft: !!launch.draft,
         ...(notifyFamiliarId ? { notifyOnComplete: true } : {}),
       };
+    }
+    case "board.list": {
+      const cwd = requireProject(source, input, host);
+      if (input.archived !== undefined && typeof input.archived !== "boolean")
+        throw new Error("archived must be a boolean");
+      return {
+        cwd,
+        cards: await listBoardCards(
+          requireBoard(host),
+          cwd,
+          input.archived === true,
+        ),
+      };
+    }
+    case "board.create": {
+      const cwd = requireProject(source, input, host);
+      if (!/^[A-Za-z0-9_-]{1,128}$/.test(requestId))
+        throw new Error("Invalid request ID");
+      const criteria =
+        input.acceptanceCriteria === ""
+          ? ""
+          : optionalString(input.acceptanceCriteria, "acceptanceCriteria", 50_000);
+      return createBoardCard(requireBoard(host), {
+        id: `app-${source.id}-${requestId}`,
+        projectCwd: cwd,
+        title: requiredString(input.title, "title", 200),
+        description: requiredString(input.description, "description", 100_000),
+        acceptanceCriteria: criteria ?? "",
+        baseRef: optionalString(input.baseRef, "baseRef", 255) ?? null,
+      });
     }
     case "worktrees.list":
       return host.worktrees(requireProject(source, input, host));

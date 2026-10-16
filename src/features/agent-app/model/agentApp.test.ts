@@ -12,6 +12,9 @@ import {
 import type { Note } from "../../notes";
 import type { Artifact } from "../../artifacts/artifacts";
 import type { Worktree } from "../../source-control/model/worktrees";
+import { runAction } from "../../task-board/services/actions";
+import { createCard } from "../../task-board/services/card-create";
+import { createFakePorts } from "../../task-board/services/testing/fake-ports";
 import { handleAgentApp, notePreview, canAccessAgentAppProject, type AgentAppHost } from "./agentApp";
 
 vi.mock("../../../integrations/harness/core/availability", () => ({
@@ -1499,5 +1502,109 @@ describe("agent app commands", () => {
         host,
       ),
     ).rejects.toThrow("body is required");
+  });
+});
+
+describe("task board app actions", () => {
+  const card = {
+    title: "Add board",
+    description: "### Overview\n\nBuild it",
+    acceptanceCriteria: "AC-1: It builds",
+  };
+
+  function boardFixture() {
+    const { source, host } = fixture();
+    const fake = createFakePorts();
+    source.cwd = "/code/app";
+    host.board = {
+      ports: fake.ports,
+      create: (input) => createCard(fake.ports, input),
+      act: (cardId, action) => runAction(fake.ports, cardId, action),
+      needsInput: () => false,
+    };
+    return { source, host, fake };
+  }
+
+  it("creates a backlog card in the session's project and lists it", async () => {
+    const { source, host, fake } = boardFixture();
+
+    const created = await handleAgentApp(source, "card-1", "board.create", card, host);
+    const listed = await handleAgentApp(source, "list-1", "board.list", {}, host);
+
+    expect(created).toMatchObject({
+      id: "app-lead-card-1",
+      number: 1,
+      project: "/code/app",
+      column: "backlog",
+      needsYou: false,
+    });
+    expect(listed).toMatchObject({ cwd: "/code/app", cards: [{ id: "app-lead-card-1" }] });
+    expect(fake.board.latest("app-lead-card-1", "task")?.body).toContain("AC-1: It builds");
+  });
+
+  it("returns the same card when a request is retried", async () => {
+    const { source, host, fake } = boardFixture();
+
+    const first = await handleAgentApp(source, "card-2", "board.create", card, host);
+    const retry = await handleAgentApp(source, "card-2", "board.create", card, host);
+
+    expect(retry).toEqual(first);
+    expect(fake.board.cards.size).toBe(1);
+  });
+
+  it("rejects a retried request ID with different content", async () => {
+    const { source, host, fake } = boardFixture();
+    await handleAgentApp(source, "card-3", "board.create", card, host);
+
+    await expect(
+      handleAgentApp(source, "card-3", "board.create", { ...card, title: "Something else" }, host),
+    ).rejects.toThrow("Request ID was already used for another card");
+    expect(fake.board.cards.size).toBe(1);
+  });
+
+  it("keeps a regular session to its own project", async () => {
+    const { source, host } = boardFixture();
+
+    await expect(
+      handleAgentApp(source, "card-4", "board.create", { ...card, project: "/code/site" }, host),
+    ).rejects.toThrow("project is only for a Familiar");
+    await expect(
+      handleAgentApp(source, "list-2", "board.list", { project: "/code/site" }, host),
+    ).rejects.toThrow("project is only for a Familiar");
+  });
+
+  it("lets a Familiar file cards only in its own projects", async () => {
+    const { source, host, fake } = boardFixture();
+    source.cwd = "/home/user";
+    host.isFamiliar = (id) => id === source.id;
+    host.familiarOf = () => ({ id: "familiar", projects: ["/code/app", "/code/site"] });
+
+    const created = await handleAgentApp(source, "card-5", "board.create", { ...card, project: "app" }, host);
+
+    expect(created).toMatchObject({ project: "/code/app" });
+    await expect(
+      handleAgentApp(source, "card-6", "board.create", { ...card, project: "/code/other" }, host),
+    ).rejects.toThrow("Not one of your projects");
+    expect(fake.board.cards.size).toBe(1);
+  });
+
+  it("passes card input errors through as plain messages", async () => {
+    const { source, host } = boardFixture();
+    source.cwd = "/code/unlisted";
+
+    await expect(handleAgentApp(source, "card-7", "board.create", card, host)).rejects.toThrow(
+      "Choose one of the projects on the rail.",
+    );
+    await expect(
+      handleAgentApp(source, "card-8", "board.create", { ...card, title: "" }, host),
+    ).rejects.toThrow("title must be a non-empty string");
+  });
+
+  it("reports a missing board instead of guessing", async () => {
+    const { source, host } = fixture();
+
+    await expect(handleAgentApp(source, "card-9", "board.create", card, host)).rejects.toThrow(
+      "Task Board is unavailable",
+    );
   });
 });

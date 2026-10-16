@@ -1,9 +1,12 @@
 import type { ControlOutcome } from "../../orchestration/model/orchestration";
+import { listSkills } from "../../../platform/tauri/fs";
+import { loadDisabledSkillPaths } from "../../skills/model/skills";
 import { COLUMN_LABEL, isAgentStage, READ_ONLY_STAGES } from "../constants/columns";
 import { dirtyCheckoutError } from "../model/checkout-checks";
-import { stageInputs } from "../model/prompts/inputs";
+import { resolveGrillInputs, stageInputs } from "../model/prompts/inputs";
 import { TEMPLATE_VERSION } from "../model/prompts/shared";
 import { buildStagePrompt } from "../model/prompts/stages";
+import { resolveStageSkills } from "../model/resolve-stage-skills";
 import { resolveStageConfig } from "../model/stage-config";
 import type { Card } from "../types/card";
 import type { AgentStage } from "../types/stage";
@@ -14,12 +17,35 @@ import { ensureWorktree } from "./worktree";
 
 export type StageSettled = (runId: string, cardId: string, outcome: ControlOutcome) => void;
 
-async function preparePrompt(ports: EnginePorts, card: Card, stage: AgentStage, headSha: string) {
-  const contract = stageInputs(stage, card.grillRound);
-  const inputs = await readLatest(ports.store, card.id, [...contract.required, ...contract.optional]);
-  const missing = contract.required.filter((kind) => !inputs[kind]);
+async function availableSkillNames(cwd: string): Promise<Set<string>> {
+  try {
+    const discovered = await listSkills(cwd, loadDisabledSkillPaths());
+    return new Set(discovered.map((skill) => skill.name));
+  } catch {
+    // No catalog (tests, headless, or IO failure): run the stage without skills.
+    return new Set();
+  }
+}
+
+async function preparePrompt(
+  ports: EnginePorts,
+  card: Card,
+  stage: AgentStage,
+  headSha: string,
+  skillNames: readonly string[],
+) {
+  const requested = stageInputs(stage, card.grillRound);
+  const loaded = await readLatest(ports.store, card.id, [...requested.required, ...requested.optional]);
+  const contract = stage === "grill" ? resolveGrillInputs(card.grillRound, loaded) : requested;
+  const missing = contract.required.filter((kind) => !loaded[kind]);
   if (missing.length) throw new Error(`Missing input artifacts: ${missing.join(", ")}.`);
-  return buildStagePrompt(stage, { card, inputs, headSha });
+
+  // Fallback to first-grill wording when later-round artifacts are absent.
+  const promptCard =
+    stage === "grill" && contract.required.length === 1 && card.grillRound > 1
+      ? { ...card, grillRound: 1 }
+      : card;
+  return buildStagePrompt(stage, { card: promptCard, inputs: loaded, headSha }, skillNames);
 }
 
 /** The card still runs this very run; a cancel or retry in the meantime says no. */
@@ -66,7 +92,18 @@ export async function startStage(
     const dirty = READ_ONLY_STAGES.includes(stage) ? null : dirtyCheckoutError(before);
     if (dirty) throw new Error(dirty);
 
-    const prompt = await preparePrompt(ports, card, stage, before.head);
+    const available = await availableSkillNames(card.projectCwd);
+    const configured = settings.columnSkills?.[stage];
+    const { skills: skillNames, missing: missingSkills } = resolveStageSkills(stage, configured, available);
+    if (missingSkills.length) {
+      console.warn("Task board: configured skills missing from catalog", {
+        cardId: card.id,
+        stage,
+        missingSkills,
+      });
+    }
+
+    const prompt = await preparePrompt(ports, card, stage, before.head, skillNames);
     const sessionId = ports.newId();
     await ports.store.updateRun(run.id, {
       headBefore: before.head,

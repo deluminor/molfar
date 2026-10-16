@@ -6,6 +6,11 @@ import type { EnginePorts } from "./ports";
 import { errorText } from "./stage-fail";
 
 export type NewCard = {
+  /**
+   * A caller-chosen id makes a retry safe: the card already saved under it is
+   * returned instead of a second one. Omit it for a fresh id.
+   */
+  id?: string;
   projectCwd: string;
   title: string;
   description: string;
@@ -28,16 +33,40 @@ async function assertLocalRepository(ports: EnginePorts, projectCwd: string): Pr
   }
 }
 
+/** A retry can land after the card was saved but before its task snapshot was. */
+async function withTaskArtifact(ports: EnginePorts, card: Card): Promise<Card> {
+  const artifacts = await ports.store.listArtifacts(card.id);
+  if (!artifacts.some((meta) => meta.kind === "task")) {
+    await ports.store.writeArtifact({ cardId: card.id, kind: "task", source: "user", body: formatTask(card) });
+  }
+  return card;
+}
+
 export async function createCard(ports: EnginePorts, input: NewCard): Promise<Card> {
+  if (input.id) {
+    const saved = await ports.store.getCard(input.id);
+    if (saved) return withTaskArtifact(ports, saved);
+  }
+
   await assertLocalRepository(ports, input.projectCwd);
-  const card = await ports.store.createCard({
-    id: ports.newId(),
-    projectCwd: input.projectCwd,
-    title: input.title.trim(),
-    description: input.description.trim(),
-    acceptanceCriteria: input.acceptanceCriteria.trim(),
-    baseRef: input.baseRef?.trim() || null,
-  });
+  const id = input.id ?? ports.newId();
+  let card: Card;
+  try {
+    card = await ports.store.createCard({
+      id,
+      projectCwd: input.projectCwd,
+      title: input.title.trim(),
+      description: input.description.trim(),
+      acceptanceCriteria: input.acceptanceCriteria.trim(),
+      baseRef: input.baseRef?.trim() || null,
+    });
+  } catch (error: unknown) {
+    // A concurrent retry with the same id won the insert; hand back its card.
+    const raced = input.id ? await ports.store.getCard(input.id) : null;
+    if (!raced) throw error;
+    return withTaskArtifact(ports, raced);
+  }
+
   await ports.store.writeArtifact({
     cardId: card.id,
     kind: "task",

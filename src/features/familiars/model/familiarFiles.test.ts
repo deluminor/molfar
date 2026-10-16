@@ -124,6 +124,8 @@ it("says how to keep memory and update the soul only at the user's request", () 
     "Only when the user asks you to change your soul or standing instructions",
   );
   expect(full).toContain("app soul.read {}");
+  expect(full).toContain("<board_rules>");
+  expect(full).toContain("file it with `app board.create`");
   expect(full).toContain(
     'app soul.update {"text":"<complete updated Markdown>","expectedHash":"<hash from soul.read>"}',
   );

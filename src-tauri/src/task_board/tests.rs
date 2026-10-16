@@ -240,13 +240,29 @@ fn settings_default_and_validate() {
         (defaults.max_concurrent_stages, defaults.stall_minutes),
         (3, 45)
     );
+    assert!(defaults.column_skills.is_empty());
 
     let mut invalid = defaults.clone();
     invalid.max_concurrent_stages = 0;
     assert!(settings::set(&conn, &invalid).is_err());
 
+    let mut bad_skills = defaults.clone();
+    bad_skills
+        .column_skills
+        .insert("code_review".into(), vec!["Not A Skill".into()]);
+    assert!(settings::set(&conn, &bad_skills).is_err());
+
     let mut saved = defaults;
     saved.stall_minutes = 30;
+    saved.column_skills.insert(
+        "code_review".into(),
+        vec!["d-code-review".into(), "code-review".into()],
+    );
     settings::set(&conn, &saved).unwrap();
-    assert_eq!(settings::get(&conn).unwrap().stall_minutes, 30);
+    let loaded = settings::get(&conn).unwrap();
+    assert_eq!(loaded.stall_minutes, 30);
+    assert_eq!(
+        loaded.column_skills.get("code_review"),
+        Some(&vec!["d-code-review".into(), "code-review".into()])
+    );
 }
