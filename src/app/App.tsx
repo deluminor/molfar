@@ -49,6 +49,7 @@ import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import { submitWithSettlement } from "./model/managedSubmission";
 import { createTaskBoardSessionPort } from "./model/task-board-session-port";
 import { createCompanionBoard } from "../features/companion/model/companion-board";
+import { boardTaskRule } from "../features/agent-app/model/agentAppBoard";
 import { useTaskBoardEngine } from "../features/task-board/hooks/use-task-board-engine";
 import { useBoardAttention } from "../features/task-board/hooks/use-board-attention";
 import { requestBoardFocus } from "../features/task-board/model/board-focus";
@@ -8075,7 +8076,7 @@ function Workspace({
           if (operatorCommand.matched || handAgent) {
             const cli = `${shellPath(await invoke<string>("app_cli_path"))} app`;
             appContext.push(
-              `<molfar_app>\n${handAgent ? "App access is always enabled in this thread." : "The user's Operator command enables app access in this thread, including later turns without the command."} You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read, continue, stop, archive or delete other project sessions, save unsent drafts, organize session folders, and read or write saved notes through its local CLI. Run \`${cli} --help\` when you need the exact commands and JSON fields. When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`,
+              `<molfar_app>\n${handAgent ? "App access is always enabled in this thread." : "The user's Operator command enables app access in this thread, including later turns without the command."} You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read, continue, stop, archive or delete other project sessions, save unsent drafts, organize session folders, read or write saved notes, and list or create Task Board cards through its local CLI. Run \`${cli} --help\` when you need the exact commands and JSON fields. ${boardTaskRule(cli)} When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`,
             );
           }
           // A Familiar reads who it is ahead of the message, so it never takes it
@@ -8743,6 +8744,8 @@ function Workspace({
   );
   const isMainWindow = useMemo(() => getCurrentWindow().label === "main", []);
   const taskBoard = useTaskBoardEngine(taskBoardSessions, isMainWindow, companionProjectPaths);
+  const taskBoardRef = useRef(taskBoard);
+  taskBoardRef.current = taskBoard;
   const boardAttention = useBoardAttention(taskBoard.ports.store);
   const railBadges = useMemo(() => ({ board: boardAttention }), [boardAttention]);
   useEffect(() => {
@@ -11213,6 +11216,7 @@ function Workspace({
               setSessions(sessionsRef.current);
               if (!isHabitRun(sessionId)) await upsertSession(updated);
             },
+            board: taskBoardRef.current,
             isFamiliar: (id) => isFamiliarSession(id),
             isHabitRun: (id) => isHabitRun(id),
             familiarOf: (id) => {
@@ -12123,6 +12127,10 @@ function Workspace({
       requestBoardFocus(cardId);
       onOpenLocalSurface("board");
     },
+    [onOpenLocalSurface],
+  );
+  const onOpenUsageSurface = useCallback(
+    () => onOpenLocalSurface("usage"),
     [onOpenLocalSurface],
   );
   const actions = useRef({
@@ -13506,10 +13514,14 @@ function Workspace({
                 besideRail={projectRailOpen || compactProjectRail}
                 compactRail={compactRailActive}
                 projectPaths={recents.map((project) => project.path)}
+                projectCwd={projectCwd}
                 onClose={onLeaveLocalSurface}
                 onToggleSidebar={onToggleSidebar}
                 onOpenSession={onOpenHomeSession}
                 onOpenAutomation={onOpenHomeAutomation}
+                onOpenAutomations={onOpenAutomations}
+                onOpenUsage={onOpenUsageSurface}
+                onOpenInbox={onOpenInbox}
                 taskBoard={taskBoard}
               />
               {automationsSurfaceOpen ? (

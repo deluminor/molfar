@@ -28,6 +28,7 @@ export async function transitionCard(
       runState: result.runState,
       archived: result.archived,
     };
+    if (effects.includes("resetGrillRound")) patch.grillRound = 1;
     if (effects.includes("nextGrillRound")) patch.grillRound = current.grillRound + 1;
     if (effects.includes("nextReworkCycle")) patch.reworkCycle = current.reworkCycle + 1;
     if (effects.includes("clearError")) patch.lastError = null;

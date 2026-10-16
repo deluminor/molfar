@@ -16,6 +16,7 @@ import type { BoardColumn as BoardColumnId, Card } from "../types/card";
 import type { AgentStage, StageModelConfig } from "../types/stage";
 import { BoardColumn } from "./board/BoardColumn";
 import { BoardCard } from "./board/BoardCard";
+import { DragGhost } from "./board/DragGhost";
 import { BoardSettingsDialog } from "./BoardSettingsDialog";
 import { BoardToolbar } from "./BoardToolbar";
 import { CardDetailDrawer } from "./card-detail/CardDetailDrawer";
@@ -52,6 +53,7 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
   const [creating, setCreating] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
   const [intent, setIntent] = useState<DetailIntent>(null);
+  const [intentSeq, setIntentSeq] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const selectedId = useSyncExternalStore(subscribeBoardFocus, boardFocus, boardFocus);
@@ -64,6 +66,7 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
 
   const open = useCallback((cardId: string | null, next: DetailIntent = null) => {
     setIntent(next);
+    if (next) setIntentSeq((seq) => seq + 1);
     requestBoardFocus(cardId);
   }, []);
 
@@ -80,6 +83,7 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
     [runtime, open],
   );
   const drag = useBoardDrag(board.cards, onDrop);
+  const draggedCard = drag.draggingId ? board.cards.find((card) => card.id === drag.draggingId) : undefined;
 
   const saveColumn = useCallback(
     (stage: AgentStage, config: StageModelConfig | undefined) => {
@@ -88,6 +92,19 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
       if (config) columns[stage] = config;
       else delete columns[stage];
       void runtime.ports.store.setSettings({ ...board.settings, columns }).catch((error: unknown) => setActionError(String(error)));
+    },
+    [board.settings, runtime],
+  );
+
+  const saveColumnSkills = useCallback(
+    (stage: AgentStage, skills: string[] | undefined) => {
+      if (!board.settings) return;
+      const columnSkills = { ...(board.settings.columnSkills ?? {}) };
+      if (skills !== undefined) columnSkills[stage] = skills;
+      else delete columnSkills[stage];
+      void runtime.ports.store
+        .setSettings({ ...board.settings, columnSkills })
+        .catch((error: unknown) => setActionError(String(error)));
     },
     [board.settings, runtime],
   );
@@ -114,7 +131,6 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
         dragging={drag.draggingId === card.id}
         onOpen={open}
         onDragStart={drag.start}
-        onDragEnd={drag.end}
       />
     );
   };
@@ -149,20 +165,23 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
       ) : null}
 
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-auto px-4 pb-4" aria-busy={board.loading}>
+        <div data-board-scroller className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-auto px-4 pb-4" aria-busy={board.loading}>
           {BOARD_COLUMNS.map((column) => (
             <BoardColumn
               key={column}
               column={column}
               cards={board.byColumn.get(column) ?? []}
               drop={dropState(drag, column)}
+              over={drag.overColumn === column}
               modelConfig={isAgentStage(column) ? board.settings?.columns[column] : undefined}
+              columnSkills={isAgentStage(column) ? board.settings?.columnSkills?.[column] : undefined}
               modelProject={modelProject}
               onModelChange={(config) => {
                 if (isAgentStage(column)) saveColumn(column, config);
               }}
-              onDragOver={(event) => drag.over(column, event)}
-              onDrop={(event) => drag.drop(column, event)}
+              onSkillsChange={(skills) => {
+                if (isAgentStage(column)) saveColumnSkills(column, skills);
+              }}
               renderCard={renderCard}
             />
           ))}
@@ -172,6 +191,7 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
             runtime={runtime}
             cardId={selectedId}
             intent={intent}
+            intentSeq={intentSeq}
             onClose={() => open(null)}
             onOpenSession={onOpenSession}
             onMove={onDrop}
@@ -179,6 +199,7 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
         ) : null}
       </div>
 
+      {draggedCard && drag.origin ? <DragGhost card={draggedCard} origin={drag.origin} ghostRef={drag.ghostRef} /> : null}
       {creating ? (
         <NewCardDialog
           projects={projects}

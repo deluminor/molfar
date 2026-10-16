@@ -1,8 +1,9 @@
 import type { AgentStage } from "../types/stage";
 
 /**
- * Hub skills each stage invokes. The prompt names them as `/skill` tokens, so
- * MOLFAR inlines their bodies for every harness (or the harness runs them).
+ * Default skill slots per agent column. Untouched columns auto-detect the first
+ * installed candidate for each slot (`d-name`, then `name`); column settings can
+ * override with an explicit list. Prompt tokens are resolved at stage start.
  */
 export const STAGE_SKILLS: Record<AgentStage, readonly string[]> = {
   grill: ["d-plan", "d-grill-me", "d-analyze"],

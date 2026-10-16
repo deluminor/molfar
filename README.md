@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
 
+https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
+
 ## Architecture
 
 ![MOLFAR system architecture — React UI, Tauri core, Companion gateway, agent harness, Atlassian, and local store](docs/architecture/images/molfar-system.png)
@@ -22,7 +24,7 @@ Interactive diagrams: [system overview](docs/architecture/molfar-system.html) ·
 
 | Layer                 | Responsibility                                                                                     |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
+| **React UI**          | Board, Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
 | **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
 | **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
 | **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
@@ -44,6 +46,7 @@ The important boundary is the **harness layer**: provider CLIs stay native to th
 src/
 ├── app/                 # Shell composition, window chrome, startup, updates
 ├── features/            # Product slices (UI + model + tests per feature)
+│   ├── task-board/      # Global Kanban: stages, artifacts, delivery
 │   ├── sessions/        # Composer, transcripts, BTW, second opinion
 │   ├── inbox/           # Connectors incl. Confluence Docs
 │   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
@@ -56,7 +59,7 @@ src/
 ├── platform/tauri/      # Browser ↔ Tauri adapters
 ├── shared/              # Reusable UI primitives (no feature logic)
 └── styles/              # Global CSS + design tokens
-src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, familiars, control CLI
+src-tauri/src/           # Rust: PTY, FS, git, task board, inbox, jira, confluence, vault, familiars, control CLI
 host/                    # Experimental remote host (Node) for always-on agent machines
 docs/
 ├── architecture/        # Interactive HTML diagrams, JSON sources, README images
@@ -64,8 +67,6 @@ docs/
 ```
 
 > **MOLFAR** brings agents, projects, worktrees, tickets, knowledge, automation, and developer tooling into one desktop environment. It drives the provider CLIs you already use and keeps project state, sessions, and credentials on your machine.
->
-> Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT), MOLFAR is an independent project with its own repository, releases, and architecture, and it still ports selected upstream changes.
 
 ## TL;DR
 
@@ -95,6 +96,19 @@ The name is a nod to the _molfar_ — the Carpathian wise man who reads signs an
 ## What it does
 
 ![MOLFAR Home dashboard](docs/architecture/images/home.png)
+
+### Board: Kanban that runs the agent loop
+
+A global **Task Board** on the project rail turns a task into a staged pipeline instead of an open-ended chat. Cards move through **Backlog → Grill → Plan approval → Implement → Code review → Final review → Done**, with **Rework** when review sends work back. Each agent stage runs in a fresh hidden session inside the card's own Git worktree; stages hand off only through versioned **spec, plan, report, and review** artifacts.
+
+- Per-column **model, effort, and permission mode**, with per-card overrides on retry.
+- **Plan approval** and **final review** always wait for you — approve, request changes, deliver as a pull request, squash-merge, or keep the branch.
+- Waiting and failed cards surface as a **count badge** on the Board rail action and on the macOS Dock; delivered cards can be **Archived** so Done stays lean.
+- Paired Companion phones can drive the same board actions while you are away from the desk.
+
+![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board1.png)
+
+![Delivered Board card with stage timeline, acceptance criteria, and pull request link](docs/architecture/images/board2.png)
 
 ### Sessions: every agent, one workspace
 
@@ -155,7 +169,7 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 ### Companion: iPhone and iPad over Tailscale
 
-Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
+Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, Task Board gates, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
 
 ![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
 
@@ -288,6 +302,9 @@ Type `/operator` at the start of a composer message to enable MOLFAR access in t
 - `notes.list` returns titles and short previews; `notes.read` returns one full note by ID. `notes.write` creates a note linked to the calling session or edits an existing one's title, body, and tags; reuse `--request-id` on retries to avoid duplicates.
 - `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
 - `confluence.search` / `confluence.list` / `confluence.read` read Confluence through the connected Atlassian account.
+- `board.list` shows the project's Task Board cards; `board.create` adds a Backlog card with a title, Markdown description and acceptance criteria. A session files cards only in its own project, a Familiar only in its projects. Reuse `--request-id` on retries; it returns the same card instead of a second one.
+
+Asking an agent with app access to "add this to the board" is enough: the app-access instructions and the Familiar rules tell it to write the card from the conversation and follow the template in the `board.create` entry of `app --help` (Overview, Goals, Scope, Out of scope, Technical notes, `AC-n` criteria, all in English). It creates the card at once when the user says to create it now, and otherwise confirms the title and scope first; that rule lives in the instructions, not in the CLI. The built-in `/create-board-task` skill does the same on demand and skips the confirmation. Providers with their own command catalog (Pi, omp, Devin) do not list the skill, but still get the instructions and the help.
 
 Familiars always have this CLI in their own conversation, plus Familiar-only actions: `soul.read` / `soul.update`, `memory.read` / `memory.search` / `memory.add` / `memory.replace` / `memory.remove`, `habits.list` / `habits.add` / `habits.update` / `habits.run` / `habits.remove`, and `chat.card` for PR, session, choice, and habit-suggestion cards. Habit runs and other sessions cannot change a Familiar's soul.
 

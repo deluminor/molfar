@@ -1,7 +1,5 @@
 import type { ArtifactKind, HandoffFile } from "../../types/artifact";
 import type { Card } from "../../types/card";
-import { STAGE_SKILLS } from "../../constants/skills";
-import type { AgentStage } from "../../types/stage";
 import { closeMarker, openMarker } from "../artifacts/markers";
 
 /** Recorded on every stage run; bump when a template's contract changes. */
@@ -49,11 +47,13 @@ export function header(context: StagePromptContext, role: string): string {
 /**
  * Skill tokens on their own line, so MOLFAR recognises every one of them. The
  * skills were written for interactive chats; the stage contract wins.
+ * Pass an empty list to omit the Skills section entirely.
  */
-export function skills(stage: AgentStage): string {
+export function skills(names: readonly string[]): string {
+  if (names.length === 0) return "";
   return [
     "## Skills",
-    STAGE_SKILLS[stage].map((name) => `/${name}`).join(" "),
+    names.map((name) => `/${name}`).join(" "),
     "",
     "Apply every skill above. They were written for interactive work, so in this stage: do not stop to wait for",
     "approval or ask questions in chat (open questions go in the questions block), do not hand git commands to the",
@@ -82,7 +82,9 @@ export function rules(readOnly: boolean): string {
 
 /** A manifest of the handoff files; their bodies stay in the files. */
 export function renderInputs(files: readonly HandoffFile[]): string {
-  const rows = files.map((file) => `| \`${file.path}\` | ${file.kind} | v${file.version} | ${INPUT_TITLE[file.kind]} |`);
+  const rows = files.map(
+    (file) => `| \`${file.path}\` | ${file.kind} | v${file.version} | ${INPUT_TITLE[file.kind]} |`,
+  );
   return [
     "## Handoff files",
     "Read every file below before you start; together they are the card's current state. MOLFAR copied them from",

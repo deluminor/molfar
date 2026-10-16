@@ -1,33 +1,60 @@
 import type { ControlOutcome } from "../../orchestration/model/orchestration";
+import { listSkills } from "../../../platform/tauri/fs";
+import { loadDisabledSkillPaths } from "../../skills/model/skills";
 import { COLUMN_LABEL, isAgentStage, READ_ONLY_STAGES } from "../constants/columns";
 import { PROMPT_WARN_CHARS } from "../constants/limits";
 import { dirtyCheckoutError } from "../model/checkout-checks";
-import { stageInputs } from "../model/prompts/inputs";
+import { resolveGrillInputs, stageInputs } from "../model/prompts/inputs";
 import { TEMPLATE_VERSION } from "../model/prompts/shared";
 import { buildStagePrompt } from "../model/prompts/stages";
+import { resolveStageSkills } from "../model/resolve-stage-skills";
 import { resolveStageConfig } from "../model/stage-config";
 import type { Card } from "../types/card";
 import type { AgentStage } from "../types/stage";
-import { latestRefs } from "./artifact-reader";
+import { latestRefs, readLatest } from "./artifact-reader";
 import type { EnginePorts } from "./ports";
 import { errorText, failStage, latestRun } from "./stage-fail";
 import { ensureWorktree } from "./worktree";
 
 export type StageSettled = (runId: string, cardId: string, outcome: ControlOutcome) => void;
 
+async function availableSkillNames(cwd: string): Promise<Set<string>> {
+  try {
+    const discovered = await listSkills(cwd, loadDisabledSkillPaths());
+    return new Set(discovered.map((skill) => skill.name));
+  } catch {
+    // No catalog (tests, headless, or IO failure): run the stage without skills.
+    return new Set();
+  }
+}
+
 /**
  * Copies the stage's inputs into the worktree's git-ignored `.molfar/board/`
  * and names them in the prompt; artifact bodies never ride in the prompt.
  */
-async function preparePrompt(ports: EnginePorts, card: Card, stage: AgentStage, headSha: string) {
-  const contract = stageInputs(stage, card.grillRound);
-  const refs = await latestRefs(ports.store, card.id, [...contract.required, ...contract.optional]);
-  const missing = contract.required.filter((kind) => !refs.some((ref) => ref.kind === kind));
+async function preparePrompt(
+  ports: EnginePorts,
+  card: Card,
+  stage: AgentStage,
+  headSha: string,
+  skillNames: readonly string[],
+) {
+  const requested = stageInputs(stage, card.grillRound);
+  const loaded = await readLatest(ports.store, card.id, [...requested.required, ...requested.optional]);
+  const contract = stage === "grill" ? resolveGrillInputs(card.grillRound, loaded) : requested;
+  const missing = contract.required.filter((kind) => !loaded[kind]);
   if (missing.length) throw new Error(`Missing input artifacts: ${missing.join(", ")}.`);
 
+  // Fallback to first-grill wording when later-round artifacts are absent.
+  const promptCard =
+    stage === "grill" && contract.required.length === 1 && card.grillRound > 1
+      ? { ...card, grillRound: 1 }
+      : card;
+
+  const refs = await latestRefs(ports.store, card.id, [...contract.required, ...contract.optional]);
   const paths = await ports.store.materializeInputs(card.id, refs);
   const files = refs.map((ref, index) => ({ ...ref, path: paths[index] }));
-  const prompt = buildStagePrompt(stage, { card, files, headSha });
+  const prompt = buildStagePrompt(stage, { card: promptCard, files, headSha }, skillNames);
   if (prompt.length > PROMPT_WARN_CHARS) {
     console.warn("Task board: stage prompt is unusually long", { cardId: card.id, stage, chars: prompt.length });
   }
@@ -78,7 +105,18 @@ export async function startStage(
     const dirty = READ_ONLY_STAGES.includes(stage) ? null : dirtyCheckoutError(before);
     if (dirty) throw new Error(dirty);
 
-    const prompt = await preparePrompt(ports, card, stage, before.head);
+    const available = await availableSkillNames(card.projectCwd);
+    const configured = settings.columnSkills?.[stage];
+    const { skills: skillNames, missing: missingSkills } = resolveStageSkills(stage, configured, available);
+    if (missingSkills.length) {
+      console.warn("Task board: configured skills missing from catalog", {
+        cardId: card.id,
+        stage,
+        missingSkills,
+      });
+    }
+
+    const prompt = await preparePrompt(ports, card, stage, before.head, skillNames);
     const sessionId = ports.newId();
     await ports.store.updateRun(run.id, {
       headBefore: before.head,

@@ -22,6 +22,7 @@ export type BoardActionType =
 
 export type TransitionEffect =
   | "ensureWorktree"
+  | "resetGrillRound"
   | "nextGrillRound"
   | "nextReworkCycle"
   | "stopSession"
@@ -103,8 +104,10 @@ function gateTransition(card: CardPosition, action: BoardActionType): Transition
   const { columnId: column, runState: state } = card;
   const idle = state === "idle";
 
+  // Fresh starts always begin at grill round 1. Incrementing here broke retries that
+  // went backlog → start → fail → back → start (round 2 with no prior artifacts).
   if (column === "backlog" && idle && action === "start")
-    return move("grill", "queued", ["ensureWorktree", "nextGrillRound"]);
+    return move("grill", "queued", ["ensureWorktree", "resetGrillRound"]);
   if (action === "editTask" && idle && (column === "backlog" || column === "plan_approval"))
     return move(column, "idle");
 
@@ -133,10 +136,14 @@ export function transition(card: CardPosition, action: BoardActionType): Transit
   if (card.archived) return { ok: false, reason: "The card is archived." };
 
   if (action === "reject") {
-    const finished = card.columnId === "done";
-    const busy = card.runState === "running";
-    if (finished || busy) return refuse(action, card);
-    return move(card.columnId, "idle", ["cleanupWorktree"], true);
+    if (card.runState === "running") return refuse(action, card);
+    // Done cards archive without further cleanup; delivery already dropped the worktree.
+    return move(
+      card.columnId,
+      "idle",
+      card.columnId === "done" ? [] : ["cleanupWorktree"],
+      true,
+    );
   }
 
   return agentTransition(card, action) ?? gateTransition(card, action) ?? refuse(action, card);

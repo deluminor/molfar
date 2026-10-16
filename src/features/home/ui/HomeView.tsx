@@ -6,26 +6,38 @@ import {
   useHomeLayoutEditing,
   type HomeLayoutEditing,
 } from "../hooks/useHomeLayoutEditing";
+import { useGitPulse } from "../hooks/useGitPulse";
 import { useHostStats } from "../hooks/useHostStats";
+import { useInboxPulse } from "../hooks/useInboxPulse";
+import { useUsagePulse } from "../hooks/useUsagePulse";
 import { AutomationsCard } from "./AutomationsCard";
 import { ClockCard } from "./ClockCard";
 import { BrandCard } from "./BrandCard";
+import { GitPulseCard } from "./GitPulseCard";
+import { HiddenWidgetsStrip } from "./HiddenWidgetsStrip";
 import { HomeCard } from "./HomeCard";
-import { HomeGrid } from "./HomeGrid";
+import { HomeGrid, type HomeWidgets } from "./HomeGrid";
 import { HostCard } from "./HostCard";
+import { InboxPulseCard } from "./InboxPulseCard";
 import { MatrixRain } from "./MatrixRain";
 import { SessionsCard } from "./SessionsCard";
 import { StatusCard } from "./StatusCard";
 import { SurfaceHeader } from "./SurfaceHeader";
+import { UsageCard } from "./UsageCard";
 
 type Props = {
   besideRail?: boolean;
   compactRail?: boolean;
   projectPaths?: readonly string[];
+  /** Project selected on the rail; drives Git pulse and Inbox ordering. */
+  projectCwd?: string;
   onClose: () => void;
   onToggleSidebar?: () => void;
   onOpenSession?: (sessionId: string) => void;
   onOpenAutomation?: (automationId: string) => void;
+  onOpenAutomations?: () => void;
+  onOpenUsage?: () => void;
+  onOpenInbox?: () => void;
 };
 
 const NO_PROJECTS: readonly string[] = [];
@@ -68,14 +80,61 @@ export function HomeView({
   besideRail = false,
   compactRail = false,
   projectPaths = NO_PROJECTS,
+  projectCwd = "",
   onClose,
   onToggleSidebar,
   onOpenSession,
   onOpenAutomation,
+  onOpenAutomations,
+  onOpenUsage,
+  onOpenInbox,
 }: Props): ReactNode {
   const host = useHostStats();
   const dashboard = useHomeDashboard(projectPaths);
   const layoutEditing = useHomeLayoutEditing();
+  const usageEnabled = !layoutEditing.hidden.includes("usage");
+  const inboxEnabled = !layoutEditing.hidden.includes("inbox");
+  const gitEnabled = !layoutEditing.hidden.includes("git");
+  const usage = useUsagePulse(usageEnabled);
+  const inbox = useInboxPulse(projectPaths, projectCwd, inboxEnabled);
+  const git = useGitPulse(projectCwd, gitEnabled);
+
+  const widgets: HomeWidgets = {
+    clock: <ClockCard />,
+    status: (
+      <StatusCard
+        status={dashboard.status}
+        error={dashboard.error}
+        onOpenAutomations={onOpenAutomations}
+      />
+    ),
+    brand: <BrandCard />,
+    host: (
+      <HostCard stats={host.host} history={host.history} error={host.error} />
+    ),
+    usage: <UsageCard rows={usage} onOpenUsage={onOpenUsage} />,
+    inbox: <InboxPulseCard state={inbox} onOpenInbox={onOpenInbox} />,
+    git: <GitPulseCard cwd={projectCwd} state={git} />,
+    sessions: (
+      <SessionsCard
+        sessions={dashboard.sessions}
+        error={dashboard.error}
+        onOpenSession={onOpenSession}
+      />
+    ),
+    automations: (
+      <AutomationsCard
+        automations={dashboard.automations}
+        error={dashboard.error}
+        onOpenAutomation={onOpenAutomation}
+      />
+    ),
+    matrix: (
+      <HomeCard title="Matrix" className="p-0 [&>header]:px-3 [&>header]:pt-3">
+        <MatrixRain />
+      </HomeCard>
+    ),
+  };
 
   return (
     <div
@@ -94,45 +153,20 @@ export function HomeView({
         actions={<LayoutActions {...layoutEditing} />}
       />
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        {layoutEditing.editing ? (
+          <HiddenWidgetsStrip
+            hidden={layoutEditing.hidden}
+            onShowWidget={layoutEditing.onShowWidget}
+          />
+        ) : null}
         <HomeGrid
           layout={layoutEditing.layout}
+          widgets={widgets}
           isEditing={layoutEditing.editing}
+          canHideWidget={layoutEditing.canHideWidget}
+          onHideWidget={layoutEditing.onHideWidget}
           onLayoutChange={layoutEditing.onLayoutChange}
           onLayoutCommit={layoutEditing.onLayoutCommit}
-          clock={<ClockCard />}
-          status={
-            <StatusCard status={dashboard.status} error={dashboard.error} />
-          }
-          brand={<BrandCard />}
-          host={
-            <HostCard
-              stats={host.host}
-              history={host.history}
-              error={host.error}
-            />
-          }
-          sessions={
-            <SessionsCard
-              sessions={dashboard.sessions}
-              error={dashboard.error}
-              onOpenSession={onOpenSession}
-            />
-          }
-          automations={
-            <AutomationsCard
-              automations={dashboard.automations}
-              error={dashboard.error}
-              onOpenAutomation={onOpenAutomation}
-            />
-          }
-          matrix={
-            <HomeCard
-              title="Matrix"
-              className="p-0 [&>header]:px-3 [&>header]:pt-3"
-            >
-              <MatrixRain />
-            </HomeCard>
-          }
         />
       </div>
     </div>

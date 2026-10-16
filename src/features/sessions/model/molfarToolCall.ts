@@ -24,6 +24,8 @@ const ACTION_LABELS: Record<string, string> = {
   "confluence.search": "Search Confluence",
   "confluence.list": "List Confluence pages",
   "confluence.read": "Read Confluence page",
+  "board.list": "List board cards",
+  "board.create": "Create a board card",
   "artifacts.list": "List artifacts",
   "artifacts.read": "Read an artifact",
   "artifacts.write": "Write an artifact",

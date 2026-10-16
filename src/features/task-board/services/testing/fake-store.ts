@@ -30,6 +30,7 @@ export function createFakeStore(clock: () => number) {
       return card ? copy(card) : null;
     },
     async createCard(input: CardCreate) {
+      if (cards.has(input.id)) throw new Error("UNIQUE constraint failed: task_board_cards.id");
       const now = clock();
       const card: Card = {
         ...input,

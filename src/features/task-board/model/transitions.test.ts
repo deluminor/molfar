@@ -42,6 +42,7 @@ describe("transition", () => {
     ["implement", "queued", "cancel", "implement/failed"],
     ["final_review", "idle", "reject", "final_review/idle/archived"],
     ["backlog", "idle", "reject", "backlog/idle/archived"],
+    ["done", "idle", "reject", "done/idle/archived"],
   ])("%s/%s + %s → %s", (column, state, action, expected) => {
     expect(next(column, state, action)).toBe(expected);
   });
@@ -57,10 +58,15 @@ describe("transition", () => {
     ["final_review", "running", "deliverStart"],
     ["final_review", "idle", "editTask"],
     ["implement", "running", "reject"],
-    ["done", "idle", "reject"],
     ["done", "idle", "start"],
   ])("refuses %s/%s + %s", (column, state, action) => {
     expect(transition(at(column, state), action).ok).toBe(false);
+  });
+
+  it("archives a done card without cleanup side effects", () => {
+    const result = transition(at("done"), "reject");
+    expect(result.ok && result.effects).toEqual([]);
+    expect(result.ok && result.archived).toBe(true);
   });
 
   it("refuses everything on an archived card", () => {
@@ -72,9 +78,15 @@ describe("transition", () => {
     const cancel = transition(at("grill", "running"), "cancel");
     const deliver = transition(at("final_review", "running"), "deliver");
 
-    expect(start.ok && start.effects).toEqual(["ensureWorktree", "nextGrillRound"]);
+    expect(start.ok && start.effects).toEqual(["ensureWorktree", "resetGrillRound"]);
     expect(cancel.ok && cancel.effects).toEqual(["stopSession"]);
     expect(deliver.ok && deliver.effects).toContain("cleanupWorktree");
+  });
+
+  it("increments the grill round only when returning from plan approval", () => {
+    const changes = transition(at("plan_approval"), "requestChanges");
+    expect(changes.ok && changes.effects).toContain("nextGrillRound");
+    expect(changes.ok && changes.effects).not.toContain("resetGrillRound");
   });
 });
 

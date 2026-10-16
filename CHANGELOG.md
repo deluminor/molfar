@@ -7,11 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Task Board stages copy input artifacts into the worktree's git-ignored `.molfar/board/` and list them in the prompt as a handoff manifest instead of inlining bodies.
+- Long task descriptions and acceptance criteria on the card drawer collapse behind a fade with an expand control.
+- Home edit layout can **hide and show widgets**; Usage, Inbox and Git pulse cards surface host pressure, failed automations and actionable status rows.
+- Each Task Board agent column can pick which **skills** it runs. The column model chip auto-detects hub names (`d-grill`, `grill`, and the same pattern for the other stages), lets you toggle curated skills, add extras from the project catalog, and reset back to auto-detect. Missing skills warn on the chip and are skipped when a stage starts.
+- Sessions and Familiars with app access can **list and create** Task Board cards through `board.list` and `board.create`. A session only files cards in its own project; a Familiar only in its projects. Reuse `--request-id` on retries to get the same card instead of a duplicate. The built-in `/create-board-task` skill does the same on demand.
+
+### Changed
+
+- Dragging cards on the Task Board uses **pointer events** with a drag ghost and edge autoscroll, so drops work reliably in the macOS desktop build instead of being swallowed by native HTML5 drag.
+
+### Fixed
+
+- Starting a card from Backlog again after a failed Grill no longer asks for missing later-round artifacts (`spec`, `plan`, `answers`). Fresh starts reset to grill round 1, and a stuck card whose round was already past 1 falls back to first-grill inputs when those files are gone.
+
+## [1.0.14] - 2026-10-15
+
+### Added
+
+- Delivered Task Board cards can be **Archived** from the card drawer. They leave the active board and remain under the Archived filter; unfinished cards still use Reject.
+
+### Changed
+
+- The Board rail **waiting count** sits on the right of the row—same trailing slot as Familiar unread badges—instead of a left-side pill beside the icon. Inbox dots and Search shortcuts still use that trailing slot when there is no count.
+
+## [1.0.13] - 2026-10-15
+
+### Added
+
+- A global **Task Board** on the project rail runs each card through Grill, Plan approval, Implement, Code review, Final review and Rework. Every agent stage runs in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review leave the checkout untouched, Implement and Rework commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch.
+- Each board column picks its **model, effort and permission mode**; cards can override them on retry, and at most three stages run at once by default. Stages use the hub skills for their job, Code review drafts the pull request description, and stage sessions appear in the project's session list.
+- Cards waiting at a gate or failed surface as a **count badge** on the Board rail action and on the macOS Dock, sharing the Dock total with sessions that need input. Gate and failure events also raise a project banner that respects mute settings.
+- Paired Companion phones can drive the board with **`board.*`** actions and see board attention in the overview.
+
 ## [1.0.12] - 2026-10-14
 
 ### Added
 
-- A global **Task Board** on the project rail runs each task card through Grill, Plan approval, Implement, Code review, Final review and Rework, every agent stage in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review must leave the checkout untouched, Implement and Rework must commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch. Each agent column picks its model, effort and permission mode, cards can override them on retry, and at most three stages run at once by default. Each stage runs the hub skills for its job, Code review drafts the pull request description, and stage sessions appear in the project's session list. Paired phones get `board.*` Companion actions.
+- Inbox keeps **filters per provider tab** instead of one global set, so GitHub, Jira and the other sources each remember their own filters.
+- Jira issues in the inbox show an **expandable parent/child tree** with issue-type labels.
 - Familiars and habit runs can create **HTML visual artifacts** with `app artifacts.write` using `kind: "html"`, alongside Markdown documents. Visuals run in a sandboxed frame, follow the app's theme, fit their content height, and refresh when revised. Scripts and public HTTPS assets load; access to the app, fetch requests, nested frames, and form submissions are blocked.
 - Familiar replies show linked **local images and videos inline**, including workspace-relative references. Images open in the file viewer when clicked, videos have playback controls, and a file that cannot be displayed falls back to its link.
 - The Familiar overview's Sessions tab has **search and filters** for provider, status, time, archived and unavailable sessions. Sessions appear newest first, load more pages as the list nears its end, and empty states explain what to do.
@@ -365,7 +401,9 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.12...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.14...HEAD
+[1.0.14]: https://github.com/deluminor/molfar/compare/v1.0.13...v1.0.14
+[1.0.13]: https://github.com/deluminor/molfar/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/deluminor/molfar/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/deluminor/molfar/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/deluminor/molfar/compare/v1.0.9...v1.0.10

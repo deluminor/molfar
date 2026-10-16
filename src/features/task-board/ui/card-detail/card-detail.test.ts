@@ -164,8 +164,14 @@ describe("GateActions", () => {
     expect(button("Squash-merge")).toBeUndefined();
   });
 
-  it("renders nothing once delivered", () => {
-    render({ columnId: "done" });
-    expect(container.innerHTML).toBe("");
+  it("offers Archive on a delivered card", async () => {
+    const onAct = render({ columnId: "done" });
+    expect(labels()).toEqual(["Archive"]);
+    await act(async () => button("Archive").click());
+    expect(confirmApp).toHaveBeenCalledWith(
+      "Archive this card? It leaves the board and stays available under Archived.",
+      expect.objectContaining({ title: "Archive card", okLabel: "Archive" }),
+    );
+    expect(onAct).toHaveBeenCalledWith({ type: "reject" });
   });
 });

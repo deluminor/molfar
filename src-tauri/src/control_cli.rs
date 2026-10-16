@@ -82,7 +82,7 @@ const ACTIONS: [&str; 12] = [
     "list", "delegate", "get", "steer", "message", "retry", "cancel", "wait", "review", "finish",
     "respond", "answer",
 ];
-const APP_ACTIONS: [&str; 35] = [
+const APP_ACTIONS: [&str; 37] = [
     "models.list",
     "sessions.list",
     "sessions.read",
@@ -102,6 +102,8 @@ const APP_ACTIONS: [&str; 35] = [
     "confluence.search",
     "confluence.list",
     "confluence.read",
+    "board.list",
+    "board.create",
     "artifacts.list",
     "artifacts.read",
     "artifacts.write",
@@ -124,7 +126,7 @@ const APP_USAGE: &str = r#"MOLFAR app access — use in a thread enabled by /ope
 Usage: {exe} app ACTION [--json JSON | --input FILE|-] [--request-id ID]
 
 A Familiar works on several projects: add "project":"<path or name>" to the
-sessions.*, worktrees.* and folders.* actions to choose which one. It may be
+sessions.*, worktrees.*, folders.* and board.* actions to choose which one. It may be
 left out when the Familiar has a single project.
 
 Actions:
@@ -216,6 +218,39 @@ Actions:
                   List root pages in a space, or children of a page/folder.
                   parentKind is optional (page|folder); omit to try both.
   confluence.read   {"id":"..."}  Page markdown, or folder table of contents.
+  board.list     {"archived":false}  Task Board cards in this project: number,
+                  title, column, run state and whether one needs the user.
+  board.create   {"title":"...","description":"<Markdown>",
+                  "acceptanceCriteria":"AC-1: ...","baseRef":"main"}
+                  Add a Backlog card in this project. Use it when the user
+                  asks to put a task, ticket or card on the board. Create it
+                  at once when they said to create it now; otherwise show the
+                  title and three scope bullets and wait for a yes. Run
+                  board.list first when a similar card may already exist.
+                  Write the card in English from what this conversation
+                  settled; do not ask for what it already answers.
+                  title: imperative and specific, under 80 characters.
+                  description, Markdown, in this order:
+                    ### Overview      2-3 sentences: what changes, why, and
+                                      how it works end to end
+                    ### Goals         observable outcomes, not tasks
+                    ### Scope         what ships, grouped by surface or layer
+                    ### Out of scope  what a reader might assume is included
+                    ### Technical notes  modules, types and invariants to
+                                      reuse, named as in the code; omit it
+                                      when nothing is known yet
+                  acceptanceCriteria: one independently verifiable line each,
+                  covering the happy path, empty and error states and nearby
+                  behavior that must not regress, for example
+                    AC-1: Given <state>, when <action>, then <result>.
+                  Never write "works correctly". Name only files and symbols
+                  you saw or checked; mark an unknown as TBD: <what decides it>.
+                  Pass long Markdown with --input - on stdin.
+                  acceptanceCriteria and baseRef are optional; set baseRef only
+                  when the user named a branch. The project must be a local
+                  git checkout on the rail. Reuse --request-id on retries; it
+                  never makes a second card. Reply with the card number, title
+                  and column, without pasting the description back.
   artifacts.list {"limit":30,"offset":0}  Familiar or habit only. Saved artifact titles.
   artifacts.read {"id":"..."}  Full content of one artifact.
   artifacts.write {"kind":"document","title":"PR review",
@@ -666,6 +701,8 @@ mod tests {
         for action in [
             "worktrees.list",
             "worktrees.create",
+            "board.list",
+            "board.create",
             "artifacts.list",
             "artifacts.read",
             "artifacts.write",
@@ -678,6 +715,10 @@ mod tests {
         }
         assert!(app_help().contains(r#""kind":"document""#));
         assert!(app_help().contains("Artifacts are separate from Notes"));
+        assert!(app_help().contains("### Out of scope"));
+        assert!(app_help().contains("AC-1: Given <state>"));
+        assert!(app_help().contains("wait for a yes"));
+        assert!(parse_args_for(&args(&["board.create"]), false).is_err());
     }
 
     #[test]

@@ -16,10 +16,14 @@ type Props = {
   besideRail: boolean;
   compactRail: boolean;
   projectPaths: readonly string[];
+  projectCwd: string;
   onClose: () => void;
   onToggleSidebar: () => void;
   onOpenSession: (sessionId: string) => void;
   onOpenAutomation: (automationId: string) => void;
+  onOpenAutomations: () => void;
+  onOpenUsage: () => void;
+  onOpenInbox: () => void;
   taskBoard: TaskBoardRuntime;
 };
 
@@ -28,10 +32,14 @@ export function LocalSurfaceViews({
   besideRail,
   compactRail,
   projectPaths,
+  projectCwd,
   onClose,
   onToggleSidebar,
   onOpenSession,
   onOpenAutomation,
+  onOpenAutomations,
+  onOpenUsage,
+  onOpenInbox,
   taskBoard,
 }: Props): ReactNode {
   if (surface === "board") {
@@ -65,10 +73,14 @@ export function LocalSurfaceViews({
         besideRail={besideRail}
         compactRail={compactRail}
         projectPaths={projectPaths}
+        projectCwd={projectCwd}
         onClose={onClose}
         onToggleSidebar={onToggleSidebar}
         onOpenSession={onOpenSession}
         onOpenAutomation={onOpenAutomation}
+        onOpenAutomations={onOpenAutomations}
+        onOpenUsage={onOpenUsage}
+        onOpenInbox={onOpenInbox}
       />
     );
   }

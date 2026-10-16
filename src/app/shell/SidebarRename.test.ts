@@ -23,6 +23,32 @@ vi.mock("../../features/source-control/hooks/useProjectDiffStats", () => ({
 vi.mock("../../features/source-control/hooks/useGitFileStatuses", () => ({
   useGitFileStatuses: () => ({ files: new Map(), dirs: new Map() }),
 }));
+vi.mock("../../features/source-control/hooks/useProjectWorktrees", () => ({
+  useProjectWorktrees: () => ({
+    data: {
+      worktrees: [
+        {
+          path: "/workspace/project",
+          branch: "main",
+          isMain: true,
+          head: "abcdef123456",
+          locked: false,
+          prunable: false,
+          missing: false,
+          dirty: false,
+          unpushed: 0,
+          sessionIds: [],
+        },
+      ],
+      defaultRoot: "/workspace/project-worktrees",
+    },
+    refresh: async () => true,
+  }),
+}));
+vi.mock("./GithubStarPrompt", () => ({
+  GithubStarPrompt: () => null,
+  resetGithubStarPromptCacheForTest: () => {},
+}));
 vi.mock("./SidebarUpdate", () => ({ SidebarUpdateFooter: () => null }));
 vi.mock("../../features/files/ui/FileTree", () => ({
   FileTree: ({ cwd, rootLabel }: { cwd: string; rootLabel?: string }) =>
