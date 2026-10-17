@@ -41,17 +41,33 @@ export function orderUsageProviders(
 
 /**
  * Whether a card should appear on Usage surfaces. Unavailable means not
- * connected — omit entirely. Missing cards stay listed (still loading).
+ * connected — omit entirely. Missing cards are not listed (initial load uses
+ * {@link isUsageCardsPending} + a neutral skeleton instead of fake titles).
  */
 export function isUsageProviderListed(
   state: UsageCardState | undefined,
 ): boolean {
-  return state?.status !== "unavailable";
+  return state != null && state.status !== "unavailable";
 }
 
 /**
- * Connected (or still-loading) providers in preferred display order.
- * Empty when every known provider is unavailable.
+ * True before the first usage fetch settles — empty map, or every known card
+ * still in `loading` with no settled result yet.
+ */
+export function isUsageCardsPending(
+  cards: ReadonlyMap<UsageProviderId, UsageCardState>,
+): boolean {
+  if (cards.size === 0) return true;
+
+  return USAGE_PROVIDERS.every((entry) => {
+    const state = cards.get(entry.id);
+    return state == null || state.status === "loading";
+  });
+}
+
+/**
+ * Connected (or still-loading once present) providers in preferred display order.
+ * Empty when every known provider is unavailable, or before any card exists.
  */
 export function listedUsageProviders(
   cards: ReadonlyMap<UsageProviderId, UsageCardState>,

@@ -85,4 +85,8 @@ describe("usagePulseRows", () => {
     ]);
     expect(usagePulseRows(cards)).toEqual([]);
   });
+
+  it("returns no rows before the first fetch settles", () => {
+    expect(usagePulseRows(new Map())).toEqual([]);
+  });
 });

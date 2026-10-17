@@ -11,6 +11,7 @@ import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
 import { YearHeatmap } from "../../home/ui/YearHeatmap";
 import { refreshUsageCards } from "../model/fetchUsage";
 import {
+  isUsageCardsPending,
   listedUsageProviders,
   usageProviderTitle,
 } from "../model/usageProviders";
@@ -22,6 +23,7 @@ import {
 } from "../model/usageSnapshots";
 import type { UsageCardState, UsageProviderId } from "../model/usageCard";
 import { UsageProviderCard } from "./UsageProviderCard";
+import { UsageProvidersSkeleton } from "./UsageProvidersSkeleton";
 import { UsageTrendChart } from "./UsageTrendChart";
 
 type Props = {
@@ -81,6 +83,8 @@ export function UsageView({
   }, [applyCards]);
 
   const trend = usageTrendSeries(snapshots);
+  const pending = isUsageCardsPending(cards);
+  const providers = pending ? [] : listedUsageProviders(cards);
 
   return (
     <div
@@ -117,16 +121,20 @@ export function UsageView({
             <UsageTrendChart points={trend} />
           </section>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {listedUsageProviders(cards).map((provider) => (
-              <UsageProviderCard
-                key={provider}
-                title={usageProviderTitle(provider)}
-                state={cards.get(provider) ?? { status: "loading" }}
-                now={now}
-              />
-            ))}
-          </div>
+          {pending ? (
+            <UsageProvidersSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {providers.map((provider) => (
+                <UsageProviderCard
+                  key={provider}
+                  title={usageProviderTitle(provider)}
+                  state={cards.get(provider) ?? { status: "loading" }}
+                  now={now}
+                />
+              ))}
+            </div>
+          )}
 
           <section className="rounded-lg border border-stroke bg-content/[0.025] p-3">
             <h2 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-accent/70">

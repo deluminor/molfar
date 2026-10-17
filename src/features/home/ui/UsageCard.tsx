@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import { UsageProvidersSkeleton } from "../../usage/ui/UsageProvidersSkeleton";
 import type { UsagePulseRow } from "../model/usagePulse";
 import { HomeCard } from "./HomeCard";
 
 type Props = {
   rows: readonly UsagePulseRow[];
+  pending?: boolean;
   onOpenUsage?: () => void;
 };
 
@@ -68,7 +70,19 @@ function ProviderTile({
   );
 }
 
-export function UsageCard({ rows, onOpenUsage }: Props): ReactNode {
+export function UsageCard({
+  rows,
+  pending = false,
+  onOpenUsage,
+}: Props): ReactNode {
+  if (pending) {
+    return (
+      <HomeCard title="Usage">
+        <UsageProvidersSkeleton compact count={2} />
+      </HomeCard>
+    );
+  }
+
   if (rows.length === 0) {
     return (
       <HomeCard title="Usage">

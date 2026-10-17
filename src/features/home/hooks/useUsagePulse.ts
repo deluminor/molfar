@@ -4,10 +4,16 @@ import {
   recordUsageSnapshots,
 } from "../../usage/model/usageSnapshots";
 import type { UsageCardState, UsageProviderId } from "../../usage/model/usageCard";
+import { isUsageCardsPending } from "../../usage/model/usageProviders";
 import { usagePulseRows, type UsagePulseRow } from "../model/usagePulse";
 
+export type UsagePulseState = {
+  rows: UsagePulseRow[];
+  pending: boolean;
+};
+
 /** Loads the same provider cards as the Usage page for the Home strip. */
-export function useUsagePulse(enabled = true): UsagePulseRow[] {
+export function useUsagePulse(enabled = true): UsagePulseState {
   const [cards, setCards] = useState(
     () => new Map<UsageProviderId, UsageCardState>(),
   );
@@ -30,8 +36,11 @@ export function useUsagePulse(enabled = true): UsagePulseRow[] {
     };
   }, [enabled]);
 
-  return useMemo(
-    () => (enabled ? usagePulseRows(cards) : []),
-    [enabled, cards],
-  );
+  return useMemo((): UsagePulseState => {
+    if (!enabled) return { rows: [], pending: false };
+    return {
+      rows: usagePulseRows(cards),
+      pending: isUsageCardsPending(cards),
+    };
+  }, [enabled, cards]);
 }

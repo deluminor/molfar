@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { UsageCardState, UsageProviderId } from "./usageCard";
 import {
+  isUsageCardsPending,
   listedUsageProviders,
   orderUsageProviders,
 } from "./usageProviders";
@@ -68,13 +69,8 @@ describe("listedUsageProviders", () => {
     ]);
   });
 
-  it("treats missing cards as still listed (loading)", () => {
-    expect(listedUsageProviders(new Map())).toEqual([
-      "claude",
-      "codex",
-      "cursor",
-      "antigravity",
-    ]);
+  it("omits missing cards (pending load uses a neutral skeleton)", () => {
+    expect(listedUsageProviders(new Map())).toEqual([]);
   });
 
   it("returns empty when every provider is unavailable", () => {
@@ -85,5 +81,29 @@ describe("listedUsageProviders", () => {
       ["antigravity", { status: "unavailable", reason: "Nope" }],
     ]);
     expect(listedUsageProviders(cards)).toEqual([]);
+  });
+});
+
+describe("isUsageCardsPending", () => {
+  it("is pending when the map is empty", () => {
+    expect(isUsageCardsPending(new Map())).toBe(true);
+  });
+
+  it("is pending when every known card is still loading", () => {
+    const cards = new Map<UsageProviderId, UsageCardState>([
+      ["claude", { status: "loading" }],
+      ["codex", { status: "loading" }],
+      ["cursor", { status: "loading" }],
+      ["antigravity", { status: "loading" }],
+    ]);
+    expect(isUsageCardsPending(cards)).toBe(true);
+  });
+
+  it("is not pending once any provider has settled", () => {
+    const cards = new Map<UsageProviderId, UsageCardState>([
+      ["claude", { status: "unavailable", reason: "Nope" }],
+      ["codex", { status: "loading" }],
+    ]);
+    expect(isUsageCardsPending(cards)).toBe(false);
   });
 });

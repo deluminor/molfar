@@ -112,7 +112,13 @@ export function HomeView({
     host: (
       <HostCard stats={host.host} history={host.history} error={host.error} />
     ),
-    usage: <UsageCard rows={usage} onOpenUsage={onOpenUsage} />,
+    usage: (
+      <UsageCard
+        rows={usage.rows}
+        pending={usage.pending}
+        onOpenUsage={onOpenUsage}
+      />
+    ),
     inbox: <InboxPulseCard state={inbox} onOpenInbox={onOpenInbox} />,
     git: <ActivityCard state={activity} />,
     sessions: (
