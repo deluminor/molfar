@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Jira Inbox cascade rows use clearer tree guides, tighter child density, a soft expanded-group background, and omit the repeated project subtitle on nested issues.
+
 ## [1.0.16] - 2026-10-17
 
 ### Added

@@ -39,6 +39,10 @@ import {
 import { InboxFiltersMenu, INBOX_FILTER_MENU_WIDTH } from "./InboxFiltersMenu";
 import { InboxConnectMenu } from "./InboxConnectMenu";
 import { InboxProviderMark } from "./InboxProviderMark";
+import {
+  InboxTreeGutter,
+  inboxTreeIndentPx,
+} from "./InboxTreeGutter";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { Popover } from "../../../shared/ui/Popover";
@@ -1660,23 +1664,33 @@ function InboxCard({
     key: inboxItemKey(item),
     updatedAt: item.updatedAt,
   });
-  const indentPx = 10 + depth * 12;
+  const nested = depth > 0;
+  const indentPx = inboxTreeIndentPx(depth);
+  // Soft band for an expanded Jira parent and its visible children only.
+  const inExpandedTree =
+    item.provider === "jira" && (nested || (hasChildren && expanded));
+  const showSourceSubtitle = !nested;
+  const showMetaRow = showSourceSubtitle || item.labels.length > 0;
+  const chevronOffset = nested ? "mt-2" : "mt-2.5";
 
   return (
     <div
-      className={`flex w-full items-start rounded-md border ${
+      className={`relative flex w-full items-start rounded-md border ${
         active
           ? "border-transparent bg-selection text-content"
-          : "border-transparent text-content/80 hover:bg-content/5 hover:text-content"
+          : inExpandedTree
+            ? "border-transparent bg-content/[0.035] text-content/80 hover:bg-content/[0.06] hover:text-content"
+            : "border-transparent text-content/80 hover:bg-content/5 hover:text-content"
       }`}
       style={{ paddingLeft: indentPx }}
     >
+      <InboxTreeGutter depth={depth} />
       {hasChildren ? (
         <button
           type="button"
           aria-label={expanded ? "Collapse" : "Expand"}
           aria-expanded={expanded}
-          className="mt-2.5 grid size-5 shrink-0 place-items-center rounded-sm text-content/45 hover:bg-content/10 hover:text-content"
+          className={`${chevronOffset} grid size-5 shrink-0 place-items-center rounded-sm text-content/45 hover:bg-content/10 hover:text-content`}
           onClick={onToggleExpand}
         >
           {expanded ? (
@@ -1685,8 +1699,8 @@ function InboxCard({
             <ChevronRight className="size-3" strokeWidth={2} />
           )}
         </button>
-      ) : depth > 0 ? (
-        <span aria-hidden className="mt-2.5 size-5 shrink-0" />
+      ) : nested ? (
+        <span aria-hidden className={`${chevronOffset} size-5 shrink-0`} />
       ) : null}
       <button
         type="button"
@@ -1696,7 +1710,9 @@ function InboxCard({
           item,
         )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`}
         onClick={onSelect}
-        className="flex min-w-0 flex-1 flex-col rounded-md px-2.5 py-2 text-left"
+        className={`flex min-w-0 flex-1 flex-col rounded-md px-2.5 text-left ${
+          nested ? "py-1.5" : "py-2"
+        }`}
       >
         <span className="flex items-center gap-2">
           <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -1735,35 +1751,45 @@ function InboxCard({
             </span>
           ) : null}
         </span>
-        <span className="mt-1 line-clamp-1 text-[13px] font-semibold leading-snug text-content">
+        <span
+          className={`line-clamp-1 font-semibold leading-snug text-content ${
+            nested ? "mt-0.5 text-[12px]" : "mt-1 text-[13px]"
+          }`}
+        >
           {item.title}
         </span>
-        <span className="mt-1 flex min-w-0 items-center gap-2">
-          <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
-            {tracker || !item.projectPath ? null : logoPath ? (
-              <ProjectLogoIcon
-                path={logoPath}
-                className="size-3.5 shrink-0 rounded-sm"
-                imageClassName="size-3.5"
-              />
+        {showMetaRow ? (
+          <span className={`flex min-w-0 items-center gap-2 ${nested ? "mt-0.5" : "mt-1"}`}>
+            {showSourceSubtitle ? (
+              <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
+                {tracker || !item.projectPath ? null : logoPath ? (
+                  <ProjectLogoIcon
+                    path={logoPath}
+                    className="size-3.5 shrink-0 rounded-sm"
+                    imageClassName="size-3.5"
+                  />
+                ) : (
+                  <ProjectMascot
+                    project={name}
+                    color={mascotColor}
+                    name={mascotName}
+                    className="size-3 shrink-0"
+                  />
+                )}
+                <span className="min-w-0 truncate">{source}</span>
+              </span>
             ) : (
-              <ProjectMascot
-                project={name}
-                color={mascotColor}
-                name={mascotName}
-                className="size-3 shrink-0"
-              />
+              <span className="min-w-0 flex-1" />
             )}
-            <span className="min-w-0 truncate">{source}</span>
+            {item.labels.length > 0 ? (
+              <span className="flex min-w-0 shrink-0 items-center gap-1">
+                {item.labels.slice(0, 2).map((label) => (
+                  <InboxLabel key={label.name} label={label} compact />
+                ))}
+              </span>
+            ) : null}
           </span>
-          {item.labels.length > 0 ? (
-            <span className="flex min-w-0 shrink-0 items-center gap-1">
-              {item.labels.slice(0, 2).map((label) => (
-                <InboxLabel key={label.name} label={label} compact />
-              ))}
-            </span>
-          ) : null}
-        </span>
+        ) : null}
       </button>
     </div>
   );
