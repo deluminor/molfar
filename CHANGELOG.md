@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Usage (page + Home strip) lists providers as **Claude → Codex → Cursor**, then other connected providers; disconnected ones are omitted and the grid reflows for 1–N cards.
 - Home **Activity** year heatmap sizes cells and gaps to the card (ResizeObserver) with clearer empty/active contrast, capped gap rhythm, and polished month/legend chrome; Home **Usage** is a denser 2×2 provider grid with reset countdown when known.
 - Fresh Home installs and **Reset** use Erik's latest DEV layout (Activity beside clock/status, equal Inbox/Sessions/Automations row, Host+Usage, shorter Matrix). Saved layouts are not force-migrated.
 - Home **Inbox** pulse and **Sessions** cards show the last **10** items (compact rows with internal scroll).

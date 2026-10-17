@@ -79,9 +79,14 @@ export function UsageCard({ rows, onOpenUsage }: Props): ReactNode {
     );
   }
 
+  const tileClass =
+    rows.length === 1
+      ? "grid h-full min-h-0 grid-cols-1 content-stretch gap-1"
+      : "grid h-full min-h-0 grid-cols-2 auto-rows-fr content-stretch gap-1";
+
   return (
     <HomeCard title="Usage">
-      <div className="grid h-full min-h-0 grid-cols-2 grid-rows-2 content-stretch gap-1">
+      <div className={tileClass}>
         {rows.map((row) => (
           <ProviderTile key={row.provider} row={row} onOpenUsage={onOpenUsage} />
         ))}

@@ -3,7 +3,7 @@ import type { UsageCardState, UsageProviderId } from "../../usage/model/usageCar
 import { usagePulseRows } from "./usagePulse";
 
 describe("usagePulseRows", () => {
-  it("lists every known provider with percent or status — never invents %", () => {
+  it("lists connected providers in preferred order — never invents %", () => {
     const now = 1_000_000;
     const cards = new Map<UsageProviderId, UsageCardState>([
       [
@@ -37,13 +37,27 @@ describe("usagePulseRows", () => {
           ],
         },
       ],
+      [
+        "antigravity",
+        {
+          status: "ok",
+          updatedAt: 1,
+          windows: [
+            {
+              kind: "session",
+              label: "Quota",
+              usedPercent: 5,
+              resetsAt: null,
+            },
+          ],
+        },
+      ],
     ]);
 
     const rows = usagePulseRows(cards, now);
     expect(rows.map((row) => row.provider)).toEqual([
-      "codex",
-      "cursor",
       "claude",
+      "codex",
       "antigravity",
     ]);
     expect(rows.find((row) => row.provider === "claude")).toMatchObject({
@@ -51,20 +65,24 @@ describe("usagePulseRows", () => {
       statusLabel: "Session",
       resetLabel: "2h 30m",
     });
-    expect(rows.find((row) => row.provider === "cursor")).toMatchObject({
-      usedPercent: null,
-      statusLabel: "Not signed in",
-      resetLabel: null,
-    });
+    expect(rows.find((row) => row.provider === "cursor")).toBeUndefined();
     expect(rows.find((row) => row.provider === "codex")).toMatchObject({
       usedPercent: 10,
       resetLabel: null,
     });
     expect(rows.find((row) => row.provider === "antigravity")).toMatchObject({
-      usedPercent: null,
-      fetching: true,
-      statusLabel: "Loading",
-      resetLabel: null,
+      usedPercent: 5,
+      statusLabel: "Quota",
     });
+  });
+
+  it("returns no rows when every provider is unavailable", () => {
+    const cards = new Map<UsageProviderId, UsageCardState>([
+      ["claude", { status: "unavailable", reason: "Nope" }],
+      ["codex", { status: "unavailable", reason: "Nope" }],
+      ["cursor", { status: "unavailable", reason: "Nope" }],
+      ["antigravity", { status: "unavailable", reason: "Nope" }],
+    ]);
+    expect(usagePulseRows(cards)).toEqual([]);
   });
 });

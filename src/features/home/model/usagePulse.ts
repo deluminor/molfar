@@ -1,6 +1,9 @@
 import { formatResetDuration } from "../../providers/model/rateLimits";
 import type { UsageCardState, UsageProviderId } from "../../usage/model/usageCard";
-import { USAGE_PROVIDERS } from "../../usage/model/usageProviders";
+import {
+  listedUsageProviders,
+  usageProviderTitle,
+} from "../../usage/model/usageProviders";
 import { primaryUsedPercent } from "../../usage/model/usageSnapshots";
 
 export type UsagePulseRow = {
@@ -39,11 +42,11 @@ export function usagePulseRows(
   cards: ReadonlyMap<UsageProviderId, UsageCardState>,
   now = Date.now(),
 ): UsagePulseRow[] {
-  return USAGE_PROVIDERS.map((provider) => {
-    const state = cards.get(provider.id) ?? { status: "loading" as const };
+  return listedUsageProviders(cards).map((provider) => {
+    const state = cards.get(provider) ?? { status: "loading" as const };
     return {
-      provider: provider.id,
-      title: provider.title,
+      provider,
+      title: usageProviderTitle(provider),
       usedPercent: primaryUsedPercent(state),
       statusLabel: statusLabel(state),
       resetLabel: resetLabel(state, now),

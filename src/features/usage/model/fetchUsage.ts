@@ -13,6 +13,7 @@ import {
   type UsageFetchEnvelope,
   type UsageProviderId,
 } from "./usageCard";
+import { USAGE_PROVIDERS } from "./usageProviders";
 
 export async function fetchUsageCard(
   provider: UsageProviderId,
@@ -38,12 +39,9 @@ export async function fetchUsageCard(
 export async function refreshUsageCards(
   previous: ReadonlyMap<UsageProviderId, UsageCardState>,
 ): Promise<Map<UsageProviderId, UsageCardState>> {
-  const providers: UsageProviderId[] = [
-    "claude",
-    "codex",
-    "cursor",
-    "antigravity",
-  ];
+  const providers: UsageProviderId[] = USAGE_PROVIDERS.map(
+    (provider) => provider.id,
+  );
   const settled = await Promise.allSettled(
     providers.map(async (provider) => {
       const next = await fetchUsageCard(provider);

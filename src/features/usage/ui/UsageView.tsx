@@ -10,7 +10,10 @@ import { useSessionActivity } from "../../home/hooks/useSessionActivity";
 import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
 import { YearHeatmap } from "../../home/ui/YearHeatmap";
 import { refreshUsageCards } from "../model/fetchUsage";
-import { USAGE_PROVIDERS } from "../model/usageProviders";
+import {
+  listedUsageProviders,
+  usageProviderTitle,
+} from "../model/usageProviders";
 import {
   loadUsageSnapshots,
   recordUsageSnapshots,
@@ -115,11 +118,11 @@ export function UsageView({
           </section>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {USAGE_PROVIDERS.map((provider) => (
+            {listedUsageProviders(cards).map((provider) => (
               <UsageProviderCard
-                key={provider.id}
-                title={provider.title}
-                state={cards.get(provider.id) ?? { status: "loading" }}
+                key={provider}
+                title={usageProviderTitle(provider)}
+                state={cards.get(provider) ?? { status: "loading" }}
                 now={now}
               />
             ))}
