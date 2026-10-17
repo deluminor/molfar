@@ -1,7 +1,7 @@
 import { inboxItemKey, type InboxItem } from "../../inbox/model/githubTasks";
 import { inboxUpdatedAt } from "../../inbox/model/inboxSeen";
 
-export const INBOX_PULSE_LIMIT = 5;
+export const INBOX_PULSE_LIMIT = 10;
 
 export type InboxPulseRow = {
   key: string;

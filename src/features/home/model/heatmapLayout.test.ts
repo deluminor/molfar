@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeHeatmapCellLayout } from "./heatmapLayout";
 
-/** Floor division leaves at most weekCount-1 unused pixels. */
-function weekRemainder(weekCount: number): number {
-  return weekCount;
-}
-
 describe("computeHeatmapCellLayout", () => {
   it("returns minimums for empty or zero boxes", () => {
     expect(
@@ -15,33 +10,35 @@ describe("computeHeatmapCellLayout", () => {
         weekCount: 53,
         variant: "compact",
       }),
-    ).toMatchObject({ cellPx: 2, gapXPx: 1, gapYPx: 1 });
+    ).toMatchObject({ cellPx: 3, gapXPx: 2, gapYPx: 2 });
   });
 
-  it("grows cells and fills width on a wide short Home card", () => {
+  it("grows cells and keeps the grid within a wide short Home card", () => {
     const layout = computeHeatmapCellLayout({
       widthPx: 420,
       heightPx: 96,
       weekCount: 53,
       variant: "compact",
     });
-    expect(layout.cellPx).toBeGreaterThanOrEqual(6);
+    expect(layout.cellPx).toBeGreaterThanOrEqual(5);
     const gridW = 53 * layout.cellPx + 52 * layout.gapXPx;
     expect(gridW).toBeLessThanOrEqual(420);
-    expect(420 - gridW).toBeLessThan(weekRemainder(53));
+    expect(layout.gapXPx).toBeLessThanOrEqual(4);
+    expect(layout.gapYPx).toBeLessThanOrEqual(4);
   });
 
-  it("caps cell size and fills leftover width with gap", () => {
+  it("caps cell size and horizontal gap so weeks do not balloon", () => {
     const layout = computeHeatmapCellLayout({
       widthPx: 1200,
       heightPx: 220,
       weekCount: 53,
       variant: "compact",
     });
-    expect(layout.cellPx).toBe(18);
-    expect(layout.gapXPx).toBeGreaterThan(1);
+    expect(layout.cellPx).toBe(16);
+    expect(layout.gapXPx).toBeLessThanOrEqual(4);
+    expect(layout.gapYPx).toBeLessThanOrEqual(4);
     const gridW = 53 * layout.cellPx + 52 * layout.gapXPx;
-    expect(1200 - gridW).toBeLessThan(weekRemainder(53));
+    expect(gridW).toBeLessThanOrEqual(1200);
   });
 
   it("shows month labels on full variant when space allows", () => {
@@ -53,7 +50,7 @@ describe("computeHeatmapCellLayout", () => {
     });
     expect(layout.showMonthLabels).toBe(true);
     expect(layout.showLegend).toBe(true);
-    expect(layout.cellPx).toBeLessThanOrEqual(14);
+    expect(layout.cellPx).toBeLessThanOrEqual(13);
   });
 
   it("respects height before width when the card is short", () => {
@@ -64,6 +61,6 @@ describe("computeHeatmapCellLayout", () => {
       variant: "compact",
     });
     const gridH = 7 * layout.cellPx + 6 * layout.gapYPx;
-    expect(gridH).toBeLessThanOrEqual(56 - 16);
+    expect(gridH).toBeLessThanOrEqual(56 - 18);
   });
 });

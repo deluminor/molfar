@@ -69,14 +69,14 @@ describe("parseHomeLayout", () => {
     );
     expect(byId.clock).toMatchObject({ x: 0, y: 0, w: 2, h: 4 });
     expect(byId.status).toMatchObject({ x: 2, y: 0, w: 2, h: 4 });
-    expect(byId.automations).toMatchObject({ x: 4, y: 0, w: 3, h: 4 });
-    expect(byId.inbox).toMatchObject({ x: 7, y: 0, w: 3, h: 4 });
-    expect(byId.brand).toMatchObject({ x: 10, y: 0, w: 2, h: 12 });
-    expect(byId.host).toMatchObject({ x: 0, y: 4, w: 4, h: 4 });
-    expect(byId.sessions).toMatchObject({ x: 4, y: 4, w: 3, h: 4 });
-    expect(byId.git).toMatchObject({ x: 7, y: 4, w: 3, h: 4 });
-    expect(byId.usage).toMatchObject({ x: 0, y: 8, w: 10, h: 4 });
-    expect(byId.matrix).toMatchObject({ x: 0, y: 12, w: 12, h: 13 });
+    expect(byId.git).toMatchObject({ x: 4, y: 0, w: 6, h: 4 });
+    expect(byId.brand).toMatchObject({ x: 10, y: 0, w: 2, h: 4 });
+    expect(byId.inbox).toMatchObject({ x: 0, y: 4, w: 4, h: 4 });
+    expect(byId.sessions).toMatchObject({ x: 4, y: 4, w: 4, h: 4 });
+    expect(byId.automations).toMatchObject({ x: 8, y: 4, w: 4, h: 4 });
+    expect(byId.host).toMatchObject({ x: 0, y: 8, w: 8, h: 4 });
+    expect(byId.usage).toMatchObject({ x: 8, y: 8, w: 4, h: 4 });
+    expect(byId.matrix).toMatchObject({ x: 0, y: 12, w: 12, h: 7 });
     expect(DEFAULT_HOME_LAYOUT_STATE.hidden).toEqual([]);
   });
 

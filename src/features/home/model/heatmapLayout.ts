@@ -11,14 +11,14 @@ export type HeatmapCellLayout = {
 };
 
 const DAYS_PER_WEEK = 7;
-const MIN_CELL_PX = 2;
-const MAX_CELL_COMPACT_PX = 18;
-const MAX_CELL_FULL_PX = 14;
-const MIN_GAP_PX = 1;
-const MAX_GAP_PX = 6;
-const FOOTER_PX = 16;
+const MIN_CELL_PX = 3;
+const MAX_CELL_COMPACT_PX = 16;
+const MAX_CELL_FULL_PX = 13;
+const MIN_GAP_PX = 2;
+const MAX_GAP_PX = 4;
+const FOOTER_PX = 18;
 const MONTH_LABEL_PX = 14;
-const SECTION_GAP_PX = 4;
+const SECTION_GAP_PX = 6;
 
 export type HeatmapLayoutInput = {
   widthPx: number;
@@ -47,11 +47,8 @@ function maxCellForBox(
   return Math.min(fromWidth, fromHeight);
 }
 
-/** Vertical gap stays modest; horizontal gap absorbs leftover width so the grid fills. */
-function expandGapY(
-  available: number,
-  cellPx: number,
-): number {
+/** Keep day gaps modest so weeks never look vertically stretched. */
+function expandGapY(available: number, cellPx: number): number {
   const leftover = available - DAYS_PER_WEEK * cellPx;
   if (leftover <= 0) return MIN_GAP_PX;
   return clamp(
@@ -61,6 +58,10 @@ function expandGapY(
   );
 }
 
+/**
+ * Cap horizontal gap the same as vertical — ballooning week gaps look
+ * squashed. Leftover width is absorbed by centering in the UI.
+ */
 function expandGapX(
   available: number,
   cellPx: number,
@@ -69,7 +70,11 @@ function expandGapX(
   if (weekCount <= 1) return MIN_GAP_PX;
   const leftover = available - weekCount * cellPx;
   if (leftover <= 0) return MIN_GAP_PX;
-  return Math.max(MIN_GAP_PX, Math.floor(leftover / (weekCount - 1)));
+  return clamp(
+    Math.floor(leftover / (weekCount - 1)),
+    MIN_GAP_PX,
+    MAX_GAP_PX,
+  );
 }
 
 /**
@@ -96,7 +101,7 @@ export function computeHeatmapCellLayout(
 
   const wantMonths =
     variant === "full" ||
-    heightPx >= FOOTER_PX + MONTH_LABEL_PX + SECTION_GAP_PX * 2 + 7 * 4;
+    heightPx >= FOOTER_PX + MONTH_LABEL_PX + SECTION_GAP_PX * 2 + 7 * 5;
 
   const reserved =
     FOOTER_PX +
@@ -116,7 +121,7 @@ export function computeHeatmapCellLayout(
   const gapXPx = expandGapX(gridWidth, cellPx, weekCount);
   const gapYPx = expandGapY(gridHeight, cellPx);
 
-  const showMonthLabels = wantMonths && cellPx >= 3;
+  const showMonthLabels = wantMonths && cellPx >= 4;
 
   return {
     cellPx,

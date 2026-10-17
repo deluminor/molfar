@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Home **Activity** year heatmap sizes cells and gaps to the card (ResizeObserver); Home **Usage** is a denser 2×2 provider grid with reset countdown when known.
-- Fresh Home installs and **Reset** use Erik's DEV layout (compact top row, tall brand, wide Usage strip, tall Matrix). Saved layouts are not force-migrated.
+- Home **Activity** year heatmap sizes cells and gaps to the card (ResizeObserver) with clearer empty/active contrast, capped gap rhythm, and polished month/legend chrome; Home **Usage** is a denser 2×2 provider grid with reset countdown when known.
+- Fresh Home installs and **Reset** use Erik's latest DEV layout (Activity beside clock/status, equal Inbox/Sessions/Automations row, Host+Usage, shorter Matrix). Saved layouts are not force-migrated.
+- Home **Inbox** pulse and **Sessions** cards show the last **10** items (compact rows with internal scroll).
 - Factory glass defaults are sidebar opacity **70%**, blur **64**, and main-pane glass **on**. Existing saved appearance settings are unchanged.
 
 ### Fixed

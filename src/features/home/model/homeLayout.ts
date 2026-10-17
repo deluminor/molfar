@@ -50,14 +50,14 @@ export type HomeLayoutUpdate = {
 const DEFAULT_BY_ID: Record<HomeWidgetId, HomeLayoutItem> = {
   clock: { i: "clock", x: 0, y: 0, w: 2, h: 4, minW: 2, minH: 3 },
   status: { i: "status", x: 2, y: 0, w: 2, h: 4, minW: 2, minH: 3 },
-  automations: { i: "automations", x: 4, y: 0, w: 3, h: 4, minW: 3, minH: 3 },
-  inbox: { i: "inbox", x: 7, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
-  brand: { i: "brand", x: 10, y: 0, w: 2, h: 12, minW: 2, minH: 4 },
-  host: { i: "host", x: 0, y: 4, w: 4, h: 4, minW: 3, minH: 3 },
-  sessions: { i: "sessions", x: 4, y: 4, w: 3, h: 4, minW: 3, minH: 3 },
-  git: { i: "git", x: 7, y: 4, w: 3, h: 4, minW: 2, minH: 3 },
-  usage: { i: "usage", x: 0, y: 8, w: 10, h: 4, minW: 4, minH: 3 },
-  matrix: { i: "matrix", x: 0, y: 12, w: 12, h: 13, minW: 4, minH: 3 },
+  git: { i: "git", x: 4, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
+  brand: { i: "brand", x: 10, y: 0, w: 2, h: 4, minW: 2, minH: 3 },
+  inbox: { i: "inbox", x: 0, y: 4, w: 4, h: 4, minW: 2, minH: 3 },
+  sessions: { i: "sessions", x: 4, y: 4, w: 4, h: 4, minW: 3, minH: 3 },
+  automations: { i: "automations", x: 8, y: 4, w: 4, h: 4, minW: 3, minH: 3 },
+  host: { i: "host", x: 0, y: 8, w: 8, h: 4, minW: 3, minH: 3 },
+  usage: { i: "usage", x: 8, y: 8, w: 4, h: 4, minW: 3, minH: 3 },
+  matrix: { i: "matrix", x: 0, y: 12, w: 12, h: 7, minW: 4, minH: 3 },
 };
 
 /** Wide default matching Erik's Home arrangement. */

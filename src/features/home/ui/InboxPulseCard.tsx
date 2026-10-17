@@ -34,13 +34,13 @@ export function InboxPulseCard({ state, onOpenInbox }: Props): ReactNode {
         ) : null
       }
     >
-      <ul className="flex h-full flex-col justify-center gap-1 overflow-y-auto">
+      <ul className="flex h-full flex-col justify-start gap-0.5 overflow-y-auto">
         {rows.map((row) => (
           <li key={row.key}>
             <button
               type="button"
               onClick={onOpenInbox}
-              className="group flex w-full min-w-0 items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-accent/25 hover:bg-accent/[0.06] focus-visible:border-accent/40 focus-visible:outline-none"
+              className="group flex w-full min-w-0 items-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-left transition-colors hover:border-accent/25 hover:bg-accent/[0.06] focus-visible:border-accent/40 focus-visible:outline-none"
             >
               <span
                 aria-hidden
@@ -48,7 +48,7 @@ export function InboxPulseCard({ state, onOpenInbox }: Props): ReactNode {
                   row.unseen ? "bg-accent" : "bg-content/20"
                 }`}
               />
-              <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-content/85 group-hover:text-content">
+              <span className="min-w-0 flex-1 truncate font-mono text-[12px] leading-tight text-content/85 group-hover:text-content">
                 {row.title}
               </span>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-content/35 group-hover:text-accent/70">

@@ -18,11 +18,12 @@ type Props = {
   className?: string;
 };
 
+/** Empty stays cool/neutral; active rungs step clearly into MOLFAR accent. */
 const LEVEL_CLASS: Record<ActivityCell["level"], string> = {
-  0: "bg-content/[0.06]",
-  1: "bg-accent/25",
-  2: "bg-accent/45",
-  3: "bg-accent/70",
+  0: "bg-content/[0.09] ring-1 ring-inset ring-content/[0.06]",
+  1: "bg-accent/30",
+  2: "bg-accent/50",
+  3: "bg-accent/75",
   4: "bg-accent",
 };
 
@@ -69,10 +70,11 @@ function monthMarkers(grid: ActivityYearGrid): { week: number; label: string }[]
 }
 
 function cellBoxStyle(layout: HeatmapCellLayout): CSSProperties {
+  const radius = Math.max(2, Math.round(layout.cellPx * 0.28));
   return {
     width: layout.cellPx,
     height: layout.cellPx,
-    borderRadius: Math.max(1, Math.round(layout.cellPx / 5)),
+    borderRadius: radius,
   };
 }
 
@@ -121,6 +123,7 @@ export function YearHeatmap({
   const cellStyle = cellBoxStyle(layout);
   const weekGapStyle: CSSProperties = { gap: layout.gapYPx };
   const rowGapStyle: CSSProperties = { gap: layout.gapXPx };
+  const legendSwatch = Math.max(8, layout.cellPx - 1);
 
   return (
     <div
@@ -129,10 +132,10 @@ export function YearHeatmap({
       role="img"
       aria-label={`${grid.year} session activity: ${grid.totalActiveDays} active days, ${grid.totalSessions} sessions`}
     >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center gap-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1.5">
         {layout.showMonthLabels ? (
           <div
-            className="flex font-mono text-[10px] text-content/40"
+            className="flex font-mono text-[10px] tracking-wide text-content/45"
             style={rowGapStyle}
           >
             {grid.weeks.map((_, weekIndex) => {
@@ -165,7 +168,7 @@ export function YearHeatmap({
                   className={
                     day.inYear
                       ? day.future
-                        ? "bg-content/[0.03]"
+                        ? "bg-content/[0.04] ring-1 ring-inset ring-content/[0.04]"
                         : LEVEL_CLASS[day.level]
                       : "bg-transparent"
                   }
@@ -177,29 +180,29 @@ export function YearHeatmap({
       </div>
 
       {layout.showLegend ? (
-        <div className="mt-1 flex shrink-0 items-center justify-between gap-3 font-mono text-[10px] text-content/40">
-          <span>
+        <div className="mt-1.5 flex shrink-0 items-center justify-between gap-3 font-mono text-[10px] text-content/45">
+          <span className="tracking-wide">
             {grid.totalActiveDays} days · {grid.totalSessions} sessions ·{" "}
             {grid.year}
           </span>
-          <span className="flex items-center gap-1">
-            Less
+          <span className="flex items-center gap-1.5">
+            <span className="text-content/35">Less</span>
             {([0, 1, 2, 3, 4] as const).map((level) => (
               <span
                 key={level}
                 className={LEVEL_CLASS[level]}
                 style={{
-                  width: Math.max(9, layout.cellPx - 2),
-                  height: Math.max(9, layout.cellPx - 2),
-                  borderRadius: 2,
+                  width: legendSwatch,
+                  height: legendSwatch,
+                  borderRadius: Math.max(2, Math.round(legendSwatch * 0.28)),
                 }}
               />
             ))}
-            More
+            <span className="text-content/35">More</span>
           </span>
         </div>
       ) : (
-        <p className="mt-1 shrink-0 truncate font-mono text-[10px] text-content/40">
+        <p className="mt-1 shrink-0 truncate text-center font-mono text-[10px] tracking-wide text-content/40">
           {grid.totalActiveDays}d · {grid.totalSessions} · {grid.year}
         </p>
       )}
