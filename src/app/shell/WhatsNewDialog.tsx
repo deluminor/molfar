@@ -129,6 +129,8 @@ export function WhatsNewDialog({ version, onClose }: Props) {
     <ReleaseNotesDialog
       title="What's new"
       description={`MOLFAR ${version}${date ? ` · ${date}` : ""}`}
+      size="lg"
+      className="h-[min(82vh,760px)]"
       onClose={onClose}
     >
       <WhatsNewBody version={version} />

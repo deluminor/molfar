@@ -150,13 +150,19 @@ describe("listRecentReleases", () => {
 });
 
 describe("listWhatsNewReleases", () => {
-  it("returns the recent window when the focus version is inside it", () => {
+  it("returns every release by default", () => {
+    expect(listWhatsNewReleases("0.1.3", fixture).map((e) => e.version)).toEqual(
+      ["0.1.3", "0.1.2", "0.1.1"],
+    );
+  });
+
+  it("returns the recent window when a finite limit is passed", () => {
     expect(listWhatsNewReleases("0.1.3", fixture, 2).map((e) => e.version)).toEqual(
       ["0.1.3", "0.1.2"],
     );
   });
 
-  it("appends a focus version that falls outside the newest window", () => {
+  it("appends a focus version that falls outside a finite newest window", () => {
     expect(listWhatsNewReleases("0.1.1", fixture, 2).map((e) => e.version)).toEqual(
       ["0.1.3", "0.1.1"],
     );

@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
-import { Modal } from "../../shared/ui/Modal";
+import { Modal, type ModalSize } from "../../shared/ui/Modal";
 
 type ReleaseNotesDialogProps = {
   title: string;
   description: string;
   footer?: ReactNode;
   onClose: () => void;
+  size?: ModalSize;
+  /** Extra classes on the panel (fixed height, etc). */
+  className?: string;
   /** Single-release body when `children` is omitted. */
   label?: string;
   markdown?: string | null;
@@ -44,6 +47,8 @@ export function ReleaseNotesDialog({
   markdown,
   footer,
   onClose,
+  size = "md",
+  className = "h-[min(72vh,640px)]",
   children,
 }: ReleaseNotesDialogProps) {
   return (
@@ -51,8 +56,8 @@ export function ReleaseNotesDialog({
       onClose={onClose}
       title={title}
       description={description}
-      size="md"
-      className="h-[min(72vh,640px)]"
+      size={size}
+      className={className}
       footer={footer}
     >
       {children ?? (

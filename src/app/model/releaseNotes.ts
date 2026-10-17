@@ -60,6 +60,7 @@ export type ReleaseNotesEntry = {
   markdown: string;
 };
 
+/** Default cap when callers want a newest-N window (tests / tooling). */
 export const RECENT_RELEASES_LIMIT = 10;
 
 const RELEASE_HEADING =
@@ -106,11 +107,12 @@ export function presentReleaseNotes(
 }
 
 /**
- * Bundled releases newest-first, skipping Unreleased. Caps at `limit` (default 10).
+ * Bundled releases newest-first, skipping Unreleased.
+ * Pass a finite `limit` to cap the list; omit or use Infinity for every release.
  */
 export function listRecentReleases(
   changelog: string = bundledChangelog,
-  limit: number = RECENT_RELEASES_LIMIT,
+  limit: number = Number.POSITIVE_INFINITY,
 ): ReleaseNotesEntry[] {
   if (limit <= 0) return [];
 
@@ -139,17 +141,22 @@ export function listRecentReleases(
 }
 
 /**
- * Recent releases for the What's New accordion. Ensures `focusVersion` appears
- * when it exists in the changelog but falls outside the newest-N window.
+ * What's New accordion: every bundled release, newest first.
+ * Optional `limit` keeps the older focus-append behavior for callers that still
+ * want a newest-N window (tests).
  */
 export function listWhatsNewReleases(
   focusVersion: string,
   changelog: string = bundledChangelog,
-  limit: number = RECENT_RELEASES_LIMIT,
+  limit: number = Number.POSITIVE_INFINITY,
 ): ReleaseNotesEntry[] {
   const recent = listRecentReleases(changelog, limit);
   const normalized = focusVersion.trim();
-  if (!normalized || recent.some((entry) => entry.version === normalized)) {
+  if (
+    !Number.isFinite(limit) ||
+    !normalized ||
+    recent.some((entry) => entry.version === normalized)
+  ) {
     return recent;
   }
 

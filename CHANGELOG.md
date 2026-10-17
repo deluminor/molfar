@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- What's New lists recent releases as an accordion — current version open first, older ones collapsed with a quiet preview.
+- What's New lists every bundled release as an accordion in a larger dialog — current version open first, older ones collapsed with a quiet preview.
 
 ### Changed
 
