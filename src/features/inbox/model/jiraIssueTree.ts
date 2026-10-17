@@ -10,6 +10,8 @@ export type JiraIssueTreeRow = {
   depth: number;
   hasChildren: boolean;
   expanded: boolean;
+  /** Last visible sibling at this depth — tree rail stops at mid-row. */
+  isLastSibling: boolean;
 };
 
 /**
@@ -83,7 +85,7 @@ export function flattenJiraIssueTree(
 ): JiraIssueTreeRow[] {
   const rows: JiraIssueTreeRow[] = [];
   const walk = (nodes: readonly JiraIssueTreeNode[], depth: number) => {
-    for (const node of nodes) {
+    nodes.forEach((node, index) => {
       const key = inboxItemKey(node.item);
       const hasChildren = node.children.length > 0;
       const isExpanded = hasChildren && expanded.has(key);
@@ -92,9 +94,10 @@ export function flattenJiraIssueTree(
         depth,
         hasChildren,
         expanded: isExpanded,
+        isLastSibling: index === nodes.length - 1,
       });
       if (isExpanded) walk(node.children, depth + 1);
-    }
+    });
   };
   walk(roots, 0);
   return rows;
