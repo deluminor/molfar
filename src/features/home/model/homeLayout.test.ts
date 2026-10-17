@@ -63,6 +63,23 @@ describe("parseHomeLayout", () => {
     );
   });
 
+  it("uses the Erik DEV factory geometry", () => {
+    const byId = Object.fromEntries(
+      DEFAULT_HOME_LAYOUT.map((item) => [item.i, item]),
+    );
+    expect(byId.clock).toMatchObject({ x: 0, y: 0, w: 2, h: 4 });
+    expect(byId.status).toMatchObject({ x: 2, y: 0, w: 2, h: 4 });
+    expect(byId.automations).toMatchObject({ x: 4, y: 0, w: 3, h: 4 });
+    expect(byId.inbox).toMatchObject({ x: 7, y: 0, w: 3, h: 4 });
+    expect(byId.brand).toMatchObject({ x: 10, y: 0, w: 2, h: 12 });
+    expect(byId.host).toMatchObject({ x: 0, y: 4, w: 4, h: 4 });
+    expect(byId.sessions).toMatchObject({ x: 4, y: 4, w: 3, h: 4 });
+    expect(byId.git).toMatchObject({ x: 7, y: 4, w: 3, h: 4 });
+    expect(byId.usage).toMatchObject({ x: 0, y: 8, w: 10, h: 4 });
+    expect(byId.matrix).toMatchObject({ x: 0, y: 12, w: 12, h: 13 });
+    expect(DEFAULT_HOME_LAYOUT_STATE.hidden).toEqual([]);
+  });
+
   it("falls back to default for non-arrays", () => {
     expect(parseHomeLayout(null)).toEqual(DEFAULT_HOME_LAYOUT);
     expect(parseHomeLayout({})).toEqual(DEFAULT_HOME_LAYOUT);

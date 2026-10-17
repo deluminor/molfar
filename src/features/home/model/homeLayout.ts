@@ -46,20 +46,21 @@ export type HomeLayoutUpdate = {
   h: number;
 };
 
+/** Erik DEV factory layout — reset / fresh installs only; never force-migrate. */
 const DEFAULT_BY_ID: Record<HomeWidgetId, HomeLayoutItem> = {
-  clock: { i: "clock", x: 0, y: 0, w: 4, h: 4, minW: 2, minH: 3 },
-  status: { i: "status", x: 4, y: 0, w: 4, h: 4, minW: 2, minH: 3 },
-  brand: { i: "brand", x: 8, y: 0, w: 4, h: 9, minW: 2, minH: 4 },
-  host: { i: "host", x: 0, y: 4, w: 8, h: 5, minW: 4, minH: 3 },
-  usage: { i: "usage", x: 0, y: 9, w: 4, h: 4, minW: 2, minH: 3 },
-  inbox: { i: "inbox", x: 4, y: 9, w: 4, h: 4, minW: 2, minH: 3 },
-  git: { i: "git", x: 8, y: 9, w: 4, h: 4, minW: 2, minH: 3 },
-  sessions: { i: "sessions", x: 0, y: 13, w: 6, h: 4, minW: 3, minH: 3 },
-  automations: { i: "automations", x: 6, y: 13, w: 6, h: 4, minW: 3, minH: 3 },
-  matrix: { i: "matrix", x: 0, y: 17, w: 12, h: 5, minW: 4, minH: 3 },
+  clock: { i: "clock", x: 0, y: 0, w: 2, h: 4, minW: 2, minH: 3 },
+  status: { i: "status", x: 2, y: 0, w: 2, h: 4, minW: 2, minH: 3 },
+  automations: { i: "automations", x: 4, y: 0, w: 3, h: 4, minW: 3, minH: 3 },
+  inbox: { i: "inbox", x: 7, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
+  brand: { i: "brand", x: 10, y: 0, w: 2, h: 12, minW: 2, minH: 4 },
+  host: { i: "host", x: 0, y: 4, w: 4, h: 4, minW: 3, minH: 3 },
+  sessions: { i: "sessions", x: 4, y: 4, w: 3, h: 4, minW: 3, minH: 3 },
+  git: { i: "git", x: 7, y: 4, w: 3, h: 4, minW: 2, minH: 3 },
+  usage: { i: "usage", x: 0, y: 8, w: 10, h: 4, minW: 4, minH: 3 },
+  matrix: { i: "matrix", x: 0, y: 12, w: 12, h: 13, minW: 4, minH: 3 },
 };
 
-/** Wide default matching the previous hardcoded Home grid. */
+/** Wide default matching Erik's Home arrangement. */
 export const DEFAULT_HOME_LAYOUT: HomeLayout = HOME_WIDGET_IDS.map(
   (id) => DEFAULT_BY_ID[id],
 );
@@ -68,14 +69,14 @@ export const DEFAULT_HOME_LAYOUT: HomeLayout = HOME_WIDGET_IDS.map(
 export const NARROW_HOME_LAYOUT: HomeLayout = [
   { i: "clock", x: 0, y: 0, w: 12, h: 4, minW: 12, minH: 3 },
   { i: "status", x: 0, y: 4, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "brand", x: 0, y: 8, w: 12, h: 7, minW: 12, minH: 4 },
-  { i: "host", x: 0, y: 15, w: 12, h: 5, minW: 12, minH: 3 },
-  { i: "usage", x: 0, y: 20, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "inbox", x: 0, y: 24, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "git", x: 0, y: 28, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "sessions", x: 0, y: 32, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "automations", x: 0, y: 36, w: 12, h: 4, minW: 12, minH: 3 },
-  { i: "matrix", x: 0, y: 40, w: 12, h: 5, minW: 12, minH: 3 },
+  { i: "automations", x: 0, y: 8, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "inbox", x: 0, y: 12, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "brand", x: 0, y: 16, w: 12, h: 8, minW: 12, minH: 4 },
+  { i: "host", x: 0, y: 24, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "sessions", x: 0, y: 28, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "git", x: 0, y: 32, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "usage", x: 0, y: 36, w: 12, h: 4, minW: 12, minH: 3 },
+  { i: "matrix", x: 0, y: 40, w: 12, h: 10, minW: 12, minH: 3 },
 ];
 
 function isHomeWidgetId(value: string): value is HomeWidgetId {
