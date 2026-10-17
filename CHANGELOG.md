@@ -9,102 +9,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- What's New lists every bundled release as an accordion in a larger dialog — current version open first, older ones collapsed with a quiet preview.
+- **What's New** opens every bundled release in a larger accordion — the current version expands first; older ones stay collapsed with a quiet one-line preview.
 
 ### Changed
 
-- Jira Inbox cascade keeps parent rows aligned with flat issues: **Show subtasks** / **Hide subtasks** sits beside the timestamp, nested rows use a continuous tree rail through the list gap, denser children, a soft expanded-group wash, and no repeated project subtitle.
-- Working-rail **X** closes the session tab in every card state. Finished chats dismiss immediately; a still-running turn asks before stop-and-close.
+- **Jira Inbox** cascade keeps parent rows aligned with flat issues. **Show subtasks** / **Hide subtasks** sits beside the timestamp; children use a continuous tree rail, denser rows, a soft group wash when expanded, and no repeated project subtitle.
+- Working-rail **X** closes the tab in every card state. Finished chats dismiss immediately; a still-running turn confirms before stop-and-close.
 
 ## [1.0.16] - 2026-10-17
 
 ### Added
 
-- Working agents strip cards get a quiet **X** to stop that session without opening it (working, needs approval, and done).
-- Task Board stages copy their input artifacts into the worktree's git-ignored `.molfar/board/` and list those paths in a short handoff manifest, so prompts no longer paste full artifact bodies.
-- Long task descriptions and acceptance criteria on the card **Overview** collapse behind a fade with **Show more** and **Show less**.
-- Home **Edit layout** can **hide and show widgets**; hidden ones sit in a strip until restored, and the arrangement persists across restarts. New **Usage**, **Inbox**, and **Activity** cards summarize plan pressure, open inbox items, and a year heatmap of session activity across all projects. **Status**, **Automations**, and **Host** highlight actionable rows, failed runs, and high load more clearly.
-- The **Usage** page shows denser provider cards (limits when available, status otherwise — never a fake percent), an honest trend from daily usage snapshots, and the same session **Activity** year heatmap as Home.
+- Working-rail cards get a quiet **X** so you can dismiss an agent without opening it (working, needs approval, and done).
+- Task Board stages materialize input artifacts into the worktree's git-ignored `.molfar/board/` and hand off short path manifests — prompts no longer paste full artifact bodies.
+- Long task descriptions and acceptance criteria on the card **Overview** fold behind a fade with **Show more** / **Show less**.
+- Home **Edit layout** can hide and restore widgets (persisted across restarts). New **Usage**, **Inbox**, and **Activity** cards surface plan pressure, open inbox items, and a year heatmap of session activity. **Status**, **Automations**, and **Host** call out actionable rows, failed runs, and high load more clearly.
+- The **Usage** page shows denser provider cards (real limits when known — never a fake percent), a trend built from daily snapshots, and the same **Activity** year heatmap as Home.
 
 ### Changed
 
-- Usage (page + Home strip) lists providers as **Claude → Codex → Cursor**, then other connected providers; disconnected ones are omitted and the grid reflows for 1–N cards.
-- Home **Activity** year heatmap sizes cells and gaps to the card (ResizeObserver) with clearer empty/active contrast, capped gap rhythm, and polished month/legend chrome; Home **Usage** is a denser 2×2 provider grid with reset countdown when known.
-- Fresh Home installs and **Reset** use Erik's latest DEV layout (Activity beside clock/status, equal Inbox/Sessions/Automations row, Host+Usage, shorter Matrix). Saved layouts are not force-migrated.
-- Home **Inbox** pulse and **Sessions** cards show the last **10** items (compact rows with internal scroll).
-- Factory glass defaults are sidebar opacity **70%**, blur **64**, and main-pane glass **on**. Existing saved appearance settings are unchanged.
+- Usage (page and Home strip) orders providers **Claude → Codex → Cursor**, then other connected ones; disconnected providers are omitted and the grid reflows.
+- Home **Activity** fills the card with clearer empty/active contrast and tighter month/legend chrome; Home **Usage** is a denser 2×2 grid with reset countdown when known.
+- Fresh Home installs and **Reset** use the curated default layout (Activity beside clock/status, balanced Inbox/Sessions/Automations, Host+Usage, shorter Matrix). Existing saved layouts are left alone.
+- Home **Inbox** and **Sessions** show the last **10** items in compact scrollable lists.
+- Factory glass defaults: sidebar opacity **70%**, blur **64**, main-pane glass **on**. Existing appearance settings are unchanged.
 
 ### Fixed
 
-- A broken or unfinished Home layout save keeps the previous arrangement instead of wiping it; **Reset** only leaves edit mode after the default layout is cleared. Hidden widgets stop refreshing until shown again.
+- A broken or unfinished Home layout save keeps the previous arrangement instead of wiping it. **Reset** leaves edit mode only after the default layout is cleared. Hidden widgets stop refreshing until shown again.
 
 ## [1.0.15] - 2026-10-16
 
 ### Added
 
-- Each Task Board agent column can pick which **skills** it runs. The column model chip auto-detects hub names (`d-grill`, `grill`, and the same pattern for the other stages), lets you toggle curated skills, add extras from the project catalog, and reset back to auto-detect. Missing skills warn on the chip and are skipped when a stage starts.
-- Sessions and Familiars with app access can **list and create** Task Board cards through `board.list` and `board.create`. A session only files cards in its own project; a Familiar only in its projects. Reuse `--request-id` on retries to get the same card instead of a duplicate. The built-in `/create-board-task` skill does the same on demand.
+- Each Task Board agent column can choose which **skills** it runs. The model chip auto-detects hub skills (`d-grill`, `grill`, and the same pattern for other stages), lets you toggle curated ones, add from the project catalog, or reset to auto-detect. Missing skills warn on the chip and are skipped at launch.
+- Sessions and Familiars with app access can **list and create** board cards via `board.list` / `board.create` (project-scoped). Reuse `--request-id` on retries to avoid duplicates. The `/create-board-task` skill does the same on demand.
 
 ### Changed
 
-- Dragging cards on the Task Board uses **pointer events** with a drag ghost and edge autoscroll, so drops work reliably in the macOS desktop build instead of being swallowed by native HTML5 drag.
+- Task Board drag uses **pointer events** with a drag ghost and edge autoscroll, so drops work reliably on the macOS desktop build instead of being swallowed by native HTML5 drag.
 
 ### Fixed
 
-- Starting a card from Backlog again after a failed Grill no longer asks for missing later-round artifacts (`spec`, `plan`, `answers`). Fresh starts reset to grill round 1, and a stuck card whose round was already past 1 falls back to first-grill inputs when those files are gone.
+- Restarting a card from Backlog after a failed Grill no longer demands missing later-round artifacts (`spec`, `plan`, `answers`). Fresh starts reset to grill round 1; stuck higher rounds fall back to first-grill inputs when those files are gone.
 
 ## [1.0.14] - 2026-10-15
 
 ### Added
 
-- Delivered Task Board cards can be **Archived** from the card drawer. They leave the active board and remain under the Archived filter; unfinished cards still use Reject.
+- Delivered Task Board cards can be **Archived** from the drawer. They leave the active board and remain under the Archived filter; unfinished cards still use Reject.
 
 ### Changed
 
-- The Board rail **waiting count** sits on the right of the row—same trailing slot as Familiar unread badges—instead of a left-side pill beside the icon. Inbox dots and Search shortcuts still use that trailing slot when there is no count.
+- The Board rail **waiting count** sits in the trailing badge slot (same place as Familiar unread), instead of a pill beside the icon. Inbox dots and Search shortcuts still share that slot when there is no count.
 
 ## [1.0.13] - 2026-10-15
 
 ### Added
 
-- A global **Task Board** on the project rail runs each card through Grill, Plan approval, Implement, Code review, Final review and Rework. Every agent stage runs in a fresh hidden session inside the card's own worktree. Stages hand off only through versioned spec, plan, report and review files; Grill and Code review leave the checkout untouched, Implement and Rework commit. Plan approval and final review always wait for you; delivery opens a pull request, squash-merges it, or keeps the branch.
-- Each board column picks its **model, effort and permission mode**; cards can override them on retry, and at most three stages run at once by default. Stages use the hub skills for their job, Code review drafts the pull request description, and stage sessions appear in the project's session list.
-- Cards waiting at a gate or failed surface as a **count badge** on the Board rail action and on the macOS Dock, sharing the Dock total with sessions that need input. Gate and failure events also raise a project banner that respects mute settings.
+- A global **Task Board** on the project rail moves each card through Grill → Plan approval → Implement → Code review → Final review → Rework. Agent stages run in fresh hidden sessions inside the card's worktree and hand off only through versioned artifacts. Grill and Code review leave the checkout untouched; Implement and Rework commit. Plan approval and final review wait for you; delivery opens a PR, squash-merges, or keeps the branch.
+- Each column picks **model, effort, and permission mode** (overridable per card). At most three stages run at once by default. Stages use hub skills; Code review drafts the PR description; stage sessions appear in the project session list.
+- Cards waiting at a gate or failed show as a **count badge** on the Board rail and the macOS Dock (shared with sessions that need input). Gate and failure events also raise a project banner that respects mute settings.
 - Paired Companion phones can drive the board with **`board.*`** actions and see board attention in the overview.
 
 ## [1.0.12] - 2026-10-14
 
 ### Added
 
-- Inbox keeps **filters per provider tab** instead of one global set, so GitHub, Jira and the other sources each remember their own filters.
+- Inbox keeps **filters per provider tab**, so GitHub, Jira, and the other sources each remember their own filters.
 - Jira issues in the inbox show an **expandable parent/child tree** with issue-type labels.
-- Familiars and habit runs can create **HTML visual artifacts** with `app artifacts.write` using `kind: "html"`, alongside Markdown documents. Visuals run in a sandboxed frame, follow the app's theme, fit their content height, and refresh when revised. Scripts and public HTTPS assets load; access to the app, fetch requests, nested frames, and form submissions are blocked.
-- Familiar replies show linked **local images and videos inline**, including workspace-relative references. Images open in the file viewer when clicked, videos have playback controls, and a file that cannot be displayed falls back to its link.
-- The Familiar overview's Sessions tab has **search and filters** for provider, status, time, archived and unavailable sessions. Sessions appear newest first, load more pages as the list nears its end, and empty states explain what to do.
-- MOLFAR **reopens the last open Familiar on launch** when it still exists and Familiars are enabled. Closing the Familiar clears that choice.
-- An **Activity** tab in the Familiar overview shows a turn's work trail with a Working or Finished status; selecting a chat turn's activity opens it.
-- Sessions started by a **habit run** are listed on the report it posts to the Familiar's chat, and a run that only started sessions still posts a report.
-- A **sound** plays when an agent asks a question or needs approval, using the existing sound settings. From MonoCode #801.
-- **Terminal hyperlinks**, including OSC 8 links, open in the default browser. From MonoCode #782.
+- Familiars and habit runs can create **HTML visual artifacts** via `app artifacts.write` (`kind: "html"`). Visuals run sandboxed, follow the theme, size to content, and refresh when revised — scripts and public HTTPS assets load; app access, fetch, nested frames, and form posts are blocked.
+- Familiar replies show linked **local images and videos inline** (including workspace-relative paths). Images open in the file viewer; videos play in place; unreadable files fall back to a link.
+- The Familiar overview **Sessions** tab adds search and filters (provider, status, time, archived, unavailable), newest-first paging, and clear empty states.
+- MOLFAR **reopens the last Familiar on launch** when it still exists and Familiars are enabled. Closing it clears that choice.
+- An **Activity** tab in the Familiar overview shows each turn's work trail (Working / Finished); selecting activity jumps to that turn.
+- Habit runs list sessions they started on the report they post — even when the run only launched sessions.
+- A **sound** plays when an agent asks a question or needs approval (existing sound settings). From MonoCode #801.
+- **Terminal hyperlinks**, including OSC 8, open in the default browser. From MonoCode #782.
 - Project groups can be **reordered by dragging**. From MonoCode #787.
-- The editor highlights **`.env`, Vue, Svelte, SCSS, Sass and Less** files. From MonoCode #915 and #892.
-- Markdown and SVG files remember the last **Preview or Source** choice, including after a restart; review tabs still open in Source. From MonoCode #929.
+- The editor highlights **`.env`, Vue, Svelte, SCSS, Sass, and Less**. From MonoCode #915 and #892.
+- Markdown and SVG remember the last **Preview or Source** choice across restarts; review tabs still open in Source. From MonoCode #929.
 - Settings → Keybindings lists **Escape** as the fixed shortcut that stops a busy session. From MonoCode #897.
-- The compact project rail shows **instant tooltips** with diff stats and shortcuts, and the Sessions tab shows a dot when a finished reply is unseen.
+- The compact project rail shows **instant tooltips** with diff stats and shortcuts; the Sessions tab dots unseen finished replies.
 - Plan **usage chips** appear in the Familiar composer.
 
 ### Changed
 
-- A unified **Familiar overview** replaces the separate details, sessions, artifacts and changes sidebars, with Sessions, Documents, Habits, Changes and Activity tabs. It opens beside the chat by default, toggles from the title bar, starts 400 pixels wide, and resizes up to 960 pixels or 62% of the window.
-- Familiar settings open in a **dialog** from the title bar, with General, Soul and Memory sections. Clicking the mascot opens the mascot and color popover, and the name field sits beneath it.
-- Sessions a Familiar starts **stay out of the project sidebar** unless **Show sessions in sidebar** is turned on in that Familiar's settings, and open over the overview's session list with Back, Open in workspace and Hide overview controls.
-- The overview's **Changes** tab groups repositories into project tabs, uses the repository's real Git staging area shared with the Changes panel, and opens a changed file in an inline diff editor.
-- Documents and visuals open in the overview's **Documents** tab; reply cards are compact title chips with document or chart icons.
-- Familiar session cards show the model's provider mark beside the branch; habits are grouped into Up next today, Done today and Later.
-- The Familiar intro is an **inline rail card** with a switch to hide Familiars, instead of a one-time popover.
-- New conversations show an empty context ring; the folded Changes tab icon shows a dot when there are changes; the rail unread badge uses the accent color.
-- Handoff and second-opinion actions are hidden in the Familiar view, chat bubbles no longer have messaging-style tails, and the Familiar composer compacts its tools and model pills in narrow chats.
-- The model picker groups models by provider for omp, Pi and Hermes, and Claude model labels are shortened to show their versions. From MonoCode #765 and #937.
+- A unified **Familiar overview** replaces the separate details/sessions/artifacts/changes sidebars (Sessions, Documents, Habits, Changes, Activity). It opens beside chat by default, toggles from the title bar, starts at 400px, and resizes up to 960px or 62% of the window.
+- Familiar settings open in a **dialog** (General, Soul, Memory). The mascot opens color/mascot controls; the name field sits beneath.
+- Sessions a Familiar starts **stay out of the project sidebar** unless **Show sessions in sidebar** is on; they open over the overview list with Back, Open in workspace, and Hide overview.
+- Overview **Changes** groups repositories into project tabs, shares the real Git staging area with the Changes panel, and opens diffs inline.
+- Documents and visuals open in the **Documents** tab; reply cards are compact title chips with document or chart icons.
+- Familiar session cards show the provider mark beside the branch; habits group into Up next today, Done today, and Later.
+- The Familiar intro is an **inline rail card** with a hide switch, instead of a one-time popover.
+- New conversations show an empty context ring; the folded Changes icon dots when there are changes; the rail unread badge uses the accent color.
+- Familiar view hides handoff and second-opinion actions, drops messaging-style bubble tails, and compacts composer tools/model pills in narrow chats.
+- The model picker groups models by provider for omp, Pi, and Hermes; Claude labels show versions more clearly. From MonoCode #765 and #937.
 - Pi and Codex show token totals for the **whole turn**, not just the last request. From MonoCode #884.
 - Branch and commit menus use the shared popover.
 
@@ -190,13 +190,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Connectors MCP**: when Jira is connected in Settings, harness sessions (Cursor, Grok, fx, Antigravity, Hermes) and interactive Claude receive a `molfar-connectors` MCP server with Jira + Confluence tools. Provider-local MCP configs from disk are merged in — sessions no longer wipe tools with an empty `mcpServers` list. Secrets stay in the existing vault file; Codex `config.toml` is not modified.
-- **Companion**: paired phones can attach files (PDF, Markdown, text, JSON/XML, and common source) alongside photos when messaging a Familiar or a session, including when starting one. Up to six files per send, about 10 MB each. See [docs/companion.md](docs/companion.md).
-- Floating Familiar chats have a **Familiar rail** for switching conversations and creating a new Familiar without closing the window. The wider window keeps the rail beside the chat, and its selection stays in sync with the macOS menu bar.
-- Document artifacts open in an animated sheet inside a floating Familiar chat, with the same formatted reader and file links as the main window.
-- Settings → Familiars → **Menu bar icon** can hide or restore the macOS Familiar menu bar icon. The choice survives app restarts.
-- The Explorer file tree supports **keyboard navigation**: arrow keys, Home/End, and PageUp/PageDown move the selection; Right/Left enter, expand, or collapse folders; Enter opens files or toggles folders; and Space activates the selected row. Typing a filename prefix jumps to a match, repeating a letter cycles matches, and focused rows have a visible outline.
-- The Familiar's live activity ticker can expand or collapse the current turn's activity directly from the reply header, with keyboard access and an expanded-state indicator.
+- **Connectors MCP**: with Jira connected, harness sessions (Cursor, Grok, fx, Antigravity, Hermes) and interactive Claude get a `molfar-connectors` MCP server (Jira + Confluence). Provider-local MCP configs merge in — sessions no longer wipe tools with an empty `mcpServers` list. Secrets stay in the vault; Codex `config.toml` is untouched.
+- **Companion**: paired phones can attach files (PDF, Markdown, text, JSON/XML, common source) alongside photos when messaging a Familiar or session, including when starting one. Up to six files per send, ~10 MB each. See [docs/companion.md](docs/companion.md).
+- Floating Familiar chats get a **Familiar rail** to switch or create Familiars without closing the window; selection stays in sync with the macOS menu bar.
+- Document artifacts open in an animated sheet inside a floating Familiar chat, with the same reader and file links as the main window.
+- Settings → Familiars → **Menu bar icon** can hide or restore the macOS Familiar menu bar icon across restarts.
+- Explorer **keyboard navigation**: arrows, Home/End, PageUp/PageDown; Right/Left enter or expand folders; Enter opens or toggles; Space activates. Type-ahead jumps to a filename match; repeating a letter cycles matches.
+- The Familiar activity ticker expands or collapses the current turn's activity from the reply header (keyboard accessible).
 - **OpenCode 2.x** servers are supported for local and remote sessions alongside OpenCode 1.x. Version detection selects the matching server, catalog, and event protocol, including approvals, questions, multi-select answers, compaction, cancellation, and resuming a session in its current project folder. From MonoCode #434.
 - The Linux **AppImage updates itself** from Settings → General using signed release downloads. Keep it in a writable directory so it can replace itself and relaunch. `.deb` and `.rpm` installations instead show instructions for updating through apt or dnf; a feed without an AppImage update reports that no update is available. From MonoCode #825.
 - The chat composer enables native **macOS spell checking**, including spelling suggestions in its context menu. Existing macOS spell-checking preferences are preserved. From MonoCode #829.
@@ -242,57 +242,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.9] - 2026-10-09
 
-### Added
-
-- **Connectors MCP**: when Jira is connected in Settings, harness sessions (Cursor, Grok, fx, Antigravity, Hermes) and interactive Claude receive a `molfar-connectors` MCP server with Jira + Confluence tools. Provider-local MCP configs from disk are merged in — sessions no longer wipe tools with an empty `mcpServers` list. Secrets stay in the existing vault file; Codex `config.toml` is not modified.
-- **Companion**: paired phones can attach files (PDF, Markdown, text, JSON/XML, and common source) alongside photos when messaging a Familiar or a session, including when starting one. Up to six files per send, about 10 MB each. See [docs/companion.md](docs/companion.md).
-- Floating Familiar chats have a **Familiar rail** for switching conversations and creating a new Familiar without closing the window. The wider window keeps the rail beside the chat, and its selection stays in sync with the macOS menu bar.
-- Document artifacts open in an animated sheet inside a floating Familiar chat, with the same formatted reader and file links as the main window.
-- Settings → Familiars → **Menu bar icon** can hide or restore the macOS Familiar menu bar icon. The choice survives app restarts.
-- The Explorer file tree supports **keyboard navigation**: arrow keys, Home/End, and PageUp/PageDown move the selection; Right/Left enter, expand, or collapse folders; Enter opens files or toggles folders; and Space activates the selected row. Typing a filename prefix jumps to a match, repeating a letter cycles matches, and focused rows have a visible outline.
-- The Familiar's live activity ticker can expand or collapse the current turn's activity directly from the reply header, with keyboard access and an expanded-state indicator.
-- **OpenCode 2.x** servers are supported for local and remote sessions alongside OpenCode 1.x. Version detection selects the matching server, catalog, and event protocol, including approvals, questions, multi-select answers, compaction, cancellation, and resuming a session in its current project folder. From MonoCode #434.
-- The Linux **AppImage updates itself** from Settings → General using signed release downloads. Keep it in a writable directory so it can replace itself and relaunch. `.deb` and `.rpm` installations instead show instructions for updating through apt or dnf; a feed without an AppImage update reports that no update is available. From MonoCode #825.
-- The chat composer enables native **macOS spell checking**, including spelling suggestions in its context menu. Existing macOS spell-checking preferences are preserved. From MonoCode #829.
-- Familiars can create persistent **document artifacts** for reports, plans, and other Markdown deliverables. Document cards appear beneath the originating reply and open a reader with formatting, file links, copy, and delete controls. Documents survive app restarts and the reader refreshes when a document is revised.
-- Familiars and habit runs can use `app artifacts.list`, `artifacts.read`, and `artifacts.write` to find, read, create, or revise documents and attach them to the chat or habit report. Retrying a creation request reuses the saved document instead of creating a duplicate. Deleting a document removes its cards from saved conversations, and later saves from another window cannot restore them.
-- On macOS, the **Familiars menu bar** lists each Familiar with its mascot and opens a resizable floating chat that stays above other windows and follows across Spaces. Floating chats share the main conversation, accept messages and attachments, handle approvals and questions, and offer controls to stop a reply or open the conversation in MOLFAR.
-- A Familiar's **Details → Permissions** picker saves its permission mode alongside its model settings. New Familiar conversations start with **Auto** permissions.
-- Familiar replies have a **Sessions** control for work launched during that turn. Its panel shows each session's provider, model, project, and current status, including requests for input, drafts, and archived sessions. Launch records survive chat restoration, so saved sessions remain accessible after their tabs close.
-- Settings → Familiars adds preferences for sessions started by each Familiar: show or hide them in the project sidebar, and optionally group them in a color-coded folder named after the Familiar. Hidden sessions remain saved and can be opened from its chat; the preferences apply to newly started sessions.
-- The opt-in `app` CLI adds `sessions.stop`, `sessions.archive`, and `sessions.delete` to manage another regular session in the chosen project. Stop cancels the active turn and pauses queued messages; archive saves the conversation for later restoration; delete permanently removes it. Open files, terminals, and worktrees are kept. `sessions.list` also reports archived status.
-- A Familiar **Changes** panel can show session diffs and a commit tab; the commit message can be edited without selected or staged files.
-
 ### Changed
 
-- Familiar Codex conversations retain their native context in **isolated MOLFAR storage** for the selected account, sharing its provider configuration and credentials. Existing Familiar threads migrate with their rollout files, fork dependencies, and delegated-agent state, preserving context across restarts while keeping Familiar conversation storage separate from the ordinary Codex session list.
-- Familiar provider sessions rotate when reported context reaches **80%** of the model's window. Idle time and app restarts no longer trigger a rotation. A fresh session receives recent exchanges and a bounded brief of earlier work, while the full transcript remains available in the chat.
-- Habits can work for **up to one hour** per run, increased from 15 minutes. Time spent waiting for an approval does not count toward that limit, and overdue runs still stop and record a failure.
-- Active Familiar names use compact signature pills beside the work ticker; settled replies use lighter, muted name styling. The floating Familiar rail dims when its window loses focus.
-- The macOS Familiar menu uses system-style rows, hover feedback, SF Symbols, and red styling for destructive actions.
-- Zen phase live content hides scrollbars while retaining scrolling.
-- Prerelease tags publish to a separate **beta updater feed**, and beta builds use that feed without changing the stable updater feed or macOS download links. AppImage releases are signed after repacking so signatures cover the distributed file. Linux dependency installation bounds APT retries. From MonoCode #825.
-- Account emails are **masked by default** when no display preference has been saved. Existing choices are preserved, and Settings → Providers → Usage and privacy → **Mask account emails** controls the display.
-- Familiar chats keep opening narration and intermediate progress in the activity trail, show live status beneath the Familiar's name, and reveal the final answer when work finishes. The activity control sits beside the reply actions, and copying or saving a reply uses its final answer.
-- Automatic Familiar replies after delegated sessions finish continue the preceding answer with one header and one set of reply actions. A new day or a break of more than an hour starts a separate message with its own timestamp.
-- Max and Ultra effort animations now apply to every provider whose effort or variant controls expose those options, including keyboard highlighting. From MonoCode #672.
-
-### Fixed
-
-- Scrolling settled chat history keeps the scroll range stable instead of resizing turns during a gesture. Small reversals do not restart following, directionless trackpad events do not snap the reader back, and reopening or reattaching a transcript follows the latest turn without restoring a stale offset. From MonoCode #818.
-- Opening a local project preserves remote sessions instead of reusing their tabs as blank local sessions. Remote tabs are reused only for the matching project, including while their saved transcript is still loading.
-- Files in the Changes list respond across the full row height and open their exact diff path without an unnecessary path-resolution request, reducing selection latency. From MonoCode #830.
-- Opening a provider's model dropdown in Settings explicitly refreshes its catalog even when a live catalog is already cached, so newly available models can appear without restarting.
-- Linux AppImages use the host's **WebKitGTK 4.1 and system libraries**, avoiding EGL display failures caused by bundled Ubuntu libraries on current Mesa systems. Install `libwebkit2gtk-4.1-0` on Debian/Ubuntu, `webkit2gtk4.1` on Fedora, or `webkit2gtk-4.1` on Arch. Native Wayland is supported, and `GDK_BACKEND=x11` remains available when needed. From MonoCode #824.
-- Windows Codex Familiar storage creates directory junctions against canonical source paths and opens copied rollout files with write access before flushing, fixing configuration-link creation and file-sync failures.
-- Temporary Grok and OpenCode text-generation sessions are deleted after completion, failure, or cancellation. Generated Codex text uses unsaved threads by default, while side questions retain resumable context. Grok cleanup accepts only valid session UUIDs.
-- Replies to delivered mid-turn Familiar follow-ups appear immediately and stay visible when more tool work arrives. Queued or failed messages are not treated as delivered follow-ups, and replies already shown remain available when background work resumes.
-- Familiar completion reports wait for launch acceptance, including sessions that finish before their launch is acknowledged. Rejected launches and follow-ups do not produce a second report. When a Familiar stops, archives, or deletes a monitored session, its pending or queued report is dismissed while reports for other sessions and other Familiars are retained.
-- Selecting an IME candidate with Enter no longer sends a Familiar message or submits the memory fact, Familiar name, or new habit name fields prematurely on WebKit. From MonoCode #790.
-- Codex turns can start before a model has been explicitly selected. The adapter omits the collaboration-mode override until a model is known, allowing Codex to use the thread's selected model without rejecting a null model setting. From MonoCode #771.
-- Notes created without a title receive a title-based filename slug when title editing finishes or the editor closes, instead of retaining an `untitled` slug. Later title edits discard stale finalization requests, and existing or user-chosen slugs stay stable. From MonoCode #788.
-- **⌘W / Ctrl+W** closes the active project-dock terminal and **⌘T / Ctrl+T** adds a dock terminal while that dock has keyboard focus. Elsewhere the shortcuts retain their workspace behavior, and macOS New Tab and Close Tab menu actions affect only the focused window. From MonoCode #774.
-- Settings refreshes live provider model catalogs even when built-in fallback models are already present, fixing stale Pi and Antigravity model lists after restart. From MonoCode #783.
+- Interim packaging cut before the full notes restore in **1.0.10**. Open **1.0.10** in What's New for the feature list from this window — the previous duplicate body is removed so the accordion stays readable.
 
 ## [1.0.8] - 2026-10-08
 
