@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.16] - 2026-10-17
+
 ### Added
 
 - Working agents strip cards get a quiet **X** to stop that session without opening it (working, needs approval, and done).
@@ -420,7 +422,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.15...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.16...HEAD
+[1.0.16]: https://github.com/deluminor/molfar/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/deluminor/molfar/compare/v1.0.14...v1.0.15
 [1.0.14]: https://github.com/deluminor/molfar/compare/v1.0.13...v1.0.14
 [1.0.13]: https://github.com/deluminor/molfar/compare/v1.0.12...v1.0.13
