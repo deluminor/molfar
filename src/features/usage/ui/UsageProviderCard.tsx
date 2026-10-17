@@ -57,23 +57,12 @@ function WindowRow({
 
 /** Dense provider card — limits when known, status otherwise, never fake %. */
 export function UsageProviderCard({ title, state, now }: Props): ReactNode {
-  const primary =
-    (state.status === "ok" || state.status === "error") &&
-    state.windows.length > 0
-      ? state.windows[0]
-      : null;
-
   return (
     <section className="flex min-h-0 flex-col gap-3 rounded-lg border border-stroke bg-content/[0.025] p-3">
-      <header className="flex items-baseline justify-between gap-3">
+      <header>
         <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-accent/70">
           {title}
         </h2>
-        {primary ? (
-          <span className="font-mono text-[18px] tabular-nums leading-none text-content">
-            {Math.round(primary.usedPercent)}%
-          </span>
-        ) : null}
       </header>
 
       {state.status === "loading" ? <StatusLine text="Loading…" /> : null}
