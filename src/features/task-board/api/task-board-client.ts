@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { BOARD_COLUMNS } from "../constants/columns";
 import { TASK_BOARD_CHANGED } from "../constants/limits";
-import type { ArtifactKind, ArtifactMeta, ArtifactSource } from "../types/artifact";
+import type { ArtifactKind, ArtifactMeta, ArtifactRef, ArtifactSource } from "../types/artifact";
 import type { Card, CardCreate, CardPatch } from "../types/card";
 import type { BoardSettings } from "../types/settings";
 import type { StageRun, StageRunCreate, StageRunPatch } from "../types/stage";
@@ -53,6 +53,9 @@ export const taskBoardClient = {
     invoke("task_board_artifact_read", { cardId, kind, version }),
   writeArtifact: (input: ArtifactWrite): Promise<ArtifactMeta> =>
     invoke("task_board_artifact_write", { ...input, stageRunId: input.stageRunId ?? null }),
+  /** Replaces the card worktree's `.molfar/board/` with these versions; returns their relative paths. */
+  materializeInputs: (cardId: string, inputs: readonly ArtifactRef[]): Promise<string[]> =>
+    invoke("task_board_inputs_materialize", { cardId, inputs }),
   getSettings: (): Promise<BoardSettings> => invoke("task_board_settings_get"),
   setSettings: (settings: BoardSettings): Promise<BoardSettings> =>
     invoke("task_board_settings_set", { settings }),

@@ -8,6 +8,7 @@ import type { StageRun } from "../../types/stage";
 import { AlertCircle, ExternalLink, PenLine } from "../../../../shared/ui/icons";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "../button-styles";
 import { CardTimeline } from "./CardTimeline";
+import { FadeFold } from "./FadeFold";
 
 type Props = {
   card: Card;
@@ -114,11 +115,15 @@ export function CardOverview({ card, runs, now, onAct, onOpenSession }: Props): 
           <TaskEditor card={card} onAct={onAct} onDone={() => setEditing(false)} />
         ) : (
           <div className="flex flex-col gap-3 rounded-xl border border-stroke bg-content/[0.03] p-3.5">
-            <p className="whitespace-pre-wrap text-[13px] leading-5 text-content/85">{card.description}</p>
+            <FadeFold label="the task description">
+              <p className="whitespace-pre-wrap text-[13px] leading-5 text-content/85">{card.description}</p>
+            </FadeFold>
             {card.acceptanceCriteria ? (
               <div className="flex flex-col gap-1 border-t border-stroke pt-3">
                 <span className="text-[11px] font-medium text-content/45">Acceptance criteria</span>
-                <p className="whitespace-pre-wrap text-[12.5px] leading-5 text-content/70">{card.acceptanceCriteria}</p>
+                <FadeFold label="the acceptance criteria">
+                  <p className="whitespace-pre-wrap text-[12.5px] leading-5 text-content/70">{card.acceptanceCriteria}</p>
+                </FadeFold>
               </div>
             ) : null}
           </div>

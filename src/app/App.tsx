@@ -12129,6 +12129,10 @@ function Workspace({
     },
     [onOpenLocalSurface],
   );
+  const onOpenUsageSurface = useCallback(
+    () => onOpenLocalSurface("usage"),
+    [onOpenLocalSurface],
+  );
   const actions = useRef({
     onNewFocused,
     onArchiveFocusedSession,
@@ -13121,6 +13125,7 @@ function Workspace({
               busyProjectPaths={busyProjectPaths}
               liveAgents={liveAgents}
               onSelectAgent={onSelectLiveAgent}
+              onStopAgent={onStop}
               onSelectProject={onSelectProject}
               onOpenProject={pickProject}
               onRemoveProject={onRemoveProject}
@@ -13510,10 +13515,14 @@ function Workspace({
                 besideRail={projectRailOpen || compactProjectRail}
                 compactRail={compactRailActive}
                 projectPaths={recents.map((project) => project.path)}
+                projectCwd={projectCwd}
                 onClose={onLeaveLocalSurface}
                 onToggleSidebar={onToggleSidebar}
                 onOpenSession={onOpenHomeSession}
                 onOpenAutomation={onOpenHomeAutomation}
+                onOpenAutomations={onOpenAutomations}
+                onOpenUsage={onOpenUsageSurface}
+                onOpenInbox={onOpenInbox}
                 taskBoard={taskBoard}
               />
               {automationsSurfaceOpen ? (

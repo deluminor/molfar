@@ -63,3 +63,24 @@ export function nextDueAutomationAt(
   }
   return soonest;
 }
+
+const FAILED_RUN_STATUSES: ReadonlySet<string> = new Set([
+  "failed",
+  "cancelled",
+]);
+
+/** Failed/cancelled runs stay visible; otherwise the next due time is the useful signal. */
+export function automationRowMeta(automation: RecentAutomationRow): {
+  label: string;
+  failed: boolean;
+} {
+  if (!automation.enabled) return { label: "paused", failed: false };
+  const status = automation.lastRunStatus;
+  if (status && FAILED_RUN_STATUSES.has(status)) {
+    return { label: status, failed: true };
+  }
+  if (automation.nextRunAt > 0) {
+    return { label: formatAutomationRunAt(automation.nextRunAt), failed: false };
+  }
+  return { label: status ?? "—", failed: false };
+}

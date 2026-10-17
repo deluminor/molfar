@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Working agents strip cards get a quiet **X** to stop that session without opening it (working, needs approval, and done).
+- Task Board stages copy their input artifacts into the worktree's git-ignored `.molfar/board/` and list those paths in a short handoff manifest, so prompts no longer paste full artifact bodies.
+- Long task descriptions and acceptance criteria on the card **Overview** collapse behind a fade with **Show more** and **Show less**.
+- Home **Edit layout** can **hide and show widgets**; hidden ones sit in a strip until restored, and the arrangement persists across restarts. New **Usage**, **Inbox**, and **Activity** cards summarize plan pressure, open inbox items, and a year heatmap of session activity across all projects. **Status**, **Automations**, and **Host** highlight actionable rows, failed runs, and high load more clearly.
+- The **Usage** page shows denser provider cards (limits when available, status otherwise — never a fake percent), an honest trend from daily usage snapshots, and the same session **Activity** year heatmap as Home.
+
+### Changed
+
+- Usage (page + Home strip) lists providers as **Claude → Codex → Cursor**, then other connected providers; disconnected ones are omitted and the grid reflows for 1–N cards.
+- Home **Activity** year heatmap sizes cells and gaps to the card (ResizeObserver) with clearer empty/active contrast, capped gap rhythm, and polished month/legend chrome; Home **Usage** is a denser 2×2 provider grid with reset countdown when known.
+- Fresh Home installs and **Reset** use Erik's latest DEV layout (Activity beside clock/status, equal Inbox/Sessions/Automations row, Host+Usage, shorter Matrix). Saved layouts are not force-migrated.
+- Home **Inbox** pulse and **Sessions** cards show the last **10** items (compact rows with internal scroll).
+- Factory glass defaults are sidebar opacity **70%**, blur **64**, and main-pane glass **on**. Existing saved appearance settings are unchanged.
+
+### Fixed
+
+- A broken or unfinished Home layout save keeps the previous arrangement instead of wiping it; **Reset** only leaves edit mode after the default layout is cleared. Hidden widgets stop refreshing until shown again.
+
 ## [1.0.15] - 2026-10-16
 
 ### Added

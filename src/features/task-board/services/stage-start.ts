@@ -2,6 +2,7 @@ import type { ControlOutcome } from "../../orchestration/model/orchestration";
 import { listSkills } from "../../../platform/tauri/fs";
 import { loadDisabledSkillPaths } from "../../skills/model/skills";
 import { COLUMN_LABEL, isAgentStage, READ_ONLY_STAGES } from "../constants/columns";
+import { PROMPT_WARN_CHARS } from "../constants/limits";
 import { dirtyCheckoutError } from "../model/checkout-checks";
 import { resolveGrillInputs, stageInputs } from "../model/prompts/inputs";
 import { TEMPLATE_VERSION } from "../model/prompts/shared";
@@ -10,7 +11,7 @@ import { resolveStageSkills } from "../model/resolve-stage-skills";
 import { resolveStageConfig } from "../model/stage-config";
 import type { Card } from "../types/card";
 import type { AgentStage } from "../types/stage";
-import { readLatest } from "./artifact-reader";
+import { latestRefs, readLatest } from "./artifact-reader";
 import type { EnginePorts } from "./ports";
 import { errorText, failStage, latestRun } from "./stage-fail";
 import { ensureWorktree } from "./worktree";
@@ -27,6 +28,10 @@ async function availableSkillNames(cwd: string): Promise<Set<string>> {
   }
 }
 
+/**
+ * Copies the stage's inputs into the worktree's git-ignored `.molfar/board/`
+ * and names them in the prompt; artifact bodies never ride in the prompt.
+ */
 async function preparePrompt(
   ports: EnginePorts,
   card: Card,
@@ -45,7 +50,15 @@ async function preparePrompt(
     stage === "grill" && contract.required.length === 1 && card.grillRound > 1
       ? { ...card, grillRound: 1 }
       : card;
-  return buildStagePrompt(stage, { card: promptCard, inputs: loaded, headSha }, skillNames);
+
+  const refs = await latestRefs(ports.store, card.id, [...contract.required, ...contract.optional]);
+  const paths = await ports.store.materializeInputs(card.id, refs);
+  const files = refs.map((ref, index) => ({ ...ref, path: paths[index] }));
+  const prompt = buildStagePrompt(stage, { card: promptCard, files, headSha }, skillNames);
+  if (prompt.length > PROMPT_WARN_CHARS) {
+    console.warn("Task board: stage prompt is unusually long", { cardId: card.id, stage, chars: prompt.length });
+  }
+  return prompt;
 }
 
 /** The card still runs this very run; a cancel or retry in the meantime says no. */

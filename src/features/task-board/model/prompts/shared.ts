@@ -1,4 +1,4 @@
-import type { ArtifactDoc, ArtifactKind } from "../../types/artifact";
+import type { ArtifactKind, HandoffFile } from "../../types/artifact";
 import type { Card } from "../../types/card";
 import { closeMarker, openMarker } from "../artifacts/markers";
 
@@ -12,20 +12,21 @@ export type PromptCard = Pick<
 
 export type StagePromptContext = {
   card: PromptCard;
-  inputs: Partial<Record<ArtifactKind, ArtifactDoc>>;
+  /** The stage's inputs, already copied into the checkout, in contract order. */
+  files: readonly HandoffFile[];
   headSha?: string;
 };
 
 const INPUT_TITLE: Record<ArtifactKind, string> = {
-  task: "Task",
-  spec: "Spec",
-  plan: "Plan",
-  questions: "Previous questions",
-  answers: "Answers and notes from the user",
-  impl_report: "Latest implementation report",
-  review: "Latest code review",
-  rework_brief: "Findings selected for rework",
-  delivery: "Delivery",
+  task: "The task as the user wrote it, with acceptance criteria",
+  spec: "Spec: problem, acceptance criteria, scope, constraints, risks",
+  plan: "The implementation plan",
+  questions: "Questions the previous grill round asked",
+  answers: "The user's answers and notes",
+  impl_report: "The latest implementation report",
+  review: "The latest code review and its findings",
+  rework_brief: "The findings selected for rework, with the user's note",
+  delivery: "Delivery record",
   pr_description: "Pull request description",
 };
 
@@ -33,7 +34,8 @@ export function header(context: StagePromptContext, role: string): string {
   const { card } = context;
   return [
     `You are the ${role} stage of MOLFAR Task Board card #${card.number}: "${card.title}".`,
-    "This is a fresh session. Everything you know about the task is in this prompt and in the repository.",
+    "This is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and",
+    "the repository.",
     "",
     `- Project: ${card.projectCwd}`,
     `- Working checkout (your cwd): ${card.worktreePath ?? "(not created)"}`,
@@ -69,7 +71,7 @@ export function rules(readOnly: boolean): string {
   const mode = readOnly
     ? [
         "- READ-ONLY stage: do not create, modify, stage or commit any file. MOLFAR compares the checkout before and after;",
-        "  any change fails this stage.",
+        "  any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.",
       ]
     : [
         "- Commit your work yourself with small, atomic Conventional Commits (`type(scope): subject`).",
@@ -78,13 +80,20 @@ export function rules(readOnly: boolean): string {
   return ["## Rules", ...shared, ...mode].join("\n");
 }
 
-export function renderInputs(context: StagePromptContext, kinds: readonly ArtifactKind[]): string {
-  const sections = kinds.flatMap((kind) => {
-    const doc = context.inputs[kind];
-    if (!doc) return [];
-    return [`### ${INPUT_TITLE[kind]} (v${doc.version})\n\n${doc.body.trim()}`];
-  });
-  return ["## Inputs", ...sections].join("\n\n");
+/** A manifest of the handoff files; their bodies stay in the files. */
+export function renderInputs(files: readonly HandoffFile[]): string {
+  const rows = files.map(
+    (file) => `| \`${file.path}\` | ${file.kind} | v${file.version} | ${INPUT_TITLE[file.kind]} |`,
+  );
+  return [
+    "## Handoff files",
+    "Read every file below before you start; together they are the card's current state. MOLFAR copied them from",
+    "the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.",
+    "",
+    "| File | Kind | Version | What it is |",
+    "| --- | --- | --- | --- |",
+    ...rows,
+  ].join("\n");
 }
 
 export function outputContract(kinds: readonly { kind: ArtifactKind; format: string }[]): string {

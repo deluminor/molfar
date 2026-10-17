@@ -76,7 +76,9 @@ describe("TaskBoardEngine pipeline", () => {
 
     await act(id, { type: "answer", answers: [{ number: 1, answer: "Keep it in app data" }], note: "" });
     expect(fake.sessions.launched).toHaveLength(2);
-    expect(lastLaunch().prompt).toContain("Keep it in app data");
+    expect(fake.board.handoffText(id)).toContain("Keep it in app data");
+    expect(lastLaunch().prompt).toContain(".molfar/board/answers-v1.md");
+    expect(lastLaunch().prompt).not.toContain("Keep it in app data");
     expect(lastLaunch().prompt).toContain("Grill round 2");
 
     await finish(GRILL_OUTPUT);
@@ -85,14 +87,15 @@ describe("TaskBoardEngine pipeline", () => {
 
     await finish(IMPL_OUTPUT, "commit");
     expect(cardState(id)).toBe("code_review/running");
-    expect(lastLaunch().prompt).toContain("Done.");
+    expect(fake.board.handoffText(id)).toContain("Done.");
+    expect(lastLaunch().prompt).toContain(".molfar/board/impl_report-v1.md");
 
     await finish(REVIEW_OUTPUT);
     expect(cardState(id)).toBe("final_review/idle");
 
     await act(id, { type: "rework", findings: ["F1"], note: "Cover the edge case" });
     expect(cardState(id)).toBe("rework/running");
-    expect(lastLaunch().prompt).toContain("Cover the edge case");
+    expect(fake.board.handoffText(id)).toContain("Cover the edge case");
     expect(fake.board.cards.get(id)?.reworkCycle).toBe(1);
 
     await finish(IMPL_OUTPUT, "commit");
@@ -280,6 +283,6 @@ describe("delivery and rejection", () => {
     await act(id, { type: "requestChanges", note: "Split stage 3" });
 
     expect(fake.board.latest(id, "answers")?.body).toBe("## Note\n\nSplit stage 3");
-    expect(lastLaunch().prompt).toContain("Split stage 3");
+    expect(fake.board.handoffText(id)).toContain("Split stage 3");
   });
 });

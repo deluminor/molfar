@@ -1,6 +1,5 @@
 import { READ_ONLY_STAGES } from "../../constants/columns";
 import type { AgentStage } from "../../types/stage";
-import { stageInputs } from "./inputs";
 import {
   header,
   outputContract,
@@ -125,7 +124,6 @@ export function buildStagePrompt(
   context: StagePromptContext,
   skillNames: readonly string[] = [],
 ): string {
-  const contract = stageInputs(stage, context.card.grillRound);
   const body: Record<AgentStage, () => string[]> = {
     grill: () => grill(context),
     implement,
@@ -137,7 +135,7 @@ export function buildStagePrompt(
     header(context, ROLE[stage]),
     skills(skillNames),
     rules(READ_ONLY_STAGES.includes(stage)),
-    renderInputs(context, [...contract.required, ...contract.optional]),
+    renderInputs(context.files),
     ...body[stage](),
   ]
     .filter((section) => section.length > 0)

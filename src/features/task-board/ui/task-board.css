@@ -73,7 +73,31 @@
   animation: task-board-breathe 1.6s ease-in-out infinite;
 }
 
+/* The fade sits in the mask's bottom 4rem; opening grows the mask past the box so it slides out with the height. */
+.task-board-fold[data-fold="closed"],
+.task-board-fold[data-fold="open"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  transition:
+    max-height 320ms var(--motion-ease-out),
+    -webkit-mask-size 320ms var(--motion-ease-out),
+    mask-size 320ms var(--motion-ease-out);
+}
+
+.task-board-fold[data-fold="open"] {
+  -webkit-mask-size: 100% calc(100% + 4rem);
+  mask-size: 100% calc(100% + 4rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .task-board-fold {
+    transition: none !important;
+  }
+
   .task-board-card,
   .task-board-panel,
   .task-board-panel-body,

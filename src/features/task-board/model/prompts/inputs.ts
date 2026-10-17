@@ -9,7 +9,7 @@ const LATER_GRILL: InputContract = {
   optional: ["questions"],
 };
 
-/** Which artifacts each stage receives, inlined in its prompt (latest versions). */
+/** Which artifacts each stage receives as handoff files (latest versions). */
 export function stageInputs(stage: AgentStage, grillRound: number): InputContract {
   switch (stage) {
     case "grill":

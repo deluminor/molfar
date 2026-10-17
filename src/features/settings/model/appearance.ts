@@ -129,17 +129,18 @@ export const THEME_DARK_LIGHTNESS_DEFAULT = 9;
 
 export const SIDEBAR_OPACITY_MIN = 0.15;
 export const SIDEBAR_OPACITY_MAX = 1;
-export const SIDEBAR_OPACITY_DEFAULT = 0.85;
+export const SIDEBAR_OPACITY_DEFAULT = 0.7;
 
 export const SIDEBAR_BLUR_MIN = 1;
 export const SIDEBAR_BLUR_MAX = 64;
-export const SIDEBAR_BLUR_DEFAULT = 24;
+export const SIDEBAR_BLUR_DEFAULT = 64;
 
 export const PROJECT_RAIL_WIDTH_MIN = 180;
 export const PROJECT_RAIL_WIDTH_MAX = 360;
 export const PROJECT_RAIL_WIDTH_DEFAULT = 200;
 
-export const BODY_GLASS_DEFAULT = !IS_LINUX;
+/** Factory default only — stored preferences always win. */
+export const BODY_GLASS_DEFAULT = true;
 
 export const CHAT_BACKGROUND_OPACITY_MIN = 0.05;
 export const CHAT_BACKGROUND_OPACITY_MAX = 0.65;

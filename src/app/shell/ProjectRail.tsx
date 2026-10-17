@@ -125,6 +125,7 @@ type Props = {
   liveAgents?: LiveAgent[];
   activeSessionId?: string;
   onSelectAgent?: (sessionId: string) => void;
+  onStopAgent?: (sessionId: string) => void;
   settingsOpen?: boolean;
   settingsSection?: SettingsSectionId;
   onOpenSettings?: () => void;
@@ -167,6 +168,7 @@ export function ProjectRail({
   liveAgents = [],
   activeSessionId,
   onSelectAgent,
+  onStopAgent,
   settingsOpen = false,
   settingsSection = "general",
   onOpenSettings,
@@ -549,6 +551,7 @@ export function ProjectRail({
             agents={liveAgents}
             activeSessionId={activeSessionId}
             onSelect={onSelectAgent}
+            onStop={onStopAgent}
             groupLabels={groupLabels}
             groupColors={groupColors}
             groupCustomColors={groupCustomColors}
