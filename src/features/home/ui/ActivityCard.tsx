@@ -26,9 +26,7 @@ export function ActivityCard({ state }: Props): ReactNode {
 
   return (
     <HomeCard title="Activity">
-      <div className="flex h-full min-h-0 items-center">
-        <YearHeatmap grid={state.grid} variant="compact" />
-      </div>
+      <YearHeatmap grid={state.grid} variant="compact" />
     </HomeCard>
   );
 }

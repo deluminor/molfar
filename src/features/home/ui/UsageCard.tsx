@@ -7,7 +7,7 @@ type Props = {
   onOpenUsage?: () => void;
 };
 
-function ProviderChip({
+function ProviderTile({
   row,
   onOpenUsage,
 }: {
@@ -16,38 +16,54 @@ function ProviderChip({
 }): ReactNode {
   const detail =
     row.usedPercent != null ? `${row.usedPercent}%` : row.statusLabel;
+  let meta: string | null = null;
+  if (row.resetLabel != null) meta = `resets ${row.resetLabel}`;
+  else if (row.usedPercent != null) meta = row.statusLabel;
 
   return (
     <button
       type="button"
       onClick={onOpenUsage}
-      className="group flex min-w-0 flex-1 flex-col gap-1.5 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-accent/25 hover:bg-accent/[0.06] focus-visible:border-accent/40 focus-visible:outline-none"
-      aria-label={`${row.title} usage: ${detail}`}
+      className="group flex min-h-0 min-w-0 flex-col justify-center gap-1.5 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-accent/25 hover:bg-accent/[0.06] focus-visible:border-accent/40 focus-visible:outline-none"
+      aria-label={
+        row.resetLabel != null
+          ? `${row.title} usage: ${detail}, resets ${row.resetLabel}`
+          : `${row.title} usage: ${detail}`
+      }
     >
-      <span
-        className={`font-mono text-[10px] uppercase tracking-[0.16em] ${
-          row.fetching ? "text-content/30" : "text-content/45"
-        }`}
-      >
-        {row.title}
-      </span>
-      {row.usedPercent != null ? (
-        <>
-          <span className="font-mono text-[16px] tabular-nums leading-none text-content">
+      <div className="flex min-w-0 items-baseline justify-between gap-2">
+        <span
+          className={`truncate font-mono text-[10px] uppercase tracking-[0.16em] ${
+            row.fetching ? "text-content/30" : "text-content/45"
+          }`}
+        >
+          {row.title}
+        </span>
+        {row.usedPercent != null ? (
+          <span className="shrink-0 font-mono text-[15px] tabular-nums leading-none text-content">
             {row.usedPercent}%
           </span>
-          <span className="h-1 overflow-hidden rounded-full bg-content/10">
-            <span
-              className="block h-full rounded-full bg-accent/70"
-              style={{ width: `${row.usedPercent}%` }}
-            />
-          </span>
-        </>
+        ) : null}
+      </div>
+
+      {row.usedPercent != null ? (
+        <span className="h-1 w-full overflow-hidden rounded-full bg-content/10">
+          <span
+            className="block h-full rounded-full bg-accent/70"
+            style={{ width: `${row.usedPercent}%` }}
+          />
+        </span>
       ) : (
         <span className="truncate font-mono text-[11px] text-content/50">
           {row.statusLabel}
         </span>
       )}
+
+      {meta != null ? (
+        <span className="truncate font-mono text-[10px] text-content/35">
+          {meta}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -65,9 +81,9 @@ export function UsageCard({ rows, onOpenUsage }: Props): ReactNode {
 
   return (
     <HomeCard title="Usage">
-      <div className="flex h-full min-h-0 items-stretch gap-1 overflow-x-auto">
+      <div className="grid h-full min-h-0 grid-cols-2 grid-rows-2 content-stretch gap-1">
         {rows.map((row) => (
-          <ProviderChip key={row.provider} row={row} onOpenUsage={onOpenUsage} />
+          <ProviderTile key={row.provider} row={row} onOpenUsage={onOpenUsage} />
         ))}
       </div>
     </HomeCard>

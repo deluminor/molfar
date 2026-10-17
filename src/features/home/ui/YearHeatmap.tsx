@@ -1,11 +1,21 @@
-import type { ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import {
+  computeHeatmapCellLayout,
+  type HeatmapCellLayout,
+  type HeatmapVariant,
+} from "../model/heatmapLayout";
 import type { ActivityCell, ActivityYearGrid } from "../model/sessionActivity";
-
-type Variant = "compact" | "full";
 
 type Props = {
   grid: ActivityYearGrid;
-  variant?: Variant;
+  variant?: HeatmapVariant;
+  className?: string;
 };
 
 const LEVEL_CLASS: Record<ActivityCell["level"], string> = {
@@ -31,6 +41,14 @@ const MONTH_SHORT = [
   "Dec",
 ] as const;
 
+const FALLBACK_LAYOUT: HeatmapCellLayout = {
+  cellPx: 6,
+  gapXPx: 2,
+  gapYPx: 2,
+  showMonthLabels: false,
+  showLegend: false,
+};
+
 function cellTitle(cell: ActivityCell): string {
   if (!cell.inYear) return "";
   if (cell.future) return `${cell.dateKey} · upcoming`;
@@ -50,57 +68,116 @@ function monthMarkers(grid: ActivityYearGrid): { week: number; label: string }[]
   return markers;
 }
 
-/** GitHub-style year contribution grid; compact for Home, full for Usage. */
-export function YearHeatmap({ grid, variant = "compact" }: Props): ReactNode {
-  const gap = variant === "compact" ? "gap-px" : "gap-[3px]";
-  const cell =
-    variant === "compact"
-      ? "size-1.5 rounded-[1px]"
-      : "size-[11px] rounded-[2px]";
-  const markers = variant === "full" ? monthMarkers(grid) : [];
+function cellBoxStyle(layout: HeatmapCellLayout): CSSProperties {
+  return {
+    width: layout.cellPx,
+    height: layout.cellPx,
+    borderRadius: Math.max(1, Math.round(layout.cellPx / 5)),
+  };
+}
+
+/** GitHub-style year contribution grid; sizes itself to the container. */
+export function YearHeatmap({
+  grid,
+  variant = "compact",
+  className = "",
+}: Props): ReactNode {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = useState<HeatmapCellLayout>(() => ({
+    ...FALLBACK_LAYOUT,
+    showLegend: variant === "full",
+    showMonthLabels: variant === "full",
+  }));
+
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const measure = (): void => {
+      const next = computeHeatmapCellLayout({
+        widthPx: el.clientWidth,
+        heightPx: el.clientHeight,
+        weekCount: grid.weeks.length,
+        variant,
+      });
+      setLayout((prev) =>
+        prev.cellPx === next.cellPx &&
+        prev.gapXPx === next.gapXPx &&
+        prev.gapYPx === next.gapYPx &&
+        prev.showMonthLabels === next.showMonthLabels &&
+        prev.showLegend === next.showLegend
+          ? prev
+          : next,
+      );
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [grid.weeks.length, variant]);
+
+  const markers = layout.showMonthLabels ? monthMarkers(grid) : [];
+  const cellStyle = cellBoxStyle(layout);
+  const weekGapStyle: CSSProperties = { gap: layout.gapYPx };
+  const rowGapStyle: CSSProperties = { gap: layout.gapXPx };
 
   return (
     <div
-      className={`flex min-h-0 min-w-0 flex-col ${variant === "full" ? "gap-2" : "gap-1"}`}
+      ref={rootRef}
+      className={`flex h-full min-h-0 w-full min-w-0 flex-col justify-center ${className}`}
       role="img"
       aria-label={`${grid.year} session activity: ${grid.totalActiveDays} active days, ${grid.totalSessions} sessions`}
     >
-      {variant === "full" ? (
-        <div className={`flex ${gap} font-mono text-[10px] text-content/40`}>
-          {grid.weeks.map((_, weekIndex) => {
-            const marker = markers.find((item) => item.week === weekIndex);
-            return (
-              <span
-                key={weekIndex}
-                className="w-[11px] shrink-0 overflow-visible whitespace-nowrap"
-              >
-                {marker?.label ?? ""}
-              </span>
-            );
-          })}
-        </div>
-      ) : null}
-      <div className={`flex min-w-0 overflow-x-auto ${gap}`}>
-        {grid.weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className={`flex shrink-0 flex-col ${gap}`}>
-            {week.map((day) => (
-              <span
-                key={`${day.dateKey}-${day.inYear ? "y" : "p"}`}
-                title={cellTitle(day)}
-                className={`${cell} ${
-                  day.inYear
-                    ? day.future
-                      ? "bg-content/[0.03]"
-                      : LEVEL_CLASS[day.level]
-                    : "bg-transparent"
-                }`}
-              />
-            ))}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center gap-1">
+        {layout.showMonthLabels ? (
+          <div
+            className="flex font-mono text-[10px] text-content/40"
+            style={rowGapStyle}
+          >
+            {grid.weeks.map((_, weekIndex) => {
+              const marker = markers.find((item) => item.week === weekIndex);
+              return (
+                <span
+                  key={weekIndex}
+                  className="shrink-0 overflow-visible whitespace-nowrap"
+                  style={{ width: layout.cellPx }}
+                >
+                  {marker?.label ?? ""}
+                </span>
+              );
+            })}
           </div>
-        ))}
+        ) : null}
+
+        <div className="flex min-w-0" style={rowGapStyle}>
+          {grid.weeks.map((week, weekIndex) => (
+            <div
+              key={weekIndex}
+              className="flex shrink-0 flex-col"
+              style={weekGapStyle}
+            >
+              {week.map((day) => (
+                <span
+                  key={`${day.dateKey}-${day.inYear ? "y" : "p"}`}
+                  title={cellTitle(day)}
+                  style={cellStyle}
+                  className={
+                    day.inYear
+                      ? day.future
+                        ? "bg-content/[0.03]"
+                        : LEVEL_CLASS[day.level]
+                      : "bg-transparent"
+                  }
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
-      {variant === "full" ? (
-        <div className="flex items-center justify-between gap-3 font-mono text-[10px] text-content/40">
+
+      {layout.showLegend ? (
+        <div className="mt-1 flex shrink-0 items-center justify-between gap-3 font-mono text-[10px] text-content/40">
           <span>
             {grid.totalActiveDays} days · {grid.totalSessions} sessions ·{" "}
             {grid.year}
@@ -110,14 +187,19 @@ export function YearHeatmap({ grid, variant = "compact" }: Props): ReactNode {
             {([0, 1, 2, 3, 4] as const).map((level) => (
               <span
                 key={level}
-                className={`size-[9px] rounded-[2px] ${LEVEL_CLASS[level]}`}
+                className={LEVEL_CLASS[level]}
+                style={{
+                  width: Math.max(9, layout.cellPx - 2),
+                  height: Math.max(9, layout.cellPx - 2),
+                  borderRadius: 2,
+                }}
               />
             ))}
             More
           </span>
         </div>
       ) : (
-        <p className="truncate font-mono text-[10px] text-content/40">
+        <p className="mt-1 shrink-0 truncate font-mono text-[10px] text-content/40">
           {grid.totalActiveDays}d · {grid.totalSessions} · {grid.year}
         </p>
       )}

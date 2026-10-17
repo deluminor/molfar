@@ -4,6 +4,7 @@ import { usagePulseRows } from "./usagePulse";
 
 describe("usagePulseRows", () => {
   it("lists every known provider with percent or status — never invents %", () => {
+    const now = 1_000_000;
     const cards = new Map<UsageProviderId, UsageCardState>([
       [
         "claude",
@@ -15,7 +16,7 @@ describe("usagePulseRows", () => {
               kind: "session",
               label: "Session",
               usedPercent: 42.4,
-              resetsAt: null,
+              resetsAt: now + 2 * 3_600_000 + 30 * 60_000,
             },
           ],
         },
@@ -38,7 +39,7 @@ describe("usagePulseRows", () => {
       ],
     ]);
 
-    const rows = usagePulseRows(cards);
+    const rows = usagePulseRows(cards, now);
     expect(rows.map((row) => row.provider)).toEqual([
       "codex",
       "cursor",
@@ -48,15 +49,22 @@ describe("usagePulseRows", () => {
     expect(rows.find((row) => row.provider === "claude")).toMatchObject({
       usedPercent: 42,
       statusLabel: "Session",
+      resetLabel: "2h 30m",
     });
     expect(rows.find((row) => row.provider === "cursor")).toMatchObject({
       usedPercent: null,
       statusLabel: "Not signed in",
+      resetLabel: null,
+    });
+    expect(rows.find((row) => row.provider === "codex")).toMatchObject({
+      usedPercent: 10,
+      resetLabel: null,
     });
     expect(rows.find((row) => row.provider === "antigravity")).toMatchObject({
       usedPercent: null,
       fetching: true,
       statusLabel: "Loading",
+      resetLabel: null,
     });
   });
 });
