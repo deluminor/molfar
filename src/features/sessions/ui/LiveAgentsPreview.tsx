@@ -253,8 +253,16 @@ function LiveAgentCard({
       </button>
       <button
         type="button"
-        title={`Stop session ${agent.title}`}
-        aria-label={`Stop session ${agent.title}`}
+        title={
+          agent.done
+            ? `Close ${agent.title}`
+            : `Stop and close ${agent.title}`
+        }
+        aria-label={
+          agent.done
+            ? `Close ${agent.title}`
+            : `Stop and close ${agent.title}`
+        }
         data-live-agent-stop={agent.id}
         onClick={(event) => {
           event.stopPropagation();

@@ -109,7 +109,7 @@ describe("LiveAgentsPreview", () => {
     expect(onSelect).toHaveBeenCalledExactlyOnceWith("b");
   });
 
-  it("shows a stop control on working, needs-approval, and done cards", () => {
+  it("shows a close control on working, needs-approval, and done cards", () => {
     render({
       agents: [
         agent("work", "/repo/a"),
@@ -122,15 +122,21 @@ describe("LiveAgentsPreview", () => {
       groupMascots: {},
     });
 
-    for (const id of ["work", "approve", "done"]) {
-      const stop = container.querySelector<HTMLButtonElement>(
-        `[data-live-agent-stop="${id}"]`,
-      );
-      expect(stop).not.toBeNull();
-      expect(stop!.getAttribute("aria-label")).toBe(
-        `Stop session Agent ${id}`,
-      );
-    }
+    expect(
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="work"]')!
+        .getAttribute("aria-label"),
+    ).toBe("Stop and close Agent work");
+    expect(
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="approve"]')!
+        .getAttribute("aria-label"),
+    ).toBe("Stop and close Agent approve");
+    expect(
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="done"]')!
+        .getAttribute("aria-label"),
+    ).toBe("Close Agent done");
   });
 
   it("stops from the X without selecting the card", () => {

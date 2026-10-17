@@ -816,6 +816,7 @@ import {
   CONTINUE_PROMPT,
   inFlightRefs,
   inFlightSnapshotKey,
+  isInFlightSession,
   shouldWriteInFlightSnapshot,
 } from "../features/sessions/model/inFlight";
 import {
@@ -2198,6 +2199,10 @@ function Workspace({
     busySessionIds,
     activeSessionId,
   );
+  /** Working-rail X dismissals — finished cards stay out until the session runs again. */
+  const [dismissedLiveAgentIds, setDismissedLiveAgentIds] = useState(
+    () => new Set<string>(),
+  );
   const familiarSessionIds = useMemo(
     () =>
       new Set(
@@ -2213,21 +2218,26 @@ function Workspace({
     activeSessionId,
   );
 
-  const liveAgentRows = useMemo(
-    () =>
-      liveAgentsEnabled
-        ? liveAgentsFromSessions(
-            promptableSessions,
-            unseenFinishedIds,
-            new Set(
-              listFamiliars().flatMap((familiar) =>
-                familiar.sessionId ? [familiar.sessionId] : [],
-              ),
-            ),
-          )
-        : [],
-    [liveAgentsEnabled, promptableSessions, unseenFinishedIds, familiarsSnap],
-  );
+  const liveAgentRows = useMemo(() => {
+    if (!liveAgentsEnabled) return [];
+    return liveAgentsFromSessions(
+      promptableSessions,
+      unseenFinishedIds,
+      new Set(
+        listFamiliars().flatMap((familiar) =>
+          familiar.sessionId ? [familiar.sessionId] : [],
+        ),
+      ),
+    ).filter(
+      (agent) => !agent.done || !dismissedLiveAgentIds.has(agent.id),
+    );
+  }, [
+    liveAgentsEnabled,
+    promptableSessions,
+    unseenFinishedIds,
+    familiarsSnap,
+    dismissedLiveAgentIds,
+  ]);
   // Rebuilt for every streamed batch; identity only moves when a row does.
   const liveAgents = useStableValue(liveAgentRows);
 
@@ -10215,6 +10225,65 @@ function Workspace({
     [flushHarnessEvents],
   );
 
+  /** Working-rail X: close the tab; warn + stop first when the turn is still running. */
+  const onCloseLiveAgent = useCallback(
+    (sessionId: string) => {
+      void (async () => {
+        const session = sessionsRef.current.find((entry) => entry.id === sessionId);
+        const running = session ? isInFlightSession(session) : false;
+        if (running) {
+          const ok = await confirmApp(
+            "This chat is still running. Stop it and close the tab?",
+            { kind: "warning", okLabel: "Stop & close" },
+          );
+          if (!ok) return;
+        }
+
+        setDismissedLiveAgentIds((prev) => {
+          if (prev.has(sessionId)) return prev;
+          const next = new Set(prev);
+          next.add(sessionId);
+          return next;
+        });
+        unseenFinishedIds.delete(sessionId);
+
+        if (running) {
+          await Promise.resolve(onStop(sessionId));
+        }
+
+        const tab = tabsRef.current.find((entry) =>
+          leafIds(entry.layout).includes(sessionId),
+        );
+        if (!tab) return;
+
+        const leaves = leafIds(tab.layout);
+        if (leaves.length === 1) {
+          onCloseTab(tab.id);
+          return;
+        }
+
+        const nextTab = closeLeaf(tab, sessionId);
+        if (!nextTab) {
+          onCloseTab(tab.id);
+          return;
+        }
+        persistSession(sessionsRef.current.find((entry) => entry.id === sessionId));
+        setTabs((prev) =>
+          prev.map((entry) =>
+            entry.id === tab.id
+              ? {
+                  ...entry,
+                  layout: nextTab.layout,
+                  focusedId: nextTab.focusedId,
+                }
+              : entry,
+          ),
+        );
+      })();
+    },
+    [onCloseTab, onStop, persistSession, unseenFinishedIds],
+  );
+
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       const focusedBusySessionId = () => {
@@ -13125,7 +13194,7 @@ function Workspace({
               busyProjectPaths={busyProjectPaths}
               liveAgents={liveAgents}
               onSelectAgent={onSelectLiveAgent}
-              onStopAgent={onStop}
+              onStopAgent={onCloseLiveAgent}
               onSelectProject={onSelectProject}
               onOpenProject={pickProject}
               onRemoveProject={onRemoveProject}
