@@ -18,14 +18,17 @@ const document = {
   revision: "sha",
 };
 
-it("passes a saved snapshot through the real Notes prompt contract with provenance", () => {
+it("attaches the vault file path and keeps the body out of the harness prompt", () => {
   const card = knowledgeContextCard(connection, document);
+  expect(card.filePath).toBe("/vault/Projects/Guide.md");
   expect(card.sourceCwd).toBeUndefined();
-  expect(composeNoteMessage(card, "Explain")).toContain(
+  expect(noteCardMeta(card).source).toEqual(card.source);
+  const message = composeNoteMessage(card, "Explain");
+  expect(message).toContain(
     'Knowledge source: {"vault":"My vault","path":"Projects/Guide.md","revision":"sha"}',
   );
-  expect(composeNoteMessage(card, "Explain")).toContain(document.body);
-  expect(noteCardMeta(card).source).toEqual(card.source);
+  expect(message).toContain("attached as a file");
+  expect(message).not.toContain(document.body);
   const listener = vi.fn();
   window.addEventListener(ADD_NOTE_TO_CHAT_EVENT, listener);
   requestKnowledgeContext(connection, document);

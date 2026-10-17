@@ -50,6 +50,9 @@ describe("buildStagePrompt", () => {
     expect(prompt).toContain("## Handoff files");
     expect(prompt).toContain("| `.molfar/board/plan-v2.md` | plan | v2 | The implementation plan |");
     expect(prompt).not.toContain("## Inputs");
+    // Bodies live in `.molfar/board/*.md`; the prompt only lists paths.
+    expect(prompt).not.toMatch(/<<<<<<<|>>>>>>>/);
+    expect(prompt).toMatch(/Read every file below/);
   });
 
   it("marks read-only stages and asks writing stages to commit", () => {
