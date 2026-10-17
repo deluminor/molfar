@@ -1,51 +1,41 @@
-import type {
-  ProviderRateLimits,
-  RateLimitProvider,
-  RateLimitWindow,
-} from "../../providers/model/rateLimits";
-
-const MINUTES_PER_DAY = 1_440;
-
-export type UsagePulseWindow = {
-  label: string;
-  usedPercent: number;
-  resetsAt: number | null;
-};
+import type { UsageCardState, UsageProviderId } from "../../usage/model/usageCard";
+import { USAGE_PROVIDERS } from "../../usage/model/usageProviders";
+import { primaryUsedPercent } from "../../usage/model/usageSnapshots";
 
 export type UsagePulseRow = {
-  provider: RateLimitProvider;
+  provider: UsageProviderId;
+  title: string;
+  /** Null when the provider has no honest percent — show status instead. */
+  usedPercent: number | null;
+  statusLabel: string;
   fetching: boolean;
-  windows: UsagePulseWindow[];
 };
 
-function windowLabel(minutes: number): string {
-  if (minutes < MINUTES_PER_DAY) return `${Math.round(minutes / 60)}h`;
-  return `${Math.round(minutes / MINUTES_PER_DAY)}d`;
+function statusLabel(state: UsageCardState): string {
+  switch (state.status) {
+    case "loading":
+      return "Loading";
+    case "unavailable":
+      return state.reason.trim() || "Unavailable";
+    case "error":
+      return state.reason.trim() || "Error";
+    case "ok":
+      return state.windows[0]?.label ?? "Ready";
+  }
 }
 
-function toPulseWindow(window: RateLimitWindow): UsagePulseWindow {
-  return {
-    label: windowLabel(window.windowMinutes),
-    usedPercent: Math.round(Math.max(0, Math.min(100, window.usedPercent))),
-    resetsAt: window.resetsAt,
-  };
-}
-
-/** Providers with at least one reported window; signed-out ones are dropped. */
+/** Compact multi-provider rows for the Home Usage strip. */
 export function usagePulseRows(
-  snapshots: readonly ProviderRateLimits[],
+  cards: ReadonlyMap<UsageProviderId, UsageCardState>,
 ): UsagePulseRow[] {
-  return snapshots.flatMap((limits) => {
-    const windows = [limits.session, limits.weekly, limits.monthly]
-      .filter((window): window is RateLimitWindow => window != null)
-      .map(toPulseWindow);
-    if (windows.length === 0) return [];
-    return [
-      {
-        provider: limits.provider,
-        fetching: limits.status === "fetching",
-        windows,
-      },
-    ];
+  return USAGE_PROVIDERS.map((provider) => {
+    const state = cards.get(provider.id) ?? { status: "loading" as const };
+    return {
+      provider: provider.id,
+      title: provider.title,
+      usedPercent: primaryUsedPercent(state),
+      statusLabel: statusLabel(state),
+      fetching: state.status === "loading",
+    };
   });
 }

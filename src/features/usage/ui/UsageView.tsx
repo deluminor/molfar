@@ -6,146 +6,78 @@ import {
   type ReactNode,
 } from "react";
 import { Gauge, RefreshCw } from "../../../shared/ui/icons";
+import { useSessionActivity } from "../../home/hooks/useSessionActivity";
 import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
+import { YearHeatmap } from "../../home/ui/YearHeatmap";
 import { refreshUsageCards } from "../model/fetchUsage";
+import { USAGE_PROVIDERS } from "../model/usageProviders";
 import {
-  usageBarTone,
-  usageWindowFooter,
-  type UsageCardState,
-  type UsageProviderId,
-  type UsageWindow,
-} from "../model/usageCard";
-
-const PROVIDERS: { id: UsageProviderId; title: string }[] = [
-  { id: "codex", title: "Codex" },
-  { id: "cursor", title: "Cursor" },
-  { id: "claude", title: "Claude" },
-  { id: "antigravity", title: "Antigravity" },
-];
-
-const BAR_TONE: Record<ReturnType<typeof usageBarTone>, string> = {
-  low: "bg-accent/70",
-  mid: "bg-content/80",
-  critical: "bg-rose-400",
-};
+  loadUsageSnapshots,
+  recordUsageSnapshots,
+  usageTrendSeries,
+  type UsageDaySnapshot,
+} from "../model/usageSnapshots";
+import type { UsageCardState, UsageProviderId } from "../model/usageCard";
+import { UsageProviderCard } from "./UsageProviderCard";
+import { UsageTrendChart } from "./UsageTrendChart";
 
 type Props = {
   besideRail?: boolean;
   compactRail?: boolean;
+  projectPaths?: readonly string[];
   onClose: () => void;
   onToggleSidebar?: () => void;
 };
 
-function UsageBar({
-  window,
-  now,
-}: {
-  window: UsageWindow;
-  now: number;
-}): ReactNode {
-  const pct = Math.min(100, Math.max(0, window.usedPercent));
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
-          <div className="truncate text-[15px] font-medium text-content">
-            {window.label}
-          </div>
-          <div className="truncate text-[11px] text-content/40">
-            {usageWindowFooter(window, now)}
-          </div>
-        </div>
-        <span className="shrink-0 text-[12px] tabular-nums text-content/55">
-          {Math.round(pct)}% used
-        </span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-content/10">
-        <div
-          className={`h-full rounded-full ${BAR_TONE[usageBarTone(pct)]}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ProviderCard({
-  title,
-  state,
-  now,
-}: {
-  title: string;
-  state: UsageCardState;
-  now: number;
-}): ReactNode {
-  return (
-    <section className="rounded-xl border border-stroke bg-content/[0.03] p-4">
-      <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-content/40">
-        {title}
-      </h2>
-      {state.status === "loading" ? (
-        <p className="text-[13px] text-content/40">Loading…</p>
-      ) : null}
-      {state.status === "unavailable" ? (
-        <p className="text-[13px] text-content/45">{state.reason}</p>
-      ) : null}
-      {state.status === "error" && state.windows.length === 0 ? (
-        <p className="text-[13px] text-content/45">{state.reason}</p>
-      ) : null}
-      {state.status === "ok" ||
-      (state.status === "error" && state.windows.length > 0) ? (
-        <div className="flex flex-col gap-4">
-          {state.windows.map((window) => (
-            <UsageBar key={window.kind} window={window} now={now} />
-          ))}
-          {state.status === "error" ? (
-            <p className="text-[11px] text-content/40">{state.reason}</p>
-          ) : null}
-        </div>
-      ) : null}
-    </section>
-  );
-}
+const NO_PROJECTS: readonly string[] = [];
 
 /** Provider limits surface opened from the project rail. */
 export function UsageView({
   besideRail = false,
   compactRail = false,
+  projectPaths = NO_PROJECTS,
   onClose,
   onToggleSidebar,
 }: Props): ReactNode {
   const [cards, setCards] = useState(
     () => new Map<UsageProviderId, UsageCardState>(),
   );
+  const [snapshots, setSnapshots] = useState<UsageDaySnapshot[]>(() =>
+    loadUsageSnapshots(),
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const activity = useSessionActivity(projectPaths, true);
 
   const cardsRef = useRef(cards);
   cardsRef.current = cards;
 
+  const applyCards = useCallback((next: Map<UsageProviderId, UsageCardState>) => {
+    setCards(next);
+    setSnapshots(recordUsageSnapshots(next));
+    setNow(Date.now());
+  }, []);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const next = await refreshUsageCards(cardsRef.current);
-      setCards(next);
-      setNow(Date.now());
+      applyCards(await refreshUsageCards(cardsRef.current));
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [applyCards]);
 
   useEffect(() => {
     let alive = true;
     void refreshUsageCards(new Map()).then((next) => {
-      if (alive) {
-        setCards(next);
-        setNow(Date.now());
-      }
+      if (alive) applyCards(next);
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [applyCards]);
+
+  const trend = usageTrendSeries(snapshots);
 
   return (
     <div
@@ -177,15 +109,36 @@ export function UsageView({
         }
       />
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <div className="mx-auto grid max-w-3xl grid-cols-1 gap-3 md:grid-cols-2">
-          {PROVIDERS.map((provider) => (
-            <ProviderCard
-              key={provider.id}
-              title={provider.title}
-              state={cards.get(provider.id) ?? { status: "loading" }}
-              now={now}
-            />
-          ))}
+        <div className="mx-auto flex max-w-3xl flex-col gap-4">
+          <section className="rounded-lg border border-stroke bg-content/[0.025] p-3">
+            <UsageTrendChart points={trend} />
+          </section>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {USAGE_PROVIDERS.map((provider) => (
+              <UsageProviderCard
+                key={provider.id}
+                title={provider.title}
+                state={cards.get(provider.id) ?? { status: "loading" }}
+                now={now}
+              />
+            ))}
+          </div>
+
+          <section className="rounded-lg border border-stroke bg-content/[0.025] p-3">
+            <h2 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-accent/70">
+              Activity
+            </h2>
+            {activity.status === "ready" ? (
+              <YearHeatmap grid={activity.grid} variant="full" />
+            ) : activity.status === "error" ? (
+              <p className="font-mono text-[12px] text-content/45">
+                {activity.message}
+              </p>
+            ) : (
+              <p className="font-mono text-[12px] text-content/40">Loading…</p>
+            )}
+          </section>
         </div>
       </div>
     </div>

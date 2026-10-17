@@ -90,6 +90,7 @@ export function LocalSurfaceViews({
       <UsageView
         besideRail={besideRail}
         compactRail={compactRail}
+        projectPaths={projectPaths}
         onClose={onClose}
         onToggleSidebar={onToggleSidebar}
       />
