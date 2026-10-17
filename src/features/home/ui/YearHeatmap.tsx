@@ -124,18 +124,29 @@ export function YearHeatmap({
   const weekGapStyle: CSSProperties = { gap: layout.gapYPx };
   const rowGapStyle: CSSProperties = { gap: layout.gapXPx };
   const legendSwatch = Math.max(8, layout.cellPx - 1);
+  const isFull = variant === "full";
 
   return (
     <div
       ref={rootRef}
-      className={`flex h-full min-h-0 w-full min-w-0 flex-col justify-center ${className}`}
+      className={`flex w-full min-w-0 flex-col ${
+        isFull
+          ? "min-h-[11.5rem] justify-start"
+          : "h-full min-h-0 justify-center"
+      } ${className}`}
       role="img"
       aria-label={`${grid.year} session activity: ${grid.totalActiveDays} active days, ${grid.totalSessions} sessions`}
     >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1.5">
+      <div
+        className={`flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 ${
+          isFull
+            ? "w-full items-stretch justify-start"
+            : "items-center justify-center"
+        }`}
+      >
         {layout.showMonthLabels ? (
           <div
-            className="flex font-mono text-[10px] tracking-wide text-content/45"
+            className="flex w-full font-mono text-[10px] tracking-wide text-content/45"
             style={rowGapStyle}
           >
             {grid.weeks.map((_, weekIndex) => {
@@ -153,7 +164,7 @@ export function YearHeatmap({
           </div>
         ) : null}
 
-        <div className="flex min-w-0" style={rowGapStyle}>
+        <div className={`flex min-w-0 ${isFull ? "w-full" : ""}`} style={rowGapStyle}>
           {grid.weeks.map((week, weekIndex) => (
             <div
               key={weekIndex}

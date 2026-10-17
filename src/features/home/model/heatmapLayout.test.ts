@@ -50,7 +50,37 @@ describe("computeHeatmapCellLayout", () => {
     });
     expect(layout.showMonthLabels).toBe(true);
     expect(layout.showLegend).toBe(true);
-    expect(layout.cellPx).toBeLessThanOrEqual(13);
+    expect(layout.cellPx).toBeGreaterThanOrEqual(10);
+    expect(layout.cellPx).toBeLessThanOrEqual(22);
+  });
+
+  it("full variant fills width even when measured height is short", () => {
+    const layout = computeHeatmapCellLayout({
+      widthPx: 700,
+      heightPx: 40,
+      weekCount: 53,
+      variant: "full",
+    });
+    const gridW = 53 * layout.cellPx + 52 * layout.gapXPx;
+    expect(layout.cellPx).toBeGreaterThanOrEqual(10);
+    expect(gridW).toBeGreaterThanOrEqual(Math.floor(700 * 0.92));
+    expect(gridW).toBeLessThanOrEqual(700);
+    expect(layout.showMonthLabels).toBe(true);
+    expect(layout.showLegend).toBe(true);
+  });
+
+  it("full variant stretches across a Usage card width", () => {
+    const layout = computeHeatmapCellLayout({
+      widthPx: 720,
+      heightPx: 200,
+      weekCount: 53,
+      variant: "full",
+    });
+    const gridW = 53 * layout.cellPx + 52 * layout.gapXPx;
+    expect(layout.cellPx).toBeGreaterThanOrEqual(11);
+    expect(gridW).toBeGreaterThanOrEqual(Math.floor(720 * 0.95));
+    expect(gridW).toBeLessThanOrEqual(720);
+    expect(layout.gapXPx).toBeLessThanOrEqual(8);
   });
 
   it("respects height before width when the card is short", () => {

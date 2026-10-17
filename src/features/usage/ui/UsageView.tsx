@@ -133,7 +133,9 @@ export function UsageView({
               Activity
             </h2>
             {activity.status === "ready" ? (
-              <YearHeatmap grid={activity.grid} variant="full" />
+              <div className="w-full min-w-0">
+                <YearHeatmap grid={activity.grid} variant="full" />
+              </div>
             ) : activity.status === "error" ? (
               <p className="font-mono text-[12px] text-content/45">
                 {activity.message}
