@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Jira Inbox cascade rows use clearer tree guides, tighter child density, a soft expanded-group background, and omit the repeated project subtitle on nested issues.
+- Jira Inbox cascade keeps parent rows aligned with flat issues: **Show subtasks** / **Hide subtasks** sits beside the timestamp, nested rows use a continuous tree rail through the list gap, denser children, a soft expanded-group wash, and no repeated project subtitle.
+- Working-rail **X** closes the session tab in every card state. Finished chats dismiss immediately; a still-running turn asks before stop-and-close.
 
 ## [1.0.16] - 2026-10-17
 
