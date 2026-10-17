@@ -93,6 +93,42 @@
   mask-size: 100% calc(100% + 4rem);
 }
 
+.board-markdown .agent-markdown {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.board-markdown .agent-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.85em 0 0.35em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-content);
+}
+
+.board-markdown .agent-markdown h1 {
+  font-size: 1.2em;
+}
+
+.board-markdown .agent-markdown h2 {
+  font-size: 1.1em;
+}
+
+.board-markdown .agent-markdown h3 {
+  font-size: 1.05em;
+}
+
+.board-markdown .agent-markdown p:first-child,
+.board-markdown .agent-markdown :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.board-markdown .agent-markdown code:not([data-block]) {
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--color-content) 8%, transparent);
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .task-board-fold {
     transition: none !important;

@@ -142,6 +142,37 @@ const LocalImageSourcesContext = createContext<ReadonlyMap<string, string> | und
 const LocalMediaContext = createContext(false);
 const MarkdownFadeContext = createContext(false);
 
+type TaskToggleApi = {
+  onToggle: (index: number, checked: boolean) => void;
+  nextIndex: () => number;
+};
+
+const TaskToggleContext = createContext<TaskToggleApi | null>(null);
+
+const LONG_URL_LABEL = 48;
+
+/** Shorten a bare autolink label so long URLs stay readable in preview. */
+function linkLabel(href: string | undefined, label: string): ReactNode {
+  if (!href || label !== href || !/^https?:\/\//i.test(href)) return null;
+  if (href.length <= LONG_URL_LABEL) return null;
+  try {
+    const url = new URL(href);
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    const clipped =
+      path.length > 28 ? `${path.slice(0, 14)}…${path.slice(-10)}` : path;
+    return (
+      <span className="markdown-url-label" title={href}>
+        <span className="markdown-url-host">{url.host}</span>
+        {clipped && clipped !== "/" ? (
+          <span className="markdown-url-path">{clipped}</span>
+        ) : null}
+      </span>
+    );
+  } catch {
+    return `${href.slice(0, LONG_URL_LABEL - 1)}…`;
+  }
+}
+
 const REVEAL_LABEL = IS_MAC
   ? "Reveal in Finder"
   : IS_WIN
@@ -259,10 +290,12 @@ function MarkdownLink({
     return <InboxMedia src={href} alt={label} />;
   }
 
+  const pretty = linkLabel(href, label);
   const link = (
     <a
       href={href}
       className={`text-sky-400/90 hover:text-sky-300 hover:underline ${className ?? ""}`}
+      title={pretty && href ? href : undefined}
       {...props}
       dir={dir ?? "auto"}
       onClick={(event) => {
@@ -286,7 +319,7 @@ function MarkdownLink({
         onFileContextMenu(event, file.path, file.navigation);
       }}
     >
-      {children}
+      {pretty ?? children}
     </a>
   );
   if (localMedia && file && isLocalMediaPath(file.path)) {
@@ -523,10 +556,54 @@ function MarkdownImage({
   return <InboxMedia src={url} alt={alt} />;
 }
 
+type MarkdownInputProps = ComponentProps<"input"> & { node?: unknown };
+
+function MarkdownCheckbox({
+  type,
+  checked,
+  disabled: _disabled,
+  node: _node,
+  onChange,
+  className,
+  ...props
+}: MarkdownInputProps) {
+  const tasks = useContext(TaskToggleContext);
+  if (type !== "checkbox") {
+    return <input type={type} checked={checked} onChange={onChange} className={className} {...props} />;
+  }
+  if (!tasks) {
+    return (
+      <input
+        type="checkbox"
+        checked={!!checked}
+        disabled
+        className={`markdown-task-checkbox ${className ?? ""}`}
+        {...props}
+      />
+    );
+  }
+  const index = tasks.nextIndex();
+  return (
+    <input
+      type="checkbox"
+      checked={!!checked}
+      className={`markdown-task-checkbox is-interactive ${className ?? ""}`}
+      aria-label={checked ? "Mark task incomplete" : "Mark task complete"}
+      onChange={(event) => {
+        onChange?.(event);
+        if (event.defaultPrevented) return;
+        tasks.onToggle(index, event.target.checked);
+      }}
+      {...props}
+    />
+  );
+}
+
 const MARKDOWN_COMPONENTS = {
   a: MarkdownLink,
   code: MarkdownCode,
   img: MarkdownImage,
+  input: MarkdownCheckbox,
 } satisfies Components;
 
 /**
@@ -566,6 +643,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
   localImageSources,
   localMedia,
   hardBreaks,
+  onToggleTask,
 }: {
   text: string;
   streaming?: boolean;
@@ -580,9 +658,24 @@ export const AgentMarkdown = memo(function AgentMarkdown({
   localMedia?: boolean;
   /** Show a newline inside a block as a line break, as a document does (#591). */
   hardBreaks?: boolean;
+  /** When set, GFM task-list checkboxes are interactive and call back by index. */
+  onToggleTask?: (index: number, checked: boolean) => void;
 }) {
   const [fileMenu, setFileMenu] = useState<FileLinkMenu | null>(null);
   const [fileActionError, setFileActionError] = useState<string | null>(null);
+  const taskIndexRef = useRef(0);
+  taskIndexRef.current = 0;
+  const taskToggle = useMemo<TaskToggleApi | null>(() => {
+    if (!onToggleTask) return null;
+    return {
+      onToggle: onToggleTask,
+      nextIndex: () => {
+        const index = taskIndexRef.current;
+        taskIndexRef.current += 1;
+        return index;
+      },
+    };
+  }, [onToggleTask]);
   const onFileContextMenu = useCallback(
     (event: ReactMouseEvent, path: string, navigation?: EditorNavigation) => {
       event.preventDefault();
@@ -677,44 +770,46 @@ export const AgentMarkdown = memo(function AgentMarkdown({
       <RemoteMediaContext.Provider value={remoteMedia}>
         <LocalMediaContext.Provider value={!!localMedia}>
           <FileOpenContext.Provider value={fileOpen}>
-            <>
-              <MarkdownFadeContext.Provider value={fading}>
-                {/* Streamdown takes no style; a contents box passes the fade timing down. */}
-                <div className="contents" style={fadeStyle}>
-                  <Streamdown
-                    BlockComponent={DirectionalBlock}
-                    className={`agent-markdown min-w-0 font-sans text-sm leading-6 ${fading ? "word-fading" : ""} ${className ?? ""}`}
-                    components={MARKDOWN_COMPONENTS}
-                    controls={false}
-                    dir="auto"
-                    isAnimating={!!streaming || paced.revealing}
-                    parseIncompleteMarkdown={false}
-                    parseMarkdownIntoBlocksFn={parseStreamingMarkdown}
-                    plugins={MARKDOWN_PLUGINS}
-                    remarkPlugins={remarkPlugins}
-                    rehypePlugins={rehypePlugins}
-                  >
-                    {paced.text}
-                  </Streamdown>
-                </div>
-              </MarkdownFadeContext.Provider>
-              {fileMenu ? (
-                <ExplorerMenu
-                  x={fileMenu.x}
-                  y={fileMenu.y}
-                  items={fileLinkMenuItems(!!onOpenFile, !!cwd)}
-                  ariaLabel="File link actions"
-                  onPick={onFileMenuPick}
-                  onClose={() => setFileMenu(null)}
-                />
-              ) : null}
-              {fileActionError ? (
-                <FileActionError
-                  message={fileActionError}
-                  onDismiss={() => setFileActionError(null)}
-                />
-              ) : null}
-            </>
+            <TaskToggleContext.Provider value={taskToggle}>
+              <>
+                <MarkdownFadeContext.Provider value={fading}>
+                  {/* Streamdown takes no style; a contents box passes the fade timing down. */}
+                  <div className="contents" style={fadeStyle}>
+                    <Streamdown
+                      BlockComponent={DirectionalBlock}
+                      className={`agent-markdown min-w-0 font-sans text-sm leading-6 ${fading ? "word-fading" : ""} ${className ?? ""}`}
+                      components={MARKDOWN_COMPONENTS}
+                      controls={false}
+                      dir="auto"
+                      isAnimating={!!streaming || paced.revealing}
+                      parseIncompleteMarkdown={false}
+                      parseMarkdownIntoBlocksFn={parseStreamingMarkdown}
+                      plugins={MARKDOWN_PLUGINS}
+                      remarkPlugins={remarkPlugins}
+                      rehypePlugins={rehypePlugins}
+                    >
+                      {paced.text}
+                    </Streamdown>
+                  </div>
+                </MarkdownFadeContext.Provider>
+                {fileMenu ? (
+                  <ExplorerMenu
+                    x={fileMenu.x}
+                    y={fileMenu.y}
+                    items={fileLinkMenuItems(!!onOpenFile, !!cwd)}
+                    ariaLabel="File link actions"
+                    onPick={onFileMenuPick}
+                    onClose={() => setFileMenu(null)}
+                  />
+                ) : null}
+                {fileActionError ? (
+                  <FileActionError
+                    message={fileActionError}
+                    onDismiss={() => setFileActionError(null)}
+                  />
+                ) : null}
+              </>
+            </TaskToggleContext.Provider>
           </FileOpenContext.Provider>
         </LocalMediaContext.Provider>
       </RemoteMediaContext.Provider>
@@ -729,6 +824,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile,
   header,
   hardBreaks,
+  allowRemoteMedia,
+  localImageSources,
+  onToggleTask,
 }: {
   text: string;
   streaming?: boolean;
@@ -736,6 +834,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile?: OpenFileFn;
   header?: ReactNode;
   hardBreaks?: boolean;
+  allowRemoteMedia?: boolean;
+  localImageSources?: ReadonlyMap<string, string>;
+  onToggleTask?: (index: number, checked: boolean) => void;
 }) {
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
 
@@ -755,6 +856,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
           cwd={cwd}
           onOpenFile={onOpenFile}
           hardBreaks={hardBreaks}
+          allowRemoteMedia={allowRemoteMedia}
+          localImageSources={localImageSources}
+          onToggleTask={onToggleTask}
         />
       </div>
     </div>

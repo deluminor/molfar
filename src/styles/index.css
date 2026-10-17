@@ -1476,6 +1476,46 @@ input,
   margin-bottom: 0;
 }
 
+.agent-markdown .markdown-url-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.15em;
+  align-items: baseline;
+}
+
+.agent-markdown .markdown-url-host {
+  font-weight: 500;
+}
+
+.agent-markdown .markdown-url-path {
+  opacity: 0.72;
+  font-size: 0.92em;
+}
+
+.agent-markdown .markdown-task-checkbox {
+  appearance: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin: 0 0.4rem 0 0;
+  vertical-align: -0.1em;
+  border: 1.5px solid color-mix(in srgb, var(--color-content) 35%, transparent);
+  border-radius: 0.25rem;
+  background: transparent;
+}
+
+.agent-markdown .markdown-task-checkbox.is-interactive {
+  cursor: pointer;
+}
+
+.agent-markdown .markdown-task-checkbox:checked {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E");
+  background-size: 0.65rem;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .agent-markdown [data-streamdown="blockquote"] {
   padding-left: 0;
   padding-inline-start: 1rem;

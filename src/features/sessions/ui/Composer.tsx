@@ -25,6 +25,7 @@ import {
 } from "react";
 import {
   attachmentsFromFiles,
+  attachmentsFromPaths,
   filesFromClipboard,
   mergeAttachments,
   pickAttachments,
@@ -709,6 +710,30 @@ export function Composer({
     },
     [harness, syncHasValue],
   );
+
+  // Knowledge notes must ride as native file attachments, not as inlined body text.
+  useEffect(() => {
+    const path = noteCard?.filePath?.trim();
+    if (!path || !attachmentsSupported) return;
+    if (attachmentsRef.current.some((file) => file.path === path)) return;
+    let alive = true;
+    void attachmentsFromPaths([path])
+      .then((files) => {
+        if (!alive || files.length === 0) return;
+        addAttachments(files);
+      })
+      .catch((error: unknown) => {
+        if (!alive) return;
+        console.error("Failed to attach knowledge note file:", error);
+        setPasteError(
+          `Could not attach the knowledge note file: ${String(error)}`,
+        );
+      });
+    return () => {
+      alive = false;
+    };
+  }, [noteCard?.filePath, attachmentsSupported, addAttachments]);
+
   // Native listener registration crosses several IPC hops. Keep changing
   // composer callbacks and capabilities out of its subscription dependencies.
   const fileDropStateRef = useRef({

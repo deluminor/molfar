@@ -47,6 +47,11 @@ export type NoteCardMeta = {
 /** Composer chip: display fields plus the body injected into the harness prompt. */
 export type NoteComposerCard = NoteCardMeta & {
   body: string;
+  /**
+   * Absolute path to attach as a native file instead of inlining `body`.
+   * Used for Knowledge vault notes so the agent reads the file on disk.
+   */
+  filePath?: string;
 };
 
 export function noteCardMeta(card: NoteComposerCard): NoteCardMeta {
@@ -352,6 +357,23 @@ export function composeNoteMessage(
 ): string {
   if (!card) return text.trim();
   const lead = text.trim() || "Use this note.";
+  // Knowledge vault notes travel as files (attachment + disk path), not inlined body.
+  if (card.filePath && card.source?.kind === "knowledge") {
+    const source = JSON.stringify({
+      vault: card.source.vaultName,
+      path: card.source.path,
+      revision: card.source.revision,
+    });
+    return [
+      lead,
+      "",
+      "---",
+      `Knowledge note attached as a file (read it from disk or the attachment; do not expect the body inline).`,
+      `File: ${JSON.stringify(card.filePath)}`,
+      `Knowledge source: ${source}`,
+    ].join("\n");
+  }
+
   let body = card.body;
   if (card.source) {
     body = `Knowledge source: ${JSON.stringify({ vault: card.source.vaultName, path: card.source.path, revision: card.source.revision })}\n\n${body}`;

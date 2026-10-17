@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { projectName } from "../../../../shared/lib/paths";
+import { AlertCircle, ExternalLink, PenLine } from "../../../../shared/ui/icons";
+import { AgentMarkdown } from "../../../sessions/ui/AgentMarkdown";
 import { parseDelivery } from "../../model/delivery-text";
 import { transition } from "../../model/transitions";
 import type { OwnerAction } from "../../services/actions";
 import type { Card } from "../../types/card";
 import type { StageRun } from "../../types/stage";
-import { AlertCircle, ExternalLink, PenLine } from "../../../../shared/ui/icons";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "../button-styles";
 import { CardTimeline } from "./CardTimeline";
 import { FadeFold } from "./FadeFold";
@@ -116,13 +117,17 @@ export function CardOverview({ card, runs, now, onAct, onOpenSession }: Props): 
         ) : (
           <div className="flex flex-col gap-3 rounded-xl border border-stroke bg-content/[0.03] p-3.5">
             <FadeFold label="the task description">
-              <p className="whitespace-pre-wrap text-[13px] leading-5 text-content/85">{card.description}</p>
+              <div className="board-markdown text-[13px] leading-5 text-content/85">
+                <AgentMarkdown text={card.description} hardBreaks />
+              </div>
             </FadeFold>
             {card.acceptanceCriteria ? (
               <div className="flex flex-col gap-1 border-t border-stroke pt-3">
                 <span className="text-[11px] font-medium text-content/45">Acceptance criteria</span>
                 <FadeFold label="the acceptance criteria">
-                  <p className="whitespace-pre-wrap text-[12.5px] leading-5 text-content/70">{card.acceptanceCriteria}</p>
+                  <div className="board-markdown text-[12.5px] leading-5 text-content/70">
+                    <AgentMarkdown text={card.acceptanceCriteria} hardBreaks />
+                  </div>
                 </FadeFold>
               </div>
             ) : null}

@@ -85,7 +85,7 @@ export function BoardColumn({
         )}
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 [scrollbar-gutter:stable]">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 pt-1.5 [scrollbar-gutter:stable]">
         {cards.map((card) => renderCard(card))}
         {cards.length === 0 && !drop ? (
           <div className="mx-1 mt-1 flex flex-col items-center gap-2 rounded-xl px-3 py-6 text-center">
