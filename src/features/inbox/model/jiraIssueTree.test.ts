@@ -112,9 +112,16 @@ describe("flattenJiraIssueTree", () => {
     const expanded = defaultExpandedJiraKeys(roots);
     expect([...expanded]).toEqual([inboxItemKey(epic)]);
     const rows = flattenJiraIssueTree(roots, expanded);
-    expect(rows.map((row) => [row.item.identifier, row.depth, row.expanded])).toEqual([
-      ["ENG-1", 0, true],
-      ["ENG-2", 1, false],
+    expect(
+      rows.map((row) => [
+        row.item.identifier,
+        row.depth,
+        row.expanded,
+        row.isLastSibling,
+      ]),
+    ).toEqual([
+      ["ENG-1", 0, true, true],
+      ["ENG-2", 1, false, true],
     ]);
     expect(flattenJiraIssueTree(roots, new Set()).map((row) => row.item.identifier)).toEqual([
       "ENG-1",

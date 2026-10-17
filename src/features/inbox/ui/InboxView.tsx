@@ -851,6 +851,7 @@ export function InboxView({
         depth: 0,
         hasChildren: false,
         expanded: false,
+        isLastSibling: true,
       })),
     [jiraRows, visibleItems],
   );
@@ -1126,6 +1127,7 @@ export function InboxView({
                     depth={row.depth}
                     hasChildren={row.hasChildren}
                     expanded={row.expanded}
+                    isLastSibling={row.isLastSibling}
                     onToggleExpand={
                       row.hasChildren
                         ? () => toggleJiraExpand(key)
@@ -1621,6 +1623,7 @@ function InboxCard({
   depth = 0,
   hasChildren = false,
   expanded = false,
+  isLastSibling = false,
   onToggleExpand,
   active,
   logoPath,
@@ -1633,6 +1636,7 @@ function InboxCard({
   depth?: number;
   hasChildren?: boolean;
   expanded?: boolean;
+  isLastSibling?: boolean;
   onToggleExpand?: () => void;
   active: boolean;
   logoPath: string | null;
@@ -1671,7 +1675,9 @@ function InboxCard({
     item.provider === "jira" && (nested || (hasChildren && expanded));
   const showSourceSubtitle = !nested;
   const showMetaRow = showSourceSubtitle || item.labels.length > 0;
-  const chevronOffset = nested ? "mt-2" : "mt-2.5";
+  const selectLabel = `${status.label} ${kindLabel.toLowerCase()} ${inboxItemRef(
+    item,
+  )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`;
 
   return (
     <div
@@ -1684,38 +1690,21 @@ function InboxCard({
       }`}
       style={{ paddingLeft: indentPx }}
     >
-      <InboxTreeGutter depth={depth} />
-      {hasChildren ? (
-        <button
-          type="button"
-          aria-label={expanded ? "Collapse" : "Expand"}
-          aria-expanded={expanded}
-          className={`${chevronOffset} grid size-5 shrink-0 place-items-center rounded-sm text-content/45 hover:bg-content/10 hover:text-content`}
-          onClick={onToggleExpand}
-        >
-          {expanded ? (
-            <ChevronDown className="size-3" strokeWidth={2} />
-          ) : (
-            <ChevronRight className="size-3" strokeWidth={2} />
-          )}
-        </button>
-      ) : nested ? (
-        <span aria-hidden className={`${chevronOffset} size-5 shrink-0`} />
-      ) : null}
-      <button
-        type="button"
-        title={item.title}
-        aria-current={active ? "true" : undefined}
-        aria-label={`${status.label} ${kindLabel.toLowerCase()} ${inboxItemRef(
-          item,
-        )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`}
-        onClick={onSelect}
-        className={`flex min-w-0 flex-1 flex-col rounded-md px-2.5 text-left ${
+      <InboxTreeGutter depth={depth} isLast={isLastSibling} />
+      <div
+        className={`flex min-w-0 flex-1 flex-col px-2.5 text-left ${
           nested ? "py-1.5" : "py-2"
         }`}
       >
         <span className="flex items-center gap-2">
-          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <button
+            type="button"
+            title={item.title}
+            aria-current={active ? "true" : undefined}
+            aria-label={selectLabel}
+            onClick={onSelect}
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left"
+          >
             <InboxProviderMark
               provider={item.provider}
               className="size-3.5 shrink-0"
@@ -1728,8 +1717,8 @@ function InboxCard({
               {kindLabel} · {inboxItemRef(item)}
               {attentionLabel ? ` · ${attentionLabel}` : ""}
             </span>
-          </span>
-          {relatedSessionCount > 0 || time || unseen ? (
+          </button>
+          {relatedSessionCount > 0 || time || unseen || hasChildren ? (
             <span className="flex shrink-0 items-center gap-1.5">
               {relatedSessionCount > 0 ? (
                 <span
@@ -1745,21 +1734,45 @@ function InboxCard({
                   {time}
                 </span>
               ) : null}
+              {hasChildren ? (
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-sm px-1 py-0.5 text-[11px] text-content/50 hover:bg-content/10 hover:text-content"
+                  onClick={onToggleExpand}
+                >
+                  {expanded ? (
+                    <ChevronDown className="size-3" strokeWidth={2} />
+                  ) : (
+                    <ChevronRight className="size-3" strokeWidth={2} />
+                  )}
+                  <span>{expanded ? "Hide subtasks" : "Show subtasks"}</span>
+                </button>
+              ) : null}
               {unseen ? (
                 <span aria-hidden className="size-1.5 rounded-full bg-accent" />
               ) : null}
             </span>
           ) : null}
         </span>
-        <span
-          className={`line-clamp-1 font-semibold leading-snug text-content ${
+        <button
+          type="button"
+          title={item.title}
+          aria-current={active ? "true" : undefined}
+          aria-label={selectLabel}
+          onClick={onSelect}
+          className={`line-clamp-1 w-full text-left font-semibold leading-snug text-content ${
             nested ? "mt-0.5 text-[12px]" : "mt-1 text-[13px]"
           }`}
         >
           {item.title}
-        </span>
+        </button>
         {showMetaRow ? (
-          <span className={`flex min-w-0 items-center gap-2 ${nested ? "mt-0.5" : "mt-1"}`}>
+          <button
+            type="button"
+            onClick={onSelect}
+            className={`flex w-full min-w-0 items-center gap-2 text-left ${nested ? "mt-0.5" : "mt-1"}`}
+          >
             {showSourceSubtitle ? (
               <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
                 {tracker || !item.projectPath ? null : logoPath ? (
@@ -1788,9 +1801,9 @@ function InboxCard({
                 ))}
               </span>
             ) : null}
-          </span>
+          </button>
         ) : null}
-      </button>
+      </div>
     </div>
   );
 }
