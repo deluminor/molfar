@@ -1681,6 +1681,7 @@ function InboxCard({
 
   return (
     <div
+      data-inbox-card={inboxItemKey(item)}
       className={`relative flex w-full items-start rounded-md border ${
         active
           ? "border-transparent bg-selection text-content"
@@ -1699,7 +1700,6 @@ function InboxCard({
         <span className="flex items-center gap-2">
           <button
             type="button"
-            title={item.title}
             aria-current={active ? "true" : undefined}
             aria-label={selectLabel}
             onClick={onSelect}
