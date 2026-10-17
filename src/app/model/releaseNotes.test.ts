@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   formatReleaseDate,
   formatUpdateDate,
+  listRecentReleases,
+  listWhatsNewReleases,
   presentReleaseNotes,
+  releaseForeshadow,
   releaseNotesForVersion,
   releaseNotesMarkdown,
   releaseNotesTitle,
@@ -108,6 +111,55 @@ describe("presentReleaseNotes", () => {
 
   it("returns null when the version is missing", () => {
     expect(presentReleaseNotes("9.9.9", fixture)).toBeNull();
+  });
+});
+
+describe("releaseForeshadow", () => {
+  it("returns the first bullet as plain text", () => {
+    expect(releaseForeshadow("### Added\n- **Bold** `code` item.")).toBe(
+      "Bold code item.",
+    );
+  });
+
+  it("returns null when there is no bullet", () => {
+    expect(releaseForeshadow("### Added\nNo list.")).toBeNull();
+  });
+});
+
+describe("listRecentReleases", () => {
+  it("skips Unreleased, keeps newest first, and caps the list", () => {
+    expect(listRecentReleases(fixture, 2)).toEqual([
+      {
+        version: "0.1.3",
+        date: "2026-09-01",
+        foreshadow: "Newer fix.",
+        markdown: "### Fixed\n- Newer fix.",
+      },
+      {
+        version: "0.1.2",
+        date: "2026-08-31",
+        foreshadow: "Requested feature.",
+        markdown: "### Added\n- Requested feature.",
+      },
+    ]);
+  });
+
+  it("returns an empty list for a non-positive limit", () => {
+    expect(listRecentReleases(fixture, 0)).toEqual([]);
+  });
+});
+
+describe("listWhatsNewReleases", () => {
+  it("returns the recent window when the focus version is inside it", () => {
+    expect(listWhatsNewReleases("0.1.3", fixture, 2).map((e) => e.version)).toEqual(
+      ["0.1.3", "0.1.2"],
+    );
+  });
+
+  it("appends a focus version that falls outside the newest window", () => {
+    expect(listWhatsNewReleases("0.1.1", fixture, 2).map((e) => e.version)).toEqual(
+      ["0.1.3", "0.1.1"],
+    );
   });
 });
 

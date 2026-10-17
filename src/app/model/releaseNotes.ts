@@ -52,6 +52,33 @@ export type ReleaseNotesPresentation = {
   markdown: string;
 };
 
+/** One release in the What's New accordion: chrome fields + body markdown. */
+export type ReleaseNotesEntry = {
+  version: string;
+  date: string | null;
+  foreshadow: string | null;
+  markdown: string;
+};
+
+export const RECENT_RELEASES_LIMIT = 10;
+
+const RELEASE_HEADING =
+  /^## \[([^\]]+)\](?: - (\d{4}-\d{2}-\d{2}))?\r?$/gm;
+
+/** Quiet preview line for a collapsed accordion row (first bullet, plain text). */
+export function releaseForeshadow(markdown: string): string | null {
+  const match = /^- (.+)$/m.exec(markdown);
+  if (!match) return null;
+
+  const plain = match[1]
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+
+  return plain.length > 0 ? plain : null;
+}
+
 /** Changelog body for the What's new modal: version heading lives in the chrome. */
 export function presentReleaseNotes(
   version: string,
@@ -76,6 +103,68 @@ export function presentReleaseNotes(
       ? release.markdown.slice(match[0].length).trimStart()
       : release.markdown,
   };
+}
+
+/**
+ * Bundled releases newest-first, skipping Unreleased. Caps at `limit` (default 10).
+ */
+export function listRecentReleases(
+  changelog: string = bundledChangelog,
+  limit: number = RECENT_RELEASES_LIMIT,
+): ReleaseNotesEntry[] {
+  if (limit <= 0) return [];
+
+  const entries: ReleaseNotesEntry[] = [];
+  const heading = new RegExp(RELEASE_HEADING.source, "gm");
+  let match: RegExpExecArray | null;
+
+  while ((match = heading.exec(changelog)) !== null) {
+    const version = match[1];
+    if (!version || version === "Unreleased") continue;
+
+    const presented = presentReleaseNotes(version, changelog);
+    if (!presented) continue;
+
+    entries.push({
+      version: presented.version,
+      date: presented.date,
+      foreshadow: releaseForeshadow(presented.markdown),
+      markdown: presented.markdown,
+    });
+
+    if (entries.length >= limit) break;
+  }
+
+  return entries;
+}
+
+/**
+ * Recent releases for the What's New accordion. Ensures `focusVersion` appears
+ * when it exists in the changelog but falls outside the newest-N window.
+ */
+export function listWhatsNewReleases(
+  focusVersion: string,
+  changelog: string = bundledChangelog,
+  limit: number = RECENT_RELEASES_LIMIT,
+): ReleaseNotesEntry[] {
+  const recent = listRecentReleases(changelog, limit);
+  const normalized = focusVersion.trim();
+  if (!normalized || recent.some((entry) => entry.version === normalized)) {
+    return recent;
+  }
+
+  const focused = presentReleaseNotes(normalized, changelog);
+  if (!focused) return recent;
+
+  return [
+    ...recent.slice(0, Math.max(0, limit - 1)),
+    {
+      version: focused.version,
+      date: focused.date,
+      foreshadow: releaseForeshadow(focused.markdown),
+      markdown: focused.markdown,
+    },
+  ];
 }
 
 const MONTHS = [

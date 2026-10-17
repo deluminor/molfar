@@ -5,10 +5,12 @@ import { Modal } from "../../shared/ui/Modal";
 type ReleaseNotesDialogProps = {
   title: string;
   description: string;
-  label: string;
-  markdown: string | null;
   footer?: ReactNode;
   onClose: () => void;
+  /** Single-release body when `children` is omitted. */
+  label?: string;
+  markdown?: string | null;
+  children?: ReactNode;
 };
 
 export function ReleaseNotesBody({
@@ -42,6 +44,7 @@ export function ReleaseNotesDialog({
   markdown,
   footer,
   onClose,
+  children,
 }: ReleaseNotesDialogProps) {
   return (
     <Modal
@@ -52,7 +55,9 @@ export function ReleaseNotesDialog({
       className="h-[min(72vh,640px)]"
       footer={footer}
     >
-      <ReleaseNotesBody label={label} markdown={markdown} />
+      {children ?? (
+        <ReleaseNotesBody label={label ?? ""} markdown={markdown ?? null} />
+      )}
     </Modal>
   );
 }

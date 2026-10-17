@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- What's New lists recent releases as an accordion — current version open first, older ones collapsed with a quiet preview.
+
 ### Changed
 
 - Jira Inbox cascade rows use clearer tree guides, tighter child density, a soft expanded-group background, and omit the repeated project subtitle on nested issues.
