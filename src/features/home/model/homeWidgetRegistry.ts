@@ -8,7 +8,7 @@ export const HOME_WIDGET_LABELS: Record<HomeWidgetId, string> = {
   host: "Host",
   usage: "Usage",
   inbox: "Inbox",
-  git: "Git",
+  git: "Activity",
   sessions: "Sessions",
   automations: "Automations",
   matrix: "Matrix",

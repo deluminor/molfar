@@ -6,14 +6,14 @@ import {
   useHomeLayoutEditing,
   type HomeLayoutEditing,
 } from "../hooks/useHomeLayoutEditing";
-import { useGitPulse } from "../hooks/useGitPulse";
 import { useHostStats } from "../hooks/useHostStats";
 import { useInboxPulse } from "../hooks/useInboxPulse";
+import { useSessionActivity } from "../hooks/useSessionActivity";
 import { useUsagePulse } from "../hooks/useUsagePulse";
+import { ActivityCard } from "./ActivityCard";
 import { AutomationsCard } from "./AutomationsCard";
 import { ClockCard } from "./ClockCard";
 import { BrandCard } from "./BrandCard";
-import { GitPulseCard } from "./GitPulseCard";
 import { HiddenWidgetsStrip } from "./HiddenWidgetsStrip";
 import { HomeCard } from "./HomeCard";
 import { HomeGrid, type HomeWidgets } from "./HomeGrid";
@@ -29,7 +29,7 @@ type Props = {
   besideRail?: boolean;
   compactRail?: boolean;
   projectPaths?: readonly string[];
-  /** Project selected on the rail; drives Git pulse and Inbox ordering. */
+  /** Project selected on the rail; drives Inbox ordering. */
   projectCwd?: string;
   onClose: () => void;
   onToggleSidebar?: () => void;
@@ -94,10 +94,10 @@ export function HomeView({
   const layoutEditing = useHomeLayoutEditing();
   const usageEnabled = !layoutEditing.hidden.includes("usage");
   const inboxEnabled = !layoutEditing.hidden.includes("inbox");
-  const gitEnabled = !layoutEditing.hidden.includes("git");
+  const activityEnabled = !layoutEditing.hidden.includes("git");
   const usage = useUsagePulse(usageEnabled);
   const inbox = useInboxPulse(projectPaths, projectCwd, inboxEnabled);
-  const git = useGitPulse(projectCwd, gitEnabled);
+  const activity = useSessionActivity(projectPaths, activityEnabled);
 
   const widgets: HomeWidgets = {
     clock: <ClockCard />,
@@ -114,7 +114,7 @@ export function HomeView({
     ),
     usage: <UsageCard rows={usage} onOpenUsage={onOpenUsage} />,
     inbox: <InboxPulseCard state={inbox} onOpenInbox={onOpenInbox} />,
-    git: <GitPulseCard cwd={projectCwd} state={git} />,
+    git: <ActivityCard state={activity} />,
     sessions: (
       <SessionsCard
         sessions={dashboard.sessions}
