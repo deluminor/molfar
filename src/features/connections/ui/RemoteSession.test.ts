@@ -382,7 +382,23 @@ async function settle() {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 }
-const byLabel = (prefix: string) =>
+/** Waits for poll-driven UI while keeping each snapshot update inside act. */
+async function waitForHost(assert: () => void, timeout = 4_000) {
+  const deadline = Date.now() + timeout;
+  let lastError: unknown;
+  while (Date.now() < deadline) {
+    try {
+      assert();
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+  }
+  throw lastError;
+}const byLabel = (prefix: string) =>
   container.querySelector<HTMLButtonElement>(`button[aria-label^="${prefix}"]`);
 async function type(text: string) {
   const textarea = container.querySelector("textarea")!;
@@ -1003,9 +1019,7 @@ it("holds a settings change during a running turn and applies it afterwards", as
     runId: "run",
     session: { ...host!.session, busy: true },
   };
-  await vi.waitFor(() => expect(byLabel("Stop")).not.toBeNull(), {
-    timeout: 4_000,
-  });
+  await waitForHost(() => expect(byLabel("Stop")).not.toBeNull());
   await chooseEffort("Low");
   expect(commands.some((command) => command.type === "configure")).toBe(false);
 
@@ -1019,13 +1033,11 @@ it("holds a settings change during a running turn and applies it afterwards", as
     runId: undefined,
     session: { ...host!.session, busy: false },
   };
-  await vi.waitFor(
-    () =>
-      expect(commands.at(-1)).toMatchObject({
-        type: "configure",
-        modelSettings: { reasoningEffort: "low" },
-      }),
-    { timeout: 4_000 },
+  await waitForHost(() =>
+    expect(commands.at(-1)).toMatchObject({
+      type: "configure",
+      modelSettings: { reasoningEffort: "low" },
+    }),
   );
 });
 
