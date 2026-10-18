@@ -12,21 +12,19 @@ Tooling it relies on: `scripts/upstream/apply.mjs` (per-path patch, exit codes 0
 You are running a scheduled upstream sync for MOLFAR (`deluminor/molfar`), a standalone repository derived from MonoCode (`hardbeat920/monocode`). MOLFAR is no longer a GitHub fork, so GitHub cannot sync it; this automation does it with plain git.
 
 ## Branch model
-- `upstream/main` — MonoCode's default branch (remote `upstream`).
-- `origin/upstream-main` — read-only mirror of `upstream/main` kept on our repo. Only ever fast-forwarded.
+- `upstream/main` — MonoCode's default branch (remote `upstream`, fetch only). It is not mirrored as a branch on our repo: that would inflate the GitHub contributors list with every MonoCode author.
 - `origin/main` — MOLFAR's product branch. Protected by a ruleset: changes land only through pull requests. It shares **no commits** with MonoCode: its history was reset to a single MOLFAR commit so that the repository's contributors are MOLFAR's own. Upstream changes are therefore applied as **patches**, never merged.
 - `.github/upstream-sync.json` (on `main`) — `syncedCommit` is the last MonoCode commit whose changes are in `main`.
 
 ## Goal
-1. Fast-forward `origin/upstream-main` to `upstream/main`.
-2. Apply the changes between `syncedCommit` and `origin/upstream-main` to `main` through a pull request that builds, passes checks, keeps every MOLFAR feature and branding, and brings in every upstream change — with English release notes describing what changed.
+Apply the changes between `syncedCommit` and `upstream/main` to `main` through a pull request that builds, passes checks, keeps every MOLFAR feature and branding, and brings in every upstream change — with English release notes describing what changed.
 
 The default outcome is a ready-to-review PR. A "Sync blocked" Issue is the exception, used only under the conditions in step 4c.
 
 ## Hard rules
 1. Work only in this repository. Do not touch unrelated repos.
-2. Never force-push. Never push to `main`. The only direct push to a protected ref allowed is a fast-forward of `upstream-main`.
-3. Never `git merge`, `git cherry-pick`, `git rebase` onto, or otherwise bring MonoCode commits (anything reachable from `upstream-main` or `upstream/main`) into a MOLFAR branch, with or without `--allow-unrelated-histories`. It would add every MonoCode author back to MOLFAR's contributors. CI rejects such branches. Upstream content arrives only through `node scripts/upstream/apply.mjs`.
+2. Never force-push. Never push to `main` or any other protected ref, and never push MonoCode refs to our repo.
+3. Never `git merge`, `git cherry-pick`, `git rebase` onto, or otherwise bring MonoCode commits (anything reachable from `upstream/main`) into a MOLFAR branch, with or without `--allow-unrelated-histories`. It would add every MonoCode author back to MOLFAR's contributors. CI rejects such branches. Upstream content arrives only through `node scripts/upstream/apply.mjs`.
 4. Never push or open PRs to `hardbeat920/monocode`. `gh` commands must target `deluminor/molfar` (pass `-R deluminor/molfar`).
 5. If there is nothing new to sync, exit silently: no PR, no Issue, no extra commits.
 6. Never commit conflict markers.
@@ -46,49 +44,42 @@ The default outcome is a ready-to-review PR. A "Sync blocked" Issue is the excep
   ```
 - Fetch:
   ```bash
-  git fetch origin main upstream-main
+  git fetch origin main
   git fetch upstream main
   ```
 - Work from a fresh branch based on `origin/main`; do not dirty the user's WIP.
 - Check that the patch-sync tooling is on `main`: `git cat-file -e origin/main:scripts/upstream/apply.mjs && git cat-file -e origin/main:.github/upstream-sync.json`. If either is missing, stop. Report only the one-liner `Patch-sync tooling is not on main yet; sync skipped.` Do not merge, do not open a PR or an Issue.
 - Check the repository's git identity and state before any commit. `git config user.name` / `git config user.email` must be the owner's identity: never `CRLF Test`, and never an `@example.invalid` address. `git config --get core.bare` must be `false`. If any check fails, the repository config was corrupted by a test fixture. Stop and open a `Sync blocked: repository git config corrupted (YYYY-MM-DD)` Issue listing the bad keys. Do not repair the config yourself and do not commit.
 
-### 2. Refresh the mirror
-- If `origin/upstream-main` equals `upstream/main`, continue to step 3.
-- If `origin/upstream-main` is an ancestor of `upstream/main`, fast-forward it:
-  ```bash
-  git merge-base --is-ancestor origin/upstream-main upstream/main
-  git push origin upstream/main:refs/heads/upstream-main
-  git fetch origin upstream-main
-  ```
-- Otherwise MonoCode rewrote history. Do not force-push. Open an Issue titled `Sync blocked: upstream-main diverged from MonoCode (YYYY-MM-DD)` describing both heads, then stop.
+### 2. No mirror
+MonoCode is read from `upstream/main` directly. Do not create or push an `upstream-main` branch.
 
 ### 3. Divergence check and open sync PRs
 ```bash
 SYNCED=$(git show origin/main:.github/upstream-sync.json | node -e 'process.stdin.on("data", d => console.log(JSON.parse(d).syncedCommit))')
-git merge-base --is-ancestor "$SYNCED" origin/upstream-main   # must succeed
-git rev-list --count "$SYNCED"..origin/upstream-main
+git merge-base --is-ancestor "$SYNCED" upstream/main   # must succeed
+git rev-list --count "$SYNCED"..upstream/main
 ```
-- If `syncedCommit` is not an ancestor of `origin/upstream-main`, MonoCode rewrote history: open `Sync blocked: upstream-main diverged from MonoCode (YYYY-MM-DD)` with both commits and stop.
+- If `syncedCommit` is not an ancestor of `upstream/main`, MonoCode rewrote history: open `Sync blocked: MonoCode history diverged (YYYY-MM-DD)` with both commits and stop.
 - If the count is `0`, stop immediately. No PR, no Issue. Report only a one-liner that nothing needed syncing.
-- Never use `origin/main..origin/upstream-main` for counting or notes: the histories are unrelated, so that range is all of MonoCode.
+- Never use `origin/main..upstream/main` for counting or notes: the histories are unrelated, so that range is all of MonoCode.
 - Check for an open sync PR: `gh pr list -R deluminor/molfar --state open --json number,headRefName,url --jq '.[] | select(.headRefName | startswith("sync/upstream-into-main-"))'`.
-  - Read that branch's `.github/upstream-sync.json`. If its `syncedCommit` equals `origin/upstream-main`, stop: report the existing PR URL only.
-  - If it is behind, do not open a second PR. Check out its head branch, run `node scripts/upstream/apply.mjs` again (it continues from the branch's recorded commit; steps 4–6 apply), commit, push normally (no force), and update that PR's and its linked Issue's bodies with refreshed notes covering the full range from `main`'s `syncedCommit` to `origin/upstream-main`.
+  - Read that branch's `.github/upstream-sync.json`. If its `syncedCommit` equals `upstream/main`, stop: report the existing PR URL only.
+  - If it is behind, do not open a second PR. Check out its head branch, run `node scripts/upstream/apply.mjs` again (it continues from the branch's recorded commit; steps 4–6 apply), commit, push normally (no force), and update that PR's and its linked Issue's bodies with refreshed notes covering the full range from `main`'s `syncedCommit` to `upstream/main`.
 
 ### 4. Sync branch + patch
 - Date stamp `YYYYMMDD` (local). Branch `sync/upstream-into-main-YYYYMMDD`; if it already exists on `origin`, append `-2`, `-3`, …
 - Create it from `origin/main` and apply the upstream patch:
   ```bash
   git switch -c sync/upstream-into-main-YYYYMMDD origin/main
-  node scripts/upstream/apply.mjs origin/upstream-main
+  node scripts/upstream/apply.mjs upstream/main
   ```
-  It applies `git diff <syncedCommit> origin/upstream-main` to the working tree and index **one path at a time** as three-way patches, updates `.github/upstream-sync.json`, and prints JSON with `status`, the upstream `commits`, `conflicts`, `pending`, `retargeted` and `added`. Exit `0` = applied (or up to date), `2` = conflict markers left in the listed files, `3` = upstream history diverged (open the diverged Issue from step 3 and stop), `4` = pending ports were written (conflicts may also be present; handle both).
+  It applies `git diff <syncedCommit> upstream/main` to the working tree and index **one path at a time** as three-way patches, updates `.github/upstream-sync.json`, and prints JSON with `status`, the upstream `commits`, `conflicts`, `pending`, `remapped` (paths translated through `scripts/upstream/rename-map.mjs`, e.g. Monos → Familiars), `retargeted` and `added`. Exit `0` = applied (or up to date), `2` = conflict markers left in the listed files, `3` = upstream history diverged (open the diverged Issue from step 3 and stop), `4` = pending ports were written (conflicts may also be present; handle both).
   - `retargeted`: upstream edits to paths MOLFAR renamed, already applied to the MOLFAR path through `.github/upstream-moves.json`. Treat them like any applied change (they can also appear in `conflicts`).
   - `pending`: upstream changes to paths MOLFAR split, removed, or moved without a map entry. They were **not** applied; each has its diff under `.upstream-pending/<from>..<to>/`. Step 4b-bis ports them.
   - `added`: new upstream files. Step 4b-ter adapts them to MOLFAR's structure.
   - `extracted`: paths that still exist but from which MOLFAR moved some declarations (types, helpers) into other modules; each lists `names` and `target`. When an upstream hunk touches one of those names, it conflicts or lands next to code that moved: port that part into `target` and keep the old location clean.
-- In this prompt, "the range" means `<syncedCommit>..origin/upstream-main`, and "the upstream diff of a file" means `git diff <syncedCommit> origin/upstream-main -- <path>`. Before resolving anything, read `git log --oneline` of the range and the upstream diff of every conflicting file, so you understand what each upstream change intends.
+- In this prompt, "the range" means `<syncedCommit>..upstream/main`, and "the upstream diff of a file" means `git diff <syncedCommit> upstream/main -- <path>`. Before resolving anything, read `git log --oneline` of the range and the upstream diff of every conflicting file, so you understand what each upstream change intends.
 - MOLFAR's structure differs from MonoCode's: MOLFAR split large modules into folders, renamed files to kebab-case (components stay `PascalCase.tsx`), moved workspace state into a Zustand store (`src/app/workspace/store/`) and stateful flows (`src/app/workspace/flows/`), and regrouped Rust modules into domain folders. `.github/upstream-moves.json` records every move: `renames` (old path → new path), `splits` (old path → `targets` + `notes` describing what went where), `extractions` (old path that still exists → declarations moved to other modules) and `removed` (old path → reason). Read it before resolving anything.
 
 #### 4a. MOLFAR-owned paths — keep MOLFAR's side
@@ -106,8 +97,8 @@ See `docs/releasing.md` → Syncing from upstream.
 MIT requires every copy to carry the copyright and permission notices, so an upstream notice change must never be dropped, even inside the MOLFAR-owned paths above.
 - Check what upstream changed in this range:
   ```bash
-  git diff "$SYNCED" origin/upstream-main --stat -- LICENSE 'LICENSE*' NOTICE 'NOTICE*' '**/LICENSE*' '**/NOTICE*' '**/COPYING*'
-  git diff "$SYNCED" origin/upstream-main -U0 | grep -E '^\+.*(Copyright|SPDX-License-Identifier|Licensed under)'
+  git diff "$SYNCED" upstream/main --stat -- LICENSE 'LICENSE*' NOTICE 'NOTICE*' '**/LICENSE*' '**/NOTICE*' '**/COPYING*'
+  git diff "$SYNCED" upstream/main -U0 | grep -E '^\+.*(Copyright|SPDX-License-Identifier|Licensed under)'
   ```
 - `LICENSE`: keep MOLFAR's text, and add every new or changed upstream copyright line next to the existing `Copyright (c) 2026 Nick` line. Never remove or reword an upstream copyright line or the permission text.
 - `NOTICE`: keep MOLFAR's text, and add upstream additions (new third-party attributions, new notices) in substance.
@@ -130,12 +121,12 @@ Resolve the conflict when both sides' intent is clear and they can coexist. Typi
 - **Upstream extracted code into a new module or hook**: take the extraction, and make sure the old inline copy does not survive next to the new call. Remove imports that become unused, and remove duplicate state, effects, or functions.
 
 After resolving, check every resolved file:
-- `git diff origin/upstream-main -- <path>` and `git diff origin/main -- <path>`. Every upstream hunk must be present (possibly adapted to MOLFAR names), and no MOLFAR-only behavior may have been lost.
+- `git diff upstream/main -- <path>` and `git diff origin/main -- <path>`. Every upstream hunk must be present (possibly adapted to MOLFAR names), and no MOLFAR-only behavior may have been lost.
 - Grep the file for identifiers that upstream removed or moved in this range. They must not remain as dead or duplicated code.
 
 #### 4b-bis. Pending ports (mandatory whenever `pending` is non-empty)
 Every upstream change must land in MOLFAR. A pending port is a change the patch could not place automatically; you place it by hand.
-- Read `.upstream-pending/<from>..<to>/manifest.json`. For each entry read its `.diff`, the upstream commits that touched the path (`git log --oneline <syncedCommit>..origin/upstream-main -- <path>`), and its entry in `.github/upstream-moves.json`.
+- Read `.upstream-pending/<from>..<to>/manifest.json`. For each entry read its `.diff`, the upstream commits that touched the path (`git log --oneline <syncedCommit>..upstream/main -- <path>`), and its entry in `.github/upstream-moves.json`.
 - Find where the touched code lives now. Start from the split `targets` and `notes`; then search the MOLFAR tree for the functions, components, state names, hooks or strings in the hunk context (`rg`, codegraph). Code that lived in `Workspace` (`src/app/App.tsx` upstream) is now in store slices, `flows/` modules, hooks or `ui/` components; follow the notes.
 - Port the intent of every hunk into the new location, in MOLFAR's form: store actions instead of `setState` in `Workspace`, selectors instead of props, MOLFAR names, kebab-case file names. Do not paste the upstream block back as a monolith, and do not recreate a removed file.
 - By reason:
@@ -166,7 +157,7 @@ Then:
 - Open an Issue titled `Sync blocked: MonoCode → main needs human (YYYY-MM-DD)`, labeled `sync-notes` if the label exists. The body starts with a **Needs human** section that lists:
   - every conflicting path, each with a plain-language description of what each side did and the recommended resolution;
   - the decision that blocked you;
-  - the range (`<syncedCommit>..origin/upstream-main`, with both hashes);
+  - the range (`<syncedCommit>..upstream/main`, with both hashes);
   - the local commands to reproduce: `git fetch origin && git switch -c sync/upstream-into-main-YYYYMMDD origin/main && node scripts/upstream/apply.mjs`.
   Include the release notes from step 6, with `Conflict status: Conflicts`.
 - Stop.
@@ -197,13 +188,13 @@ Update tests that assert on renamed keys or names in the same way.
 - If the sync touched `src-tauri/` or `Cargo.*`, also run `cargo check --quiet` in `src-tauri/`.
 - If the sync touched `host/`, also run `npm run test:host`.
 - Sync-caused failures (unused or duplicate imports, a renamed symbol, a test asserting an old key) are your responsibility: fix them in the sync branch and re-run until green.
-- If a failure is not caused by the sync (it also fails on `origin/upstream-main` alone, or on `origin/main` alone), still open the PR, and list the failures with their output under **Breaking / attention**.
+- If a failure is not caused by the sync (it also fails on `upstream/main` alone, or on `origin/main` alone), still open the PR, and list the failures with their output under **Breaking / attention**.
 
 ### 6. Analyze changes and write release notes
 Inspect at least:
-- `git log --oneline "$SYNCED"..origin/upstream-main` (`$SYNCED` = `main`'s `syncedCommit`, see step 3)
-- `git diff --stat "$SYNCED" origin/upstream-main`
-- `git diff "$SYNCED" origin/upstream-main -- CHANGELOG.md`. Upstream's changelog describes user-visible behavior; use it as a source, but verify it against the code.
+- `git log --oneline "$SYNCED"..upstream/main` (`$SYNCED` = `main`'s `syncedCommit`, see step 3)
+- `git diff --stat "$SYNCED" upstream/main`
+- `git diff "$SYNCED" upstream/main -- CHANGELOG.md`. Upstream's changelog describes user-visible behavior; use it as a source, but verify it against the code.
 - Meaningful file diffs for user-facing or behavioral changes (UI, harness, git, sessions, automations, releases, remote host, settings defaults). Skip noise (lockfile-only, formatting-only) unless that is the whole change.
 
 #### 6a. Notes format
@@ -230,7 +221,7 @@ If none apply, write `None.`
 Be specific and honest. Prefer outcomes over hashes. Do not invent changes.
 
 #### 6b. MOLFAR `CHANGELOG.md` `Unreleased` entries (mandatory)
-The release script (`scripts/release/prepare.mjs`) excludes every commit reachable from `upstream-main` from its generated notes, and combines the rest with `## [Unreleased]`. Without notes in `Unreleased`, the next MOLFAR release would silently omit everything this sync brings in. So in the sync branch:
+The release script (`scripts/release/prepare.mjs`) never generates notes from commit subjects: a release section is exactly the `## [Unreleased]` notes, and the release refuses to cut while they are empty. Without notes in `Unreleased`, the next MOLFAR release would silently omit everything this sync brings in. So in the sync branch:
 - Add the user-visible changes from this range under `## [Unreleased]`, using Keep a Changelog sections (`### Added`, `### Changed`, `### Fixed`, `### Removed`). Merge them into any entries already there instead of duplicating sections.
 - Base the entries on upstream's changelog wording, adapted for MOLFAR:
   - write `MonoCode #NNN` instead of a bare `#NNN` (a bare number would link to MOLFAR's own issues);
@@ -243,7 +234,7 @@ The release script (`scripts/release/prepare.mjs`) excludes every commit reachab
 ### 7. Commit, push, PR, Issue
 - Before every commit, run `git status --short` and `git diff --cached --name-only`. Only paths this sync intends to change may be staged. Never commit stray test fixtures (for example `notes.txt` at the repo root), scratch files, `.upstream-pending/`, or anything outside the patch, its conflict resolutions, the pending ports, `.github/upstream-moves.json`, the branding scan, `CHANGELOG.md` and the lockfiles. If unexpected paths are staged, unstage them and find out where they came from.
 - Commit the sync as one commit with the message `chore(sync): apply MonoCode main <short syncedCommit>..<short new commit> (YYYY-MM-DD)`, and list the upstream commit subjects from `apply.mjs` in the body. If you resolved conflicts or made scan fixes, add a body line summarizing them. Commit any later fixes as separate conventional commits on the same branch (for example `fix(sync): rename display preference keys to molfar prefix`). Hooks must run (hard rule 6).
-- Confirm the sync commit has exactly one parent (`origin/main`), that its author and committer are the owner's identity (`git log -1 --format='%an <%ae> / %cn <%ce>'`), and that the branch shares no history with MonoCode: `git merge-base HEAD origin/upstream-main` must fail. If it succeeds, the branch is contaminated: delete it locally and start over.
+- Confirm the sync commit has exactly one parent (`origin/main`), that its author and committer are the owner's identity (`git log -1 --format='%an <%ae> / %cn <%ce>'`), and that the branch shares no history with MonoCode: `git merge-base HEAD upstream/main` must fail. If it succeeds, the branch is contaminated: delete it locally and start over.
 - `git push -u origin <sync branch>`. The repository's `pre-push` hook runs `npm run check:web`. Tests are isolated from the hook's git environment by `scripts/test/isolate-git-env.mjs`. If that file is missing from the checked-out tree, the hook's tests can rewrite this repository's config and commit fixtures. In that case stop before pushing and report it.
 - After pushing, re-check `git config user.name`, `git config --get core.bare`, and `git log -3 --format='%h %an %s'` on the sync branch. No `CRLF Test` identity, no `Initial content` / `Remove file from index` commits.
 - PR: `-R deluminor/molfar`, **base** `main`, **head** the sync branch, **title** `sync: MonoCode main into main (YYYY-MM-DD)`, **body** full notes + Issue link.
@@ -260,7 +251,7 @@ The release script (`scripts/release/prepare.mjs`) excludes every commit reachab
 
 ### 8. Finish
 Final message:
-- Mirror: `upstream-main` fast-forwarded `<old>..<new>`, or already current
+- Range: `<syncedCommit>..<upstream/main>`, or already current
 - Skipped / PR URL / blocked Issue URL
 - Issue URL
 - Conflicts: none, or the resolved paths (product code called out separately)
