@@ -13,10 +13,11 @@ export function sameProviderAccountId(
   );
 }
 
-/** Providers whose CLIs support isolated, locally named account profiles. */
+/** Providers listed under Accounts, each with at least its CLI's own login. */
 export const PROVIDER_ACCOUNT_PROVIDERS = [
   "claude",
   "codex",
+  "devin",
 ] as const satisfies readonly HarnessId[];
 
 export type ProviderAccountProvider =
@@ -26,6 +27,23 @@ export function supportsProviderAccounts(
   provider: HarnessId,
 ): provider is ProviderAccountProvider {
   return PROVIDER_ACCOUNT_PROVIDERS.some((candidate) => candidate === provider);
+}
+
+/**
+ * Providers whose CLIs can keep isolated, locally named profiles. Devin has
+ * no config-dir override on Windows, so it offers only its default login.
+ */
+const PROFILE_PROVIDERS = [
+  "claude",
+  "codex",
+] as const satisfies readonly ProviderAccountProvider[];
+
+export type ProfileAccountProvider = (typeof PROFILE_PROVIDERS)[number];
+
+export function supportsAccountProfiles(
+  provider: HarnessId,
+): provider is ProfileAccountProvider {
+  return PROFILE_PROVIDERS.some((candidate) => candidate === provider);
 }
 
 export type ProviderAccount = {

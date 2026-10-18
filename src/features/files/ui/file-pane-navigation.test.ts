@@ -235,14 +235,14 @@ describe("file pane source navigation", { timeout: 20_000 }, () => {
     "cancels a clamped pending navigation on %s before its line arrives",
     async (interaction) => {
       const path = `/repo/pending-${interaction}.txt`;
-      // Model the file itself: watcher stat calls may run before the initial read.
+      // Watcher IPC can run before the read; keep the file short until reload.
       disk.content = "first line";
       const view = await render(path, 3);
       await act(async () =>
-        vi.waitFor(
-          () => expect(view.state.selection.main.head).toBe(1),
-          LOAD_TIMEOUT,
-        ),
+        vi.waitFor(() => {
+          expect(view.state.doc.lines).toBe(1);
+          expect(view.state.selection.main.head).toBe(1);
+        }, LOAD_TIMEOUT),
       );
       const button = document.createElement("button");
       container.append(button);

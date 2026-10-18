@@ -1,3 +1,4 @@
+import { basename, prettyParent, projectKey, projectName } from "@/shared/lib/paths";
 import {
   useEffect,
   useRef,
@@ -5,38 +6,44 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
-import { basename } from "@/shared/lib/paths";
-import { prettyParent, projectKey, projectName } from "@/shared/lib/paths";
+import { useProjectAppearance } from "../hooks/use-project-appearance";
 import {
   looksLikeProject,
   projectRailItems,
   sameProjectPath,
-  subscribeProjectPathsChanged,
   type RecentProject,
 } from "../model/recents";
 import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupLabels,
-  loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
 } from "@/features/workspace/model/tab-groups";
 import { Check, ChevronDown, Plus, Search } from "@/shared/ui/icons";
-import { Popover } from "@/shared/ui/Popover";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
 import { ProjectMascot } from "./ProjectMascot";
+import { PixelMascot } from "./PixelMascot";
+import { FamiliarRailMascot } from "@/features/familiars/ui/FamiliarRailMascot";
+import { FAMILIAR_STATUS_LABEL, type FamiliarStatus } from "@/features/familiars/model/familiar";
 
-function loadAppearance() {
-  return {
-    groupLabels: loadTabGroupLabels(),
-    groupColors: loadTabGroupColors(),
-    groupCustomColors: loadTabGroupCustomColors(),
-    groupMascots: loadTabGroupMascots(),
-  };
-}
+/** A Familiar the picker offers beside the projects. */
+export type PickerFamiliar = {
+  id: string;
+  name: string;
+  mascot: string;
+  color: string;
+  status?: FamiliarStatus;
+};
+
+/** Familiars listed above the projects; picking one opens it. */
+export type PickerFamiliars = {
+  items: readonly PickerFamiliar[];
+  /** The Familiar open in the main area; then no project is the current one. */
+  activeId?: string;
+  onOpen: (familiarId: string) => void;
+  onCreate?: () => void;
+};
 
 type Props = {
   cwd: string;
@@ -60,6 +67,8 @@ type Props = {
   ) => void;
   /** Keeps the dropdown open while the project's context menu or its dialogs show. */
   projectMenuActive?: boolean;
+  /** Lists Familiars first, for the compact rail where they have no row of their own. */
+  familiars?: PickerFamiliars;
 };
 
 export function SearchableProjectPicker({
@@ -76,19 +85,12 @@ export function SearchableProjectPicker({
   onOpenProject,
   onProjectContextMenu,
   projectMenuActive = false,
+  familiars,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
   const pickerRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const [{ groupLabels, groupColors, groupCustomColors, groupMascots }, setAppearance] =
-    useState(loadAppearance);
-  useEffect(
-    () => subscribeProjectPathsChanged(() => setAppearance(loadAppearance())),
-    [],
-  );
+  const { groupLabels, groupColors, groupCustomColors, groupMascots } =
+    useProjectAppearance();
   const groupLogos = useTabGroupLogos();
   const inProject = looksLikeProject(cwd);
   const seed = projectName(cwd);
@@ -107,87 +109,9 @@ export function SearchableProjectPicker({
     ...projects.filter((item) => sameProjectPath(item.path, cwd)),
     ...projects.filter((item) => !sameProjectPath(item.path, cwd)),
   ];
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const filteredProjects = normalizedQuery
-    ? orderedProjects.filter((item) => {
-        const itemKey = projectKey(item.path);
-        const itemLabel = resolveTabGroupLabel(
-          itemKey,
-          groupLabels,
-          basename(item.path) || projectName(item.path),
-        );
-        return `${itemLabel}\n${item.path}`
-          .toLocaleLowerCase()
-          .includes(normalizedQuery);
-      })
-    : orderedProjects;
-
-  const closePicker = () => {
-    setOpen(false);
-    setQuery("");
-    setActive(0);
-  };
-
-  const openPicker = () => {
-    setOpen(true);
-    setQuery("");
-    setActive(0);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    searchRef.current?.focus();
-    const frame = window.requestAnimationFrame(() => {
-      searchRef.current?.focus();
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [open]);
-
-  const pickProject = (path: string) => {
-    closePicker();
-    if (!sameProjectPath(path, cwd)) onSelectProject(path);
-  };
-
-  const onPickerKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
-    const target = event.target;
-    const rows = listRef.current?.children;
-    if (
-      onProjectContextMenu &&
-      rows &&
-      (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))
-    ) {
-      // A Tab-focused row opens its own menu; the search input opens the highlighted one.
-      const index =
-        target instanceof HTMLInputElement
-          ? active
-          : Array.prototype.indexOf.call(rows, target);
-      const project = filteredProjects[index];
-      const row = rows[index];
-      if (!project || !row) return;
-      event.preventDefault();
-      const rect = row.getBoundingClientRect();
-      onProjectContextMenu(project.path, rect.left, rect.bottom, searchRef.current);
-      return;
-    }
-    if (!(target instanceof HTMLInputElement)) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      if (filteredProjects.length === 0) return;
-      setActive((index) => Math.min(filteredProjects.length - 1, index + 1));
-      return;
-    }
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActive((index) => Math.max(0, index - 1));
-      return;
-    }
-    if (event.key === "Enter") {
-      const project = filteredProjects[active];
-      if (!project) return;
-      event.preventDefault();
-      pickProject(project.path);
-    }
-  };
+  const activeFamiliar = familiars?.items.find((familiar) => familiar.id === familiars.activeId);
+  const closePicker = () => setOpen(false);
+  const openPicker = () => setOpen(true);
 
   const action = mode === "move" ? "Move note to project" : "Switch project";
 
@@ -200,11 +124,32 @@ export function SearchableProjectPicker({
     >
       <button
         type="button"
-        title={inProject ? cwd : undefined}
+        title={
+          compact
+            ? undefined
+            : activeFamiliar
+              ? `${activeFamiliar.name}\n${FAMILIAR_STATUS_LABEL[activeFamiliar.status ?? "idle"]}`
+              : inProject
+                ? cwd
+                : undefined
+        }
+        // The compact rail draws its own instant tooltip from these.
+        data-rail-tip={
+          compact
+            ? (activeFamiliar?.name ?? (inProject ? label : action))
+            : undefined
+        }
+        data-rail-tip-detail={
+          compact && activeFamiliar
+            ? FAMILIAR_STATUS_LABEL[activeFamiliar.status ?? "idle"]
+            : undefined
+        }
         aria-label={
-          inProject
-            ? `${action}, current project ${label}`
-            : "Choose project for note"
+          activeFamiliar
+            ? `${action}, current familiar ${activeFamiliar.name}, ${FAMILIAR_STATUS_LABEL[activeFamiliar.status ?? "idle"]}`
+            : inProject
+              ? `${action}, current project ${label}`
+              : "Choose project for note"
         }
         aria-expanded={open}
         aria-haspopup="dialog"
@@ -226,7 +171,14 @@ export function SearchableProjectPicker({
               : "text-content/50 hover:bg-content/5 hover:text-content"
         }${buttonClassName ? ` ${buttonClassName}` : ""}`}
       >
-        {!inProject ? null : logoPath ? (
+        {activeFamiliar ? (
+          <FamiliarRailMascot
+            name={activeFamiliar.mascot}
+            color={activeFamiliar.color}
+            status={activeFamiliar.status}
+            className={`${compact ? "size-4" : "size-3.5"} shrink-0`}
+          />
+        ) : !inProject ? null : logoPath ? (
           <ProjectLogoIcon
             path={logoPath}
             className={`${compact ? "size-4" : "size-3.5"} shrink-0 rounded-sm`}
@@ -244,7 +196,7 @@ export function SearchableProjectPicker({
         {compact ? null : (
           <>
             <span className="min-w-0 truncate font-medium text-content/90">
-              {label}
+              {activeFamiliar?.name ?? label}
             </span>
             <ChevronDown
               className={`size-3 shrink-0 text-content/45 transition-transform ${
@@ -256,131 +208,332 @@ export function SearchableProjectPicker({
         )}
       </button>
       {open ? (
-        <Popover
+        <ProjectPickerPopover
           anchor={pickerRef}
-          side="bottom"
-          align="start"
-          gap={4}
-          width={286}
-          maxHeight={380}
-          role="dialog"
-          aria-label="Project picker"
-          onDismiss={projectMenuActive ? undefined : closePicker}
-          onKeyDown={onPickerKeyDown}
-          className="flex flex-col overflow-hidden"
-        >
-          <label className="flex h-11 shrink-0 items-center gap-2.5 border-b border-stroke px-3 text-content/45 focus-within:text-content/70">
-            <Search className="size-4 shrink-0" strokeWidth={1.75} />
-            <span className="sr-only">Search projects</span>
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setActive(0);
-              }}
-              placeholder="Search projects..."
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
-            />
-          </label>
-          <div
-            ref={listRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1.5"
-          >
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map((item, index) => {
-                const current = sameProjectPath(item.path, cwd);
-                const itemKey = projectKey(item.path);
-                const itemSeed = projectName(item.path);
-                const itemLabel = resolveTabGroupLabel(
-                  itemKey,
-                  groupLabels,
-                  basename(item.path) || itemSeed,
-                );
-                const itemLogo = resolveTabGroupLogo(itemKey, groupLogos);
-                const itemColor = resolveTabGroupColor(
-                  itemKey,
-                  groupColors,
-                  groupCustomColors,
-                  itemSeed,
-                );
-                return (
-                  <button
-                    key={item.path}
-                    type="button"
-                    title={item.path}
-                    onMouseEnter={() => setActive(index)}
-                    onClick={() => pickProject(item.path)}
-                    onContextMenu={
-                      onProjectContextMenu
-                        ? (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            onProjectContextMenu(
-                              item.path,
-                              event.clientX,
-                              event.clientY,
-                              searchRef.current,
-                            );
-                          }
-                        : undefined
-                    }
-                    className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left ${
-                      active === index
-                        ? "bg-selection text-content"
-                        : "text-content/75 hover:bg-content/5 hover:text-content"
-                    }`}
-                  >
-                    <span className="grid size-4 shrink-0 place-items-center">
-                      {current ? (
-                        <Check className="size-3.5" strokeWidth={2} />
-                      ) : itemLogo ? (
-                        <ProjectLogoIcon
-                          path={itemLogo}
-                          className="size-4 rounded-sm"
-                          imageClassName="size-4"
-                        />
-                      ) : (
-                        <ProjectMascot
-                          project={itemSeed}
-                          color={itemColor}
-                          name={resolveTabGroupMascot(itemKey, groupMascots)}
-                          className="size-3.5"
-                        />
-                      )}
-                    </span>
-                    <span className="min-w-0 max-w-[calc(100%_-_36px)] shrink-0 truncate text-[13px] font-medium">
-                      {itemLabel}
-                    </span>
-                    <span className="min-w-0 max-w-28 flex-1 truncate font-mono text-[11px] text-content/40">
-                      {prettyParent(item.path)}
-                    </span>
-                  </button>
-                );
-              })
-            ) : (
-              <p className="px-2.5 py-5 text-center text-[12px] text-content/45">
-                No projects found
-              </p>
-            )}
-          </div>
-          {onOpenProject ? (
-            <div className="shrink-0 border-t border-stroke p-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  closePicker();
-                  onOpenProject();
-                }}
-                className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] text-content/75 hover:bg-content/8 hover:text-content"
-              >
-                <Plus className="size-4 shrink-0" strokeWidth={1.75} />
-                <span>New project</span>
-              </button>
-            </div>
-          ) : null}
-        </Popover>
+          projects={orderedProjects}
+          currentProject={cwd}
+          onDismiss={closePicker}
+          onSelectProject={onSelectProject}
+          onOpenProject={onOpenProject}
+          onProjectContextMenu={onProjectContextMenu}
+          projectMenuActive={projectMenuActive}
+          familiars={familiars}
+        />
       ) : null}
     </div>
+  );
+}
+
+type ProjectPickerPopoverProps = Pick<
+  Props,
+  | "onSelectProject"
+  | "onOpenProject"
+  | "onProjectContextMenu"
+  | "projectMenuActive"
+  | "familiars"
+> & {
+  anchor: PopoverAnchor;
+  projects: readonly RecentProject[];
+  currentProject?: string;
+  onDismiss: () => void;
+  label?: string;
+  emptyMessage?: string;
+};
+
+/** Shared searchable project menu for switching projects or adding them to a Familiar. */
+export function ProjectPickerPopover({
+  anchor,
+  projects,
+  currentProject,
+  onDismiss,
+  onSelectProject,
+  onOpenProject,
+  onProjectContextMenu,
+  projectMenuActive = false,
+  familiars,
+  label = "Project picker",
+  emptyMessage = "No projects found",
+}: ProjectPickerPopoverProps) {
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const { groupLabels, groupColors, groupCustomColors, groupMascots } =
+    useProjectAppearance();
+  const groupLogos = useTabGroupLogos();
+  const activeFamiliar = familiars?.items.find((familiar) => familiar.id === familiars.activeId);
+  // With a Familiar open, no project is current: each one is a way back.
+  const isCurrent = (path: string) =>
+    !activeFamiliar &&
+    currentProject != null &&
+    sameProjectPath(path, currentProject);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filteredFamiliars = (familiars?.items ?? []).filter((familiar) =>
+    familiar.name.toLocaleLowerCase().includes(normalizedQuery),
+  );
+  const filteredProjects = normalizedQuery
+    ? projects.filter((item) => {
+        const itemKey = projectKey(item.path);
+        const itemLabel = resolveTabGroupLabel(
+          itemKey,
+          groupLabels,
+          basename(item.path) || projectName(item.path),
+        );
+        return `${itemLabel}\n${item.path}`
+          .toLocaleLowerCase()
+          .includes(normalizedQuery);
+      })
+    : projects;
+
+  useEffect(() => {
+    searchRef.current?.focus();
+    const frame = window.requestAnimationFrame(() => {
+      searchRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const pickProject = (path: string) => {
+    onDismiss();
+    if (!isCurrent(path)) onSelectProject(path);
+  };
+
+  const pickFamiliar = (familiarId: string) => {
+    onDismiss();
+    familiars?.onOpen(familiarId);
+  };
+
+  /** Keyboard rows: the Familiars, then the projects. */
+  const rowCount = filteredFamiliars.length + filteredProjects.length;
+  const pickRow = (index: number) => {
+    if (index < filteredFamiliars.length) pickFamiliar(filteredFamiliars[index].id);
+    else {
+      const project = filteredProjects[index - filteredFamiliars.length];
+      if (project) pickProject(project.path);
+    }
+  };
+
+  const onPickerKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    const target = event.target;
+    const rows = listRef.current?.children;
+    if (
+      onProjectContextMenu &&
+      rows &&
+      (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))
+    ) {
+      // A Tab-focused row opens its own menu; the search input opens the highlighted one.
+      const index =
+        target instanceof HTMLInputElement
+          ? active
+          : Array.prototype.indexOf.call(rows, target);
+      const project = filteredProjects[index - filteredFamiliars.length];
+      const row = rows[index];
+      if (!project || !row) return;
+      event.preventDefault();
+      const rect = row.getBoundingClientRect();
+      onProjectContextMenu(
+        project.path,
+        rect.left,
+        rect.bottom,
+        searchRef.current,
+      );
+      return;
+    }
+    if (!(target instanceof HTMLInputElement)) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (rowCount === 0) return;
+      setActive((index) => Math.min(rowCount - 1, index + 1));
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive((index) => Math.max(0, index - 1));
+      return;
+    }
+    if (event.key === "Enter") {
+      if (active >= rowCount) return;
+      event.preventDefault();
+      pickRow(active);
+    }
+  };
+
+  return (
+    <Popover
+      anchor={anchor}
+      side="bottom"
+      align="start"
+      gap={4}
+      width={286}
+      maxHeight={380}
+      role="dialog"
+      aria-label={label}
+      onDismiss={projectMenuActive ? undefined : onDismiss}
+      onKeyDown={onPickerKeyDown}
+      className="flex flex-col overflow-hidden"
+    >
+      <label className="flex h-11 shrink-0 items-center gap-2.5 border-b border-stroke px-3 text-content/45 focus-within:text-content/70">
+        <Search className="size-4 shrink-0" strokeWidth={1.75} />
+        <span className="sr-only">Search projects</span>
+        <input
+          ref={searchRef}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setActive(0);
+          }}
+          placeholder={
+            familiars?.items.length
+              ? "Search familiars and projects..."
+              : "Search projects..."
+          }
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
+        />
+      </label>
+      <div
+        ref={listRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1.5"
+      >
+        {filteredFamiliars.map((familiar, index) => (
+          <button
+            key={`familiar:${familiar.id}`}
+            type="button"
+            title={familiar.name}
+            data-picker-familiar={familiar.id}
+            onMouseEnter={() => setActive(index)}
+            onClick={() => pickFamiliar(familiar.id)}
+            className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left ${
+              active === index
+                ? "bg-selection text-content"
+                : "text-content/75 hover:bg-content/5 hover:text-content"
+            }`}
+          >
+            <span className="grid size-4 shrink-0 place-items-center">
+              {familiar.id === familiars?.activeId ? (
+                <Check className="size-3.5" strokeWidth={2} />
+              ) : (
+                <PixelMascot
+                  name={familiar.mascot}
+                  color={familiar.color}
+                  still
+                  className="size-4"
+                />
+              )}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+              {familiar.name}
+            </span>
+            <span className="shrink-0 text-[11px] text-content/40">Familiar</span>
+          </button>
+        ))}
+        {filteredProjects.length > 0 ? (
+          filteredProjects.map((item, projectIndex) => {
+            const index = filteredFamiliars.length + projectIndex;
+            const current = isCurrent(item.path);
+            const itemKey = projectKey(item.path);
+            const itemSeed = projectName(item.path);
+            const itemLabel = resolveTabGroupLabel(
+              itemKey,
+              groupLabels,
+              basename(item.path) || itemSeed,
+            );
+            const itemLogo = resolveTabGroupLogo(itemKey, groupLogos);
+            const itemColor = resolveTabGroupColor(
+              itemKey,
+              groupColors,
+              groupCustomColors,
+              itemSeed,
+            );
+            return (
+              <button
+                key={item.path}
+                type="button"
+                title={item.path}
+                onMouseEnter={() => setActive(index)}
+                onClick={() => pickProject(item.path)}
+                onContextMenu={
+                  onProjectContextMenu
+                    ? (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onProjectContextMenu(
+                          item.path,
+                          event.clientX,
+                          event.clientY,
+                          searchRef.current,
+                        );
+                      }
+                    : undefined
+                }
+                className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left ${
+                  active === index
+                    ? "bg-selection text-content"
+                    : "text-content/75 hover:bg-content/5 hover:text-content"
+                }`}
+              >
+                <span className="grid size-4 shrink-0 place-items-center">
+                  {current ? (
+                    <Check className="size-3.5" strokeWidth={2} />
+                  ) : itemLogo ? (
+                    <ProjectLogoIcon
+                      path={itemLogo}
+                      className="size-4 rounded-sm"
+                      imageClassName="size-4"
+                    />
+                  ) : (
+                    <ProjectMascot
+                      project={itemSeed}
+                      color={itemColor}
+                      name={resolveTabGroupMascot(itemKey, groupMascots)}
+                      className="size-3.5"
+                    />
+                  )}
+                </span>
+                <span className="min-w-0 max-w-[calc(100%_-_36px)] shrink-0 truncate text-[13px] font-medium">
+                  {itemLabel}
+                </span>
+                <span className="min-w-0 max-w-28 flex-1 truncate font-mono text-[11px] text-content/40">
+                  {prettyParent(item.path)}
+                </span>
+              </button>
+            );
+          })
+        ) : filteredFamiliars.length ? null : (
+          <p className="px-2.5 py-5 text-center text-[12px] text-content/45">
+            {emptyMessage}
+          </p>
+        )}
+      </div>
+      {onOpenProject || familiars?.onCreate ? (
+        <div className="shrink-0 border-t border-stroke p-1.5">
+          {familiars?.onCreate ? (
+            <button
+              type="button"
+              onClick={() => {
+                onDismiss();
+                familiars.onCreate?.();
+              }}
+              className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] text-content/75 hover:bg-content/8 hover:text-content"
+            >
+              <Plus className="size-4 shrink-0" strokeWidth={1.75} />
+              <span>New familiar</span>
+            </button>
+          ) : null}
+          {onOpenProject ? (
+            <button
+              type="button"
+              onClick={() => {
+                onDismiss();
+                onOpenProject();
+              }}
+              className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] text-content/75 hover:bg-content/8 hover:text-content"
+            >
+              <Plus className="size-4 shrink-0" strokeWidth={1.75} />
+              <span>New project</span>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </Popover>
   );
 }

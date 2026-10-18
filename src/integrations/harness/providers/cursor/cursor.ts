@@ -1,7 +1,8 @@
 import { nativeModelId } from "../../core/models/resolve-model";
-import { AcpSubagents } from "../../core/acp-subagents";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { promptBlocks } from "@/domain/session/attachment-prompt";
+import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type SendTurnInput, type SteerTurnInput } from "../../core/types";
+import { AcpSubagents } from "../../core/acp-subagents";
 import {
   isTaskListToolName,
   taskListFromToolInput,
@@ -14,6 +15,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import {
   readStoredCursorToolCalls,
   readStoredCursorSubagentRuns,
@@ -26,12 +28,6 @@ import {
   kindFromCursorToolName,
 } from "./cursor-subagents";
 import { stopCursorTitleGeneration } from "./cursor-title";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
 import {
   CUSTOM_OPTION_ID,
   questionPromptTitle,
@@ -148,7 +144,7 @@ export async function sendCursorTurn(input: SendTurnInput): Promise<void> {
 
 export async function steerCursorTurn(input: SteerTurnInput): Promise<void> {
   const live = liveByThread.get(input.sessionId);
-  if (!live) throw new Error("No active Cursor session");
+  if (!live) throw new TurnNotReadyError("No active Cursor session");
 
   const blocks = promptBlocks(input.text, input.attachments);
   if (blocks.length === 0) return;
@@ -323,6 +319,7 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     let setup: SessionSetupResult | undefined;
     let acpSessionId: string | undefined;
     let didLoad = false;
+    const mcpServers = await loadSessionMcpServers("cursor", input.cwd);
 
     if (canLoad && resume) {
       muteGate.current = true;
@@ -330,7 +327,7 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
         setup = await acp.request<SessionSetupResult>("session/load", {
           sessionId: resume.acpSessionId,
           cwd: input.cwd,
-          mcpServers: [],
+          mcpServers,
         });
         acpSessionId = resume.acpSessionId;
         didLoad = true;
@@ -346,7 +343,7 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     if (!acpSessionId) {
       setup = await acp.request<SessionSetupResult>("session/new", {
         cwd: input.cwd,
-        mcpServers: [],
+        mcpServers,
       });
       acpSessionId = setup.sessionId?.trim();
     }
@@ -457,10 +454,12 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
     live.backgroundAgentTools.clear();
     live.taskListTools.clear();
     live.promptActive = true;
-    await live.acp.request("session/prompt", {
+    const pending = live.acp.request("session/prompt", {
       sessionId: live.acpSessionId,
       prompt: blocks,
     });
+    input.onAccepted?.();
+    await pending;
     live.promptActive = false;
     if (live.cancelled) {
       live.backgroundAgentTools.clear();

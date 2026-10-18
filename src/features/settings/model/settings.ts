@@ -14,12 +14,14 @@ const SECTION_KEY = "molfar.settingsSection";
 export type SettingsSectionId =
   | "general"
   | "connections"
+  | "companion"
   | "appearance"
   | "keybindings"
   | "chat"
   | "providers"
   | "mcp"
   | "skills"
+  | "familiars"
   | "inbox"
   | "worktrees"
   | "archive";
@@ -57,6 +59,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     label: "Connections",
     description: "Connect your machines and run agents remotely through SSH.",
     keywords: "ssh remote host machine server environment always on",
+  },
+  {
+    id: "companion",
+    group: "app",
+    label: "Companion",
+    description:
+      "Pair your phone or tablet to follow and steer MOLFAR from anywhere on your tailnet.",
+    keywords: "phone iphone ipad mobile tablet bitchain tailscale pair qr remote control",
   },
   {
     id: "appearance",
@@ -97,8 +107,10 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     id: "mcp",
     group: "agents",
     label: "MCP",
-    description: "Find MCP servers across providers and manage their connections.",
-    keywords: "tools servers connections oauth authenticate login claude codex cursor opencode",
+    description:
+      "Find MCP servers across providers and manage their connections.",
+    keywords:
+      "tools servers connections oauth authenticate login claude codex cursor opencode",
   },
   {
     id: "skills",
@@ -107,6 +119,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     description:
       "Discover and manage file skills from project, personal, and harness folders.",
     keywords: "skill instructions prompt",
+  },
+  {
+    id: "familiars",
+    group: "agents",
+    label: "Familiars",
+    description:
+      "The resident agent beside your tabs, and which projects have one.",
+    keywords: "familiar resident agent mascot claim project title bar",
   },
   {
     id: "inbox",
@@ -156,12 +176,48 @@ export type SettingsEntry = {
 };
 
 export const SETTINGS_INDEX: SettingsEntry[] = [
-  { id: "remote-machines", section: "connections", label: "Your machines", keywords: "ssh remote connect host server environment" },
+  {
+    id: "companion-gateway",
+    section: "companion",
+    label: "Companion gateway",
+    keywords: "phone mobile tailscale serve port",
+  },
+  {
+    id: "companion-devices",
+    section: "companion",
+    label: "Paired devices",
+    keywords: "phone iphone ipad pair qr revoke",
+  },
+  {
+    id: "remote-machines",
+    section: "connections",
+    label: "Your machines",
+    keywords: "ssh remote connect host server environment",
+  },
   {
     id: "mcp-servers",
     section: "mcp",
     label: "MCP servers",
     keywords: "claude tools connections oauth authenticate login add remove",
+  },
+  {
+    id: "familiars-enabled",
+    section: "familiars",
+    label: "Show familiars",
+    keywords: "familiar agent rail hide",
+  },
+  {
+    id: "rail-familiars-pinned",
+    section: "familiars",
+    label: "Pin familiars to the icon rail",
+    keywords: "familiar rail compact collapsed icons top divider project picker",
+  },
+  {
+    id: "familiar-list",
+    section: "familiars",
+    label: "Your familiars",
+    keywords:
+      "familiar reset soul name projects sessions sidebar visibility hidden show menu bar",
   },
   {
     id: "project-worktrees",
@@ -234,6 +290,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "project rail shortcut vault obsidian notes hide show",
   },
   {
+    id: "rail-board",
+    section: "general",
+    label: "Board",
+    keywords: "project rail shortcut task board kanban pipeline grill review hide show",
+  },
+  {
     id: "file-tabs",
     section: "general",
     label: "File tabs",
@@ -266,6 +328,13 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     section: "appearance",
     label: "Accent color",
     keywords: "highlight bubble send button tint",
+  },
+  {
+    id: "diff-colors",
+    section: "appearance",
+    label: "Diff colors",
+    keywords:
+      "colorblind color blind accessibility added removed red green blue orange high contrast changes",
   },
   {
     id: "hue",
@@ -353,6 +422,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
       "effort thinking reasoning fast service tier model picker composer",
   },
   {
+    id: "composer-autocorrect",
+    section: "chat",
+    label: "Autocorrect",
+    keywords: "spelling spell check autocorrect typo macos composer",
+  },
+  {
     id: "composer-mascot",
     section: "chat",
     label: "Composer mascot",
@@ -380,7 +455,8 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     id: "agent-clis",
     section: "providers",
     label: "Agent CLIs",
-    keywords: "codex opencode cursor grok pi omp fx hermes antigravity binary path",
+    keywords:
+      "codex opencode cursor grok pi omp fx hermes antigravity devin binary path",
   },
   {
     id: "provider-accounts",
@@ -406,6 +482,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     section: "providers",
     label: "Claude Code hooks",
     keywords: "pretooluse settings.json block command notification",
+  },
+  {
+    id: "idle-agents",
+    section: "providers",
+    label: "Keep idle agents ready",
+    keywords: "memory ram cpu performance process warm park background",
   },
   {
     id: "project-notifications",
@@ -761,6 +843,100 @@ export function subscribeNotesEnabled(onStoreChange: () => void) {
     window.removeEventListener(NOTES_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
+const FAMILIARS_ENABLED_KEY = "molfar.familiarsEnabled";
+const LEGACY_MONOS_ENABLED_KEY = "molfar.monosEnabled";
+
+export const FAMILIARS_ENABLED_DEFAULT = true;
+
+/** Fired on `window` when familiars are shown or hidden. */
+export const FAMILIARS_ENABLED_CHANGE_EVENT = "molfar:familiars-enabled-change";
+
+/** Whether familiars show in the title bar at all, across every project. */
+export function loadFamiliarsEnabled(): boolean {
+  const current = readFlag(FAMILIARS_ENABLED_KEY);
+  if (current != null) return current;
+  const legacy = readFlag(LEGACY_MONOS_ENABLED_KEY);
+  if (legacy != null) {
+    writeFlag(FAMILIARS_ENABLED_KEY, legacy);
+    try {
+      localStorage.removeItem(LEGACY_MONOS_ENABLED_KEY);
+    } catch {
+      // private mode
+    }
+    return legacy;
+  }
+  return FAMILIARS_ENABLED_DEFAULT;
+}
+
+export function saveFamiliarsEnabled(value: boolean) {
+  writeFlag(FAMILIARS_ENABLED_KEY, value);
+  try {
+    localStorage.removeItem(LEGACY_MONOS_ENABLED_KEY);
+  } catch {
+    // private mode
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<boolean>(FAMILIARS_ENABLED_CHANGE_EVENT, { detail: value }),
+  );
+}
+
+export function subscribeFamiliarsEnabled(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(FAMILIARS_ENABLED_CHANGE_EVENT, onStoreChange);
+  return () =>
+    window.removeEventListener(FAMILIARS_ENABLED_CHANGE_EVENT, onStoreChange);
+}
+
+const FAMILIAR_MENU_BAR_KEY = "molfar.familiarMenuBarIcon";
+const LEGACY_MONO_MENU_BAR_KEY = "monocode.monoMenuBarIcon";
+
+/** Fired on `window` when the menu bar icon is shown or hidden. */
+export const FAMILIAR_MENU_BAR_CHANGE_EVENT = "molfar:familiar-menu-bar-change";
+/** @deprecated Prefer FAMILIAR_MENU_BAR_CHANGE_EVENT */
+export const MONO_MENU_BAR_CHANGE_EVENT = FAMILIAR_MENU_BAR_CHANGE_EVENT;
+
+export function loadFamiliarMenuBarIcon(): boolean {
+  const value = readFlag(FAMILIAR_MENU_BAR_KEY);
+  if (value === true || value === false) return value;
+  const legacy = readFlag(LEGACY_MONO_MENU_BAR_KEY);
+  if (legacy === true || legacy === false) return legacy;
+  return true;
+}
+
+/** @deprecated Prefer loadFamiliarMenuBarIcon */
+export function loadMonoMenuBarIcon(): boolean {
+  return loadFamiliarMenuBarIcon();
+}
+
+export function saveFamiliarMenuBarIcon(value: boolean) {
+  writeFlag(FAMILIAR_MENU_BAR_KEY, value);
+  try {
+    localStorage.removeItem(LEGACY_MONO_MENU_BAR_KEY);
+  } catch {
+    // private mode
+  }
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(FAMILIAR_MENU_BAR_CHANGE_EVENT));
+}
+
+/** @deprecated Prefer saveFamiliarMenuBarIcon */
+export function saveMonoMenuBarIcon(value: boolean) {
+  saveFamiliarMenuBarIcon(value);
+}
+
+export function subscribeFamiliarMenuBarIcon(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(FAMILIAR_MENU_BAR_CHANGE_EVENT, onStoreChange);
+  return () =>
+    window.removeEventListener(FAMILIAR_MENU_BAR_CHANGE_EVENT, onStoreChange);
+}
+
+/** @deprecated Prefer subscribeFamiliarMenuBarIcon */
+export function subscribeMonoMenuBarIcon(onStoreChange: () => void) {
+  return subscribeFamiliarMenuBarIcon(onStoreChange);
+}
+
 const QUICK_COMPOSER_ENABLED_KEY = "molfar.quickComposerEnabled";
 const QUICK_COMPOSER_SHORTCUT_KEY = "molfar.quickComposerShortcut";
 
@@ -954,12 +1130,40 @@ export function subscribeAutosave(onStoreChange: () => void) {
   };
 }
 
+const IDLE_AGENT_LIMIT_KEY = "molfar.idleAgentLimit";
+
+/** How many finished conversations keep their agent CLI warm. */
+export const IDLE_AGENT_LIMITS = [0, 1, 2, 3, 5] as const;
+export type IdleAgentLimit = (typeof IDLE_AGENT_LIMITS)[number];
+export const IDLE_AGENT_LIMIT_DEFAULT: IdleAgentLimit = 3;
+
+export function loadIdleAgentLimit(): IdleAgentLimit {
+  try {
+    const raw = Number(localStorage.getItem(IDLE_AGENT_LIMIT_KEY) ?? NaN);
+    return (
+      IDLE_AGENT_LIMITS.find((limit) => limit === raw) ??
+      IDLE_AGENT_LIMIT_DEFAULT
+    );
+  } catch {
+    return IDLE_AGENT_LIMIT_DEFAULT;
+  }
+}
+
+export function saveIdleAgentLimit(value: IdleAgentLimit) {
+  try {
+    localStorage.setItem(IDLE_AGENT_LIMIT_KEY, String(value));
+  } catch {
+    // private mode / quota
+  }
+}
+
 const CTRL = IS_MAC ? "⌃" : "Ctrl+";
 
 export type KeybindingRow = {
   command: string;
   keys: string;
   when: string;
+  fixed?: true;
 };
 
 /**
@@ -991,6 +1195,7 @@ export const KEYBINDINGS: KeybindingRow[] = [
     when: "Always",
   },
   { command: "App: Switch Model", keys: `${MOD}.`, when: "Always" },
+  { command: "App: Toggle Familiar", keys: `${MOD}I`, when: "Project with a familiar" },
   {
     command: "Composer: Toggle Workspace",
     keys: `${MOD}${SHIFT}G`,
@@ -1019,6 +1224,12 @@ export const KEYBINDINGS: KeybindingRow[] = [
     command: "Session: Archive",
     keys: `${MOD}${SHIFT}A`,
     when: "sessionFocus && !overlay",
+  },
+  {
+    command: "Session: Stop",
+    keys: "Esc",
+    when: "sessionBusy && !terminalFocus",
+    fixed: true,
   },
   {
     command: "Session: Previous",
@@ -1078,7 +1289,9 @@ export type KeybindingOverride = {
 
 export type KeybindingOverrides = Record<string, KeybindingOverride>;
 
-const VALID_COMMANDS = new Set(KEYBINDINGS.map((row) => row.command));
+const VALID_COMMANDS = new Set(
+  KEYBINDINGS.filter((row) => !row.fixed).map((row) => row.command),
+);
 
 const KEY_CODES: Record<string, string> = {
   " ": "Space",
@@ -1137,9 +1350,7 @@ function defaultShortcutsFor(command: string): string[] {
     return value ? [value] : [];
   };
   if (row.keys.includes("…")) {
-    return [1, 2, 3, 4, 5, 6, 7, 8].flatMap((digit) =>
-      chords(`Digit${digit}`),
-    );
+    return [1, 2, 3, 4, 5, 6, 7, 8].flatMap((digit) => chords(`Digit${digit}`));
   }
   if (/^[A-Za-z]$/.test(rest)) return chords(`Key${rest.toUpperCase()}`);
   if (/^[0-9]$/.test(rest)) return chords(`Digit${rest}`);
@@ -1159,9 +1370,7 @@ function shortcutOwners(): Map<string, string> {
         : defaultShortcutsFor(row.command);
     for (const chord of chords) owners.set(chord, row.command);
   }
-  for (const [command, override] of Object.entries(
-    loadKeybindingOverrides(),
-  )) {
+  for (const [command, override] of Object.entries(loadKeybindingOverrides())) {
     if (override.shortcut) owners.set(override.shortcut, command);
   }
   return owners;
@@ -1312,9 +1521,7 @@ export function keybindingShortcutTokens(
 ): string | null {
   const override = loadKeybindingOverrides()[command];
   if (override?.disabled) return null;
-  return override?.shortcut
-    ? shortcutTokens(override.shortcut)
-    : fallback;
+  return override?.shortcut ? shortcutTokens(override.shortcut) : fallback;
 }
 
 export function subscribeKeybindings(onStoreChange: () => void) {

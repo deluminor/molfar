@@ -1,10 +1,11 @@
 import { execFileSync } from "node:child_process";
 
-export function git(cwd, args, input) {
+export function git(cwd, args, input, { encoding = "utf8", env } = {}) {
   return execFileSync("git", ["-c", "core.quotePath=false", ...args], {
     cwd,
     input,
-    encoding: "utf8",
+    encoding,
+    env: env ? { ...process.env, ...env } : undefined,
     maxBuffer: 1024 * 1024 * 1024,
     stdio: ["pipe", "pipe", "pipe"],
   });

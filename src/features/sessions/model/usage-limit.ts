@@ -1,5 +1,19 @@
-import { formatResetDuration } from "@/features/providers/model/rate-limits";
 import type { Session } from "@/domain/session/session";
+import { formatResetDuration } from "@/features/providers/model/rate-limits";
+
+/** Release the stopped outbox only when the user chooses to recover. */
+export function resumeUsageLimitedSession(session: Session): Session {
+  if (!session.usageLimit || session.busy) return session;
+  return {
+    ...session,
+    usageLimit: undefined,
+    queueStatus: session.queuedMessages?.length ? "active" : undefined,
+    queuedMessages: session.queuedMessages?.map((message) => ({
+      ...message,
+      error: undefined,
+    })),
+  };
+}
 
 /** Providers can still refuse right at the reset; give them a moment. */
 export const USAGE_LIMIT_RESUME_GRACE_MS = 30_000;

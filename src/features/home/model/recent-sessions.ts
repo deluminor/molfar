@@ -13,6 +13,9 @@ export type RecentSessionRow = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Default cap for the Home Sessions card (newest first). */
+export const RECENT_SESSIONS_LIMIT = 10;
+
 /**
  * Latest sessions across recent projects, newest first, capped at `limit`.
  * Each project is fetched independently so one slow/failing cwd does not
@@ -20,7 +23,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 export async function loadRecentSessions(
   projectPaths: readonly string[],
-  limit = 3,
+  limit = RECENT_SESSIONS_LIMIT,
 ): Promise<RecentSessionRow[]> {
   const rows = await scanProjectSessions(projectPaths);
   return pickRecentSessions(rows, limit);

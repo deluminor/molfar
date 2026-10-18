@@ -48,20 +48,20 @@ export function SessionsCard({
   }
   return (
     <HomeCard title="Sessions">
-      <ul className="flex h-full flex-col justify-center gap-1">
+      <ul className="flex h-full flex-col justify-start gap-0.5 overflow-y-auto">
         {sessions.map((session) => (
           <li key={session.id}>
             <button
               type="button"
               data-id={session.id}
               onClick={onRowClick}
-              className="group flex w-full min-w-0 items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-left transition-colors hover:border-accent/25 hover:bg-accent/[0.06] focus-visible:border-accent/40 focus-visible:outline-none"
+              className="group flex w-full min-w-0 items-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-left transition-colors hover:border-accent/25 hover:bg-accent/[0.06] focus-visible:border-accent/40 focus-visible:outline-none"
             >
               <span
                 aria-hidden
-                className="h-6 w-0.5 shrink-0 rounded-full bg-accent/25 transition-colors group-hover:bg-accent"
+                className="h-4 w-0.5 shrink-0 rounded-full bg-accent/25 transition-colors group-hover:bg-accent"
               />
-              <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-content/85 group-hover:text-content">
+              <span className="min-w-0 flex-1 truncate font-mono text-[12px] leading-tight text-content/85 group-hover:text-content">
                 {session.title}
               </span>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-content/35 group-hover:text-accent/70">

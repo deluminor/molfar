@@ -3,6 +3,12 @@ import type { NoteComposerCard } from "@/domain/notes/note-card";
 import type { VaultConnection, VaultDocument } from "../vault/types";
 import { MAX_KNOWLEDGE_CONTEXT_BYTES } from "./constants";
 
+function vaultFilePath(root: string, path: string): string {
+  const base = root.replace(/[/\\]+$/, "");
+  const relative = path.replace(/^[/\\]+/, "");
+  return `${base}/${relative}`;
+}
+
 export function knowledgeContextCard(
   connection: VaultConnection,
   document: VaultDocument,
@@ -27,7 +33,9 @@ export function knowledgeContextCard(
         .split("/")
         .pop()
         ?.replace(/\.(?:md|markdown)$/i, "") || document.path,
+    // Body kept for chip fallback; the harness receives the vault file instead.
     body: document.body,
+    filePath: vaultFilePath(connection.root, document.path),
     source: {
       kind: "knowledge",
       vaultName: connection.name,

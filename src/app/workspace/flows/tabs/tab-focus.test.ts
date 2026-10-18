@@ -46,6 +46,7 @@ function setup(sessions: Session[], tabs: WorkspaceTab[]) {
       onSaved: () => {},
     }),
     forgetHarness: vi.fn(),
+    leaveCoveringViews: vi.fn(),
   };
   return { deps, store };
 }
@@ -76,6 +77,7 @@ describe("activateTab", () => {
     expect(store.getState().projectCwd).toBe("/work/other");
     expect(store.getState().recents[0]?.path).toBe("/work/other");
     expect(deps.setComposerFocused).toHaveBeenCalledWith(true);
+    expect(deps.leaveCoveringViews).toHaveBeenCalled();
   });
 
   it("passes a workspace switch through", () => {

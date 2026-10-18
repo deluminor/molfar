@@ -12,8 +12,15 @@ use crate::atlassian_adf::rich_text;
 const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 const DEFAULT_LIMIT: u32 = 40;
 const COMMENT_LIMIT: u32 = 50;
-const ISSUE_FIELDS: [&str; 6] = [
-    "summary", "status", "updated", "labels", "assignee", "project",
+const ISSUE_FIELDS: [&str; 8] = [
+    "summary",
+    "status",
+    "updated",
+    "labels",
+    "assignee",
+    "project",
+    "issuetype",
+    "parent",
 ];
 
 #[derive(Serialize)]
@@ -25,10 +32,10 @@ pub struct JiraStatus {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-struct JiraConfig {
-    site: String,
-    email: String,
-    token: String,
+pub(crate) struct JiraConfig {
+    pub(crate) site: String,
+    pub(crate) email: String,
+    pub(crate) token: String,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -73,6 +80,12 @@ pub struct JiraIssue {
     pub team_id: String,
     pub team_name: String,
     pub project_path: String,
+    /// Jira issue type display name (Epic, Story, Task, …).
+    pub issue_type: String,
+    /// Jira hierarchy level when present (Epic often 1, Story/Task 0, Sub-task -1).
+    pub issue_type_hierarchy_level: Option<i64>,
+    /// Parent issue key when this issue nests under another.
+    pub parent_key: String,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -452,6 +465,7 @@ fn parse_jira_issue(node: &Value, site: &str) -> Option<JiraIssue> {
         })
         .unwrap_or_default();
     let (assignee, avatar_url) = person_fields(fields.get("assignee"));
+    let issue_type = fields.get("issuetype");
     Some(JiraIssue {
         provider: "jira".into(),
         kind: "jira".into(),
@@ -482,6 +496,16 @@ fn parse_jira_issue(node: &Value, site: &str) -> Option<JiraIssue> {
             .and_then(|value| string_field(value, "name"))
             .unwrap_or_default(),
         project_path: String::new(),
+        issue_type: issue_type
+            .and_then(|value| string_field(value, "name"))
+            .unwrap_or_default(),
+        issue_type_hierarchy_level: issue_type
+            .and_then(|value| value.get("hierarchyLevel"))
+            .and_then(Value::as_i64),
+        parent_key: fields
+            .get("parent")
+            .and_then(|value| string_field(value, "key"))
+            .unwrap_or_default(),
         id,
         identifier: key,
     })
@@ -668,28 +692,118 @@ fn config_path(app: &AppHandle) -> Result<PathBuf, String> {
         .join("jira-config.json"))
 }
 
-fn read_config(app: &AppHandle) -> Result<Option<JiraConfig>, String> {
-    let path = config_path(app)?;
+/// Same vault file Tauri commands use — for CLI MCP without an AppHandle.
+pub(crate) fn disk_config_path() -> Result<PathBuf, String> {
+    Ok(crate::app_identity::app_data_dir()?.join("jira-config.json"))
+}
+
+fn parse_config_raw(raw: &str) -> Result<Option<JiraConfig>, String> {
+    let mut config: JiraConfig =
+        serde_json::from_str(raw).map_err(|_| "Jira settings are invalid".to_string())?;
+    config.site = normalize_jira_site(&config.site)?;
+    config.email = config.email.trim().to_string();
+    config.token = config.token.trim().to_string();
+    if config.token.is_empty() || config.email.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(config))
+    }
+}
+
+fn read_config_at(path: &Path) -> Result<Option<JiraConfig>, String> {
     match fs::read_to_string(path) {
-        Ok(raw) => {
-            let mut config: JiraConfig =
-                serde_json::from_str(&raw).map_err(|_| "Jira settings are invalid".to_string())?;
-            config.site = normalize_jira_site(&config.site)?;
-            config.email = config.email.trim().to_string();
-            config.token = config.token.trim().to_string();
-            if config.token.is_empty() || config.email.is_empty() {
-                Ok(None)
-            } else {
-                Ok(Some(config))
-            }
-        }
+        Ok(raw) => parse_config_raw(&raw),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(error) => Err(error.to_string()),
     }
 }
 
+fn read_config(app: &AppHandle) -> Result<Option<JiraConfig>, String> {
+    read_config_at(&config_path(app)?)
+}
+
+pub(crate) fn read_disk_config() -> Result<Option<JiraConfig>, String> {
+    read_config_at(&disk_config_path()?)
+}
+
+pub(crate) fn is_connected_on_disk() -> bool {
+    read_disk_config().ok().flatten().is_some()
+}
+
 fn require_config(app: &AppHandle) -> Result<JiraConfig, String> {
     read_config(app)?.ok_or_else(|| "Connect Jira in Settings".to_string())
+}
+
+fn require_disk_config() -> Result<JiraConfig, String> {
+    read_disk_config()?.ok_or_else(|| "Connect Jira in Settings".to_string())
+}
+
+pub(crate) fn mcp_list_projects() -> Result<Vec<JiraProject>, String> {
+    let config = require_disk_config()?;
+    fetch_jira_projects(|start| {
+        jira_get(
+            &config,
+            &format!("/rest/api/3/project/search?maxResults=100&orderBy=name&startAt={start}"),
+        )
+    })
+}
+
+pub(crate) fn mcp_list_issues(
+    assigned_to_me: bool,
+    state: &str,
+    project_ids: Vec<String>,
+    limit: Option<u32>,
+) -> Result<Vec<JiraIssue>, String> {
+    let Some(config) = read_disk_config()? else {
+        return Ok(Vec::new());
+    };
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).clamp(1, 100);
+    let jql = issue_jql(assigned_to_me, state, &project_ids);
+    let data = jira_post(
+        &config,
+        "/rest/api/3/search/jql",
+        &json!({ "jql": jql, "maxResults": limit, "fields": ISSUE_FIELDS }),
+    )?;
+    parse_jira_issues(&data, &config.site)
+}
+
+pub(crate) fn mcp_issue_details(key: &str) -> Result<JiraIssueDetails, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let data = jira_get(
+        &config,
+        &format!("/rest/api/3/issue/{key}?fields=description,reporter,creator,assignee"),
+    )?;
+    parse_jira_issue_details(&data)
+}
+
+pub(crate) fn mcp_issue_thread(key: &str) -> Result<JiraIssueThread, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let data = jira_get(
+        &config,
+        &format!("/rest/api/3/issue/{key}/comment?maxResults={COMMENT_LIMIT}&orderBy=-created"),
+    )?;
+    parse_jira_issue_thread(&data, &config.site, key)
+}
+
+pub(crate) fn mcp_issue_comment(key: &str, body: &str) -> Result<String, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let body = body.trim();
+    if body.is_empty() {
+        return Err("Comment cannot be empty".into());
+    }
+    let data = jira_post(
+        &config,
+        &format!("/rest/api/3/issue/{key}/comment"),
+        &json!({ "body": text_to_adf(body) }),
+    )?;
+    let id = string_field(&data, "id").unwrap_or_default();
+    if id.is_empty() {
+        return Err("Could not post Jira comment".into());
+    }
+    Ok(comment_url(&config.site, key, &id))
 }
 
 fn write_config(app: &AppHandle, config: &JiraConfig) -> Result<(), String> {
@@ -842,7 +956,9 @@ mod tests {
                         "displayName": "Maya",
                         "avatarUrls": { "48x48": "https://avatar.example/maya.png" }
                     },
-                    "project": { "id": "10000", "key": "ENG", "name": "Engineering" }
+                    "project": { "id": "10000", "key": "ENG", "name": "Engineering" },
+                    "issuetype": { "name": "Story", "hierarchyLevel": 0 },
+                    "parent": { "key": "ENG-1", "fields": { "summary": "Auth epic" } }
                 }
             }, { "id": "10043" }]
         });
@@ -867,6 +983,9 @@ mod tests {
         assert_eq!(item.repo, "ENG");
         assert_eq!(item.team_id, "10000");
         assert_eq!(item.team_name, "Engineering");
+        assert_eq!(item.issue_type, "Story");
+        assert_eq!(item.issue_type_hierarchy_level, Some(0));
+        assert_eq!(item.parent_key, "ENG-1");
     }
 
     #[test]

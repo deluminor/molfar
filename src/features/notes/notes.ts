@@ -17,6 +17,8 @@ export type Note = {
   tags: string[];
   sourceSessionId?: string;
   sourceCwd?: string;
+  /** Slug generated for a note created without a title; replaced once from its first real title. */
+  slugPending: boolean;
   createdAt: number;
   updatedAt: number;
 };
@@ -29,6 +31,8 @@ export type NoteUpsert = {
   sourceSessionId?: string;
   /** Omit on update to keep the saved project directory. */
   sourceCwd?: string;
+  /** Replace a pending slug from the title. Set once the title is done being typed; ignored unless the slug is pending. */
+  finalizeSlug?: boolean;
 };
 
 export const ADD_NOTE_TO_CHAT_EVENT = "molfar:add-note-to-chat";
@@ -324,6 +328,23 @@ export function composeNoteMessage(
 ): string {
   if (!card) return text.trim();
   const lead = text.trim() || "Use this note.";
+  // Knowledge vault notes travel as files (attachment + disk path), not inlined body.
+  if (card.filePath && card.source?.kind === "knowledge") {
+    const source = JSON.stringify({
+      vault: card.source.vaultName,
+      path: card.source.path,
+      revision: card.source.revision,
+    });
+    return [
+      lead,
+      "",
+      "---",
+      `Knowledge note attached as a file (read it from disk or the attachment; do not expect the body inline).`,
+      `File: ${JSON.stringify(card.filePath)}`,
+      `Knowledge source: ${source}`,
+    ].join("\n");
+  }
+
   let body = card.body;
   if (card.source) {
     body = `Knowledge source: ${JSON.stringify({ vault: card.source.vaultName, path: card.source.path, revision: card.source.revision })}\n\n${body}`;
@@ -336,6 +357,7 @@ export function composeNoteMessage(
       title: card.title,
       body,
       tags: [],
+      slugPending: false,
       createdAt: 0,
       updatedAt: 0,
     },

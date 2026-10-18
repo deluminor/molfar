@@ -1,4 +1,4 @@
-export type RateLimitProvider = "claude" | "codex" | "opencode";
+export type RateLimitProvider = "claude" | "codex" | "opencode" | "devin";
 
 export type RateLimitStatus =
   "idle" | "fetching" | "ok" | "error" | "unavailable";
@@ -35,11 +35,14 @@ export type ProviderRateLimits = {
   monthly: RateLimitWindow | null;
   /** Codex-only banked rate-limit reset rewards, when supplied by app-server. */
   resetCredits: RateLimitResetCredits | null;
+  /** Devin-only extra (overage) usage balance in US dollars; negative once billed. */
+  extraUsageBalance?: number | null;
   updatedAt: number;
   error: string | null;
   status: RateLimitStatus;
 };
 
 export const SESSION_WINDOW_MINUTES = 300;
+export const DAILY_WINDOW_MINUTES = 1_440;
 export const WEEKLY_WINDOW_MINUTES = 10080;
 export const MONTHLY_WINDOW_MINUTES = 43200;

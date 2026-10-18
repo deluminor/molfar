@@ -1,9 +1,13 @@
+import type { HarnessId } from "@/domain/harness/harness";
+import type { Session } from "@/domain/session/session";
 import { describe, expect, it } from "vitest";
 import { newTab } from "@/features/workspace/model/layout";
 import { newSession } from "@/features/sessions/model/session";
-import type { Session } from "@/domain/session/session";
-import type { HarnessId } from "@/domain/harness/harness";
 import { planProjectOpenRun, type ProjectOpenStep } from "./project-open-run";
+import {
+  collectWorkspaceSnapshot,
+  hydrateWorkspaceSnapshot,
+} from "@/features/workspace/model/workspace-snapshot";
 
 function chat(id: string, cwd: string, harness: HarnessId = "cursor"): Session {
   return {
@@ -128,6 +132,39 @@ describe("planning a run of folders", () => {
     });
     expect(creates(steps).map((step) => step.session.cwd)).toEqual(["/two"]);
   });
+
+  it.each(["molfar", "molfar-local"])(
+    "preserves a restored remote conversation when opening local %s",
+    (name) => {
+      const remote = "remote://host/Users/me/code/molfar";
+      const local = `/Users/me/code/${name}`;
+      const original = workspace([chat("remote-shell", remote)]);
+      const snapshot = collectWorkspaceSnapshot(
+        original.tabs,
+        original.sessions,
+        original.activeTabId,
+        remote,
+        original.memory,
+      );
+      const restored = hydrateWorkspaceSnapshot(snapshot, new Map())!;
+      // Remote transcripts arrive from the host after workspace restoration.
+      expect(restored.sessions[0].blocks).toEqual([]);
+
+      const steps = planProjectOpenRun({
+        ...restored,
+        memory: restored.projectReturnMemory,
+        paths: [local],
+      });
+      expect(steps).toHaveLength(1);
+      expect(steps[0]).toMatchObject({
+        action: "create",
+        path: local,
+        session: { cwd: local },
+      });
+      expect(creates(steps)[0].session.id).not.toBe("remote-shell");
+      expect(restored.sessions[0].cwd).toBe(remote);
+    },
+  );
 
   it("leaves a single folder behaving as it did before the run", () => {
     const state = workspace();

@@ -12,6 +12,9 @@ import { GeneratedImage } from "./GeneratedImage";
 vi.mock("@/platform/tauri/fs", () => ({
   readBinaryFile: vi.fn(),
 }));
+vi.mock("@/platform/tauri/trackpad-zoom", () => ({
+  claimTrackpadMagnify: () => () => {},
+}));
 import { AttachmentChip } from "./AttachmentChip";
 
 const attachment: Attachment = {

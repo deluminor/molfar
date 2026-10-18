@@ -38,6 +38,7 @@ export interface LocalSurfaceActionDeps {
   sessionsRef: MutableRefObject<Session[]>;
   history: readonly SessionSummary[];
   onSelectHistorySession: (sessionId: string) => Promise<unknown>;
+  railBadges?: Partial<Record<LocalSurfaceId, number>>;
 }
 
 export interface LocalSurfaceActions {

@@ -6,20 +6,9 @@ Please don’t open PRs that add a new provider right now. The existing harnesse
 
 ## Get it running
 
-You need Node.js 20+, a current stable Rust toolchain, and at least one provider CLI installed and logged in:
+You need Node.js 20+, a current stable Rust toolchain, and at least one provider CLI installed and logged in. See [Install a provider](README.md#install-a-provider) for installation and login instructions.
 
-- [Claude Code](https://claude.com/product/claude-code) - `claude auth login`
-- [Codex](https://developers.openai.com/codex/cli) - `codex login`
-- [Cursor CLI](https://cursor.com/cli) - `agent login`
-- [Grok Build](https://docs.x.ai/build/overview) - `curl -fsSL https://x.ai/cli/install.sh | bash` then `grok login`
-- [OpenCode](https://opencode.ai) - `opencode auth login`
-- [Antigravity](https://antigravity.google/docs/cli-install) (macOS/Linux) - `curl -fsSL https://antigravity.google/cli/install.sh | bash`, then run `agy` once to sign in
-- [Pi](https://pi.dev/) - `npm install -g @earendil-works/pi-coding-agent`
-- [omp](https://omp.sh) - `curl -fsSL https://omp.sh/install | sh`
-- [fx](https://fx.sh) - `curl -fsSL https://fx.sh/setup.sh | bash` then `fx login`
-- [Hermes Agent](https://github.com/NousResearch/hermes-agent) - macOS/Linux: `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`; Windows PowerShell: `iex (irm https://hermes-agent.nousresearch.com/install.ps1)`; then run `hermes model`
-
-macOS, Linux, and Windows are supported targets. On Debian/Ubuntu, `npm run setup:linux:deb` installs the native Tauri build dependencies.
+macOS, Linux, and Windows are supported targets. See [Build from source](README.md#build-from-source) for platform prerequisites and packaging commands.
 
 ```bash
 npm install
@@ -47,9 +36,18 @@ npm run check
 
 That runs what CI runs: vitest, `tsc --noEmit`, `cargo fmt`, `cargo clippy`, and `cargo test`. If it’s green locally it should be green on GitHub. `npm run check:web` and `npm run check:rust` run the two halves separately when you only touched one side.
 
+For transcript layout and scrolling changes, also run the real-browser tests:
+
+```bash
+npx playwright install chromium webkit
+npm run test:browser
+```
+
+These render the actual transcript and stylesheet in Chromium and WebKit, checking scroll geometry that the DOM-mocked unit tests cannot exercise. They start an isolated Vite server on port 1435 and need no provider or Tauri app.
+
 ## New providers
 
-I’m pausing new harnesses until the current ones share the same patterns - session lifecycle, catalog probes, usage, approvals, and how slash commands and skills are wired. A PR that adds another provider will be closed for now, even if the work is good. Fixes, tests, and protocol bugs on Claude, Codex, Cursor, Grok, OpenCode, Antigravity, Pi, omp, fx, and Hermes Agent are still the best kind of contribution.
+I’m pausing new harnesses until the current ones share the same patterns - session lifecycle, catalog probes, usage, approvals, and how slash commands and skills are wired. A PR that adds another provider will be closed for now, even if the work is good. Fixes, tests, and protocol bugs on Claude, Codex, Cursor, Grok, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent, and Devin are still the best kind of contribution.
 
 When the pause lifts, this section goes away.
 

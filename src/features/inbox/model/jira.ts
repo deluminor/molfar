@@ -26,6 +26,12 @@ export type JiraIssue = {
   teamId: string;
   teamName: string;
   projectPath: string;
+  /** Jira issue type display name (Epic, Story, Task, …). */
+  issueType?: string;
+  /** Jira hierarchy level when present. */
+  issueTypeHierarchyLevel?: number | null;
+  /** Parent issue key when nested under another issue. */
+  parentKey?: string;
 };
 
 export type JiraIssueDetails = {

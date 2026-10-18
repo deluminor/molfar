@@ -1,3 +1,4 @@
+import { isNoteImagePath } from "@/features/notes/note-images";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -11,6 +12,7 @@ import {
   useRef,
   useState,
   type ComponentProps,
+  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
@@ -44,11 +46,21 @@ import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { copyText } from "@/platform/tauri/clipboard";
 import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
 import { INBOX_MEDIA_PREFIXES, isInboxMediaUrl } from "@/features/inbox/model/inbox-media";
-import { isNoteImagePath } from "@/features/notes/note-images";
 import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import { InboxMedia } from "@/features/inbox/ui/InboxMedia";
+import { isLocalMediaPath, LocalMedia } from "./LocalMedia";
 import { rehypeHardBreaks } from "./hard-breaks";
-import { rehypeWordFade, usePacedText, useWordFading } from "./word-fade";
+import {
+  pacedRevealPreferred,
+  rehypeWordFade,
+  useCadenceFade,
+  usePacedText,
+  useStreamedText,
+  useWordFading,
+  WORD_FADE_MS,
+} from "./word-fade";
+import { isFenceBlock, parseStreamingMarkdown } from "./streaming-markdown";
+import { HighlightedCodeBlock } from "./HighlightedCodeBlock";
 
 const MERMAID_BASE_CONFIG = {
   startOnLoad: false,
@@ -126,6 +138,40 @@ const FileOpenContext = createContext<{
 
 const RemoteMediaContext = createContext(false);
 const LocalImageSourcesContext = createContext<ReadonlyMap<string, string> | undefined>(undefined);
+/** Show local images and videos a reply links to, rather than the links. */
+const LocalMediaContext = createContext(false);
+const MarkdownFadeContext = createContext(false);
+
+type TaskToggleApi = {
+  onToggle: (index: number, checked: boolean) => void;
+  nextIndex: () => number;
+};
+
+const TaskToggleContext = createContext<TaskToggleApi | null>(null);
+
+const LONG_URL_LABEL = 48;
+
+/** Shorten a bare autolink label so long URLs stay readable in preview. */
+function linkLabel(href: string | undefined, label: string): ReactNode {
+  if (!href || label !== href || !/^https?:\/\//i.test(href)) return null;
+  if (href.length <= LONG_URL_LABEL) return null;
+  try {
+    const url = new URL(href);
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    const clipped =
+      path.length > 28 ? `${path.slice(0, 14)}…${path.slice(-10)}` : path;
+    return (
+      <span className="markdown-url-label" title={href}>
+        <span className="markdown-url-host">{url.host}</span>
+        {clipped && clipped !== "/" ? (
+          <span className="markdown-url-path">{clipped}</span>
+        ) : null}
+      </span>
+    );
+  } catch {
+    return `${href.slice(0, LONG_URL_LABEL - 1)}…`;
+  }
+}
 
 const REVEAL_LABEL = IS_MAC
   ? "Reveal in Finder"
@@ -239,14 +285,17 @@ function MarkdownLink({
   const { cwd, onOpenFile, onFileContextMenu } = useContext(FileOpenContext);
   const file = href ? resolveWorkspaceFileReference(href, cwd) : undefined;
   const label = textContent(children);
+  const localMedia = useContext(LocalMediaContext);
   if (allowRemoteMedia && href && isInboxMediaUrl(href)) {
     return <InboxMedia src={href} alt={label} />;
   }
 
-  return (
+  const pretty = linkLabel(href, label);
+  const link = (
     <a
       href={href}
       className={`text-sky-400/90 hover:text-sky-300 hover:underline ${className ?? ""}`}
+      title={pretty && href ? href : undefined}
       {...props}
       dir={dir ?? "auto"}
       onClick={(event) => {
@@ -270,9 +319,20 @@ function MarkdownLink({
         onFileContextMenu(event, file.path, file.navigation);
       }}
     >
-      {children}
+      {pretty ?? children}
     </a>
   );
+  if (localMedia && file && isLocalMediaPath(file.path)) {
+    return (
+      <LocalMedia
+        path={file.path}
+        label={label}
+        onOpen={onOpenFile ? () => onOpenFile(file.path) : undefined}
+        fallback={link}
+      />
+    );
+  }
+  return link;
 }
 
 type MarkdownCodeProps = ComponentProps<"code"> & { node?: unknown };
@@ -368,8 +428,7 @@ function MarkdownCode({
         <span className="markdown-code-fallback-label">{fence.language}</span>
       ) : null}
       <CodeCopyButton code={code} />
-      <CodeBlock
-        className={className}
+      <HighlightedCodeBlock
         code={code}
         isIncomplete={incomplete}
         language={highlightLanguageFor(fence.language)}
@@ -468,6 +527,8 @@ function MarkdownImage({
 }: MarkdownImageProps) {
   const allowRemoteMedia = useContext(RemoteMediaContext);
   const localImageSources = useContext(LocalImageSourcesContext);
+  const localMedia = useContext(LocalMediaContext);
+  const { cwd, onOpenFile } = useContext(FileOpenContext);
   const url = typeof src === "string" ? src.trim() : "";
   const localSrc = localImageSources?.get(url);
   if (localSrc) return <img {...props} src={localSrc} alt={alt ?? ""} loading="lazy" draggable={false} />;
@@ -477,14 +538,72 @@ function MarkdownImage({
   if (isNoteImagePath(url)) {
     return <NoteAssetImage {...props} asset={url} alt={alt} />;
   }
+  const file =
+    localMedia && url && !/^[a-z][a-z0-9+.-]*:\/\//i.test(url)
+      ? resolveWorkspaceFileReference(url, cwd)
+      : undefined;
+  if (file && isLocalMediaPath(file.path)) {
+    return (
+      <LocalMedia
+        path={file.path}
+        label={alt ?? ""}
+        onOpen={onOpenFile ? () => onOpenFile(file.path) : undefined}
+        fallback={null}
+      />
+    );
+  }
   if (!allowRemoteMedia || !url || !isInboxMediaUrl(url)) return null;
   return <InboxMedia src={url} alt={alt} />;
+}
+
+type MarkdownInputProps = ComponentProps<"input"> & { node?: unknown };
+
+function MarkdownCheckbox({
+  type,
+  checked,
+  disabled: _disabled,
+  node: _node,
+  onChange,
+  className,
+  ...props
+}: MarkdownInputProps) {
+  const tasks = useContext(TaskToggleContext);
+  if (type !== "checkbox") {
+    return <input type={type} checked={checked} onChange={onChange} className={className} {...props} />;
+  }
+  if (!tasks) {
+    return (
+      <input
+        type="checkbox"
+        checked={!!checked}
+        disabled
+        className={`markdown-task-checkbox ${className ?? ""}`}
+        {...props}
+      />
+    );
+  }
+  const index = tasks.nextIndex();
+  return (
+    <input
+      type="checkbox"
+      checked={!!checked}
+      className={`markdown-task-checkbox is-interactive ${className ?? ""}`}
+      aria-label={checked ? "Mark task incomplete" : "Mark task complete"}
+      onChange={(event) => {
+        onChange?.(event);
+        if (event.defaultPrevented) return;
+        tasks.onToggle(index, event.target.checked);
+      }}
+      {...props}
+    />
+  );
 }
 
 const MARKDOWN_COMPONENTS = {
   a: MarkdownLink,
   code: MarkdownCode,
   img: MarkdownImage,
+  input: MarkdownCheckbox,
 } satisfies Components;
 
 /**
@@ -496,7 +615,14 @@ const MARKDOWN_COMPONENTS = {
  * comes from the block inside it.
  */
 function DirectionalBlock({ dir, ...props }: BlockProps) {
-  const block = <Block {...props} />;
+  const fading = useContext(MarkdownFadeContext);
+  // Streamdown retains a parsed prose tree after the fade plugin changes.
+  // Remount prose to remove its word spans, but keep literal fences mounted:
+  // rebuilding all their highlighted tokens at fade-end causes a long frame.
+  const fence = isFenceBlock(props.content);
+  const block = (
+    <Block key={fence ? "code" : fading ? "fade" : "plain"} {...props} />
+  );
   return dir ? (
     <div dir={dir} className="agent-markdown-block">
       {block}
@@ -509,25 +635,47 @@ function DirectionalBlock({ dir, ...props }: BlockProps) {
 export const AgentMarkdown = memo(function AgentMarkdown({
   text,
   streaming,
+  revealOnMount,
   className,
   cwd,
   onOpenFile,
   allowRemoteMedia,
   localImageSources,
+  localMedia,
   hardBreaks,
+  onToggleTask,
 }: {
   text: string;
   streaming?: boolean;
+  /** Pace newly arrived output even if it finished before its first paint. */
+  revealOnMount?: boolean;
   className?: string;
   cwd?: string;
   onOpenFile?: OpenFileFn;
   allowRemoteMedia?: boolean;
   localImageSources?: ReadonlyMap<string, string>;
+  /** Show local images and videos the text links to, in place of the links. */
+  localMedia?: boolean;
   /** Show a newline inside a block as a line break, as a document does (#591). */
   hardBreaks?: boolean;
+  /** When set, GFM task-list checkboxes are interactive and call back by index. */
+  onToggleTask?: (index: number, checked: boolean) => void;
 }) {
   const [fileMenu, setFileMenu] = useState<FileLinkMenu | null>(null);
   const [fileActionError, setFileActionError] = useState<string | null>(null);
+  const taskIndexRef = useRef(0);
+  taskIndexRef.current = 0;
+  const taskToggle = useMemo<TaskToggleApi | null>(() => {
+    if (!onToggleTask) return null;
+    return {
+      onToggle: onToggleTask,
+      nextIndex: () => {
+        const index = taskIndexRef.current;
+        taskIndexRef.current += 1;
+        return index;
+      },
+    };
+  }, [onToggleTask]);
   const onFileContextMenu = useCallback(
     (event: ReactMouseEvent, path: string, navigation?: EditorNavigation) => {
       event.preventDefault();
@@ -548,8 +696,19 @@ export const AgentMarkdown = memo(function AgentMarkdown({
     [cwd],
   );
   const remoteMedia = !!allowRemoteMedia;
-  const paced = usePacedText(text, !!streaming);
-  const fading = useWordFading(!!streaming || paced.revealing);
+  // Read once: switching reveal hooks while mounted would break hook order.
+  const [pacedReveal] = useState(pacedRevealPreferred);
+  const useReveal = pacedReveal ? usePacedText : useStreamedText;
+  const paced = useReveal(text, !!streaming, revealOnMount);
+  const cadence = useCadenceFade(paced.text);
+  const fadeMs = pacedReveal ? WORD_FADE_MS : cadence.durationMs;
+  const fading = useWordFading(!!streaming || paced.revealing, fadeMs);
+  const fadeStyle = pacedReveal
+    ? undefined
+    : ({
+        "--word-fade-ms": `${fadeMs}ms`,
+        "--word-fade-ease": cadence.easing,
+      } as CSSProperties);
   // Spans stay while words are fading so a word already on screen keeps its
   // element. Dropping one mid-fade would remount it and fade it again. Once
   // the fade is over they come off, or a finished reply would keep a span per
@@ -609,42 +768,50 @@ export const AgentMarkdown = memo(function AgentMarkdown({
   return (
     <LocalImageSourcesContext.Provider value={localImageSources}>
       <RemoteMediaContext.Provider value={remoteMedia}>
-        <FileOpenContext.Provider value={fileOpen}>
-          <>
-            <Streamdown
-              // Streamdown keeps a parsed tree while the text is unchanged, so
-              // the plugin swap has to remount it once the fade is over.
-              key={fading ? "fade" : "plain"}
-              BlockComponent={DirectionalBlock}
-              className={`agent-markdown min-w-0 font-sans text-sm leading-6 ${fading ? "word-fading" : ""} ${className ?? ""}`}
-              components={MARKDOWN_COMPONENTS}
-              controls={false}
-              dir="auto"
-              isAnimating={!!streaming || paced.revealing}
-              plugins={MARKDOWN_PLUGINS}
-              remarkPlugins={remarkPlugins}
-              rehypePlugins={rehypePlugins}
-            >
-              {paced.text}
-            </Streamdown>
-            {fileMenu ? (
-              <ExplorerMenu
-                x={fileMenu.x}
-                y={fileMenu.y}
-                items={fileLinkMenuItems(!!onOpenFile, !!cwd)}
-                ariaLabel="File link actions"
-                onPick={onFileMenuPick}
-                onClose={() => setFileMenu(null)}
-              />
-            ) : null}
-            {fileActionError ? (
-              <FileActionError
-                message={fileActionError}
-                onDismiss={() => setFileActionError(null)}
-              />
-            ) : null}
-          </>
-        </FileOpenContext.Provider>
+        <LocalMediaContext.Provider value={!!localMedia}>
+          <FileOpenContext.Provider value={fileOpen}>
+            <TaskToggleContext.Provider value={taskToggle}>
+              <>
+                <MarkdownFadeContext.Provider value={fading}>
+                  {/* Streamdown takes no style; a contents box passes the fade timing down. */}
+                  <div className="contents" style={fadeStyle}>
+                    <Streamdown
+                      BlockComponent={DirectionalBlock}
+                      className={`agent-markdown min-w-0 font-sans text-sm leading-6 ${fading ? "word-fading" : ""} ${className ?? ""}`}
+                      components={MARKDOWN_COMPONENTS}
+                      controls={false}
+                      dir="auto"
+                      isAnimating={!!streaming || paced.revealing}
+                      parseIncompleteMarkdown={false}
+                      parseMarkdownIntoBlocksFn={parseStreamingMarkdown}
+                      plugins={MARKDOWN_PLUGINS}
+                      remarkPlugins={remarkPlugins}
+                      rehypePlugins={rehypePlugins}
+                    >
+                      {paced.text}
+                    </Streamdown>
+                  </div>
+                </MarkdownFadeContext.Provider>
+                {fileMenu ? (
+                  <ExplorerMenu
+                    x={fileMenu.x}
+                    y={fileMenu.y}
+                    items={fileLinkMenuItems(!!onOpenFile, !!cwd)}
+                    ariaLabel="File link actions"
+                    onPick={onFileMenuPick}
+                    onClose={() => setFileMenu(null)}
+                  />
+                ) : null}
+                {fileActionError ? (
+                  <FileActionError
+                    message={fileActionError}
+                    onDismiss={() => setFileActionError(null)}
+                  />
+                ) : null}
+              </>
+            </TaskToggleContext.Provider>
+          </FileOpenContext.Provider>
+        </LocalMediaContext.Provider>
       </RemoteMediaContext.Provider>
     </LocalImageSourcesContext.Provider>
   );
@@ -657,6 +824,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile,
   header,
   hardBreaks,
+  allowRemoteMedia,
+  localImageSources,
+  onToggleTask,
 }: {
   text: string;
   streaming?: boolean;
@@ -664,6 +834,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile?: OpenFileFn;
   header?: ReactNode;
   hardBreaks?: boolean;
+  allowRemoteMedia?: boolean;
+  localImageSources?: ReadonlyMap<string, string>;
+  onToggleTask?: (index: number, checked: boolean) => void;
 }) {
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
 
@@ -683,6 +856,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
           cwd={cwd}
           onOpenFile={onOpenFile}
           hardBreaks={hardBreaks}
+          allowRemoteMedia={allowRemoteMedia}
+          localImageSources={localImageSources}
+          onToggleTask={onToggleTask}
         />
       </div>
     </div>

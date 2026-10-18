@@ -1,3 +1,8 @@
+import { IconButton } from "@/shared/ui/IconButton";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import type { GithubLabel } from "@/domain/work-items/work-item";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { LinkedWorkItem } from "@/domain/session/session";
 import { useGithubPrChecks } from "../hooks/use-github-pr-checks";
 import { summarizePrChecks } from "../model/github-pr-checks";
 import type { CiRepairRequest } from "../model/ci-repair";
@@ -7,6 +12,7 @@ import {
   CheckCheck,
   CheckCircle,
   ChevronDown,
+  ChevronRight,
   CircleDot,
   CircleX,
   Copy,
@@ -35,54 +41,22 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import {
-  InboxFiltersMenu,
-  INBOX_FILTER_MENU_WIDTH,
-} from "./InboxFiltersMenu";
+import { InboxFiltersMenu, INBOX_FILTER_MENU_WIDTH } from "./InboxFiltersMenu";
 import { InboxConnectMenu } from "./InboxConnectMenu";
 import { InboxProviderMark } from "./InboxProviderMark";
+import {
+  InboxTreeGutter,
+  inboxTreeIndentPx,
+} from "./InboxTreeGutter";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { Popover } from "@/shared/ui/Popover";
-import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
-import { IconButton } from "@/shared/ui/IconButton";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { useDragResize } from "@/shared/hooks/use-drag-resize";
 import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
-import {
-  githubStatus,
-  githubPrDiff,
-  githubPrAction,
-  githubReviewDecisionLabel,
-  githubWorkItem,
-  githubWorkItemComment,
-  githubWorkItemDetails,
-  githubWorkItemThread,
-  gitlabAttentionLabel,
-  inboxItemKey,
-  inboxItemRef,
-  inboxItemStatus,
-  inboxListIsFresh,
-  inboxProjectsForRail,
-  listInboxItems,
-  peekGithubPrDiff,
-  peekGithubWorkItem,
-  peekGithubWorkItemDetails,
-  peekGithubWorkItemThread,
-  peekInboxList,
-  formatRelativeTime,
-  inboxPersonAvatarUrl,
-  type GithubPrAction,
-  type GithubPrDiff,
-  type GithubWorkItemDetails,
-  type GithubWorkItemThread,
-  type InboxItem,
-  type InboxProviderErrors,
-  type InboxQuery,
-} from "../model/github-tasks";
-import type { GithubLabel } from "@/domain/work-items/work-item";
+import { githubStatus, githubPrDiff, githubPrAction, githubReviewDecisionLabel, githubWorkItem, githubWorkItemComment, githubWorkItemDetails, githubWorkItemThread, gitlabAttentionLabel, inboxItemKey, inboxItemRef, inboxItemStatus, inboxListIsFresh, inboxProjectsForRail, listInboxItems, peekGithubPrDiff, peekGithubWorkItem, peekGithubWorkItemDetails, peekGithubWorkItemThread, peekInboxList, formatRelativeTime, inboxPersonAvatarUrl, type GithubPrAction, type GithubPrDiff, GITHUB_WORK_ITEM_FRESH_MS, type GithubWorkItemDetails, type GithubWorkItemThread, type InboxItem, type InboxProviderErrors, type InboxQuery } from "../model/github-tasks";
 import {
   applyInboxFilters,
   connectableInboxSources,
@@ -90,29 +64,37 @@ import {
   loadInboxConnections,
   linearProjectOptions,
   inboxFetchState,
-  loadInboxFilters,
+  loadInboxFiltersBySource,
   loadInboxSource,
   pruneInboxFilters,
-  saveInboxFilters,
+  saveInboxFiltersForSource,
   resolveInboxSource,
   saveInboxConnections,
   saveInboxSource,
   visibleInboxSources,
+  widestInboxFetchParams,
   INBOX_SOURCE_LABELS,
   isConfluenceSource,
   isTrackerSource,
   type ConnectableInboxSource,
   type InboxFilters,
+  type InboxFiltersBySource,
   type InboxSource,
 } from "../model/inbox-filters";
+import {
+  buildJiraIssueTree,
+  defaultExpandedJiraKeys,
+  flattenJiraIssueTree,
+} from "../model/jira-issue-tree";
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
 import { copyText } from "@/platform/tauri/clipboard";
 import { projectKey, projectName } from "@/shared/lib/paths";
 import { IS_MAC } from "@/shared/lib/platform";
 import { playCue } from "@/features/settings/model/sounds";
-import { sameProjectPath, type RecentProject } from "@/features/projects/model/recents";
-import { sessionDisplayTitle } from "@/domain/session/title";
-import type { LinkedWorkItem } from "@/domain/session/session";
+import {
+  sameProjectPath,
+  type RecentProject,
+} from "@/features/projects/model/recents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   inboxItemMatchesLinkedWorkItem,
@@ -195,9 +177,10 @@ import {
 } from "./InboxComments";
 import { InboxPrDiff } from "./InboxPrDiff";
 import {
-  InboxPrChecks,
-  PrChecksTab,
-} from "./InboxPrChecks";
+  InboxDescriptionSummary,
+  InboxPrChangesGlance,
+} from "./InboxPrOverview";
+import { InboxPrChecks, PrChecksTab } from "./InboxPrChecks";
 import {
   InboxDiscussionPanel,
   type InboxSessionPortal,
@@ -277,13 +260,16 @@ function InboxProjectMark({
 
 function peekInboxForRail(recents: RecentProject[], cwd: string) {
   const projects = inboxProjectsForRail(recents, cwd);
-  const filters = pruneInboxFilters(
-    loadInboxFilters(),
-    projects.map((project) => project.path),
-  );
+  const paths = projects.map((project) => project.path);
+  const bySource = loadInboxFiltersBySource();
+  const pruned: typeof bySource = { ...bySource };
+  for (const source of Object.keys(bySource) as (keyof typeof bySource)[]) {
+    pruned[source] = pruneInboxFilters(bySource[source], paths);
+  }
+  const widest = widestInboxFetchParams(pruned);
   return peekInboxList(projects, {
-    assignedToMe: filters.assignedToMe,
-    state: inboxFetchState(filters),
+    assignedToMe: widest.assignedToMe,
+    state: widest.state,
     search: "",
     linearHiddenTeamIds: loadHiddenLinearTeamIds(),
     jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
@@ -323,10 +309,12 @@ function InboxSourceTab({
 
 function InboxDetailTab({
   label,
+  count,
   selected,
   onSelect,
 }: {
   label: string;
+  count?: number;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -341,6 +329,11 @@ function InboxDetailTab({
       }`}
     >
       {label}
+      {count ? (
+        <span className="ml-1.5 rounded-full bg-content/10 px-1.5 py-0.5 text-[10px] tabular-nums text-content/60">
+          {count}
+        </span>
+      ) : null}
       {selected ? (
         <span className="absolute inset-x-0 bottom-0 h-0.5 bg-content" />
       ) : null}
@@ -433,7 +426,9 @@ export function InboxView({
     targetSelectionKey,
   );
   const [targetItem, setTargetItem] = useState<InboxItem | null>(null);
-  const [filters, setFilters] = useState(loadInboxFilters);
+  const [filtersBySource, setFiltersBySource] = useState(
+    loadInboxFiltersBySource,
+  );
   const [connections, setConnections] = useState(loadInboxConnections);
   const [source, setSource] = useState(() =>
     resolveInboxSource(loadInboxSource(), connections),
@@ -465,10 +460,10 @@ export function InboxView({
   const activeFilters = useMemo(
     () =>
       pruneInboxFilters(
-        filters,
+        filtersBySource[source],
         projects.map((project) => project.path),
       ),
-    [filters, projects],
+    [filtersBySource, projects, source],
   );
   const filtersActive = hasActiveInboxFilters(
     activeFilters,
@@ -767,11 +762,13 @@ export function InboxView({
 
   const inboxSeenTick = useInboxSeenTick();
   useEffect(() => {
-    rememberInboxItems(items.map((item) => ({
-      key: inboxItemKey(item),
-      updatedAt: item.updatedAt,
-      projectPath: item.projectPath,
-    })));
+    rememberInboxItems(
+      items.map((item) => ({
+        key: inboxItemKey(item),
+        updatedAt: item.updatedAt,
+        projectPath: item.projectPath,
+      })),
+    );
   }, [items]);
   const sourceEntries = useMemo(
     () =>
@@ -795,13 +792,47 @@ export function InboxView({
   const sourceError =
     source === "confluence" ? null : (providerErrors[source] ?? null);
 
+  const jiraTree = useMemo(
+    () => (source === "jira" ? buildJiraIssueTree(visibleItems) : []),
+    [source, visibleItems],
+  );
+  const [jiraExpanded, setJiraExpanded] = useState<Set<string>>(() => new Set());
+  const jiraExpandSeed = useRef("");
+  useEffect(() => {
+    if (source !== "jira") return;
+    const seed = jiraTree.map((node) => inboxItemKey(node.item)).join("\0");
+    if (seed === jiraExpandSeed.current) return;
+    jiraExpandSeed.current = seed;
+    setJiraExpanded(defaultExpandedJiraKeys(jiraTree));
+  }, [jiraTree, source]);
+
+  const jiraRows = useMemo(
+    () =>
+      source === "jira" ? flattenJiraIssueTree(jiraTree, jiraExpanded) : null,
+    [jiraExpanded, jiraTree, source],
+  );
+  const listRows = useMemo(
+    () =>
+      jiraRows ??
+      visibleItems.map((item) => ({
+        item,
+        depth: 0,
+        hasChildren: false,
+        expanded: false,
+        isLastSibling: true,
+      })),
+    [jiraRows, visibleItems],
+  );
+
   const selectedByKey = visibleItems.find(
     (item) => inboxItemKey(item) === selectedKey,
   );
   const waitingForTarget =
     !!targetSelectionKey && selectedKey === targetSelectionKey;
   const selected =
-    selectedByKey ?? (waitingForTarget ? null : visibleItems[0]) ?? null;
+    selectedByKey ??
+    (waitingForTarget ? null : listRows[0]?.item ?? visibleItems[0]) ??
+    null;
   const updateInboxItem = useCallback((next: InboxItem) => {
     const key = inboxItemKey(next);
     setItems((current) =>
@@ -811,9 +842,17 @@ export function InboxView({
       current && inboxItemKey(current) === key ? next : current,
     );
   }, []);
-  const shownItemCount = listWindowSize(visibleItems.length, listLimit);
-  const shownItems = visibleItems.slice(0, shownItemCount);
-  const hasMoreItems = shownItemCount < visibleItems.length;
+  const shownItemCount = listWindowSize(listRows.length, listLimit);
+  const shownRows = listRows.slice(0, shownItemCount);
+  const hasMoreItems = shownItemCount < listRows.length;
+  const toggleJiraExpand = useCallback((key: string) => {
+    setJiraExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     setListLimit(LIST_PAGE_SIZE);
@@ -866,8 +905,11 @@ export function InboxView({
       next,
       projects.map((project) => project.path),
     );
-    setFilters(pruned);
-    saveInboxFilters(pruned);
+    setFiltersBySource((current: InboxFiltersBySource) => ({
+      ...current,
+      [source]: pruned,
+    }));
+    saveInboxFiltersForSource(source, pruned);
   };
 
   const onSourceChange = (next: InboxSource) => {
@@ -961,11 +1003,13 @@ export function InboxView({
             title="Mark all as read"
             aria-label="Mark all as read"
             disabled={!sourceHasUnseen}
-            onClick={() => setReadStatusError(
-              markInboxItemsSeen(sourceEntries)
-                ? null
-                : "Could not save read status. Please try again.",
-            )}
+            onClick={() =>
+              setReadStatusError(
+                markInboxItemsSeen(sourceEntries)
+                  ? null
+                  : "Could not save read status. Please try again.",
+              )
+            }
             className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/10 hover:text-content disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-content/45"
           >
             <CheckCheck className="size-3.5" strokeWidth={1.75} />
@@ -1036,7 +1080,8 @@ export function InboxView({
           </p>
         ) : (
           <ul className="flex flex-col gap-0.5 p-1.5">
-            {shownItems.map((item) => {
+            {shownRows.map((row) => {
+              const item = row.item;
               const key = inboxItemKey(item);
               const projectId = projectKey(item.projectPath);
               const relatedSessions = relatedSessionsForInboxItem(
@@ -1047,6 +1092,15 @@ export function InboxView({
                 <li key={key}>
                   <InboxCard
                     item={item}
+                    depth={row.depth}
+                    hasChildren={row.hasChildren}
+                    expanded={row.expanded}
+                    isLastSibling={row.isLastSibling}
+                    onToggleExpand={
+                      row.hasChildren
+                        ? () => toggleJiraExpand(key)
+                        : undefined
+                    }
                     active={selected != null && key === inboxItemKey(selected)}
                     logoPath={resolveTabGroupLogo(projectId, logos)}
                     mascotName={resolveTabGroupMascot(projectId, groupMascots)}
@@ -1329,6 +1383,23 @@ export function LinkedWorkItemPanel({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [visible]);
 
+  // The pane takes its full width up front so the sessions reflow once, then
+  // the sheet slides in on a transform. Animating the width instead would
+  // rewrap the transcript and resize terminals on every frame.
+  const [opening, setOpening] = useState(
+    () =>
+      visible &&
+      !(
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ),
+  );
+  useEffect(() => {
+    if (!visible) setOpening(false);
+  }, [visible]);
+  const contentKey = item ? inboxItemKey(item) : error ? "error" : "loading";
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+
   const kindLabel = target.kind === "pr" ? "Pull request" : "Issue";
   return (
     <aside
@@ -1338,9 +1409,12 @@ export function LinkedWorkItemPanel({
       aria-hidden={!visible}
       inert={!visible || undefined}
       data-linked-work-item-panel
-      className={`@container/linked relative min-h-0 max-w-full shrink-0 flex-col border-l border-stroke text-content max-[950px]:absolute max-[950px]:inset-y-0 max-[950px]:right-0 max-[950px]:z-30 max-[950px]:shadow-2xl ${
+      onAnimationEnd={(event) => {
+        if (event.animationName === "linked-panel-slide") setOpening(false);
+      }}
+      className={`relative min-h-0 max-w-full shrink-0 flex-col text-content max-[950px]:absolute max-[950px]:inset-y-0 max-[950px]:right-0 max-[950px]:z-30 max-[950px]:shadow-2xl ${
         visible ? "flex" : "hidden"
-      }`}
+      } ${opening ? "overflow-hidden" : ""}`}
     >
       <div
         role="separator"
@@ -1352,50 +1426,69 @@ export function LinkedWorkItemPanel({
           resize.dragging ? "bg-content/15" : "hover:bg-content/10"
         }`}
       />
-      <div className="absolute top-[5px] right-2 z-30">
-        <IconButton
-          label={`Close ${kindLabel.toLowerCase()} panel`}
-          onClick={onClose}
+      <div
+        className={`relative flex min-h-0 flex-1 flex-col border-l border-stroke ${
+          opening ? "linked-panel-slide" : ""
+        }`}
+      >
+        <div className="absolute top-[5px] right-2 z-30">
+          <IconButton
+            label={`Close ${kindLabel.toLowerCase()} panel`}
+            onClick={onClose}
+          >
+            <PanelLeft className="size-3.5" strokeWidth={1.75} />
+          </IconButton>
+        </div>
+        <div
+          key={contentKey}
+          onAnimationEnd={(event) => {
+            if (event.animationName === "linked-panel-reveal") {
+              setRevealedKey(contentKey);
+            }
+          }}
+          className={`@container/linked min-h-0 min-w-0 flex-1 ${
+            revealedKey === contentKey ? "" : "linked-panel-reveal"
+          }`}
         >
-          <PanelLeft className="size-3.5" strokeWidth={1.75} />
-        </IconButton>
-      </div>
-      <div className="min-h-0 min-w-0 flex-1">
-        {item ? (
-          <InboxDetail
-            key={inboxItemKey(item)}
-            item={item}
-            cwd={cwd}
-            projects={projectOptions}
-            revision={0}
-            relatedSessions={[]}
-            mode="panel"
-            visible={visible}
-            repairSessions={repairSessions}
-            onRepairChecks={onRepairChecks}
-            onOpenSession={onOpenSession}
-            onItemChange={setItem}
-          />
-        ) : error ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
-            <CircleX className="size-5 text-rose-400/90" strokeWidth={1.75} />
-            <p role="alert" className="max-w-sm text-[12px] text-content/55">
-              {error}
-            </p>
-            <button
-              type="button"
-              onClick={() => void openUrl(target.url)}
-              className={ACTION_OUTLINE}
-            >
-              <ExternalLink className="size-3.5" strokeWidth={1.75} />
-              Open on GitHub
-            </button>
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center text-content/40">
-            <LoaderCircle className="size-4 animate-spin" strokeWidth={1.75} />
-          </div>
-        )}
+          {item ? (
+            <InboxDetail
+              key={inboxItemKey(item)}
+              item={item}
+              cwd={cwd}
+              projects={projectOptions}
+              revision={0}
+              relatedSessions={[]}
+              mode="panel"
+              visible={visible}
+              repairSessions={repairSessions}
+              onRepairChecks={onRepairChecks}
+              onOpenSession={onOpenSession}
+              onItemChange={setItem}
+            />
+          ) : error ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
+              <CircleX className="size-5 text-rose-400/90" strokeWidth={1.75} />
+              <p role="alert" className="max-w-sm text-[12px] text-content/55">
+                {error}
+              </p>
+              <button
+                type="button"
+                onClick={() => void openUrl(target.url)}
+                className={ACTION_OUTLINE}
+              >
+                <ExternalLink className="size-3.5" strokeWidth={1.75} />
+                Open on GitHub
+              </button>
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center text-content/40">
+              <LoaderCircle
+                className="size-4 animate-spin"
+                strokeWidth={1.75}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );
@@ -1495,6 +1588,11 @@ export function inboxStatusMark(item: InboxItem): InboxStatusMark {
 
 function InboxCard({
   item,
+  depth = 0,
+  hasChildren = false,
+  expanded = false,
+  isLastSibling = false,
+  onToggleExpand,
   active,
   logoPath,
   mascotName,
@@ -1503,6 +1601,11 @@ function InboxCard({
   onSelect,
 }: {
   item: InboxItem;
+  depth?: number;
+  hasChildren?: boolean;
+  expanded?: boolean;
+  isLastSibling?: boolean;
+  onToggleExpand?: () => void;
   active: boolean;
   logoPath: string | null;
   mascotName: string | null;
@@ -1512,12 +1615,15 @@ function InboxCard({
 }) {
   useInboxSeenTick();
   const status = inboxStatusMark(item);
+  const issueType = item.provider === "jira" ? item.issueType?.trim() : "";
   const kindLabel =
     item.kind === "pr"
       ? item.provider === "gitlab"
         ? "Merge request"
         : "Pull request"
-      : "Issue";
+      : issueType
+        ? issueType
+        : "Issue";
   const time = formatRelativeTime(item.updatedAt);
   const name = projectName(item.projectPath);
   const tracker = item.provider === "linear" || item.provider === "jira";
@@ -1530,89 +1636,143 @@ function InboxCard({
     key: inboxItemKey(item),
     updatedAt: item.updatedAt,
   });
+  const nested = depth > 0;
+  const indentPx = inboxTreeIndentPx(depth);
+  // Soft band for an expanded Jira parent and its visible children only.
+  const inExpandedTree =
+    item.provider === "jira" && (nested || (hasChildren && expanded));
+  const showSourceSubtitle = !nested;
+  const showMetaRow = showSourceSubtitle || item.labels.length > 0;
+  const selectLabel = `${status.label} ${kindLabel.toLowerCase()} ${inboxItemRef(
+    item,
+  )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`;
 
   return (
-    <button
-      type="button"
-      title={item.title}
-      aria-current={active ? "true" : undefined}
-      aria-label={`${status.label} ${kindLabel.toLowerCase()} ${inboxItemRef(
-        item,
-      )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`}
-      onClick={onSelect}
-      className={`flex w-full flex-col rounded-md border px-2.5 py-2 text-left ${
+    <div
+      data-inbox-card={inboxItemKey(item)}
+      className={`relative flex w-full items-start rounded-md border ${
         active
           ? "border-transparent bg-selection text-content"
-          : "border-transparent text-content/80 hover:bg-content/5 hover:text-content"
+          : inExpandedTree
+            ? "border-transparent bg-content/[0.035] text-content/80 hover:bg-content/[0.06] hover:text-content"
+            : "border-transparent text-content/80 hover:bg-content/5 hover:text-content"
       }`}
+      style={{ paddingLeft: indentPx }}
     >
-      <span className="flex items-center gap-2">
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <InboxProviderMark
-            provider={item.provider}
-            className="size-3.5 shrink-0"
-          />
-          <status.Icon
-            className={`size-3 shrink-0 ${status.className}`}
-            strokeWidth={1.75}
-          />
-          <span className="min-w-0 truncate text-[11px] text-content/50">
-            {kindLabel} · {inboxItemRef(item)}
-            {attentionLabel ? ` · ${attentionLabel}` : ""}
-          </span>
+      <InboxTreeGutter depth={depth} isLast={isLastSibling} />
+      <div
+        className={`flex min-w-0 flex-1 flex-col px-2.5 text-left ${
+          nested ? "py-1.5" : "py-2"
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-current={active ? "true" : undefined}
+            aria-label={selectLabel}
+            onClick={onSelect}
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left"
+          >
+            <InboxProviderMark
+              provider={item.provider}
+              className="size-3.5 shrink-0"
+            />
+            <status.Icon
+              className={`size-3 shrink-0 ${status.className}`}
+              strokeWidth={1.75}
+            />
+            <span className="min-w-0 truncate text-[11px] text-content/50">
+              {kindLabel} · {inboxItemRef(item)}
+              {attentionLabel ? ` · ${attentionLabel}` : ""}
+            </span>
+          </button>
+          {relatedSessionCount > 0 || time || unseen || hasChildren ? (
+            <span className="flex shrink-0 items-center gap-1.5">
+              {relatedSessionCount > 0 ? (
+                <span
+                  title={`${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}`}
+                  className="inline-flex items-center gap-0.5 text-[11px] tabular-nums text-accent"
+                >
+                  <MessageMultiple className="size-3" strokeWidth={1.75} />
+                  {relatedSessionCount}
+                </span>
+              ) : null}
+              {time ? (
+                <span className="text-[11px] tabular-nums text-content/45">
+                  {time}
+                </span>
+              ) : null}
+              {hasChildren ? (
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-sm px-1 py-0.5 text-[11px] text-content/50 hover:bg-content/10 hover:text-content"
+                  onClick={onToggleExpand}
+                >
+                  {expanded ? (
+                    <ChevronDown className="size-3" strokeWidth={2} />
+                  ) : (
+                    <ChevronRight className="size-3" strokeWidth={2} />
+                  )}
+                  <span>{expanded ? "Hide subtasks" : "Show subtasks"}</span>
+                </button>
+              ) : null}
+              {unseen ? (
+                <span aria-hidden className="size-1.5 rounded-full bg-accent" />
+              ) : null}
+            </span>
+          ) : null}
         </span>
-        {relatedSessionCount > 0 || time || unseen ? (
-          <span className="flex shrink-0 items-center gap-1.5">
-            {relatedSessionCount > 0 ? (
-              <span
-                title={`${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}`}
-                className="inline-flex items-center gap-0.5 text-[11px] tabular-nums text-accent"
-              >
-                <MessageMultiple className="size-3" strokeWidth={1.75} />
-                {relatedSessionCount}
+        <button
+          type="button"
+          title={item.title}
+          aria-current={active ? "true" : undefined}
+          aria-label={selectLabel}
+          onClick={onSelect}
+          className={`line-clamp-1 w-full text-left font-semibold leading-snug text-content ${
+            nested ? "mt-0.5 text-[12px]" : "mt-1 text-[13px]"
+          }`}
+        >
+          {item.title}
+        </button>
+        {showMetaRow ? (
+          <button
+            type="button"
+            onClick={onSelect}
+            className={`flex w-full min-w-0 items-center gap-2 text-left ${nested ? "mt-0.5" : "mt-1"}`}
+          >
+            {showSourceSubtitle ? (
+              <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
+                {tracker || !item.projectPath ? null : logoPath ? (
+                  <ProjectLogoIcon
+                    path={logoPath}
+                    className="size-3.5 shrink-0 rounded-sm"
+                    imageClassName="size-3.5"
+                  />
+                ) : (
+                  <ProjectMascot
+                    project={name}
+                    color={mascotColor}
+                    name={mascotName}
+                    className="size-3 shrink-0"
+                  />
+                )}
+                <span className="min-w-0 truncate">{source}</span>
+              </span>
+            ) : (
+              <span className="min-w-0 flex-1" />
+            )}
+            {item.labels.length > 0 ? (
+              <span className="flex min-w-0 shrink-0 items-center gap-1">
+                {item.labels.slice(0, 2).map((label) => (
+                  <InboxLabel key={label.name} label={label} compact />
+                ))}
               </span>
             ) : null}
-            {time ? (
-              <span className="text-[11px] tabular-nums text-content/45">
-                {time}
-              </span>
-            ) : null}
-            {unseen ? (
-              <span aria-hidden className="size-1.5 rounded-full bg-accent" />
-            ) : null}
-          </span>
+          </button>
         ) : null}
-      </span>
-      <span className="mt-1 line-clamp-1 text-[13px] font-semibold leading-snug text-content">
-        {item.title}
-      </span>
-      <span className="mt-1 flex min-w-0 items-center gap-2">
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-content/45">
-          {tracker || !item.projectPath ? null : logoPath ? (
-            <ProjectLogoIcon
-              path={logoPath}
-              className="size-3.5 shrink-0 rounded-sm"
-              imageClassName="size-3.5"
-            />
-          ) : (
-            <ProjectMascot
-              project={name}
-              color={mascotColor}
-              name={mascotName}
-              className="size-3 shrink-0"
-            />
-          )}
-          <span className="min-w-0 truncate">{source}</span>
-        </span>
-        {item.labels.length > 0 ? (
-          <span className="flex min-w-0 shrink-0 items-center gap-1">
-            {item.labels.slice(0, 2).map((label) => (
-              <InboxLabel key={label.name} label={label} compact />
-            ))}
-          </span>
-        ) : null}
-      </span>
-    </button>
+      </div>
+    </div>
   );
 }
 
@@ -2093,6 +2253,12 @@ export function InboxDetail({
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"summary" | "code" | "checks">("summary");
   const [diffMode, setDiffMode] = useState<"hunks" | "full">("hunks");
+  // Reopening the side panel reuses recent GitHub data. Inbox keeps refetching
+  // so its explicit refresh stays live.
+  const panelMaxAge = panel ? GITHUB_WORK_ITEM_FRESH_MS : undefined;
+  const [diffFocusPath, setDiffFocusPath] = useState<string | undefined>();
+  // The panel summary lists changed files, so it shares the Code tab's fetch.
+  const diffWanted = tab === "code" || (panel && tab === "summary");
   const fullFile = inboxShowsFullFileDiff(item) && diffMode === "full";
   const [prDiff, setPrDiff] = useState<GithubPrDiff | null>(cachedDiff);
   const [diffLoading, setDiffLoading] = useState(isPr && cachedDiff == null);
@@ -2165,7 +2331,7 @@ export function InboxDetail({
     number: item.number,
     enabled: prChecksEnabled,
     open: isPr && item.state.trim().toLowerCase() === "open",
-    poll: visible,
+    poll: visible && tab === "checks",
     revision,
   });
   const prChecksOverall = prChecksEnabled
@@ -2211,21 +2377,22 @@ export function InboxDetail({
           ? jiraIssueDetails(jiraKey)
           : Promise.reject(new Error("Missing Jira issue"))
         : gitlabKind
-        ? gitlabWorkItemDetails(item.repo, gitlabKind, item.number)
-        : azureDevOpsKind
-          ? azureDevOpsWorkItemDetails(
-              item.repo,
-              azureDevOpsKind,
-              item.number,
-            )
-          : githubKind
-            ? githubWorkItemDetails(
-                item.projectPath,
+          ? gitlabWorkItemDetails(item.repo, gitlabKind, item.number)
+          : azureDevOpsKind
+            ? azureDevOpsWorkItemDetails(
                 item.repo,
-                githubKind,
+                azureDevOpsKind,
                 item.number,
               )
-            : Promise.reject(new Error("Unknown inbox item"));
+            : githubKind
+              ? githubWorkItemDetails(
+                  item.projectPath,
+                  item.repo,
+                  githubKind,
+                  item.number,
+                  { maxAgeMs: panelMaxAge },
+                )
+              : Promise.reject(new Error("Unknown inbox item"));
     void pending
       .then((next) => {
         if (cancelled) return;
@@ -2254,6 +2421,7 @@ export function InboxDetail({
     jira,
     jiraKey,
     linear,
+    panelMaxAge,
     revision,
   ]);
 
@@ -2404,6 +2572,7 @@ export function InboxDetail({
       item.repo,
       githubKind,
       item.number,
+      { maxAgeMs: panelMaxAge },
     )
       .then((next) => {
         if (cancelled) return;
@@ -2432,11 +2601,12 @@ export function InboxDetail({
     jira,
     jiraKey,
     linear,
+    panelMaxAge,
     revision,
   ]);
 
   useEffect(() => {
-    if (!isPr || tab !== "code") return;
+    if (!isPr || !diffWanted) return;
     let cancelled = false;
     const cachedDiff = gitlab
       ? peekGitlabMrDiff(item.repo, item.number)
@@ -2458,6 +2628,7 @@ export function InboxDetail({
         ? azureDevOpsMrDiff(item.repo, item.number)
         : githubPrDiff(item.projectPath, item.repo, item.number, {
             fullContext: fullFile,
+            maxAgeMs: panelMaxAge,
           });
     void pending
       .then((next) => {
@@ -2478,15 +2649,21 @@ export function InboxDetail({
     };
   }, [
     azuredevops,
+    diffWanted,
     fullFile,
     gitlab,
     isPr,
     item.number,
     item.projectPath,
     item.repo,
+    panelMaxAge,
     revision,
-    tab,
   ]);
+
+  // The side panel reveals its overview in one piece rather than letting the
+  // description, files and activity land and reshuffle one after another.
+  const overviewSettling =
+    panel && (loading || threadLoading || (isPr && diffLoading));
 
   const postComment = async (body: string) => {
     setPosting(true);
@@ -2791,10 +2968,7 @@ export function InboxDetail({
                           ? { ...item, projectPath: startProject }
                           : item;
                         void Promise.resolve(
-                          onStart(
-                            next,
-                            tracker ? details?.body : undefined,
-                          ),
+                          onStart(next, tracker ? details?.body : undefined),
                         )
                           .catch((err: unknown) => {
                             setStartError(
@@ -2867,8 +3041,12 @@ export function InboxDetail({
                   />
                   <InboxDetailTab
                     label="Code"
+                    count={panel ? prDiff?.files.length : undefined}
                     selected={tab === "code"}
-                    onSelect={() => setTab("code")}
+                    onSelect={() => {
+                      setDiffFocusPath(undefined);
+                      setTab("code");
+                    }}
                   />
                   {prChecksOverall ? (
                     <PrChecksTab
@@ -2925,7 +3103,7 @@ export function InboxDetail({
         >
           <div
             className={`mx-auto flex w-full max-w-5xl flex-col ${
-              panel ? "gap-4 px-4 py-4" : "gap-5 px-8 py-5"
+              panel ? "gap-6 px-4 py-5" : "gap-5 px-8 py-5"
             }`}
           >
             {item.labels.length > 0 ? (
@@ -2950,6 +3128,7 @@ export function InboxDetail({
                   key={`${item.projectPath}:${item.number}:${revision}:${diffMode}`}
                   diff={prDiff}
                   fullFile={fullFile}
+                  focusPath={diffFocusPath}
                 />
               ) : (
                 <p className="text-[13px] text-content/45">No file changes</p>
@@ -2979,7 +3158,7 @@ export function InboxDetail({
                     : undefined
                 }
               />
-            ) : loading ? (
+            ) : loading || overviewSettling ? (
               <div className="flex justify-center py-10 text-content/40">
                 <LoaderCircle
                   className="size-4 animate-spin"
@@ -2990,7 +3169,12 @@ export function InboxDetail({
               <p className="text-[13px] text-content/50">{error}</p>
             ) : (
               <>
-                {details?.body.trim() ? (
+                {panel ? (
+                  <InboxDescriptionSummary
+                    body={details?.body ?? ""}
+                    cwd={markdownCwd}
+                  />
+                ) : details?.body.trim() ? (
                   <AgentMarkdown
                     text={details.body}
                     cwd={markdownCwd}
@@ -2999,6 +3183,17 @@ export function InboxDetail({
                 ) : (
                   <p className="text-[13px] text-content/45">No description</p>
                 )}
+                {panel && isPr ? (
+                  <InboxPrChangesGlance
+                    diff={prDiff}
+                    loading={diffLoading}
+                    error={diffError}
+                    onOpenFile={(path) => {
+                      setDiffFocusPath(path);
+                      setTab("code");
+                    }}
+                  />
+                ) : null}
                 <InboxComments
                   thread={thread}
                   loading={threadLoading}

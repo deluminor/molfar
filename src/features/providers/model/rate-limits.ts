@@ -73,11 +73,18 @@ export function formatRateLimitWindowChipLabel(
 export function rateLimitWindowTooltip(
   window: RateLimitWindow,
   now = Date.now(),
+  showRemaining = false,
 ): string {
-  const used = `${formatUsagePercent(window.usedPercent)} used`;
+  const pct = clampUsedPercent(window.usedPercent);
+  const usage = `${formatUsagePercent(showRemaining ? 100 - pct : pct)} ${showRemaining ? "remaining" : "used"}`;
   if (window.resetsAt == null) {
-    return `${used} · ${formatWindowLabel(window.windowMinutes)} window`;
+    return `${usage} · ${formatWindowLabel(window.windowMinutes)} window`;
   }
-  return `${used} · ${formatResetCountdown(window.resetsAt - now)}`;
+  return `${usage} · ${formatResetCountdown(window.resetsAt - now)}`;
+}
+
+/** "$-1.67", the way Devin's own plan panel writes the balance. */
+export function formatExtraUsageBalance(dollars: number): string {
+  return `$${dollars.toFixed(2)}`;
 }
 

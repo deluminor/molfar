@@ -29,6 +29,8 @@ export type SessionPersistence = {
   forgetSaved(sessionId: string): void;
   dropPending(sessionId: string): void;
   forgetUserTurn(sessionId: string): void;
+  /** Drops everything known about a session, so its replacement saves as new. */
+  forget(sessionId: string): void;
   /** Rewrites sessions still waiting to be written. */
   mapPending(update: (session: Session) => Session): void;
 };
@@ -64,8 +66,12 @@ export function createSessionPersistence(
 
   const observeOne = (session: Session, openSessionIds: Set<string>) => {
     if (deps.isBlocked(session.id)) return;
-    if (observed.get(session.id) === session) return;
+    const previouslyObserved = observed.get(session.id);
+    if (previouslyObserved === session) return;
     observed.set(session.id, session);
+    const queueChanged =
+      previouslyObserved?.queuedMessages !== session.queuedMessages ||
+      previouslyObserved?.queueStatus !== session.queueStatus;
 
     const parked = !openSessionIds.has(session.id);
     const providerSessionId = session.providerSessionId;
@@ -84,7 +90,7 @@ export function createSessionPersistence(
     }
     if (!shouldPersistSession(session)) return;
 
-    if (newlyBound || newUserTurn) persist(session);
+    if (newlyBound || newUserTurn || queueChanged) persist(session);
     const settledOrUnsaved =
       !session.busy || parked || newlyBound || newUserTurn;
     if (settledOrUnsaved || !lastPersisted.has(session.id)) {
@@ -143,6 +149,12 @@ export function createSessionPersistence(
     },
     forgetUserTurn(sessionId) {
       lastPersistedUserBlock.delete(sessionId);
+    },
+    forget(sessionId) {
+      pending.delete(sessionId);
+      lastPersisted.delete(sessionId);
+      lastPersistedUserBlock.delete(sessionId);
+      lastBoundProvider.delete(sessionId);
     },
     mapPending(update) {
       for (const [id, session] of pending) pending.set(id, update(session));

@@ -12,12 +12,13 @@ export type HarnessEvent =
   | { type: "session.error"; message: string }
   | { type: "session.providerBound"; providerSessionId: string }
   | { type: "turn.started"; providerTurnId: string }
+  | { type: "turn.ready" }
   | {
       type: "session.configChanged";
       model?: string;
       modelSettings?: Record<string, string>;
     }
-  | { type: "status"; text: string }
+  | { type: "status"; text: string; key?: string }
   /** The provider refused the turn until its usage window resets (epoch ms). */
   | { type: "usage.limited"; resetsAt?: number }
   /**
@@ -150,6 +151,9 @@ export type HarnessEvent =
 
 export type ApprovalDecision = "allow" | "deny";
 
+/** The turn is connecting or has just ended; retain the follow-up for later. */
+export class TurnNotReadyError extends Error {}
+
 export type HarnessSessionInput = {
   sessionId: string;
   cwd: string;
@@ -157,6 +161,10 @@ export type HarnessSessionInput = {
   modelSettings?: Record<string, string>;
   providerAccountId?: string;
   runtimeMode: RuntimeMode;
+  /** Keep provider context in memory; MOLFAR owns the saved transcript. */
+  ephemeral?: boolean;
+  /** Persist Codex context in MOLFAR's private Mono store. */
+  codexStore?: "mono";
   intent?: TurnIntent;
   /**
    * This session drives MOLFAR's control CLI, which reaches the app over

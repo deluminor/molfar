@@ -25,6 +25,10 @@ import {
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
 import { useIdleSessionDetach } from "./use-idle-session-detach";
+import {
+  createFamiliar,
+  saveFamiliarSessionId,
+} from "@/features/familiars/model/familiar";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -205,6 +209,31 @@ async function advance(milliseconds = 250) {
   });
   await flushSessionWrites();
 }
+
+it("keeps the resident conversation mounted independently of ordinary tabs", async () => {
+  const agent = chat("resident");
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  });
+  saveFamiliarSessionId(createFamiliar([agent.cwd]).id, agent.id);
+  const workspace = mountWorkspace({
+    sessions: [agent, chat("other")],
+    tabs: [newTab("other")],
+    orchestrationRuns: [],
+    liveAgentsEnabled: false,
+    busySessionIds: new Set(),
+    activeSessionId: "other",
+  });
+  await advance();
+  expect(workspace.snapshot().sessions.map((session) => session.id)).toEqual([
+    "resident",
+    "other",
+  ]);
+  expect(workspace.persistSession).not.toHaveBeenCalled();
+  expect(mocks.forgetHarnessSession).not.toHaveBeenCalled();
+});
 
 describe("orchestration worker detachment", () => {
   it("retains finished workers until their lead closes, then persists and forgets them", async () => {

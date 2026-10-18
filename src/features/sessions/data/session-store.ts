@@ -1,4 +1,18 @@
+import { ARTIFACT_KINDS } from "@/domain/artifacts/artifact";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
+import type { AgentRunMeta, AgentStep } from "@/domain/session/agent-run";
+import type { Block } from "@/domain/session/block";
+import type { BtwMessage, BtwThread, HandoffMeta, HandoffStatus, InterjectionMeta, PlanBlockMeta, SecondOpinionMeta } from "@/domain/session/block-meta";
+import type { GeneratedImageMeta } from "@/domain/session/attachment";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import type { LinkedWorkItem, Session } from "@/domain/session/session";
+import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
+import type { TaskListMeta } from "@/domain/session/task-list";
+import type { MessageQueueStatus, QueuedMessage } from "@/domain/session/message-queue";
+import type { TurnMetrics, TurnModel } from "@/domain/session/turn";
 import { invoke } from "@tauri-apps/api/core";
+import { isFamiliarSession } from "@/features/familiars/model/familiar";
+import { sanitizeFamiliarSpawnedSessions } from "@/features/familiars/model/familiar-spawned-sessions";
 import {
   isWeakToolTitle,
   titleFromToolInput,
@@ -8,7 +22,6 @@ import { recoverCursorSubagents } from "@/integrations/harness/providers/cursor/
 import { persistableAttachment } from "../model/attachments";
 import type { ContextUsage } from "@/domain/session/context-usage";
 import { isRemoteProjectPath } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
 import {
   claudeShellCommands,
   ompActiveAssistantTexts,
@@ -18,23 +31,6 @@ import {
   backfillOmpInterjections,
   ompStatusSplitTexts,
 } from "../model/omp-interjections";
-import type { LinkedWorkItem, Session } from "@/domain/session/session";
-import type { Block } from "@/domain/session/block";
-import type { GeneratedImageMeta } from "@/domain/session/attachment";
-import type { AgentRunMeta, AgentStep } from "@/domain/session/agent-run";
-import type {
-  BtwMessage,
-  BtwThread,
-  HandoffMeta,
-  HandoffStatus,
-  InterjectionMeta,
-  SecondOpinionMeta,
-  PlanBlockMeta,
-} from "@/domain/session/block-meta";
-import type { TurnModel, TurnMetrics } from "@/domain/session/turn";
-import type { TaskListMeta } from "@/domain/session/task-list";
-import { type RuntimeMode, RUNTIME_MODES } from "@/domain/session/runtime-mode";
-import { type HarnessId, HARNESSES } from "@/domain/harness/harness";
 
 
 import { restoreOrchestrationProposal } from "@/features/orchestration/model/orchestration-plan";
@@ -42,6 +38,7 @@ import { restoreOrchestrationProposal } from "@/features/orchestration/model/orc
 import type { OrchestrationSummary } from "@/features/orchestration/model/orchestration-summary";
 
 export type SessionSummary = {
+  sidebarHidden?: boolean;
   orchestrationLeadId?: string;
   orchestration?: OrchestrationSummary;
   id: string;
@@ -64,9 +61,12 @@ export type SessionSummary = {
   draft?: boolean;
   linkedWorkItem?: LinkedWorkItem;
   automationId?: string;
+  taskCardId?: string;
 };
 
 type SessionRecord = {
+  sidebarHidden?: boolean;
+  familiarTranscript?: Session["familiarTranscript"];
   orchestrationLeadId?: string;
   id: string;
   cwd: string;
@@ -78,6 +78,8 @@ type SessionRecord = {
   providerSessionId?: string | null;
   providerAccountId?: string | null;
   blocks: Block[];
+  queuedMessages?: QueuedMessage[];
+  queueStatus?: MessageQueueStatus;
   contextUsed?: number | null;
   contextWindow?: number | null;
   branch?: string | null;
@@ -85,11 +87,13 @@ type SessionRecord = {
   worktreeRemoved?: boolean;
   linkedWorkItem?: LinkedWorkItem | null;
   automationId?: string | null;
+  taskCardId?: string | null;
   createdAt: number;
   updatedAt: number;
 };
 
 type SessionUpsertPayload = {
+  sidebarHidden?: boolean;
   id: string;
   cwd: string;
   harness: string;
@@ -100,6 +104,8 @@ type SessionUpsertPayload = {
   providerSessionId?: string;
   providerAccountId?: string;
   blocks: Block[];
+  queuedMessages?: QueuedMessage[];
+  queueStatus?: MessageQueueStatus;
   contextUsed?: number;
   contextWindow?: number;
   branch?: string;
@@ -107,15 +113,19 @@ type SessionUpsertPayload = {
   worktreeRemoved?: boolean;
   linkedWorkItem?: LinkedWorkItem;
   automationId?: string;
+  taskCardId?: string;
 };
 
 /** Only real chats belong in project history — blank tabs stay ephemeral. */
 export function shouldPersistSession(session: Session): boolean {
   return (
+    !session.ephemeral &&
     !session.inboxAsk &&
     !isRemoteProjectPath(session.cwd) &&
     session.cwd !== "~" &&
-    session.blocks.some((block) => block.role === "user")
+    (session.blocks.some((block) => block.role === "user") ||
+      (isFamiliarSession(session.id) &&
+        (session.blocks.length > 0 || !!session.familiarTranscript)))
   );
 }
 
@@ -126,8 +136,12 @@ export function isPersistableId(value: string): boolean {
 
 function persistableMeta(
   session: Session,
+  includeQueue = true,
 ): Omit<SessionUpsertPayload, "blocks"> {
   const linkedWorkItem = sanitizeLinkedWorkItem(session.linkedWorkItem);
+  const queuedMessages = includeQueue
+    ? sanitizeQueuedMessages(session.queuedMessages)
+    : [];
   return {
     id: session.id,
     cwd: normalizeProjectPath(session.cwd),
@@ -136,6 +150,13 @@ function persistableMeta(
     modelSettings: session.modelSettings,
     runtimeMode: session.runtimeMode,
     title: session.title,
+    ...(session.sidebarHidden === true ? { sidebarHidden: true } : {}),
+    ...(queuedMessages.length
+      ? {
+          queuedMessages,
+          queueStatus: session.queueStatus ?? "active",
+        }
+      : {}),
     ...(session.providerSessionId && isPersistableId(session.providerSessionId)
       ? { providerSessionId: session.providerSessionId }
       : {}),
@@ -153,7 +174,140 @@ function persistableMeta(
     ...(session.automationId && isPersistableId(session.automationId)
       ? { automationId: session.automationId }
       : {}),
+    ...(session.taskCardId && isPersistableId(session.taskCardId)
+      ? { taskCardId: session.taskCardId }
+      : {}),
   };
+}
+
+function sanitizeFamiliarSessionCompletion(
+  value: unknown,
+): Block["familiarSessionCompletion"] {
+  if (!value || typeof value !== "object") return undefined;
+  const completion = value as NonNullable<Block["familiarSessionCompletion"]>;
+  if (
+    typeof completion.sessionId !== "string" ||
+    !isPersistableId(completion.sessionId) ||
+    typeof completion.title !== "string" ||
+    !["completed", "failed", "cancelled"].includes(completion.status)
+  )
+    return undefined;
+  return {
+    sessionId: completion.sessionId,
+    title: completion.title,
+    status: completion.status,
+    ...(typeof completion.sessionCount === "number" &&
+    Number.isInteger(completion.sessionCount) &&
+    completion.sessionCount > 1
+      ? { sessionCount: completion.sessionCount }
+      : {}),
+  };
+}
+
+/** Upstream Mono field names still present in transcripts saved before the rename. */
+type LegacyFamiliarFields = {
+  familiarHabit?: Block["familiarHabit"];
+  familiarSessionCompletion?: Block["familiarSessionCompletion"];
+  monoHabit?: Block["familiarHabit"];
+  monoSessionCompletion?: Block["familiarSessionCompletion"];
+};
+
+function legacyFamiliarHabit(
+  block: LegacyFamiliarFields,
+): Block["familiarHabit"] | undefined {
+  return block.familiarHabit ?? block.monoHabit;
+}
+
+function legacyFamiliarSessionCompletion(block: LegacyFamiliarFields): unknown {
+  return block.familiarSessionCompletion ?? block.monoSessionCompletion;
+}
+
+/** Pending images need their bytes until delivery; object URLs never survive reloads. */
+function sanitizeQueuedMessages(value: unknown): QueuedMessage[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const message = entry as QueuedMessage;
+    if (
+      typeof message.id !== "string" ||
+      !isPersistableId(message.id) ||
+      seen.has(message.id) ||
+      typeof message.text !== "string"
+    )
+      return [];
+    seen.add(message.id);
+    const attachments = Array.isArray(message.attachments)
+      ? message.attachments.flatMap((file) => {
+          if (
+            !file ||
+            typeof file.id !== "string" ||
+            typeof file.name !== "string" ||
+            typeof file.mimeType !== "string" ||
+            !["image", "audio", "file"].includes(file.kind) ||
+            typeof file.size !== "number" ||
+            !Number.isFinite(file.size) ||
+            file.size < 0
+          )
+            return [];
+          return [
+            {
+              ...persistableAttachment(file),
+              ...(!file.path &&
+              file.kind === "image" &&
+              typeof file.data === "string"
+                ? { data: file.data }
+                : {}),
+            },
+          ];
+        })
+      : [];
+    const noteMeta = sanitizeNoteCard(message.noteCard);
+    const completion = sanitizeFamiliarSessionCompletion(
+      legacyFamiliarSessionCompletion(message),
+    );
+    const noteCard =
+      noteMeta && typeof message.noteCard?.body === "string"
+        ? { ...noteMeta, body: message.noteCard.body }
+        : undefined;
+    const handoff = message.handoffCard;
+    const handoffCard =
+      handoff &&
+      typeof handoff.brief === "string" &&
+      HARNESSES.includes(handoff.from) &&
+      HARNESSES.includes(handoff.to)
+        ? handoff
+        : undefined;
+    if (
+      !message.text.trim() &&
+      !attachments.length &&
+      !noteCard &&
+      !handoffCard
+    )
+      return [];
+    return [
+      {
+        id: message.id,
+        ...(typeof message.blockId === "string" &&
+        isPersistableId(message.blockId)
+          ? { blockId: message.blockId }
+          : {}),
+        text: message.text,
+        attachments,
+        ...(noteCard ? { noteCard } : {}),
+        ...(handoffCard ? { handoffCard } : {}),
+        ...(completion ? { familiarSessionCompletion: completion } : {}),
+        ...(["default", "plan", "build", "orchestrate"].includes(
+          message.intent ?? "",
+        )
+          ? { intent: message.intent }
+          : {}),
+        ...(typeof message.error === "string" && message.error
+          ? { error: message.error }
+          : {}),
+      },
+    ];
+  });
 }
 
 export function sanitizeLinkedWorkItem(
@@ -237,7 +391,14 @@ export async function upsertSession(
   if (!shouldPersistSession(session) || deletedSessionIds.has(session.id)) {
     return null;
   }
-  const payload = sanitizeSessionForPersist(session);
+  const familiar = !!session.familiarTranscript || isFamiliarSession(session.id);
+  const snapshot = familiar
+    ? session.blocks.filter((block) => familiarPersistedBlock(block) !== null)
+    : session.blocks;
+  // Familiar writes sanitize only the changed suffix inside the serialized queue.
+  const payload = familiar
+    ? persistableMeta(session)
+    : sanitizeSessionForPersist(session);
   if (session.orchestrationLeadId) {
     sessionWriteLeadById.set(session.id, session.orchestrationLeadId);
   } else {
@@ -245,10 +406,43 @@ export async function upsertSession(
   }
   const summary = await enqueueSessionWrite(session.id, async () => {
     if (deletedSessionIds.has(session.id)) return null;
+    if (familiar) {
+      const previous = familiarSavedBlocks.get(session.id);
+      let same = 0;
+      if (previous) {
+        while (
+          same < previous.length &&
+          same < snapshot.length &&
+          previous[same] === snapshot[same]
+        )
+          same++;
+      }
+      const changed =
+        !previous || same !== previous.length || same !== snapshot.length;
+      const summary = await invoke<SessionSummary>("familiar_session_upsert", {
+        session: {
+          ...payload,
+          blocks: changed
+            ? snapshot.slice(same).map((block) => familiarPersistedBlock(block)!)
+            : [],
+        },
+        afterBlockId: same > 0 ? snapshot[same - 1].id : null,
+        fromBlockId:
+          same === 0
+            ? previous !== undefined
+              ? (previous[0]?.id ?? null)
+              : (session.familiarTranscript?.firstBlockId ?? null)
+            : null,
+        blocksChanged: changed,
+        appendOnly: previous?.length === 0,
+      });
+      familiarSavedBlocks.set(session.id, snapshot);
+      return summary;
+    }
     return invoke<SessionSummary>("session_upsert", {
       session: {
         ...payload,
-        blocks: payload.blocks.map((block) =>
+        blocks: (payload as SessionUpsertPayload).blocks.map((block) =>
           block.orchestrationLeadId &&
           deletedSessionIds.has(block.orchestrationLeadId)
             ? { ...block, orchestrationLeadId: undefined }
@@ -268,7 +462,9 @@ export async function upsertSession(
  * `persistableMeta` so a new persisted column cannot be forgotten here.
  */
 const blockTokens = new WeakMap<Block, number>();
+const queuedMessageTokens = new WeakMap<QueuedMessage, number>();
 let lastBlockToken = 0;
+let lastQueuedMessageToken = 0;
 
 function blockToken(block: Block): number {
   const seen = blockTokens.get(block);
@@ -279,7 +475,17 @@ function blockToken(block: Block): number {
 }
 
 export function persistFingerprint(session: Session): string {
-  return `${JSON.stringify(persistableMeta(session))}|${session.orchestrationLeadId ?? ""}|${session.blocks
+  // Pasted image bytes can be megabytes. Like transcript blocks, queue rows
+  // are immutable, so their identity detects edits without serializing bytes.
+  const queue = (session.queuedMessages ?? []).map((message) => {
+    let token = queuedMessageTokens.get(message);
+    if (token === undefined) {
+      token = ++lastQueuedMessageToken;
+      queuedMessageTokens.set(message, token);
+    }
+    return token;
+  });
+  return `${JSON.stringify(persistableMeta(session, false))}|${queue.length ? (session.queueStatus ?? "active") : ""}:${queue.join(",")}|${session.orchestrationLeadId ?? ""}|${session.blocks
     .map(blockToken)
     .join(",")}`;
 }
@@ -354,12 +560,61 @@ export function cancelSessionSearch(searchOwner: string): Promise<void> {
   return invoke<void>("cancel_session_search", { searchOwner });
 }
 
-export async function getSession(sessionId: string): Promise<Session | null> {
-  const record = await invoke<SessionRecord | null>("session_get", {
+const familiarSavedBlocks = new Map<string, Block[]>();
+const familiarBlockPayloads = new WeakMap<Block, Block | null>();
+function familiarPersistedBlock(block: Block): Block | null {
+  if (familiarBlockPayloads.has(block)) return familiarBlockPayloads.get(block)!;
+  const payload = sanitizeBlock(block);
+  familiarBlockPayloads.set(block, payload);
+  return payload;
+}
+
+export const FAMILIAR_PAGE_TURNS = 10;
+export type FamiliarTranscriptPage = {
+  blocks: Block[];
+  before: number | null;
+  hasNewer: boolean;
+};
+
+export async function getFamiliarTranscriptPage(
+  sessionId: string,
+  options: {
+    before?: number;
+    beforeBlockId?: string;
+    aroundBlockId?: string;
+  } = {},
+): Promise<FamiliarTranscriptPage> {
+  const page = await invoke<FamiliarTranscriptPage>("familiar_session_page", {
     sessionId,
+    before: options.before ?? null,
+    beforeBlockId: options.beforeBlockId ?? null,
+    aroundBlockId: options.aroundBlockId ?? null,
   });
+  return {
+    ...page,
+    blocks: page.blocks
+      .map((block) => sanitizeBlock(block, { hydrate: true }))
+      .filter((block): block is Block => !!block),
+  };
+}
+
+export function findFamiliarTranscript(
+  sessionId: string,
+  query: string,
+): Promise<string[]> {
+  return invoke("familiar_session_find", { sessionId, query });
+}
+
+export async function getSession(sessionId: string): Promise<Session | null> {
+  const record = await invoke<SessionRecord | null>(
+    isFamiliarSession(sessionId) ? "familiar_session_get" : "session_get",
+    {
+      sessionId,
+    },
+  );
   if (!record) return null;
   const session = recordToSession(record);
+  if (session.familiarTranscript) familiarSavedBlocks.set(sessionId, session.blocks);
   if (session.harness === "claude" && session.providerSessionId) {
     const toolIds = shellPlaceholderIds(session.blocks);
     if (toolIds.length) {
@@ -511,7 +766,11 @@ export async function deleteSession(
     await enqueueSessionWrite(sessionId, () =>
       invoke<void>("session_delete", { sessionId, imagePaths }),
     );
-    const tombstone = setTimeout(() => deletedSessionIds.delete(sessionId), 60_000);
+    familiarSavedBlocks.delete(sessionId);
+    const tombstone = setTimeout(
+      () => deletedSessionIds.delete(sessionId),
+      60_000,
+    );
     if (typeof tombstone === "object") tombstone.unref();
   } catch (error) {
     deletedSessionIds.delete(sessionId);
@@ -526,6 +785,7 @@ export async function discardDraftSessionRecord(
   await enqueueSessionWrite(sessionId, () =>
     invoke<void>("session_delete", { sessionId, imagePaths: [] }),
   );
+  familiarSavedBlocks.delete(sessionId);
 }
 
 export async function setSessionArchived(
@@ -641,6 +901,24 @@ function sanitizeBlock(
   if (image) next.image = image;
   if (block.startedAt != null) next.startedAt = block.startedAt;
   if (block.durationMs != null) next.durationMs = block.durationMs;
+  const familiarHabit = legacyFamiliarHabit(block);
+  if (
+    (block.role === "assistant" || block.role === "approval") &&
+    typeof familiarHabit?.id === "string" &&
+    familiarHabit.id.trim() &&
+    typeof familiarHabit.name === "string" &&
+    familiarHabit.name.trim() &&
+    typeof familiarHabit.at === "number" &&
+    Number.isFinite(familiarHabit.at)
+  ) {
+    next.familiarHabit = {
+      id: familiarHabit.id,
+      name: familiarHabit.name,
+      at: familiarHabit.at,
+    };
+  }
+  if (block.role === "user" && typeof block.sentAt === "number")
+    next.sentAt = block.sentAt;
   const turnModel = sanitizeTurnModel(block.turnModel);
   if (block.role === "user" && turnModel) next.turnModel = turnModel;
   if (block.role === "user" && block.draft) next.draft = true;
@@ -673,6 +951,17 @@ function sanitizeBlock(
   // Without this the transcript would show the app's orchestration turns as
   // the user's own after a reload.
   if (block.role === "user" && block.internal) next.internal = true;
+  const completion = sanitizeFamiliarSessionCompletion(
+    legacyFamiliarSessionCompletion(block),
+  );
+  if (block.role === "user" && block.internal && completion)
+    next.familiarSessionCompletion = completion;
+  const spawned = sanitizeFamiliarSpawnedSessions(
+    block.familiarSpawnedSessions ??
+      (block as { monoSpawnedSessions?: unknown }).monoSpawnedSessions,
+  );
+  if (block.role === "user" && spawned.length)
+    next.familiarSpawnedSessions = spawned;
   const turnMetrics = sanitizeTurnMetrics(block.turnMetrics);
   if (block.role === "user" && turnMetrics) next.turnMetrics = turnMetrics;
   if (block.tool) next.tool = block.tool;
@@ -711,6 +1000,30 @@ function sanitizeBlock(
   }
   const noteCard = sanitizeNoteCard(block.noteCard);
   if (noteCard) next.noteCard = noteCard;
+  if (Array.isArray(block.artifactCards)) {
+    const cards = block.artifactCards.flatMap((card) => {
+      if (
+        !card ||
+        !ARTIFACT_KINDS.includes(card.kind) ||
+        typeof card.id !== "string" ||
+        !isPersistableId(card.id) ||
+        typeof card.title !== "string" ||
+        !card.title.trim()
+      )
+        return [];
+      return [
+        {
+          id: card.id,
+          kind: card.kind,
+          title: card.title.slice(0, 200),
+          ...(typeof card.summary === "string" && card.summary.trim()
+            ? { summary: card.summary.slice(0, 280) }
+            : {}),
+        },
+      ];
+    });
+    if (cards.length) next.artifactCards = cards;
+  }
   if (
     block.role === "user" &&
     typeof block.ciContext === "string" &&
@@ -859,14 +1172,17 @@ function sanitizeBtwThreads(
   return threads.length > 0 ? threads : undefined;
 }
 
-function sanitizeGeneratedImage(value: unknown): GeneratedImageMeta | undefined {
+function sanitizeGeneratedImage(
+  value: unknown,
+): GeneratedImageMeta | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return undefined;
   }
   const record = value as Record<string, unknown>;
   const path = typeof record.path === "string" ? record.path.trim() : "";
   const name = typeof record.name === "string" ? record.name.trim() : "";
-  const mimeType = typeof record.mimeType === "string" ? record.mimeType.trim() : "";
+  const mimeType =
+    typeof record.mimeType === "string" ? record.mimeType.trim() : "";
   const size = record.size;
   if (
     !path ||
@@ -1097,10 +1413,14 @@ function normalizeSummary(summary: SessionSummary): SessionSummary {
     archived: summary.archived || undefined,
     pinned: summary.pinned || undefined,
     draft: summary.draft || undefined,
+    sidebarHidden: summary.sidebarHidden === true || undefined,
     linkedWorkItem,
     ...(typeof summary.automationId === "string" &&
     isPersistableId(summary.automationId)
       ? { automationId: summary.automationId }
+      : {}),
+    ...(typeof summary.taskCardId === "string" && isPersistableId(summary.taskCardId)
+      ? { taskCardId: summary.taskCardId }
       : {}),
   };
 }
@@ -1112,8 +1432,10 @@ function recordToSession(record: SessionRecord): Session {
         .filter((block): block is Block => block != null)
     : [];
   const linkedWorkItem = sanitizeLinkedWorkItem(record.linkedWorkItem);
+  const queuedMessages = sanitizeQueuedMessages(record.queuedMessages);
   return {
     id: record.id,
+    sidebarHidden: record.sidebarHidden === true || undefined,
     cwd: record.cwd,
     harness: asHarness(record.harness),
     model: record.model,
@@ -1124,6 +1446,11 @@ function recordToSession(record: SessionRecord): Session {
     runtimeMode: asRuntimeMode(record.runtimeMode),
     title: record.title,
     blocks,
+    // A restart interrupted the active turn. Let the user resume pending work.
+    ...(queuedMessages.length
+      ? { queuedMessages, queueStatus: "paused" as const }
+      : {}),
+    ...(record.familiarTranscript ? { familiarTranscript: record.familiarTranscript } : {}),
     busy: false,
     orchestrationLeadId:
       record.orchestrationLeadId ??
@@ -1143,6 +1470,9 @@ function recordToSession(record: SessionRecord): Session {
     ...(linkedWorkItem ? { linkedWorkItem } : {}),
     ...(record.automationId && isPersistableId(record.automationId)
       ? { automationId: record.automationId }
+      : {}),
+    ...(record.taskCardId && isPersistableId(record.taskCardId)
+      ? { taskCardId: record.taskCardId }
       : {}),
     ...(contextFromRecord(record) ?? {}),
   };

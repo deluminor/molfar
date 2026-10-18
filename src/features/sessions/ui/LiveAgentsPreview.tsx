@@ -11,7 +11,13 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupMascot,
 } from "@/features/workspace/model/tab-groups";
-import { Check, ChevronDown, ChevronUp, CircleAlert } from "@/shared/ui/icons";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+  X,
+} from "@/shared/ui/icons";
 import { HarnessIcon } from "./HarnessIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { TerminalSpinner } from "./TerminalSpinner";
@@ -27,6 +33,7 @@ type Props = {
   agents: LiveAgent[];
   activeSessionId?: string;
   onSelect?: (sessionId: string) => void;
+  onStop?: (sessionId: string) => void;
   bottomSpacing?: boolean;
   groupLabels?: Record<string, string>;
   groupColors?: Record<string, number>;
@@ -38,6 +45,7 @@ export function LiveAgentsPreview({
   agents,
   activeSessionId,
   onSelect,
+  onStop,
   bottomSpacing = false,
   groupLabels: groupLabelsProp,
   groupColors: groupColorsProp,
@@ -112,6 +120,7 @@ export function LiveAgentsPreview({
               now={now}
               selected={agent.id === activeSessionId}
               onSelect={onSelect}
+              onStop={onStop}
               groupLabels={groupLabels}
               groupColors={groupColors}
               groupCustomColors={groupCustomColors}
@@ -144,6 +153,7 @@ function LiveAgentCard({
   now,
   selected,
   onSelect,
+  onStop,
   groupLabels,
   groupColors,
   groupCustomColors,
@@ -153,6 +163,7 @@ function LiveAgentCard({
   now: number;
   selected: boolean;
   onSelect?: (sessionId: string) => void;
+  onStop?: (sessionId: string) => void;
   groupLabels: Record<string, string>;
   groupColors: Record<string, number>;
   groupCustomColors: Record<string, string>;
@@ -180,62 +191,87 @@ function LiveAgentCard({
     .join("\n");
 
   return (
-    <button
-      type="button"
-      title={title}
-      aria-label={[agent.title, project, activity, elapsed]
-        .filter(Boolean)
-        .join(", ")}
-      aria-current={selected ? "true" : undefined}
-      data-live-agent-card={agent.id}
-      onClick={() => onSelect?.(agent.id)}
-      className={`relative flex w-full flex-col rounded-md px-2 py-1.5 text-left ${
+    <div
+      className={`group relative rounded-md ${
         selected ? "bg-selection" : "hover:bg-content/8"
       }`}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <ProjectMascot
-          project={seed}
-          color={color}
-          name={resolveTabGroupMascot(key, groupMascots)}
-          className="size-2 shrink-0"
-          active={live}
-        />
-        {live ? (
-          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-snug">
-            {agent.title}
-          </p>
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-snug">
-            {agent.title}
-          </span>
-        )}
-      </span>
-      <span
-        className={`mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-[11px] leading-tight ${
-          agent.needsApproval
-            ? "text-amber-400"
-            : agent.done
-              ? "text-emerald-400"
-              : "text-content/50"
-        }`}
+      <button
+        type="button"
+        title={title}
+        aria-label={[agent.title, project, activity, elapsed]
+          .filter(Boolean)
+          .join(", ")}
+        aria-current={selected ? "true" : undefined}
+        data-live-agent-card={agent.id}
+        onClick={() => onSelect?.(agent.id)}
+        className="flex w-full flex-col px-2 py-1.5 pr-7 text-left"
       >
-        {agent.needsApproval ? (
-          <CircleAlert className="size-3 shrink-0" strokeWidth={1.75} />
-        ) : agent.done ? (
-          <Check className="size-3 shrink-0" strokeWidth={2.25} />
-        ) : (
-          <TerminalSpinner className="inline-block w-3 select-none text-center text-[11px] leading-none" />
-        )}
-        <span className="min-w-0 truncate">{activity}</span>
-      </span>
-      <span className="mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-[11px] leading-tight text-content/45">
-        <HarnessIcon harness={agent.harness} className="size-3 shrink-0" />
-        <span className="min-w-0 flex-1 truncate">{project}</span>
-        {elapsed ? (
-          <span className="shrink-0 tabular-nums">{elapsed}</span>
-        ) : null}
-      </span>
-    </button>
+        <span className="flex min-w-0 items-center gap-2">
+          <ProjectMascot
+            project={seed}
+            color={color}
+            name={resolveTabGroupMascot(key, groupMascots)}
+            className="size-2 shrink-0"
+            active={live}
+          />
+          {live ? (
+            <p className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-snug">
+              {agent.title}
+            </p>
+          ) : (
+            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-snug">
+              {agent.title}
+            </span>
+          )}
+        </span>
+        <span
+          className={`mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-[11px] leading-tight ${
+            agent.needsApproval
+              ? "text-amber-400"
+              : agent.done
+                ? "text-emerald-400"
+                : "text-content/50"
+          }`}
+        >
+          {agent.needsApproval ? (
+            <CircleAlert className="size-3 shrink-0" strokeWidth={1.75} />
+          ) : agent.done ? (
+            <Check className="size-3 shrink-0" strokeWidth={2.25} />
+          ) : (
+            <TerminalSpinner className="inline-block w-3 select-none text-center text-[11px] leading-none" />
+          )}
+          <span className="min-w-0 truncate">{activity}</span>
+        </span>
+        <span className="mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-[11px] leading-tight text-content/45">
+          <HarnessIcon harness={agent.harness} className="size-3 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{project}</span>
+          {elapsed ? (
+            <span className="shrink-0 tabular-nums">{elapsed}</span>
+          ) : null}
+        </span>
+      </button>
+      <button
+        type="button"
+        title={
+          agent.done
+            ? `Close ${agent.title}`
+            : `Stop and close ${agent.title}`
+        }
+        aria-label={
+          agent.done
+            ? `Close ${agent.title}`
+            : `Stop and close ${agent.title}`
+        }
+        data-live-agent-stop={agent.id}
+        onClick={(event) => {
+          event.stopPropagation();
+          onStop?.(agent.id);
+        }}
+        className="absolute right-1 top-1 grid size-5 place-items-center rounded text-content/45 opacity-0 hover:bg-content/10 hover:text-content focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        <X className="size-3" strokeWidth={1.75} />
+      </button>
+    </div>
   );
 }

@@ -1,14 +1,17 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
   type ChangeEvent,
   type MouseEvent,
 } from "react";
-import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
-import { X } from "@/shared/ui/icons";
+import { splitMarkdownFrontmatter } from "@/shared/lib/markdown-frontmatter";
+import { ChevronDown, ChevronRight, X } from "@/shared/ui/icons";
 import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import { prepareVaultPreview } from "../../model/document/prepare-vault-preview";
+import { toggleMarkdownTask } from "../../model/document/toggle-markdown-task";
 import { useVaultAssets } from "../../hooks/documents/use-vault-assets";
 import { ACTION_FILLED, ICON_BUTTON } from "../constants";
 import { KnowledgeAlert } from "../KnowledgeAlert";
@@ -25,13 +28,21 @@ export function KnowledgeDocument({
   contextBusy,
   onClose,
 }: KnowledgeDocumentProps) {
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState(true);
   const [linkError, setLinkError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPreview(true);
+    setLinkError(null);
+  }, [path]);
+
   const markdown = useMemo(
     () => prepareVaultPreview(state.draft?.body ?? "", notes, path, entries),
     [state.draft?.body, notes, path, entries],
   );
+  const document = useMemo(() => splitMarkdownFrontmatter(markdown), [markdown]);
   const assets = useVaultAssets(preview ? vaultId : undefined, markdown);
+
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
@@ -43,10 +54,12 @@ export function KnowledgeDocument({
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
   }, [state]);
+
   const change = (event: ChangeEvent<HTMLTextAreaElement>) =>
     state.change(event.target.value);
   const source = () => setPreview(false);
   const rendered = () => setPreview(true);
+
   const link = (event: MouseEvent<HTMLDivElement>) => {
     const anchor =
       event.target instanceof Element ? event.target.closest("a") : null;
@@ -61,6 +74,16 @@ export function KnowledgeDocument({
       setLinkError(String(failure));
     }
   };
+
+  const toggleTask = useCallback(
+    (index: number, checked: boolean) => {
+      if (!state.draft || state.draft.conflict) return;
+      const next = toggleMarkdownTask(state.draft.body, index, checked);
+      if (next == null) return;
+      void state.save(next);
+    },
+    [state],
+  );
 
   return (
     <section className="knowledge-document" aria-label="Note editor">
@@ -163,10 +186,32 @@ export function KnowledgeDocument({
       ) : null}
       {state.draft && preview ? (
         <div className="knowledge-preview" onClickCapture={link}>
+          {document.metadata !== null ? (
+            <details className="group/metadata mb-5 rounded-lg border border-content/10 bg-content/[0.03]">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] text-content/60 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-3.5 shrink-0 text-content/50 group-open/metadata:hidden"
+                  strokeWidth={1.75}
+                />
+                <ChevronDown
+                  aria-hidden="true"
+                  className="hidden size-3.5 shrink-0 text-content/50 group-open/metadata:block"
+                  strokeWidth={1.75}
+                />
+                Properties
+              </summary>
+              <pre className="whitespace-pre-wrap break-words border-t border-stroke px-3 py-2 font-mono text-[12px] leading-5 text-content/70">
+                {document.metadata}
+              </pre>
+            </details>
+          ) : null}
           <AgentMarkdown
-            text={markdown}
+            text={document.body}
             allowRemoteMedia={false}
             localImageSources={assets.sources}
+            hardBreaks
+            onToggleTask={toggleTask}
           />
         </div>
       ) : null}

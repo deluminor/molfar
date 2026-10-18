@@ -16,11 +16,11 @@ import type {
   GitFileDiff,
   GitChangedFile,
   GitDiffIndex,
-} from "@/domain/git/working-tree";
+} from "../src/domain/git/working-tree";
 import type {
   ProjectSearchMatch,
   ProjectSearchResult,
-} from "@/domain/search/project-search";
+} from "../src/domain/search/project-search";
 
 const exec = promisify(execFile);
 const MAX_FILE = 1024 * 1024;
@@ -785,8 +785,8 @@ export async function hostGitAction(
       await git(
         root,
         action === "stage"
-          ? ["add", "--", path]
-          : ["restore", "--staged", "--", path],
+          ? ["--literal-pathspecs", "add", "--", path]
+          : ["--literal-pathspecs", "restore", "--staged", "--", path],
       );
       return;
     }

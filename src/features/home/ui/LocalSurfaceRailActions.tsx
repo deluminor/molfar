@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from "react";
 import { RailAction } from "@/shared/ui/RailAction";
-import { Gauge, Home } from "@/shared/ui/icons";
+import { Gauge, Home, Kanban } from "@/shared/ui/icons";
 import type {
   RailSurfaceId,
   RailSurfaceVisibility,
@@ -13,15 +13,19 @@ type Props = {
   active: LocalSurfaceId | null;
   visible: RailSurfaceVisibility;
   onOpen: (id: LocalSurfaceId) => void;
+  /** Items waiting on the user per surface, e.g. Task Board cards at a gate. */
+  badges?: Partial<Record<LocalSurfaceId, number>>;
 };
 
 export function LocalSurfaceRailActions({
   active,
   visible,
   onOpen,
+  badges = {},
 }: Props): ReactNode {
   const openHome = useCallback(() => onOpen("home"), [onOpen]);
   const openUsage = useCallback(() => onOpen("usage"), [onOpen]);
+  const openBoard = useCallback(() => onOpen("board"), [onOpen]);
 
   return (
     <>
@@ -39,6 +43,16 @@ export function LocalSurfaceRailActions({
           icon={Gauge}
           onClick={openUsage}
           active={active === "usage"}
+        />
+      ) : null}
+      {visible.board ? (
+        <RailAction
+          label="Board"
+          ariaLabel={badges.board ? `Board, ${badges.board} waiting on you` : "Board"}
+          icon={Kanban}
+          onClick={openBoard}
+          active={active === "board"}
+          badge={badges.board || undefined}
         />
       ) : null}
     </>

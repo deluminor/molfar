@@ -82,13 +82,16 @@ const ACTIONS: [&str; 12] = [
     "list", "delegate", "get", "steer", "message", "retry", "cancel", "wait", "review", "finish",
     "respond", "answer",
 ];
-const APP_ACTIONS: [&str; 16] = [
+const APP_ACTIONS: [&str; 37] = [
     "models.list",
     "sessions.list",
     "sessions.read",
     "sessions.send",
     "sessions.draft",
     "sessions.start",
+    "sessions.stop",
+    "sessions.archive",
+    "sessions.delete",
     "worktrees.list",
     "worktrees.create",
     "folders.list",
@@ -99,22 +102,46 @@ const APP_ACTIONS: [&str; 16] = [
     "confluence.search",
     "confluence.list",
     "confluence.read",
+    "board.list",
+    "board.create",
+    "artifacts.list",
+    "artifacts.read",
+    "artifacts.write",
+    "soul.read",
+    "soul.update",
+    "memory.read",
+    "memory.search",
+    "memory.add",
+    "memory.replace",
+    "memory.remove",
+    "habits.list",
+    "habits.add",
+    "habits.update",
+    "habits.run",
+    "habits.remove",
+    "chat.card",
 ];
 const APP_USAGE: &str = r#"MOLFAR app access — use in a thread enabled by /operator.
 
 Usage: {exe} app ACTION [--json JSON | --input FILE|-] [--request-id ID]
 
+A Familiar works on several projects: add "project":"<path or name>" to the
+sessions.*, worktrees.*, folders.* and board.* actions to choose which one. It may be
+left out when the Familiar has a single project.
+
 Actions:
   models.list    {}  Available providers, models, settings and permission modes.
-  sessions.list  {}  Project sessions with IDs, busy status and hasDraft.
+  sessions.list  {}  Project sessions with IDs, busy status, hasDraft and archived.
   sessions.read  {"sessionId":"...","before":"<turnId>","limit":3,"maxChars":1200}
                   Read up to 3 recent user/assistant exchanges. Tools and
                   reasoning are omitted. Omit before for the newest page;
                   pass nextBefore from a result for older exchanges. maxChars
                   caps each message (200-6000, default 1200).
-  sessions.send  {"sessionId":"...","prompt":"..."}
+  sessions.send  {"sessionId":"...","prompt":"...","notifyOnComplete":true}
                   Submit a follow-up to an idle session in this project.
                   A busy session is rejected. Reuse --request-id on retries.
+                  Optional notifyOnComplete:true asks for a completion report
+                  in the calling Familiar's chat. It waits until that Familiar is idle.
   sessions.draft {"sessionId":"...","prompt":"..."}
                   Save an unsent draft in an idle project session. Existing
                   drafts are preserved; send or remove one in MOLFAR first.
@@ -130,6 +157,19 @@ Actions:
                   session in this project, including one just created. Set
                   draft:true to save the prompt unsent; no agent turn runs.
                   Otherwise the turn is submitted.
+                  Submitted sessions notify the calling Familiar by default when
+                  this turn completes, fails or is cancelled. The Familiar reviews
+                  it and reports back once idle. Set notifyOnComplete:false
+                  when the user asks not to receive a report. Drafts do not
+                  notify; notifyOnComplete:true cannot be combined with draft:true.
+                  Sessions monitored during the same Familiar turn form one group:
+                  their results arrive together after every session stops.
+                  The Familiar reviews the whole group and gives one combined report.
+                  Rejected launches or follow-ups return a CLI error without
+                  a later completion report. When a Familiar successfully stops,
+                  archives or deletes a monitored session, its pending report
+                  for that session is dismissed; acknowledge the action in
+                  the current reply. Other sessions' reports are kept.
                   Returns after creation/acceptance, not agent completion;
                   use its ID with folders.move immediately. Optional model,
                   effort, modelSettings, permission mode and workspace choice
@@ -140,6 +180,22 @@ Actions:
                   runtimeMode to inherit this
                   session's permission mode; set it to override. Run
                   models.list for allowed IDs. cwd is your project; no attachments.
+  sessions.stop {"sessionId":"..."}
+                  Stop a session's current turn and pause its queued messages.
+                  The conversation and checkout are kept. Idle sessions are
+                  unchanged. Reuse --request-id on retries.
+  sessions.archive {"sessionId":"..."}
+                  Stop the session if running, save its conversation, and
+                  archive it. It can be restored from MOLFAR's archive.
+                  Open files, terminals and worktrees are kept.
+                  Reuse --request-id on retries.
+  sessions.delete {"sessionId":"..."}
+                  Stop the session if running and permanently delete its
+                  saved conversation. Open files, terminals and worktrees
+                  are kept. Reuse --request-id on retries.
+                  stop, archive and delete cannot target the calling session,
+                  Familiar chats, habit runs or orchestration workers. Sessions
+                  must belong to the chosen project.
   worktrees.list {}  Working copies in this project, with paths and branches.
   worktrees.create {"branch":"feature/name","base":"HEAD","existing":false}
                   Create a worktree on a named new branch from base (a branch
@@ -162,6 +218,91 @@ Actions:
                   List root pages in a space, or children of a page/folder.
                   parentKind is optional (page|folder); omit to try both.
   confluence.read   {"id":"..."}  Page markdown, or folder table of contents.
+  board.list     {"archived":false}  Task Board cards in this project: number,
+                  title, column, run state and whether one needs the user.
+  board.create   {"title":"...","description":"<Markdown>",
+                  "acceptanceCriteria":"AC-1: ...","baseRef":"main"}
+                  Add a Backlog card in this project. Use it when the user
+                  asks to put a task, ticket or card on the board. Create it
+                  at once when they said to create it now; otherwise show the
+                  title and three scope bullets and wait for a yes. Run
+                  board.list first when a similar card may already exist.
+                  Write the card in English from what this conversation
+                  settled; do not ask for what it already answers.
+                  title: imperative and specific, under 80 characters.
+                  description, Markdown, in this order:
+                    ### Overview      2-3 sentences: what changes, why, and
+                                      how it works end to end
+                    ### Goals         observable outcomes, not tasks
+                    ### Scope         what ships, grouped by surface or layer
+                    ### Out of scope  what a reader might assume is included
+                    ### Technical notes  modules, types and invariants to
+                                      reuse, named as in the code; omit it
+                                      when nothing is known yet
+                  acceptanceCriteria: one independently verifiable line each,
+                  covering the happy path, empty and error states and nearby
+                  behavior that must not regress, for example
+                    AC-1: Given <state>, when <action>, then <result>.
+                  Never write "works correctly". Name only files and symbols
+                  you saw or checked; mark an unknown as TBD: <what decides it>.
+                  Pass long Markdown with --input - on stdin.
+                  acceptanceCriteria and baseRef are optional; set baseRef only
+                  when the user named a branch. The project must be a local
+                  git checkout on the rail. Reuse --request-id on retries; it
+                  never makes a second card. Reply with the card number, title
+                  and column, without pasting the description back.
+  artifacts.list {"limit":30,"offset":0}  Familiar or habit only. Saved artifact titles.
+  artifacts.read {"id":"..."}  Full content of one artifact.
+  artifacts.write {"kind":"document","title":"PR review",
+                   "summary":"Merge verdict and blockers",
+                   "body":"<complete Markdown>"}
+                  Save a document and attach its card below your chat reply.
+                  Artifacts are separate from Notes. Currently only kind "document"
+                  (Markdown) is supported. Reply briefly; do not
+                  repeat the document body in chat. Returns metadata only.
+                  To revise, pass {"id":"...","body":"<updated Markdown>"};
+                  omitted title stays unchanged. Reuse --request-id on retries.
+  soul.read      {}  Familiar's own conversation only. Current SOUL.md text and hash.
+  soul.update    {"text":"<complete Markdown>","expectedHash":"<hash from soul.read>"}
+                  Update your standing instructions only when the user asks.
+                  Preserve the other instructions. If the file changed since
+                  soul.read, read it again and reapply the requested changes.
+                  Habit runs and other sessions cannot change a Familiar's soul.
+  memory.read    {"topic":"releases"}  Familiar only. Without topic:
+                  MEMORY.md, how much of it loads, and the topic names.
+  memory.search  {"query":"release tags","since":"7d"}
+                  Entries across MEMORY.md, topic notes and the archive that
+                  share words with query, best first. since is a date or a
+                  span (24h, 7d, 2w) and keeps dated entries from then on.
+  memory.add     {"fact":"...","topic":"releases","until":"2026-11-01"}
+                  Add one dated entry to MEMORY.md, or to a topic file when
+                  topic is set. until is optional, for facts that expire.
+                  Oldest entries move to the archive when MEMORY.md is full.
+  memory.replace {"find":"text of the old entry","fact":"...","topic":"..."}
+                  Strike the one entry containing find through and add fact.
+  memory.remove  {"find":"text of the entry","topic":"..."}
+                  Delete the one entry containing find, for a wrong entry.
+  habits.list    {}  Familiar only. Your habits: what each does, when it runs
+                  next, and how its last run went.
+  habits.add     {"name":"Morning CI check","instructions":"...",
+                  "schedule":{"kind":"weekdays","time":"09:00"}}
+                  Add only after the user agreed to it in this chat. kind is
+                  hourly (with "minute"), daily, weekdays or weekly (with
+                  "dayOfWeek", 0 = Sunday); time is local 24-hour HH:MM.
+                  Each run is a hidden session that posts to this chat only
+                  when it has something worth saying.
+  habits.update  {"id":"...","name":"...","instructions":"...",
+                  "schedule":{...},"enabled":false}  Change or pause one.
+  habits.run     {"id":"..."}  Run one within a minute, to try it out.
+  habits.remove  {"id":"..."}
+  chat.card      Familiar or habit only. Post a card to the Familiar's chat:
+                  {"type":"pr","repo":"owner/repo","number":123,"note":"..."}
+                  {"type":"session","sessionId":"...","note":"..."}
+                  {"type":"choices","options":["First choice","Second choice"]}
+                  {"type":"habit","name":"...","instructions":"...",
+                   "schedule":{"kind":"daily","time":"09:00"}}
+                  choices accepts 1–4 options. A habit card is a suggestion;
+                  the user must start it before it is scheduled.
 
 The output is one JSON line: {"ok":true,"result":...} or {"ok":false,"error":"..."}.
 Use --input - to pass JSON on stdin. Never print MOLFAR credentials.
@@ -534,12 +675,20 @@ mod tests {
             parse_args_for(&args(&["notes.list"]), true),
             Ok(Parsed::Call(_, _, _))
         ));
-        for action in ["sessions.read", "sessions.send", "sessions.draft"] {
+        for action in [
+            "sessions.read",
+            "sessions.send",
+            "sessions.draft",
+            "sessions.stop",
+            "sessions.archive",
+            "sessions.delete",
+        ] {
             assert!(matches!(
                 parse_args_for(&args(&[action, "--json", r#"{"sessionId":"other"}"#]), true),
                 Ok(Parsed::Call(_, _, _))
             ));
             assert!(app_help().contains(action));
+            assert!(parse_args_for(&args(&[action]), false).is_err());
         }
         assert!(app_help().contains("draft:true"));
         assert!(app_help().contains("inherit this"));
@@ -549,13 +698,27 @@ mod tests {
         );
         assert!(app_help().contains("notes.read"));
         assert!(app_help().contains("notes.write"));
-        for action in ["worktrees.list", "worktrees.create"] {
+        for action in [
+            "worktrees.list",
+            "worktrees.create",
+            "board.list",
+            "board.create",
+            "artifacts.list",
+            "artifacts.read",
+            "artifacts.write",
+        ] {
             assert!(matches!(
                 parse_args_for(&args(&[action]), true),
                 Ok(Parsed::Call(_, _, _))
             ));
             assert!(app_help().contains(action));
         }
+        assert!(app_help().contains(r#""kind":"document""#));
+        assert!(app_help().contains("Artifacts are separate from Notes"));
+        assert!(app_help().contains("### Out of scope"));
+        assert!(app_help().contains("AC-1: Given <state>"));
+        assert!(app_help().contains("wait for a yes"));
+        assert!(parse_args_for(&args(&["board.create"]), false).is_err());
     }
 
     #[test]
@@ -565,5 +728,51 @@ mod tests {
         assert!(denied.get("requestId").is_none());
         let uncertain = with_retry_hint(json!({"ok":false,"error":"timeout"}), "id-1");
         assert_eq!(uncertain["retryWith"], "--request-id id-1");
+    }
+
+    #[test]
+    fn app_mode_accepts_chat_cards_and_documents_every_type() {
+        for input in [
+            r#"{"type":"pr","repo":"owner/repo","number":123}"#,
+            r#"{"type":"session","sessionId":"other"}"#,
+            r#"{"type":"choices","options":["Review","Ship"]}"#,
+            r#"{"type":"habit","name":"Check CI","instructions":"Check CI","schedule":{"kind":"daily","time":"09:00"}}"#,
+        ] {
+            assert!(matches!(
+                parse_args_for(&args(&["chat.card", "--json", input]), true),
+                Ok(Parsed::Call(action, parsed_input, _))
+                    if action == "chat.card"
+                        && parsed_input == serde_json::from_str::<Value>(input).unwrap()
+            ));
+        }
+        assert!(parse_args_for(&args(&["chat.card"]), false).is_err());
+        let help = app_help();
+        assert!(help.contains("chat.card"));
+        for kind in ["pr", "session", "choices", "habit"] {
+            assert!(help.contains(&format!(r#""type":"{kind}""#)));
+        }
+    }
+
+    #[test]
+    fn app_mode_exposes_soul_actions_and_documents_requested_updates() {
+        for (action, input) in [
+            ("soul.read", r#"{}"#),
+            (
+                "soul.update",
+                r##"{"text":"# Soul\n","expectedHash":"old-hash"}"##,
+            ),
+        ] {
+            assert!(matches!(
+                parse_args_for(&args(&[action, "--json", input]), true),
+                Ok(Parsed::Call(parsed_action, parsed_input, _))
+                    if parsed_action == action
+                        && parsed_input == serde_json::from_str::<Value>(input).unwrap()
+            ));
+            assert!(parse_args_for(&args(&[action]), false).is_err());
+            assert!(app_help().contains(action));
+        }
+        assert!(app_help().contains("only when the user asks"));
+        assert!(app_help().contains("expectedHash"));
+        assert!(app_help().contains("Habit runs and other sessions cannot change"));
     }
 }

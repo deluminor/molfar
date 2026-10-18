@@ -3,6 +3,7 @@ import {
   formatLoad,
   formatPercent,
   formatProcessCount,
+  isHostPressureHigh,
   loadAsPercent,
   type HostStats,
 } from "../model/host-stats";
@@ -27,11 +28,13 @@ function MetricChart({
   value,
   series,
   display,
+  warn = false,
 }: {
   label: string;
   value: number;
   series: readonly number[];
   display?: string;
+  warn?: boolean;
 }): ReactNode {
   const geo = sparklineGeometry(series, CHART_W, CHART_H);
   const gradientId = `host-fill-${label.replace(/\s+/g, "-")}`;
@@ -39,7 +42,9 @@ function MetricChart({
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div className="flex items-baseline justify-between gap-2 font-mono text-[11px]">
         <span className="text-content/45">{label}</span>
-        <span className="text-accent tabular-nums">
+        <span
+          className={`tabular-nums ${warn ? "text-amber-400" : "text-accent"}`}
+        >
           {display ?? formatPercent(value)}
         </span>
       </div>
@@ -47,7 +52,7 @@ function MetricChart({
         role="img"
         aria-label={`${label} ${display ?? formatPercent(value)}`}
         viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-        className="h-9 w-full text-accent"
+        className={`h-9 w-full ${warn ? "text-amber-400" : "text-accent"}`}
         preserveAspectRatio="none"
       >
         <defs>
@@ -105,11 +110,13 @@ export function HostCard({ stats, history, error }: Props): ReactNode {
             label="CPU"
             value={stats.cpuPercent}
             series={cpuSeries}
+            warn={isHostPressureHigh(stats.cpuPercent)}
           />
           <MetricChart
             label="RAM"
             value={stats.memoryPercent}
             series={ramSeries}
+            warn={isHostPressureHigh(stats.memoryPercent)}
           />
           <MetricChart
             label="SWAP"

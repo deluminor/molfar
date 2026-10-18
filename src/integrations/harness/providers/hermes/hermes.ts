@@ -1,5 +1,6 @@
 import { nativeModelId } from "../../core/models/resolve-model";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type HarnessSessionInput, type SendTurnInput, type SteerTurnInput } from "../../core/types";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import { AcpSubagents } from "../../core/acp-subagents";
 import {
@@ -10,6 +11,7 @@ import {
   watchChild,
   readHarnessTextFile,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import {
   HERMES_AUTH_HELP,
   hermesBackgroundDispatch,
@@ -27,13 +29,6 @@ import {
   permissionRequestFromAcp,
   pickAutoOption,
 } from "../grok/grok-protocol";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  HarnessSessionInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
 
 type Live = {
   subagents: AcpSubagents;
@@ -114,7 +109,7 @@ export async function sendHermesTurn(input: SendTurnInput): Promise<void> {
 /** Hermes redirects a concurrent text prompt, or queues it when redirect is unavailable. */
 export async function steerHermesTurn(input: SteerTurnInput): Promise<void> {
   const live = liveByThread.get(input.sessionId);
-  if (!live) throw new Error("No active Hermes Agent session");
+  if (!live) throw new TurnNotReadyError("No active Hermes Agent session");
   const blocks = hermesPromptBlocks(input.text, input.attachments);
   if (blocks.length === 0) return;
   await live.acp.request(
@@ -277,12 +272,13 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     let setup: unknown;
     let acpSessionId: string | undefined;
     let didLoad = false;
+    const mcpServers = await loadSessionMcpServers("hermes", input.cwd);
     if (canLoad && resume) {
       muteGate.current = true;
       try {
         setup = await acp.request(
           "session/load",
-          { sessionId: resume.acpSessionId, cwd: input.cwd, mcpServers: [] },
+          { sessionId: resume.acpSessionId, cwd: input.cwd, mcpServers },
           SESSION_TIMEOUT_MS,
         );
         acpSessionId = hermesSessionId(setup) ?? resume.acpSessionId;
@@ -299,7 +295,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
       try {
         setup = await acp.request(
           "session/new",
-          { cwd: input.cwd, mcpServers: [] },
+          { cwd: input.cwd, mcpServers },
           SESSION_TIMEOUT_MS,
         );
       } catch (error) {
@@ -375,12 +371,18 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
   try {
     let blocks = hermesPromptBlocks(input.text, input.attachments);
     if (blocks.length === 0) return;
+    let accepted = false;
     for (;;) {
-      await live.acp.request(
+      const pending = live.acp.request(
         "session/prompt",
         { sessionId: live.acpSessionId, prompt: blocks },
         PROMPT_TIMEOUT_MS,
       );
+      if (!accepted) {
+        accepted = true;
+        input.onAccepted?.();
+      }
+      await pending;
       if (live.cancelled) return;
       // Close this assistant bubble without ending MOLFAR's busy turn. A
       // background handoff opens a fresh assistant bubble after it arrives.

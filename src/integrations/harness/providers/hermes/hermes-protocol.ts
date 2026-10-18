@@ -1,10 +1,8 @@
-import {
-  promptBlocks,
-  type PromptContentBlock,
-} from "@/domain/session/attachment-prompt";
+import { promptBlocks, type PromptContentBlock } from "@/domain/session/attachment-prompt";
 import type { AgentModel } from "@/domain/models/agent-model";
 import type { Attachment } from "@/domain/session/attachment";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { upstreamProviderName } from "../../core/provider-names";
 
 export type HermesBackgroundDispatch = {
   callId: string;
@@ -150,12 +148,15 @@ export function modelsFromHermesSession(result: unknown): AgentModel[] {
     ).trim();
     if (!nativeId || seen.has(nativeId)) continue;
     seen.add(nativeId);
-    const name = String(model.name ?? model.title ?? nativeId).trim();
+    const rawName = String(model.name ?? model.title ?? nativeId).trim();
+    const provider = hermesModelProvider(nativeId, rawName, model.description);
+    const name = provider ? stripProviderPrefix(rawName, provider.name) : rawName;
     models.push({
       id: `hermes:${nativeId}`,
       harness: "hermes",
       name: name || displayName(nativeId),
       nativeId,
+      ...(provider ? { provider } : {}),
     });
   }
 
@@ -166,6 +167,40 @@ export function modelsFromHermesSession(result: unknown): AgentModel[] {
     if (index > 0) models.unshift(...models.splice(index, 1));
   }
   return models;
+}
+
+/**
+ * Hermes encodes picker ids as `provider:model` (`custom:<key>:model` for
+ * user-defined endpoints) and labels rows `Provider: <name>` in their
+ * description, with the inventory rows also named `<name> · <model>`.
+ */
+function hermesModelProvider(
+  nativeId: string,
+  name: string,
+  description: unknown,
+): AgentModel["provider"] {
+  const parts = nativeId.split(":");
+  if (parts.length < 2) return undefined;
+  const id = parts[0] === "custom" && parts.length > 2
+    ? `${parts[0]}:${parts[1]}`
+    : parts[0];
+  const described =
+    typeof description === "string"
+      ? /^Provider:\s*([^•]+)/.exec(description)?.[1]?.trim()
+      : undefined;
+  const prefixed = name.includes(" · ")
+    ? name.slice(0, name.indexOf(" · ")).trim()
+    : undefined;
+  return {
+    id,
+    name: described || prefixed || upstreamProviderName(id.replace(/^custom:/, "")),
+  };
+}
+
+/** Remove a matching provider label now shown by the picker's group heading. */
+function stripProviderPrefix(name: string, provider: string): string {
+  const prefix = `${provider} · `;
+  return name.startsWith(prefix) ? name.slice(prefix.length).trim() : name;
 }
 
 function displayName(nativeId: string): string {

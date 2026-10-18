@@ -1,7 +1,7 @@
+import { supportsAccountProfiles } from "@/domain/harness/provider-account";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { homeDir } from "@/platform/tauri/fs";
-import { supportsProviderAccounts } from "@/domain/harness/provider-account";
-import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import * as child from "./child";
 import { harnessLoginArgs } from "./auth-support";
 
@@ -40,6 +40,7 @@ const LOGIN_RESOLVERS: Partial<
   cursor: () => child.resolveCursorBinary(),
   grok: () => child.resolveGrokBinary(),
   fx: () => child.resolveFxBinary(),
+  devin: () => child.resolveDevinBinary(),
 };
 
 const inflight = new Map<string, Promise<void>>();
@@ -132,7 +133,7 @@ async function runHarnessLogin(
     }, LOGIN_TIMEOUT_MS);
 
     const account =
-      accountId && accountId !== "default" && supportsProviderAccounts(harness)
+      accountId && accountId !== "default" && supportsAccountProfiles(harness)
         ? { provider: harness, id: accountId }
         : undefined;
     const spawn = account

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { readBinaryFile } from "@/platform/tauri/fs";
 import { formatFileSize, sniffImageMime } from "@/features/files/model/file-preview";
-import { ImageLightbox } from "@/shared/ui/ImageLightbox";
+import { ImageLightbox } from "./ImageLightbox";
 import type { GeneratedImageMeta } from "@/domain/session/attachment";
 
 type State =

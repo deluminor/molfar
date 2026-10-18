@@ -37,6 +37,7 @@ export function dequeueQueuedMessage(
  */
 export function canDispatchQueuedHead(session: Session): boolean {
   if (session.busy) return false;
+  if (session.worktreePreparing || session.worktreeRemoved) return false;
   if (session.usageLimit) return false;
   if (session.queueStatus === "paused" || session.queueStatus === "resuming") {
     return false;
@@ -46,6 +47,30 @@ export function canDispatchQueuedHead(session: Session): boolean {
   if (isEditingQueuedHead(session)) return false;
   if (isPreparingHandoff(session)) return false;
   return true;
+}
+
+/** Familiars deliver one waiting follow-up at a time after the provider is ready. */
+export function canSteerQueuedHead(session: Session): boolean {
+  const head = queuedHead(session);
+  return (
+    !!head &&
+    !head.familiarSessionCompletion &&
+    !!session.busy &&
+    !!session.turnReady &&
+    !session.worktreePreparing &&
+    !session.worktreeRemoved &&
+    !session.pendingSwitch &&
+    !session.usageLimit &&
+    !(
+      session.pendingQuestion && session.pendingQuestion.autoResolveAt == null
+    ) &&
+    session.queueStatus !== "paused" &&
+    session.queueStatus !== "resuming" &&
+    !isEditingQueuedHead(session) &&
+    !isPreparingHandoff(session) &&
+    head.intent !== "plan" &&
+    head.intent !== "orchestrate"
+  );
 }
 
 /** Resolve a queued row for auto-dispatch (head, idle) or an explicit Steer. */
@@ -58,7 +83,7 @@ export function queuedMessageForSubmit(
     (entry) => entry.id === messageId,
   );
   if (!message) return undefined;
-  if (mode === "steer") return message;
+  if (mode === "steer") return message.familiarSessionCompletion ? undefined : message;
   if (queuedHead(session)?.id !== messageId) return undefined;
   if (!canDispatchQueuedHead(session)) return undefined;
   return message;

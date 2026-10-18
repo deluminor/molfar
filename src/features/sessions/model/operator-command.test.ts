@@ -29,8 +29,8 @@ describe("Operator composer command", () => {
       text: "Explain /operator",
       matched: false,
     });
-    expect(consumeOperatorCommand("/mono list notes")).toEqual({
-      text: "/mono list notes",
+    expect(consumeOperatorCommand("/familiar list notes")).toEqual({
+      text: "/familiar list notes",
       matched: false,
     });
   });
@@ -59,7 +59,7 @@ describe("Operator composer command", () => {
       isOperatorUserTurn({
         id: "plain",
         role: "user",
-        text: "/mono list notes",
+        text: "/familiar list notes",
       }),
     ).toBe(false);
   });

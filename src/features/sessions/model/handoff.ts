@@ -1,15 +1,13 @@
+import { sameProviderAccountId } from "@/domain/harness/provider-account";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import type { Block } from "@/domain/session/block";
+import type { HandoffMeta, SecondOpinionMeta } from "@/domain/session/block-meta";
+import type { HandoffComposerCard } from "@/domain/session/handoff-card";
+import type { PendingHarnessSwitch, Session } from "@/domain/session/session";
 import { isEditTool } from "@/integrations/harness/core/preview";
 import { compactCiRepairContext } from "@/features/inbox/model/ci-repair";
 import { limitSection } from "@/shared/lib/json-text";
 import { displayPath } from "@/shared/lib/paths";
-import type { PendingHarnessSwitch, Session } from "@/domain/session/session";
-import type { Block } from "@/domain/session/block";
-import type {
-  HandoffMeta,
-  SecondOpinionMeta,
-} from "@/domain/session/block-meta";
-import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
-import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 
 export const HANDOFF_TITLE = "Handoff";
 
@@ -92,6 +90,7 @@ export function planComposerSwitch(
       from: session.harness,
       fromModel: session.model,
       fromSettings: session.modelSettings,
+      ...(session.usageLimit ? { skipOutgoingRecap: true } : {}),
       ...(session.providerSessionId
         ? { fromProviderSessionId: session.providerSessionId }
         : {}),
@@ -108,6 +107,21 @@ export function sessionChildHarnesses(session: Session): HarnessId[] {
   const last = lastHandoffBlock(session.blocks)?.handoff;
   if (last?.status === "preparing") ids.add(last.from);
   return [...ids];
+}
+
+/** Account switches also retire the old thread, even within one provider. */
+export function pendingComposerSwitch(
+  session: Session,
+): PendingHarnessSwitch | null {
+  const pending = session.pendingSwitch;
+  return pending &&
+    (pending.from !== session.harness ||
+      !sameProviderAccountId(
+        pending.fromProviderAccountId,
+        session.providerAccountId,
+      ))
+    ? pending
+    : null;
 }
 
 /** Session as of the end of this turn, so a later turn is not in the recap. */
@@ -229,6 +243,8 @@ export function hasSessionEdits(session: Session): boolean {
 }
 
 export function shouldAskOutgoingAgent(session: Session): boolean {
+  if (session.usageLimit || session.pendingSwitch?.skipOutgoingRecap)
+    return false;
   const liveId =
     session.pendingSwitch?.fromProviderSessionId ?? session.providerSessionId;
   return !!liveId && hasSessionEdits(session);

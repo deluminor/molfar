@@ -1,3 +1,7 @@
+import { getModelSnapshot, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-model";
+import { DEFAULT_RUNTIME_MODE, RUNTIME_MODE_LABEL, type RuntimeMode } from "@/domain/session/runtime-mode";
+import { HARNESS_TITLE, harnessSupportsAttachments, type HarnessId } from "@/domain/harness/harness";
 import { QuickWorkspaceControls } from "./QuickWorkspaceControls";
 import {
   workspaceForProject,
@@ -30,31 +34,14 @@ import {
   QuickProjectIcon,
   loadQuickProjectAppearance,
 } from "./QuickProjectIcon";
-import {
-  loadLastModelSettings,
-  saveLastModelSettings,
-  saveRecentModelChoice,
-} from "@/features/sessions/model/models";
-import { mergeModelSettings } from "@/integrations/harness/core/models/resolve-model";
-import {
-  getModelSnapshot,
-  subscribeModels,
-} from "@/integrations/harness/core/models/catalog-store";
-import {
-  DEFAULT_RUNTIME_MODE,
-  type RuntimeMode,
-} from "@/domain/session/runtime-mode";
-import {
-  HARNESS_TITLE,
-  harnessSupportsAttachments,
-  type HarnessId,
-} from "@/domain/harness/harness";
+import { loadLastModelSettings, saveLastModelSettings, saveRecentModelChoice } from "@/features/sessions/model/models";
 import { Popover } from "@/shared/ui/Popover";
 import { AttachmentChip } from "@/features/sessions/ui/AttachmentChip";
 import { quickLaunchAttachments } from "../model/quick-attachments";
 import { useQuickAttachments } from "./use-quick-attachments";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { QuickModelSelector } from "./QuickModelSelector";
+import { QuickPermissionIcon, QuickPermissions } from "./QuickPermissions";
 import { useQuickPickerMotion } from "./use-quick-picker-motion";
 import { OPERATOR_COMMAND } from "@/features/sessions/model/operator-command";
 import { ORCHESTRATOR_COMMAND } from "@/features/sessions/model/orchestrator-command";
@@ -141,7 +128,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   const leadingMode = leadingModeCommand(prompt, MODE_NAMES);
   const [slash, setSlash] = useState<SlashToken | null>(null);
   const [picker, setPicker] = useState<
-    "project" | "model" | "attachments" | "commands" | null
+    "project" | "model" | "permissions" | "attachments" | "commands" | null
   >(null);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
@@ -276,7 +263,9 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   const settings = mergeModelSettings(model, modelSettings);
   const optionCount =
     picker === "commands" ? commandOptions.length : projectOptions.length;
-  const openPicker = (kind: "project" | "model" | "attachments") => {
+  const openPicker = (
+    kind: "project" | "model" | "permissions" | "attachments",
+  ) => {
     if (picker === kind) {
       closePicker();
       return;
@@ -514,7 +503,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         aria-label="Close composer"
         title="Close (Esc)"
         onClick={dismiss}
-        className="absolute right-2 top-2 z-20 grid size-5 place-items-center rounded text-content/35 hover:bg-selection-hover hover:text-content"
+        className="absolute right-2 top-3.5 z-20 grid size-5 place-items-center rounded text-content/35 hover:bg-selection-hover hover:text-content"
       >
         <X className="size-3" />
       </button>
@@ -523,7 +512,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           Drop to attach
         </div>
       ) : null}
-      <div className="flex shrink-0 items-center px-5 pt-3 pr-9">
+      <div className="flex shrink-0 items-center gap-2 px-5 pt-3 pr-8">
         <QuickWorkspaceControls
           key={cwd}
           value={workspace}
@@ -533,6 +522,27 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           onOpenChange={onGitOpenChange}
           onClose={focusPrompt}
         />
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => openPicker("project")}
+          disabled={projects.length === 0}
+          title="Project (⌘P)"
+          aria-expanded={picker === "project"}
+          className={`ml-auto flex min-w-0 max-w-[40%] shrink items-center gap-1.5 rounded-md px-1.5 h-6 text-[12px] disabled:opacity-50 ${picker === "project" ? "bg-selection-emphasis text-content" : "text-content/55 hover:bg-selection-hover hover:text-content"}`}
+        >
+          {cwd ? (
+            <QuickProjectIcon
+              projectPath={cwd}
+              appearance={projectAppearance}
+              className="size-3 shrink-0"
+            />
+          ) : null}
+          <span className="truncate">
+            {cwd ? projectName(cwd) : "No project"}
+          </span>
+          <ChevronDown className="size-3 shrink-0 opacity-60" />
+        </button>
       </div>
       {attachments.files.length ? (
         <div
@@ -638,27 +648,6 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         <button
           type="button"
           onMouseDown={(event) => event.preventDefault()}
-          onClick={() => openPicker("project")}
-          disabled={projects.length === 0}
-          title="Project (⌘P)"
-          aria-expanded={picker === "project"}
-          className={`flex min-w-0 max-w-[40%] items-center gap-1.5 rounded-md px-2 py-1 text-[12px] disabled:opacity-50 ${picker === "project" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content"}`}
-        >
-          {cwd ? (
-            <QuickProjectIcon
-              projectPath={cwd}
-              appearance={projectAppearance}
-              className="size-3 shrink-0"
-            />
-          ) : null}
-          <span className="truncate">
-            {cwd ? projectName(cwd) : "No project"}
-          </span>
-          <ChevronDown className="size-3 shrink-0 opacity-60" />
-        </button>
-        <button
-          type="button"
-          onMouseDown={(event) => event.preventDefault()}
           onClick={() => openPicker("model")}
           title="Model (⌘.)"
           aria-expanded={picker === "model"}
@@ -668,6 +657,23 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           <span className="truncate">{model.name}</span>
           <ChevronDown className="size-3 shrink-0 opacity-60" />
         </button>
+        {model.harness !== "fx" ? (
+          <button
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => openPicker("permissions")}
+            title="Permissions"
+            aria-expanded={picker === "permissions"}
+            className={`flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ${picker === "permissions" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content"}`}
+          >
+            <QuickPermissionIcon
+              mode={runtimeMode}
+              className="size-3.5 shrink-0"
+            />
+            <span className="truncate">{RUNTIME_MODE_LABEL[runtimeMode]}</span>
+            <ChevronDown className="size-3 shrink-0 opacity-60" />
+          </button>
+        ) : null}
         <span className="ml-auto flex shrink-0 items-center gap-3 text-[11px] text-content/45">
           {attachments.loading ? (
             <span role="status">Adding attachment…</span>
@@ -777,8 +783,6 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
             <QuickModelSelector
               model={model}
               values={settings}
-              runtimeMode={runtimeMode}
-              onRuntimeModeChange={setRuntimeMode}
               availableHarnesses={availableHarnesses}
               onChange={(selected) => {
                 setChoice({ harness: selected.harness, model: selected.id });
@@ -787,6 +791,14 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                 );
               }}
               onSettingsChange={setModelSettings}
+              onClose={closePicker}
+            />
+          ) : null}
+
+          {picker === "permissions" ? (
+            <QuickPermissions
+              value={runtimeMode}
+              onChange={setRuntimeMode}
               onClose={closePicker}
             />
           ) : null}

@@ -5,8 +5,10 @@ export type ForegroundView = {
   hidden: boolean;
   /** No surface (search, inbox, notes, …) covers the workspace. */
   workspaceVisible: boolean;
-  /** Session shown in the Inbox, which owns it outside the tab tree. */
-  inboxSessionId?: string;
+  /** Standalone conversation (Inbox ask, a Familiar) shown outside the tab tree. */
+  standaloneSessionId?: string;
+  /** A session shown beside the Familiar's chat. */
+  sideSessionId?: string;
   activeTab: WorkspaceTab | undefined;
 };
 
@@ -16,7 +18,11 @@ export function isForegroundSession(
   view: ForegroundView,
 ): boolean {
   if (view.hidden) return false;
-  if (view.inboxSessionId === sessionId) return true;
+  if (
+    view.standaloneSessionId === sessionId ||
+    view.sideSessionId === sessionId
+  )
+    return true;
 
   const tab = view.activeTab;
   if (!view.workspaceVisible || !tab) return false;

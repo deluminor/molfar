@@ -1,13 +1,20 @@
 // @vitest-environment happy-dom
-import { act, createElement, type ComponentProps } from "react";
+import { act, createElement, StrictMode, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { formatSessionTitle } from "@/domain/session/title";
 import { formatReminderTime } from "@/features/sessions/model/session-reminders";
 import { Sidebar } from "./Sidebar";
-import { loadSessionFolders } from "@/features/sessions/model/session-folders";
+import {
+  loadSessionFolders,
+  saveSessionFolders,
+} from "@/features/sessions/model/session-folders";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import { copyText } from "@/platform/tauri/clipboard";
+import {
+  createFamiliar,
+  saveFamiliarSessionId,
+} from "@/features/familiars/model/familiar";
 
 // Keep native services out of these menu/input interaction tests.
 vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
@@ -16,8 +23,37 @@ vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
 vi.mock("@/features/source-control/hooks/use-git-file-statuses", () => ({
   useGitFileStatuses: () => ({ files: new Map(), dirs: new Map() }),
 }));
+vi.mock("@/features/source-control/hooks/use-project-worktrees", () => ({
+  useProjectWorktrees: () => ({
+    data: {
+      worktrees: [
+        {
+          path: "/workspace/project",
+          branch: "main",
+          isMain: true,
+          head: "abcdef123456",
+          locked: false,
+          prunable: false,
+          missing: false,
+          dirty: false,
+          unpushed: 0,
+          sessionIds: [],
+        },
+      ],
+      defaultRoot: "/workspace/project-worktrees",
+    },
+    refresh: async () => true,
+  }),
+}));
+vi.mock("./GithubStarPrompt", () => ({
+  GithubStarPrompt: () => null,
+  resetGithubStarPromptCacheForTest: () => {},
+}));
 vi.mock("./SidebarUpdate", () => ({ SidebarUpdateFooter: () => null }));
-vi.mock("@/features/files/ui/FileTree", () => ({ FileTree: () => null }));
+vi.mock("@/features/files/ui/FileTree", () => ({
+  FileTree: ({ cwd, rootLabel }: { cwd: string; rootLabel?: string }) =>
+    createElement("div", { "data-explorer-cwd": cwd }, rootLabel),
+}));
 vi.mock("@/platform/tauri/clipboard", () => ({
   copyText: vi.fn().mockResolvedValue(undefined),
 }));
@@ -141,6 +177,44 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+it("leaves the resident agent and its description out of the session list", () => {
+  saveFamiliarSessionId(createFamiliar(["/workspace/project"]).id, "resident");
+  props.sessions = [
+    ...props.sessions,
+    {
+      ...props.sessions[0],
+      id: "resident",
+      title: "Resident agent description",
+    },
+  ];
+  act(() => render());
+  expect(card()).not.toBeNull();
+  expect(container.querySelector('[data-session-card="resident"]')).toBeNull();
+  expect(container.querySelector("[data-familiar]")).toBeNull();
+  expect(container.textContent).not.toContain("Resident agent description");
+});
+
+it("omits hidden Familiar launches from history, open sessions and folders", () => {
+  const hidden = {
+    ...props.sessions[0],
+    id: "hidden-launch",
+    title: "Familiar background work",
+    sidebarHidden: true,
+  };
+  props.sessions = [...props.sessions, hidden];
+  props.openSessions = [hidden];
+  saveSessionFolders("/workspace/project", [
+    { id: "folder", name: "Work", sessionIds: [hidden.id], collapsed: false },
+  ]);
+  act(() => render());
+  expect(card()).not.toBeNull();
+  expect(container.querySelector('[data-session-card="hidden-launch"]')).toBeNull();
+  expect(container.textContent).not.toContain(hidden.title);
+  props.sessions = props.sessions.filter((session) => session.id !== hidden.id);
+  act(() => render());
+  expect(container.querySelector('[data-session-card="hidden-launch"]')).toBeNull();
+});
+
 describe("project rail visibility", () => {
   it("keeps the mounted rail and its scroll state when collapsed", async () => {
     props = {
@@ -164,6 +238,106 @@ describe("project rail visibility", () => {
     await act(async () => render());
     expect(container.querySelector('nav[aria-label="Projects"]')).toBe(rail);
     expect(rail?.scrollTop).toBe(37);
+  });
+});
+
+describe("worktree explorer visibility", () => {
+  it("does not mount the file tree while browsing chat tabs", () => {
+    props = { ...props, gitCwd: "/worktrees/first" };
+    act(() => render());
+    props = { ...props, gitCwd: "/worktrees/second" };
+    act(() => render());
+    expect(container.querySelector("[data-explorer-cwd]")).toBeNull();
+  });
+
+  it("retains the hidden tree and catches up when Files opens", () => {
+    props = {
+      ...props,
+      tab: "files",
+      gitCwd: "/worktrees/first",
+      explorerRootLabel: "first-branch",
+    };
+    act(() => render());
+    const first = container.querySelector<HTMLElement>("[data-explorer-cwd]")!;
+    first.scrollTop = 73;
+    props = {
+      ...props,
+      tab: "sessions",
+      gitCwd: "/worktrees/second",
+      explorerRootLabel: "second-branch",
+    };
+    act(() => render());
+    expect(container.querySelector("[data-explorer-cwd]")).toBe(first);
+    expect(first.scrollTop).toBe(73);
+    expect(first.dataset.explorerCwd).toBe("/worktrees/first");
+
+    props = { ...props, tab: "files" };
+    act(() => render());
+    const second = container.querySelector<HTMLElement>("[data-explorer-cwd]")!;
+    expect(second.dataset.explorerCwd).toBe("/worktrees/second");
+    expect(second.textContent).toBe("second-branch");
+    expect(second).not.toBe(first);
+  });
+
+  it("updates the visible explorer on a worktree switch", () => {
+    props = { ...props, tab: "files", gitCwd: "/worktrees/first" };
+    act(() => render());
+    props = { ...props, gitCwd: "/worktrees/second" };
+    act(() => render());
+    expect(
+      container.querySelector<HTMLElement>("[data-explorer-cwd]")!.dataset
+        .explorerCwd,
+    ).toBe("/worktrees/second");
+  });
+});
+
+describe.each([false, true])("Familiar rail selection (compact: %s)", (compact) => {
+  it.each([
+    ["Inbox", "inboxActive", "onOpenInbox"],
+    ["Notes", "notesActive", "onOpenNotes"],
+    ["Automations", "automationsActive", "onOpenAutomations"],
+    ["Search", "searchActive", "onSearch"],
+  ] as const)("selects only %s while it covers a Familiar", async (label, active, open) => {
+    const familiar = createFamiliar();
+    props = {
+      ...props,
+      projectRailOpen: !compact,
+      compactProjectRail: compact,
+      onSelectProject: vi.fn(),
+      onOpenProject: vi.fn(),
+      familiarViewActive: true,
+      familiars: {
+        activeId: familiar.id,
+        states: new Map(),
+        onOpen: vi.fn(),
+        onCreate: vi.fn(),
+        onDelete: vi.fn(),
+      },
+      [open]: () => {
+        props = { ...props, [active]: true };
+        render();
+      },
+    };
+    await act(async () => render());
+    const familiarSelected = () => compact
+      ? container.querySelector('[aria-label^="Switch project"]')!
+          .getAttribute("aria-label")!.includes("current familiar")
+      : !!container.querySelector('[data-familiar-rail] [aria-current="true"]');
+    expect(familiarSelected()).toBe(true);
+
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>(`button[aria-label^="${label}"]`)!.click(),
+    );
+    expect(container.querySelector(`button[aria-label^="${label}"]`)!.classList)
+      .toContain("bg-selection");
+    expect(familiarSelected()).toBe(false);
+    expect(container.querySelector('[data-familiar-rail] [data-selected="true"]')).toBeNull();
+    expect(props.familiars?.activeId).toBe(familiar.id);
+
+    // Back reveals the same conversation and restores its rail selection.
+    props = { ...props, [active]: false };
+    await act(async () => render());
+    expect(familiarSelected()).toBe(true);
   });
 });
 
@@ -719,6 +893,66 @@ describe("sidebar reorder affordances", () => {
           .className,
       ).not.toContain("cursor-grab");
     }
+  });
+});
+
+describe("sidebar new session rows", () => {
+  it("grows in only for a session that arrives after the list has rendered", () => {
+    const animate = vi
+      .spyOn(HTMLElement.prototype, "animate")
+      .mockImplementation(() => ({ cancel: vi.fn() }) as unknown as Animation);
+    const animated = (property: string) =>
+      animate.mock.calls.flatMap(([keyframes], index) =>
+        property in (keyframes as Keyframe[])[0]
+          ? [animate.mock.contexts[index] as HTMLElement]
+          : [],
+      );
+    // Dev builds replay mount effects; the row must still animate, once.
+    const render = () =>
+      root.render(createElement(StrictMode, null, createElement(Sidebar, props)));
+    act(() => render());
+    expect(animate).not.toHaveBeenCalled();
+
+    props = {
+      ...props,
+      sessions: [
+        {
+          ...props.sessions[0],
+          id: "session-2",
+          createdAt: Date.now(),
+          updatedAt: props.sessions[0].updatedAt + 1,
+        },
+        ...props.sessions,
+      ],
+    };
+    act(() => render());
+    // The new card fades in where it lands; the row below slides down.
+    expect(animated("opacity")).toHaveLength(1);
+    expect(
+      animated("opacity")[0].closest("li")?.querySelector(
+        '[data-session-card="session-2"]',
+      ),
+    ).not.toBeNull();
+    expect(animated("transform")).toHaveLength(1);
+    expect(
+      animated("transform")[0].querySelector('[data-session-card="session-1"]'),
+    ).not.toBeNull();
+    const calls = animate.mock.calls.length;
+
+    props = {
+      ...props,
+      sessions: [
+        { ...props.sessions[0], id: "session-old", createdAt: 1 },
+        ...props.sessions,
+      ],
+    };
+    act(() => render());
+    expect(animate).toHaveBeenCalledTimes(calls);
+
+    // Reordering existing rows must not replay their entrance.
+    props = { ...props, sessions: [...props.sessions].reverse() };
+    act(() => render());
+    expect(animate).toHaveBeenCalledTimes(calls);
   });
 });
 

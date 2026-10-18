@@ -76,7 +76,7 @@ export async function renderApp(
     recents.rememberProject(options.project);
   }
 
-  const { default: App } = await import("@/app/App");
+  const { default: App } = await import("../../App");
   const registry = await import("@/integrations/harness/core/registry");
   const harness = createFakeHarness(options.harness ?? "cursor");
   registry.registerHarness(harness.adapter);

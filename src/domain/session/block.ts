@@ -1,3 +1,5 @@
+import type { ArtifactCard } from "../artifacts/artifact";
+import type { FamiliarCard } from "../familiars/familiar-card";
 import type { NoteCardMeta } from "../notes/note-card";
 import type { OrchestrationProposal } from "../orchestration/proposal";
 import type { ToolPreview, AgentRunMeta } from "./agent-run";
@@ -9,6 +11,7 @@ import type {
   BtwThread,
   InterjectionMeta,
 } from "./block-meta";
+import type { FamiliarSessionCompletion, FamiliarSpawnedSession } from "./familiar-session";
 import type { TaskListMeta } from "./task-list";
 import type { TurnModel, TurnIntent, TurnMetrics } from "./turn";
 
@@ -35,6 +38,8 @@ export type Block = {
   startedAt?: number;
   /** How long the agent worked on this user turn, in ms. */
   durationMs?: number;
+  /** Epoch ms when this message joined a turn that was already running. */
+  sentAt?: number;
   /** Stable model label for this turn. Present on newly created user blocks. */
   turnModel?: TurnModel;
   /** Provider turn boundary used to replace this user message, when known. */
@@ -56,6 +61,8 @@ export type Block = {
     status?: string;
     detail?: string;
     preview?: ToolPreview;
+    /** Every file in a multi-file edit, retained for checkpoint recovery. */
+    paths?: string[];
     /** Left running by the agent when it yielded; the turn waits on it. */
     background?: boolean;
   };
@@ -76,11 +83,17 @@ export type Block = {
    * conversation rather than the user narrating their own agents.
    */
   internal?: boolean;
+  /** Hidden app prompt that starts a separate completion report in a Familiar chat. */
+  familiarSessionCompletion?: FamiliarSessionCompletion;
+  /** Accepted session launches, kept on the originating user turn. */
+  familiarSpawnedSessions?: FamiliarSpawnedSession[];
   handoff?: HandoffMeta;
   secondOpinion?: SecondOpinionMeta;
   /** Independent read-only side conversations anchored to this user turn. */
   btwThreads?: BtwThread[];
   noteCard?: NoteCardMeta;
+  /** Saved artifacts attached to this turn; their bodies live outside chat. */
+  artifactCards?: ArtifactCard[];
   /** Exact CI repair instructions and evidence supplied with this user turn. */
   ciContext?: string;
   /** Mid-turn interjection chrome; system blocks only. Body lives in text. */
@@ -90,4 +103,14 @@ export type Block = {
    * rather than turn chrome like a status ping. Never folds into the trail.
    */
   notice?: "error" | "interrupt";
+  statusKey?: string;
+  /** Posted to a Familiar's chat by one of its habits, outside any turn. */
+  familiarHabit?: { id: string; name: string; at: number };
+  /** A card a Familiar put in its chat; see `domain/familiars/familiar-card`. */
+  familiarCard?: FamiliarCard;
+  /**
+   * The emoji a Familiar answered this user message with. Drawn from its reply
+   * when the chat renders; see `features/familiars/model/familiarReaction`.
+   */
+  familiarReaction?: string;
 };

@@ -1,14 +1,13 @@
+import { basename, displayPath } from "@/shared/lib/paths";
 import {
   GitCompare,
   GripVertical,
   Terminal,
   X,
 } from "@/shared/ui/icons";
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { copyText } from "@/platform/tauri/clipboard";
 import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
-import { basename } from "@/shared/lib/paths";
 import {
   isAgentTab,
   isChangesTab,
@@ -21,7 +20,6 @@ import {
   isTerminalTab,
   type FilePaneTab,
 } from "../model/layout";
-import { displayPath } from "@/shared/lib/paths";
 import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import { releaseNotesTitle } from "@/features/updates/model/release-notes";
 import { terminalTabLabel } from "@/features/terminal/model/terminal-tab";
@@ -36,6 +34,7 @@ import {
 import { FileActionError } from "@/features/files/ui/FileActionError";
 import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { TabLabel } from "@/shared/ui/TabLabel";
 
 type Props = {
   files: FilePaneTab[];
@@ -380,8 +379,8 @@ export function SurfaceTabs({
                 ) : (
                   <FileTypeIcon name={iconName} isDir={false} size={14} />
                 )}
-                <span
-                  className={`min-w-0 flex-1 truncate ${file.preview ? "italic" : ""} ${
+                <TabLabel
+                  className={`flex-1 ${file.preview ? "italic" : ""} ${
                     errors
                       ? active
                         ? "text-red-400"
@@ -390,7 +389,7 @@ export function SurfaceTabs({
                   }`}
                 >
                   {label}
-                </span>
+                </TabLabel>
                 {dirty ? (
                   <span
                     className="size-1.5 shrink-0 rounded-full bg-content/70"

@@ -1,3 +1,7 @@
+import type { LinkedWorkItem } from "../src/domain/session/session";
+import { parseGithubWorkItemUrl } from "../src/domain/work-items/github-url";
+import { setHarnessModels } from "../src/integrations/harness/core/models/catalog-store";
+import type { AgentModel } from "../src/domain/models/agent-model";
 import {
   createServer,
   type IncomingMessage,
@@ -14,8 +18,6 @@ import {
 } from "../src/domain/remote/protocol";
 import { HostEngine } from "./engine";
 import { writeAttachmentChunk, readAttachmentChunk } from "./attachments";
-import type { LinkedWorkItem } from "@/domain/session/session";
-import { parseGithubWorkItemUrl } from "@/domain/work-items/github-url";
 import { SyncTransfers } from "./sync-transfer";
 import { browseHostDirectories } from "./browse";
 import {
@@ -50,13 +52,13 @@ import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness
 import { discoverFxModels } from "../src/integrations/harness/providers/fx/fx-catalog";
 import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermes-catalog";
 import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravity-catalog";
-import { setHarnessModels } from "@/integrations/harness/core/models/catalog-store";
-import type { AgentModel } from "@/domain/models/agent-model";
+import { discoverDevinModels } from "../src/integrations/harness/providers/devin/devin-catalog";
 import {
   resolveAntigravityBinary,
   resolveClaudeBinary,
   resolveCodexBinary,
   resolveCursorBinary,
+  resolveDevinBinary,
   resolveFxBinary,
   resolveGrokBinary,
   resolveHermesBinary,
@@ -79,6 +81,7 @@ const resolveBinary: Record<RemoteProvider, () => Promise<{ path: string }>> = {
   fx: () => resolveFxBinary(),
   hermes: () => resolveHermesBinary(),
   antigravity: () => resolveAntigravityBinary(),
+  devin: () => resolveDevinBinary(),
 };
 // A 1 MiB text file can expand to 6 MiB when JSON escapes control characters.
 // Existing files.write sends both the original and replacement contents.
@@ -94,6 +97,7 @@ const discoverModels: Record<RemoteProvider, (cwd: string) => Promise<AgentModel
   fx: discoverFxModels,
   hermes: discoverHermesModels,
   antigravity: discoverAntigravityModels,
+  devin: discoverDevinModels,
 };
 
 async function body(

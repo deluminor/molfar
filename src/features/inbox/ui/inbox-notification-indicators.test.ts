@@ -167,13 +167,17 @@ it.each([
         ),
       );
     await mount();
-    let card = container.querySelector<HTMLButtonElement>(
+    let row = container.querySelector<HTMLElement>(
+      `[data-inbox-card="${entry.key}"]`,
+    )!;
+    let select = row.querySelector<HTMLButtonElement>(
       'button[title="Notification indicator regression"]',
     )!;
-    expect(card).not.toBeNull();
-    expect(card.getAttribute("aria-label")).toContain(", new");
+    expect(row).not.toBeNull();
+    expect(select).not.toBeNull();
+    expect(select.getAttribute("aria-label")).toContain(", new");
 
-    expect(card.querySelector(".bg-accent")).not.toBeNull();
+    expect(row.querySelector(".bg-accent")).not.toBeNull();
     expect(isInboxEntryUnseen(entry)).toBe(true);
 
     act(() =>
@@ -182,20 +186,23 @@ it.each([
         mutedUntil: Date.now() + 1000,
       }),
     );
-    expect(card.getAttribute("aria-label")).toContain(", new");
+    expect(select.getAttribute("aria-label")).toContain(", new");
     // Closing and reopening Inbox while muted must not hide or consume unread state.
     act(() => root.render(null));
     await mount();
-    card = container.querySelector<HTMLButtonElement>(
+    row = container.querySelector<HTMLElement>(
+      `[data-inbox-card="${entry.key}"]`,
+    )!;
+    select = row.querySelector<HTMLButtonElement>(
       'button[title="Notification indicator regression"]',
     )!;
-    expect(card.getAttribute("aria-label")).toContain(", new");
+    expect(select.getAttribute("aria-label")).toContain(", new");
     expect(isInboxEntryUnseen(entry)).toBe(true);
-    act(() => card.click());
+    act(() => select.click());
     expect(isInboxEntryUnseen(entry)).toBe(false);
-    expect(card.getAttribute("aria-label")).not.toContain(", new");
+    expect(select.getAttribute("aria-label")).not.toContain(", new");
     await act(async () => vi.advanceTimersByTimeAsync(1000));
-    expect(card.getAttribute("aria-label")).not.toContain(", new");
+    expect(select.getAttribute("aria-label")).not.toContain(", new");
     expect(isInboxEntryUnseen(entry)).toBe(false);
   },
 );

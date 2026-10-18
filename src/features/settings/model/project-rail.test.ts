@@ -32,6 +32,7 @@ describe("rail surfaces", () => {
       home: true,
       usage: true,
       knowledge: true,
+      board: true,
     });
   });
 
@@ -47,6 +48,7 @@ describe("rail surfaces", () => {
       home: true,
       usage: false,
       knowledge: true,
+      board: true,
     });
   });
 

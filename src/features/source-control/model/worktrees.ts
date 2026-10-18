@@ -1,12 +1,16 @@
-import { invoke } from "@tauri-apps/api/core";
-import { appendReadyHandoff, buildDeterministicHandoff } from "@/features/sessions/model/handoff";
-import { invokeWorkspace, notifyGitChanged } from "@/platform/tauri/fs";
-import { isFilesystemTab, type FilePaneTab } from "@/features/workspace/model/layout";
-import { isEqualOrInside, pathKey } from "@/shared/lib/paths";
-import { isBlankSession } from "@/features/projects/model/project-return";
-import { newSession } from "@/features/sessions/model/session";
 import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
+import { invoke } from "@tauri-apps/api/core";
+import { appendReadyHandoff, buildDeterministicHandoff } from "@/features/sessions/model/handoff";
+import {
+  invokeWorkspace,
+  notifyGitChanged,
+  resolveProjectLocation,
+} from "@/platform/tauri/fs";
+import { isFilesystemTab, type FilePaneTab } from "@/features/workspace/model/layout";
+import { isEqualOrInside, parentPath, pathKey } from "@/shared/lib/paths";
+import { isBlankSession } from "@/features/projects/model/project-return";
+import { newSession } from "@/features/sessions/model/session";
 
 export type Worktree = {
   path: string;
@@ -104,6 +108,15 @@ export async function removeOrchestrationBranch(
 /** Read-only preflight; final removal must still recheck for new blockers. */
 export const checkWorktreeRemoval: RemoveWorktree = (cwd, path, force) =>
   invoke("git_worktree_check_remove", { cwd, path, force });
+
+/** Removed outside the app. A missing parent is more likely an unmounted volume. */
+export async function worktreeDeletedExternally(path: string) {
+  const [tree, parent] = await Promise.all([
+    resolveProjectLocation(path),
+    resolveProjectLocation(parentPath(path)),
+  ]);
+  return !tree && !!parent;
+}
 
 export function assertWorktreeFilesClosed(
   path: string,

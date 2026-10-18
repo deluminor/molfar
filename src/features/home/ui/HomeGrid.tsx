@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import ReactGridLayout, {
   useContainerWidth,
   verticalCompactor,
@@ -10,45 +10,55 @@ import {
   HOME_LAYOUT_COLS,
   HOME_LAYOUT_MARGIN,
   HOME_LAYOUT_ROW_HEIGHT,
-  normalizeHomeLayout,
   type HomeLayout,
+  type HomeLayoutUpdate,
+  type HomeWidgetId,
 } from "../model/home-layout";
+import { HOME_WIDGET_LABELS } from "../model/home-widget-registry";
+import { HomeCardEditContext, type HomeCardEdit } from "./HomeCardEditContext";
+
+export type HomeWidgets = Record<HomeWidgetId, ReactNode>;
 
 type Props = {
+  /** Visible items only; widgets outside it are never mounted. */
   layout: HomeLayout;
+  widgets: HomeWidgets;
   isEditing: boolean;
-  onLayoutChange: (layout: HomeLayout) => void;
-  onLayoutCommit: (layout: HomeLayout) => void;
-  clock: ReactNode;
-  status: ReactNode;
-  brand: ReactNode;
-  host: ReactNode;
-  sessions: ReactNode;
-  automations: ReactNode;
-  matrix: ReactNode;
+  canHideWidget: (id: HomeWidgetId) => boolean;
+  onHideWidget: (id: HomeWidgetId) => void;
+  onLayoutChange: (layout: readonly HomeLayoutUpdate[]) => void;
+  onLayoutCommit: (layout: readonly HomeLayoutUpdate[]) => void;
 };
 
 const ITEM = "home-grid-item grid min-h-0 min-w-0 [&>*]:h-full [&>*]:min-h-0";
 
 export function HomeGrid({
   layout,
+  widgets,
   isEditing,
+  canHideWidget,
+  onHideWidget,
   onLayoutChange,
   onLayoutCommit,
-  clock,
-  status,
-  brand,
-  host,
-  sessions,
-  automations,
-  matrix,
 }: Props): ReactNode {
   const { width, containerRef, mounted } = useContainerWidth();
 
+  const editById = useMemo(() => {
+    if (!isEditing) return null;
+    const byId = new Map<HomeWidgetId, HomeCardEdit>();
+    for (const item of layout) {
+      byId.set(item.i, {
+        label: HOME_WIDGET_LABELS[item.i],
+        canHide: canHideWidget(item.i),
+        onHide: () => onHideWidget(item.i),
+      });
+    }
+    return byId;
+  }, [isEditing, layout, canHideWidget, onHideWidget]);
+
   const commitFromRgl = (next: Layout): void => {
-    const normalized = normalizeHomeLayout(next);
-    onLayoutChange(normalized);
-    onLayoutCommit(normalized);
+    onLayoutChange(next);
+    onLayoutCommit(next);
   };
 
   return (
@@ -70,7 +80,7 @@ export function HomeGrid({
           dragConfig={{
             enabled: isEditing,
             handle: ".home-card-drag-handle",
-            cancel: ".home-brand-selector",
+            cancel: ".home-brand-selector, .home-card-edit-control",
           }}
           resizeConfig={{
             enabled: isEditing,
@@ -79,7 +89,7 @@ export function HomeGrid({
           compactor={verticalCompactor}
           onLayoutChange={(next) => {
             if (!isEditing) return;
-            onLayoutChange(normalizeHomeLayout(next));
+            onLayoutChange(next);
           }}
           onDragStop={(next) => {
             commitFromRgl(next);
@@ -88,27 +98,15 @@ export function HomeGrid({
             commitFromRgl(next);
           }}
         >
-          <div key="clock" className={ITEM}>
-            {clock}
-          </div>
-          <div key="status" className={ITEM}>
-            {status}
-          </div>
-          <div key="brand" className={ITEM}>
-            {brand}
-          </div>
-          <div key="host" className={ITEM}>
-            {host}
-          </div>
-          <div key="sessions" className={ITEM}>
-            {sessions}
-          </div>
-          <div key="automations" className={ITEM}>
-            {automations}
-          </div>
-          <div key="matrix" className={ITEM}>
-            {matrix}
-          </div>
+          {layout.map((item) => (
+            <div key={item.i} className={ITEM}>
+              <HomeCardEditContext.Provider
+                value={editById?.get(item.i) ?? null}
+              >
+                {widgets[item.i]}
+              </HomeCardEditContext.Provider>
+            </div>
+          ))}
         </ReactGridLayout>
       ) : null}
     </div>

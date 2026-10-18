@@ -13,9 +13,27 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useStableValue } from "@/shared/hooks/use-stable-value";
 import { flushSync } from "react-dom";
+import { sessionConversationPage } from "@/features/agent-app/model/session-conversation";
+import { readFamiliarConversation } from "@/features/familiars/model/familiar-conversation";
+import {
+  resumeFamiliarUsageLimit,
+  switchFamiliarUsageLimitAccount,
+} from "@/features/familiars/model/familiar-usage-limit";
+import {
+  acknowledgeFamiliarMessage,
+  enqueueFamiliarMessage,
+} from "@/features/familiars/model/familiar-messaging";
+import {
+  dismissQueuedFamiliarSessionCompletion,
+  enqueueFamiliarSessionCompletion,
+  familiarSessionCompletionResult,
+  FamiliarSessionCompletionBatches,
+} from "@/features/familiars/model/familiar-session-completion";
 import {
   handleAgentApp,
+  canAccessAgentAppProject,
   type AppSessionListing,
   type AppSessionPlacement,
 } from "@/features/agent-app/model/agent-app";
@@ -48,6 +66,14 @@ import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
 import { acceptQuickLaunch } from "./model/quick-launch-session";
+import { createTaskBoardSessionPort } from "./model/task-board-session-port";
+import { createCompanionBoard } from "@/features/companion/model/companion-board";
+import { boardTaskRule } from "@/features/agent-app/model/agent-app-board";
+import { useTaskBoardEngine } from "@/features/task-board/hooks/use-task-board-engine";
+import { useBoardAttention } from "@/features/task-board/hooks/use-board-attention";
+import { requestBoardFocus } from "@/features/task-board/model/board-focus";
+import { boardNoticeCard } from "@/features/task-board/services/notify";
+import { updateSessionState } from "./model/session-state";
 import {
   captureSettingsReturnView,
   restoreSettingsReturnView,
@@ -73,6 +99,25 @@ import {
   prepareAttachments,
 } from "@/features/sessions/model/attachments";
 import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import {
+  FamiliarOverview,
+  type FamiliarOverviewTab,
+} from "@/features/familiars/ui/FamiliarOverview";
+import { FamiliarSettingsDialog } from "@/features/familiars/ui/FamiliarSettingsDialog";
+import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
+import {
+  launchedSessionState,
+  familiarSpawnedSessions,
+  recordFamiliarSpawnedSession,
+  type LaunchedSessionState,
+  type LaunchedSessionView,
+} from "@/features/familiars/model/familiar-spawned-sessions";
+import { groupFamiliarTurns } from "@/features/sessions/model/transcript-activity";
+import {
+  resolveFamiliarActivity,
+  type FamiliarActivitySelection,
+} from "@/features/familiars/model/familiar-activity";
 import {
   DeleteSessionDialog,
   type SessionDeleteChoice,
@@ -115,6 +160,7 @@ import {
   removeWorktree,
   renameWorktreeBranch,
   sessionInWorktree,
+  worktreeDeletedExternally,
   worktreeSessionIds,
   type Worktree,
 } from "@/features/source-control/model/worktrees";
@@ -124,11 +170,12 @@ import {
   temporaryWorktreeBranchName,
 } from "@/domain/git/worktree-branch";
 import {
+  homeDir,
   notifyGitChanged,
   pickFolders,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
-import { basename } from "@/shared/lib/paths";
+import { basename, displayPath, isEqualOrInside, pathKey, projectName, rebasePath, resolveWorkspacePath } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
@@ -202,6 +249,7 @@ import {
   closeTerminalInDock,
   createProjectTerminal,
   findProjectTerminal,
+  focusedDockTerminalId,
   mapProjectTerminal,
   nextDockTerminalTitle,
   patchProjectTerminals,
@@ -231,6 +279,7 @@ import {
   HANDOFF_TITLE,
   handoffTurnCard,
   isPreparingHandoff,
+  pendingComposerSwitch,
   pendingHandoff,
   planComposerSwitch,
   sessionChildHarnesses,
@@ -258,6 +307,7 @@ import {
 } from "@/features/terminal/model/terminal-close";
 import {
   listRunningTerminals,
+  newTerminalCwd,
   terminalTabLabel,
   type TerminalMetaPatch,
 } from "@/features/terminal/model/terminal-tab";
@@ -274,6 +324,7 @@ import {
   forgetHarnessSession,
   generateHarnessBranchName,
   generateHarnessTitle,
+  migrateFamiliarCodexSession,
   isLiveHarness,
   keepHarnessQuestionOpen,
   latestTurnNeedsHarnessLogin,
@@ -290,6 +341,7 @@ import {
   startHarnessBridge,
   steerHarnessTurn,
   stopHarnessSession,
+  configureHarnessIdlePark,
   stopHarnessTextPrompts,
   stopStreaming,
   type ApprovalDecision,
@@ -351,6 +403,7 @@ import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 
 import { orderByIds } from "@/shared/lib/reorder";
 
+import { useSessionChangeTotals } from "@/features/sessions/ui/SessionReview";
 import {
   releaseNotesForVersion,
   releaseNotesTitle,
@@ -368,6 +421,7 @@ import {
   applySessionCheckpoint,
   beginSessionTurn,
   captureSessionCheckpoint,
+  finishSessionTurn,
   flushSessionCheckpoint,
   forgetSessionCheckpoint,
   keepSessionChanges,
@@ -380,6 +434,7 @@ import {
   createEditedResendCoordinator,
 } from "@/features/sessions/model/edit-last-turn";
 import { isEditTool } from "@/integrations/harness/core/preview";
+import { sessionEditPaths } from "@/features/sessions/model/checkpoint-edits";
 
 import {
   rebaseProjectData,
@@ -414,13 +469,13 @@ import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
 } from "@/domain/harness/provider-account";
 import { applyAddToChatRequest } from "@/features/sessions/model/add-chat-to-workspace";
+import { newWorkspaceSession } from "./model/new-workspace-session";
 import {
   buildPlanPrompt,
   planTitle,
   planTurnPrompt,
 } from "@/features/sessions/model/plan";
-import { isProviderFailureText } from "@/domain/session/plan";
-import { planTurnKey } from "@/domain/session/plan";
+import { isProviderFailureText, planTurnKey } from "@/domain/session/plan";
 import {
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,
@@ -449,7 +504,7 @@ import type {
   WorkspaceMode,
 } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type { UsageLimit } from "@/domain/session/message-queue";
+import type { UsageLimit, QueuedMessage } from "@/domain/session/message-queue";
 import type { Attachment } from "@/domain/session/attachment";
 import type {
   BtwThread,
@@ -461,7 +516,7 @@ import type {
   PlanBuildTarget,
   ComposerTurnOptions,
 } from "@/domain/session/turn";
-import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
   HARNESS_LABEL,
   HARNESS_TITLE,
@@ -470,6 +525,7 @@ import {
 } from "@/domain/harness/harness";
 import { createSessionRemover } from "@/features/sessions/model/session-removal";
 import { shouldGenerateSessionTitle } from "@/domain/session/generated-title";
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
 import {
   applyDetachPaneToTab,
   applyPlaceSessionOnPane,
@@ -480,14 +536,6 @@ import {
   workspaceTabCwd,
   workspaceTabWorktree,
 } from "@/features/workspace/model/workspace-tab-groups";
-import {
-  displayPath,
-  isEqualOrInside,
-  pathKey,
-  projectName,
-  rebasePath,
-  resolveWorkspacePath,
-} from "@/shared/lib/paths";
 
 import { claimInboxAutomationRuns } from "@/features/automations/model/automation-events";
 import {
@@ -501,6 +549,8 @@ import {
 import {
   ADD_NOTE_TO_CHAT_EVENT,
   composeNoteMessage,
+  createNote,
+  getNote,
   NOTES_CHANGED_EVENT,
   upsertNote,
   loadNotes,
@@ -509,7 +559,7 @@ import { noteCardMeta, type NoteComposerCard } from "@/domain/notes/note-card";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
-import { syncDockBadge } from "@/features/notifications/model/dock-badge";
+import { syncDockBadge, syncBoardDockBadge } from "@/features/notifications/model/dock-badge";
 import {
   announceSessionFinished,
   loadNotificationsEnabled,
@@ -518,6 +568,7 @@ import {
   setWindowFocused,
 } from "@/features/notifications/model/notifications";
 import { exhaustedWindowResetAt } from "@/domain/rate-limits/rate-limit-window";
+import { deliverQueuedFollowUp } from "@/features/sessions/model/queued-follow-up";
 import {
   fetchClaudeRateLimits,
   fetchCodexRateLimits,
@@ -546,8 +597,10 @@ import { archiveFocusedSession } from "@/features/sessions/model/archive-shortcu
 import { dropContextWindow } from "@/domain/session/context-usage";
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
+import { useUnseenReplyCounts } from "@/features/sessions/hooks/use-unseen-reply-counts";
 import {
   canDispatchQueuedHead,
+  canSteerQueuedHead,
   dequeueQueuedMessage,
   queuedMessageForSubmit,
 } from "@/features/sessions/model/message-queue";
@@ -564,6 +617,56 @@ import {
   turnUserRequest,
 } from "@/features/sessions/model/second-opinion";
 import {
+  createFamiliar,
+  findFamiliar,
+  isFamiliarSession,
+  listFamiliars,
+  loadOpenFamiliar,
+  familiarForSession,
+  familiarLook,
+  familiarsSnapshot,
+  familiarState,
+  removeFamiliar,
+  saveOpenFamiliar,
+  subscribeFamiliars,
+  type FamiliarState,
+} from "@/features/familiars/model/familiar";
+import {
+  loadFamiliarFiles,
+  FAMILIAR_PROMPT_VERSION,
+  planAgentContext,
+  familiarContext,
+  familiarTurn,
+  readAgentFile,
+  recordAgentContext,
+  writeAgentFile,
+} from "@/features/familiars/model/familiar-files";
+import { useFamiliarHabits } from "./hooks/use-familiar-habits";
+import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
+import {
+  dropRelays,
+  habitPostsContext,
+  habitRunFamiliar,
+  isHabitRun,
+  noteHabitRunLaunch,
+  relayApproval,
+  takeRelayedApproval,
+  loadHabits,
+  unseenHabitPosts,
+  updateHabits,
+} from "@/features/familiars/model/familiar-habits";
+import {
+  loadFamiliarRotation,
+  planRotation,
+  rotationReason,
+  saveFamiliarRotation,
+} from "@/features/familiars/model/familiar-rotation";
+import {
+  detachFamiliarTabs,
+  ensureFamiliarSession,
+  resetFamiliarSession,
+} from "@/features/familiars/model/familiar-workspace";
+import {
   loadSessionFolders,
   placeSessionInFolder,
   saveSessionFolders,
@@ -571,6 +674,7 @@ import {
 } from "@/features/sessions/model/session-folders";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import {
+  resumeUsageLimitedSession,
   USAGE_LIMIT_RESUME_GRACE_MS,
   usageLimitResumeDue,
 } from "@/features/sessions/model/usage-limit";
@@ -579,6 +683,15 @@ import {
   TranscriptPool,
   TranscriptPoolOutlet,
 } from "@/features/sessions/ui/TranscriptPool";
+import {
+  getArtifact,
+  saveArtifact,
+  artifactCards,
+  recordArtifactCard,
+  removeArtifactCard,
+  ARTIFACT_DELETED_EVENT,
+} from "@/features/artifacts/artifacts";
+import type { MonoChangesRequest } from "@/features/familiars/ui/FamiliarChangesView";
 import {
   isNativeCommandPrompt,
   warmNativeSkills,
@@ -593,6 +706,17 @@ import {
   tabCommandForKeybinding,
   tabCommandKeybinding,
 } from "@/features/workspace/model/tab-keys";
+import { useCompanionBridge } from "@/features/companion/hooks/use-companion-bridge";
+import {
+  readVaultNote,
+  saveVaultNote,
+  scanVault,
+  vaultStatus,
+} from "@/features/knowledge/model/vault/vault-client";
+import {
+  companionProjectLabel,
+  companionProjectPaths,
+} from "@/features/companion/model/companion-projects";
 import {
   cachedRemoteSessionSummary,
   OPEN_CONNECTIONS_EVENT,
@@ -608,6 +732,7 @@ import type { HostSession } from "@/domain/remote/protocol";
 import {
   remotePath,
   remoteProjectFor,
+  remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
 import {
   buildRemotePlan,
@@ -615,6 +740,7 @@ import {
 } from "@/features/connections/model/remote-session-actions";
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
 import { AddRemoteProjectDialog } from "@/features/connections/ui/AddRemoteProjectDialog";
+import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
 import {
   handleEditorFindKey,
   openFindInActiveEditor,
@@ -667,9 +793,12 @@ import {
   keybindingPressed,
   loadAutosave,
   loadCloseToTray,
+  loadFamiliarsEnabled,
+  subscribeFamiliarsEnabled,
   loadDiffViewer,
   loadFileTabMode,
   loadFollowUpBehavior,
+  loadIdleAgentLimit,
   loadKeybindingOverrides,
   loadLiveAgentsEnabled,
   loadNotesEnabled,
@@ -694,6 +823,7 @@ import {
 import {
   historyWithLiveSessions,
   mergeProjectHistorySummary,
+  sameSessionSummaries,
   summaryFromSession,
 } from "@/features/sessions/data/session-history";
 import {
@@ -701,6 +831,7 @@ import {
   CONTINUE_PROMPT,
   inFlightRefs,
   inFlightSnapshotKey,
+  isInFlightSession,
   shouldWriteInFlightSnapshot,
 } from "@/features/sessions/model/in-flight";
 import {
@@ -777,6 +908,7 @@ type SubmitOptions = ComposerTurnOptions & {
   managed?: boolean;
   orchestrationRetry?: OrchestrationProposal;
   appRequestId?: string;
+  familiarSessionCompletion?: Block["familiarSessionCompletion"];
   onSettled?: (outcome: ControlOutcome) => void;
   refreshTitle?: boolean;
   projectLocationReady?: boolean;
@@ -810,6 +942,8 @@ function withPlanStatus(
 function lastAssistantTextInTurn(session: Session): string {
   for (let index = session.blocks.length - 1; index >= 0; index -= 1) {
     const block = session.blocks[index];
+    if (session.queuedMessages?.some((message) => message.blockId === block.id))
+      continue;
     if (block.role === "user") return "";
     if (block.role === "assistant" && block.text.trim()) return block.text;
   }
@@ -904,6 +1038,9 @@ function openSessionIds(tabs: WorkspaceTab[]): Set<string> {
   }
   return ids;
 }
+
+/** Stable empty tab list for the title bar while a Familiar is in full view. */
+const NO_TITLE_TABS: [] = [];
 
 /** In-app confirm. `window.confirm` is swallowed when a macOS menu accelerator fires. */
 function confirmDiscardUnsaved(message: string): Promise<boolean> {
@@ -1035,6 +1172,98 @@ function Workspace({
   lastDockSideRef.current = lastDockSide;
   const projectTerminalFocused = useWorkspaceField(workspaceStore, "projectTerminalFocused");
   const activeTabId = useWorkspaceField(workspaceStore, "activeTabId");
+  const [familiarViewId, setFamiliarViewId] = useState<string | null>(null);
+  // A Familiar opens with its overview beside the chat until it is hidden.
+  const [familiarOverviewOpen, setFamiliarOverviewOpen] = useState(true);
+  const [familiarOverviewTab, setFamiliarOverviewTab] =
+    useState<FamiliarOverviewTab>("sessions");
+  const familiarOverviewOpenRef = useRef(familiarOverviewOpen);
+  familiarOverviewOpenRef.current = familiarOverviewOpen;
+  const familiarOverviewTabRef = useRef(familiarOverviewTab);
+  familiarOverviewTabRef.current = familiarOverviewTab;
+  // The Familiar whose settings dialog is open; another Familiar's view closes it.
+  const [familiarSettingsFor, setFamiliarSettingsFor] = useState<string | null>(null);
+  // A document opened from the chat shows on the overview's Documents tab,
+  // the same page the tab opens it on.
+  const onOpenMonoArtifact = useCallback((_sessionId: string, id: string) => {
+    setFamiliarShownSession(null);
+    setFamiliarOverviewDocument(id);
+    setFamiliarOverviewTab("documents");
+    setFamiliarOverviewOpen(true);
+  }, []);
+  // What the overview's Changes tab was last asked to show.
+  const [familiarChangesRequest, setFamiliarChangesRequest] =
+    useState<MonoChangesRequest>({});
+  useEffect(() => {
+    const listening = listen<string>(
+      ARTIFACT_DELETED_EVENT,
+      ({ payload: id }) => {
+        const previous = sessionsRef.current;
+        const updated = previous.map((session) =>
+          removeArtifactCard(session, id),
+        );
+        if (updated.some((session, index) => session !== previous[index])) {
+          sessionsRef.current = updated;
+          setSessions(updated);
+        }
+        setFamiliarOverviewDocument((current) => (current === id ? null : current));
+      },
+    );
+    return () => {
+      void listening.then((unlisten) => unlisten());
+    };
+  }, []);
+  const [familiarActivity, setFamiliarActivity] =
+    useState<FamiliarActivitySelection | null>(null);
+  // A launched session or a document open over the overview's list. Hiding
+  // the overview leaves them, so it opens on its list again.
+  const [familiarShownSession, setFamiliarShownSession] = useState<string | null>(null);
+  const [familiarOverviewDocument, setFamiliarOverviewDocument] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (familiarOverviewOpen) return;
+    setFamiliarShownSession(null);
+    setFamiliarOverviewDocument(null);
+  }, [familiarOverviewOpen]);
+  // Whether the shown session, rather than the Familiar's chat, holds focus.
+  const [familiarShownSessionFocused, setFamiliarShownSessionFocused] = useState(false);
+  const shownFamiliarSessionId =
+    familiarViewId && familiarOverviewOpen && familiarShownSession
+      ? familiarShownSession
+      : undefined;
+  const shownFamiliarSessionIdRef = useRef(shownFamiliarSessionId);
+  shownFamiliarSessionIdRef.current = shownFamiliarSessionId;
+  // A turn's activity shows on the overview's Activity tab; picking the shown
+  // one again clears it.
+  const onShowFamiliarActivity = useCallback(
+    (sessionId: string, turnId: string, blocks: Block[]) => {
+      const shown =
+        familiarOverviewOpenRef.current && familiarOverviewTabRef.current === "activity";
+      setFamiliarShownSession(null);
+      setFamiliarOverviewDocument(null);
+      setFamiliarOverviewTab("activity");
+      setFamiliarOverviewOpen(true);
+      setFamiliarActivity((previous) =>
+        shown &&
+        previous?.sessionId === sessionId &&
+        previous.turnId === turnId
+          ? null
+          : { sessionId, turnId, blocks },
+      );
+    },
+    [],
+  );
+  const familiarViewIdRef = useRef(familiarViewId);
+  familiarViewIdRef.current = familiarViewId;
+  const familiarViewRequest = useRef(0);
+  const closeFamiliarView = useCallback(() => {
+    familiarViewRequest.current += 1;
+    familiarViewIdRef.current = null;
+    saveOpenFamiliar(undefined);
+    setFamiliarViewId(null);
+    setFamiliarActivity(null);
+  }, []);
   const [composerFocused, setComposerFocused] = useState(() => {
     if (windowTransfer) return true;
     if (!resumed) return false;
@@ -1118,6 +1347,16 @@ function Workspace({
   const updateNotice = useWorkspaceField(workspaceStore, "updateNotice");
   const whatsNewVersion = useWorkspaceField(workspaceStore, "whatsNewVersion");
   const providerSignInRequest = useWorkspaceField(workspaceStore, "providerSignInRequest");
+  const familiarsEnabled = useSyncExternalStore(
+    subscribeFamiliarsEnabled,
+    loadFamiliarsEnabled,
+    () => true,
+  );
+  const familiarsSnap = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  /** A Familiar hides the terminal, so reaching for one leaves it. */
+  const leaveCoveringFamiliar = useCallback(() => {
+    if (familiarViewIdRef.current) closeFamiliarView();
+  }, [closeFamiliarView]);
   const seenProviderSignInRequestsRef = useRef<Set<string> | null>(null);
   const seenProviderSignInRequests =
     seenProviderSignInRequestsRef.current ??
@@ -1164,6 +1403,7 @@ function Workspace({
   >(new Map());
   const linkedWorkItemActivityFetches = useRef(new Map<string, number>());
   const queueDispatchingRef = useRef(new Set<string>());
+  const [queueDispatchVersion, setQueueDispatchVersion] = useState(0);
   const usageResumingRef = useRef(new Set<string>());
   const usageResetLookups = useRef(new WeakSet<UsageLimit>());
   const tabsRef = useRef(tabs);
@@ -1176,6 +1416,26 @@ function Workspace({
   projectTerminalFocusedRef.current = projectTerminalFocused;
   const activeTabIdRef = useRef(activeTabId);
   activeTabIdRef.current = activeTabId;
+
+  useLayoutEffect(() => {
+    const migration = detachFamiliarTabs(
+      tabs,
+      sessions,
+      activeTabId,
+      projectCwd,
+      (cwd) => newDefaultSession(cwd),
+    );
+    if (!migration) return;
+    tabsRef.current = migration.tabs;
+    sessionsRef.current = [...sessions, ...migration.addedSessions];
+    setTabs(migration.tabs);
+    setSessions(sessionsRef.current);
+    setActiveTabIdState(migration.activeTabId);
+    if (migration.agentViewId) {
+      familiarViewIdRef.current = migration.agentViewId;
+      setFamiliarViewId(migration.agentViewId);
+    }
+  }, [tabs, sessions, activeTabId, projectCwd]);
 
   const projectWorktree = useWorktreeFocus(projectCwd);
   /** Tab or session id -> the workspace it was opened or moved in. A tab
@@ -1238,6 +1498,7 @@ function Workspace({
         activateTab(id, undefined, "workspace");
       } else {
         // A newly created tab has not rendered into tabsRef yet.
+        closeFamiliarView();
         setActiveTabIdState(id);
         setComposerFocused(true);
       }
@@ -1249,9 +1510,10 @@ function Workspace({
   const setActiveTabId = useCallback(
     (id: string) => {
       workspaceNavigation.cancel();
+      closeFamiliarView();
       setActiveTabIdState(id);
     },
-    [workspaceNavigation.cancel],
+    [workspaceNavigation.cancel, closeFamiliarView],
   );
 
   const projectCwdRef = useRef(projectCwd);
@@ -1262,7 +1524,9 @@ function Workspace({
   inboxViewOpenRef.current = inboxViewOpen;
   const foregroundSurfaceRef = useRef<{
     workspaceVisible: boolean;
-    inboxSessionId?: string;
+    standaloneSessionId?: string;
+    /** A session shown beside the Familiar's chat. */
+    sideSessionId?: string;
   }>({ workspaceVisible: true });
   foregroundSurfaceRef.current = {
     workspaceVisible:
@@ -1270,8 +1534,24 @@ function Workspace({
       !inboxViewOpen &&
       !notesViewOpen &&
       !automationsViewOpen &&
-      !settingsOpen,
-    inboxSessionId: inboxViewOpen ? inboxAskPortal?.sessionId : undefined,
+      !settingsOpen &&
+      !familiarViewId,
+    standaloneSessionId: inboxViewOpen
+      ? inboxAskPortal?.sessionId
+      : !searchViewOpen &&
+          !notesViewOpen &&
+          !automationsViewOpen &&
+          !settingsOpen
+        ? (familiarViewId ?? undefined)
+        : undefined,
+    sideSessionId:
+      !inboxViewOpen &&
+      !searchViewOpen &&
+      !notesViewOpen &&
+      !automationsViewOpen &&
+      !settingsOpen
+        ? shownFamiliarSessionId
+        : undefined,
   };
   const notesViewOpenRef = useRef(notesViewOpen);
   notesViewOpenRef.current = notesViewOpen;
@@ -1312,6 +1592,7 @@ function Workspace({
     () =>
       preloadNavigationWhenIdle([
         InboxView.preload,
+        LinkedWorkItemPanel.preload,
         AutomationsView.preload,
         listAutomations,
         ...(notesEnabled ? [NotesView.preload, loadNotes] : []),
@@ -1391,17 +1672,17 @@ function Workspace({
     for (const session of imported) sessionPersistence.markImported(session);
   }, [windowTransfer, resumed]);
 
+  // Visible output advances per frame; hidden streams keep their own cadence.
   const harnessEvents = useStableFlow(() =>
     createHarnessEventPipeline({
-      readSessions: () => sessionsRef.current,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        syncDockBadge(next);
-        setSessions(next);
+      updateSessions: (update) => {
+        const previous = sessionsRef.current;
+        const next = updateSessionState(sessionsRef, setSessions, update);
+        if (next !== previous) syncDockBadge(next);
       },
       isForeground: (sessionId) =>
         isForegroundSession(sessionId, {
-          hidden: document.hidden,
+          hidden: false,
           ...foregroundSurfaceRef.current,
           activeTab: tabsRef.current.find(
             (entry) => entry.id === activeTabIdRef.current,
@@ -1409,7 +1690,15 @@ function Workspace({
         }),
     }),
   );
+  // Cap warm agent CLIs, sparing the conversations on screen.
+  useEffect(() => {
+    configureHarnessIdlePark({
+      limit: loadIdleAgentLimit,
+      keep: harnessEvents.isForeground,
+    });
+  }, [harnessEvents]);
   const flushHarnessEvents = harnessEvents.flush;
+  const flushForegroundHarnessEvents = harnessEvents.flushForeground;
   const enqueueHarnessEvent = harnessEvents.enqueue;
 
   const stopSessionForRemoval = useCallback(
@@ -1423,10 +1712,12 @@ function Workspace({
       turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
       flushHarnessEvents();
       await Promise.all(
-        sessionChildHarnesses(open).map((harness) =>
-          cancelHarnessTurn(harness, sessionId).catch(() => undefined),
-        ),
+        sessionChildHarnesses(open).map(async (harness) => {
+          await cancelHarnessTurn(harness, sessionId).catch(() => undefined);
+          await stopHarnessSession(harness, sessionId);
+        }),
       );
+      await finishSessionTurn(sessionId, sessionWorkCwd(open));
       flushHarnessEvents();
       return sessionsRef.current.find((session) => session.id === sessionId);
     },
@@ -1466,6 +1757,58 @@ function Workspace({
   }, [resumed, readProjectReturnMemory]);
 
   useEffect(() => {
+    let cancelled = false;
+    // Retain known existing Familiar threads before hiding their original entries.
+    // Sending a turn uses the same migration lock, so it can safely overlap.
+    void (async () => {
+      for (const mono of listFamiliars()) {
+        if (cancelled) return;
+        if (!mono.sessionId) continue;
+        try {
+          const session =
+            sessionsRef.current.find((s) => s.id === mono.sessionId) ??
+            (await getSession(mono.sessionId));
+          if (
+            !session ||
+            cancelled ||
+            sessionsRef.current.find((s) => s.id === session.id)?.busy
+          )
+            continue;
+          const cwd = sessionWorkCwd(session);
+          if (!cwd || cwd === "~") continue;
+          const threadIds = new Set<string>();
+          if (session.harness === "codex" && session.providerSessionId)
+            threadIds.add(session.providerSessionId);
+          for (const block of session.blocks) {
+            for (const thread of block.btwThreads ?? []) {
+              if (
+                (thread.harness ?? session.harness) === "codex" &&
+                thread.providerThreadId
+              )
+                threadIds.add(thread.providerThreadId);
+            }
+          }
+          for (const threadId of threadIds) {
+            if (cancelled) return;
+            await migrateFamiliarCodexSession({
+              sessionId: session.id,
+              threadId,
+              cwd,
+              providerAccountId: session.providerAccountId,
+            });
+          }
+        } catch (error) {
+          // Keep the original context intact; the next native operation retries.
+          console.warn("Could not migrate saved Familiar Codex context", error);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [familiarsSnap]);
+
+  useEffect(() => {
     void probeHarnessAvailability();
     // Only the harnesses already in this window. Probing every installed CLI
     // at boot left unused agents (especially Pi) running in the background.
@@ -1499,6 +1842,10 @@ function Workspace({
     sessions.find(
       (session) => activeTab && leafIds(activeTab.layout).includes(session.id),
     );
+  const familiarViewSession = familiarViewId
+    ? sessions.find((session) => session.id === familiarViewId)
+    : undefined;
+  const familiarCovers = !!familiarViewId;
   const activeTabSessionIds = activeTab ? leafIds(activeTab.layout) : [];
   const activeLinkedWorkItemPanel = activeTab
     ? (linkedWorkItemPanels.get(activeTab.focusedId) ??
@@ -1573,6 +1920,7 @@ function Workspace({
   }, [activeSkillCwd, active?.id, active?.harness]);
 
   const activeFile = activeTab ? focusedFileTab(activeTab) : undefined;
+  // A Familiar belongs to no project, so its view keeps the project in place.
   const sidebarCwd =
     activeFile?.projectCwd ?? activeFile?.cwd ?? active?.cwd ?? projectCwd;
   const sidebarCwdRef = useRef(sidebarCwd);
@@ -1608,6 +1956,11 @@ function Workspace({
     !historyFailed;
   const gitCwd =
     activeFile?.cwd ?? (active ? sessionWorkCwd(active) : sidebarCwd);
+  const terminalCwd = newTerminalCwd({
+    activeFile,
+    session: active,
+    fallback: sidebarCwd,
+  });
   const gitCwdBranches = useProjectBranches(
     gitCwd,
     Boolean(gitCwd) && gitCwd !== "~" && !isRemoteProjectPath(sidebarCwd),
@@ -1617,17 +1970,33 @@ function Workspace({
       ? active.branch || gitCwdBranches?.current || undefined
       : undefined;
   const remoteFilesProject = remoteProjectFor(sidebarCwd);
+  // The host checkout the remote tab is aimed at — the attached session's
+  // work path or a worktree picked before the first message.
+  const remoteTabCheckout = remoteFilesProject
+    ? remoteTabCwd(sidebarCwd, active?.id)
+    : undefined;
   const filesCwd = remoteFilesProject
     ? isRemoteProjectPath(gitCwd)
       ? gitCwd
       : remotePath(
           remoteFilesProject.environmentId,
-          remoteTabCwd(sidebarCwd, active?.id) ??
+          remoteTabCheckout ??
             (gitCwd && gitCwd !== sidebarCwd ? gitCwd : remoteFilesProject.cwd),
         )
     : gitCwd;
-  const gitCwdRef = useRef(filesCwd);
-  gitCwdRef.current = filesCwd;
+  // Git follows the session's own work path (a linked worktree included),
+  // never the terminal-following files cwd: a remote session working in a
+  // separate worktree diffed the main checkout and showed "No file changes".
+  const gitRootCwd = remoteFilesProject
+    ? remoteSessionGitCwd(
+        remoteFilesProject,
+        gitCwd,
+        sidebarCwd,
+        remoteTabCheckout,
+      )
+    : gitCwd;
+  const gitCwdRef = useRef(gitRootCwd);
+  gitCwdRef.current = gitRootCwd;
   const projectBranches = useProjectBranches(
     sidebarCwd,
     Boolean(sidebarCwd) && sidebarCwd !== "~",
@@ -1665,7 +2034,8 @@ function Workspace({
     if (
       active?.harness === "claude" ||
       active?.harness === "codex" ||
-      active?.harness === "opencode"
+      active?.harness === "opencode" ||
+      active?.harness === "devin"
     ) {
       return [active.harness];
     }
@@ -1762,11 +2132,19 @@ function Workspace({
 
   const activeSessionId = inboxViewOpen
     ? inboxAskPortal?.sessionId
-    : active?.id;
+    : shownFamiliarSessionId && familiarShownSessionFocused
+      ? shownFamiliarSessionId
+      : (familiarViewSession?.id ?? active?.id);
   const activeSessionIdRef = useRef(activeSessionId);
   activeSessionIdRef.current = activeSessionId;
 
-  useInputNotifications(sessions, activeSessionId);
+  // Sessions that belong in the UI: a habit's hidden run is not one of them,
+  // and asks through its Familiar's chat rather than on its own.
+  const promptableSessions = useMemo(
+    () => sessions.filter((session) => !session.ephemeral),
+    [sessions],
+  );
+  useInputNotifications(promptableSessions, activeSessionId);
 
   // Cache the OS decision so a turn ending later can skip a denied banner.
   useEffect(() => {
@@ -1777,18 +2155,66 @@ function Workspace({
     busySessionIds,
     activeSessionId,
   );
-
-  const liveAgents = useMemo(
+  /** Working-rail X dismissals — finished cards stay out until the session runs again. */
+  const [dismissedLiveAgentIds, setDismissedLiveAgentIds] = useState(
+    () => new Set<string>(),
+  );
+  const familiarSessionIds = useMemo(
     () =>
-      liveAgentsEnabled
-        ? liveAgentsFromSessions(sessions, unseenFinishedIds)
-        : [],
-    [liveAgentsEnabled, sessions, unseenFinishedIds],
+      new Set(
+        listFamiliars().flatMap((familiar) => (familiar.sessionId ? [familiar.sessionId] : [])),
+      ),
+    // The roster is read through its snapshot.
+    [familiarsSnap],
+  );
+  // How many replies each Familiar has that the user has not read, for the rail.
+  const familiarReplies = useUnseenReplyCounts(
+    familiarSessionIds,
+    busySessionIds,
+    activeSessionId,
   );
 
+  const liveAgentRows = useMemo(() => {
+    if (!liveAgentsEnabled) return [];
+    return liveAgentsFromSessions(
+      promptableSessions,
+      unseenFinishedIds,
+      new Set(
+        listFamiliars().flatMap((familiar) =>
+          familiar.sessionId ? [familiar.sessionId] : [],
+        ),
+      ),
+    ).filter(
+      (agent) => !agent.done || !dismissedLiveAgentIds.has(agent.id),
+    );
+  }, [
+    liveAgentsEnabled,
+    promptableSessions,
+    unseenFinishedIds,
+    familiarsSnap,
+    dismissedLiveAgentIds,
+  ]);
+  // Rebuilt for every streamed batch; identity only moves when a row does.
+  const liveAgents = useStableValue(liveAgentRows);
+
   const hiddenApprovalToasts = useMemo(
-    () => hiddenApprovalNotices(sessions, activeTabId, tabs, composerFocused),
-    [sessions, activeTabId, tabs, composerFocused],
+    () =>
+      hiddenApprovalNotices(
+        familiarViewId
+          ? promptableSessions.filter((session) => session.id !== familiarViewId)
+          : promptableSessions,
+        familiarCovers ? "" : activeTabId,
+        tabs,
+        composerFocused,
+      ),
+    [
+      promptableSessions,
+      activeTabId,
+      tabs,
+      composerFocused,
+      familiarViewId,
+      familiarCovers,
+    ],
   );
   const [reminderNoticesHeight, setReminderNoticesHeight] = useState(0);
   const [harnessUpdateHeight, setHarnessUpdateHeight] = useState(0);
@@ -1803,7 +2229,7 @@ function Workspace({
       .onFocusChanged(({ payload: focused }) => {
         setWindowFocused(focused);
         if (focused) {
-          flushHarnessEvents();
+          flushForegroundHarnessEvents();
           syncDockBadge(sessionsRef.current);
           if (
             document.activeElement === document.body &&
@@ -1825,7 +2251,7 @@ function Workspace({
     return () => {
       unlisten?.();
     };
-  }, [flushHarnessEvents]);
+  }, [flushForegroundHarnessEvents]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -1838,18 +2264,20 @@ function Workspace({
   }, [flushHarnessEvents]);
 
   useLayoutEffect(() => {
-    // A newly selected chat catches up before paint, even if its output was
-    // waiting on the background cadence. Draft/composer input stays immediate.
-    flushHarnessEvents();
+    // Catch up only the newly visible panes before paint. Other streams keep
+    // their background timer instead of adding work to this tab switch.
+    flushForegroundHarnessEvents();
   }, [
     activeTabId,
+    familiarViewId,
     inboxViewOpen,
     inboxAskPortal?.sessionId,
+    shownFamiliarSessionId,
     searchViewOpen,
     notesViewOpen,
     automationsViewOpen,
     settingsOpen,
-    flushHarnessEvents,
+    flushForegroundHarnessEvents,
   ]);
 
   useEffect(() => {
@@ -1866,10 +2294,19 @@ function Workspace({
       keepWorkspaceTab,
     );
     void getCurrentWindow()
-      .onCloseRequested((event) => {
+      .onCloseRequested(async (event) => {
         // Listening here makes close our job. Letting the default path run
         // calls JS `window.destroy`, which Tauri denies without a permission.
         event.preventDefault();
+        if (
+          IS_MAC &&
+          (await invoke<boolean>("familiar_chat_keep_alive").catch(() => false))
+        ) {
+          flushHarnessEvents();
+          void persistLiveTranscripts(sessionsRef.current);
+          void hideCurrentWindow();
+          return;
+        }
         const toTray = loadCloseToTray();
         if (hasInFlightSessions(sessionsRef.current)) {
           flushHarnessEvents();
@@ -2066,6 +2503,7 @@ function Workspace({
       persistence: sessionPersistence,
       forgetHarness: (session) =>
         void forgetHarnessSession(session.harness, session.id),
+      leaveCoveringViews: () => closeFamiliarView(),
     }),
   );
   const activateTab = useCallback(
@@ -2112,14 +2550,16 @@ function Workspace({
 
   const onSelectProviderAccount = useCallback(
     (provider: ProviderAccountProvider, accountId: string) => {
-      if (!active || active.harness !== provider) return;
-      const currentId = active.providerAccountId ?? DEFAULT_PROVIDER_ACCOUNT_ID;
-      if (currentId === accountId) return;
+      const current = sessionsRef.current.find(
+        (session) => session.id === active?.id,
+      );
+      if (!current || current.harness !== provider) return;
 
-      if (active.blocks.length === 0 && !active.busy) {
-        setSessions((current) =>
-          current.map((session) =>
-            session.id === active.id
+      if (current.blocks.length === 0 && !current.busy) {
+        if (current.providerAccountId === accountId) return;
+        updateSessionState(sessionsRef, setSessions, (sessions) =>
+          sessions.map((session) =>
+            session.id === current.id
               ? { ...session, providerAccountId: accountId }
               : session,
           ),
@@ -2127,23 +2567,32 @@ function Workspace({
         return;
       }
 
+      const currentId =
+        current.providerAccountId ?? DEFAULT_PROVIDER_ACCOUNT_ID;
+      if (currentId === accountId) return;
+
       // Provider thread ids are account-owned. Keep the current conversation
       // pinned to its account and open a clean one for the selected profile.
       const session = {
         ...newSession(
-          active.harness,
-          active.cwd,
-          active.model,
-          active.runtimeMode,
-          active.modelSettings,
+          current.harness,
+          current.cwd,
+          current.model,
+          current.runtimeMode,
+          current.modelSettings,
         ),
         providerAccountId: accountId,
       };
-      const tab = openSessionTab(session, active.cwd);
+      const tab = newTab(session.id);
+      updateSessionState(sessionsRef, setSessions, (sessions) => [
+        ...sessions,
+        session,
+      ]);
+      appendTab(tab, current.cwd);
       setActiveTabId(tab.id);
       setComposerFocused(true);
     },
-    [active, openSessionTab],
+    [active?.id, appendTab],
   );
 
   const onOpenWhatsNew = useCallback((version: string) => {
@@ -2175,25 +2624,13 @@ function Workspace({
     setInboxViewOpen(false);
     setNotesViewOpen(false);
     setAutomationsViewOpen(false);
-    const cwd = active?.cwd ?? sessionDefaults?.cwd ?? projectCwd;
-    const focus = worktreeFocus(cwd);
-    const session = {
-      ...newDefaultSession(cwd, sessionDefaults?.runtimeMode),
-      ...(focus && pathKey(focus.path) !== pathKey(cwd)
-        ? { worktreeCwd: focus.path, branch: focus.branch ?? undefined }
-        : {}),
-    };
+    const cwd = sidebarCwd;
+    const session = newWorkspaceSession(cwd, sessionDefaults?.runtimeMode);
     const tab = openSessionTab(session, cwd);
     setActiveTabId(tab.id);
     setComposerFocused(true);
     return session.id;
-  }, [
-    active?.cwd,
-    openSessionTab,
-    sessionDefaults?.cwd,
-    sessionDefaults?.runtimeMode,
-    projectCwd,
-  ]);
+  }, [openSessionTab, sessionDefaults?.runtimeMode, sidebarCwd]);
 
   const onSelectRemoteSession = useCallback(
     (project: string, remoteSessionId: string) => {
@@ -2201,14 +2638,12 @@ function Workspace({
       setInboxViewOpen(false);
       setNotesViewOpen(false);
       setAutomationsViewOpen(false);
-      const existing = tabsRef.current
-        .map((tab) => ({
-          tab,
-          shellId: leafIds(tab.layout).find(
-            (shellId) => remoteSessionFor(shellId) === remoteSessionId,
-          ),
-        }))
-        .find(({ shellId }) => shellId);
+      const existing = findRemoteSessionTab(
+        tabsRef.current,
+        sessionsRef.current,
+        project,
+        remoteSessionId,
+      );
       if (existing) {
         activateTab(existing.tab.id, existing.shellId);
         return;
@@ -2364,6 +2799,7 @@ function Workspace({
 
   const onSplit = useCallback(
     (dir: SplitDir) => {
+      closeFamiliarView();
       if (!activeTab) return;
       const session = newDefaultSession(
         sessionDefaults?.cwd ?? projectCwd,
@@ -2420,7 +2856,7 @@ function Workspace({
 
   const onOpenTerminal = useCallback(
     (cwd: string, asWorkspaceTab = false, occupySessionId?: string) => {
-      const workdir = cwd || gitCwd;
+      const workdir = cwd || terminalCwd;
       if (!isLocalProject(projectCwdRef.current) || !isLocalProject(workdir))
         return;
       if (openProjectTerminal(workdir)) return;
@@ -2461,28 +2897,12 @@ function Workspace({
       );
       setComposerFocused(false);
     },
-    [gitCwd, activeTab, appendTab, openProjectTerminal, sidebarCwd],
+    [terminalCwd, activeTab, appendTab, openProjectTerminal, sidebarCwd],
   );
 
   const onNewTerminal = useCallback(() => {
-    onOpenTerminal(gitCwd);
-  }, [gitCwd, onOpenTerminal]);
-
-  const onShowProjectTerminal = useCallback(() => {
-    const dock = findProjectTerminal(projectTerminalsRef.current, projectCwd);
-    if (dock && dock.pane.files.length > 0) {
-      if (!dock.open) {
-        setProjectTerminals((prev) =>
-          mapProjectTerminal(prev, projectCwd, (entry) =>
-            withDockOpen(entry, true),
-          ),
-        );
-      }
-      focusProjectTerminal();
-      return;
-    }
-    onOpenTerminal(gitCwd);
-  }, [gitCwd, focusProjectTerminal, onOpenTerminal, projectCwd]);
+    onOpenTerminal(terminalCwd);
+  }, [terminalCwd, onOpenTerminal]);
 
   const onNewTerminalInSession = useCallback(
     (sessionId: string) => {
@@ -2501,9 +2921,10 @@ function Workspace({
 
   const onToggleProjectTerminal = useCallback(() => {
     if (!isLocalProject(projectCwd)) return;
+    leaveCoveringFamiliar();
     const dock = findProjectTerminal(projectTerminalsRef.current, projectCwd);
     if (!dock) {
-      openProjectTerminal(gitCwd);
+      openProjectTerminal(terminalCwd);
       return;
     }
     const nextOpen = !dock.open;
@@ -2514,7 +2935,13 @@ function Workspace({
     );
     if (nextOpen) focusProjectTerminal();
     else setProjectTerminalFocused(false);
-  }, [gitCwd, focusProjectTerminal, openProjectTerminal, projectCwd]);
+  }, [
+    terminalCwd,
+    focusProjectTerminal,
+    leaveCoveringFamiliar,
+    openProjectTerminal,
+    projectCwd,
+  ]);
 
   const onHideProjectTerminal = useCallback(() => {
     setProjectTerminals((prev) =>
@@ -2683,8 +3110,8 @@ function Workspace({
   );
 
   const onNewTerminalTab = useCallback(() => {
-    onOpenTerminal(gitCwd, true);
-  }, [gitCwd, onOpenTerminal]);
+    onOpenTerminal(terminalCwd, true);
+  }, [terminalCwd, onOpenTerminal]);
 
   const onCloseTab = useCallback(
     (id: string, opts?: { confirmedTerminalIds?: string[] }) => {
@@ -3136,6 +3563,7 @@ function Workspace({
   );
 
   const onCloseAllTabs = useCallback(() => {
+    closeFamiliarView();
     const tab = tabsRef.current.find(
       (entry) => entry.id === activeTabIdRef.current,
     );
@@ -3271,9 +3699,14 @@ function Workspace({
 
   const onClosePane = useCallback(
     (sessionId?: string) => {
-      // The project terminal is shared by every workspace tab in the project.
-      // Keep the global close command scoped to workspace tabs and panes even
-      // while the dock has focus; terminal tabs have their own close buttons.
+      if (familiarViewIdRef.current) {
+        closeFamiliarView();
+        setComposerFocused(true);
+        return;
+      }
+      // The project terminal is shared by every workspace tab in the project,
+      // so pane and title-bar close buttons stay scoped to workspace tabs and
+      // panes. ⌘W / Ctrl+W goes through onCloseFocused to reach the dock.
       if (!activeTab) return;
       const focusedSurface = findSurfacePane(activeTab, activeTab.focusedId);
       if (sessionId === undefined && focusedSurface) {
@@ -3319,6 +3752,7 @@ function Workspace({
     },
     [
       activeTab,
+      closeFamiliarView,
       onCloseFile,
       onCloseTab,
       onClearTabSession,
@@ -3329,8 +3763,35 @@ function Workspace({
     ],
   );
 
+  /** The dock terminal that ⌘T / ⌘W act on while the keyboard is in the dock. */
+  const focusedDockTerminal = useCallback(() => {
+    // Require DOM focus as well as the dock flag: the flag outlives clicks on
+    // chrome that does not clear it, and the shortcuts must follow the keyboard.
+    const dockFocused =
+      projectTerminalFocusedRef.current &&
+      Boolean(document.activeElement?.closest("[data-project-terminal-dock]"));
+    return focusedDockTerminalId(
+      findProjectTerminal(projectTerminalsRef.current, projectCwdRef.current),
+      dockFocused,
+    );
+  }, []);
+
+  /** ⌘T / Ctrl+T: add a dock terminal while the dock has focus, else a tab. */
+  const onNewFocused = useCallback(() => {
+    if (focusedDockTerminal()) onNewTerminal();
+    else onNew();
+  }, [focusedDockTerminal, onNew, onNewTerminal]);
+
+  /** ⌘W / Ctrl+W: close the focused dock terminal, else the focused pane. */
+  const onCloseFocused = useCallback(() => {
+    const fileId = focusedDockTerminal();
+    if (fileId) onCloseProjectTerminal(fileId);
+    else onClosePane();
+  }, [focusedDockTerminal, onCloseProjectTerminal, onClosePane]);
+
   const onCloseTitleTab = useCallback(
     (id: string) => {
+      closeFamiliarView();
       const closePlan = planWorkspaceTabClose({
         tabs: tabsRef.current,
         sessions: sessionsRef.current,
@@ -3388,17 +3849,30 @@ function Workspace({
   ]);
 
   const onNext = useCallback(() => {
+    if (familiarViewIdRef.current) {
+      activateTab(activeTabId);
+      return;
+    }
     const tab = cycleTab(deckProjectTabs, activeTabId, 1);
     if (tab) activateTab(tab.id);
   }, [activateTab, activeTabId, deckProjectTabs]);
 
   const onPrev = useCallback(() => {
+    if (familiarViewIdRef.current) {
+      activateTab(activeTabId);
+      return;
+    }
     const tab = cycleTab(deckProjectTabs, activeTabId, -1);
     if (tab) activateTab(tab.id);
   }, [activateTab, activeTabId, deckProjectTabs]);
 
   const visitTab = useCallback(
     (direction: "back" | "forward") => {
+      // A Familiar's full view covers the tabs; visiting returns to them first.
+      if (familiarViewIdRef.current) {
+        activateTab(activeTabIdRef.current);
+        return;
+      }
       const openTabIds = new Set(tabsRef.current.map((tab) => tab.id));
       const tabId = tabVisits.step(
         direction,
@@ -3422,6 +3896,27 @@ function Workspace({
 
   const onFocusPane = useCallback(
     (paneId: string) => {
+      if (paneId === familiarViewIdRef.current) {
+        setFamiliarShownSessionFocused(false);
+        setProjectTerminalFocused(false);
+        setComposerFocused(true);
+        return;
+      }
+      if (paneId === shownFamiliarSessionIdRef.current) {
+        setFamiliarShownSessionFocused(true);
+        setProjectTerminalFocused(false);
+        setComposerFocused(true);
+        return;
+      }
+      // Over the Familiar, only its sidebar holds panes outside the workspace: a
+      // launched session sliding away as another opens. Its late focus must
+      // not close the Familiar and send that session to its project.
+      if (
+        familiarViewIdRef.current &&
+        !tabsRef.current.some((tab) => leafIds(tab.layout).includes(paneId))
+      )
+        return;
+      closeFamiliarView();
       if (
         tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
           ?.focusedId !== paneId
@@ -3443,7 +3938,7 @@ function Workspace({
         sessionsRef.current.some((session) => session.id === paneId),
       );
     },
-    [activeTabId, inboxAskPortal],
+    [activeTabId, inboxAskPortal, closeFamiliarView],
   );
 
   const onOpenDiff = useCallback(
@@ -3452,6 +3947,7 @@ function Workspace({
       session?: { sessionId: string; cwd: string },
       changeKind?: GitFileDiffKind,
       pin = false,
+      options?: { exact?: boolean },
     ) => {
       void (async () => {
         const diffCwd = session?.cwd ?? gitCwdRef.current;
@@ -3460,7 +3956,9 @@ function Workspace({
               ?.cwd
           : sidebarCwdRef.current;
         const resolved = path
-          ? ((await resolveOpenablePath(diffCwd, path)) ?? path)
+          ? options?.exact
+            ? path
+            : ((await resolveOpenablePath(diffCwd, path)) ?? path)
           : undefined;
         if (resolved) rememberOpenedFile(diffCwd, resolved);
         setTabs((prev) =>
@@ -3500,9 +3998,33 @@ function Workspace({
     [activeTabId],
   );
 
+  // A Familiar view covers the workspace, so its session changes open on the
+  // overview's Changes tab instead of in a project tab hidden behind it.
+  const openMonoChanges = useCallback((request: MonoChangesRequest) => {
+    setFamiliarShownSession(null);
+    setFamiliarOverviewDocument(null);
+    setFamiliarChangesRequest(request);
+    setFamiliarOverviewTab("changes");
+    setFamiliarOverviewOpen(true);
+  }, []);
+  const onOpenMonoDiff = useCallback(
+    (path?: string, session?: { sessionId: string; cwd: string }) => {
+      if (!session) {
+        onOpenDiff(path);
+        return;
+      }
+      openMonoChanges({ path });
+    },
+    [onOpenDiff, openMonoChanges],
+  );
+  const onCommitMonoChanges = useCallback(
+    () => openMonoChanges({}),
+    [openMonoChanges],
+  );
+
   const onOpenWorkingTreeDiff = useCallback(
     (path: string, kind?: GitFileDiffKind, pin?: boolean) =>
-      onOpenDiff(path, undefined, kind, pin),
+      onOpenDiff(path, undefined, kind, pin, { exact: true }),
     [onOpenDiff],
   );
 
@@ -3847,11 +4369,160 @@ function Workspace({
     setComposerFocused(true);
   }, [inboxAskPortal, inboxViewOpen]);
 
+  /** The last Familiar opened, which the shortcut brings back. */
+  const lastFamiliarIdRef = useRef<string | undefined>(undefined);
+
+  /** A Familiar's conversation is a view over the existing workspace tabs. */
+  const onOpenFamiliar = useCallback(
+    async (familiarId: string) => {
+      setFamiliarActivity(null);
+      workspaceNavigation.cancel();
+      const request = ++familiarViewRequest.current;
+      setSearchViewOpen(false);
+      setInboxViewOpen(false);
+      setNotesViewOpen(false);
+      setAutomationsViewOpen(false);
+      lastFamiliarIdRef.current = familiarId;
+      const session = await ensureFamiliarSession(familiarId, {
+        home: homeDir,
+        load: ensureOpenSession,
+        create: (path) => newDefaultSession(path),
+        add: (created) => {
+          sessionsRef.current = [...sessionsRef.current, created];
+          setSessions(sessionsRef.current);
+        },
+      });
+      if (!session || request !== familiarViewRequest.current) return;
+      // What the last Familiar had open over its overview is its own; another
+      // Familiar opens on its list.
+      if (familiarViewIdRef.current !== session.id) {
+        setFamiliarShownSession(null);
+        setFamiliarShownSessionFocused(false);
+        setFamiliarOverviewDocument(null);
+      }
+      familiarViewIdRef.current = session.id;
+      saveOpenFamiliar(familiarId);
+      setFamiliarViewId(session.id);
+      setProjectTerminalFocused(false);
+      setComposerFocused(true);
+      setComposerFocusToken((token) => token + 1);
+    },
+    [ensureOpenSession, workspaceNavigation.cancel],
+  );
+
+  // A Familiar open when the app last closed opens again; a moved window keeps
+  // what it carried.
+  const reopenedFamiliar = useRef(false);
+  useEffect(() => {
+    if (reopenedFamiliar.current) return;
+    reopenedFamiliar.current = true;
+    if (windowTransfer || !familiarsEnabled) return;
+    const familiarId = loadOpenFamiliar();
+    if (familiarId && findFamiliar(familiarId)) void onOpenFamiliar(familiarId);
+    else if (familiarId) saveOpenFamiliar(undefined);
+  }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
+
+  /** The shortcut opens the last Familiar, or the first on the rail. */
+  const onToggleFamiliar = useCallback(() => {
+    if (familiarViewIdRef.current) {
+      closeFamiliarView();
+      setComposerFocused(true);
+      return;
+    }
+    if (!familiarsEnabled) return;
+    const last = lastFamiliarIdRef.current;
+    const familiarId =
+      (last && findFamiliar(last) ? last : undefined) ?? listFamiliars()[0]?.id;
+    if (familiarId) void onOpenFamiliar(familiarId);
+  }, [closeFamiliarView, familiarsEnabled, onOpenFamiliar]);
+
+  /** A new Familiar opens straight away, ready to be told what it works on. */
+  const onCreateFamiliar = useCallback(() => {
+    const familiarId = createFamiliar().id;
+    setFamiliarSettingsFor(familiarId);
+    void onOpenFamiliar(familiarId);
+  }, [onOpenFamiliar]);
+
+  const onResetFamiliar = useCallback(
+    async (sessionId: string): Promise<void> => {
+      const current = sessionsRef.current.find(
+        (session) => session.id === sessionId,
+      );
+      if (!current || !isFamiliarSession(sessionId))
+        throw new Error("This Familiar's conversation is no longer available.");
+      if (removingSessionIds.current.has(sessionId))
+        throw new Error("This conversation is already being reset.");
+
+      removingSessionIds.current.add(sessionId);
+      sessionPersistence.dropPending(sessionId);
+      invalidateLoadedSession(sessionId);
+      try {
+        await resetFamiliarSession(current, {
+          stop: async (id) => {
+            const latest = (await stopSessionForRemoval(id)) ?? current;
+            const stopped = {
+              ...stopStreaming(latest),
+              queueStatus: "paused" as const,
+            };
+            sessionsRef.current = sessionsRef.current.map((session) =>
+              session.id === id ? stopped : session,
+            );
+            setSessions(sessionsRef.current);
+            return stopped;
+          },
+          remove: async (stopped) => {
+            await Promise.all(
+              sessionChildHarnesses(stopped).map((harness) =>
+                forgetHarnessSession(harness, sessionId),
+              ),
+            );
+            await flushSessionCheckpoint(sessionId);
+            const imagePaths = stopped.blocks.flatMap((block) =>
+              block.role === "image" && block.image ? [block.image.path] : [],
+            );
+            await orchestrator.deleteSession(sessionId, () =>
+              deleteSession(sessionId, imagePaths),
+            );
+          },
+          replace: (fresh) => {
+            sessionPersistence.forget(sessionId);
+            invalidateLoadedSession(sessionId);
+            sessionsRef.current = sessionsRef.current.map((session) =>
+              session.id === sessionId ? fresh : session,
+            );
+            setSessions(sessionsRef.current);
+            setHistory((history) =>
+              history.filter((entry) => entry.id !== sessionId),
+            );
+            setStoredLinkedSessions((history) =>
+              history.filter((entry) => entry.id !== sessionId),
+            );
+            if (familiarViewIdRef.current === sessionId) {
+              familiarViewRequest.current += 1;
+              familiarViewIdRef.current = fresh.id;
+              setFamiliarViewId(fresh.id);
+              setComposerFocused(true);
+              setComposerFocusToken((token) => token + 1);
+            }
+          },
+        });
+      } finally {
+        removingSessionIds.current.delete(sessionId);
+      }
+    },
+    [invalidateLoadedSession, stopSessionForRemoval],
+  );
+
   const onSelectHistorySession = useCallback(
     async (sessionId: string) => {
       workspaceNavigation.cancel();
       let session = await ensureOpenSession(sessionId);
       if (!session || session.inboxAsk) return;
+      const familiar = familiarForSession(session.id);
+      if (familiar) {
+        await onOpenFamiliar(familiar.id);
+        return;
+      }
       const parentId =
         session.orchestrationLeadId ??
         orchestrator.forSession(sessionId)?.leadId;
@@ -3880,10 +4551,60 @@ function Workspace({
     [
       appendTab,
       ensureOpenSession,
+      onOpenFamiliar,
       focusOpenSession,
       replaceBlankPaneWithSession,
       revealLinkedSessionUpdate,
     ],
+  );
+
+  const onOpenMonoLaunchedSession = useCallback(
+    async (sessionId: string) => {
+      const session = await ensureOpenSession(sessionId);
+      if (!session) throw new Error("This session is no longer available.");
+      closeFamiliarView();
+      setSidebarTab("sessions", session.cwd);
+      await onSelectHistorySession(sessionId);
+    },
+    [ensureOpenSession, closeFamiliarView, setSidebarTab, onSelectHistorySession],
+  );
+
+  // A launched session opens over the overview, where it can be followed,
+  // answered or stopped without leaving the chat. Back lands on every session
+  // the Familiar started; opening the one already shown hides it again.
+  const showFamiliarLaunchedSession = useCallback(
+    async (familiarSessionId: string, launchedId: string) => {
+      if (shownFamiliarSessionIdRef.current === launchedId) {
+        setFamiliarShownSession(null);
+        return;
+      }
+      // Load it first, then switch in one step: the overview goes straight
+      // from what it shows to this session, never through the list.
+      const session = await ensureOpenSession(launchedId).catch(() => null);
+      if (familiarViewIdRef.current !== familiarSessionId) return;
+      setFamiliarOverviewTab("sessions");
+      setFamiliarOverviewDocument(null);
+      setFamiliarOverviewOpen(true);
+      // One that is gone leaves the sessions list open, which says so.
+      if (!session) {
+        setFamiliarShownSession(null);
+        return;
+      }
+      setFamiliarShownSession(launchedId);
+      setFamiliarShownSessionFocused(true);
+      setProjectTerminalFocused(false);
+      setComposerFocused(true);
+    },
+    [ensureOpenSession],
+  );
+  const onOpenFamiliarSession = useCallback(
+    (
+      familiarSessionId: string,
+      _turnId: string,
+      _blocks: Block[],
+      launchedId: string,
+    ) => showFamiliarLaunchedSession(familiarSessionId, launchedId),
+    [showFamiliarLaunchedSession],
   );
 
   const openReminderSession = useCallback(
@@ -4235,6 +4956,7 @@ function Workspace({
       sessionId: string,
       mode: "archive" | "delete",
       skipDeleteConfirm = false,
+      origin: "ui" | "cli" = "ui",
     ): Promise<boolean> => {
       if (
         removingSessionIds.current.has(sessionId) ||
@@ -4278,6 +5000,7 @@ function Workspace({
       try {
         const remover = createSessionRemover({
           mode,
+          preserveOpenFiles: origin === "cli",
           scope: tabCloseScope,
           replacement: {
             harness: seed?.harness ?? "cursor",
@@ -4301,6 +5024,7 @@ function Workspace({
               ),
           },
           confirm: async (closedTabs, removalMode) => {
+            if (origin === "cli") return true;
             const files = filesInWorkspaceTabs(closedTabs);
             const unsaved = files.some(
               (file) =>
@@ -4333,6 +5057,7 @@ function Workspace({
         }
         return removed;
       } catch (error) {
+        if (origin === "cli") throw error;
         const detail = error instanceof Error ? error.message : String(error);
         void alertApp(`Could not ${mode} this conversation.\n\n${detail}`, {
           kind: "error",
@@ -4385,6 +5110,7 @@ function Workspace({
           sessions: sessionsRef.current,
           projectTerminalFocused: projectTerminalFocusedRef.current,
           surfaceOpen: Boolean(
+            familiarViewIdRef.current ||
             searchViewOpenRef.current ||
             inboxViewOpenRef.current ||
             notesViewOpenRef.current ||
@@ -4521,6 +5247,39 @@ function Workspace({
     [onRemoveHistorySession],
   );
 
+  /** Deletes the Familiar's conversation, then the Familiar. Its files stay on disk. */
+  const onDeleteFamiliar = useCallback(
+    async (familiarId: string) => {
+      const familiar = findFamiliar(familiarId);
+      if (!familiar) return;
+      const { name } = familiarLook(familiar);
+      const confirmed = await confirmApp(
+        `Delete ${name}? Its conversation will be deleted and its habits stop. This can’t be undone.`,
+        { title: "MOLFAR", kind: "warning", okLabel: "Delete" },
+      );
+      if (!confirmed) return;
+      if (familiar.sessionId) {
+        if (familiarViewIdRef.current === familiar.sessionId) closeFamiliarView();
+        if (
+          sessionsRef.current.some(
+            (session) => session.id === familiar.sessionId,
+          ) ||
+          history.some((entry) => entry.id === familiar.sessionId)
+        ) {
+          const removed = await onRemoveHistorySession(
+            familiar.sessionId,
+            "delete",
+            true,
+          );
+          if (!removed) return;
+        }
+      }
+      removeFamiliar(familiarId);
+      if (lastFamiliarIdRef.current === familiarId) lastFamiliarIdRef.current = undefined;
+    },
+    [closeFamiliarView, history, onRemoveHistorySession],
+  );
+
   const onDeleteHistorySessions = useCallback(
     async (sessionIds: readonly string[]) => {
       if (sessionIds.length === 0) return;
@@ -4614,6 +5373,12 @@ function Workspace({
         setActiveTabId(tab.id);
         setComposerFocused(true);
         return;
+      }
+      if (previous && !sameProjectPath(previous, normalized)) {
+        // Clear bindings left by older versions before reusing a local shell.
+        if (remoteSessionFor(sessionId)) rememberRemoteSession(sessionId);
+        if (remotePendingWorktree(sessionId))
+          rememberRemotePendingWorktree(sessionId);
       }
       if (
         previous &&
@@ -4841,10 +5606,7 @@ function Workspace({
         }
         const next = sessionInWorktree(latest, target);
         if (fromComposer)
-          workspacePins.current.set(
-            sessionId,
-            currentWorkspace(latest.cwd),
-          );
+          workspacePins.current.set(sessionId, currentWorkspace(latest.cwd));
         else workspacePins.current.delete(sessionId);
         if (latest.worktreeRemoved)
           await keepSessionChanges(sessionId, target.path);
@@ -4874,10 +5636,11 @@ function Workspace({
 
   const onSelectWorkspace = useCallback(
     (focus?: WorktreeFocus) => {
+      closeFamiliarView();
       setProjectCwd(sidebarCwdRef.current);
       workspaceNavigation.selectWorkspace(sidebarCwdRef.current, focus);
     },
-    [workspaceNavigation.selectWorkspace],
+    [workspaceNavigation.selectWorkspace, closeFamiliarView],
   );
 
   /**
@@ -4962,12 +5725,14 @@ function Workspace({
 
   const onSelectProject = useCallback(
     (path: string) => {
+      closeFamiliarView();
       workspaceNavigation.cancel();
       openProjects([path]);
       workspaceNavigation.selectProject(path);
     },
     [
       openProjects,
+      closeFamiliarView,
       workspaceNavigation.cancel,
       workspaceNavigation.selectProject,
     ],
@@ -5246,6 +6011,7 @@ function Workspace({
 
   const onOpenFile = useCallback<OpenFileFn>(
     (path, navigation, options) => {
+      closeFamiliarView();
       void (async () => {
         const fileCwd = gitCwdRef.current;
         const fileProjectCwd = sidebarCwdRef.current;
@@ -5322,7 +6088,7 @@ function Workspace({
         setComposerFocused(false);
       })();
     },
-    [activateTab, insertBesideActive],
+    [activateTab, insertBesideActive, closeFamiliarView],
   );
 
   const onOpenPlan = useCallback(
@@ -5389,6 +6155,7 @@ function Workspace({
   );
 
   const onSelectFileSurface = useCallback((paneId: string, fileId: string) => {
+    closeFamiliarView();
     setTabs((prev) =>
       prev.map((tab) => {
         const found = findSurfacePane(tab, paneId);
@@ -5420,23 +6187,21 @@ function Workspace({
         current.modelSettings,
       );
       const plan = planComposerSwitch(current, harness);
+      const recoverLimit =
+        !current.busy &&
+        !!current.usageLimit &&
+        (current.harness !== harness || current.model !== resolved.id);
       if (plan.kind === "empty") {
         void forgetHarnessSession(plan.forget, sessionId);
       }
       setSessions((prev) =>
         prev.map((s) => {
           if (s.id !== sessionId) return s;
-          const next = withHarnessChoice(
-            s,
-            harness,
-            resolved.id,
-            modelSettings,
-          );
+          let next = withHarnessChoice(s, harness, resolved.id, modelSettings);
           if (plan.kind === "arm") {
-            return { ...next, pendingSwitch: plan.pending };
-          }
-          if (plan.kind === "revert") {
-            return {
+            next = { ...next, pendingSwitch: plan.pending };
+          } else if (plan.kind === "revert") {
+            next = {
               ...next,
               pendingSwitch: undefined,
               ...(plan.restoreProviderSessionId
@@ -5446,11 +6211,14 @@ function Workspace({
                 ? { providerAccountId: plan.restoreProviderAccountId }
                 : { providerAccountId: undefined }),
             };
+          } else if (plan.kind === "empty") {
+            next = { ...next, pendingSwitch: undefined };
           }
-          if (plan.kind === "empty") {
-            return { ...next, pendingSwitch: undefined };
-          }
-          return next;
+          return recoverLimit
+            ? isFamiliarSession(sessionId)
+              ? resumeFamiliarUsageLimit(next)
+              : resumeUsageLimitedSession(next)
+            : next;
         }),
       );
     },
@@ -5584,6 +6352,9 @@ function Workspace({
           options,
         );
       if (editedResends.isActive(sessionId)) return false;
+      // Output already received belongs before the submitted user message.
+      // Flush before reading the session too, since pending errors can settle it.
+      flushHarnessEvents();
       const controlError = orchestrator.submissionError(
         sessionId,
         options?.managed,
@@ -5748,8 +6519,21 @@ function Workspace({
         flushHarnessEvents();
         return false;
       }
+      // The Familiar has app access in every turn, without the command.
+      const familiar = isFamiliarSession(sessionId);
+      const queuedFamiliarMessage =
+        familiar && options?.queuedMessageId
+          ? current.queuedMessages?.find(
+              (message) => message.id === options.queuedMessageId,
+            )
+          : undefined;
       const operatorAccess =
-        operatorCommand.matched || operatorEnabledInThread(current.blocks);
+        operatorCommand.matched ||
+        familiar ||
+        operatorEnabledInThread(current.blocks);
+      const familiarFirstTurn =
+        familiar &&
+        !current.blocks.some((block) => block.role === "user" && !block.draft);
       const promptText = operatorCommand.matched
         ? operatorCommand.text.trim() ||
           "Explain what you can do in MOLFAR with the app CLI."
@@ -5762,10 +6546,116 @@ function Workspace({
         options?.ciRepair?.prompt ??
         (rawCommand ? submittedText : composeNoteMessage(noteCard, promptText));
 
-      const pendingSwitch =
-        current.pendingSwitch && current.pendingSwitch.from !== current.harness
-          ? current.pendingSwitch
-          : null;
+      const pendingSwitch = pendingComposerSwitch(current);
+
+      // A Familiar accepts consecutive messages before its provider is connected.
+      // The pending head is delivered once ready; later messages cannot overtake it.
+      if (
+        familiar &&
+        !options?.queuedMessageId &&
+        (current.busy || current.queuedMessages?.length)
+      ) {
+        const next = sessionsRef.current.map((session) =>
+          session.id === sessionId
+            ? enqueueFamiliarMessage(
+                {
+                  ...session,
+                  inboxCard: rawCommand ? session.inboxCard : undefined,
+                  noteCard: rawCommand ? session.noteCard : undefined,
+                  handoffCard: rawCommand ? session.handoffCard : undefined,
+                },
+                {
+                  id: crypto.randomUUID(),
+                  text,
+                  attachments,
+                  noteCard,
+                  handoffCard,
+                  intent,
+                },
+                rawCommand ? undefined : userTurnCards(noteCard),
+              )
+            : session,
+        );
+        sessionsRef.current = next;
+        setSessions(next);
+        dismissNoticesForContinuedSession(sessionId);
+        return true;
+      }
+
+      if (familiar && current.busy && options?.queuedMessageId) {
+        const message = current.queuedMessages?.find(
+          (entry) => entry.id === options.queuedMessageId,
+        );
+        if (
+          !message ||
+          !canSteerQueuedHead(current) ||
+          !canSteerHarness(current.harness) ||
+          operatorCommand.matched
+        )
+          return false;
+        const gen = turnGen.current.get(sessionId);
+        const change = (update: (session: Session) => Session) => {
+          const next = sessionsRef.current.map((session) =>
+            session.id === sessionId ? update(session) : session,
+          );
+          sessionsRef.current = next;
+          setSessions(next);
+        };
+        return deliverQueuedFollowUp({
+          message,
+          current: () =>
+            sessionsRef.current.find((session) => session.id === sessionId),
+          isCurrentTurn: () => turnGen.current.get(sessionId) === gen,
+          prepare: async () => {
+            const latest = sessionsRef.current.find(
+              (session) => session.id === sessionId,
+            );
+            if (latest) await upsertSession(latest);
+            return {
+              attachments: await prepareAttachments(attachments),
+              text: await preparePrompt(harnessText, {
+                harness: current.harness,
+                sessionId,
+                cwd: initialWorkCwd,
+              }),
+            };
+          },
+          steer: (prepared) =>
+            steerHarnessTurn({
+              harness: current.harness,
+              sessionId,
+              cwd: initialWorkCwd,
+              model: current.model,
+              modelSettings: current.modelSettings,
+              text: inboxAskPrompt(
+                rawCommand ? undefined : current.inboxAsk,
+                prepared.text,
+              ),
+              attachments: prepared.attachments,
+            }),
+          delivered: () => {
+            change((session) =>
+              acknowledgeFamiliarMessage(session, message, {
+                mode: "follow-up",
+                text: submittedText,
+                attachments: displayAttachments(attachments),
+                cards: userTurnCards(noteCard),
+              }),
+            );
+            flushHarnessEvents();
+          },
+          deferred: () =>
+            change((session) => ({ ...session, turnReady: false })),
+          failed: (error) =>
+            change((session) => ({
+              ...session,
+              queueStatus: "paused",
+              queuedMessages: session.queuedMessages?.map((entry) =>
+                entry.id === message.id ? { ...entry, error } : entry,
+              ),
+            })),
+        });
+      }
 
       if (current.busy && !pendingSwitch) {
         if (
@@ -5780,6 +6670,8 @@ function Workspace({
           flushHarnessEvents();
           return false;
         }
+        const steerable =
+          isLiveHarness(current.harness) && canSteerHarness(current.harness);
         const followUpBehavior =
           current.worktreePreparing ||
           intent === "plan" ||
@@ -5791,7 +6683,13 @@ function Workspace({
               // behind it, so hand it to the agent now.
               current.backgroundTasks?.length
               ? "steer"
-              : (options?.followUpBehavior ?? loadFollowUpBehavior());
+              : // Messaging a Familiar mid-reply is like texting a friend twice:
+                // it reads the new message now, or right after if it can't.
+                familiar
+                ? steerable
+                  ? "steer"
+                  : "queue"
+                : (options?.followUpBehavior ?? loadFollowUpBehavior());
         if (followUpBehavior === "queue") {
           setSessions((prev) =>
             prev.map((s) =>
@@ -5821,10 +6719,7 @@ function Workspace({
           dismissNoticesForContinuedSession(sessionId);
           return true;
         }
-        if (
-          !isLiveHarness(current.harness) ||
-          !canSteerHarness(current.harness)
-        ) {
+        if (!steerable) {
           // Harnesses that cannot steer (fx) used to drop the message on the
           // floor here, so a follow-up sent mid-turn just vanished. Say so.
           enqueueHarnessEvent(sessionId, {
@@ -5944,6 +6839,22 @@ function Workspace({
         });
       }
 
+      // A Familiar's chat never ends, but the provider session behind it does:
+      // once it fills most of the model's context window, this turn starts
+      // a fresh one, briefed on where the conversation was.
+      const familiarRotationReason =
+        familiar && !pendingSwitch && !editedResend
+          ? rotationReason(current)
+          : undefined;
+      const familiarRotation = familiarRotationReason
+        ? planRotation(
+            current.blocks,
+            loadFamiliarRotation(sessionId),
+            familiarRotationReason,
+            Date.now(),
+          )
+        : undefined;
+
       const gen = (turnGen.current.get(sessionId) ?? 0) + 1;
       turnGen.current.set(sessionId, gen);
       const proposalId =
@@ -6005,7 +6916,12 @@ function Workspace({
           ? { appRequestId: options.appRequestId }
           : {}),
         // The orchestrator writes these turns, not the user; hide them.
-        ...(options?.managed ? { internal: true } : {}),
+        ...(options?.managed || options?.familiarSessionCompletion
+          ? { internal: true }
+          : {}),
+        ...(options?.familiarSessionCompletion
+          ? { familiarSessionCompletion: options.familiarSessionCompletion }
+          : {}),
       };
       const live = isLiveHarness(current.harness);
       const queuedHandoff =
@@ -6077,13 +6993,19 @@ function Workspace({
                 busy: false,
                 blocks: [
                   ...next.blocks,
-                  {
-                    id: crypto.randomUUID(),
-                    role: "user",
-                    text: visibleText,
-                    ...(visible.length > 0 ? { attachments: visible } : {}),
-                    ...cards,
-                  },
+                  ...(queuedFamiliarMessage?.blockId
+                    ? []
+                    : [
+                        {
+                          id: crypto.randomUUID(),
+                          role: "user",
+                          text: visibleText,
+                          ...(visible.length > 0
+                            ? { attachments: visible }
+                            : {}),
+                          ...cards,
+                        } as Block,
+                      ]),
                   {
                     id: crypto.randomUUID(),
                     role: "system",
@@ -6099,23 +7021,37 @@ function Workspace({
                 title: titled,
                 pendingSwitch: undefined,
               });
-              return appendUser(
-                appendPreparingHandoff(
-                  sealed,
-                  pendingSwitch.from,
-                  next.harness,
-                ),
-                visibleText,
-                visible,
-                cards,
+              const prepared = appendPreparingHandoff(
+                sealed,
+                pendingSwitch.from,
+                next.harness,
               );
+              return queuedFamiliarMessage
+                ? acknowledgeFamiliarMessage(prepared, queuedFamiliarMessage, {
+                    mode: "new-turn",
+                    text: visibleText,
+                    attachments: visible,
+                    cards,
+                  })
+                : appendUser(prepared, visibleText, visible, cards);
             }
-            return appendUser(
-              { ...next, title: titled },
-              visibleText,
-              visible,
-              cards,
-            );
+            return queuedFamiliarMessage
+              ? acknowledgeFamiliarMessage(
+                  { ...next, title: titled },
+                  queuedFamiliarMessage,
+                  {
+                    mode: "new-turn",
+                    text: visibleText,
+                    attachments: visible,
+                    cards,
+                  },
+                )
+              : appendUser(
+                  { ...next, title: titled },
+                  visibleText,
+                  visible,
+                  cards,
+                );
           }),
         );
       };
@@ -6235,10 +7171,7 @@ function Workspace({
             false,
           );
           workCwd = tree.path;
-          workspacePins.current.set(
-            sessionId,
-            currentWorkspace(current.cwd),
-          );
+          workspacePins.current.set(sessionId, currentWorkspace(current.cwd));
           if (proposalDraft)
             proposalDraft = { ...proposalDraft, checkoutCwd: tree.path };
           setSessions((prev) =>
@@ -6429,10 +7362,22 @@ function Workspace({
           });
         };
 
-        if (!current.inboxAsk && !orchestrator.forSession(sessionId)) {
-          await beginSessionTurn(sessionId, workCwd).catch(() => undefined);
+        const checkpointTurnId =
+          !current.inboxAsk && !orchestrator.forSession(sessionId)
+            ? await beginSessionTurn(
+                sessionId,
+                workCwd,
+                sessionEditPaths(current.blocks),
+              )
+            : undefined;
+        if (turnGen.current.get(sessionId) !== gen) {
+          if (checkpointTurnId) {
+            await finishSessionTurn(sessionId, workCwd, {
+              turnId: checkpointTurnId,
+            });
+          }
+          return;
         }
-        if (turnGen.current.get(sessionId) !== gen) return;
         let buildSucceeded = false;
         try {
           const prepared = await prepareAttachments(attachments);
@@ -6470,7 +7415,13 @@ function Workspace({
                 cwd: workCwd,
                 model: current.model,
                 modelSettings: current.modelSettings,
+                providerAccountId,
                 runtimeMode: current.runtimeMode,
+                ephemeral: current.ephemeral === true,
+                codexStore: isFamiliarSession(sessionId) ? "mono" : undefined,
+                controlsAgents:
+                  operatorAccess ||
+                  orchestrator.run(sessionId)?.status === "active",
                 ...(editedProviderTurnId
                   ? { providerTurnId: editedProviderTurnId }
                   : {}),
@@ -6520,6 +7471,8 @@ function Workspace({
               modelSettings: current.modelSettings,
               providerAccountId,
               runtimeMode: current.runtimeMode,
+              ephemeral: current.ephemeral === true,
+              codexStore: isFamiliarSession(sessionId) ? "mono" : undefined,
               intent: intent === "orchestrate" ? "plan" : intent,
               // A /operator user turn enables app access for this thread;
               // orchestration leads retain their separate control access.
@@ -6546,11 +7499,92 @@ function Workspace({
                 : turnPrompt,
             ),
           );
-          if (operatorCommand.matched) {
-            const cli = `${shellPath(await invoke<string>("app_cli_path"))} app`;
-            sendText += `\n\n<molfar_app>\nThe user's Operator command enables app access in this thread, including later turns without the command. You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read and continue other project sessions, save unsent drafts, organize session folders, and read or write saved notes through its local CLI. Run \`${cli} --help\` for exact commands and JSON fields, then use it as needed for the user's request. When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`;
+          if (familiarRotation) {
+            if (current.harness === "codex" && current.providerSessionId) {
+              await migrateFamiliarCodexSession({
+                sessionId,
+                threadId: current.providerSessionId,
+                cwd: workCwd,
+                providerAccountId,
+              });
+            }
+            await forgetHarnessSession(current.harness, sessionId);
+            const fresh = (session: Session) =>
+              session.id === sessionId
+                ? {
+                    ...session,
+                    providerSessionId: undefined,
+                    context: undefined,
+                  }
+                : session;
+            current = fresh(current);
+            sessionsRef.current = sessionsRef.current.map(fresh);
+            setSessions((prev) => prev.map(fresh));
+            saveFamiliarRotation(sessionId, familiarRotation.rotation);
           }
+          // The agent's soul and memory live in its folder. A native session
+          // is handed them once, and memory again only when it changes.
+          const familiarRecord = familiar ? familiarForSession(sessionId) : undefined;
+          const agentLook = familiarRecord ? familiarLook(familiarRecord) : undefined;
+          const agentFiles = familiarRecord
+            ? await loadFamiliarFiles(familiarRecord.id).catch(() => undefined)
+            : undefined;
+          // Who it is counts as part of its soul: a rename or a change to its
+          // projects is handed over too, and so is a change to the fixed rules.
+          const handedFiles = agentFiles &&
+            agentLook && {
+              ...agentFiles,
+              soulHash: `${agentFiles.soulHash}:${agentLook.name}:${agentLook.projects
+                .map((project) => project.path)
+                .join("|")}:${FAMILIAR_PROMPT_VERSION}`,
+            };
+          const agentPlan = handedFiles
+            ? planAgentContext(
+                sessionId,
+                current.providerSessionId,
+                handedFiles,
+              )
+            : undefined;
+          const handAgent = agentPlan ? agentPlan.soul : familiarFirstTurn;
+          // What the app adds to the user's message rather than them.
+          const appContext: string[] = [];
+          if (familiarRotation) {
+            appContext.push(familiarRotation.brief(sessionId));
+          }
+          // Habit posts land in the chat outside any turn, so the Familiar's
+          // session has not seen them; the next message carries them once.
+          const habitPosts = familiar ? unseenHabitPosts(current.blocks) : [];
+          if (habitPosts.length) {
+            appContext.push(habitPostsContext(habitPosts));
+          }
+          if (
+            agentFiles &&
+            agentLook &&
+            agentPlan &&
+            (agentPlan.soul || agentPlan.memory)
+          ) {
+            appContext.push(familiarContext(agentLook, agentFiles, agentPlan));
+          }
+          if (operatorCommand.matched || handAgent) {
+            const cli = `${shellPath(await invoke<string>("app_cli_path"))} app`;
+            appContext.push(
+              `<molfar_app>\n${handAgent ? "App access is always enabled in this thread." : "The user's Operator command enables app access in this thread, including later turns without the command."} You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read, continue, stop, archive or delete other project sessions, save unsent drafts, organize session folders, read or write saved notes, and list or create Task Board cards through its local CLI. Run \`${cli} --help\` when you need the exact commands and JSON fields. ${boardTaskRule(cli)} When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`,
+            );
+          }
+          // A Familiar reads who it is ahead of the message, so it never takes it
+          // for something the user pasted. A command must stay first.
+          if (familiar && !rawCommand) sendText = familiarTurn(sendText, appContext);
+          else if (appContext.length)
+            sendText += `\n\n${appContext.join("\n\n")}`;
           await sendTurn(sendText);
+          if (agentFiles) {
+            recordAgentContext(
+              sessionId,
+              sessionsRef.current.find((session) => session.id === sessionId)
+                ?.providerSessionId ?? current.providerSessionId,
+              handedFiles ?? agentFiles,
+            );
+          }
           acceptEditedResend();
           if (proposalDraft && !providerFailureSeen) {
             completedProposal = await completeOrRepairOrchestrationProposal(
@@ -6574,16 +7608,18 @@ function Workspace({
           }
           if (turnGen.current.get(sessionId) !== gen) return;
           if (wrap) {
-            setSessions((prev) =>
-              prev.map((s) => {
-                if (s.id !== sessionId) return s;
-                const ready = isPreparingHandoff(s)
-                  ? completeHandoff(s, wrap.text)
-                  : s;
-                // A command owns its arguments; deliver the recap with the next chat prompt.
-                return rawCommand ? ready : consumeHandoff(ready);
-              }),
-            );
+            // Settle the ref too: the flush in `finally` rebuilds sessions from
+            // it, and a stale ref would drop the consumed flag and resend the
+            // recap with every later turn.
+            sessionsRef.current = sessionsRef.current.map((s) => {
+              if (s.id !== sessionId) return s;
+              const ready = isPreparingHandoff(s)
+                ? completeHandoff(s, wrap.text)
+                : s;
+              // A command owns its arguments; deliver the recap with the next chat prompt.
+              return rawCommand ? ready : consumeHandoff(ready);
+            });
+            setSessions(sessionsRef.current);
           }
           buildSucceeded = true;
         } catch (error: unknown) {
@@ -6603,6 +7639,18 @@ function Workspace({
           }
           providerFailureSeen = true;
         } finally {
+          // A failed provider can leave its process writing after the event
+          // stream ends. Stop it before recording the final workspace state.
+          if (providerFailureSeen && turnGen.current.get(sessionId) === gen) {
+            await stopHarnessSession(current.harness, sessionId).catch(
+              () => undefined,
+            );
+          }
+          if (checkpointTurnId) {
+            await finishSessionTurn(sessionId, workCwd, {
+              turnId: checkpointTurnId,
+            });
+          }
           if (turnGen.current.get(sessionId) !== gen) return;
           flushHarnessEvents();
           controlOutcome = {
@@ -6615,14 +7663,6 @@ function Workspace({
             text: controlText.trim(),
             ...(providerFailureSeen ? { error: controlOutcome.error } : {}),
           };
-          // A failed provider can leave its process alive with a dead event
-          // stream or poisoned turn state. Park it now; the next prompt will
-          // reconnect and resume through a fresh transport.
-          if (providerFailureSeen) {
-            await stopHarnessSession(current.harness, sessionId).catch(
-              () => undefined,
-            );
-          }
           await flushSessionCheckpoint(sessionId);
           setSessions((prev) =>
             prev.map((s) => {
@@ -6659,6 +7699,27 @@ function Workspace({
                 : finalized;
             }),
           );
+          // A worktree removed outside the app fails every turn. Detach the
+          // session as an in-app removal would, so it can pick a new checkout.
+          const worktreePath = current.worktreeCwd;
+          if (providerFailureSeen && worktreePath) {
+            void worktreeDeletedExternally(worktreePath)
+              .then((deleted) => {
+                if (!deleted || switchingWorktrees.current.has(sessionId))
+                  return;
+                // Through the ref too, or a pending event flush puts it back.
+                sessionsRef.current = sessionsRef.current.map((s) =>
+                  s.id === sessionId &&
+                  !s.busy &&
+                  !s.worktreeRemoved &&
+                  s.worktreeCwd === worktreePath
+                    ? detachSessionWorktree(s, s.cwd, worktreePath)
+                    : s,
+                );
+                setSessions(sessionsRef.current);
+              })
+              .catch(() => undefined);
+          }
           // Next tick: the flush above has rendered by then, so the banner
           // quotes the reply's final text rather than the previous batch.
           window.setTimeout(() => {
@@ -6666,7 +7727,10 @@ function Workspace({
               (s) => s.id === sessionId,
             );
             const visible = sessionId === activeSessionIdRef.current;
-            if (finished) void announceSessionFinished(finished, visible);
+            // A habit's hidden run speaks through its Familiar's chat, and a
+            // Task Board stage through the board, instead.
+            if (finished && !isHabitRun(sessionId) && !finished.taskCardId)
+              void announceSessionFinished(finished, visible);
           }, 0);
           notifyReviewChanged(sessionId);
           notifyGitChanged();
@@ -6742,6 +7806,135 @@ function Workspace({
     },
     [submitSession],
   );
+
+  // onApproval is created once; it reaches the current helper through this.
+  const decideFamiliarBlockRef = useRef<
+    (
+      familiarId: string,
+      blockId: string,
+      decided: "allow" | "deny" | "cancelled",
+    ) => void
+  >(() => {});
+  /** Adds a block to a Familiar's chat outside any turn, once no reply is streaming. */
+  const appendToFamiliar = (
+    familiarId: string,
+    block: Block,
+    then?: (familiar: Session) => void,
+    attempt = 0,
+  ) => {
+    const familiar = sessionsRef.current.find((session) => session.id === familiarId);
+    if (!familiar) return;
+    if (familiar.busy && attempt < 120) {
+      window.setTimeout(
+        () => appendToFamiliar(familiarId, block, then, attempt + 1),
+        5_000,
+      );
+      return;
+    }
+    const next: Session = { ...familiar, blocks: [...familiar.blocks, block] };
+    sessionsRef.current = sessionsRef.current.map((session) =>
+      session.id === familiarId ? next : session,
+    );
+    setSessions(sessionsRef.current);
+    persistSession(next);
+    then?.(next);
+  };
+  const decideFamiliarBlock = (
+    familiarId: string,
+    blockId: string,
+    decided: "allow" | "deny" | "cancelled",
+  ) => {
+    const decide = (session: Session) =>
+      session.id === familiarId
+        ? {
+            ...session,
+            blocks: session.blocks.map((block) =>
+              block.id === blockId && block.approval
+                ? { ...block, approval: { ...block.approval, decided } }
+                : block,
+            ),
+          }
+        : session;
+    sessionsRef.current = sessionsRef.current.map(decide);
+    setSessions(sessionsRef.current);
+    persistSession(
+      sessionsRef.current.find((session) => session.id === familiarId),
+    );
+  };
+  decideFamiliarBlockRef.current = decideFamiliarBlock;
+
+  useFamiliarHabits({
+    sessions: () => sessionsRef.current,
+    open: async (id) => (await ensureOpenSession(id)) ?? undefined,
+    add: (session) => {
+      sessionsRef.current = [...sessionsRef.current, session];
+      setSessions(sessionsRef.current);
+    },
+    run: (id, prompt) =>
+      new Promise((resolve) => {
+        void submitWithSettlement({
+          submit: (onSettled) => submitSession(id, prompt, [], { onSettled }),
+          onSettled: resolve,
+          rejectionMessage: "The habit's run could not start.",
+        });
+      }),
+    remove: async (id) => {
+      const open = await stopSessionForRemoval(id);
+      if (open)
+        await Promise.all(
+          sessionChildHarnesses(open).map((harness) =>
+            forgetHarnessSession(harness, id),
+          ),
+        );
+      await deleteSession(id, []);
+      sessionsRef.current = sessionsRef.current.filter(
+        (session) => session.id !== id,
+      );
+      setSessions(sessionsRef.current);
+    },
+    post: (familiarId, habit, text, name, artifacts, launches) =>
+      appendToFamiliar(
+        familiarId,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text,
+          familiarHabit: { id: habit.id, name: habit.name, at: Date.now() },
+          ...(artifacts?.length ? { artifactCards: artifacts } : {}),
+          ...(launches?.length ? { familiarSpawnedSessions: launches } : {}),
+        },
+        (posted) => {
+          familiarReplies.noteReply(familiarId);
+          void announceSessionFinished(
+            { ...posted, title: name },
+            familiarId === activeSessionIdRef.current,
+          );
+        },
+      ),
+    // The chat shows it like any approval, and the usual approval banner
+    // fires for the Familiar; the answer is routed back in onApproval.
+    askApproval: (familiarId, habit, runId, block) => {
+      const blockId = crypto.randomUUID();
+      const requestId = relayApproval({
+        familiarId,
+        runId,
+        requestId: block.approval!.requestId,
+        blockId,
+      });
+      appendToFamiliar(familiarId, {
+        id: blockId,
+        role: "approval",
+        text: block.text,
+        ...(block.tool ? { tool: block.tool } : {}),
+        approval: { requestId },
+        familiarHabit: { id: habit.id, name: habit.name, at: Date.now() },
+      });
+    },
+    endApprovals: (runId) => {
+      for (const relay of dropRelays(runId))
+        decideFamiliarBlock(relay.familiarId, relay.blockId, "cancelled");
+    },
+  });
 
   const automationSessionReservations = useRef(new Set<string>());
   const automationRecoveryRef = useRef<Promise<void> | null>(null);
@@ -6899,11 +8092,56 @@ function Workspace({
     [appendTab, focusOpenSession, submitSession],
   );
 
+  const queueFamiliarSessionCompletion = useCallback(
+    async (
+      familiarId: string,
+      message: QueuedMessage,
+      current: () => QueuedMessage | undefined = () => message,
+    ) => {
+      if (!isFamiliarSession(familiarId) || removingSessionIds.current.has(familiarId))
+        return;
+      if (
+        !(await ensureOpenSession(familiarId)) ||
+        removingSessionIds.current.has(familiarId)
+      )
+        return;
+      setSessions((previous) => {
+        const latest = current();
+        return latest
+          ? previous.map((session) =>
+              session.id === familiarId
+                ? enqueueFamiliarSessionCompletion(session, latest)
+                : session,
+            )
+          : previous;
+      });
+    },
+    [ensureOpenSession],
+  );
+  const queueFamiliarSessionCompletionRef = useRef(queueFamiliarSessionCompletion);
+  queueFamiliarSessionCompletionRef.current = queueFamiliarSessionCompletion;
+  const familiarCompletionBatches = useRef<FamiliarSessionCompletionBatches | null>(null);
+  if (!familiarCompletionBatches.current) {
+    familiarCompletionBatches.current = new FamiliarSessionCompletionBatches(
+      (familiarId, message, current) => {
+        void queueFamiliarSessionCompletionRef.current(familiarId, message, current);
+      },
+    );
+  }
+  useEffect(() => {
+    familiarCompletionBatches.current!.closeInactive(({ familiarId, turn }) => {
+      const familiar = sessionsRef.current.find((session) => session.id === familiarId);
+      return !!familiar?.busy && turnGen.current.get(familiarId) === turn;
+    });
+  }, [sessions]);
+
   const launchQuickSession = useCallback(
     (
       launch: QuickLaunch,
       deliveryId: string,
       placement?: AppSessionPlacement,
+      onSettled?: (outcome: ControlOutcome) => void,
+      openTab?: boolean,
     ) =>
       acceptQuickLaunch(
         launch,
@@ -6957,17 +8195,54 @@ function Workspace({
             setAutomationsViewOpen(false);
             setSidebarTab("sessions", cwd);
           },
-          submit: submitSession,
+          submit: (id, text, attachments, options) =>
+            onSettled
+              ? submitWithSettlement({
+                  submit: (settle) =>
+                    submitSession(id, text, attachments, {
+                      ...options,
+                      appRequestId: deliveryId,
+                      onSettled: settle,
+                    }),
+                  onSettled,
+                  rejectionMessage: "The monitored session could not start.",
+                })
+              : submitSession(id, text, attachments, options),
           saveDraft: (id, prompt, attachments, requestId) =>
             flushSync(() => onSaveDraft(id, prompt, attachments, requestId)),
         },
         placement,
+        openTab,
       ),
     [appendTab, submitSession, onSaveDraft],
   );
   useQuickComposerLaunches(launchQuickSession);
   const launchQuickSessionRef = useRef(launchQuickSession);
   launchQuickSessionRef.current = launchQuickSession;
+  const taskBoardSessions = useMemo(
+    () =>
+      createTaskBoardSessionPort({
+        launch: (launch, id, onSettled) =>
+          launchQuickSessionRef.current(launch, id, undefined, onSettled, false),
+        sessions: () => sessionsRef.current,
+        loadSession: getSession,
+        stop: async (id) => {
+          await flushSync(() => stopSessionRef.current(id));
+          flushHarnessEvents();
+        },
+        wait: (ms) => new Promise((resolve) => window.setTimeout(resolve, ms)),
+      }),
+    [],
+  );
+  const isMainWindow = useMemo(() => getCurrentWindow().label === "main", []);
+  const taskBoard = useTaskBoardEngine(taskBoardSessions, isMainWindow, companionProjectPaths);
+  const taskBoardRef = useRef(taskBoard);
+  taskBoardRef.current = taskBoard;
+  const boardAttention = useBoardAttention(taskBoard.ports.store);
+  const railBadges = useMemo(() => ({ board: boardAttention }), [boardAttention]);
+  useEffect(() => {
+    if (isMainWindow) syncBoardDockBadge(boardAttention);
+  }, [isMainWindow, boardAttention]);
   const submitSessionRef = useRef(submitSession);
   submitSessionRef.current = submitSession;
   const saveDraftRef = useRef(onSaveDraft);
@@ -7133,9 +8408,9 @@ function Workspace({
     const scheduled = new Set<string>();
     for (const session of sessions) {
       const queued = session.queuedMessages ?? [];
-      if (session.busy || queued.length === 0) continue;
+      if (queued.length === 0) continue;
 
-      if (session.queueStatus === "resuming") {
+      if (!session.busy && session.queueStatus === "resuming") {
         setSessions((prev) =>
           prev.map((entry) =>
             entry.id === session.id
@@ -7146,7 +8421,13 @@ function Workspace({
         continue;
       }
       if (
-        !canDispatchQueuedHead(session) ||
+        !(
+          canDispatchQueuedHead(session) ||
+          (familiarForSession(session.id) &&
+            canSteerQueuedHead(session) &&
+            canSteerHarness(session.harness) &&
+            !consumeOperatorCommand(queued[0].text).matched)
+        ) ||
         queueDispatchingRef.current.has(session.id)
       ) {
         continue;
@@ -7157,8 +8438,8 @@ function Workspace({
       queueDispatchingRef.current.add(session.id);
       scheduled.add(session.id);
       timers.push(
-        window.setTimeout(() => {
-          queueDispatchingRef.current.delete(session.id);
+        window.setTimeout(async () => {
+          scheduled.delete(session.id);
           const latest = sessionsRef.current.find(
             (entry) => entry.id === session.id,
           );
@@ -7167,16 +8448,114 @@ function Workspace({
             !latest ||
             !head ||
             head.id !== next.id ||
-            !canDispatchQueuedHead(latest)
+            !(
+              canDispatchQueuedHead(latest) ||
+              (familiarForSession(latest.id) &&
+                canSteerQueuedHead(latest) &&
+                canSteerHarness(latest.harness) &&
+                !consumeOperatorCommand(head.text).matched)
+            )
           ) {
+            queueDispatchingRef.current.delete(session.id);
             return;
           }
-          onSubmit(session.id, head.text, head.attachments, {
-            queuedMessageId: head.id,
-            noteCard: head.noteCard,
-            handoffCard: head.handoffCard,
-            intent: head.intent,
-          });
+          const steering = latest.busy;
+          if (steering)
+            setSessions((prev) =>
+              prev.map((entry) =>
+                entry.id === session.id
+                  ? { ...entry, sendingQueuedMessageId: head.id }
+                  : entry,
+              ),
+            );
+          try {
+            const accepted = await submitSession(
+              session.id,
+              head.text,
+              head.attachments,
+              {
+                queuedMessageId: head.id,
+                followUpBehavior: steering ? "steer" : undefined,
+                noteCard: head.noteCard,
+                handoffCard: head.handoffCard,
+                intent: head.intent,
+                ...(head.familiarSessionCompletion
+                  ? {
+                      familiarSessionCompletion: head.familiarSessionCompletion,
+                      appRequestId: head.id,
+                    }
+                  : {}),
+              },
+            );
+            // A preflight rejection must not repeatedly retry or hide the message.
+            if (!accepted && familiarForSession(session.id)) {
+              const current = sessionsRef.current.find(
+                (entry) => entry.id === session.id,
+              );
+              if (
+                current &&
+                (steering
+                  ? canSteerQueuedHead(current)
+                  : canDispatchQueuedHead(current)) &&
+                current.queuedMessages?.[0] === head
+              ) {
+                setSessions((prev) =>
+                  prev.map((entry) =>
+                    entry.id === session.id
+                      ? {
+                          ...entry,
+                          queueStatus: "paused",
+                          queuedMessages: entry.queuedMessages?.map(
+                            (message) =>
+                              message.id === head.id
+                                ? {
+                                    ...message,
+                                    error:
+                                      "Delivery is unavailable. Retry when the agent is ready.",
+                                  }
+                                : message,
+                          ),
+                        }
+                      : entry,
+                  ),
+                );
+              }
+            }
+            if (accepted || steering)
+              setQueueDispatchVersion((value) => value + 1);
+          } catch (error) {
+            setSessions((prev) =>
+              prev.map((entry) =>
+                entry.id === session.id
+                  ? {
+                      ...entry,
+                      queueStatus: "paused",
+                      queuedMessages: entry.queuedMessages?.map((message) =>
+                        message.id === head.id
+                          ? {
+                              ...message,
+                              error:
+                                error instanceof Error
+                                  ? error.message
+                                  : String(error),
+                            }
+                          : message,
+                      ),
+                    }
+                  : entry,
+              ),
+            );
+          } finally {
+            queueDispatchingRef.current.delete(session.id);
+            if (steering)
+              setSessions((prev) =>
+                prev.map((entry) =>
+                  entry.id === session.id
+                    ? { ...entry, sendingQueuedMessageId: undefined }
+                    : entry,
+                ),
+              );
+          }
         }, 0),
       );
     }
@@ -7184,7 +8563,7 @@ function Workspace({
       for (const timer of timers) window.clearTimeout(timer);
       for (const id of scheduled) queueDispatchingRef.current.delete(id);
     };
-  }, [onSubmit, sessions]);
+  }, [submitSession, sessions, queueDispatchVersion]);
 
   const onDeleteQueuedMessage = useCallback(
     (sessionId: string, messageId: string) => {
@@ -7220,7 +8599,9 @@ function Workspace({
             ? {
                 ...session,
                 queuedMessages: session.queuedMessages?.map((message) =>
-                  message.id === messageId ? { ...message, text } : message,
+                  message.id === messageId
+                    ? { ...message, text, error: undefined }
+                    : message,
                 ),
                 editingQueuedMessageId: undefined,
               }
@@ -7266,10 +8647,29 @@ function Workspace({
       );
       if (
         !session ||
-        session.busy ||
+        (session.busy && !familiarForSession(sessionId)) ||
         session.queueStatus !== "paused" ||
         !session.queuedMessages?.length
       ) {
+        return;
+      }
+      if (familiarForSession(sessionId)) {
+        setSessions((prev) =>
+          prev.map((entry) =>
+            entry.id === sessionId
+              ? entry.usageLimit
+                ? resumeFamiliarUsageLimit(entry)
+                : {
+                    ...entry,
+                    queueStatus: "active",
+                    queuedMessages: entry.queuedMessages?.map((message) => ({
+                      ...message,
+                      error: undefined,
+                    })),
+                  }
+              : entry,
+          ),
+        );
         return;
       }
       setSessions((prev) =>
@@ -7318,10 +8718,41 @@ function Workspace({
         (entry) => entry.id === sessionId,
       );
       if (!session?.usageLimit || session.busy) return;
+      if (isFamiliarSession(sessionId)) {
+        setSessions((prev) =>
+          prev.map((entry) =>
+            entry.id === sessionId ? resumeFamiliarUsageLimit(entry) : entry,
+          ),
+        );
+        return;
+      }
       onUsageLimitDismiss(sessionId);
       onSubmit(sessionId, CONTINUE_PROMPT);
     },
     [onSubmit, onUsageLimitDismiss],
+  );
+
+  const onUsageLimitAccountChange = useCallback(
+    (sessionId: string, accountId: string) => {
+      const session = sessionsRef.current.find(
+        (entry) => entry.id === sessionId,
+      );
+      if (
+        !session ||
+        !isFamiliarSession(sessionId) ||
+        !supportsProviderAccounts(session.harness) ||
+        !providerAccountExists(session.harness, accountId)
+      )
+        return;
+      setSessions((prev) =>
+        prev.map((entry) =>
+          entry.id === sessionId
+            ? switchFamiliarUsageLimitAccount(entry, accountId)
+            : entry,
+        ),
+      );
+    },
+    [],
   );
 
   const [usageLimitTick, setUsageLimitTick] = useState(0);
@@ -7642,6 +9073,8 @@ function Workspace({
         providerAccountId: input.source.providerAccountId,
         model: model || undefined,
         modelSettings: input.thread.modelSettings ?? input.source.modelSettings,
+        ephemeral: false,
+        codexStore: isFamiliarSession(input.source.id) ? "mono" : undefined,
         threadId: input.thread.providerThreadId,
         onThreadId: (providerThreadId) => {
           if (controller.signal.aborted) return;
@@ -8174,6 +9607,12 @@ function Workspace({
                 selectedProviderAccountId(current.harness, current.cwd))
               : undefined,
             runtimeMode: current.runtimeMode,
+            ephemeral: current.ephemeral === true,
+            codexStore: isFamiliarSession(sessionId) ? "mono" : undefined,
+            controlsAgents:
+              isFamiliarSession(sessionId) ||
+              operatorEnabledInThread(current.blocks) ||
+              orchestrator.run(sessionId)?.status === "active",
             onEvent: (event) => {
               if (turnGen.current.get(sessionId) !== gen) return;
               enqueueHarnessEvent(sessionId, event);
@@ -8220,17 +9659,27 @@ function Workspace({
         const stopping = orchestrator.stopForSession(sessionId);
         if (stopping) {
           void stopping.catch(console.error);
-          return;
+          return stopping;
         }
       }
       const session = sessionsRef.current.find((s) => s.id === sessionId);
       turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
       flushHarnessEvents();
-      if (session) {
-        for (const id of sessionChildHarnesses(session)) {
-          void cancelHarnessTurn(id, sessionId);
-        }
-      }
+      const cancelling = Promise.all(
+        (session ? sessionChildHarnesses(session) : []).map(async (id) => {
+          try {
+            await cancelHarnessTurn(id, sessionId);
+          } finally {
+            await stopHarnessSession(id, sessionId);
+          }
+        }),
+      );
+      const checkpointFinished = session
+        ? finishSessionTurn(sessionId, sessionWorkCwd(session), {
+            after: cancelling.catch(() => undefined),
+          })
+        : Promise.resolve();
+      void cancelling.catch(console.error);
       setSessions((prev) =>
         prev.map((s) => {
           if (s.id !== sessionId) return s;
@@ -8253,21 +9702,91 @@ function Workspace({
       } else {
         notifyReviewChanged(sessionId);
       }
+      return Promise.all([cancelling, checkpointFinished]);
     },
     [flushHarnessEvents],
   );
 
+  /** Working-rail X: close the tab; warn + stop first when the turn is still running. */
+  const onCloseLiveAgent = useCallback(
+    (sessionId: string) => {
+      void (async () => {
+        const session = sessionsRef.current.find((entry) => entry.id === sessionId);
+        const running = session ? isInFlightSession(session) : false;
+        if (running) {
+          const ok = await confirmApp(
+            "This chat is still running. Stop it and close the tab?",
+            { kind: "warning", okLabel: "Stop & close" },
+          );
+          if (!ok) return;
+        }
+
+        setDismissedLiveAgentIds((prev) => {
+          if (prev.has(sessionId)) return prev;
+          const next = new Set(prev);
+          next.add(sessionId);
+          return next;
+        });
+        unseenFinishedIds.delete(sessionId);
+
+        if (running) {
+          await Promise.resolve(onStop(sessionId));
+        }
+
+        const tab = tabsRef.current.find((entry) =>
+          leafIds(entry.layout).includes(sessionId),
+        );
+        if (!tab) return;
+
+        const leaves = leafIds(tab.layout);
+        if (leaves.length === 1) {
+          onCloseTab(tab.id);
+          return;
+        }
+
+        const nextTab = closeLeaf(tab, sessionId);
+        if (!nextTab) {
+          onCloseTab(tab.id);
+          return;
+        }
+        persistSession(sessionsRef.current.find((entry) => entry.id === sessionId));
+        setTabs((prev) =>
+          prev.map((entry) =>
+            entry.id === tab.id
+              ? {
+                  ...entry,
+                  layout: nextTab.layout,
+                  focusedId: nextTab.focusedId,
+                }
+              : entry,
+          ),
+        );
+      })();
+    },
+    [onCloseTab, onStop, persistSession, unseenFinishedIds],
+  );
+
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
+      const focusedBusySessionId = () => {
+        const agentId = familiarViewIdRef.current;
+        if (agentId) {
+          return sessionsRef.current.find((session) => session.id === agentId)
+            ?.busy
+            ? agentId
+            : undefined;
+        }
+        return focusedBusyAgentSessionId(
+          activeTabIdRef.current,
+          tabsRef.current,
+          sessionsRef.current,
+          projectTerminalFocusedRef.current,
+        );
+      };
       const target = event.target instanceof Element ? event.target : null;
       const inTerminal = Boolean(target?.closest(".molfar-terminal"));
       const activeTabId = activeTabIdRef.current;
-      const sessionId = focusedBusyAgentSessionId(
-        activeTabId,
-        tabsRef.current,
-        sessionsRef.current,
-        projectTerminalFocusedRef.current,
-      );
+      const sessionId = focusedBusySessionId();
       if (
         !sessionId ||
         !shouldStopFocusedTurnOnEscape(event, {
@@ -8282,12 +9801,7 @@ function Workspace({
       // same keydown dispatch. Defer the destructive stop until every handler
       // has had a chance to preventDefault, then verify focus did not move.
       deferUnhandledEscape(event, () => {
-        const stillFocusedSessionId = focusedBusyAgentSessionId(
-          activeTabIdRef.current,
-          tabsRef.current,
-          sessionsRef.current,
-          projectTerminalFocusedRef.current,
-        );
+        const stillFocusedSessionId = focusedBusySessionId();
         if (
           activeTabIdRef.current !== activeTabId ||
           stillFocusedSessionId !== sessionId
@@ -8305,6 +9819,36 @@ function Workspace({
     (sessionId: string, requestId: number, decision: ApprovalDecision) => {
       const session = sessionsRef.current.find((s) => s.id === sessionId);
       if (!session || session.worktreeRemoved) return;
+      // An approval a habit's hidden run asked for, put to the user in the
+      // Familiar's chat: answer the run, and settle the question in the chat.
+      if (isFamiliarSession(sessionId)) {
+        const asked = session.blocks.find(
+          (block) => block.familiarHabit && block.approval?.requestId === requestId,
+        );
+        if (asked) {
+          const relay = takeRelayedApproval(sessionId, requestId);
+          const run = relay
+            ? sessionsRef.current.find((s) => s.id === relay.runId)
+            : undefined;
+          if (relay && run)
+            respondHarnessApproval(
+              run.harness,
+              run.id,
+              relay.requestId,
+              decision,
+            );
+          decideFamiliarBlockRef.current(
+            sessionId,
+            asked.id,
+            relay && run
+              ? decision === "deny"
+                ? "deny"
+                : "allow"
+              : "cancelled",
+          );
+          return;
+        }
+      }
       if (remoteProjectFor(session.cwd)) {
         remoteSessionActions(sessionId)?.approve(requestId, decision);
         return;
@@ -8326,6 +9870,60 @@ function Workspace({
     },
     [],
   );
+
+  const unseenFinishedRef = useRef(unseenFinishedIds);
+  unseenFinishedRef.current = unseenFinishedIds;
+  const companionBoard = useMemo(() => createCompanionBoard(taskBoard), [taskBoard]);
+  useCompanionBridge({
+    board: companionBoard,
+    sessions: () => sessionsRef.current,
+    // History spans visited projects; phones need it so Open sessions is not
+    // limited to tabs currently mounted in memory.
+    sessionHistory: () => history,
+    familiars: () => (familiarsEnabled ? listFamiliars() : []),
+    projects: companionProjectPaths,
+    projectLabel: companionProjectLabel,
+    unseen: () => unseenFinishedRef.current,
+    openFamiliar: async (familiarId) =>
+      (await ensureFamiliarSession(familiarId, {
+        home: homeDir,
+        load: ensureOpenSession,
+        create: (path) => newDefaultSession(path, sessionDefaults?.runtimeMode),
+        add: (created) => {
+          sessionsRef.current = [...sessionsRef.current, created];
+          setSessions(sessionsRef.current);
+        },
+      })) ?? undefined,
+    openSession: async (sessionId) =>
+      (await ensureOpenSession(sessionId)) ?? undefined,
+    submit: (sessionId, text, attachments) => {
+      const accepted = submitSessionRef.current(sessionId, text, attachments);
+      if (typeof accepted === "boolean") return accepted;
+      void accepted.catch(() => undefined);
+      return true;
+    },
+    stop: (sessionId) => onStop(sessionId),
+    setRuntimeMode: onRuntimeModeChange,
+    approve: onApproval,
+    answer: onQuestionReply,
+    launch: (launch, id) => launchQuickSessionRef.current(launch, id),
+    defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
+    vault: {
+      status: vaultStatus,
+      scan: scanVault,
+      read: readVaultNote,
+      save: saveVaultNote,
+    },
+    notes: {
+      list: () => loadNotes(true),
+      read: getNote,
+      create: async (input) => {
+        const note = await createNote(input);
+        window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
+        return note;
+      },
+    },
+  });
 
   const onQuestionInteraction = useCallback(
     (sessionId: string, requestId: number) => {
@@ -8672,6 +10270,7 @@ function Workspace({
         }).catch(console.error);
       },
       steer: async (id, text) => {
+        flushHarnessEvents();
         const session = sessionsRef.current.find((entry) => entry.id === id);
         if (!session) throw new Error("This agent is no longer available");
         if (!session.busy)
@@ -8729,11 +10328,16 @@ function Workspace({
         }
       },
     });
-  }, [checkOpenWorktreeFiles, submitSession, onStop]);
+  }, [checkOpenWorktreeFiles, submitSession, onStop, flushHarnessEvents]);
 
   useEffect(() => {
     orchestrator.sync();
   }, [sessions]);
+
+  const stopSessionRef = useRef(onStop);
+  stopSessionRef.current = onStop;
+  const removeSessionRef = useRef(onRemoveHistorySession);
+  removeSessionRef.current = onRemoveHistorySession;
 
   useEffect(() => {
     const listening = listen<{
@@ -8773,13 +10377,104 @@ function Workspace({
             throw new Error("Request ID was already used with different input");
           return previous.promise;
         }
+        const sourceFamiliar =
+          familiarForSession(source.id) ?? findFamiliar(habitRunFamiliar(source.id) ?? "");
+        const canAccessProject = (cwd: string) =>
+          canAccessAgentAppProject(source, cwd, sourceFamiliar?.projects);
+        const sourceTurn = turnGen.current.get(source.id) ?? 0;
+        const sourceTurns = isFamiliarSession(source.id)
+          ? groupFamiliarTurns(source.blocks)
+          : [];
+        const sourceTurnId = sourceTurns[sourceTurns.length - 1]?.[0]?.id;
+        const rememberSession = (entry: FamiliarSpawnedSession) => {
+          // A habit run is thrown away when it ends; its launches go on the
+          // report it posts to the Familiar's chat instead.
+          if (isHabitRun(source.id)) {
+            noteHabitRunLaunch(source.id, entry);
+            return;
+          }
+          if (!sourceTurnId) return;
+          const next = sessionsRef.current.map((session) =>
+            session.id === source.id
+              ? recordFamiliarSpawnedSession(session, sourceTurnId, entry)
+              : session,
+          );
+          if (
+            next.every(
+              (session, index) => session === sessionsRef.current[index],
+            )
+          )
+            return;
+          sessionsRef.current = next;
+          setSessions(next);
+        };
+        const monitorCompletion = (
+          familiarId: string,
+          sessionId: string,
+          requestId: string,
+          project: string,
+          prompt: string,
+        ) => {
+          const settle = familiarCompletionBatches.current!.watch(
+            { familiarId, turn: sourceTurn },
+            requestId,
+            sessionId,
+            { awaitAcceptance: true },
+          );
+          return Object.assign(
+            (outcome: ControlOutcome) =>
+              settle(
+                familiarSessionCompletionResult({
+                  requestId,
+                  sessionId,
+                  project,
+                  prompt,
+                  outcome,
+                  session: sessionsRef.current.find(
+                    (session) => session.id === sessionId,
+                  ),
+                }),
+              ),
+            { accept: settle.accept, discard: settle.discard },
+          );
+        };
+        const dismissCompletion = (sessionId: string) => {
+          if (!isFamiliarSession(source.id)) return;
+          familiarCompletionBatches.current!.dismissSession(
+            source.id,
+            sessionId,
+          );
+          flushSync(() =>
+            setSessions((previous) =>
+              previous.map((session) =>
+                session.id === source.id
+                  ? dismissQueuedFamiliarSessionCompletion(session, sessionId)
+                  : session,
+              ),
+            ),
+          );
+        };
         const promise = handleAgentApp(
           source,
           payload.requestId,
           payload.action,
           payload.input,
           {
-            start: async (launch, id, placement) => {
+            start: async (launch, id, placement, notifyFamiliarId) => {
+              const rememberLaunch = () => {
+                const created =
+                  sessionsRef.current.find((session) => session.id === id) ??
+                  existing;
+                rememberSession({
+                  sessionId: id,
+                  cwd: created?.cwd ?? launch.cwd,
+                  title: created?.title ?? launch.prompt.trim().slice(0, 300),
+                  harness: created?.harness ?? launch.harness,
+                  model:
+                    created?.model ??
+                    resolveModel(launch.harness, launch.model).id,
+                });
+              };
               const open = sessionsRef.current.find(
                 (session) => session.id === id,
               );
@@ -8796,23 +10491,50 @@ function Workspace({
                   throw new Error(
                     "Request ID was already used for another session launch",
                   );
+                rememberLaunch();
                 return;
               }
               if (
                 existing?.blocks.some(
                   (block) => block.role === "user" && !block.draft,
                 )
-              )
+              ) {
+                rememberLaunch();
                 return;
+              }
               if (existing && sessionDraftBlock(existing))
                 throw new Error("Session ID already has a different draft");
-              await launchQuickSessionRef.current(launch, id, placement);
+              const onSettled = notifyFamiliarId
+                ? monitorCompletion(
+                    notifyFamiliarId,
+                    id,
+                    id,
+                    launch.cwd,
+                    launch.prompt,
+                  )
+                : undefined;
+              try {
+                // A Familiar's sessions open from its chat, not as workspace
+                // tabs, unless it places one beside an open pane.
+                await launchQuickSessionRef.current(
+                  launch,
+                  id,
+                  placement,
+                  onSettled,
+                  !isFamiliarSession(source.id) || !!placement,
+                );
+                rememberLaunch();
+                onSettled?.accept();
+              } catch (error) {
+                onSettled?.discard();
+                throw error;
+              }
             },
             sessions: async (cwd): Promise<AppSessionListing[]> => {
               const stored = await listSessionsByProject(cwd);
               const byId = new Map<string, AppSessionListing>();
               for (const session of stored) {
-                if (session.orchestrationLeadId) continue;
+                if (session.orchestrationLeadId || session.taskCardId) continue;
                 byId.set(session.id, {
                   id: session.id,
                   title: session.title,
@@ -8820,11 +10542,14 @@ function Workspace({
                   model: session.model,
                   busy: false,
                   hasDraft: !!session.draft,
+                  archived: !!session.archived,
                 });
               }
               for (const session of sessionsRef.current) {
                 if (
                   session.orchestrationLeadId ||
+                  session.taskCardId ||
+                  isHabitRun(session.id) ||
                   !sameProjectPath(session.cwd, cwd)
                 )
                   continue;
@@ -8835,6 +10560,7 @@ function Workspace({
                   model: session.model,
                   busy: !!session.busy,
                   hasDraft: !!sessionDraftBlock(session),
+                  archived: byId.get(session.id)?.archived ?? false,
                 });
               }
               return [...byId.values()];
@@ -8845,19 +10571,35 @@ function Workspace({
                 (await getSession(id));
               return target &&
                 !target.orchestrationLeadId &&
-                sameProjectPath(target.cwd, source.cwd)
+                canAccessProject(target.cwd)
                 ? target
                 : null;
             },
-            send: async (id, prompt, requestId) => {
+            readConversation: async (target, options) =>
+              isFamiliarSession(target.id)
+                ? readFamiliarConversation(target, options)
+                : sessionConversationPage(target, options),
+            send: async (id, prompt, requestId, notifyFamiliarId) => {
               const target = await ensureOpenSessionRef.current(id);
               if (
                 !target ||
                 target.orchestrationLeadId ||
-                !sameProjectPath(target.cwd, source.cwd) ||
+                !canAccessProject(target.cwd) ||
                 orchestrator.run(id)
               )
                 throw new Error("Session is unavailable in this project");
+              const rememberFollowUp = () => {
+                const current =
+                  sessionsRef.current.find((session) => session.id === id) ??
+                  target;
+                rememberSession({
+                  sessionId: id,
+                  cwd: current.cwd,
+                  title: current.title,
+                  harness: current.harness,
+                  model: current.model,
+                });
+              };
               const previous = target.blocks.find(
                 (block) => block.appRequestId === requestId,
               );
@@ -8868,6 +10610,7 @@ function Workspace({
                   );
                 if (previous.draft)
                   throw new Error("Request ID belongs to an unsent draft");
+                rememberFollowUp();
                 return { alreadySubmitted: true };
               }
               if (target.busy)
@@ -8876,11 +10619,35 @@ function Workspace({
                 throw new Error(
                   "Session already has a draft; send or remove it first",
                 );
-              const accepted = await submitSessionRef.current(id, prompt, [], {
-                appRequestId: requestId,
-              });
-              if (!accepted)
+              const onSettled = notifyFamiliarId
+                ? monitorCompletion(
+                    notifyFamiliarId,
+                    id,
+                    requestId,
+                    target.cwd,
+                    prompt,
+                  )
+                : undefined;
+              const accepted = onSettled
+                ? await submitWithSettlement({
+                    submit: (onSettled) =>
+                      submitSessionRef.current(id, prompt, [], {
+                        appRequestId: requestId,
+                        onSettled,
+                      }),
+                    onSettled,
+                    rejectionMessage:
+                      "The monitored follow-up could not start.",
+                  })
+                : await submitSessionRef.current(id, prompt, [], {
+                    appRequestId: requestId,
+                  });
+              if (!accepted) {
+                onSettled?.discard();
                 throw new Error("Session could not accept the follow-up");
+              }
+              rememberFollowUp();
+              onSettled?.accept();
               return { alreadySubmitted: false };
             },
             draft: async (id, prompt, requestId) => {
@@ -8888,7 +10655,7 @@ function Workspace({
               if (
                 !target ||
                 target.orchestrationLeadId ||
-                !sameProjectPath(target.cwd, source.cwd) ||
+                !canAccessProject(target.cwd) ||
                 orchestrator.run(id)
               )
                 throw new Error("Session is unavailable in this project");
@@ -8914,6 +10681,54 @@ function Workspace({
               if (!saved) throw new Error("Session could not accept a draft");
               return { alreadySaved: false, draft: true };
             },
+            stop: async (id) => {
+              if (
+                removingSessionIds.current.has(id) ||
+                switchingWorktrees.current.has(id)
+              )
+                throw new Error(
+                  "Session is being removed or changing worktrees",
+                );
+              const target = sessionsRef.current.find(
+                (session) => session.id === id,
+              );
+              if (!target) {
+                dismissCompletion(id);
+                return;
+              }
+              if (
+                target.orchestrationLeadId ||
+                !canAccessProject(target.cwd) ||
+                isFamiliarSession(id) ||
+                isHabitRun(id)
+              )
+                throw new Error("Session is unavailable in this project");
+              await flushSync(() => stopSessionRef.current(id));
+              flushHarnessEvents();
+              dismissCompletion(id);
+            },
+            remove: async (id, mode) => {
+              const target = await ensureOpenSessionRef.current(id);
+              if (
+                !target ||
+                target.orchestrationLeadId ||
+                !canAccessProject(target.cwd) ||
+                isFamiliarSession(id) ||
+                isHabitRun(id)
+              )
+                throw new Error("Session is unavailable in this project");
+              const removed = await removeSessionRef.current(
+                id,
+                mode,
+                true,
+                "cli",
+              );
+              if (!removed)
+                throw new Error(
+                  `Session could not be ${mode === "archive" ? "archived" : "deleted"}; another session operation is in progress`,
+                );
+              dismissCompletion(id);
+            },
             worktrees: (cwd) => listWorktrees(cwd),
             createWorktree: (cwd, branch, base, existing) =>
               createWorktree(cwd, branch, base, existing),
@@ -8924,6 +10739,62 @@ function Workspace({
               window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
               return saved;
             },
+            artifacts: () => invoke("artifacts_list"),
+            artifact: getArtifact,
+            saveArtifact,
+            postArtifact: async (sessionId, card) => {
+              const latest = sessionsRef.current.find(
+                (session) => session.id === sessionId,
+              );
+              const anchor =
+                sourceTurnId ??
+                latest?.blocks
+                  .slice()
+                  .reverse()
+                  .find((block) => block.role === "user")?.id;
+              if (
+                !latest ||
+                !anchor ||
+                !latest.blocks.some((block) => block.id === anchor)
+              )
+                throw new Error(
+                  "The artifact's conversation turn is no longer available",
+                );
+              const updated = recordArtifactCard(latest, anchor, card);
+              sessionsRef.current = sessionsRef.current.map((session) =>
+                session.id === sessionId ? updated : session,
+              );
+              setSessions(sessionsRef.current);
+              if (!isHabitRun(sessionId)) await upsertSession(updated);
+            },
+            board: taskBoardRef.current,
+            isFamiliar: (id) => isFamiliarSession(id),
+            isHabitRun: (id) => isHabitRun(id),
+            familiarOf: (id) => {
+              const familiar =
+                familiarForSession(id) ?? findFamiliar(habitRunFamiliar(id) ?? "");
+              return (
+                familiar && {
+                  id: familiar.id,
+                  projects: familiar.projects,
+                  showStartedSessionsInSidebar:
+                    familiar.showStartedSessionsInSidebar,
+                  ...(familiar.useSidebarFolders
+                    ? {
+                        folder: {
+                          name: familiarLook(familiar).name,
+                          color: familiar.color,
+                        },
+                      }
+                    : {}),
+                }
+              );
+            },
+            habits: { load: loadHabits, update: updateHabits },
+            agentFiles: (familiarId) => loadFamiliarFiles(familiarId),
+            readAgentFile: (familiarId, path) => readAgentFile(familiarId, path),
+            writeAgentFile: (familiarId, path, text, hash) =>
+              writeAgentFile(familiarId, path, text, hash),
           },
         );
         appReceipts.current.set(key, { signature, promise });
@@ -9180,11 +11051,12 @@ function Workspace({
     [history, sidebarCwd],
   );
 
-  const sidebarHistory = useMemo(
+  const sidebarHistoryRows = useMemo(
     () =>
       historyWithLiveSessions(
         history,
-        sessions,
+        // A habit's hidden run is never one of the project's chats.
+        promptableSessions,
         sidebarCwd,
         {
           ...(projectBranches?.current
@@ -9196,7 +11068,17 @@ function Workspace({
         },
         orchestrationRuns,
       ),
-    [history, projectBranches, sessions, sidebarCwd, orchestrationRuns],
+    [
+      history,
+      projectBranches,
+      promptableSessions,
+      sidebarCwd,
+      orchestrationRuns,
+    ],
+  );
+  const sidebarHistory = useStableValue(
+    sidebarHistoryRows,
+    sameSessionSummaries,
   );
   const {
     unseen: inboxUnseen,
@@ -9239,12 +11121,13 @@ function Workspace({
     () => ciRepairSessions(history, sessions),
     [history, sessions],
   );
-  const openProjectSessions = useMemo(
+  const openProjectSessionRows = useMemo(
     () =>
       sessions
         .filter(
           (session) =>
             !session.inboxAsk &&
+            !session.ephemeral &&
             !session.orchestrationLeadId &&
             sameProjectPath(session.cwd, sidebarCwd),
         )
@@ -9259,6 +11142,10 @@ function Workspace({
           }),
         ),
     [projectBranches, sessions, sidebarCwd],
+  );
+  const openProjectSessions = useStableValue(
+    openProjectSessionRows,
+    sameSessionSummaries,
   );
 
   const onToggleSidebar = useCallback(() => {
@@ -9486,6 +11373,7 @@ function Workspace({
   }, []);
 
   const {
+    onOpenLocalSurface,
     onOpenKnowledge,
     onLeaveLocalSurface,
     onOpenHomeSession,
@@ -9503,6 +11391,7 @@ function Workspace({
     sessionsRef,
     history,
     onSelectHistorySession,
+    railBadges,
   });
 
   const onOpenAutomationSession = useCallback(
@@ -9639,10 +11528,16 @@ function Workspace({
       setAutomationsViewOpen(false);
       return;
     }
+    if (familiarViewIdRef.current) {
+      closeFamiliarView();
+      setComposerFocused(true);
+      return;
+    }
     onVisitBack();
   }, [
     onCloseSettings,
     onVisitBack,
+    closeFamiliarView,
     searchViewOpen,
     settingsOpen,
     inboxViewOpen,
@@ -9778,12 +11673,23 @@ function Workspace({
     [onSelectProject],
   );
 
+  const onOpenBoardCard = useCallback(
+    (cardId: string) => {
+      requestBoardFocus(cardId);
+      onOpenLocalSurface("board");
+    },
+    [onOpenLocalSurface],
+  );
+  const onOpenUsageSurface = useCallback(
+    () => onOpenLocalSurface("usage"),
+    [onOpenLocalSurface],
+  );
   const actions = useRef({
-    onNew,
+    onNewFocused,
     onArchiveFocusedSession,
     onCloseOtherTabs,
     onCloseAllTabs,
-    onClosePane,
+    onCloseFocused,
     onNext,
     onPrev,
     onVisitBack,
@@ -9793,6 +11699,7 @@ function Workspace({
     onFocusDir,
     onToggleSidebar,
     onToggleSessionSidebar,
+    onToggleFamiliar,
     onGoToFile,
     onOpenCommandPalette,
     onReload,
@@ -9808,13 +11715,14 @@ function Workspace({
     onNavigateProjectList,
     openSettings,
     onOpenApprovalSession,
+    onOpenBoardCard,
   });
   actions.current = {
-    onNew,
+    onNewFocused,
     onArchiveFocusedSession,
     onCloseOtherTabs,
     onCloseAllTabs,
-    onClosePane,
+    onCloseFocused,
     onNext,
     onPrev,
     onVisitBack,
@@ -9824,6 +11732,7 @@ function Workspace({
     onFocusDir,
     onToggleSidebar,
     onToggleSessionSidebar,
+    onToggleFamiliar,
     onGoToFile,
     onOpenCommandPalette,
     onReload,
@@ -9839,6 +11748,7 @@ function Workspace({
     onNavigateProjectList,
     openSettings,
     onOpenApprovalSession,
+    onOpenBoardCard,
   };
 
   const debounce = useRef({ name: "", at: 0 });
@@ -9876,6 +11786,9 @@ function Workspace({
       // A rebound zoom chord may be Option-only, so it is resolved outside the
       // Cmd/Ctrl guard that only the browser-standard defaults need.
       const zoom = resolveZoomKeybinding(e);
+      // An image preview under the pointer zooms the image instead; its own
+      // listener runs next.
+      if (zoom && document.querySelector("[data-image-zoom]")) return;
       if (zoom) {
         e.preventDefault();
         e.stopPropagation();
@@ -9964,11 +11877,11 @@ function Workspace({
         e.preventDefault();
         e.stopPropagation();
         const a = actions.current;
-        if (cmd === "new") run("new", a.onNew);
+        if (cmd === "new") run("new", a.onNewFocused);
         else if (cmd === "close-others")
           run("close-others", a.onCloseOtherTabs);
         else if (cmd === "close-all") run("close-all", a.onCloseAllTabs);
-        else if (cmd === "close") run("close", a.onClosePane);
+        else if (cmd === "close") run("close", a.onCloseFocused);
         else if (cmd === "next") run("next", a.onNext);
         else if (cmd === "prev") run("prev", a.onPrev);
         else if (cmd === "cycle-next") run("next", a.onNext);
@@ -10038,6 +11951,8 @@ function Workspace({
           run("toggle_sidebar", a.onToggleSidebar);
         else if (shortcut === "App: Toggle Session Sidebar")
           run("toggle_session_sidebar", a.onToggleSessionSidebar);
+        else if (shortcut === "App: Toggle Familiar")
+          run("toggle_familiar", a.onToggleFamiliar);
         else if (shortcut === "App: Go to File")
           run("go_to_file", a.onGoToFile);
         else if (shortcut === "App: Command Palette")
@@ -10057,14 +11972,14 @@ function Workspace({
 
   useEffect(() => {
     const unlisten: Array<Promise<() => void>> = [
-      listen("new_tab", () => run("new", actions.current.onNew)),
+      listen("new_tab", () => run("new", actions.current.onNewFocused)),
       listen("close_other_tabs", () =>
         run("close-others", actions.current.onCloseOtherTabs),
       ),
       listen("close_all_tabs", () =>
         run("close-all", actions.current.onCloseAllTabs),
       ),
-      listen("close_tab", () => run("close", actions.current.onClosePane)),
+      listen("close_tab", () => run("close", actions.current.onCloseFocused)),
       listen<boolean>("toggle_autosave", ({ payload }) => {
         const saved = saveAutosave(payload);
         if (saved !== payload && IS_MAC) {
@@ -10137,14 +12052,19 @@ function Workspace({
       }),
       // Every window hears the click; only the one holding the session acts.
       listen<string>(NOTIFICATION_CLICK_EVENT, ({ payload: sessionId }) => {
-        if (!sessionsRef.current.some((s) => s.id === sessionId)) return;
+        const boardCard = boardNoticeCard(sessionId);
+        const handled = boardCard
+          ? isMainWindow
+          : sessionsRef.current.some((s) => s.id === sessionId);
+        if (!handled) return;
         const win = getCurrentWindow();
         // Windows leaves a minimized window minimized when it is only focused.
         void win
           .unminimize()
           .then(() => win.setFocus())
           .catch(() => {});
-        actions.current.onOpenApprovalSession(sessionId);
+        if (boardCard) actions.current.onOpenBoardCard(boardCard);
+        else actions.current.onOpenApprovalSession(sessionId);
       }),
       listen("zoom_in", () => {
         const next = zoomInUiScale(loadUiScale());
@@ -10174,7 +12094,7 @@ function Workspace({
       projectCwdRef.current,
     );
     const el = dockGridRef.current;
-    if (!dock || !el) return;
+    if (!dock || !el || familiarViewIdRef.current) return;
     dockDragSize.current = size;
     applyDockGridStyle(el, dock.side, size);
   }, []);
@@ -10186,15 +12106,18 @@ function Workspace({
     [onProjectTerminalSize],
   );
   useLayoutEffect(() => {
+    if (familiarCovers) dockDragSize.current = null;
     if (dockDragSize.current != null) return;
     const el = dockGridRef.current;
     if (!el) return;
     applyDockGridStyle(
       el,
-      dockVisible && currentProjectDock ? currentProjectDock.side : null,
+      dockVisible && !familiarCovers && currentProjectDock
+        ? currentProjectDock.side
+        : null,
       currentProjectDock?.size ?? 0,
     );
-  }, [currentProjectDock, dockVisible]);
+  }, [currentProjectDock, dockVisible, familiarCovers]);
 
   const lastRemoteSnapshot = useRef(new Map<string, HostSession>());
   const onRemoteSnapshot = useCallback(
@@ -10237,6 +12160,33 @@ function Workspace({
     [openSettings],
   );
 
+  useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
+    open: (monoId) =>
+      ensureFamiliarSession(monoId, {
+        home: homeDir,
+        load: ensureOpenSession,
+        create: newDefaultSession,
+        add: (created) => {
+          sessionsRef.current = [...sessionsRef.current, created];
+          setSessions(sessionsRef.current);
+        },
+      }),
+    submit: onSubmit,
+    stop: onStop,
+    approval: onApproval,
+    question: onQuestionReply,
+    questionInteraction: onQuestionInteraction,
+    reveal: onOpenFamiliar,
+    openArtifact: async (monoId, id) => {
+      await onOpenFamiliar(monoId);
+      const sessionId = findFamiliar(monoId)?.sessionId;
+      if (sessionId) onOpenMonoArtifact(sessionId, id);
+    },
+    openFile: onOpenFile,
+    resume: onUsageLimitResume,
+    create: () => createFamiliar().id,
+  });
+
   const sessionPaneProps = {
     workspaceSwitchingSessionId: workspaceNavigation.pending
       ? active?.id
@@ -10269,6 +12219,7 @@ function Workspace({
     onUsageLimitResume,
     onUsageLimitResumeAtReset,
     onUsageLimitDismiss,
+    onUsageLimitAccountChange,
     onInboxCardDismiss,
     onLinkedWorkItemUpdateCardDismiss,
     onNoteCardDismiss,
@@ -10293,6 +12244,289 @@ function Workspace({
     onNewTerminal: onNewTerminalInSession,
   };
 
+  // Renames, mascot picks and new projects show up on the rail.
+  const familiarViewFamiliar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
+  const selectedFamiliarActivity = resolveFamiliarActivity(
+    familiarActivity,
+    familiarViewSession,
+  );
+  // The chat marks the turn whose activity the overview is showing.
+  const familiarActivityShownTurnId =
+    familiarOverviewOpen && familiarOverviewTab === "activity"
+      ? selectedFamiliarActivity?.turnId
+      : undefined;
+  const familiarViewBlocks = familiarViewSession?.blocks;
+  const familiarViewBusy = !!familiarViewSession?.busy;
+  const familiarViewCwd = familiarViewSession ? sessionWorkCwd(familiarViewSession) : "";
+  const familiarEditedPaths = useMemo(
+    () =>
+      familiarViewBlocks && !familiarViewBusy
+        ? sessionEditPaths(familiarViewBlocks)
+        : undefined,
+    [familiarViewBlocks, familiarViewBusy],
+  );
+  // The session's changes, on the overview's tab instead of under a message.
+  const familiarChangeTotals = useSessionChangeTotals(
+    familiarViewSession?.id ?? "",
+    familiarViewCwd,
+    {
+      enabled: !familiarViewSession?.worktreeRemoved,
+      busy: familiarViewBusy,
+      editedPaths: familiarEditedPaths,
+    },
+  );
+  const familiarLaunches = useMemo(
+    () => (familiarViewBlocks ? familiarSpawnedSessions(familiarViewBlocks) : []),
+    [familiarViewBlocks],
+  );
+  const familiarDocuments = useMemo(
+    () => (familiarViewBlocks ? artifactCards(familiarViewBlocks) : []),
+    [familiarViewBlocks],
+  );
+  const familiarActivityView =
+    familiarViewSession && selectedFamiliarActivity ? (
+      <FamiliarActivityView
+        key={selectedFamiliarActivity.turnId}
+        blocks={selectedFamiliarActivity.blocks}
+        live={selectedFamiliarActivity.live}
+        cwd={sessionWorkCwd(familiarViewSession)}
+        onApproval={
+          familiarViewSession.worktreeRemoved
+            ? undefined
+            : (requestId, decision) =>
+                onApproval(familiarViewSession.id, requestId, decision)
+        }
+        onOpenFile={onOpenFile}
+        onOpenDiff={onOpenDiff}
+      />
+    ) : null;
+  // Status for the cards of the sessions the open Familiar launched, rebuilt only
+  // when one changes state or title rather than on every streamed token. One
+  // that is no longer open cannot be running, so it reads as done.
+  // A card names its session as the sidebar does. One that is not open has
+  // its saved title fetched, rather than the prompt it was launched with, so
+  // opening it does not rename the card.
+  const [storedLaunchTitles, setStoredLaunchTitles] = useState<
+    ReadonlyMap<string, string>
+  >(() => new Map());
+  const unopenedLaunchesKey = JSON.stringify(
+    familiarLaunches.flatMap((launch) =>
+      storedLaunchTitles.has(launch.sessionId) ||
+      sessions.some((entry) => entry.id === launch.sessionId)
+        ? []
+        : [launch.sessionId],
+    ),
+  );
+  useEffect(() => {
+    const ids: string[] = JSON.parse(unopenedLaunchesKey);
+    if (ids.length === 0) return;
+    let current = true;
+    void Promise.all(ids.map((id) => getSession(id).catch(() => null))).then(
+      (stored) => {
+        if (!current) return;
+        setStoredLaunchTitles((previous) => {
+          const next = new Map(previous);
+          stored.forEach((session, index) =>
+            next.set(ids[index], session?.title ?? ""),
+          );
+          return next;
+        });
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [unopenedLaunchesKey]);
+  const familiarLaunchesKey = JSON.stringify(
+    familiarLaunches.map((launch) => {
+      const live = sessions.find((entry) => entry.id === launch.sessionId);
+      return live
+        ? [launch.sessionId, launchedSessionState(live), live.title]
+        : [
+            launch.sessionId,
+            "done",
+            storedLaunchTitles.get(launch.sessionId) || launch.title,
+          ];
+    }),
+  );
+  const familiarLaunchedSessions = useMemo(
+    () =>
+      new Map<string, LaunchedSessionView>(
+        (
+          JSON.parse(familiarLaunchesKey) as [
+            string,
+            LaunchedSessionState,
+            string,
+          ][]
+        ).map(([id, state, title]) => [id, { state, title }]),
+      ),
+    [familiarLaunchesKey],
+  );
+  const familiarShownSessionPane = shownFamiliarSessionId
+    ? sessions.find((session) => session.id === shownFamiliarSessionId)
+    : undefined;
+  const familiarShownSessionActive =
+    !!familiarShownSessionPane && familiarShownSessionFocused;
+  const familiarShownSessionView = familiarShownSessionPane
+    ? {
+        sessionId: familiarShownSessionPane.id,
+        title: sessionDisplayTitle(
+          familiarShownSessionPane.title,
+          familiarShownSessionPane.harness,
+        ),
+        pane: (
+          <SessionPane
+            {...sessionPaneProps}
+            session={familiarShownSessionPane}
+            // The Familiar view covers the workspace, so a review opens
+            // beside the chat rather than in a hidden tab.
+            onOpenDiff={onOpenMonoDiff}
+            // The Familiar runs this session; handing it off or asking for a
+            // second opinion belongs in its own tab.
+            onSecondOpinion={undefined}
+            onHandoff={undefined}
+            visible={familiarCovers}
+            focused={familiarShownSessionActive && !projectTerminalFocused}
+            inSplit={false}
+            addToChatTarget={false}
+            composerFocused={
+              familiarShownSessionActive &&
+              composerFocused &&
+              !projectTerminalFocused
+            }
+            composerFocusToken={composerFocusToken}
+          />
+        ),
+      }
+    : undefined;
+  const familiarOverviewPanel =
+    familiarViewFamiliar && familiarViewSession ? (
+      <FamiliarOverview
+        key={familiarViewFamiliar.id}
+        open={familiarOverviewOpen}
+        familiarId={familiarViewFamiliar.id}
+        cwd={familiarViewSession.cwd}
+        agent={familiarLook(familiarViewFamiliar)}
+        state={familiarState(familiarViewSession)}
+        launches={familiarLaunches}
+        sessions={sessions}
+        history={history}
+        documents={familiarDocuments}
+        activity={familiarActivityView}
+        changes={{
+          sessionId: familiarViewSession.id,
+          cwd: familiarViewCwd,
+          totals: familiarChangeTotals,
+          request: familiarChangesRequest,
+          textHarness: familiarViewSession.harness,
+          projects: familiarViewFamiliar.projects,
+        }}
+        tab={familiarOverviewTab}
+        onTabChange={setFamiliarOverviewTab}
+        onOpenSession={(sessionId) =>
+          showFamiliarLaunchedSession(familiarViewSession.id, sessionId)
+        }
+        shownSession={familiarShownSessionView}
+        // Back lands on every session it started.
+        onBackFromSession={() => {
+          setFamiliarShownSession(null);
+          setFamiliarShownSessionFocused(false);
+        }}
+        onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
+        onOpenDocument={(id) => {
+          setFamiliarShownSession(null);
+          setFamiliarOverviewDocument(id);
+        }}
+        shownDocumentId={familiarOverviewDocument ?? undefined}
+        onBackFromDocument={() => setFamiliarOverviewDocument(null)}
+        onOpenFile={onOpenFile}
+        onClose={() => setFamiliarOverviewOpen(false)}
+        windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
+      />
+    ) : null;
+  const familiarSettingsDialog =
+    familiarCovers &&
+    familiarViewFamiliar &&
+    familiarViewSession &&
+    familiarSettingsFor === familiarViewFamiliar.id ? (
+      <FamiliarSettingsDialog
+        key={familiarViewFamiliar.id}
+        familiarId={familiarViewFamiliar.id}
+        agent={familiarLook(familiarViewFamiliar)}
+        status={familiarState(familiarViewSession).status}
+        cwd={familiarViewSession.cwd}
+        harness={familiarViewSession.harness}
+        model={familiarViewSession.model}
+        modelSettings={familiarViewSession.modelSettings}
+        runtimeMode={familiarViewSession.runtimeMode}
+        busy={!!familiarViewSession.busy}
+        onModelChange={(harness, model) =>
+          onModelChange(familiarViewSession.id, harness, model)
+        }
+        onModelSettingsChange={(settings) =>
+          onModelSettingsChange(familiarViewSession.id, settings)
+        }
+        onRuntimeModeChange={(mode) =>
+          onRuntimeModeChange(familiarViewSession.id, mode)
+        }
+        onReset={() => onResetFamiliar(familiarViewSession.id)}
+        onClose={() => setFamiliarSettingsFor(null)}
+      />
+    ) : null;
+  const familiarRailState = useMemo(() => {
+    const states = new Map<string, FamiliarState>();
+    const unseen = new Map<string, number>();
+    for (const familiar of listFamiliars()) {
+      const session = familiar.sessionId
+        ? sessions.find((entry) => entry.id === familiar.sessionId)
+        : undefined;
+      if (session) states.set(familiar.id, familiarState(session));
+      const count = familiar.sessionId
+        ? familiarReplies.counts.get(familiar.sessionId)
+        : undefined;
+      if (count) unseen.set(familiar.id, count);
+    }
+    return { states, unseen };
+    // The roster is read through its snapshot.
+  }, [familiarsSnap, sessions, familiarReplies.counts]);
+  const familiarRail = useStableValue(familiarRailState);
+  const busyProjectPaths = useStableValue(
+    promptableSessions.flatMap((session) =>
+      session.busy && session.cwd ? [session.cwd] : [],
+    ),
+  );
+  const onOpenRailFamiliar = useCallback(
+    (familiarId: string) => void onOpenFamiliar(familiarId),
+    [onOpenFamiliar],
+  );
+  const onDeleteRailFamiliar = useCallback(
+    (familiarId: string) => void onDeleteFamiliar(familiarId),
+    [onDeleteFamiliar],
+  );
+  // The memoized sidebar only skips a streamed batch if this keeps identity.
+  const sidebarFamiliars = useMemo(
+    () =>
+      familiarsEnabled
+        ? {
+            activeId: familiarViewFamiliar?.id,
+            states: familiarRail.states,
+            unseenCounts: familiarRail.unseen,
+            onOpen: onOpenRailFamiliar,
+            onCreate: onCreateFamiliar,
+            onDelete: onDeleteRailFamiliar,
+          }
+        : undefined,
+    [
+      familiarsEnabled,
+      familiarViewFamiliar?.id,
+      familiarRail,
+      onOpenRailFamiliar,
+      onCreateFamiliar,
+      onDeleteRailFamiliar,
+    ],
+  );
+  const onDismissUpdate = useCallback(() => setUpdateNotice(null), []);
+
   const chromeSurfaceOpen =
     searchViewOpen ||
     settingsOpen ||
@@ -10301,23 +12535,42 @@ function Workspace({
     automationsViewOpen;
   const compactProjectRail = collapsedProjectRailMode === "compact";
   const compactRailActive = compactProjectRail && !projectRailOpen;
-  const compactTitleBar = IS_MAC && compactRailActive && !chromeSurfaceOpen;
+  const compactTitleNavigation =
+    IS_MAC && compactRailActive && !chromeSurfaceOpen;
+  const compactTitleBar = compactTitleNavigation && !familiarCovers;
   const workspaceTitleBar = (
     <TitleBar
-      tabs={titleTabs}
-      activeId={activeTabId}
+      // A Familiar in full view stands apart from the project's tabs.
+      tabs={familiarCovers ? NO_TITLE_TABS : titleTabs}
+      familiar={
+        familiarCovers && familiarViewFamiliar && familiarViewSession
+          ? { look: familiarLook(familiarViewFamiliar), state: familiarState(familiarViewSession) }
+          : undefined
+      }
+      onToggleFamiliarOverview={
+        familiarCovers
+          ? () => setFamiliarOverviewOpen(!familiarOverviewOpen)
+          : undefined
+      }
+      familiarOverviewOpen={familiarOverviewOpen}
+      onOpenFamiliarSettings={
+        familiarCovers && familiarViewFamiliar
+          ? () => setFamiliarSettingsFor(familiarViewFamiliar.id)
+          : undefined
+      }
+      hideWindowControls={familiarCovers && familiarOverviewOpen && !!familiarOverviewPanel}
+      activeId={familiarViewSession ? "" : activeTabId}
       cwd={sidebarCwd}
       projectRailOpen={projectRailOpen}
       sessionSidebarOpen={sessionSidebarOpen}
-      compactRail={compactTitleBar}
-      canGoBack={tabVisitNav.canBack}
+      compactRail={compactTitleNavigation}
+      canGoBack={!!familiarViewId || tabVisitNav.canBack}
       canGoForward={tabVisitNav.canForward}
       onGoBack={onRailBack}
       onGoForward={onRailForward}
       onToggleSidebar={onToggleSidebar}
       onToggleSessionSidebar={onToggleSessionSidebar}
       onSelect={activateTab}
-      onNew={onNew}
       onNewTerminal={onNewTerminal}
       onOpenSettings={onOpenSettings}
       onOpenInbox={onOpenInbox}
@@ -10328,7 +12581,6 @@ function Workspace({
       onDeleteTab={onDeleteTitleTab}
       onReorder={onReorderTabs}
       onPlaceOnPane={onPlaceTabOnPane}
-      onGoToFile={onGoToFile}
       onPinFile={onPinFile}
       recents={recents}
       onSelectProject={onSelectProject}
@@ -10339,8 +12591,10 @@ function Workspace({
     <OrchestrationActions.Provider value={orchestrationActions}>
       <OrchestrationWorkers.Provider value={orchestrationWorkers}>
         <div
-          className={`flex h-full flex-col text-content ${
-            HAS_NATIVE_GLASS ? "bg-background-base/40" : "bg-background-base"
+          className={`workspace-background flex h-full flex-col text-content ${
+            HAS_NATIVE_GLASS
+              ? "bg-background-base/[var(--window-background-opacity)]"
+              : "bg-background-base"
           }`}
         >
           {compactTitleBar ? workspaceTitleBar : null}
@@ -10369,7 +12623,7 @@ function Workspace({
               sessions={sidebarHistory}
               busySessionIds={busySessionIds}
               approvalSessionIds={approvalSessionIds}
-              activeSessionId={active?.id}
+              activeSessionId={activeSessionId}
               status={historyFailed ? "error" : "idle"}
               pending={historyPending}
               onSelectSession={onSelectHistorySession}
@@ -10394,6 +12648,7 @@ function Workspace({
               onFileMoved={onFileMoved}
               onFileDeleted={onFileDeleted}
               canGoBack={
+                !!familiarViewId ||
                 tabVisitNav.canBack ||
                 searchViewOpen ||
                 settingsOpen ||
@@ -10418,14 +12673,15 @@ function Workspace({
               }
               textHarness={pickTextHarness(active?.harness)}
               recents={recents}
-              busyProjectPaths={sessions.flatMap((session) =>
-                session.busy && session.cwd ? [session.cwd] : [],
-              )}
+              busyProjectPaths={busyProjectPaths}
               liveAgents={liveAgents}
               onSelectAgent={onSelectLiveAgent}
+              onStopAgent={onCloseLiveAgent}
               onSelectProject={onSelectProject}
               onOpenProject={pickProject}
               onRemoveProject={onRemoveProject}
+              familiars={sidebarFamiliars}
+              familiarViewActive={familiarCovers}
               onNew={onNew}
               openSessions={openProjectSessions}
               onNewTerminal={onNewTerminal}
@@ -10460,7 +12716,7 @@ function Workspace({
               onCloseSettings={onCloseSettings}
               updateNotice={updateNotice}
               onOpenWhatsNew={onOpenWhatsNew}
-              onDismissUpdate={() => setUpdateNotice(null)}
+              onDismissUpdate={onDismissUpdate}
             />
 
             <div className="body-glass flex min-h-0 min-w-0 flex-1 flex-col">
@@ -10523,139 +12779,213 @@ function Workspace({
                     }}
                   />
                 ) : null}
-                {compactTitleBar ? null : workspaceTitleBar}
+                <div className="flex min-h-0 min-w-0 flex-1">
+                  <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    {compactTitleBar ? null : workspaceTitleBar}
 
-                <main className="relative flex min-h-0 min-w-0 flex-1">
-                  <div
-                    ref={dockGridRef}
-                    className="grid h-full min-h-0 min-w-0 flex-1"
-                  >
-                    {projectTerminals.map((dock) => {
-                      const show =
-                        dock.open &&
-                        sameProjectPath(dock.projectPath, projectCwd);
-                      return (
-                        <div
-                          key={dock.projectPath}
-                          className={
-                            show
-                              ? "h-full min-h-0 min-w-0 w-full overflow-hidden"
-                              : "hidden"
-                          }
-                          style={show ? { gridArea: "dock" } : undefined}
-                          aria-hidden={!show}
-                        >
-                          <ProjectTerminalDock
-                            dock={dock}
-                            focused={show && projectTerminalFocused}
-                            onFocus={focusProjectTerminal}
-                            onHide={onHideProjectTerminal}
-                            onSideChange={onProjectTerminalSide}
-                            onSizePaint={paintDockSize}
-                            onSizeCommit={commitDockSize}
-                            onAddTerminal={onNewTerminal}
-                            onSelectTerminal={onSelectProjectTerminal}
-                            onCloseTerminal={onCloseProjectTerminal}
-                            onCloseOtherTerminals={onCloseOtherProjectTerminals}
-                            onReorderTerminals={onReorderProjectTerminals}
-                            onTerminalMetaChange={onTerminalMetaChange}
-                          />
-                        </div>
-                      );
-                    })}
-                    <div
-                      className="relative flex min-h-0 min-w-0 flex-row"
-                      style={{ gridArea: "main" }}
-                    >
-                      <div className="relative min-h-0 min-w-0 flex-1">
-                        {tabs.map((tab) => (
-                          <div
-                            key={tab.id}
-                            aria-hidden={tab.id !== activeTabId}
-                            className={
-                              tab.id === activeTabId
-                                ? "absolute inset-0 flex h-full min-h-0 flex-col"
-                                : "hidden"
-                            }
-                          >
-                            <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-                              <PaneTree
-                                {...sessionPaneProps}
-                                visible={
-                                  tab.id === activeTabId && !inboxViewOpen
+                    <main className="relative flex min-h-0 min-w-0 flex-1">
+                      <div
+                        ref={dockGridRef}
+                        className="grid h-full min-h-0 min-w-0 flex-1"
+                      >
+                        {projectTerminals.map((dock) => {
+                          const show =
+                            dock.open &&
+                            !familiarCovers &&
+                            sameProjectPath(dock.projectPath, projectCwd);
+                          return (
+                            <div
+                              key={dock.projectPath}
+                              className={
+                                show
+                                  ? "h-full min-h-0 min-w-0 w-full overflow-hidden"
+                                  : "hidden"
+                              }
+                              style={show ? { gridArea: "dock" } : undefined}
+                              aria-hidden={!show}
+                            >
+                              <ProjectTerminalDock
+                                dock={dock}
+                                focused={show && projectTerminalFocused}
+                                onFocus={focusProjectTerminal}
+                                onHide={onHideProjectTerminal}
+                                onSideChange={onProjectTerminalSide}
+                                onSizePaint={paintDockSize}
+                                onSizeCommit={commitDockSize}
+                                onAddTerminal={onNewTerminal}
+                                onSelectTerminal={onSelectProjectTerminal}
+                                onCloseTerminal={onCloseProjectTerminal}
+                                onCloseOtherTerminals={
+                                  onCloseOtherProjectTerminals
                                 }
-                                layout={tab.layout}
-                                sessions={sessions}
-                                editorPanes={[
-                                  ...tab.editorPanes,
-                                  ...(tab.terminalPanes ?? []),
-                                ]}
-                                dirtyFileIds={dirtyFiles}
-                                fileErrorCounts={fileErrorCounts}
-                                focusedId={
-                                  tab.id === activeTabId &&
-                                  !inboxViewOpen &&
-                                  !tab.diffFocused &&
-                                  !projectTerminalFocused
-                                    ? tab.focusedId
-                                    : ""
-                                }
-                                addToChatSessionId={
-                                  tab.id === activeTabId
-                                    ? active?.id
-                                    : undefined
-                                }
-                                composerFocused={
-                                  composerFocused && !projectTerminalFocused
-                                }
-                                composerFocusToken={composerFocusToken}
-                                onSelectFile={onSelectFileSurface}
-                                onCloseFile={onCloseFile}
-                                onCloseOtherFiles={onCloseOtherFiles}
-                                onPinFile={onPinFile}
-                                onReorderFiles={onReorderFiles}
-                                onFileDirtyChange={onFileDirtyChange}
-                                onFileErrorCountChange={onFileErrorCountChange}
-                                transcriptPool={transcriptPool}
-                                onRatio={(splitId, index, ratio) =>
-                                  onRatio(tab.id, splitId, index, ratio)
-                                }
-                                editorNavigation={editorNavigation}
-                                onUpdatePlan={onUpdatePlan}
-                                onMovePane={onMovePane}
-                                onDetachPane={onDetachPane}
+                                onReorderTerminals={onReorderProjectTerminals}
                                 onTerminalMetaChange={onTerminalMetaChange}
                               />
                             </div>
+                          );
+                        })}
+                        <div
+                          className="relative flex min-h-0 min-w-0 flex-row"
+                          style={{ gridArea: "main" }}
+                        >
+                          <div className="relative min-h-0 min-w-0 flex-1">
+                            {tabs.map((tab) => (
+                              <div
+                                key={tab.id}
+                                aria-hidden={
+                                  tab.id !== activeTabId || familiarCovers
+                                }
+                                className={
+                                  tab.id === activeTabId && !familiarCovers
+                                    ? "absolute inset-0 flex h-full min-h-0 flex-col"
+                                    : "hidden"
+                                }
+                              >
+                                <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+                                  <PaneTree
+                                    {...sessionPaneProps}
+                                    visible={
+                                      tab.id === activeTabId &&
+                                      !inboxViewOpen &&
+                                      !familiarCovers
+                                    }
+                                    layout={tab.layout}
+                                    sessions={sessions}
+                                    editorPanes={[
+                                      ...tab.editorPanes,
+                                      ...(tab.terminalPanes ?? []),
+                                    ]}
+                                    dirtyFileIds={dirtyFiles}
+                                    fileErrorCounts={fileErrorCounts}
+                                    focusedId={
+                                      tab.id === activeTabId &&
+                                      !familiarViewId &&
+                                      !inboxViewOpen &&
+                                      !tab.diffFocused &&
+                                      !projectTerminalFocused
+                                        ? tab.focusedId
+                                        : ""
+                                    }
+                                    addToChatSessionId={
+                                      tab.id === activeTabId
+                                        ? active?.id
+                                        : undefined
+                                    }
+                                    composerFocused={
+                                      composerFocused &&
+                                      !projectTerminalFocused &&
+                                      !familiarViewId
+                                    }
+                                    composerFocusToken={composerFocusToken}
+                                    onSelectFile={onSelectFileSurface}
+                                    onCloseFile={onCloseFile}
+                                    onCloseOtherFiles={onCloseOtherFiles}
+                                    onPinFile={onPinFile}
+                                    onReorderFiles={onReorderFiles}
+                                    onFileDirtyChange={onFileDirtyChange}
+                                    onFileErrorCountChange={
+                                      onFileErrorCountChange
+                                    }
+                                    transcriptPool={transcriptPool}
+                                    onRatio={(splitId, index, ratio) =>
+                                      onRatio(tab.id, splitId, index, ratio)
+                                    }
+                                    editorNavigation={editorNavigation}
+                                    onUpdatePlan={onUpdatePlan}
+                                    onMovePane={onMovePane}
+                                    onDetachPane={onDetachPane}
+                                    onTerminalMetaChange={onTerminalMetaChange}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                            {sessions
+                              .filter((session) => isFamiliarSession(session.id))
+                              .map((session) => {
+                                const visible = familiarViewId === session.id;
+                                return (
+                                  <div
+                                    key={session.id}
+                                    data-familiar-view={session.id}
+                                    aria-hidden={!visible}
+                                    inert={!visible || undefined}
+                                    className={
+                                      visible
+                                        ? "absolute inset-0 flex h-full min-h-0 flex-col"
+                                        : "hidden"
+                                    }
+                                  >
+                                    <SessionPane
+                                      {...sessionPaneProps}
+                                      session={session}
+                                      visible={visible}
+                                      focused={
+                                        visible &&
+                                        !projectTerminalFocused &&
+                                        !familiarShownSessionActive
+                                      }
+                                      inSplit={false}
+                                      addToChatTarget={visible}
+                                      composerFocused={
+                                        visible &&
+                                        composerFocused &&
+                                        !projectTerminalFocused &&
+                                        !familiarShownSessionActive
+                                      }
+                                      composerFocusToken={composerFocusToken}
+                                      onShowFamiliarActivity={onShowFamiliarActivity}
+                                      onOpenArtifact={onOpenMonoArtifact}
+                                      onOpenDiff={onOpenMonoDiff}
+                                      onCommitChanges={onCommitMonoChanges}
+                                      familiarActivityTurnId={
+                                        familiarActivityShownTurnId
+                                      }
+                                      onOpenFamiliarSession={onOpenFamiliarSession}
+                                      familiarLaunchedSessions={
+                                        visible
+                                          ? familiarLaunchedSessions
+                                          : undefined
+                                      }
+                                      openFamiliarSessionId={shownFamiliarSessionId}
+                                    />
+                                  </div>
+                                );
+                              })}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
+                      {[...linkedWorkItemPanels.values()].map((panel) => (
+                        <LinkedWorkItemPanel
+                          repairSessions={repairSessions}
+                          onRepairChecks={onRepairChecks}
+                          onOpenSession={(sessionId) => {
+                            closeLinkedWorkItemPanel(panel.sessionId);
+                            onOpenInboxSession(sessionId);
+                          }}
+                          key={panel.sessionId}
+                          target={panel.item}
+                          cwd={panel.cwd}
+                          recents={recents}
+                          visible={
+                            !searchViewOpen &&
+                            !settingsOpen &&
+                            !inboxViewOpen &&
+                            !notesViewOpen &&
+                            !automationsViewOpen &&
+                            !familiarViewId &&
+                            activeLinkedWorkItemPanel?.sessionId ===
+                              panel.sessionId
+                          }
+                          onClose={() =>
+                            closeLinkedWorkItemPanel(panel.sessionId)
+                          }
+                        />
+                      ))}
+                    </main>
                   </div>
-                  {[...linkedWorkItemPanels.values()].map((panel) => (
-                    <LinkedWorkItemPanel
-                      repairSessions={repairSessions}
-                      onRepairChecks={onRepairChecks}
-                      onOpenSession={(sessionId) => {
-                        closeLinkedWorkItemPanel(panel.sessionId);
-                        onOpenInboxSession(sessionId);
-                      }}
-                      key={panel.sessionId}
-                      target={panel.item}
-                      cwd={panel.cwd}
-                      recents={recents}
-                      visible={
-                        !searchViewOpen &&
-                        !settingsOpen &&
-                        !inboxViewOpen &&
-                        !notesViewOpen &&
-                        !automationsViewOpen &&
-                        activeLinkedWorkItemPanel?.sessionId === panel.sessionId
-                      }
-                      onClose={() => closeLinkedWorkItemPanel(panel.sessionId)}
-                    />
-                  ))}
-                </main>
+                  {familiarCovers ? familiarOverviewPanel : null}
+                  {familiarSettingsDialog}
+                </div>
               </div>
               {searchViewOpen ? (
                 <SearchView
@@ -10736,10 +13066,15 @@ function Workspace({
                 besideRail={projectRailOpen || compactProjectRail}
                 compactRail={compactRailActive}
                 projectPaths={recents.map((project) => project.path)}
+                projectCwd={projectCwd}
                 onClose={onLeaveLocalSurface}
                 onToggleSidebar={onToggleSidebar}
                 onOpenSession={onOpenHomeSession}
                 onOpenAutomation={onOpenHomeAutomation}
+                onOpenAutomations={onOpenAutomations}
+                onOpenUsage={onOpenUsageSurface}
+                onOpenInbox={onOpenInbox}
+                taskBoard={taskBoard}
               />
               {automationsSurfaceOpen ? (
                 <AutomationsView
@@ -10789,7 +13124,8 @@ function Workspace({
               inboxViewOpen ||
               notesViewOpen ||
               automationsViewOpen ||
-              settingsOpen ? null : (
+              settingsOpen ||
+              familiarCovers ? null : (
                 <UsageFooter
                   providers={usageProviders}
                   session={usageSession}
@@ -10798,20 +13134,27 @@ function Workspace({
                   onManageAccounts={() =>
                     openSettings("providers", "provider-accounts")
                   }
-                  terminals={runningTerminals}
-                  terminalOpen={runningTerminalOpen}
+                  // A Familiar in full view has no terminal of its own.
+                  terminals={familiarCovers ? undefined : runningTerminals}
+                  terminalOpen={!familiarCovers && runningTerminalOpen}
                   onToggleTerminal={onToggleRunningTerminal}
                   onNewTerminal={
-                    isLocalProject(projectCwd) ? onNewTerminal : undefined
+                    !familiarCovers && isLocalProject(projectCwd)
+                      ? onNewTerminal
+                      : undefined
                   }
-                  onShowTerminal={
-                    isLocalProject(projectCwd)
-                      ? onShowProjectTerminal
+                  onToggleProjectTerminal={
+                    !familiarCovers && isLocalProject(projectCwd)
+                      ? onToggleProjectTerminal
                       : undefined
                   }
                   projectTerminalActive={
+                    !familiarCovers &&
                     !!currentProjectDock &&
                     currentProjectDock.pane.files.length > 0
+                  }
+                  projectTerminalOpen={
+                    !familiarCovers && !!currentProjectDock?.open
                   }
                 />
               )}

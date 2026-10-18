@@ -11,6 +11,11 @@ export type NoteCardMeta = {
 /** Composer chip: display fields plus the body injected into the harness prompt. */
 export type NoteComposerCard = NoteCardMeta & {
   body: string;
+  /**
+   * Absolute path to attach as a native file instead of inlining `body`.
+   * Used for Knowledge vault notes so the agent reads the file on disk.
+   */
+  filePath?: string;
 };
 
 export function noteCardMeta(card: NoteComposerCard): NoteCardMeta {

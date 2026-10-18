@@ -51,6 +51,12 @@ export type QuickCatalog = {
 export type QuickChoice = { harness: HarnessId; model: string };
 
 export type QuickLaunch = {
+  /** Familiar's visibility preference, captured before creating the session. */
+  sidebarHidden?: boolean;
+  /** Task Board card whose stage this session runs. */
+  taskCardId?: string;
+  /** A fixed title; a set title also stops the generated one replacing it. */
+  title?: string;
   prompt: string;
   /** Create an unsent user draft instead of starting an agent turn. */
   draft?: boolean;

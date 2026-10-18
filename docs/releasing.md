@@ -5,19 +5,14 @@ MOLFAR ships its own releases from the `main` branch of `deluminor/molfar`: desk
 ## Cut a release
 
 1. Merge the work into `main` and make sure CI is green.
-2. Optional: write the notes under `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added, Changed, Fixed, Removed).
+2. **Required:** write user-facing notes under `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added, Changed, Fixed, Removed). Use product language — what the user sees — not commit subjects or API names. The release refuses to cut if Unreleased is empty.
 3. **Actions → Release → Run workflow**, branch `main`, version `patch`, `minor`, `major`, or an exact `X.Y.Z`.
 
 The workflow then:
 
 - bumps `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock` and `tauri.conf.json` (`scripts/release/prepare.mjs`);
-- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes are combined, section by section, with notes generated from MOLFAR's conventional commits since the previous MOLFAR tag (`feat` → Added, `fix` → Fixed, `perf`/`refactor`/`revert` → Changed). These commits are left out of the generated notes:
-  - `chore`, `ci`, `docs`, `test`, `build`, `style` and merge commits;
-  - commits scoped `release`, `sync` or `license`, which change tooling or notices rather than the app — describe user-visible license changes under `Unreleased` yourself;
-  - subjects without a conventional prefix;
-  - commits that edited `CHANGELOG.md` themselves, since they already wrote their notes;
-  - MonoCode commits reachable from `upstream-main`, which the sync PR describes under `Unreleased`;
-- opens a `release/vX.Y.Z` branch, squash-merges a PR into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
+- writes the release section of `CHANGELOG.md`. An existing `## [X.Y.Z]` section is kept as is. Otherwise the `Unreleased` notes become that section (and Unreleased is cleared). Notes are never generated from commit subjects;
+- opens a `release/vX.Y.Z` branch, waits until GitHub's compare API sees that head, opens or reuses the PR via the REST pulls API (GraphQL `createPullRequest` often still races a force-pushed ref even after compare is ahead), squash-merges it into `main` (required by the branch ruleset), tags the merge commit, and pushes the tag (re-run if the PR conflicts because `main` moved);
 - builds macOS (arm64 + x64), Windows, Linux (`.deb`, AppImage, `.rpm`) and the six host packages from that tag;
 - publishes the GitHub release with the changelog section as its body, plus `latest.json` for in-app updates.
 
@@ -42,17 +37,18 @@ Without the Apple secrets the macOS build is ad-hoc signed and not notarized; us
 
 ## Syncing from upstream
 
-MOLFAR is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** is unavailable and PRs cannot target MonoCode from here. Syncing is plain git against the `upstream` remote (`hardbeat920/monocode`), which works as long as MonoCode stays public.
+MOLFAR is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** is unavailable and PRs cannot target MonoCode from here. Syncing is plain git against the `upstream` remote (`hardbeat920/monocode`), which works as long as MonoCode stays public. MonoCode is not mirrored as a branch on this repository — that would inflate the GitHub contributors list with every MonoCode author.
 
 | Ref | Role |
 | --- | --- |
-| `upstream/main` | MonoCode's default branch |
-| `upstream-main` | Mirror of `upstream/main` on this repo; only ever fast-forwarded, never committed to |
+| `upstream/main` | MonoCode's default branch (fetch only; never merge into `main`) |
 | `main` | MOLFAR; upstream changes arrive through a `sync/upstream-into-main-YYYYMMDD` PR |
 
-`main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are MOLFAR's own. MonoCode's authors and full history live in the MonoCode repository and on `upstream-main`; MOLFAR's history before the reset is kept on `archive/main-pre-squash`. Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge origin/upstream-main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches `upstream-main`.
+`main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are MOLFAR's own. MonoCode's authors and full history live in the MonoCode repository; MOLFAR's history before the reset is kept in the private [`molfar-archive`](https://github.com/deluminor/molfar-archive) repository (not mirrored here — a branch with that history would inflate GitHub's contributors list). Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge upstream/main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches MonoCode's `main`.
 
-`.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `origin/upstream-main` to the working tree and index one path at a time, as three-way patches, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, `3` if MonoCode rewrote its history, or `4` if some changes became pending ports (below).
+`.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `upstream/main` to the working tree and index one path at a time, as three-way patches, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, `3` if MonoCode rewrote its history, or `4` if some changes became pending ports (below).
+
+Before applying, the changes are translated through MOLFAR's renames (`scripts/upstream/rename-map.mjs`, currently Monos → Familiars): upstream paths follow MOLFAR's renamed files and directories, relative imports are rewritten to match, and each identifier or word containing a renamed term takes the spelling MOLFAR uses — first in the target file, then across the tree — so names MOLFAR deliberately kept (persisted keys such as `mono_id`, `font-mono`) stay as they are. Identifiers MOLFAR has never seen take the renamed spelling. MOLFAR-owned and license files apply verbatim. `apply.mjs` lists every remapped path under `remapped`. When MOLFAR renames another upstream concept, add a rule to `RENAMES`.
 
 MOLFAR restructures code that came from MonoCode (split modules, kebab-case file names, a workspace store), so the same file often lives elsewhere in MOLFAR. `.github/upstream-moves.json` records every move relative to `refactorBase`, the commit before the restructuring:
 
@@ -66,7 +62,7 @@ MOLFAR restructures code that came from MonoCode (split modules, kebab-case file
 
 Pending ports land in `.upstream-pending/<from>..<to>/` (ignored by git) with a `manifest.json`; the sync agent ports each into the new modules, or lists it under **Needs human** in the sync PR. Any change that moves or removes a MonoCode-derived path updates the map in the same commit: run `node scripts/upstream/moves.mjs` to add detected renames, describe splits and removals by hand, and `node scripts/upstream/moves.mjs --check` (part of `check:web`) verifies that the map covers the tree.
 
-The **Sync MonoCode upstream** automation in MOLFAR (Tuesday and Friday, 09:00; prompt kept in `docs/automations/upstream-sync.md`) fast-forwards `upstream-main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps MOLFAR's side in the MOLFAR-owned paths below, and resolves product-code conflicts by combining both sides: it keeps MOLFAR's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
+The **Sync MonoCode upstream** automation in MOLFAR (Tuesday and Friday, 09:00; prompt kept in `docs/automations/upstream-sync.md`) fetches `upstream/main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps MOLFAR's side in the MOLFAR-owned paths below, and resolves product-code conflicts by combining both sides: it keeps MOLFAR's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
 
 Every sync, including one that applies cleanly, also:
 
@@ -80,8 +76,6 @@ By hand:
 git remote add upstream https://github.com/hardbeat920/monocode.git   # once per clone
 gh repo set-default deluminor/molfar                                    # once per clone
 git fetch upstream main
-git push origin upstream/main:refs/heads/upstream-main                 # fast-forward the mirror
-git fetch origin
 git switch -c sync/upstream-into-main-$(date +%Y%m%d) origin/main
 node scripts/upstream/apply.mjs                                        # applies the patch, updates .github/upstream-sync.json
 # resolve conflicts, port .upstream-pending/ entries, keep MOLFAR-owned paths below, commit, open a PR into main

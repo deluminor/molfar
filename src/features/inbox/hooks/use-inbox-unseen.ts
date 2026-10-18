@@ -1,3 +1,4 @@
+import type { InboxProvider } from "@/domain/work-items/work-item";
 import {
   useCallback,
   useEffect,
@@ -6,23 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  githubWorkItem,
-  inboxListCacheKey,
-  inboxItemKey,
-  inboxProjectsForRail,
-  listInboxItems,
-  type GithubWorkItem,
-  type InboxItem,
-  type InboxQuery,
-} from "../model/github-tasks";
-import type { InboxProvider } from "@/domain/work-items/work-item";
-import {
-  applyInboxFilters,
-  inboxFetchState,
-  loadInboxFilters,
-  pruneInboxFilters,
-} from "../model/inbox-filters";
+import { inboxListCacheKey, inboxItemKey, inboxProjectsForRail, listInboxItems, type GithubWorkItem, type InboxItem } from "../model/github-tasks";
+import { applyInboxFiltersBySource } from "../model/inbox-filters";
+import { inboxActivityRequest } from "../model/inbox-activity-request";
 import {
   inboxHasUnseenItems,
   rememberInboxItems,
@@ -33,18 +20,15 @@ import {
 } from "../model/inbox-seen";
 import {
   linkedSessionUpdates,
-  linkedWorkItemTargets,
   linkedWorkItemUpdateKey,
   type LinkedSessionUpdate,
-  type LinkedWorkItemTarget,
 } from "../model/linked-session-updates";
 import {
   markLinkedSessionUpdateSeen,
   linkedSessionSeenAt,
   subscribeLinkedSessionSeen,
 } from "../model/linked-session-seen";
-import { loadHiddenLinearTeamIds } from "../model/linear";
-import { JIRA_CHANGE_EVENT, loadHiddenJiraProjectIds } from "../model/jira";
+import { JIRA_CHANGE_EVENT } from "../model/jira";
 import type { RecentProject } from "@/features/projects/model/recents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { playCue } from "@/features/settings/model/sounds";
@@ -67,9 +51,9 @@ import {
   subscribeInboxSelfActivity,
 } from "../model/inbox-self-activity";
 
-const POLL_MS = 30_000;
-const FALLBACK_REFRESH_MS = 60_000;
-const MAX_CONCURRENT_LOOKUPS = 3;
+const POLL_MS = 2 * 60_000;
+const HIDDEN_POLL_MS = 5 * 60_000;
+const POLL_TICK_MS = 30_000;
 
 type ProjectSeenEntry = InboxSeenEntry & NotificationSubject;
 
@@ -92,41 +76,6 @@ function mergeSnapshots(
     next.set(key, item);
   }
   return next ?? current;
-}
-
-async function fetchFallbackUpdates(
-  cwd: string,
-  targets: readonly LinkedWorkItemTarget[],
-): Promise<Array<readonly [string, GithubWorkItem]>> {
-  const results: Array<readonly [string, GithubWorkItem]> = [];
-  let cursor = 0;
-  const worker = async () => {
-    while (cursor < targets.length) {
-      const target = targets[cursor++];
-      if (!target) return;
-      try {
-        const item = await githubWorkItem(
-          cwd,
-          target.item.repo,
-          target.item.kind,
-          target.item.number,
-          { force: true },
-        );
-        if (Number.isFinite(Date.parse(item.updatedAt))) {
-          results.push([target.key, item]);
-        }
-      } catch {
-        // The next shared Inbox poll retries missing items.
-      }
-    }
-  };
-  await Promise.all(
-    Array.from(
-      { length: Math.min(MAX_CONCURRENT_LOOKUPS, targets.length) },
-      worker,
-    ),
-  );
-  return results;
 }
 
 export type InboxActivity = {
@@ -152,10 +101,7 @@ export function useInboxActivity(
   const notifications = useRef(new InboxNotificationTracker());
   const sessionsRef = useRef(sessions);
   const onAppearedRef = useRef(options?.onAppeared);
-  const fallbackFetchedAt = useRef(new Map<string, number>());
-  const targetKey = linkedWorkItemTargets(sessions)
-    .map((target) => target.key)
-    .join("\0");
+  const lastPulledAt = useRef<number | null>(null);
 
   const applyUnseen = useCallback(() => {
     const preferences = loadNotificationPreferences();
@@ -215,19 +161,14 @@ export function useInboxActivity(
         return;
       }
       pulling = true;
-      const projectPaths = projects.map((project) => project.path);
-      const filters = pruneInboxFilters(loadInboxFilters(), projectPaths);
-      const query: InboxQuery = {
-        assignedToMe: filters.assignedToMe,
-        state: inboxFetchState(filters),
-        search: "",
-        linearHiddenTeamIds: loadHiddenLinearTeamIds(),
-        jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
-      };
+      lastPulledAt.current = Date.now();
+      const { pruned, query } = inboxActivityRequest(
+        projects.map((project) => project.path),
+      );
       try {
         const listed = await listInboxItems(projects, query, { force });
         if (cancelled) return;
-        const visible = applyInboxFilters(listed.items, filters, "");
+        const visible = applyInboxFiltersBySource(listed.items, pruned, "");
         rememberNotificationProjects(
           listed.items.map(inboxNotificationProject),
         );
@@ -254,11 +195,13 @@ export function useInboxActivity(
         }
         const entries = seenEntries(visible);
         entriesRef.current = entries;
-        rememberInboxItems(listed.items.map((item) => ({
-          key: inboxItemKey(item),
-          updatedAt: item.updatedAt,
-          projectPath: item.projectPath,
-        })));
+        rememberInboxItems(
+          listed.items.map((item) => ({
+            key: inboxItemKey(item),
+            updatedAt: item.updatedAt,
+            projectPath: item.projectPath,
+          })),
+        );
         seedInboxSeenIfNeeded(entries);
         const selfAuthoredEntries = entries.filter((entry) =>
           selfAuthoredKeys.has(entry.key),
@@ -270,7 +213,8 @@ export function useInboxActivity(
           if (
             item.provider !== "github" ||
             (item.kind !== "issue" && item.kind !== "pr")
-          ) continue;
+          )
+            continue;
           const updatedAt = Date.parse(item.updatedAt);
           if (!Number.isFinite(updatedAt)) continue;
           const key = linkedWorkItemUpdateKey({
@@ -289,9 +233,8 @@ export function useInboxActivity(
         }
         applyUnseen();
 
-        const targets = linkedWorkItemTargets(sessionsRef.current);
-        const targetKeys = new Set(targets.map((target) => target.key));
-        const listedKeys = new Set<string>();
+        // Linked badges reuse this list. Fetching every omitted historical
+        // item individually makes background traffic grow with session history.
         const snapshots: Array<readonly [string, GithubWorkItem]> = [];
         for (const item of listed.items) {
           const kind = item.kind;
@@ -306,29 +249,12 @@ export function useInboxActivity(
             kind,
             number: item.number,
           });
-          if (!targetKeys.has(key)) continue;
-          listedKeys.add(key);
           if (Number.isFinite(Date.parse(item.updatedAt))) {
             snapshots.push([key, { ...item, kind }]);
           }
         }
         if (snapshots.length > 0) {
           setWorkItems((current) => mergeSnapshots(current, snapshots));
-        }
-
-        const now = Date.now();
-        const missing = targets.filter((target) => {
-          if (listedKeys.has(target.key)) return false;
-          const last = fallbackFetchedAt.current.get(target.key) ?? 0;
-          if (now - last < FALLBACK_REFRESH_MS) return false;
-          fallbackFetchedAt.current.set(target.key, now);
-          return true;
-        });
-        if (missing.length > 0) {
-          const fallback = await fetchFallbackUpdates(cwd, missing);
-          if (!cancelled && fallback.length > 0) {
-            setWorkItems((current) => mergeSnapshots(current, fallback));
-          }
         }
       } catch {
         // Leave the last known badges; a later poll can try again.
@@ -343,11 +269,21 @@ export function useInboxActivity(
 
     void pull(false);
     const stopSelfActivity = subscribeInboxSelfActivity(() => void pull(true));
-    // Keep polling while minimized or closed-to-tray: the webview is still
-    // alive, and Inbox automation triggers ride this same refresh.
-    const timer = window.setInterval(() => void pull(true), POLL_MS);
+    // Automation triggers still run in the tray, at a slower cadence. Resume
+    // events share the cadence so frequent focus changes cannot flood GitHub.
+    const poll = () => {
+      if (pulling) return;
+      const interval = document.hidden ? HIDDEN_POLL_MS : POLL_MS;
+      if (
+        lastPulledAt.current != null &&
+        Date.now() - lastPulledAt.current < interval
+      )
+        return;
+      void pull(true);
+    };
+    const timer = window.setInterval(poll, POLL_TICK_MS);
     const onVis = () => {
-      if (!document.hidden) void pull(true);
+      if (!document.hidden) poll();
     };
     document.addEventListener("visibilitychange", onVis);
     const onJiraChange = () => void pull(true);
@@ -359,7 +295,7 @@ export function useInboxActivity(
       window.removeEventListener(JIRA_CHANGE_EVENT, onJiraChange);
       stopSelfActivity();
     };
-  }, [applyUnseen, cwd, recents, targetKey]);
+  }, [applyUnseen, cwd, recents]);
 
   const updates = useMemo(
     () => linkedSessionUpdates(sessions, workItems, linkedSessionSeenAt),

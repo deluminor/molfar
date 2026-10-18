@@ -14,6 +14,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 
 const PROBE_ID = "molfar-cursor-probe";
 const DISCOVERY_TIMEOUT_MS = 15_000;
@@ -88,9 +89,9 @@ async function discoverViaAcp(workingDirectory?: string): Promise<AgentModel[]> 
         },
         REQUEST_TIMEOUT_MS,
       );
-      await acp
-        .request("authenticate", { methodId: "cursor_login" }, REQUEST_TIMEOUT_MS)
-        .catch(() => undefined);
+      // ACP reads existing CLI credentials at startup. `cursor_login` can
+      // launch a browser, so a catalog refresh must never request it. Missing
+      // credentials fall back to CLI discovery and the bundled model list.
       const listed = await acp.request<unknown>(
         "cursor/list_available_models",
         {},
@@ -99,9 +100,10 @@ async function discoverViaAcp(workingDirectory?: string): Promise<AgentModel[]> 
       const models = modelsFromListAvailable(listed);
       if (models.length > 0) return models;
 
+      const mcpServers = await loadSessionMcpServers("cursor", cwd);
       const created = await acp.request<unknown>(
         "session/new",
-        { cwd, mcpServers: [] },
+        { cwd, mcpServers },
         REQUEST_TIMEOUT_MS,
       );
       return modelsFromSessionNew(created);

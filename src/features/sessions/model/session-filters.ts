@@ -11,6 +11,8 @@ export type SessionStatusFilter = {
 
 export type SessionSidebarFilters = {
   showArchived: boolean;
+  /** Narrows a Familiar's sessions to launches since deleted. */
+  showUnavailable?: boolean;
   hiddenHarnesses: HarnessId[];
   time: SessionTimeFilter;
   status: SessionStatusFilter;
@@ -78,6 +80,7 @@ export function hasActiveSessionFilters(
 ): boolean {
   return (
     filters.showArchived ||
+    !!filters.showUnavailable ||
     filters.hiddenHarnesses.length > 0 ||
     filters.time !== "all" ||
     filters.status.working ||

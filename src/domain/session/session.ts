@@ -25,6 +25,8 @@ export type LinkedWorkItem = {
 export type WorkspaceMode = "current" | "worktree";
 
 export type Session = {
+  /** Saved and accessible by id, but omitted from the normal session sidebar. */
+  sidebarHidden?: boolean;
   /** Receipt for an acknowledged floating-composer handoff. */
   quickLaunchAccepted?: boolean;
   /** Internal worker: displayed in its lead's panel rather than a workspace tab. */
@@ -40,21 +42,32 @@ export type Session = {
   /** Project / working directory for this session. */
   cwd: string;
   blocks: Block[];
+  /** Familiar-only database window. Older blocks are fetched separately by the viewer. */
+  familiarTranscript?: { before: number | null; firstBlockId: string | null };
   /** True while a harness turn is in flight. */
   busy?: boolean;
+  /** The provider has accepted this turn and can take live follow-ups. */
+  turnReady?: boolean;
   /**
    * What the live turn is waiting on after the agent yielded with work still
    * running in the background. In-memory only.
    */
   backgroundTasks?: string[];
-  /** Follow-ups waiting for current turn. In-memory only. */
+  /** Follow-ups retained until they have been delivered. */
   queuedMessages?: QueuedMessage[];
   /** Paused after user stops current turn; resuming waits for continued turn. */
   queueStatus?: MessageQueueStatus;
   /** Prevent auto-dispatch while this queued row is being edited. In-memory only. */
   editingQueuedMessageId?: string;
+  /** Pending delivery locks this row against edits and deletion. Not persisted. */
+  sendingQueuedMessageId?: string;
   /** Last turn hit a provider usage limit; cleared by the next send. In-memory only. */
   usageLimit?: UsageLimit;
+  /**
+   * Lives only in memory: never saved, never listed with the project's chats.
+   * A Familiar's habit runs are, and disappear when the run ends.
+   */
+  ephemeral?: boolean;
   /** Provider-side conversation id (Cursor ACP session id). */
   providerSessionId?: string;
   /** Named local credential profile used by Claude or Codex. */
@@ -86,6 +99,8 @@ export type Session = {
   linkedWorkItem?: LinkedWorkItem;
   /** Automation that created or last launched this session. */
   automationId?: string;
+  /** Task Board card whose stage this session runs; hidden from normal lists. */
+  taskCardId?: string;
   /** New linked-item activity shown above the composer. In-memory, one-shot. */
   linkedWorkItemUpdateCard?: LinkedWorkItemUpdateCard;
   /** Note chip shown above the composer. In-memory, one-shot. */
@@ -105,4 +120,6 @@ export type PendingHarnessSwitch = {
   fromSettings: Record<string, string>;
   fromProviderSessionId?: string;
   fromProviderAccountId?: string;
+  /** The outgoing provider is exhausted; build the recap from the transcript. */
+  skipOutgoingRecap?: boolean;
 };

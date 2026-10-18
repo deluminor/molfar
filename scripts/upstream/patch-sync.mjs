@@ -9,6 +9,7 @@ import {
 } from "./move-map.mjs";
 import { changedPaths, filePatch, retargetPatch } from "./patch-paths.mjs";
 import { writePendingPorts } from "./pending-ports.mjs";
+import { translateRange } from "./translate-range.mjs";
 
 export const STATE_FILE = ".github/upstream-sync.json";
 
@@ -114,8 +115,9 @@ function overallStatus(conflicts, pending) {
  * Applies upstream's changes since the last synced commit to the index and working tree, one path at
  * a time, and records `target` as synced. MOLFAR's `main` shares no commits with upstream, so a merge
  * would pull every upstream author into its history; a patch keeps the content and leaves authorship
- * to the sync commit. Paths MOLFAR moved are retargeted through the move map; paths it split or
- * removed become pending ports instead of aborting the sync.
+ * to the sync commit. Paths and identifiers MOLFAR renamed (rename-map.mjs) are translated first;
+ * paths MOLFAR moved are retargeted through the move map; paths it split or removed become pending
+ * ports instead of aborting the sync.
  */
 export function applyUpstreamPatch({ cwd, target }) {
   const state = readSyncState(cwd);
@@ -125,6 +127,7 @@ export function applyUpstreamPatch({ cwd, target }) {
     commits: [],
     conflicts: [],
     pending: [],
+    remapped: [],
     retargeted: [],
     added: [],
     extracted: [],
@@ -150,9 +153,11 @@ export function applyUpstreamPatch({ cwd, target }) {
   const retargeted = [];
   const added = [];
   const extracted = [];
+  const translated = translateRange(cwd, map, from, to);
+  const range = { from: translated.before, to: translated.after };
 
-  for (const change of changedPaths(cwd, from, to)) {
-    const outcome = applyChange(cwd, { from, to }, map, change);
+  for (const change of changedPaths(cwd, range.from, range.to)) {
+    const outcome = applyChange(cwd, range, map, change);
     if (outcome.kind === "pending") pending.push(outcome.entry);
     if (outcome.kind === "conflict") conflicts.push(outcome.target);
     if (outcome.retargeted)
@@ -177,6 +182,7 @@ export function applyUpstreamPatch({ cwd, target }) {
     commits,
     conflicts,
     pending: pendingPorts,
+    remapped: translated.remapped,
     retargeted,
     added,
     extracted,

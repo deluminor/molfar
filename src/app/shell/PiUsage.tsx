@@ -1,3 +1,4 @@
+import { idleRateLimits } from "@/domain/rate-limits/rate-limit-state";
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "@/shared/ui/icons";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
@@ -7,14 +8,18 @@ import {
   piUsageProvider,
   type PiUsageProvider,
 } from "@/features/providers/model/pi-usage";
-import {
-  RATE_LIMIT_MIN_REFETCH_MS,
-  RATE_LIMIT_POLL_MS,
-} from "@/features/providers/model/rate-limits";
-import { idleRateLimits } from "@/domain/rate-limits/rate-limit-state";
-import { UsageProviderChip } from "./UsageProviderChip";
+import { RATE_LIMIT_MIN_REFETCH_MS, RATE_LIMIT_POLL_MS } from "@/features/providers/model/rate-limits";
+import { UsageProviderChip, type UsageChipVariant } from "./UsageProviderChip";
 
-export function PiUsage({ model, now }: { model?: string; now: number }) {
+export function PiUsage({
+  model,
+  now,
+  variant = "footer",
+}: {
+  model?: string;
+  now: number;
+  variant?: UsageChipVariant;
+}) {
   const provider = piUsageProvider(model);
   if (!provider) {
     return (
@@ -31,15 +36,24 @@ export function PiUsage({ model, now }: { model?: string; now: number }) {
       </span>
     );
   }
-  return <PiProviderUsage key={provider} provider={provider} now={now} />;
+  return (
+    <PiProviderUsage
+      key={provider}
+      provider={provider}
+      now={now}
+      variant={variant}
+    />
+  );
 }
 
 function PiProviderUsage({
   provider,
   now,
+  variant,
 }: {
   provider: PiUsageProvider;
   now: number;
+  variant: UsageChipVariant;
 }) {
   const [limits, setLimits] = useState(() =>
     idleRateLimits(piBillingProvider(provider)),
@@ -90,6 +104,7 @@ function PiProviderUsage({
       <UsageProviderChip
         limits={limits}
         now={now}
+        variant={variant}
         presentation={{
           sourceLabel: "Pi's saved OAuth account",
           harness: "pi",

@@ -1,0 +1,149 @@
+/* Task Board motion. Every animation is off under prefers-reduced-motion. */
+
+@keyframes task-board-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes task-board-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes task-board-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes task-board-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.task-board-card {
+  animation: task-board-card-in 220ms var(--motion-ease-out) backwards;
+}
+
+.task-board-panel {
+  animation: task-board-panel-in 240ms var(--motion-ease-out) backwards;
+}
+
+.task-board-panel-body {
+  animation: task-board-card-in 180ms var(--motion-ease-out) backwards;
+}
+
+.task-board-progress {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  overflow: hidden;
+}
+
+.task-board-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  animation: task-board-progress 1.8s ease-in-out infinite;
+}
+
+.task-board-breathe {
+  animation: task-board-breathe 1.6s ease-in-out infinite;
+}
+
+/* The fade sits in the mask's bottom 4rem; opening grows the mask past the box so it slides out with the height. */
+.task-board-fold[data-fold="closed"],
+.task-board-fold[data-fold="open"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  transition:
+    max-height 320ms var(--motion-ease-out),
+    -webkit-mask-size 320ms var(--motion-ease-out),
+    mask-size 320ms var(--motion-ease-out);
+}
+
+.task-board-fold[data-fold="open"] {
+  -webkit-mask-size: 100% calc(100% + 4rem);
+  mask-size: 100% calc(100% + 4rem);
+}
+
+.board-markdown .agent-markdown {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.board-markdown .agent-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.85em 0 0.35em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-content);
+}
+
+.board-markdown .agent-markdown h1 {
+  font-size: 1.2em;
+}
+
+.board-markdown .agent-markdown h2 {
+  font-size: 1.1em;
+}
+
+.board-markdown .agent-markdown h3 {
+  font-size: 1.05em;
+}
+
+.board-markdown .agent-markdown p:first-child,
+.board-markdown .agent-markdown :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.board-markdown .agent-markdown code:not([data-block]) {
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--color-content) 8%, transparent);
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-board-fold {
+    transition: none !important;
+  }
+
+  .task-board-card,
+  .task-board-panel,
+  .task-board-panel-body,
+  .task-board-breathe {
+    animation: none;
+  }
+
+  .task-board-progress::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.35;
+  }
+}

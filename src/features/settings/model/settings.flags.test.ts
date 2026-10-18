@@ -68,6 +68,13 @@ describe.each([
     "molfar:live-agents-enabled-change",
   ],
   [
+    "molfar.familiarsEnabled",
+    settings.loadFamiliarsEnabled,
+    settings.saveFamiliarsEnabled,
+    true,
+    "molfar:familiars-enabled-change",
+  ],
+  [
     "molfar.closeToTray",
     settings.loadCloseToTray,
     settings.saveCloseToTray,

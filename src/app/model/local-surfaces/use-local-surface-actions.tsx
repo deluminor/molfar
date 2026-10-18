@@ -16,6 +16,7 @@ export function useLocalSurfaceActions({
   sessionsRef,
   history,
   onSelectHistorySession,
+  railBadges,
 }: LocalSurfaceActionDeps): LocalSurfaceActions {
   const {
     localSurface,
@@ -92,9 +93,10 @@ export function useLocalSurfaceActions({
         active={localSurface}
         visible={railSurfaces}
         onOpen={onOpenLocalSurface}
+        badges={railBadges}
       />
     ),
-    [localSurface, railSurfaces, onOpenLocalSurface],
+    [localSurface, railSurfaces, onOpenLocalSurface, railBadges],
   );
 
   return {

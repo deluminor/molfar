@@ -1,12 +1,13 @@
-import { invoke } from "@tauri-apps/api/core";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
 import { sessionDisplayTitle } from "@/domain/session/title";
 import type { Session } from "@/domain/session/session";
-import { HARNESS_TITLE } from "@/domain/harness/harness";
+import { invoke } from "@tauri-apps/api/core";
 import { loadSoundsEnabled, playCue } from "@/features/settings/model/sounds";
 import {
   allowsProjectNotification,
   type NotificationSubject,
 } from "./notification-preferences";
+import { familiarReplyText } from "@/features/familiars/model/familiar-reaction";
 import { knownNotificationProject } from "./notification-projects";
 
 const KEY = "molfar.notifications";
@@ -205,7 +206,7 @@ export function notificationText(
   return {
     title,
     subtitle,
-    body: clip(reply?.text || `${harness} finished`),
+    body: clip((reply && familiarReplyText(reply.text)) || `${harness} finished`),
   };
 }
 
@@ -242,27 +243,98 @@ export async function notifySession(
   });
 }
 
-/** One policy decision covers both the OS banner and its in-app sound fallback. */
-export async function announceSessionFinished(
+export function announceSessionFinished(
   session: Session,
+  sessionVisible: boolean,
+): Promise<void> {
+  return announceSession(session, "finished", sessionVisible);
+}
+
+export function announceSessionInput(
+  session: Session,
+  event: InputNotificationEvent,
+  sessionVisible: boolean,
+): Promise<void> {
+  return announceSession(session, event, sessionVisible);
+}
+
+/** One policy decision covers both the OS banner and its in-app sound fallback. */
+async function announceSession(
+  session: Session,
+  event: NotificationEvent,
   sessionVisible: boolean,
 ): Promise<void> {
   if (session.inboxAsk) return;
   const occurredAt = Date.now();
   const project = knownNotificationProject(session.cwd);
   if (!project) return;
+  const finished = event === "finished";
   const subject: NotificationSubject = {
     projectId: project.id,
-    category: "agentFinished",
+    category: finished ? "agentFinished" : "agentInput",
     occurredAt,
   };
   const sent = await notifyProjectSession(
     session,
-    "finished",
+    event,
     sessionVisible,
     subject,
   );
-  if (!sent) playCue("turnFinished", subject);
+  if (!sent) playCue(finished ? "turnFinished" : "inputRequested", subject);
+}
+
+/**
+ * A banner for an app surface rather than a session (the Task Board). The
+ * click payload is `target`, so the window can route it.
+ */
+export async function notifyApp(notice: {
+  target: string;
+  title: string;
+  subtitle: string;
+  body: string;
+}): Promise<boolean> {
+  const decision = shouldNotify({
+    enabled: loadNotificationsEnabled(),
+    permission,
+    windowFocused,
+    sessionVisible: false,
+  });
+  if (!decision) return false;
+  try {
+    await invoke("show_notification", {
+      sessionId: notice.target,
+      title: notice.title,
+      subtitle: notice.subtitle,
+      body: notice.body,
+      sound: loadSoundsEnabled(),
+    });
+    return true;
+  } catch (error: unknown) {
+    console.error("Notification could not be shown", { target: notice.target, error });
+    return false;
+  }
+}
+
+/**
+ * An app event about a project (a Task Board gate or failure). It follows the
+ * project's mute and "needs input" preferences like session banners, and
+ * falls back to the in-app sound when no banner is shown.
+ */
+export async function announceProjectEvent(notice: {
+  target: string;
+  projectCwd: string;
+  title: string;
+  subtitle: string;
+  body: string;
+}): Promise<void> {
+  const project = knownNotificationProject(notice.projectCwd);
+  const subject: NotificationSubject | undefined = project
+    ? { projectId: project.id, category: "agentInput", occurredAt: Date.now() }
+    : undefined;
+  if (subject && !allowsProjectNotification(subject)) return;
+
+  const sent = await notifyApp(notice);
+  if (!sent && subject) playCue("inputRequested", subject);
 }
 
 async function notifyProjectSession(

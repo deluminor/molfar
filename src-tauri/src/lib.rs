@@ -2,16 +2,26 @@ use tauri::Manager;
 
 mod account_identity;
 mod app_identity;
+mod artifacts;
 mod atlassian_adf;
 mod automations;
 mod azure_devops;
 mod chat_background;
 mod checkpoint;
+mod codex_familiar_store;
+mod companion;
 mod confluence;
+pub mod connectors_mcp;
 mod control;
 pub mod control_cli;
 mod cursor_store;
+mod devin_config;
+mod devin_usage;
 mod external_editor;
+mod familiar;
+#[cfg(target_os = "macos")]
+mod familiar_chat;
+mod familiar_transcript;
 mod fs;
 mod gitlab;
 mod harness;
@@ -19,6 +29,7 @@ mod harness_updates;
 mod home_host;
 mod inbox_media;
 mod jira;
+mod jsonc;
 mod linear;
 mod link_preview;
 #[cfg(target_os = "macos")]
@@ -26,6 +37,7 @@ mod macos;
 #[cfg(target_os = "macos")]
 mod macos_background;
 mod mcp;
+mod mcp_session;
 mod menu;
 mod notes;
 mod notifications;
@@ -43,6 +55,9 @@ mod search;
 mod session_store;
 mod skills;
 pub mod ssh_askpass;
+mod task_board;
+#[cfg(target_os = "macos")]
+mod trackpad_zoom;
 #[cfg(target_os = "windows")]
 mod tray;
 mod usage_limits;
@@ -205,7 +220,18 @@ fn set_dock_badge(
 }
 
 #[tauri::command]
-fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
+fn set_trackpad_zoom_enabled(
+    #[allow(unused_variables)] window: tauri::WebviewWindow,
+    #[allow(unused_variables)] enabled: bool,
+) {
+    #[cfg(target_os = "macos")]
+    trackpad_zoom::set_enabled(&window, enabled);
+}
+
+// Async so the window is built off the main thread. Building it from a sync
+// command deadlocks WebView2 on Windows and leaves the new window blank.
+#[tauri::command]
+async fn open_new_window(app: tauri::AppHandle) -> Result<(), String> {
     window::open_new_window(&app)
 }
 
@@ -221,21 +247,31 @@ fn app_context() -> tauri::Context {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "macos")]
+    macos::register_spellcheck_default();
     #[cfg(windows)]
     windows::initialize().expect("Failed to initialize Windows process safety");
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // Closing to the tray leaves the process running without a taskbar entry,
+    // so a second launch must reopen it instead of starting another instance.
+    // Registered first so the duplicate exits before any setup runs.
+    #[cfg(target_os = "windows")]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        let _ = window::show_hidden_or_open_new(app);
+    }));
+    let app = builder
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                .with_denylist(&[
-                    window::QUICK_COMPOSER_LABEL,
-                    window::QUICK_COMPOSER_GIT_LABEL,
-                ])
+                .with_filter(window::is_workspace_window)
                 .build(),
         )
+        .register_uri_scheme_protocol(artifacts::HTML_SCHEME, |ctx, request| {
+            artifacts::serve_html(ctx.app_handle(), &request)
+        })
         .manage(harness::HarnessHost::new())
         .manage(pty::PtyHost::new())
         .manage(remote::RemoteConnections::default())
@@ -245,6 +281,9 @@ pub fn run() {
             harness::reap_orphaned_harness_processes();
             session_store::init(app.handle())?;
             control::init(app.handle())?;
+            if let Err(error) = companion::init(app.handle()) {
+                eprintln!("[companion] {error}");
+            }
             reminders::init(app.handle());
             checkpoint::init(app.handle())?;
             menu::install(app.handle())?;
@@ -253,6 +292,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 quick_composer::init(app.handle())?;
+                familiar_chat::init(app.handle())?;
                 macos::install_dock_menu(app.handle());
                 if let Some(window) = app.get_webview_window("main") {
                     macos::install(&window);
@@ -280,6 +320,12 @@ pub fn run() {
             remote::remote_ssh_poll,
             remote::remote_ssh_answer,
             remote::remote_ssh_cancel,
+            companion::companion_status,
+            companion::companion_configure,
+            companion::companion_pair_start,
+            companion::companion_pair_cancel,
+            companion::companion_revoke,
+            companion::companion_reply,
             control::control_enable,
             control::control_disable,
             control::control_reply,
@@ -304,6 +350,22 @@ pub fn run() {
             reminders::reminder_take_open,
             reminders::reminder_register_window,
             reminders::reminder_open,
+            task_board::task_board_cards_list,
+            task_board::task_board_card_get,
+            task_board::task_board_card_create,
+            task_board::task_board_card_update,
+            task_board::task_board_card_delete,
+            task_board::task_board_claim_next,
+            task_board::task_board_runs_list,
+            task_board::task_board_runs_running,
+            task_board::task_board_run_create,
+            task_board::task_board_run_update,
+            task_board::task_board_artifacts_list,
+            task_board::task_board_artifact_read,
+            task_board::task_board_artifact_write,
+            task_board::task_board_inputs_materialize,
+            task_board::task_board_settings_get,
+            task_board::task_board_settings_set,
             automations::automations_list,
             automations::automations_upsert,
             automations::automations_delete,
@@ -334,12 +396,16 @@ pub fn run() {
             fs::git_stage_all,
             fs::git_unstage_all,
             fs::git_commit,
+            fs::git_locate_files,
             fs::git_head_message,
             fs::git_staged_context,
             fs::git_push,
             fs::git_pull,
             fs::git_sync,
             fs::git_range_context,
+            fs::git_range_diff,
+            fs::git_snapshot,
+            fs::git_default_branch_name,
             fs::git_pr_status,
             fs::git_pr_create,
             fs::git_github_status,
@@ -407,6 +473,7 @@ pub fn run() {
             worktrees::git_worktree_remove,
             worktrees::git_orchestration_worktree_remove,
             worktrees::git_orchestration_branch_remove,
+            worktrees::git_task_branch_remove,
             fs::create_path,
             fs::rename_path,
             fs::delete_path,
@@ -422,6 +489,7 @@ pub fn run() {
             fs::inspect_paths,
             fs::read_file_base64,
             fs::read_binary_file,
+            fs::allow_video_stream,
             fs::write_attachment,
             fs::save_generated_image,
             fs::delete_generated_images,
@@ -444,6 +512,7 @@ pub fn run() {
             harness::claude_mcp_list,
             mcp::mcp_discover,
             mcp::mcp_add,
+            mcp_session::session_mcp_servers,
             harness::claude_mcp_add,
             harness::claude_mcp_remove,
             harness::mcp_provider_login,
@@ -452,9 +521,13 @@ pub fn run() {
             harness::harness_resolve_fx,
             harness::harness_resolve_grok,
             harness::harness_resolve_hermes,
+            harness::harness_resolve_devin,
             harness::harness_resolve_antigravity,
             harness::harness_free_port,
             harness::harness_spawn,
+            codex_familiar_store::codex_familiar_store_prepare,
+            codex_familiar_store::codex_familiar_store_copy,
+            codex_familiar_store::codex_familiar_store_restore_agent_state,
             harness::harness_write,
             harness::harness_kill,
             harness::harness_kill_all,
@@ -473,6 +546,7 @@ pub fn run() {
             home_host::home_host_stats,
             usage_limits::usage_cursor_limits,
             usage_limits::usage_antigravity_limits,
+            devin_usage::fetch_devin_usage,
             pty::pty_spawn,
             pty::pty_write,
             pty::pty_resize,
@@ -486,6 +560,10 @@ pub fn run() {
             session_store::session_search,
             session_store::cancel_session_search,
             session_store::session_get,
+            familiar_transcript::familiar_session_get,
+            familiar_transcript::familiar_session_page,
+            familiar_transcript::familiar_session_upsert,
+            familiar_transcript::familiar_session_find,
             session_store::session_delete,
             session_store::session_set_archived,
             session_store::session_set_pinned,
@@ -498,6 +576,10 @@ pub fn run() {
             notes::notes_list,
             notes::notes_get,
             notes::notes_upsert,
+            artifacts::artifacts_list,
+            artifacts::artifacts_get,
+            artifacts::artifacts_upsert,
+            artifacts::artifacts_delete,
             notes::notes_delete,
             notes::notes_save_image,
             notes::notes_image_path,
@@ -509,7 +591,12 @@ pub fn run() {
             vault::vault_save,
             vault::vault_disconnect,
             vault::vault_asset_path,
+            familiar::familiar_load,
+            familiar::familiar_read,
+            familiar::familiar_save,
             checkpoint::session_checkpoint_ensure,
+            checkpoint::session_checkpoint_begin_turn,
+            checkpoint::session_checkpoint_finish_turn,
             checkpoint::session_checkpoint_prepare,
             checkpoint::session_checkpoint_capture,
             checkpoint::session_checkpoint_status,
@@ -522,6 +609,7 @@ pub fn run() {
             set_traffic_lights_visible,
             set_window_background_blur,
             set_dock_badge,
+            set_trackpad_zoom_enabled,
             #[cfg(target_os = "macos")]
             menu::keybindings_set_overrides,
             #[cfg(target_os = "macos")]
@@ -559,6 +647,28 @@ pub fn run() {
             quick_composer::git_popup::quick_git_complete,
             #[cfg(target_os = "macos")]
             quick_composer::git_popup::quick_composer_dismiss,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_sync,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_publish,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_state,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_ready,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_action,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_take,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_accept,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_reply,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_keep_alive,
+            #[cfg(target_os = "macos")]
+            familiar_chat::familiar_chat_switch,
+            #[cfg(target_os = "macos")]
+            familiar_chat::mono_menu_bar_set_visible,
             window_transfer::stage_window_transfer,
             window_transfer::take_window_transfer,
             chat_background::save_chat_background,
@@ -574,11 +684,15 @@ pub fn run() {
 
     app.run(|handle, event| match event {
         #[cfg(target_os = "macos")]
-        tauri::RunEvent::Reopen {
-            has_visible_windows: false,
-            ..
-        } => {
-            let _ = window::show_hidden_or_open_new(handle);
+        tauri::RunEvent::Reopen { .. } => {
+            // A visible floating panel must not make a hidden workspace
+            // unreachable from the Dock.
+            if !window::workspace_windows(handle)
+                .iter()
+                .any(|window| window.is_visible().unwrap_or(false))
+            {
+                let _ = window::show_hidden_or_open_new(handle);
+            }
         }
         tauri::RunEvent::Ready => {
             #[cfg(target_os = "macos")]
@@ -600,6 +714,8 @@ pub fn run() {
                 .iter()
                 .any(|window| window.label() != label);
             control::window_closed(handle, &label);
+            #[cfg(target_os = "macos")]
+            familiar_chat::window_closed(handle, &label);
             if !other_window {
                 reap_harness_children(handle);
             }

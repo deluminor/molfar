@@ -41,7 +41,7 @@ describe("isForegroundSession", () => {
     expect(
       isForegroundSession(
         "shown",
-        view({ hidden: true, inboxSessionId: "shown" }),
+        view({ hidden: true, standaloneSessionId: "shown" }),
       ),
     ).toBe(false);
   });
@@ -56,7 +56,16 @@ describe("isForegroundSession", () => {
     expect(
       isForegroundSession(
         "inbox",
-        view({ workspaceVisible: false, inboxSessionId: "inbox" }),
+        view({ workspaceVisible: false, standaloneSessionId: "inbox" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is true for the session shown beside a Familiar's chat", () => {
+    expect(
+      isForegroundSession(
+        "side",
+        view({ workspaceVisible: false, sideSessionId: "side" }),
       ),
     ).toBe(true);
   });

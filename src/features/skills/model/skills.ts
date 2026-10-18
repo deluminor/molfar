@@ -1,3 +1,5 @@
+import { normalizeProjectPath } from "@/shared/lib/project-path";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   createPath,
   homeDir,
@@ -9,9 +11,7 @@ import {
 import { invalidateProjectFiles } from "@/features/files/model/file-index";
 import { joinPath } from "@/shared/lib/paths";
 import { isLocalProject } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
-import type { HarnessId } from "@/domain/harness/harness";
 import { getHarness } from "@/integrations/harness/core/registry";
 import type { NativeCommand } from "@/integrations/harness/core/native-commands";
 import {
@@ -19,6 +19,11 @@ import {
   CREATE_SKILL_DESCRIPTION,
   CREATE_SKILL_NAME,
 } from "./create-skill";
+import {
+  CREATE_BOARD_TASK_SKILL_BODY,
+  CREATE_BOARD_TASK_SKILL_DESCRIPTION,
+  CREATE_BOARD_TASK_SKILL_NAME,
+} from "./create-board-task";
 
 export {
   rankSkills,
@@ -75,6 +80,7 @@ export type SkillSource =
   | "grok"
   | "hermes"
   | "antigravity"
+  | "devin"
   | "molfar";
 
 type SkillCommon = {
@@ -109,6 +115,26 @@ export const BUILTIN_CREATE_SKILL: BuiltinSkill = {
   invocation: CREATE_SKILL_NAME,
   scope: "builtin",
   source: "molfar",
+};
+
+export const BUILTIN_CREATE_BOARD_TASK_SKILL: BuiltinSkill = {
+  kind: "builtin",
+  name: CREATE_BOARD_TASK_SKILL_NAME,
+  description: CREATE_BOARD_TASK_SKILL_DESCRIPTION,
+  invocation: CREATE_BOARD_TASK_SKILL_NAME,
+  scope: "builtin",
+  source: "molfar",
+};
+
+/** Bundled skills with a body to inject; `/operator`, `/btw` and `/mcp` are commands, not these. */
+export const BUILTIN_SKILLS: readonly BuiltinSkill[] = [
+  BUILTIN_CREATE_SKILL,
+  BUILTIN_CREATE_BOARD_TASK_SKILL,
+];
+
+const BUILTIN_SKILL_BODIES: Readonly<Record<string, string>> = {
+  [CREATE_SKILL_NAME]: CREATE_SKILL_BODY,
+  [CREATE_BOARD_TASK_SKILL_NAME]: CREATE_BOARD_TASK_SKILL_BODY,
 };
 
 const SKILL_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -327,7 +353,7 @@ export function mergeCatalog(discovered: DiscoveredSkill[]): Skill[] {
   for (const skill of discovered) {
     if (skill.source === "agents") add(asSkill(skill));
   }
-  add(BUILTIN_CREATE_SKILL);
+  for (const skill of BUILTIN_SKILLS) add(skill);
   for (const skill of discovered) {
     if (skill.source !== "agents") add(asSkill(skill));
   }
@@ -474,7 +500,7 @@ export function warmNativeSkills(
 export async function readSkillBody(
   skill: FileSkill | BuiltinSkill,
 ): Promise<string> {
-  if (skill.kind === "builtin") return CREATE_SKILL_BODY;
+  if (skill.kind === "builtin") return BUILTIN_SKILL_BODIES[skill.name] ?? "";
   try {
     return await readTextFile(skill.path);
   } catch {

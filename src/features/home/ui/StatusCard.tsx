@@ -5,17 +5,21 @@ import { HomeCard } from "./HomeCard";
 type Props = {
   status: HomeStatus | null;
   error: string | null;
+  onOpenAutomations?: () => void;
 };
 
 type Metric = {
   label: string;
   value: string;
   active?: boolean;
+  onOpen?: () => void;
 };
 
-function MetricRow({ label, value, active }: Metric): ReactNode {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
+const ROW = "flex items-baseline justify-between gap-3";
+
+function MetricRow({ label, value, active, onOpen }: Metric): ReactNode {
+  const content = (
+    <>
       <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-content/40">
         {label}
       </span>
@@ -26,11 +30,27 @@ function MetricRow({ label, value, active }: Metric): ReactNode {
       >
         {value}
       </span>
-    </div>
+    </>
+  );
+  if (!onOpen) return <div className={ROW}>{content}</div>;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`${ROW} -mx-1 rounded px-1 text-left transition-colors hover:bg-accent/[0.06] focus-visible:outline-1 focus-visible:outline-accent`}
+    >
+      {content}
+    </button>
   );
 }
 
-function StatusPanel({ status }: { status: HomeStatus }): ReactNode {
+function StatusPanel({
+  status,
+  onOpenAutomations,
+}: {
+  status: HomeStatus;
+  onOpenAutomations?: () => void;
+}): ReactNode {
   const live =
     status.recentSessionCount > 0 || status.enabledAutomationCount > 0;
   const metrics: Metric[] = [
@@ -43,10 +63,12 @@ function StatusPanel({ status }: { status: HomeStatus }): ReactNode {
       label: "Automations",
       value: String(status.enabledAutomationCount),
       active: status.enabledAutomationCount > 0,
+      onOpen: onOpenAutomations,
     },
     {
       label: "Next due",
       value: formatNextDueAt(status.nextDueAt),
+      onOpen: onOpenAutomations,
     },
   ];
 
@@ -82,7 +104,11 @@ function StatusPanel({ status }: { status: HomeStatus }): ReactNode {
   );
 }
 
-export function StatusCard({ status, error }: Props): ReactNode {
+export function StatusCard({
+  status,
+  error,
+  onOpenAutomations,
+}: Props): ReactNode {
   if (error) {
     return (
       <HomeCard title="Status">
@@ -99,7 +125,7 @@ export function StatusCard({ status, error }: Props): ReactNode {
   }
   return (
     <HomeCard title="Status">
-      <StatusPanel status={status} />
+      <StatusPanel status={status} onOpenAutomations={onOpenAutomations} />
     </HomeCard>
   );
 }

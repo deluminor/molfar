@@ -1,8 +1,19 @@
-import { ChevronDown, GripVertical, X } from "@/shared/ui/icons";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { sessionDraftBlock, sessionWorkCwd } from "@/domain/session/session-state";
+import type { Attachment } from "@/domain/session/attachment";
+import type { Block } from "@/domain/session/block";
+import type { HarnessId } from "@/domain/harness/harness";
+import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
+import type { ComposerTurnOptions, ModelTarget, PlanBuildTarget } from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { RateLimitProvider } from "@/domain/rate-limits/rate-limit";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { GripVertical, X } from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -19,47 +30,51 @@ import {
 import { DiscussionEmpty } from "./DiscussionEmpty";
 import { LinkedWorkItemUpdateNotice } from "@/features/inbox/ui/LinkedWorkItemUpdateNotice";
 import { SessionReview } from "./SessionReview";
+import { sessionEditPaths } from "../model/checkpoint-edits";
 import { PromptOutline } from "./PromptOutline";
 import {
   canCompactHarnessContext,
   type ApprovalDecision,
   type UserQuestionReply,
 } from "@/integrations/harness";
-import {
-  looksLikeProject,
-  type RecentProject,
-  isRemoteProjectPath,
-} from "@/features/projects/model/recents";
-import { sessionDisplayTitle } from "@/domain/session/title";
-import {
-  sessionWorkCwd,
-  sessionDraftBlock,
-} from "@/domain/session/session-state";
-import type {
-  LinkedWorkItem,
-  Session,
-  WorkspaceMode,
-} from "@/domain/session/session";
-import type { Block } from "@/domain/session/block";
-import type { Attachment } from "@/domain/session/attachment";
-import type {
-  ModelTarget,
-  PlanBuildTarget,
-  ComposerTurnOptions,
-} from "@/domain/session/turn";
-import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import type { HarnessId } from "@/domain/harness/harness";
+import { looksLikeProject, type RecentProject, isRemoteProjectPath } from "@/features/projects/model/recents";
 import { sessionHasBtwThreads, supportsBtwHarness } from "../model/btw";
 import { BtwSheet, useBtwConversation } from "./BtwSheet";
 import { AgentTranscript } from "./AgentTranscript";
 import { PooledTranscript, type TranscriptPool } from "./TranscriptPool";
 import { TranscriptFind } from "./TranscriptFind";
 import {
+  TranscriptJumpToBottom,
+  useTranscriptJumpVisibility,
+} from "./TranscriptJumpToBottom";
+import {
   clearTranscriptJump,
   peekTranscriptJump,
   subscribeTranscriptJump,
 } from "../model/transcript-jump";
 import { EmptySession } from "./EmptySession";
+import {
+  familiarForSession,
+  familiarLook,
+  familiarsSnapshot,
+  subscribeFamiliars,
+} from "@/features/familiars/model/familiar";
+import { FamiliarHeader } from "@/features/familiars/ui/FamiliarHeader";
+import { FamiliarComposer } from "@/features/familiars/ui/FamiliarComposer";
+import type { LaunchedSessionView } from "@/features/familiars/model/familiar-spawned-sessions";
+import { ModelControlPills, ModelPicker } from "./ModelPicker";
+import { ContextMeter } from "./ContextMeter";
+import { UsageChips } from "@/app/shell/UsageFooter";
+import { FamiliarUsageLimitNotice } from "@/features/familiars/ui/FamiliarUsageLimitNotice";
+import { QuestionForm } from "./QuestionForm";
+import {
+  familiarMessageDeliveries,
+  familiarPendingTranscriptBlocks,
+  visibleFamiliarCompletionMessages,
+} from "@/features/familiars/model/familiar-messaging";
+import { MessageQueue } from "./MessageQueue";
+import { useFamiliarTranscript } from "@/features/familiars/hooks/use-familiar-transcript";
+import { FAMILIAR_PAGE_TURNS } from "../data/session-store";
 import { useComposerDockMotion } from "./use-composer-dock-motion";
 import { MOD } from "@/shared/lib/platform";
 import {
@@ -74,7 +89,6 @@ import {
   subscribeNotesEnabled,
 } from "@/features/settings/model/settings";
 import { getComposerDraft, setComposerDraft } from "../model/draft-cache";
-import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { isAstraModel } from "../model/astra-welcome";
 import { isOpus55Model } from "../model/opus-welcome";
 import { AstraWelcome } from "./AstraWelcome";
@@ -88,6 +102,7 @@ import {
   subscribeProjectChatBackground,
 } from "@/features/projects/model/project-chat-background";
 import { useProjectBackgroundEffect } from "@/features/projects/ui/use-project-background-effect";
+import { familiarChatBackground } from "@/features/familiars/model/familiar-background";
 import { GradientBlurBackground } from "@/features/settings/ui/GradientBlurBackground";
 import {
   loadChatBackgroundPath,
@@ -109,6 +124,23 @@ export type SessionPaneProps = {
   inSplit: boolean;
   composerFocused: boolean;
   composerFocusToken?: number;
+  onShowFamiliarActivity?: (
+    sessionId: string,
+    turnId: string,
+    blocks: Block[],
+  ) => void;
+  familiarActivityTurnId?: string;
+  /** Open a session a Familiar's turn launched, in the Familiar's sidebar. */
+  onOpenFamiliarSession?: (
+    sessionId: string,
+    turnId: string,
+    blocks: Block[],
+    launchedId: string,
+  ) => void;
+  /** Live status of the sessions this Familiar launched, by id. */
+  familiarLaunchedSessions?: ReadonlyMap<string, LaunchedSessionView>;
+  /** The launched session open in the Familiar's sidebar. */
+  openFamiliarSessionId?: string;
   recents: RecentProject[];
   hideProjectPicker?: boolean;
   onFocus: (sessionId: string) => void;
@@ -160,9 +192,11 @@ export type SessionPaneProps = {
   onUsageLimitResume: (sessionId: string) => void;
   onUsageLimitResumeAtReset: (sessionId: string, enabled: boolean) => void;
   onUsageLimitDismiss: (sessionId: string) => void;
+  onUsageLimitAccountChange?: (sessionId: string, accountId: string) => void;
   onInboxCardDismiss?: (sessionId: string) => void;
   onLinkedWorkItemUpdateCardDismiss?: (sessionId: string) => void;
   onNoteCardDismiss?: (sessionId: string) => void;
+  onOpenArtifact?: (sessionId: string, id: string) => void;
   onHandoffCardDismiss?: (sessionId: string) => void;
   onOpenLinkedWorkItem?: (item: LinkedWorkItem, sessionId: string) => void;
   onArchiveSession?: (sessionId: string, archived: boolean) => Promise<boolean>;
@@ -183,6 +217,8 @@ export type SessionPaneProps = {
     path?: string,
     session?: { sessionId: string; cwd: string },
   ) => void;
+  /** Offer committing a settled turn's changes from its review card. */
+  onCommitChanges?: (session: { sessionId: string; cwd: string }) => void;
   onOpenPlan: (sessionId: string, blockId: string) => void;
   onBuildPlan: (
     sessionId: string,
@@ -291,9 +327,11 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onUsageLimitResume,
   onUsageLimitResumeAtReset,
   onUsageLimitDismiss,
+  onUsageLimitAccountChange,
   onInboxCardDismiss,
   onLinkedWorkItemUpdateCardDismiss,
   onNoteCardDismiss,
+  onOpenArtifact,
   onHandoffCardDismiss,
   onOpenLinkedWorkItem,
   onArchiveSession,
@@ -303,6 +341,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onQuestionInteraction,
   onOpenFile,
   onOpenDiff,
+  onCommitChanges,
+  onShowFamiliarActivity,
+  familiarActivityTurnId,
+  onOpenFamiliarSession,
+  familiarLaunchedSessions,
+  openFamiliarSessionId,
   onOpenPlan,
   onBuildPlan,
   onSecondOpinion,
@@ -328,9 +372,19 @@ const LocalSessionPane = memo(function LocalSessionPane({
   );
   const title = sessionDisplayTitle(session.title, session.harness);
   const isEmpty = session.blocks.length === 0;
+  const editedPaths = useMemo(
+    () => (session.busy ? undefined : sessionEditPaths(session.blocks)),
+    [session.blocks, session.busy],
+  );
+  const messageDeliveries = useMemo(
+    () => familiarMessageDeliveries(session),
+    [session.queuedMessages, session.queueStatus],
+  );
   const recallLastTurnRef = useRef<(() => void) | null>(null);
   const remote = remoteSession;
-  const editLastTurnSupported = !remote && canEditLastTurn(session);
+  // A Familiar's chat is a running conversation; what was said stays said.
+  const editLastTurnSupported =
+    !remote && !familiarForSession(session.id) && canEditLastTurn(session);
   const turnRecall = editLastTurnSupported ? lastTurnRecall(session) : null;
   const draftBlock = sessionDraftBlock(session);
   useSyncExternalStore(
@@ -348,9 +402,14 @@ const LocalSessionPane = memo(function LocalSessionPane({
     loadNewThreadBackgroundEffect,
     loadNewThreadBackgroundEffect,
   );
-  const projectBackground = loadProjectChatBackgroundSettings(
-    projectKey(session.cwd),
-  );
+  // Renames, instructions and mascot picks re-render the agent's look.
+  useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  const familiar = familiarForSession(session.id);
+  const agent = familiar ? familiarLook(familiar) : undefined;
+  // A Familiar shows only its own background, never the project's or the app's.
+  const projectBackground = familiar
+    ? familiarChatBackground(familiar.id)
+    : loadProjectChatBackgroundSettings(projectKey(session.cwd));
   const projectBackgroundUrl = useProjectBackgroundEffect(
     projectBackground?.path ?? null,
     projectBackground?.effect ?? "none",
@@ -397,7 +456,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
     [onFocus, session.id],
   );
   const quoteRequestId = useRef(0);
-  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const jumpVisibility = useTranscriptJumpVisibility();
   const [editingLastTurn, setEditingLastTurn] = useState(false);
   useEffect(() => {
     setEditingLastTurn(false);
@@ -452,6 +511,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const onJumpToBottomReady = useCallback((jump: () => void) => {
     jumpToBottomRef.current = jump;
   }, []);
+  const familiarTranscript = useFamiliarTranscript(
+    session,
+    !!familiarForSession(session.id),
+  );
   const revealBlockRef = useRef<((blockId: string) => boolean) | null>(null);
   const onRevealReady = useCallback((reveal: (blockId: string) => boolean) => {
     revealBlockRef.current = reveal;
@@ -472,9 +535,16 @@ const LocalSessionPane = memo(function LocalSessionPane({
     [],
   );
   const navigateBlock = useCallback(
-    (blockId: string | null, query?: string) =>
-      navigateBlockRef.current?.(blockId, query) ?? false,
-    [],
+    async (blockId: string | null, query?: string) => {
+      if (navigateBlockRef.current?.(blockId, query)) return true;
+      if (!blockId) return false;
+      if (!(await familiarTranscript.reveal(blockId))) return false;
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve()),
+      );
+      return navigateBlockRef.current?.(blockId, query) ?? false;
+    },
+    [familiarTranscript.reveal],
   );
   const jumpRequest = useSyncExternalStore(
     subscribeTranscriptJump,
@@ -483,12 +553,19 @@ const LocalSessionPane = memo(function LocalSessionPane({
   );
   useEffect(() => {
     if (!visible || !navigatorReady || !jumpRequest) return;
+    let cancelled = false;
     const frame = requestAnimationFrame(() => {
-      if (navigateBlock(jumpRequest.blockId, jumpRequest.query)) {
-        clearTranscriptJump(session.id, jumpRequest.token);
-      }
+      void navigateBlock(jumpRequest.blockId, jumpRequest.query)
+        .then((found) => {
+          if (found && !cancelled)
+            clearTranscriptJump(session.id, jumpRequest.token);
+        })
+        .catch(() => undefined);
     });
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [visible, navigatorReady, jumpRequest, navigateBlock, session.id]);
   const addSelectionToChat = useCallback(
     (text: string, mode?: QuoteRequest["mode"]) => {
@@ -543,10 +620,17 @@ const LocalSessionPane = memo(function LocalSessionPane({
     return () => window.removeEventListener(ADD_TO_CHAT_EVENT, onAdd);
   }, [addSelectionToChat, addToChatTarget]);
   const workCwd = sessionWorkCwd(session);
+  const reviewHidden =
+    remote ||
+    !!session.inboxAsk ||
+    !!session.worktreeRemoved ||
+    familiarTranscript.viewingOlderPage ||
+    !!draftBlock;
   const showDeckProjectPicker = isEmpty && !looksLikeProject(session.cwd);
+  // The agent's input always sits at the bottom, like a chat.
   const dockComposer =
     remoteSessionLoading ||
-    (!draftBlock && (!isEmpty || inSplit || !!session.inboxAsk));
+    (!draftBlock && (!isEmpty || inSplit || !!session.inboxAsk || !!agent));
   const composerDockMotion = useComposerDockMotion(dockComposer);
   const draftRef = useRef<string | undefined>(getComposerDraft(session.id));
   const composer = (
@@ -698,11 +782,14 @@ const LocalSessionPane = memo(function LocalSessionPane({
       data-project-background-effect={projectBackground?.effect}
       data-project-background-scope={projectBackground?.scope}
       style={projectBackgroundStyle}
-      className="chat-pane-background relative isolate flex h-full min-h-0 min-w-0 flex-1 flex-col"
+      className={`${
+        agent && !projectBackground ? "" : "chat-pane-background "
+      }relative isolate flex h-full min-h-0 min-w-0 flex-1 flex-col`}
       onMouseDown={() => onFocus(session.id)}
     >
       {projectBackground?.effect === "gradient-blur" ||
-      (!projectBackground &&
+      (!agent &&
+        !projectBackground &&
         globalBackgroundPath &&
         globalBackgroundEffect === "gradient-blur") ? (
         <GradientBlurBackground />
@@ -761,227 +848,428 @@ const LocalSessionPane = memo(function LocalSessionPane({
           </button>
         </div>
       ) : null}
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        <div
-          ref={transcriptScope}
-          className="@container relative min-h-0 flex-1"
-        >
-          {visible && focused && !session.inboxAsk ? (
-            <LinkedWorkItemUpdateNotice
-              sessionId={session.id}
-              card={session.linkedWorkItemUpdateCard}
-              onAcknowledge={() => {
-                const updatedAt = session.linkedWorkItemUpdateCard?.updatedAt;
-                if (updatedAt != null) {
-                  markLinkedSessionUpdateSeen(session.id, updatedAt);
+      <div className="flex min-h-0 min-w-0 flex-1">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+          <div
+            ref={transcriptScope}
+            className={`@container relative min-h-0 flex-1${
+              dockComposer && !agent ? " transcript-composer-fade" : ""
+            }`}
+          >
+            {visible && focused && !session.inboxAsk ? (
+              <LinkedWorkItemUpdateNotice
+                sessionId={session.id}
+                card={session.linkedWorkItemUpdateCard}
+                onAcknowledge={() => {
+                  const updatedAt = session.linkedWorkItemUpdateCard?.updatedAt;
+                  if (updatedAt != null) {
+                    markLinkedSessionUpdateSeen(session.id, updatedAt);
+                  }
+                }}
+                onDismiss={() =>
+                  onLinkedWorkItemUpdateCardDismiss?.(session.id)
                 }
-              }}
-              onDismiss={() => onLinkedWorkItemUpdateCardDismiss?.(session.id)}
-              onOpenDiscussion={() => {
-                if (session.linkedWorkItem) {
-                  onOpenLinkedWorkItem?.(session.linkedWorkItem, session.id);
+                onOpenDiscussion={() => {
+                  if (session.linkedWorkItem) {
+                    onOpenLinkedWorkItem?.(session.linkedWorkItem, session.id);
+                  }
+                }}
+                onAddToChat={(text) => addSelectionToChat(text, "plain")}
+                onArchiveSession={
+                  onArchiveSession
+                    ? () => onArchiveSession(session.id, true)
+                    : undefined
                 }
-              }}
-              onAddToChat={(text) => addSelectionToChat(text, "plain")}
-              onArchiveSession={
-                onArchiveSession
-                  ? () => onArchiveSession(session.id, true)
-                  : undefined
-              }
-              onDeleteSession={
-                onDeleteSession ? () => onDeleteSession(session.id) : undefined
-              }
-            />
-          ) : null}
-          {remoteSessionLoading ? null : isEmpty ? (
-            session.inboxAsk ? (
-              <div className="scrollbar-none h-full min-h-0 overflow-y-auto">
-                <DiscussionEmpty message="Explore this item with your agent." />
-              </div>
-            ) : (
-              <EmptySession
-                cwd={session.cwd}
-                hasChatBackground={Boolean(
-                  projectBackground || globalBackgroundPath,
-                )}
-                composer={
-                  dockComposer ? undefined : (
-                    <div
-                      ref={composerDockMotion.centeredRef}
-                      data-session-composer
-                    >
-                      {composer}
-                    </div>
-                  )
+                onDeleteSession={
+                  onDeleteSession
+                    ? () => onDeleteSession(session.id)
+                    : undefined
                 }
               />
-            )
-          ) : (
-            <>
-              <PooledTranscript
-                pool={transcriptPool}
-                sessionId={session.id}
-                onMouseDown={focusPane}
-              >
-                <AgentTranscript
-                  blocks={session.blocks}
-                  busy={!!session.busy}
-                  visible={visible}
-                  cwd={workCwd}
-                  harness={session.harness}
-                  model={session.model}
-                  modelSettings={session.modelSettings}
-                  pendingQuestion={!!session.pendingQuestion}
-                  backgroundTasks={session.backgroundTasks}
-                  onApproval={session.worktreeRemoved ? undefined : approve}
-                  onAddToChat={addSelectionToChat}
-                  onSaveNote={notesEnabled ? saveNote : undefined}
-                  onSendDraft={
-                    draftBlock
-                      ? (block) =>
-                          onSubmit(
-                            session.id,
-                            block.text,
-                            block.attachments ?? [],
-                            {
-                              draftBlockId: block.id,
-                              ...(block.appRequestId
-                                ? { appRequestId: block.appRequestId }
-                                : {}),
-                            },
-                          )
-                      : undefined
-                  }
-                  onRemoveDraft={
-                    draftBlock
-                      ? (block) => onRemoveDraft(session.id, block.id)
-                      : undefined
-                  }
-                  onSaveSelectionNote={
-                    notesEnabled ? saveSelectionNote : undefined
-                  }
-                  onOpenFile={onOpenFile}
-                  onOpenDiff={onOpenDiff}
-                  onOpenPlan={openPlan}
-                  onBuildPlan={session.worktreeRemoved ? undefined : buildPlan}
-                  planBuildTargets={!remote}
-                  onSecondOpinion={
-                    !session.inboxAsk &&
-                    !session.worktreeRemoved &&
-                    onSecondOpinion
-                      ? (target, turn) =>
-                          onSecondOpinion(session.id, target, turn)
-                      : undefined
-                  }
-                  onHandoff={
-                    !session.inboxAsk && !session.worktreeRemoved && onHandoff
-                      ? (target, turn) => onHandoff(session.id, target, turn)
-                      : undefined
-                  }
-                  onJumpToBottomChange={setShowJumpToBottom}
-                  onJumpToBottomReady={onJumpToBottomReady}
-                  onRevealReady={onRevealReady}
-                  onNavigateReady={onNavigateReady}
-                  onScrollerChange={setTranscriptScroller}
-                  editingLastTurn={editingLastTurn}
-                  onEditLastTurn={
-                    editLastTurnSupported
-                      ? () => {
-                          onFocus(session.id);
-                          recallLastTurnRef.current?.();
-                        }
-                      : undefined
-                  }
-                  latestTurnAccessory={
-                    remote ||
-                    session.inboxAsk ||
-                    session.worktreeRemoved ||
-                    draftBlock ? undefined : (
-                      <SessionReview
-                        sessionId={session.id}
-                        cwd={workCwd}
-                        enabled={visible}
-                        busy={!!session.busy}
-                        undoLocked={
-                          reviewUndoLocked ||
-                          orchestrationRuns.some(
-                            (run) =>
-                              (run.status === "active" ||
-                                run.status === "paused") &&
-                              (run.leadId === session.id ||
-                                run.tasks.some(
-                                  (task) => task.sessionId === session.id,
-                                )),
-                          )
-                        }
-                        onOpenDiff={onOpenDiff}
-                      />
+            ) : null}
+            {remoteSessionLoading ? null : isEmpty ? (
+              agent ? (
+                <div className="scrollbar-none h-full min-h-0 overflow-y-auto">
+                  <FamiliarHeader agent={agent} greeting />
+                </div>
+              ) : session.inboxAsk ? (
+                <div className="scrollbar-none h-full min-h-0 overflow-y-auto">
+                  <DiscussionEmpty message="Explore this item with your agent." />
+                </div>
+              ) : (
+                <EmptySession
+                  cwd={session.cwd}
+                  hasChatBackground={Boolean(
+                    projectBackground || globalBackgroundPath,
+                  )}
+                  composer={
+                    dockComposer ? undefined : (
+                      <div
+                        ref={composerDockMotion.centeredRef}
+                        data-session-composer
+                      >
+                        {composer}
+                      </div>
                     )
                   }
                 />
-              </PooledTranscript>
-              {!session.inboxAsk ? (
-                <TranscriptFind
-                  blocks={session.blocks}
-                  visible={visible}
-                  focused={focused}
-                  onNavigate={navigateBlock}
-                  side={
-                    session.linkedWorkItemUpdateCard &&
-                    session.linkedWorkItemUpdateCard.status !== "loading"
-                      ? "left"
-                      : "right"
-                  }
+              )
+            ) : (
+              <>
+                <PooledTranscript
+                  pool={transcriptPool}
+                  sessionId={session.id}
+                  onMouseDown={focusPane}
+                >
+                  <AgentTranscript
+                    blocks={
+                      agent && !familiarTranscript.viewingOlderPage
+                        ? familiarPendingTranscriptBlocks(
+                            session,
+                            familiarTranscript.blocks,
+                          )
+                        : familiarTranscript.blocks
+                    }
+                    historicalBlockIds={familiarTranscript.historicalBlockIds}
+                    initialTurns={agent ? FAMILIAR_PAGE_TURNS : undefined}
+                    pageSize={agent ? FAMILIAR_PAGE_TURNS : undefined}
+                    hasEarlier={familiarTranscript.hasEarlier}
+                    loadEarlierOnScroll={!!agent}
+                    onLoadEarlier={
+                      agent ? familiarTranscript.loadEarlier : undefined
+                    }
+                    onReturnToLatest={
+                      familiarTranscript.viewingOlderPage
+                        ? familiarTranscript.latest
+                        : undefined
+                    }
+                    busy={!!session.busy && !familiarTranscript.viewingOlderPage}
+                    visible={visible}
+                    cwd={workCwd}
+                    agentName={agent?.name}
+                    onOpenArtifact={
+                      onOpenArtifact
+                        ? (id) => onOpenArtifact(session.id, id)
+                        : undefined
+                    }
+                    agentMascot={agent}
+                    bottomAligned={!!agent}
+                    inlineWork={!!agent}
+                    messageDeliveries={agent ? messageDeliveries : undefined}
+                    onRetryMessage={
+                      agent ? () => onResumeQueue(session.id) : undefined
+                    }
+                    onShowWork={
+                      agent && onShowFamiliarActivity
+                        ? (turnId, blocks) =>
+                            onShowFamiliarActivity(session.id, turnId, blocks)
+                        : undefined
+                    }
+                    activeWorkTurnId={familiarActivityTurnId}
+                    onOpenSession={
+                      agent && onOpenFamiliarSession
+                        ? (turnId, blocks, launchedId) =>
+                            onOpenFamiliarSession(
+                              session.id,
+                              turnId,
+                              blocks,
+                              launchedId,
+                            )
+                        : undefined
+                    }
+                    launchedSessions={familiarLaunchedSessions}
+                    openSessionId={openFamiliarSessionId}
+                    // A Familiar's turn keeps copy, save as note and the time.
+                    daySeparators={!!agent}
+                    hideTurnMetrics={!!agent}
+                    harness={session.harness}
+                    model={session.model}
+                    modelSettings={session.modelSettings}
+                    pendingQuestion={!!session.pendingQuestion}
+                    backgroundTasks={session.backgroundTasks}
+                    onApproval={session.worktreeRemoved ? undefined : approve}
+                    onAddToChat={addSelectionToChat}
+                    onSaveNote={notesEnabled ? saveNote : undefined}
+                    onSendDraft={
+                      draftBlock
+                        ? (block) =>
+                            onSubmit(
+                              session.id,
+                              block.text,
+                              block.attachments ?? [],
+                              {
+                                draftBlockId: block.id,
+                                ...(block.appRequestId
+                                  ? { appRequestId: block.appRequestId }
+                                  : {}),
+                              },
+                            )
+                        : undefined
+                    }
+                    onRemoveDraft={
+                      draftBlock
+                        ? (block) => onRemoveDraft(session.id, block.id)
+                        : undefined
+                    }
+                    onSaveSelectionNote={
+                      notesEnabled ? saveSelectionNote : undefined
+                    }
+                    onOpenFile={onOpenFile}
+                    onOpenDiff={onOpenDiff}
+                    onOpenPlan={openPlan}
+                    onBuildPlan={
+                      session.worktreeRemoved ? undefined : buildPlan
+                    }
+                    planBuildTargets={!remote}
+                    onSecondOpinion={
+                      !agent &&
+                      !session.inboxAsk &&
+                      !session.worktreeRemoved &&
+                      onSecondOpinion
+                        ? (target, turn) =>
+                            onSecondOpinion(session.id, target, turn)
+                        : undefined
+                    }
+                    onHandoff={
+                      !agent &&
+                      !session.inboxAsk &&
+                      !session.worktreeRemoved &&
+                      onHandoff
+                        ? (target, turn) => onHandoff(session.id, target, turn)
+                        : undefined
+                    }
+                    onJumpToBottomChange={jumpVisibility.setVisible}
+                    onJumpToBottomReady={onJumpToBottomReady}
+                    onRevealReady={onRevealReady}
+                    onNavigateReady={onNavigateReady}
+                    onScrollerChange={setTranscriptScroller}
+                    editingLastTurn={editingLastTurn}
+                    onEditLastTurn={
+                      editLastTurnSupported && !familiarTranscript.viewingOlderPage
+                        ? () => {
+                            onFocus(session.id);
+                            recallLastTurnRef.current?.();
+                          }
+                        : undefined
+                    }
+                    latestTurnAccessory={
+                      reviewHidden || agent ? undefined : (
+                        <SessionReview
+                          sessionId={session.id}
+                          editedPaths={editedPaths}
+                          cwd={workCwd}
+                          enabled={visible}
+                          busy={!!session.busy}
+                          undoLocked={
+                            reviewUndoLocked ||
+                            orchestrationRuns.some(
+                              (run) =>
+                                (run.status === "active" ||
+                                  run.status === "paused") &&
+                                (run.leadId === session.id ||
+                                  run.tasks.some(
+                                    (task) => task.sessionId === session.id,
+                                  )),
+                            )
+                          }
+                          onOpenDiff={onOpenDiff}
+                          onCommit={onCommitChanges}
+                        />
+                      )
+                    }
+                  />
+                </PooledTranscript>
+                {!session.inboxAsk ? (
+                  <TranscriptFind
+                    blocks={session.blocks}
+                    visible={visible}
+                    focused={focused}
+                    onNavigate={navigateBlock}
+                    onSearch={familiarTranscript.search}
+                    side={
+                      session.linkedWorkItemUpdateCard &&
+                      session.linkedWorkItemUpdateCard.status !== "loading"
+                        ? "left"
+                        : "right"
+                    }
+                  />
+                ) : null}
+                {/* One mark per message would crowd a Familiar's endless chat. */}
+                {agent ? null : (
+                  <PromptOutline
+                    blocks={session.blocks}
+                    scope={transcriptScope}
+                    scroller={transcriptScroller}
+                    visible={visible}
+                    revealBlock={revealBlock}
+                  />
+                )}
+                <TranscriptJumpToBottom
+                  visibility={jumpVisibility}
+                  onJump={() => {
+                    if (familiarTranscript.viewingOlderPage) {
+                      familiarTranscript.latest();
+                      requestAnimationFrame(() => jumpToBottomRef.current?.());
+                    } else jumpToBottomRef.current?.();
+                  }}
                 />
-              ) : null}
-              <PromptOutline
-                blocks={session.blocks}
-                scope={transcriptScope}
-                scroller={transcriptScroller}
-                visible={visible}
-                revealBlock={revealBlock}
-              />
-              {showJumpToBottom ? (
-                <div className="pointer-events-none absolute inset-x-0 bottom-2 z-30 flex justify-center">
-                  <button
-                    type="button"
-                    title="Jump to latest"
-                    aria-label="Jump to latest"
-                    data-jump-to-bottom
-                    onClick={() => jumpToBottomRef.current?.()}
-                    className="pointer-events-auto grid size-6 place-items-center rounded-md border border-content/15 bg-content/10 text-content shadow-md hover:bg-content/5 backdrop-blur-md"
-                  >
-                    <ChevronDown className="size-4" strokeWidth={2} />
-                  </button>
-                </div>
-              ) : null}
-            </>
-          )}
-        </div>
-        {dockComposer ? (
-          <div
-            ref={composerDockMotion.dockedRef}
-            data-session-composer
-            inert={btw.open}
-            className="mx-auto w-full max-w-4xl shrink-0"
-          >
-            {composer}
+              </>
+            )}
           </div>
-        ) : null}
-        <BtwSheet
-          btw={btw}
-          cwd={workCwd}
-          visible={visible}
-          origin={() =>
-            composerDockMotion.dockedRef.current?.querySelector<HTMLElement>(
-              "[data-composer-box]",
-            ) ?? null
-          }
-          onSaveNote={notesEnabled ? saveNote : undefined}
-          onOpenFile={onOpenFile}
-          onOpenDiff={onOpenDiff}
-        />
+          {dockComposer ? (
+            <div
+              ref={composerDockMotion.dockedRef}
+              data-session-composer
+              inert={btw.open}
+              className="mx-auto w-full max-w-4xl shrink-0"
+            >
+              {agent ? (
+                <>
+                  <MessageQueue
+                    messages={visibleFamiliarCompletionMessages(session)}
+                    status={session.queueStatus}
+                    sendingId={session.sendingQueuedMessageId}
+                    onDelete={(messageId) =>
+                      onDeleteQueuedMessage(session.id, messageId)
+                    }
+                    onResume={() => onResumeQueue(session.id)}
+                    variant="messages"
+                  />
+                  {session.pendingQuestion ? (
+                    <QuestionForm
+                      prompt={session.pendingQuestion}
+                      onReply={replyQuestion}
+                      onInteraction={(id) =>
+                        onQuestionInteraction?.(session.id, id)
+                      }
+                    />
+                  ) : null}
+                  {session.usageLimit ? (
+                    <FamiliarUsageLimitNotice
+                      session={session}
+                      onModelChange={(harness, model) =>
+                        onModelChange(session.id, harness, model)
+                      }
+                      onAccountChange={
+                        onUsageLimitAccountChange
+                          ? (accountId) =>
+                              onUsageLimitAccountChange(session.id, accountId)
+                          : undefined
+                      }
+                      onResume={() => onUsageLimitResume(session.id)}
+                      onResumeAtReset={(enabled) =>
+                        onUsageLimitResumeAtReset(session.id, enabled)
+                      }
+                    />
+                  ) : null}
+                  <FamiliarComposer
+                    key={session.id}
+                    sessionId={session.id}
+                    name={agent.name}
+                    enabled={visible}
+                    quoteRequest={quoteRequest}
+                    onQuoteRequestConsumed={acknowledgeQuote}
+                    onDraftChange={(text) => {
+                      draftRef.current = text;
+                    }}
+                    focusToken={
+                      focused && composerFocused
+                        ? composerFocusToken
+                        : undefined
+                    }
+                    onFocus={() => onFocus(session.id)}
+                    onSubmit={(text, attachments) =>
+                      onSubmit(session.id, text, attachments)
+                    }
+                    // The plan's usage, as the session footer shows it,
+                    // which a Familiar in full view covers. Its account moves
+                    // with the usage-limit notice, not here. A narrow chat
+                    // drops it first, then shows the model controls as icons.
+                    tools={
+                      <div className="flex shrink-0 items-center gap-0.5 text-[11px] text-content/55 @max-md:hidden">
+                        <UsageChips
+                          providers={familiarUsageProviders(session.harness)}
+                          session={{
+                            id: session.id,
+                            harness: session.harness,
+                            model: session.model,
+                            providerAccountId: session.providerAccountId,
+                          }}
+                          project={session.cwd}
+                          accountPicker={false}
+                          variant="composer"
+                        />
+                      </div>
+                    }
+                    controls={
+                      <>
+                        <ModelPicker
+                          harness={session.harness}
+                          model={session.model}
+                          values={session.modelSettings}
+                          allowedHarnesses={allowedModelHarnesses}
+                          project={workCwd}
+                          hideSettings
+                          hotkeys={focused && !btw.open}
+                          variant="text"
+                          labelClassName="@max-sm:hidden"
+                          onChange={(harness, model) =>
+                            onModelChange(session.id, harness, model)
+                          }
+                          onSettingsChange={(settings) =>
+                            onModelSettingsChange(session.id, settings)
+                          }
+                        />
+                        <ModelControlPills
+                          harness={session.harness}
+                          model={session.model}
+                          values={session.modelSettings}
+                          variant="text"
+                          labelClassName="@max-sm:hidden"
+                          onSettingsChange={(settings) =>
+                            onModelSettingsChange(session.id, settings)
+                          }
+                        />
+                        {/* A Familiar is one long conversation; this is how full
+                            its current thread is. It rotates threads itself,
+                            so there is nothing to compact here. */}
+                        <div className="grid size-6.5 place-items-center rounded-md transition-colors hover:bg-content/8">
+                          <ContextMeter usage={session.context} empty={isEmpty} />
+                        </div>
+                      </>
+                    }
+                  />
+                </>
+              ) : (
+                composer
+              )}
+            </div>
+          ) : null}
+          <BtwSheet
+            btw={btw}
+            cwd={workCwd}
+            visible={visible}
+            origin={() =>
+              composerDockMotion.dockedRef.current?.querySelector<HTMLElement>(
+                "[data-composer-box]",
+              ) ?? null
+            }
+            onSaveNote={notesEnabled ? saveNote : undefined}
+            onOpenFile={onOpenFile}
+            onOpenDiff={onOpenDiff}
+          />
+        </div>
       </div>
     </div>
   );
 });
+
+/** The providers whose plan usage a Familiar on `harness` shows by its composer. */
+function familiarUsageProviders(harness: HarnessId): RateLimitProvider[] {
+  return harness === "claude" ||
+    harness === "codex" ||
+    harness === "opencode" ||
+    harness === "devin"
+    ? [harness]
+    : [];
+}

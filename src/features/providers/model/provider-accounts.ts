@@ -1,6 +1,7 @@
 import { pathKey } from "@/shared/lib/paths";
 import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
+  supportsAccountProfiles,
   type ProviderAccountProvider,
   type ProviderAccount,
 } from "@/domain/harness/provider-account";
@@ -37,7 +38,7 @@ export function providerAccounts(
       }
       return [];
     }
-    if (!id || !label || seen.has(id)) {
+    if (!id || !label || seen.has(id) || !supportsAccountProfiles(provider)) {
       return [];
     }
     seen.add(id);
@@ -69,7 +70,8 @@ export function newProviderAccount(
 export function saveProviderAccount(account: ProviderAccount): void {
   if (
     account.id === DEFAULT_PROVIDER_ACCOUNT_ID ||
-    !validAccountId(account.id)
+    !validAccountId(account.id) ||
+    !supportsAccountProfiles(account.provider)
   ) {
     return;
   }

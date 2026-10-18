@@ -99,6 +99,22 @@ describe("createSessionPersistence", () => {
     expect(persistence.observe([streaming], new Set(["s1"]))).toBe(false);
   });
 
+  it("writes a busy session at once when its follow-up queue changes", async () => {
+    const { persistence, written } = setup();
+    const busy = { ...withUserTurn(project()), busy: true };
+    persistence.observe([busy], new Set(["s1"]));
+    await persistence.writePending();
+
+    const queued: Session = {
+      ...busy,
+      queuedMessages: [{ id: "q1", text: "next", attachments: [] }],
+    };
+    persistence.observe([queued], new Set(["s1"]));
+    await flush();
+
+    expect(written[written.length - 1]?.queuedMessages).toEqual(queued.queuedMessages);
+  });
+
   it("queues a busy session that is parked out of every tab", async () => {
     const { persistence } = setup();
     const busy = { ...withUserTurn(project()), busy: true };
@@ -170,6 +186,19 @@ describe("createSessionPersistence", () => {
     await flush();
 
     persistence.forgetSaved("s1");
+    persistence.persist(session);
+    await flush();
+
+    expect(written).toHaveLength(2);
+  });
+
+  it("saves a replacement as new once the session is forgotten", async () => {
+    const { persistence, written } = setup();
+    const session = withUserTurn(project());
+    persistence.persist(session);
+    await flush();
+
+    persistence.forget("s1");
     persistence.persist(session);
     await flush();
 

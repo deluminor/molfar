@@ -1,7 +1,7 @@
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
 import { LoaderCircle, Plus, Search, File, Trash2, X } from "@/shared/ui/icons";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -14,7 +14,6 @@ import { useMarkdownMode } from "@/features/sessions/ui/MarkdownModeToggle";
 import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";
-import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { useDragResize } from "@/shared/hooks/use-drag-resize";
 import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
@@ -53,7 +52,8 @@ import {
   resolveTabGroupLogo,
   resolveTabGroupMascot,
 } from "@/features/workspace/model/tab-groups";
-import { AgentMarkdown, MarkdownSourceHighlight } from "@/features/sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
+import { MarkdownSourceEditor } from "@/features/sessions/ui/MarkdownSourceEditor";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;
@@ -193,8 +193,9 @@ export function NotesView({
     if (creating) return;
     setCreating(true);
     try {
+      // A blank title marks the note's generated slug as pending.
       const note = await createNote({
-        title: "Untitled",
+        title: "",
         body: "",
         ...(cwd && looksLikeProject(cwd) ? { sourceCwd: cwd } : {}),
       });
@@ -577,10 +578,14 @@ function NoteEditor({
   const projectChangeRef = useRef(projectChange);
   const noteRef = useRef(note);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const titleFieldRef = useRef<HTMLInputElement>(null);
   const sourceFieldRef = useRef<HTMLTextAreaElement>(null);
   const lastDropAt = useRef(0);
   const skipSave = useRef(false);
   const saveTimer = useRef<number | null>(null);
+  // Title the user finished typing (blur/close). Any later title edit drops
+  // it; a save clears it only if the same request is still current.
+  const finalizeRef = useRef<{ title: string } | null>(null);
   const onSavedRef = useRef(onSaved);
   bodyRef.current = body;
   noteRef.current = note;
@@ -605,15 +610,25 @@ function NoteEditor({
     const current = latest ?? noteRef.current;
     const changes = editsRef.current;
     const nextBody = changes.body ?? current.body;
+    const titleFocused = document.activeElement === titleFieldRef.current;
     const nextTitle =
-      (changes.title ?? current.title).trim() || noteTitle(nextBody);
+      (changes.title ?? current.title).trim() ||
+      (titleFocused ? current.title : noteTitle(nextBody));
     const nextTags = changes.tags ?? current.tags;
     const nextProject = projectChangeRef.current;
     const acceptSaved = (saved: Note) => {
       noteRef.current = saved;
       // A completed save only clears the edits included in that request.
       const remaining = { ...editsRef.current };
-      if (remaining.title === changes.title) delete remaining.title;
+      // Keep the focused draft, including blanks and spaces, until blur.
+      // Leave the draft for a queued blur or unmount save to commit as well.
+      if (
+        remaining.title === changes.title &&
+        !titleFocused &&
+        document.activeElement !== titleFieldRef.current
+      ) {
+        delete remaining.title;
+      }
       if (remaining.body === changes.body) delete remaining.body;
       if (remaining.tags === changes.tags) delete remaining.tags;
       editsRef.current = remaining;
@@ -625,7 +640,11 @@ function NoteEditor({
       }
       setSaveError(null);
     };
+    // Bound to the finished title so a newer partial edit never finalizes.
+    const finalizeRequest = finalizeRef.current;
+    const finalizeSlug = finalizeRequest?.title === nextTitle;
     if (
+      !finalizeSlug &&
       nextTitle === current.title &&
       nextBody === current.body &&
       sameTags(nextTags, current.tags) &&
@@ -640,8 +659,12 @@ function NoteEditor({
         title: nextTitle,
         body: nextBody,
         tags: nextTags,
+        ...(finalizeSlug ? { finalizeSlug } : {}),
         ...(nextProject ? { sourceCwd: nextProject.path } : {}),
       });
+      if (finalizeSlug && finalizeRef.current === finalizeRequest) {
+        finalizeRef.current = null;
+      }
       acceptSaved(saved);
       onSavedRef.current(saved);
       return saved;
@@ -771,6 +794,14 @@ function NoteEditor({
 
   useEffect(() => {
     return () => {
+      // Only notes whose slug is still pending need a finalizing save.
+      if (noteRef.current.slugPending) {
+        finalizeRef.current = {
+          title:
+            (editsRef.current.title ?? noteRef.current.title).trim() ||
+            noteTitle(bodyRef.current),
+        };
+      }
       void saveNow();
     };
   }, [saveNow]);
@@ -818,14 +849,19 @@ function NoteEditor({
             />
           </div>
           <input
+            ref={titleFieldRef}
             value={title}
             onChange={(event) => {
+              finalizeRef.current = null;
               editNote({ title: event.target.value });
               scheduleSave();
             }}
             onBlur={() => {
               const next = title.trim() || noteTitle(body);
               if (next !== title) editNote({ title: next });
+              if (noteRef.current.slugPending) {
+                finalizeRef.current = { title: next };
+              }
               void saveNow();
             }}
             onKeyDown={onTitleKeyDown}
@@ -939,7 +975,7 @@ function NoteEditor({
             </div>
           ) : null}
           {mode === "source" ? (
-            <NoteSource
+            <MarkdownSourceEditor
               textareaRef={sourceFieldRef}
               autoFocus={blank}
               value={body}
@@ -955,60 +991,6 @@ function NoteEditor({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function NoteSource({
-  value,
-  onChange,
-  textareaRef,
-  autoFocus = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  textareaRef: { current: HTMLTextAreaElement | null };
-  autoFocus?: boolean;
-}) {
-  const lines = value.split("\n");
-  const gutterWidth = `calc(${Math.max(String(lines.length).length, 2)}ch + 0.75rem)`;
-  const textOffset = `calc(${gutterWidth} + 0.75rem)`;
-
-  return (
-    <div className="relative min-h-[448px]">
-      <div
-        aria-hidden
-        className="pointer-events-none grid font-mono text-[13px] leading-5 text-content/85"
-        style={{
-          gridTemplateColumns: `${gutterWidth} minmax(0, 1fr)`,
-        }}
-      >
-        {lines.map((line, index) => (
-          <Fragment key={index}>
-            <div className="select-none pr-2 text-right tabular-nums whitespace-nowrap text-content/40">
-              {index + 1}
-            </div>
-            <div className="min-h-5 min-w-0 pl-3 whitespace-pre-wrap wrap-break-word">
-              {line ? <MarkdownSourceHighlight text={line} /> : "\u00a0"}
-            </div>
-          </Fragment>
-        ))}
-      </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 w-px bg-content/10"
-        style={{ left: gutterWidth }}
-      />
-      <textarea
-        ref={textareaRef}
-        value={value}
-        autoFocus={autoFocus}
-        onChange={(event) => onChange(event.target.value)}
-        spellCheck={false}
-        placeholder="Write markdown…"
-        className="markdown-source-field absolute inset-0 h-full w-full resize-none overflow-hidden border-0 bg-transparent py-0 pr-0 font-mono text-[13px] leading-5 whitespace-pre-wrap wrap-break-word outline-none"
-        style={{ paddingLeft: textOffset }}
-      />
     </div>
   );
 }

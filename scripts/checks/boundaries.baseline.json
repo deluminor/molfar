@@ -1,1 +1,29 @@
-{}
+{
+  "src/features/agent-app/model/agent-app.test.ts": {
+    "feature-internal:task-board": 1
+  },
+  "src/features/companion/model/companion-board.test.ts": {
+    "feature-internal:task-board": 1
+  },
+  "src/features/companion/model/companion-vault.ts": {
+    "feature-internal:knowledge": 2
+  },
+  "src/features/familiars/model/familiar-completion-batches.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/familiars/model/familiar-session-completion.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/familiars/ui/FamiliarSessionList.tsx": {
+    "layer:features->app": 1
+  },
+  "src/features/sessions/ui/session-pane-messaging.test.ts": {
+    "layer:features->app": 1
+  },
+  "src/features/sessions/ui/SessionPane.tsx": {
+    "layer:features->app": 1
+  },
+  "src/integrations/harness/core/apply.test.ts": {
+    "layer:integrations->features": 2
+  }
+}

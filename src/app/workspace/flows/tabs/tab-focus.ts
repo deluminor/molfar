@@ -33,6 +33,8 @@ export type TabFocusDeps = {
   cache: Map<string, Session>;
   persistence: SessionPersistence;
   forgetHarness(session: Session): void;
+  /** Leaves views that cover the workspace (a Familiar's full view). */
+  leaveCoveringViews(): void;
 };
 
 /** The pane to focus in `tab`: `paneId` when the tab holds it, else its current one. */
@@ -60,6 +62,7 @@ export function activateTab(
   paneId?: string,
   reason: TabSelectReason = "session",
 ): void {
+  deps.leaveCoveringViews();
   const tab = deps.tabs().find((entry) => entry.id === tabId);
   const focusedId = paneToFocus(tab, paneId);
 

@@ -153,6 +153,29 @@ describe("buildClaudeSpawnArgs", () => {
     expect(args).not.toContain("--permission-prompt-tool");
   });
 
+  it("supplements interactive MCP without strict wipe", () => {
+    const args = buildClaudeSpawnArgs({
+      mcpConfig: {
+        mcpServers: {
+          "molfar-connectors": {
+            command: "/app/molfar",
+            args: ["connectors-mcp"],
+          },
+        },
+      },
+    });
+    expect(args).not.toContain("--strict-mcp-config");
+    const config = args[args.indexOf("--mcp-config") + 1];
+    expect(JSON.parse(config)).toEqual({
+      mcpServers: {
+        "molfar-connectors": {
+          command: "/app/molfar",
+          args: ["connectors-mcp"],
+        },
+      },
+    });
+  });
+
   it("locks isolated read-only prompts to plan mode", () => {
     const args = buildClaudeSpawnArgs({
       isolated: true,
@@ -522,6 +545,22 @@ describe("list_models catalog", () => {
 
     const haiku = models[3];
     expect(haiku?.settings).toBeUndefined();
+  });
+
+  it("records the concrete model behind live-catalog aliases", () => {
+    const models = modelsFromClaudeListModels([
+      { value: "opus", resolvedModel: "claude-opus-5-5", displayName: "Opus" },
+      {
+        value: "claude-fable-5-1[1m]",
+        resolvedModel: "claude-fable-5-1",
+        displayName: "Fable 5.1",
+      },
+    ]);
+
+    expect(models.map((model) => model.aliasTarget)).toEqual([
+      "claude-opus-5-5",
+      undefined,
+    ]);
   });
 
   it("adds resolved versions to generic live-catalog alias labels", () => {

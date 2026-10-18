@@ -31,7 +31,11 @@ export function sessionConversationPage(
 
   const exchanges: Exchange[] = [];
   for (const block of session.blocks) {
-    if (block.role === "user" && !block.internal && !block.draft) {
+    if (
+      block.role === "user" &&
+      (!block.internal || block.familiarSessionCompletion) &&
+      !block.draft
+    ) {
       exchanges.push({ user: block, assistants: [] });
     } else if (
       block.role === "assistant" &&
@@ -58,7 +62,14 @@ export function sessionConversationPage(
     ),
     turns: selected.map(({ user, assistants }) => ({
       turnId: user.id,
-      user: capped(user.text, maxChars),
+      user: capped(
+        user.familiarSessionCompletion
+          ? user.familiarSessionCompletion.sessionCount
+            ? `MOLFAR: results from ${user.familiarSessionCompletion.sessionCount} sessions`
+            : `MOLFAR: session ${user.familiarSessionCompletion.status}: ${user.familiarSessionCompletion.title}`
+          : user.text,
+        maxChars,
+      ),
       assistant: assistants.length
         ? capped(assistants[assistants.length - 1].text, maxChars)
         : null,

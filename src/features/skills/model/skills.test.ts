@@ -12,8 +12,10 @@ vi.mock("@/integrations/harness/core/registry", () => ({
 
 import { describe, expect, it, vi } from "vitest";
 import {
+  BUILTIN_CREATE_BOARD_TASK_SKILL,
   BUILTIN_CREATE_SKILL,
   applySkillsToTurn,
+  readSkillBody,
   blankSkillMarkdown,
   injectSkillPrompt,
   isValidSkillName,
@@ -25,6 +27,7 @@ import {
   skillTextParts,
   slashTokenAt,
   slugSkillName,
+  type BuiltinSkill,
   type Skill,
 } from "./skills";
 
@@ -284,6 +287,27 @@ describe("mergeCatalog", () => {
     expect(catalog.find((s) => s.name === "cursor-only")?.source).toBe(
       "cursor",
     );
+    expect(catalog.find((s) => s.name === "create-board-task")).toEqual(
+      BUILTIN_CREATE_BOARD_TASK_SKILL,
+    );
+  });
+});
+
+describe("readSkillBody", () => {
+  it("returns each built-in skill's own body", async () => {
+    const createSkill = await readSkillBody(BUILTIN_CREATE_SKILL);
+    const boardTask = await readSkillBody(BUILTIN_CREATE_BOARD_TASK_SKILL);
+
+    expect(createSkill).toContain("name: create-skill");
+    expect(boardTask).toContain("name: create-board-task");
+    expect(boardTask).toContain("app board.create");
+    expect(boardTask).not.toContain("name: create-skill");
+  });
+
+  it("injects nothing for a built-in command that has no skill body", async () => {
+    const command: BuiltinSkill = { ...BUILTIN_CREATE_SKILL, name: "operator", invocation: "operator" };
+
+    expect(await readSkillBody(command)).toBe("");
   });
 });
 

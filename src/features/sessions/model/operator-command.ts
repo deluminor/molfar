@@ -16,10 +16,15 @@ export function consumeOperatorCommand(text: string): {
   text: string;
   matched: boolean;
 } {
-  const match = text.match(/^\s*\/operator(?=\s|$)\s*/i);
+  // Keep the old spellings as unlisted aliases for existing drafts and threads.
+  const match = text.match(
+    /^\s*\/(?:operator|molfar|mono|monocode|vatra)(?=\s|$)\s*/i,
+  );
   if (!match) return { text, matched: false };
   return { text: text.slice(match[0].length), matched: true };
 }
+
+const LEGACY_COMMAND = /^\s*\/(?:molfar|mono|monocode|vatra)(?=\s|$)\s*/i;
 
 /** A submitted /operator turn keeps CLI access available in later turns. */
 export function isOperatorUserTurn(block: Block): boolean {
@@ -27,7 +32,20 @@ export function isOperatorUserTurn(block: Block): boolean {
     block.role === "user" &&
     !block.draft &&
     !block.internal &&
-    block.molfar === true
+    // Persisted molfar field for MOLFAR sessions; monocode for imported MonoCode threads.
+    (block.molfar === true ||
+      (block as { monocode?: boolean }).monocode === true ||
+      LEGACY_COMMAND.test(block.text))
+  );
+}
+
+/** Old command messages remain enabled and render without their old prefix. */
+export function operatorUserPrompt(block: Block): string {
+  const legacy = block.text.match(LEGACY_COMMAND);
+  if (!legacy) return block.text;
+  return (
+    block.text.slice(legacy[0].length).trim() ||
+    "Explain what you can do in MOLFAR with the app CLI."
   );
 }
 

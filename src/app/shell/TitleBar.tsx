@@ -5,8 +5,6 @@ import {
   DashboardSquare,
   Inbox,
   PanelLeft,
-  Plus,
-  Search,
   Settings,
   StickyNote,
   Terminal,
@@ -23,10 +21,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { basename } from "@/shared/lib/paths";
-import {
-  looksLikeProject,
-  type RecentProject,
-} from "@/features/projects/model/recents";
+import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
 import type { HarnessId } from "@/domain/harness/harness";
 import { CwdPicker } from "@/features/projects/ui/CwdPicker";
 import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
@@ -40,9 +35,19 @@ import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
+import { TabLabel } from "@/shared/ui/TabLabel";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
+import {
+  FAMILIAR_STATUS_LABEL,
+  type FamiliarLook,
+  type FamiliarState,
+} from "@/features/familiars/model/familiar";
 import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
-import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
+import {
+  ExplorerMenu,
+  type ExplorerMenuItem,
+} from "@/features/files/ui/ExplorerMenu";
 import {
   paneDropFromPoint,
   setExternalPaneDrop,
@@ -53,10 +58,24 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { TabVisitNav } from "@/features/window-chrome/ui/OverlayNav";
 import type { Tab } from "@/features/workspace/model/title-tab";
 
+/** How far below the tab bar a dragged tab must go before it targets a pane. */
+const PANE_DROP_PULL = 32;
+
 type Props = {
   tabs: Tab[];
   activeId: string;
   cwd: string;
+  /**
+   * The Familiar filling the main area. It takes the tabs' place, and nothing
+   * project-scoped belongs beside it.
+   */
+  familiar?: { look: FamiliarLook; state: FamiliarState };
+  /** Shows or hides the Familiar's overview panel beside its chat. */
+  onToggleFamiliarOverview?: () => void;
+  familiarOverviewOpen?: boolean;
+  onOpenFamiliarSettings?: () => void;
+  /** The full-height Familiar panel owns these while it is open. */
+  hideWindowControls?: boolean;
   projectRailOpen?: boolean;
   sessionSidebarOpen?: boolean;
   compactRail?: boolean;
@@ -67,7 +86,6 @@ type Props = {
   onToggleSidebar: () => void;
   onToggleSessionSidebar?: () => void;
   onSelect: (id: string) => void;
-  onNew: () => void;
   onNewTerminal?: () => void;
   onOpenSettings?: () => void;
   onOpenInbox?: () => void;
@@ -78,7 +96,6 @@ type Props = {
   onDeleteTab?: (id: string) => void;
   onReorder: (ids: string[], movedId?: string) => void;
   onPlaceOnPane?: (tabId: string, targetId: string, edge: PaneEdge) => void;
-  onGoToFile?: () => void;
   onPinFile?: (fileId: string) => void;
   recents?: RecentProject[];
   onSelectProject?: (path: string) => void;
@@ -334,15 +351,15 @@ function TitleTabItem({
         {/* Keep two-line tabs compact while leaving room for descenders. */}
         <span className="flex min-w-0 flex-1 flex-col justify-center">
           <span className="flex min-w-0 items-center gap-1">
-            <span
-              className={`min-w-0 truncate leading-tight ${tab.previewFileId ? "italic" : ""} ${
+            <TabLabel
+              className={`leading-tight ${tab.previewFileId ? "italic" : ""} ${
                 meta
                   ? "text-[13px] @min-[11rem]:text-[10px] @min-[11rem]:font-medium"
                   : "text-[13px]"
               }`}
             >
               {headline}
-            </span>
+            </TabLabel>
             {tab.dirty ? (
               <span
                 className="size-1.5 shrink-0 rounded-full bg-content/70"
@@ -352,9 +369,9 @@ function TitleTabItem({
             ) : null}
           </span>
           {meta ? (
-            <span className="hidden min-w-0 truncate text-[10px] leading-tight text-content/45 @min-[11rem]:block">
+            <TabLabel className="hidden text-[10px] leading-tight text-content/45 @min-[11rem]:block">
               {meta}
-            </span>
+            </TabLabel>
           ) : null}
         </span>
       </button>
@@ -409,6 +426,11 @@ function TitleBarComponent({
   tabs,
   activeId,
   cwd,
+  familiar,
+  onToggleFamiliarOverview,
+  familiarOverviewOpen = false,
+  onOpenFamiliarSettings,
+  hideWindowControls = false,
   projectRailOpen = true,
   sessionSidebarOpen = true,
   compactRail = false,
@@ -419,7 +441,6 @@ function TitleBarComponent({
   onToggleSidebar,
   onToggleSessionSidebar,
   onSelect,
-  onNew,
   onNewTerminal,
   onOpenSettings,
   onOpenInbox,
@@ -430,19 +451,30 @@ function TitleBarComponent({
   onDeleteTab,
   onReorder,
   onPlaceOnPane,
-  onGoToFile,
   onPinFile,
   recents = [],
   onSelectProject,
 }: Props) {
   const tabIds = tabs.map((tab) => tab.id);
   const { displayed, setTabNode, finishMotion } = useTabCloseMotion(tabs);
+  const tabStripRef = useRef<HTMLDivElement | null>(null);
+  const paneDropArmed = useRef(false);
   const externalTabDrop = useMemo<ReorderExternalDrop<string> | undefined>(
-    () =>
-      onPlaceOnPane
+    () => {
+      // A sideways drag sags, so only a deliberate pull below the tab bar
+      // targets a pane. Once armed it stays armed until the pointer is back
+      // over the tabs.
+      const pulledBelowTabs = (event: PointerEvent) => {
+        const bottom = tabStripRef.current?.getBoundingClientRect().bottom ?? 0;
+        if (event.clientY <= bottom) paneDropArmed.current = false;
+        else if (event.clientY >= bottom + PANE_DROP_PULL)
+          paneDropArmed.current = true;
+        return paneDropArmed.current;
+      };
+      return onPlaceOnPane
         ? {
             onMove: (tabId, event) => {
-              if (tabId === activeId) {
+              if (tabId === activeId || !pulledBelowTabs(event)) {
                 setExternalPaneDrop(null);
                 return false;
               }
@@ -455,21 +487,24 @@ function TitleBarComponent({
               return over != null;
             },
             onDrop: (tabId, event) => {
-              if (tabId === activeId) return false;
+              if (tabId === activeId || !pulledBelowTabs(event)) return false;
               const over = paneDropFromPoint(event.clientX, event.clientY);
               if (!over) return false;
               onPlaceOnPane(tabId, over.id, over.edge);
               return true;
             },
-            onEnd: () => setExternalPaneDrop(null),
+            onEnd: () => {
+              paneDropArmed.current = false;
+              setExternalPaneDrop(null);
+            },
           }
-        : undefined,
+        : undefined;
+    },
     [activeId, onPlaceOnPane],
   );
   const sortable = useAnimatedReorder(tabIds, onReorder, "x", externalTabDrop);
   const paneToTabDrop = useExternalTitleTabDrop();
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
-  const tabStripRef = useRef<HTMLDivElement | null>(null);
   const setTabStripRef = useCallback(
     (el: HTMLDivElement | null) => {
       tabStripRef.current = el;
@@ -656,13 +691,44 @@ function TitleBarComponent({
   const showProjectButton =
     railClosed && Boolean(onSelectProject) && !showCurrentProject;
   const showTrailingActions =
-    (projectless &&
-      railClosed &&
-      Boolean(onOpenInbox || onOpenNotes || onOpenSettings)) ||
-    (railClosed && !projectless);
+    !familiar &&
+    projectless &&
+    railClosed &&
+    Boolean(onOpenInbox || onOpenNotes || onOpenSettings);
   const trailingControls =
-    showTrailingActions || !IS_MAC ? (
+    showTrailingActions ||
+    (familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings)) ||
+    (!IS_MAC && !hideWindowControls) ? (
       <div className="flex h-full shrink-0 items-stretch">
+        {familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings) ? (
+          <div className="flex items-center gap-1 px-3">
+            {onToggleFamiliarOverview ? (
+              <button
+                type="button"
+                aria-pressed={familiarOverviewOpen}
+                title={familiarOverviewOpen ? "Hide overview" : "Show overview"}
+                data-tauri-drag-region="false"
+                onClick={onToggleFamiliarOverview}
+                className={`flex h-6 items-center gap-1.5 rounded-md px-2 text-[12px] ${
+                  familiarOverviewOpen
+                    ? "bg-content/10 text-content"
+                    : "bg-content/5 text-content/70 hover:bg-content/8 hover:text-content"
+                }`}
+              >
+                <DashboardSquare className="size-3.5" strokeWidth={1.75} />
+                Overview
+              </button>
+            ) : null}
+            {onOpenFamiliarSettings ? (
+              <IconButton
+                label={`${familiar.look.name} settings`}
+                onClick={onOpenFamiliarSettings}
+              >
+                <Settings className="size-3.5" strokeWidth={1.75} />
+              </IconButton>
+            ) : null}
+          </div>
+        ) : null}
         {showTrailingActions ? (
           <div className="flex items-center gap-0.5 px-2">
             {projectless && railClosed && onOpenInbox ? (
@@ -675,16 +741,6 @@ function TitleBarComponent({
                 <StickyNote className="size-3.5" strokeWidth={1.75} />
               </IconButton>
             ) : null}
-            {railClosed && !projectless ? (
-              <>
-                <IconButton label={`Go to File (${MOD}P)`} onClick={onGoToFile}>
-                  <Search className="size-3.5" strokeWidth={1.75} />
-                </IconButton>
-                <IconButton label={`New session (${MOD}T)`} onClick={onNew}>
-                  <Plus className="size-3.5" strokeWidth={1.75} />
-                </IconButton>
-              </>
-            ) : null}
             {!projectRailOpen && !showCurrentProject && onOpenSettings ? (
               <IconButton label={`Settings (${MOD},)`} onClick={onOpenSettings}>
                 <Settings className="size-3.5" strokeWidth={1.75} />
@@ -692,7 +748,7 @@ function TitleBarComponent({
             ) : null}
           </div>
         ) : null}
-        {!IS_MAC ? <WindowControls /> : null}
+        {!IS_MAC && !hideWindowControls ? <WindowControls /> : null}
       </div>
     ) : null;
 
@@ -702,14 +758,15 @@ function TitleBarComponent({
   return (
     <header
       className={`flex h-10 shrink-0 select-none items-stretch border-b border-stroke${
-        compactRail ? " body-glass" : ""
+        compactRail && !familiar ? " body-glass" : ""
       }`}
       data-tauri-drag-region="deep"
     >
       {compactRail ? (
         <div
           data-compact-title-nav
-          className="flex shrink-0 items-center pl-[70px]"
+          // A full Familiar's title bar starts beside the 48px compact rail.
+          className={`flex shrink-0 items-center ${familiar ? "pl-[22px]" : "pl-[70px]"}`}
         >
           <TabVisitNav
             canGoBack={canGoBack}
@@ -765,101 +822,105 @@ function TitleBarComponent({
           showProjectButton ? " border-l border-stroke" : ""
         }`}
       >
-        <div
-          className="relative h-full min-w-0 flex-1 overflow-hidden"
-          onWheel={(event) => {
-            const el = tabStripRef.current;
-            if (!el || el.scrollWidth <= el.clientWidth) return;
-            if (event.deltaX === 0 && event.deltaY !== 0) {
-              el.scrollLeft += event.deltaY;
-            }
-          }}
-        >
-          {tabOverflow.left ? (
-            <TabStripChevron side="left" onClick={() => scrollTabsBy(-1)} />
-          ) : null}
-          {tabOverflow.right ? (
-            <TabStripChevron side="right" onClick={() => scrollTabsBy(1)} />
-          ) : null}
+        {familiar ? (
+          <FamiliarTitle look={familiar.look} state={familiar.state} />
+        ) : (
           <div
-            ref={setTabStripRef}
-            data-title-tab-strip
-            className="scrollbar-none flex h-full min-w-0 cursor-default items-center gap-0.5 overflow-x-auto overflow-y-hidden overscroll-none pl-1.5 pr-2.5"
-          >
-            {displayed.map((entry) => {
-              const tab = entry.item;
-              const shell = (
-                <div
-                  ref={(el) => {
-                    if (!entry.closing) setTabNode(tab.id, el);
-                  }}
-                  className={
-                    entry.closing || entry.opening
-                      ? "relative flex h-full w-full min-w-0 overflow-hidden items-center"
-                      : "relative flex h-full w-56 min-w-28 shrink cursor-default items-center"
-                  }
-                  data-title-tab-id={entry.closing ? undefined : tab.id}
-                  data-tab-slot-id={entry.closing ? undefined : tab.id}
-                  data-tauri-drag-region="false"
-                >
-                  {!entry.closing && paneToTabDrop?.targetTabId === tab.id ? (
-                    <span
-                      data-pane-tab-drop-hint
-                      className={`pointer-events-none absolute inset-y-1 z-50 w-0.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)] ${
-                        paneToTabDrop.position === "before"
-                          ? "left-0"
-                          : "right-0"
-                      }`}
-                    />
-                  ) : null}
-                  <TitleTabItem
-                    tab={tab}
-                    active={!entry.closing && tab.id === activeId}
-                    closable={
-                      !entry.closing && titleTabClosable(tab, tabs.length)
-                    }
-                    canDrag={!entry.closing && canDrag}
-                    sortable={sortable}
-                    onSelect={onSelect}
-                    onClose={onClose}
-                    onPinFile={onPinFile}
-                    onContextMenu={(tabId, event) =>
-                      setTabMenu({
-                        tabId,
-                        x: event.clientX,
-                        y: event.clientY,
-                      })
-                    }
-                    itemRef={
-                      !entry.closing && tab.id === activeId
-                        ? (el) => {
-                            activeTabRef.current = el;
-                          }
-                        : undefined
-                    }
-                  />
-                </div>
-              );
-              if (entry.closing || entry.opening) {
-                return (
-                  <TabWidthMotion
-                    key={tab.id}
-                    phase={entry.closing ? "closing" : "opening"}
-                    width={entry.width}
-                    onFinish={() => finishMotion(tab.id)}
-                  >
-                    {shell}
-                  </TabWidthMotion>
-                );
+            className="relative h-full min-w-0 flex-1 overflow-hidden"
+            onWheel={(event) => {
+              const el = tabStripRef.current;
+              if (!el || el.scrollWidth <= el.clientWidth) return;
+              if (event.deltaX === 0 && event.deltaY !== 0) {
+                el.scrollLeft += event.deltaY;
               }
-              return (
-                <div key={tab.id} className="contents">
-                  {shell}
-                </div>
-              );
-            })}
+            }}
+          >
+            {tabOverflow.left ? (
+              <TabStripChevron side="left" onClick={() => scrollTabsBy(-1)} />
+            ) : null}
+            {tabOverflow.right ? (
+              <TabStripChevron side="right" onClick={() => scrollTabsBy(1)} />
+            ) : null}
+            <div
+              ref={setTabStripRef}
+              data-title-tab-strip
+              className="scrollbar-none flex h-full min-w-0 cursor-default items-center gap-0.5 overflow-x-auto overflow-y-hidden overscroll-none pl-1.5 pr-2.5"
+            >
+              {displayed.map((entry) => {
+                const tab = entry.item;
+                const shell = (
+                  <div
+                    ref={(el) => {
+                      if (!entry.closing) setTabNode(tab.id, el);
+                    }}
+                    className={
+                      entry.closing || entry.opening
+                        ? "relative flex h-full w-full min-w-0 overflow-hidden items-center"
+                        : "relative flex h-full w-56 min-w-28 shrink cursor-default items-center"
+                    }
+                    data-title-tab-id={entry.closing ? undefined : tab.id}
+                    data-tab-slot-id={entry.closing ? undefined : tab.id}
+                    data-tauri-drag-region="false"
+                  >
+                    {!entry.closing && paneToTabDrop?.targetTabId === tab.id ? (
+                      <span
+                        data-pane-tab-drop-hint
+                        className={`pointer-events-none absolute inset-y-1 z-50 w-0.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)] ${
+                          paneToTabDrop.position === "before"
+                            ? "left-0"
+                            : "right-0"
+                        }`}
+                      />
+                    ) : null}
+                    <TitleTabItem
+                      tab={tab}
+                      active={!entry.closing && tab.id === activeId}
+                      closable={
+                        !entry.closing && titleTabClosable(tab, tabs.length)
+                      }
+                      canDrag={!entry.closing && canDrag}
+                      sortable={sortable}
+                      onSelect={onSelect}
+                      onClose={onClose}
+                      onPinFile={onPinFile}
+                      onContextMenu={(tabId, event) =>
+                        setTabMenu({
+                          tabId,
+                          x: event.clientX,
+                          y: event.clientY,
+                        })
+                      }
+                      itemRef={
+                        !entry.closing && tab.id === activeId
+                          ? (el) => {
+                              activeTabRef.current = el;
+                            }
+                          : undefined
+                      }
+                    />
+                  </div>
+                );
+                if (entry.closing || entry.opening) {
+                  return (
+                    <TabWidthMotion
+                      key={tab.id}
+                      phase={entry.closing ? "closing" : "opening"}
+                      width={entry.width}
+                      onFinish={() => finishMotion(tab.id)}
+                    >
+                      {shell}
+                    </TabWidthMotion>
+                  );
+                }
+                return (
+                  <div key={tab.id} className="contents">
+                    {shell}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {!IS_MAC && !IS_WIN ? (
           <div className="flex min-w-0 flex-1 items-center justify-center px-4">
@@ -886,3 +947,32 @@ function TitleBarComponent({
 }
 
 export const TitleBar = memo(TitleBarComponent);
+
+/** In a Familiar's view the title bar names it and shows its status. */
+function FamiliarTitle({ look, state }: { look: FamiliarLook; state: FamiliarState }) {
+  return (
+    <div
+      data-familiar-title
+      className="flex min-w-0 flex-1 items-center gap-2 px-4"
+    >
+      <PixelMascot
+        name={look.mascot}
+        color={look.color}
+        status={state.status}
+        still={state.status === "idle"}
+        className="size-4 shrink-0"
+      />
+      <span className="min-w-0 truncate text-[13px] font-medium text-content">
+        {look.name}
+      </span>
+      <span
+        data-familiar-status={state.status}
+        className={`shrink-0 text-[12px] ${
+          state.status === "needs-you" ? "text-accent" : "text-content/45"
+        }`}
+      >
+        {FAMILIAR_STATUS_LABEL[state.status]}
+      </span>
+    </div>
+  );
+}

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { HARNESSES, HARNESS_TITLE } from "@/domain/harness/harness";
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,8 +20,13 @@ import {
   clearCachedRateLimits,
   setCachedRateLimits,
 } from "@/features/providers/model/rate-limits-cache";
-import { HARNESS_TITLE, HARNESSES } from "@/domain/harness/harness";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/display-prefs";
+import {
+  createFamiliar,
+  findFamiliar,
+  familiarLook,
+  updateFamiliar,
+} from "@/features/familiars/model/familiar";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => undefined),
@@ -113,8 +119,32 @@ afterEach(async () => {
 });
 
 describe("settings pages", () => {
-  it("keeps account emails blurred until clicked and hides them when settings reopen", async () => {
-    saveMaskEmails(true);
+  it("saves each Familiar's session visibility and restores it when settings reopen", async () => {
+    const familiar = createFamiliar();
+    const other = createFamiliar();
+    const toggle = (id: string) =>
+      container.querySelector<HTMLButtonElement>(
+        `[role="switch"][aria-label="Show sessions started by ${familiarLook(findFamiliar(id)!).name} in sidebar"]`,
+      )!;
+    await render("familiars");
+    // Off until turned on: a Familiar's sessions stay in its overview.
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("false");
+    expect(toggle(other.id).getAttribute("aria-checked")).toBe("false");
+    await act(async () => toggle(familiar.id).click());
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("true");
+    expect(findFamiliar(familiar.id)?.showStartedSessionsInSidebar).toBe(true);
+    expect(toggle(other.id).getAttribute("aria-checked")).toBe("false");
+    await render("general");
+    await render("familiars");
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("true");
+    await act(async () => updateFamiliar(familiar.id, (entry) => ({
+      ...entry,
+      showStartedSessionsInSidebar: false,
+    })));
+    expect(toggle(familiar.id).getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("blurs account emails by default and hides them when settings reopen", async () => {
     vi.mocked(invoke).mockImplementation(async (command, args) => {
       if (command === "provider_account_identity") {
         const { provider } = args as { provider: string };
@@ -151,6 +181,7 @@ describe("settings pages", () => {
   });
 
   it("shows used usage and plain emails until the options are turned on", async () => {
+    saveMaskEmails(false);
     vi.mocked(invoke).mockImplementation(async (command) =>
       command === "provider_account_identity"
         ? { email: "user@example.com", plan: "Pro" }
@@ -894,6 +925,17 @@ describe("settings search", () => {
     expect(options()).toHaveLength(0);
     expect(input.value).toBe("");
     expect(onSelectSection).not.toHaveBeenCalled();
+  });
+
+  it("lists Escape stopping a session without a recorder", async () => {
+    await render("keybindings");
+    const row = [...container.querySelectorAll("span")].find(
+      (span) => span.textContent === "Session: Stop",
+    )?.parentElement;
+    expect(row?.textContent).toContain("Esc");
+    expect(
+      container.querySelector('[aria-label="Change Session: Stop shortcut"]'),
+    ).toBeNull();
   });
 
   it("records a custom keybinding from the key cell", async () => {

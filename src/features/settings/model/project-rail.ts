@@ -1,6 +1,6 @@
 import { readFlag, writeFlag } from "@/shared/lib/storage-flags";
 
-export type RailSurfaceId = "home" | "usage" | "knowledge";
+export type RailSurfaceId = "home" | "usage" | "knowledge" | "board";
 
 export type RailSurfaceVisibility = Readonly<Record<RailSurfaceId, boolean>>;
 
@@ -8,6 +8,7 @@ const RAIL_SURFACE_KEYS: Record<RailSurfaceId, string> = {
   home: "molfar.railSurface.home",
   usage: "molfar.railSurface.usage",
   knowledge: "molfar.railSurface.knowledge",
+  board: "molfar.railSurface.board",
 };
 
 /** Fired on `window` when any project rail shortcut is shown or hidden. */
@@ -17,6 +18,7 @@ export const RAIL_SURFACES_DEFAULT: RailSurfaceVisibility = {
   home: true,
   usage: true,
   knowledge: true,
+  board: true,
 };
 
 // useSyncExternalStore compares snapshots by identity, so an unchanged
@@ -28,12 +30,14 @@ export function loadRailSurfaces(): RailSurfaceVisibility {
     home: readRailSurface("home"),
     usage: readRailSurface("usage"),
     knowledge: readRailSurface("knowledge"),
+    board: readRailSurface("board"),
   };
 
   const unchanged =
     next.home === railSurfacesSnapshot.home &&
     next.usage === railSurfacesSnapshot.usage &&
-    next.knowledge === railSurfacesSnapshot.knowledge;
+    next.knowledge === railSurfacesSnapshot.knowledge &&
+    next.board === railSurfacesSnapshot.board;
   if (!unchanged) railSurfacesSnapshot = next;
 
   return railSurfacesSnapshot;

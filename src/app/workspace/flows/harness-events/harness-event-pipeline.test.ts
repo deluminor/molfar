@@ -1,42 +1,54 @@
-import { describe, expect, it, vi } from "vitest";
+// @vitest-environment happy-dom
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/domain/session/session";
 import { testSession } from "@/integrations/harness/core/test-session";
 import type { HarnessEvent } from "@/integrations/harness/core/types";
 import { createHarnessEventPipeline } from "./harness-event-pipeline";
-import type { ScheduledFlush } from "./harness-flush";
 
-function setup(isForeground: () => boolean = () => true) {
+const frames = new Map<number, FrameRequestCallback>();
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  let nextFrame = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    frames.set(++nextFrame, callback);
+    return nextFrame;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+});
+
+afterEach(() => {
+  frames.clear();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+function runFrames() {
+  const pending = [...frames.values()];
+  frames.clear();
+  for (const run of pending) run(performance.now());
+}
+
+function setup(isForeground: (id: string) => boolean = () => true) {
   let sessions: Session[] = [
     { ...testSession("claude", "/repo"), id: "a" },
     { ...testSession("claude", "/repo"), id: "b" },
   ];
-  const scheduled: Array<{ run: () => void; handle: ScheduledFlush }> = [];
-  let nextId = 1;
-  const commitSessions = vi.fn((next: Session[]) => {
-    sessions = next;
-  });
-  const cancel = vi.fn((handle: ScheduledFlush | null) => {
-    const index = scheduled.findIndex((entry) => entry.handle === handle);
-    if (index >= 0) scheduled.splice(index, 1);
-  });
+  const commitSessions = vi.fn();
   const pipeline = createHarnessEventPipeline({
-    readSessions: () => sessions,
-    commitSessions,
-    isForeground,
-    schedule: (run, foreground) => {
-      const handle: ScheduledFlush = {
-        kind: foreground ? "raf" : "timeout",
-        id: nextId++,
-      };
-      scheduled.push({ run, handle });
-      return handle;
+    updateSessions: (update) => {
+      const next = update(sessions);
+      if (next === sessions) return;
+      sessions = next;
+      commitSessions(next);
     },
-    cancel,
+    isForeground,
   });
 
   return {
     pipeline,
-    scheduled,
     commitSessions,
     text: (id: string) =>
       sessions
@@ -49,16 +61,16 @@ function setup(isForeground: () => boolean = () => true) {
 const delta = (text: string): HarnessEvent => ({ type: "message.delta", text });
 
 describe("createHarnessEventPipeline", () => {
-  it("queues events and applies each session's batch in one commit", () => {
-    const { pipeline, scheduled, commitSessions, text } = setup();
+  it("queues visible events and applies each session's batch in one commit", () => {
+    const { pipeline, commitSessions, text } = setup();
 
     pipeline.enqueue("a", delta("Hel"));
     pipeline.enqueue("a", delta("lo"));
     pipeline.enqueue("b", delta("Hi"));
     expect(commitSessions).not.toHaveBeenCalled();
-    expect(scheduled).toHaveLength(1);
 
-    scheduled[0]?.run();
+    vi.advanceTimersByTime(40);
+    runFrames();
 
     expect(commitSessions).toHaveBeenCalledTimes(1);
     expect(text("a")).toBe("Hello");
@@ -79,17 +91,19 @@ describe("createHarnessEventPipeline", () => {
     expect(text("a")).toContain("Running");
   });
 
-  it("moves a background timer to the next frame once output is visible", () => {
-    let foreground = false;
-    const { pipeline, scheduled } = setup(() => foreground);
+  it("keeps hidden streams on their own timer while a visible one flushes", () => {
+    const { pipeline, text } = setup((id) => id === "a");
 
-    pipeline.enqueue("a", delta("x"));
-    expect(scheduled.map((entry) => entry.handle.kind)).toEqual(["timeout"]);
+    pipeline.enqueue("a", delta("seen"));
+    pipeline.enqueue("b", delta("hidden"));
+    pipeline.flushForeground();
 
-    foreground = true;
-    pipeline.enqueue("a", delta("y"));
+    expect(text("a")).toBe("seen");
+    expect(text("b")).toBe("");
 
-    expect(scheduled.map((entry) => entry.handle.kind)).toEqual(["raf"]);
+    vi.advanceTimersByTime(100);
+
+    expect(text("b")).toBe("hidden");
   });
 
   it("does not commit when a flush changes nothing", () => {
@@ -100,12 +114,20 @@ describe("createHarnessEventPipeline", () => {
     expect(commitSessions).not.toHaveBeenCalled();
   });
 
-  it("cancels a pending flush on dispose", () => {
-    const { pipeline, scheduled } = setup();
+  it("drops scheduled flushes on dispose", () => {
+    const { pipeline, commitSessions } = setup(() => false);
     pipeline.enqueue("a", delta("x"));
 
     pipeline.dispose();
+    vi.advanceTimersByTime(200);
 
-    expect(scheduled).toHaveLength(0);
+    expect(commitSessions).not.toHaveBeenCalled();
+  });
+
+  it("exposes the foreground check for idle parking", () => {
+    const { pipeline } = setup((id) => id === "a");
+
+    expect(pipeline.isForeground("a")).toBe(true);
+    expect(pipeline.isForeground("b")).toBe(false);
   });
 });

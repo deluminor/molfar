@@ -9,10 +9,10 @@ pub struct ConfluenceStatus {
 }
 
 #[derive(Deserialize, Clone)]
-pub(super) struct AtlassianConfig {
-    pub(super) site: String,
-    pub(super) email: String,
-    pub(super) token: String,
+pub(crate) struct AtlassianConfig {
+    pub(crate) site: String,
+    pub(crate) email: String,
+    pub(crate) token: String,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]

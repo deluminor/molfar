@@ -109,6 +109,66 @@ describe("LiveAgentsPreview", () => {
     expect(onSelect).toHaveBeenCalledExactlyOnceWith("b");
   });
 
+  it("shows a close control on working, needs-approval, and done cards", () => {
+    render({
+      agents: [
+        agent("work", "/repo/a"),
+        agent("approve", "/repo/b", { needsApproval: true }),
+        agent("done", "/repo/c", { done: true, durationMs: 1_500 }),
+      ],
+      groupLabels: {},
+      groupColors: {},
+      groupCustomColors: {},
+      groupMascots: {},
+    });
+
+    expect(
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="work"]')!
+        .getAttribute("aria-label"),
+    ).toBe("Stop and close Agent work");
+    expect(
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="approve"]')!
+        .getAttribute("aria-label"),
+    ).toBe("Stop and close Agent approve");
+    expect(
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="done"]')!
+        .getAttribute("aria-label"),
+    ).toBe("Close Agent done");
+  });
+
+  it("stops from the X without selecting the card", () => {
+    const onSelect = vi.fn();
+    const onStop = vi.fn();
+    render({
+      agents: [agent("a", "/repo/a"), agent("b", "/repo/b")],
+      onSelect,
+      onStop,
+      groupLabels: {},
+      groupColors: {},
+      groupCustomColors: {},
+      groupMascots: {},
+    });
+
+    act(() =>
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-stop="b"]')!
+        .click(),
+    );
+    expect(onStop).toHaveBeenCalledExactlyOnceWith("b");
+    expect(onSelect).not.toHaveBeenCalled();
+
+    act(() =>
+      container
+        .querySelector<HTMLButtonElement>('[data-live-agent-card="a"]')!
+        .click(),
+    );
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith("a");
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps elapsed timers out of its live region", () => {
     render({
       agents: [agent("a", "/repo/a"), agent("b", "/repo/b")],

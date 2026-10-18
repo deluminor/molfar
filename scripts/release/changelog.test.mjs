@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   compareVersions,
-  notesFromCommits,
   prepareChangelog,
   releaseNotes,
   resolveNextVersion,
@@ -31,7 +30,6 @@ Intro.
 const OPTIONS = {
   version: "1.0.0",
   date: "2026-10-02",
-  generated: null,
   previousTag: "",
   repository: "deluminor/molfar",
 };
@@ -62,56 +60,6 @@ describe("resolveNextVersion", () => {
   });
 });
 
-describe("notesFromCommits", () => {
-  it("groups conventional commits and skips housekeeping and merges", () => {
-    const notes = notesFromCommits([
-      "feat(inbox): add Confluence search",
-      "fix: keep pane width",
-      "chore: bump deps",
-      "docs(readme): refresh",
-      "Merge pull request #9 from deluminor/fix",
-      "refactor!: drop the legacy host",
-      "fix: keep pane width",
-      "Tidy the sidebar",
-    ]);
-
-    expect(notes).toBe(
-      [
-        "### Added",
-        "",
-        "- **inbox:** add Confluence search",
-        "",
-        "### Changed",
-        "",
-        "- **Breaking:** drop the legacy host",
-        "",
-        "### Fixed",
-        "",
-        "- keep pane width",
-      ].join("\n"),
-    );
-  });
-
-  it("returns null when nothing is user-facing", () => {
-    expect(notesFromCommits(["chore: release", "ci: cache", ""])).toBeNull();
-  });
-
-  it("skips release, sync and license commits unless they break something", () => {
-    const notes = notesFromCommits([
-      "fix(release): merge release PRs with admin bypass (#14)",
-      "feat(sync): apply MonoCode changes as patches",
-      "feat(license): ship notices for the Rust crates",
-      "feat(sync)!: drop the legacy sync branch",
-    ]);
-
-    expect(notes).toBe(["### Added", "", "- **Breaking:** **sync:** drop the legacy sync branch"].join("\n"));
-  });
-
-  it("skips commits without a conventional prefix", () => {
-    expect(notesFromCommits(["Optimize architecture documentation images", "Tidy the sidebar"])).toBeNull();
-  });
-});
-
 describe("prepareChangelog", () => {
   it("promotes the Unreleased notes and links the fork release", () => {
     const result = prepareChangelog(CHANGELOG, OPTIONS);
@@ -134,49 +82,16 @@ describe("prepareChangelog", () => {
     );
   });
 
-  it("uses generated notes alone when Unreleased is empty", () => {
-    const empty = CHANGELOG.replace("### Changed\n\n- Renamed the app.\n\n", "");
-
-    const result = prepareChangelog(empty, { ...OPTIONS, generated: "### Fixed\n\n- A bug." });
-
-    expect(result?.source).toBe("commits");
-    expect(releaseNotes(result.changelog, "1.0.0")).toBe("### Fixed\n\n- A bug.");
-  });
-
-  it("combines Unreleased notes with generated notes section by section", () => {
-    const result = prepareChangelog(CHANGELOG, {
-      ...OPTIONS,
-      generated: "### Added\n\n- New view.\n\n### Changed\n\n- Faster sync.",
-    });
-
-    expect(result?.source).toBe("unreleased+commits");
-    expect(releaseNotes(result.changelog, "1.0.0")).toBe(
-      "### Added\n\n- New view.\n\n### Changed\n\n- Renamed the app.\n- Faster sync.",
-    );
-  });
-
-  it("does not repeat a generated item already in Unreleased", () => {
-    const result = prepareChangelog(CHANGELOG, {
-      ...OPTIONS,
-      generated: "### Changed\n\n- Renamed the app.",
-    });
-
-    expect(releaseNotes(result.changelog, "1.0.0")).toBe("### Changed\n\n- Renamed the app.");
-  });
-
-  it("keeps Unreleased prose and custom sections around merged items", () => {
+  it("keeps Unreleased prose and custom sections", () => {
     const custom = CHANGELOG.replace(
       "### Changed\n\n- Renamed the app.\n\n",
       "Upstream sync.\n\n### Security\n\n- Patched a parser.\n  Details on two lines.\n\n### Fixed\n\n- Old bug.\n\n",
     );
 
-    const result = prepareChangelog(custom, {
-      ...OPTIONS,
-      generated: "### Fixed\n\n- New bug.\n\n### Added\n\n- Feature.",
-    });
+    const result = prepareChangelog(custom, OPTIONS);
 
     expect(releaseNotes(result.changelog, "1.0.0")).toBe(
-      "Upstream sync.\n\n### Added\n\n- Feature.\n\n### Fixed\n\n- Old bug.\n- New bug.\n\n### Security\n\n- Patched a parser.\n  Details on two lines.",
+      "Upstream sync.\n\n### Security\n\n- Patched a parser.\n  Details on two lines.\n\n### Fixed\n\n- Old bug.",
     );
   });
 
@@ -191,7 +106,7 @@ describe("prepareChangelog", () => {
     expect(result).toEqual({ changelog: written, source: "existing" });
   });
 
-  it("refuses an empty release", () => {
+  it("refuses an empty Unreleased section", () => {
     const empty = CHANGELOG.replace("### Changed\n\n- Renamed the app.\n\n", "");
 
     expect(prepareChangelog(empty, OPTIONS)).toBeNull();

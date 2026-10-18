@@ -1,14 +1,14 @@
+import { errorRateLimits, unavailableRateLimits } from "@/domain/rate-limits/rate-limit-state";
+import { parseClaudeOAuthUsage } from "@/integrations/harness/providers/claude/claude-usage";
+import { parseCodexRateLimits } from "@/integrations/harness/providers/codex/codex-rate-limits";
+import { parseDevinUsage, type DevinUsage } from "@/integrations/harness/providers/devin/devin-usage";
+import { parseOpencodeGoUsage } from "@/integrations/harness/providers/opencode/opencode-usage";
+import type { ProviderRateLimits } from "@/domain/rate-limits/rate-limit";
 import { invoke } from "@tauri-apps/api/core";
 import { homeDir } from "@/platform/tauri/fs";
-import { parseCodexRateLimits } from "@/integrations/harness/providers/codex/codex-rate-limits";
-import { parseOpencodeGoUsage } from "@/integrations/harness/providers/opencode/opencode-usage";
-import { parseClaudeOAuthUsage } from "@/integrations/harness/providers/claude/claude-usage";
+import type { ProviderAccountIdentity } from "./provider-account-identity";
 import {
-  errorRateLimits,
-  unavailableRateLimits,
-} from "@/domain/rate-limits/rate-limit-state";
-import type { ProviderRateLimits } from "@/domain/rate-limits/rate-limit";
-import {
+  inspectHarnessBinary,
   killChild,
   resolveCodexBinary,
   spawnChild,
@@ -69,6 +69,60 @@ export async function fetchOpencodeGoRateLimits(): Promise<ProviderRateLimits> {
     "opencode",
     result.error?.trim() || "OpenCode Go usage unavailable",
   );
+}
+
+type DevinUsageFetch = {
+  status: "ok" | "error" | "unavailable" | string;
+  httpStatus?: number | null;
+  usage?: DevinUsage | null;
+  error?: string | null;
+};
+
+let devinIdentity: ProviderAccountIdentity | null = null;
+
+/** Identity from the latest Devin usage read; Devin caches none on disk. */
+export function cachedDevinIdentity(): ProviderAccountIdentity | null {
+  return devinIdentity;
+}
+
+/**
+ * Devin's API server reports the plan's daily and weekly quota. The request
+ * names the installed CLI's version, read from the binary rather than pinned.
+ */
+export async function fetchDevinRateLimits(): Promise<ProviderRateLimits> {
+  let cliVersion: string | undefined;
+  try {
+    const inspected = await inspectHarnessBinary("devin");
+    cliVersion = /\d+(?:\.\d+)+/.exec(inspected.version ?? "")?.[0];
+  } catch {
+    return unavailableRateLimits("devin", "Devin CLI not found");
+  }
+  if (!cliVersion) return errorRateLimits("devin", "Devin CLI version unknown");
+  let result: DevinUsageFetch;
+  try {
+    result = await invoke<DevinUsageFetch>("fetch_devin_usage", { cliVersion });
+  } catch (error) {
+    return errorRateLimits(
+      "devin",
+      error instanceof Error ? error.message : "Devin usage unavailable",
+    );
+  }
+  if (result.status === "ok" && result.usage) {
+    devinIdentity = {
+      name: result.usage.name ?? null,
+      email: result.usage.email ?? null,
+      plan: result.usage.plan ?? null,
+    };
+    return parseDevinUsage(result.usage);
+  }
+  if (result.status === "unavailable") {
+    devinIdentity = null;
+    return unavailableRateLimits("devin", result.error?.trim() || "Devin not signed in");
+  }
+  // A rejected key means that account is no longer signed in; a network
+  // failure keeps the identity beside the last usage snapshot.
+  if (result.httpStatus === 401 || result.httpStatus === 403) devinIdentity = null;
+  return errorRateLimits("devin", result.error?.trim() || "Devin usage unavailable");
 }
 
 export type CodexRateLimitResetOutcome =

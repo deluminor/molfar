@@ -156,9 +156,18 @@ export function useVaultDocument(
     [path],
   );
 
-  const save = useCallback(async () => {
-    if (!vaultId || !path || !draft || draft.conflict || inFlight.current)
-      return;
+  const save = useCallback(async (bodyOverride?: string) => {
+    if (!vaultId || !path || inFlight.current) return;
+    const selected = latestDrafts.current[path];
+    if (!selected || selected.conflict) return;
+    const body = bodyOverride ?? selected.body;
+    if (bodyOverride !== undefined && bodyOverride !== selected.body) {
+      setDrafts((current) => {
+        const entry = current[path];
+        if (!entry) return current;
+        return { ...current, [path]: { ...entry, body: bodyOverride } };
+      });
+    }
     inFlight.current = true;
     saveEpoch.current += 1;
     setSaving(true);
@@ -168,8 +177,8 @@ export function useVaultDocument(
       const saved = await saveVaultNote(
         vaultId,
         path,
-        draft.body,
-        draft.saved.revision,
+        body,
+        selected.saved.revision,
       );
       if (generation.current !== currentGeneration) return;
       setDrafts((current) => {
@@ -190,7 +199,7 @@ export function useVaultDocument(
       inFlight.current = false;
       setSaving(false);
     }
-  }, [vaultId, path, draft, onSaved]);
+  }, [vaultId, path, onSaved]);
 
   const reload = useCallback(async () => {
     if (!vaultId || !path) return;

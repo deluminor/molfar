@@ -30,6 +30,29 @@ function edit(id: string, path = "src/App.tsx", status = "in_progress"): Block {
 }
 
 describe("liveAgentsFromSessions", () => {
+  it("excludes Familiar activity while keeping regular working and finished sessions", () => {
+    const working = chat("/repo", { id: "working", busy: true });
+    const done = chat("/repo", { id: "done" });
+    const familiarWorking = chat("~", { id: "familiar-working", busy: true });
+    const familiarWaiting = chat("~", {
+      id: "familiar-waiting",
+      blocks: [{
+        id: "approval",
+        role: "approval",
+        text: "Run a command",
+        approval: { requestId: 1 },
+      }],
+    });
+    const familiarDone = chat("~", { id: "familiar-done" });
+    const agents = liveAgentsFromSessions(
+      [familiarWaiting, familiarWorking, familiarDone, done, working],
+      new Set([familiarDone.id, done.id]),
+      new Set([familiarWorking.id, familiarWaiting.id, familiarDone.id]),
+    );
+    expect(agents.map((agent) => agent.id)).toEqual([working.id, done.id]);
+    expect(agents[1].done).toBe(true);
+  });
+
   it("keeps internal workers in their lead's agent panel", () => {
     const lead = chat("/repo", { id: "lead", busy: true });
     const worker = chat("/repo", { id: "worker", busy: true, orchestrationLeadId: "lead" });

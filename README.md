@@ -14,31 +14,66 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
 
-![MOLFAR Home dashboard](docs/architecture/images/home.png)
+https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
+
+## Architecture
+
+![MOLFAR system architecture — React UI, Tauri core, Companion gateway, agent harness, Atlassian, and local store](docs/architecture/images/molfar-system.png)
+
+Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
+
+| Layer                 | Responsibility                                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| **React UI**          | Board, Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model              |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI        |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine           |
+
+The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
+
+| Concern             | Technology                                            |
+| ------------------- | ----------------------------------------------------- |
+| Desktop runtime     | Tauri 2                                               |
+| UI                  | React 19, Vite 7, Tailwind CSS 4, TypeScript (strict) |
+| Native runtime      | Rust (stable)                                         |
+| Editor / terminal   | CodeMirror 6, xterm.js                                |
+| Markdown / diagrams | Streamdown, Mermaid                                   |
+| Knowledge graph     | 3d-force-graph (WebGL)                                |
+| Home visuals        | Canvas 2D renderers, no extra dependencies            |
+| Tests               | Vitest, cargo test, clippy `-D warnings`              |
+
+```
+src/
+├── app/                 # Shell composition, window chrome, startup, updates
+├── features/            # Product slices (UI + model + tests per feature)
+│   ├── task-board/      # Global Kanban: stages, artifacts, delivery
+│   ├── sessions/        # Composer, transcripts, BTW, second opinion
+│   ├── inbox/           # Connectors incl. Confluence Docs
+│   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
+│   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
+│   ├── familiars/           # Persistent agents: soul, memory, habits
+│   ├── orchestration/   # Lead/worker runs
+│   ├── agent-app/       # /operator app-tool surface
+│   └── …                # files, notes, terminal, automations, source-control, usage, settings
+├── integrations/harness/ # Provider-independent core + per-CLI adapters
+├── platform/tauri/      # Browser ↔ Tauri adapters
+├── shared/              # Reusable UI primitives (no feature logic)
+└── styles/              # Global CSS + design tokens
+src-tauri/src/           # Rust: PTY, FS, git, task board, inbox, jira, confluence, vault, familiars, control CLI
+host/                    # Experimental remote host (Node) for always-on agent machines
+docs/
+├── architecture/        # Interactive HTML diagrams, JSON sources, README images
+└── brand/               # Logo, app-icon and installer artwork sources (SVG)
+```
 
 > **MOLFAR** brings agents, projects, worktrees, tickets, knowledge, automation, and developer tooling into one desktop environment. It drives the provider CLIs you already use and keeps project state, sessions, and credentials on your machine.
->
-> Derived from [MonoCode](https://github.com/hardbeat920/monocode) (MIT), MOLFAR is an independent project with its own repository, releases, and architecture, and it still ports selected upstream changes.
-
-## Table of Contents
-
-- [TL;DR](#tldr)
-- [Why MOLFAR](#why-molfar)
-- [What it does](#what-it-does)
-- [Architecture](#architecture)
-- [Security and execution model](#security-and-execution-model)
-- [Getting started](#getting-started)
-- [Reference](#reference)
-- [Development](#development)
-- [Direction](#direction)
-- [License and attribution](#license-and-attribution)
 
 ## TL;DR
 
 |               |                                                                                                   |
 | ------------- | ------------------------------------------------------------------------------------------------- |
 | **What**      | Local-first engineering workspace and control plane for coding agents                             |
-| **Providers** | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent          |
+| **Providers** | Claude Code, Codex, Cursor, Grok Build, OpenCode, Antigravity, Pi, omp, fx, Hermes Agent, Devin   |
 | **Cost**      | No hosted model and no token resale. MOLFAR drives the CLIs and subscriptions you already have    |
 | **Data**      | Sessions, project state, notes, knowledge links, and integration credentials stay on your machine |
 | **Platforms** | macOS (Apple Silicon and Intel), Windows, Linux (`.deb`, AppImage, `.rpm`)                        |
@@ -59,6 +94,19 @@ The problem is not a lack of agents. It is the lack of a shared engineering envi
 The name is a nod to the _molfar_ — the Carpathian wise man who reads signs and keeps knowledge. The acronym says what the product does: a layer that orchestrates many agents locally and keeps their reasoning grounded in your project.
 
 ## What it does
+
+![MOLFAR Home dashboard](docs/architecture/images/home.png)
+
+### Board: Kanban that runs the agent loop
+
+A global **Task Board** on the project rail turns a task into a staged pipeline instead of an open-ended chat. Cards move through **Backlog → Grill → Plan approval → Implement → Code review → Final review → Done**, with **Rework** when review sends work back. Each agent stage runs in a fresh hidden session inside the card's own Git worktree; stages hand off only through versioned **spec, plan, report, and review** artifacts.
+
+- Per-column **model, effort, and permission mode**, with per-card overrides on retry.
+- **Plan approval** and **final review** always wait for you — approve, request changes, deliver as a pull request, squash-merge, or keep the branch.
+- Waiting and failed cards surface as a **count badge** on the Board rail action and on the macOS Dock; delivered cards can be **Archived** so Done stays lean.
+- Paired Companion phones can drive the same board actions while you are away from the desk.
+
+![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board.png)
 
 ### Sessions: every agent, one workspace
 
@@ -89,6 +137,17 @@ Start from a template (code review, security scan, incident triage, documentatio
 
 ![Automation templates and the list of scheduled runs](docs/architecture/images/automations.png)
 
+### Familiars: persistent agents with memory and habits
+
+A **Familiar** is a long-lived agent on the project rail with its own conversation, assigned projects, name, pixel mascot, and color. The conversation survives app restarts, provider switches, and usage limits.
+
+- **Soul** — editable Markdown standing instructions (`SOUL.md`); the Familiar changes them only when asked.
+- **Memory** — dated facts and preferences carried across conversations, with topic notes and a searchable archive instead of loading everything into every turn.
+- **Habits** — recurring tasks (hourly, daily, weekdays, weekly, local time) that run in background sessions while MOLFAR is open and post to the chat only when there is something worth reporting. Suggested habits wait for you to start them.
+- **Delegation** — through the local `app` CLI a Familiar starts, reads, and messages sessions, manages worktrees, folders, and notes across its projects, and gets one consolidated report when delegated work finishes.
+
+Soul and memory files live in the app's data folder. Settings → Familiars can hide them or reset a Familiar's name and instructions.
+
 ### Knowledge: local Obsidian vaults as agent context
 
 MOLFAR opens a local Obsidian vault directly — no plugin, no running Obsidian. The Markdown files stay the source of truth.
@@ -97,18 +156,29 @@ MOLFAR opens a local Obsidian vault directly — no plugin, no running Obsidian.
 - Source/Preview editing that preserves frontmatter and line endings;
 - **Add to agent context** attaches the saved revision as an explicit context card, so the agent works from exactly the text you reviewed.
 
+![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-close.png)
 ![Knowledge vault tree alongside the 3D link graph](docs/architecture/images/vault-open.png)
 
 ### Notes
 
-Project-scoped Markdown notes for decisions, checklists, and context worth reusing. Notes support tags, Source/Preview, **Add to chat**, and `@` mentions in the composer; agents with `/operator` access can list and read them.
+Project-scoped Markdown notes for decisions, checklists, and context worth reusing. Notes support tags, Source/Preview, **Add to chat**, and `@` mentions in the composer; agents with `/operator` access and Familiars can list, read, create, and edit them.
 
 ![Notes view with a tagged note in preview mode](docs/architecture/images/notes.png)
+
+### Companion: iPhone and iPad over Tailscale
+
+Pair a phone or tablet through the **Molfar** module in BitChain and steer the desktop while it is awake: Familiars and open sessions, Task Board gates, approvals and clarifying questions, new sessions, notes, and read-only Knowledge. Traffic stays on the tailnet — Tailscale Serve terminates HTTPS and forwards only to loopback on the laptop. Details and pairing steps: [docs/companion.md](docs/companion.md).
+
+![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
+
+![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred.png)
+
+![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred2.png)
 
 ### Orchestration and `/operator`
 
 - **Orchestration** lets a lead agent decompose a larger task into coordinated worker sessions, each in its own checkout.
-- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes, worktrees, and read-only Confluence tools. Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
+- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), worktrees, and read-only Confluence tools. Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
 
 ### Home and Usage
 
@@ -118,57 +188,7 @@ Project-scoped Markdown notes for decisions, checklists, and context worth reusi
 
 ### Also inside
 
-Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · skills and slash-command authoring · notifications with approval toasts and dock badges · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
-
-## Architecture
-
-<p align="center">
-  <img src="docs/architecture/images/molfar-system.png" alt="MOLFAR system architecture — React UI, Tauri core, agent harness, Atlassian, and local store" width="900" />
-</p>
-
-Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
-
-| Layer                 | Responsibility                                                                                  |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| **React UI**          | Sessions, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them         |
-| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model    |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session persistence, host metrics, Atlassian requests, local control CLI  |
-| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine |
-
-The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
-
-| Concern             | Technology                                            |
-| ------------------- | ----------------------------------------------------- |
-| Desktop runtime     | Tauri 2                                               |
-| UI                  | React 19, Vite 7, Tailwind CSS 4, TypeScript (strict) |
-| Native runtime      | Rust (stable)                                         |
-| Editor / terminal   | CodeMirror 6, xterm.js                                |
-| Markdown / diagrams | Streamdown, Mermaid                                   |
-| Knowledge graph     | 3d-force-graph (WebGL)                                |
-| Home visuals        | Canvas 2D renderers, no extra dependencies            |
-| Tests               | Vitest, cargo test, clippy `-D warnings`              |
-
-```
-src/
-├── app/                 # Shell composition, window chrome, startup, updates
-├── features/            # Product slices (UI + model + tests per feature)
-│   ├── sessions/        # Composer, transcripts, BTW, second opinion
-│   ├── inbox/           # Connectors incl. Confluence Docs
-│   ├── home/            # Dashboard grid; Sphere, Fire and Orb visuals
-│   ├── knowledge/       # Local Obsidian vault browse, graph, agent context
-│   ├── orchestration/   # Lead/worker runs
-│   ├── agent-app/       # /operator app-tool surface
-│   └── …                # files, notes, terminal, automations, source-control, usage, settings
-├── integrations/harness/ # Provider-independent core + per-CLI adapters
-├── platform/tauri/      # Browser ↔ Tauri adapters
-├── shared/              # Reusable UI primitives (no feature logic)
-└── styles/              # Global CSS + design tokens
-src-tauri/src/           # Rust: PTY, FS, git, inbox, jira, confluence, vault, control CLI
-host/                    # Experimental remote host (Node) for always-on agent machines
-docs/
-├── architecture/        # Interactive HTML diagrams, JSON sources, README images
-└── brand/               # Logo, app-icon and installer artwork sources (SVG)
-```
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence tools when Atlassian is connected; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Security and execution model
 
@@ -177,6 +197,7 @@ docs/
 - **Rust owns sensitive integration calls.** Atlassian requests run in the Tauri core, so the stored credential is not exposed to the UI.
 - **Explicit permission modes.** Every session and automation declares how much authority its agent has.
 - **Scoped `/operator` access.** App control is granted per thread and only during an active agent turn.
+- **Unattended Familiar habits.** Habit runs use full tool access in background sessions, so a habit is scheduled only after you start it. Runs execute one at a time, skip schedules missed by more than two hours, and stop on working-time or unanswered-approval limits; provider approvals surface in the Familiar's chat.
 - **Worktree isolation.** Parallel tasks can run in separate Git checkouts.
 - **Reviewed knowledge injection.** Knowledge reaches an agent only through context you select and submit.
 
@@ -207,6 +228,7 @@ MOLFAR probes for each CLI at startup and disables the ones it cannot find. One 
 - [omp](https://omp.sh) — `curl -fsSL https://omp.sh/install | sh`
 - [fx](https://fx.sh) — `curl -fsSL https://fx.sh/setup.sh | bash` then `fx login`
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — install script, then `hermes model`
+- [Devin CLI](https://docs.devin.ai/cli) — macOS/Linux: `curl -fsSL https://cli.devin.ai/install.sh | bash` (or `brew install --cask devin-cli`); Windows PowerShell: `irm https://static.devin.ai/cli/setup.ps1 | iex`; then run `devin auth login` (MOLFAR reuses that login)
 
 ### Build from source
 
@@ -275,9 +297,14 @@ Type `/operator` at the start of a composer message to enable MOLFAR access in t
 - `sessions.start` opens a tab in the current project with a prompt. `placement: "right"` or `"down"` splits the calling session's pane; `besideSessionId` targets another visible pane, and the returned session ID can be reused to build nested layouts. `draft: true` saves the prompt unsent. It accepts a provider, model, effort and other model settings, permission mode, and a checkout: the current one, a new worktree, or an existing `worktreeCwd` from `worktrees.list`. Omit `runtimeMode` to inherit the caller's permission mode.
 - `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older ones and a per-message character cap. `sessions.send` submits a follow-up to an idle session; `sessions.draft` saves an unsent message for review.
 - `folders.list` / `folders.move` organize sessions in sidebar folders, including a new folder.
-- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID.
+- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID. `notes.write` creates a note linked to the calling session or edits an existing one's title, body, and tags; reuse `--request-id` on retries to avoid duplicates.
 - `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
 - `confluence.search` / `confluence.list` / `confluence.read` read Confluence through the connected Atlassian account.
+- `board.list` shows the project's Task Board cards; `board.create` adds a Backlog card with a title, Markdown description and acceptance criteria. A session files cards only in its own project, a Familiar only in its projects. Reuse `--request-id` on retries; it returns the same card instead of a second one.
+
+Asking an agent with app access to "add this to the board" is enough: the app-access instructions and the Familiar rules tell it to write the card from the conversation and follow the template in the `board.create` entry of `app --help` (Overview, Goals, Scope, Out of scope, Technical notes, `AC-n` criteria, all in English). It creates the card at once when the user says to create it now, and otherwise confirms the title and scope first; that rule lives in the instructions, not in the CLI. The built-in `/create-board-task` skill does the same on demand and skips the confirmation. Providers with their own command catalog (Pi, omp, Devin) do not list the skill, but still get the instructions and the help.
+
+Familiars always have this CLI in their own conversation, plus Familiar-only actions: `soul.read` / `soul.update`, `memory.read` / `memory.search` / `memory.add` / `memory.replace` / `memory.remove`, `habits.list` / `habits.add` / `habits.update` / `habits.run` / `habits.remove`, and `chat.card` for PR, session, choice, and habit-suggestion cards. Habit runs and other sessions cannot change a Familiar's soul.
 
 Orchestration workers keep their scoped `control` workflow and do not receive this app access.
 
@@ -322,8 +349,6 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 ## Direction
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
-
-The next major step is an **iPad and iOS companion** that connects to a running MOLFAR host: monitor sessions, approve permission requests, inspect agent activity, and steer ongoing work remotely.
 
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 

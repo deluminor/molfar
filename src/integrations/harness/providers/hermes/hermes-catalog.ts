@@ -1,6 +1,6 @@
-import { homeDir } from "@/platform/tauri/fs";
 import { setHarnessModels } from "../../core/models/catalog-store";
 import type { AgentModel } from "@/domain/models/agent-model";
+import { homeDir } from "@/platform/tauri/fs";
 import { AcpClient } from "../../core/acp";
 import {
   killChild,
@@ -9,6 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import { modelsFromHermesSession } from "./hermes-protocol";
 
 const PROBE_ID = "molfar-hermes-probe";
@@ -78,9 +79,10 @@ export async function discoverHermesModels(
           },
           REQUEST_TIMEOUT_MS,
         );
+        const mcpServers = await loadSessionMcpServers("hermes", cwd);
         const created = await acp.request<unknown>(
           "session/new",
-          { cwd, mcpServers: [] },
+          { cwd, mcpServers },
           REQUEST_TIMEOUT_MS,
         );
         return modelsFromHermesSession(created);

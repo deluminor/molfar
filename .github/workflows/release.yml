@@ -53,6 +53,13 @@ jobs:
         with:
           node-version: 24
 
+      # prepare.mjs excludes MonoCode commits via refs/remotes/upstream/main
+      - name: Fetch MonoCode upstream
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git remote add upstream https://github.com/hardbeat920/monocode.git 2>/dev/null || git remote set-url upstream https://github.com/hardbeat920/monocode.git
+          git fetch --no-tags --quiet upstream main
+
       - name: Bump version and write release notes
         id: bump
         if: github.event_name == 'workflow_dispatch'
@@ -81,14 +88,22 @@ jobs:
           git config user.email "${OWNER_ID}+${OWNER}@users.noreply.github.com"
 
           RELEASE_HEAD="release/${TAG}"
-          git switch -c "$RELEASE_HEAD"
+          # Re-runs after a createPullRequest race leave this branch behind;
+          # switch -C resets it onto the freshly prepared bump commit.
+          git switch -C "$RELEASE_HEAD"
           git add CHANGELOG.md package.json package-lock.json Cargo.toml Cargo.lock src-tauri/tauri.conf.json
           git commit -m "chore(release): $TAG"
+          EXPECTED_SHA="$(git rev-parse HEAD)"
           git push --force-with-lease origin "HEAD:refs/heads/$RELEASE_HEAD"
 
-          PR_URL="$(gh pr create \
+          # GitHub's GraphQL createPullRequest races a force-pushed release head
+          # (REST compare can already be ahead). Wait for compare, then open or
+          # reuse the PR via REST in scripts/release/open-pr.mjs.
+          PR_URL="$(node scripts/release/open-pr.mjs \
+            --repository "$GITHUB_REPOSITORY" \
             --base "$RELEASE_BRANCH" \
             --head "$RELEASE_HEAD" \
+            --expected-sha "$EXPECTED_SHA" \
             --title "chore(release): $TAG" \
             --body "Automated release bump for \`${TAG}\`. Opened and squash-merged by the Release workflow so \`main\` stays PR-only.")"
 
@@ -150,6 +165,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Select release channel
+        run: node scripts/release-channel.cjs
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -367,13 +385,17 @@ jobs:
           fi
           verify_release() {
             local expected_draft="$1"
-            gh release view "$TAG" --json isDraft,assets > "$RUNNER_TEMP/release-state.json"
+            gh release view "$TAG" --json isDraft,isPrerelease,assets > "$RUNNER_TEMP/release-state.json"
             node - "$RUNNER_TEMP/release-state.json" "$expected_draft" "${RELEASE_FILES[@]}" <<'NODE'
           const fs = require("node:fs");
           const path = require("node:path");
           const release = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
           if (release.isDraft !== (process.argv[3] === "true")) {
             console.error("GitHub Release publication state is unexpected.");
+            process.exit(1);
+          }
+          if (release.isPrerelease !== (process.env.RELEASE_PRERELEASE === "true")) {
+            console.error("GitHub Release channel is unexpected.");
             process.exit(1);
           }
           const names = new Set(release.assets.map((asset) => asset.name));
@@ -438,6 +460,8 @@ jobs:
     name: Linux packages
     needs: prepare
     runs-on: ubuntu-22.04
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -449,6 +473,9 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Select release channel
+        run: node scripts/release-channel.cjs
+
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux system dependencies
@@ -456,8 +483,40 @@ jobs:
 
       - run: npm ci
 
+      - name: Write updater release config
+        run: |
+          printf '%s\n' '{"bundle":{"createUpdaterArtifacts":true}}' > "$RUNNER_TEMP/tauri.release.conf.json"
+
+      # Same as `npm run build:linux`, with the updater config merged in.
+      # npm would append extra args to the repack script, not tauri build.
       - name: Build Linux packages
-        run: npm run build:linux
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --bundles deb,appimage --config "$RUNNER_TEMP/tauri.release.conf.json"
+          bash scripts/repack-appimage.sh
+
+      - name: Assert AppImage uses host libraries
+        run: bash scripts/assert-appimage-host-libs.sh
+
+      # Sign after repack-appimage.sh: a signature Tauri wrote during the
+      # build would cover the pre-repack file and fail updater verification.
+      - name: Sign AppImage for the updater
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          appimage=(target/release/bundle/appimage/*.AppImage)
+          if (( ${#appimage[@]} != 1 )); then
+            echo "Expected exactly one AppImage" >&2
+            exit 1
+          fi
+          npx tauri signer sign "${appimage[0]}"
+          test -s "${appimage[0]}.sig"
 
       - name: Stage Linux packages
         run: |
@@ -469,8 +528,12 @@ jobs:
             echo "Expected exactly one .deb and one AppImage" >&2
             exit 1
           fi
+          if [[ ! -s "${appimage[0]}.sig" ]]; then
+            echo "Missing AppImage updater signature" >&2
+            exit 1
+          fi
           mkdir -p release-artifacts
-          cp "${deb[0]}" "${appimage[0]}" release-artifacts/
+          cp "${deb[0]}" "${appimage[0]}" "${appimage[0]}.sig" release-artifacts/
 
       - name: Upload Linux packages
         uses: actions/upload-artifact@v7
@@ -548,6 +611,8 @@ jobs:
     name: Windows packages
     needs: prepare
     runs-on: windows-latest
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -558,6 +623,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Select release channel
+        run: node scripts/release-channel.cjs
 
       - uses: dtolnay/rust-toolchain@stable
 

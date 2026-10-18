@@ -19,6 +19,8 @@ export type AgentModel = {
   harness: HarnessId;
   name: string;
   nativeId?: string;
+  /** Concrete native id a moving alias (`opus`) currently launches. */
+  aliasTarget?: string;
   /** Upstream provider inside a multi-provider harness such as OpenCode. */
   provider?: {
     id: string;
