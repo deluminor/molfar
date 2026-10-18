@@ -22,12 +22,12 @@ https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
 
 Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
 
-| Layer                 | Responsibility                                                                                     |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
+| Layer                 | Responsibility                                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
 | **React UI**          | Board, Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
-| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
-| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model              |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI        |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine           |
 
 The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
 
@@ -106,9 +106,7 @@ A global **Task Board** on the project rail turns a task into a staged pipeline 
 - Waiting and failed cards surface as a **count badge** on the Board rail action and on the macOS Dock; delivered cards can be **Archived** so Done stays lean.
 - Paired Companion phones can drive the same board actions while you are away from the desk.
 
-![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board1.png)
-
-![Delivered Board card with stage timeline, acceptance criteria, and pull request link](docs/architecture/images/board2.png)
+![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board.png)
 
 ### Sessions: every agent, one workspace
 
