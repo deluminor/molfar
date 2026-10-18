@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Knowledge** notes open in **Preview** by default. Frontmatter sits in a collapsible **Properties** block; headings, task lists, and links render cleanly, and long bare URLs shorten to a readable host + path.
+- Preview task-list checkboxes are clickable and save straight back to the vault note.
+- **Add to agent context** attaches the vault file itself (path + native attachment) instead of pasting the note body into the prompt.
+- Task Board card **Overview** renders description and acceptance criteria as Markdown (headings, code, links), not raw text.
+- Board columns leave a little space above the first card so hover lift and shadow are not clipped.
+
 ## [1.0.17] - 2026-10-17
 
 ### Added
