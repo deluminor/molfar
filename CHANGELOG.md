@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-10-18
+
 ### Changed
 
 - **Knowledge** notes open in **Preview** by default. Frontmatter sits in a collapsible **Properties** block; headings, task lists, and links render cleanly, and long bare URLs shorten to a readable host + path.
@@ -393,7 +395,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.17...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.18...HEAD
+[1.0.18]: https://github.com/deluminor/molfar/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/deluminor/molfar/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/deluminor/molfar/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/deluminor/molfar/compare/v1.0.14...v1.0.15
