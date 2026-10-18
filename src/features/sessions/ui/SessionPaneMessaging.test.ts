@@ -11,6 +11,11 @@ const probes = vi.hoisted(() => ({
   runs: [],
 }));
 vi.mock("./Composer", () => ({ Composer: () => null }));
+// Messaging tests do not exercise plan-usage chips; keep their async loads out of act.
+vi.mock("../../../app/shell/UsageFooter", async (original) => ({
+  ...(await original<typeof import("../../../app/shell/UsageFooter")>()),
+  UsageChips: () => null,
+}));
 vi.mock("../hooks/useFileDrop", () => ({ useFileDrop: () => false }));
 vi.mock("../model/attachments", async (original) => ({
   ...(await original<typeof import("../model/attachments")>()),
