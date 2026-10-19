@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **New layout** is opt-in again: classic chrome stays until users accept the invitation or enable it in Settings → Appearance → Layout.
-- In the new layout, the sidebar Views order is **Home → Board → Inbox → Notes → Usage → Knowledge → Automations**.
+- **New layout** is opt-in: classic chrome stays the default. Try the redesigned sidebar, project switcher, and workspace from the invitation, or enable it in Settings → Appearance → Layout.
+- In the new layout, sidebar Views are ordered **Home → Board → Inbox → Notes → Usage → Knowledge → Automations**.
 
 ## [1.0.19] - 2026-10-19
 
