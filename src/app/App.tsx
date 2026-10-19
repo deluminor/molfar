@@ -103,16 +103,9 @@ import {
 import { FamiliarSettingsDialog } from "@/features/familiars/ui/FamiliarSettingsDialog";
 import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
 import {
-  launchedSessionState,
-  familiarSpawnedSessions,
   recordFamiliarSpawnedSession,
-  type LaunchedSessionState,
-  type LaunchedSessionView,
 } from "@/features/familiars/model/familiar-spawned-sessions";
 import { groupFamiliarTurns } from "@/features/sessions/model/transcript-activity";
-import {
-  resolveFamiliarActivity,
-} from "@/features/familiars/model/familiar-activity";
 import {
   DeleteSessionDialog,
   type SessionDeleteChoice,
@@ -182,6 +175,8 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import { useFamiliarRail } from "./workspace/hooks/familiars/use-familiar-rail";
+import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import {
   forgetOverviewDocument,
   leaveOverviewItems,
@@ -408,7 +403,6 @@ import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 
 import { orderByIds } from "@/shared/lib/reorder";
 
-import { useSessionChangeTotals } from "@/features/sessions/ui/SessionReview";
 import {
   releaseNotesForVersion,
   releaseNotesTitle,
@@ -632,7 +626,6 @@ import {
   removeFamiliar,
   saveOpenFamiliar,
   subscribeFamiliars,
-  type FamiliarState,
 } from "@/features/familiars/model/familiar";
 import {
   loadFamiliarFiles,
@@ -689,7 +682,6 @@ import {
 import {
   getArtifact,
   saveArtifact,
-  artifactCards,
   recordArtifactCard,
   removeArtifactCard,
   ARTIFACT_DELETED_EVENT,
@@ -1200,7 +1192,6 @@ function Workspace({
       void listening.then((unlisten) => unlisten());
     };
   }, []);
-  const familiarActivity = useWorkspaceField(workspaceStore, "familiarActivity");
   const familiarOverviewDocument = useWorkspaceField(workspaceStore, "familiarOverviewDocument");
   useEffect(() => {
     if (!familiarOverviewOpen) leaveOverviewItems(workspaceStore);
@@ -12096,43 +12087,12 @@ function Workspace({
 
   // Renames, mascot picks and new projects show up on the rail.
   const familiarViewFamiliar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
-  const selectedFamiliarActivity = resolveFamiliarActivity(
-    familiarActivity,
+  const familiarOverview = useFamiliarOverviewData(
+    workspaceStore,
     familiarViewSession,
+    sessions,
   );
-  // The chat marks the turn whose activity the overview is showing.
-  const familiarActivityShownTurnId =
-    familiarOverviewOpen && familiarOverviewTab === "activity"
-      ? selectedFamiliarActivity?.turnId
-      : undefined;
-  const familiarViewBlocks = familiarViewSession?.blocks;
-  const familiarViewBusy = !!familiarViewSession?.busy;
-  const familiarViewCwd = familiarViewSession ? sessionWorkCwd(familiarViewSession) : "";
-  const familiarEditedPaths = useMemo(
-    () =>
-      familiarViewBlocks && !familiarViewBusy
-        ? sessionEditPaths(familiarViewBlocks)
-        : undefined,
-    [familiarViewBlocks, familiarViewBusy],
-  );
-  // The session's changes, on the overview's tab instead of under a message.
-  const familiarChangeTotals = useSessionChangeTotals(
-    familiarViewSession?.id ?? "",
-    familiarViewCwd,
-    {
-      enabled: !familiarViewSession?.worktreeRemoved,
-      busy: familiarViewBusy,
-      editedPaths: familiarEditedPaths,
-    },
-  );
-  const familiarLaunches = useMemo(
-    () => (familiarViewBlocks ? familiarSpawnedSessions(familiarViewBlocks) : []),
-    [familiarViewBlocks],
-  );
-  const familiarDocuments = useMemo(
-    () => (familiarViewBlocks ? artifactCards(familiarViewBlocks) : []),
-    [familiarViewBlocks],
-  );
+  const selectedFamiliarActivity = familiarOverview.selectedActivity;
   const familiarActivityView =
     familiarViewSession && selectedFamiliarActivity ? (
       <FamiliarActivityView
@@ -12150,68 +12110,6 @@ function Workspace({
         onOpenDiff={onOpenDiff}
       />
     ) : null;
-  // Status for the cards of the sessions the open Familiar launched, rebuilt only
-  // when one changes state or title rather than on every streamed token. One
-  // that is no longer open cannot be running, so it reads as done.
-  // A card names its session as the sidebar does. One that is not open has
-  // its saved title fetched, rather than the prompt it was launched with, so
-  // opening it does not rename the card.
-  const [storedLaunchTitles, setStoredLaunchTitles] = useState<
-    ReadonlyMap<string, string>
-  >(() => new Map());
-  const unopenedLaunchesKey = JSON.stringify(
-    familiarLaunches.flatMap((launch) =>
-      storedLaunchTitles.has(launch.sessionId) ||
-      sessions.some((entry) => entry.id === launch.sessionId)
-        ? []
-        : [launch.sessionId],
-    ),
-  );
-  useEffect(() => {
-    const ids: string[] = JSON.parse(unopenedLaunchesKey);
-    if (ids.length === 0) return;
-    let current = true;
-    void Promise.all(ids.map((id) => getSession(id).catch(() => null))).then(
-      (stored) => {
-        if (!current) return;
-        setStoredLaunchTitles((previous) => {
-          const next = new Map(previous);
-          stored.forEach((session, index) =>
-            next.set(ids[index], session?.title ?? ""),
-          );
-          return next;
-        });
-      },
-    );
-    return () => {
-      current = false;
-    };
-  }, [unopenedLaunchesKey]);
-  const familiarLaunchesKey = JSON.stringify(
-    familiarLaunches.map((launch) => {
-      const live = sessions.find((entry) => entry.id === launch.sessionId);
-      return live
-        ? [launch.sessionId, launchedSessionState(live), live.title]
-        : [
-            launch.sessionId,
-            "done",
-            storedLaunchTitles.get(launch.sessionId) || launch.title,
-          ];
-    }),
-  );
-  const familiarLaunchedSessions = useMemo(
-    () =>
-      new Map<string, LaunchedSessionView>(
-        (
-          JSON.parse(familiarLaunchesKey) as [
-            string,
-            LaunchedSessionState,
-            string,
-          ][]
-        ).map(([id, state, title]) => [id, { state, title }]),
-      ),
-    [familiarLaunchesKey],
-  );
   const familiarShownSessionPane = shownFamiliarSessionId
     ? sessions.find((session) => session.id === shownFamiliarSessionId)
     : undefined;
@@ -12258,15 +12156,15 @@ function Workspace({
         cwd={familiarViewSession.cwd}
         agent={familiarLook(familiarViewFamiliar)}
         state={familiarState(familiarViewSession)}
-        launches={familiarLaunches}
+        launches={familiarOverview.launches}
         sessions={sessions}
         history={history}
-        documents={familiarDocuments}
+        documents={familiarOverview.documents}
         activity={familiarActivityView}
         changes={{
           sessionId: familiarViewSession.id,
-          cwd: familiarViewCwd,
-          totals: familiarChangeTotals,
+          cwd: familiarOverview.cwd,
+          totals: familiarOverview.changeTotals,
           request: familiarChangesRequest,
           textHarness: familiarViewSession.harness,
           projects: familiarViewFamiliar.projects,
@@ -12323,58 +12221,20 @@ function Workspace({
         onClose={() => setFamiliarSettingsFor(null)}
       />
     ) : null;
-  const familiarRailState = useMemo(() => {
-    const states = new Map<string, FamiliarState>();
-    const unseen = new Map<string, number>();
-    for (const familiar of listFamiliars()) {
-      const session = familiar.sessionId
-        ? sessions.find((entry) => entry.id === familiar.sessionId)
-        : undefined;
-      if (session) states.set(familiar.id, familiarState(session));
-      const count = familiar.sessionId
-        ? familiarReplies.counts.get(familiar.sessionId)
-        : undefined;
-      if (count) unseen.set(familiar.id, count);
-    }
-    return { states, unseen };
-    // The roster is read through its snapshot.
-  }, [familiarsSnap, sessions, familiarReplies.counts]);
-  const familiarRail = useStableValue(familiarRailState);
   const busyProjectPaths = useStableValue(
     promptableSessions.flatMap((session) =>
       session.busy && session.cwd ? [session.cwd] : [],
     ),
   );
-  const onOpenRailFamiliar = useCallback(
-    (familiarId: string) => void onOpenFamiliar(familiarId),
-    [onOpenFamiliar],
-  );
-  const onDeleteRailFamiliar = useCallback(
-    (familiarId: string) => void onDeleteFamiliar(familiarId),
-    [onDeleteFamiliar],
-  );
-  // The memoized sidebar only skips a streamed batch if this keeps identity.
-  const sidebarFamiliars = useMemo(
-    () =>
-      familiarsEnabled
-        ? {
-            activeId: familiarViewFamiliar?.id,
-            states: familiarRail.states,
-            unseenCounts: familiarRail.unseen,
-            onOpen: onOpenRailFamiliar,
-            onCreate: onCreateFamiliar,
-            onDelete: onDeleteRailFamiliar,
-          }
-        : undefined,
-    [
-      familiarsEnabled,
-      familiarViewFamiliar?.id,
-      familiarRail,
-      onOpenRailFamiliar,
-      onCreateFamiliar,
-      onDeleteRailFamiliar,
-    ],
-  );
+  const sidebarFamiliars = useFamiliarRail({
+    enabled: familiarsEnabled,
+    activeId: familiarViewFamiliar?.id,
+    sessions,
+    unseenReplies: familiarReplies.counts,
+    onOpen: onOpenFamiliar,
+    onCreate: onCreateFamiliar,
+    onDelete: onDeleteFamiliar,
+  });
   const onDismissUpdate = useCallback(() => setUpdateNotice(null), []);
 
   const chromeSurfaceOpen =
@@ -12788,12 +12648,12 @@ function Workspace({
                                       onOpenDiff={onOpenMonoDiff}
                                       onCommitChanges={onCommitMonoChanges}
                                       familiarActivityTurnId={
-                                        familiarActivityShownTurnId
+                                        familiarOverview.activityShownTurnId
                                       }
                                       onOpenFamiliarSession={onOpenFamiliarSession}
                                       familiarLaunchedSessions={
                                         visible
-                                          ? familiarLaunchedSessions
+                                          ? familiarOverview.launchedSessions
                                           : undefined
                                       }
                                       openFamiliarSessionId={shownFamiliarSessionId}

@@ -1140,6 +1140,24 @@
           "familiarViewRequest, lastFamiliarIdRef, closeFamiliarView, onOpenFamiliar, onToggleFamiliar, showFamiliarLaunchedSession, reset replace branch of onResetFamiliar (App: familiarView.close/open/toggle/replaceSession/showLaunchedSession/forget)"
         ],
         "target": "src/app/workspace/flows/familiars/familiar-view.ts"
+      },
+      {
+        "names": [
+          "selectedFamiliarActivity, familiarActivityShownTurnId, familiarEditedPaths, familiarChangeTotals, familiarLaunches, familiarDocuments (App: familiarOverview.*)"
+        ],
+        "target": "src/app/workspace/hooks/familiars/use-familiar-overview-data.ts"
+      },
+      {
+        "names": [
+          "storedLaunchTitles, unopenedLaunchesKey effect, familiarLaunchesKey, familiarLaunchedSessions"
+        ],
+        "target": "src/app/workspace/hooks/familiars/use-familiar-launched-sessions.ts"
+      },
+      {
+        "names": [
+          "familiarRailState, familiarRail, onOpenRailFamiliar, onDeleteRailFamiliar, sidebarFamiliars"
+        ],
+        "target": "src/app/workspace/hooks/familiars/use-familiar-rail.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
