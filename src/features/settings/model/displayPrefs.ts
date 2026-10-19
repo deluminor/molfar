@@ -5,6 +5,7 @@ const SHOW_REMAINING_USAGE_KEY = "molfar.showRemainingUsage";
 const MASK_EMAILS_KEY = "molfar.maskEmails";
 const COMPOSER_AUTOCORRECT_KEY = "molfar.composerAutocorrect";
 const RAIL_FAMILIARS_PINNED_KEY = "molfar.railFamiliarsPinned";
+export const PACED_REVEAL_KEY = "molfar.pacedReveal";
 
 export const SHOW_REMAINING_USAGE_DEFAULT = false;
 export const MASK_EMAILS_DEFAULT = true;
@@ -72,6 +73,22 @@ const railFamiliarsPinned = flagStore(
   RAIL_FAMILIARS_PINNED_DEFAULT,
   RAIL_FAMILIARS_PINNED_CHANGE_EVENT,
 );
+const pacedReveal = flagStore(
+  PACED_REVEAL_KEY,
+  true,
+  "molfar:pacedrevealchange",
+);
+export const loadPacedReveal = pacedReveal.load;
+export const savePacedReveal = pacedReveal.save;
+export const usePacedReveal = pacedReveal.useFlag;
+
+const newLayoutPromptDismissed = flagStore(
+  "molfar.newLayoutPromptDismissed",
+  false,
+  "molfar:newlayoutpromptdismissedchange",
+);
+export const saveNewLayoutPromptDismissed = newLayoutPromptDismissed.save;
+export const useNewLayoutPromptDismissed = newLayoutPromptDismissed.useFlag;
 
 /** Usage meters fill with what is left instead of what is used. */
 export const loadShowRemainingUsage = showRemainingUsage.load;
