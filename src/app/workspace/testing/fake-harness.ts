@@ -11,6 +11,7 @@ export type FakeHarness = {
   turns: SendTurnInput[];
   steers: SteerTurnInput[];
   cancelled: string[];
+  compacted: string[];
   approvals: Array<{ sessionId: string; requestId: number; decision: string }>;
   /** Streams events into the running turn. */
   send(event: HarnessEvent): void;
@@ -23,6 +24,7 @@ export function createFakeHarness(id: HarnessId): FakeHarness {
   const turns: SendTurnInput[] = [];
   const steers: SteerTurnInput[] = [];
   const cancelled: string[] = [];
+  const compacted: string[] = [];
   const approvals: FakeHarness["approvals"] = [];
   let finishTurn: (() => void) | undefined;
   const adapter: HarnessAdapter = {
@@ -41,6 +43,9 @@ export function createFakeHarness(id: HarnessId): FakeHarness {
       cancelled.push(sessionId);
       finishTurn?.();
     },
+    compactContext: async (input) => {
+      compacted.push(input.sessionId);
+    },
     respondApproval: (sessionId, requestId, decision) => {
       approvals.push({ sessionId, requestId, decision });
     },
@@ -54,6 +59,7 @@ export function createFakeHarness(id: HarnessId): FakeHarness {
     turns,
     steers,
     cancelled,
+    compacted,
     approvals,
     send(event) {
       const turn = turns[turns.length - 1];
