@@ -54,6 +54,46 @@ describe("macOS native tint", () => {
   const hasNativeTint = () =>
     document.documentElement.classList.contains("has-native-glass-tint");
 
+  it.each([false, true])(
+    "preserves an opaque window across theme changes (inset shell mounted: %s)",
+    async (mounted) => {
+      const {
+        activateWindowAppearance,
+        applyWorkspaceTheme,
+        applyThemePreference,
+        loadInsetGlass,
+      } = await import("./appearance");
+      localStorage.setItem("molfar.insetLayout", "1");
+      localStorage.setItem("molfar.insetGlass", "0");
+      document.documentElement.classList.toggle("layout-inset", mounted);
+      activateWindowAppearance();
+
+      for (const theme of ["moss", "ember", "default"] as const) {
+        invoke.mockClear();
+        applyWorkspaceTheme(theme);
+        await vi.waitFor(() =>
+          expect(invoke).toHaveBeenLastCalledWith(
+            "set_window_glass_enabled",
+            expect.objectContaining({ enabled: false }),
+          ),
+        );
+        expect(hasGlass()).toBe(false);
+        expect(hasNativeTint()).toBe(false);
+        expect(loadInsetGlass()).toBe(false);
+      }
+      invoke.mockClear();
+      applyThemePreference("light");
+      applyThemePreference("dark");
+      await vi.waitFor(() =>
+        expect(invoke).toHaveBeenLastCalledWith(
+          "set_window_glass_enabled",
+          expect.objectContaining({ enabled: false }),
+        ),
+      );
+      expect(hasGlass()).toBe(false);
+    },
+  );
+
   it("hands the current tint and opacity to AppKit before clearing the CSS tint", async () => {
     const { applySidebarOpacity, applyThemeTint, syncNativeGlass } =
       await import("./appearance");
@@ -252,6 +292,7 @@ describe("native glass", () => {
 
   it("enables glass on Linux once main pane glass is on", async () => {
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     await vi.waitFor(() => expect(hasGlass()).toBe(true));
@@ -277,6 +318,7 @@ describe("native glass", () => {
 
   it("fades the page opaque before the window stops being transparent", async () => {
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     await vi.waitFor(() => expect(hasGlass()).toBe(true));
@@ -296,6 +338,7 @@ describe("native glass", () => {
 
   it("drops a fade still owed to glass that is back on", async () => {
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     await vi.waitFor(() => expect(hasGlass()).toBe(true));
@@ -323,6 +366,7 @@ describe("native glass", () => {
     );
 
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     localStorage.setItem(BODY_GLASS_KEY, "0");

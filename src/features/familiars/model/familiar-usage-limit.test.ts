@@ -124,6 +124,16 @@ describe("Familiar usage recovery", () => {
     expect(switchFamiliarUsageLimitAccount(legacy, "default")).toBe(legacy);
   });
 
+  it("resumes the same provider session when its transcript was carried over", () => {
+    const original = limited();
+    const resumed = switchFamiliarUsageLimitAccount(original, "account-work", true);
+    expect(resumed.providerAccountId).toBe("account-work");
+    expect(resumed.providerSessionId).toBe("old-thread");
+    expect(pendingComposerSwitch(resumed)).toBeNull();
+    expect(resumed.usageLimit).toBeUndefined();
+    expect(resumed.queuedMessages?.[0].text).toBe(CONTINUE_PROMPT);
+  });
+
   it("shows recovery again if the replacement account also runs out", () => {
     const resumed = resumeFamiliarUsageLimit(limited());
     const stopped = applyHarnessEvent(resumed, {

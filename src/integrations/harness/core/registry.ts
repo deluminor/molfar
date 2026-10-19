@@ -1,11 +1,12 @@
-import type { Block } from "@/domain/session/block";
-import type { TurnIntent } from "@/domain/session/turn";
-import type { TaskListMeta } from "@/domain/session/task-list";
-import type { HarnessId } from "@/domain/harness/harness";
+import { type Block } from "@/domain/session/block";
+import { type HarnessId } from "@/domain/harness/harness";
+import { type TaskListMeta } from "@/domain/session/task-list";
+import { type TurnIntent } from "@/domain/session/turn";
+import { hasLiveCatalog } from "./models/catalog-store";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { transferProviderSession } from "./child";
 import type { GeneratedSessionTitle } from "@/domain/session/generated-title";
 import type { PrContent } from "@/domain/git/git-text";
-import { hasLiveCatalog } from "./models/catalog-store";
 import type { UserQuestionReply } from "@/domain/session/user-question";
 import type { NativeCommandProvider } from "./native-commands";
 import type {
@@ -440,6 +441,38 @@ export function bindHarnessSession(
     block.role === "tasks" && block.taskList ? [block.taskList] : [],
   );
   if (lists.length > 0) adapter.restoreTaskLists(threadId, lists);
+}
+
+/**
+ * Continue a provider conversation under another account of the same provider.
+ * The old process stops first so its transcript is complete, then the native
+ * transcript is copied to the new account and the thread resumes from it.
+ * Throws when the transcript cannot be carried, leaving the thread unbound.
+ */
+export async function transferHarnessSessionAccount(input: {
+  harness: "claude" | "codex";
+  threadId: string;
+  providerSessionId: string;
+  cwd: string;
+  fromAccountId?: string;
+  toAccountId: string;
+  blocks?: Block[];
+}): Promise<void> {
+  await forgetHarnessSession(input.harness, input.threadId);
+  await transferProviderSession(
+    input.harness,
+    input.fromAccountId,
+    input.toAccountId,
+    input.providerSessionId,
+  );
+  bindHarnessSession(
+    input.harness,
+    input.threadId,
+    input.providerSessionId,
+    input.cwd,
+    input.toAccountId,
+    input.blocks,
+  );
 }
 
 /**

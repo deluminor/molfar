@@ -475,13 +475,16 @@ function startLaunch(
   const worktreeCwd = optionalString(input.worktreeCwd, "worktreeCwd");
   if (worktreeCwd && workspaceMode !== "current")
     throw new Error("worktreeCwd requires workspaceMode current");
+  const startingFamiliar = host.familiarOf?.(source.id);
   const currentWorktree =
     worktreeCwd ||
     (pathKey(cwd) === pathKey(source.cwd) ? source.worktreeCwd : undefined);
   return {
     cwd,
     prompt,
-    ...(host.familiarOf?.(source.id)?.showStartedSessionsInSidebar !== true
+    // Only a Familiar's own preference hides what it starts. A regular session
+    // with /operator has no Familiar, and its launches belong in the sidebar.
+    ...(startingFamiliar && startingFamiliar.showStartedSessionsInSidebar !== true
       ? { sidebarHidden: true }
       : {}),
     ...(draft ? { draft: true } : {}),

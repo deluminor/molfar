@@ -1,8 +1,8 @@
 import { IconButton } from "@/shared/ui/IconButton";
 import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
-import type { GithubLabel } from "@/domain/work-items/work-item";
+import { type GithubLabel } from "@/domain/work-items/work-item";
 import { sessionDisplayTitle } from "@/domain/session/title";
-import type { LinkedWorkItem } from "@/domain/session/session";
+import { type LinkedWorkItem } from "@/domain/session/session";
 import { useGithubPrChecks } from "../hooks/use-github-pr-checks";
 import { summarizePrChecks } from "../model/github-pr-checks";
 import type { CiRepairRequest } from "../model/ci-repair";
@@ -89,6 +89,7 @@ import {
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
 import { copyText } from "@/platform/tauri/clipboard";
 import { projectKey, projectName } from "@/shared/lib/paths";
+import { inProjectScope } from "@/features/projects/model/project-scope";
 import { IS_MAC } from "@/shared/lib/platform";
 import { playCue } from "@/features/settings/model/sounds";
 import {
@@ -351,10 +352,14 @@ type CiRepairProps = {
 };
 
 type Props = {
+  tabbed?: boolean;
+  active?: boolean;
   onAsk: (item: InboxItem) => Promise<string>;
   onAskRestart: (item: InboxItem) => Promise<string>;
   onAskMount: (portal: InboxSessionPortal | null) => void;
   cwd: string;
+  /** Shows only this project's items, plus ones not tied to any project. */
+  scopeProject?: string;
   recents: RecentProject[];
   besideRail?: boolean;
   compactRail?: boolean;
@@ -372,10 +377,13 @@ type Props = {
 };
 
 export function InboxView({
+  tabbed = false,
+  active = true,
   onAsk,
   onAskRestart,
   onAskMount,
   cwd,
+  scopeProject,
   recents,
   besideRail = false,
   compactRail = false,
@@ -448,22 +456,43 @@ export function InboxView({
   const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
   const prevRefresh = useRef(refresh);
 
+  // Fetches still cover every project, sharing the background poll's cache,
+  // so switching projects is instant; a scoped Inbox only shows its own.
   const projects = useMemo(
     () => inboxProjectsForRail(recents, cwd),
     [cwd, recents],
   );
-  const projectOptions = useMemo(
-    () => inboxProjectOptions(projects, logos),
-    [logos, projects],
+  const shownProjects = useMemo(
+    () =>
+      scopeProject
+        ? projects.filter((project) =>
+            sameProjectPath(project.path, scopeProject),
+          )
+        : projects,
+    [projects, scopeProject],
   );
-  const linearProjects = useMemo(() => linearProjectOptions(items), [items]);
+  const scopedItems = useMemo(
+    () =>
+      scopeProject
+        ? items.filter((item) => inProjectScope(item.projectPath, scopeProject))
+        : items,
+    [items, scopeProject],
+  );
+  const projectOptions = useMemo(
+    () => inboxProjectOptions(shownProjects, logos),
+    [logos, shownProjects],
+  );
+  const linearProjects = useMemo(
+    () => linearProjectOptions(scopedItems),
+    [scopedItems],
+  );
   const activeFilters = useMemo(
     () =>
       pruneInboxFilters(
         filtersBySource[source],
-        projects.map((project) => project.path),
+        shownProjects.map((project) => project.path),
       ),
-    [filtersBySource, projects, source],
+    [filtersBySource, shownProjects, source],
   );
   const filtersActive = hasActiveInboxFilters(
     activeFilters,
@@ -503,6 +532,7 @@ export function InboxView({
   }, [target]);
 
   useEffect(() => {
+    if (!active) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -519,7 +549,7 @@ export function InboxView({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [connectMenuOpen, filterMenu]);
+  }, [active, connectMenuOpen, filterMenu]);
 
   useEffect(() => {
     const onChange = () => {
@@ -736,7 +766,7 @@ export function InboxView({
   const visibleItems = useMemo(() => {
     if (!sourceAvailable) return [];
     const visible = applyInboxFilters(
-      items,
+      scopedItems,
       activeFilters,
       searchInput,
       Date.now(),
@@ -753,6 +783,7 @@ export function InboxView({
   }, [
     activeFilters,
     items,
+    scopedItems,
     searchInput,
     source,
     sourceAvailable,
@@ -773,14 +804,14 @@ export function InboxView({
   const sourceEntries = useMemo(
     () =>
       sourceAvailable
-        ? items
+        ? scopedItems
             .filter((item) => item.provider === source)
             .map((item) => ({
               key: inboxItemKey(item),
               updatedAt: item.updatedAt,
             }))
         : [],
-    [items, source, sourceAvailable],
+    [scopedItems, source, sourceAvailable],
   );
   const sourceHasUnseen = useMemo(
     () => sourceEntries.some(isInboxEntryUnseen),
@@ -1177,24 +1208,27 @@ export function InboxView({
       data-app-inbox
       className="flex min-h-0 min-w-0 flex-1 flex-col text-content"
     >
-      <div
-        className="flex h-10 shrink-0 select-none items-center border-b border-stroke"
-        data-tauri-drag-region="deep"
-      >
-        {IS_MAC && compactRail ? <div className="w-4 shrink-0" /> : null}
-        {IS_MAC && !besideRail ? <div className="w-[78px] shrink-0" /> : null}
-        {besideRail ? null : (
-          <OverlayNav onBack={onClose} onToggleSidebar={onToggleSidebar} />
-        )}
-        <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-[13px]">
-          <Inbox
-            className="size-3.5 shrink-0 text-content/45"
-            strokeWidth={1.75}
-          />
-          <span className="min-w-0 truncate text-content">Inbox</span>
+      {!tabbed ? (
+        <div
+          data-app-view-header
+          className="flex h-10 shrink-0 select-none items-center border-b border-stroke"
+          data-tauri-drag-region="deep"
+        >
+          {IS_MAC && compactRail ? <div className="w-4 shrink-0" /> : null}
+          {IS_MAC && !besideRail ? <div className="w-[78px] shrink-0" /> : null}
+          {besideRail ? null : (
+            <OverlayNav onBack={onClose} onToggleSidebar={onToggleSidebar} />
+          )}
+          <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-[13px]">
+            <Inbox
+              className="size-3.5 shrink-0 text-content/45"
+              strokeWidth={1.75}
+            />
+            <span className="min-w-0 truncate text-content">Inbox</span>
+          </div>
+          {IS_MAC ? null : <WindowControls />}
         </div>
-        {IS_MAC ? null : <WindowControls />}
-      </div>
+      ) : null}
 
       <div className="flex min-h-0 min-w-0 flex-1">
         {isConfluenceSource(source) ? (

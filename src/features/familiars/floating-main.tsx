@@ -23,6 +23,7 @@ import {
 import { FloatingFamiliarChat } from "./ui/FloatingFamiliarChat";
 import { homeDir } from "@/platform/tauri/fs";
 import { setHomeDir } from "@/shared/lib/paths";
+import { installNativeContextMenuGuard } from "@/shared/lib/native-context-menu";
 import "@/styles/index.css";
 
 let appearanceKey = "";
@@ -55,6 +56,7 @@ function applyFloatingAppearance() {
 
 applyFloatingAppearance();
 watchSystemColorScheme();
+installNativeContextMenuGuard();
 window.addEventListener("storage", applyFloatingAppearance);
 void homeDir()
   .then(setHomeDir)

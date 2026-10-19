@@ -1,8 +1,14 @@
+import { type Session } from "@/domain/session/session";
 import { usageLimitFromError } from "@/domain/session/usage-limit-error";
-import type { Session } from "@/domain/session/session";
 import { describe, expect, it } from "vitest";
 import { newSession } from "./session";
-import { formatUsageLimitReset, USAGE_LIMIT_RESUME_GRACE_MS, usageLimitResumeDue, resumeUsageLimitedSession } from "./usage-limit";
+import {
+  formatUsageLimitReset,
+  USAGE_LIMIT_RESUME_GRACE_MS,
+  usageLimitResumeDue,
+  resumeUsageLimitedSession,
+  withUsageLimitAccount,
+} from "./usage-limit";
 
 function limited(patch: Partial<Session> = {}): Session {
   return {
@@ -89,5 +95,34 @@ describe("formatUsageLimitReset", () => {
     expect(formatUsageLimitReset(today, now)).toMatch(/ · in 1h 16m$/);
     const tomorrow = new Date(2026, 8, 26, 3, 16).getTime();
     expect(formatUsageLimitReset(tomorrow, now)).toMatch(/26.* · in 4h 42m$/);
+  });
+});
+
+describe("withUsageLimitAccount", () => {
+  it("keeps the provider session when the transcript was carried over", () => {
+    const original = limited({
+      providerSessionId: "thread-1",
+      providerAccountId: "personal",
+    });
+    const next = withUsageLimitAccount(original, "work", true);
+    expect(next.providerAccountId).toBe("work");
+    expect(next.providerSessionId).toBe("thread-1");
+    expect(next.pendingSwitch).toBeUndefined();
+  });
+
+  it("hands off to a new provider session without asking the limited account", () => {
+    const original = limited({
+      providerSessionId: "thread-1",
+      providerAccountId: "personal",
+    });
+    const next = withUsageLimitAccount(original, "work", false);
+    expect(next.providerAccountId).toBe("work");
+    expect(next.providerSessionId).toBeUndefined();
+    expect(next.pendingSwitch).toMatchObject({
+      from: "codex",
+      fromProviderSessionId: "thread-1",
+      fromProviderAccountId: "personal",
+      skipOutgoingRecap: true,
+    });
   });
 });

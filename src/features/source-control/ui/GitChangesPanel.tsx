@@ -1,7 +1,11 @@
 import { basename } from "@/shared/lib/paths";
-import type { GitChangedFile, GitDiffIndex, GitFileDiffKind } from "@/domain/git/working-tree";
-import type { GitPr } from "@/domain/git/pull-request";
-import type { HarnessId } from "@/domain/harness/harness";
+import {
+  type GitChangedFile,
+  type GitDiffIndex,
+  type GitFileDiffKind,
+} from "@/domain/git/working-tree";
+import { type GitPr } from "@/domain/git/pull-request";
+import { type HarnessId } from "@/domain/harness/harness";
 import { alertApp, confirmApp } from "@/shared/lib/app-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -34,7 +38,9 @@ import {
   type ReactNode,
 } from "react";
 import { Popover } from "@/shared/ui/Popover";
+import { PaneHeader } from "@/shared/ui/PaneHeader";
 import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { WorkingTreeDiffSurface } from "./working-tree-diff-surface";
 import {
   GitHistoryGraph,
   GraphResizeSash,
@@ -83,6 +89,8 @@ type AmendTarget = { branch: string | null; head: string | null };
 type Props = {
   cwd: string;
   enabled: boolean;
+  showGraph?: boolean;
+  compactHeader?: boolean;
   textHarness?: HarnessId;
   selectedPath?: string;
   selectedKind?: GitFileDiffKind;
@@ -95,6 +103,8 @@ type Props = {
 export function GitChangesPanel({
   cwd,
   enabled,
+  showGraph = true,
+  compactHeader = false,
   textHarness,
   selectedPath,
   selectedKind,
@@ -104,6 +114,12 @@ export function GitChangesPanel({
   onOpenCommit,
 }: Props) {
   const { index, reload } = useDiffIndex(cwd, enabled);
+  useEffect(() => {
+    if (!enabled) return;
+    // Opening Changes signals an upcoming review. Warm its optional surface
+    // while the file list loads, so the first file opens during streaming too.
+    void WorkingTreeDiffSurface.preload().catch(() => {});
+  }, [enabled]);
   const files = index?.files ?? [];
   const paneRef = useRef<HTMLDivElement>(null);
   const branchMenuRef = useRef<HTMLButtonElement>(null);
@@ -144,6 +160,7 @@ export function GitChangesPanel({
   };
 
   useLayoutEffect(() => {
+    if (!showGraph) return;
     const pane = paneRef.current;
     if (!pane || pane.clientHeight < GRAPH_PANEL_MIN + 160) return;
     const max = pane.clientHeight - 160;
@@ -151,7 +168,7 @@ export function GitChangesPanel({
       setGraphHeight(max);
       saveGraphPanelHeight(max);
     }
-  }, [graphHeight]);
+  }, [graphHeight, showGraph]);
 
   if (!cwd || cwd === "~") {
     return (
@@ -164,10 +181,13 @@ export function GitChangesPanel({
       ref={paneRef}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <header className="flex h-9 shrink-0 items-center gap-2 border-b border-stroke px-3">
-        <span className="text-[12px] font-medium text-content">Changes</span>
+      <PaneHeader compact={compactHeader} role="toolbar" aria-label="Changes">
+        <span className="shrink-0">Changes</span>
         {status ? (
-          <span role="status" className="text-[11px] text-content/50">
+          <span
+            role="status"
+            className="min-w-0 truncate text-[11px] text-content/50"
+          >
             {status}
           </span>
         ) : null}
@@ -195,7 +215,7 @@ export function GitChangesPanel({
               aria-expanded={branchMenuOpen}
               disabled={busy !== null}
               onClick={() => setBranchMenuOpen((open) => !open)}
-              className="grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/10 hover:text-content disabled:opacity-40 aria-expanded:bg-content/10 aria-expanded:text-content"
+              className="grid size-6 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-40 aria-expanded:bg-content/10 aria-expanded:text-content"
             >
               {busy === "pull" ? (
                 <Loader className="size-3.5 animate-spin" strokeWidth={1.75} />
@@ -240,7 +260,7 @@ export function GitChangesPanel({
         ) : (
           <span className="ml-auto" />
         )}
-      </header>
+      </PaneHeader>
       <ChangedFiles
         cwd={cwd}
         textHarness={textHarness}
@@ -261,39 +281,43 @@ export function GitChangesPanel({
           window.setTimeout(() => invalidateWatchedFiles(paths), 150);
         }}
       />
-      {graphExpanded ? (
-        <GraphResizeSash
-          height={graphHeight}
-          onHeightPaint={setGraphHeight}
-          onHeightCommit={(next) => {
-            setGraphHeight(next);
-            saveGraphPanelHeight(next);
-          }}
-          maxHeight={() => {
-            const pane = paneRef.current;
-            if (!pane) return GRAPH_PANEL_DEFAULT * 2;
-            return Math.max(GRAPH_PANEL_MIN, pane.clientHeight - 160);
-          }}
-        />
+      {showGraph ? (
+        <>
+          {graphExpanded ? (
+            <GraphResizeSash
+              height={graphHeight}
+              onHeightPaint={setGraphHeight}
+              onHeightCommit={(next) => {
+                setGraphHeight(next);
+                saveGraphPanelHeight(next);
+              }}
+              maxHeight={() => {
+                const pane = paneRef.current;
+                if (!pane) return GRAPH_PANEL_DEFAULT * 2;
+                return Math.max(GRAPH_PANEL_MIN, pane.clientHeight - 160);
+              }}
+            />
+          ) : null}
+          <div
+            className={`shrink-0 overflow-hidden border-t border-stroke ${
+              graphExpanded ? "min-h-0" : "h-7"
+            }`}
+            style={graphExpanded ? { height: graphHeight } : undefined}
+          >
+            <GitHistoryGraph
+              cwd={cwd}
+              enabled={enabled}
+              expanded={graphExpanded}
+              selectedSha={selectedSha}
+              onToggleExpanded={() => {
+                graphOpen = !graphExpanded;
+                setGraphExpanded(graphOpen);
+              }}
+              onOpenCommit={onOpenCommit}
+            />
+          </div>
+        </>
       ) : null}
-      <div
-        className={`shrink-0 overflow-hidden border-t border-stroke ${
-          graphExpanded ? "min-h-0" : "h-7"
-        }`}
-        style={graphExpanded ? { height: graphHeight } : undefined}
-      >
-        <GitHistoryGraph
-          cwd={cwd}
-          enabled={enabled}
-          expanded={graphExpanded}
-          selectedSha={selectedSha}
-          onToggleExpanded={() => {
-            graphOpen = !graphExpanded;
-            setGraphExpanded(graphOpen);
-          }}
-          onOpenCommit={onOpenCommit}
-        />
-      </div>
     </div>
   );
 }
@@ -1583,9 +1607,13 @@ function useDiffIndex(
   index: GitDiffIndex | null;
   reload: () => void;
 } {
-  const [index, setIndex] = useState<GitDiffIndex | null>(() =>
-    cachedIndex(cwd),
-  );
+  const [snapshot, setSnapshot] = useState(() => ({
+    cwd,
+    index: cachedIndex(cwd),
+  }));
+  // The first render of a switch must already belong to the new checkout.
+  // Waiting for an effect can expose the old checkout's files and actions.
+  const index = snapshot.cwd === cwd ? snapshot.index : cachedIndex(cwd);
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((value) => value + 1), []);
   const indexRef = useRef(index);
@@ -1596,13 +1624,12 @@ function useDiffIndex(
       return;
     }
     const cached = cachedIndex(cwd);
-    if (cached && !sameIndex(indexRef.current, cached)) {
-      indexRef.current = cached;
-      setIndex(cached);
-    }
+    indexRef.current = cached;
+    setSnapshot({ cwd, index: cached });
     let cancelled = false;
     let inFlight = false;
     let pending = false;
+    let publishing = false;
 
     const load = async () => {
       if (inFlight) {
@@ -1614,11 +1641,11 @@ function useDiffIndex(
       try {
         const next = await gitDiffIndex(cwd);
         if (cancelled) return;
+        rememberIndex(cwd, next);
         const prev = indexRef.current;
         if (sameIndex(prev, next)) return;
-        indexByCwd.set(cwd, next);
         indexRef.current = next;
-        setIndex(next);
+        setSnapshot({ cwd, index: next });
         applyProjectDiffStats(cwd, {
           files: next.files.length,
           additions: next.additions,
@@ -1627,13 +1654,18 @@ function useDiffIndex(
         if (prev) {
           const paths = changedFilePaths(prev, next);
           invalidateWatchedFiles(paths);
-          notifyGitChanged();
+          // Our own publication is not a new disk change requiring a second
+          // index immediately after the one we just read.
+          publishing = true;
+          try {
+            notifyGitChanged({ invalidatePending: false });
+          } finally {
+            publishing = false;
+          }
         }
       } catch {
-        if (!cancelled) {
-          indexByCwd.delete(cwd);
-          setIndex(null);
-        }
+        // A slow/unavailable checkout keeps its last useful snapshot.
+        // Never replace it with another checkout's data.
       } finally {
         inFlight = false;
         if (pending && !cancelled) {
@@ -1645,7 +1677,7 @@ function useDiffIndex(
 
     void load();
     const onResume = () => {
-      if (!document.hidden) void load();
+      if (!publishing && !document.hidden) void load();
     };
     const timer = window.setInterval(onResume, GIT_POLL_MS);
     window.addEventListener("focus", onResume);
@@ -1666,7 +1698,11 @@ function useDiffIndex(
 /** The last Git status read for a checkout, shared so other views open on it. */
 export function cachedIndex(cwd: string | undefined): GitDiffIndex | null {
   if (!cwd || cwd === "~") return null;
-  return indexByCwd.get(cwd) ?? null;
+  const index = indexByCwd.get(cwd);
+  if (!index) return null;
+  indexByCwd.delete(cwd);
+  indexByCwd.set(cwd, index);
+  return index;
 }
 
 function changedFilePaths(prev: GitDiffIndex, next: GitDiffIndex): string[] {
@@ -1697,8 +1733,18 @@ function changedFilePaths(prev: GitDiffIndex, next: GitDiffIndex): string[] {
 }
 
 export function rememberIndex(cwd: string, index: GitDiffIndex | null) {
-  if (index) indexByCwd.set(cwd, index);
-  else indexByCwd.delete(cwd);
+  indexByCwd.delete(cwd);
+  if (!index) return;
+  indexByCwd.set(cwd, index);
+  // Small checkout snapshots make revisits immediate without retaining every
+  // worktree ever visited. Very large indexes need their own file budget.
+  let files = 0;
+  for (const value of indexByCwd.values()) files += value.files.length;
+  for (const [path, value] of indexByCwd) {
+    if (indexByCwd.size <= 24 && files <= 20_000) break;
+    indexByCwd.delete(path);
+    files -= value.files.length;
+  }
 }
 
 export function sameIndex(prev: GitDiffIndex | null, next: GitDiffIndex): boolean {

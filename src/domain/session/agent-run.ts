@@ -34,6 +34,8 @@ export type AgentStep = {
   toolKind?: string;
   status?: string;
   detail?: string;
+  /** Large output left in storage on load; see `loadToolDetail`. */
+  detailOmitted?: boolean;
   preview?: ToolPreview;
 };
 /**

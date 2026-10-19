@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/domain/session/session";
 import { testSession } from "@/integrations/harness/core/test-session";
 import type { HarnessEvent } from "@/integrations/harness/core/types";
+import { BACKGROUND_FLUSH_MS } from "./harness-flush";
 import { createHarnessEventPipeline } from "./harness-event-pipeline";
 
 const frames = new Map<number, FrameRequestCallback>();
@@ -38,11 +39,11 @@ function setup(isForeground: (id: string) => boolean = () => true) {
   ];
   const commitSessions = vi.fn();
   const pipeline = createHarnessEventPipeline({
-    updateSessions: (update) => {
+    updateSessions: (update, textOnly) => {
       const next = update(sessions);
       if (next === sessions) return;
       sessions = next;
-      commitSessions(next);
+      commitSessions(next, textOnly);
     },
     isForeground,
   });
@@ -73,6 +74,7 @@ describe("createHarnessEventPipeline", () => {
     runFrames();
 
     expect(commitSessions).toHaveBeenCalledTimes(1);
+    expect(commitSessions).toHaveBeenCalledWith(expect.any(Array), true);
     expect(text("a")).toBe("Hello");
     expect(text("b")).toBe("Hi");
   });
@@ -88,6 +90,7 @@ describe("createHarnessEventPipeline", () => {
     });
 
     expect(commitSessions).toHaveBeenCalledTimes(1);
+    expect(commitSessions).toHaveBeenCalledWith(expect.any(Array), false);
     expect(text("a")).toContain("Running");
   });
 
@@ -101,7 +104,7 @@ describe("createHarnessEventPipeline", () => {
     expect(text("a")).toBe("seen");
     expect(text("b")).toBe("");
 
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(BACKGROUND_FLUSH_MS);
 
     expect(text("b")).toBe("hidden");
   });

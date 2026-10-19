@@ -1,7 +1,12 @@
 import type { HarnessId } from "@/domain/harness/harness";
+import type { FamiliarStatus } from "@/features/familiars/model/familiar";
+import type { AppView } from "./app-view-tabs";
 
 export type Tab = {
   id: string;
+  appView?: AppView;
+  /** A Familiar open as a tab; its name is the title. */
+  familiar?: { mascot: string; color: string; status: FamiliarStatus };
   /** Project folder name, e.g. `agent-terminal`. */
   project: string;
   /** Focused conversation title; empty for a fresh session. */

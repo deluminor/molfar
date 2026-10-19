@@ -31,6 +31,7 @@ function setup(open: Session[] = []) {
     store,
     cancelNavigation: vi.fn(),
     closeAutomations: vi.fn(),
+    openFamiliarTab: vi.fn(),
     ensureOpenSession: async (id) => open.find((entry) => entry.id === id) ?? null,
     addSession: vi.fn(),
     focusComposer: vi.fn(),
@@ -56,7 +57,23 @@ describe("createFamiliarView", () => {
     expect(store.getState().searchViewOpen).toBe(false);
     expect(deps.cancelNavigation).toHaveBeenCalled();
     expect(deps.closeAutomations).toHaveBeenCalled();
+    expect(deps.openFamiliarTab).toHaveBeenCalledWith("first");
     expect(deps.focusComposer).toHaveBeenCalledWith({ retake: true });
+  });
+
+  it("keeps app views open until the Familiar's session arrives", async () => {
+    let resolve: (value: Session) => void = () => {};
+    familiars.sessions.set("first", new Promise((done) => (resolve = done)));
+    const { store, deps, view } = setup();
+    store.getState().setSearchViewOpen(true);
+
+    const opening = view.open("first");
+    expect(store.getState().searchViewOpen).toBe(true);
+    expect(deps.closeAutomations).not.toHaveBeenCalled();
+
+    resolve(session("chat-1"));
+    await opening;
+    expect(store.getState().searchViewOpen).toBe(false);
   });
 
   it("drops an open that a later close superseded", async () => {

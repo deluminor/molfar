@@ -55,6 +55,22 @@ export function copyFamiliarCodexThreads(
   });
 }
 
+/** Copy a native Claude or Codex conversation into another account's home,
+ * so that account resumes the same provider session id. */
+export function transferProviderSession(
+  provider: "claude" | "codex",
+  fromAccountId: string | undefined,
+  toAccountId: string | undefined,
+  providerSessionId: string,
+): Promise<void> {
+  return invoke("provider_session_transfer", {
+    provider,
+    fromAccountId,
+    toAccountId,
+    providerSessionId,
+  });
+}
+
 export function restoreFamiliarCodexAgentState(
   providerAccountId: string | undefined,
   threadId: string,

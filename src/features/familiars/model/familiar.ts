@@ -329,15 +329,18 @@ export function removeFamiliar(id: string): void {
   saveRoster(listFamiliars().filter((familiar) => familiar.id !== id));
 }
 
+/**
+ * Puts the given Familiars in this order. Given only some, as a project's list
+ * is, they swap among their own places and the rest stay where they are.
+ */
 export function reorderFamiliars(ids: readonly string[]): void {
   const roster = listFamiliars();
-  const order = new Map(ids.map((id, index) => [id, index]));
+  const byId = new Map(roster.map((familiar) => [familiar.id, familiar]));
+  const ordered = ids.flatMap((id) => byId.get(id) ?? []);
+  const moved = new Set(ordered.map((familiar) => familiar.id));
+  let next = 0;
   saveRoster(
-    [...roster].sort(
-      (a, b) =>
-        (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-        (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-    ),
+    roster.map((familiar) => (moved.has(familiar.id) ? ordered[next++]! : familiar)),
   );
 }
 

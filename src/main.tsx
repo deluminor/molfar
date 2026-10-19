@@ -21,6 +21,7 @@ import { homeDir } from "@/platform/tauri/fs";
 import { setHomeDir } from "@/shared/lib/paths";
 import { consumeInstalledUpdate } from "@/features/updates/model/update-notice";
 import { initializeProviderBinaryPaths } from "@/integrations/harness/core/provider-binary-paths";
+import { installNativeContextMenuGuard } from "@/shared/lib/native-context-menu";
 // Lets file commands reach a connected machine for `remote://` paths.
 import "@/features/connections/model/remote-commands";
 import "@/styles/index.css";
@@ -32,6 +33,7 @@ const appLoaded = import("@/app/App");
 initAppearance();
 initSounds();
 installModalEscape();
+installNativeContextMenuGuard();
 // Prime the real home directory before the first render so every `~/` file
 // reference resolves consistently. The IPC call is local and failures remain
 // best-effort, falling back to inference from a session's cwd.

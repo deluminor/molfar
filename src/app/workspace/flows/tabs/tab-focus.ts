@@ -1,3 +1,4 @@
+import { beginTabSwitch } from "../../../model/navigation-performance";
 import type { Session } from "@/domain/session/session";
 import { isBlankSession } from "@/features/projects/model/project-return";
 import {
@@ -62,6 +63,7 @@ export function activateTab(
   paneId?: string,
   reason: TabSelectReason = "session",
 ): void {
+  if (tabId !== deps.activeTabId()) beginTabSwitch(tabId);
   deps.leaveCoveringViews();
   const tab = deps.tabs().find((entry) => entry.id === tabId);
   const focusedId = paneToFocus(tab, paneId);

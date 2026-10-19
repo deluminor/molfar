@@ -1,11 +1,12 @@
+import { type Tab } from "@/features/workspace/model/title-tab";
 import { describe, expect, it } from "vitest";
 import {
   tabCopy,
   tabStripOverflow,
   titleTabContextCloseIds,
   titleTabClosable,
+  titleTabsCanCloseAll,
 } from "./TitleBar";
-import type { Tab } from "@/features/workspace/model/title-tab";
 
 function tab(overrides: Partial<Tab> = {}): Tab {
   return {
@@ -22,6 +23,18 @@ function tab(overrides: Partial<Tab> = {}): Tab {
 }
 
 describe("tabCopy", () => {
+  it.each(["inbox", "search", "notes", "automations"] as const)(
+    "uses a standalone label for the %s app tab",
+    (appView) => {
+      const label = appView[0].toUpperCase() + appView.slice(1);
+      expect(tabCopy(tab({ appView, title: "", sessionCount: 0 }))).toEqual({
+        headline: label,
+        meta: "",
+        tooltip: label,
+      });
+    },
+  );
+
   it("layers conversation and file when split across panes", () => {
     const focusedSession = tabCopy(
       tab({
@@ -113,6 +126,25 @@ describe("titleTabClosable", () => {
 
   it("allows a blank tab to be removed when another tab remains", () => {
     expect(titleTabClosable(tab({ blank: true }), 2)).toBe(true);
+  });
+});
+
+describe("titleTabsCanCloseAll", () => {
+  it("has nothing to close when the only tab is blank", () => {
+    expect(titleTabsCanCloseAll([tab({ blank: true })])).toBe(false);
+  });
+
+  it("closes a sole tab that has content", () => {
+    expect(titleTabsCanCloseAll([tab({ blank: false })])).toBe(true);
+  });
+
+  it("closes whenever more than one tab is open", () => {
+    expect(
+      titleTabsCanCloseAll([
+        tab({ id: "a", blank: true }),
+        tab({ id: "b", blank: true }),
+      ]),
+    ).toBe(true);
   });
 });
 

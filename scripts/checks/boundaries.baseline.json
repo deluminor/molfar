@@ -17,6 +17,9 @@
   "src/features/familiars/ui/FamiliarSessionList.tsx": {
     "layer:features->app": 1
   },
+  "src/features/sessions/model/session-state-store.test.ts": {
+    "layer:features->app": 1
+  },
   "src/features/sessions/ui/session-pane-messaging.test.ts": {
     "layer:features->app": 1
   },

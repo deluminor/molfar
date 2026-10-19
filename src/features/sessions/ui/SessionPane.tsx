@@ -1,14 +1,23 @@
 import { sessionDisplayTitle } from "@/domain/session/title";
 import { sessionDraftBlock, sessionWorkCwd } from "@/domain/session/session-state";
-import type { Attachment } from "@/domain/session/attachment";
-import type { Block } from "@/domain/session/block";
-import type { HarnessId } from "@/domain/harness/harness";
-import type { LinkedWorkItem, Session, WorkspaceMode } from "@/domain/session/session";
-import type { ComposerTurnOptions, ModelTarget, PlanBuildTarget } from "@/domain/session/turn";
-import type { RuntimeMode } from "@/domain/session/runtime-mode";
-import type { RateLimitProvider } from "@/domain/rate-limits/rate-limit";
+import { type Attachment } from "@/domain/session/attachment";
+import { type Block } from "@/domain/session/block";
+import { type HarnessId } from "@/domain/harness/harness";
+import {
+  type LinkedWorkItem,
+  type Session,
+  type WorkspaceMode,
+} from "@/domain/session/session";
+import {
+  type ComposerTurnOptions,
+  type ModelTarget,
+  type PlanBuildTarget,
+} from "@/domain/session/turn";
+import { type RuntimeMode } from "@/domain/session/runtime-mode";
+import { type RateLimitProvider } from "@/domain/rate-limits/rate-limit";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { GripVertical, X } from "@/shared/ui/icons";
+import { useSessionSnapshot } from "../model/session-state-store";
 import {
   memo,
   useCallback,
@@ -37,7 +46,10 @@ import {
   type ApprovalDecision,
   type UserQuestionReply,
 } from "@/integrations/harness";
-import { looksLikeProject, type RecentProject, isRemoteProjectPath } from "@/features/projects/model/recents";
+import {
+  looksLikeProject,
+  type RecentProject,
+} from "@/features/projects/model/recents";
 import { sessionHasBtwThreads, supportsBtwHarness } from "../model/btw";
 import { BtwSheet, useBtwConversation } from "./BtwSheet";
 import { AgentTranscript } from "./AgentTranscript";
@@ -112,6 +124,7 @@ import {
 import type { SessionFolderTarget } from "../model/session-folders";
 import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import { RemoteSession } from "@/features/connections/ui/RemoteSession";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
 import type { HostSession } from "@/domain/remote/protocol";
 
 export type SessionPaneProps = {
@@ -141,6 +154,8 @@ export type SessionPaneProps = {
   familiarLaunchedSessions?: ReadonlyMap<string, LaunchedSessionView>;
   /** The launched session open in the Familiar's sidebar. */
   openFamiliarSessionId?: string;
+  /** Shows plan usage by a Familiar's composer; off where a footer shows it. */
+  familiarComposerUsage?: boolean;
   recents: RecentProject[];
   hideProjectPicker?: boolean;
   onFocus: (sessionId: string) => void;
@@ -267,7 +282,9 @@ type Props = SessionPaneProps & {
   allowedModelHarnesses?: readonly HarnessId[];
 };
 
-export const SessionPane = memo(function SessionPane(props: SessionPaneProps) {
+export const SessionPane = memo(function SessionPane(input: SessionPaneProps) {
+  const session = useSessionSnapshot(input.session, input.visible);
+  const props = session === input.session ? input : { ...input, session };
   // Sessions in a project on another machine render this same pane, backed by
   // the host instead of this computer's session runtime.
   if (isRemoteProjectPath(props.session.cwd))
@@ -347,6 +364,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onOpenFamiliarSession,
   familiarLaunchedSessions,
   openFamiliarSessionId,
+  familiarComposerUsage = true,
   onOpenPlan,
   onBuildPlan,
   onSecondOpinion,
@@ -763,6 +781,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
         onUsageLimitResumeAtReset(session.id, enabled)
       }
       onUsageLimitDismiss={() => onUsageLimitDismiss(session.id)}
+      providerAccountId={session.providerAccountId}
+      onUsageLimitAccountChange={
+        onUsageLimitAccountChange
+          ? (accountId) => onUsageLimitAccountChange(session.id, accountId)
+          : undefined
+      }
       onOpenFile={onOpenFile}
       busy={!!session.busy}
       editLastTurnSupported={editLastTurnSupported}
@@ -803,6 +827,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
       ) : null}
       {inSplit ? (
         <div
+          data-split-header=""
           className={`flex h-9 shrink-0 touch-none items-center gap-1.5 border-b border-stroke px-2 select-none ${
             onPaneDragStart ? "cursor-grab active:cursor-grabbing" : ""
           }`}
@@ -852,7 +877,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           <div
             ref={transcriptScope}
-            className={`@container relative min-h-0 flex-1${
+            className={`relative min-h-0 flex-1${
               dockComposer && !agent ? " transcript-composer-fade" : ""
             }`}
           >
@@ -930,6 +955,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                           )
                         : familiarTranscript.blocks
                     }
+                    sessionId={remoteSession ? undefined : session.id}
                     historicalBlockIds={familiarTranscript.historicalBlockIds}
                     initialTurns={agent ? FAMILIAR_PAGE_TURNS : undefined}
                     pageSize={agent ? FAMILIAR_PAGE_TURNS : undefined}
@@ -1186,20 +1212,22 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     // with the usage-limit notice, not here. A narrow chat
                     // drops it first, then shows the model controls as icons.
                     tools={
-                      <div className="flex shrink-0 items-center gap-0.5 text-[11px] text-content/55 @max-md:hidden">
-                        <UsageChips
-                          providers={familiarUsageProviders(session.harness)}
-                          session={{
-                            id: session.id,
-                            harness: session.harness,
-                            model: session.model,
-                            providerAccountId: session.providerAccountId,
-                          }}
-                          project={session.cwd}
-                          accountPicker={false}
-                          variant="composer"
-                        />
-                      </div>
+                      familiarComposerUsage ? (
+                        <div className="flex shrink-0 items-center gap-0.5 text-[11px] text-content/55 @max-md:hidden">
+                          <UsageChips
+                            providers={familiarUsageProviders(session.harness)}
+                            session={{
+                              id: session.id,
+                              harness: session.harness,
+                              model: session.model,
+                              providerAccountId: session.providerAccountId,
+                            }}
+                            project={session.cwd}
+                            accountPicker={false}
+                            variant="composer"
+                          />
+                        </div>
+                      ) : undefined
                     }
                     controls={
                       <>
@@ -1234,7 +1262,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
                             its current thread is. It rotates threads itself,
                             so there is nothing to compact here. */}
                         <div className="grid size-6.5 place-items-center rounded-md transition-colors hover:bg-content/8">
-                          <ContextMeter usage={session.context} empty={isEmpty} />
+                          <ContextMeter
+                            usage={session.context}
+                            empty={isEmpty}
+                          />
                         </div>
                       </>
                     }

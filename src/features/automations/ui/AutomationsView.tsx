@@ -1,3 +1,6 @@
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   useCallback,
   useEffect,
@@ -10,7 +13,6 @@ import {
   type ReactNode,
 } from "react";
 import { confirmApp } from "@/shared/lib/app-dialog";
-import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { gitBranches } from "@/platform/tauri/fs";
 import { IS_MAC } from "@/shared/lib/platform";
@@ -54,6 +56,7 @@ import { JIRA_CHANGE_EVENT, jiraConnected } from "@/features/inbox/model/jira";
 import { LINEAR_CHANGE_EVENT, linearConnected } from "@/features/inbox/model/linear";
 import { InboxProviderMark } from "@/features/inbox/ui/InboxProviderMark";
 import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { inProjectScope } from "@/features/projects/model/project-scope";
 import {
   looksLikeProject,
   type RecentProject,
@@ -66,8 +69,6 @@ import {
   firstEnabledHarness,
   preferredModelId,
 } from "@/features/sessions/model/models";
-import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
-import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
 import {
   loadSessionFolders,
   subscribeSessionFolders,
@@ -127,9 +128,12 @@ import {
 } from "../model/automation-templates";
 
 type Props = {
+  tabbed?: boolean;
   besideRail?: boolean;
   compactRail?: boolean;
   cwd?: string;
+  /** Lists only automations that run in this project, plus project-less ones. */
+  scopeProject?: string;
   recents: RecentProject[];
   focusAutomationId?: string | null;
   onFocusAutomationConsumed?: () => void;
@@ -150,9 +154,11 @@ const ACTION_OUTLINE = `${ACTION} h-7 border border-content/15 text-content/80 h
 let rememberedAutomationId: string | null = null;
 
 export function AutomationsView({
+  tabbed = false,
   besideRail = false,
   compactRail = false,
   cwd,
+  scopeProject,
   recents,
   focusAutomationId = null,
   onFocusAutomationConsumed,
@@ -168,26 +174,30 @@ export function AutomationsView({
       data-app-automations
       className="flex min-h-0 min-w-0 flex-1 flex-col text-content"
     >
-      <div
-        className="flex h-10 shrink-0 select-none items-center border-b border-stroke"
-        data-tauri-drag-region="deep"
-      >
-        {IS_MAC && compactRail ? <div className="w-4 shrink-0" /> : null}
-        {IS_MAC && !besideRail ? <div className="w-[78px] shrink-0" /> : null}
-        {besideRail ? null : (
-          <OverlayNav onBack={onClose} onToggleSidebar={onToggleSidebar} />
-        )}
-        <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-[13px]">
-          <Zap
-            className="size-3.5 shrink-0 text-content/45"
-            strokeWidth={1.75}
-          />
-          <span className="min-w-0 truncate text-content">Automations</span>
+      {!tabbed ? (
+        <div
+          data-app-view-header
+          className="flex h-10 shrink-0 select-none items-center border-b border-stroke"
+          data-tauri-drag-region="deep"
+        >
+          {IS_MAC && compactRail ? <div className="w-4 shrink-0" /> : null}
+          {IS_MAC && !besideRail ? <div className="w-[78px] shrink-0" /> : null}
+          {besideRail ? null : (
+            <OverlayNav onBack={onClose} onToggleSidebar={onToggleSidebar} />
+          )}
+          <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-[13px]">
+            <Zap
+              className="size-3.5 shrink-0 text-content/45"
+              strokeWidth={1.75}
+            />
+            <span className="min-w-0 truncate text-content">Automations</span>
+          </div>
+          {IS_MAC ? null : <WindowControls />}
         </div>
-        {IS_MAC ? null : <WindowControls />}
-      </div>
+      ) : null}
       <AutomationsContent
         cwd={cwd}
+        scopeProject={scopeProject}
         recents={recents}
         focusAutomationId={focusAutomationId}
         onFocusAutomationConsumed={onFocusAutomationConsumed}
@@ -200,6 +210,7 @@ export function AutomationsView({
 
 function AutomationsContent({
   cwd,
+  scopeProject,
   recents,
   focusAutomationId,
   onFocusAutomationConsumed,
@@ -208,6 +219,7 @@ function AutomationsContent({
 }: Pick<
   Props,
   | "cwd"
+  | "scopeProject"
   | "recents"
   | "focusAutomationId"
   | "onFocusAutomationConsumed"
@@ -267,14 +279,33 @@ function AutomationsContent({
     return subscribeAutomations(() => void refresh());
   }, [refresh]);
 
+  const scoped = useMemo(
+    () =>
+      scopeProject
+        ? automations.filter((automation) =>
+            inProjectScope(automation.cwd, scopeProject),
+          )
+        : automations,
+    [automations, scopeProject],
+  );
+  // One from another project stays remembered, but a scoped list opens on its
+  // own first automation instead.
+  const shownId =
+    scopeProject && !scoped.some((entry) => entry.id === selectedId)
+      ? (scoped[0]?.id ?? null)
+      : selectedId;
+
   useEffect(() => {
     rememberedAutomationId = selectedId;
-    if (!selectedId) {
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!shownId) {
       setRuns([]);
       return;
     }
     let cancelled = false;
-    void listAutomationRuns(selectedId)
+    void listAutomationRuns(shownId)
       .then((next) => {
         if (!cancelled) setRuns(next);
       })
@@ -284,11 +315,11 @@ function AutomationsContent({
     return () => {
       cancelled = true;
     };
-  }, [automations, selectedId]);
+  }, [automations, shownId]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
-    return automations.filter((automation) => {
+    return scoped.filter((automation) => {
       if (!needle) return true;
       const project = resolveTabGroupLabel(
         projectKey(automation.cwd),
@@ -299,8 +330,8 @@ function AutomationsContent({
         .toLocaleLowerCase()
         .includes(needle);
     });
-  }, [automations, groupLabels, query]);
-  const selected = automations.find((entry) => entry.id === selectedId) ?? null;
+  }, [scoped, groupLabels, query]);
+  const selected = automations.find((entry) => entry.id === shownId) ?? null;
 
   const defaultDraftTarget = () => {
     const project =

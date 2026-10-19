@@ -3,10 +3,11 @@ import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { cspStyleNonce } from "@/shared/lib/csp";
 import type { ColorScheme } from "@/features/settings/model/appearance";
-import { editorHighlightStyleFor } from "./editor-language";
+import { editorHighlightStyle } from "./editor-language";
+import { EDITOR_LINE_HEIGHT_PX } from "./editor-metrics";
 
 export {
-  editorHighlightStyleFor,
+  editorHighlightStyle,
   languageForPath,
 } from "./editor-language";
 
@@ -17,7 +18,7 @@ function editorThemeStyles(dark: boolean) {
       height: "100%",
       backgroundColor: "transparent",
       color: "var(--color-content)",
-      fontSize: "13px",
+      fontSize: "var(--code-font-size)",
       userSelect: "text",
     },
     "&.cm-focused": {
@@ -27,7 +28,7 @@ function editorThemeStyles(dark: boolean) {
       overflow: "auto",
       overscrollBehavior: "none",
       fontFamily: "var(--font-mono)",
-      lineHeight: "1.6",
+      lineHeight: `${EDITOR_LINE_HEIGHT_PX}px`,
     },
     ".cm-content": {
       minHeight: "100%",
@@ -137,7 +138,7 @@ export function editorThemeFor(scheme: ColorScheme): Extension {
 export function schemeExtensions(scheme: ColorScheme): Extension[] {
   return [
     editorThemeFor(scheme),
-    syntaxHighlighting(editorHighlightStyleFor(scheme)),
+    syntaxHighlighting(editorHighlightStyle),
   ];
 }
 

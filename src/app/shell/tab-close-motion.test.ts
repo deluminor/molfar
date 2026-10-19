@@ -47,6 +47,24 @@ function flushPaint() {
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      constructor(private callback: (entries: ResizeObserverEntry[]) => void) {}
+      observe(target: Element) {
+        const rect = target.getBoundingClientRect();
+        this.callback([
+          {
+            target,
+            borderBoxSize: [{ inlineSize: rect.width, blockSize: rect.height }],
+            contentRect: rect,
+          } as ResizeObserverEntry,
+        ]);
+      }
+      unobserve() {}
+      disconnect() {}
+    },
+  );
   mockLocalStorage();
   localStorage.setItem("molfar.tabAnimationsEnabled", "1");
   vi.useFakeTimers();

@@ -14,6 +14,8 @@ export type FamiliarViewDeps = {
   store: WorkspaceStore;
   cancelNavigation(): void;
   closeAutomations(): void;
+  /** Keeps the Familiar's title tab open in the inset layout. */
+  openFamiliarTab(familiarId: string): void;
   ensureOpenSession(sessionId: string): Promise<Session | null>;
   addSession(session: Session): void;
   /** `retake` also moves the caret back into an already focused composer. */
@@ -44,10 +46,6 @@ export function createFamiliarView(deps: FamiliarViewDeps) {
     state.setFamiliarActivity(null);
     deps.cancelNavigation();
     const current = ++request;
-    state.setSearchViewOpen(false);
-    state.setInboxViewOpen(false);
-    state.setNotesViewOpen(false);
-    deps.closeAutomations();
     lastFamiliarId = familiarId;
 
     const session = await ensureFamiliarSession(familiarId, {
@@ -66,7 +64,14 @@ export function createFamiliarView(deps: FamiliarViewDeps) {
       state.setFamiliarOverviewDocument(null);
     }
     saveOpenFamiliar(familiarId);
+    // App views close with the Familiar's arrival, not before the await, so
+    // the workspace tab never shows between them.
+    state.setSearchViewOpen(false);
+    state.setInboxViewOpen(false);
+    state.setNotesViewOpen(false);
+    deps.closeAutomations();
     state.setFamiliarViewId(session.id);
+    deps.openFamiliarTab(familiarId);
     state.setProjectTerminalFocused(false);
     deps.focusComposer({ retake: true });
   };

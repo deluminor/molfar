@@ -7,6 +7,14 @@ import type { HarnessId } from "@/domain/harness/harness";
 import { defaultIpcAnswer } from "./ipc-defaults";
 import { createFakeHarness, type FakeHarness } from "./fake-harness";
 
+// Browsers mark a cancelled animation's `finished` rejection as handled;
+// happy-dom leaves it unhandled, which fails the run for pane slides.
+const cancelAnimation = Animation.prototype.cancel;
+Animation.prototype.cancel = function cancel(this: Animation) {
+  this.finished.catch(() => undefined);
+  cancelAnimation.call(this);
+};
+
 export type IpcArgs = Record<string, unknown> | undefined;
 export type IpcRoute = (args: IpcArgs) => unknown;
 export type IpcCall = { command: string; args: IpcArgs };
