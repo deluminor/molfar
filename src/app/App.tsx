@@ -87,6 +87,8 @@ import { boardTaskRule } from "@/features/agent-app/model/agent-app-board";
 import { requestBoardFocus } from "@/features/task-board/model/board-focus";
 import { boardNoticeCard } from "@/features/task-board/services/notify";
 import { updateSessionState } from "./model/session-state";
+import { activeWorkspaceTab } from "./model/active-workspace-tab";
+import { isBlankWorkspaceTab } from "./model/blank-workspace-tab";
 import {
   captureSettingsReturnView,
   restoreSettingsReturnView,
@@ -243,6 +245,25 @@ import {
   type TabLayoutDeps,
 } from "./workspace/flows/tabs/tab-layout";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
+import type { TabCloseDeps } from "./workspace/flows/tabs/close/tab-close-deps";
+import {
+  closeOtherTabs,
+  closeTab,
+  closeTabs,
+} from "./workspace/flows/tabs/close/tab-close";
+import {
+  closeFile,
+  closeOtherFiles,
+} from "./workspace/flows/tabs/close/file-close";
+import { closeDeletedRemoteSession } from "./workspace/flows/tabs/close/tab-clear";
+import {
+  closeAllTabs,
+  closeEveryTab,
+} from "./workspace/flows/tabs/close/tab-close-all";
+import {
+  closePane,
+  closeTitleTab,
+} from "./workspace/flows/tabs/close/pane-close";
 import { FamiliarViewActions, TitleBar } from "./shell/TitleBar";
 import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
 import { AppDialog } from "./shell/AppDialog";
@@ -380,7 +401,6 @@ import { supportsHarnessLogin } from "@/integrations/harness/core/auth-support";
 
 import {
   closeLeaf,
-  closeSurfacePanes,
   findSurfacePane,
   firstLeafId,
   focusedFileTab,
@@ -388,7 +408,6 @@ import {
   isFilesystemTab,
   isolateTerminalPanes,
   isTerminalTab,
-  leaf,
   leafIds,
   neighborLeafId,
   newAgentTab,
@@ -408,7 +427,6 @@ import {
   pinEditorFile,
   previewWorkspaceFile,
   removePane,
-  resetTabToSession,
   setSplitRatio,
   siblingLeafId,
   splitPane,
@@ -557,7 +575,6 @@ import {
   applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
   filterTabsForProject,
-  planWorkspaceTabClose,
   switchSessionInTab,
   workspaceTabCwd,
   workspaceTabWorktree,
@@ -1597,10 +1614,7 @@ function Workspace({
     },
     [],
   );
-  const tabWorktreeOf = useCallback(
-    (tab: WorkspaceTab) => tabWorkspace(tab, sessionsRef.current),
-    [tabWorkspace],
-  );
+
   /** Saved tabs: the app reopens on each project's default workspace, so
    * tabs from other worktrees close with it instead of piling up. */
   const keepWorkspaceTab = useCallback(
@@ -1957,11 +1971,7 @@ function Workspace({
     });
   }, []);
 
-  // A stale id falls back within the project, never to another project's tab.
-  const activeTab =
-    tabs.find((t) => t.id === activeTabId) ??
-    filterTabsForProject(tabs, sessions, projectCwd)[0] ??
-    tabs[0];
+  const activeTab = activeWorkspaceTab(tabs, activeTabId, sessions, projectCwd);
   const active =
     sessions.find((session) => session.id === activeTab?.focusedId) ??
     sessions.find(
@@ -3289,741 +3299,76 @@ function Workspace({
     onOpenTerminal(terminalCwd, true);
   }, [terminalCwd, onOpenTerminal]);
 
+  const tabCloseDeps = useStableFlow(
+    (): TabCloseDeps => ({
+      store: workspaceStore,
+      tabs: () => tabsRef.current,
+      sessions: () => sessionsRef.current,
+      activeTabId: () => activeTabIdRef.current,
+      projectCwd: () => projectCwdRef.current,
+      dirtyFiles: () => dirtyFilesRef.current,
+      setSessions: (update) => setSessions(update),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      insetLayout: () => insetLayoutRef.current,
+      navigation: () => displayedTabNavigation.current,
+      tabWorkspace: (tab, list) => tabWorkspace(tab, list),
+      activateTab: (tabId) => activateTab(tabId),
+      persist: (session) => persistSession(session),
+      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
+      closeFamiliarView: () => closeFamiliarView(),
+      confirmDiscardUnsaved,
+      confirmCloseTerminal,
+      confirmCloseTerminals,
+    }),
+  );
   const onCloseTab = useCallback(
-    (id: string, opts?: { confirmedTerminalIds?: string[] }) => {
-      const current = tabsRef.current;
-      const index = current.findIndex((t) => t.id === id);
-      if (index < 0) return;
-      const closePlan = planWorkspaceTabClose({
-        tabs: current,
-        sessions: sessionsRef.current,
-        closingTabId: id,
-        scope: tabCloseScope,
-        worktreeOf: tabWorktreeOf,
-      });
-      if (closePlan.action === "keep") return;
-      const closing = current[index];
-      const closingFiles = [
-        ...closing.editorPanes.flatMap((pane) => pane.files),
-        ...(closing.terminalPanes ?? []).flatMap((pane) => pane.files),
-      ];
-      const unsaved = closingFiles.filter(
-        (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-      );
-      const confirmed = new Set(opts?.confirmedTerminalIds ?? []);
-      const terminals = closingFiles.filter(
-        (file) => file.terminal && !confirmed.has(file.id),
-      );
-
-      const finishClose = () => {
-        const nextActiveTabId = closePlan.nextActiveTabId;
-        const next = current.filter((t) => t.id !== id);
-        const gone = new Set(
-          leafIds(closing.layout).filter((paneId) =>
-            sessionsRef.current.some((session) => session.id === paneId),
-          ),
-        );
-        for (const sessionId of gone) {
-          persistSession(sessionsRef.current.find((s) => s.id === sessionId));
-          rememberRemoteSession(sessionId);
-          rememberRemotePendingWorktree(sessionId);
-        }
-        setDirtyFiles((prev) => {
-          const updated = new Set(prev);
-          for (const file of closingFiles) updated.delete(file.id);
-          return updated;
-        });
-        if (id !== activeTabIdRef.current) {
-          setTabs(next);
-          void refreshHistory(sidebarCwd);
-          return;
-        }
-        const navigation = displayedTabNavigation.current;
-        // A view shown over this tab stays up; only the workspace beneath it
-        // moves on.
-        if (
-          insetLayoutRef.current &&
-          navigation.activeId !== id &&
-          isViewTab(navigation.activeId)
-        ) {
-          setTabs(next);
-          if (nextActiveTabId) setActiveTabIdState(nextActiveTabId);
-          void refreshHistory(sidebarCwd);
-          return;
-        }
-        const nextId = nextDisplayedTabAfterClose(
-          navigation.tabs,
-          navigation.activeId,
-          id,
-        );
-        const close = () => {
-          setTabs(next);
-          // View tabs still need a valid workspace to return to underneath;
-          // a Familiar's opens over it, so it moves there without revealing it.
-          if (nextActiveTabId) {
-            if (nextId && familiarForTab(nextId)) {
-              setActiveTabIdState(nextActiveTabId);
-            } else if (!nextId || appViewForTab(nextId)) {
-              activateTab(nextActiveTabId);
-            }
-          }
-          if (nextId) navigation.select?.(nextId);
-        };
-        // A view tab opens in a transition; closing alongside it keeps the
-        // workspace beneath from painting between the two.
-        if (nextId && isViewTab(nextId)) startTransition(close);
-        else close();
-        void refreshHistory(sidebarCwd);
-      };
-
-      void (async () => {
-        if (unsaved.length > 0) {
-          const ok = await confirmDiscardUnsaved(
-            "Close this tab with unsaved files?",
-          );
-          if (!ok) return;
-        }
-        if (terminals.length > 0) {
-          const ok = await confirmCloseTerminals(terminals);
-          if (!ok) return;
-        }
-        finishClose();
-      })();
-    },
-    [activateTab, persistSession, refreshHistory, sidebarCwd, tabCloseScope],
+    (id: string, opts?: { confirmedTerminalIds?: string[] }) =>
+      closeTab(tabCloseDeps, id, opts),
+    [],
   );
-
   const onCloseTabs = useCallback(
-    (ids: string[], fallbackId: string, opts?: { confirmed?: boolean }) => {
-      const current = tabsRef.current;
-      const closingIds = new Set(ids);
-      const closing = current.filter((tab) => closingIds.has(tab.id));
-      const fallback = current.find(
-        (tab) => tab.id === fallbackId && !closingIds.has(tab.id),
-      );
-      if (!fallback || closing.length === 0) return;
-
-      const closingFiles = closing.flatMap((tab) => [
-        ...tab.editorPanes.flatMap((pane) => pane.files),
-        ...(tab.terminalPanes ?? []).flatMap((pane) => pane.files),
-      ]);
-      const unsaved = closingFiles.filter(
-        (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-      );
-      const terminals = closingFiles.filter((file) => file.terminal);
-
-      const finishClose = () => {
-        const sessionIds = new Set(
-          closing.flatMap((tab) =>
-            leafIds(tab.layout).filter((paneId) =>
-              sessionsRef.current.some((session) => session.id === paneId),
-            ),
-          ),
-        );
-        for (const sessionId of sessionIds) {
-          persistSession(
-            sessionsRef.current.find((session) => session.id === sessionId),
-          );
-          rememberRemoteSession(sessionId);
-          rememberRemotePendingWorktree(sessionId);
-        }
-        setDirtyFiles((prev) => {
-          const next = new Set(prev);
-          for (const file of closingFiles) next.delete(file.id);
-          return next;
-        });
-        setTabs((prev) => prev.filter((tab) => !closingIds.has(tab.id)));
-        if (closingIds.has(activeTabIdRef.current)) activateTab(fallback.id);
-        void refreshHistory(sidebarCwd);
-      };
-
-      // The caller already confirmed unsaved files and terminals.
-      if (opts?.confirmed) {
-        finishClose();
-        return;
-      }
-
-      void (async () => {
-        if (unsaved.length > 0) {
-          const ok = await confirmDiscardUnsaved(
-            "Close these tabs with unsaved files?",
-          );
-          if (!ok) return;
-        }
-        if (terminals.length > 0) {
-          const ok = await confirmCloseTerminals(terminals);
-          if (!ok) return;
-        }
-        finishClose();
-      })();
-    },
-    [activateTab, persistSession, refreshHistory, sidebarCwd],
+    (ids: string[], fallbackId: string, opts?: { confirmed?: boolean }) =>
+      closeTabs(tabCloseDeps, ids, fallbackId, opts),
+    [],
   );
-
-  const onCloseOtherTabs = useCallback(() => {
-    const current = tabsRef.current;
-    const activeId = activeTabIdRef.current;
-    if (!current.some((tab) => tab.id === activeId)) return;
-    onCloseTabs(
-      current.filter((tab) => tab.id !== activeId).map((tab) => tab.id),
-      activeId,
-    );
-  }, [onCloseTabs]);
-
+  const onCloseOtherTabs = useCallback(() => closeOtherTabs(tabCloseDeps), []);
   const onCloseFile = useCallback(
-    (paneId: string, fileId: string) => {
-      const tab = tabsRef.current.find((entry) =>
-        findSurfacePane(entry, paneId),
-      );
-      if (!tab) return;
-      const found = findSurfacePane(tab, paneId);
-      if (!found) return;
-      const { kind, pane } = found;
-      const index = pane.files.findIndex((file) => file.id === fileId);
-      if (index < 0) return;
-      const file = pane.files[index];
-      const needsUnsavedConfirm =
-        isFilesystemTab(file) && dirtyFilesRef.current.has(fileId);
-
-      const finishClose = () => {
-        const files = pane.files.filter((entry) => entry.id !== fileId);
-        let nextFocus = tab.focusedId;
-        let nextLayout = tab.layout;
-        let nextPanes = surfacePanes(tab, kind);
-        if (files.length > 0) {
-          nextFocus = paneId;
-          const activeFileId =
-            pane.activeFileId === fileId
-              ? files[Math.min(index, files.length - 1)].id
-              : pane.activeFileId;
-          nextPanes = nextPanes.map((entry) =>
-            entry.id === paneId ? { ...entry, files, activeFileId } : entry,
-          );
-        } else {
-          const sibling = siblingLeafId(tab.layout, paneId);
-          const withoutPane = removePane(tab.layout, paneId);
-          if (!withoutPane) {
-            setDirtyFiles((prev) => {
-              const next = new Set(prev);
-              next.delete(fileId);
-              return next;
-            });
-            const closePlan = planWorkspaceTabClose({
-              tabs: tabsRef.current,
-              sessions: sessionsRef.current,
-              closingTabId: tab.id,
-              scope: tabCloseScope,
-              worktreeOf: tabWorktreeOf,
-            });
-            if (closePlan.action === "close") {
-              onCloseTab(
-                tab.id,
-                file.terminal ? { confirmedTerminalIds: [fileId] } : undefined,
-              );
-              return;
-            }
-            const seed = sessionsRef.current[0];
-            const session = newSession(
-              seed?.harness ?? "claude",
-              file.cwd || projectCwd,
-              seed?.model,
-              seed?.runtimeMode,
-              seed?.modelSettings,
-            );
-            setSessions((prev) => [...prev, session]);
-            setTabs((prev) =>
-              prev.map((entry) =>
-                entry.id === tab.id
-                  ? {
-                      ...entry,
-                      layout: leaf(session.id),
-                      focusedId: session.id,
-                      editorPanes: [],
-                      terminalPanes: [],
-                      diffOpen: false,
-                      diffFocused: false,
-                    }
-                  : entry,
-              ),
-            );
-            setComposerFocused(true);
-            const navigation = displayedTabNavigation.current;
-            const nextId = nextDisplayedTabAfterClose(
-              navigation.tabs,
-              navigation.activeId,
-              tab.id,
-            );
-            if (nextId) navigation.select?.(nextId);
-            return;
-          }
-          nextLayout = withoutPane;
-          nextFocus =
-            tab.focusedId === paneId
-              ? (sibling ?? firstLeafId(withoutPane))
-              : tab.focusedId;
-          nextPanes = nextPanes.filter((entry) => entry.id !== paneId);
-        }
-
-        setTabs((prev) =>
-          prev.map((entry) =>
-            entry.id === tab.id
-              ? withSurfacePanes(
-                  {
-                    ...entry,
-                    layout: nextLayout,
-                    focusedId: nextFocus,
-                  },
-                  kind,
-                  nextPanes,
-                )
-              : entry,
-          ),
-        );
-        setDirtyFiles((prev) => {
-          const next = new Set(prev);
-          next.delete(fileId);
-          return next;
-        });
-        if (tab.id === activeTabId && files.length === 0) {
-          setComposerFocused(
-            sessionsRef.current.some((session) => session.id === nextFocus),
-          );
-        }
-      };
-
-      void (async () => {
-        if (needsUnsavedConfirm) {
-          const ok = await confirmDiscardUnsaved(
-            `Close ${basename(file.path)} without saving?`,
-          );
-          if (!ok) return;
-        }
-        if (file.terminal) {
-          const ok = await confirmCloseTerminal(file);
-          if (!ok) return;
-        }
-        finishClose();
-      })();
-    },
-    [activeTabId, onCloseTab, projectCwd, tabCloseScope],
+    (paneId: string, fileId: string) => closeFile(tabCloseDeps, paneId, fileId),
+    [],
   );
-
-  const onCloseOtherFiles = useCallback((paneId: string, fileId: string) => {
-    const tab = tabsRef.current.find((entry) => findSurfacePane(entry, paneId));
-    if (!tab) return;
-    const found = findSurfacePane(tab, paneId);
-    if (!found?.pane.files.some((file) => file.id === fileId)) return;
-    const closingFiles = found.pane.files.filter((file) => file.id !== fileId);
-    if (closingFiles.length === 0) return;
-    const closingIds = new Set(closingFiles.map((file) => file.id));
-    const unsaved = closingFiles.filter(
-      (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-    );
-    const terminals = closingFiles.filter((file) => file.terminal);
-
-    const finishClose = () => {
-      setTabs((prev) =>
-        prev.map((entry) => {
-          if (entry.id !== tab.id) return entry;
-          const current = findSurfacePane(entry, paneId);
-          if (!current?.pane.files.some((file) => file.id === fileId)) {
-            return entry;
-          }
-          return withSurfacePanes(
-            { ...entry, focusedId: paneId },
-            current.kind,
-            surfacePanes(entry, current.kind).map((pane) =>
-              pane.id === paneId
-                ? {
-                    ...pane,
-                    files: pane.files.filter(
-                      (file) => !closingIds.has(file.id),
-                    ),
-                    activeFileId: fileId,
-                  }
-                : pane,
-            ),
-          );
-        }),
-      );
-      setDirtyFiles((prev) => {
-        const next = new Set(prev);
-        for (const id of closingIds) next.delete(id);
-        return next;
-      });
-    };
-
-    void (async () => {
-      if (unsaved.length > 0) {
-        const ok = await confirmDiscardUnsaved(
-          "Close other tabs with unsaved files?",
-        );
-        if (!ok) return;
-      }
-      if (terminals.length > 0) {
-        const ok = await confirmCloseTerminals(terminals);
-        if (!ok) return;
-      }
-      finishClose();
-    })();
-  }, []);
-
-  const onClearTabSession = useCallback(
-    (id: string, opts?: { confirmed?: boolean; selectNeighbor?: boolean }) => {
-      const tab = tabs.find((entry) => entry.id === id);
-      if (!tab) return;
-      const navigation = displayedTabNavigation.current;
-      const neighborId = opts?.selectNeighbor
-        ? nextDisplayedTabAfterClose(navigation.tabs, navigation.activeId, id)
-        : undefined;
-      const selectNeighbor = () => {
-        if (neighborId) navigation.select?.(neighborId);
-      };
-      if (isBlankWorkspaceTab(tab, sessionsRef.current)) {
-        selectNeighbor();
-        return;
-      }
-
-      const closingFiles = [
-        ...tab.editorPanes.flatMap((pane) => pane.files),
-        ...(tab.terminalPanes ?? []).flatMap((pane) => pane.files),
-      ];
-      const unsaved = closingFiles.filter(
-        (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-      );
-
-      const oldSessionId = leafIds(tab.layout).find((paneId) =>
-        sessionsRef.current.some((session) => session.id === paneId),
-      );
-      const oldSession = sessionsRef.current.find(
-        (session) => session.id === oldSessionId,
-      );
-      if (!oldSession) return;
-
-      const clear = () => {
-        persistSession(oldSession);
-        for (const shellId of leafIds(tab.layout)) {
-          rememberRemoteSession(shellId);
-          rememberRemotePendingWorktree(shellId);
-        }
-
-        // The blank replacement stays in the tab's worktree, so clearing the
-        // last tab there does not switch the workspace back to the project.
-        const workspace = tabWorkspace(tab, sessionsRef.current);
-        const focus = worktreeFocus(oldSession.cwd);
-        const session = {
-          ...newSession(
-            oldSession.harness,
-            oldSession.cwd,
-            oldSession.model,
-            oldSession.runtimeMode,
-            oldSession.modelSettings,
-          ),
-          ...(workspace && !sameProjectPath(workspace, oldSession.cwd)
-            ? {
-                worktreeCwd: workspace,
-                branch:
-                  (focus && sameProjectPath(focus.path, workspace)
-                    ? focus.branch
-                    : undefined) ??
-                  (oldSession.worktreeCwd &&
-                  sameProjectPath(oldSession.worktreeCwd, workspace)
-                    ? oldSession.branch
-                    : undefined) ??
-                  undefined,
-              }
-            : {}),
-        };
-
-        setSessions((prev) => [...prev, session]);
-        setDirtyFiles((prev) => {
-          const updated = new Set(prev);
-          for (const file of closingFiles) updated.delete(file.id);
-          return updated;
-        });
-        setTabs((prev) =>
-          prev.map((entry) =>
-            entry.id === id
-              ? {
-                  ...entry,
-                  layout: leaf(session.id),
-                  focusedId: session.id,
-                  editorPanes: [],
-                  terminalPanes: [],
-                  diffOpen: false,
-                  diffFocused: false,
-                }
-              : entry,
-          ),
-        );
-        setComposerFocused(true);
-        void refreshHistory(sidebarCwd);
-        selectNeighbor();
-      };
-      // A view tab opens in a transition; clearing alongside it keeps the
-      // blank tab from painting before the view.
-      const finishClear = () => {
-        if (neighborId && isViewTab(neighborId)) startTransition(clear);
-        else clear();
-      };
-
-      // The caller already confirmed unsaved files.
-      if (unsaved.length === 0 || opts?.confirmed) {
-        finishClear();
-        return;
-      }
-      void confirmDiscardUnsaved(
-        "Close this conversation with unsaved files?",
-      ).then((ok) => ok && finishClear());
-    },
-    [tabs, persistSession, refreshHistory, sidebarCwd],
+  const onCloseOtherFiles = useCallback(
+    (paneId: string, fileId: string) =>
+      closeOtherFiles(tabCloseDeps, paneId, fileId),
+    [],
   );
-
   const onRemoteSessionDeleted = useCallback(
-    (remoteSessionId: string) => {
-      const tab = tabsRef.current.find((entry) =>
-        leafIds(entry.layout).some(
-          (shellId) => remoteSessionFor(shellId) === remoteSessionId,
-        ),
-      );
-      if (!tab) return;
-      const closePlan = planWorkspaceTabClose({
-        tabs: tabsRef.current,
-        sessions: sessionsRef.current,
-        closingTabId: tab.id,
-        scope: tabCloseScope,
-        worktreeOf: tabWorktreeOf,
-      });
-      if (closePlan.action === "keep") onClearTabSession(tab.id);
-      else onCloseTab(tab.id);
-    },
-    [onClearTabSession, onCloseTab, tabCloseScope],
+    (remoteSessionId: string) =>
+      closeDeletedRemoteSession(tabCloseDeps, remoteSessionId),
+    [],
   );
-
-  const seedSession = useCallback((cwd: string) => {
-    const seed = sessionsRef.current[0];
-    return newSession(
-      seed?.harness ?? "claude",
-      cwd,
-      seed?.model,
-      seed?.runtimeMode,
-      seed?.modelSettings,
-    );
-  }, []);
-
-  // The workspace always keeps one tab, so close every other tab and reset
-  // the active one to a blank session. `scope` limits this to those tabs,
-  // such as the ones the title bar shows. Every confirmation runs before
-  // any tab changes, so a cancelled prompt leaves all tabs.
   const onCloseEveryTab = useCallback(
-    (scope?: readonly string[]) => {
-      const inScope = scope ? new Set(scope) : null;
-      const tab = tabsRef.current.find(
-        (entry) => entry.id === activeTabIdRef.current,
-      );
-      if (!tab || (inScope && !inScope.has(tab.id))) return;
-
-      const otherIds = tabsRef.current
-        .filter((entry) => entry.id !== tab.id)
-        .filter((entry) => !inScope || inScope.has(entry.id))
-        .map((entry) => entry.id);
-      const keptFiles = [
-        ...tab.editorPanes.flatMap((pane) => pane.files),
-        ...(tab.terminalPanes ?? []).flatMap((pane) => pane.files),
-      ];
-      const closingFiles = [
-        ...tabsRef.current
-          .filter((entry) => otherIds.includes(entry.id))
-          .flatMap((entry) => [
-            ...entry.editorPanes.flatMap((pane) => pane.files),
-            ...(entry.terminalPanes ?? []).flatMap((pane) => pane.files),
-          ]),
-        ...keptFiles,
-      ];
-      const unsaved = closingFiles.filter(
-        (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-      );
-      const terminals = closingFiles.filter((file) => file.terminal);
-
-      void (async () => {
-        if (unsaved.length > 0) {
-          const ok = await confirmDiscardUnsaved(
-            "Close all tabs with unsaved files?",
-          );
-          if (!ok) return;
-        }
-        if (terminals.length > 0) {
-          const ok = await confirmCloseTerminals(terminals);
-          if (!ok) return;
-        }
-        if (otherIds.length > 0) {
-          onCloseTabs(otherIds, tab.id, { confirmed: true });
-        }
-        const hasSession = leafIds(tab.layout).some((paneId) =>
-          sessionsRef.current.some((session) => session.id === paneId),
-        );
-        if (hasSession) {
-          onClearTabSession(tab.id, { confirmed: true });
-          return;
-        }
-        // The tab held no session: seed one so the workspace stays usable.
-        const session = seedSession(keptFiles[0]?.cwd || projectCwd);
-        setSessions((prev) => [...prev, session]);
-        setDirtyFiles((prev) => {
-          const updated = new Set(prev);
-          for (const file of keptFiles) updated.delete(file.id);
-          return updated;
-        });
-        setTabs((prev) =>
-          prev.map((entry) =>
-            entry.id === tab.id ? resetTabToSession(entry, session.id) : entry,
-          ),
-        );
-        setComposerFocused(true);
-      })();
-    },
-    [onCloseTabs, onClearTabSession, projectCwd, seedSession],
+    (scope?: readonly string[]) => closeEveryTab(tabCloseDeps, scope),
+    [],
   );
-
-  const onCloseAllTabs = useCallback(() => {
-    closeFamiliarView();
-    const tab = tabsRef.current.find(
-      (entry) => entry.id === activeTabIdRef.current,
-    );
-    if (!tab) return;
-
-    // Stage one: files open in the active tab's editor panes close first.
-    // Only when none are open does the command close every workspace tab.
-    const editorFiles = tab.editorPanes.flatMap((pane) => pane.files);
-    if (editorFiles.length > 0) {
-      const remaining = closeSurfacePanes(tab, "editor");
-      if (!remaining) {
-        const closePlan = planWorkspaceTabClose({
-          tabs: tabsRef.current,
-          sessions: sessionsRef.current,
-          closingTabId: tab.id,
-          scope: tabCloseScope,
-          worktreeOf: tabWorktreeOf,
-        });
-        if (closePlan.action === "close") {
-          onCloseTab(tab.id);
-          return;
-        }
-      }
-      const unsaved = editorFiles.filter(
-        (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-      );
-
-      const finishClose = () => {
-        let nextTab: WorkspaceTab;
-        let focusesSession: boolean;
-        if (remaining) {
-          nextTab = remaining;
-          focusesSession = sessionsRef.current.some(
-            (session) => session.id === remaining.focusedId,
-          );
-        } else {
-          // The tab held only editor panes and must stay: seed a session.
-          const session = seedSession(editorFiles[0].cwd || projectCwd);
-          setSessions((prev) => [...prev, session]);
-          nextTab = resetTabToSession(tab, session.id);
-          focusesSession = true;
-        }
-        setTabs((prev) =>
-          prev.map((entry) => (entry.id === tab.id ? nextTab : entry)),
-        );
-        setDirtyFiles((prev) => {
-          const updated = new Set(prev);
-          for (const file of editorFiles) updated.delete(file.id);
-          return updated;
-        });
-        setComposerFocused(focusesSession);
-      };
-
-      void (async () => {
-        if (unsaved.length > 0) {
-          const ok = await confirmDiscardUnsaved(
-            "Close all open files with unsaved changes?",
-          );
-          if (!ok) return;
-        }
-        finishClose();
-      })();
-      return;
-    }
-
-    // Stage two: no files are open, so close every workspace tab.
-    onCloseEveryTab();
-  }, [onCloseEveryTab, onCloseTab, projectCwd, seedSession, tabCloseScope]);
-
+  const onCloseAllTabs = useCallback(() => closeAllTabs(tabCloseDeps), []);
   const onClosePane = useCallback(
-    (sessionId?: string) => {
-      if (workspaceStore.getState().familiarViewId) {
-        closeFamiliarView();
-        setComposerFocused(true);
-        return;
-      }
-      // The project terminal is shared by every workspace tab in the project,
-      // so pane and title-bar close buttons stay scoped to workspace tabs and
-      // panes. ⌘W / Ctrl+W goes through onCloseFocused to reach the dock.
-      if (!activeTab) return;
-      const focusedSurface = findSurfacePane(activeTab, activeTab.focusedId);
-      if (sessionId === undefined && focusedSurface) {
-        onCloseFile(focusedSurface.pane.id, focusedSurface.pane.activeFileId);
-        return;
-      }
-      const closingId = sessionId ?? activeTab.focusedId;
-      const ids = leafIds(activeTab.layout);
-      const sessionIds = ids.filter((paneId) =>
-        sessionsRef.current.some((session) => session.id === paneId),
-      );
-      if (!sessionIds.includes(closingId)) return;
-      const nextTab = closeLeaf(activeTab, closingId);
-      if (!nextTab) {
-        const closePlan = planWorkspaceTabClose({
-          tabs: tabsRef.current,
-          sessions: sessionsRef.current,
-          closingTabId: activeTab.id,
-          scope: tabCloseScope,
-          worktreeOf: tabWorktreeOf,
-        });
-        if (closePlan.action === "keep") {
-          onClearTabSession(activeTab.id, { selectNeighbor: true });
-        } else {
-          onCloseTab(activeTab.id);
-        }
-        return;
-      }
-      persistSession(sessionsRef.current.find((s) => s.id === closingId));
-      setTabs((prev) =>
-        prev.map((t) =>
-          t.id === activeTab.id
-            ? { ...t, layout: nextTab.layout, focusedId: nextTab.focusedId }
-            : t,
-        ),
-      );
-      if (closingId === activeTab.focusedId) {
-        setComposerFocused(
-          nextTab &&
-            sessionsRef.current.some(
-              (session) => session.id === nextTab.focusedId,
-            ),
-        );
-      }
-      void refreshHistory(sidebarCwd);
-    },
-    [
-      activeTab,
-      closeFamiliarView,
-      onCloseFile,
-      onCloseTab,
-      onClearTabSession,
-      persistSession,
-      refreshHistory,
-      sidebarCwd,
-      tabCloseScope,
-    ],
+    (sessionId?: string) => closePane(tabCloseDeps, sessionId),
+    [],
   );
+  const onCloseTitleTab = useCallback(
+    (id: string) => closeTitleTab(tabCloseDeps, id),
+    [],
+  );
+
+
+
+
+
+
+
+
+
+
 
   /** The dock terminal that ⌘T / ⌘W act on while the keyboard is in the dock. */
   const focusedDockTerminal = useCallback(() => {
@@ -4051,26 +3396,6 @@ function Workspace({
     else onClosePane();
   }, [focusedDockTerminal, onCloseProjectTerminal, onClosePane]);
 
-  const onCloseTitleTab = useCallback(
-    (id: string) => {
-      // The inset layout shows a Familiar as its own tab, which closing another
-      // tab leaves alone.
-      if (!insetLayoutRef.current) closeFamiliarView();
-      const closePlan = planWorkspaceTabClose({
-        tabs: tabsRef.current,
-        sessions: sessionsRef.current,
-        closingTabId: id,
-        scope: tabCloseScope,
-        worktreeOf: tabWorktreeOf,
-      });
-      if (closePlan.action === "keep" && id === activeTabIdRef.current) {
-        onClosePane();
-        return;
-      }
-      onCloseTab(id);
-    },
-    [onClosePane, onCloseTab, tabCloseScope],
-  );
 
   /** Open tabs per workspace in the sidebar's project, keyed by worktree
    * path, so the switcher can show what each worktree still has open. */
@@ -13475,16 +12800,6 @@ function selectedCommitSha(tab: WorkspaceTab): string | undefined {
     const file = pane.files.find((entry) => entry.id === pane.activeFileId);
     if (file && isCommitTab(file)) return file.commit.sha;
   }
-}
-
-function isBlankWorkspaceTab(tab: WorkspaceTab, sessions: Session[]): boolean {
-  if (tab.editorPanes.some((pane) => pane.files.length > 0)) return false;
-  if ((tab.terminalPanes ?? []).some((pane) => pane.files.length > 0))
-    return false;
-  const ids = leafIds(tab.layout);
-  if (ids.length !== 1) return false;
-  if (remoteSessionFor(ids[0]) || remotePendingWorktree(ids[0])) return false;
-  return isBlankSession(sessions.find((entry) => entry.id === ids[0]));
 }
 
 function toTitleTab(

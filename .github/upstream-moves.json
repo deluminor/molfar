@@ -1200,6 +1200,54 @@
           "onBtwSubmit, onBtwModelChange, onBtwDelete, onBtwStop, onBtwRetry (App: btw.submit/changeModel/remove/stop/retry)"
         ],
         "target": "src/app/workspace/flows/btw/btw-actions.ts"
+      },
+      {
+        "names": [
+          "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
+      },
+      {
+        "names": [
+          "onCloseFile, onCloseOtherFiles"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/file-close.ts"
+      },
+      {
+        "names": [
+          "onClearTabSession, onRemoteSessionDeleted"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-clear.ts"
+      },
+      {
+        "names": [
+          "onCloseEveryTab, onCloseAllTabs, seedSession"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-close-all.ts"
+      },
+      {
+        "names": [
+          "onClosePane, onCloseTitleTab"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/pane-close.ts"
+      },
+      {
+        "names": [
+          "planWorkspaceTabClose calls, closing file/dirty/remote helpers"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-close-steps.ts"
+      },
+      {
+        "names": [
+          "isBlankWorkspaceTab"
+        ],
+        "target": "src/app/model/blank-workspace-tab.ts"
+      },
+      {
+        "names": [
+          "activeTab fallback"
+        ],
+        "target": "src/app/model/active-workspace-tab.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
