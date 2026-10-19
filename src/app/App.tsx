@@ -28,9 +28,7 @@ import {
 } from "@/features/familiars/model/familiar-messaging";
 import {
   dismissQueuedFamiliarSessionCompletion,
-  enqueueFamiliarSessionCompletion,
   familiarSessionCompletionResult,
-  FamiliarSessionCompletionBatches,
 } from "@/features/familiars/model/familiar-session-completion";
 import {
   handleAgentApp,
@@ -184,6 +182,8 @@ import {
   showFamiliarActivity,
 } from "./workspace/flows/familiars/familiar-overview";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
+import { createFamiliarChat } from "./workspace/flows/familiars/familiar-chat";
+import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-completions";
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
 import { useWorkspaceTaskBoard } from "./workspace/hooks/use-workspace-task-board";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
@@ -503,7 +503,7 @@ import type {
   WorkspaceMode,
 } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type { UsageLimit, QueuedMessage } from "@/domain/session/message-queue";
+import type { UsageLimit, } from "@/domain/session/message-queue";
 import type { Attachment } from "@/domain/session/attachment";
 import type {
   BtwThread,
@@ -7682,61 +7682,17 @@ function Workspace({
     [submitSession],
   );
 
-  // onApproval is created once; it reaches the current helper through this.
-  const decideFamiliarBlockRef = useRef<
-    (
-      familiarId: string,
-      blockId: string,
-      decided: "allow" | "deny" | "cancelled",
-    ) => void
-  >(() => {});
-  /** Adds a block to a Familiar's chat outside any turn, once no reply is streaming. */
-  const appendToFamiliar = (
-    familiarId: string,
-    block: Block,
-    then?: (familiar: Session) => void,
-    attempt = 0,
-  ) => {
-    const familiar = sessionsRef.current.find((session) => session.id === familiarId);
-    if (!familiar) return;
-    if (familiar.busy && attempt < 120) {
-      window.setTimeout(
-        () => appendToFamiliar(familiarId, block, then, attempt + 1),
-        5_000,
-      );
-      return;
-    }
-    const next: Session = { ...familiar, blocks: [...familiar.blocks, block] };
-    sessionsRef.current = sessionsRef.current.map((session) =>
-      session.id === familiarId ? next : session,
-    );
-    setSessions(sessionsRef.current);
-    persistSession(next);
-    then?.(next);
-  };
-  const decideFamiliarBlock = (
-    familiarId: string,
-    blockId: string,
-    decided: "allow" | "deny" | "cancelled",
-  ) => {
-    const decide = (session: Session) =>
-      session.id === familiarId
-        ? {
-            ...session,
-            blocks: session.blocks.map((block) =>
-              block.id === blockId && block.approval
-                ? { ...block, approval: { ...block.approval, decided } }
-                : block,
-            ),
-          }
-        : session;
-    sessionsRef.current = sessionsRef.current.map(decide);
-    setSessions(sessionsRef.current);
-    persistSession(
-      sessionsRef.current.find((session) => session.id === familiarId),
-    );
-  };
-  decideFamiliarBlockRef.current = decideFamiliarBlock;
+  const familiarChat = useStableFlow(() =>
+    createFamiliarChat({
+      openSessions: () => sessionsRef.current,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        setSessions(next);
+      },
+      persist: (session) => sessionPersistence.persist(session),
+      schedule: (run, ms) => window.setTimeout(run, ms),
+    }),
+  );
 
   useFamiliarHabits({
     sessions: () => sessionsRef.current,
@@ -7768,7 +7724,7 @@ function Workspace({
       setSessions(sessionsRef.current);
     },
     post: (familiarId, habit, text, name, artifacts, launches) =>
-      appendToFamiliar(
+      familiarChat.append(
         familiarId,
         {
           id: crypto.randomUUID(),
@@ -7796,7 +7752,7 @@ function Workspace({
         requestId: block.approval!.requestId,
         blockId,
       });
-      appendToFamiliar(familiarId, {
+      familiarChat.append(familiarId, {
         id: blockId,
         role: "approval",
         text: block.text,
@@ -7807,7 +7763,7 @@ function Workspace({
     },
     endApprovals: (runId) => {
       for (const relay of dropRelays(runId))
-        decideFamiliarBlock(relay.familiarId, relay.blockId, "cancelled");
+        familiarChat.decide(relay.familiarId, relay.blockId, "cancelled");
     },
   });
 
@@ -7967,47 +7923,20 @@ function Workspace({
     [appendTab, focusOpenSession, submitSession],
   );
 
-  const queueFamiliarSessionCompletion = useCallback(
-    async (
-      familiarId: string,
-      message: QueuedMessage,
-      current: () => QueuedMessage | undefined = () => message,
-    ) => {
-      if (!isFamiliarSession(familiarId) || removingSessionIds.current.has(familiarId))
-        return;
-      if (
-        !(await ensureOpenSession(familiarId)) ||
-        removingSessionIds.current.has(familiarId)
-      )
-        return;
-      setSessions((previous) => {
-        const latest = current();
-        return latest
-          ? previous.map((session) =>
-              session.id === familiarId
-                ? enqueueFamiliarSessionCompletion(session, latest)
-                : session,
-            )
-          : previous;
-      });
-    },
-    [ensureOpenSession],
-  );
-  const queueFamiliarSessionCompletionRef = useRef(queueFamiliarSessionCompletion);
-  queueFamiliarSessionCompletionRef.current = queueFamiliarSessionCompletion;
-  const familiarCompletionBatches = useRef<FamiliarSessionCompletionBatches | null>(null);
-  if (!familiarCompletionBatches.current) {
-    familiarCompletionBatches.current = new FamiliarSessionCompletionBatches(
-      (familiarId, message, current) => {
-        void queueFamiliarSessionCompletionRef.current(familiarId, message, current);
+  const familiarCompletions = useStableFlow(() =>
+    createFamiliarCompletions({
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      isRemoving: (sessionId) => removingSessionIds.current.has(sessionId),
+      setSessions,
+      isBusyOnTurn: (familiarId, turn) => {
+        const familiar = sessionsRef.current.find((session) => session.id === familiarId);
+        return !!familiar?.busy && turnGen.current.get(familiarId) === turn;
       },
-    );
-  }
+    }),
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: every session change may end a Familiar's turn.
   useEffect(() => {
-    familiarCompletionBatches.current!.closeInactive(({ familiarId, turn }) => {
-      const familiar = sessionsRef.current.find((session) => session.id === familiarId);
-      return !!familiar?.busy && turnGen.current.get(familiarId) === turn;
-    });
+    familiarCompletions.closeInactive();
   }, [sessions]);
 
   const launchQuickSession = useCallback(
@@ -9700,7 +9629,7 @@ function Workspace({
               relay.requestId,
               decision,
             );
-          decideFamiliarBlockRef.current(
+          familiarChat.decide(
             sessionId,
             asked.id,
             relay && run
@@ -10256,7 +10185,7 @@ function Workspace({
           project: string,
           prompt: string,
         ) => {
-          const settle = familiarCompletionBatches.current!.watch(
+          const settle = familiarCompletions.batches.watch(
             { familiarId, turn: sourceTurn },
             requestId,
             sessionId,
@@ -10281,7 +10210,7 @@ function Workspace({
         };
         const dismissCompletion = (sessionId: string) => {
           if (!isFamiliarSession(source.id)) return;
-          familiarCompletionBatches.current!.dismissSession(
+          familiarCompletions.batches.dismissSession(
             source.id,
             sessionId,
           );

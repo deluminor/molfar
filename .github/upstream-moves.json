@@ -1158,6 +1158,18 @@
           "familiarRailState, familiarRail, onOpenRailFamiliar, onDeleteRailFamiliar, sidebarFamiliars"
         ],
         "target": "src/app/workspace/hooks/familiars/use-familiar-rail.ts"
+      },
+      {
+        "names": [
+          "decideFamiliarBlockRef, appendToFamiliar, decideFamiliarBlock (App: familiarChat.append/decide)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-chat.ts"
+      },
+      {
+        "names": [
+          "queueFamiliarSessionCompletion(Ref), familiarCompletionBatches, closeInactive effect (App: familiarCompletions.batches/closeInactive)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-completions.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
