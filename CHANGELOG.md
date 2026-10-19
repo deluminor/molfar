@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- A **New layout** brings a redesigned sidebar, project switcher, workspace tabs and right panel. It is on by default; turn it off in Settings → Appearance → Layout to return to the classic layout. Glass remains a separate setting.
+- An optional **New layout** brings a redesigned sidebar, project switcher, workspace tabs and right panel. Try it from the invitation or Settings → Appearance → Layout, where it can also be turned off to return to the classic layout. Glass remains a separate setting.
 - In the new layout, the sidebar's view links include **Home**, **Usage**, **Board**, and **Knowledge** alongside Inbox, Notes, and Automations.
 - The new layout has **workspace themes** (Default, Harbor, Moss, Ember, Orchid, Tidepool, Dune, Rosewood, Glacier) in Settings → Appearance → Theme.
 - A **Resource pressure** indicator in the usage footer opens a process view with CPU and memory usage, controls to stop agents and sessions, and controls to stop individual running tools. From MonoCode #1045.

@@ -98,13 +98,14 @@ describe("layout and glass defaults", () => {
     return import("./appearance");
   }
 
-  it("uses the new layout unless it was turned off", async () => {
+  it("keeps the classic layout until the user opts in", async () => {
     const appearance = await loadForPlatform("MacIntel");
 
-    expect(appearance.loadInsetLayout()).toBe(true);
-
-    localStorage.setItem("molfar.insetLayout", "0");
+    expect(appearance.INSET_LAYOUT_DEFAULT).toBe(false);
     expect(appearance.loadInsetLayout()).toBe(false);
+
+    localStorage.setItem("molfar.insetLayout", "1");
+    expect(appearance.loadInsetLayout()).toBe(true);
   });
 
   it("turns main pane glass off by default only on Linux", async () => {
