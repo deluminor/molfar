@@ -1293,6 +1293,30 @@
       },
       {
         "names": [
+          "currentWorkspace"
+        ],
+        "target": "src/app/model/current-workspace.ts"
+      },
+      {
+        "names": [
+          "withHarnessChoice, withPlanBuildTarget"
+        ],
+        "target": "src/app/model/harness-choice.ts"
+      },
+      {
+        "names": [
+          "withPlanStatus, lastAssistantTextInTurn, userTurnCards"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-blocks.ts"
+      },
+      {
+        "names": [
+          "trackSessionEdits, nudgeOpenEditors"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-file-effects.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

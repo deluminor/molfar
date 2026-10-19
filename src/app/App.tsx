@@ -165,7 +165,6 @@ import { useProjectBranches } from "@/features/source-control/hooks/use-project-
 import {
   type WorktreeFocus,
   useWorktreeFocus,
-  worktreeFocus,
 } from "@/features/source-control/model/worktree-focus";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import {
@@ -195,7 +194,7 @@ import {
   pickFolders,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
-import { basename, displayPath, isEqualOrInside, pathKey, projectName, rebasePath, resolveWorkspacePath } from "@/shared/lib/paths";
+import { basename, displayPath, isEqualOrInside, pathKey, projectName, rebasePath } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
@@ -244,7 +243,18 @@ import { stopTurn } from "./workspace/flows/turn-control/stop-turn";
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
 import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
 import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
+import { currentWorkspace } from "./model/current-workspace";
+import { withHarnessChoice, withPlanBuildTarget } from "./model/harness-choice";
 import { nudgeWorkspace } from "./model/nudge-workspace";
+import {
+  lastAssistantTextInTurn,
+  userTurnCards,
+  withPlanStatus,
+} from "./workspace/flows/submission/turn-blocks";
+import {
+  nudgeOpenEditors,
+  trackSessionEdits,
+} from "./workspace/flows/submission/turn-file-effects";
 import { createFamiliarChat } from "./workspace/flows/familiars/familiar-chat";
 import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-completions";
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
@@ -474,27 +484,23 @@ import type { WindowTransferPayload } from "./model/window-transfer";
 
 import { notifyDirsChanged } from "@/features/files/model/file-tree";
 import {
-  invalidateWatchedFiles,
   nudgeWatchedFiles,
 } from "@/features/files/model/file-watch";
 import type { OpenFileFn } from "@/features/search/model/search";
 import {
   applySessionCheckpoint,
   beginSessionTurn,
-  captureSessionCheckpoint,
   finishSessionTurn,
   flushSessionCheckpoint,
   forgetSessionCheckpoint,
   keepSessionChanges,
   notifyReviewChanged,
-  prepareSessionCheckpoint,
   sessionCheckpointCleanupSafe,
 } from "@/features/sessions/model/checkpoint";
 import {
   createEditedResendAttempt,
   createEditedResendCoordinator,
 } from "@/features/sessions/model/edit-last-turn";
-import { isEditTool } from "@/integrations/harness/core/preview";
 import { sessionEditPaths } from "@/features/sessions/model/checkpoint-edits";
 
 import {
@@ -567,10 +573,6 @@ import type {
 import type { Block } from "@/domain/session/block";
 import type { Attachment } from "@/domain/session/attachment";
 import type {
-  PlanStatus,
-  SecondOpinionMeta,
-} from "@/domain/session/block-meta";
-import type {
   ModelTarget,
   PlanBuildTarget,
 } from "@/domain/session/turn";
@@ -609,7 +611,7 @@ import {
   upsertNote,
   loadNotes,
 } from "@/features/notes/notes";
-import { noteCardMeta, type NoteComposerCard } from "@/domain/notes/note-card";
+import type { NoteComposerCard } from "@/domain/notes/note-card";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
@@ -645,7 +647,6 @@ import {
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
 import { archiveFocusedSession } from "@/features/sessions/model/archive-shortcut";
-import { dropContextWindow } from "@/domain/session/context-usage";
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import { useUnseenReplyCounts } from "@/features/sessions/hooks/use-unseen-reply-counts";
@@ -921,114 +922,12 @@ const AutomationsView = lazySurface(
   { suspense: false },
 );
 
-function withPlanStatus(
-  session: Session,
-  blockId: string,
-  status: PlanStatus,
-): Session {
-  return {
-    ...session,
-    blocks: session.blocks.map((block) =>
-      block.id === blockId && block.role === "plan"
-        ? {
-            ...block,
-            plan: { ...(block.plan ?? { status: "ready" }), status },
-          }
-        : block,
-    ),
-  };
-}
-
-function lastAssistantTextInTurn(session: Session): string {
-  for (let index = session.blocks.length - 1; index >= 0; index -= 1) {
-    const block = session.blocks[index];
-    if (session.queuedMessages?.some((message) => message.blockId === block.id))
-      continue;
-    if (block.role === "user") return "";
-    if (block.role === "assistant" && block.text.trim()) return block.text;
-  }
-  return "";
-}
-
 function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false;
   for (const value of a) {
     if (!b.has(value)) return false;
   }
   return true;
-}
-
-function userTurnCards(
-  noteCard: NoteComposerCard | undefined,
-  secondOpinion?: SecondOpinionMeta,
-) {
-  if (!noteCard && !secondOpinion) return undefined;
-  return {
-    ...(secondOpinion ? { secondOpinion } : {}),
-    ...(noteCard ? { noteCard: noteCardMeta(noteCard) } : {}),
-  };
-}
-
-function withHarnessChoice(
-  session: Session,
-  harness: HarnessId,
-  model: string,
-  modelSettings: Record<string, string>,
-): Session {
-  return {
-    ...session,
-    harness,
-    model,
-    modelSettings,
-    title:
-      session.blocks.length === 0
-        ? HARNESS_LABEL[harness]
-        : formatSessionTitle(
-            harness,
-            sessionDisplayTitle(session.title, session.harness),
-          ),
-    ...(session.model === model
-      ? {}
-      : { context: dropContextWindow(session.context) }),
-    ...(session.harness === harness
-      ? {}
-      : { providerSessionId: undefined, providerAccountId: undefined }),
-  };
-}
-
-function withPlanBuildTarget(
-  session: Session,
-  target: PlanBuildTarget,
-): Session {
-  const resolved = resolveModel(target.harness, target.model);
-  const modelSettings = mergeModelSettings(resolved, target.modelSettings);
-  const plan = planComposerSwitch(session, target.harness);
-  const next = withHarnessChoice(
-    session,
-    target.harness,
-    resolved.id,
-    modelSettings,
-  );
-
-  if (plan.kind === "arm") {
-    return { ...next, pendingSwitch: plan.pending };
-  }
-  if (plan.kind === "revert") {
-    return {
-      ...next,
-      pendingSwitch: undefined,
-      ...(plan.restoreProviderSessionId
-        ? { providerSessionId: plan.restoreProviderSessionId }
-        : { providerSessionId: undefined }),
-      ...(plan.restoreProviderAccountId
-        ? { providerAccountId: plan.restoreProviderAccountId }
-        : { providerAccountId: undefined }),
-    };
-  }
-  if (plan.kind === "empty") {
-    return { ...next, pendingSwitch: undefined };
-  }
-  return next;
 }
 
 function openSessionIds(tabs: WorkspaceTab[]): Set<string> {
@@ -1088,11 +987,6 @@ type AppProps = {
   history?: SessionSummary[];
   historyCwd?: string | null;
 };
-
-/** The worktree a project's workspace currently shows. */
-function currentWorkspace(project: string): string {
-  return worktreeFocus(project)?.path ?? project;
-}
 
 export default function App(props: AppProps) {
   return (
@@ -11903,69 +11797,6 @@ function dropOpenFiles(
     });
   }
   return { ...tab, layout, focusedId, editorPanes };
-}
-
-function trackSessionEdits(
-  sessionId: string,
-  cwd: string,
-  event: HarnessEvent,
-) {
-  if (event.type !== "tool.started" && event.type !== "tool.updated") return;
-  if (!isEditTool(event.kind, event.title, event.preview)) return;
-  const paths = [
-    ...(event.paths ?? []),
-    ...(event.preview?.path ? [event.preview.path] : []),
-  ].filter((path, index, all) => all.indexOf(path) === index);
-  if (paths.length === 0 || cwd === "~") return;
-  const completed =
-    event.type === "tool.updated" &&
-    (event.status === "completed" || event.status === "success");
-  if (!completed) {
-    void prepareSessionCheckpoint(sessionId, cwd, paths).catch(() => undefined);
-    return;
-  }
-  void captureSessionCheckpoint(sessionId, cwd, paths)
-    .catch(() => undefined)
-    .then(() => notifyReviewChanged(sessionId));
-}
-
-function nudgeOpenEditors(event: HarnessEvent, cwd: string) {
-  if (event.type !== "tool.updated") return;
-  const completed = event.status === "completed" || event.status === "success";
-
-  const kind = event.kind?.trim().toLowerCase();
-  if (kind === "execute" || event.preview?.kind === "shell") {
-    if (!completed) return;
-    nudgeWatchedFiles();
-    window.setTimeout(() => nudgeWatchedFiles(), 150);
-    notifyGitChanged();
-    nudgeWorkspace(cwd);
-    window.setTimeout(() => nudgeWorkspace(cwd), 150);
-    return;
-  }
-
-  if (!isEditTool(event.kind, event.title, event.preview)) return;
-  const resolved = [
-    ...(event.paths ?? []),
-    ...(event.preview?.path ? [event.preview.path] : []),
-  ]
-    .map((path) => resolveWorkspacePath(path, cwd) ?? path)
-    .filter((path, index, paths) => paths.indexOf(path) === index);
-  if (completed) {
-    // A successful edit is authoritative. Reload it even if a startup race or
-    // coarse filesystem timestamp makes the mtime appear unchanged.
-    invalidateWatchedFiles(resolved.length > 0 ? resolved : undefined);
-  } else if (resolved.length > 0) {
-    nudgeWatchedFiles(resolved);
-  }
-  if (completed) {
-    window.setTimeout(
-      () => nudgeWatchedFiles(resolved.length > 0 ? resolved : undefined),
-      150,
-    );
-    notifyGitChanged();
-    nudgeWorkspace(cwd);
-  }
 }
 
 function sameSettings(
