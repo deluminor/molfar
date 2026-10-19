@@ -14217,6 +14217,12 @@ function Workspace({
       notesActive={notesViewOpen}
       automationsActive={automationsSurfaceOpen}
       railExtraActions={localSurfaceRailActions}
+      localSurfaces={{
+        active: localSurface,
+        visible: railSurfaces,
+        onOpen: onOpenLocalSurface,
+        badges: railBadges,
+      }}
       notesEnabled={notesEnabled}
       // The inset layout has no project rail: the sidebar header's menu
       // switches projects.

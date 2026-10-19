@@ -76,6 +76,7 @@ it.each([true, false])(
 
 it("keeps Knowledge and the local surfaces in the new layout's sidebar", () => {
   const onOpenKnowledge = vi.fn();
+  const onOpenLocalSurface = vi.fn();
   const props: ComponentProps<typeof Sidebar> = {
     cwd: "/workspace/project",
     open: true,
@@ -94,13 +95,23 @@ it("keeps Knowledge and the local surfaces in the new layout's sidebar", () => {
     onFilesSearchOpenChange: vi.fn(),
     onSelectProject: vi.fn(),
     onOpenProject: vi.fn(),
+    onOpenInbox: vi.fn(),
     onOpenNotes: vi.fn(),
     onOpenKnowledge,
     onOpenAutomations: vi.fn(),
     knowledgeActive: false,
     notesActive: false,
     notesEnabled: true,
-    railExtraActions: createElement("button", { "aria-label": "Board" }),
+    localSurfaces: {
+      active: null,
+      visible: {
+        home: true,
+        usage: true,
+        knowledge: true,
+        board: true,
+      },
+      onOpen: onOpenLocalSurface,
+    },
   };
 
   act(() => root.render(createElement(Sidebar, props)));
@@ -110,7 +121,15 @@ it("keeps Knowledge and the local surfaces in the new layout's sidebar", () => {
   const labels = [
     ...nav!.querySelectorAll<HTMLButtonElement>("button[aria-label]"),
   ].map((button) => button.getAttribute("aria-label"));
-  expect(labels).toEqual(["Notes", "Knowledge", "Automations", "Board"]);
+  expect(labels).toEqual([
+    "Home",
+    "Board",
+    "Inbox",
+    "Notes",
+    "Usage",
+    "Knowledge",
+    "Automations",
+  ]);
 
   const knowledge = nav!.querySelector<HTMLButtonElement>(
     'button[aria-label="Knowledge"]',

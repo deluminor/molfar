@@ -31,7 +31,10 @@ import {
   FolderTree,
   GitBranch,
   GitPullRequest,
+  Gauge,
+  Home,
   Inbox,
+  Kanban,
   ListFilter,
   PanelLeft,
   Pin,
@@ -70,6 +73,8 @@ import {
   type RightPanelTab,
   type SidebarTabId,
 } from "../../features/settings/model/appearance";
+import type { LocalSurfaceId } from "../../features/home/ui/LocalSurfaceRailActions";
+import type { RailSurfaceVisibility } from "../../features/settings/model/projectRail";
 import { formatInteger } from "../../shared/lib/numbers";
 import {
   type GitFileDiffKind,
@@ -418,6 +423,16 @@ type Props = {
   onOpenWhatsNew?: (version: string) => void;
   onDismissUpdate?: () => void;
   railExtraActions?: ReactNode;
+  /**
+   * Home / Board / Usage for the inset Views list. When set, those surfaces are
+   * interleaved with Inbox and the rest instead of appended via `railExtraActions`.
+   */
+  localSurfaces?: {
+    active: LocalSurfaceId | null;
+    visible: RailSurfaceVisibility;
+    onOpen: (id: LocalSurfaceId) => void;
+    badges?: Partial<Record<LocalSurfaceId, number>>;
+  };
   /** The Familiars on the rail; absent while Familiars are off. */
   familiars?: FamiliarRailProps;
   /** A Familiar fills the main area, which has no project sidebar. */
@@ -519,6 +534,7 @@ function SidebarComponent({
   onOpenWhatsNew,
   onDismissUpdate,
   railExtraActions,
+  localSurfaces,
   familiars,
   familiarViewActive = false,
 }: Props) {
@@ -2415,35 +2431,20 @@ function SidebarComponent({
       search={
         onSearch ? { active: searchActive, onClick: onSearch } : undefined
       }
-      items={[
-        onOpenInbox && {
-          label: "Inbox",
-          icon: Inbox,
-          active: inboxActive,
-          dot: inboxUnseen,
-          onClick: onOpenInbox,
-        },
-        notesEnabled &&
-          onOpenNotes && {
-            label: "Notes",
-            icon: StickyNote,
-            active: notesActive,
-            onClick: onOpenNotes,
-          },
-        onOpenKnowledge && {
-          label: "Knowledge",
-          icon: FolderTree,
-          active: knowledgeActive,
-          onClick: onOpenKnowledge,
-        },
-        onOpenAutomations && {
-          label: "Automations",
-          icon: Zap,
-          active: automationsActive,
-          onClick: onOpenAutomations,
-        },
-      ]}
-      extra={railExtraActions}
+      items={insetViewNavItems({
+        localSurfaces,
+        onOpenInbox,
+        inboxActive,
+        inboxUnseen,
+        notesEnabled,
+        onOpenNotes,
+        notesActive,
+        onOpenKnowledge,
+        knowledgeActive,
+        onOpenAutomations,
+        automationsActive,
+      })}
+      extra={localSurfaces ? undefined : railExtraActions}
     />
   ) : null;
 
@@ -4254,9 +4255,93 @@ type SidebarNavItem = {
   icon: IconComponent;
   shortcut?: string;
   active?: boolean;
+  badge?: number;
   dot?: boolean;
+  ariaLabel?: string;
   onClick: () => void;
 };
+
+/**
+ * Inset Views order: Home → Board → Inbox → Notes → Usage → Knowledge →
+ * Automations. Hidden surfaces are omitted.
+ */
+function insetViewNavItems({
+  localSurfaces,
+  onOpenInbox,
+  inboxActive,
+  inboxUnseen,
+  notesEnabled,
+  onOpenNotes,
+  notesActive,
+  onOpenKnowledge,
+  knowledgeActive,
+  onOpenAutomations,
+  automationsActive,
+}: {
+  localSurfaces?: Props["localSurfaces"];
+  onOpenInbox?: () => void;
+  inboxActive: boolean;
+  inboxUnseen: boolean;
+  notesEnabled: boolean;
+  onOpenNotes?: () => void;
+  notesActive: boolean;
+  onOpenKnowledge?: () => void;
+  knowledgeActive: boolean;
+  onOpenAutomations?: () => void;
+  automationsActive: boolean;
+}): (SidebarNavItem | false | undefined)[] {
+  const boardBadge = localSurfaces?.badges?.board;
+  return [
+    localSurfaces?.visible.home && {
+      label: "Home",
+      icon: Home,
+      active: localSurfaces.active === "home",
+      onClick: () => localSurfaces.onOpen("home"),
+    },
+    localSurfaces?.visible.board && {
+      label: "Board",
+      icon: Kanban,
+      active: localSurfaces.active === "board",
+      badge: boardBadge || undefined,
+      ariaLabel: boardBadge
+        ? `Board, ${boardBadge} waiting on you`
+        : undefined,
+      onClick: () => localSurfaces.onOpen("board"),
+    },
+    onOpenInbox && {
+      label: "Inbox",
+      icon: Inbox,
+      active: inboxActive,
+      dot: inboxUnseen,
+      onClick: onOpenInbox,
+    },
+    notesEnabled &&
+      onOpenNotes && {
+        label: "Notes",
+        icon: StickyNote,
+        active: notesActive,
+        onClick: onOpenNotes,
+      },
+    localSurfaces?.visible.usage && {
+      label: "Usage",
+      icon: Gauge,
+      active: localSurfaces.active === "usage",
+      onClick: () => localSurfaces.onOpen("usage"),
+    },
+    onOpenKnowledge && {
+      label: "Knowledge",
+      icon: FolderTree,
+      active: knowledgeActive,
+      onClick: onOpenKnowledge,
+    },
+    onOpenAutomations && {
+      label: "Automations",
+      icon: Zap,
+      active: automationsActive,
+      onClick: onOpenAutomations,
+    },
+  ];
+}
 
 /** The inset sidebar's links to the app-wide views, under the project. */
 function SidebarNavList({
@@ -4267,7 +4352,7 @@ function SidebarNavList({
   /** The project rail's search field, above the links. */
   search?: { active: boolean; onClick: () => void };
   items: readonly (SidebarNavItem | false | undefined)[];
-  /** MOLFAR's local surfaces (Home, Usage, Board), as the project rail shows them. */
+  /** Classic rail surfaces when the inset list does not own them. */
   extra?: ReactNode;
 }) {
   const shown = items.filter((item): item is SidebarNavItem => !!item);
@@ -4292,18 +4377,23 @@ function SidebarNavList({
           <div className="mt-0.5" />
         </>
       ) : null}
-      {shown.map(({ label, icon, shortcut, active, dot, onClick }) => (
-        <RailAction
-          key={label}
-          label={label}
-          icon={icon}
-          shortcut={shortcut}
-          active={active}
-          dot={dot}
-          ariaLabel={dot ? `${label}, new items` : undefined}
-          onClick={onClick}
-        />
-      ))}
+      {shown.map(
+        ({ label, icon, shortcut, active, badge, dot, ariaLabel, onClick }) => (
+          <RailAction
+            key={label}
+            label={label}
+            icon={icon}
+            shortcut={shortcut}
+            active={active}
+            badge={badge}
+            dot={dot}
+            ariaLabel={
+              ariaLabel ?? (dot ? `${label}, new items` : undefined)
+            }
+            onClick={onClick}
+          />
+        ),
+      )}
       {extra}
     </nav>
   );
