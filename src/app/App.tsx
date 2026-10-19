@@ -14124,7 +14124,9 @@ function Workspace({
           : undefined
       }
       explorerRootLabel={explorerRootLabel}
-      open={sessionSidebarOpen && localSurface === null}
+      // The inset sidebar carries the links to the local surfaces, so it stays
+      // beside them like it does beside the other views.
+      open={sessionSidebarOpen && (insetLayout || localSurface === null)}
       tab={insetLayout ? "sessions" : sidebarTab}
       onTabChange={setSidebarTab}
       rightPanel={

@@ -2430,6 +2430,12 @@ function SidebarComponent({
             active: notesActive,
             onClick: onOpenNotes,
           },
+        onOpenKnowledge && {
+          label: "Knowledge",
+          icon: FolderTree,
+          active: knowledgeActive,
+          onClick: onOpenKnowledge,
+        },
         onOpenAutomations && {
           label: "Automations",
           icon: Zap,
@@ -2437,6 +2443,7 @@ function SidebarComponent({
           onClick: onOpenAutomations,
         },
       ]}
+      extra={railExtraActions}
     />
   ) : null;
 
@@ -4255,13 +4262,16 @@ type SidebarNavItem = {
 function SidebarNavList({
   search,
   items,
+  extra,
 }: {
   /** The project rail's search field, above the links. */
   search?: { active: boolean; onClick: () => void };
   items: readonly (SidebarNavItem | false | undefined)[];
+  /** MOLFAR's local surfaces (Home, Usage, Board), as the project rail shows them. */
+  extra?: ReactNode;
 }) {
   const shown = items.filter((item): item is SidebarNavItem => !!item);
-  if (!search && !shown.length) return null;
+  if (!search && !shown.length && !extra) return null;
   return (
     <nav
       aria-label="Views"
@@ -4294,6 +4304,7 @@ function SidebarNavList({
           onClick={onClick}
         />
       ))}
+      {extra}
     </nav>
   );
 }
