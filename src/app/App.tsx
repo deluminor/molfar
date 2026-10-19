@@ -67,11 +67,7 @@ import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
 import { acceptQuickLaunch } from "./model/quick-launch-session";
-import { createTaskBoardSessionPort } from "./model/task-board-session-port";
-import { createCompanionBoard } from "@/features/companion/model/companion-board";
 import { boardTaskRule } from "@/features/agent-app/model/agent-app-board";
-import { useTaskBoardEngine } from "@/features/task-board/hooks/use-task-board-engine";
-import { useBoardAttention } from "@/features/task-board/hooks/use-board-attention";
 import { requestBoardFocus } from "@/features/task-board/model/board-focus";
 import { boardNoticeCard } from "@/features/task-board/services/notify";
 import { updateSessionState } from "./model/session-state";
@@ -186,6 +182,8 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
+import { useWorkspaceTaskBoard } from "./workspace/hooks/use-workspace-task-board";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
 import { cycleTab, tabInSlot } from "./workspace/flows/tabs/tab-cycle";
 import {
@@ -549,8 +547,6 @@ import {
 import {
   ADD_NOTE_TO_CHAT_EVENT,
   composeNoteMessage,
-  createNote,
-  getNote,
   NOTES_CHANGED_EVENT,
   upsertNote,
   loadNotes,
@@ -559,7 +555,7 @@ import { noteCardMeta, type NoteComposerCard } from "@/domain/notes/note-card";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
-import { syncDockBadge, syncBoardDockBadge } from "@/features/notifications/model/dock-badge";
+import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import {
   announceSessionFinished,
   loadNotificationsEnabled,
@@ -706,17 +702,6 @@ import {
   tabCommandForKeybinding,
   tabCommandKeybinding,
 } from "@/features/workspace/model/tab-keys";
-import { useCompanionBridge } from "@/features/companion/hooks/use-companion-bridge";
-import {
-  readVaultNote,
-  saveVaultNote,
-  scanVault,
-  vaultStatus,
-} from "@/features/knowledge/model/vault/vault-client";
-import {
-  companionProjectLabel,
-  companionProjectPaths,
-} from "@/features/companion/model/companion-projects";
 import {
   cachedRemoteSessionSummary,
   OPEN_CONNECTIONS_EVENT,
@@ -8206,30 +8191,18 @@ function Workspace({
   useQuickComposerLaunches(launchQuickSession);
   const launchQuickSessionRef = useRef(launchQuickSession);
   launchQuickSessionRef.current = launchQuickSession;
-  const taskBoardSessions = useMemo(
-    () =>
-      createTaskBoardSessionPort({
-        launch: (launch, id, onSettled) =>
-          launchQuickSessionRef.current(launch, id, undefined, onSettled, false),
-        sessions: () => sessionsRef.current,
-        loadSession: getSession,
-        stop: async (id) => {
-          await flushSync(() => stopSessionRef.current(id));
-          flushHarnessEvents();
-        },
-        wait: (ms) => new Promise((resolve) => window.setTimeout(resolve, ms)),
-      }),
-    [],
-  );
-  const isMainWindow = useMemo(() => getCurrentWindow().label === "main", []);
-  const taskBoard = useTaskBoardEngine(taskBoardSessions, isMainWindow, companionProjectPaths);
+  const { taskBoard, isMainWindow, railBadges } = useWorkspaceTaskBoard({
+    launch: (launch, id, onSettled) =>
+      launchQuickSessionRef.current(launch, id, undefined, onSettled, false),
+    sessions: () => sessionsRef.current,
+    loadSession: getSession,
+    stop: async (id) => {
+      await flushSync(() => stopSessionRef.current(id));
+      flushHarnessEvents();
+    },
+  });
   const taskBoardRef = useRef(taskBoard);
   taskBoardRef.current = taskBoard;
-  const boardAttention = useBoardAttention(taskBoard.ports.store);
-  const railBadges = useMemo(() => ({ board: boardAttention }), [boardAttention]);
-  useEffect(() => {
-    if (isMainWindow) syncBoardDockBadge(boardAttention);
-  }, [isMainWindow, boardAttention]);
   const submitSessionRef = useRef(submitSession);
   submitSessionRef.current = submitSession;
   const saveDraftRef = useRef(onSaveDraft);
@@ -9860,16 +9833,13 @@ function Workspace({
 
   const unseenFinishedRef = useRef(unseenFinishedIds);
   unseenFinishedRef.current = unseenFinishedIds;
-  const companionBoard = useMemo(() => createCompanionBoard(taskBoard), [taskBoard]);
-  useCompanionBridge({
-    board: companionBoard,
+  useWorkspaceCompanion({
+    taskBoard,
     sessions: () => sessionsRef.current,
     // History spans visited projects; phones need it so Open sessions is not
     // limited to tabs currently mounted in memory.
     sessionHistory: () => history,
     familiars: () => (familiarsEnabled ? listFamiliars() : []),
-    projects: companionProjectPaths,
-    projectLabel: companionProjectLabel,
     unseen: () => unseenFinishedRef.current,
     openFamiliar: async (familiarId) =>
       (await ensureFamiliarSession(familiarId, {
@@ -9883,33 +9853,14 @@ function Workspace({
       })) ?? undefined,
     openSession: async (sessionId) =>
       (await ensureOpenSession(sessionId)) ?? undefined,
-    submit: (sessionId, text, attachments) => {
-      const accepted = submitSessionRef.current(sessionId, text, attachments);
-      if (typeof accepted === "boolean") return accepted;
-      void accepted.catch(() => undefined);
-      return true;
-    },
+    submit: (sessionId, text, attachments) =>
+      submitSessionRef.current(sessionId, text, attachments),
     stop: (sessionId) => onStop(sessionId),
     setRuntimeMode: onRuntimeModeChange,
     approve: onApproval,
     answer: onQuestionReply,
     launch: (launch, id) => launchQuickSessionRef.current(launch, id),
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
-    vault: {
-      status: vaultStatus,
-      scan: scanVault,
-      read: readVaultNote,
-      save: saveVaultNote,
-    },
-    notes: {
-      list: () => loadNotes(true),
-      read: getNote,
-      create: async (input) => {
-        const note = await createNote(input);
-        window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
-        return note;
-      },
-    },
   });
 
   const onQuestionInteraction = useCallback(

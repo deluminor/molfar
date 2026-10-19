@@ -1110,6 +1110,24 @@
           "insertBeside, insertBesideActive, appendTab bodies; newTab + setSessions + appendTab became openSessionTab (createWorkspaceTab, onNew, onSelectProviderAccount, onSelectRemoteSession, inbox/note sessions, project switch); onSplit setSessions/setTabs = splitFocusedPane; onReorderTabs = reorderTabs; onReorderFiles = reorderPaneFiles; onMovePane = movePaneTo"
         ],
         "target": "src/app/workspace/flows/tabs/tab-layout.ts"
+      },
+      {
+        "names": [
+          "useState: familiarViewId, familiarOverviewOpen, familiarOverviewTab, familiarSettingsFor, familiarChangesRequest, familiarActivity, familiarShownSession, familiarOverviewDocument, familiarShownSessionFocused; shownFamiliarSessionId (refs → workspaceStore.getState())"
+        ],
+        "target": "src/app/workspace/store/familiars-slice.ts"
+      },
+      {
+        "names": [
+          "taskBoardSessions, isMainWindow, taskBoard, boardAttention, railBadges, syncBoardDockBadge effect"
+        ],
+        "target": "src/app/workspace/hooks/use-workspace-task-board.ts"
+      },
+      {
+        "names": [
+          "companionBoard, useCompanionBridge deps (projects, projectLabel, submit wrapper, vault, notes)"
+        ],
+        "target": "src/app/workspace/hooks/use-workspace-companion.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [

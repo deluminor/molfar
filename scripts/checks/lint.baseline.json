@@ -74,7 +74,7 @@
   "src/app/App.tsx": {
     "lint/complexity/useOptionalChain": 3,
     "lint/correctness/noUnsafeFinally": 2,
-    "lint/correctness/useExhaustiveDependencies": 107,
+    "lint/correctness/useExhaustiveDependencies": 106,
     "lint/style/noNonNullAssertion": 12,
     "lint/suspicious/noAssignInExpressions": 1,
     "lint/suspicious/useIterableCallbackReturn": 2
