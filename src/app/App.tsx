@@ -14,6 +14,20 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useStableValue } from "../shared/hooks/useStableValue";
+import { useDragResize } from "../shared/hooks/useDragResize";
+import { beginLayoutTransition } from "../shared/lib/layoutTransition";
+import {
+  APP_VIEW_LABELS,
+  appViewForTab,
+  appViewTabId,
+  isViewTab,
+  familiarForTab,
+  familiarTabId,
+  nextDisplayedTabAfterClose,
+  reconcileTitleTabOrder,
+  type AppView,
+} from "../features/workspace/model/appViewTabs";
+import { AppViewSurface } from "../features/workspace/ui/AppViewSurface";
 import { flushSync } from "react-dom";
 import { sessionConversationPage } from "../features/agent-app/model/sessionConversation";
 import { readFamiliarConversation } from "../features/familiars/model/familiarConversation";
@@ -31,6 +45,12 @@ import {
   familiarSessionCompletionResult,
   FamiliarSessionCompletionBatches,
 } from "../features/familiars/model/familiarSessionCompletion";
+import { noteStreamApplied } from "../features/sessions/model/streamingPerformance";
+import { beginTabSwitch, commitTabSwitch } from "./model/navigationPerformance";
+import {
+  SessionStateContext,
+  useWorkspaceSessionState,
+} from "../features/sessions/model/sessionStateStore";
 import {
   handleAgentApp,
   canAccessAgentAppProject,
@@ -105,11 +125,26 @@ import {
   type SessionDeleteChoice,
 } from "../features/sessions/ui/DeleteSessionDialog";
 import { ProviderSignInDialog } from "../features/sessions/ui/ProviderSignInDialog";
+import { ResourcePressureNotice } from "../features/notifications/ui/ResourcePressureNotice";
 import {
+  applyInsetLayout,
+  INSET_LAYOUT_DEFAULT,
+  loadInsetLayout,
   loadProjectRailOpen,
+  loadRightPanelOpen,
+  loadRightPanelTab,
+  loadRightPanelWidth,
   loadSessionSidebarOpen,
+  RIGHT_PANEL_WIDTH_DEFAULT,
+  RIGHT_PANEL_WIDTH_MAX,
+  RIGHT_PANEL_WIDTH_MIN,
   saveProjectRailOpen,
+  saveRightPanelOpen,
+  saveRightPanelTab,
+  saveRightPanelWidth,
   saveSessionSidebarOpen,
+  subscribeInsetLayout,
+  type RightPanelTab,
   type SidebarTabId,
 } from "../features/settings/model/appearance";
 import { resolveAppShortcut } from "../features/settings/model/appShortcuts";
@@ -132,6 +167,7 @@ import {
   useWorktreeFocus,
   worktreeFocus,
 } from "../features/source-control/model/worktreeFocus";
+import { useProjectDiffStats } from "../features/source-control/hooks/useProjectDiffStats";
 import {
   assertWorktreeFilesClosed,
   checkWorktreeRemoval,
@@ -163,8 +199,13 @@ import { HAS_NATIVE_GLASS, IS_MAC } from "../platform/tauri/platform";
 import { getUpdatePrompt } from "./model/updatePrompt";
 import { runUpdateFlow } from "./model/updater";
 import { MenuBar } from "./shell/MenuBar";
-import { Sidebar } from "./shell/Sidebar";
-import { TitleBar, type Tab as TitleTab } from "./shell/TitleBar";
+import { NewLayoutNotice } from "./shell/NewLayoutNotice";
+import { noteProjectStep, Sidebar } from "./shell/Sidebar";
+import {
+  FamiliarViewActions,
+  TitleBar,
+  type Tab as TitleTab,
+} from "./shell/TitleBar";
 import { AppDialog } from "./shell/AppDialog";
 import { UpdatePromptDialog } from "./shell/UpdatePromptDialog";
 import { UsageFooter } from "./shell/UsageFooter";
@@ -207,6 +248,7 @@ import {
   createProjectTerminal,
   findProjectTerminal,
   focusedDockTerminalId,
+  isVerticalDock,
   mapProjectTerminal,
   nextDockTerminalTitle,
   patchProjectTerminals,
@@ -265,6 +307,7 @@ import {
   applyHarnessEvent,
   applyHarnessEvents,
   bindHarnessSession,
+  transferHarnessSessionAccount,
   cancelHarnessTurn,
   canCompactHarnessContext,
   canRewindHarnessLastTurn,
@@ -426,6 +469,7 @@ import {
 import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
   providerAccountExists,
+  sameProviderAccountId,
   selectedProviderAccountId,
   supportsProviderAccounts,
   type ProviderAccountProvider,
@@ -547,6 +591,9 @@ import {
   discardDraftSessionRecord,
   flushSessionWrites,
   getSession,
+  readSession,
+  repairSession,
+  applySessionRepair,
   listLinkedSessions,
   listSessionsByProject,
   persistFingerprint,
@@ -586,6 +633,7 @@ import {
 import {
   createFamiliar,
   findFamiliar,
+  familiarWorksOn,
   isFamiliarSession,
   listFamiliars,
   loadOpenFamiliar,
@@ -644,6 +692,7 @@ import {
   resumeUsageLimitedSession,
   USAGE_LIMIT_RESUME_GRACE_MS,
   usageLimitResumeDue,
+  withUsageLimitAccount,
 } from "../features/sessions/model/usageLimit";
 import { ReminderNotices } from "../features/sessions/ui/ReminderNotices";
 import {
@@ -1051,6 +1100,10 @@ function titleTabsEqual(a: TitleTab[], b: TitleTab[]): boolean {
     return (
       other != null &&
       tab.id === other.id &&
+      tab.appView === other.appView &&
+      tab.familiar?.mascot === other.familiar?.mascot &&
+      tab.familiar?.color === other.familiar?.color &&
+      tab.familiar?.status === other.familiar?.status &&
       tab.project === other.project &&
       tab.title === other.title &&
       tab.sessionCount === other.sessionCount &&
@@ -1120,9 +1173,10 @@ function Workspace({
     const tab = newTab(session.id);
     return { session, tab };
   });
-  const [sessions, setSessions] = useState<Session[]>(
-    () => windowTransfer?.sessions ?? resumed?.sessions ?? [seed.session],
-  );
+  const { sessions, setSessions, sessionsRef, store: sessionState } =
+    useWorkspaceSessionState(
+      () => windowTransfer?.sessions ?? resumed?.sessions ?? [seed.session],
+    );
   const [sessionDeleteDialog, setSessionDeleteDialog] = useState<{
     title: string;
     unusedWorktree: string;
@@ -1214,15 +1268,14 @@ function Workspace({
   const onShowFamiliarActivity = useCallback(
     (sessionId: string, turnId: string, blocks: Block[]) => {
       const shown =
-        familiarOverviewOpenRef.current && familiarOverviewTabRef.current === "activity";
+        familiarOverviewOpenRef.current &&
+        familiarOverviewTabRef.current === "activity";
       setFamiliarShownSession(null);
       setFamiliarOverviewDocument(null);
       setFamiliarOverviewTab("activity");
       setFamiliarOverviewOpen(true);
       setFamiliarActivity((previous) =>
-        shown &&
-        previous?.sessionId === sessionId &&
-        previous.turnId === turnId
+        shown && previous?.sessionId === sessionId && previous.turnId === turnId
           ? null
           : { sessionId, turnId, blocks },
       );
@@ -1252,6 +1305,11 @@ function Workspace({
   const [composerFocusToken, setComposerFocusToken] = useState(0);
   /** Tab id -> project name, kept in sync with the rendered title tabs. */
   const tabProjectsRef = useRef(new Map<string, string>());
+  const displayedTabNavigation = useRef<{
+    tabs: readonly TitleTab[];
+    activeId: string;
+    select?: (id: string) => void;
+  }>({ tabs: [], activeId: "" });
   const projectOfTab = useCallback(
     (id: string) => tabProjectsRef.current.get(id),
     [],
@@ -1298,6 +1356,26 @@ function Workspace({
     setAutomationsViewOpen,
     railSurfaces,
   } = localSurfaces;
+  const [openAppViews, setOpenAppViews] = useState<AppView[]>([]);
+  // Familiars open as title tabs in the inset layout, by Familiar id.
+  const [openFamiliarTabs, setOpenFamiliarTabs] = useState<string[]>([]);
+  const [titleTabOrder, setTitleTabOrder] = useState(() =>
+    tabs.map((tab) => tab.id),
+  );
+  const activeAppView: AppView | undefined = searchViewOpen
+    ? "search"
+    : inboxViewOpen
+      ? "inbox"
+      : notesViewOpen
+        ? "notes"
+        : automationsSurfaceOpen
+          ? "automations"
+          : undefined;
+  const rememberAppView = useCallback((view: AppView) => {
+    setOpenAppViews((current) =>
+      current.includes(view) ? current : [...current, view],
+    );
+  }, []);
   const [inspectedWorkerId, setInspectedWorkerId] = useState<string | null>(
     null,
   );
@@ -1324,6 +1402,85 @@ function Workspace({
   );
   const [collapsedProjectRailMode, setCollapsedProjectRailMode] =
     useState<CollapsedProjectRailMode>(loadCollapsedProjectRailMode);
+  const insetLayout = useSyncExternalStore(
+    subscribeInsetLayout,
+    loadInsetLayout,
+    () => INSET_LAYOUT_DEFAULT,
+  );
+  const [insetRailHost, setInsetRailHost] = useState<HTMLDivElement | null>(
+    null,
+  );
+  // Where Settings puts its breadcrumb and actions in the inset title bar.
+  const [settingsHeaderHost, setSettingsHeaderHost] =
+    useState<HTMLDivElement | null>(null);
+  const insetLayoutRef = useRef(insetLayout);
+  insetLayoutRef.current = insetLayout;
+  // The inset layout's project tools beside the card.
+  const [rightPanelHost, setRightPanelHost] = useState<HTMLDivElement | null>(
+    null,
+  );
+  const [rightPanelOpen, setRightPanelOpenState] = useState(loadRightPanelOpen);
+  const [rightPanelTab, setRightPanelTabState] =
+    useState<RightPanelTab>(loadRightPanelTab);
+  // A closed panel keeps its contents until it has slid out.
+  const [rightPanelClosing, setRightPanelClosing] = useState(false);
+  const rightPanelOpenRef = useRef(rightPanelOpen);
+  rightPanelOpenRef.current = rightPanelOpen;
+  const showRightPanel = useCallback((tab: RightPanelTab) => {
+    setRightPanelTabState(tab);
+    saveRightPanelTab(tab);
+    setRightPanelOpenState(true);
+    setRightPanelClosing(false);
+    saveRightPanelOpen(true);
+  }, []);
+  const onToggleRightPanel = useCallback(() => {
+    const next = !rightPanelOpenRef.current;
+    rightPanelOpenRef.current = next;
+    saveRightPanelOpen(next);
+    setRightPanelOpenState(next);
+    setRightPanelClosing(!next);
+  }, []);
+  // Its handle sits on the left edge, so dragging left widens it.
+  const rightPanelResize = useDragResize({
+    direction: "left",
+    min: RIGHT_PANEL_WIDTH_MIN,
+    max: () =>
+      Math.min(RIGHT_PANEL_WIDTH_MAX, Math.floor(window.innerWidth * 0.5)),
+    defaultWidth: RIGHT_PANEL_WIDTH_DEFAULT,
+    initial: loadRightPanelWidth(),
+    onCommit: saveRightPanelWidth,
+  });
+  const rightPanelRef = useRef<HTMLDivElement | null>(null);
+  const setRightPanelPane = rightPanelResize.setPaneRef;
+  const setRightPanelRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      rightPanelRef.current = el;
+      setRightPanelPane(el);
+    },
+    [setRightPanelPane],
+  );
+  const rightPanelAnimation = useRef<Animation | null>(null);
+  const endRightPanelTransition = useRef<(() => void) | null>(null);
+  const rightPanelWasOpen = useRef(rightPanelOpen);
+  useLayoutEffect(() => {
+    applyInsetLayout(insetLayout);
+  }, [insetLayout]);
+  // The title bar's navigation spans the open rail, so its tabs line up with
+  // the card. Written straight to the shell to follow a rail drag per frame.
+  useLayoutEffect(() => {
+    const host = insetRailHost;
+    const shell = host?.closest<HTMLElement>(".inset-shell");
+    if (!host || !shell) return;
+    const sync = () =>
+      shell.style.setProperty("--inset-rail-width", `${host.offsetWidth}px`);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(host);
+    return () => {
+      observer.disconnect();
+      shell.style.removeProperty("--inset-rail-width");
+    };
+  }, [insetRailHost]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsReturnViewRef = useRef<SettingsReturnView>({
     search: false,
@@ -1340,6 +1497,26 @@ function Workspace({
     () => true,
   );
   const familiarsSnap = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  // A deleted Familiar, or Familiars turned off, drop their tabs.
+  const shownFamiliarTabs = useMemo(
+    () =>
+      insetLayout && familiarsEnabled
+        ? openFamiliarTabs.filter((familiarId) => findFamiliar(familiarId))
+        : [],
+    // The roster is read through its snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [insetLayout, familiarsEnabled, openFamiliarTabs, familiarsSnap],
+  );
+  useLayoutEffect(() => {
+    if (!insetLayout) return;
+    setTitleTabOrder((order) =>
+      reconcileTitleTabOrder(order, [
+        ...tabs.map((tab) => tab.id),
+        ...openAppViews.map(appViewTabId),
+        ...shownFamiliarTabs.map(familiarTabId),
+      ]),
+    );
+  }, [insetLayout, tabs, openAppViews, shownFamiliarTabs]);
   /** A Familiar hides the terminal, so reaching for one leaves it. */
   const leaveCoveringFamiliar = useCallback(() => {
     if (familiarViewIdRef.current) closeFamiliarView();
@@ -1416,8 +1593,6 @@ function Workspace({
   /** Project whose listing failed, so the error cannot leak to another one. */
   const [historyErrorCwd, setHistoryErrorCwd] = useState<string | null>(null);
 
-  const sessionsRef = useRef(sessions);
-  sessionsRef.current = sessions;
   const linkedSessionUpdatesRef = useRef<
     ReadonlyMap<string, LinkedSessionUpdate>
   >(new Map());
@@ -1436,6 +1611,7 @@ function Workspace({
   projectTerminalFocusedRef.current = projectTerminalFocused;
   const activeTabIdRef = useRef(activeTabId);
   activeTabIdRef.current = activeTabId;
+  useLayoutEffect(() => commitTabSwitch(activeTabId), [activeTabId]);
 
   useLayoutEffect(() => {
     const migration = detachFamiliarTabs(
@@ -1660,7 +1836,7 @@ function Workspace({
   const activeSessionPrefetch = useRef<Promise<Session | null> | null>(null);
   const [transcriptPool] = useState(() => new TranscriptPool());
   // Visible output advances per frame; hidden streams keep their own cadence.
-  const [harnessEvents] = useState(
+  const [harnessEvents] = useState<HarnessEventQueue>(
     () =>
       new HarnessEventQueue(
         (sessionId) => {
@@ -1685,13 +1861,22 @@ function Workspace({
         },
         (batches) => {
           const previous = sessionsRef.current;
-          const next = updateSessionState(
-            sessionsRef,
-            setSessions,
+          const textOnly = [...batches.values()].every((events) =>
+            events.every(
+              (event) => event.type === "message.delta" || event.type === "reasoning.delta",
+            ),
+          );
+          const next = sessionState.update(
             (current) => {
               const updated = current.map((session) => {
                 const events = batches.get(session.id);
-                return events ? applyHarnessEvents(session, events) : session;
+                if (!events) return session;
+                const updated = applyHarnessEvents(session, events);
+                noteStreamApplied(
+                  session.blocks, updated.blocks, events,
+                  harnessEvents.isForeground(session.id),
+                );
+                return updated;
               });
               return updated.some(
                 (session, index) => session !== current[index],
@@ -1699,8 +1884,9 @@ function Workspace({
                 ? updated
                 : current;
             },
+            textOnly,
           );
-          if (next !== previous) syncDockBadge(next);
+          if (!textOnly && next !== previous) syncDockBadge(next);
         },
       ),
   );
@@ -1880,7 +2066,11 @@ function Workspace({
     });
   }, []);
 
-  const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+  // A stale id falls back within the project, never to another project's tab.
+  const activeTab =
+    tabs.find((t) => t.id === activeTabId) ??
+    filterTabsForProject(tabs, sessions, projectCwd)[0] ??
+    tabs[0];
   const active =
     sessions.find((session) => session.id === activeTab?.focusedId) ??
     sessions.find(
@@ -1890,6 +2080,13 @@ function Workspace({
     ? sessions.find((session) => session.id === familiarViewId)
     : undefined;
   const familiarCovers = !!familiarViewId;
+  // The open Familiar's title tab, in the inset layout.
+  const familiarViewTabId = useMemo(() => {
+    const familiarId = familiarViewId ? familiarForSession(familiarViewId)?.id : undefined;
+    return familiarId ? familiarTabId(familiarId) : undefined;
+    // The roster is read through its snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familiarViewId, familiarsSnap]);
   const activeTabSessionIds = activeTab ? leafIds(activeTab.layout) : [];
   const activeLinkedWorkItemPanel = activeTab
     ? (linkedWorkItemPanels.get(activeTab.focusedId) ??
@@ -1969,6 +2166,10 @@ function Workspace({
     activeFile?.projectCwd ?? activeFile?.cwd ?? active?.cwd ?? projectCwd;
   const sidebarCwdRef = useRef(sidebarCwd);
   sidebarCwdRef.current = sidebarCwd;
+  // Each inset space is one project, so its Inbox, Notes and Automations (and
+  // the Inbox dot) show that project's items; the classic layout shows all.
+  const appViewScope =
+    insetLayout && looksLikeProject(sidebarCwd) ? sidebarCwd : undefined;
   const [sidebarTabSelection, setSidebarTabSelection] = useState<{
     project: string;
     tab: SidebarTabId;
@@ -1980,14 +2181,23 @@ function Workspace({
     sidebarTabSelection.project === pathKey(sidebarCwd)
       ? sidebarTabSelection.tab
       : loadProjectSidebarTab(sidebarCwd);
-  const setSidebarTab = useCallback((tab: SidebarTabId, project?: string) => {
-    const cwd = project ?? sidebarCwdRef.current;
-    saveProjectSidebarTab(cwd, tab);
-    setSidebarTabSelection({
-      project: pathKey(cwd),
-      tab: tab === "inbox" ? "sessions" : tab,
-    });
-  }, []);
+  const setSidebarTab = useCallback(
+    (tab: SidebarTabId, project?: string) => {
+      // Inset: Explorer and Changes open in the right panel; the sidebar stays
+      // on the sessions.
+      if (insetLayoutRef.current && (tab === "files" || tab === "changes")) {
+        showRightPanel(tab);
+        return;
+      }
+      const cwd = project ?? sidebarCwdRef.current;
+      saveProjectSidebarTab(cwd, tab);
+      setSidebarTabSelection({
+        project: pathKey(cwd),
+        tab: tab === "inbox" ? "sessions" : tab,
+      });
+    },
+    [showRightPanel],
+  );
   const sidebarCwdKey =
     sidebarCwd && sidebarCwd !== "~" ? normalizeProjectPath(sidebarCwd) : null;
   const historyFailed =
@@ -2074,36 +2284,40 @@ function Workspace({
     void refreshHarnessCatalogs([activeHarness]);
   }, [activeHarness]);
 
+  // The footer's usage follows what is in view: under the inset layout a
+  // Familiar's tab keeps the footer, which then reads the Familiar's model.
+  const usageSource =
+    insetLayout && familiarViewSession ? familiarViewSession : active;
   const usageProviders = useMemo(() => {
     if (
-      active?.harness === "claude" ||
-      active?.harness === "codex" ||
-      active?.harness === "opencode" ||
-      active?.harness === "devin"
+      usageSource?.harness === "claude" ||
+      usageSource?.harness === "codex" ||
+      usageSource?.harness === "opencode" ||
+      usageSource?.harness === "devin"
     ) {
-      return [active.harness];
+      return [usageSource.harness];
     }
     return [];
-  }, [active?.harness]);
+  }, [usageSource?.harness]);
   const usageSession = useMemo(() => {
-    if (!active) return undefined;
+    if (!usageSource) return undefined;
     return {
-      id: active.id,
-      harness: active.harness,
-      model: active.model,
-      authRequired: latestTurnNeedsHarnessLogin(active.blocks),
+      id: usageSource.id,
+      harness: usageSource.harness,
+      model: usageSource.model,
+      authRequired: latestTurnNeedsHarnessLogin(usageSource.blocks),
       providerAccountId:
-        active.providerAccountId ??
-        (active.blocks.some((block) => block.role === "user")
+        usageSource.providerAccountId ??
+        (usageSource.blocks.some((block) => block.role === "user")
           ? DEFAULT_PROVIDER_ACCOUNT_ID
           : undefined),
     };
   }, [
-    active?.id,
-    active?.harness,
-    active?.model,
-    active?.blocks,
-    active?.providerAccountId,
+    usageSource?.id,
+    usageSource?.harness,
+    usageSource?.model,
+    usageSource?.blocks,
+    usageSource?.providerAccountId,
   ]);
   const activeProviderSignInRequest = useMemo(() => {
     if (
@@ -2262,6 +2476,11 @@ function Workspace({
   );
   const [reminderNoticesHeight, setReminderNoticesHeight] = useState(0);
   const [harnessUpdateHeight, setHarnessUpdateHeight] = useState(0);
+  const [newLayoutNoticeHeight, setNewLayoutNoticeHeight] = useState(0);
+  // The footer's slot for the resource pressure chip. Monitoring continues
+  // while the footer is hidden.
+  const [pressureChipHost, setPressureChipHost] =
+    useState<HTMLSpanElement | null>(null);
 
   useEffect(() => {
     syncDockBadge(sessions);
@@ -2458,83 +2677,94 @@ function Workspace({
   }, []);
 
   useEffect(() => {
-    const liveIds = new Set(sessions.map((session) => session.id));
-    const visibleIds = openSessionIds(tabsRef.current);
-    for (const session of sessions) {
-      if (
-        removingSessionIds.current.has(session.id) ||
-        switchingWorktrees.current.has(session.id)
-      )
-        continue;
-      const previouslyObserved = observedSessions.current.get(session.id);
-      if (previouslyObserved === session) continue;
-      observedSessions.current.set(session.id, session);
-      const queueChanged =
-        previouslyObserved?.queuedMessages !== session.queuedMessages ||
-        previouslyObserved?.queueStatus !== session.queueStatus;
-      const parked = !visibleIds.has(session.id);
-      const newlyBound =
-        !!session.providerSessionId &&
-        lastBoundProvider.current.get(session.id) !== session.providerSessionId;
-      const lastUserId = lastUserBlockId(session);
-      const newUserTurn =
-        !!lastUserId &&
-        lastPersistedUserBlock.current.get(session.id) !== lastUserId;
-      if (newlyBound && session.providerSessionId) {
-        lastBoundProvider.current.set(session.id, session.providerSessionId);
+    let timer: number | undefined;
+    const observe = () => {
+      const sessions = sessionState.snapshot();
+      const liveIds = new Set(sessions.map((session) => session.id));
+      const visibleIds = openSessionIds(tabsRef.current);
+      for (const session of sessions) {
+        if (
+          removingSessionIds.current.has(session.id) ||
+          switchingWorktrees.current.has(session.id)
+        )
+          continue;
+        const previouslyObserved = observedSessions.current.get(session.id);
+        if (previouslyObserved === session) continue;
+        observedSessions.current.set(session.id, session);
+        const queueChanged =
+          previouslyObserved?.queuedMessages !== session.queuedMessages ||
+          previouslyObserved?.queueStatus !== session.queueStatus;
+        const parked = !visibleIds.has(session.id);
+        const newlyBound =
+          !!session.providerSessionId &&
+          lastBoundProvider.current.get(session.id) !==
+            session.providerSessionId;
+        const lastUserId = lastUserBlockId(session);
+        const newUserTurn =
+          !!lastUserId &&
+          lastPersistedUserBlock.current.get(session.id) !== lastUserId;
+        if (newlyBound && session.providerSessionId) {
+          lastBoundProvider.current.set(session.id, session.providerSessionId);
+        }
+        if (newUserTurn && lastUserId) {
+          lastPersistedUserBlock.current.set(session.id, lastUserId);
+        }
+        if (
+          (newlyBound || newUserTurn || queueChanged) &&
+          shouldPersistSession(session)
+        ) {
+          persistSession(session);
+        }
+        if (
+          shouldPersistSession(session) &&
+          (!session.busy ||
+            parked ||
+            newlyBound ||
+            newUserTurn ||
+            !lastPersisted.current.has(session.id))
+        ) {
+          pendingPersist.current.set(session.id, session);
+        }
       }
-      if (newUserTurn && lastUserId) {
-        lastPersistedUserBlock.current.set(session.id, lastUserId);
+      for (const sessionId of observedSessions.current.keys()) {
+        if (liveIds.has(sessionId)) continue;
+        observedSessions.current.delete(sessionId);
+        pendingPersist.current.delete(sessionId);
       }
-      if (
-        (newlyBound || newUserTurn || queueChanged) &&
-        shouldPersistSession(session)
-      ) {
-        persistSession(session);
-      }
-      if (
-        shouldPersistSession(session) &&
-        (!session.busy ||
-          parked ||
-          newlyBound ||
-          newUserTurn ||
-          !lastPersisted.current.has(session.id))
-      ) {
-        pendingPersist.current.set(session.id, session);
-      }
-    }
-    for (const sessionId of observedSessions.current.keys()) {
-      if (liveIds.has(sessionId)) continue;
-      observedSessions.current.delete(sessionId);
-      pendingPersist.current.delete(sessionId);
-    }
-    if (pendingPersist.current.size === 0) return;
+      if (pendingPersist.current.size === 0) return;
 
-    const timer = window.setTimeout(() => {
-      const dirty = [...pendingPersist.current.values()];
-      pendingPersist.current.clear();
-      void Promise.all(
-        dirty.map(async (session) => {
-          if (
-            removingSessionIds.current.has(session.id) ||
-            switchingWorktrees.current.has(session.id)
-          )
-            return;
-          const fingerprint = persistFingerprint(session);
-          if (lastPersisted.current.get(session.id) === fingerprint) return;
-          const summary = await upsertSession(session).catch(() => null);
-          if (!summary) return;
-          lastPersisted.current.set(session.id, fingerprint);
-          if (summary.cwd === sidebarCwdRef.current) {
-            setHistory((current) =>
-              mergeProjectHistorySummary(current, summary),
-            );
-          }
-        }),
-      );
-    }, 650);
-    return () => window.clearTimeout(timer);
-  }, [persistSession, sessions]);
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const dirty = [...pendingPersist.current.values()];
+        pendingPersist.current.clear();
+        void Promise.all(
+          dirty.map(async (session) => {
+            if (
+              removingSessionIds.current.has(session.id) ||
+              switchingWorktrees.current.has(session.id)
+            )
+              return;
+            const fingerprint = persistFingerprint(session);
+            if (lastPersisted.current.get(session.id) === fingerprint) return;
+            const summary = await upsertSession(session).catch(() => null);
+            if (!summary) return;
+            lastPersisted.current.set(session.id, fingerprint);
+            if (summary.cwd === sidebarCwdRef.current) {
+              setHistory((current) =>
+                mergeProjectHistorySummary(current, summary),
+              );
+            }
+          }),
+        );
+      }, 650);
+    };
+    observe();
+    const unsubscribe = sessionState.observe(observe);
+    return () => {
+      unsubscribe();
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [persistSession, sessionState]);
 
   useEffect(() => {
     const refs = inFlightRefs(sessions, tabs);
@@ -2641,6 +2871,7 @@ function Workspace({
       paneId?: string,
       reason: "session" | "workspace" = "session",
     ) => {
+      if (id !== activeTabIdRef.current) beginTabSwitch(id);
       closeFamiliarView();
       const tab = tabsRef.current.find((entry) => entry.id === id);
       const nextFocusedId =
@@ -2734,12 +2965,21 @@ function Workspace({
     [insertBesideActive],
   );
 
+  const usageLimitAccountChangeRef = useRef<
+    ((sessionId: string, accountId: string) => Promise<void>) | null
+  >(null);
   const onSelectProviderAccount = useCallback(
     (provider: ProviderAccountProvider, accountId: string) => {
       const current = sessionsRef.current.find(
         (session) => session.id === active?.id,
       );
       if (!current || current.harness !== provider) return;
+
+      // A limited session continues in place under the selected account.
+      if (current.usageLimit && !current.busy) {
+        void usageLimitAccountChangeRef.current?.(current.id, accountId);
+        return;
+      }
 
       if (current.blocks.length === 0 && !current.busy) {
         if (current.providerAccountId === accountId) return;
@@ -3358,10 +3598,46 @@ function Workspace({
           for (const file of closingFiles) updated.delete(file.id);
           return updated;
         });
-        setTabs(next);
-        if (id === activeTabIdRef.current && nextActiveTabId) {
-          activateTab(nextActiveTabId);
+        if (id !== activeTabIdRef.current) {
+          setTabs(next);
+          void refreshHistory(sidebarCwd);
+          return;
         }
+        const navigation = displayedTabNavigation.current;
+        // A view shown over this tab stays up; only the workspace beneath it
+        // moves on.
+        if (
+          insetLayoutRef.current &&
+          navigation.activeId !== id &&
+          isViewTab(navigation.activeId)
+        ) {
+          setTabs(next);
+          if (nextActiveTabId) setActiveTabIdState(nextActiveTabId);
+          void refreshHistory(sidebarCwd);
+          return;
+        }
+        const nextId = nextDisplayedTabAfterClose(
+          navigation.tabs,
+          navigation.activeId,
+          id,
+        );
+        const close = () => {
+          setTabs(next);
+          // View tabs still need a valid workspace to return to underneath;
+          // a Familiar's opens over it, so it moves there without revealing it.
+          if (nextActiveTabId) {
+            if (nextId && familiarForTab(nextId)) {
+              setActiveTabIdState(nextActiveTabId);
+            } else if (!nextId || appViewForTab(nextId)) {
+              activateTab(nextActiveTabId);
+            }
+          }
+          if (nextId) navigation.select?.(nextId);
+        };
+        // A view tab opens in a transition; closing alongside it keeps the
+        // workspace beneath from painting between the two.
+        if (nextId && isViewTab(nextId)) startTransition(close);
+        else close();
         void refreshHistory(sidebarCwd);
       };
 
@@ -3536,6 +3812,13 @@ function Workspace({
               ),
             );
             setComposerFocused(true);
+            const navigation = displayedTabNavigation.current;
+            const nextId = nextDisplayedTabAfterClose(
+              navigation.tabs,
+              navigation.activeId,
+              tab.id,
+            );
+            if (nextId) navigation.select?.(nextId);
             return;
           }
           nextLayout = withoutPane;
@@ -3651,9 +3934,20 @@ function Workspace({
   }, []);
 
   const onClearTabSession = useCallback(
-    (id: string) => {
+    (id: string, opts?: { confirmed?: boolean; selectNeighbor?: boolean }) => {
       const tab = tabs.find((entry) => entry.id === id);
-      if (!tab || isBlankWorkspaceTab(tab, sessionsRef.current)) return;
+      if (!tab) return;
+      const navigation = displayedTabNavigation.current;
+      const neighborId = opts?.selectNeighbor
+        ? nextDisplayedTabAfterClose(navigation.tabs, navigation.activeId, id)
+        : undefined;
+      const selectNeighbor = () => {
+        if (neighborId) navigation.select?.(neighborId);
+      };
+      if (isBlankWorkspaceTab(tab, sessionsRef.current)) {
+        selectNeighbor();
+        return;
+      }
 
       const closingFiles = [
         ...tab.editorPanes.flatMap((pane) => pane.files),
@@ -3671,7 +3965,7 @@ function Workspace({
       );
       if (!oldSession) return;
 
-      const finishClear = () => {
+      const clear = () => {
         persistSession(oldSession);
         for (const shellId of leafIds(tab.layout)) {
           rememberRemoteSession(shellId);
@@ -3729,9 +4023,17 @@ function Workspace({
         );
         setComposerFocused(true);
         void refreshHistory(sidebarCwd);
+        selectNeighbor();
+      };
+      // A view tab opens in a transition; clearing alongside it keeps the
+      // blank tab from painting before the view.
+      const finishClear = () => {
+        if (neighborId && isViewTab(neighborId)) startTransition(clear);
+        else clear();
       };
 
-      if (unsaved.length === 0) {
+      // The caller already confirmed unsaved files.
+      if (unsaved.length === 0 || opts?.confirmed) {
         finishClear();
         return;
       }
@@ -3763,23 +4065,97 @@ function Workspace({
     [onClearTabSession, onCloseTab, tabCloseScope],
   );
 
+  const seedSession = useCallback((cwd: string) => {
+    const seed = sessionsRef.current[0];
+    return newSession(
+      seed?.harness ?? "claude",
+      cwd,
+      seed?.model,
+      seed?.runtimeMode,
+      seed?.modelSettings,
+    );
+  }, []);
+
+  // The workspace always keeps one tab, so close every other tab and reset
+  // the active one to a blank session. `scope` limits this to those tabs,
+  // such as the ones the title bar shows. Every confirmation runs before
+  // any tab changes, so a cancelled prompt leaves all tabs.
+  const onCloseEveryTab = useCallback(
+    (scope?: readonly string[]) => {
+      const inScope = scope ? new Set(scope) : null;
+      const tab = tabsRef.current.find(
+        (entry) => entry.id === activeTabIdRef.current,
+      );
+      if (!tab || (inScope && !inScope.has(tab.id))) return;
+
+      const otherIds = tabsRef.current
+        .filter((entry) => entry.id !== tab.id)
+        .filter((entry) => !inScope || inScope.has(entry.id))
+        .map((entry) => entry.id);
+      const keptFiles = [
+        ...tab.editorPanes.flatMap((pane) => pane.files),
+        ...(tab.terminalPanes ?? []).flatMap((pane) => pane.files),
+      ];
+      const closingFiles = [
+        ...tabsRef.current
+          .filter((entry) => otherIds.includes(entry.id))
+          .flatMap((entry) => [
+            ...entry.editorPanes.flatMap((pane) => pane.files),
+            ...(entry.terminalPanes ?? []).flatMap((pane) => pane.files),
+          ]),
+        ...keptFiles,
+      ];
+      const unsaved = closingFiles.filter(
+        (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
+      );
+      const terminals = closingFiles.filter((file) => file.terminal);
+
+      void (async () => {
+        if (unsaved.length > 0) {
+          const ok = await confirmDiscardUnsaved(
+            "Close all tabs with unsaved files?",
+          );
+          if (!ok) return;
+        }
+        if (terminals.length > 0) {
+          const ok = await confirmCloseTerminals(terminals);
+          if (!ok) return;
+        }
+        if (otherIds.length > 0) {
+          onCloseTabs(otherIds, tab.id, { confirmed: true });
+        }
+        const hasSession = leafIds(tab.layout).some((paneId) =>
+          sessionsRef.current.some((session) => session.id === paneId),
+        );
+        if (hasSession) {
+          onClearTabSession(tab.id, { confirmed: true });
+          return;
+        }
+        // The tab held no session: seed one so the workspace stays usable.
+        const session = seedSession(keptFiles[0]?.cwd || projectCwd);
+        setSessions((prev) => [...prev, session]);
+        setDirtyFiles((prev) => {
+          const updated = new Set(prev);
+          for (const file of keptFiles) updated.delete(file.id);
+          return updated;
+        });
+        setTabs((prev) =>
+          prev.map((entry) =>
+            entry.id === tab.id ? resetTabToSession(entry, session.id) : entry,
+          ),
+        );
+        setComposerFocused(true);
+      })();
+    },
+    [onCloseTabs, onClearTabSession, projectCwd, seedSession],
+  );
+
   const onCloseAllTabs = useCallback(() => {
     closeFamiliarView();
     const tab = tabsRef.current.find(
       (entry) => entry.id === activeTabIdRef.current,
     );
     if (!tab) return;
-
-    const seedSession = (cwd: string) => {
-      const seed = sessionsRef.current[0];
-      return newSession(
-        seed?.harness ?? "claude",
-        cwd,
-        seed?.model,
-        seed?.runtimeMode,
-        seed?.modelSettings,
-      );
-    };
 
     // Stage one: files open in the active tab's editor panes close first.
     // Only when none are open does the command close every workspace tab.
@@ -3841,62 +4217,9 @@ function Workspace({
       return;
     }
 
-    // Stage two: the workspace always keeps one tab, so close every other
-    // tab and reset the active one to a blank session. Every confirmation
-    // runs before any tab changes, so a cancelled prompt leaves all tabs.
-    const otherIds = tabsRef.current
-      .filter((entry) => entry.id !== tab.id)
-      .map((entry) => entry.id);
-    const terminalFiles = (tab.terminalPanes ?? []).flatMap(
-      (pane) => pane.files,
-    );
-    const closingFiles = [
-      ...tabsRef.current
-        .filter((entry) => otherIds.includes(entry.id))
-        .flatMap((entry) => [
-          ...entry.editorPanes.flatMap((pane) => pane.files),
-          ...(entry.terminalPanes ?? []).flatMap((pane) => pane.files),
-        ]),
-      ...terminalFiles,
-    ];
-    const unsaved = closingFiles.filter(
-      (file) => isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-    );
-    const terminals = closingFiles.filter((file) => file.terminal);
-
-    void (async () => {
-      if (unsaved.length > 0) {
-        const ok = await confirmDiscardUnsaved(
-          "Close all tabs with unsaved files?",
-        );
-        if (!ok) return;
-      }
-      if (terminals.length > 0) {
-        const ok = await confirmCloseTerminals(terminals);
-        if (!ok) return;
-      }
-      if (otherIds.length > 0) {
-        onCloseTabs(otherIds, tab.id, { confirmed: true });
-      }
-      const hasSession = leafIds(tab.layout).some((paneId) =>
-        sessionsRef.current.some((session) => session.id === paneId),
-      );
-      if (hasSession) {
-        // No editor files remain, so this commits without a prompt.
-        onClearTabSession(tab.id);
-        return;
-      }
-      // The tab held no session: seed one so the workspace stays usable.
-      const session = seedSession(terminalFiles[0]?.cwd || projectCwd);
-      setSessions((prev) => [...prev, session]);
-      setTabs((prev) =>
-        prev.map((entry) =>
-          entry.id === tab.id ? resetTabToSession(entry, session.id) : entry,
-        ),
-      );
-      setComposerFocused(true);
-    })();
-  }, [onCloseTab, onCloseTabs, onClearTabSession, projectCwd, tabCloseScope]);
+    // Stage two: no files are open, so close every workspace tab.
+    onCloseEveryTab();
+  }, [onCloseEveryTab, onCloseTab, projectCwd, seedSession, tabCloseScope]);
 
   const onClosePane = useCallback(
     (sessionId?: string) => {
@@ -3929,8 +4252,11 @@ function Workspace({
           scope: tabCloseScope,
           worktreeOf: tabWorktreeOf,
         });
-        if (closePlan.action === "keep") onClearTabSession(activeTab.id);
-        else onCloseTab(activeTab.id);
+        if (closePlan.action === "keep") {
+          onClearTabSession(activeTab.id, { selectNeighbor: true });
+        } else {
+          onCloseTab(activeTab.id);
+        }
         return;
       }
       persistSession(sessionsRef.current.find((s) => s.id === closingId));
@@ -3992,7 +4318,9 @@ function Workspace({
 
   const onCloseTitleTab = useCallback(
     (id: string) => {
-      closeFamiliarView();
+      // The inset layout shows a Familiar as its own tab, which closing another
+      // tab leaves alone.
+      if (!insetLayoutRef.current) closeFamiliarView();
       const closePlan = planWorkspaceTabClose({
         tabs: tabsRef.current,
         sessions: sessionsRef.current,
@@ -4154,18 +4482,19 @@ function Workspace({
         setComposerFocused(true);
         return;
       }
-      setTabs((prev) =>
-        prev.map((t) =>
-          t.id === activeTabId
-            ? { ...t, focusedId: paneId, diffFocused: false }
-            : t,
-        ),
-      );
+      setTabs((prev) => {
+        const selectedId = activeTabIdRef.current;
+        const selected = prev.find((tab) => tab.id === selectedId);
+        if (!selected || (selected.focusedId === paneId && !selected.diffFocused)) return prev;
+        return prev.map((tab) => tab.id === selectedId
+          ? { ...tab, focusedId: paneId, diffFocused: false }
+          : tab);
+      });
       setComposerFocused(
         sessionsRef.current.some((session) => session.id === paneId),
       );
     },
-    [activeTabId, inboxAskPortal, closeFamiliarView],
+    [inboxAskPortal, closeFamiliarView],
   );
 
   const onOpenDiff = useCallback(
@@ -4465,7 +4794,7 @@ function Workspace({
       if (pending) return pending;
 
       const epoch = sessionLoadEpochs.current.get(sessionId) ?? 0;
-      const loading = getSession(sessionId)
+      const loading = readSession(sessionId)
         .then((loaded) => {
           if (
             !loaded ||
@@ -4526,6 +4855,28 @@ function Workspace({
         const next = [...sessionsRef.current, restored];
         sessionsRef.current = next;
         setSessions(next);
+        // Provider log reads (old shell labels, subagent trails, interjections)
+        // must not sit between the hotkey and the saved conversation. Apply
+        // them later only if this transcript has not advanced in the meantime.
+        void repairSession(restored, { persist: false })
+          .then((repaired) => {
+            if (repaired.blocks === restored.blocks) return;
+            updateSessionState(sessionsRef, setSessions, (current) => {
+              let changed = false;
+              const next = current.map((session) => {
+                if (session.id !== restored.id) return session;
+                const repairedSession = applySessionRepair(
+                  session,
+                  restored,
+                  repaired,
+                );
+                changed ||= repairedSession !== session;
+                return repairedSession;
+              });
+              return changed ? next : current;
+            });
+          })
+          .catch(() => undefined);
       }
       return restored;
     },
@@ -4772,10 +5123,6 @@ function Workspace({
       setFamiliarActivity(null);
       workspaceNavigation.cancel();
       const request = ++familiarViewRequest.current;
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
       lastFamiliarIdRef.current = familiarId;
       const session = await ensureFamiliarSession(familiarId, {
         home: homeDir,
@@ -4796,7 +5143,18 @@ function Workspace({
       }
       familiarViewIdRef.current = session.id;
       saveOpenFamiliar(familiarId);
+      // App views close with the Familiar's arrival, not before the await, so
+      // the workspace tab never shows between them.
+      setSearchViewOpen(false);
+      setInboxViewOpen(false);
+      setNotesViewOpen(false);
+      setAutomationsViewOpen(false);
       setFamiliarViewId(session.id);
+      if (insetLayoutRef.current) {
+        setOpenFamiliarTabs((current) =>
+          current.includes(familiarId) ? current : [...current, familiarId],
+        );
+      }
       setProjectTerminalFocused(false);
       setComposerFocused(true);
       setComposerFocusToken((token) => token + 1);
@@ -4831,8 +5189,8 @@ function Workspace({
   }, [closeFamiliarView, familiarsEnabled, onOpenFamiliar]);
 
   /** A new Familiar opens straight away, ready to be told what it works on. */
-  const onCreateFamiliar = useCallback(() => {
-    const familiarId = createFamiliar().id;
+  const onCreateFamiliar = useCallback((projects?: readonly string[]) => {
+    const familiarId = createFamiliar(projects).id;
     setFamiliarSettingsFor(familiarId);
     void onOpenFamiliar(familiarId);
   }, [onOpenFamiliar]);
@@ -4928,6 +5286,11 @@ function Workspace({
         session = await ensureOpenSession(parentId);
         if (!session) return;
       }
+      setSearchViewOpen(false);
+      setSettingsOpen(false);
+      setInboxViewOpen(false);
+      setNotesViewOpen(false);
+      setAutomationsViewOpen(false);
       if (looksLikeProject(session.cwd))
         setProjectCwd(normalizeProjectPath(session.cwd));
       const linkedUpdate = linkedSessionUpdatesRef.current.get(session.id);
@@ -8086,7 +8449,7 @@ function Workspace({
           if (operatorCommand.matched || handAgent) {
             const cli = `${shellPath(await invoke<string>("app_cli_path"))} app`;
             appContext.push(
-              `<molfar_app>\n${handAgent ? "App access is always enabled in this thread." : "The user's Operator command enables app access in this thread, including later turns without the command."} You can start session tabs or split session panes right or down, list and create project worktrees, choose a new session's checkout, read, continue, stop, archive or delete other project sessions, save unsent drafts, organize session folders, read or write saved notes, and list or create Task Board cards through its local CLI. Run \`${cli} --help\` when you need the exact commands and JSON fields. ${boardTaskRule(cli)} When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`,
+              `<molfar_app>\n${handAgent ? "App access is always enabled in this thread." : "The user's Operator command enables app access in this thread, including later turns without the command."} You can start sessions, list and create project worktrees, choose a new session's checkout, read, continue, stop, archive or delete other project sessions, save unsent drafts, organize session folders, read or write saved notes, and list or create Task Board cards through its local CLI. Run \`${cli} --help\` when you need the exact commands and JSON fields. ${boardTaskRule(cli)} When reading another session, start with its latest two or three user/assistant exchanges. Request older exchanges with nextBefore or a larger excerpt only if needed. The CLI uses a session credential already in your environment; never print it. New sessions inherit this session's permission mode unless runtimeMode is set explicitly. For a new session with a draft, call sessions.start with its prompt and draft:true; do not submit a seed prompt. Sessions you start appear in the user's sidebar under this session without opening; the user opens them when they want. Only set placement right or down, or reveal:true, when the user asks to see a session open or side by side. The returned ID can be used as besideSessionId to split its pane again or moved into a folder immediately. A normal sessions.start submits its prompt but returns after acceptance, so do not wait for that agent to finish before organizing it.\n</molfar_app>`,
             );
           }
           // A Familiar reads who it is ahead of the message, so it never takes it
@@ -9250,28 +9613,87 @@ function Workspace({
     [onSubmit, onUsageLimitDismiss],
   );
 
+  const usageLimitSwitching = useRef(new Set<string>());
   const onUsageLimitAccountChange = useCallback(
-    (sessionId: string, accountId: string) => {
+    async (sessionId: string, accountId: string) => {
       const session = sessionsRef.current.find(
         (entry) => entry.id === sessionId,
       );
       if (
-        !session ||
-        !isFamiliarSession(sessionId) ||
+        !session?.usageLimit ||
+        session.busy ||
         !supportsProviderAccounts(session.harness) ||
-        !providerAccountExists(session.harness, accountId)
+        !providerAccountExists(session.harness, accountId) ||
+        sameProviderAccountId(session.providerAccountId, accountId) ||
+        usageLimitSwitching.current.has(sessionId)
       )
         return;
-      setSessions((prev) =>
-        prev.map((entry) =>
+      const familiar = isFamiliarSession(sessionId);
+      // Copy the native transcript so the other account resumes the very same
+      // provider session. Familiar Codex threads live in a private store instead.
+      let carried = false;
+      if (
+        session.providerSessionId &&
+        (session.harness === "claude" ||
+          (session.harness === "codex" && !familiar))
+      ) {
+        usageLimitSwitching.current.add(sessionId);
+        try {
+          await transferHarnessSessionAccount({
+            harness: session.harness,
+            threadId: sessionId,
+            providerSessionId: session.providerSessionId,
+            cwd: sessionWorkCwd(session),
+            fromAccountId: session.providerAccountId,
+            toAccountId: accountId,
+            blocks: session.blocks,
+          });
+          carried = true;
+        } catch (error) {
+          console.warn(
+            "Could not carry the conversation to the other account; continuing from a handoff",
+            error,
+          );
+        } finally {
+          usageLimitSwitching.current.delete(sessionId);
+        }
+        const latest = sessionsRef.current.find(
+          (entry) => entry.id === sessionId,
+        );
+        // The user moved on while the transcript was copied.
+        if (
+          !latest?.usageLimit ||
+          latest.busy ||
+          latest.providerSessionId !== session.providerSessionId ||
+          !sameProviderAccountId(
+            latest.providerAccountId,
+            session.providerAccountId,
+          )
+        )
+          return;
+      }
+      if (familiar) {
+        updateSessionState(sessionsRef, setSessions, (sessions) =>
+          sessions.map((entry) =>
+            entry.id === sessionId
+              ? switchFamiliarUsageLimitAccount(entry, accountId, carried)
+              : entry,
+          ),
+        );
+        return;
+      }
+      updateSessionState(sessionsRef, setSessions, (sessions) =>
+        sessions.map((entry) =>
           entry.id === sessionId
-            ? switchFamiliarUsageLimitAccount(entry, accountId)
+            ? withUsageLimitAccount(entry, accountId, carried)
             : entry,
         ),
       );
+      onUsageLimitResume(sessionId);
     },
-    [],
+    [onUsageLimitResume],
   );
+  usageLimitAccountChangeRef.current = onUsageLimitAccountChange;
 
   const [usageLimitTick, setUsageLimitTick] = useState(0);
   useEffect(() => {
@@ -11032,14 +11454,16 @@ function Workspace({
                   )
                 : undefined;
               try {
-                // A Familiar's sessions open from its chat, not as workspace
-                // tabs, unless it places one beside an open pane.
+                // Started sessions wait in the sidebar, under the session
+                // that started them, until the user opens one. Only an
+                // explicit split, or a reveal from a regular session, puts
+                // one in the workspace.
                 await launchQuickSessionRef.current(
                   launch,
                   id,
                   placement,
                   onSettled,
-                  !isFamiliarSession(source.id) || !!placement,
+                  !!placement || (!isFamiliarSession(source.id) && launch.reveal),
                 );
                 rememberLaunch();
                 onSettled?.accept();
@@ -11550,9 +11974,77 @@ function Workspace({
     [onOpenApprovalSession],
   );
 
-  const nextTitleTabs: TitleTab[] = deckProjectTabs.map((tab) =>
-    toTitleTab(tab, sessions, dirtyFiles, unseenFinishedIds),
+  const orderedTitleTabs: TitleTab[] = orderByIds(
+    [
+      ...deckProjectTabs.map((tab) =>
+        toTitleTab(tab, sessions, dirtyFiles, unseenFinishedIds),
+      ),
+      ...(insetLayout
+        ? openAppViews
+            .filter((view) => view !== "notes" || notesEnabled)
+            .map((view): TitleTab => ({
+              id: appViewTabId(view),
+              appView: view,
+              project: "",
+              title: APP_VIEW_LABELS[view],
+              more: [],
+              sessionCount: 0,
+              harnesses: [],
+              busyHarnesses: [],
+              files: [],
+            }))
+        : []),
+      ...shownFamiliarTabs.flatMap((familiarId): TitleTab[] => {
+        const familiar = findFamiliar(familiarId);
+        // Like the sidebar's Familiars, a Familiar's tab shows in the projects it
+        // works on; it keeps its place for when the project comes back.
+        if (!familiar || !familiarWorksOn(familiar, sidebarCwd)) return [];
+        const look = familiarLook(familiar);
+        const session = familiar.sessionId
+          ? sessions.find((entry) => entry.id === familiar.sessionId)
+          : undefined;
+        return [
+          {
+            id: familiarTabId(familiarId),
+            familiar: {
+              mascot: look.mascot,
+              color: look.color,
+              status: session ? familiarState(session).status : "idle",
+            },
+            project: "",
+            title: look.name,
+            more: [],
+            sessionCount: 0,
+            harnesses: [],
+            busyHarnesses: [],
+            files: [],
+          },
+        ];
+      }),
+    ],
+    insetLayout ? titleTabOrder : [],
   );
+  // Like a browser, a Familiar or app tab can be the only tab. The project's lone
+  // blank session tab stays underneath, out of the strip, until closing the
+  // last of them shows it again.
+  const shownViewTabId = settingsOpen
+    ? undefined
+    : familiarCovers
+      ? familiarViewTabId
+      : activeAppView
+        ? appViewTabId(activeAppView)
+        : undefined;
+  const placeholderTab =
+    insetLayout &&
+    shownViewTabId &&
+    orderedTitleTabs.some((tab) => tab.id === shownViewTabId) &&
+    deckProjectTabs.length === 1 &&
+    isBlankWorkspaceTab(deckProjectTabs[0], sessions)
+      ? deckProjectTabs[0].id
+      : undefined;
+  const nextTitleTabs = placeholderTab
+    ? orderedTitleTabs.filter((tab) => tab.id !== placeholderTab)
+    : orderedTitleTabs;
   tabProjectsRef.current = new Map(
     nextTitleTabs.map((tab) => [tab.id, tab.project]),
   );
@@ -11604,6 +12096,7 @@ function Workspace({
     linkedSessionUpdates,
   } = useInboxActivity(recents, sidebarCwd, sidebarHistory, {
     onAppeared: onInboxAppeared,
+    scopeProject: appViewScope,
   });
   linkedSessionUpdatesRef.current = linkedSessionUpdates;
   const inboxRelatedSessions = useMemo(() => {
@@ -11666,14 +12159,6 @@ function Workspace({
     sameSessionSummaries,
   );
 
-  const onToggleSidebar = useCallback(() => {
-    setProjectRailOpen((open) => {
-      const next = !open;
-      saveProjectRailOpen(next);
-      return next;
-    });
-  }, []);
-
   const onToggleSessionSidebar = useCallback(() => {
     setSessionSidebarOpen((open) => {
       const next = !open;
@@ -11681,6 +12166,31 @@ function Workspace({
       return next;
     });
   }, []);
+
+  // The inset layout has no project rail, so its sidebar takes the primary
+  // toggle.
+  const onToggleSidebar = useCallback(() => {
+    if (insetLayout) {
+      onToggleSessionSidebar();
+      return;
+    }
+    setProjectRailOpen((open) => {
+      const next = !open;
+      saveProjectRailOpen(next);
+      return next;
+    });
+  }, [insetLayout, onToggleSessionSidebar]);
+
+  // The inset layout's sidebar already answers the primary toggle, so the
+  // session sidebar's shortcut takes the right panel instead.
+  const rightPanelToggleRef = useRef<(() => void) | null>(null);
+  const onToggleSessionSidebarShortcut = useCallback(() => {
+    if (insetLayout) {
+      rightPanelToggleRef.current?.();
+      return;
+    }
+    onToggleSessionSidebar();
+  }, [insetLayout, onToggleSessionSidebar]);
 
   const onToggleProjectRail = useCallback(() => {
     setProjectRailOpen((open) => {
@@ -11728,6 +12238,10 @@ function Workspace({
   const onOpenSearch = useCallback(() => {
     workspaceNavigation.cancel();
     startTransition(() => {
+      // With the Familiar closed in the same commit, no frame shows the
+      // workspace tab between the two views.
+      closeFamiliarView();
+      rememberAppView("search");
       setFilePickerOpen(false);
       setSettingsOpen(false);
       setInboxViewOpen(false);
@@ -11745,6 +12259,8 @@ function Workspace({
   const onOpenInbox = useCallback(() => {
     workspaceNavigation.cancel();
     startTransition(() => {
+      closeFamiliarView();
+      rememberAppView("inbox");
       setFilePickerOpen(false);
       setSettingsOpen(false);
       setSearchViewOpen(false);
@@ -11861,6 +12377,8 @@ function Workspace({
     workspaceNavigation.cancel();
     if (!loadNotesEnabled()) return;
     startTransition(() => {
+      closeFamiliarView();
+      rememberAppView("notes");
       setFilePickerOpen(false);
       setSettingsOpen(false);
       setSearchViewOpen(false);
@@ -11877,6 +12395,8 @@ function Workspace({
   const onOpenAutomations = useCallback(() => {
     workspaceNavigation.cancel();
     startTransition(() => {
+      closeFamiliarView();
+      rememberAppView("automations");
       setFilePickerOpen(false);
       setSettingsOpen(false);
       setSearchViewOpen(false);
@@ -12186,6 +12706,7 @@ function Workspace({
       );
       const next = adjacentItemId(ids, current, delta);
       if (!next || sameProjectPath(next, current)) return;
+      noteProjectStep(next, delta);
       onSelectProject(next);
     },
     [onSelectProject],
@@ -12202,21 +12723,262 @@ function Workspace({
     () => onOpenLocalSurface("usage"),
     [onOpenLocalSurface],
   );
+  const onSelectTitleTab = useCallback(
+    (id: string) => {
+      const familiarId = familiarForTab(id);
+      if (familiarId) {
+        void onOpenFamiliar(familiarId);
+        return;
+      }
+      const view = appViewForTab(id);
+      if (view) {
+        const open = {
+          search: onOpenSearch,
+          inbox: onOpenInbox,
+          notes: onOpenNotes,
+          automations: onOpenAutomations,
+        };
+        open[view]();
+        return;
+      }
+      setSearchViewOpen(false);
+      setSettingsOpen(false);
+      setInboxViewOpen(false);
+      setNotesViewOpen(false);
+      setAutomationsViewOpen(false);
+      activateTab(id);
+    },
+    [
+      activateTab,
+      onOpenFamiliar,
+      onOpenSearch,
+      onOpenInbox,
+      onOpenNotes,
+      onOpenAutomations,
+    ],
+  );
+
+  displayedTabNavigation.current = {
+    tabs: insetLayout ? titleTabs : [],
+    activeId: settingsOpen
+      ? ""
+      : familiarCovers
+        ? (familiarViewTabId ?? "")
+        : activeAppView
+          ? appViewTabId(activeAppView)
+          : activeTabId,
+    select: onSelectTitleTab,
+  };
+
+  const onCloseAppView = useCallback((view: AppView, selectNeighbor = true) => {
+    const navigation = displayedTabNavigation.current;
+    const nextId = selectNeighbor
+      ? nextDisplayedTabAfterClose(
+          navigation.tabs,
+          navigation.activeId,
+          appViewTabId(view),
+        )
+      : undefined;
+    startTransition(() => {
+      setOpenAppViews((current) => current.filter((entry) => entry !== view));
+      setTitleTabOrder((current) =>
+        current.filter((id) => id !== appViewTabId(view)),
+      );
+      if (view === "search") setSearchViewOpen(false);
+      if (view === "inbox") setInboxViewOpen(false);
+      if (view === "notes") setNotesViewOpen(false);
+      if (view === "automations") setAutomationsViewOpen(false);
+      if (nextId) navigation.select?.(nextId);
+    });
+  }, []);
+  /** Closing a Familiar's tab puts its view away when it is the one shown. */
+  const onCloseFamiliarTab = useCallback(
+    (familiarId: string, selectNeighbor = true) => {
+      const navigation = displayedTabNavigation.current;
+      const id = familiarTabId(familiarId);
+      const showing = navigation.activeId === id;
+      const nextId =
+        selectNeighbor && showing
+          ? nextDisplayedTabAfterClose(navigation.tabs, navigation.activeId, id)
+          : undefined;
+      startTransition(() => {
+        setOpenFamiliarTabs((current) =>
+          current.filter((entry) => entry !== familiarId),
+        );
+        setTitleTabOrder((current) => current.filter((entry) => entry !== id));
+        if (nextId) navigation.select?.(nextId);
+        else if (showing) closeFamiliarView();
+      });
+    },
+    [closeFamiliarView],
+  );
+  const closeViewTab = useCallback(
+    (id: string, selectNeighbor?: boolean) => {
+      const view = appViewForTab(id);
+      if (view) onCloseAppView(view, selectNeighbor);
+      const familiarId = familiarForTab(id);
+      if (familiarId) onCloseFamiliarTab(familiarId, selectNeighbor);
+    },
+    [onCloseAppView, onCloseFamiliarTab],
+  );
+  const onCloseDisplayedTab = useCallback(
+    (id: string) => {
+      if (isViewTab(id)) closeViewTab(id);
+      else onCloseTitleTab(id);
+    },
+    [closeViewTab, onCloseTitleTab],
+  );
+  const onCloseDisplayedTabs = useCallback(
+    (ids: string[], fallbackId: string) => {
+      const navigation = displayedTabNavigation.current;
+      const closing = new Set(ids);
+      const workspaceIds = ids.filter((id) => !isViewTab(id));
+      startTransition(() => {
+        for (const id of ids) {
+          if (isViewTab(id)) closeViewTab(id, false);
+        }
+        if (workspaceIds.length > 0) {
+          // Kept from a view tab, the workspace beneath falls back to one of
+          // this project's shown tabs that stays open; with none left, Close
+          // All keeps a blank one rather than reaching into another project.
+          const workspaceFallback = isViewTab(fallbackId)
+            ? [
+                activeTabIdRef.current,
+                ...navigation.tabs.map((tab) => tab.id),
+              ].find(
+                (id) =>
+                  !closing.has(id) &&
+                  !isViewTab(id) &&
+                  navigation.tabs.some((tab) => tab.id === id),
+              )
+            : fallbackId;
+          if (workspaceFallback) onCloseTabs(workspaceIds, workspaceFallback);
+          else onCloseEveryTab(workspaceIds);
+        }
+        if (closing.has(navigation.activeId)) navigation.select?.(fallbackId);
+      });
+    },
+    [closeViewTab, onCloseTabs, onCloseEveryTab],
+  );
+  const onCloseAllDisplayedTabs = useCallback(
+    (ids: readonly string[]) => {
+      startTransition(() => {
+        for (const id of ids) {
+          if (isViewTab(id)) closeViewTab(id, false);
+        }
+        onCloseEveryTab(ids.filter((id) => !isViewTab(id)));
+      });
+    },
+    [closeViewTab, onCloseEveryTab],
+  );
+  const onReorderDisplayedTabs = useCallback(
+    (ids: string[], movedId?: string) => {
+      setTitleTabOrder((current) =>
+        mergeOrderedSubset(
+          current.map((id) => ({ id })),
+          ids.map((id) => ({ id })),
+        ).map((tab) => tab.id),
+      );
+      onReorderTabs(
+        ids.filter((id) => !isViewTab(id)),
+        isViewTab(movedId ?? "") ? undefined : movedId,
+      );
+    },
+    [onReorderTabs],
+  );
+  const onCloseVisibleTab = useCallback(() => {
+    if (insetLayout && familiarCovers && familiarViewTabId) closeViewTab(familiarViewTabId);
+    else if (insetLayout && activeAppView) onCloseAppView(activeAppView);
+    else onCloseFocused();
+  }, [
+    insetLayout,
+    familiarCovers,
+    familiarViewTabId,
+    activeAppView,
+    closeViewTab,
+    onCloseAppView,
+    onCloseFocused,
+  ]);
+  const onCycleVisibleTab = useCallback(
+    (delta: number) => {
+      if (!insetLayout) {
+        (delta > 0 ? onNext : onPrev)();
+        return;
+      }
+      const current =
+        familiarCovers && familiarViewTabId
+          ? familiarViewTabId
+          : activeAppView
+            ? appViewTabId(activeAppView)
+            : activeTabId;
+      const index = titleTabs.findIndex((tab) => tab.id === current);
+      const next =
+        titleTabs[(index + delta + titleTabs.length) % titleTabs.length];
+      if (next) onSelectTitleTab(next.id);
+    },
+    [
+      insetLayout,
+      familiarCovers,
+      familiarViewTabId,
+      activeAppView,
+      activeTabId,
+      titleTabs,
+      onSelectTitleTab,
+      onNext,
+      onPrev,
+    ],
+  );
+  const onActivateVisibleTab = useCallback(
+    (slot: number) => {
+      if (!insetLayout) {
+        onActivate(slot);
+        return;
+      }
+      const tab = slot < 0 ? titleTabs[titleTabs.length - 1] : titleTabs[slot];
+      if (tab) onSelectTitleTab(tab.id);
+    },
+    [insetLayout, titleTabs, onSelectTitleTab, onActivate],
+  );
+
+  // The inset layout's shortcuts close every kind of title tab, like its
+  // tab menu.
+  const onCloseOtherVisibleTabs = useCallback(() => {
+    if (!insetLayout) {
+      onCloseOtherTabs();
+      return;
+    }
+    const { tabs: shown, activeId } = displayedTabNavigation.current;
+    if (!shown.some((tab) => tab.id === activeId)) return;
+    onCloseDisplayedTabs(
+      shown.filter((tab) => tab.id !== activeId).map((tab) => tab.id),
+      activeId,
+    );
+  }, [insetLayout, onCloseOtherTabs, onCloseDisplayedTabs]);
+  const onCloseAllVisibleTabs = useCallback(() => {
+    if (!insetLayout) {
+      onCloseAllTabs();
+      return;
+    }
+    onCloseAllDisplayedTabs(
+      displayedTabNavigation.current.tabs.map((tab) => tab.id),
+    );
+  }, [insetLayout, onCloseAllTabs, onCloseAllDisplayedTabs]);
+
   const actions = useRef({
     onNewFocused,
     onArchiveFocusedSession,
-    onCloseOtherTabs,
-    onCloseAllTabs,
-    onCloseFocused,
-    onNext,
-    onPrev,
+    onCloseOtherTabs: onCloseOtherVisibleTabs,
+    onCloseAllTabs: onCloseAllVisibleTabs,
+    onCloseFocused: onCloseVisibleTab,
+    onNext: () => onCycleVisibleTab(1),
+    onPrev: () => onCycleVisibleTab(-1),
     onVisitBack,
     onVisitForward,
-    onActivate,
+    onActivate: onActivateVisibleTab,
     onSplit,
     onFocusDir,
     onToggleSidebar,
-    onToggleSessionSidebar,
+    onToggleSessionSidebar: onToggleSessionSidebarShortcut,
     onToggleFamiliar,
     onGoToFile,
     onOpenCommandPalette,
@@ -12238,18 +13000,18 @@ function Workspace({
   actions.current = {
     onNewFocused,
     onArchiveFocusedSession,
-    onCloseOtherTabs,
-    onCloseAllTabs,
-    onCloseFocused,
-    onNext,
-    onPrev,
+    onCloseOtherTabs: onCloseOtherVisibleTabs,
+    onCloseAllTabs: onCloseAllVisibleTabs,
+    onCloseFocused: onCloseVisibleTab,
+    onNext: () => onCycleVisibleTab(1),
+    onPrev: () => onCycleVisibleTab(-1),
     onVisitBack,
     onVisitForward,
-    onActivate,
+    onActivate: onActivateVisibleTab,
     onSplit,
     onFocusDir,
     onToggleSidebar,
-    onToggleSessionSidebar,
+    onToggleSessionSidebar: onToggleSessionSidebarShortcut,
     onToggleFamiliar,
     onGoToFile,
     onOpenCommandPalette,
@@ -12292,7 +13054,13 @@ function Workspace({
     const onKey = (e: KeyboardEvent) => {
       // The Quick Composer recorder owns the next key combination, including
       // bindings that the workspace would normally handle in capture phase.
-      if (document.querySelector('[data-shortcut-recorder-active="true"]'))
+      // It records only while focused, so check the focused element: a
+      // document-wide query walked the whole DOM on every keystroke.
+      if (
+        document.activeElement?.getAttribute(
+          "data-shortcut-recorder-active",
+        ) === "true"
+      )
         return;
       // Never act on a chord while an IME is composing: tabCommand and the
       // editor guards already do, and the app shortcut resolver does too, so
@@ -12389,7 +13157,12 @@ function Workspace({
           target.closest(
             "[data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]",
           );
-        if (inPicker && typeof cmd === "object" && "activate" in cmd) {
+        if (
+          inPicker &&
+          typeof cmd === "object" &&
+          "activate" in cmd &&
+          !(insetLayoutRef.current && target?.closest("[data-app-search]"))
+        ) {
           return;
         }
         e.preventDefault();
@@ -12623,19 +13396,123 @@ function Workspace({
     },
     [onProjectTerminalSize],
   );
+  const dockWasOpen = useRef<{ path: string; open: boolean } | null>(null);
+  const dockAnimation = useRef<{ key: string; stop: () => void } | null>(
+    null,
+  );
+  // The project whose dock stays rendered while it slides shut.
+  const [dockClosing, setDockClosing] = useState<string | null>(null);
+  const dockClosingShown =
+    dockClosing != null &&
+    !familiarCovers &&
+    !!currentProjectDock &&
+    !currentProjectDock.open &&
+    sameProjectPath(dockClosing, projectCwd);
   useLayoutEffect(() => {
     if (familiarCovers) dockDragSize.current = null;
     if (dockDragSize.current != null) return;
     const el = dockGridRef.current;
     if (!el) return;
-    applyDockGridStyle(
-      el,
-      dockVisible && !familiarCovers && currentProjectDock
-        ? currentProjectDock.side
-        : null,
-      currentProjectDock?.size ?? 0,
+    const dock = currentProjectDock;
+    const open = dockVisible && !familiarCovers && !!dock;
+    const side = dock && (open || dockClosingShown) ? dock.side : null;
+    const size = dock?.size ?? 0;
+    // Only a dock opening or closing in place slides; a project switch or a
+    // familiar covering the workspace shows or hides it at once.
+    const previous = dockWasOpen.current;
+    const inPlace = !!previous && sameProjectPath(previous.path, projectCwd);
+    dockWasOpen.current = { path: projectCwd, open };
+    const key = side ? `${open ? "open" : "close"}:${side}:${size}` : "";
+    // Unrelated dock updates, like a terminal retitling itself, leave a
+    // running slide alone.
+    if (inPlace && dockAnimation.current?.key === key) return;
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const animates =
+      insetLayout && !reduceMotion && typeof el.animate === "function";
+    // Render the dock once more so it can slide out; the grid keeps its
+    // track until then.
+    if (
+      animates &&
+      inPlace &&
+      previous.open &&
+      !open &&
+      dock &&
+      !familiarCovers
+    ) {
+      setDockClosing(projectCwd);
+      return;
+    }
+    const host = el.querySelector<HTMLElement>(":scope > [data-dock-shown]");
+    const vertical = side ? isVerticalDock(side) : true;
+    // A reversal mid-slide starts from wherever the track currently is.
+    const current = host
+      ? vertical
+        ? host.getBoundingClientRect().height
+        : host.getBoundingClientRect().width
+      : 0;
+    const reversing = !!dockAnimation.current;
+    dockAnimation.current?.stop();
+    dockAnimation.current = null;
+    applyDockGridStyle(el, side, size);
+    const opening = open && inPlace && (!previous.open || reversing);
+    const closing = !open && !!side;
+    if (!side || !animates || !(opening || closing)) return;
+    const section = host?.firstElementChild;
+    if (!host || !(section instanceof HTMLElement)) return;
+    // The terminal keeps its full size and rides the moving edge, so it fits
+    // once instead of on every frame.
+    const property = vertical ? "gridTemplateRows" : "gridTemplateColumns";
+    const leading = side === "top" || side === "left";
+    host.style.display = "flex";
+    host.style.flexDirection = vertical ? "column" : "row";
+    host.style.justifyContent = leading ? "flex-end" : "flex-start";
+    section.style.flexShrink = "0";
+    if (vertical) section.style.height = `${size}px`;
+    else section.style.width = `${size}px`;
+    const track = (px: number) =>
+      leading ? `${px}px minmax(0, 1fr)` : `minmax(0, 1fr) ${px}px`;
+    const from = reversing ? current : opening ? 0 : size;
+    const endTransition = beginLayoutTransition();
+    const animation = el.animate(
+      [{ [property]: track(from) }, { [property]: track(opening ? size : 0) }],
+      {
+        duration: opening ? 240 : 200,
+        easing: "cubic-bezier(0.32, 0.72, 0, 1)",
+        fill: "forwards",
+      },
     );
-  }, [currentProjectDock, dockVisible, familiarCovers]);
+    // Mounting the terminal can hold up the next frame; the slide starts
+    // once that frame is out, not partway through.
+    animation.pause();
+    const start = requestAnimationFrame(() => animation.play());
+    const stop = () => {
+      cancelAnimationFrame(start);
+      animation.onfinish = null;
+      animation.cancel();
+      host.style.display = "";
+      host.style.flexDirection = "";
+      host.style.justifyContent = "";
+      section.style.flexShrink = "";
+      section.style.height = "";
+      section.style.width = "";
+      endTransition();
+      if (dockAnimation.current?.stop === stop) dockAnimation.current = null;
+      if (closing) setDockClosing(null);
+    };
+    // A closed dock holds its last frame until it is no longer rendered.
+    animation.onfinish = opening ? stop : () => setDockClosing(null);
+    dockAnimation.current = { key, stop };
+  }, [
+    currentProjectDock,
+    dockVisible,
+    dockClosingShown,
+    familiarCovers,
+    insetLayout,
+    projectCwd,
+  ]);
+  useEffect(() => () => dockAnimation.current?.stop(), []);
 
   const lastRemoteSnapshot = useRef(new Map<string, HostSession>());
   const onRemoteSnapshot = useCallback(
@@ -13056,48 +13933,175 @@ function Workspace({
   const compactTitleNavigation =
     IS_MAC && compactRailActive && !chromeSurfaceOpen;
   const compactTitleBar = compactTitleNavigation && !familiarCovers;
+  // The inset layout keeps its tabs across the top of the window at all
+  // times, with the rail and the card below them.
+  const titleBarSpansWindow = insetLayout || compactTitleBar;
+  const titleBarInBody = !insetLayout && !compactTitleBar;
+  // Matches when the sidebar portals Explorer or Changes into the panel.
+  const insetRightPanelShown =
+    insetLayout &&
+    (rightPanelOpen || rightPanelClosing) &&
+    !settingsOpen &&
+    !familiarCovers &&
+    !activeAppView &&
+    looksLikeProject(sidebarCwd);
+  // The right panel grows from the card's edge and pushes the workspace. Its
+  // own contents keep their full width and ride its edge.
+  // A reversal mid-slide starts from wherever the width currently is.
+  useLayoutEffect(() => {
+    const toggled = rightPanelWasOpen.current !== rightPanelOpen;
+    rightPanelWasOpen.current = rightPanelOpen;
+    const pane = rightPanelRef.current;
+    const content = pane?.firstElementChild;
+    if (!toggled || !pane || !(content instanceof HTMLElement)) return;
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const animate =
+      insetRightPanelShown && typeof pane.animate === "function" && !reduceMotion;
+    const current = pane.getBoundingClientRect().width;
+    const from = rightPanelAnimation.current || !rightPanelOpen ? current : 0;
+    rightPanelAnimation.current?.cancel();
+    rightPanelAnimation.current = null;
+    endRightPanelTransition.current?.();
+    endRightPanelTransition.current = null;
+    if (!animate) {
+      content.style.width = "";
+      if (!rightPanelOpen) setRightPanelClosing(false);
+      return;
+    }
+    // The committed width; a running slide only overrides it. Only the
+    // width is pinned: the column still stretches the contents to full
+    // height, so the panel's scrolling content stays put while it slides.
+    const full = parseFloat(pane.style.width) || pane.offsetWidth;
+    content.style.width = `${full}px`;
+    endRightPanelTransition.current = beginLayoutTransition();
+    const animation = pane.animate(
+      [{ width: `${from}px` }, { width: `${rightPanelOpen ? full : 0}px` }],
+      {
+        duration: rightPanelOpen ? 240 : 200,
+        easing: "cubic-bezier(0.32, 0.72, 0, 1)",
+        fill: "forwards",
+      },
+    );
+    rightPanelAnimation.current = animation;
+    animation.onfinish = () => {
+      if (rightPanelAnimation.current !== animation) return;
+      if (rightPanelOpen) {
+        animation.cancel();
+        rightPanelAnimation.current = null;
+        endRightPanelTransition.current?.();
+        endRightPanelTransition.current = null;
+        content.style.width = "";
+      } else {
+        setRightPanelClosing(false);
+      }
+    };
+  }, [rightPanelOpen]);
+  // A slid-out panel holds its last frame until it is hidden, in the same
+  // commit, so it never flashes back in place.
+  useLayoutEffect(() => {
+    if (rightPanelClosing || rightPanelOpen) return;
+    rightPanelAnimation.current?.cancel();
+    rightPanelAnimation.current = null;
+    endRightPanelTransition.current?.();
+    endRightPanelTransition.current = null;
+    const content = rightPanelRef.current?.firstElementChild;
+    if (content instanceof HTMLElement) {
+      content.style.width = "";
+    }
+  }, [rightPanelClosing, rightPanelOpen]);
+  // The same shared stats the sidebar's Changes tab reads, so the toggle
+  // that opens it can carry its dot.
+  const showRightPanelToggle =
+    insetLayout && !settingsOpen && looksLikeProject(sidebarCwd);
+  rightPanelToggleRef.current =
+    showRightPanelToggle && !(familiarCovers && familiarViewFamiliar) && !activeAppView
+      ? onToggleRightPanel
+      : null;
+  const rightPanelChanges = useProjectDiffStats(
+    gitCwd || sidebarCwd,
+    showRightPanelToggle && isLocalProject(sidebarCwd),
+  );
+  const onToggleFamiliarOverview = () => setFamiliarOverviewOpen(!familiarOverviewOpen);
+  const onOpenFamiliarViewSettings = familiarViewFamiliar
+    ? () => setFamiliarSettingsFor(familiarViewFamiliar.id)
+    : undefined;
+  // A new session takes over from a Familiar in view.
+  const onNewFromTitleBar = () => {
+    if (familiarViewIdRef.current) closeFamiliarView();
+    onNew();
+  };
   const workspaceTitleBar = (
     <TitleBar
-      // A Familiar in full view stands apart from the project's tabs.
-      tabs={familiarCovers ? NO_TITLE_TABS : titleTabs}
+      // A Familiar in full view stands apart from the project's tabs, except
+      // in the inset layout, where it is one of them.
+      tabs={familiarCovers && !insetLayout ? NO_TITLE_TABS : titleTabs}
+      content={
+        insetLayout && settingsOpen ? (
+          <div
+            ref={setSettingsHeaderHost}
+            data-settings-title
+            className="flex h-full min-w-0 flex-1"
+          />
+        ) : undefined
+      }
       familiar={
         familiarCovers && familiarViewFamiliar && familiarViewSession
           ? { look: familiarLook(familiarViewFamiliar), state: familiarState(familiarViewSession) }
           : undefined
       }
+      // The inset layout keeps these in the Familiar's pane, under its tab.
       onToggleFamiliarOverview={
-        familiarCovers
-          ? () => setFamiliarOverviewOpen(!familiarOverviewOpen)
-          : undefined
+        familiarCovers && !insetLayout ? onToggleFamiliarOverview : undefined
       }
       familiarOverviewOpen={familiarOverviewOpen}
       onOpenFamiliarSettings={
-        familiarCovers && familiarViewFamiliar
-          ? () => setFamiliarSettingsFor(familiarViewFamiliar.id)
-          : undefined
+        familiarCovers && !insetLayout ? onOpenFamiliarViewSettings : undefined
       }
       hideWindowControls={familiarCovers && familiarOverviewOpen && !!familiarOverviewPanel}
-      activeId={familiarViewSession ? "" : activeTabId}
+      activeId={
+        familiarViewSession
+          ? insetLayout
+            ? (familiarViewTabId ?? "")
+            : ""
+          : insetLayout && activeAppView
+            ? appViewTabId(activeAppView)
+            : activeTabId
+      }
       cwd={sidebarCwd}
       projectRailOpen={projectRailOpen}
       sessionSidebarOpen={sessionSidebarOpen}
-      compactRail={compactTitleNavigation}
+      compactRail={!insetLayout && compactTitleNavigation}
+      inset={insetLayout}
+      rightPanelOpen={rightPanelOpen}
+      onToggleRightPanel={
+        showRightPanelToggle ? onToggleRightPanel : undefined
+      }
+      rightPanelDot={(rightPanelChanges?.files ?? 0) > 0}
+      rightPanelUnavailable={!!activeAppView}
       canGoBack={!!familiarViewId || tabVisitNav.canBack}
       canGoForward={tabVisitNav.canForward}
       onGoBack={onRailBack}
       onGoForward={onRailForward}
       onToggleSidebar={onToggleSidebar}
       onToggleSessionSidebar={onToggleSessionSidebar}
-      onSelect={activateTab}
+      onSelect={onSelectTitleTab}
       onNewTerminal={onNewTerminal}
+      onNewSession={
+        insetLayout && !settingsOpen && looksLikeProject(sidebarCwd)
+          ? onNewFromTitleBar
+          : undefined
+      }
       onOpenSettings={onOpenSettings}
       onOpenInbox={onOpenInbox}
       onOpenNotes={notesEnabled ? onOpenNotes : undefined}
-      onClose={onCloseTitleTab}
-      onCloseMany={onCloseTabs}
+      onClose={onCloseDisplayedTab}
+      onCloseMany={onCloseDisplayedTabs}
+      onCloseAll={onCloseAllDisplayedTabs}
       onArchiveTab={onArchiveTitleTab}
       onDeleteTab={onDeleteTitleTab}
-      onReorder={onReorderTabs}
+      onReorder={onReorderDisplayedTabs}
       onPlaceOnPane={onPlaceTabOnPane}
       onPinFile={onPinFile}
       recents={recents}
@@ -13105,577 +14109,736 @@ function Workspace({
     />
   );
 
+  const sessionSidebar = (
+    <Sidebar
+      cwd={sidebarCwd}
+      gitCwd={gitCwd}
+      worktreeTabStats={worktreeTabStats}
+      onSelectWorkspace={onSelectWorkspace}
+      workspaceSwitchPending={
+        workspaceNavigation.pending?.project === sidebarCwd
+      }
+      workspaceSwitchError={
+        workspaceNavigation.error?.project === sidebarCwd
+          ? workspaceNavigation.error.message
+          : undefined
+      }
+      explorerRootLabel={explorerRootLabel}
+      // The inset sidebar carries the links to the local surfaces, so it stays
+      // beside them like it does beside the other views.
+      open={sessionSidebarOpen && (insetLayout || localSurface === null)}
+      tab={insetLayout ? "sessions" : sidebarTab}
+      onTabChange={setSidebarTab}
+      rightPanel={
+        insetLayout && !settingsOpen && !familiarCovers
+          ? {
+              host: rightPanelHost,
+              open: rightPanelOpen || rightPanelClosing,
+              tab: rightPanelTab,
+              onTabChange: showRightPanel,
+            }
+          : undefined
+      }
+      filesSearchOpen={filesSearchOpen}
+      onFilesSearchOpenChange={setFilesSearchOpen}
+      onOpenFilesSearch={onFindInProject}
+      searchFocusToken={searchFocusToken}
+      sessions={sidebarHistory}
+      busySessionIds={busySessionIds}
+      approvalSessionIds={approvalSessionIds}
+      activeSessionId={activeSessionId}
+      status={historyFailed ? "error" : "idle"}
+      pending={historyPending}
+      onSelectSession={onSelectHistorySession}
+      onSelectRemoteSession={onSelectRemoteSession}
+      onRemoteSessionDeleted={onRemoteSessionDeleted}
+      onPrefetchSession={onPrefetchHistorySession}
+      onSessionNavigationOrder={onSessionNavigationOrder}
+      onPlaceSessionOnPane={onPlaceSessionOnPane}
+      onRenameSession={onRenameHistorySession}
+      onArchiveSession={onArchiveHistorySession}
+      onArchiveSessions={onArchiveHistorySessions}
+      onPinSession={onPinHistorySession}
+      onPinSessions={onPinHistorySessions}
+      onSetSessionLinkedWorkItem={onSetHistorySessionLinkedWorkItem}
+      reminders={sessionReminders.reminders}
+      onSetReminders={sessionReminders.schedule}
+      onCancelReminders={sessionReminders.cancel}
+      onDeleteSession={onDeleteHistorySession}
+      onDeleteSessions={onDeleteHistorySessions}
+      onOpenFile={onOpenFile}
+      onOpenTerminal={onOpenTerminal}
+      onFileMoved={onFileMoved}
+      onFileDeleted={onFileDeleted}
+      canGoBack={
+        !!familiarViewId ||
+        tabVisitNav.canBack ||
+        searchViewOpen ||
+        settingsOpen ||
+        inboxViewOpen ||
+        notesViewOpen ||
+        automationsViewOpen
+      }
+      canGoForward={tabVisitNav.canForward}
+      onGoBack={onRailBack}
+      onGoForward={onRailForward}
+      onOpenDiff={onOpenWorkingTreeDiff}
+      onOpenAllChanges={onOpenAllChanges}
+      onOpenCommit={onOpenCommit}
+      selectedDiffPath={
+        activeTab ? selectedChangePath(activeTab, gitCwd) : undefined
+      }
+      selectedDiffKind={activeTab ? selectedChangeKind(activeTab) : undefined}
+      selectedCommitSha={activeTab ? selectedCommitSha(activeTab) : undefined}
+      textHarness={pickTextHarness(active?.harness)}
+      recents={recents}
+      busyProjectPaths={busyProjectPaths}
+      liveAgents={liveAgents}
+      onSelectAgent={onSelectLiveAgent}
+      onStopAgent={onCloseLiveAgent}
+      onSelectProject={onSelectProject}
+      onOpenProject={pickProject}
+      onRemoveProject={onRemoveProject}
+      familiars={sidebarFamiliars}
+      familiarViewActive={familiarCovers}
+      onNew={onNew}
+      openSessions={openProjectSessions}
+      onNewTerminal={onNewTerminal}
+      onSearch={onOpenSearch}
+      onOpenInbox={onOpenInbox}
+      onOpenInboxItem={onOpenLinkedWorkItem}
+      onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+      onOpenKnowledge={railSurfaces.knowledge ? onOpenKnowledge : undefined}
+      knowledgeActive={localSurface === "knowledge"}
+      onOpenAutomations={onOpenAutomations}
+      onGoToFile={onGoToFile}
+      searchActive={searchViewOpen}
+      inboxActive={inboxViewOpen}
+      notesActive={notesViewOpen}
+      automationsActive={automationsSurfaceOpen}
+      railExtraActions={localSurfaceRailActions}
+      notesEnabled={notesEnabled}
+      // The inset layout has no project rail: the sidebar header's menu
+      // switches projects.
+      projectRailOpen={!insetLayout && projectRailOpen}
+      compactProjectRail={!insetLayout && compactProjectRail}
+      titleBarAbove={insetLayout || compactTitleBar}
+      inset={insetLayout}
+      onToggleProjectRail={onToggleProjectRail}
+      unseenFinishedIds={unseenFinishedIds}
+      inboxUnseen={inboxUnseen}
+      linkedSessionUpdateIds={linkedSessionUpdateIds}
+      settingsOpen={settingsOpen}
+      settingsSection={settingsSection}
+      onOpenSettings={onOpenSettings}
+      onOpenNotificationSettings={onOpenNotificationSettings}
+      onSelectSettingsSection={onSelectSettingsSection}
+      onCloseSettings={onCloseSettings}
+      updateNotice={updateNotice}
+      onOpenWhatsNew={onOpenWhatsNew}
+      onDismissUpdate={onDismissUpdate}
+    />
+  );
+
+  const usageFooter =
+    (chromeSurfaceOpen && !(insetLayout && activeAppView)) ||
+    (familiarCovers && !insetLayout) ? null : (
+      <UsageFooter
+        pressureSlot={setPressureChipHost}
+        providers={usageProviders}
+        session={usageSession}
+        project={usageSource?.cwd ?? projectCwd}
+        onSelectAccount={onSelectProviderAccount}
+        onManageAccounts={() => openSettings("providers", "provider-accounts")}
+        // A Familiar in full view has no terminal of its own.
+        terminals={familiarCovers ? undefined : runningTerminals}
+        terminalOpen={!familiarCovers && runningTerminalOpen}
+        onToggleTerminal={onToggleRunningTerminal}
+        onNewTerminal={
+          !familiarCovers && isLocalProject(projectCwd) ? onNewTerminal : undefined
+        }
+        onToggleProjectTerminal={
+          !familiarCovers && isLocalProject(projectCwd)
+            ? onToggleProjectTerminal
+            : undefined
+        }
+        projectTerminalActive={
+          !familiarCovers &&
+          !!currentProjectDock &&
+          currentProjectDock.pane.files.length > 0
+        }
+        projectTerminalOpen={!familiarCovers && !!currentProjectDock?.open}
+        inset={insetLayout}
+      />
+    );
+
   return (
+    <SessionStateContext.Provider value={sessionState}>
     <OrchestrationActions.Provider value={orchestrationActions}>
       <OrchestrationWorkers.Provider value={orchestrationWorkers}>
         <div
           className={`workspace-background flex h-full flex-col text-content ${
-            HAS_NATIVE_GLASS
-              ? "bg-background-base/[var(--window-background-opacity)]"
-              : "bg-background-base"
+            insetLayout
+              ? "inset-shell inset-outer"
+              : HAS_NATIVE_GLASS
+                ? "bg-background-base/[var(--window-background-opacity)]"
+                : "bg-background-base"
           }`}
         >
-          {compactTitleBar ? workspaceTitleBar : null}
+          {titleBarSpansWindow ? workspaceTitleBar : null}
           <div className="flex min-h-0 min-w-0 flex-1">
-            <Sidebar
-              cwd={sidebarCwd}
-              gitCwd={gitCwd}
-              worktreeTabStats={worktreeTabStats}
-              onSelectWorkspace={onSelectWorkspace}
-              workspaceSwitchPending={
-                workspaceNavigation.pending?.project === sidebarCwd
+            {insetLayout ? (
+              <div
+                ref={setInsetRailHost}
+                className="inset-rail-host flex h-full shrink-0"
+              >
+                {sessionSidebar}
+              </div>
+            ) : null}
+            {/* `contents` keeps the classic layout's flat row; the inset
+                layout stacks the tabs, the card and the footer. */}
+            <div
+              className={
+                insetLayout
+                  ? "flex min-h-0 min-w-0 flex-1 flex-col"
+                  : "contents"
               }
-              workspaceSwitchError={
-                workspaceNavigation.error?.project === sidebarCwd
-                  ? workspaceNavigation.error.message
-                  : undefined
-              }
-              explorerRootLabel={explorerRootLabel}
-              open={sessionSidebarOpen && localSurface === null}
-              tab={sidebarTab}
-              onTabChange={setSidebarTab}
-              filesSearchOpen={filesSearchOpen}
-              onFilesSearchOpenChange={setFilesSearchOpen}
-              onOpenFilesSearch={onFindInProject}
-              searchFocusToken={searchFocusToken}
-              sessions={sidebarHistory}
-              busySessionIds={busySessionIds}
-              approvalSessionIds={approvalSessionIds}
-              activeSessionId={activeSessionId}
-              status={historyFailed ? "error" : "idle"}
-              pending={historyPending}
-              onSelectSession={onSelectHistorySession}
-              onSelectRemoteSession={onSelectRemoteSession}
-              onRemoteSessionDeleted={onRemoteSessionDeleted}
-              onPrefetchSession={onPrefetchHistorySession}
-              onSessionNavigationOrder={onSessionNavigationOrder}
-              onPlaceSessionOnPane={onPlaceSessionOnPane}
-              onRenameSession={onRenameHistorySession}
-              onArchiveSession={onArchiveHistorySession}
-              onArchiveSessions={onArchiveHistorySessions}
-              onPinSession={onPinHistorySession}
-              onPinSessions={onPinHistorySessions}
-              onSetSessionLinkedWorkItem={onSetHistorySessionLinkedWorkItem}
-              reminders={sessionReminders.reminders}
-              onSetReminders={sessionReminders.schedule}
-              onCancelReminders={sessionReminders.cancel}
-              onDeleteSession={onDeleteHistorySession}
-              onDeleteSessions={onDeleteHistorySessions}
-              onOpenFile={onOpenFile}
-              onOpenTerminal={onOpenTerminal}
-              onFileMoved={onFileMoved}
-              onFileDeleted={onFileDeleted}
-              canGoBack={
-                !!familiarViewId ||
-                tabVisitNav.canBack ||
-                searchViewOpen ||
-                settingsOpen ||
-                inboxViewOpen ||
-                notesViewOpen ||
-                automationsViewOpen
-              }
-              canGoForward={tabVisitNav.canForward}
-              onGoBack={onRailBack}
-              onGoForward={onRailForward}
-              onOpenDiff={onOpenWorkingTreeDiff}
-              onOpenAllChanges={onOpenAllChanges}
-              onOpenCommit={onOpenCommit}
-              selectedDiffPath={
-                activeTab ? selectedChangePath(activeTab, gitCwd) : undefined
-              }
-              selectedDiffKind={
-                activeTab ? selectedChangeKind(activeTab) : undefined
-              }
-              selectedCommitSha={
-                activeTab ? selectedCommitSha(activeTab) : undefined
-              }
-              textHarness={pickTextHarness(active?.harness)}
-              recents={recents}
-              busyProjectPaths={busyProjectPaths}
-              liveAgents={liveAgents}
-              onSelectAgent={onSelectLiveAgent}
-              onStopAgent={onCloseLiveAgent}
-              onSelectProject={onSelectProject}
-              onOpenProject={pickProject}
-              onRemoveProject={onRemoveProject}
-              familiars={sidebarFamiliars}
-              familiarViewActive={familiarCovers}
-              onNew={onNew}
-              openSessions={openProjectSessions}
-              onNewTerminal={onNewTerminal}
-              onSearch={onOpenSearch}
-              onOpenInbox={onOpenInbox}
-              onOpenInboxItem={onOpenLinkedWorkItem}
-              onOpenNotes={notesEnabled ? onOpenNotes : undefined}
-              onOpenKnowledge={
-                railSurfaces.knowledge ? onOpenKnowledge : undefined
-              }
-              knowledgeActive={localSurface === "knowledge"}
-              onOpenAutomations={onOpenAutomations}
-              onGoToFile={onGoToFile}
-              searchActive={searchViewOpen}
-              inboxActive={inboxViewOpen}
-              notesActive={notesViewOpen}
-              automationsActive={automationsSurfaceOpen}
-              railExtraActions={localSurfaceRailActions}
-              notesEnabled={notesEnabled}
-              projectRailOpen={projectRailOpen}
-              compactProjectRail={compactProjectRail}
-              titleBarAbove={compactTitleBar}
-              onToggleProjectRail={onToggleProjectRail}
-              unseenFinishedIds={unseenFinishedIds}
-              inboxUnseen={inboxUnseen}
-              linkedSessionUpdateIds={linkedSessionUpdateIds}
-              settingsOpen={settingsOpen}
-              settingsSection={settingsSection}
-              onOpenSettings={onOpenSettings}
-              onOpenNotificationSettings={onOpenNotificationSettings}
-              onSelectSettingsSection={onSelectSettingsSection}
-              onCloseSettings={onCloseSettings}
-              updateNotice={updateNotice}
-              onOpenWhatsNew={onOpenWhatsNew}
-              onDismissUpdate={onDismissUpdate}
-            />
-
-            <div className="body-glass flex min-h-0 min-w-0 flex-1 flex-col">
+            >
               <div
                 className={
-                  searchViewOpen ||
-                  settingsOpen ||
-                  inboxViewOpen ||
-                  notesViewOpen ||
-                  automationsViewOpen
-                    ? "hidden"
-                    : "flex min-h-0 min-w-0 flex-1 flex-col"
-                }
-                aria-hidden={
-                  searchViewOpen ||
-                  settingsOpen ||
-                  inboxViewOpen ||
-                  notesViewOpen ||
-                  automationsViewOpen
-                }
-                inert={
-                  searchViewOpen ||
-                  settingsOpen ||
-                  inboxViewOpen ||
-                  notesViewOpen ||
-                  automationsViewOpen ||
-                  undefined
+                  insetLayout
+                    ? "inset-card mr-1.5 flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[10px] border border-stroke"
+                    : "contents"
                 }
               >
-                {!IS_MAC ? (
-                  <MenuBar
-                    onNew={onNew}
-                    onNewTerminal={onNewTerminal}
-                    onToggleTerminal={onToggleProjectTerminal}
-                    onGoToFile={onGoToFile}
-                    onToggleSidebar={onToggleSidebar}
-                    onToggleSessionSidebar={onToggleSessionSidebar}
-                    onShowSourceControl={onToggleChanges}
-                    onCloseCurrentTab={
-                      activeTabId ? () => onCloseTab(activeTabId) : undefined
-                    }
-                    onCloseOtherTabs={onCloseOtherTabs}
-                    onCloseAllTabs={onCloseAllTabs}
-                    onPickProject={pickProject}
-                    onFindInProject={onFindInProject}
-                    onSearch={onOpenSearch}
-                    onOpenInbox={onOpenInbox}
-                    onOpenNotes={notesEnabled ? onOpenNotes : undefined}
-                    onZoomIn={() => {
-                      const next = saveUiScale(zoomInUiScale(loadUiScale()));
-                      void applyUiScale(next);
-                    }}
-                    onZoomOut={() => {
-                      const next = saveUiScale(zoomOutUiScale(loadUiScale()));
-                      void applyUiScale(next);
-                    }}
-                    onZoomReset={() => {
-                      saveUiScale(UI_SCALE_DEFAULT);
-                      void applyUiScale(UI_SCALE_DEFAULT);
-                    }}
-                  />
-                ) : null}
-                <div className="flex min-h-0 min-w-0 flex-1">
-                  <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    {compactTitleBar ? null : workspaceTitleBar}
+                {insetLayout ? null : sessionSidebar}
 
-                    <main className="relative flex min-h-0 min-w-0 flex-1">
-                      <div
-                        ref={dockGridRef}
-                        className="grid h-full min-h-0 min-w-0 flex-1"
-                      >
-                        {projectTerminals.map((dock) => {
-                          const show =
-                            dock.open &&
-                            !familiarCovers &&
-                            sameProjectPath(dock.projectPath, projectCwd);
-                          return (
-                            <div
-                              key={dock.projectPath}
-                              className={
-                                show
-                                  ? "h-full min-h-0 min-w-0 w-full overflow-hidden"
-                                  : "hidden"
-                              }
-                              style={show ? { gridArea: "dock" } : undefined}
-                              aria-hidden={!show}
-                            >
-                              <ProjectTerminalDock
-                                dock={dock}
-                                focused={show && projectTerminalFocused}
-                                onFocus={focusProjectTerminal}
-                                onHide={onHideProjectTerminal}
-                                onSideChange={onProjectTerminalSide}
-                                onSizePaint={paintDockSize}
-                                onSizeCommit={commitDockSize}
-                                onAddTerminal={onNewTerminal}
-                                onSelectTerminal={onSelectProjectTerminal}
-                                onCloseTerminal={onCloseProjectTerminal}
-                                onCloseOtherTerminals={
-                                  onCloseOtherProjectTerminals
-                                }
-                                onReorderTerminals={onReorderProjectTerminals}
-                                onTerminalMetaChange={onTerminalMetaChange}
-                              />
-                            </div>
+                <div
+                  className={`flex min-h-0 min-w-0 flex-1 flex-col${
+                    insetLayout ? "" : " body-glass"
+                  }`}
+                >
+                  <div
+                    className={
+                      searchViewOpen ||
+                      settingsOpen ||
+                      inboxViewOpen ||
+                      notesViewOpen ||
+                      automationsViewOpen
+                        ? "hidden"
+                        : "flex min-h-0 min-w-0 flex-1 flex-col"
+                    }
+                    aria-hidden={
+                      searchViewOpen ||
+                      settingsOpen ||
+                      inboxViewOpen ||
+                      notesViewOpen ||
+                      automationsViewOpen
+                    }
+                    inert={
+                      searchViewOpen ||
+                      settingsOpen ||
+                      inboxViewOpen ||
+                      notesViewOpen ||
+                      automationsViewOpen ||
+                      undefined
+                    }
+                  >
+                    {!IS_MAC ? (
+                      <MenuBar
+                        onNew={onNew}
+                        onNewTerminal={onNewTerminal}
+                        onToggleTerminal={onToggleProjectTerminal}
+                        onGoToFile={onGoToFile}
+                        onToggleSidebar={onToggleSidebar}
+                        onToggleSessionSidebar={
+                          onToggleSessionSidebarShortcut
+                        }
+                        onShowSourceControl={onToggleChanges}
+                        onCloseCurrentTab={
+                          activeTabId
+                            ? () => onCloseTab(activeTabId)
+                            : undefined
+                        }
+                        onCloseOtherTabs={onCloseOtherTabs}
+                        onCloseAllTabs={onCloseAllTabs}
+                        onPickProject={pickProject}
+                        onFindInProject={onFindInProject}
+                        onSearch={onOpenSearch}
+                        onOpenInbox={onOpenInbox}
+                        onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+                        onZoomIn={() => {
+                          const next = saveUiScale(
+                            zoomInUiScale(loadUiScale()),
                           );
-                        })}
-                        <div
-                          className="relative flex min-h-0 min-w-0 flex-row"
-                          style={{ gridArea: "main" }}
-                        >
-                          <div className="relative min-h-0 min-w-0 flex-1">
-                            {tabs.map((tab) => (
-                              <div
-                                key={tab.id}
-                                aria-hidden={
-                                  tab.id !== activeTabId || familiarCovers
-                                }
-                                className={
-                                  tab.id === activeTabId && !familiarCovers
-                                    ? "absolute inset-0 flex h-full min-h-0 flex-col"
-                                    : "hidden"
-                                }
-                              >
-                                <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-                                  <PaneTree
-                                    {...sessionPaneProps}
-                                    visible={
-                                      tab.id === activeTabId &&
-                                      !inboxViewOpen &&
-                                      !familiarCovers
+                          void applyUiScale(next);
+                        }}
+                        onZoomOut={() => {
+                          const next = saveUiScale(
+                            zoomOutUiScale(loadUiScale()),
+                          );
+                          void applyUiScale(next);
+                        }}
+                        onZoomReset={() => {
+                          saveUiScale(UI_SCALE_DEFAULT);
+                          void applyUiScale(UI_SCALE_DEFAULT);
+                        }}
+                      />
+                    ) : null}
+                    <div className="flex min-h-0 min-w-0 flex-1">
+                      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                        {titleBarInBody ? workspaceTitleBar : null}
+
+                        <main className="relative flex min-h-0 min-w-0 flex-1">
+                          <div
+                            ref={dockGridRef}
+                            className="grid h-full min-h-0 min-w-0 flex-1"
+                          >
+                            {projectTerminals.map((dock) => {
+                              const show =
+                                (dock.open || dockClosingShown) &&
+                                !familiarCovers &&
+                                sameProjectPath(dock.projectPath, projectCwd);
+                              return (
+                                <div
+                                  key={dock.projectPath}
+                                  className={
+                                    show
+                                      ? "h-full min-h-0 min-w-0 w-full overflow-hidden"
+                                      : "hidden"
+                                  }
+                                  style={
+                                    show ? { gridArea: "dock" } : undefined
+                                  }
+                                  aria-hidden={!show}
+                                  data-dock-shown={show ? "" : undefined}
+                                >
+                                  <ProjectTerminalDock
+                                    dock={dock}
+                                    focused={show && projectTerminalFocused}
+                                    onFocus={focusProjectTerminal}
+                                    onHide={onHideProjectTerminal}
+                                    onSideChange={onProjectTerminalSide}
+                                    onSizePaint={paintDockSize}
+                                    onSizeCommit={commitDockSize}
+                                    onAddTerminal={onNewTerminal}
+                                    onSelectTerminal={onSelectProjectTerminal}
+                                    onCloseTerminal={onCloseProjectTerminal}
+                                    onCloseOtherTerminals={
+                                      onCloseOtherProjectTerminals
                                     }
-                                    layout={tab.layout}
-                                    sessions={sessions}
-                                    editorPanes={[
-                                      ...tab.editorPanes,
-                                      ...(tab.terminalPanes ?? []),
-                                    ]}
-                                    dirtyFileIds={dirtyFiles}
-                                    fileErrorCounts={fileErrorCounts}
-                                    focusedId={
-                                      tab.id === activeTabId &&
-                                      !familiarViewId &&
-                                      !inboxViewOpen &&
-                                      !tab.diffFocused &&
-                                      !projectTerminalFocused
-                                        ? tab.focusedId
-                                        : ""
+                                    onReorderTerminals={
+                                      onReorderProjectTerminals
                                     }
-                                    addToChatSessionId={
-                                      tab.id === activeTabId
-                                        ? active?.id
-                                        : undefined
-                                    }
-                                    composerFocused={
-                                      composerFocused &&
-                                      !projectTerminalFocused &&
-                                      !familiarViewId
-                                    }
-                                    composerFocusToken={composerFocusToken}
-                                    onSelectFile={onSelectFileSurface}
-                                    onCloseFile={onCloseFile}
-                                    onCloseOtherFiles={onCloseOtherFiles}
-                                    onPinFile={onPinFile}
-                                    onReorderFiles={onReorderFiles}
-                                    onFileDirtyChange={onFileDirtyChange}
-                                    onFileErrorCountChange={
-                                      onFileErrorCountChange
-                                    }
-                                    transcriptPool={transcriptPool}
-                                    onRatio={(splitId, index, ratio) =>
-                                      onRatio(tab.id, splitId, index, ratio)
-                                    }
-                                    editorNavigation={editorNavigation}
-                                    onUpdatePlan={onUpdatePlan}
-                                    onMovePane={onMovePane}
-                                    onDetachPane={onDetachPane}
                                     onTerminalMetaChange={onTerminalMetaChange}
                                   />
                                 </div>
-                              </div>
-                            ))}
-                            {sessions
-                              .filter((session) => isFamiliarSession(session.id))
-                              .map((session) => {
-                                const visible = familiarViewId === session.id;
-                                return (
+                              );
+                            })}
+                            <div
+                              className="relative flex min-h-0 min-w-0 flex-row"
+                              style={{ gridArea: "main" }}
+                            >
+                              <div className="relative min-h-0 min-w-0 flex-1">
+                                {tabs.map((tab) => (
                                   <div
-                                    key={session.id}
-                                    data-familiar-view={session.id}
-                                    aria-hidden={!visible}
-                                    inert={!visible || undefined}
+                                    key={tab.id}
+                                    data-workspace-tab={tab.id}
+                                    aria-hidden={
+                                      tab.id !== activeTabId || familiarCovers
+                                    }
                                     className={
-                                      visible
+                                      tab.id === activeTabId && !familiarCovers
                                         ? "absolute inset-0 flex h-full min-h-0 flex-col"
                                         : "hidden"
                                     }
                                   >
-                                    <SessionPane
-                                      {...sessionPaneProps}
-                                      session={session}
-                                      visible={visible}
-                                      focused={
-                                        visible &&
-                                        !projectTerminalFocused &&
-                                        !familiarShownSessionActive
-                                      }
-                                      inSplit={false}
-                                      addToChatTarget={visible}
-                                      composerFocused={
-                                        visible &&
-                                        composerFocused &&
-                                        !projectTerminalFocused &&
-                                        !familiarShownSessionActive
-                                      }
-                                      composerFocusToken={composerFocusToken}
-                                      onShowFamiliarActivity={onShowFamiliarActivity}
-                                      onOpenArtifact={onOpenMonoArtifact}
-                                      onOpenDiff={onOpenMonoDiff}
-                                      onCommitChanges={onCommitMonoChanges}
-                                      familiarActivityTurnId={
-                                        familiarActivityShownTurnId
-                                      }
-                                      onOpenFamiliarSession={onOpenFamiliarSession}
-                                      familiarLaunchedSessions={
-                                        visible
-                                          ? familiarLaunchedSessions
-                                          : undefined
-                                      }
-                                      openFamiliarSessionId={shownFamiliarSessionId}
-                                    />
+                                    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+                                      <PaneTree
+                                        {...sessionPaneProps}
+                                        visible={
+                                          tab.id === activeTabId &&
+                                          !inboxViewOpen &&
+                                          !familiarCovers
+                                        }
+                                        layout={tab.layout}
+                                        sessions={sessions}
+                                        editorPanes={[
+                                          ...tab.editorPanes,
+                                          ...(tab.terminalPanes ?? []),
+                                        ]}
+                                        dirtyFileIds={dirtyFiles}
+                                        fileErrorCounts={fileErrorCounts}
+                                        focusedId={
+                                          tab.id === activeTabId &&
+                                          !familiarViewId &&
+                                          !inboxViewOpen &&
+                                          !tab.diffFocused &&
+                                          !projectTerminalFocused
+                                            ? tab.focusedId
+                                            : ""
+                                        }
+                                        addToChatSessionId={
+                                          tab.id === activeTabId
+                                            ? active?.id
+                                            : undefined
+                                        }
+                                        composerFocused={
+                                          composerFocused &&
+                                          !projectTerminalFocused &&
+                                          !familiarViewId
+                                        }
+                                        composerFocusToken={composerFocusToken}
+                                        onSelectFile={onSelectFileSurface}
+                                        onCloseFile={onCloseFile}
+                                        onCloseOtherFiles={onCloseOtherFiles}
+                                        onPinFile={onPinFile}
+                                        onReorderFiles={onReorderFiles}
+                                        onFileDirtyChange={onFileDirtyChange}
+                                        onFileErrorCountChange={
+                                          onFileErrorCountChange
+                                        }
+                                        transcriptPool={transcriptPool}
+                                        onRatio={(splitId, index, ratio) =>
+                                          onRatio(tab.id, splitId, index, ratio)
+                                        }
+                                        editorNavigation={editorNavigation}
+                                        onUpdatePlan={onUpdatePlan}
+                                        onMovePane={onMovePane}
+                                        onDetachPane={onDetachPane}
+                                        onTerminalMetaChange={
+                                          onTerminalMetaChange
+                                        }
+                                      />
+                                    </div>
                                   </div>
-                                );
-                              })}
+                                ))}
+                                {sessions
+                                  .filter((session) =>
+                                    isFamiliarSession(session.id),
+                                  )
+                                  .map((session) => {
+                                    const visible = familiarViewId === session.id;
+                                    return (
+                                      <div
+                                        key={session.id}
+                                        data-familiar-view={session.id}
+                                        aria-hidden={!visible}
+                                        inert={!visible || undefined}
+                                        className={
+                                          visible
+                                            ? "absolute inset-0 flex h-full min-h-0 flex-col"
+                                            : "hidden"
+                                        }
+                                      >
+                                        {insetLayout &&
+                                        visible &&
+                                        familiarViewFamiliar ? (
+                                          <FamiliarViewActions
+                                            name={familiarLook(familiarViewFamiliar).name}
+                                            overviewOpen={familiarOverviewOpen}
+                                            onToggleOverview={
+                                              onToggleFamiliarOverview
+                                            }
+                                            onOpenSettings={
+                                              onOpenFamiliarViewSettings
+                                            }
+                                            // The overview header's row, so both share a centre line.
+                                            className="absolute right-2.5 top-0 z-10 h-10"
+                                          />
+                                        ) : null}
+                                        <SessionPane
+                                          {...sessionPaneProps}
+                                          session={session}
+                                          visible={visible}
+                                          focused={
+                                            visible &&
+                                            !projectTerminalFocused &&
+                                            !familiarShownSessionActive
+                                          }
+                                          inSplit={false}
+                                          addToChatTarget={visible}
+                                          composerFocused={
+                                            visible &&
+                                            composerFocused &&
+                                            !projectTerminalFocused &&
+                                            !familiarShownSessionActive
+                                          }
+                                          composerFocusToken={
+                                            composerFocusToken
+                                          }
+                                          onShowFamiliarActivity={
+                                            onShowFamiliarActivity
+                                          }
+                                          onOpenArtifact={onOpenMonoArtifact}
+                                          onOpenDiff={onOpenMonoDiff}
+                                          onCommitChanges={onCommitMonoChanges}
+                                          familiarActivityTurnId={
+                                            familiarActivityShownTurnId
+                                          }
+                                          onOpenFamiliarSession={onOpenFamiliarSession}
+                                          familiarLaunchedSessions={
+                                            visible
+                                              ? familiarLaunchedSessions
+                                              : undefined
+                                          }
+                                          openFamiliarSessionId={shownFamiliarSessionId}
+                                          // The inset footer stays under a
+                                          // Familiar and shows its usage.
+                                          familiarComposerUsage={!insetLayout}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                          {[...linkedWorkItemPanels.values()].map((panel) => (
+                            <LinkedWorkItemPanel
+                              repairSessions={repairSessions}
+                              onRepairChecks={onRepairChecks}
+                              onOpenSession={(sessionId) => {
+                                closeLinkedWorkItemPanel(panel.sessionId);
+                                onOpenInboxSession(sessionId);
+                              }}
+                              key={panel.sessionId}
+                              target={panel.item}
+                              cwd={panel.cwd}
+                              recents={recents}
+                              visible={
+                                !searchViewOpen &&
+                                !settingsOpen &&
+                                !inboxViewOpen &&
+                                !notesViewOpen &&
+                                !automationsViewOpen &&
+                                !familiarViewId &&
+                                activeLinkedWorkItemPanel?.sessionId ===
+                                  panel.sessionId
+                              }
+                              onClose={() =>
+                                closeLinkedWorkItemPanel(panel.sessionId)
+                              }
+                            />
+                          ))}
+                        </main>
                       </div>
-                      {[...linkedWorkItemPanels.values()].map((panel) => (
-                        <LinkedWorkItemPanel
-                          repairSessions={repairSessions}
-                          onRepairChecks={onRepairChecks}
-                          onOpenSession={(sessionId) => {
-                            closeLinkedWorkItemPanel(panel.sessionId);
-                            onOpenInboxSession(sessionId);
-                          }}
-                          key={panel.sessionId}
-                          target={panel.item}
-                          cwd={panel.cwd}
-                          recents={recents}
-                          visible={
-                            !searchViewOpen &&
-                            !settingsOpen &&
-                            !inboxViewOpen &&
-                            !notesViewOpen &&
-                            !automationsViewOpen &&
-                            !familiarViewId &&
-                            activeLinkedWorkItemPanel?.sessionId ===
-                              panel.sessionId
-                          }
-                          onClose={() =>
-                            closeLinkedWorkItemPanel(panel.sessionId)
-                          }
-                        />
-                      ))}
-                    </main>
+                      {familiarCovers ? familiarOverviewPanel : null}
+                      {familiarSettingsDialog}
+                    </div>
                   </div>
-                  {familiarCovers ? familiarOverviewPanel : null}
-                  {familiarSettingsDialog}
+                  {searchViewOpen ||
+                  (insetLayout && openAppViews.includes("search")) ? (
+                    <AppViewSurface active={searchViewOpen}>
+                      <SearchView
+                        tabbed={insetLayout}
+                        open={searchViewOpen}
+                        cwd={gitCwd}
+                        recents={recents}
+                        history={projectHistory}
+                        sessions={sessions.filter((session) => !session.inboxAsk)}
+                        focusToken={searchViewFocusToken}
+                        besideRail={
+                          insetLayout || projectRailOpen || compactProjectRail
+                        }
+                        compactRail={!insetLayout && compactRailActive}
+                        onClose={onLeaveSearch}
+                        onToggleSidebar={onToggleSidebar}
+                        onOpenFile={onOpenFile}
+                        onOpenSession={(sessionId, blockId, query) => {
+                          if (blockId)
+                            requestTranscriptJump(sessionId, blockId, query);
+                          void onSelectHistorySession(sessionId);
+                        }}
+                        onOpenProject={onSelectProject}
+                      />
+                    </AppViewSurface>
+                  ) : null}
+                  <div className="hidden" aria-hidden>
+                    {sessions
+                      .filter((session) => session.inboxAsk)
+                      .map((session) => {
+                        const visible =
+                          inboxViewOpen &&
+                          inboxAskPortal?.sessionId === session.id;
+                        return (
+                          <SessionSurface
+                            key={session.id}
+                            host={visible ? inboxAskPortal.host : undefined}
+                          >
+                            <SessionPane
+                              {...sessionPaneProps}
+                              session={session}
+                              visible={visible}
+                              focused={visible}
+                              inSplit={false}
+                              composerFocused={composerFocused}
+                              composerFocusToken={composerFocusToken}
+                            />
+                          </SessionSurface>
+                        );
+                      })}
+                  </div>
+                  {inboxViewOpen ||
+                  (insetLayout && openAppViews.includes("inbox")) ? (
+                    <AppViewSurface active={inboxViewOpen}>
+                      <InboxView
+                        tabbed={insetLayout}
+                        active={inboxViewOpen}
+                        cwd={sidebarCwd}
+                        scopeProject={appViewScope}
+                        recents={recents}
+                        besideRail={
+                          insetLayout || projectRailOpen || compactProjectRail
+                        }
+                        compactRail={!insetLayout && compactRailActive}
+                        onClose={onLeaveInbox}
+                        onToggleSidebar={onToggleSidebar}
+                        onStart={onStartInboxItem}
+                        onAsk={onAskInboxItem}
+                        onAskRestart={onRestartInboxAsk}
+                        onAskMount={setInboxAskPortal}
+                        sessions={inboxRelatedSessions}
+                        repairSessions={repairSessions}
+                        onRepairChecks={onRepairChecks}
+                        onOpenSession={onOpenInboxSession}
+                        onOpenIntegrations={onOpenInboxIntegrations}
+                      />
+                    </AppViewSurface>
+                  ) : null}
+                  {notesViewOpen ||
+                  (insetLayout && notesEnabled && openAppViews.includes("notes")) ? (
+                    <AppViewSurface active={notesViewOpen}>
+                      <NotesView
+                        tabbed={insetLayout}
+                        active={notesViewOpen}
+                        besideRail={
+                          insetLayout || projectRailOpen || compactProjectRail
+                        }
+                        compactRail={!insetLayout && compactRailActive}
+                        cwd={projectCwd}
+                        scopeProject={appViewScope}
+                        recents={recents}
+                        onClose={onLeaveNotes}
+                        onToggleSidebar={onToggleSidebar}
+                      />
+                    </AppViewSurface>
+                  ) : null}
+                  <LocalSurfaceViews
+                    surface={localSurface}
+                    besideRail={
+                      insetLayout || projectRailOpen || compactProjectRail
+                    }
+                    compactRail={!insetLayout && compactRailActive}
+                    projectPaths={recents.map((project) => project.path)}
+                    projectCwd={projectCwd}
+                    onClose={onLeaveLocalSurface}
+                    onToggleSidebar={onToggleSidebar}
+                    onOpenSession={onOpenHomeSession}
+                    onOpenAutomation={onOpenHomeAutomation}
+                    onOpenAutomations={onOpenAutomations}
+                    onOpenUsage={onOpenUsageSurface}
+                    onOpenInbox={onOpenInbox}
+                    taskBoard={taskBoard}
+                  />
+                  {automationsSurfaceOpen ||
+                  (insetLayout && openAppViews.includes("automations")) ? (
+                    <AppViewSurface active={automationsSurfaceOpen}>
+                      <AutomationsView
+                        tabbed={insetLayout}
+                        besideRail={
+                          insetLayout || projectRailOpen || compactProjectRail
+                        }
+                        compactRail={!insetLayout && compactRailActive}
+                        cwd={projectCwd}
+                        scopeProject={appViewScope}
+                        recents={recents}
+                        focusAutomationId={automationsFocusId}
+                        onFocusAutomationConsumed={onAutomationsFocusConsumed}
+                        onClose={onLeaveAutomations}
+                        onToggleSidebar={onToggleSidebar}
+                        onLaunch={(automation, run) =>
+                          launchAutomation(automation, run, true)
+                        }
+                        onOpenSession={onOpenAutomationSession}
+                      />
+                    </AppViewSurface>
+                  ) : null}
+                  {settingsOpen ? (
+                    <SettingsView
+                      section={settingsSection}
+                      anchor={settingsAnchor}
+                      notificationProjectPath={notificationProjectPath}
+                      notificationSettingsRequest={notificationSettingsRequest}
+                      recents={recents}
+                      cwd={sidebarCwd}
+                      sessions={sidebarHistory}
+                      liveSessions={sessions}
+                      onRemoveWorktree={onRemoveWorktree}
+                      onCheckWorktreeRemoval={onCheckWorktreeRemoval}
+                      onDeleteWorktreeSessions={onDeleteWorktreeSessions}
+                      besideRail
+                      headerHost={insetLayout ? settingsHeaderHost : undefined}
+                      onClose={onCloseSettings}
+                      onSelectSection={onSelectSettingsSection}
+                      onOpenSession={onOpenArchivedSession}
+                      onArchiveSession={onArchiveHistorySession}
+                      onDeleteSession={onDeleteHistorySession}
+                      onRestoreProject={onRestoreProject}
+                      onDeleteProject={(path) =>
+                        onRemoveProject(path, { purgeData: true })
+                      }
+                      onOpenWhatsNew={onOpenWhatsNew}
+                      collapsedProjectRailMode={collapsedProjectRailMode}
+                      onCollapsedProjectRailModeChange={
+                        setCollapsedProjectRailMode
+                      }
+                    />
+                  ) : null}
+                  {insetLayout ? null : usageFooter}
                 </div>
+                {insetLayout ? (
+                  // Part of the card: the project tools beside the
+                  // workspace, behind a hairline.
+                  <div
+                    ref={setRightPanelRef}
+                    inert={rightPanelClosing || undefined}
+                    className={
+                      insetRightPanelShown
+                        ? "relative flex h-full shrink-0 flex-col overflow-hidden border-l border-stroke"
+                        : "hidden"
+                    }
+                  >
+                    <div
+                      ref={setRightPanelHost}
+                      aria-label="Project tools"
+                      className="flex min-h-0 flex-1 flex-col"
+                    />
+                    <div
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Resize right sidebar"
+                      aria-valuenow={rightPanelResize.width}
+                      aria-valuemin={RIGHT_PANEL_WIDTH_MIN}
+                      aria-valuemax={RIGHT_PANEL_WIDTH_MAX}
+                      className={`absolute inset-y-0 -left-px z-10 w-1.5 cursor-col-resize touch-none ${
+                        rightPanelResize.dragging
+                          ? "bg-content/15"
+                          : "hover:bg-content/10"
+                      }`}
+                      onPointerDown={rightPanelResize.onPointerDown}
+                      onDoubleClick={rightPanelResize.onDoubleClick}
+                    />
+                  </div>
+                ) : null}
               </div>
-              {searchViewOpen ? (
-                <SearchView
-                  open
-                  cwd={gitCwd}
-                  recents={recents}
-                  history={projectHistory}
-                  sessions={sessions.filter((session) => !session.inboxAsk)}
-                  focusToken={searchViewFocusToken}
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  onClose={onLeaveSearch}
-                  onToggleSidebar={onToggleSidebar}
-                  onOpenFile={onOpenFile}
-                  onOpenSession={(sessionId, blockId, query) => {
-                    if (blockId)
-                      requestTranscriptJump(sessionId, blockId, query);
-                    void onSelectHistorySession(sessionId);
-                  }}
-                  onOpenProject={onSelectProject}
-                />
-              ) : null}
-              <div className="hidden" aria-hidden>
-                {sessions
-                  .filter((session) => session.inboxAsk)
-                  .map((session) => {
-                    const visible =
-                      inboxViewOpen && inboxAskPortal?.sessionId === session.id;
-                    return (
-                      <SessionSurface
-                        key={session.id}
-                        host={visible ? inboxAskPortal.host : undefined}
-                      >
-                        <SessionPane
-                          {...sessionPaneProps}
-                          session={session}
-                          visible={visible}
-                          focused={visible}
-                          inSplit={false}
-                          composerFocused={composerFocused}
-                          composerFocusToken={composerFocusToken}
-                        />
-                      </SessionSurface>
-                    );
-                  })}
-              </div>
-              {inboxViewOpen ? (
-                <InboxView
-                  cwd={sidebarCwd}
-                  recents={recents}
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  onClose={onLeaveInbox}
-                  onToggleSidebar={onToggleSidebar}
-                  onStart={onStartInboxItem}
-                  onAsk={onAskInboxItem}
-                  onAskRestart={onRestartInboxAsk}
-                  onAskMount={setInboxAskPortal}
-                  sessions={inboxRelatedSessions}
-                  repairSessions={repairSessions}
-                  onRepairChecks={onRepairChecks}
-                  onOpenSession={onOpenInboxSession}
-                  onOpenIntegrations={onOpenInboxIntegrations}
-                />
-              ) : null}
-              {notesViewOpen ? (
-                <NotesView
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  cwd={projectCwd}
-                  recents={recents}
-                  onClose={onLeaveNotes}
-                  onToggleSidebar={onToggleSidebar}
-                />
-              ) : null}
-              <LocalSurfaceViews
-                surface={localSurface}
-                besideRail={projectRailOpen || compactProjectRail}
-                compactRail={compactRailActive}
-                projectPaths={recents.map((project) => project.path)}
-                projectCwd={projectCwd}
-                onClose={onLeaveLocalSurface}
-                onToggleSidebar={onToggleSidebar}
-                onOpenSession={onOpenHomeSession}
-                onOpenAutomation={onOpenHomeAutomation}
-                onOpenAutomations={onOpenAutomations}
-                onOpenUsage={onOpenUsageSurface}
-                onOpenInbox={onOpenInbox}
-                taskBoard={taskBoard}
-              />
-              {automationsSurfaceOpen ? (
-                <AutomationsView
-                  besideRail={projectRailOpen || compactProjectRail}
-                  compactRail={compactRailActive}
-                  cwd={projectCwd}
-                  recents={recents}
-                  focusAutomationId={automationsFocusId}
-                  onFocusAutomationConsumed={onAutomationsFocusConsumed}
-                  onClose={onLeaveAutomations}
-                  onToggleSidebar={onToggleSidebar}
-                  onLaunch={(automation, run) =>
-                    launchAutomation(automation, run, true)
-                  }
-                  onOpenSession={onOpenAutomationSession}
-                />
-              ) : null}
-              {settingsOpen ? (
-                <SettingsView
-                  section={settingsSection}
-                  anchor={settingsAnchor}
-                  notificationProjectPath={notificationProjectPath}
-                  notificationSettingsRequest={notificationSettingsRequest}
-                  recents={recents}
-                  cwd={sidebarCwd}
-                  sessions={sidebarHistory}
-                  liveSessions={sessions}
-                  onRemoveWorktree={onRemoveWorktree}
-                  onCheckWorktreeRemoval={onCheckWorktreeRemoval}
-                  onDeleteWorktreeSessions={onDeleteWorktreeSessions}
-                  besideRail
-                  onClose={onCloseSettings}
-                  onSelectSection={onSelectSettingsSection}
-                  onOpenSession={onOpenArchivedSession}
-                  onArchiveSession={onArchiveHistorySession}
-                  onDeleteSession={onDeleteHistorySession}
-                  onRestoreProject={onRestoreProject}
-                  onDeleteProject={(path) =>
-                    onRemoveProject(path, { purgeData: true })
-                  }
-                  onOpenWhatsNew={onOpenWhatsNew}
-                  collapsedProjectRailMode={collapsedProjectRailMode}
-                  onCollapsedProjectRailModeChange={setCollapsedProjectRailMode}
-                />
-              ) : null}
-              {searchViewOpen ||
-              inboxViewOpen ||
-              notesViewOpen ||
-              automationsViewOpen ||
-              settingsOpen ||
-              familiarCovers ? null : (
-                <UsageFooter
-                  providers={usageProviders}
-                  session={usageSession}
-                  project={active?.cwd ?? projectCwd}
-                  onSelectAccount={onSelectProviderAccount}
-                  onManageAccounts={() =>
-                    openSettings("providers", "provider-accounts")
-                  }
-                  // A Familiar in full view has no terminal of its own.
-                  terminals={familiarCovers ? undefined : runningTerminals}
-                  terminalOpen={!familiarCovers && runningTerminalOpen}
-                  onToggleTerminal={onToggleRunningTerminal}
-                  onNewTerminal={
-                    !familiarCovers && isLocalProject(projectCwd)
-                      ? onNewTerminal
-                      : undefined
-                  }
-                  onToggleProjectTerminal={
-                    !familiarCovers && isLocalProject(projectCwd)
-                      ? onToggleProjectTerminal
-                      : undefined
-                  }
-                  projectTerminalActive={
-                    !familiarCovers &&
-                    !!currentProjectDock &&
-                    currentProjectDock.pane.files.length > 0
-                  }
-                  projectTerminalOpen={
-                    !familiarCovers && !!currentProjectDock?.open
-                  }
-                />
-              )}
+              {insetLayout
+                ? (usageFooter ??
+                  // Settings has no footer, so the card runs down to the same
+                  // gutter as its right edge.
+                  <div
+                    className={`${settingsOpen ? "h-1.5" : "h-[30px]"} shrink-0`}
+                  />)
+                : null}
             </div>
           </div>
 
@@ -13710,12 +14873,29 @@ function Workspace({
             }
             onHeightChange={setHarnessUpdateHeight}
           />
+          <NewLayoutNotice
+            topOffset={
+              12 +
+              (reminderNoticesHeight ? reminderNoticesHeight + 8 : 0) +
+              (harnessUpdateHeight ? harnessUpdateHeight + 8 : 0)
+            }
+            onHeightChange={setNewLayoutNoticeHeight}
+          />
+          <ResourcePressureNotice
+            sessions={sessionsRef}
+            onStopAgent={(id) => onStop(id, true)}
+            onStopSession={onStop}
+            onPressureChange={transcriptPool.setResourcePressure}
+            chipHost={pressureChipHost}
+            insetChip={insetLayout}
+          />
           <ApprovalToasts
             notices={hiddenApprovalToasts}
             topOffset={
               12 +
               (reminderNoticesHeight ? reminderNoticesHeight + 8 : 0) +
-              (harnessUpdateHeight ? harnessUpdateHeight + 8 : 0)
+              (harnessUpdateHeight ? harnessUpdateHeight + 8 : 0) +
+              (newLayoutNoticeHeight ? newLayoutNoticeHeight + 8 : 0)
             }
             onFocusSession={onOpenApprovalSession}
             onApproval={onApproval}
@@ -13758,6 +14938,7 @@ function Workspace({
         <TranscriptPoolOutlet pool={transcriptPool} />
       </OrchestrationWorkers.Provider>
     </OrchestrationActions.Provider>
+    </SessionStateContext.Provider>
   );
 }
 function conversationTitle(session: Session): string {

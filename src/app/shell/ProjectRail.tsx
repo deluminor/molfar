@@ -17,6 +17,7 @@ import {
 } from "../../shared/ui/icons";
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -36,7 +37,8 @@ import {
   saveProjectRailWidth,
 } from "../../features/settings/model/appearance";
 import { basename, type GitDiffStats } from "../../platform/tauri/fs";
-import { IS_MAC, MOD } from "../../platform/tauri/platform";
+import { MOD } from "../../platform/tauri/platform";
+import { useTrafficLightsVisible } from "../../platform/tauri/useTrafficLightsVisible";
 import { formatInteger } from "../../shared/lib/numbers";
 import { pathKey, projectKey, projectName } from "../../shared/lib/paths";
 import {
@@ -99,6 +101,18 @@ import { FamiliarRailSection, type FamiliarRailProps } from "./FamiliarRailSecti
 
 type Props = {
   visible?: boolean;
+  /** The inset layout's title bar carries the traffic lights and navigation. */
+  headerless?: boolean;
+  /**
+   * A width shared with the pane this rail stands in for, as the inset
+   * layout's Settings does with the sidebar: shown at it, resized into it.
+   */
+  sharedWidth?: {
+    width: number;
+    min: number;
+    max: () => number;
+    onCommit: (width: number) => void;
+  };
   cwd: string;
   recents: RecentProject[];
   inboxUnseen?: boolean;
@@ -142,6 +156,8 @@ type Props = {
 
 export function ProjectRail({
   visible = true,
+  headerless = false,
+  sharedWidth,
   cwd,
   recents,
   inboxUnseen = false,
@@ -181,14 +197,24 @@ export function ProjectRail({
   extraActions,
   familiars,
 }: Props) {
+  const trafficLightsVisible = useTrafficLightsVisible();
   const resize = useDragResize({
-    min: PROJECT_RAIL_WIDTH_MIN,
-    max: () =>
-      Math.min(PROJECT_RAIL_WIDTH_MAX, Math.floor(window.innerWidth * 0.35)),
+    min: sharedWidth?.min ?? PROJECT_RAIL_WIDTH_MIN,
+    max:
+      sharedWidth?.max ??
+      (() =>
+        Math.min(PROJECT_RAIL_WIDTH_MAX, Math.floor(window.innerWidth * 0.35))),
     defaultWidth: PROJECT_RAIL_WIDTH_DEFAULT,
-    initial: loadProjectRailWidth(),
-    onCommit: saveProjectRailWidth,
+    initial: sharedWidth?.width ?? loadProjectRailWidth(),
+    onCommit: sharedWidth?.onCommit ?? saveProjectRailWidth,
   });
+  // The rail stays mounted while hidden, so it picks the shared width up
+  // each time it is shown, before it paints.
+  const sharedWidthValue = sharedWidth?.width;
+  const { setPaneWidth } = resize;
+  useLayoutEffect(() => {
+    if (visible && sharedWidthValue != null) setPaneWidth(sharedWidthValue);
+  }, [visible, sharedWidthValue, setPaneWidth]);
   const [railOrder, setRailOrder] = useState(loadProjectRailOrder);
   const [pinnedPaths, setPinnedPaths] = useState(loadPinnedProjects);
   const [groupLabels, setGroupLabels] = useState(loadTabGroupLabels);
@@ -367,21 +393,23 @@ export function ProjectRail({
       aria-label="Projects"
       className={`sidebar-glass relative shrink-0 flex-col border-r border-stroke ${visible ? "flex" : "hidden"}`}
     >
-      <div
-        className="flex h-10 shrink-0 select-none items-center pr-1.5"
-        data-tauri-drag-region="deep"
-      >
-        {IS_MAC ? <div className="w-[78px] shrink-0" /> : null}
-        <DevModeSlot />
-        <TabVisitNav
-          canGoBack={canGoBack}
-          canGoForward={canGoForward}
-          onGoBack={onGoBack}
-          onGoForward={onGoForward}
-          onTogglePanel={settingsOpen ? undefined : onTogglePanel}
-          panelActive
-        />
-      </div>
+      {headerless ? null : (
+        <div
+          className="flex h-10 shrink-0 select-none items-center pr-1.5"
+          data-tauri-drag-region="deep"
+        >
+          {trafficLightsVisible ? <div className="w-[78px] shrink-0" /> : null}
+          <DevModeSlot />
+          <TabVisitNav
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onGoBack={onGoBack}
+            onGoForward={onGoForward}
+            onTogglePanel={settingsOpen ? undefined : onTogglePanel}
+            panelActive
+          />
+        </div>
+      )}
 
       {settingsOpen ? (
         <SettingsNav
@@ -594,7 +622,11 @@ export function ProjectRail({
         aria-valuemin={PROJECT_RAIL_WIDTH_MIN}
         aria-valuemax={PROJECT_RAIL_WIDTH_MAX}
         className={`absolute inset-y-0 -right-px z-10 w-1.5 cursor-col-resize touch-none ${
-          resize.dragging ? "bg-content/15" : "hover:bg-content/10"
+          headerless
+            ? ""
+            : resize.dragging
+              ? "bg-content/15"
+              : "hover:bg-content/10"
         }`}
         onPointerDown={resize.onPointerDown}
         onDoubleClick={resize.onDoubleClick}
@@ -805,14 +837,14 @@ function ProjectGroupSection({
             if (groupSortable.consumeClick()) return;
             onToggleCollapsed();
           }}
-          className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
+          className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[button:focus-visible]:pr-6"
         >
           <div className="grid size-4 shrink-0 place-items-center">
             {group.collapsed ? (
               <>
                 <span
                   data-group-mascot
-                  className="grid size-4 place-items-center group-hover:hidden group-has-[:focus-visible]:hidden"
+                  className="grid size-4 place-items-center group-hover:hidden group-has-[button:focus-visible]:hidden"
                 >
                   <ProjectMascot
                     project={group.id}
@@ -823,7 +855,7 @@ function ProjectGroupSection({
                 </span>
                 <ChevronRight
                   data-group-chevron
-                  className="hidden size-3.5 group-hover:block group-has-[:focus-visible]:block"
+                  className="hidden size-3.5 group-hover:block group-has-[button:focus-visible]:block"
                   strokeWidth={1.75}
                 />
               </>
@@ -848,7 +880,7 @@ function ProjectGroupSection({
             event.stopPropagation();
             openMenu(event.currentTarget);
           }}
-          className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 place-items-center rounded-md text-content/55 hover:bg-content/8 hover:text-content group-hover:grid group-has-[:focus-visible]:grid"
+          className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 place-items-center rounded-md text-content/55 hover:bg-content/8 hover:text-content group-hover:grid group-has-[button:focus-visible]:grid"
         >
           <MoreHorizontal className="size-4" strokeWidth={1.75} />
         </button>
@@ -1005,7 +1037,7 @@ function ProjectCard({
           muteStatus ? `${cardAriaLabel}, ${muteStatus}` : cardAriaLabel
         }
         aria-current={selected ? "true" : undefined}
-        className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
+        className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[button:focus-visible]:pr-6"
       >
         <div className="project-card-logo grid size-4 shrink-0 place-items-center transition-opacity group-hover:opacity-0">
           {logoPath && !busy ? (
@@ -1037,7 +1069,7 @@ function ProjectCard({
           </span>
         ) : null}
         {hasChanges ? (
-          <span className="project-card-stats shrink-0 group-hover:hidden group-has-[:focus-visible]:hidden">
+          <span className="project-card-stats shrink-0 group-hover:hidden group-has-[button:focus-visible]:hidden">
             <ProjectDiffStat additions={additions} deletions={deletions} />
           </span>
         ) : null}
@@ -1091,7 +1123,7 @@ function ProjectCard({
             event.detail === 0 ? rect.bottom : event.clientY,
           );
         }}
-        className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 place-items-center rounded-md text-content/55 hover:bg-content/8 hover:text-content group-hover:grid group-has-[:focus-visible]:grid"
+        className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 place-items-center rounded-md text-content/55 hover:bg-content/8 hover:text-content group-hover:grid group-has-[button:focus-visible]:grid"
       >
         <MoreHorizontal className="size-4" strokeWidth={1.75} />
       </button>

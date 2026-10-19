@@ -11,6 +11,7 @@ import { Shimmer } from "../../shared/ui/Shimmer";
 import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
 import { FamiliarRailMascot } from "../../features/familiars/ui/FamiliarRailMascot";
 import { FamiliarIntroCard } from "../../features/familiars/ui/FamiliarIntro";
+import { RailAction } from "./RailAction";
 import { saveFamiliarsEnabled } from "../../features/settings/model/settings";
 import { ProjectBackgroundDialog } from "../../features/projects/ui/ProjectBackgroundDialog";
 import { familiarBackgroundKey } from "../../features/familiars/model/familiarBackground";
@@ -27,6 +28,7 @@ import {
   familiarLook,
   familiarProjectsPhrase,
   familiarsSnapshot,
+  familiarWorksOn,
   reorderFamiliars,
   saveFamiliarMascot,
   saveFamiliarName,
@@ -43,7 +45,8 @@ export type FamiliarRailProps = {
   /** Replies each Familiar has that the user has not looked at yet, by Familiar id. */
   unseenCounts?: ReadonlyMap<string, number>;
   onOpen: (familiarId: string) => void;
-  onCreate: () => void;
+  /** Creates a Familiar, given these projects to start with. */
+  onCreate: (projects?: readonly string[]) => void;
   onDelete: (familiarId: string) => void;
 };
 
@@ -70,44 +73,81 @@ export function FamiliarRailSection({
   onOpen,
   onCreate,
   onDelete,
-}: FamiliarRailProps) {
+  project,
+}: FamiliarRailProps & {
+  /**
+   * Lists only the Familiars working on this project, as the inset sidebar does;
+   * a Familiar on several projects shows in each of them.
+   */
+  project?: string;
+}) {
   const snapshot = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
-  const familiars = useMemo(() => listFamiliars(), [snapshot]);
+  const familiars = useMemo(
+    () => listFamiliars().filter((familiar) => !project || familiarWorksOn(familiar, project)),
+    [snapshot, project],
+  );
   const ids = familiars.map((familiar) => familiar.id);
   const sortable = useAnimatedReorder(ids, reorderFamiliars, "y");
   const [menu, setMenu] = useState<{ id: string; anchor: PopoverAnchor }>();
   const [background, setBackground] = useState<string>();
   const backgroundFamiliar = background ? findFamiliar(background) : undefined;
 
-  // With no Familiar yet, the card stands in for the section.
-  if (familiars.length === 0)
+  // With no Familiar yet, the card stands in for the rail's section. A project
+  // with none of its own offers one under the label instead.
+  if (familiars.length === 0 && !project)
     return (
       <div className="mb-2 shrink-0" data-familiar-rail>
         <FamiliarIntroCard
           look={nextFamiliarLook(familiars)}
-          onCreate={onCreate}
+          onCreate={() => onCreate()}
           onHide={() => saveFamiliarsEnabled(false)}
         />
       </div>
     );
 
   return (
-    <div className="mb-2 shrink-0" data-familiar-rail>
-      <div className="flex items-center gap-1 px-3 pb-1.5 pt-1">
-        <span className="min-w-0 flex-1 truncate px-1 text-xs leading-5 text-content/50">
+    <div
+      className={`shrink-0 ${project ? "px-2 pb-3" : "mb-2"}`}
+      data-familiar-rail
+      data-familiar-project={project}
+    >
+      <div
+        className={
+          // The inset sidebar's section labels.
+          project
+            ? "flex h-7 items-center gap-1 px-2 text-[12px] font-medium text-content/50"
+            : "flex items-center gap-1 px-3 pb-1.5 pt-1"
+        }
+      >
+        <span
+          className={`min-w-0 flex-1 truncate${
+            project ? "" : " px-1 text-xs leading-5 text-content/50"
+          }`}
+        >
           Familiars
         </span>
-        <button
-          type="button"
-          title="New familiar"
-          aria-label="New familiar"
-          onClick={onCreate}
-          className="grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/8 hover:text-content"
-        >
-          <Plus className="size-3.5" strokeWidth={1.75} />
-        </button>
+        {familiars.length ? (
+          <button
+            type="button"
+            title="New familiar"
+            aria-label="New familiar"
+            onClick={() => onCreate(project ? [project] : undefined)}
+            className={`grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/8 hover:text-content${
+              project ? " -mr-0.5" : ""
+            }`}
+          >
+            <Plus className="size-3.5" strokeWidth={1.75} />
+          </button>
+        ) : null}
       </div>
-      <div className="flex flex-col gap-px px-2">
+      <div className={`flex flex-col gap-px${project ? "" : " px-2"}`}>
+        {familiars.length === 0 ? (
+          <RailAction
+            label="New familiar"
+            icon={Plus}
+            onClick={() => onCreate(project ? [project] : undefined)}
+          />
+        ) : null}
         {familiars.map((familiar) => {
           const look = familiarLook(familiar);
           const state = states.get(familiar.id) ?? IDLE;
@@ -169,7 +209,7 @@ export function FamiliarRailSection({
                   .filter(Boolean)
                   .join(", ")}
                 aria-current={selected ? "true" : undefined}
-                className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
+                className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[button:focus-visible]:pr-6"
               >
                 <FamiliarRailMascot
                   name={look.mascot}
@@ -193,7 +233,7 @@ export function FamiliarRailSection({
                   <span
                     aria-hidden
                     data-familiar-unread={unseen}
-                    className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-accent px-1 text-[10px] font-medium tabular-nums leading-none text-white group-hover:hidden group-has-[:focus-visible]:hidden"
+                    className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-accent px-1 text-[10px] font-medium tabular-nums leading-none text-white group-hover:hidden group-has-[button:focus-visible]:hidden"
                   >
                     {unreadBadge(unseen)}
                   </span>
@@ -210,7 +250,7 @@ export function FamiliarRailSection({
                   event.stopPropagation();
                   setMenu({ id: familiar.id, anchor: event.currentTarget });
                 }}
-                className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 place-items-center rounded-md text-content/55 hover:bg-content/8 hover:text-content group-hover:grid group-has-[:focus-visible]:grid"
+                className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 place-items-center rounded-md text-content/55 hover:bg-content/8 hover:text-content group-hover:grid group-has-[button:focus-visible]:grid"
               >
                 <MoreHorizontal className="size-4" strokeWidth={1.75} />
               </button>

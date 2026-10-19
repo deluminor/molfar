@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- An optional **New layout** brings a redesigned sidebar, project switcher, workspace tabs and right panel. Try it from the invitation or Settings → Appearance → Layout, where it can also be turned off to return to the classic layout. Glass remains a separate setting.
+- In the new layout, the sidebar's view links include **Home**, **Usage**, **Board**, and **Knowledge** alongside Inbox, Notes, and Automations.
+- The new layout has **workspace themes** (Default, Harbor, Moss, Ember, Orchid, Tidepool, Dune, Rosewood, Glacier) in Settings → Appearance → Theme.
+- A **Resource pressure** indicator in the usage footer opens a process view with CPU and memory usage, controls to stop agents and sessions, and controls to stop individual running tools. From MonoCode #1045.
+- **Smooth text reveal** in Settings → Chat controls whether incoming reply bursts appear gradually or immediately. It is enabled by default, so replies now reveal gradually; turn it off to show bursts as they arrive. From MonoCode #1045.
+- The new layout's right panel has a **History** tab with a searchable, refreshable Git history graph. Its tabs can be dragged to reorder.
+- A session that hits a usage limit can **continue on another provider account**. Claude and Codex conversations are copied to the chosen account so the same session resumes there; if the copy fails, it continues from a handoff summary.
+- Sessions started by an operator appear in the sidebar under the session that started them instead of opening as tabs, unless the user asks to see them.
+- Remote hosts can run on **Linux without systemd**, including containers and Firecracker microVMs. Setup uses a detached background process there and reconnecting starts it again if needed; machines with systemd keep their user service and lingering. From MonoCode #990.
+- The workspace tab context menu has **Close All Tabs**, with the same unsaved-file and terminal confirmations as the File menu. From MonoCode #1005.
+
+### Changed
+
+- **Main pane glass** is off by default on Linux. Turn it on in Settings → Appearance → Translucency.
+- The footer's **High usage** warning opens a compact view of running sessions, with one Stop button per session. Process details expand when needed, and long lists scroll inside the dialog.
+- Large conversations and busy workspaces stay more responsive: recent transcripts retain their rendered state across tab switches, code highlighting and large diffs run in workers, and navigation avoids unnecessary layout measurements. Large tool output loads when expanded. From MonoCode #1045.
+- Background Git work and agent tool processes receive lower scheduling priority where supported. Resource pressure reduces retained transcript memory while preserving session history. From MonoCode #1045.
+- In the new layout, the **terminal panel and split panes slide** open and closed, pushing the workspace aside. A file pane slides in with its tabs and fades its contents in once loaded.
+- Code in the editor, diffs, and replies uses the **VS Code Dark+ and Light+** colors, with a shared code font size for the editor and diffs.
+- Review tabs stay open across editor navigation, keeping their folds and scroll position. Unified diffs render faster, with syntax highlighting in the background, and commit diffs are not refetched when shown again.
+- In the new layout, the session sidebar shortcut (⌘⇧B) toggles the right panel, and Inbox, Notes, and Automations show the active project's items.
+- Glass in the new layout uses native macOS blur.
+- Session review cards and the message queue have lighter, more consistent styling.
+
+### Fixed
+
+- Turning off **Transparent window** keeps the new layout opaque when themes change, including native appearance updates before the layout has mounted.
+- Completing a reply, changing a file pane's width, or returning to a cached conversation preserves the reader's position and keeps a following conversation at its reply. Completed provider bursts continue their text reveal without jumping the transcript. From MonoCode #1045.
+- Session streaming avoids unnecessary background rerenders and repeated history work. Composer resizing and decorative transcript measurements no longer force repeated workspace layout during navigation. From MonoCode #1045.
+- Notification sounds suspend their audio context after playback finishes, reducing idle resource use. From MonoCode #1045.
+- Moving focus no longer rechecks the whole page's styles, which took about 45 ms with a long transcript open. From MonoCode #1038.
+- Agent tool calls no longer rebuild every open composer's @-mention index when nothing on disk changed. From MonoCode #1029.
+- Keystrokes no longer search the whole page for an active shortcut recorder. From MonoCode #1028.
+- Typing in a composer on macOS no longer rechecks the whole page's styles for each keystroke. From MonoCode #985.
+- The composer runner stops its animation loop while its tab is in the background. From MonoCode #975.
+- A blank session keeps the provider account selected for its own project. From MonoCode #967.
+- Skills remain discoverable when their 16 KiB preview ends partway through a UTF-8 character. From MonoCode #978.
+- Replayed Claude background-task notifications no longer end a resumed turn early. From MonoCode #532.
+- Refused fast mode is not reported as a session usage limit. From MonoCode #958.
+- Sending a message during a running turn preserves its existing clock. From MonoCode #1021.
+- Git LFS works when MOLFAR is launched from Finder: Git commands include Homebrew and other common install locations on their PATH, plus the terminal's PATH once available. From MonoCode #1004.
+- Selecting the **whole last paragraph** of a reply opens the Add to chat and Add to notes menu. From MonoCode #1001.
+- Wrapped diff lines place scrollbar change markers at their rendered positions. From MonoCode #1002.
+- **Markdown file previews** display local Markdown and HTML images, including centered headers, tables, and picture elements, while preserving dimensions and alignment. Paths resolve within the project; missing, invalid, remote, or out-of-project images fall back to their alt text. From MonoCode #1027.
+- Right-clicking empty window space no longer opens a native menu offering only **Reload**. Reload remains in the View menu, and controls keep their applicable native menus. From MonoCode #1003.
+- HTML artifacts render their surface, muted, and border theme colors opaquely. From MonoCode #1020.
+- macOS development bundles carry the app's real version metadata. From MonoCode #983.
+- Revisiting a tab no longer replays its transcript animations.
+- Closing tabs around Familiar and app view tabs keeps the right workspace visible, and switching between them no longer flickers.
+- Title bars and the project rail leave room for the window controls in macOS full screen.
+- Model pickers and popovers fit short or zoomed windows without clipping rows.
+- Empty sessions lay out correctly in narrow or short panes.
+- Translucent cards render without flicker on macOS.
+
 ## [1.0.18] - 2026-10-18
 
 ### Changed
