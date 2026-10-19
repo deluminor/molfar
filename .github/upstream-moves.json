@@ -1203,6 +1203,54 @@
       },
       {
         "names": [
+          "onHandoff session build (App: handoffSession, opened beside the source)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/handoff-session.ts"
+      },
+      {
+        "names": [
+          "onCompactContext (App: compactContext)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/compact-context.ts"
+      },
+      {
+        "names": [
+          "onStop (App: stopTurn, stoppedSession)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/stop-turn.ts"
+      },
+      {
+        "names": [
+          "onCloseLiveAgent (App: closeLiveAgent)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/close-live-agent.ts"
+      },
+      {
+        "names": [
+          "onApproval, onQuestionReply, onQuestionInteraction (App: answerApproval/answerQuestion/keepQuestionOpen)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/harness-replies.ts"
+      },
+      {
+        "names": [
+          "Escape-stops-focused-turn effect"
+        ],
+        "target": "src/app/workspace/hooks/use-escape-stop.ts"
+      },
+      {
+        "names": [
+          "autoContinueKey + auto-continue effect"
+        ],
+        "target": "src/app/workspace/hooks/use-auto-continue.ts"
+      },
+      {
+        "names": [
+          "nudgeWorkspace"
+        ],
+        "target": "src/app/model/nudge-workspace.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

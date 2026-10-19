@@ -220,6 +220,20 @@ import {
 } from "./workspace/flows/familiars/familiar-overview";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
+import { closeLiveAgent, type CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
+import { compactContext } from "./workspace/flows/turn-control/compact-context";
+import { handoffSession } from "./workspace/flows/turn-control/handoff-session";
+import {
+  answerApproval,
+  answerQuestion,
+  type HarnessReplyDeps,
+  keepQuestionOpen,
+} from "./workspace/flows/turn-control/harness-replies";
+import { stopTurn } from "./workspace/flows/turn-control/stop-turn";
+import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
+import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
+import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
+import { nudgeWorkspace } from "./model/nudge-workspace";
 import { createFamiliarChat } from "./workspace/flows/familiars/familiar-chat";
 import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-completions";
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
@@ -328,19 +342,15 @@ import {
 
 import {
   appendPreparingHandoff,
-  buildDeterministicHandoff,
-  buildHandoffComposerCard,
   chooseHandoffBrief,
   completeHandoff,
   consumeHandoff,
-  HANDOFF_TITLE,
   handoffTurnCard,
   isPreparingHandoff,
   pendingComposerSwitch,
   pendingHandoff,
   planComposerSwitch,
   sessionChildHarnesses,
-  sessionThroughTurn,
   shouldAskOutgoingAgent,
   userMessagesAfterHandoff,
   wrapHandoffPrompt,
@@ -370,20 +380,16 @@ import {
 import {
   appendSteerUser,
   appendUser,
-  applyHarnessEvent,
   bindHarnessSession,
   transferHarnessSessionAccount,
   cancelHarnessTurn,
-  canCompactHarnessContext,
   canRewindHarnessLastTurn,
   canSteerHarness,
-  compactHarnessContext,
   forgetHarnessSession,
   generateHarnessBranchName,
   generateHarnessTitle,
   migrateFamiliarCodexSession,
   isLiveHarness,
-  keepHarnessQuestionOpen,
   latestTurnNeedsHarnessLogin,
   pickTextHarness,
   probeHarnessAvailability,
@@ -407,7 +413,6 @@ import {
 import { supportsHarnessLogin } from "@/integrations/harness/core/auth-support";
 
 import {
-  closeLeaf,
   findSurfacePane,
   firstLeafId,
   focusedFileTab,
@@ -565,7 +570,6 @@ import type {
 import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
   HARNESS_LABEL,
-  HARNESS_TITLE,
   HARNESSES,
   type HarnessId,
 } from "@/domain/harness/harness";
@@ -658,8 +662,6 @@ import {
   buildSecondOpinionRequest,
   harnessForTurn,
   SECOND_OPINION_TITLE,
-  turnEditedFiles,
-  turnUserRequest,
 } from "@/features/sessions/model/second-opinion";
 import {
   createFamiliar,
@@ -695,7 +697,6 @@ import {
   isHabitRun,
   noteHabitRunLaunch,
   relayApproval,
-  takeRelayedApproval,
   loadHabits,
   unseenHabitPosts,
   updateHabits,
@@ -743,10 +744,7 @@ import {
 } from "@/features/skills/model/skills";
 import {
   adjacentItemId,
-  deferUnhandledEscape,
-  focusedBusyAgentSessionId,
   shouldHandleListNavigation,
-  shouldStopFocusedTurnOnEscape,
   tabCommand,
   tabCommandForKeybinding,
   tabCommandKeybinding,
@@ -861,11 +859,9 @@ import {
   summaryFromSession,
 } from "@/features/sessions/data/session-history";
 import {
-  canAutoContinue,
   CONTINUE_PROMPT,
   inFlightRefs,
   inFlightSnapshotKey,
-  isInFlightSession,
   shouldWriteInFlightSnapshot,
 } from "@/features/sessions/model/in-flight";
 import {
@@ -1836,6 +1832,20 @@ function Workspace({
   const flushHarnessEvents = harnessEvents.flush;
   const flushForegroundHarnessEvents = harnessEvents.flushForeground;
   const enqueueHarnessEvent = harnessEvents.enqueue;
+  const turnControl = useStableFlow(
+    (): TurnControlDeps => ({
+      sessions: () => sessionsRef.current,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        syncDockBadge(next);
+        setSessions(next);
+      },
+      updateSessions: (update) => setSessions(update),
+      turnGen: turnGen.current,
+      enqueueHarnessEvent,
+      flushHarnessEvents,
+    }),
+  );
 
   const stopSessionForRemoval = useCallback(
     async (sessionId: string): Promise<Session | undefined> => {
@@ -7586,7 +7596,7 @@ function Workspace({
         !session ||
         session.busy ||
         block?.role !== "plan" ||
-        !!block.orchestration ||
+        block.orchestration ||
         !block.text.trim() ||
         block.plan?.status === "streaming" ||
         block.plan?.status === "building" ||
@@ -8167,389 +8177,89 @@ function Workspace({
   const onBtwStop = btw.stop;
   const onBtwRetry = btw.retry;
 
+  const unseenFinishedRef = useRef(unseenFinishedIds);
+  unseenFinishedRef.current = unseenFinishedIds;
+
   const onHandoff = useCallback(
     (sourceId: string, target: ModelTarget, turn: Block[]) => {
       const source = sessionsRef.current.find(
         (session) => session.id === sourceId,
       );
       if (!source || source.worktreeRemoved) return;
-      const { harness, model, modelSettings } = target;
-      const cwd = sessionWorkCwd(source);
-      const from = harnessForTurn(source.blocks, turn, source.harness);
-      const sliced = sessionThroughTurn(source, turn);
-      const userRequest = turnUserRequest(turn);
-      const files = turnEditedFiles(sliced.blocks, cwd);
-      const display = sessionDisplayTitle(source.title, source.harness);
-      const session = {
-        ...newSession(harness, source.cwd, model, source.runtimeMode),
-        worktreeCwd: source.worktreeCwd,
-        branch: source.branch,
-        modelSettings: mergeModelSettings(
-          resolveModel(harness, model),
-          modelSettings,
-        ),
-        title: formatSessionTitle(
-          harness,
-          display === "New session" ? HANDOFF_TITLE : display,
-        ),
-        handoffCard: buildHandoffComposerCard({
-          from,
-          to: harness,
-          brief: buildDeterministicHandoff(sliced),
-          userRequest,
-          files,
-        }),
-      };
-      openSessionBeside(sourceId, session, source.cwd, true);
+      openSessionBeside(
+        sourceId,
+        handoffSession(source, target, turn),
+        source.cwd,
+        true,
+      );
     },
     [openSessionBeside],
   );
 
-  const autoContinueKey = sessions
-    .filter(
-      (session) => canAutoContinue(session) && isLiveHarness(session.harness),
-    )
-    .map((session) => session.id)
-    .join("\n");
-
-  useEffect(() => {
-    if (!autoContinueKey) return;
-    const ids = autoContinueKey.split("\n");
-    // Delay past React StrictMode's dev remount so Continue is not claimed
-    // against a discarded tree (sessionStorage also survives Vite reloads).
-    const timer = window.setTimeout(() => {
-      for (const id of ids) {
-        const session = sessionsRef.current.find((entry) => entry.id === id);
-        if (
-          !session ||
-          !canAutoContinue(session) ||
-          !isLiveHarness(session.harness)
-        ) {
-          continue;
-        }
-        onSubmit(id, CONTINUE_PROMPT);
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [autoContinueKey, onSubmit]);
+  useAutoContinue(sessions, turnControl.sessions, onSubmit);
 
   const onCompactContext = useCallback(
-    (sessionId: string) => {
-      const current = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (current && remoteProjectFor(current.cwd))
-        return remoteSessionActions(sessionId)?.compact() ?? false;
-      if (!current || current.busy || current.worktreeRemoved) return false;
-      if (!canCompactHarnessContext(current.harness)) {
-        const unsupported = sessionsRef.current.map((session) =>
-          session.id === sessionId
-            ? applyHarnessEvent(session, {
-                type: "status",
-                text: `${HARNESS_TITLE[current.harness]} does not support manual context compaction.`,
-              })
-            : session,
-        );
-        sessionsRef.current = unsupported;
-        syncDockBadge(unsupported);
-        setSessions(unsupported);
-        return true;
-      }
-
-      const gen = (turnGen.current.get(sessionId) ?? 0) + 1;
-      turnGen.current.set(sessionId, gen);
-      const workCwd = sessionWorkCwd(current);
-      const started = sessionsRef.current.map((session) =>
-        session.id === sessionId
-          ? applyHarnessEvent(
-              { ...session, busy: true },
-              { type: "status", text: "Compacting context…" },
-            )
-          : session,
-      );
-      sessionsRef.current = started;
-      syncDockBadge(started);
-      setSessions(started);
-
-      void (async () => {
-        try {
-          await compactHarnessContext({
-            harness: current.harness,
-            sessionId,
-            cwd: workCwd,
-            model: current.model,
-            modelSettings: current.modelSettings,
-            providerAccountId: supportsProviderAccounts(current.harness)
-              ? (current.providerAccountId ??
-                selectedProviderAccountId(current.harness, current.cwd))
-              : undefined,
-            runtimeMode: current.runtimeMode,
-            ephemeral: current.ephemeral === true,
-            codexStore: isFamiliarSession(sessionId) ? "mono" : undefined,
-            controlsAgents:
-              isFamiliarSession(sessionId) ||
-              operatorEnabledInThread(current.blocks) ||
-              orchestrator.run(sessionId)?.status === "active",
-            onEvent: (event) => {
-              if (turnGen.current.get(sessionId) !== gen) return;
-              enqueueHarnessEvent(sessionId, event);
-            },
-          });
-          if (turnGen.current.get(sessionId) !== gen) return;
-          enqueueHarnessEvent(sessionId, {
-            type: "status",
-            text: "Compacted context",
-          });
-        } catch (error: unknown) {
-          if (turnGen.current.get(sessionId) !== gen) return;
-          enqueueHarnessEvent(sessionId, {
-            type: "session.error",
-            message:
-              error instanceof Error
-                ? error.message
-                : `${current.harness} could not compact this context`,
-          });
-        } finally {
-          if (turnGen.current.get(sessionId) !== gen) return;
-          flushHarnessEvents();
-          const finished = sessionsRef.current.map((session) =>
-            session.id === sessionId ? { ...session, busy: false } : session,
-          );
-          sessionsRef.current = finished;
-          syncDockBadge(finished);
-          setSessions(finished);
-        }
-      })();
-      return true;
-    },
-    [enqueueHarnessEvent, flushHarnessEvents],
+    (sessionId: string) => compactContext(turnControl, sessionId),
+    [],
   );
-
   const onStop = useCallback(
-    (sessionId: string, managed = false) => {
-      const remote = sessionsRef.current.find((s) => s.id === sessionId);
-      if (remote && remoteProjectFor(remote.cwd)) {
-        remoteSessionActions(sessionId)?.stop();
-        return;
-      }
-      if (!managed) {
-        const stopping = orchestrator.stopForSession(sessionId);
-        if (stopping) {
-          void stopping.catch(console.error);
-          return stopping;
-        }
-      }
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
-      flushHarnessEvents();
-      const cancelling = Promise.all(
-        (session ? sessionChildHarnesses(session) : []).map(async (id) => {
-          try {
-            await cancelHarnessTurn(id, sessionId);
-          } finally {
-            await stopHarnessSession(id, sessionId);
-          }
-        }),
-      );
-      const checkpointFinished = session
-        ? finishSessionTurn(sessionId, sessionWorkCwd(session), {
-            after: cancelling.catch(() => undefined),
-          })
-        : Promise.resolve();
-      void cancelling.catch(console.error);
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== sessionId) return s;
-          const stopped = stopStreaming(s);
-          const completed = isPreparingHandoff(stopped)
-            ? completeHandoff(stopped, buildDeterministicHandoff(stopped))
-            : stopped;
-          const ready = { ...completed, worktreePreparing: undefined };
-          return ready.queuedMessages?.length
-            ? { ...ready, queueStatus: "paused" }
-            : ready;
-        }),
-      );
-      if (session) {
-        notifyReviewChanged(sessionId);
-        nudgeWorkspace(sessionWorkCwd(session));
-        notifyGitChanged();
-        nudgeWatchedFiles();
-        window.setTimeout(() => nudgeWatchedFiles(), 150);
-      } else {
-        notifyReviewChanged(sessionId);
-      }
-      return Promise.all([cancelling, checkpointFinished]);
-    },
-    [flushHarnessEvents],
+    (sessionId: string, managed = false) =>
+      stopTurn(turnControl, sessionId, managed),
+    [],
   );
 
-  /** Working-rail X: close the tab; warn + stop first when the turn is still running. */
-  const onCloseLiveAgent = useCallback(
-    (sessionId: string) => {
-      void (async () => {
-        const session = sessionsRef.current.find((entry) => entry.id === sessionId);
-        const running = session ? isInFlightSession(session) : false;
-        if (running) {
-          const ok = await confirmApp(
-            "This chat is still running. Stop it and close the tab?",
-            { kind: "warning", okLabel: "Stop & close" },
-          );
-          if (!ok) return;
-        }
-
+  const closeLiveAgentDeps = useStableFlow(
+    (): CloseLiveAgentDeps => ({
+      sessions: () => sessionsRef.current,
+      tabs: () => tabsRef.current,
+      dismiss: (sessionId) => {
         setDismissedLiveAgentIds((prev) => {
           if (prev.has(sessionId)) return prev;
           const next = new Set(prev);
           next.add(sessionId);
           return next;
         });
-        unseenFinishedIds.delete(sessionId);
+        unseenFinishedRef.current.delete(sessionId);
+      },
+      stop: (sessionId) => onStop(sessionId),
+      closeTab: (tabId) => onCloseTab(tabId),
+      persist: (session) => persistSession(session),
+      updateTabs: (update) => setTabs(update),
+    }),
+  );
+  const onCloseLiveAgent = useCallback((sessionId: string) => {
+    void closeLiveAgent(closeLiveAgentDeps, sessionId);
+  }, []);
 
-        if (running) {
-          await Promise.resolve(onStop(sessionId));
-        }
-
-        const tab = tabsRef.current.find((entry) =>
-          leafIds(entry.layout).includes(sessionId),
-        );
-        if (!tab) return;
-
-        const leaves = leafIds(tab.layout);
-        if (leaves.length === 1) {
-          onCloseTab(tab.id);
-          return;
-        }
-
-        const nextTab = closeLeaf(tab, sessionId);
-        if (!nextTab) {
-          onCloseTab(tab.id);
-          return;
-        }
-        persistSession(sessionsRef.current.find((entry) => entry.id === sessionId));
-        setTabs((prev) =>
-          prev.map((entry) =>
-            entry.id === tab.id
-              ? {
-                  ...entry,
-                  layout: nextTab.layout,
-                  focusedId: nextTab.focusedId,
-                }
-              : entry,
-          ),
-        );
-      })();
-    },
-    [onCloseTab, onStop, persistSession, unseenFinishedIds],
+  useEscapeStop(
+    useStableFlow(() => ({
+      store: workspaceStore,
+      sessions: () => sessionsRef.current,
+      tabs: () => tabsRef.current,
+      activeTabId: () => activeTabIdRef.current,
+      terminalFocused: () => projectTerminalFocusedRef.current,
+      stop: (sessionId: string) => onStop(sessionId),
+    })),
   );
 
-  useEffect(() => {
-    const onEscape = (event: KeyboardEvent) => {
-      const focusedBusySessionId = () => {
-        const agentId = workspaceStore.getState().familiarViewId;
-        if (agentId) {
-          return sessionsRef.current.find((session) => session.id === agentId)
-            ?.busy
-            ? agentId
-            : undefined;
-        }
-        return focusedBusyAgentSessionId(
-          activeTabIdRef.current,
-          tabsRef.current,
-          sessionsRef.current,
-          projectTerminalFocusedRef.current,
-        );
-      };
-      const target = event.target instanceof Element ? event.target : null;
-      const inTerminal = Boolean(target?.closest(".molfar-terminal"));
-      const activeTabId = activeTabIdRef.current;
-      const sessionId = focusedBusySessionId();
-      if (
-        !sessionId ||
-        !shouldStopFocusedTurnOnEscape(event, {
-          inTerminal,
-          focusedSessionBusy: true,
-        })
-      ) {
-        return;
-      }
-
-      // Other surfaces (drag/reorder included) can claim Escape later in the
-      // same keydown dispatch. Defer the destructive stop until every handler
-      // has had a chance to preventDefault, then verify focus did not move.
-      deferUnhandledEscape(event, () => {
-        const stillFocusedSessionId = focusedBusySessionId();
-        if (
-          activeTabIdRef.current !== activeTabId ||
-          stillFocusedSessionId !== sessionId
-        ) {
-          return;
-        }
-        onStop(sessionId);
-      });
-    };
-    window.addEventListener("keydown", onEscape);
-    return () => window.removeEventListener("keydown", onEscape);
-  }, [onStop]);
-
+  const harnessReplyDeps = useStableFlow(
+    (): HarnessReplyDeps => ({
+      sessions: () => sessionsRef.current,
+      decideFamiliarApproval: (familiarId, blockId, decided) =>
+        familiarChat.decide(familiarId, blockId, decided),
+    }),
+  );
   const onApproval = useCallback(
-    (sessionId: string, requestId: number, decision: ApprovalDecision) => {
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (!session || session.worktreeRemoved) return;
-      // An approval a habit's hidden run asked for, put to the user in the
-      // Familiar's chat: answer the run, and settle the question in the chat.
-      if (isFamiliarSession(sessionId)) {
-        const asked = session.blocks.find(
-          (block) => block.familiarHabit && block.approval?.requestId === requestId,
-        );
-        if (asked) {
-          const relay = takeRelayedApproval(sessionId, requestId);
-          const run = relay
-            ? sessionsRef.current.find((s) => s.id === relay.runId)
-            : undefined;
-          if (relay && run)
-            respondHarnessApproval(
-              run.harness,
-              run.id,
-              relay.requestId,
-              decision,
-            );
-          familiarChat.decide(
-            sessionId,
-            asked.id,
-            relay && run
-              ? decision === "deny"
-                ? "deny"
-                : "allow"
-              : "cancelled",
-          );
-          return;
-        }
-      }
-      if (remoteProjectFor(session.cwd)) {
-        remoteSessionActions(sessionId)?.approve(requestId, decision);
-        return;
-      }
-      respondHarnessApproval(session.harness, sessionId, requestId, decision);
-    },
+    (sessionId: string, requestId: number, decision: ApprovalDecision) =>
+      answerApproval(harnessReplyDeps, sessionId, requestId, decision),
     [],
   );
-
   const onQuestionReply = useCallback(
-    (sessionId: string, requestId: number, reply: UserQuestionReply) => {
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (!session || session.worktreeRemoved) return;
-      if (remoteProjectFor(session.cwd)) {
-        remoteSessionActions(sessionId)?.answer(requestId, reply);
-        return;
-      }
-      respondHarnessQuestion(session.harness, sessionId, requestId, reply);
-    },
+    (sessionId: string, requestId: number, reply: UserQuestionReply) =>
+      answerQuestion(harnessReplyDeps, sessionId, requestId, reply),
     [],
   );
 
-  const unseenFinishedRef = useRef(unseenFinishedIds);
-  unseenFinishedRef.current = unseenFinishedIds;
   useWorkspaceCompanion({
     taskBoard,
     sessions: () => sessionsRef.current,
@@ -8581,12 +8291,8 @@ function Workspace({
   });
 
   const onQuestionInteraction = useCallback(
-    (sessionId: string, requestId: number) => {
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (session && remoteProjectFor(session.cwd)) return;
-      if (session && !session.worktreeRemoved)
-        keepHarnessQuestionOpen(session.harness, sessionId, requestId);
-    },
+    (sessionId: string, requestId: number) =>
+      keepQuestionOpen(harnessReplyDeps, sessionId, requestId),
     [],
   );
 
@@ -12750,11 +12456,6 @@ function trackSessionEdits(
   void captureSessionCheckpoint(sessionId, cwd, paths)
     .catch(() => undefined)
     .then(() => notifyReviewChanged(sessionId));
-}
-
-function nudgeWorkspace(cwd?: string) {
-  invalidateProjectFiles(cwd);
-  notifyDirsChanged();
 }
 
 function nudgeOpenEditors(event: HarnessEvent, cwd: string) {
