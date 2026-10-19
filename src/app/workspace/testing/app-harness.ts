@@ -55,10 +55,14 @@ export async function renderApp(
     harness?: HarnessId;
     /** Project the app reopens on launch; none boots into `~`. */
     project?: string;
+    /** localStorage entries (settings) present at launch. */
+    storage?: Record<string, string>;
   } = {},
 ): Promise<AppHarness> {
   vi.resetModules();
   localStorage.clear();
+  for (const [key, value] of Object.entries(options.storage ?? {}))
+    localStorage.setItem(key, value);
 
   const calls: IpcCall[] = [];
   const routes: Record<string, IpcRoute> = {
