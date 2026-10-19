@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.19] - 2026-10-19
+
 ### Added
 
 - A **New layout** brings a redesigned sidebar, project switcher, workspace tabs and right panel. It is on by default; turn it off in Settings → Appearance → Layout to return to the classic layout. Glass remains a separate setting.
@@ -451,7 +453,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.18...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.19...HEAD
+[1.0.19]: https://github.com/deluminor/molfar/compare/v1.0.18...v1.0.19
 [1.0.18]: https://github.com/deluminor/molfar/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/deluminor/molfar/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/deluminor/molfar/compare/v1.0.15...v1.0.16
