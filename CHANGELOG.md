@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - A **New layout** brings a redesigned sidebar, project switcher, workspace tabs and right panel. It is on by default; turn it off in Settings → Appearance → Layout to return to the classic layout. Glass remains a separate setting.
+- In the new layout, the sidebar's view links include **Home**, **Usage**, **Board**, and **Knowledge** alongside Inbox, Notes, and Automations.
+- The new layout has **workspace themes** (Default, Harbor, Moss, Ember, Orchid, Tidepool, Dune, Rosewood, Glacier) in Settings → Appearance → Theme.
 - A **Resource pressure** indicator in the usage footer opens a process view with CPU and memory usage, controls to stop agents and sessions, and controls to stop individual running tools. From MonoCode #1045.
-- **Smooth text reveal** in Settings → Chat controls whether incoming reply bursts appear gradually or immediately. It is enabled by default. From MonoCode #1045.
+- **Smooth text reveal** in Settings → Chat controls whether incoming reply bursts appear gradually or immediately. It is enabled by default, so replies now reveal gradually; turn it off to show bursts as they arrive. From MonoCode #1045.
 - The new layout's right panel has a **History** tab with a searchable, refreshable Git history graph. Its tabs can be dragged to reorder.
 - A session that hits a usage limit can **continue on another provider account**. Claude and Codex conversations are copied to the chosen account so the same session resumes there; if the copy fails, it continues from a handoff summary.
-- Sessions started by an operator are grouped under the session that started them in the sidebar.
+- Sessions started by an operator appear in the sidebar under the session that started them instead of opening as tabs, unless the user asks to see them.
 - Remote hosts can run on **Linux without systemd**, including containers and Firecracker microVMs. Setup uses a detached background process there and reconnecting starts it again if needed; machines with systemd keep their user service and lingering. From MonoCode #990.
 - The workspace tab context menu has **Close All Tabs**, with the same unsaved-file and terminal confirmations as the File menu. From MonoCode #1005.
 
