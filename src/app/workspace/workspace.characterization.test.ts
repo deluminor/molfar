@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type AppHarness, renderApp } from "./testing/app-harness";
+import { answeredSession, shows, tabIds } from "./testing/workspace-steps";
 
 // Pins Workspace behaviour before App.tsx is split into a store, slices and
 // flows (global refactor, Stage 5). Every step waits for the state it expects
@@ -20,35 +21,12 @@ function current(): AppHarness {
   return app;
 }
 
-function tabIds(): string[] {
-  return [
-    ...current().host.querySelectorAll<HTMLElement>("[data-title-tab-id]"),
-  ].map((tab) => tab.dataset.titleTabId ?? "");
-}
-
-function shows(text: string): boolean {
-  return current().visibleText().includes(text);
-}
-
-async function answeredSession(prompt: string, reply: string) {
-  const harness = current().harness;
-  const turnsBefore = harness.turns.length;
-  await current().submitPrompt(prompt);
-  await current().until(() => harness.turns.length > turnsBefore);
-  await current().drive(() => {
-    harness.send({ type: "message.delta", text: reply });
-    harness.send({ type: "message.completed" });
-    harness.finish();
-  });
-  await current().until(() => shows(reply));
-}
-
 describe("Workspace boot", () => {
   it("opens one blank session tab with an empty composer", async () => {
     app = await renderApp();
 
-    expect(tabIds()).toHaveLength(1);
-    expect(shows("What should we work on?")).toBe(true);
+    expect(tabIds(current())).toHaveLength(1);
+    expect(shows(current(), "What should we work on?")).toBe(true);
   });
 
   it("loads notes, automations and reminders on launch", async () => {
@@ -67,7 +45,7 @@ describe("Workspace submit", () => {
   it("sends the prompt to the session's harness and streams the reply", async () => {
     app = await renderApp({ project: "/work/demo" });
 
-    await answeredSession("explain the build", "The build uses Vite.");
+    await answeredSession(current(), "explain the build", "The build uses Vite.");
 
     expect(app.harness.turns).toHaveLength(1);
     expect(app.harness.turns[0]).toMatchObject({
@@ -75,7 +53,7 @@ describe("Workspace submit", () => {
       cwd: "/work/demo",
       model: "cursor:composer-2.5",
     });
-    expect(shows("explain the build")).toBe(true);
+    expect(shows(current(), "explain the build")).toBe(true);
   });
 
   it("persists the user turn at once and the answered transcript after it settles", async () => {
@@ -106,7 +84,7 @@ describe("Workspace submit", () => {
   it("does not persist sessions outside a project", async () => {
     app = await renderApp();
 
-    await answeredSession("hello", "Hi.");
+    await answeredSession(current(), "hello", "Hi.");
     // The answered-transcript save is debounced by 650ms.
     await app.settle(1_000);
 
@@ -125,7 +103,7 @@ describe("Workspace history", () => {
       },
     });
 
-    await app.until(() => shows("Fix the flaky upload test"));
+    await app.until(() => shows(current(), "Fix the flaky upload test"));
     expect(app.commands("session_list_by_project")[0]?.args).toMatchObject({
       cwd: "/work/demo",
     });
@@ -142,13 +120,13 @@ describe("Workspace history", () => {
           args?.sessionId === "saved-1" ? savedRecord("saved-1") : null,
       },
     });
-    await app.until(() => shows("Fix the flaky upload test"));
+    await app.until(() => shows(current(), "Fix the flaky upload test"));
 
     await app.drive(() => {
       historyRow("Fix the flaky upload test")?.click();
     });
 
-    await app.until(() => shows("The upload retries were racing."));
+    await app.until(() => shows(current(), "The upload retries were racing."));
     expect(app.commands("session_get")[0]?.args).toMatchObject({
       sessionId: "saved-1",
     });
@@ -171,7 +149,7 @@ describe("Workspace history", () => {
           ],
         },
       });
-      await app.until(() => shows("Fix the flaky upload test"));
+      await app.until(() => shows(current(), "Fix the flaky upload test"));
       const row = historyLabel("Fix the flaky upload test");
       if (!row) throw new Error("Saved session is not listed");
 
@@ -196,7 +174,7 @@ describe("Workspace history", () => {
         project: "/work/demo",
         routes: { session_upsert: (args) => args?.session },
       });
-      await answeredSession("explain the build", "The build uses Vite.");
+      await answeredSession(current(), "explain the build", "The build uses Vite.");
       const sessionId = current().harness.turns[0]?.sessionId ?? "";
       const card = () =>
         current().host.querySelector(`[data-session-card="${sessionId}"]`);
@@ -209,8 +187,8 @@ describe("Workspace history", () => {
 
       await app.until(() => current().commands(command).length === 1);
       expect(app.commands(command)[0]?.args).toMatchObject({ sessionId });
-      await app.until(() => shows("What should we work on in demo?"));
-      expect(shows("The build uses Vite.")).toBe(false);
+      await app.until(() => shows(current(), "What should we work on in demo?"));
+      expect(shows(current(), "The build uses Vite.")).toBe(false);
     },
   );
 
@@ -225,7 +203,7 @@ describe("Workspace history", () => {
         session_upsert: (args) => args?.session,
       },
     });
-    await app.until(() => shows("Fix the flaky upload test"));
+    await app.until(() => shows(current(), "Fix the flaky upload test"));
     const row = historyLabel("Fix the flaky upload test");
     if (!row) throw new Error("Saved session is not listed");
 
@@ -254,45 +232,45 @@ describe("Workspace history", () => {
       },
     });
 
-    await app.until(() => shows("Couldn’t load sessions"));
+    await app.until(() => shows(current(), "Couldn’t load sessions"));
   });
 });
 
 describe("Workspace tabs", () => {
   it("shows a blank new tab in place of the blank one it was opened from", async () => {
     app = await renderApp();
-    const [first] = tabIds();
+    const [first] = tabIds(current());
 
     await app.emit("new_tab");
-    await app.until(() => tabIds()[0] !== first);
-    expect(tabIds()).toHaveLength(1);
+    await app.until(() => tabIds(current())[0] !== first);
+    expect(tabIds(current())).toHaveLength(1);
 
     await app.emit("close_tab");
-    await app.until(() => tabIds()[0] === first);
-    expect(tabIds()).toEqual([first]);
+    await app.until(() => tabIds(current())[0] === first);
+    expect(tabIds(current())).toEqual([first]);
   });
 
   it("keeps an answered session's tab next to a new tab and closes back to it", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("explain the build", "The build uses Vite.");
-    const [answered] = tabIds();
+    await answeredSession(current(), "explain the build", "The build uses Vite.");
+    const [answered] = tabIds(current());
 
     await app.emit("new_tab");
-    await app.until(() => tabIds().length === 2);
-    expect(tabIds()[0]).toBe(answered);
+    await app.until(() => tabIds(current()).length === 2);
+    expect(tabIds(current())[0]).toBe(answered);
 
     await app.emit("close_tab");
-    await app.until(() => tabIds().length === 1);
-    expect(tabIds()).toEqual([answered]);
+    await app.until(() => tabIds(current()).length === 1);
+    expect(tabIds(current())).toEqual([answered]);
     expect(app.commands("session_delete")).toHaveLength(0);
   });
 
   it("reorders tabs when one is dragged past its neighbour", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("first", "One.");
+    await answeredSession(current(), "first", "One.");
     await app.emit("new_tab");
-    await answeredSession("second", "Two.");
-    const [first, second] = tabIds();
+    await answeredSession(current(), "second", "Two.");
+    const [first, second] = tabIds(current());
     layOutTabsInARow(app.host);
 
     await app.drive(() => {
@@ -306,24 +284,24 @@ describe("Workspace tabs", () => {
       window.dispatchEvent(pointer("pointerup", 180));
     });
 
-    await app.until(() => tabIds()[0] === second);
-    expect(tabIds()).toEqual([second, first]);
+    await app.until(() => tabIds(current())[0] === second);
+    expect(tabIds(current())).toEqual([second, first]);
   });
 
   it("moves between tabs with next_tab and prev_tab", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("first", "One.");
+    await answeredSession(current(), "first", "One.");
     await app.emit("new_tab");
-    await answeredSession("second", "Two.");
-    const tabs = tabIds();
+    await answeredSession(current(), "second", "Two.");
+    const tabs = tabIds(current());
     expect(tabs).toHaveLength(2);
 
     await app.emit("prev_tab");
-    await app.until(() => shows("One.") && !shows("Two."));
+    await app.until(() => shows(current(), "One.") && !shows(current(), "Two."));
 
     await app.emit("next_tab");
-    await app.until(() => shows("Two.") && !shows("One."));
-    expect(tabIds()).toEqual(tabs);
+    await app.until(() => shows(current(), "Two.") && !shows(current(), "One."));
+    expect(tabIds(current())).toEqual(tabs);
   });
 });
 
@@ -339,7 +317,7 @@ describe("Workspace harness events", () => {
       current().harness.send({ type: "message.delta", text: "Vite." });
     });
 
-    await app.until(() => shows("The build uses Vite."));
+    await app.until(() => shows(current(), "The build uses Vite."));
   });
 
   it("applies a background tab's stream so it shows on return", async () => {
@@ -347,7 +325,7 @@ describe("Workspace harness events", () => {
     await app.submitPrompt("explain the build");
     await app.until(() => current().harness.turns.length === 1);
     await app.emit("new_tab");
-    await app.until(() => tabIds().length === 2);
+    await app.until(() => tabIds(current()).length === 2);
 
     await app.drive(() => {
       current().harness.send({
@@ -359,23 +337,23 @@ describe("Workspace harness events", () => {
     });
     await app.emit("prev_tab");
 
-    await app.until(() => shows("Streamed while hidden."));
+    await app.until(() => shows(current(), "Streamed while hidden."));
   });
 });
 
 describe("Workspace tab visits", () => {
   it("goes back and forward through visited tabs", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("first", "One.");
+    await answeredSession(current(), "first", "One.");
     await app.emit("new_tab");
-    await answeredSession("second", "Two.");
-    await app.until(() => shows("Two."));
+    await answeredSession(current(), "second", "Two.");
+    await app.until(() => shows(current(), "Two."));
 
     await app.emit("back_tab");
-    await app.until(() => shows("One.") && !shows("Two."));
+    await app.until(() => shows(current(), "One.") && !shows(current(), "Two."));
 
     await app.emit("forward_tab");
-    await app.until(() => shows("Two.") && !shows("One."));
+    await app.until(() => shows(current(), "Two.") && !shows(current(), "One."));
   });
 
   it("focuses the tab of a session chosen in the sidebar", async () => {
@@ -383,10 +361,10 @@ describe("Workspace tab visits", () => {
       project: "/work/demo",
       routes: { session_upsert: (args) => args?.session },
     });
-    await answeredSession("first", "One.");
+    await answeredSession(current(), "first", "One.");
     const firstId = current().harness.turns[0]?.sessionId ?? "";
     await app.emit("new_tab");
-    await answeredSession("second", "Two.");
+    await answeredSession(current(), "second", "Two.");
     const card = () =>
       current().host.querySelector<HTMLElement>(
         `[data-session-card="${firstId}"]`,
@@ -397,15 +375,15 @@ describe("Workspace tab visits", () => {
       card()?.click();
     });
 
-    await app.until(() => shows("One.") && !shows("Two."));
-    expect(tabIds()).toHaveLength(2);
+    await app.until(() => shows(current(), "One.") && !shows(current(), "Two."));
+    expect(tabIds(current())).toHaveLength(2);
   });
 
   it("activates a tab by its position", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("first", "One.");
+    await answeredSession(current(), "first", "One.");
     await app.emit("new_tab");
-    await answeredSession("second", "Two.");
+    await answeredSession(current(), "second", "Two.");
 
     await app.drive(() => {
       window.dispatchEvent(
@@ -417,7 +395,7 @@ describe("Workspace tab visits", () => {
         }),
       );
     });
-    await app.until(() => shows("One.") && !shows("Two."));
+    await app.until(() => shows(current(), "One.") && !shows(current(), "Two."));
   });
 });
 
@@ -474,7 +452,7 @@ describe("Workspace turn control", () => {
 describe("Workspace panes", () => {
   it("splits the focused pane on split_right", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("explain the build", "The build uses Vite.");
+    await answeredSession(current(), "explain the build", "The build uses Vite.");
 
     await app.emit("split_right");
 
@@ -485,20 +463,20 @@ describe("Workspace panes", () => {
 
   it("closes other tabs, then starts the last one over on close all", async () => {
     app = await renderApp({ project: "/work/demo" });
-    await answeredSession("first", "One.");
+    await answeredSession(current(), "first", "One.");
     await app.emit("new_tab");
-    await answeredSession("second", "Two.");
-    const [, second] = tabIds();
+    await answeredSession(current(), "second", "Two.");
+    const [, second] = tabIds(current());
 
     await app.emit("close_other_tabs");
-    await app.until(() => tabIds().length === 1);
-    expect(tabIds()).toEqual([second]);
+    await app.until(() => tabIds(current()).length === 1);
+    expect(tabIds(current())).toEqual([second]);
 
     // Close All keeps the active tab and starts it over on a blank session.
     await app.emit("close_all_tabs");
-    await app.until(() => shows("What should we work on in demo?"));
-    expect(tabIds()).toEqual([second]);
-    expect(shows("Two.")).toBe(false);
+    await app.until(() => shows(current(), "What should we work on in demo?"));
+    expect(tabIds(current())).toEqual([second]);
+    expect(shows(current(), "Two.")).toBe(false);
   });
 });
 
