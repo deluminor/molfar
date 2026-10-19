@@ -85,6 +85,41 @@ function mockLocalStorage() {
   });
 }
 
+describe("layout and glass defaults", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  async function loadForPlatform(platform: string) {
+    vi.stubGlobal("navigator", { ...navigator, platform });
+    vi.resetModules();
+    return import("./appearance");
+  }
+
+  it("uses the new layout unless it was turned off", async () => {
+    const appearance = await loadForPlatform("MacIntel");
+
+    expect(appearance.loadInsetLayout()).toBe(true);
+
+    localStorage.setItem("molfar.insetLayout", "0");
+    expect(appearance.loadInsetLayout()).toBe(false);
+  });
+
+  it("turns main pane glass off by default only on Linux", async () => {
+    const linux = await loadForPlatform("Linux x86_64");
+    expect(linux.loadBodyGlass()).toBe(false);
+
+    const mac = await loadForPlatform("MacIntel");
+    expect(mac.loadBodyGlass()).toBe(true);
+
+    localStorage.setItem("molfar.bodyGlass", "1");
+    const linuxOptedIn = await loadForPlatform("Linux x86_64");
+    expect(linuxOptedIn.loadBodyGlass()).toBe(true);
+  });
+});
+
 describe("right panel tabs", () => {
   beforeEach(mockLocalStorage);
 

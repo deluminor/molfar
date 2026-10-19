@@ -292,6 +292,7 @@ describe("native glass", () => {
 
   it("enables glass on Linux once main pane glass is on", async () => {
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     await vi.waitFor(() => expect(hasGlass()).toBe(true));
@@ -317,6 +318,7 @@ describe("native glass", () => {
 
   it("fades the page opaque before the window stops being transparent", async () => {
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     await vi.waitFor(() => expect(hasGlass()).toBe(true));
@@ -336,6 +338,7 @@ describe("native glass", () => {
 
   it("drops a fade still owed to glass that is back on", async () => {
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     await vi.waitFor(() => expect(hasGlass()).toBe(true));
@@ -363,6 +366,7 @@ describe("native glass", () => {
     );
 
     platform.isLinux = true;
+    localStorage.setItem("molfar.insetLayout", "0");
     localStorage.setItem(BODY_GLASS_KEY, "1");
     syncNativeGlass("dark");
     localStorage.setItem(BODY_GLASS_KEY, "0");
