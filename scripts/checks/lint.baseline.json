@@ -72,10 +72,10 @@
     "lint/suspicious/noControlCharactersInRegex": 2
   },
   "src/app/App.tsx": {
-    "lint/complexity/useOptionalChain": 3,
+    "lint/complexity/useOptionalChain": 2,
     "lint/correctness/noUnsafeFinally": 2,
     "lint/correctness/useExhaustiveDependencies": 103,
-    "lint/style/noNonNullAssertion": 9,
+    "lint/style/noNonNullAssertion": 6,
     "lint/suspicious/noAssignInExpressions": 1,
     "lint/suspicious/useIterableCallbackReturn": 1
   },

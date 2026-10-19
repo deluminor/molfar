@@ -1170,6 +1170,36 @@
           "queueFamiliarSessionCompletion(Ref), familiarCompletionBatches, closeInactive effect (App: familiarCompletions.batches/closeInactive)"
         ],
         "target": "src/app/workspace/flows/familiars/familiar-completions.ts"
+      },
+      {
+        "names": [
+          "updateBtwThread, removeBtwThread"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-thread-edit.ts"
+      },
+      {
+        "names": [
+          "btwRequestsRef, closed-session abort effect, unmount abort"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-requests.ts"
+      },
+      {
+        "names": [
+          "runBtwRequest"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-run.ts"
+      },
+      {
+        "names": [
+          "btw turn prelude shared by onBtwModelChange/onBtwDelete/onBtwRetry"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-turn.ts"
+      },
+      {
+        "names": [
+          "onBtwSubmit, onBtwModelChange, onBtwDelete, onBtwStop, onBtwRetry (App: btw.submit/changeModel/remove/stop/retry)"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-actions.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
