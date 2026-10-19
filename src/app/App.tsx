@@ -1,4 +1,3 @@
-import { sameProviderAccountId } from "@/domain/harness/provider-account";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -35,7 +34,6 @@ import { sessionConversationPage } from "@/features/agent-app/model/session-conv
 import { readFamiliarConversation } from "@/features/familiars/model/familiar-conversation";
 import {
   resumeFamiliarUsageLimit,
-  switchFamiliarUsageLimitAccount,
 } from "@/features/familiars/model/familiar-usage-limit";
 import {
   acknowledgeFamiliarMessage,
@@ -220,6 +218,19 @@ import {
 } from "./workspace/flows/familiars/familiar-overview";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
+import type { Submit, SubmitOptions } from "./workspace/flows/submission/submit-types";
+import { buildPlan, updatePlan } from "./workspace/flows/turn-queue/plan-block";
+import {
+  editQueuedMessage,
+  removeQueuedMessage,
+  resumeQueue,
+  setQueuedMessageEditing,
+  steerQueuedMessage,
+} from "./workspace/flows/turn-queue/queue-actions";
+import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
+import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
+import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
+import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
 import { closeLiveAgent, type CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
 import { compactContext } from "./workspace/flows/turn-control/compact-context";
 import { handoffSession } from "./workspace/flows/turn-control/handoff-session";
@@ -355,7 +366,6 @@ import {
   userMessagesAfterHandoff,
   wrapHandoffPrompt,
 } from "@/features/sessions/model/handoff";
-import type { HandoffComposerCard } from "@/domain/session/handoff-card";
 import { requestOutgoingHandoff } from "@/features/sessions/model/handoff-turn";
 import {
   preferredModelSettings,
@@ -381,7 +391,6 @@ import {
   appendSteerUser,
   appendUser,
   bindHarnessSession,
-  transferHarnessSessionAccount,
   cancelHarnessTurn,
   canRewindHarnessLastTurn,
   canSteerHarness,
@@ -556,7 +565,6 @@ import type {
   WorkspaceMode,
 } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type { UsageLimit, } from "@/domain/session/message-queue";
 import type { Attachment } from "@/domain/session/attachment";
 import type {
   PlanStatus,
@@ -565,7 +573,6 @@ import type {
 import type {
   ModelTarget,
   PlanBuildTarget,
-  ComposerTurnOptions,
 } from "@/domain/session/turn";
 import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
@@ -614,12 +621,7 @@ import {
   probeNotificationPermission,
   setWindowFocused,
 } from "@/features/notifications/model/notifications";
-import { exhaustedWindowResetAt } from "@/domain/rate-limits/rate-limit-window";
 import { deliverQueuedFollowUp } from "@/features/sessions/model/queued-follow-up";
-import {
-  fetchClaudeRateLimits,
-  fetchCodexRateLimits,
-} from "@/features/providers/model/rate-limits-fetch";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import { rememberLoadedSession } from "@/features/sessions/data/session-cache";
@@ -648,7 +650,6 @@ import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import { useUnseenReplyCounts } from "@/features/sessions/hooks/use-unseen-reply-counts";
 import {
-  canDispatchQueuedHead,
   canSteerQueuedHead,
   dequeueQueuedMessage,
   queuedMessageForSubmit,
@@ -721,9 +722,6 @@ import {
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import {
   resumeUsageLimitedSession,
-  USAGE_LIMIT_RESUME_GRACE_MS,
-  usageLimitResumeDue,
-  withUsageLimitAccount,
 } from "@/features/sessions/model/usage-limit";
 import { ReminderNotices } from "@/features/sessions/ui/ReminderNotices";
 import {
@@ -767,7 +765,6 @@ import {
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
 import {
-  buildRemotePlan,
   remoteSessionActions,
 } from "@/features/connections/model/remote-session-actions";
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
@@ -839,7 +836,6 @@ import {
   saveSettingsSection,
   subscribeLiveAgentsEnabled,
   subscribeNotesEnabled,
-  type FollowUpBehavior,
   type SettingsSectionId,
 } from "@/features/settings/model/settings";
 
@@ -924,32 +920,6 @@ const AutomationsView = lazySurface(
   },
   { suspense: false },
 );
-
-type SubmitOptions = ComposerTurnOptions & {
-  ciRepair?: CiRepairRequest;
-  ciContext?: string;
-  secondOpinion?: SecondOpinionMeta;
-  followUpBehavior?: FollowUpBehavior;
-  noteCard?: NoteComposerCard;
-  handoffCard?: HandoffComposerCard;
-  queuedMessageId?: string;
-  planBlockId?: string;
-  buildTarget?: PlanBuildTarget;
-  managed?: boolean;
-  orchestrationRetry?: OrchestrationProposal;
-  appRequestId?: string;
-  familiarSessionCompletion?: Block["familiarSessionCompletion"];
-  onSettled?: (outcome: ControlOutcome) => void;
-  refreshTitle?: boolean;
-  projectLocationReady?: boolean;
-};
-
-type Submit = (
-  sessionId: string,
-  text: string,
-  attachments?: Attachment[],
-  options?: SubmitOptions,
-) => SubmissionAcceptance;
 
 function withPlanStatus(
   session: Session,
@@ -1545,10 +1515,6 @@ function Workspace({
     ReadonlyMap<string, LinkedSessionUpdate>
   >(new Map());
   const linkedWorkItemActivityFetches = useRef(new Map<string, number>());
-  const queueDispatchingRef = useRef(new Set<string>());
-  const [queueDispatchVersion, setQueueDispatchVersion] = useState(0);
-  const usageResumingRef = useRef(new Set<string>());
-  const usageResetLookups = useRef(new WeakSet<UsageLimit>());
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
   const dirtyFilesRef = useRef(dirtyFiles);
@@ -7545,561 +7511,66 @@ function Workspace({
     [ensureAutomationRecovery, launchAutomation],
   );
 
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+  const turnQueue = useStableFlow(
+    (): TurnQueueDeps => ({
+      sessions: () => sessionsRef.current,
+      updateSessions: (update) => setSessions(update),
+      updateSessionsNow: (update) => {
+        updateSessionState(sessionsRef, setSessions, update);
+      },
+      submit: (...args) => onSubmitRef.current(...args),
+      enqueueHarnessEvent,
+      flushHarnessEvents,
+    }),
+  );
+
   const onUpdatePlan = useCallback(
-    (sessionId: string, blockId: string, text: string) => {
-      setSessions((prev) =>
-        prev.map((session) => {
-          if (remoteProjectFor(session.cwd)) return session;
-          if (session.id !== sessionId || session.busy) return session;
-          return {
-            ...session,
-            blocks: session.blocks.map((block) => {
-              if (
-                block.id !== blockId ||
-                block.role !== "plan" ||
-                block.plan?.status === "streaming" ||
-                block.plan?.status === "building" ||
-                block.plan?.status === "built"
-              ) {
-                return block;
-              }
-              const originalText = block.plan?.originalText ?? block.text;
-              return {
-                ...block,
-                text,
-                plan: {
-                  ...(block.plan ?? { status: "ready" as const }),
-                  status: "ready" as const,
-                  originalText,
-                  edited: text !== originalText,
-                },
-              };
-            }),
-          };
-        }),
-      );
-    },
+    (sessionId: string, blockId: string, text: string) =>
+      updatePlan(turnQueue, sessionId, blockId, text),
+    [],
+  );
+  const onBuildPlan = useCallback(
+    (sessionId: string, blockId: string, target?: PlanBuildTarget) =>
+      buildPlan(turnQueue, sessionId, blockId, target),
     [],
   );
 
-  const onBuildPlan = useCallback(
-    (sessionId: string, blockId: string, target?: PlanBuildTarget) => {
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      if (session && remoteProjectFor(session.cwd)) {
-        buildRemotePlan(sessionId, blockId, target);
-        return;
-      }
-      const block = session?.blocks.find((entry) => entry.id === blockId);
-      if (
-        !session ||
-        session.busy ||
-        block?.role !== "plan" ||
-        block.orchestration ||
-        !block.text.trim() ||
-        block.plan?.status === "streaming" ||
-        block.plan?.status === "building" ||
-        block.plan?.status === "built"
-      ) {
-        return;
-      }
-      if (target && session.modelSettings) {
-        saveLastModelSettings(session.modelSettings, "fill");
-      }
-      onSubmit(sessionId, "Build approved plan", [], {
-        intent: "build",
-        planBlockId: blockId,
-        buildTarget: target,
-      });
-    },
-    [onSubmit],
-  );
-
-  useEffect(() => {
-    const timers: number[] = [];
-    const scheduled = new Set<string>();
-    for (const session of sessions) {
-      const queued = session.queuedMessages ?? [];
-      if (queued.length === 0) continue;
-
-      if (!session.busy && session.queueStatus === "resuming") {
-        setSessions((prev) =>
-          prev.map((entry) =>
-            entry.id === session.id
-              ? { ...entry, queueStatus: "active" }
-              : entry,
-          ),
-        );
-        continue;
-      }
-      if (
-        !(
-          canDispatchQueuedHead(session) ||
-          (familiarForSession(session.id) &&
-            canSteerQueuedHead(session) &&
-            canSteerHarness(session.harness) &&
-            !consumeOperatorCommand(queued[0].text).matched)
-        ) ||
-        queueDispatchingRef.current.has(session.id)
-      ) {
-        continue;
-      }
-
-      const next = queued[0];
-      if (!next) continue;
-      queueDispatchingRef.current.add(session.id);
-      scheduled.add(session.id);
-      timers.push(
-        window.setTimeout(async () => {
-          scheduled.delete(session.id);
-          const latest = sessionsRef.current.find(
-            (entry) => entry.id === session.id,
-          );
-          const head = latest?.queuedMessages?.[0];
-          if (
-            !latest ||
-            !head ||
-            head.id !== next.id ||
-            !(
-              canDispatchQueuedHead(latest) ||
-              (familiarForSession(latest.id) &&
-                canSteerQueuedHead(latest) &&
-                canSteerHarness(latest.harness) &&
-                !consumeOperatorCommand(head.text).matched)
-            )
-          ) {
-            queueDispatchingRef.current.delete(session.id);
-            return;
-          }
-          const steering = latest.busy;
-          if (steering)
-            setSessions((prev) =>
-              prev.map((entry) =>
-                entry.id === session.id
-                  ? { ...entry, sendingQueuedMessageId: head.id }
-                  : entry,
-              ),
-            );
-          try {
-            const accepted = await submitSession(
-              session.id,
-              head.text,
-              head.attachments,
-              {
-                queuedMessageId: head.id,
-                followUpBehavior: steering ? "steer" : undefined,
-                noteCard: head.noteCard,
-                handoffCard: head.handoffCard,
-                intent: head.intent,
-                ...(head.familiarSessionCompletion
-                  ? {
-                      familiarSessionCompletion: head.familiarSessionCompletion,
-                      appRequestId: head.id,
-                    }
-                  : {}),
-              },
-            );
-            // A preflight rejection must not repeatedly retry or hide the message.
-            if (!accepted && familiarForSession(session.id)) {
-              const current = sessionsRef.current.find(
-                (entry) => entry.id === session.id,
-              );
-              if (
-                current &&
-                (steering
-                  ? canSteerQueuedHead(current)
-                  : canDispatchQueuedHead(current)) &&
-                current.queuedMessages?.[0] === head
-              ) {
-                setSessions((prev) =>
-                  prev.map((entry) =>
-                    entry.id === session.id
-                      ? {
-                          ...entry,
-                          queueStatus: "paused",
-                          queuedMessages: entry.queuedMessages?.map(
-                            (message) =>
-                              message.id === head.id
-                                ? {
-                                    ...message,
-                                    error:
-                                      "Delivery is unavailable. Retry when the agent is ready.",
-                                  }
-                                : message,
-                          ),
-                        }
-                      : entry,
-                  ),
-                );
-              }
-            }
-            if (accepted || steering)
-              setQueueDispatchVersion((value) => value + 1);
-          } catch (error) {
-            setSessions((prev) =>
-              prev.map((entry) =>
-                entry.id === session.id
-                  ? {
-                      ...entry,
-                      queueStatus: "paused",
-                      queuedMessages: entry.queuedMessages?.map((message) =>
-                        message.id === head.id
-                          ? {
-                              ...message,
-                              error:
-                                error instanceof Error
-                                  ? error.message
-                                  : String(error),
-                            }
-                          : message,
-                      ),
-                    }
-                  : entry,
-              ),
-            );
-          } finally {
-            queueDispatchingRef.current.delete(session.id);
-            if (steering)
-              setSessions((prev) =>
-                prev.map((entry) =>
-                  entry.id === session.id
-                    ? { ...entry, sendingQueuedMessageId: undefined }
-                    : entry,
-                ),
-              );
-          }
-        }, 0),
-      );
-    }
-    return () => {
-      for (const timer of timers) window.clearTimeout(timer);
-      for (const id of scheduled) queueDispatchingRef.current.delete(id);
-    };
-  }, [submitSession, sessions, queueDispatchVersion]);
+  useQueueDispatch(sessions, turnQueue, submitSession);
 
   const onDeleteQueuedMessage = useCallback(
-    (sessionId: string, messageId: string) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId
-            ? dequeueQueuedMessage(session, messageId)
-            : session,
-        ),
-      );
-    },
+    (sessionId: string, messageId: string) =>
+      removeQueuedMessage(turnQueue, sessionId, messageId),
     [],
   );
-
   const onQueuedMessageEditingChange = useCallback(
-    (sessionId: string, messageId?: string) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId
-            ? { ...session, editingQueuedMessageId: messageId }
-            : session,
-        ),
-      );
-    },
+    (sessionId: string, messageId?: string) =>
+      setQueuedMessageEditing(turnQueue, sessionId, messageId),
     [],
   );
-
   const onEditQueuedMessage = useCallback(
-    (sessionId: string, messageId: string, text: string) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId
-            ? {
-                ...session,
-                queuedMessages: session.queuedMessages?.map((message) =>
-                  message.id === messageId
-                    ? { ...message, text, error: undefined }
-                    : message,
-                ),
-                editingQueuedMessageId: undefined,
-              }
-            : session,
-        ),
-      );
-    },
+    (sessionId: string, messageId: string, text: string) =>
+      editQueuedMessage(turnQueue, sessionId, messageId, text),
     [],
   );
-
   const onSteerQueuedMessage = useCallback(
-    (sessionId: string, messageId: string) => {
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      const message = session
-        ? queuedMessageForSubmit(session, messageId, "steer")
-        : undefined;
-      if (!session || !message) return;
-      if (message.intent === "orchestrate" && session.busy) {
-        enqueueHarnessEvent(sessionId, {
-          type: "status",
-          text: "Orchestration planning will start after the current turn finishes.",
-        });
-        flushHarnessEvents();
-        return;
-      }
-      onSubmit(sessionId, message.text, message.attachments, {
-        followUpBehavior: "steer",
-        queuedMessageId: message.id,
-        noteCard: message.noteCard,
-        handoffCard: message.handoffCard,
-        intent: message.intent,
-      });
-    },
-    [onSubmit, enqueueHarnessEvent, flushHarnessEvents],
+    (sessionId: string, messageId: string) =>
+      steerQueuedMessage(turnQueue, sessionId, messageId),
+    [],
   );
-
   const onResumeQueue = useCallback(
-    (sessionId: string) => {
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      if (
-        !session ||
-        (session.busy && !familiarForSession(sessionId)) ||
-        session.queueStatus !== "paused" ||
-        !session.queuedMessages?.length
-      ) {
-        return;
-      }
-      if (familiarForSession(sessionId)) {
-        setSessions((prev) =>
-          prev.map((entry) =>
-            entry.id === sessionId
-              ? entry.usageLimit
-                ? resumeFamiliarUsageLimit(entry)
-                : {
-                    ...entry,
-                    queueStatus: "active",
-                    queuedMessages: entry.queuedMessages?.map((message) => ({
-                      ...message,
-                      error: undefined,
-                    })),
-                  }
-              : entry,
-          ),
-        );
-        return;
-      }
-      setSessions((prev) =>
-        prev.map((entry) =>
-          entry.id === sessionId
-            ? { ...entry, queueStatus: "resuming" }
-            : entry,
-        ),
-      );
-      onSubmit(sessionId, CONTINUE_PROMPT, [], {
-        followUpBehavior: "steer",
-      });
-    },
-    [onSubmit],
-  );
-
-  const onUsageLimitDismiss = useCallback((sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId && session.usageLimit
-          ? { ...session, usageLimit: undefined }
-          : session,
-      ),
-    );
-  }, []);
-
-  const onUsageLimitResumeAtReset = useCallback(
-    (sessionId: string, enabled: boolean) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId && session.usageLimit
-            ? {
-                ...session,
-                usageLimit: { ...session.usageLimit, resumeAtReset: enabled },
-              }
-            : session,
-        ),
-      );
-    },
+    (sessionId: string) => resumeQueue(turnQueue, sessionId),
     [],
   );
 
-  const onUsageLimitResume = useCallback(
-    (sessionId: string) => {
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      if (!session?.usageLimit || session.busy) return;
-      if (isFamiliarSession(sessionId)) {
-        setSessions((prev) =>
-          prev.map((entry) =>
-            entry.id === sessionId ? resumeFamiliarUsageLimit(entry) : entry,
-          ),
-        );
-        return;
-      }
-      onUsageLimitDismiss(sessionId);
-      onSubmit(sessionId, CONTINUE_PROMPT);
-    },
-    [onSubmit, onUsageLimitDismiss],
-  );
-
-  const usageLimitSwitching = useRef(new Set<string>());
-  const onUsageLimitAccountChange = useCallback(
-    async (sessionId: string, accountId: string) => {
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      if (
-        !session?.usageLimit ||
-        session.busy ||
-        !supportsProviderAccounts(session.harness) ||
-        !providerAccountExists(session.harness, accountId) ||
-        sameProviderAccountId(session.providerAccountId, accountId) ||
-        usageLimitSwitching.current.has(sessionId)
-      )
-        return;
-      const familiar = isFamiliarSession(sessionId);
-      // Copy the native transcript so the other account resumes the very same
-      // provider session. Familiar Codex threads live in a private store instead.
-      let carried = false;
-      if (
-        session.providerSessionId &&
-        (session.harness === "claude" ||
-          (session.harness === "codex" && !familiar))
-      ) {
-        usageLimitSwitching.current.add(sessionId);
-        try {
-          await transferHarnessSessionAccount({
-            harness: session.harness,
-            threadId: sessionId,
-            providerSessionId: session.providerSessionId,
-            cwd: sessionWorkCwd(session),
-            fromAccountId: session.providerAccountId,
-            toAccountId: accountId,
-            blocks: session.blocks,
-          });
-          carried = true;
-        } catch (error) {
-          console.warn(
-            "Could not carry the conversation to the other account; continuing from a handoff",
-            error,
-          );
-        } finally {
-          usageLimitSwitching.current.delete(sessionId);
-        }
-        const latest = sessionsRef.current.find(
-          (entry) => entry.id === sessionId,
-        );
-        // The user moved on while the transcript was copied.
-        if (
-          !latest?.usageLimit ||
-          latest.busy ||
-          latest.providerSessionId !== session.providerSessionId ||
-          !sameProviderAccountId(
-            latest.providerAccountId,
-            session.providerAccountId,
-          )
-        )
-          return;
-      }
-      if (familiar) {
-        updateSessionState(sessionsRef, setSessions, (sessions) =>
-          sessions.map((entry) =>
-            entry.id === sessionId
-              ? switchFamiliarUsageLimitAccount(entry, accountId, carried)
-              : entry,
-          ),
-        );
-        return;
-      }
-      updateSessionState(sessionsRef, setSessions, (sessions) =>
-        sessions.map((entry) =>
-          entry.id === sessionId
-            ? withUsageLimitAccount(entry, accountId, carried)
-            : entry,
-        ),
-      );
-      onUsageLimitResume(sessionId);
-    },
-    [onUsageLimitResume],
-  );
+  const usageLimits = useStableFlow(() => createUsageLimits(turnQueue));
+  const onUsageLimitDismiss = usageLimits.dismiss;
+  const onUsageLimitResumeAtReset = usageLimits.setResumeAtReset;
+  const onUsageLimitResume = usageLimits.resume;
+  const onUsageLimitAccountChange = usageLimits.changeAccount;
   usageLimitAccountChangeRef.current = onUsageLimitAccountChange;
-
-  const [usageLimitTick, setUsageLimitTick] = useState(0);
-  useEffect(() => {
-    const now = Date.now();
-    const timers: number[] = [];
-    const scheduled = new Set<string>();
-    let nextCheck = Number.POSITIVE_INFINITY;
-    for (const session of sessions) {
-      const limit = session.usageLimit;
-      if (!limit?.resumeAtReset || limit.resetsAt == null) continue;
-      if (!usageLimitResumeDue(session, now)) {
-        nextCheck = Math.min(
-          nextCheck,
-          limit.resetsAt + USAGE_LIMIT_RESUME_GRACE_MS - now,
-        );
-        continue;
-      }
-      if (usageResumingRef.current.has(session.id)) continue;
-      usageResumingRef.current.add(session.id);
-      scheduled.add(session.id);
-      timers.push(
-        window.setTimeout(() => {
-          usageResumingRef.current.delete(session.id);
-          const latest = sessionsRef.current.find(
-            (entry) => entry.id === session.id,
-          );
-          if (latest && usageLimitResumeDue(latest, Date.now())) {
-            onUsageLimitResume(session.id);
-          }
-        }, 0),
-      );
-    }
-    if (Number.isFinite(nextCheck)) {
-      // Re-check every minute at most: timers drift while the machine sleeps.
-      timers.push(
-        window.setTimeout(
-          () => setUsageLimitTick((tick) => tick + 1),
-          Math.max(1_000, Math.min(nextCheck, 60_000)),
-        ),
-      );
-    }
-    return () => {
-      for (const timer of timers) window.clearTimeout(timer);
-      for (const id of scheduled) usageResumingRef.current.delete(id);
-    };
-  }, [onUsageLimitResume, sessions, usageLimitTick]);
-
-  // The stream does not always say when the limit resets; ask the provider.
-  useEffect(() => {
-    for (const session of sessions) {
-      const limit = session.usageLimit;
-      if (!limit || limit.resetsAt != null) continue;
-      if (usageResetLookups.current.has(limit)) continue;
-      const fetchLimits =
-        session.harness === "claude"
-          ? fetchClaudeRateLimits
-          : session.harness === "codex"
-            ? fetchCodexRateLimits
-            : undefined;
-      if (!fetchLimits) continue;
-      usageResetLookups.current.add(limit);
-      void fetchLimits(session.providerAccountId).then((limits) => {
-        const resetsAt = exhaustedWindowResetAt(limits);
-        if (resetsAt == null) return;
-        setSessions((prev) =>
-          prev.map((entry) =>
-            entry.id === session.id && entry.usageLimit === limit
-              ? { ...entry, usageLimit: { ...limit, resetsAt } }
-              : entry,
-          ),
-        );
-      });
-    }
-  }, [sessions]);
+  useUsageLimitTimers(sessions, turnQueue, onUsageLimitResume);
 
   const openSessionBeside = useCallback(
     (

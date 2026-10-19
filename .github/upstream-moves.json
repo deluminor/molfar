@@ -1251,6 +1251,48 @@
       },
       {
         "names": [
+          "Submit, SubmitOptions"
+        ],
+        "target": "src/app/workspace/flows/submission/submit-types.ts"
+      },
+      {
+        "names": [
+          "onUpdatePlan, onBuildPlan (App: updatePlan/buildPlan)"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/plan-block.ts"
+      },
+      {
+        "names": [
+          "queue dispatch timer body (canSendQueuedHead, dispatchQueuedHead)"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/queue-dispatch.ts"
+      },
+      {
+        "names": [
+          "queueDispatchingRef, queueDispatchVersion, queue dispatch effect"
+        ],
+        "target": "src/app/workspace/hooks/use-queue-dispatch.ts"
+      },
+      {
+        "names": [
+          "onDeleteQueuedMessage, onQueuedMessageEditingChange, onEditQueuedMessage, onSteerQueuedMessage, onResumeQueue"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/queue-actions.ts"
+      },
+      {
+        "names": [
+          "onUsageLimitDismiss, onUsageLimitResumeAtReset, onUsageLimitResume, onUsageLimitAccountChange, usageLimitSwitching (App: usageLimits.*)"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/usage-limits.ts"
+      },
+      {
+        "names": [
+          "usageResumingRef, usageLimitTick, usageResetLookups, resume-at-reset and reset lookup effects"
+        ],
+        "target": "src/app/workspace/hooks/use-usage-limit-timers.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
