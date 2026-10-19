@@ -57,5 +57,14 @@ export function createWorkspaceStore(
     setProviderSignInRequest: fieldSetter(store, "providerSignInRequest"),
     setSessionDeleteDialog: fieldSetter(store, "sessionDeleteDialog"),
     setRemoteProjectDialogOpen: fieldSetter(store, "remoteProjectDialogOpen"),
+    setFamiliarViewId: fieldSetter(store, "familiarViewId"),
+    setFamiliarOverviewOpen: fieldSetter(store, "familiarOverviewOpen"),
+    setFamiliarOverviewTab: fieldSetter(store, "familiarOverviewTab"),
+    setFamiliarSettingsFor: fieldSetter(store, "familiarSettingsFor"),
+    setFamiliarChangesRequest: fieldSetter(store, "familiarChangesRequest"),
+    setFamiliarActivity: fieldSetter(store, "familiarActivity"),
+    setFamiliarShownSession: fieldSetter(store, "familiarShownSession"),
+    setFamiliarOverviewDocument: fieldSetter(store, "familiarOverviewDocument"),
+    setFamiliarShownSessionFocused: fieldSetter(store, "familiarShownSessionFocused"),
   }));
 }

@@ -104,7 +104,16 @@
                   "setWhatsNewVersion",
                   "setProviderSignInRequest",
                   "setSessionDeleteDialog",
-                  "setRemoteProjectDialogOpen"
+                  "setRemoteProjectDialogOpen",
+                  "setFamiliarViewId",
+                  "setFamiliarOverviewOpen",
+                  "setFamiliarOverviewTab",
+                  "setFamiliarSettingsFor",
+                  "setFamiliarChangesRequest",
+                  "setFamiliarActivity",
+                  "setFamiliarShownSession",
+                  "setFamiliarOverviewDocument",
+                  "setFamiliarShownSessionFocused"
                 ]
               }
             ]

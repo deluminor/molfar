@@ -1,3 +1,4 @@
+import { INITIAL_FAMILIARS_STATE } from "./familiars-slice";
 import type { WorkspaceInitialState } from "./types";
 
 /** An empty workspace for store tests; override the fields a test cares about. */
@@ -47,6 +48,7 @@ export function testWorkspaceState(
     providerSignInRequest: null,
     sessionDeleteDialog: undefined,
     remoteProjectDialogOpen: false,
+    ...INITIAL_FAMILIARS_STATE,
     ...overrides,
   };
 }

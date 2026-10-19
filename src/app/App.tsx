@@ -13,6 +13,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useStore } from "zustand";
 import { useStableValue } from "@/shared/hooks/use-stable-value";
 import { flushSync } from "react-dom";
 import { sessionConversationPage } from "@/features/agent-app/model/session-conversation";
@@ -102,7 +103,6 @@ import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import {
   FamiliarOverview,
-  type FamiliarOverviewTab,
 } from "@/features/familiars/ui/FamiliarOverview";
 import { FamiliarSettingsDialog } from "@/features/familiars/ui/FamiliarSettingsDialog";
 import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
@@ -116,7 +116,6 @@ import {
 import { groupFamiliarTurns } from "@/features/sessions/model/transcript-activity";
 import {
   resolveFamiliarActivity,
-  type FamiliarActivitySelection,
 } from "@/features/familiars/model/familiar-activity";
 import {
   DeleteSessionDialog,
@@ -185,6 +184,7 @@ import { Sidebar } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
+import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
 import { cycleTab, tabInSlot } from "./workspace/flows/tabs/tab-cycle";
@@ -1105,7 +1105,7 @@ function Workspace({
   history: bootHistory = [],
   historyCwd: bootHistoryCwd = null,
 }: AppProps) {
-  const [workspaceStore] = useState(() =>
+  const workspaceStore = useStableFlow(() =>
     createWorkspaceStore(
       initialWorkspaceState({
         windowTransfer,
@@ -1157,6 +1157,15 @@ function Workspace({
     setProviderSignInRequest,
     setSessionDeleteDialog,
     setRemoteProjectDialogOpen,
+    setFamiliarViewId,
+    setFamiliarOverviewOpen,
+    setFamiliarOverviewTab,
+    setFamiliarSettingsFor,
+    setFamiliarChangesRequest,
+    setFamiliarActivity,
+    setFamiliarShownSession,
+    setFamiliarOverviewDocument,
+    setFamiliarShownSessionFocused,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -1172,17 +1181,10 @@ function Workspace({
   lastDockSideRef.current = lastDockSide;
   const projectTerminalFocused = useWorkspaceField(workspaceStore, "projectTerminalFocused");
   const activeTabId = useWorkspaceField(workspaceStore, "activeTabId");
-  const [familiarViewId, setFamiliarViewId] = useState<string | null>(null);
-  // A Familiar opens with its overview beside the chat until it is hidden.
-  const [familiarOverviewOpen, setFamiliarOverviewOpen] = useState(true);
-  const [familiarOverviewTab, setFamiliarOverviewTab] =
-    useState<FamiliarOverviewTab>("sessions");
-  const familiarOverviewOpenRef = useRef(familiarOverviewOpen);
-  familiarOverviewOpenRef.current = familiarOverviewOpen;
-  const familiarOverviewTabRef = useRef(familiarOverviewTab);
-  familiarOverviewTabRef.current = familiarOverviewTab;
-  // The Familiar whose settings dialog is open; another Familiar's view closes it.
-  const [familiarSettingsFor, setFamiliarSettingsFor] = useState<string | null>(null);
+  const familiarViewId = useWorkspaceField(workspaceStore, "familiarViewId");
+  const familiarOverviewOpen = useWorkspaceField(workspaceStore, "familiarOverviewOpen");
+  const familiarOverviewTab = useWorkspaceField(workspaceStore, "familiarOverviewTab");
+  const familiarSettingsFor = useWorkspaceField(workspaceStore, "familiarSettingsFor");
   // A document opened from the chat shows on the overview's Documents tab,
   // the same page the tab opens it on.
   const onOpenMonoArtifact = useCallback((_sessionId: string, id: string) => {
@@ -1191,9 +1193,7 @@ function Workspace({
     setFamiliarOverviewTab("documents");
     setFamiliarOverviewOpen(true);
   }, []);
-  // What the overview's Changes tab was last asked to show.
-  const [familiarChangesRequest, setFamiliarChangesRequest] =
-    useState<MonoChangesRequest>({});
+  const familiarChangesRequest = useWorkspaceField(workspaceStore, "familiarChangesRequest");
   useEffect(() => {
     const listening = listen<string>(
       ARTIFACT_DELETED_EVENT,
@@ -1213,33 +1213,27 @@ function Workspace({
       void listening.then((unlisten) => unlisten());
     };
   }, []);
-  const [familiarActivity, setFamiliarActivity] =
-    useState<FamiliarActivitySelection | null>(null);
-  // A launched session or a document open over the overview's list. Hiding
-  // the overview leaves them, so it opens on its list again.
-  const [familiarShownSession, setFamiliarShownSession] = useState<string | null>(null);
-  const [familiarOverviewDocument, setFamiliarOverviewDocument] = useState<
-    string | null
-  >(null);
+  const familiarActivity = useWorkspaceField(workspaceStore, "familiarActivity");
+  const familiarOverviewDocument = useWorkspaceField(workspaceStore, "familiarOverviewDocument");
+  // Hiding the overview leaves what was open over its list, so it opens on
+  // its list again.
   useEffect(() => {
     if (familiarOverviewOpen) return;
     setFamiliarShownSession(null);
     setFamiliarOverviewDocument(null);
   }, [familiarOverviewOpen]);
-  // Whether the shown session, rather than the Familiar's chat, holds focus.
-  const [familiarShownSessionFocused, setFamiliarShownSessionFocused] = useState(false);
-  const shownFamiliarSessionId =
-    familiarViewId && familiarOverviewOpen && familiarShownSession
-      ? familiarShownSession
-      : undefined;
-  const shownFamiliarSessionIdRef = useRef(shownFamiliarSessionId);
-  shownFamiliarSessionIdRef.current = shownFamiliarSessionId;
+  const familiarShownSessionFocused = useWorkspaceField(
+    workspaceStore,
+    "familiarShownSessionFocused",
+  );
+  const shownFamiliarSessionId = useStore(workspaceStore, shownFamiliarSession);
   // A turn's activity shows on the overview's Activity tab; picking the shown
   // one again clears it.
   const onShowFamiliarActivity = useCallback(
     (sessionId: string, turnId: string, blocks: Block[]) => {
-      const shown =
-        familiarOverviewOpenRef.current && familiarOverviewTabRef.current === "activity";
+      const { familiarOverviewOpen, familiarOverviewTab } =
+        workspaceStore.getState();
+      const shown = familiarOverviewOpen && familiarOverviewTab === "activity";
       setFamiliarShownSession(null);
       setFamiliarOverviewDocument(null);
       setFamiliarOverviewTab("activity");
@@ -1254,12 +1248,9 @@ function Workspace({
     },
     [],
   );
-  const familiarViewIdRef = useRef(familiarViewId);
-  familiarViewIdRef.current = familiarViewId;
   const familiarViewRequest = useRef(0);
   const closeFamiliarView = useCallback(() => {
     familiarViewRequest.current += 1;
-    familiarViewIdRef.current = null;
     saveOpenFamiliar(undefined);
     setFamiliarViewId(null);
     setFamiliarActivity(null);
@@ -1355,7 +1346,7 @@ function Workspace({
   const familiarsSnap = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
   /** A Familiar hides the terminal, so reaching for one leaves it. */
   const leaveCoveringFamiliar = useCallback(() => {
-    if (familiarViewIdRef.current) closeFamiliarView();
+    if (workspaceStore.getState().familiarViewId) closeFamiliarView();
   }, [closeFamiliarView]);
   const seenProviderSignInRequestsRef = useRef<Set<string> | null>(null);
   const seenProviderSignInRequests =
@@ -1432,7 +1423,6 @@ function Workspace({
     setSessions(sessionsRef.current);
     setActiveTabIdState(migration.activeTabId);
     if (migration.agentViewId) {
-      familiarViewIdRef.current = migration.agentViewId;
       setFamiliarViewId(migration.agentViewId);
     }
   }, [tabs, sessions, activeTabId, projectCwd]);
@@ -2348,7 +2338,7 @@ function Workspace({
         list: listSessionsByProject,
         sidebarCwd: () => sidebarCwdRef.current,
       }),
-    [workspaceStore],
+    [],
   );
 
   useEffect(() => {
@@ -2813,7 +2803,6 @@ function Workspace({
       projectCwd,
       sessionDefaults?.cwd,
       sessionDefaults?.runtimeMode,
-      workspaceStore,
     ],
   );
 
@@ -3699,7 +3688,7 @@ function Workspace({
 
   const onClosePane = useCallback(
     (sessionId?: string) => {
-      if (familiarViewIdRef.current) {
+      if (workspaceStore.getState().familiarViewId) {
         closeFamiliarView();
         setComposerFocused(true);
         return;
@@ -3849,7 +3838,7 @@ function Workspace({
   ]);
 
   const onNext = useCallback(() => {
-    if (familiarViewIdRef.current) {
+    if (workspaceStore.getState().familiarViewId) {
       activateTab(activeTabId);
       return;
     }
@@ -3858,7 +3847,7 @@ function Workspace({
   }, [activateTab, activeTabId, deckProjectTabs]);
 
   const onPrev = useCallback(() => {
-    if (familiarViewIdRef.current) {
+    if (workspaceStore.getState().familiarViewId) {
       activateTab(activeTabId);
       return;
     }
@@ -3869,7 +3858,7 @@ function Workspace({
   const visitTab = useCallback(
     (direction: "back" | "forward") => {
       // A Familiar's full view covers the tabs; visiting returns to them first.
-      if (familiarViewIdRef.current) {
+      if (workspaceStore.getState().familiarViewId) {
         activateTab(activeTabIdRef.current);
         return;
       }
@@ -3896,13 +3885,13 @@ function Workspace({
 
   const onFocusPane = useCallback(
     (paneId: string) => {
-      if (paneId === familiarViewIdRef.current) {
+      if (paneId === workspaceStore.getState().familiarViewId) {
         setFamiliarShownSessionFocused(false);
         setProjectTerminalFocused(false);
         setComposerFocused(true);
         return;
       }
-      if (paneId === shownFamiliarSessionIdRef.current) {
+      if (paneId === shownFamiliarSession(workspaceStore.getState())) {
         setFamiliarShownSessionFocused(true);
         setProjectTerminalFocused(false);
         setComposerFocused(true);
@@ -3912,7 +3901,7 @@ function Workspace({
       // launched session sliding away as another opens. Its late focus must
       // not close the Familiar and send that session to its project.
       if (
-        familiarViewIdRef.current &&
+        workspaceStore.getState().familiarViewId &&
         !tabsRef.current.some((tab) => leafIds(tab.layout).includes(paneId))
       )
         return;
@@ -4090,13 +4079,13 @@ function Workspace({
   const onReorderFiles = useCallback(
     (paneId: string, ids: string[]) =>
       reorderPaneFiles(workspaceStore, paneId, ids),
-    [workspaceStore],
+    [],
   );
 
   const onMovePane = useCallback(
     (fromId: string, toId: string, edge: PaneEdge) =>
       movePaneTo(workspaceStore, fromId, toId, edge),
-    [workspaceStore],
+    [],
   );
 
   const onDetachPane = useCallback(
@@ -4395,12 +4384,11 @@ function Workspace({
       if (!session || request !== familiarViewRequest.current) return;
       // What the last Familiar had open over its overview is its own; another
       // Familiar opens on its list.
-      if (familiarViewIdRef.current !== session.id) {
+      if (workspaceStore.getState().familiarViewId !== session.id) {
         setFamiliarShownSession(null);
         setFamiliarShownSessionFocused(false);
         setFamiliarOverviewDocument(null);
       }
-      familiarViewIdRef.current = session.id;
       saveOpenFamiliar(familiarId);
       setFamiliarViewId(session.id);
       setProjectTerminalFocused(false);
@@ -4424,7 +4412,7 @@ function Workspace({
 
   /** The shortcut opens the last Familiar, or the first on the rail. */
   const onToggleFamiliar = useCallback(() => {
-    if (familiarViewIdRef.current) {
+    if (workspaceStore.getState().familiarViewId) {
       closeFamiliarView();
       setComposerFocused(true);
       return;
@@ -4497,9 +4485,8 @@ function Workspace({
             setStoredLinkedSessions((history) =>
               history.filter((entry) => entry.id !== sessionId),
             );
-            if (familiarViewIdRef.current === sessionId) {
+            if (workspaceStore.getState().familiarViewId === sessionId) {
               familiarViewRequest.current += 1;
-              familiarViewIdRef.current = fresh.id;
               setFamiliarViewId(fresh.id);
               setComposerFocused(true);
               setComposerFocusToken((token) => token + 1);
@@ -4574,14 +4561,14 @@ function Workspace({
   // the Familiar started; opening the one already shown hides it again.
   const showFamiliarLaunchedSession = useCallback(
     async (familiarSessionId: string, launchedId: string) => {
-      if (shownFamiliarSessionIdRef.current === launchedId) {
+      if (shownFamiliarSession(workspaceStore.getState()) === launchedId) {
         setFamiliarShownSession(null);
         return;
       }
       // Load it first, then switch in one step: the overview goes straight
       // from what it shows to this session, never through the list.
       const session = await ensureOpenSession(launchedId).catch(() => null);
-      if (familiarViewIdRef.current !== familiarSessionId) return;
+      if (workspaceStore.getState().familiarViewId !== familiarSessionId) return;
       setFamiliarOverviewTab("sessions");
       setFamiliarOverviewDocument(null);
       setFamiliarOverviewOpen(true);
@@ -5110,7 +5097,7 @@ function Workspace({
           sessions: sessionsRef.current,
           projectTerminalFocused: projectTerminalFocusedRef.current,
           surfaceOpen: Boolean(
-            familiarViewIdRef.current ||
+            workspaceStore.getState().familiarViewId ||
             searchViewOpenRef.current ||
             inboxViewOpenRef.current ||
             notesViewOpenRef.current ||
@@ -5259,7 +5246,7 @@ function Workspace({
       );
       if (!confirmed) return;
       if (familiar.sessionId) {
-        if (familiarViewIdRef.current === familiar.sessionId) closeFamiliarView();
+        if (workspaceStore.getState().familiarViewId === familiar.sessionId) closeFamiliarView();
         if (
           sessionsRef.current.some(
             (session) => session.id === familiar.sessionId,
@@ -9769,7 +9756,7 @@ function Workspace({
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       const focusedBusySessionId = () => {
-        const agentId = familiarViewIdRef.current;
+        const agentId = workspaceStore.getState().familiarViewId;
         if (agentId) {
           return sessionsRef.current.find((session) => session.id === agentId)
             ?.busy
@@ -11528,7 +11515,7 @@ function Workspace({
       setAutomationsViewOpen(false);
       return;
     }
-    if (familiarViewIdRef.current) {
+    if (workspaceStore.getState().familiarViewId) {
       closeFamiliarView();
       setComposerFocused(true);
       return;
@@ -12094,7 +12081,7 @@ function Workspace({
       projectCwdRef.current,
     );
     const el = dockGridRef.current;
-    if (!dock || !el || familiarViewIdRef.current) return;
+    if (!dock || !el || workspaceStore.getState().familiarViewId) return;
     dockDragSize.current = size;
     applyDockGridStyle(el, dock.side, size);
   }, []);

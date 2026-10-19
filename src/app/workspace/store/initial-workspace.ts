@@ -14,6 +14,7 @@ import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { newTab } from "@/features/workspace/model/layout";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { WindowTransferPayload } from "../../model/window-transfer";
+import { INITIAL_FAMILIARS_STATE } from "./familiars-slice";
 import { initialProjectsState } from "./initial-projects";
 import type { WorkspaceInitialState } from "./types";
 
@@ -87,5 +88,6 @@ export function initialWorkspaceState(
     providerSignInRequest: null,
     sessionDeleteDialog: undefined,
     remoteProjectDialogOpen: false,
+    ...INITIAL_FAMILIARS_STATE,
   };
 }
