@@ -10,6 +10,25 @@ export default defineConfig(async ({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    worker: { format: "es" },
+    resolve: {
+      alias: [
+        ...(mode.startsWith("benchmark")
+          ? [
+              {
+                find: /^@tauri-apps\/api\/core$/,
+                replacement: new URL(
+                  "./tests/browser/tauriFixture.ts",
+                  import.meta.url,
+                ).pathname,
+              },
+            ]
+          : []),
+        ...(mode === "benchmark-profile"
+          ? [{ find: "react-dom/client", replacement: "react-dom/profiling" }]
+          : []),
+      ],
+    },
     clearScreen: false,
     build: {
       // Minification strips dependencies' license headers; this file carries
@@ -22,6 +41,9 @@ export default defineConfig(async ({ mode }) => {
           main: "index.html",
           quickComposer: "quick-composer.html",
           monoChat: "familiar-chat.html",
+          ...(mode.startsWith("benchmark")
+            ? { workspaceBenchmark: "tests/browser/workspace-performance.html" }
+            : {}),
         },
       },
     },
