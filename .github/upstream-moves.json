@@ -1128,6 +1128,18 @@
           "companionBoard, useCompanionBridge deps (projects, projectLabel, submit wrapper, vault, notes)"
         ],
         "target": "src/app/workspace/hooks/use-workspace-companion.ts"
+      },
+      {
+        "names": [
+          "onOpenMonoArtifact, onShowFamiliarActivity, ARTIFACT_DELETED_EVENT overview reset, overview-hidden effect (App keeps thin callbacks)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-overview.ts"
+      },
+      {
+        "names": [
+          "familiarViewRequest, lastFamiliarIdRef, closeFamiliarView, onOpenFamiliar, onToggleFamiliar, showFamiliarLaunchedSession, reset replace branch of onResetFamiliar (App: familiarView.close/open/toggle/replaceSession/showLaunchedSession/forget)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-view.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
