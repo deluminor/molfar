@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.20] - 2026-10-19
+
 ### Changed
 
 - **New layout** is opt-in: classic chrome stays the default. Try the redesigned sidebar, project switcher, and workspace from the invitation, or enable it in Settings → Appearance → Layout.
@@ -458,7 +460,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.19...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.20...HEAD
+[1.0.20]: https://github.com/deluminor/molfar/compare/v1.0.19...v1.0.20
 [1.0.19]: https://github.com/deluminor/molfar/compare/v1.0.18...v1.0.19
 [1.0.18]: https://github.com/deluminor/molfar/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/deluminor/molfar/compare/v1.0.16...v1.0.17
