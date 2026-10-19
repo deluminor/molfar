@@ -1248,6 +1248,18 @@
           "activeTab fallback"
         ],
         "target": "src/app/model/active-workspace-tab.ts"
+      },
+      {
+        "names": [
+          "focusProjectTerminal, openProjectTerminal, onToggleProjectTerminal, onHideProjectTerminal, onProjectTerminalSide, onProjectTerminalSize, onSelectProjectTerminal, onReorderProjectTerminals, onCloseProjectTerminal, onCloseOtherProjectTerminals, focusedDockTerminal"
+        ],
+        "target": "src/app/workspace/flows/terminals/dock-terminals.ts"
+      },
+      {
+        "names": [
+          "onOpenTerminal, onNewTerminal, onNewTerminalTab, onNewTerminalInSession, onTerminalMetaChange, onToggleRunningTerminal"
+        ],
+        "target": "src/app/workspace/flows/terminals/workspace-terminals.ts"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
