@@ -207,6 +207,16 @@ const fixtureInvoke = async (
   )
     return;
   if (command === "quick_composer_take") return null;
+  // An empty Task Board keeps its background engine quiet.
+  if (
+    command === "task_board_cards_list" ||
+    command === "task_board_runs_list" ||
+    command === "task_board_runs_running"
+  )
+    return [];
+  if (command === "task_board_claim_next") return null;
+  if (command === "task_board_settings_get")
+    return { columns: {}, maxConcurrentStages: 3, stallMinutes: 45 };
   throw new Error(`Unavailable fixture service: ${command}`);
 };
 Object.assign(window, {
@@ -244,6 +254,10 @@ if (nativeInvoke) {
   );
 }
 
+// Specs that exercise the new layout opt in before load; the rest measure the
+// classic workspace.
+if (localStorage.getItem("molfar.insetLayout") === null)
+  localStorage.setItem("molfar.insetLayout", "0");
 localStorage.setItem("molfar.pacedReveal", "0");
 localStorage.setItem("molfar.diffViewer", "unified");
 localStorage.setItem("molfar.measureNavigation", "1");
