@@ -1689,6 +1689,24 @@
       },
       {
         "names": [
+          "onOpenSearch, onOpenInbox, onOpenNotes, onOpenAutomations, onGoToFile, onOpenCommandPalette, onFindInProject, onOpenAutomationSession, onRailBack, onRailForward"
+        ],
+        "target": "src/app/workspace/flows/surfaces/overlay-views.ts"
+      },
+      {
+        "names": [
+          "openSettings, onCloseSettings, onOpenNotificationSettings, onSelectSettingsSection"
+        ],
+        "target": "src/app/workspace/flows/surfaces/settings-surface.ts"
+      },
+      {
+        "names": [
+          "surface flow deps, closing overlay views"
+        ],
+        "target": "src/app/workspace/flows/surfaces/surface-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

@@ -74,10 +74,6 @@ import { boardNoticeCard } from "@/features/task-board/services/notify";
 import { updateSessionState } from "./model/session-state";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import { isBlankWorkspaceTab } from "./model/blank-workspace-tab";
-import {
-  captureSettingsReturnView,
-  restoreSettingsReturnView,
-} from "./model/settings-return/settings-return-view";
 import type { SettingsReturnView } from "./model/settings-return/types";
 import type { SubmissionAcceptance } from "./model/submission-acceptance";
 
@@ -246,6 +242,21 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
+import type { SurfaceDeps } from "./workspace/flows/surfaces/surface-deps";
+import {
+  findInProject,
+  openAppView,
+  openAutomationSession,
+  openFilePicker,
+  railBack,
+  railForward,
+} from "./workspace/flows/surfaces/overlay-views";
+import {
+  closeSettings,
+  openNotificationSettings,
+  openSettings as openSettingsSurface,
+  selectSettingsSection,
+} from "./workspace/flows/surfaces/settings-surface";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -644,7 +655,6 @@ import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
 
-import { loadRailSurfaces } from "@/features/settings/model/project-rail";
 import {
   keybindingPressed,
   loadAutosave,
@@ -658,7 +668,6 @@ import {
   loadNotesEnabled,
   matchCustomKeybinding,
   saveAutosave,
-  saveSettingsSection,
   subscribeLiveAgentsEnabled,
   subscribeNotesEnabled,
   type SettingsSectionId,
@@ -843,11 +852,7 @@ function Workspace({
     setStoredLinkedSessions,
     setFilesSearchOpen,
     setFilePickerOpen,
-    setFilePickerInitialQuery,
-    setFilePickerResetToken,
     setSearchViewOpen,
-    setSearchFocusToken,
-    setSearchViewFocusToken,
     setInboxViewOpen,
     setLinkedWorkItemPanels,
     setInboxAskPortal,
@@ -855,10 +860,6 @@ function Workspace({
     setInspectedWorkerId,
     setWorkerDetailRequest,
     setSettingsOpen,
-    setSettingsSection,
-    setSettingsAnchor,
-    setNotificationProjectPath,
-    setNotificationSettingsRequest,
     setProjectRailOpen,
     setSessionSidebarOpen,
     setCollapsedProjectRailMode,
@@ -5361,24 +5362,31 @@ function Workspace({
     });
   }, []);
 
-  const onGoToFile = useCallback(() => {
-    setSearchViewOpen(false);
-    setInboxViewOpen(false);
-    setNotesViewOpen(false);
-    setAutomationsViewOpen(false);
-    setFilePickerInitialQuery("");
-    setFilePickerResetToken((token) => token + 1);
-    setFilePickerOpen(true);
-  }, []);
-  const onOpenCommandPalette = useCallback(() => {
-    setSearchViewOpen(false);
-    setInboxViewOpen(false);
-    setNotesViewOpen(false);
-    setAutomationsViewOpen(false);
-    setFilePickerInitialQuery(">");
-    setFilePickerResetToken((token) => token + 1);
-    setFilePickerOpen(true);
-  }, []);
+  const surfaceDeps = useStableFlow(
+    (): SurfaceDeps => ({
+      store: workspaceStore,
+      setAutomationsViewOpen,
+      setAutomationsSurfaceOpen,
+      setLocalSurface,
+      automationsSurfaceOpen: () => automationsSurfaceOpenRef.current,
+      localSurface: () => localSurfaceRef.current,
+      settingsReturnView: settingsReturnViewRef,
+      rememberAppView: (view) => rememberAppView(view),
+      cancelNavigation: () => workspaceNavigation.cancel(),
+      closeFamiliarView: () => closeFamiliarView(),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      visitBack: () => onVisitBack(),
+      visitForward: () => onVisitForward(),
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
+    }),
+  );
+  const onGoToFile = useCallback(() => openFilePicker(surfaceDeps, ""), []);
+  const onOpenCommandPalette = useCallback(
+    () => openFilePicker(surfaceDeps, ">"),
+    [],
+  );
   const onReload = useCallback(() => {
     void (async () => {
       if (!(await confirmReload(dirtyFilesRef.current.size > 0))) return;
@@ -5386,50 +5394,15 @@ function Workspace({
     })();
   }, []);
 
-  const onFindInProject = useCallback(() => {
-    setSearchViewOpen(false);
-    setInboxViewOpen(false);
-    setNotesViewOpen(false);
-    setAutomationsViewOpen(false);
-    setSidebarTab("files");
-    setFilesSearchOpen(true);
-    setSearchFocusToken((token) => token + 1);
-  }, []);
+  const onFindInProject = useCallback(() => findInProject(surfaceDeps), []);
 
-  const onOpenSearch = useCallback(() => {
-    workspaceNavigation.cancel();
-    startTransition(() => {
-      // With the Familiar closed in the same commit, no frame shows the
-      // workspace tab between the two views.
-      closeFamiliarView();
-      rememberAppView("search");
-      setFilePickerOpen(false);
-      setSettingsOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      setSearchViewOpen(true);
-      setSearchViewFocusToken((token) => token + 1);
-    });
-  }, []);
+  const onOpenSearch = useCallback(() => openAppView(surfaceDeps, "search"), []);
 
   const onLeaveSearch = useCallback(() => {
     setSearchViewOpen(false);
   }, []);
 
-  const onOpenInbox = useCallback(() => {
-    workspaceNavigation.cancel();
-    startTransition(() => {
-      closeFamiliarView();
-      rememberAppView("inbox");
-      setFilePickerOpen(false);
-      setSettingsOpen(false);
-      setSearchViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      setInboxViewOpen(true);
-    });
-  }, []);
+  const onOpenInbox = useCallback(() => openAppView(surfaceDeps, "inbox"), []);
 
   const onOpenLinkedWorkItem = linkedPanels.open;
 
@@ -5447,38 +5420,16 @@ function Workspace({
     [],
   );
 
-  const onOpenNotes = useCallback(() => {
-    workspaceNavigation.cancel();
-    if (!loadNotesEnabled()) return;
-    startTransition(() => {
-      closeFamiliarView();
-      rememberAppView("notes");
-      setFilePickerOpen(false);
-      setSettingsOpen(false);
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setAutomationsViewOpen(false);
-      setNotesViewOpen(true);
-    });
-  }, []);
+  const onOpenNotes = useCallback(() => openAppView(surfaceDeps, "notes"), []);
 
   const onLeaveNotes = useCallback(() => {
     setNotesViewOpen(false);
   }, []);
 
-  const onOpenAutomations = useCallback(() => {
-    workspaceNavigation.cancel();
-    startTransition(() => {
-      closeFamiliarView();
-      rememberAppView("automations");
-      setFilePickerOpen(false);
-      setSettingsOpen(false);
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(true);
-    });
-  }, []);
+  const onOpenAutomations = useCallback(
+    () => openAppView(surfaceDeps, "automations"),
+    [],
+  );
 
   const onLeaveAutomations = useCallback(() => {
     setAutomationsViewOpen(false);
@@ -5507,53 +5458,13 @@ function Workspace({
   });
 
   const onOpenAutomationSession = useCallback(
-    async (sessionId: string) => {
-      const session = await ensureOpenSession(sessionId);
-      if (!session)
-        throw new Error("This conversation is no longer available.");
-      setAutomationsViewOpen(false);
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setSettingsOpen(false);
-      setFilePickerOpen(false);
-      setSidebarTab("sessions", session.cwd);
-      setProjectCwd(session.cwd);
-      setRecents(rememberProject(session.cwd));
-      await onSelectHistorySession(sessionId);
-    },
-    [ensureOpenSession, onSelectHistorySession],
+    (sessionId: string) => openAutomationSession(surfaceDeps, sessionId),
+    [],
   );
 
   const openSettings = useCallback(
-    (section?: SettingsSectionId, anchor?: SettingsAnchor) => {
-      workspaceNavigation.cancel();
-      settingsReturnViewRef.current = captureSettingsReturnView(
-        settingsReturnViewRef.current,
-        {
-          search: searchViewOpenRef.current,
-          inbox: inboxViewOpenRef.current,
-          notes: notesViewOpenRef.current,
-          automations: automationsSurfaceOpenRef.current,
-          localSurface: localSurfaceRef.current,
-        },
-        settingsOpenRef.current,
-      );
-      startTransition(() => {
-        setFilePickerOpen(false);
-        setSearchViewOpen(false);
-        setInboxViewOpen(false);
-        setNotesViewOpen(false);
-        setAutomationsViewOpen(false);
-        if (section) {
-          setSettingsSection(section);
-          saveSettingsSection(section);
-        }
-        setSettingsAnchor(anchor ?? null);
-        setNotificationProjectPath(null);
-        setSettingsOpen(true);
-      });
-    },
+    (section?: SettingsSectionId, anchor?: SettingsAnchor) =>
+      openSettingsSurface(surfaceDeps, section, anchor),
     [],
   );
 
@@ -5579,12 +5490,8 @@ function Workspace({
   }, [openSettings]);
 
   const onOpenNotificationSettings = useCallback(
-    (path?: string) => {
-      openSettings("inbox", "project-notifications");
-      setNotificationProjectPath(path ?? null);
-      setNotificationSettingsRequest((request) => request + 1);
-    },
-    [openSettings],
+    (path?: string) => openNotificationSettings(surfaceDeps, path),
+    [],
   );
 
   const onOpenInboxIntegrations = useCallback(
@@ -5592,24 +5499,12 @@ function Workspace({
     [openSettings],
   );
 
-  const onCloseSettings = useCallback(() => {
-    const returnView = restoreSettingsReturnView(
-      settingsReturnViewRef.current,
-      loadNotesEnabled(),
-      loadRailSurfaces(),
-    );
-    setSearchViewOpen(returnView.search);
-    setInboxViewOpen(returnView.inbox);
-    setNotesViewOpen(returnView.notes);
-    setAutomationsSurfaceOpen(returnView.automations);
-    setLocalSurface(returnView.localSurface);
-    setSettingsOpen(false);
-  }, []);
+  const onCloseSettings = useCallback(() => closeSettings(surfaceDeps), []);
 
-  const onSelectSettingsSection = useCallback((section: SettingsSectionId) => {
-    setSettingsSection(section);
-    saveSettingsSection(section);
-  }, []);
+  const onSelectSettingsSection = useCallback(
+    (section: SettingsSectionId) => selectSettingsSection(surfaceDeps, section),
+    [],
+  );
 
   const onOpenArchivedSession = useCallback(
     (sessionId: string) => {
@@ -5619,52 +5514,12 @@ function Workspace({
     [onSelectHistorySession],
   );
 
-  const onRailBack = useCallback(() => {
-    if (settingsOpen) {
-      onCloseSettings();
-      return;
-    }
-    if (searchViewOpen) {
-      setSearchViewOpen(false);
-      return;
-    }
-    if (inboxViewOpen) {
-      setInboxViewOpen(false);
-      return;
-    }
-    if (notesViewOpen) {
-      setNotesViewOpen(false);
-      return;
-    }
-    if (automationsViewOpen) {
-      setAutomationsViewOpen(false);
-      return;
-    }
-    if (workspaceStore.getState().familiarViewId) {
-      closeFamiliarView();
-      setComposerFocused(true);
-      return;
-    }
-    onVisitBack();
-  }, [
-    onCloseSettings,
-    onVisitBack,
-    closeFamiliarView,
-    searchViewOpen,
-    settingsOpen,
-    inboxViewOpen,
-    notesViewOpen,
-    automationsViewOpen,
-  ]);
+  const onRailBack = useCallback(
+    () => railBack(surfaceDeps, () => closeSettings(surfaceDeps)),
+    [],
+  );
 
-  const onRailForward = useCallback(() => {
-    setSearchViewOpen(false);
-    setSettingsOpen(false);
-    setInboxViewOpen(false);
-    setNotesViewOpen(false);
-    setAutomationsViewOpen(false);
-    onVisitForward();
-  }, [onVisitForward]);
+  const onRailForward = useCallback(() => railForward(surfaceDeps), []);
 
   useEffect(() => {
     if (sidebarTab === "inbox") setSidebarTab("sessions");
