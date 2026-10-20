@@ -1635,6 +1635,42 @@
       },
       {
         "names": [
+          "orchestrator.bind layout effect"
+        ],
+        "target": "src/app/workspace/hooks/use-orchestrator-binding.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind createWorker"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/create-worker.ts"
+      },
+      {
+        "names": [
+          "createWorker workspace selection (shared, retained, new worktree)"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-workspace.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind integrateWorker, cleanupWorker"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-checkout.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind submit, steer, respondApproval, answerQuestion, stop"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-control.ts"
+      },
+      {
+        "names": [
+          "orchestration worker deps"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
