@@ -74,11 +74,9 @@
   "src/app/App.tsx": {
     "lint/a11y/useAriaPropsSupportedByRole": 1,
     "lint/a11y/useSemanticElements": 1,
-    "lint/complexity/useOptionalChain": 1,
-    "lint/correctness/useExhaustiveDependencies": 41,
+    "lint/correctness/useExhaustiveDependencies": 40,
     "lint/style/noNonNullAssertion": 2,
-    "lint/suspicious/noAssignInExpressions": 1,
-    "lint/suspicious/useIterableCallbackReturn": 1
+    "lint/suspicious/noAssignInExpressions": 1
   },
   "src/app/hooks/use-familiar-habits.test.ts": {
     "lint/style/noNonNullAssertion": 5

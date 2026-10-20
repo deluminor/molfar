@@ -1755,6 +1755,54 @@
       },
       {
         "names": [
+          "actions ref shape (WorkspaceActions), command deps"
+        ],
+        "target": "src/app/workspace/hooks/commands/command-deps.ts"
+      },
+      {
+        "names": [
+          "run + debounce (App: useCommandRunner)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-command-runner.ts"
+      },
+      {
+        "names": [
+          "keydown capture effect (App: useWorkspaceKeys)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-workspace-keys.ts"
+      },
+      {
+        "names": [
+          "tab command chords in the keydown handler"
+        ],
+        "target": "src/app/workspace/hooks/commands/tab-command-key.ts"
+      },
+      {
+        "names": [
+          "editor find and app shortcuts in the keydown handler"
+        ],
+        "target": "src/app/workspace/hooks/commands/app-shortcut-key.ts"
+      },
+      {
+        "names": [
+          "menu listen effect, notification click (App: useMenuCommands)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-menu-commands.ts"
+      },
+      {
+        "names": [
+          "autosave / keybinding overrides effect (App: useNativeKeybindings)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-native-keybindings.ts"
+      },
+      {
+        "names": [
+          "zoom in/out/reset"
+        ],
+        "target": "src/app/workspace/hooks/commands/ui-zoom.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
