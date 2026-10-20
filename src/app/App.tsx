@@ -14,7 +14,6 @@ import {
 } from "react";
 import { useStore } from "zustand";
 import { useStableValue } from "@/shared/hooks/use-stable-value";
-import { useDragResize } from "@/shared/hooks/use-drag-resize";
 import { beginLayoutTransition } from "@/shared/lib/layout-transition";
 import {
   appViewTabId,
@@ -77,19 +76,11 @@ import {
   applyInsetLayout,
   INSET_LAYOUT_DEFAULT,
   loadInsetLayout,
-  loadRightPanelOpen,
-  loadRightPanelTab,
-  loadRightPanelWidth,
-  RIGHT_PANEL_WIDTH_DEFAULT,
   RIGHT_PANEL_WIDTH_MAX,
   RIGHT_PANEL_WIDTH_MIN,
   saveProjectRailOpen,
-  saveRightPanelOpen,
-  saveRightPanelTab,
-  saveRightPanelWidth,
   saveSessionSidebarOpen,
   subscribeInsetLayout,
-  type RightPanelTab,
   type SidebarTabId,
 } from "@/features/settings/model/appearance";
 import {
@@ -206,6 +197,7 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
+import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
 import type { CommandDeps, WorkspaceActions } from "./workspace/hooks/commands/command-deps";
 import { useCommandRunner } from "./workspace/hooks/commands/use-command-runner";
@@ -963,53 +955,19 @@ function Workspace({
     useState<HTMLDivElement | null>(null);
   const insetLayoutRef = useRef(insetLayout);
   insetLayoutRef.current = insetLayout;
-  // The inset layout's project tools beside the card.
-  const [rightPanelHost, setRightPanelHost] = useState<HTMLDivElement | null>(
-    null,
-  );
-  const [rightPanelOpen, setRightPanelOpenState] = useState(loadRightPanelOpen);
-  const [rightPanelTab, setRightPanelTabState] =
-    useState<RightPanelTab>(loadRightPanelTab);
-  // A closed panel keeps its contents until it has slid out.
-  const [rightPanelClosing, setRightPanelClosing] = useState(false);
-  const rightPanelOpenRef = useRef(rightPanelOpen);
-  rightPanelOpenRef.current = rightPanelOpen;
-  const showRightPanel = useCallback((tab: RightPanelTab) => {
-    setRightPanelTabState(tab);
-    saveRightPanelTab(tab);
-    setRightPanelOpenState(true);
-    setRightPanelClosing(false);
-    saveRightPanelOpen(true);
-  }, []);
-  const onToggleRightPanel = useCallback(() => {
-    const next = !rightPanelOpenRef.current;
-    rightPanelOpenRef.current = next;
-    saveRightPanelOpen(next);
-    setRightPanelOpenState(next);
-    setRightPanelClosing(!next);
-  }, []);
-  // Its handle sits on the left edge, so dragging left widens it.
-  const rightPanelResize = useDragResize({
-    direction: "left",
-    min: RIGHT_PANEL_WIDTH_MIN,
-    max: () =>
-      Math.min(RIGHT_PANEL_WIDTH_MAX, Math.floor(window.innerWidth * 0.5)),
-    defaultWidth: RIGHT_PANEL_WIDTH_DEFAULT,
-    initial: loadRightPanelWidth(),
-    onCommit: saveRightPanelWidth,
-  });
-  const rightPanelRef = useRef<HTMLDivElement | null>(null);
-  const setRightPanelPane = rightPanelResize.setPaneRef;
-  const setRightPanelRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      rightPanelRef.current = el;
-      setRightPanelPane(el);
-    },
-    [setRightPanelPane],
-  );
-  const rightPanelAnimation = useRef<Animation | null>(null);
-  const endRightPanelTransition = useRef<(() => void) | null>(null);
-  const rightPanelWasOpen = useRef(rightPanelOpen);
+  const {
+    host: rightPanelHost,
+    setHost: setRightPanelHost,
+    open: rightPanelOpen,
+    tab: rightPanelTab,
+    closing: rightPanelClosing,
+    setClosing: setRightPanelClosing,
+    show: showRightPanel,
+    toggle: onToggleRightPanel,
+    resize: rightPanelResize,
+    paneRef: rightPanelRef,
+    setPane: setRightPanelRef,
+  } = useRightPanel();
   useLayoutEffect(() => {
     applyInsetLayout(insetLayout);
   }, [insetLayout]);
@@ -5436,72 +5394,13 @@ function Workspace({
     !familiarCovers &&
     !activeAppView &&
     looksLikeProject(sidebarCwd);
-  // The right panel grows from the card's edge and pushes the workspace. Its
-  // own contents keep their full width and ride its edge.
-  // A reversal mid-slide starts from wherever the width currently is.
-  useLayoutEffect(() => {
-    const toggled = rightPanelWasOpen.current !== rightPanelOpen;
-    rightPanelWasOpen.current = rightPanelOpen;
-    const pane = rightPanelRef.current;
-    const content = pane?.firstElementChild;
-    if (!toggled || !pane || !(content instanceof HTMLElement)) return;
-    const reduceMotion = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const animate =
-      insetRightPanelShown && typeof pane.animate === "function" && !reduceMotion;
-    const current = pane.getBoundingClientRect().width;
-    const from = rightPanelAnimation.current || !rightPanelOpen ? current : 0;
-    rightPanelAnimation.current?.cancel();
-    rightPanelAnimation.current = null;
-    endRightPanelTransition.current?.();
-    endRightPanelTransition.current = null;
-    if (!animate) {
-      content.style.width = "";
-      if (!rightPanelOpen) setRightPanelClosing(false);
-      return;
-    }
-    // The committed width; a running slide only overrides it. Only the
-    // width is pinned: the column still stretches the contents to full
-    // height, so the panel's scrolling content stays put while it slides.
-    const full = parseFloat(pane.style.width) || pane.offsetWidth;
-    content.style.width = `${full}px`;
-    endRightPanelTransition.current = beginLayoutTransition();
-    const animation = pane.animate(
-      [{ width: `${from}px` }, { width: `${rightPanelOpen ? full : 0}px` }],
-      {
-        duration: rightPanelOpen ? 240 : 200,
-        easing: "cubic-bezier(0.32, 0.72, 0, 1)",
-        fill: "forwards",
-      },
-    );
-    rightPanelAnimation.current = animation;
-    animation.onfinish = () => {
-      if (rightPanelAnimation.current !== animation) return;
-      if (rightPanelOpen) {
-        animation.cancel();
-        rightPanelAnimation.current = null;
-        endRightPanelTransition.current?.();
-        endRightPanelTransition.current = null;
-        content.style.width = "";
-      } else {
-        setRightPanelClosing(false);
-      }
-    };
-  }, [rightPanelOpen]);
-  // A slid-out panel holds its last frame until it is hidden, in the same
-  // commit, so it never flashes back in place.
-  useLayoutEffect(() => {
-    if (rightPanelClosing || rightPanelOpen) return;
-    rightPanelAnimation.current?.cancel();
-    rightPanelAnimation.current = null;
-    endRightPanelTransition.current?.();
-    endRightPanelTransition.current = null;
-    const content = rightPanelRef.current?.firstElementChild;
-    if (content instanceof HTMLElement) {
-      content.style.width = "";
-    }
-  }, [rightPanelClosing, rightPanelOpen]);
+  useRightPanelSlide(
+    rightPanelOpen,
+    rightPanelClosing,
+    insetRightPanelShown,
+    rightPanelRef,
+    setRightPanelClosing,
+  );
   // The same shared stats the sidebar's Changes tab reads, so the toggle
   // that opens it can carry its dot.
   const showRightPanelToggle =
