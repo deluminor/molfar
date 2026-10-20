@@ -86,10 +86,8 @@ import type { SettingsReturnView } from "./model/settings-return/types";
 import type { SubmissionAcceptance } from "./model/submission-acceptance";
 
 import {
-  invalidateProjectFiles,
   prefetchProjectFiles,
   rememberOpenedFile,
-  resolveFileOpenRequest,
   resolveOpenablePath,
 } from "@/features/files/model/file-index";
 import { FilePicker } from "@/features/files/ui/FilePicker";
@@ -167,7 +165,7 @@ import {
   homeDir,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
-import { basename, displayPath, isEqualOrInside, pathKey, projectName, rebasePath } from "@/shared/lib/paths";
+import { basename, displayPath, pathKey, projectName } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
@@ -234,6 +232,15 @@ import type { ProjectDeps } from "./workspace/flows/projects/project-deps";
 import { moveProjectLocation } from "./workspace/flows/projects/project-location";
 import { removeProject } from "./workspace/flows/projects/remove-project";
 import { placeInFolder } from "./workspace/flows/projects/session-folder";
+import type { FileDeps } from "./workspace/flows/files/file-deps";
+import { fileDeleted, fileMoved } from "./workspace/flows/files/file-paths";
+import {
+  pinFile,
+  selectFileSurface,
+  setFileDirty,
+  setFileErrorCount,
+} from "./workspace/flows/files/file-state";
+import { openFile, openPlan } from "./workspace/flows/files/open-file";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -402,8 +409,6 @@ import {
 import { supportsHarnessLogin } from "@/integrations/harness/core/auth-support";
 
 import {
-  findSurfacePane,
-  firstLeafId,
   focusedFileTab,
   isCommitTab,
   isFilesystemTab,
@@ -412,24 +417,15 @@ import {
   leafIds,
   neighborLeafId,
   newAgentTab,
-  newEditorWorkspaceTab,
   newFileTab,
-  newPlanTab,
   newTab,
   openChangesTab,
   openCommitTab,
   openEditorTab,
   openSessionChangesTab,
-  openWorkspaceFile,
-  pinEditorFile,
   previewWorkspaceFile,
-  removePane,
   setSplitRatio,
-  siblingLeafId,
   splitPane,
-  surfacePanes,
-  withSurfacePanes,
-  type EditorPane,
   type FilePaneTab,
   type FocusDir,
   type PaneEdge,
@@ -482,9 +478,6 @@ import {
 } from "@/domain/harness/provider-account";
 import { applyAddToChatRequest } from "@/features/sessions/model/add-chat-to-workspace";
 import { newWorkspaceSession } from "./model/new-workspace-session";
-import {
-  planTitle,
-} from "@/features/sessions/model/plan";
 import {
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,
@@ -712,7 +705,6 @@ import {
   loadFamiliarsEnabled,
   subscribeFamiliarsEnabled,
   loadDiffViewer,
-  loadFileTabMode,
   loadIdleAgentLimit,
   loadKeybindingOverrides,
   loadLiveAgentsEnabled,
@@ -903,12 +895,9 @@ function Workspace({
     setHistory,
     setStoredLinkedSessions,
     setFilesSearchOpen,
-    setEditorNavigation,
     setFilePickerOpen,
     setFilePickerInitialQuery,
     setFilePickerResetToken,
-    setDirtyFiles,
-    setFileErrorCounts,
     setSearchViewOpen,
     setSearchFocusToken,
     setSearchViewFocusToken,
@@ -4032,217 +4021,57 @@ function Workspace({
     [onSelectProject],
   );
 
-  const onFileMoved = useCallback((from: string, to: string) => {
-    invalidateProjectFiles();
-    setTabs((prev) =>
-      prev.map((tab) => {
-        return {
-          ...tab,
-          editorPanes: tab.editorPanes.map((pane) => ({
-            ...pane,
-            files: pane.files.map((file) =>
-              isFilesystemTab(file)
-                ? { ...file, path: rebasePath(file.path, from, to) }
-                : file,
-            ),
-          })),
-        };
-      }),
-    );
-  }, []);
+  const fileDeps = useStableFlow(
+    (): FileDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      tabsRef,
+      activeTabIdRef,
+      gitCwd: () => gitCwdRef.current,
+      sidebarCwd: () => sidebarCwdRef.current,
+      editorNavigationToken,
+      closeFamiliarView: () => closeFamiliarView(),
+      insertBesideActive: (tabs, tab, cwd) => insertBesideActive(tabs, tab, cwd),
+      activateTab: (tabId, paneId) => activateTab(tabId, paneId),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+    }),
+  );
+  const onFileMoved = useCallback(
+    (from: string, to: string) => fileMoved(fileDeps, from, to),
+    [],
+  );
 
   const applyProjectLocationChange = useCallback(
     (from: string, to: string) => moveProjectLocation(projectDeps, from, to),
     [],
   );
 
-  const onFileDeleted = useCallback((path: string) => {
-    invalidateProjectFiles();
-    const dropped = new Set<string>();
-    for (const tab of tabsRef.current) {
-      for (const pane of tab.editorPanes) {
-        for (const file of pane.files) {
-          if (isFilesystemTab(file) && isEqualOrInside(file.path, path)) {
-            dropped.add(file.id);
-          }
-        }
-      }
-    }
-    setTabs((prev) =>
-      prev.map((tab) =>
-        dropOpenFiles(tab, (filePath) => isEqualOrInside(filePath, path)),
-      ),
-    );
-    if (dropped.size === 0) return;
-    setDirtyFiles((prev) => {
-      const next = new Set(prev);
-      for (const id of dropped) next.delete(id);
-      return next;
-    });
-  }, []);
-
-  const onOpenFile = useCallback<OpenFileFn>(
-    (path, navigation, options) => {
-      closeFamiliarView();
-      void (async () => {
-        const fileCwd = gitCwdRef.current;
-        const fileProjectCwd = sidebarCwdRef.current;
-        const resolved = await resolveFileOpenRequest(fileCwd, path, options);
-        rememberOpenedFile(fileCwd, resolved);
-        const tab = tabsRef.current.find(
-          (entry) => entry.id === activeTabIdRef.current,
-        );
-        if (!tab) return;
-        const file = newFileTab(
-          resolved,
-          fileCwd,
-          false,
-          undefined,
-          fileProjectCwd,
-        );
-        const pin = !!options?.pin;
-        if (loadFileTabMode() === "workspace") {
-          // Built once: the updater may run twice in StrictMode.
-          const created = newEditorWorkspaceTab(
-            pin ? file : { ...file, preview: true },
-          );
-          let target: { tabId: string; paneId?: string } | undefined;
-          // Select inside the updater, not from `tabsRef`: two opens resuming
-          // before a render would otherwise both miss the preview and append
-          // twice. flushSync runs the updater now so `target` is set below.
-          flushSync(() => {
-            setTabs((prev) => {
-              const result = openWorkspaceFile(
-                prev,
-                file,
-                created,
-                (tabs, tab) => insertBesideActive(tabs, tab, fileProjectCwd),
-                pin,
-              );
-              target = result;
-              return result.tabs;
-            });
-          });
-          if (target?.paneId) activateTab(target.tabId, target.paneId);
-          else if (target) setActiveTabId(target.tabId);
-          setProjectTerminalFocused(false);
-          setComposerFocused(false);
-          if (navigation) {
-            editorNavigationToken.current += 1;
-            setEditorNavigation({
-              path: resolved,
-              ...navigation,
-              token: editorNavigationToken.current,
-            });
-          }
-          return;
-        }
-        setTabs((prev) =>
-          prev.map((entry) => {
-            if (entry.id !== tab.id) return entry;
-            const focusedSession = sessionsRef.current.find(
-              (session) => session.id === entry.focusedId,
-            );
-            return openEditorTab(entry, file, {
-              split: focusedSession?.blocks.length === 0 ? "left" : "right",
-              pin,
-            });
-          }),
-        );
-        if (navigation) {
-          editorNavigationToken.current += 1;
-          setEditorNavigation({
-            path: resolved,
-            ...navigation,
-            token: editorNavigationToken.current,
-          });
-        }
-        setComposerFocused(false);
-      })();
-    },
-    [activateTab, insertBesideActive, closeFamiliarView],
-  );
-
-  const onOpenPlan = useCallback(
-    (sessionId: string, blockId: string) => {
-      const tab = tabsRef.current.find((entry) => entry.id === activeTabId);
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      const block = session?.blocks.find((entry) => entry.id === blockId);
-      if (!tab || !session || !block) return;
-      const file = {
-        ...newPlanTab(
-          session.id,
-          block.id,
-          planTitle(block.text),
-          sessionWorkCwd(session),
-        ),
-        ...(session.worktreeCwd ? { projectCwd: session.cwd } : {}),
-      };
-      setTabs((prev) =>
-        prev.map((entry) =>
-          entry.id === tab.id ? openEditorTab(entry, file) : entry,
-        ),
-      );
-      setComposerFocused(false);
-    },
-    [activeTabId],
-  );
-
-  const onPinFile = useCallback((fileId: string) => {
-    setTabs((prev) => {
-      const next = prev.map((tab) => pinEditorFile(tab, fileId));
-      return next.some((tab, index) => tab !== prev[index]) ? next : prev;
-    });
-  }, []);
-
-  const onFileDirtyChange = useCallback(
-    (fileId: string, dirty: boolean) => {
-      // An edited preview must not be replaced by the next click.
-      if (dirty) onPinFile(fileId);
-      setDirtyFiles((prev) => {
-        if (prev.has(fileId) === dirty) return prev;
-        const next = new Set(prev);
-        if (dirty) next.add(fileId);
-        else next.delete(fileId);
-        return next;
-      });
-    },
-    [onPinFile],
-  );
-
-  /** The editor reports 0 as it unmounts, so closed tabs drop out on their own. */
-  const onFileErrorCountChange = useCallback(
-    (fileId: string, count: number) => {
-      setFileErrorCounts((prev) => {
-        if ((prev.get(fileId) ?? 0) === count) return prev;
-        const next = new Map(prev);
-        if (count > 0) next.set(fileId, count);
-        else next.delete(fileId);
-        return next;
-      });
-    },
+  const onFileDeleted = useCallback(
+    (path: string) => fileDeleted(fileDeps, path),
     [],
   );
-
-  const onSelectFileSurface = useCallback((paneId: string, fileId: string) => {
+  const onOpenFile = useCallback<OpenFileFn>((path, navigation, options) => {
     closeFamiliarView();
-    setTabs((prev) =>
-      prev.map((tab) => {
-        const found = findSurfacePane(tab, paneId);
-        if (!found) return tab;
-        return withSurfacePanes(
-          { ...tab, focusedId: paneId },
-          found.kind,
-          surfacePanes(tab, found.kind).map((pane) =>
-            pane.id === paneId ? { ...pane, activeFileId: fileId } : pane,
-          ),
-        );
-      }),
-    );
-    setComposerFocused(false);
+    void openFile(fileDeps, path, navigation, options);
   }, []);
+  const onOpenPlan = useCallback(
+    (sessionId: string, blockId: string) => openPlan(fileDeps, sessionId, blockId),
+    [],
+  );
+  const onPinFile = useCallback((fileId: string) => pinFile(fileDeps, fileId), []);
+  const onFileDirtyChange = useCallback(
+    (fileId: string, dirty: boolean) => setFileDirty(fileDeps, fileId, dirty),
+    [],
+  );
+  const onFileErrorCountChange = useCallback(
+    (fileId: string, count: number) => setFileErrorCount(fileDeps, fileId, count),
+    [],
+  );
+  const onSelectFileSurface = useCallback(
+    (paneId: string, fileId: string) => selectFileSurface(fileDeps, paneId, fileId),
+    [],
+  );
 
   const onModelChange = useCallback(
     (sessionId: string, harness: HarnessId, model: string) => {
@@ -9143,38 +8972,6 @@ function toTitleTab(
     previewFileId: previewWorkspaceFile(tab)?.id,
     groupId: tab.groupId,
   };
-}
-
-function dropOpenFiles(
-  tab: WorkspaceTab,
-  shouldDrop: (path: string) => boolean,
-): WorkspaceTab {
-  let layout = tab.layout;
-  let focusedId = tab.focusedId;
-  const editorPanes: EditorPane[] = [];
-  for (const pane of tab.editorPanes) {
-    const files = pane.files.filter(
-      (file) => !isFilesystemTab(file) || !shouldDrop(file.path),
-    );
-    if (files.length === 0) {
-      const sibling = siblingLeafId(layout, pane.id);
-      const withoutPane = removePane(layout, pane.id);
-      if (withoutPane) {
-        layout = withoutPane;
-        if (focusedId === pane.id)
-          focusedId = sibling ?? firstLeafId(withoutPane);
-      }
-      continue;
-    }
-    editorPanes.push({
-      ...pane,
-      files,
-      activeFileId: files.some((file) => file.id === pane.activeFileId)
-        ? pane.activeFileId
-        : files[0].id,
-    });
-  }
-  return { ...tab, layout, focusedId, editorPanes };
 }
 
 function sameSettings(

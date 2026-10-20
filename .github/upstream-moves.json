@@ -1551,6 +1551,36 @@
       },
       {
         "names": [
+          "onFileMoved, onFileDeleted"
+        ],
+        "target": "src/app/workspace/flows/files/file-paths.ts"
+      },
+      {
+        "names": [
+          "dropOpenFiles"
+        ],
+        "target": "src/app/workspace/flows/files/drop-open-files.ts"
+      },
+      {
+        "names": [
+          "onOpenFile, onOpenPlan (App: openFile/openPlan)"
+        ],
+        "target": "src/app/workspace/flows/files/open-file.ts"
+      },
+      {
+        "names": [
+          "onPinFile, onFileDirtyChange, onFileErrorCountChange, onSelectFileSurface"
+        ],
+        "target": "src/app/workspace/flows/files/file-state.ts"
+      },
+      {
+        "names": [
+          "file flow deps"
+        ],
+        "target": "src/app/workspace/flows/files/file-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
