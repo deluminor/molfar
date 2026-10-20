@@ -1857,6 +1857,18 @@
       },
       {
         "names": [
+          "onRemoveHistorySession (App: removeSession)"
+        ],
+        "target": "src/app/workspace/flows/session-removal/remove-session.ts"
+      },
+      {
+        "names": [
+          "confirmDiscardUnsaved"
+        ],
+        "target": "src/app/model/confirm-discard-unsaved.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

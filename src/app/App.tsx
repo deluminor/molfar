@@ -39,11 +39,7 @@ import {
   renameSession,
   type SessionActionsDeps,
 } from "./workspace/flows/session-history/session-actions";
-import {
-  applySessionRemovalChange,
-  type SessionRemovalChangeDeps,
-} from "./workspace/flows/session-history/session-removal-change";
-import { findUnusedSessionWorktree } from "./workspace/flows/session-history/unused-worktree";
+import type { SessionRemovalChangeDeps } from "./workspace/flows/session-history/session-removal-change";
 import {
   openSavedSession,
   type OpenSavedSessionDeps,
@@ -74,7 +70,6 @@ import { FamiliarSettingsDialog } from "@/features/familiars/ui/FamiliarSettings
 import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
 import {
   DeleteSessionDialog,
-  type SessionDeleteChoice,
 } from "@/features/sessions/ui/DeleteSessionDialog";
 import { ProviderSignInDialog } from "@/features/sessions/ui/ProviderSignInDialog";
 import { ResourcePressureNotice } from "@/features/notifications/ui/ResourcePressureNotice";
@@ -221,6 +216,11 @@ import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import type { AgentAppDeps } from "./workspace/flows/agent-app/agent-app-deps";
 import { createControlRequests } from "./workspace/flows/agent-app/control-requests";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
+import { confirmDiscardUnsaved } from "./model/confirm-discard-unsaved";
+import {
+  removeSession,
+  type RemoveSessionDeps,
+} from "./workspace/flows/session-removal/remove-session";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
 import { createDisplayedTabs } from "./workspace/title-tabs/displayed-tabs";
@@ -483,7 +483,6 @@ import type {
 } from "@/domain/session/turn";
 import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
-import { createSessionRemover } from "@/features/sessions/model/session-removal";
 import {
   applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
@@ -659,7 +658,6 @@ import {
   type ResumedWorkspace,
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
-import { filesInWorkspaceTabs } from "@/features/workspace/model/tab-files";
 
 const SearchView = lazySurface(
   async () => {
@@ -719,11 +717,6 @@ function openSessionIds(tabs: WorkspaceTab[]): Set<string> {
 
 /** Stable empty tab list for the title bar while a Familiar is in full view. */
 const NO_TITLE_TABS: [] = [];
-
-/** In-app confirm. `window.confirm` is swallowed when a macOS menu accelerator fires. */
-function confirmDiscardUnsaved(message: string): Promise<boolean> {
-  return confirmApp(message, { kind: "warning" });
-}
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -3347,130 +3340,32 @@ function Workspace({
     }),
   );
 
+  const removeSessionDeps = useStableFlow(
+    (): RemoveSessionDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      tabsRef,
+      activeTabIdRef,
+      dirtyFilesRef,
+      removingSessionIds,
+      switchingWorktrees,
+      deleteConfirmationPending,
+      persistence: sessionPersistence,
+      removalChange: removalChangeDeps,
+      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
+      sidebarCwd: () => sidebarCwdRef.current,
+      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
+      removeWorktree: (cwd, path, force) => onRemoveWorktree(cwd, path, force),
+    }),
+  );
   const onRemoveHistorySession = useCallback(
-    async (
+    (
       sessionId: string,
       mode: "archive" | "delete",
       skipDeleteConfirm = false,
       origin: "ui" | "cli" = "ui",
-    ): Promise<boolean> => {
-      if (
-        removingSessionIds.current.has(sessionId) ||
-        switchingWorktrees.current.has(sessionId) ||
-        deleteConfirmationPending.current
-      )
-        return false;
-      const open = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      const summary = history.find((entry) => entry.id === sessionId);
-      const seed = open ?? summary;
-      const label = seed
-        ? sessionDisplayTitle(seed.title, seed.harness)
-        : "this session";
-      removingSessionIds.current.add(sessionId);
-      let deleteWorktreePath: string | undefined;
-      if (mode === "delete" && !skipDeleteConfirm) {
-        deleteConfirmationPending.current = true;
-        const unusedWorktree = await findUnusedSessionWorktree(
-          sessionId,
-          seed,
-          sessionsRef.current,
-        );
-        if (!unusedWorktree) {
-          deleteConfirmationPending.current = false;
-        } else {
-          const choice = await new Promise<SessionDeleteChoice>((resolve) => {
-            setSessionDeleteDialog({ title: label, unusedWorktree, resolve });
-          });
-          deleteConfirmationPending.current = false;
-          if (!choice.confirmed) {
-            removingSessionIds.current.delete(sessionId);
-            return false;
-          }
-          if (choice.deleteWorktree) deleteWorktreePath = unusedWorktree;
-        }
-      }
-      invalidateLoadedSession(sessionId);
-      sessionPersistence.dropPending(sessionId);
-      try {
-        const remover = createSessionRemover({
-          mode,
-          preserveOpenFiles: origin === "cli",
-          scope: tabCloseScope,
-          replacement: {
-            harness: seed?.harness ?? "cursor",
-            cwd: seed?.cwd ?? sidebarCwd,
-            model: seed?.model,
-            runtimeMode: seed?.runtimeMode,
-            modelSettings: open?.modelSettings,
-          },
-          workspace: {
-            snapshot: () => ({
-              tabs: tabsRef.current,
-              sessions: sessionsRef.current,
-              activeTabId: activeTabIdRef.current,
-              dirtyFiles: dirtyFilesRef.current,
-            }),
-            apply: (change) =>
-              applySessionRemovalChange(
-                removalChangeDeps,
-                { sessionId, summary },
-                change,
-              ),
-          },
-          confirm: async (closedTabs, removalMode) => {
-            if (origin === "cli") return true;
-            const files = filesInWorkspaceTabs(closedTabs);
-            const unsaved = files.some(
-              (file) =>
-                isFilesystemTab(file) && dirtyFilesRef.current.has(file.id),
-            );
-            if (
-              unsaved &&
-              !(await confirmDiscardUnsaved(
-                `${removalMode === "archive" ? "Archive" : "Delete"} this conversation with unsaved files?`,
-              ))
-            )
-              return false;
-            const terminals = files.filter((file) => file.terminal);
-            return (
-              terminals.length === 0 || (await confirmCloseTerminals(terminals))
-            );
-          },
-          stop: stopSessionForRemoval,
-        });
-        const removed = await remover.remove(sessionId);
-        if (removed && deleteWorktreePath && seed) {
-          try {
-            await onRemoveWorktree(seed.cwd, deleteWorktreePath, false);
-          } catch (error) {
-            void alertApp(
-              `The session was deleted. Its worktree was kept.\n\n${String(error)}\n\nYou can manage it in Settings → Worktrees.`,
-              { kind: "warning" },
-            );
-          }
-        }
-        return removed;
-      } catch (error) {
-        if (origin === "cli") throw error;
-        const detail = error instanceof Error ? error.message : String(error);
-        void alertApp(`Could not ${mode} this conversation.\n\n${detail}`, {
-          kind: "error",
-        });
-        return false;
-      } finally {
-        removingSessionIds.current.delete(sessionId);
-      }
-    },
-    [
-      history,
-      invalidateLoadedSession,
-      sidebarCwd,
-      stopSessionForRemoval,
-      tabCloseScope,
-      onRemoveWorktree,
-    ],
+    ) => removeSession(removeSessionDeps, sessionId, mode, skipDeleteConfirm, origin),
+    [],
   );
 
   const onArchiveHistorySession = useCallback(
