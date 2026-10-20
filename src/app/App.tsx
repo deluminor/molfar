@@ -52,7 +52,6 @@ import type { CiRepairRequest } from "@/features/inbox/model/ci-repair";
 import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import {
   rebaseCiRepairs,
-  trackCiRepair,
 } from "@/features/inbox/model/ci-repair-tracking";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
@@ -212,6 +211,17 @@ import {
   steerQueuedMessage,
 } from "./workspace/flows/turn-queue/queue-actions";
 import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
+import { dismissComposerCard } from "./workspace/flows/composer/composer-cards";
+import { repairChecks } from "./workspace/flows/inbox/ci-repair";
+import { createInboxAsk } from "./workspace/flows/inbox/inbox-ask";
+import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
+import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/inbox/inbox-related-sessions";
+import { openInboxSession, startInboxItem } from "./workspace/flows/inbox/inbox-start";
+import { setHistorySessionLinkedWorkItem } from "./workspace/flows/linked-work-items/history-link";
+import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
+import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
+import { addNoteToChat } from "./workspace/flows/notes/add-note-to-chat";
+import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -539,7 +549,6 @@ import {
   listAutomations,
 } from "@/features/automations/model/automations";
 import {
-  ADD_NOTE_TO_CHAT_EVENT,
   NOTES_CHANGED_EVENT,
   upsertNote,
   loadNotes,
@@ -572,7 +581,6 @@ import {
   replaceInFlightSessions,
   saveWorkspaceSnapshot,
   setSessionArchived,
-  setSessionLinkedWorkItem,
   setSessionPinned,
   shouldPersistSession,
   upsertSession,
@@ -683,20 +691,7 @@ import {
   handleEditorFindKey,
   openFindInActiveEditor,
 } from "@/features/files/editor/editor-search";
-import {
-  azureDevOpsWorkItemDetails,
-  peekAzureDevOpsWorkItemDetails,
-} from "@/features/inbox/model/azure-dev-ops";
-import {
-  githubWorkItemThread,
-  inboxComposerCard,
-  type InboxItem,
-} from "@/features/inbox/model/github-tasks";
-import {
-  gitlabWorkItemDetails,
-  peekGitlabWorkItemDetails,
-} from "@/features/inbox/model/gitlab";
-import { inboxAskKey } from "@/features/inbox/model/inbox-ask";
+import type { InboxItem } from "@/features/inbox/model/github-tasks";
 import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
 import { requestTranscriptJump } from "@/features/sessions/model/transcript-jump";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
@@ -710,19 +705,11 @@ import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-s
 import { preloadNavigationWhenIdle } from "./model/preload-navigation";
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 
-import { inboxTrackerDescription } from "@/features/inbox/model/inbox-context";
 
 import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
 import {
-  completeLinkedWorkItemUpdateCard,
-  failLinkedWorkItemUpdateCard,
-  pendingLinkedWorkItemUpdateCard,
-} from "@/features/inbox/model/linked-work-item-activity";
-import type { LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
-import {
   linkedWorkItemFromAutomationEvent,
-  linkedWorkItemFromInboxItem,
 } from "@/features/sessions/model/session-work-item";
 
 import { loadRailSurfaces } from "@/features/settings/model/project-rail";
@@ -1080,18 +1067,7 @@ function Workspace({
   const searchViewFocusToken = useWorkspaceField(workspaceStore, "searchViewFocusToken");
   const inboxViewOpen = useWorkspaceField(workspaceStore, "inboxViewOpen");
   const linkedWorkItemPanels = useWorkspaceField(workspaceStore, "linkedWorkItemPanels");
-  const linkedWorkItemPanelRequest = useRef(0);
-  const closeLinkedWorkItemPanel = useCallback((sessionId: string) => {
-    linkedWorkItemPanelRequest.current += 1;
-    setLinkedWorkItemPanels((current) => {
-      if (!current.has(sessionId)) return current;
-      const next = new Map(current);
-      next.delete(sessionId);
-      return next;
-    });
-  }, []);
   const inboxAskPortal = useWorkspaceField(workspaceStore, "inboxAskPortal");
-  const openingInboxSessions = useRef(new Map<string, Promise<string>>());
   const notesViewOpen = useWorkspaceField(workspaceStore, "notesViewOpen");
   const localSurfaces = useLocalSurfaceState();
   const {
@@ -1313,7 +1289,6 @@ function Workspace({
   const linkedSessionUpdatesRef = useRef<
     ReadonlyMap<string, LinkedSessionUpdate>
   >(new Map());
-  const linkedWorkItemActivityFetches = useRef(new Map<string, number>());
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
   const dirtyFilesRef = useRef(dirtyFiles);
@@ -1874,6 +1849,37 @@ function Workspace({
       });
     },
     [showRightPanel],
+  );
+  const newChatDefaultsRef = useRef({ active, sessionDefaults });
+  newChatDefaultsRef.current = { active, sessionDefaults };
+  const inboxDeps = useStableFlow(
+    (): InboxDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      setSessions,
+      closeAutomations: () => setAutomationsViewOpen(false),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+      openSessionTab: (session, cwd) => openSessionTab(session, cwd),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      focusComposer: () => setComposerFocused(true),
+      defaultCwd: () => {
+        const { active, sessionDefaults } = newChatDefaultsRef.current;
+        return active?.cwd || sessionDefaults?.cwd || projectCwdRef.current;
+      },
+      runtimeMode: () => newChatDefaultsRef.current.sessionDefaults?.runtimeMode,
+      sidebarCwd: () => sidebarCwdRef.current,
+      selectHistorySession: (sessionId) => onSelectHistorySessionRef.current(sessionId),
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      submit: (...args) => onSubmitRef.current(...args),
+    }),
+  );
+  const linkedPanels = useStableFlow(() => createLinkedWorkItemPanels(inboxDeps));
+  const linkedUpdateCards = useStableFlow(() =>
+    createLinkedUpdateCards({
+      sessionsRef,
+      setSessions,
+      linkedUpdates: () => linkedSessionUpdatesRef.current,
+    }),
   );
   const sidebarCwdKey =
     sidebarCwd && sidebarCwd !== "~" ? normalizeProjectPath(sidebarCwd) : null;
@@ -2624,143 +2630,29 @@ function Workspace({
   );
 
   const onStartInboxItem = useCallback(
-    async (item: InboxItem, body?: string) => {
-      const start = (description?: string) => {
-        setInboxViewOpen(false);
-        setNotesViewOpen(false);
-        setAutomationsViewOpen(false);
-        const cwd =
-          item.projectPath || active?.cwd || sessionDefaults?.cwd || projectCwd;
-        setSidebarTab("sessions", cwd);
-        const ref =
-          item.provider === "linear" || item.provider === "jira"
-            ? item.identifier?.trim() || `#${item.number}`
-            : `#${item.number}`;
-        const linkedWorkItem = linkedWorkItemFromInboxItem(item);
-        const session = {
-          ...newDefaultSession(cwd, sessionDefaults?.runtimeMode),
-          title: `${ref} ${item.title}`,
-          inboxCard: inboxComposerCard(item, description),
-          ...(linkedWorkItem ? { linkedWorkItem } : {}),
-        };
-        const tab = openSessionTab(session, cwd);
-        setActiveTabId(tab.id);
-        setComposerFocused(true);
-      };
-
-      start(await inboxTrackerDescription(item, body));
-    },
-    [
-      active?.cwd,
-      openSessionTab,
-      sessionDefaults?.cwd,
-      sessionDefaults?.runtimeMode,
-      projectCwd,
-    ],
-  );
-
-  const onAddNoteToChat = useCallback(
-    (card: NoteComposerCard) => {
-      if (!card.id) return;
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      const cwd =
-        (card.sourceCwd && looksLikeProject(card.sourceCwd)
-          ? card.sourceCwd
-          : undefined) ||
-        active?.cwd ||
-        sessionDefaults?.cwd ||
-        projectCwd;
-      setSidebarTab("sessions", cwd);
-      const title = card.title.trim();
-      const session = {
-        ...newDefaultSession(cwd, sessionDefaults?.runtimeMode),
-        ...(title ? { title } : {}),
-        noteCard: card,
-      };
-      const tab = openSessionTab(session, cwd);
-      setActiveTabId(tab.id);
-      setComposerFocused(true);
-    },
-    [
-      active?.cwd,
-      openSessionTab,
-      sessionDefaults?.cwd,
-      sessionDefaults?.runtimeMode,
-      projectCwd,
-    ],
-  );
-
-  useEffect(() => {
-    const onAdd = (event: Event) => {
-      const card = (event as CustomEvent<NoteComposerCard>).detail;
-      if (!card?.id) return;
-      onAddNoteToChat(card);
-    };
-    window.addEventListener(ADD_NOTE_TO_CHAT_EVENT, onAdd);
-    return () => window.removeEventListener(ADD_NOTE_TO_CHAT_EVENT, onAdd);
-  }, [onAddNoteToChat]);
-
-  const onInboxCardDismiss = useCallback((sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId && session.inboxCard
-          ? { ...session, inboxCard: undefined }
-          : session,
-      ),
-    );
-  }, []);
-
-  const setLinkedWorkItemUpdateCard = useCallback(
-    (
-      sessionId: string,
-      update: (
-        card: LinkedWorkItemUpdateCard | undefined,
-      ) => LinkedWorkItemUpdateCard | undefined,
-    ) => {
-      const previous = sessionsRef.current;
-      const next = previous.map((session) => {
-        if (session.id !== sessionId) return session;
-        const card = update(session.linkedWorkItemUpdateCard);
-        return card === session.linkedWorkItemUpdateCard
-          ? session
-          : { ...session, linkedWorkItemUpdateCard: card };
-      });
-      if (!next.some((session, index) => session !== previous[index])) return;
-      sessionsRef.current = next;
-      setSessions(next);
-    },
+    (item: InboxItem, body?: string) => startInboxItem(inboxDeps, item, body),
     [],
   );
-
-  const onLinkedWorkItemUpdateCardDismiss = useCallback(
-    (sessionId: string) => {
-      setLinkedWorkItemUpdateCard(sessionId, () => undefined);
-    },
-    [setLinkedWorkItemUpdateCard],
+  const onAddNoteToChat = useCallback(
+    (card: NoteComposerCard) => addNoteToChat(inboxDeps, card),
+    [],
   );
+  useAddNoteToChat(onAddNoteToChat);
 
-  const onNoteCardDismiss = useCallback((sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId && session.noteCard
-          ? { ...session, noteCard: undefined }
-          : session,
-      ),
-    );
-  }, []);
-
-  const onHandoffCardDismiss = useCallback((sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId && session.handoffCard
-          ? { ...session, handoffCard: undefined }
-          : session,
-      ),
-    );
-  }, []);
+  const onInboxCardDismiss = useCallback(
+    (sessionId: string) => dismissComposerCard(setSessions, sessionId, "inboxCard"),
+    [],
+  );
+  const setLinkedWorkItemUpdateCard = linkedUpdateCards.update;
+  const onLinkedWorkItemUpdateCardDismiss = linkedUpdateCards.dismiss;
+  const onNoteCardDismiss = useCallback(
+    (sessionId: string) => dismissComposerCard(setSessions, sessionId, "noteCard"),
+    [],
+  );
+  const onHandoffCardDismiss = useCallback(
+    (sessionId: string) => dismissComposerCard(setSessions, sessionId, "handoffCard"),
+    [],
+  );
 
   const onSplit = useCallback(
     (dir: SplitDir) => {
@@ -3305,202 +3197,19 @@ function Workspace({
 
   const onPrefetchHistorySession = sessionLoader.prefetch;
 
-  const revealLinkedSessionUpdate = useCallback(
-    (sessionId: string, update: LinkedSessionUpdate) => {
-      const session = sessionsRef.current.find(
-        (entry) => entry.id === sessionId,
-      );
-      if (!session?.linkedWorkItem) return;
-      if (
-        session.linkedWorkItemUpdateCard?.updatedAt === update.updatedAt &&
-        session.linkedWorkItemUpdateCard.status !== "error"
-      ) {
-        return;
-      }
-      if (
-        linkedWorkItemActivityFetches.current.get(sessionId) ===
-        update.updatedAt
-      ) {
-        return;
-      }
-      const pending = pendingLinkedWorkItemUpdateCard(update);
-      linkedWorkItemActivityFetches.current.set(sessionId, update.updatedAt);
-      // A stale/error card should not remain visible while fresh details load.
-      // The session itself is already open; this request stays fully detached
-      // from the navigation path.
-      setLinkedWorkItemUpdateCard(sessionId, (current) =>
-        current?.updatedAt === update.updatedAt && current.status === "ready"
-          ? current
-          : undefined,
-      );
-
-      void githubWorkItemThread(
-        session.cwd,
-        session.linkedWorkItem.repo,
-        session.linkedWorkItem.kind,
-        session.linkedWorkItem.number,
-        { force: true },
-      ).then(
-        (thread) => {
-          if (
-            linkedWorkItemActivityFetches.current.get(sessionId) !==
-            pending.updatedAt
-          ) {
-            return;
-          }
-          linkedWorkItemActivityFetches.current.delete(sessionId);
-          if (
-            linkedSessionUpdatesRef.current.get(sessionId)?.updatedAt !==
-            pending.updatedAt
-          ) {
-            return;
-          }
-          setLinkedWorkItemUpdateCard(sessionId, () =>
-            completeLinkedWorkItemUpdateCard(pending, thread),
-          );
-        },
-        () => {
-          if (
-            linkedWorkItemActivityFetches.current.get(sessionId) !==
-            pending.updatedAt
-          ) {
-            return;
-          }
-          linkedWorkItemActivityFetches.current.delete(sessionId);
-          if (
-            linkedSessionUpdatesRef.current.get(sessionId)?.updatedAt !==
-            pending.updatedAt
-          ) {
-            return;
-          }
-          setLinkedWorkItemUpdateCard(sessionId, () =>
-            failLinkedWorkItemUpdateCard(pending),
-          );
-        },
-      );
-    },
-    [setLinkedWorkItemUpdateCard],
+  const revealLinkedSessionUpdate = linkedUpdateCards.reveal;
+  const inboxAsk = useStableFlow(() =>
+    createInboxAsk({
+      store: workspaceStore,
+      sessionsRef,
+      setSessions,
+      sidebarCwd: () => sidebarCwdRef.current,
+      removingSessionIds,
+      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
+    }),
   );
-
-  const onAskInboxItem = useCallback(
-    (item: InboxItem): Promise<string> => {
-      const key = inboxAskKey(item);
-      const pending = openingInboxSessions.current.get(key);
-      if (pending) return pending;
-      const opening = (async () => {
-        let session = sessionsRef.current.find(
-          (entry) => entry.inboxAsk?.key === key,
-        );
-        if (!session) {
-          const candidate = item.projectPath || sidebarCwd;
-          const cwd =
-            candidate && candidate !== "~"
-              ? candidate
-              : await invoke<string>("default_cwd");
-          const description =
-            item.provider === "linear" || item.provider === "jira"
-              ? await inboxTrackerDescription(item)
-              : item.provider === "gitlab" &&
-                  (item.kind === "issue" || item.kind === "pr")
-                ? (
-                    peekGitlabWorkItemDetails(
-                      item.repo,
-                      item.kind,
-                      item.number,
-                    ) ??
-                    (await gitlabWorkItemDetails(
-                      item.repo,
-                      item.kind,
-                      item.number,
-                    ))
-                  ).body
-                : item.provider === "azuredevops" &&
-                    (item.kind === "issue" || item.kind === "pr")
-                  ? (
-                      peekAzureDevOpsWorkItemDetails(
-                        item.repo,
-                        item.kind,
-                        item.number,
-                      ) ??
-                      (await azureDevOpsWorkItemDetails(
-                        item.repo,
-                        item.kind,
-                        item.number,
-                      ))
-                    ).body
-                  : undefined;
-          session = {
-            ...newDefaultSession(cwd),
-            title: `Ask · ${item.title}`,
-            inboxAsk: {
-              key,
-              title: item.title,
-              url: item.url,
-              provider: item.provider,
-              description,
-            },
-          };
-          sessionsRef.current = [...sessionsRef.current, session];
-          setSessions(sessionsRef.current);
-        }
-        return session.id;
-      })();
-      openingInboxSessions.current.set(key, opening);
-      void opening.then(
-        () => openingInboxSessions.current.delete(key),
-        () => openingInboxSessions.current.delete(key),
-      );
-      return opening;
-    },
-    [sidebarCwd],
-  );
-
-  const onRestartInboxAsk = useCallback(
-    async (item: InboxItem): Promise<string> => {
-      const id = await onAskInboxItem(item);
-      const current = sessionsRef.current.find((session) => session.id === id)!;
-      removingSessionIds.current.add(id);
-      try {
-        await stopSessionForRemoval(id);
-        const stopped =
-          sessionsRef.current.find((session) => session.id === id) ?? current;
-        await Promise.all(
-          sessionChildHarnesses(stopped).map((harness) =>
-            forgetHarnessSession(harness, id),
-          ),
-        );
-        const imagePaths = stopped.blocks.flatMap((block) =>
-          block.role === "image" && block.image ? [block.image.path] : [],
-        );
-        await deleteSession(id, imagePaths);
-        const fresh = {
-          ...newSession(
-            stopped.harness,
-            stopped.cwd,
-            stopped.model,
-            stopped.runtimeMode,
-            stopped.modelSettings,
-          ),
-          title: stopped.title,
-          inboxAsk: stopped.inboxAsk,
-        };
-        const next = sessionsRef.current.map((session) =>
-          session.id === id ? fresh : session,
-        );
-        sessionsRef.current = next;
-        setSessions(next);
-        setInboxAskPortal((portal) =>
-          portal?.sessionId === id
-            ? { ...portal, sessionId: fresh.id }
-            : portal,
-        );
-        return fresh.id;
-      } finally {
-        removingSessionIds.current.delete(id);
-      }
-    },
-    [onAskInboxItem, stopSessionForRemoval],
-  );
+  const onAskInboxItem = inboxAsk.ask;
+  const onRestartInboxAsk = inboxAsk.restart;
 
   useEffect(() => {
     if (!inboxAskPortal || !inboxViewOpen) return;
@@ -3646,6 +3355,8 @@ function Workspace({
       revealLinkedSessionUpdate,
     ],
   );
+  const onSelectHistorySessionRef = useRef(onSelectHistorySession);
+  onSelectHistorySessionRef.current = onSelectHistorySession;
 
   const onOpenMonoLaunchedSession = useCallback(
     async (sessionId: string) => {
@@ -4198,79 +3909,23 @@ function Workspace({
   );
 
   const onSetHistorySessionLinkedWorkItem = useCallback(
-    (sessionId: string, linkedWorkItem: LinkedWorkItem | undefined) => {
-      const previousLinkedWorkItem =
-        sessionsRef.current.find((session) => session.id === sessionId)
-          ?.linkedWorkItem ??
-        history.find((session) => session.id === sessionId)?.linkedWorkItem;
-      invalidateLoadedSession(sessionId);
-      loadedSessionCache.current.delete(sessionId);
-
-      const nextSessions = sessionsRef.current.map((session) =>
-        session.id === sessionId ? { ...session, linkedWorkItem } : session,
-      );
-      sessionsRef.current = nextSessions;
-      setSessions(nextSessions);
-      setHistory((current) =>
-        current.map((session) =>
-          session.id === sessionId ? { ...session, linkedWorkItem } : session,
-        ),
-      );
-      setStoredLinkedSessions((current) =>
-        linkedWorkItem
-          ? current.map((session) =>
-              session.id === sessionId
-                ? { ...session, linkedWorkItem }
-                : session,
-            )
-          : current.filter((session) => session.id !== sessionId),
-      );
-      setLinkedWorkItemPanels((current) => {
-        if (!current.has(sessionId)) return current;
-        const next = new Map(current);
-        next.delete(sessionId);
-        return next;
-      });
-
-      void setSessionLinkedWorkItem(sessionId, linkedWorkItem).catch(
-        (error) => {
-          const rolledBackSessions = sessionsRef.current.map((session) =>
-            session.id === sessionId &&
-            session.linkedWorkItem === linkedWorkItem
-              ? { ...session, linkedWorkItem: previousLinkedWorkItem }
-              : session,
-          );
-          sessionsRef.current = rolledBackSessions;
-          setSessions(rolledBackSessions);
-          setHistory((current) =>
-            current.map((session) =>
-              session.id === sessionId &&
-              session.linkedWorkItem === linkedWorkItem
-                ? { ...session, linkedWorkItem: previousLinkedWorkItem }
-                : session,
-            ),
-          );
-          setStoredLinkedSessions((current) =>
-            previousLinkedWorkItem
-              ? current.map((session) =>
-                  session.id === sessionId
-                    ? {
-                        ...session,
-                        linkedWorkItem: previousLinkedWorkItem,
-                      }
-                    : session,
-                )
-              : current.filter((session) => session.id !== sessionId),
-          );
-          void refreshHistory(sidebarCwd);
-          void alertApp(
-            `Could not update this conversation's GitHub link.\n\n${String(error)}`,
-            { kind: "error" },
-          );
+    (sessionId: string, linkedWorkItem: LinkedWorkItem | undefined) =>
+      setHistorySessionLinkedWorkItem(
+        {
+          store: workspaceStore,
+          sessionsRef,
+          setSessions,
+          sidebarCwd: () => sidebarCwdRef.current,
+          forgetLoaded: (id) => {
+            invalidateLoadedSession(id);
+            loadedSessionCache.current.delete(id);
+          },
+          refreshHistory,
         },
-      );
-    },
-    [history, invalidateLoadedSession, refreshHistory, sidebarCwd],
+        sessionId,
+        linkedWorkItem,
+      ),
+    [invalidateLoadedSession, refreshHistory],
   );
 
   const onArchiveHistorySessions = useCallback(
@@ -7364,35 +7019,10 @@ function Workspace({
     scopeProject: appViewScope,
   });
   linkedSessionUpdatesRef.current = linkedSessionUpdates;
-  const inboxRelatedSessions = useMemo(() => {
-    const byId = new Map<string, SessionSummary>();
-    for (const session of storedLinkedSessions) byId.set(session.id, session);
-    for (const session of history) {
-      if (session.linkedWorkItem) byId.set(session.id, session);
-    }
-    for (const session of sessions) {
-      if (session.inboxAsk || !session.linkedWorkItem) continue;
-      const current = byId.get(session.id);
-      const summary = summaryFromSession(session);
-      byId.set(
-        session.id,
-        current
-          ? {
-              ...current,
-              harness: summary.harness,
-              model: summary.model,
-              runtimeMode: summary.runtimeMode,
-              title: summary.title,
-              cwd: summary.cwd,
-              linkedWorkItem: summary.linkedWorkItem,
-            }
-          : summary,
-      );
-    }
-    return [...byId.values()].sort(
-      (a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id),
-    );
-  }, [history, sessions, storedLinkedSessions]);
+  const inboxRelatedSessions = useMemo(
+    () => relatedInboxSessions(storedLinkedSessions, history, sessions),
+    [history, sessions, storedLinkedSessions],
+  );
   const repairSessions = useMemo(
     () => ciRepairSessions(history, sessions),
     [history, sessions],
@@ -7535,107 +7165,20 @@ function Workspace({
     });
   }, []);
 
-  const onOpenLinkedWorkItem = useCallback(
-    (item: LinkedWorkItem, sessionId: string) => {
-      const request = linkedWorkItemPanelRequest.current + 1;
-      linkedWorkItemPanelRequest.current = request;
-      setFilePickerOpen(false);
-      setSettingsOpen(false);
-      setSearchViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      setInboxViewOpen(false);
-      const cwd =
-        sessionsRef.current.find((session) => session.id === sessionId)?.cwd ??
-        history.find((session) => session.id === sessionId)?.cwd ??
-        sidebarCwd;
-      void onSelectHistorySession(sessionId).then(() => {
-        if (linkedWorkItemPanelRequest.current !== request) return;
-        if (!sessionsRef.current.some((session) => session.id === sessionId)) {
-          return;
-        }
-        setLinkedWorkItemPanels((current) => {
-          const next = new Map(current);
-          // Reinsert the panel so it wins if this workspace tab contains
-          // multiple sessions with remembered panels.
-          next.delete(sessionId);
-          next.set(sessionId, { item, sessionId, cwd });
-          return next;
-        });
-      });
-    },
-    [history, onSelectHistorySession, sidebarCwd],
-  );
+  const onOpenLinkedWorkItem = linkedPanels.open;
 
   const onLeaveInbox = useCallback(() => {
     setInboxViewOpen(false);
   }, []);
 
   const onOpenInboxSession = useCallback(
-    (sessionId: string) => {
-      setInboxViewOpen(false);
-      const cwd =
-        sessionsRef.current.find((session) => session.id === sessionId)?.cwd ??
-        history.find((session) => session.id === sessionId)?.cwd;
-      setSidebarTab("sessions", cwd);
-      void onSelectHistorySession(sessionId);
-    },
-    [history, onSelectHistorySession],
+    (sessionId: string) => openInboxSession(inboxDeps, sessionId),
+    [],
   );
-
   const onRepairChecks = useCallback(
-    async (item: InboxItem, request: CiRepairRequest, sessionId?: string) => {
-      const cwd = item.projectPath;
-      if (!cwd) throw new Error("Choose a local project for this PR first.");
-      let session = sessionId ? await ensureOpenSession(sessionId) : undefined;
-      if (
-        sessionId &&
-        (!session ||
-          session.inboxAsk ||
-          session.orchestrationLeadId ||
-          !sameProjectPath(session.cwd, cwd))
-      ) {
-        throw new Error("Choose a chat from this project.");
-      }
-      if (
-        session &&
-        (session.busy || session.pendingSwitch || isPreparingHandoff(session))
-      ) {
-        throw new Error(
-          "This chat is busy. Choose another chat or start a new one.",
-        );
-      }
-      if (!session) {
-        session = {
-          ...newDefaultSession(cwd, sessionDefaults?.runtimeMode),
-          title: `Fix CI #${item.number}: ${item.title}`,
-          linkedWorkItem: linkedWorkItemFromInboxItem(item) ?? undefined,
-        };
-        const next = [...sessionsRef.current, session];
-        sessionsRef.current = next;
-        setSessions(next);
-      }
-      const repairSessionId = session.id;
-      trackCiRepair(cwd, request, repairSessionId, (settle) =>
-        onSubmit(repairSessionId, request.text, [], {
-          ciRepair: request,
-          noteCard: undefined,
-          handoffCard: undefined,
-          onSettled: (outcome) => settle(outcome.status),
-        }),
-      );
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setSearchViewOpen(false);
-      setSidebarTab("sessions", cwd);
-      await onSelectHistorySession(session.id);
-    },
-    [
-      ensureOpenSession,
-      onSubmit,
-      onSelectHistorySession,
-      sessionDefaults?.runtimeMode,
-    ],
+    (item: InboxItem, request: CiRepairRequest, sessionId?: string) =>
+      repairChecks(inboxDeps, item, request, sessionId),
+    [],
   );
 
   const onOpenNotes = useCallback(() => {
@@ -9738,7 +9281,7 @@ function Workspace({
                               repairSessions={repairSessions}
                               onRepairChecks={onRepairChecks}
                               onOpenSession={(sessionId) => {
-                                closeLinkedWorkItemPanel(panel.sessionId);
+                                linkedPanels.close(panel.sessionId);
                                 onOpenInboxSession(sessionId);
                               }}
                               key={panel.sessionId}
@@ -9756,7 +9299,7 @@ function Workspace({
                                   panel.sessionId
                               }
                               onClose={() =>
-                                closeLinkedWorkItemPanel(panel.sessionId)
+                                linkedPanels.close(panel.sessionId)
                               }
                             />
                           ))}

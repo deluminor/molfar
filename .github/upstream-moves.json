@@ -1425,6 +1425,72 @@
       },
       {
         "names": [
+          "onStartInboxItem, onOpenInboxSession (App: startInboxItem/openInboxSession)"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-start.ts"
+      },
+      {
+        "names": [
+          "leave inbox/notes/automations views, open a composer session"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-deps.ts"
+      },
+      {
+        "names": [
+          "onAskInboxItem, onRestartInboxAsk, openingInboxSessions (App: inboxAsk.ask/restart)"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-ask.ts"
+      },
+      {
+        "names": [
+          "onRepairChecks (App: repairChecks)"
+        ],
+        "target": "src/app/workspace/flows/inbox/ci-repair.ts"
+      },
+      {
+        "names": [
+          "inboxRelatedSessions memo body"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-related-sessions.ts"
+      },
+      {
+        "names": [
+          "onAddNoteToChat (App: addNoteToChat)"
+        ],
+        "target": "src/app/workspace/flows/notes/add-note-to-chat.ts"
+      },
+      {
+        "names": [
+          "ADD_NOTE_TO_CHAT_EVENT effect"
+        ],
+        "target": "src/app/workspace/hooks/use-add-note-to-chat.ts"
+      },
+      {
+        "names": [
+          "setLinkedWorkItemUpdateCard, onLinkedWorkItemUpdateCardDismiss, revealLinkedSessionUpdate, linkedWorkItemActivityFetches (App: linkedUpdateCards.*)"
+        ],
+        "target": "src/app/workspace/flows/linked-work-items/linked-update-card.ts"
+      },
+      {
+        "names": [
+          "onOpenLinkedWorkItem, closeLinkedWorkItemPanel, linkedWorkItemPanelRequest (App: linkedPanels.open/close)"
+        ],
+        "target": "src/app/workspace/flows/linked-work-items/linked-work-item-panel.ts"
+      },
+      {
+        "names": [
+          "onSetHistorySessionLinkedWorkItem (App: setHistorySessionLinkedWorkItem)"
+        ],
+        "target": "src/app/workspace/flows/linked-work-items/history-link.ts"
+      },
+      {
+        "names": [
+          "onInboxCardDismiss, onNoteCardDismiss, onHandoffCardDismiss"
+        ],
+        "target": "src/app/workspace/flows/composer/composer-cards.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

@@ -75,8 +75,8 @@
     "lint/a11y/useAriaPropsSupportedByRole": 1,
     "lint/a11y/useSemanticElements": 1,
     "lint/complexity/useOptionalChain": 2,
-    "lint/correctness/useExhaustiveDependencies": 102,
-    "lint/style/noNonNullAssertion": 5,
+    "lint/correctness/useExhaustiveDependencies": 93,
+    "lint/style/noNonNullAssertion": 4,
     "lint/suspicious/noAssignInExpressions": 1,
     "lint/suspicious/useIterableCallbackReturn": 1
   },
