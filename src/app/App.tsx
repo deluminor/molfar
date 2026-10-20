@@ -155,17 +155,12 @@ import {
 } from "@/features/source-control/model/worktree-focus";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import {
-  assertWorktreeFilesClosed,
-  checkWorktreeRemoval,
   createOrchestrationWorktree,
   createWorktree,
   detachSessionWorktree,
   listWorktrees,
   removeOrchestrationBranch,
   removeOrchestrationWorktree,
-  removeWorktree,
-  sessionInWorktree,
-  worktreeSessionIds,
   type Worktree,
 } from "@/features/source-control/model/worktrees";
 import {
@@ -173,7 +168,6 @@ import {
 } from "@/domain/git/worktree-branch";
 import {
   homeDir,
-  notifyGitChanged,
   pickFolders,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
@@ -222,6 +216,19 @@ import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/lin
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { addNoteToChat } from "./workspace/flows/notes/add-note-to-chat";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
+import {
+  changeBranch,
+  changeWorkspaceMode,
+  changeWorktreeBase,
+} from "./workspace/flows/worktrees/session-checkout";
+import { changeSessionProject } from "./workspace/flows/worktrees/session-project";
+import type { WorktreeDeps } from "./workspace/flows/worktrees/worktree-deps";
+import {
+  checkOpenWorktreeFiles,
+  checkRemoval,
+  removeSessionWorktree,
+} from "./workspace/flows/worktrees/worktree-removal";
+import { changeWorktree } from "./workspace/flows/worktrees/worktree-switch";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -238,7 +245,6 @@ import { stopTurn } from "./workspace/flows/turn-control/stop-turn";
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
 import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
 import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
-import { currentWorkspace } from "./model/current-workspace";
 import { withHarnessChoice } from "./model/harness-choice";
 import { createFamiliarChat } from "./workspace/flows/familiars/familiar-chat";
 import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-completions";
@@ -425,10 +431,6 @@ import {
   type SplitDir,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
-import {
-  removeTabFromGroup,
-  tabGroupProject,
-} from "@/features/workspace/model/tab-groups";
 
 import { isHarnessAvailable } from "@/integrations/harness/core/availability";
 
@@ -448,7 +450,6 @@ import {
   finishSessionTurn,
   flushSessionCheckpoint,
   forgetSessionCheckpoint,
-  keepSessionChanges,
   notifyReviewChanged,
   sessionCheckpointCleanupSafe,
 } from "@/features/sessions/model/checkpoint";
@@ -495,7 +496,6 @@ import {
 import {
   newDefaultSession,
   newSession,
-  retargetSessionToProject,
 } from "@/features/sessions/model/session";
 import {
   canReplaceSessionTitle,
@@ -668,10 +668,8 @@ import {
   cachedRemoteSessionSummary,
   OPEN_CONNECTIONS_EVENT,
   OPEN_REMOTE_PROJECT_EVENT,
-  rememberRemotePendingWorktree,
   rememberRemoteSession,
   REMOTE_HISTORY_UPDATED,
-  remotePendingWorktree,
   remoteSessionFor,
   remoteTabCwd,
 } from "@/features/connections/model/connections";
@@ -3552,151 +3550,39 @@ function Workspace({
     [],
   );
 
-  const checkOpenWorktreeFiles = useCallback((path: string) => {
-    assertWorktreeFilesClosed(path, [
-      ...filesInWorkspaceTabs(tabsRef.current),
-      ...projectTerminalsRef.current.flatMap((dock) => dock.pane.files),
-    ]);
-  }, []);
-
-  const onCheckWorktreeRemoval = useCallback(
-    async (cwd: string, path: string, force: boolean) => {
-      checkOpenWorktreeFiles(path);
-      await checkWorktreeRemoval(cwd, path, force);
-      // Re-read UI state after the native check, before deleting sessions.
-      checkOpenWorktreeFiles(path);
-    },
-    [checkOpenWorktreeFiles],
+  const worktreeDeps = useStableFlow(
+    (): WorktreeDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      setSessions,
+      tabsRef,
+      setTabs,
+      projectTerminals: () => projectTerminalsRef.current,
+      projectCwd: () => projectCwdRef.current,
+      removingSessionIds,
+      switchingWorktrees,
+      removingWorktreePaths,
+      workspacePins,
+      persistence: sessionPersistence,
+      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
+      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
+      appendTab: (tab, cwd) => appendTab(tab, cwd),
+      openSessionTab: (session, cwd) => openSessionTab(session, cwd),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      focusComposer: () => setComposerFocused(true),
+      refreshHistory: (cwd) => refreshHistory(cwd),
+      projectOfTab: (tabId) => projectOfTab(tabId),
+    }),
   );
-
+  const onCheckWorktreeRemoval = useCallback(
+    (cwd: string, path: string, force: boolean) =>
+      checkRemoval(worktreeDeps, cwd, path, force),
+    [],
+  );
   const onRemoveWorktree = useCallback(
-    async (cwd: string, path: string, force: boolean, keepSessions = false) => {
-      if (removingWorktreePaths.current.has(path)) {
-        throw new Error("This worktree is already being deleted.");
-      }
-      removingWorktreePaths.current.add(path);
-      const lockedIds = new Set<string>();
-      const forgottenIds = new Set<string>();
-      try {
-        if (
-          [...switchingWorktrees.current.values()].some((target) =>
-            isEqualOrInside(target, path),
-          )
-        ) {
-          throw new Error(
-            "A session is selecting this worktree. Try deleting it again once selection finishes.",
-          );
-        }
-        await onCheckWorktreeRemoval(cwd, path, force);
-        const listed = await listWorktrees(cwd);
-        const tree = listed.worktrees.find(
-          (entry) => pathKey(entry.path) === pathKey(path),
-        );
-        if (!tree) throw new Error("This worktree is no longer available.");
-        const ids = worktreeSessionIds(tree, sessionsRef.current);
-        if (!keepSessions && ids.length) {
-          throw new Error(
-            "Move or delete the sessions using this worktree first.",
-          );
-        }
-        if (
-          ids.some(
-            (id) =>
-              removingSessionIds.current.has(id) ||
-              switchingWorktrees.current.has(id),
-          )
-        ) {
-          throw new Error(
-            "Wait for these sessions to finish changing before deleting the worktree.",
-          );
-        }
-        for (const id of ids) {
-          removingSessionIds.current.add(id);
-          lockedIds.add(id);
-          sessionPersistence.dropPending(id);
-          invalidateLoadedSession(id);
-        }
-        for (const id of ids) {
-          await stopSessionForRemoval(id);
-          const session = sessionsRef.current.find((entry) => entry.id === id);
-          if (!session) continue;
-          await flushSessionCheckpoint(id);
-          forgottenIds.add(id);
-          for (const harness of sessionChildHarnesses(session)) {
-            await forgetHarnessSession(harness, id);
-          }
-          const latest = sessionsRef.current.find((entry) => entry.id === id);
-          if (!latest) continue;
-          const stopped = {
-            ...stopStreaming(latest),
-            busy: false,
-            queueStatus: "paused" as const,
-            pendingQuestion: undefined,
-          };
-          sessionsRef.current = sessionsRef.current.map((entry) =>
-            entry.id === id ? stopped : entry,
-          );
-          setSessions(sessionsRef.current);
-          if (shouldPersistSession(stopped)) await upsertSession(stopped);
-        }
-        await flushSessionWrites();
-        checkOpenWorktreeFiles(path);
-        const removed = await removeWorktree(cwd, path, force, keepSessions);
-        const affected = new Set([...ids, ...removed.sessionIds]);
-        if (isEqualOrInside(projectCwdRef.current, path)) {
-          setProjectCwd(removed.projectCwd);
-          setRecents(rememberProject(removed.projectCwd));
-        }
-        for (const id of affected) {
-          invalidateLoadedSession(id);
-          sessionPersistence.dropPending(id);
-          sessionPersistence.forgetSaved(id);
-        }
-        sessionsRef.current = sessionsRef.current.map((session) =>
-          affected.has(session.id)
-            ? detachSessionWorktree(session, removed.projectCwd, path)
-            : session,
-        );
-        setSessions(sessionsRef.current);
-        const patchSummary = (entry: SessionSummary) =>
-          affected.has(entry.id)
-            ? detachSessionWorktree(entry, removed.projectCwd, path)
-            : entry;
-        setHistory((current) => current.map(patchSummary));
-        setStoredLinkedSessions((current) => current.map(patchSummary));
-        for (const id of affected) notifyReviewChanged(id);
-      } catch (error) {
-        // Removal may fail after idle agent processes were stopped. Rebind
-        // their saved threads so the unchanged working copy can still resume.
-        const kept = sessionsRef.current.filter(
-          (session) => forgottenIds.has(session.id) && !session.worktreeRemoved,
-        );
-        bindResumedSessions(kept);
-        for (const session of kept) {
-          const pending = session.pendingSwitch;
-          if (pending?.fromProviderSessionId) {
-            bindHarnessSession(
-              pending.from,
-              session.id,
-              pending.fromProviderSessionId,
-              sessionWorkCwd(session),
-              pending.fromProviderAccountId,
-              session.blocks,
-            );
-          }
-        }
-        throw error;
-      } finally {
-        removingWorktreePaths.current.delete(path);
-        for (const id of lockedIds) removingSessionIds.current.delete(id);
-      }
-    },
-    [
-      checkOpenWorktreeFiles,
-      invalidateLoadedSession,
-      onCheckWorktreeRemoval,
-      stopSessionForRemoval,
-    ],
+    (cwd: string, path: string, force: boolean, keepSessions = false) =>
+      removeSessionWorktree(worktreeDeps, cwd, path, force, keepSessions),
+    [],
   );
 
   const activateTabRef = useRef(activateTab);
@@ -4063,291 +3949,37 @@ function Workspace({
   );
 
   const onCwdChange = useCallback(
-    (sessionId: string, cwd: string) => {
-      const normalized = normalizeProjectPath(cwd);
-      const current = sessionsRef.current.find((s) => s.id === sessionId);
-      const previous = current?.cwd;
-      // Threads stay bound to their project. Switching from the composer opens a
-      // new tab instead of retargeting the conversation.
-      if (
-        current &&
-        previous &&
-        looksLikeProject(previous) &&
-        !sameProjectPath(previous, normalized) &&
-        !isBlankSession(current)
-      ) {
-        setProjectCwd(normalized);
-        setRecents(rememberProject(normalized));
-        const session = newSession(
-          current.harness,
-          normalized,
-          current.model,
-          current.runtimeMode,
-          current.modelSettings,
-        );
-        const tab = openSessionTab(session, normalized);
-        setActiveTabId(tab.id);
-        setComposerFocused(true);
-        return;
-      }
-      if (previous && !sameProjectPath(previous, normalized)) {
-        // Clear bindings left by older versions before reusing a local shell.
-        if (remoteSessionFor(sessionId)) rememberRemoteSession(sessionId);
-        if (remotePendingWorktree(sessionId))
-          rememberRemotePendingWorktree(sessionId);
-      }
-      if (
-        previous &&
-        !sameProjectPath(previous, normalized) &&
-        previous !== "~"
-      ) {
-        void keepSessionChanges(sessionId, previous).catch(() => undefined);
-      }
-      setProjectCwd(normalized);
-      setRecents(rememberProject(normalized));
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== sessionId) return s;
-          // A blank session moving into a project adopts its provider defaults;
-          // a conversation keeps its own provider.
-          const base = isBlankSession(s)
-            ? retargetSessionToProject(s, normalized)
-            : s;
-          return {
-            ...base,
-            cwd: normalized,
-            branch: undefined,
-            worktreeCwd: undefined,
-            worktreeRemoved: undefined,
-            workspaceMode: undefined,
-            worktreeBase: undefined,
-          };
-        }),
-      );
-      // The session's project just moved in place; a group only holds tabs that
-      // share one project, so drop this tab out if it no longer matches.
-      setTabs((prev) => {
-        const tab = prev.find((t) => leafIds(t.layout).includes(sessionId));
-        // The tab's visible project follows its focused pane; a background
-        // pane changing project doesn't change what the group check should see.
-        if (!tab?.groupId || tab.focusedId !== sessionId) return prev;
-        const newProject = projectName(normalized);
-        const othersProject = tabGroupProject(
-          prev.filter((t) => t.id !== tab.id),
-          tab.groupId,
-          projectOfTab,
-        );
-        if (othersProject && newProject && othersProject !== newProject) {
-          return removeTabFromGroup(prev, tab.id);
-        }
-        return prev;
-      });
-      notifyReviewChanged(sessionId);
-    },
-    [openSessionTab, projectOfTab],
+    (sessionId: string, cwd: string) =>
+      changeSessionProject(worktreeDeps, sessionId, cwd),
+    [],
   );
-
   const onBranchChange = useCallback(
-    (sessionId: string) => {
-      notifyGitChanged();
-      const current = sessionsRef.current.find((s) => s.id === sessionId);
-      if (!current) return;
-      void forgetHarnessSession(current.harness, sessionId);
-      const next = {
-        ...current,
-        branch: undefined,
-        providerSessionId: undefined,
-        context: undefined,
-      };
-      sessionsRef.current = sessionsRef.current.map((s) =>
-        s.id === sessionId ? next : s,
-      );
-      setSessions((prev) => prev.map((s) => (s.id === sessionId ? next : s)));
-      persistSession(next);
-      notifyReviewChanged(sessionId);
-    },
-    [persistSession],
+    (sessionId: string) => changeBranch(worktreeDeps, sessionId),
+    [],
   );
-
   const onWorkspaceModeChange = useCallback(
-    (sessionId: string, mode: WorkspaceMode, base?: string) => {
-      setSessions((prev) =>
-        prev.map((session) => {
-          if (
-            session.id !== sessionId ||
-            (!isBlankSession(session) &&
-              !(session.workspaceMode && !session.worktreeCwd && !session.busy))
-          ) {
-            return session;
-          }
-          return mode === "worktree"
-            ? base || session.worktreeBase
-              ? {
-                  ...session,
-                  workspaceMode: "worktree",
-                  worktreeBase: base || session.worktreeBase,
-                }
-              : session
-            : {
-                ...session,
-                workspaceMode: undefined,
-                worktreeBase: undefined,
-              };
-        }),
-      );
-    },
+    (sessionId: string, mode: WorkspaceMode, base?: string) =>
+      changeWorkspaceMode(worktreeDeps, sessionId, mode, base),
     [],
   );
-
   const onWorktreeBaseChange = useCallback(
-    (sessionId: string, base: string) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId &&
-          (isBlankSession(session) ||
-            (!!session.workspaceMode &&
-              !session.worktreeCwd &&
-              !session.busy)) &&
-          session.workspaceMode === "worktree"
-            ? { ...session, worktreeBase: base }
-            : session,
-        ),
-      );
-    },
+    (sessionId: string, base: string) =>
+      changeWorktreeBase(worktreeDeps, sessionId, base),
     [],
   );
-
   const onWorktreeChange = useCallback(
-    async (
+    (
       sessionId: string,
       tree: Worktree,
       fromComposer = false,
       isCurrent: () => boolean = () => true,
-    ) => {
-      if (!isCurrent()) return;
-      const current = sessionsRef.current.find((s) => s.id === sessionId);
-      if (
-        !current ||
-        current.busy ||
-        removingSessionIds.current.has(sessionId) ||
-        switchingWorktrees.current.has(sessionId)
-      ) {
-        throw new Error(
-          "Wait for this session to finish before changing working copies.",
-        );
-      }
-      if (
-        !current.worktreeRemoved &&
-        pathKey(sessionWorkCwd(current)) === pathKey(tree.path)
-      )
-        return;
-      if (
-        [...removingWorktreePaths.current].some((path) =>
-          isEqualOrInside(tree.path, path),
-        )
-      ) {
-        throw new Error(
-          "This worktree is being deleted. Select another working copy.",
-        );
-      }
-      if (!current.worktreeRemoved && current.queuedMessages?.length) {
-        throw new Error(
-          "Clear queued messages before changing working copies.",
-        );
-      }
-      const run = orchestrator.forSession(sessionId);
-      if (run && ["active", "paused"].includes(run.status)) {
-        throw new Error(
-          "Stop this orchestration run before changing working copies.",
-        );
-      }
-      switchingWorktrees.current.set(sessionId, tree.path);
-      sessionPersistence.dropPending(sessionId);
-      try {
-        const listed = await listWorktrees(current.cwd);
-        if (!isCurrent()) return;
-        const target = listed.worktrees.find(
-          (entry) =>
-            pathKey(entry.path) === pathKey(tree.path) && !entry.missing,
-        );
-        if (!target) {
-          throw new Error(
-            "This worktree is no longer available. Refresh the picker.",
-          );
-        }
-        const source = sessionsRef.current.find((s) => s.id === sessionId);
-        if (
-          !source ||
-          source.busy ||
-          source.cwd !== current.cwd ||
-          sessionWorkCwd(source) !== sessionWorkCwd(current)
-        ) {
-          throw new Error(
-            "The session changed. Try selecting the working copy again.",
-          );
-        }
-        const selected = sessionInWorktree(source, target);
-        if (selected.id !== sessionId) {
-          // Leave the original conversation, checkpoints, and live provider
-          // context attached to the files they describe.
-          const tab = newTab(selected.id);
-          if (fromComposer)
-            workspacePins.current.set(
-              selected.id,
-              currentWorkspace(source.cwd),
-            );
-          sessionsRef.current = [...sessionsRef.current, selected];
-          setSessions(sessionsRef.current);
-          appendTab(tab, selected.cwd);
-          setActiveTabId(tab.id);
-          setComposerFocused(true);
-          return;
-        }
-        await flushSessionCheckpoint(sessionId);
-        if (!isCurrent()) return;
-        for (const harness of sessionChildHarnesses(source)) {
-          await forgetHarnessSession(harness, sessionId);
-          if (!isCurrent()) return;
-        }
-        const latest = sessionsRef.current.find((s) => s.id === sessionId);
-        if (
-          !latest ||
-          (!latest.worktreeRemoved && !isBlankSession(latest)) ||
-          latest.cwd !== current.cwd ||
-          sessionWorkCwd(latest) !== sessionWorkCwd(current)
-        ) {
-          throw new Error(
-            "The session changed. Try selecting the working copy again.",
-          );
-        }
-        const next = sessionInWorktree(latest, target);
-        if (fromComposer)
-          workspacePins.current.set(sessionId, currentWorkspace(latest.cwd));
-        else workspacePins.current.delete(sessionId);
-        if (latest.worktreeRemoved)
-          await keepSessionChanges(sessionId, target.path);
-        sessionPersistence.dropPending(sessionId);
-        if (shouldPersistSession(next)) await upsertSession(next);
-        if (!isCurrent()) return;
-        invalidateLoadedSession(sessionId);
-        sessionsRef.current = sessionsRef.current.map((s) =>
-          s.id === sessionId ? next : s,
-        );
-        setSessions(sessionsRef.current);
-        notifyGitChanged();
-        notifyReviewChanged(sessionId);
-        void refreshHistory(next.cwd);
-      } finally {
-        switchingWorktrees.current.delete(sessionId);
-      }
-    },
-    [appendTab, invalidateLoadedSession, refreshHistory],
+    ) => changeWorktree(worktreeDeps, sessionId, tree, fromComposer, isCurrent),
+    [],
   );
-
   const onComposerWorktreeChange = useCallback(
     (sessionId: string, tree: Worktree) =>
-      onWorktreeChange(sessionId, tree, true),
-    [onWorktreeChange],
+      changeWorktree(worktreeDeps, sessionId, tree, true),
+    [],
   );
 
   const onSelectWorkspace = useCallback(
@@ -6060,7 +5692,7 @@ function Workspace({
             sessionId: task.sessionId,
           });
           await flushSessionWrites();
-          checkOpenWorktreeFiles(path);
+          checkOpenWorktreeFiles(worktreeDeps, path);
           const removed = await removeOrchestrationWorktree(
             orchestrationCheckoutCwd(run),
             path,
@@ -6188,7 +5820,7 @@ function Workspace({
         }
       },
     });
-  }, [checkOpenWorktreeFiles, submitSession, onStop, flushHarnessEvents]);
+  }, [submitSession, onStop, flushHarnessEvents]);
 
   useEffect(() => {
     orchestrator.sync();

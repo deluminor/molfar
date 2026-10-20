@@ -1491,6 +1491,36 @@
       },
       {
         "names": [
+          "checkOpenWorktreeFiles, onCheckWorktreeRemoval, onRemoveWorktree (App: checkRemoval/removeSessionWorktree)"
+        ],
+        "target": "src/app/workspace/flows/worktrees/worktree-removal.ts"
+      },
+      {
+        "names": [
+          "onWorktreeChange, onComposerWorktreeChange (App: changeWorktree)"
+        ],
+        "target": "src/app/workspace/flows/worktrees/worktree-switch.ts"
+      },
+      {
+        "names": [
+          "onBranchChange, onWorkspaceModeChange, onWorktreeBaseChange"
+        ],
+        "target": "src/app/workspace/flows/worktrees/session-checkout.ts"
+      },
+      {
+        "names": [
+          "onCwdChange (App: changeSessionProject)"
+        ],
+        "target": "src/app/workspace/flows/worktrees/session-project.ts"
+      },
+      {
+        "names": [
+          "worktree flow deps"
+        ],
+        "target": "src/app/workspace/flows/worktrees/worktree-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
