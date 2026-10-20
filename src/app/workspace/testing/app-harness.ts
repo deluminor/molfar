@@ -55,6 +55,8 @@ export async function renderApp(
     harness?: HarnessId;
     /** Project the app reopens on launch; none boots into `~`. */
     project?: string;
+    /** Projects in the rail besides `project`, remembered before it. */
+    otherProjects?: string[];
     /** localStorage entries (settings) present at launch. */
     storage?: Record<string, string>;
   } = {},
@@ -85,6 +87,7 @@ export async function renderApp(
 
   if (options.project) {
     const recents = await import("@/features/projects/model/recents");
+    for (const other of options.otherProjects ?? []) recents.rememberProject(other);
     recents.rememberProject(options.project);
   }
 
