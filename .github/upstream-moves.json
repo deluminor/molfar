@@ -1317,6 +1317,114 @@
       },
       {
         "names": [
+          "submitSession (App: submitToSession with the same deps)"
+        ],
+        "target": "src/app/workspace/flows/submission/submit-session.ts"
+      },
+      {
+        "names": [
+          "submitSession availability guards (editedResends, orchestration, managed, removing, worktree)"
+        ],
+        "target": "src/app/workspace/flows/submission/submission-guards.ts"
+      },
+      {
+        "names": [
+          "submitSession preflight (draft, build target, edited resend, intent, operator, cards, harnessText)"
+        ],
+        "target": "src/app/workspace/flows/submission/submission-preflight.ts"
+      },
+      {
+        "names": [
+          "submitSession Familiar follow-ups (enqueue, steer queued head)"
+        ],
+        "target": "src/app/workspace/flows/submission/familiar-follow-up.ts"
+      },
+      {
+        "names": [
+          "submitSession busy follow-ups (queue or steer)"
+        ],
+        "target": "src/app/workspace/flows/submission/busy-follow-up.ts"
+      },
+      {
+        "names": [
+          "submitSession project location sync"
+        ],
+        "target": "src/app/workspace/flows/submission/project-sync.ts"
+      },
+      {
+        "names": [
+          "submitSession turn setup (rotation, proposal draft, title seed, cards)"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-setup.ts"
+      },
+      {
+        "names": [
+          "commitSubmittedTurn"
+        ],
+        "target": "src/app/workspace/flows/submission/submitted-session.ts"
+      },
+      {
+        "names": [
+          "launchTitleGeneration"
+        ],
+        "target": "src/app/workspace/flows/submission/title-generation.ts"
+      },
+      {
+        "names": [
+          "submitSession turn runner (async IIFE, catch, finally)"
+        ],
+        "target": "src/app/workspace/flows/submission/run-turn.ts"
+      },
+      {
+        "names": [
+          "draft worktree creation and branch naming"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-worktree.ts"
+      },
+      {
+        "names": [
+          "pendingSwitch outgoing handoff, revealHandoff"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-handoff.ts"
+      },
+      {
+        "names": [
+          "routePlanEvent, applyTurnEvent, routeTurnEvent, acceptEditedResend, recoverEditedResend"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-events.ts"
+      },
+      {
+        "names": [
+          "edited resend rewind"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-rewind.ts"
+      },
+      {
+        "names": [
+          "turnPrompt, sendText"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-prompt.ts"
+      },
+      {
+        "names": [
+          "Familiar rotation, agent files, appContext"
+        ],
+        "target": "src/app/workspace/flows/submission/familiar-turn-context.ts"
+      },
+      {
+        "names": [
+          "molfar_app operator context"
+        ],
+        "target": "src/app/workspace/flows/submission/operator-app-context.ts"
+      },
+      {
+        "names": [
+          "turn finally/catch: finished session, worktree-gone detach, announce"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-finish.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
