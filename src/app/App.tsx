@@ -243,6 +243,9 @@ import { createAutomationRuns } from "./workspace/flows/automations/automation-r
 import { launchQuickSession as launchQuickSessionInWorkspace } from "./workspace/flows/automations/quick-launch";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
+import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
+import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
+import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -487,7 +490,6 @@ import type { HarnessId } from "@/domain/harness/harness";
 import { createSessionRemover } from "@/features/sessions/model/session-removal";
 import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
 import {
-  applyDetachPaneToTab,
   applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
   filterTabsForProject,
@@ -1749,7 +1751,7 @@ function Workspace({
       },
       runtimeMode: () => newChatDefaultsRef.current.sessionDefaults?.runtimeMode,
       sidebarCwd: () => sidebarCwdRef.current,
-      selectHistorySession: (sessionId) => onSelectHistorySessionRef.current(sessionId),
+      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
       submit: (...args) => onSubmitRef.current(...args),
     }),
@@ -2807,52 +2809,31 @@ function Workspace({
     [activateTab, deckProjectTabs],
   );
 
+  const paneDeps = useStableFlow(
+    (): PaneDeps => ({
+      store: workspaceStore,
+      tabsRef,
+      activeTabIdRef,
+      sessionsRef,
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      closeFamiliarView: () => closeFamiliarView(),
+      closeAutomations: () => setAutomationsViewOpen(false),
+      cancelNavigation: () => workspaceNavigation.cancel(),
+      activateTab: (tabId, paneId) => activateTab(tabId, paneId),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      appendTab: (tab, cwd) => appendTab(tab, cwd),
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      openFamiliar: (familiarId) => onOpenFamiliar(familiarId),
+      focusOpenSession: (sessionId) => focusOpenSession(sessionId),
+      replaceBlankPane: (session) => replaceBlankPaneWithSession(session),
+      linkedUpdates: () => linkedSessionUpdatesRef.current,
+      revealLinkedUpdate: (sessionId, update) =>
+        revealLinkedSessionUpdate(sessionId, update),
+    }),
+  );
   const onFocusPane = useCallback(
-    (paneId: string) => {
-      if (paneId === workspaceStore.getState().familiarViewId) {
-        setFamiliarShownSessionFocused(false);
-        setProjectTerminalFocused(false);
-        setComposerFocused(true);
-        return;
-      }
-      if (paneId === shownFamiliarSession(workspaceStore.getState())) {
-        setFamiliarShownSessionFocused(true);
-        setProjectTerminalFocused(false);
-        setComposerFocused(true);
-        return;
-      }
-      // Over the Familiar, only its sidebar holds panes outside the workspace: a
-      // launched session sliding away as another opens. Its late focus must
-      // not close the Familiar and send that session to its project.
-      if (
-        workspaceStore.getState().familiarViewId &&
-        !tabsRef.current.some((tab) => leafIds(tab.layout).includes(paneId))
-      )
-        return;
-      closeFamiliarView();
-      if (
-        tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
-          ?.focusedId !== paneId
-      )
-        workspaceNavigation.cancel();
-      setProjectTerminalFocused(false);
-      if (inboxAskPortal?.sessionId === paneId) {
-        setComposerFocused(true);
-        return;
-      }
-      setTabs((prev) => {
-        const selectedId = activeTabIdRef.current;
-        const selected = prev.find((tab) => tab.id === selectedId);
-        if (!selected || (selected.focusedId === paneId && !selected.diffFocused)) return prev;
-        return prev.map((tab) => tab.id === selectedId
-          ? { ...tab, focusedId: paneId, diffFocused: false }
-          : tab);
-      });
-      setComposerFocused(
-        sessionsRef.current.some((session) => session.id === paneId),
-      );
-    },
-    [inboxAskPortal, closeFamiliarView],
+    (paneId: string) => focusPane(paneDeps, paneId),
+    [],
   );
 
   const onOpenDiff = useCallback(
@@ -3014,21 +2995,9 @@ function Workspace({
   );
 
   const onDetachPane = useCallback(
-    (paneId: string, targetTabId: string, position: "before" | "after") => {
-      const result = applyDetachPaneToTab({
-        tabs: tabsRef.current,
-        paneId,
-        targetTabId,
-        position,
-      });
-      if (!result) return;
-
-      tabsRef.current = result.tabs;
-      setTabs(result.tabs);
-      setProjectTerminalFocused(false);
-      activateTab(result.activeTabId, result.focusedId);
-    },
-    [activateTab],
+    (paneId: string, targetTabId: string, position: "before" | "after") =>
+      detachPane(paneDeps, paneId, targetTabId, position),
+    [],
   );
 
   const focusOpenSession = useCallback(
@@ -3193,56 +3162,9 @@ function Workspace({
   );
 
   const onSelectHistorySession = useCallback(
-    async (sessionId: string) => {
-      workspaceNavigation.cancel();
-      let session = await ensureOpenSession(sessionId);
-      if (!session || session.inboxAsk) return;
-      const familiar = familiarForSession(session.id);
-      if (familiar) {
-        await onOpenFamiliar(familiar.id);
-        return;
-      }
-      const parentId =
-        session.orchestrationLeadId ??
-        orchestrator.forSession(sessionId)?.leadId;
-      if (parentId && parentId !== sessionId) {
-        setInspectedWorkerId(sessionId);
-        session = await ensureOpenSession(parentId);
-        if (!session) return;
-      }
-      setSearchViewOpen(false);
-      setSettingsOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      if (looksLikeProject(session.cwd))
-        setProjectCwd(normalizeProjectPath(session.cwd));
-      const linkedUpdate = linkedSessionUpdatesRef.current.get(session.id);
-      if (focusOpenSession(session.id)) {
-        if (linkedUpdate) revealLinkedSessionUpdate(session.id, linkedUpdate);
-        return;
-      }
-      if (replaceBlankPaneWithSession(session)) {
-        if (linkedUpdate) revealLinkedSessionUpdate(session.id, linkedUpdate);
-        return;
-      }
-      const tab = newTab(session.id);
-      appendTab(tab, session.cwd);
-      setActiveTabId(tab.id);
-      setComposerFocused(true);
-      if (linkedUpdate) revealLinkedSessionUpdate(session.id, linkedUpdate);
-    },
-    [
-      appendTab,
-      ensureOpenSession,
-      onOpenFamiliar,
-      focusOpenSession,
-      replaceBlankPaneWithSession,
-      revealLinkedSessionUpdate,
-    ],
+    (sessionId: string) => selectHistorySession(paneDeps, sessionId),
+    [],
   );
-  const onSelectHistorySessionRef = useRef(onSelectHistorySession);
-  onSelectHistorySessionRef.current = onSelectHistorySession;
 
   const onOpenMonoLaunchedSession = useCallback(
     async (sessionId: string) => {

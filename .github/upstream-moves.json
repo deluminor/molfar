@@ -1671,6 +1671,24 @@
       },
       {
         "names": [
+          "onFocusPane, onDetachPane (App: focusPane/detachPane)"
+        ],
+        "target": "src/app/workspace/flows/tabs/pane-focus.ts"
+      },
+      {
+        "names": [
+          "onSelectHistorySession (App: selectHistorySession)"
+        ],
+        "target": "src/app/workspace/flows/tabs/select-history-session.ts"
+      },
+      {
+        "names": [
+          "pane flow deps"
+        ],
+        "target": "src/app/workspace/flows/tabs/pane-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
