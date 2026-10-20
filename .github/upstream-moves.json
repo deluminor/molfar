@@ -1521,6 +1521,36 @@
       },
       {
         "names": [
+          "onSelectWorkspace, openProjects, onSelectProject, pickProject (App: selectWorkspace/openProjects/selectProject/pickProjects)"
+        ],
+        "target": "src/app/workspace/flows/projects/open-projects.ts"
+      },
+      {
+        "names": [
+          "onRemoveProject (App: removeProject)"
+        ],
+        "target": "src/app/workspace/flows/projects/remove-project.ts"
+      },
+      {
+        "names": [
+          "applyProjectLocationChange (App: moveProjectLocation)"
+        ],
+        "target": "src/app/workspace/flows/projects/project-location.ts"
+      },
+      {
+        "names": [
+          "onPlaceSessionInFolder (App: placeInFolder)"
+        ],
+        "target": "src/app/workspace/flows/projects/session-folder.ts"
+      },
+      {
+        "names": [
+          "project flow deps"
+        ],
+        "target": "src/app/workspace/flows/projects/project-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
