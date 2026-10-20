@@ -69,7 +69,6 @@ import {
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
-import { acceptQuickLaunch } from "./model/quick-launch-session";
 import { requestBoardFocus } from "@/features/task-board/model/board-focus";
 import { boardNoticeCard } from "@/features/task-board/services/notify";
 import { updateSessionState } from "./model/session-state";
@@ -246,6 +245,10 @@ import {
 } from "./workspace/flows/composer/composer-model";
 import { removeDraft, saveDraft } from "./workspace/flows/composer/drafts";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
+import type { AutomationDeps } from "./workspace/flows/automations/automation-deps";
+import { createAutomationRuns } from "./workspace/flows/automations/automation-runs";
+import { launchQuickSession as launchQuickSessionInWorkspace } from "./workspace/flows/automations/quick-launch";
+import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -501,7 +504,6 @@ import type {
 } from "@/domain/session/turn";
 import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
-  HARNESS_LABEL,
   HARNESSES,
   type HarnessId,
 } from "@/domain/harness/harness";
@@ -517,13 +519,7 @@ import {
   workspaceTabWorktree,
 } from "@/features/workspace/model/workspace-tab-groups";
 
-import { claimInboxAutomationRuns } from "@/features/automations/model/automation-events";
 import {
-  claimDueAutomations,
-  recoverAutomationRuns,
-  updateAutomationRun,
-  type Automation,
-  type AutomationRun,
   listAutomations,
 } from "@/features/automations/model/automations";
 import {
@@ -606,12 +602,7 @@ import {
   ensureFamiliarSession,
   resetFamiliarSession,
 } from "@/features/familiars/model/familiar-workspace";
-import {
-  loadSessionFolders,
-  placeSessionInFolder,
-  saveSessionFolders,
-  type SessionFolderTarget,
-} from "@/features/sessions/model/session-folders";
+import type { SessionFolderTarget } from "@/features/sessions/model/session-folders";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import { ReminderNotices } from "@/features/sessions/ui/ReminderNotices";
 import {
@@ -675,9 +666,6 @@ import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 
 import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
-import {
-  linkedWorkItemFromAutomationEvent,
-} from "@/features/sessions/model/session-work-item";
 
 import { loadRailSurfaces } from "@/features/settings/model/project-rail";
 import {
@@ -4191,161 +4179,24 @@ function Workspace({
     },
   });
 
-  const automationSessionReservations = useRef(new Set<string>());
-  const automationRecoveryRef = useRef<Promise<void> | null>(null);
-  const automationRecoveryCutoffRef = useRef(Date.now());
-
-  const launchAutomation = useCallback(
-    async (
-      automation: Automation,
-      run: AutomationRun,
-      reveal = false,
-      prompt = run.prompt ?? automation.prompt,
-      sourceWorkItem?: LinkedWorkItem,
-    ) => {
-      let reservationId: string | undefined;
-      let releaseAfterSettle = false;
-      const releaseReservation = () => {
-        if (!reservationId) return;
-        automationSessionReservations.current.delete(reservationId);
-        reservationId = undefined;
-      };
-      try {
-        const eventRun = run.trigger === "event";
-        const linkedWorkItem =
-          sourceWorkItem ?? linkedWorkItemFromAutomationEvent(run);
-        let session =
-          automation.reuseSession && automation.lastSessionId
-            ? sessionsRef.current.find(
-                (entry) =>
-                  entry.id === automation.lastSessionId &&
-                  entry.harness === automation.harness &&
-                  !entry.busy &&
-                  !entry.worktreeRemoved &&
-                  !automationSessionReservations.current.has(entry.id) &&
-                  (automation.workspaceMode === "current"
-                    ? entry.workspaceMode !== "worktree" &&
-                      !entry.worktreeCwd &&
-                      pathKey(entry.cwd) === pathKey(automation.cwd)
-                    : automation.workspaceMode === "existing"
-                      ? pathKey(sessionWorkCwd(entry)) ===
-                        pathKey(automation.worktreeCwd ?? "")
-                      : false),
-              )
-            : undefined;
-
-        if (!session) {
-          session = {
-            ...newSession(
-              automation.harness,
-              automation.cwd,
-              automation.model,
-              automation.runtimeMode,
-              automation.modelSettings,
-            ),
-            title: eventRun
-              ? HARNESS_LABEL[automation.harness]
-              : formatSessionTitle(automation.harness, automation.name),
-            automationId: automation.id,
-            ...(linkedWorkItem ? { linkedWorkItem } : {}),
-            ...(automation.workspaceMode === "worktree"
-              ? { workspaceMode: "worktree" as const, worktreeBase: "HEAD" }
-              : automation.workspaceMode === "existing" &&
-                  automation.worktreeCwd
-                ? { worktreeCwd: automation.worktreeCwd }
-                : {}),
-          };
-          const nextSessions = [...sessionsRef.current, session];
-          sessionsRef.current = nextSessions;
-          setSessions(nextSessions);
-          const tab = newTab(session.id);
-          appendTab(tab, automation.cwd);
-          if (reveal) {
-            setActiveTabId(tab.id);
-            setComposerFocused(false);
-          }
-        } else {
-          const stamped = {
-            ...session,
-            automationId: automation.id,
-            model: automation.model,
-            modelSettings: automation.modelSettings ?? {},
-            runtimeMode: automation.runtimeMode,
-            ...(linkedWorkItem ? { linkedWorkItem } : {}),
-          };
-          session = stamped;
-          const nextSessions = sessionsRef.current.map((entry) =>
-            entry.id === stamped.id ? stamped : entry,
-          );
-          sessionsRef.current = nextSessions;
-          setSessions(nextSessions);
-          if (reveal) {
-            focusOpenSession(session.id);
-          }
-        }
-
-        reservationId = session.id;
-        automationSessionReservations.current.add(session.id);
-
-        if (automation.sessionFolderId && looksLikeProject(automation.cwd)) {
-          saveSessionFolders(
-            automation.cwd,
-            placeSessionInFolder(
-              loadSessionFolders(automation.cwd),
-              session.id,
-              { kind: "existing", folderId: automation.sessionFolderId },
-            ),
-          );
-        }
-
-        if (reveal) {
-          setSearchViewOpen(false);
-          setInboxViewOpen(false);
-          setNotesViewOpen(false);
-          setAutomationsViewOpen(false);
-          setSidebarTab("sessions", session.cwd);
-        }
-
-        await updateAutomationRun(run.id, "running", {
-          sessionId: session.id,
-        });
-        // From here the settlement callback owns reservation cleanup, including
-        // a rejected submission that never starts an agent turn.
-        releaseAfterSettle = true;
-        await submitWithSettlement({
-          submit: (onSettled) =>
-            submitSession(session.id, prompt, [], {
-              refreshTitle: eventRun,
-              onSettled,
-            }),
-          rejectionMessage:
-            "The selected agent session could not start this run.",
-          onSettled: (outcome) => {
-            const status =
-              outcome.status === "completed"
-                ? "succeeded"
-                : outcome.status === "cancelled"
-                  ? "cancelled"
-                  : "failed";
-            void updateAutomationRun(run.id, status, {
-              sessionId: session.id,
-              ...(outcome.error ? { error: outcome.error } : {}),
-            })
-              .catch(() => undefined)
-              .finally(releaseReservation);
-          },
-        });
-      } catch (reason: unknown) {
-        await updateAutomationRun(run.id, "failed", {
-          error: reason instanceof Error ? reason.message : String(reason),
-        }).catch(() => undefined);
-        throw reason;
-      } finally {
-        if (!releaseAfterSettle) releaseReservation();
-      }
-    },
-    [appendTab, focusOpenSession, submitSession],
+  const automationDeps = useStableFlow(
+    (): AutomationDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      setSessions,
+      tabsRef,
+      appendTab: (tab, cwd) => appendTab(tab, cwd),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      focusOpenSession: (sessionId) => focusOpenSession(sessionId),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+      closeAutomations: () => setAutomationsViewOpen(false),
+      submitSession: (...args) => submitSessionRef.current(...args),
+      saveDraft: (...args) => onSaveDraft(...args),
+    }),
   );
+  const automationRuns = useStableFlow(() => createAutomationRuns(automationDeps));
+  const launchAutomation = automationRuns.launch;
 
   const familiarCompletions = useStableFlow(() =>
     createFamiliarCompletions({
@@ -4371,78 +4222,15 @@ function Workspace({
       onSettled?: (outcome: ControlOutcome) => void,
       openTab?: boolean,
     ) =>
-      acceptQuickLaunch(
+      launchQuickSessionInWorkspace(
+        automationDeps,
         launch,
         deliveryId,
-        {
-          getSessions: () => sessionsRef.current,
-          updateSessions: (update) => {
-            sessionsRef.current = update(sessionsRef.current);
-            // Compose with submission's queued transcript updates.
-            setSessions(update);
-          },
-          appendTab,
-          placeSession: (sessionId, target, cwd) => {
-            const anchor = sessionsRef.current.find(
-              (session) => session.id === target.besideSessionId,
-            );
-            const tab = tabsRef.current.find((entry) =>
-              leafIds(entry.layout).includes(target.besideSessionId),
-            );
-            if (!anchor || !sameProjectPath(anchor.cwd, cwd) || !tab)
-              throw new Error(
-                "The target session must be open in this project",
-              );
-            const nextTabs = tabsRef.current.map((entry) =>
-              entry.id === tab.id
-                ? {
-                    ...entry,
-                    layout: splitPane(
-                      entry.layout,
-                      target.besideSessionId,
-                      target.direction,
-                      sessionId,
-                    ),
-                    focusedId: launch.reveal ? sessionId : entry.focusedId,
-                    diffFocused: launch.reveal ? false : entry.diffFocused,
-                  }
-                : entry,
-            );
-            tabsRef.current = nextTabs;
-            setTabs(nextTabs);
-            return tab.id;
-          },
-          setProjectCwd,
-          setRecents,
-          revealTab: (id, cwd) => {
-            setActiveTabId(id);
-            setComposerFocused(false);
-            setSearchViewOpen(false);
-            setInboxViewOpen(false);
-            setNotesViewOpen(false);
-            setAutomationsViewOpen(false);
-            setSidebarTab("sessions", cwd);
-          },
-          submit: (id, text, attachments, options) =>
-            onSettled
-              ? submitWithSettlement({
-                  submit: (settle) =>
-                    submitSession(id, text, attachments, {
-                      ...options,
-                      appRequestId: deliveryId,
-                      onSettled: settle,
-                    }),
-                  onSettled,
-                  rejectionMessage: "The monitored session could not start.",
-                })
-              : submitSession(id, text, attachments, options),
-          saveDraft: (id, prompt, attachments, requestId) =>
-            flushSync(() => onSaveDraft(id, prompt, attachments, requestId)),
-        },
         placement,
+        onSettled,
         openTab,
       ),
-    [appendTab, submitSession, onSaveDraft],
+    [],
   );
   useQuickComposerLaunches(launchQuickSession);
   const launchQuickSessionRef = useRef(launchQuickSession);
@@ -4470,83 +4258,8 @@ function Workspace({
     new Map<string, { signature: string; promise: Promise<unknown> }>(),
   );
 
-  const ensureAutomationRecovery = useCallback(() => {
-    if (!automationRecoveryRef.current) {
-      const recovery = (async () => {
-        const pending = await recoverAutomationRuns(
-          automationRecoveryCutoffRef.current,
-        );
-        for (const item of pending) {
-          await launchAutomation(
-            item.automation,
-            item.run,
-            false,
-            item.run.prompt ?? item.automation.prompt,
-          ).catch(() => undefined);
-        }
-      })();
-      automationRecoveryRef.current = recovery.catch((error: unknown) => {
-        automationRecoveryRef.current = null;
-        throw error;
-      });
-    }
-    return automationRecoveryRef.current;
-  }, [launchAutomation]);
-
-  useEffect(() => {
-    let disposed = false;
-    let evaluating = false;
-    const evaluate = async () => {
-      if (disposed || evaluating) return;
-      evaluating = true;
-      try {
-        await ensureAutomationRecovery();
-        const due = await claimDueAutomations();
-        for (const item of due) {
-          if (disposed) break;
-          void launchAutomation(item.automation, item.run).catch(
-            () => undefined,
-          );
-        }
-      } catch {
-        // Scheduling retries on the next tick; individual claimed runs record
-        // launch failures in launchAutomation.
-      } finally {
-        evaluating = false;
-      }
-    };
-    void evaluate();
-    const timer = window.setInterval(() => void evaluate(), 30_000);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void evaluate();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      disposed = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [ensureAutomationRecovery, launchAutomation]);
-
-  const onInboxAppeared = useCallback(
-    (items: Parameters<typeof claimInboxAutomationRuns>[0]) => {
-      void ensureAutomationRecovery()
-        .then(() => claimInboxAutomationRuns(items))
-        .then((due) => {
-          for (const item of due) {
-            void launchAutomation(
-              item.automation,
-              item.run,
-              false,
-              item.prompt,
-              item.linkedWorkItem,
-            ).catch(() => undefined);
-          }
-        })
-        .catch(() => undefined);
-    },
-    [ensureAutomationRecovery, launchAutomation],
-  );
+  useAutomationSchedule(automationRuns);
+  const onInboxAppeared = automationRuns.inboxAppeared;
 
   const onSubmitRef = useRef(onSubmit);
   onSubmitRef.current = onSubmit;

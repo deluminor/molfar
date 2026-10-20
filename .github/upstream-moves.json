@@ -1605,6 +1605,36 @@
       },
       {
         "names": [
+          "launchAutomation, ensureAutomationRecovery, onInboxAppeared, automationSessionReservations, automationRecoveryRef (App: automationRuns.*)"
+        ],
+        "target": "src/app/workspace/flows/automations/automation-runs.ts"
+      },
+      {
+        "names": [
+          "automation session reuse/creation"
+        ],
+        "target": "src/app/workspace/flows/automations/automation-session.ts"
+      },
+      {
+        "names": [
+          "launchQuickSession workspace (App: launchQuickSessionInWorkspace)"
+        ],
+        "target": "src/app/workspace/flows/automations/quick-launch.ts"
+      },
+      {
+        "names": [
+          "automation flow deps"
+        ],
+        "target": "src/app/workspace/flows/automations/automation-deps.ts"
+      },
+      {
+        "names": [
+          "due automation polling effect"
+        ],
+        "target": "src/app/workspace/hooks/use-automation-schedule.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
