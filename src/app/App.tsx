@@ -23,21 +23,10 @@ import {
 } from "@/features/workspace/model/app-view-tabs";
 import { AppViewSurface } from "@/features/workspace/ui/AppViewSurface";
 import { flushSync } from "react-dom";
-import { sessionConversationPage } from "@/features/agent-app/model/session-conversation";
-import { readFamiliarConversation } from "@/features/familiars/model/familiar-conversation";
-import {
-  dismissQueuedFamiliarSessionCompletion,
-  familiarSessionCompletionResult,
-} from "@/features/familiars/model/familiar-session-completion";
 import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
 import { useWorkspaceSessions } from "./workspace/hooks/use-workspace-sessions";
-import {
-  handleAgentApp,
-  canAccessAgentAppProject,
-  type AppSessionListing,
-  type AppSessionPlacement,
-} from "@/features/agent-app/model/agent-app";
+import type { AppSessionPlacement } from "@/features/agent-app/model/agent-app";
 import type { CiRepairRequest } from "@/features/inbox/model/ci-repair";
 import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
@@ -84,10 +73,6 @@ import {
 import { FamiliarSettingsDialog } from "@/features/familiars/ui/FamiliarSettingsDialog";
 import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
 import {
-  recordFamiliarSpawnedSession,
-} from "@/features/familiars/model/familiar-spawned-sessions";
-import { groupFamiliarTurns } from "@/features/sessions/model/transcript-activity";
-import {
   DeleteSessionDialog,
   type SessionDeleteChoice,
 } from "@/features/sessions/ui/DeleteSessionDialog";
@@ -130,11 +115,7 @@ import {
   useWorktreeFocus,
 } from "@/features/source-control/model/worktree-focus";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
-import {
-  createWorktree,
-  listWorktrees,
-  type Worktree,
-} from "@/features/source-control/model/worktrees";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 import {
   homeDir,
   type GitHistoryCommit,
@@ -237,6 +218,9 @@ import { useMenuCommands } from "./workspace/hooks/commands/use-menu-commands";
 import { useNativeKeybindings } from "./workspace/hooks/commands/use-native-keybindings";
 import { useWorkspaceKeys } from "./workspace/hooks/commands/use-workspace-keys";
 import { useLatestRef } from "./workspace/hooks/use-latest-ref";
+import type { AgentAppDeps } from "./workspace/flows/agent-app/agent-app-deps";
+import { createControlRequests } from "./workspace/flows/agent-app/control-requests";
+import { useControlRequests } from "./workspace/hooks/use-control-requests";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
 import { createDisplayedTabs } from "./workspace/title-tabs/displayed-tabs";
@@ -483,7 +467,6 @@ import {
 } from "@/domain/session/title";
 import {
   sessionWorkCwd,
-  sessionDraftBlock,
   sessionNeedsInput,
   lastUserBlockId,
 } from "@/domain/session/session-state";
@@ -501,7 +484,6 @@ import type {
 import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import { createSessionRemover } from "@/features/sessions/model/session-removal";
-import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
 import {
   applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
@@ -514,8 +496,6 @@ import {
   listAutomations,
 } from "@/features/automations/model/automations";
 import {
-  NOTES_CHANGED_EVENT,
-  upsertNote,
   loadNotes,
 } from "@/features/notes/notes";
 import type { NoteComposerCard } from "@/domain/notes/note-card";
@@ -568,21 +548,11 @@ import {
   saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
-import {
-  loadFamiliarFiles,
-  readAgentFile,
-  writeAgentFile,
-} from "@/features/familiars/model/familiar-files";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import {
   dropRelays,
-  habitRunFamiliar,
-  isHabitRun,
-  noteHabitRunLaunch,
   relayApproval,
-  loadHabits,
-  updateHabits,
 } from "@/features/familiars/model/familiar-habits";
 import {
   detachFamiliarTabs,
@@ -597,9 +567,6 @@ import {
   TranscriptPoolOutlet,
 } from "@/features/sessions/ui/TranscriptPool";
 import {
-  getArtifact,
-  saveArtifact,
-  recordArtifactCard,
   removeArtifactCard,
   ARTIFACT_DELETED_EVENT,
 } from "@/features/artifacts/artifacts";
@@ -4107,14 +4074,6 @@ function Workspace({
   taskBoardRef.current = taskBoard;
   const submitSessionRef = useRef(submitSession);
   submitSessionRef.current = submitSession;
-  const saveDraftRef = useRef(onSaveDraft);
-  saveDraftRef.current = onSaveDraft;
-  const ensureOpenSessionRef = useRef(ensureOpenSession);
-  ensureOpenSessionRef.current = ensureOpenSession;
-
-  const appReceipts = useRef(
-    new Map<string, { signature: string; promise: Promise<unknown> }>(),
-  );
 
   useAutomationSchedule(automationRuns);
   const onInboxAppeared = automationRuns.inboxAppeared;
@@ -4426,499 +4385,25 @@ function Workspace({
   const removeSessionRef = useRef(onRemoveHistorySession);
   removeSessionRef.current = onRemoveHistorySession;
 
-  useEffect(() => {
-    const listening = listen<{
-      id: string;
-      namespace: string;
-      sessionId: string;
-      requestId: string;
-      action: string;
-      input: Record<string, unknown>;
-    }>("molfar-control-request", ({ payload }) => {
-      const handle = async () => {
-        if (payload.namespace === "control") {
-          return orchestrator.handle(
-            payload.sessionId,
-            payload.requestId,
-            payload.action,
-            payload.input,
-          );
-        }
-        if (payload.namespace !== "app")
-          throw new Error("Unknown CLI namespace");
-        const source = sessionsRef.current.find(
-          (session) => session.id === payload.sessionId,
-        );
-        if (
-          !source ||
-          source.inboxAsk ||
-          source.orchestrationLeadId ||
-          orchestrator.run(source.id)
-        )
-          throw new Error("This session cannot use the MOLFAR app CLI");
-        const key = `${source.id}:${payload.requestId}`;
-        const signature = JSON.stringify([payload.action, payload.input]);
-        const previous = appReceipts.current.get(key);
-        if (previous) {
-          if (previous.signature !== signature)
-            throw new Error("Request ID was already used with different input");
-          return previous.promise;
-        }
-        const sourceFamiliar =
-          familiarForSession(source.id) ?? findFamiliar(habitRunFamiliar(source.id) ?? "");
-        const canAccessProject = (cwd: string) =>
-          canAccessAgentAppProject(source, cwd, sourceFamiliar?.projects);
-        const sourceTurn = turnGen.current.get(source.id) ?? 0;
-        const sourceTurns = isFamiliarSession(source.id)
-          ? groupFamiliarTurns(source.blocks)
-          : [];
-        const sourceTurnId = sourceTurns[sourceTurns.length - 1]?.[0]?.id;
-        const rememberSession = (entry: FamiliarSpawnedSession) => {
-          // A habit run is thrown away when it ends; its launches go on the
-          // report it posts to the Familiar's chat instead.
-          if (isHabitRun(source.id)) {
-            noteHabitRunLaunch(source.id, entry);
-            return;
-          }
-          if (!sourceTurnId) return;
-          const next = sessionsRef.current.map((session) =>
-            session.id === source.id
-              ? recordFamiliarSpawnedSession(session, sourceTurnId, entry)
-              : session,
-          );
-          if (
-            next.every(
-              (session, index) => session === sessionsRef.current[index],
-            )
-          )
-            return;
-          sessionsRef.current = next;
-          setSessions(next);
-        };
-        const monitorCompletion = (
-          familiarId: string,
-          sessionId: string,
-          requestId: string,
-          project: string,
-          prompt: string,
-        ) => {
-          const settle = familiarCompletions.batches.watch(
-            { familiarId, turn: sourceTurn },
-            requestId,
-            sessionId,
-            { awaitAcceptance: true },
-          );
-          return Object.assign(
-            (outcome: ControlOutcome) =>
-              settle(
-                familiarSessionCompletionResult({
-                  requestId,
-                  sessionId,
-                  project,
-                  prompt,
-                  outcome,
-                  session: sessionsRef.current.find(
-                    (session) => session.id === sessionId,
-                  ),
-                }),
-              ),
-            { accept: settle.accept, discard: settle.discard },
-          );
-        };
-        const dismissCompletion = (sessionId: string) => {
-          if (!isFamiliarSession(source.id)) return;
-          familiarCompletions.batches.dismissSession(
-            source.id,
-            sessionId,
-          );
-          flushSync(() =>
-            setSessions((previous) =>
-              previous.map((session) =>
-                session.id === source.id
-                  ? dismissQueuedFamiliarSessionCompletion(session, sessionId)
-                  : session,
-              ),
-            ),
-          );
-        };
-        const promise = handleAgentApp(
-          source,
-          payload.requestId,
-          payload.action,
-          payload.input,
-          {
-            start: async (launch, id, placement, notifyFamiliarId) => {
-              const rememberLaunch = () => {
-                const created =
-                  sessionsRef.current.find((session) => session.id === id) ??
-                  existing;
-                rememberSession({
-                  sessionId: id,
-                  cwd: created?.cwd ?? launch.cwd,
-                  title: created?.title ?? launch.prompt.trim().slice(0, 300),
-                  harness: created?.harness ?? launch.harness,
-                  model:
-                    created?.model ??
-                    resolveModel(launch.harness, launch.model).id,
-                });
-              };
-              const open = sessionsRef.current.find(
-                (session) => session.id === id,
-              );
-              const stored = open ? null : await getSession(id);
-              const existing = open ?? stored;
-              const previous = existing?.blocks.find(
-                (block) => block.appRequestId === id,
-              );
-              if (previous) {
-                if (
-                  previous.text !== launch.prompt ||
-                  (!launch.draft && !!previous.draft)
-                )
-                  throw new Error(
-                    "Request ID was already used for another session launch",
-                  );
-                rememberLaunch();
-                return;
-              }
-              if (
-                existing?.blocks.some(
-                  (block) => block.role === "user" && !block.draft,
-                )
-              ) {
-                rememberLaunch();
-                return;
-              }
-              if (existing && sessionDraftBlock(existing))
-                throw new Error("Session ID already has a different draft");
-              const onSettled = notifyFamiliarId
-                ? monitorCompletion(
-                    notifyFamiliarId,
-                    id,
-                    id,
-                    launch.cwd,
-                    launch.prompt,
-                  )
-                : undefined;
-              try {
-                // Started sessions wait in the sidebar, under the session
-                // that started them, until the user opens one. Only an
-                // explicit split, or a reveal from a regular session, puts
-                // one in the workspace.
-                await launchQuickSessionRef.current(
-                  launch,
-                  id,
-                  placement,
-                  onSettled,
-                  !!placement || (!isFamiliarSession(source.id) && launch.reveal),
-                );
-                rememberLaunch();
-                onSettled?.accept();
-              } catch (error) {
-                onSettled?.discard();
-                throw error;
-              }
-            },
-            sessions: async (cwd): Promise<AppSessionListing[]> => {
-              const stored = await listSessionsByProject(cwd);
-              const byId = new Map<string, AppSessionListing>();
-              for (const session of stored) {
-                if (session.orchestrationLeadId || session.taskCardId) continue;
-                byId.set(session.id, {
-                  id: session.id,
-                  title: session.title,
-                  harness: session.harness,
-                  model: session.model,
-                  busy: false,
-                  hasDraft: !!session.draft,
-                  archived: !!session.archived,
-                });
-              }
-              for (const session of sessionsRef.current) {
-                if (
-                  session.orchestrationLeadId ||
-                  session.taskCardId ||
-                  isHabitRun(session.id) ||
-                  !sameProjectPath(session.cwd, cwd)
-                )
-                  continue;
-                byId.set(session.id, {
-                  id: session.id,
-                  title: session.title,
-                  harness: session.harness,
-                  model: session.model,
-                  busy: !!session.busy,
-                  hasDraft: !!sessionDraftBlock(session),
-                  archived: byId.get(session.id)?.archived ?? false,
-                });
-              }
-              return [...byId.values()];
-            },
-            session: async (id) => {
-              const target =
-                sessionsRef.current.find((session) => session.id === id) ??
-                (await getSession(id));
-              return target &&
-                !target.orchestrationLeadId &&
-                canAccessProject(target.cwd)
-                ? target
-                : null;
-            },
-            readConversation: async (target, options) =>
-              isFamiliarSession(target.id)
-                ? readFamiliarConversation(target, options)
-                : sessionConversationPage(target, options),
-            send: async (id, prompt, requestId, notifyFamiliarId) => {
-              const target = await ensureOpenSessionRef.current(id);
-              if (
-                !target ||
-                target.orchestrationLeadId ||
-                !canAccessProject(target.cwd) ||
-                orchestrator.run(id)
-              )
-                throw new Error("Session is unavailable in this project");
-              const rememberFollowUp = () => {
-                const current =
-                  sessionsRef.current.find((session) => session.id === id) ??
-                  target;
-                rememberSession({
-                  sessionId: id,
-                  cwd: current.cwd,
-                  title: current.title,
-                  harness: current.harness,
-                  model: current.model,
-                });
-              };
-              const previous = target.blocks.find(
-                (block) => block.appRequestId === requestId,
-              );
-              if (previous) {
-                if (previous.text !== prompt)
-                  throw new Error(
-                    "Request ID was already used with another prompt",
-                  );
-                if (previous.draft)
-                  throw new Error("Request ID belongs to an unsent draft");
-                rememberFollowUp();
-                return { alreadySubmitted: true };
-              }
-              if (target.busy)
-                throw new Error("Session is busy; try again when it finishes");
-              if (sessionDraftBlock(target))
-                throw new Error(
-                  "Session already has a draft; send or remove it first",
-                );
-              const onSettled = notifyFamiliarId
-                ? monitorCompletion(
-                    notifyFamiliarId,
-                    id,
-                    requestId,
-                    target.cwd,
-                    prompt,
-                  )
-                : undefined;
-              const accepted = onSettled
-                ? await submitWithSettlement({
-                    submit: (onSettled) =>
-                      submitSessionRef.current(id, prompt, [], {
-                        appRequestId: requestId,
-                        onSettled,
-                      }),
-                    onSettled,
-                    rejectionMessage:
-                      "The monitored follow-up could not start.",
-                  })
-                : await submitSessionRef.current(id, prompt, [], {
-                    appRequestId: requestId,
-                  });
-              if (!accepted) {
-                onSettled?.discard();
-                throw new Error("Session could not accept the follow-up");
-              }
-              rememberFollowUp();
-              onSettled?.accept();
-              return { alreadySubmitted: false };
-            },
-            draft: async (id, prompt, requestId) => {
-              const target = await ensureOpenSessionRef.current(id);
-              if (
-                !target ||
-                target.orchestrationLeadId ||
-                !canAccessProject(target.cwd) ||
-                orchestrator.run(id)
-              )
-                throw new Error("Session is unavailable in this project");
-              const previous = target.blocks.find(
-                (block) => block.appRequestId === requestId,
-              );
-              if (previous) {
-                if (previous.text !== prompt)
-                  throw new Error(
-                    "Request ID was already used with another prompt",
-                  );
-                return { alreadySaved: true, draft: !!previous.draft };
-              }
-              if (target.busy)
-                throw new Error("Session is busy; try again when it finishes");
-              if (sessionDraftBlock(target))
-                throw new Error(
-                  "Session already has a draft; send or remove it first",
-                );
-              const saved = flushSync(() =>
-                saveDraftRef.current(id, prompt, [], requestId),
-              );
-              if (!saved) throw new Error("Session could not accept a draft");
-              return { alreadySaved: false, draft: true };
-            },
-            stop: async (id) => {
-              if (
-                removingSessionIds.current.has(id) ||
-                switchingWorktrees.current.has(id)
-              )
-                throw new Error(
-                  "Session is being removed or changing worktrees",
-                );
-              const target = sessionsRef.current.find(
-                (session) => session.id === id,
-              );
-              if (!target) {
-                dismissCompletion(id);
-                return;
-              }
-              if (
-                target.orchestrationLeadId ||
-                !canAccessProject(target.cwd) ||
-                isFamiliarSession(id) ||
-                isHabitRun(id)
-              )
-                throw new Error("Session is unavailable in this project");
-              await flushSync(() => stopSessionRef.current(id));
-              flushHarnessEvents();
-              dismissCompletion(id);
-            },
-            remove: async (id, mode) => {
-              const target = await ensureOpenSessionRef.current(id);
-              if (
-                !target ||
-                target.orchestrationLeadId ||
-                !canAccessProject(target.cwd) ||
-                isFamiliarSession(id) ||
-                isHabitRun(id)
-              )
-                throw new Error("Session is unavailable in this project");
-              const removed = await removeSessionRef.current(
-                id,
-                mode,
-                true,
-                "cli",
-              );
-              if (!removed)
-                throw new Error(
-                  `Session could not be ${mode === "archive" ? "archived" : "deleted"}; another session operation is in progress`,
-                );
-              dismissCompletion(id);
-            },
-            worktrees: (cwd) => listWorktrees(cwd),
-            createWorktree: (cwd, branch, base, existing) =>
-              createWorktree(cwd, branch, base, existing),
-            notes: () => invoke("notes_list"),
-            note: (id) => invoke("notes_get", { id }),
-            saveNote: async (note) => {
-              const saved = await upsertNote(note);
-              window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
-              return saved;
-            },
-            artifacts: () => invoke("artifacts_list"),
-            artifact: getArtifact,
-            saveArtifact,
-            postArtifact: async (sessionId, card) => {
-              const latest = sessionsRef.current.find(
-                (session) => session.id === sessionId,
-              );
-              const anchor =
-                sourceTurnId ??
-                latest?.blocks
-                  .slice()
-                  .reverse()
-                  .find((block) => block.role === "user")?.id;
-              if (
-                !latest ||
-                !anchor ||
-                !latest.blocks.some((block) => block.id === anchor)
-              )
-                throw new Error(
-                  "The artifact's conversation turn is no longer available",
-                );
-              const updated = recordArtifactCard(latest, anchor, card);
-              sessionsRef.current = sessionsRef.current.map((session) =>
-                session.id === sessionId ? updated : session,
-              );
-              setSessions(sessionsRef.current);
-              if (!isHabitRun(sessionId)) await upsertSession(updated);
-            },
-            board: taskBoardRef.current,
-            isFamiliar: (id) => isFamiliarSession(id),
-            isHabitRun: (id) => isHabitRun(id),
-            familiarOf: (id) => {
-              const familiar =
-                familiarForSession(id) ?? findFamiliar(habitRunFamiliar(id) ?? "");
-              return (
-                familiar && {
-                  id: familiar.id,
-                  projects: familiar.projects,
-                  showStartedSessionsInSidebar:
-                    familiar.showStartedSessionsInSidebar,
-                  ...(familiar.useSidebarFolders
-                    ? {
-                        folder: {
-                          name: familiarLook(familiar).name,
-                          color: familiar.color,
-                        },
-                      }
-                    : {}),
-                }
-              );
-            },
-            habits: { load: loadHabits, update: updateHabits },
-            agentFiles: (familiarId) => loadFamiliarFiles(familiarId),
-            readAgentFile: (familiarId, path) => readAgentFile(familiarId, path),
-            writeAgentFile: (familiarId, path, text, hash) =>
-              writeAgentFile(familiarId, path, text, hash),
-          },
-        );
-        appReceipts.current.set(key, { signature, promise });
-        void promise.catch(() => {
-          if (appReceipts.current.get(key)?.promise === promise)
-            appReceipts.current.delete(key);
-        });
-        if (appReceipts.current.size > 256) {
-          const first = appReceipts.current.keys().next().value;
-          if (first) appReceipts.current.delete(first);
-        }
-        return promise;
-      };
-      void handle()
-        .then(
-          (result) =>
-            invoke("control_reply", {
-              id: payload.id,
-              response: { ok: true, result },
-            }),
-          (error: unknown) =>
-            invoke("control_reply", {
-              id: payload.id,
-              response: {
-                ok: false,
-                error: error instanceof Error ? error.message : String(error),
-              },
-            }),
-        )
-        .catch(console.error);
-    });
-    return () => {
-      void listening.then((unlisten) => unlisten());
-    };
-  }, []);
+  const agentAppDeps = useStableFlow(
+    (): AgentAppDeps => ({
+      sessionsRef,
+      setSessions,
+      turnGen,
+      removingSessionIds,
+      switchingWorktrees,
+      completions: familiarCompletions.batches,
+      board: () => taskBoardRef.current,
+      flushHarnessEvents,
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      submitSession: (...args) => submitSessionRef.current(...args),
+      saveDraft: (...args) => onSaveDraft(...args),
+      stopSession: (sessionId) => stopSessionRef.current(sessionId),
+      removeSession: (...args) => removeSessionRef.current(...args),
+      launchQuickSession: (...args) => launchQuickSession(...args),
+    }),
+  );
+  useControlRequests(useStableFlow(() => createControlRequests(agentAppDeps)));
 
   const confirmingOrchestration = useRef(new Set<string>());
   const queueWorkerPanes = useCallback(

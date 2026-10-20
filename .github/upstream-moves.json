@@ -1803,6 +1803,60 @@
       },
       {
         "names": [
+          "molfar-control-request listener (App: useControlRequests)"
+        ],
+        "target": "src/app/workspace/hooks/use-control-requests.ts"
+      },
+      {
+        "names": [
+          "control request handling, appReceipts"
+        ],
+        "target": "src/app/workspace/flows/agent-app/control-requests.ts"
+      },
+      {
+        "names": [
+          "handleAgentApp host object"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-host.ts"
+      },
+      {
+        "names": [
+          "CLI source: canAccessProject, rememberSession, monitorCompletion, dismissCompletion"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-source.ts"
+      },
+      {
+        "names": [
+          "CLI start"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-launch.ts"
+      },
+      {
+        "names": [
+          "CLI send, draft"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-messages.ts"
+      },
+      {
+        "names": [
+          "CLI sessions, session, stop, remove"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-sessions.ts"
+      },
+      {
+        "names": [
+          "CLI saveNote, postArtifact, familiarOf"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-content.ts"
+      },
+      {
+        "names": [
+          "app CLI deps"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-deps.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
