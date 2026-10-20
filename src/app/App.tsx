@@ -33,9 +33,6 @@ import { flushSync } from "react-dom";
 import { sessionConversationPage } from "@/features/agent-app/model/session-conversation";
 import { readFamiliarConversation } from "@/features/familiars/model/familiar-conversation";
 import {
-  resumeFamiliarUsageLimit,
-} from "@/features/familiars/model/familiar-usage-limit";
-import {
   dismissQueuedFamiliarSessionCompletion,
   familiarSessionCompletionResult,
 } from "@/features/familiars/model/familiar-session-completion";
@@ -241,6 +238,14 @@ import {
   setFileErrorCount,
 } from "./workspace/flows/files/file-state";
 import { openFile, openPlan } from "./workspace/flows/files/open-file";
+import type { ComposerDeps } from "./workspace/flows/composer/composer-deps";
+import {
+  changeModel,
+  changeModelSettings,
+  changeRuntimeMode,
+} from "./workspace/flows/composer/composer-model";
+import { removeDraft, saveDraft } from "./workspace/flows/composer/drafts";
+import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -257,7 +262,6 @@ import { stopTurn } from "./workspace/flows/turn-control/stop-turn";
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
 import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
 import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
-import { withHarnessChoice } from "./model/harness-choice";
 import { createFamiliarChat } from "./workspace/flows/familiars/familiar-chat";
 import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-completions";
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
@@ -358,15 +362,8 @@ import {
 } from "@/features/projects/model/project-terminal";
 
 import {
-  isPreparingHandoff,
-  planComposerSwitch,
   sessionChildHarnesses,
 } from "@/features/sessions/model/handoff";
-import {
-  preferredModelSettings,
-  saveLastModelSettings,
-  saveRecentModelChoice,
-} from "@/features/sessions/model/models";
 import {
   mergeModelSettings,
   resolveModel,
@@ -476,25 +473,17 @@ import {
   type ProviderAccountProvider,
   DEFAULT_PROVIDER_ACCOUNT_ID,
 } from "@/domain/harness/provider-account";
-import { applyAddToChatRequest } from "@/features/sessions/model/add-chat-to-workspace";
 import { newWorkspaceSession } from "./model/new-workspace-session";
-import {
-  ADD_TO_CHAT_EVENT,
-  type AddToChatRequest,
-} from "@/features/sessions/model/quote-draft";
 import {
   newDefaultSession,
   newSession,
 } from "@/features/sessions/model/session";
 import {
-  canReplaceSessionTitle,
   formatSessionTitle,
   sessionDisplayTitle,
-  titleFromPrompt,
 } from "@/domain/session/title";
 import {
   sessionWorkCwd,
-  removeSessionDraft,
   sessionDraftBlock,
   sessionNeedsInput,
   lastUserBlockId,
@@ -558,7 +547,6 @@ import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-qu
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import {
   deleteSession,
-  discardDraftSessionRecord,
   flushSessionWrites,
   getSession,
   readSession,
@@ -625,9 +613,6 @@ import {
   type SessionFolderTarget,
 } from "@/features/sessions/model/session-folders";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
-import {
-  resumeUsageLimitedSession,
-} from "@/features/sessions/model/usage-limit";
 import { ReminderNotices } from "@/features/sessions/ui/ReminderNotices";
 import {
   TranscriptPool,
@@ -666,9 +651,6 @@ import {
   remoteProjectFor,
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
-import {
-  remoteSessionActions,
-} from "@/features/connections/model/remote-session-actions";
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
 import { AddRemoteProjectDialog } from "@/features/connections/ui/AddRemoteProjectDialog";
 import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
@@ -1738,45 +1720,6 @@ function Workspace({
 
   const sessionDefaults = active ?? sessions[0];
 
-  useEffect(() => {
-    const openSessionForAddToChat = (event: Event) => {
-      const detail = (event as CustomEvent<AddToChatRequest>).detail;
-      if (!detail?.text) return;
-
-      // Match notes/inbox: leave the overlay surface so the chat is visible.
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      setSidebarTab("sessions");
-      setProjectTerminalFocused(false);
-      setComposerFocused(true);
-
-      const result = applyAddToChatRequest({
-        sessions: sessionsRef.current,
-        tabs: tabsRef.current,
-        activeTabId: activeTabIdRef.current,
-        projectCwd: projectCwdRef.current,
-        fallbackCwd: sessionDefaults?.cwd,
-        defaultRuntimeMode: sessionDefaults?.runtimeMode,
-        text: detail.text,
-        mode: detail.mode,
-      });
-      // null ⇒ a mounted session pane already owns add-to-chat (draft insert).
-      if (!result) return;
-
-      sessionsRef.current = result.sessions;
-      tabsRef.current = result.tabs;
-      setSessions(result.sessions);
-      setTabs(result.tabs);
-      setActiveTabId(result.activeTabId);
-    };
-
-    window.addEventListener(ADD_TO_CHAT_EVENT, openSessionForAddToChat);
-    return () =>
-      window.removeEventListener(ADD_TO_CHAT_EVENT, openSessionForAddToChat);
-  }, [sessionDefaults?.cwd, sessionDefaults?.runtimeMode]);
-
   const activeSkillContext = active
     ? nativeSkillContextForSession(active)
     : null;
@@ -1849,6 +1792,11 @@ function Workspace({
     }),
   );
   const linkedPanels = useStableFlow(() => createLinkedWorkItemPanels(inboxDeps));
+  useAddToChat(
+    useStableFlow(() => ({ ...inboxDeps, tabsRef, activeTabIdRef, projectCwdRef })),
+    sessionDefaults?.cwd,
+    sessionDefaults?.runtimeMode,
+  );
   const linkedUpdateCards = useStableFlow(() =>
     createLinkedUpdateCards({
       sessionsRef,
@@ -4073,167 +4021,43 @@ function Workspace({
     [],
   );
 
+  const composerDeps = useStableFlow(
+    (): ComposerDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      setSessions,
+      persistence: sessionPersistence,
+      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
+    }),
+  );
   const onModelChange = useCallback(
-    (sessionId: string, harness: HarnessId, model: string) => {
-      const current = sessionsRef.current.find((s) => s.id === sessionId);
-      if (!current) return;
-      if (isPreparingHandoff(current)) return;
-      const resolved = resolveModel(harness, model);
-      saveRecentModelChoice(resolved.harness, resolved.id);
-      if (current.modelSettings) {
-        saveLastModelSettings(current.modelSettings, "fill");
-      }
-      const modelSettings = preferredModelSettings(
-        resolved,
-        current.modelSettings,
-      );
-      const plan = planComposerSwitch(current, harness);
-      const recoverLimit =
-        !current.busy &&
-        !!current.usageLimit &&
-        (current.harness !== harness || current.model !== resolved.id);
-      if (plan.kind === "empty") {
-        void forgetHarnessSession(plan.forget, sessionId);
-      }
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== sessionId) return s;
-          let next = withHarnessChoice(s, harness, resolved.id, modelSettings);
-          if (plan.kind === "arm") {
-            next = { ...next, pendingSwitch: plan.pending };
-          } else if (plan.kind === "revert") {
-            next = {
-              ...next,
-              pendingSwitch: undefined,
-              ...(plan.restoreProviderSessionId
-                ? { providerSessionId: plan.restoreProviderSessionId }
-                : { providerSessionId: undefined }),
-              ...(plan.restoreProviderAccountId
-                ? { providerAccountId: plan.restoreProviderAccountId }
-                : { providerAccountId: undefined }),
-            };
-          } else if (plan.kind === "empty") {
-            next = { ...next, pendingSwitch: undefined };
-          }
-          return recoverLimit
-            ? isFamiliarSession(sessionId)
-              ? resumeFamiliarUsageLimit(next)
-              : resumeUsageLimitedSession(next)
-            : next;
-        }),
-      );
-    },
+    (sessionId: string, harness: HarnessId, model: string) =>
+      changeModel(composerDeps, sessionId, harness, model),
     [],
   );
-
   const onModelSettingsChange = useCallback(
-    (sessionId: string, modelSettings: Record<string, string>) => {
-      saveLastModelSettings(modelSettings);
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, modelSettings } : s)),
-      );
-    },
+    (sessionId: string, modelSettings: Record<string, string>) =>
+      changeModelSettings(composerDeps, sessionId, modelSettings),
     [],
   );
-
   const onRuntimeModeChange = useCallback(
-    (sessionId: string, runtimeMode: RuntimeMode) => {
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, runtimeMode } : s)),
-      );
-    },
+    (sessionId: string, runtimeMode: RuntimeMode) =>
+      changeRuntimeMode(composerDeps, sessionId, runtimeMode),
     [],
   );
-
   const onSaveDraft = useCallback(
     (
       sessionId: string,
       text: string,
       attachments: Attachment[] = [],
       appRequestId?: string,
-    ) => {
-      const current = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (current && remoteProjectFor(current.cwd))
-        return !!remoteSessionActions(sessionId)?.saveDraft(text, attachments);
-      if (
-        !current ||
-        current.busy ||
-        sessionDraftBlock(current) ||
-        current.inboxAsk ||
-        current.worktreeRemoved ||
-        (!text.trim() && attachments.length === 0)
-      ) {
-        return false;
-      }
-      const placeholderTitle = canReplaceSessionTitle(
-        current.title,
-        current.harness,
-        HARNESS_LABEL[current.harness],
-      );
-      const title = placeholderTitle
-        ? titleFromPrompt(text, current.harness, attachments)
-        : current.title;
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId && !sessionDraftBlock(session)
-            ? {
-                ...session,
-                title,
-                blocks: [
-                  ...session.blocks,
-                  {
-                    id: crypto.randomUUID(),
-                    role: "user",
-                    text,
-                    ...(attachments.length > 0 ? { attachments } : {}),
-                    draft: true,
-                    ...(appRequestId ? { appRequestId } : {}),
-                  },
-                ],
-              }
-            : session,
-        ),
-      );
-      return true;
-    },
+    ) => saveDraft(composerDeps, sessionId, text, attachments, appRequestId),
     [],
   );
-
   const onRemoveDraft = useCallback(
-    (sessionId: string, draftBlockId: string) => {
-      const current = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (!current) return false;
-      const withoutDraft = removeSessionDraft(current, draftBlockId);
-      if (!withoutDraft) return false;
-
-      if (!shouldPersistSession(withoutDraft)) {
-        sessionPersistence.dropPending(sessionId);
-        sessionPersistence.forgetSaved(sessionId);
-        sessionPersistence.forgetUserTurn(sessionId);
-        invalidateLoadedSession(sessionId);
-        setHistory((history) =>
-          history.filter((session) => session.id !== sessionId),
-        );
-        setStoredLinkedSessions((history) =>
-          history.filter((session) => session.id !== sessionId),
-        );
-        void discardDraftSessionRecord(sessionId).catch(() => undefined);
-      }
-
-      setSessions((sessions) =>
-        sessions.map((session) =>
-          session.id === sessionId
-            ? (removeSessionDraft(session, draftBlockId) ?? session)
-            : session,
-        ),
-      );
-      return true;
-    },
-    [invalidateLoadedSession],
+    (sessionId: string, draftBlockId: string) =>
+      removeDraft(composerDeps, sessionId, draftBlockId),
+    [],
   );
 
   const submitSession = useCallback(

@@ -1581,6 +1581,30 @@
       },
       {
         "names": [
+          "onModelChange, onModelSettingsChange, onRuntimeModeChange"
+        ],
+        "target": "src/app/workspace/flows/composer/composer-model.ts"
+      },
+      {
+        "names": [
+          "onSaveDraft, onRemoveDraft"
+        ],
+        "target": "src/app/workspace/flows/composer/drafts.ts"
+      },
+      {
+        "names": [
+          "composer flow deps"
+        ],
+        "target": "src/app/workspace/flows/composer/composer-deps.ts"
+      },
+      {
+        "names": [
+          "ADD_TO_CHAT_EVENT effect"
+        ],
+        "target": "src/app/workspace/hooks/use-add-to-chat.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

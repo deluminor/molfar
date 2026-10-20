@@ -46,9 +46,15 @@ export function withPlanBuildTarget(
     modelSettings,
   );
 
-  if (plan.kind === "arm") {
-    return { ...next, pendingSwitch: plan.pending };
-  }
+  return withComposerSwitch(next, plan);
+}
+
+/** Applies a planned harness switch: arms the handoff, reverts to the old binding, or clears it. */
+export function withComposerSwitch(
+  next: Session,
+  plan: ReturnType<typeof planComposerSwitch>,
+): Session {
+  if (plan.kind === "arm") return { ...next, pendingSwitch: plan.pending };
   if (plan.kind === "revert") {
     return {
       ...next,
@@ -61,8 +67,6 @@ export function withPlanBuildTarget(
         : { providerAccountId: undefined }),
     };
   }
-  if (plan.kind === "empty") {
-    return { ...next, pendingSwitch: undefined };
-  }
+  if (plan.kind === "empty") return { ...next, pendingSwitch: undefined };
   return next;
 }
