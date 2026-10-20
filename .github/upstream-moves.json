@@ -1707,6 +1707,12 @@
       },
       {
         "names": [
+          "onNavigateSessionList (App: navigateSessionList)"
+        ],
+        "target": "src/app/workspace/flows/tabs/session-list-navigation.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"

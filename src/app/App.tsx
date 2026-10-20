@@ -242,6 +242,10 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
+import {
+  navigateSessionList,
+  type SessionListDeps,
+} from "./workspace/flows/tabs/session-list-navigation";
 import type { SurfaceDeps } from "./workspace/flows/surfaces/surface-deps";
 import {
   findInProject,
@@ -504,7 +508,6 @@ import {
   applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
   filterTabsForProject,
-  switchSessionInTab,
   workspaceTabCwd,
   workspaceTabWorktree,
 } from "@/features/workspace/model/workspace-tab-groups";
@@ -2830,6 +2833,16 @@ function Workspace({
       linkedUpdates: () => linkedSessionUpdatesRef.current,
       revealLinkedUpdate: (sessionId, update) =>
         revealLinkedSessionUpdate(sessionId, update),
+    }),
+  );
+  const sessionListDeps = useStableFlow(
+    (): SessionListDeps => ({
+      ...paneDeps,
+      navigationIds: sessionNavigationIdsRef,
+      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
+      selectRemoteSession: (project, remoteSessionId) =>
+        onSelectRemoteSession(project, remoteSessionId),
+      prefetch: (sessionId) => onPrefetchHistorySession(sessionId),
     }),
   );
   const onFocusPane = useCallback(
@@ -5555,76 +5568,9 @@ function Workspace({
   }, []);
 
   const onNavigateSessionList = useCallback(
-    (delta: number, inCurrentTab = false) => {
-      const activeWorkspace = tabsRef.current.find(
-        (entry) => entry.id === activeTabIdRef.current,
-      );
-      if (!activeWorkspace || activeWorkspace.diffFocused) return;
-      const current = sessionsRef.current.find(
-        (session) => session.id === activeWorkspace.focusedId,
-      );
-      if (!current) return;
-      const remoteProject = isRemoteProjectPath(current.cwd);
-      const navigationId = remoteProject
-        ? remoteSessionFor(current.id)
-        : current.id;
-      if (!navigationId) return;
-
-      const next = adjacentItemId(
-        sessionNavigationIdsRef.current,
-        navigationId,
-        delta,
-      );
-      if (!next || next === navigationId) return;
-      if (remoteProject) {
-        if (inCurrentTab) {
-          rememberRemoteSession(current.id, next);
-          setComposerFocused(true);
-        } else {
-          onSelectRemoteSession(current.cwd, next);
-        }
-        return;
-      }
-      // Stepping gives no hover to warm the transcript, so load the one a
-      // further step away once this switch has its own session.
-      const prefetchAhead = () => {
-        const ahead = adjacentItemId(
-          sessionNavigationIdsRef.current,
-          next,
-          delta,
-        );
-        if (ahead && ahead !== current.id) onPrefetchHistorySession(ahead);
-      };
-      if (!inCurrentTab) {
-        void onSelectHistorySession(next).then(prefetchAhead);
-        return;
-      }
-      const activeTabId = activeWorkspace.id;
-      const focusedId = current.id;
-      void ensureOpenSession(next).then((session) => {
-        prefetchAhead();
-        if (!session || session.inboxAsk) return;
-        if (activeTabIdRef.current !== activeTabId) return;
-        const currentTab = tabsRef.current.find(
-          (tab) => tab.id === activeTabId,
-        );
-        if (currentTab?.focusedId !== focusedId) return;
-        setTabs(
-          (prev) =>
-            switchSessionInTab(prev, activeTabId, focusedId, next) ?? prev,
-        );
-        setComposerFocused(true);
-        const linkedUpdate = linkedSessionUpdatesRef.current.get(next);
-        if (linkedUpdate) revealLinkedSessionUpdate(next, linkedUpdate);
-      });
-    },
-    [
-      ensureOpenSession,
-      onPrefetchHistorySession,
-      onSelectHistorySession,
-      onSelectRemoteSession,
-      revealLinkedSessionUpdate,
-    ],
+    (delta: number, inCurrentTab = false) =>
+      navigateSessionList(sessionListDeps, delta, inCurrentTab),
+    [],
   );
 
   const onNavigateProjectList = useCallback(
