@@ -3,7 +3,6 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { alertApp, confirmApp, getAppDialog } from "@/shared/lib/app-dialog";
 import {
-  startTransition,
   Suspense,
   useCallback,
   useEffect,
@@ -18,14 +17,8 @@ import { useStableValue } from "@/shared/hooks/use-stable-value";
 import { useDragResize } from "@/shared/hooks/use-drag-resize";
 import { beginLayoutTransition } from "@/shared/lib/layout-transition";
 import {
-  APP_VIEW_LABELS,
-  appViewForTab,
   appViewTabId,
-  isViewTab,
-  familiarForTab,
   familiarTabId,
-  nextDisplayedTabAfterClose,
-  reconcileTitleTabOrder,
   type AppView,
 } from "@/features/workspace/model/app-view-tabs";
 import { AppViewSurface } from "@/features/workspace/ui/AppViewSurface";
@@ -73,7 +66,6 @@ import { requestBoardFocus } from "@/features/task-board/model/board-focus";
 import { boardNoticeCard } from "@/features/task-board/services/notify";
 import { updateSessionState } from "./model/session-state";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
-import { isBlankWorkspaceTab } from "./model/blank-workspace-tab";
 import type { SettingsReturnView } from "./model/settings-return/types";
 import type { SubmissionAcceptance } from "./model/submission-acceptance";
 
@@ -150,7 +142,7 @@ import {
   homeDir,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
-import { basename, displayPath, pathKey, projectName } from "@/shared/lib/paths";
+import { displayPath, pathKey, projectName } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
@@ -242,6 +234,16 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
+import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
+import { titleTabList } from "./workspace/title-tabs/title-tab-list";
+import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
+import { createDisplayedTabs } from "./workspace/title-tabs/displayed-tabs";
+import type {
+  DisplayedTabNavigation,
+  DisplayedTabsDeps,
+  VisibleTabs,
+} from "./workspace/title-tabs/displayed-tabs-deps";
+import { createVisibleTabShortcuts } from "./workspace/title-tabs/visible-tab-shortcuts";
 import {
   navigateSessionList,
   type SessionListDeps,
@@ -341,7 +343,6 @@ import {
   closeTitleTab,
 } from "./workspace/flows/tabs/close/pane-close";
 import { FamiliarViewActions, TitleBar } from "./shell/TitleBar";
-import type { Tab as TitleTab } from "@/features/workspace/model/title-tab";
 import { AppDialog } from "./shell/AppDialog";
 import { UpdatePromptDialog } from "./shell/UpdatePromptDialog";
 import { UsageFooter } from "./shell/UsageFooter";
@@ -387,7 +388,6 @@ import {
 import {
   listRunningTerminals,
   newTerminalCwd,
-  terminalTabLabel,
   type TerminalMetaPatch,
 } from "@/features/terminal/model/terminal-tab";
 import {
@@ -416,7 +416,6 @@ import {
   isCommitTab,
   isFilesystemTab,
   isolateTerminalPanes,
-  isTerminalTab,
   leafIds,
   neighborLeafId,
   newAgentTab,
@@ -426,7 +425,6 @@ import {
   openCommitTab,
   openEditorTab,
   openSessionChangesTab,
-  previewWorkspaceFile,
   setSplitRatio,
   splitPane,
   type FilePaneTab,
@@ -437,11 +435,9 @@ import {
 } from "@/features/workspace/model/layout";
 
 
-import { mergeOrderedSubset, orderByIds } from "@/shared/lib/reorder";
 
 import {
   releaseNotesForVersion,
-  releaseNotesTitle,
 } from "@/features/updates/model/release-notes";
 
 import type { WindowTransferPayload } from "./model/window-transfer";
@@ -560,7 +556,6 @@ import {
 import {
   createFamiliar,
   findFamiliar,
-  familiarWorksOn,
   isFamiliarSession,
   listFamiliars,
   loadOpenFamiliar,
@@ -619,12 +614,10 @@ import {
   tabCommandKeybinding,
 } from "@/features/workspace/model/tab-keys";
 import {
-  cachedRemoteSessionSummary,
   OPEN_CONNECTIONS_EVENT,
   OPEN_REMOTE_PROJECT_EVENT,
   rememberRemoteSession,
   REMOTE_HISTORY_UPDATED,
-  remoteSessionFor,
   remoteTabCwd,
 } from "@/features/connections/model/connections";
 import type { HostSession } from "@/domain/remote/protocol";
@@ -775,37 +768,6 @@ const NO_TITLE_TABS: [] = [];
 /** In-app confirm. `window.confirm` is swallowed when a macOS menu accelerator fires. */
 function confirmDiscardUnsaved(message: string): Promise<boolean> {
   return confirmApp(message, { kind: "warning" });
-}
-
-function titleTabsEqual(a: TitleTab[], b: TitleTab[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((tab, index) => {
-    const other = b[index];
-    return (
-      other != null &&
-      tab.id === other.id &&
-      tab.appView === other.appView &&
-      tab.familiar?.mascot === other.familiar?.mascot &&
-      tab.familiar?.color === other.familiar?.color &&
-      tab.familiar?.status === other.familiar?.status &&
-      tab.project === other.project &&
-      tab.title === other.title &&
-      tab.sessionCount === other.sessionCount &&
-      tab.dirty === other.dirty &&
-      tab.more.join("\u0000") === other.more.join("\u0000") &&
-      tab.harnesses.join("\u0000") === other.harnesses.join("\u0000") &&
-      tab.busyHarnesses.join("\u0000") === other.busyHarnesses.join("\u0000") &&
-      (tab.doneHarnesses ?? []).join("\u0000") ===
-        (other.doneHarnesses ?? []).join("\u0000") &&
-      tab.files.join("\u0000") === other.files.join("\u0000") &&
-      tab.multiPane === other.multiPane &&
-      tab.fileFocused === other.fileFocused &&
-      tab.blank === other.blank &&
-      tab.terminal === other.terminal &&
-      tab.previewFileId === other.previewFileId &&
-      tab.groupId === other.groupId
-    );
-  });
 }
 
 // Register capabilities before composer hooks choose their discovery strategy.
@@ -973,11 +935,15 @@ function Workspace({
   const [composerFocusToken, setComposerFocusToken] = useState(0);
   /** Tab id -> project name, kept in sync with the rendered title tabs. */
   const tabProjectsRef = useRef(new Map<string, string>());
-  const displayedTabNavigation = useRef<{
-    tabs: readonly TitleTab[];
-    activeId: string;
-    select?: (id: string) => void;
-  }>({ tabs: [], activeId: "" });
+  const displayedTabNavigation = useRef<DisplayedTabNavigation>({
+    tabs: [],
+    activeId: "",
+  });
+  const visibleTabsRef = useRef<VisibleTabs>({
+    insetLayout: false,
+    activeTabId: "",
+    titleTabs: [],
+  });
   const projectOfTab = useCallback(
     (id: string) => tabProjectsRef.current.get(id),
     [],
@@ -1010,12 +976,6 @@ function Workspace({
   } = localSurfaces;
   const inspectedWorkerId = useWorkspaceField(workspaceStore, "inspectedWorkerId");
   const workerDetailRequest = useWorkspaceField(workspaceStore, "workerDetailRequest");
-  const [openAppViews, setOpenAppViews] = useState<AppView[]>([]);
-  // Familiars open as title tabs in the inset layout, by Familiar id.
-  const [openFamiliarTabs, setOpenFamiliarTabs] = useState<string[]>([]);
-  const [titleTabOrder, setTitleTabOrder] = useState(() =>
-    tabs.map((tab) => tab.id),
-  );
   const activeAppView: AppView | undefined = searchViewOpen
     ? "search"
     : inboxViewOpen
@@ -1025,11 +985,6 @@ function Workspace({
         : automationsSurfaceOpen
           ? "automations"
           : undefined;
-  const rememberAppView = useCallback((view: AppView) => {
-    setOpenAppViews((current) =>
-      current.includes(view) ? current : [...current, view],
-    );
-  }, []);
   const orchestrationRuns = useSyncExternalStore(
     orchestrator.subscribe,
     orchestrator.snapshot,
@@ -1142,26 +1097,15 @@ function Workspace({
     () => true,
   );
   const familiarsSnap = useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
-  // A deleted Familiar, or Familiars turned off, drop their tabs.
-  const shownFamiliarTabs = useMemo(
-    () =>
-      insetLayout && familiarsEnabled
-        ? openFamiliarTabs.filter((familiarId) => findFamiliar(familiarId))
-        : [],
-    // The roster is read through its snapshot.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [insetLayout, familiarsEnabled, openFamiliarTabs, familiarsSnap],
-  );
-  useLayoutEffect(() => {
-    if (!insetLayout) return;
-    setTitleTabOrder((order) =>
-      reconcileTitleTabOrder(order, [
-        ...tabs.map((tab) => tab.id),
-        ...openAppViews.map(appViewTabId),
-        ...shownFamiliarTabs.map(familiarTabId),
-      ]),
-    );
-  }, [insetLayout, tabs, openAppViews, shownFamiliarTabs]);
+  const {
+    openAppViews,
+    setOpenAppViews,
+    setOpenFamiliarTabs,
+    titleTabOrder,
+    setTitleTabOrder,
+    rememberAppView,
+    shownFamiliarTabs,
+  } = useTitleTabState(tabs, insetLayout, familiarsEnabled, familiarsSnap);
   /** A Familiar hides the terminal, so reaching for one leaves it. */
   const leaveCoveringFamiliar = useCallback(() => {
     if (workspaceStore.getState().familiarViewId) closeFamiliarView();
@@ -2835,13 +2779,28 @@ function Workspace({
         revealLinkedSessionUpdate(sessionId, update),
     }),
   );
+  // These depend on render state; stable flows reach the current ones here.
+  const renderedTabActions = useRef({
+    onNext,
+    onPrev,
+    onActivate,
+    onCloseFocused,
+    onSelectRemoteSession,
+  });
+  renderedTabActions.current = {
+    onNext,
+    onPrev,
+    onActivate,
+    onCloseFocused,
+    onSelectRemoteSession,
+  };
   const sessionListDeps = useStableFlow(
     (): SessionListDeps => ({
       ...paneDeps,
       navigationIds: sessionNavigationIdsRef,
       selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
       selectRemoteSession: (project, remoteSessionId) =>
-        onSelectRemoteSession(project, remoteSessionId),
+        renderedTabActions.current.onSelectRemoteSession(project, remoteSessionId),
       prefetch: (sessionId) => onPrefetchHistorySession(sessionId),
     }),
   );
@@ -5174,59 +5133,6 @@ function Workspace({
     [onOpenApprovalSession],
   );
 
-  const orderedTitleTabs: TitleTab[] = orderByIds(
-    [
-      ...deckProjectTabs.map((tab) =>
-        toTitleTab(tab, sessions, dirtyFiles, unseenFinishedIds),
-      ),
-      ...(insetLayout
-        ? openAppViews
-            .filter((view) => view !== "notes" || notesEnabled)
-            .map((view): TitleTab => ({
-              id: appViewTabId(view),
-              appView: view,
-              project: "",
-              title: APP_VIEW_LABELS[view],
-              more: [],
-              sessionCount: 0,
-              harnesses: [],
-              busyHarnesses: [],
-              files: [],
-            }))
-        : []),
-      ...shownFamiliarTabs.flatMap((familiarId): TitleTab[] => {
-        const familiar = findFamiliar(familiarId);
-        // Like the sidebar's Familiars, a Familiar's tab shows in the projects it
-        // works on; it keeps its place for when the project comes back.
-        if (!familiar || !familiarWorksOn(familiar, sidebarCwd)) return [];
-        const look = familiarLook(familiar);
-        const session = familiar.sessionId
-          ? sessions.find((entry) => entry.id === familiar.sessionId)
-          : undefined;
-        return [
-          {
-            id: familiarTabId(familiarId),
-            familiar: {
-              mascot: look.mascot,
-              color: look.color,
-              status: session ? familiarState(session).status : "idle",
-            },
-            project: "",
-            title: look.name,
-            more: [],
-            sessionCount: 0,
-            harnesses: [],
-            busyHarnesses: [],
-            files: [],
-          },
-        ];
-      }),
-    ],
-    insetLayout ? titleTabOrder : [],
-  );
-  // Like a browser, a Familiar or app tab can be the only tab. The project's lone
-  // blank session tab stays underneath, out of the strip, until closing the
-  // last of them shows it again.
   const shownViewTabId = settingsOpen
     ? undefined
     : familiarCovers
@@ -5234,17 +5140,19 @@ function Workspace({
       : activeAppView
         ? appViewTabId(activeAppView)
         : undefined;
-  const placeholderTab =
-    insetLayout &&
-    shownViewTabId &&
-    orderedTitleTabs.some((tab) => tab.id === shownViewTabId) &&
-    deckProjectTabs.length === 1 &&
-    isBlankWorkspaceTab(deckProjectTabs[0], sessions)
-      ? deckProjectTabs[0].id
-      : undefined;
-  const nextTitleTabs = placeholderTab
-    ? orderedTitleTabs.filter((tab) => tab.id !== placeholderTab)
-    : orderedTitleTabs;
+  const nextTitleTabs = titleTabList({
+    projectTabs: deckProjectTabs,
+    sessions,
+    dirtyFiles,
+    unseenFinishedIds,
+    insetLayout,
+    openAppViews,
+    notesEnabled,
+    familiarTabs: shownFamiliarTabs,
+    sidebarCwd,
+    order: titleTabOrder,
+    shownViewTabId,
+  });
   tabProjectsRef.current = new Map(
     nextTitleTabs.map((tab) => [tab.id, tab.project]),
   );
@@ -5598,40 +5506,50 @@ function Workspace({
     () => onOpenLocalSurface("usage"),
     [onOpenLocalSurface],
   );
-  const onSelectTitleTab = useCallback(
-    (id: string) => {
-      const familiarId = familiarForTab(id);
-      if (familiarId) {
-        void onOpenFamiliar(familiarId);
-        return;
-      }
-      const view = appViewForTab(id);
-      if (view) {
-        const open = {
-          search: onOpenSearch,
-          inbox: onOpenInbox,
-          notes: onOpenNotes,
-          automations: onOpenAutomations,
-        };
-        open[view]();
-        return;
-      }
-      setSearchViewOpen(false);
-      setSettingsOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      activateTab(id);
-    },
-    [
-      activateTab,
-      onOpenFamiliar,
-      onOpenSearch,
-      onOpenInbox,
-      onOpenNotes,
-      onOpenAutomations,
-    ],
+  const displayedTabsDeps = useStableFlow(
+    (): DisplayedTabsDeps => ({
+      store: workspaceStore,
+      navigation: displayedTabNavigation,
+      visible: () => visibleTabsRef.current,
+      activeTabIdRef,
+      setOpenAppViews,
+      setOpenFamiliarTabs,
+      setTitleTabOrder,
+      setAutomationsViewOpen,
+      openFamiliar: (familiarId) => onOpenFamiliar(familiarId),
+      openAppView: (view) => openAppView(surfaceDeps, view),
+      activateTab: (tabId) => activateTab(tabId),
+      closeFamiliarView: () => closeFamiliarView(),
+      workspace: {
+        closeTitleTab: (tabId) => onCloseTitleTab(tabId),
+        closeTabs: (ids, fallbackId) => onCloseTabs(ids, fallbackId),
+        closeEveryTab: (ids) => onCloseEveryTab(ids),
+        reorderTabs: (ids, movedId) => onReorderTabs(ids, movedId),
+        closeFocused: () => renderedTabActions.current.onCloseFocused(),
+        next: () => renderedTabActions.current.onNext(),
+        prev: () => renderedTabActions.current.onPrev(),
+        activate: (slot) => renderedTabActions.current.onActivate(slot),
+        closeOtherTabs: () => onCloseOtherTabs(),
+        closeAllTabs: () => onCloseAllTabs(),
+      },
+    }),
   );
+  const displayedTabs = useStableFlow(() => createDisplayedTabs(displayedTabsDeps));
+  const visibleTabShortcuts = useStableFlow(() =>
+    createVisibleTabShortcuts(displayedTabsDeps, displayedTabs),
+  );
+  const onSelectTitleTab = displayedTabs.selectTitleTab;
+  const onCloseDisplayedTab = displayedTabs.closeDisplayedTab;
+  const onCloseDisplayedTabs = displayedTabs.closeDisplayedTabs;
+  const onCloseAllDisplayedTabs = displayedTabs.closeAllDisplayedTabs;
+  const onReorderDisplayedTabs = displayedTabs.reorderDisplayedTabs;
+  const {
+    closeVisibleTab: onCloseVisibleTab,
+    cycleVisibleTab: onCycleVisibleTab,
+    activateVisibleTab: onActivateVisibleTab,
+    closeOtherVisibleTabs: onCloseOtherVisibleTabs,
+    closeAllVisibleTabs: onCloseAllVisibleTabs,
+  } = visibleTabShortcuts;
 
   displayedTabNavigation.current = {
     tabs: insetLayout ? titleTabs : [],
@@ -5645,199 +5563,13 @@ function Workspace({
     select: onSelectTitleTab,
   };
 
-  const onCloseAppView = useCallback((view: AppView, selectNeighbor = true) => {
-    const navigation = displayedTabNavigation.current;
-    const nextId = selectNeighbor
-      ? nextDisplayedTabAfterClose(
-          navigation.tabs,
-          navigation.activeId,
-          appViewTabId(view),
-        )
-      : undefined;
-    startTransition(() => {
-      setOpenAppViews((current) => current.filter((entry) => entry !== view));
-      setTitleTabOrder((current) =>
-        current.filter((id) => id !== appViewTabId(view)),
-      );
-      if (view === "search") setSearchViewOpen(false);
-      if (view === "inbox") setInboxViewOpen(false);
-      if (view === "notes") setNotesViewOpen(false);
-      if (view === "automations") setAutomationsViewOpen(false);
-      if (nextId) navigation.select?.(nextId);
-    });
-  }, []);
-  /** Closing a Familiar's tab puts its view away when it is the one shown. */
-  const onCloseFamiliarTab = useCallback(
-    (familiarId: string, selectNeighbor = true) => {
-      const navigation = displayedTabNavigation.current;
-      const id = familiarTabId(familiarId);
-      const showing = navigation.activeId === id;
-      const nextId =
-        selectNeighbor && showing
-          ? nextDisplayedTabAfterClose(navigation.tabs, navigation.activeId, id)
-          : undefined;
-      startTransition(() => {
-        setOpenFamiliarTabs((current) =>
-          current.filter((entry) => entry !== familiarId),
-        );
-        setTitleTabOrder((current) => current.filter((entry) => entry !== id));
-        if (nextId) navigation.select?.(nextId);
-        else if (showing) closeFamiliarView();
-      });
-    },
-    [closeFamiliarView],
-  );
-  const closeViewTab = useCallback(
-    (id: string, selectNeighbor?: boolean) => {
-      const view = appViewForTab(id);
-      if (view) onCloseAppView(view, selectNeighbor);
-      const familiarId = familiarForTab(id);
-      if (familiarId) onCloseFamiliarTab(familiarId, selectNeighbor);
-    },
-    [onCloseAppView, onCloseFamiliarTab],
-  );
-  const onCloseDisplayedTab = useCallback(
-    (id: string) => {
-      if (isViewTab(id)) closeViewTab(id);
-      else onCloseTitleTab(id);
-    },
-    [closeViewTab, onCloseTitleTab],
-  );
-  const onCloseDisplayedTabs = useCallback(
-    (ids: string[], fallbackId: string) => {
-      const navigation = displayedTabNavigation.current;
-      const closing = new Set(ids);
-      const workspaceIds = ids.filter((id) => !isViewTab(id));
-      startTransition(() => {
-        for (const id of ids) {
-          if (isViewTab(id)) closeViewTab(id, false);
-        }
-        if (workspaceIds.length > 0) {
-          // Kept from a view tab, the workspace beneath falls back to one of
-          // this project's shown tabs that stays open; with none left, Close
-          // All keeps a blank one rather than reaching into another project.
-          const workspaceFallback = isViewTab(fallbackId)
-            ? [
-                activeTabIdRef.current,
-                ...navigation.tabs.map((tab) => tab.id),
-              ].find(
-                (id) =>
-                  !closing.has(id) &&
-                  !isViewTab(id) &&
-                  navigation.tabs.some((tab) => tab.id === id),
-              )
-            : fallbackId;
-          if (workspaceFallback) onCloseTabs(workspaceIds, workspaceFallback);
-          else onCloseEveryTab(workspaceIds);
-        }
-        if (closing.has(navigation.activeId)) navigation.select?.(fallbackId);
-      });
-    },
-    [closeViewTab, onCloseTabs, onCloseEveryTab],
-  );
-  const onCloseAllDisplayedTabs = useCallback(
-    (ids: readonly string[]) => {
-      startTransition(() => {
-        for (const id of ids) {
-          if (isViewTab(id)) closeViewTab(id, false);
-        }
-        onCloseEveryTab(ids.filter((id) => !isViewTab(id)));
-      });
-    },
-    [closeViewTab, onCloseEveryTab],
-  );
-  const onReorderDisplayedTabs = useCallback(
-    (ids: string[], movedId?: string) => {
-      setTitleTabOrder((current) =>
-        mergeOrderedSubset(
-          current.map((id) => ({ id })),
-          ids.map((id) => ({ id })),
-        ).map((tab) => tab.id),
-      );
-      onReorderTabs(
-        ids.filter((id) => !isViewTab(id)),
-        isViewTab(movedId ?? "") ? undefined : movedId,
-      );
-    },
-    [onReorderTabs],
-  );
-  const onCloseVisibleTab = useCallback(() => {
-    if (insetLayout && familiarCovers && familiarViewTabId) closeViewTab(familiarViewTabId);
-    else if (insetLayout && activeAppView) onCloseAppView(activeAppView);
-    else onCloseFocused();
-  }, [
+  visibleTabsRef.current = {
     insetLayout,
-    familiarCovers,
-    familiarViewTabId,
+    familiarTabId: familiarCovers ? familiarViewTabId : undefined,
     activeAppView,
-    closeViewTab,
-    onCloseAppView,
-    onCloseFocused,
-  ]);
-  const onCycleVisibleTab = useCallback(
-    (delta: number) => {
-      if (!insetLayout) {
-        (delta > 0 ? onNext : onPrev)();
-        return;
-      }
-      const current =
-        familiarCovers && familiarViewTabId
-          ? familiarViewTabId
-          : activeAppView
-            ? appViewTabId(activeAppView)
-            : activeTabId;
-      const index = titleTabs.findIndex((tab) => tab.id === current);
-      const next =
-        titleTabs[(index + delta + titleTabs.length) % titleTabs.length];
-      if (next) onSelectTitleTab(next.id);
-    },
-    [
-      insetLayout,
-      familiarCovers,
-      familiarViewTabId,
-      activeAppView,
-      activeTabId,
-      titleTabs,
-      onSelectTitleTab,
-      onNext,
-      onPrev,
-    ],
-  );
-  const onActivateVisibleTab = useCallback(
-    (slot: number) => {
-      if (!insetLayout) {
-        onActivate(slot);
-        return;
-      }
-      const tab = slot < 0 ? titleTabs[titleTabs.length - 1] : titleTabs[slot];
-      if (tab) onSelectTitleTab(tab.id);
-    },
-    [insetLayout, titleTabs, onSelectTitleTab, onActivate],
-  );
-
-  // The inset layout's shortcuts close every kind of title tab, like its
-  // tab menu.
-  const onCloseOtherVisibleTabs = useCallback(() => {
-    if (!insetLayout) {
-      onCloseOtherTabs();
-      return;
-    }
-    const { tabs: shown, activeId } = displayedTabNavigation.current;
-    if (!shown.some((tab) => tab.id === activeId)) return;
-    onCloseDisplayedTabs(
-      shown.filter((tab) => tab.id !== activeId).map((tab) => tab.id),
-      activeId,
-    );
-  }, [insetLayout, onCloseOtherTabs, onCloseDisplayedTabs]);
-  const onCloseAllVisibleTabs = useCallback(() => {
-    if (!insetLayout) {
-      onCloseAllTabs();
-      return;
-    }
-    onCloseAllDisplayedTabs(
-      displayedTabNavigation.current.tabs.map((tab) => tab.id),
-    );
-  }, [insetLayout, onCloseAllTabs, onCloseAllDisplayedTabs]);
+    activeTabId,
+    titleTabs,
+  };
 
   const actions = useRef({
     onNewFocused,
@@ -7691,20 +7423,6 @@ function Workspace({
     </SessionStateContext.Provider>
   );
 }
-function conversationTitle(session: Session): string {
-  const hostId = isRemoteProjectPath(session.cwd)
-    ? remoteSessionFor(session.id)
-    : undefined;
-  const remote = hostId
-    ? cachedRemoteSessionSummary(session.cwd, hostId)
-    : undefined;
-  const title = sessionDisplayTitle(
-    remote?.title ?? session.title,
-    remote?.harness ?? session.harness,
-  );
-  return title === "New session" ? "" : title;
-}
-
 function providerSignInRequestKey(session: Session): string {
   const lastBlockId = session.blocks[session.blocks.length - 1]?.id;
   return `${session.id}:${lastUserBlockId(session) ?? lastBlockId ?? "auth"}`;
@@ -7731,129 +7449,6 @@ function selectedCommitSha(tab: WorkspaceTab): string | undefined {
     const file = pane.files.find((entry) => entry.id === pane.activeFileId);
     if (file && isCommitTab(file)) return file.commit.sha;
   }
-}
-
-function toTitleTab(
-  tab: WorkspaceTab,
-  sessions: Session[],
-  dirtyFiles: Set<string>,
-  unseenFinishedIds: ReadonlySet<string>,
-): TitleTab {
-  const paneIds = leafIds(tab.layout);
-  const multiPane = paneIds.length > 1;
-  const tabSessions = paneIds
-    .map((id) => sessions.find((session) => session.id === id))
-    .filter((session): session is Session => session != null);
-  const sessionFocused = tabSessions.some(
-    (session) => session.id === tab.focusedId,
-  );
-  const fileFocused =
-    !sessionFocused &&
-    (tab.editorPanes.some((pane) => pane.id === tab.focusedId) ||
-      (tab.terminalPanes ?? []).some((pane) => pane.id === tab.focusedId));
-  const focused =
-    sessions.find((session) => session.id === tab.focusedId) ?? tabSessions[0];
-
-  const seen = new Set<HarnessId>();
-  const harnesses: HarnessId[] = [];
-  const busySeen = new Set<HarnessId>();
-  const busyHarnesses: HarnessId[] = [];
-  const doneSeen = new Set<HarnessId>();
-  const doneHarnesses: HarnessId[] = [];
-  const ordered = focused
-    ? [focused, ...tabSessions.filter((session) => session.id !== focused.id)]
-    : tabSessions;
-  for (const session of ordered) {
-    if (
-      session.busy &&
-      !sessionNeedsInput(session) &&
-      !busySeen.has(session.harness)
-    ) {
-      busySeen.add(session.harness);
-      busyHarnesses.push(session.harness);
-    }
-    if (unseenFinishedIds.has(session.id) && !doneSeen.has(session.harness)) {
-      doneSeen.add(session.harness);
-      doneHarnesses.push(session.harness);
-    }
-    if (seen.has(session.harness)) continue;
-    seen.add(session.harness);
-    harnesses.push(session.harness);
-  }
-
-  const files: string[] = [];
-  const seenKeys = new Set<string>();
-  const pushFile = (file: FilePaneTab) => {
-    const key = file.terminal
-      ? `terminal:${file.id}`
-      : file.plan
-        ? `plan:${file.plan.blockId}`
-        : file.releaseNotes
-          ? `release-notes:${file.releaseNotes.version}`
-          : file.path;
-    if (seenKeys.has(key)) return;
-    seenKeys.add(key);
-    files.push(
-      file.plan?.title?.trim() ||
-        (file.releaseNotes
-          ? releaseNotesTitle(file.releaseNotes.version)
-          : file.terminal
-            ? terminalTabLabel(file)
-            : basename(file.path)),
-    );
-  };
-  const focusedPane =
-    tab.editorPanes.find((pane) => pane.id === tab.focusedId) ??
-    (tab.terminalPanes ?? []).find((pane) => pane.id === tab.focusedId);
-  const otherPanes = [
-    ...tab.editorPanes.filter((pane) => pane.id !== focusedPane?.id),
-    ...(tab.terminalPanes ?? []).filter((pane) => pane.id !== focusedPane?.id),
-  ];
-  const panes = focusedPane ? [focusedPane, ...otherPanes] : otherPanes;
-  for (const pane of panes) {
-    const active = pane.files.find((file) => file.id === pane.activeFileId);
-    if (active) pushFile(active);
-  }
-  for (const pane of panes) {
-    for (const file of pane.files) pushFile(file);
-  }
-
-  const more = tabSessions
-    .filter((session) => session.id !== focused?.id)
-    .map(conversationTitle)
-    .filter(Boolean);
-
-  const hasTerminal = (tab.terminalPanes ?? []).some((pane) =>
-    pane.files.some(isTerminalTab),
-  );
-  const focusedFile = focusedFileTab(tab);
-
-  return {
-    id: tab.id,
-    project: focused
-      ? projectName(focused.cwd)
-      : focusedFile
-        ? projectName(focusedFile.projectCwd ?? focusedFile.cwd)
-        : "~",
-    title: focused ? conversationTitle(focused) : "",
-    more,
-    sessionCount: tabSessions.length,
-    harnesses,
-    busyHarnesses,
-    doneHarnesses,
-    files,
-    multiPane,
-    fileFocused,
-    blank: isBlankWorkspaceTab(tab, sessions),
-    dirty: tab.editorPanes.some((pane) =>
-      pane.files.some(
-        (file) => isFilesystemTab(file) && dirtyFiles.has(file.id),
-      ),
-    ),
-    terminal: hasTerminal && harnesses.length === 0,
-    previewFileId: previewWorkspaceFile(tab)?.id,
-    groupId: tab.groupId,
-  };
 }
 
 function sameSettings(

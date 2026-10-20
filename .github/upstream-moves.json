@@ -1713,6 +1713,48 @@
       },
       {
         "names": [
+          "toTitleTab, conversationTitle"
+        ],
+        "target": "src/app/workspace/title-tabs/to-title-tab.ts"
+      },
+      {
+        "names": [
+          "titleTabsEqual"
+        ],
+        "target": "src/app/workspace/title-tabs/title-tabs-equal.ts"
+      },
+      {
+        "names": [
+          "orderedTitleTabs, placeholderTab, nextTitleTabs (App: titleTabList)"
+        ],
+        "target": "src/app/workspace/title-tabs/title-tab-list.ts"
+      },
+      {
+        "names": [
+          "onSelectTitleTab, onCloseAppView, onCloseFamiliarTab, closeViewTab, onCloseDisplayedTab(s), onCloseAllDisplayedTabs, onReorderDisplayedTabs"
+        ],
+        "target": "src/app/workspace/title-tabs/displayed-tabs.ts"
+      },
+      {
+        "names": [
+          "onCloseVisibleTab, onCycleVisibleTab, onActivateVisibleTab, onCloseOtherVisibleTabs, onCloseAllVisibleTabs"
+        ],
+        "target": "src/app/workspace/title-tabs/visible-tab-shortcuts.ts"
+      },
+      {
+        "names": [
+          "displayedTabNavigation type, displayed tab deps"
+        ],
+        "target": "src/app/workspace/title-tabs/displayed-tabs-deps.ts"
+      },
+      {
+        "names": [
+          "openAppViews, openFamiliarTabs, titleTabOrder, rememberAppView, shownFamiliarTabs, title tab order effect"
+        ],
+        "target": "src/app/workspace/hooks/use-title-tab-state.ts"
+      },
+      {
+        "names": [
           "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
         ],
         "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
