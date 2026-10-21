@@ -3,6 +3,7 @@ import type { Session } from "@/domain/session/session";
 import { requestTranscriptJump } from "@/features/sessions/model/transcript-jump";
 import type { AppView } from "@/features/workspace/model/app-view-tabs";
 import { AppViewSurface } from "@/features/workspace/ui/AppViewSurface";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
@@ -31,28 +32,8 @@ type Props = {
   inboxAsk: ReactNode;
   /** Rendered between the notes and automations views. */
   localSurfaces: ReactNode;
-  onToggleSidebar: () => void;
-  onOpenFile: SearchProps["onOpenFile"];
-  onOpenHistorySession: (sessionId: string) => unknown;
-  onOpenProject: SearchProps["onOpenProject"];
-  onLeaveSearch: () => void;
-  onLeaveNotes: () => void;
-  inbox: Pick<
-    InboxProps,
-    | "onClose"
-    | "onStart"
-    | "onAsk"
-    | "onAskRestart"
-    | "sessions"
-    | "repairSessions"
-    | "onRepairChecks"
-    | "onOpenSession"
-    | "onOpenIntegrations"
-  >;
-  automations: Pick<
-    AutomationsProps,
-    "onFocusAutomationConsumed" | "onClose" | "onLaunch" | "onOpenSession"
-  >;
+  inbox: Pick<InboxProps, "sessions" | "repairSessions">;
+  automations: Pick<AutomationsProps, "onFocusAutomationConsumed" | "onLaunch">;
 };
 
 /** Search, Inbox, Notes and Automations over the workspace. */
@@ -72,15 +53,12 @@ export function WorkspaceAppViews({
   automationsFocusId,
   inboxAsk,
   localSurfaces,
-  onToggleSidebar,
-  onOpenFile,
-  onOpenHistorySession,
-  onOpenProject,
-  onLeaveSearch,
-  onLeaveNotes,
   inbox,
   automations,
 }: Props) {
+  const handlers = useWorkspaceHandlers();
+  const { surfaces } = handlers;
+  const onToggleSidebar = handlers.navigation.toggleSidebar;
   const searchOpen = useWorkspaceField(store, "searchViewOpen");
   const searchFocusToken = useWorkspaceField(store, "searchViewFocusToken");
   const inboxOpen = useWorkspaceField(store, "inboxViewOpen");
@@ -104,14 +82,14 @@ export function WorkspaceAppViews({
             focusToken={searchFocusToken}
             besideRail={besideRail}
             compactRail={compactRail}
-            onClose={onLeaveSearch}
+            onClose={surfaces.leaveSearch}
             onToggleSidebar={onToggleSidebar}
-            onOpenFile={onOpenFile}
+            onOpenFile={handlers.files.open}
             onOpenSession={(sessionId, blockId, query) => {
               if (blockId) requestTranscriptJump(sessionId, blockId, query);
-              void onOpenHistorySession(sessionId);
+              void handlers.sessionOpeners.selectHistory(sessionId);
             }}
-            onOpenProject={onOpenProject}
+            onOpenProject={handlers.projects.select}
           />
         </AppViewSurface>
       ) : null}
@@ -120,6 +98,13 @@ export function WorkspaceAppViews({
         <AppViewSurface active={inboxOpen}>
           <InboxView
             {...inbox}
+            onClose={surfaces.leaveInbox}
+            onStart={handlers.inbox.start}
+            onAsk={handlers.inboxAsk.ask}
+            onAskRestart={handlers.inboxAsk.restart}
+            onRepairChecks={handlers.inbox.repairChecks}
+            onOpenSession={handlers.inbox.openSession}
+            onOpenIntegrations={surfaces.openInboxIntegrations}
             tabbed={insetLayout}
             active={inboxOpen}
             cwd={sidebarCwd}
@@ -142,7 +127,7 @@ export function WorkspaceAppViews({
             cwd={projectCwd}
             scopeProject={scopeProject}
             recents={recents}
-            onClose={onLeaveNotes}
+            onClose={surfaces.leaveNotes}
             onToggleSidebar={onToggleSidebar}
           />
         </AppViewSurface>
@@ -152,6 +137,8 @@ export function WorkspaceAppViews({
         <AppViewSurface active={automationsOpen}>
           <AutomationsView
             {...automations}
+            onClose={surfaces.leaveAutomations}
+            onOpenSession={surfaces.openConversation}
             tabbed={insetLayout}
             besideRail={besideRail}
             compactRail={compactRail}

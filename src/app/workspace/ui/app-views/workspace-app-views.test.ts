@@ -7,6 +7,7 @@ import { newDefaultSession } from "@/features/sessions/model/session";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { WorkspaceAppViews } from "./WorkspaceAppViews";
 
 type Seen = Record<string, Record<string, unknown> | undefined>;
@@ -33,7 +34,7 @@ type Props = ComponentProps<typeof WorkspaceAppViews>;
 let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
-const onOpenHistorySession = vi.fn();
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function mount(patch: Partial<Props> = {}) {
   const props: Props = {
@@ -52,32 +53,11 @@ function mount(patch: Partial<Props> = {}) {
     automationsFocusId: undefined,
     inboxAsk: createElement("i", { "data-inbox-ask": "" }),
     localSurfaces: createElement("i", { "data-local": "" }),
-    onToggleSidebar: () => {},
-    onOpenFile: () => {},
-    onOpenHistorySession,
-    onOpenProject: () => {},
-    onLeaveSearch: () => {},
-    onLeaveNotes: () => {},
-    inbox: {
-      onClose: () => {},
-      onStart: async () => {},
-      onAsk: async () => {},
-      onAskRestart: async () => {},
-      sessions: [],
-      repairSessions: new Map(),
-      onRepairChecks: () => {},
-      onOpenSession: () => {},
-      onOpenIntegrations: () => {},
-    },
-    automations: {
-      onFocusAutomationConsumed: () => {},
-      onClose: () => {},
-      onLaunch: () => {},
-      onOpenSession: () => {},
-    },
+    inbox: { sessions: [], repairSessions: new Map() },
+    automations: { onFocusAutomationConsumed: () => {}, onLaunch: () => {} },
     ...patch,
   };
-  act(() => root.render(createElement(WorkspaceAppViews, props)));
+  act(() => root.render(withWorkspaceHandlers(createElement(WorkspaceAppViews, props), handlers)));
 }
 
 beforeEach(() => {
@@ -85,6 +65,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
+  handlers = fakeWorkspaceHandlers();
   for (const key of Object.keys(seen)) delete seen[key];
 });
 
@@ -129,7 +110,28 @@ describe("WorkspaceAppViews", () => {
     const onOpenSession = seen.search?.onOpenSession as (id: string, block?: string, query?: string) => void;
     onOpenSession("chat", "b1", "needle");
     expect(jump).toHaveBeenCalledWith("chat", "b1", "needle");
-    expect(onOpenHistorySession).toHaveBeenCalledWith("chat");
+    expect(handlers.sessionOpeners.selectHistory).toHaveBeenCalledWith("chat");
+  });
+
+  it("takes each view's callbacks from the workspace handlers", () => {
+    store.setState({ searchViewOpen: true, inboxViewOpen: true, notesViewOpen: true });
+    mount({ automationsOpen: true });
+
+    expect(seen.search).toMatchObject({
+      onClose: handlers.surfaces.leaveSearch,
+      onOpenFile: handlers.files.open,
+      onToggleSidebar: handlers.navigation.toggleSidebar,
+    });
+    expect(seen.inbox).toMatchObject({
+      onClose: handlers.surfaces.leaveInbox,
+      onAsk: handlers.inboxAsk.ask,
+      onOpenSession: handlers.inbox.openSession,
+    });
+    expect(seen.notes?.onClose).toBe(handlers.surfaces.leaveNotes);
+    expect(seen.automations).toMatchObject({
+      onClose: handlers.surfaces.leaveAutomations,
+      onOpenSession: handlers.surfaces.openConversation,
+    });
   });
 
   it("hands the inbox's Ask host to the store", () => {

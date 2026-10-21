@@ -3321,28 +3321,10 @@ function Workspace({
                         taskBoard={taskBoard}
                       />
                     }
-                    onToggleSidebar={navigation.toggleSidebar}
-                    onOpenFile={fileActions.open}
-                    onOpenHistorySession={sessionOpeners.selectHistory}
-                    onOpenProject={projectActions.select}
-                    onLeaveSearch={surfaces.leaveSearch}
-                    onLeaveNotes={surfaces.leaveNotes}
-                    inbox={{
-                      onClose: surfaces.leaveInbox,
-                      onStart: inboxActions.start,
-                      onAsk: inboxAsk.ask,
-                      onAskRestart: inboxAsk.restart,
-                      sessions: inboxRelatedSessions,
-                      repairSessions,
-                      onRepairChecks: inboxActions.repairChecks,
-                      onOpenSession: inboxActions.openSession,
-                      onOpenIntegrations: surfaces.openInboxIntegrations,
-                    }}
+                    inbox={{ sessions: inboxRelatedSessions, repairSessions }}
                     automations={{
                       onFocusAutomationConsumed: onAutomationsFocusConsumed,
-                      onClose: surfaces.leaveAutomations,
                       onLaunch: (automation, run) => launchAutomation(automation, run, true),
-                      onOpenSession: surfaces.openConversation,
                     }}
                   />
                   <WorkspaceSettings
