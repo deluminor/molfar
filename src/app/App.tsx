@@ -3385,29 +3385,18 @@ function Workspace({
             </div>
           </div>
 
-          <WorkspacePickerDialogs
-            store={workspaceStore}
-            cwd={filesCwd}
-            openPaths={openFilePaths}
-            onOpenFile={fileActions.open}
-            onReload={navigation.reload}
-          />
+          <WorkspacePickerDialogs store={workspaceStore} cwd={filesCwd} openPaths={openFilePaths} />
           <WorkspaceNotices
             pressure={{
               sessions: sessionsRef,
-              onStopAgent: (id) => turnActions.stop(id, true),
-              onStopSession: turnActions.stop,
               onPressureChange: transcriptPool.setResourcePressure,
               chipHost: pressureChipHost,
               insetChip: insetLayout,
             }}
             approvalNotices={hiddenApprovalToasts}
-            onFocusApprovalSession={workerPanes.openSession}
-            onApproval={turnActions.approve}
             reminders={sessionReminders}
-            onOpenReminderSettings={surfaces.openReminderSettings}
           />
-          <WorkspaceDialogs store={workspaceStore} onOpenProject={projectActions.select} />
+          <WorkspaceDialogs store={workspaceStore} />
         </div>
         <TranscriptPoolOutlet pool={transcriptPool} />
       </OrchestrationWorkers.Provider>

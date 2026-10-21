@@ -5,28 +5,20 @@ import { ResourcePressureNotice } from "@/features/notifications/ui/ResourcePres
 import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
 import { ReminderNotices } from "@/features/sessions/ui/ReminderNotices";
 import { NewLayoutNotice } from "../../../shell/NewLayoutNotice";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { noticeStackOffset } from "./notice-stack";
 
 type ToastProps = ComponentProps<typeof ApprovalToasts>;
 
 type Props = {
-  pressure: ComponentProps<typeof ResourcePressureNotice>;
+  pressure: Omit<ComponentProps<typeof ResourcePressureNotice>, "onStopAgent" | "onStopSession">;
   approvalNotices: ToastProps["notices"];
-  onFocusApprovalSession: ToastProps["onFocusSession"];
-  onApproval: ToastProps["onApproval"];
   reminders: ReturnType<typeof useSessionReminders>;
-  onOpenReminderSettings: () => void;
 };
 
 /** The notices stacked down the window's top-right corner, reminders first. */
-export function WorkspaceNotices({
-  pressure,
-  approvalNotices,
-  onFocusApprovalSession,
-  onApproval,
-  reminders,
-  onOpenReminderSettings,
-}: Props) {
+export function WorkspaceNotices({ pressure, approvalNotices, reminders }: Props) {
+  const { turns, workerPanes, surfaces } = useWorkspaceHandlers();
   const [reminderHeight, setReminderHeight] = useState(0);
   const [harnessUpdateHeight, setHarnessUpdateHeight] = useState(0);
   const [newLayoutHeight, setNewLayoutHeight] = useState(0);
@@ -41,12 +33,16 @@ export function WorkspaceNotices({
         topOffset={noticeStackOffset([reminderHeight, harnessUpdateHeight])}
         onHeightChange={setNewLayoutHeight}
       />
-      <ResourcePressureNotice {...pressure} />
+      <ResourcePressureNotice
+        {...pressure}
+        onStopAgent={(id) => turns.stop(id, true)}
+        onStopSession={turns.stop}
+      />
       <ApprovalToasts
         notices={approvalNotices}
         topOffset={noticeStackOffset([reminderHeight, harnessUpdateHeight, newLayoutHeight])}
-        onFocusSession={onFocusApprovalSession}
-        onApproval={onApproval}
+        onFocusSession={workerPanes.openSession}
+        onApproval={turns.approve}
       />
       <ReminderNotices
         reminders={reminders.due}
@@ -55,7 +51,7 @@ export function WorkspaceNotices({
         onSnooze={reminders.schedule}
         onDismiss={reminders.cancel}
         onRetry={reminders.refresh}
-        onOpenSettings={onOpenReminderSettings}
+        onOpenSettings={surfaces.openReminderSettings}
         onHeightChange={setReminderHeight}
       />
     </>

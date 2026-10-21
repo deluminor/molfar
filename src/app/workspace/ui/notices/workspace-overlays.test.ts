@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { WorkspaceDialogs } from "./WorkspaceDialogs";
 import { WorkspaceNotices } from "./WorkspaceNotices";
 
@@ -51,6 +52,7 @@ type NoticesProps = ComponentProps<typeof WorkspaceNotices>;
 let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function heightSetter(name: string): (height: number) => void {
   return seen[name]?.onHeightChange as (height: number) => void;
@@ -61,6 +63,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
+  handlers = fakeWorkspaceHandlers();
   for (const key of Object.keys(seen)) delete seen[key];
 });
 
@@ -70,8 +73,6 @@ afterEach(() => {
 });
 
 describe("WorkspaceNotices", () => {
-  const onOpenReminderSettings = vi.fn();
-
   function mount() {
     const reminders = {
       due: [],
@@ -83,14 +84,14 @@ describe("WorkspaceNotices", () => {
     } as unknown as NoticesProps["reminders"];
     act(() =>
       root.render(
-        createElement(WorkspaceNotices, {
-          pressure: { sessions: { current: [] }, onStopAgent: () => {}, onStopSession: () => {} },
-          approvalNotices: [],
-          onFocusApprovalSession: () => {},
-          onApproval: () => {},
-          reminders,
-          onOpenReminderSettings,
-        }),
+        withWorkspaceHandlers(
+          createElement(WorkspaceNotices, {
+            pressure: { sessions: { current: [] } },
+            approvalNotices: [],
+            reminders,
+          }),
+          handlers,
+        ),
       ),
     );
   }
@@ -115,15 +116,25 @@ describe("WorkspaceNotices", () => {
     const openSettings = seen.reminders?.onOpenSettings as () => void;
     openSettings();
 
-    expect(onOpenReminderSettings).toHaveBeenCalled();
+    expect(handlers.surfaces.openReminderSettings).toHaveBeenCalled();
+  });
+
+  it("stops agents and sessions and answers approvals through the handlers", () => {
+    mount();
+
+    const stopAgent = seen.pressure?.onStopAgent as (id: string) => void;
+    stopAgent("worker-1");
+
+    expect(handlers.turns.stop).toHaveBeenCalledWith("worker-1", true);
+    expect(seen.pressure?.onStopSession).toBe(handlers.turns.stop);
+    expect(seen.toasts?.onFocusSession).toBe(handlers.workerPanes.openSession);
+    expect(seen.toasts?.onApproval).toBe(handlers.turns.approve);
   });
 });
 
 describe("WorkspaceDialogs", () => {
-  const onOpenProject = vi.fn();
-
   function mount() {
-    act(() => root.render(createElement(WorkspaceDialogs, { store, onOpenProject })));
+    act(() => root.render(withWorkspaceHandlers(createElement(WorkspaceDialogs, { store }), handlers)));
   }
 
   it("shows nothing until the store asks for a dialog", () => {
@@ -155,7 +166,7 @@ describe("WorkspaceDialogs", () => {
     const openRemote = seen.remote?.onOpen as (key: string) => void;
     act(() => openRemote("ssh://box/work"));
 
-    expect(onOpenProject).toHaveBeenCalledWith("ssh://box/work");
+    expect(handlers.projects.select).toHaveBeenCalledWith("ssh://box/work");
     expect(store.getState().remoteProjectDialogOpen).toBe(false);
   });
 });

@@ -1,17 +1,18 @@
 import type { ComponentProps } from "react";
 import { FilePicker } from "@/features/files/ui/FilePicker";
 import { DeleteSessionDialog } from "@/features/sessions/ui/DeleteSessionDialog";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
 
-type Props = Pick<ComponentProps<typeof FilePicker>, "cwd" | "openPaths" | "onOpenFile"> & {
+type Props = Pick<ComponentProps<typeof FilePicker>, "cwd" | "openPaths"> & {
   store: WorkspaceStore;
-  onReload: () => void;
 };
 
 /** The Go to File picker and the delete-session confirmation, while the store has them open. */
-export function WorkspacePickerDialogs({ store, onReload, ...pickerProps }: Props) {
+export function WorkspacePickerDialogs({ store, ...pickerProps }: Props) {
+  const { files, navigation } = useWorkspaceHandlers();
   const filePickerOpen = useWorkspaceField(store, "filePickerOpen");
   const initialQuery = useWorkspaceField(store, "filePickerInitialQuery");
   const resetToken = useWorkspaceField(store, "filePickerResetToken");
@@ -19,7 +20,7 @@ export function WorkspacePickerDialogs({ store, onReload, ...pickerProps }: Prop
   const { setFilePickerOpen, setSessionDeleteDialog } = useWorkspaceActions(store);
 
   const onRunAction = (id: string) => {
-    if (id === "reload") onReload();
+    if (id === "reload") navigation.reload();
   };
   const onClosePicker = () => setFilePickerOpen(false);
 
@@ -28,6 +29,7 @@ export function WorkspacePickerDialogs({ store, onReload, ...pickerProps }: Prop
       {filePickerOpen ? (
         <FilePicker
           {...pickerProps}
+          onOpenFile={files.open}
           key={resetToken}
           open
           initialQuery={initialQuery}

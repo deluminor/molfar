@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { WorkspacePickerDialogs } from "./WorkspacePickerDialogs";
 
 type Seen = Record<string, unknown>;
@@ -28,18 +29,15 @@ vi.mock("@/features/sessions/ui/DeleteSessionDialog", () => ({
 
 let root: Root;
 let store: WorkspaceStore;
-const onReload = vi.fn();
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function mount(): void {
   act(() =>
     root.render(
-      createElement(WorkspacePickerDialogs, {
-        store,
-        cwd: "/work/app",
-        openPaths: [],
-        onOpenFile: vi.fn(),
-        onReload,
-      }),
+      withWorkspaceHandlers(
+        createElement(WorkspacePickerDialogs, { store, cwd: "/work/app", openPaths: [] }),
+        handlers,
+      ),
     ),
   );
 }
@@ -50,7 +48,7 @@ beforeEach(() => {
   store = createWorkspaceStore(testWorkspaceState());
   seen.picker = undefined;
   seen.dialog = undefined;
-  onReload.mockClear();
+  handlers = fakeWorkspaceHandlers();
 });
 
 afterEach(() => {
@@ -72,7 +70,8 @@ describe("WorkspacePickerDialogs", () => {
     runAction("reload");
     act(() => close());
 
-    expect(onReload).toHaveBeenCalledTimes(1);
+    expect(handlers.navigation.reload).toHaveBeenCalledTimes(1);
+    expect(seen.picker?.onOpenFile).toBe(handlers.files.open);
     expect(store.getState().filePickerOpen).toBe(false);
   });
 
