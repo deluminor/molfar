@@ -59,6 +59,10 @@ export async function renderApp(
     otherProjects?: string[];
     /** localStorage entries (settings) present at launch. */
     storage?: Record<string, string>;
+    /** Boots as `main.tsx` does: the saved workspace is loaded and passed to App. */
+    boot?: boolean;
+    /** When boot is done; a visible composer unless a view covers the workspace. */
+    ready?: (host: HTMLElement) => boolean;
   } = {},
 ): Promise<AppHarness> {
   vi.resetModules();
@@ -92,6 +96,9 @@ export async function renderApp(
   }
 
   const { default: App } = await import("../../App");
+  const props = options.boot
+    ? await (await import("../../model/app-lifecycle")).loadBootWorkspace()
+    : {};
   const registry = await import("@/integrations/harness/core/registry");
   const harness = createFakeHarness(options.harness ?? "cursor");
   registry.registerHarness(harness.adapter);
@@ -100,7 +107,7 @@ export async function renderApp(
   document.body.append(host);
   const root: Root = createRoot(host);
   await act(async () => {
-    root.render(createElement(App, {}));
+    root.render(createElement(App, props));
   });
 
   const settle = async (ms = 50) => {
@@ -124,7 +131,7 @@ export async function renderApp(
     ].find((candidate) => !candidate.closest('[aria-hidden="true"]'));
 
   // Booting is IPC-driven and its timing depends on machine load.
-  await until(() => !!visibleComposer());
+  await until(() => (options.ready ? options.ready(host) : !!visibleComposer()));
   await settle();
 
   return {
