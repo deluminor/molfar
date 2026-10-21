@@ -40,6 +40,12 @@ function mount(overrides: Partial<Props> = {}, handlers = fakeWorkspaceHandlers(
     tab: "files",
     rightPanel,
     localSurfaces: { active: null, visible: {}, onOpen: () => {}, badges: {} },
+    cwd: "~",
+    gitCwd: "~",
+    liveSessions: [],
+    tabWorkspace: () => null,
+    workspaceSwitch: { pending: null, error: null, revision: 0 },
+    unseenFamiliarReplies: new Map(),
     ...overrides,
   } as unknown as Props;
   act(() => root.render(withWorkspaceHandlers(createElement(WorkspaceSidebar, props), handlers)));
@@ -135,6 +141,27 @@ describe("WorkspaceSidebar", () => {
     expect(store.getState().filesSearchOpen).toBe(true);
     expect(store.getState().updateNotice).toBeNull();
     expect(seen.props?.filesSearchOpen).toBe(true);
+  });
+
+  it("marks the project's history state and its pending or failed workspace switch", () => {
+    store.setState({ historyErrorCwd: "/work/demo" });
+    const workspaceSwitch = {
+      pending: { project: "/work/demo" },
+      error: { project: "/work/demo", message: "No such worktree" },
+      revision: 0,
+    };
+    mount({ cwd: "/work/demo", gitCwd: "", workspaceSwitch } as Partial<Props>);
+
+    expect(seen.props?.status).toBe("error");
+    expect(seen.props?.pending).toBe(false);
+    expect(seen.props?.workspaceSwitchPending).toBe(true);
+    expect(seen.props?.workspaceSwitchError).toBe("No such worktree");
+
+    act(() => store.setState({ historyErrorCwd: null }));
+    mount({ cwd: "/work/other", gitCwd: "" } as Partial<Props>);
+    expect(seen.props?.status).toBe("idle");
+    expect(seen.props?.pending).toBe(true);
+    expect(seen.props?.workspaceSwitchPending).toBe(false);
   });
 
   it("takes its callbacks from the workspace handlers, notes only when enabled", () => {

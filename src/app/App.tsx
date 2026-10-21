@@ -59,7 +59,7 @@ import {
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus";
 import { homeDir } from "@/platform/tauri/fs";
-import { pathKey, projectName } from "@/shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import { IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { noteProjectStep } from "./shell/Sidebar";
@@ -79,7 +79,7 @@ import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { createComposerCardActions } from "./workspace/flows/composer/composer-cards";
 import { createFamiliarActions } from "./workspace/flows/familiars/familiar-actions";
 import { createReminderActions } from "./workspace/flows/reminders/reminder-actions";
-import { useFamiliarRail } from "./workspace/hooks/familiars/use-familiar-rail";
+import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import {
   forgetOverviewDocument,
@@ -242,12 +242,8 @@ import {
   rememberProject,
   sameProjectPath,
 } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { newDefaultSession } from "@/features/sessions/model/session";
-import {
-  sessionWorkCwd,
-  sessionNeedsInput,
-} from "@/domain/session/session-state";
+import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
@@ -344,11 +340,6 @@ import {
 } from "./model/session-id-sets";
 import { useProviderSignInPrompt } from "./workspace/hooks/use-provider-sign-in-prompt";
 import { useSessionIdSet } from "./workspace/hooks/use-session-id-set";
-import {
-  selectedChangeKind,
-  selectedChangePath,
-  selectedCommitSha,
-} from "./model/selected-change";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
 import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
 import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
@@ -389,7 +380,6 @@ import {
   historyWithLiveSessions,
   mergeProjectHistorySummary,
   sameSessionSummaries,
-  summaryFromSession,
 } from "@/features/sessions/data/session-history";
 import {
   inFlightRefs,
@@ -696,8 +686,6 @@ function Workspace({
     return () => window.removeEventListener(REMOTE_HISTORY_UPDATED, updated);
   }, []);
   const storedLinkedSessions = useWorkspaceField(workspaceStore, "storedLinkedSessions");
-  const loadedProjects = useWorkspaceField(workspaceStore, "loadedProjects");
-  const historyErrorCwd = useWorkspaceField(workspaceStore, "historyErrorCwd");
 
   const btw = useStableFlow(() =>
     createBtw({
@@ -1280,16 +1268,6 @@ function Workspace({
       linkedUpdates: () => linkedSessionUpdatesRef.current,
     }),
   );
-  const sidebarCwdKey =
-    sidebarCwd && sidebarCwd !== "~" ? normalizeProjectPath(sidebarCwd) : null;
-  const historyFailed =
-    sidebarCwdKey != null && historyErrorCwd === sidebarCwdKey;
-  // True from the very first frame that shows a project we have never listed,
-  // so the sidebar can stay blank instead of flashing "No sessions yet".
-  const historyPending =
-    sidebarCwdKey != null &&
-    !loadedProjects.has(sidebarCwdKey) &&
-    !historyFailed;
   const gitCwd =
     activeFile?.cwd ?? (active ? sessionWorkCwd(active) : sidebarCwd);
   const terminalCwd = newTerminalCwd({
@@ -1299,14 +1277,6 @@ function Workspace({
   });
   const terminalCwdRef = useRef(terminalCwd);
   terminalCwdRef.current = terminalCwd;
-  const gitCwdBranches = useProjectBranches(
-    gitCwd,
-    Boolean(gitCwd) && gitCwd !== "~" && !isRemoteProjectPath(sidebarCwd),
-  );
-  const explorerRootLabel =
-    active?.worktreeCwd && sameProjectPath(gitCwd, sessionWorkCwd(active))
-      ? active.branch || gitCwdBranches?.current || undefined
-      : undefined;
   const remoteFilesProject = remoteProjectFor(sidebarCwd);
   // The host checkout the remote tab is aimed at — the attached session's
   // work path or a worktree picked before the first message.
@@ -1359,8 +1329,6 @@ function Workspace({
   const usageSource =
     insetLayout && familiarViewSession ? familiarViewSession : active;
   useProviderSignInPrompt(workspaceStore, sessions, active);
-
-  const approvalSessionIds = useSessionIdSet(sessions, sessionNeedsInput);
 
   const activeSessionId = inboxViewOpen
     ? inboxAskPortal?.sessionId
@@ -1856,24 +1824,6 @@ function Workspace({
     }),
   );
 
-  /** Open tabs per workspace in the sidebar's project, keyed by worktree
-   * path, so the switcher can show what each worktree still has open. */
-  const worktreeTabStats = useMemo(() => {
-    const stats = new Map<string, { tabs: number; busy: boolean }>();
-    if (!sidebarCwd || sidebarCwd === "~" || isRemoteProjectPath(sidebarCwd))
-      return stats;
-    for (const tab of filterTabsForProject(tabs, sessions, sidebarCwd)) {
-      const workspace = tabWorkspace(tab, sessions) ?? sidebarCwd;
-      const key = pathKey(workspace);
-      const entry = stats.get(key) ?? { tabs: 0, busy: false };
-      entry.tabs += 1;
-      entry.busy ||= leafIds(tab.layout).some(
-        (id) => sessions.find((session) => session.id === id)?.busy,
-      );
-      stats.set(key, entry);
-    }
-    return stats;
-  }, [tabs, sessions, sidebarCwd, tabWorkspace, workspaceNavigation.revision]);
   const deckProjectTabs = useMemo(() => {
     // A projectless session belongs to no project, so it stands on its own
     // rather than trailing the last project's tabs.
@@ -2622,14 +2572,7 @@ function Workspace({
         // A habit's hidden run is never one of the project's chats.
         promptableSessions,
         sidebarCwd,
-        {
-          ...(projectBranches?.current
-            ? { branch: projectBranches.current }
-            : {}),
-          ...(sidebarCwd && sidebarCwd !== "~"
-            ? { repo: projectName(sidebarCwd) }
-            : {}),
-        },
+        projectGitHint(sidebarCwd, projectBranches?.current ?? undefined),
         orchestrationRuns,
       ),
     [
@@ -2661,33 +2604,6 @@ function Workspace({
     () => ciRepairSessions(history, sessions),
     [history, sessions],
   );
-  const openProjectSessionRows = useMemo(
-    () =>
-      sessions
-        .filter(
-          (session) =>
-            !session.inboxAsk &&
-            !session.ephemeral &&
-            !session.orchestrationLeadId &&
-            sameProjectPath(session.cwd, sidebarCwd),
-        )
-        .map((session) =>
-          summaryFromSession(session, {
-            ...(projectBranches?.current
-              ? { branch: projectBranches.current }
-              : {}),
-            ...(sidebarCwd && sidebarCwd !== "~"
-              ? { repo: projectName(sidebarCwd) }
-              : {}),
-          }),
-        ),
-    [projectBranches, sessions, sidebarCwd],
-  );
-  const openProjectSessions = useStableValue(
-    openProjectSessionRows,
-    sameSessionSummaries,
-  );
-
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
   const {
     onOpenLocalSurface,
@@ -2952,20 +2868,6 @@ function Workspace({
         session={familiarViewSession}
       />
     ) : null;
-  const busyProjectPaths = useStableValue(
-    promptableSessions.flatMap((session) =>
-      session.busy && session.cwd ? [session.cwd] : [],
-    ),
-  );
-  const sidebarFamiliars = useFamiliarRail({
-    enabled: familiarsEnabled,
-    activeId: familiarViewFamiliar?.id,
-    sessions,
-    unseenReplies: familiarReplies.counts,
-    onOpen: onOpenFamiliar,
-    onCreate: familiarActions.create,
-    onDelete: historyActions.deleteFamiliar,
-  });
 
   const chrome = useWorkspaceChrome(workspaceStore, {
     insetLayout,
@@ -3013,16 +2915,12 @@ function Workspace({
       automationsViewOpen={automationsViewOpen}
       cwd={sidebarCwd}
       gitCwd={gitCwd}
-      worktreeTabStats={worktreeTabStats}
-      workspaceSwitchPending={
-        workspaceNavigation.pending?.project === sidebarCwd
-      }
-      workspaceSwitchError={
-        workspaceNavigation.error?.project === sidebarCwd
-          ? workspaceNavigation.error.message
-          : undefined
-      }
-      explorerRootLabel={explorerRootLabel}
+      liveSessions={sessions}
+      activeTab={activeTab}
+      activeSession={active}
+      tabWorkspace={tabWorkspace}
+      workspaceSwitch={workspaceNavigation}
+      unseenFamiliarReplies={familiarReplies.counts}
       tab={sidebarTab}
       onTabChange={setSidebarTab}
       rightPanel={{
@@ -3033,23 +2931,12 @@ function Workspace({
       }}
       sessions={sidebarHistory}
       busySessionIds={busySessionIds}
-      approvalSessionIds={approvalSessionIds}
       activeSessionId={activeSessionId}
-      status={historyFailed ? "error" : "idle"}
-      pending={historyPending}
       reminders={sessionReminders.reminders}
       onSetReminders={sessionReminders.schedule}
       onCancelReminders={sessionReminders.cancel}
-      selectedDiffPath={
-        activeTab ? selectedChangePath(activeTab, gitCwd) : undefined
-      }
-      selectedDiffKind={activeTab ? selectedChangeKind(activeTab) : undefined}
-      selectedCommitSha={activeTab ? selectedCommitSha(activeTab) : undefined}
       textHarness={pickTextHarness(active?.harness)}
-      busyProjectPaths={busyProjectPaths}
       liveAgents={liveAgents}
-      familiars={sidebarFamiliars}
-      openSessions={openProjectSessions}
       onOpenKnowledge={railSurfaces.knowledge ? onOpenKnowledge : undefined}
       knowledgeActive={localSurface === "knowledge"}
       automationsActive={automationsSurfaceOpen}
