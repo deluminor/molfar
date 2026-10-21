@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type AppHarness, renderApp } from "./testing/app-harness";
-import { shows } from "./testing/workspace-steps";
+import { shows, tabIds } from "./testing/workspace-steps";
 
 // Pins submitSession's branches before it leaves App.tsx for
 // flows/submission (global refactor, Stage 5).
@@ -13,6 +13,7 @@ let app: AppHarness | undefined;
 afterEach(async () => {
   await app?.unmount();
   app = undefined;
+  vi.restoreAllMocks();
 });
 
 function current(): AppHarness {
@@ -82,5 +83,28 @@ describe("Workspace submission", () => {
     expect(app.harness.turns[0]).toMatchObject({ appAccess: true, controlsAgents: true });
     expect(app.harness.turns[0]?.text).toContain("list my sessions");
     expect(app.harness.turns[0]?.text).toContain("<molfar_app>");
+  });
+
+  it("starts a quick composer launch in a new tab, sends its prompt and acknowledges it", async () => {
+    vi.spyOn(navigator, "platform", "get").mockReturnValue("MacIntel");
+    let queued: unknown = {
+      id: "q1",
+      request: { prompt: "Ship the release", cwd: "/work/demo", harness: "cursor", reveal: true },
+    };
+    app = await renderApp({
+      project: "/work/demo",
+      routes: {
+        quick_composer_take: () => {
+          const next = queued;
+          queued = null;
+          return next;
+        },
+      },
+    });
+
+    await app.until(() => current().harness.turns.some((turn) => turn.text.includes("Ship the release")));
+    await app.until(() => current().commands("quick_composer_ack").some((call) => call.args?.id === "q1"));
+    expect(current().harness.turns).toHaveLength(1);
+    expect(tabIds(current())).toHaveLength(2);
   });
 });
