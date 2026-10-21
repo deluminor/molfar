@@ -1,4 +1,4 @@
-type ArchiveContext = {
+export type ArchiveContext = {
   activeTabId: string;
   tabs: readonly { id: string; focusedId: string; diffFocused?: boolean }[];
   sessions: readonly { id: string }[];

@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { alertApp, confirmApp, getAppDialog } from "@/shared/lib/app-dialog";
+import { alertApp, getAppDialog } from "@/shared/lib/app-dialog";
 import {
   Suspense,
   useCallback,
@@ -31,11 +31,8 @@ import { isForegroundSession } from "./workspace/flows/harness-events/foreground
 import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
 import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
 import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
-import {
-  pinSession,
-  renameSession,
-  type SessionActionsDeps,
-} from "./workspace/flows/session-history/session-actions";
+import type { SessionActionsDeps } from "./workspace/flows/session-history/session-actions";
+import { createSessionHistoryActions } from "./workspace/flows/session-history/session-history-actions";
 import type { SessionRemovalChangeDeps } from "./workspace/flows/session-history/session-removal-change";
 import {
   openSavedSession,
@@ -110,7 +107,6 @@ import { createInboxAsk } from "./workspace/flows/inbox/inbox-ask";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
 import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/inbox/inbox-related-sessions";
 import { openInboxSession, startInboxItem } from "./workspace/flows/inbox/inbox-start";
-import { setHistorySessionLinkedWorkItem } from "./workspace/flows/linked-work-items/history-link";
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { addNoteToChat } from "./workspace/flows/notes/add-note-to-chat";
@@ -157,10 +153,7 @@ import type { AgentAppDeps } from "./workspace/flows/agent-app/agent-app-deps";
 import { createControlRequests } from "./workspace/flows/agent-app/control-requests";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
 import { confirmDiscardUnsaved } from "./model/confirm-discard-unsaved";
-import {
-  removeSession,
-  type RemoveSessionDeps,
-} from "./workspace/flows/session-removal/remove-session";
+import type { RemoveSessionDeps } from "./workspace/flows/session-removal/remove-session";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
 import { createDisplayedTabs } from "./workspace/title-tabs/displayed-tabs";
@@ -332,10 +325,7 @@ import {
   sessionWorkCwd,
   sessionNeedsInput,
 } from "@/domain/session/session-state";
-import type {
-  LinkedWorkItem,
-  Session,
-} from "@/domain/session/session";
+import type { Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
 import type {
   ModelTarget,
@@ -381,7 +371,6 @@ import {
   upsertSession,
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
-import { archiveFocusedSession } from "@/features/sessions/model/archive-shortcut";
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import { useUnseenReplyCounts } from "@/features/sessions/hooks/use-unseen-reply-counts";
@@ -400,11 +389,7 @@ import {
   saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
-import {
-  deleteFamiliar,
-  resetFamiliar,
-  type FamiliarRemovalDeps,
-} from "./workspace/flows/familiars/familiar-removal";
+import type { FamiliarRemovalDeps } from "./workspace/flows/familiars/familiar-removal";
 import { openDiff, type OpenDiffDeps } from "./workspace/flows/files/open-diff";
 import { placeSessionOnPane, type PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
@@ -2598,12 +2583,6 @@ function Workspace({
     }),
   );
 
-  const onRenameHistorySession = useCallback(
-    (sessionId: string, displayTitle: string) =>
-      renameSession(sessionActionDeps, sessionId, displayTitle),
-    [],
-  );
-
   const worktreeDeps = useStableFlow(
     (): WorktreeDeps => ({
       store: workspaceStore,
@@ -2672,132 +2651,8 @@ function Workspace({
       removeWorktree: (cwd, path, force) => worktreeActions.remove(cwd, path, force),
     }),
   );
-  const onRemoveHistorySession = useCallback(
-    (
-      sessionId: string,
-      mode: "archive" | "delete",
-      skipDeleteConfirm = false,
-      origin: "ui" | "cli" = "ui",
-    ) => removeSession(removeSessionDeps, sessionId, mode, skipDeleteConfirm, origin),
-    [],
-  );
-
-  const onArchiveHistorySession = useCallback(
-    async (sessionId: string, archived: boolean) => {
-      if (archived) return onRemoveHistorySession(sessionId, "archive");
-      if (removingSessionIds.current.has(sessionId)) return false;
-      try {
-        await setSessionArchived(sessionId, false);
-        setHistory((current) =>
-          current.map((entry) =>
-            entry.id === sessionId ? { ...entry, archived: false } : entry,
-          ),
-        );
-        return true;
-      } catch (error) {
-        void alertApp(
-          `Could not unarchive this conversation.\n\n${String(error)}`,
-          { kind: "error" },
-        );
-        return false;
-      }
-    },
-    [onRemoveHistorySession],
-  );
-
-  const onArchiveFocusedSession = useCallback(
-    (event: KeyboardEvent) => {
-      archiveFocusedSession(
-        event,
-        {
-          activeTabId: activeTabIdRef.current,
-          tabs: tabsRef.current,
-          sessions: sessionsRef.current,
-          projectTerminalFocused: projectTerminalFocusedRef.current,
-          surfaceOpen: Boolean(
-            workspaceStore.getState().familiarViewId ||
-            searchViewOpenRef.current ||
-            inboxViewOpenRef.current ||
-            notesViewOpenRef.current ||
-            automationsViewOpenRef.current ||
-            settingsOpenRef.current ||
-            filePickerOpenRef.current ||
-            whatsNewVersionRef.current ||
-            getUpdatePrompt() ||
-            getAppDialog(),
-          ),
-        },
-        (sessionId) => {
-          void onArchiveHistorySession(sessionId, true);
-        },
-      );
-    },
-    [onArchiveHistorySession],
-  );
-
-  const onPinHistorySession = useCallback(
-    (sessionId: string, pinned: boolean) =>
-      pinSession(sessionActionDeps, sessionId, pinned),
-    [],
-  );
-
-  const onSetHistorySessionLinkedWorkItem = useCallback(
-    (sessionId: string, linkedWorkItem: LinkedWorkItem | undefined) =>
-      setHistorySessionLinkedWorkItem(
-        {
-          store: workspaceStore,
-          sessionsRef,
-          setSessions,
-          sidebarCwd: () => sidebarCwdRef.current,
-          forgetLoaded: (id) => {
-            invalidateLoadedSession(id);
-            loadedSessionCache.current.delete(id);
-          },
-          refreshHistory,
-        },
-        sessionId,
-        linkedWorkItem,
-      ),
-    [invalidateLoadedSession, refreshHistory],
-  );
-
-  const onArchiveHistorySessions = useCallback(
-    async (sessionIds: readonly string[], archived: boolean) => {
-      for (const sessionId of sessionIds) {
-        if (!(await onArchiveHistorySession(sessionId, archived))) break;
-      }
-    },
-    [onArchiveHistorySession],
-  );
-
-  const onPinHistorySessions = useCallback(
-    async (sessionIds: readonly string[], pinned: boolean) => {
-      await Promise.all(
-        sessionIds.map((sessionId) => onPinHistorySession(sessionId, pinned)),
-      );
-    },
-    [onPinHistorySession],
-  );
-
-  const onDeleteWorktreeSessions = useCallback(
-    async (sessionIds: readonly string[]): Promise<boolean> => {
-      for (const sessionId of sessionIds) {
-        if (!(await onRemoveHistorySession(sessionId, "delete", true))) {
-          return false;
-        }
-      }
-      return true;
-    },
-    [onRemoveHistorySession],
-  );
-
-  const onDeleteHistorySession = useCallback(
-    (sessionId: string) => onRemoveHistorySession(sessionId, "delete"),
-    [onRemoveHistorySession],
-  );
-
   const familiarRemovalDeps = useStableFlow(
-    (): FamiliarRemovalDeps => ({
+    (): Omit<FamiliarRemovalDeps, "removeSession"> => ({
       store: workspaceStore,
       sessionsRef,
       removingSessionIds,
@@ -2812,61 +2667,44 @@ function Workspace({
       flushCheckpoint: flushSessionCheckpoint,
       deleteStoredSession: (sessionId, imagePaths) =>
         orchestrator.deleteSession(sessionId, () => deleteSession(sessionId, imagePaths)),
-      removeSession: (sessionId, mode, skipDeleteConfirm) =>
-        onRemoveHistorySession(sessionId, mode, skipDeleteConfirm),
     }),
   );
-  const onResetFamiliar = useCallback(
-    (sessionId: string) => resetFamiliar(familiarRemovalDeps, sessionId),
-    [],
-  );
-  const onDeleteFamiliar = useCallback(
-    (familiarId: string) => deleteFamiliar(familiarRemovalDeps, familiarId),
-    [],
-  );
-
-  const onDeleteHistorySessions = useCallback(
-    async (sessionIds: readonly string[]) => {
-      if (sessionIds.length === 0) return;
-      const confirmed = await confirmApp(
-        `Delete ${sessionIds.length} selected conversations? This can’t be undone.`,
-        { okLabel: "Delete" },
-      );
-      if (!confirmed) return;
-      for (const sessionId of sessionIds) {
-        if (!(await onRemoveHistorySession(sessionId, "delete", true))) break;
-      }
-    },
-    [onRemoveHistorySession],
-  );
-
-  const sessionIdsInTitleTab = useCallback((tabId: string): string[] => {
-    const tab = tabsRef.current.find((entry) => entry.id === tabId);
-    if (!tab) return [];
-    const openSessionIds = new Set(
-      sessionsRef.current.map((session) => session.id),
-    );
-    return leafIds(tab.layout).filter((id) => openSessionIds.has(id));
-  }, []);
-
-  const onArchiveTitleTab = useCallback(
-    (tabId: string) => {
-      const sessionIds = sessionIdsInTitleTab(tabId);
-      void onArchiveHistorySessions(sessionIds, true);
-    },
-    [onArchiveHistorySessions, sessionIdsInTitleTab],
-  );
-
-  const onDeleteTitleTab = useCallback(
-    (tabId: string) => {
-      const sessionIds = sessionIdsInTitleTab(tabId);
-      if (sessionIds.length === 1) {
-        void onDeleteHistorySession(sessionIds[0]);
-      } else if (sessionIds.length > 1) {
-        void onDeleteHistorySessions(sessionIds);
-      }
-    },
-    [onDeleteHistorySession, onDeleteHistorySessions, sessionIdsInTitleTab],
+  const historyActions = useStableFlow(() =>
+    createSessionHistoryActions({
+      session: sessionActionDeps,
+      removal: removeSessionDeps,
+      link: {
+        store: workspaceStore,
+        sessionsRef,
+        setSessions,
+        sidebarCwd: () => sidebarCwdRef.current,
+        forgetLoaded: (id) => {
+          invalidateLoadedSession(id);
+          loadedSessionCache.current.delete(id);
+        },
+        refreshHistory,
+      },
+      familiarRemoval: familiarRemovalDeps,
+      setSessionArchived,
+      archiveContext: () => ({
+        activeTabId: activeTabIdRef.current,
+        tabs: tabsRef.current,
+        sessions: sessionsRef.current,
+        projectTerminalFocused: projectTerminalFocusedRef.current,
+        surfaceOpen: Boolean(
+          workspaceStore.getState().familiarViewId ||
+          searchViewOpenRef.current ||
+          inboxViewOpenRef.current ||
+          notesViewOpenRef.current ||
+          automationsViewOpenRef.current ||
+          settingsOpenRef.current ||
+          filePickerOpenRef.current ||
+          whatsNewVersionRef.current ||
+          getUpdatePrompt() ||
+          getAppDialog(),
+        ),
+      }),
+    }),
   );
 
   const onFocusDir = useCallback(
@@ -3424,8 +3262,6 @@ function Workspace({
 
   const stopSessionRef = useRef(onStop);
   stopSessionRef.current = onStop;
-  const removeSessionRef = useRef(onRemoveHistorySession);
-  removeSessionRef.current = onRemoveHistorySession;
 
   const agentAppDeps = useStableFlow(
     (): AgentAppDeps => ({
@@ -3441,7 +3277,7 @@ function Workspace({
       submitSession: (...args) => submitSessionRef.current(...args),
       saveDraft: (...args) => composerActions.saveDraft(...args),
       stopSession: (sessionId) => stopSessionRef.current(sessionId),
-      removeSession: (...args) => removeSessionRef.current(...args),
+      removeSession: historyActions.remove,
       launchQuickSession: (...args) => launchQuickSession(...args),
     }),
   );
@@ -3880,7 +3716,7 @@ function Workspace({
 
   const actions = useLatestRef<WorkspaceActions>({
     onNewFocused,
-    onArchiveFocusedSession,
+    onArchiveFocusedSession: historyActions.archiveFocused,
     onCloseOtherTabs: onCloseOtherVisibleTabs,
     onCloseAllTabs: onCloseAllVisibleTabs,
     onCloseFocused: onCloseVisibleTab,
@@ -4056,8 +3892,8 @@ function Workspace({
     onNoteCardDismiss,
     onHandoffCardDismiss,
     onOpenLinkedWorkItem,
-    onArchiveSession: onArchiveHistorySession,
-    onDeleteSession: onDeleteHistorySession,
+    onArchiveSession: historyActions.archive,
+    onDeleteSession: historyActions.delete,
     onApproval,
     onQuestionReply,
     onQuestionInteraction,
@@ -4145,7 +3981,7 @@ function Workspace({
         onModelChange={composerActions.changeModel}
         onModelSettingsChange={composerActions.changeModelSettings}
         onRuntimeModeChange={composerActions.changeRuntimeMode}
-        onReset={onResetFamiliar}
+        onReset={historyActions.resetFamiliar}
       />
     ) : null;
   const busyProjectPaths = useStableValue(
@@ -4160,7 +3996,7 @@ function Workspace({
     unseenReplies: familiarReplies.counts,
     onOpen: onOpenFamiliar,
     onCreate: onCreateFamiliar,
-    onDelete: onDeleteFamiliar,
+    onDelete: historyActions.deleteFamiliar,
   });
 
   const chromeSurfaceOpen =
@@ -4232,8 +4068,8 @@ function Workspace({
       onClose={onCloseDisplayedTab}
       onCloseMany={onCloseDisplayedTabs}
       onCloseAll={onCloseAllDisplayedTabs}
-      onArchiveTab={onArchiveTitleTab}
-      onDeleteTab={onDeleteTitleTab}
+      onArchiveTab={historyActions.archiveTitleTab}
+      onDeleteTab={historyActions.deleteTitleTab}
       onReorder={onReorderDisplayedTabs}
       onPlaceOnPane={onPlaceTabOnPane}
       onPinFile={fileActions.pin}
@@ -4279,17 +4115,17 @@ function Workspace({
       onPrefetchSession={onPrefetchHistorySession}
       onSessionNavigationOrder={onSessionNavigationOrder}
       onPlaceSessionOnPane={onPlaceSessionOnPane}
-      onRenameSession={onRenameHistorySession}
-      onArchiveSession={onArchiveHistorySession}
-      onArchiveSessions={onArchiveHistorySessions}
-      onPinSession={onPinHistorySession}
-      onPinSessions={onPinHistorySessions}
-      onSetSessionLinkedWorkItem={onSetHistorySessionLinkedWorkItem}
+      onRenameSession={historyActions.rename}
+      onArchiveSession={historyActions.archive}
+      onArchiveSessions={historyActions.archiveMany}
+      onPinSession={historyActions.pin}
+      onPinSessions={historyActions.pinMany}
+      onSetSessionLinkedWorkItem={historyActions.setLinkedWorkItem}
       reminders={sessionReminders.reminders}
       onSetReminders={sessionReminders.schedule}
       onCancelReminders={sessionReminders.cancel}
-      onDeleteSession={onDeleteHistorySession}
-      onDeleteSessions={onDeleteHistorySessions}
+      onDeleteSession={historyActions.delete}
+      onDeleteSessions={historyActions.deleteMany}
       onOpenFile={fileActions.open}
       onOpenTerminal={terminals.open}
       onFileMoved={fileActions.moved}
@@ -4614,13 +4450,13 @@ function Workspace({
                     liveSessions={sessions}
                     onRemoveWorktree={worktreeActions.remove}
                     onCheckWorktreeRemoval={worktreeActions.checkRemoval}
-                    onDeleteWorktreeSessions={onDeleteWorktreeSessions}
+                    onDeleteWorktreeSessions={historyActions.deleteWorktreeSessions}
                     headerHost={insetLayout ? settingsHeaderHost : undefined}
                     onClose={surfaces.closeSettings}
                     onSelectSection={surfaces.selectSettingsSection}
                     onOpenSession={surfaces.openArchivedSession}
-                    onArchiveSession={onArchiveHistorySession}
-                    onDeleteSession={onDeleteHistorySession}
+                    onArchiveSession={historyActions.archive}
+                    onDeleteSession={historyActions.delete}
                     onRestoreProject={projectActions.restore}
                     onRemoveProject={projectActions.remove}
                     onOpenWhatsNew={onOpenWhatsNew}
