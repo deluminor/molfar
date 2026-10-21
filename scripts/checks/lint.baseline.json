@@ -75,7 +75,6 @@
     "lint/a11y/useAriaPropsSupportedByRole": 1,
     "lint/a11y/useSemanticElements": 1,
     "lint/correctness/useExhaustiveDependencies": 35,
-    "lint/style/noNonNullAssertion": 1,
     "lint/suspicious/noAssignInExpressions": 1
   },
   "src/app/hooks/use-familiar-habits.test.ts": {

@@ -45,7 +45,6 @@ import {
 } from "./workspace/flows/session-history/open-saved-session";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
-import { submitWithSettlement } from "./model/managed-submission";
 import { updateSessionState } from "./model/session-state";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import type { SettingsReturnView } from "./model/settings-return/types";
@@ -491,7 +490,6 @@ import { useSessionReminders } from "@/features/notifications/hooks/use-session-
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
 import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import {
-  announceSessionFinished,
   loadNotificationsEnabled,
   probeNotificationPermission,
   setWindowFocused,
@@ -543,11 +541,8 @@ import { openDiff, type OpenDiffDeps } from "./workspace/flows/files/open-diff";
 import { placeSessionOnPane, type PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
+import { createFamiliarHabitHost } from "./workspace/flows/familiars/habit-host";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
-import {
-  dropRelays,
-  relayApproval,
-} from "@/features/familiars/model/familiar-habits";
 import {
   detachFamiliarTabs,
   ensureFamiliarSession,
@@ -3606,78 +3601,22 @@ function Workspace({
     }),
   );
 
-  useFamiliarHabits({
-    sessions: () => sessionsRef.current,
-    open: async (id) => (await ensureOpenSession(id)) ?? undefined,
-    add: (session) => {
-      sessionsRef.current = [...sessionsRef.current, session];
-      setSessions(sessionsRef.current);
-    },
-    run: (id, prompt) =>
-      new Promise((resolve) => {
-        void submitWithSettlement({
-          submit: (onSettled) => submitSession(id, prompt, [], { onSettled }),
-          onSettled: resolve,
-          rejectionMessage: "The habit's run could not start.",
-        });
-      }),
-    remove: async (id) => {
-      const open = await stopSessionForRemoval(id);
-      if (open)
-        await Promise.all(
-          sessionChildHarnesses(open).map((harness) =>
-            forgetHarnessSession(harness, id),
-          ),
-        );
-      await deleteSession(id, []);
-      sessionsRef.current = sessionsRef.current.filter(
-        (session) => session.id !== id,
-      );
-      setSessions(sessionsRef.current);
-    },
-    post: (familiarId, habit, text, name, artifacts, launches) =>
-      familiarChat.append(
-        familiarId,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text,
-          familiarHabit: { id: habit.id, name: habit.name, at: Date.now() },
-          ...(artifacts?.length ? { artifactCards: artifacts } : {}),
-          ...(launches?.length ? { familiarSpawnedSessions: launches } : {}),
-        },
-        (posted) => {
-          familiarReplies.noteReply(familiarId);
-          void announceSessionFinished(
-            { ...posted, title: name },
-            familiarId === activeSessionIdRef.current,
-          );
-        },
-      ),
-    // The chat shows it like any approval, and the usual approval banner
-    // fires for the Familiar; the answer is routed back in onApproval.
-    askApproval: (familiarId, habit, runId, block) => {
-      const blockId = crypto.randomUUID();
-      const requestId = relayApproval({
-        familiarId,
-        runId,
-        requestId: block.approval!.requestId,
-        blockId,
-      });
-      familiarChat.append(familiarId, {
-        id: blockId,
-        role: "approval",
-        text: block.text,
-        ...(block.tool ? { tool: block.tool } : {}),
-        approval: { requestId },
-        familiarHabit: { id: habit.id, name: habit.name, at: Date.now() },
-      });
-    },
-    endApprovals: (runId) => {
-      for (const relay of dropRelays(runId))
-        familiarChat.decide(relay.familiarId, relay.blockId, "cancelled");
-    },
-  });
+  const familiarHabitHost = useStableFlow(() =>
+    createFamiliarHabitHost({
+      sessionsRef,
+      activeSessionIdRef,
+      chat: familiarChat,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        setSessions(next);
+      },
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      submitSession: (...args) => submitSessionRef.current(...args),
+      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
+      noteReply: familiarReplies.noteReply,
+    }),
+  );
+  useFamiliarHabits(familiarHabitHost);
 
   const automationDeps = useStableFlow(
     (): AutomationDeps => ({
