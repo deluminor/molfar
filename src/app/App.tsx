@@ -120,6 +120,7 @@ import { createProviderAccountActions } from "./workspace/flows/composer/provide
 import { createRemoteSnapshotSync } from "./workspace/flows/remote-sessions/remote-snapshot";
 import { createNavigationActions } from "./workspace/flows/surfaces/navigation-actions";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
+import { useWorkspaceChrome } from "./workspace/ui/layout/use-workspace-chrome";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
 import type { CommandDeps, WorkspaceActions } from "./workspace/hooks/commands/command-deps";
 import { useCommandRunner } from "./workspace/hooks/commands/use-command-runner";
@@ -565,7 +566,6 @@ function Workspace({
     (id: string) => tabProjectsRef.current.get(id),
     [],
   );
-  const projectRailOpen = useWorkspaceField(workspaceStore, "projectRailOpen");
   const tabCloseScope = "project" as const;
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
@@ -613,7 +613,6 @@ function Workspace({
     loadLiveAgentsEnabled,
     () => true,
   );
-  const collapsedProjectRailMode = useWorkspaceField(workspaceStore, "collapsedProjectRailMode");
   const settingsOpen = useWorkspaceField(workspaceStore, "settingsOpen");
   const insetLayout = useSyncExternalStore(
     subscribeInsetLayout,
@@ -3008,42 +3007,23 @@ function Workspace({
     onDelete: historyActions.deleteFamiliar,
   });
 
-  const chromeSurfaceOpen =
-    searchViewOpen ||
-    settingsOpen ||
-    inboxViewOpen ||
-    notesViewOpen ||
-    automationsViewOpen;
-  const compactProjectRail = collapsedProjectRailMode === "compact";
-  const compactRailActive = compactProjectRail && !projectRailOpen;
-  const appViewBesideRail = insetLayout || projectRailOpen || compactProjectRail;
-  const appViewCompactRail = !insetLayout && compactRailActive;
-  const compactTitleNavigation =
-    IS_MAC && compactRailActive && !chromeSurfaceOpen;
-  const compactTitleBar = compactTitleNavigation && !familiarCovers;
-  // The inset layout keeps its tabs across the top of the window at all
-  // times, with the rail and the card below them.
-  const titleBarSpansWindow = insetLayout || compactTitleBar;
-  const titleBarInBody = !insetLayout && !compactTitleBar;
-  // Matches when the sidebar portals Explorer or Changes into the panel.
-  const insetRightPanelShown =
-    insetLayout &&
-    (rightPanelOpen || rightPanelClosing) &&
-    !settingsOpen &&
-    !familiarCovers &&
-    !activeAppView &&
-    looksLikeProject(sidebarCwd);
+  const chrome = useWorkspaceChrome(workspaceStore, {
+    insetLayout,
+    automationsViewOpen,
+    rightPanelOpen,
+    rightPanelClosing,
+    activeAppView,
+    sidebarCwd,
+  });
   useRightPanelSlide(
     rightPanelOpen,
     rightPanelClosing,
-    insetRightPanelShown,
+    chrome.insetRightPanelShown,
     rightPanelRef,
     setRightPanelClosing,
   );
-  const showRightPanelToggle =
-    insetLayout && !settingsOpen && looksLikeProject(sidebarCwd);
   rightPanelToggleRef.current =
-    showRightPanelToggle && !(familiarCovers && familiarViewFamiliar) && !activeAppView
+    chrome.showRightPanelToggle && !(familiarCovers && familiarViewFamiliar) && !activeAppView
       ? onToggleRightPanel
       : null;
   const workspaceTitleBar = (
@@ -3058,8 +3038,8 @@ function Workspace({
       familiarTabId={familiarViewTabId}
       overviewShown={!!familiarOverviewPanel}
       activeAppView={activeAppView}
-      compactRail={compactTitleNavigation}
-      showRightPanelToggle={showRightPanelToggle}
+      compactRail={chrome.compactTitleNavigation}
+      showRightPanelToggle={chrome.showRightPanelToggle}
       rightPanelOpen={rightPanelOpen}
       onToggleRightPanel={onToggleRightPanel}
       onSettingsHeaderHost={setSettingsHeaderHost}
@@ -3121,7 +3101,7 @@ function Workspace({
         badges: railBadges,
       }}
       notesEnabled={notesEnabled}
-      titleBarAbove={insetLayout || compactTitleBar}
+      titleBarAbove={chrome.sidebarTitleBarAbove}
       inset={insetLayout}
       unseenFinishedIds={unseenFinishedIds}
       inboxUnseen={inboxUnseen}
@@ -3129,17 +3109,15 @@ function Workspace({
     />
   );
 
-  const usageFooter =
-    (chromeSurfaceOpen && !(insetLayout && activeAppView)) ||
-    (familiarCovers && !insetLayout) ? null : (
-      <WorkspaceUsageFooter
-        store={workspaceStore}
-        pressureSlot={setPressureChipHost}
-        source={usageSource}
-        activeTab={activeTab}
-        inset={insetLayout}
-      />
-    );
+  const usageFooter = chrome.usageFooterShown ? (
+    <WorkspaceUsageFooter
+      store={workspaceStore}
+      pressureSlot={setPressureChipHost}
+      source={usageSource}
+      activeTab={activeTab}
+      inset={insetLayout}
+    />
+  ) : null;
 
   return (
     <SessionStateContext.Provider value={sessionState}>
@@ -3155,7 +3133,7 @@ function Workspace({
                 : "bg-background-base"
           }`}
         >
-          {titleBarSpansWindow ? workspaceTitleBar : null}
+          {chrome.titleBarSpansWindow ? workspaceTitleBar : null}
           <div className="flex min-h-0 min-w-0 flex-1">
             {insetLayout ? (
               <div
@@ -3190,12 +3168,12 @@ function Workspace({
                 >
                   <div
                     className={
-                      chromeSurfaceOpen
+                      chrome.surfaceOpen
                         ? "hidden"
                         : "flex min-h-0 min-w-0 flex-1 flex-col"
                     }
-                    aria-hidden={chromeSurfaceOpen}
-                    inert={chromeSurfaceOpen || undefined}
+                    aria-hidden={chrome.surfaceOpen}
+                    inert={chrome.surfaceOpen || undefined}
                   >
                     {!IS_MAC ? (
                       <WorkspaceMenuBar
@@ -3205,7 +3183,7 @@ function Workspace({
                     ) : null}
                     <div className="flex min-h-0 min-w-0 flex-1">
                       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                        {titleBarInBody ? workspaceTitleBar : null}
+                        {chrome.titleBarInBody ? workspaceTitleBar : null}
 
                         <main className="relative flex min-h-0 min-w-0 flex-1">
                           <div
@@ -3251,7 +3229,7 @@ function Workspace({
                           <LinkedWorkItemPanels
                             store={workspaceStore}
                             shownSessionId={
-                              chromeSurfaceOpen || familiarCovers
+                              chrome.surfaceOpen || familiarCovers
                                 ? undefined
                                 : activeLinkedWorkItemPanel?.sessionId
                             }
@@ -3269,8 +3247,8 @@ function Workspace({
                     openAppViews={openAppViews}
                     notesEnabled={notesEnabled}
                     automationsOpen={automationsSurfaceOpen}
-                    besideRail={appViewBesideRail}
-                    compactRail={appViewCompactRail}
+                    besideRail={chrome.appViewBesideRail}
+                    compactRail={chrome.appViewCompactRail}
                     gitCwd={gitCwd}
                     sidebarCwd={sidebarCwd}
                     scopeProject={appViewScope}
@@ -3307,8 +3285,8 @@ function Workspace({
                     localSurfaces={
                       <LocalSurfaceViews
                         surface={localSurface}
-                        besideRail={appViewBesideRail}
-                        compactRail={appViewCompactRail}
+                        besideRail={chrome.appViewBesideRail}
+                        compactRail={chrome.appViewCompactRail}
                         projectPaths={recents.map((project) => project.path)}
                         projectCwd={projectCwd}
                         onClose={onLeaveLocalSurface}
@@ -3338,7 +3316,7 @@ function Workspace({
                 </div>
                 {insetLayout ? (
                   <InsetRightPanel
-                    shown={insetRightPanelShown}
+                    shown={chrome.insetRightPanelShown}
                     closing={rightPanelClosing}
                     resize={rightPanelResize}
                     onPane={setRightPanelRef}
