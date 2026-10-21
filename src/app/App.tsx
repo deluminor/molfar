@@ -124,14 +124,7 @@ import {
   type ProviderAccountDeps,
   selectProviderAccount,
 } from "./workspace/flows/composer/provider-account";
-import { openBoardCard } from "./workspace/flows/surfaces/board-surface";
-import { stepProject } from "./workspace/flows/surfaces/project-navigation";
-import {
-  togglePrimarySidebar,
-  toggleProjectRail,
-  toggleSessionSidebar,
-  toggleSessionSidebarShortcut,
-} from "./workspace/flows/surfaces/sidebar-toggles";
+import { createNavigationActions } from "./workspace/flows/surfaces/navigation-actions";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
 import type { CommandDeps, WorkspaceActions } from "./workspace/hooks/commands/command-deps";
@@ -154,10 +147,7 @@ import type {
   VisibleTabs,
 } from "./workspace/title-tabs/displayed-tabs-deps";
 import { createVisibleTabShortcuts } from "./workspace/title-tabs/visible-tab-shortcuts";
-import {
-  navigateSessionList,
-  type SessionListDeps,
-} from "./workspace/flows/tabs/session-list-navigation";
+import type { SessionListDeps } from "./workspace/flows/tabs/session-list-navigation";
 import type { SurfaceDeps } from "./workspace/flows/surfaces/surface-deps";
 import { openAppView } from "./workspace/flows/surfaces/overlay-views";
 import { createSurfaceActions } from "./workspace/flows/surfaces/surface-actions";
@@ -451,7 +441,6 @@ import {
   bindResumedSessions,
   closeBusyWindow,
   closeCurrentWindow,
-  confirmReload,
   hasInFlightSessions,
   hideCurrentWindow,
   isAppQuitting,
@@ -2937,37 +2926,6 @@ function Workspace({
   );
 
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
-  const onToggleSessionSidebar = useCallback(
-    () => toggleSessionSidebar(workspaceStore),
-    [],
-  );
-  const onToggleSidebar = useCallback(
-    () => togglePrimarySidebar(workspaceStore, insetLayout),
-    [insetLayout],
-  );
-  const onToggleSessionSidebarShortcut = useCallback(
-    () =>
-      toggleSessionSidebarShortcut(
-        workspaceStore,
-        insetLayout,
-        rightPanelToggleRef.current,
-      ),
-    [insetLayout],
-  );
-  const onToggleProjectRail = useCallback(
-    () => toggleProjectRail(workspaceStore),
-    [],
-  );
-
-
-  const onReload = useCallback(() => {
-    void (async () => {
-      if (!(await confirmReload(dirtyFilesRef.current.size > 0))) return;
-      window.location.reload();
-    })();
-  }, []);
-
-
   const {
     onOpenLocalSurface,
     onOpenKnowledge,
@@ -2989,6 +2947,22 @@ function Workspace({
     onSelectHistorySession,
     railBadges,
   });
+  const navigation = useStableFlow(() =>
+    createNavigationActions({
+      store: workspaceStore,
+      insetLayout: () => insetLayoutRef.current,
+      rightPanelToggle: () => rightPanelToggleRef.current,
+      hasDirtyFiles: () => dirtyFilesRef.current.size > 0,
+      reload: () => window.location.reload(),
+      sessionList: sessionListDeps,
+      project: {
+        currentProject: () => projectCwdRef.current,
+        selectProject: projectActions.select,
+        noteStep: noteProjectStep,
+      },
+      openLocalSurface: (surface) => onOpenLocalSurface(surface),
+    }),
+  );
 
   useEffect(() => {
     if (sidebarTab === "inbox") setSidebarTab("sessions");
@@ -3019,37 +2993,6 @@ function Workspace({
     );
   }, []);
 
-  const onSessionNavigationOrder = useCallback((ids: readonly string[]) => {
-    sessionNavigationIdsRef.current = ids;
-  }, []);
-
-  const onNavigateSessionList = useCallback(
-    (delta: number, inCurrentTab = false) =>
-      navigateSessionList(sessionListDeps, delta, inCurrentTab),
-    [],
-  );
-
-  const onNavigateProjectList = useCallback(
-    (delta: number) =>
-      stepProject(
-        {
-          currentProject: () => projectCwdRef.current,
-          selectProject: projectActions.select,
-          noteStep: noteProjectStep,
-        },
-        delta,
-      ),
-    [],
-  );
-
-  const onOpenBoardCard = useCallback(
-    (cardId: string) => openBoardCard(onOpenLocalSurface, cardId),
-    [onOpenLocalSurface],
-  );
-  const onOpenUsageSurface = useCallback(
-    () => onOpenLocalSurface("usage"),
-    [onOpenLocalSurface],
-  );
   const displayedTabsDeps = useStableFlow(
     (): DisplayedTabsDeps => ({
       store: workspaceStore,
@@ -3128,12 +3071,12 @@ function Workspace({
     onActivate: onActivateVisibleTab,
     onSplit,
     onFocusDir,
-    onToggleSidebar,
-    onToggleSessionSidebar: onToggleSessionSidebarShortcut,
+    onToggleSidebar: navigation.toggleSidebar,
+    onToggleSessionSidebar: navigation.toggleSessionSidebarShortcut,
     onToggleFamiliar: familiarActions.toggle,
     onGoToFile: surfaces.goToFile,
     onOpenCommandPalette: surfaces.openCommandPalette,
-    onReload,
+    onReload: navigation.reload,
     onFindInProject: surfaces.findInProject,
     onOpenSearch: surfaces.openSearch,
     onOpenInbox: surfaces.openInbox,
@@ -3142,11 +3085,11 @@ function Workspace({
     onNewTerminal: terminals.openNew,
     onNewTerminalTab: terminals.openNewTab,
     onToggleProjectTerminal: terminals.toggleDock,
-    onNavigateSessionList,
-    onNavigateProjectList,
+    onNavigateSessionList: navigation.navigateSessionList,
+    onNavigateProjectList: navigation.navigateProjectList,
     openSettings: surfaces.openSettings,
     onOpenApprovalSession: workerPanes.openSession,
-    onOpenBoardCard,
+    onOpenBoardCard: navigation.openBoardCard,
   });
   const run = useCommandRunner();
   const isMainWindowRef = useLatestRef(isMainWindow);
@@ -3459,8 +3402,8 @@ function Workspace({
       onCloseFamiliarView={closeFamiliarView}
       onGoBack={surfaces.railBack}
       onGoForward={surfaces.railForward}
-      onToggleSidebar={onToggleSidebar}
-      onToggleSessionSidebar={onToggleSessionSidebar}
+      onToggleSidebar={navigation.toggleSidebar}
+      onToggleSessionSidebar={navigation.toggleSessionSidebar}
       onSelect={onSelectTitleTab}
       onNewTerminal={terminals.openNew}
       onOpenSettings={surfaces.openSettingsHome}
@@ -3514,7 +3457,7 @@ function Workspace({
       onSelectRemoteSession={onSelectRemoteSession}
       onRemoteSessionDeleted={tabClose.closeDeletedRemoteSession}
       onPrefetchSession={onPrefetchHistorySession}
-      onSessionNavigationOrder={onSessionNavigationOrder}
+      onSessionNavigationOrder={navigation.setSessionNavigationOrder}
       onPlaceSessionOnPane={tabActions.placeSession}
       onRenameSession={historyActions.rename}
       onArchiveSession={historyActions.archive}
@@ -3572,7 +3515,7 @@ function Workspace({
       notesEnabled={notesEnabled}
       titleBarAbove={insetLayout || compactTitleBar}
       inset={insetLayout}
-      onToggleProjectRail={onToggleProjectRail}
+      onToggleProjectRail={navigation.toggleProjectRail}
       unseenFinishedIds={unseenFinishedIds}
       inboxUnseen={inboxUnseen}
       linkedSessionUpdateIds={linkedSessionUpdateIds}
@@ -3663,8 +3606,8 @@ function Workspace({
                         onNewTerminal={terminals.openNew}
                         onToggleTerminal={terminals.toggleDock}
                         onGoToFile={surfaces.goToFile}
-                        onToggleSidebar={onToggleSidebar}
-                        onToggleSessionSidebar={onToggleSessionSidebarShortcut}
+                        onToggleSidebar={navigation.toggleSidebar}
+                        onToggleSessionSidebar={navigation.toggleSessionSidebarShortcut}
                         onShowSourceControl={tabActions.showSourceControl}
                         onCloseTab={tabClose.closeTab}
                         onCloseOtherTabs={tabClose.closeOtherTabs}
@@ -3811,16 +3754,16 @@ function Workspace({
                         projectPaths={recents.map((project) => project.path)}
                         projectCwd={projectCwd}
                         onClose={onLeaveLocalSurface}
-                        onToggleSidebar={onToggleSidebar}
+                        onToggleSidebar={navigation.toggleSidebar}
                         onOpenSession={onOpenHomeSession}
                         onOpenAutomation={onOpenHomeAutomation}
                         onOpenAutomations={surfaces.openAutomations}
-                        onOpenUsage={onOpenUsageSurface}
+                        onOpenUsage={navigation.openUsage}
                         onOpenInbox={surfaces.openInbox}
                         taskBoard={taskBoard}
                       />
                     }
-                    onToggleSidebar={onToggleSidebar}
+                    onToggleSidebar={navigation.toggleSidebar}
                     onOpenFile={fileActions.open}
                     onOpenHistorySession={onSelectHistorySession}
                     onOpenProject={projectActions.select}
@@ -3890,7 +3833,7 @@ function Workspace({
             cwd={filesCwd}
             openPaths={openFilePaths}
             onOpenFile={fileActions.open}
-            onReload={onReload}
+            onReload={navigation.reload}
           />
           <WorkspaceNotices
             pressure={{

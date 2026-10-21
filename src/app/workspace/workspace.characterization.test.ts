@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { loadProjectRailOpen, loadSessionSidebarOpen } from "@/features/settings/model/appearance";
 import { type AppHarness, renderApp } from "./testing/app-harness";
 import { answeredSession, shows, tabIds } from "./testing/workspace-steps";
 
@@ -446,6 +447,21 @@ describe("Workspace turn control", () => {
     expect(app.harness.approvals).toEqual([
       { sessionId, requestId: 7, decision: "allow" },
     ]);
+  });
+});
+
+describe("Workspace sidebars", () => {
+  it("toggles the project rail and the session sidebar from the menu", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    const railOpen = loadProjectRailOpen();
+    const sidebarOpen = loadSessionSidebarOpen();
+
+    await app.emit("toggle_sidebar");
+    await app.until(() => loadProjectRailOpen() === !railOpen);
+
+    await app.emit("toggle_session_sidebar");
+    await app.until(() => loadSessionSidebarOpen() === !sidebarOpen);
+    expect(loadProjectRailOpen()).toBe(!railOpen);
   });
 });
 
