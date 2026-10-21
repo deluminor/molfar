@@ -67,12 +67,8 @@ import {
   type WorktreeFocus,
   useWorktreeFocus,
 } from "@/features/source-control/model/worktree-focus";
-import {
-  homeDir,
-  type GitHistoryCommit,
-} from "@/platform/tauri/fs";
+import { homeDir } from "@/platform/tauri/fs";
 import { pathKey, projectName } from "@/shared/lib/paths";
-import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { noteProjectStep } from "./shell/Sidebar";
@@ -127,7 +123,7 @@ import { launchQuickSession as launchQuickSessionInWorkspace } from "./workspace
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
-import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
+import { createTabActions } from "./workspace/flows/tabs/tab-actions";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
 import {
   type ProviderAccountDeps,
@@ -192,7 +188,6 @@ import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
 import { useWorkspaceTaskBoard } from "./workspace/hooks/use-workspace-task-board";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
-import { cycleTab, tabInSlot } from "./workspace/flows/tabs/tab-cycle";
 import {
   activateTab as activateWorkspaceTab,
   focusOpenSession as focusTabOfSession,
@@ -204,10 +199,7 @@ import {
   appendTab as appendWorkspaceTab,
   insertBeside as insertTabBeside,
   insertBesideActive as insertTabBesideActiveTab,
-  movePaneTo,
   openSessionTab as openWorkspaceSessionTab,
-  reorderPaneFiles,
-  reorderTabs as reorderWorkspaceTabs,
   splitFocusedPane,
   type TabLayoutDeps,
 } from "./workspace/flows/tabs/tab-layout";
@@ -273,8 +265,6 @@ import {
   neighborLeafId,
   newAgentTab,
   newTab,
-  openChangesTab,
-  openCommitTab,
   openEditorTab,
   splitPane,
   type FocusDir,
@@ -390,7 +380,7 @@ import {
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
 import type { FamiliarRemovalDeps } from "./workspace/flows/familiars/familiar-removal";
-import { openDiff, type OpenDiffDeps } from "./workspace/flows/files/open-diff";
+import type { OpenDiffDeps } from "./workspace/flows/files/open-diff";
 import { placeSessionOnPane, type PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
@@ -410,7 +400,6 @@ import {
   removeArtifactCard,
   ARTIFACT_DELETED_EVENT,
 } from "@/features/artifacts/artifacts";
-import type { MonoChangesRequest } from "@/features/familiars/ui/FamiliarChangesView";
 import {
   warmNativeSkills,
 } from "@/features/skills/model/skills";
@@ -571,12 +560,7 @@ function Workspace({
     setSettingsOpen,
     setWhatsNewVersion,
     setFamiliarViewId,
-    setFamiliarOverviewOpen,
-    setFamiliarOverviewTab,
     setFamiliarSettingsFor,
-    setFamiliarChangesRequest,
-    setFamiliarShownSession,
-    setFamiliarOverviewDocument,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -2127,52 +2111,6 @@ function Workspace({
     workspaceNavigation.revision,
   ]);
 
-  const onNext = useCallback(() => {
-    if (workspaceStore.getState().familiarViewId) {
-      activateTab(activeTabId);
-      return;
-    }
-    const tab = cycleTab(deckProjectTabs, activeTabId, 1);
-    if (tab) activateTab(tab.id);
-  }, [activateTab, activeTabId, deckProjectTabs]);
-
-  const onPrev = useCallback(() => {
-    if (workspaceStore.getState().familiarViewId) {
-      activateTab(activeTabId);
-      return;
-    }
-    const tab = cycleTab(deckProjectTabs, activeTabId, -1);
-    if (tab) activateTab(tab.id);
-  }, [activateTab, activeTabId, deckProjectTabs]);
-
-  const visitTab = useCallback(
-    (direction: "back" | "forward") => {
-      // A Familiar's full view covers the tabs; visiting returns to them first.
-      if (workspaceStore.getState().familiarViewId) {
-        activateTab(activeTabIdRef.current);
-        return;
-      }
-      const openTabIds = new Set(tabsRef.current.map((tab) => tab.id));
-      const tabId = tabVisits.step(
-        direction,
-        openTabIds,
-        activeTabIdRef.current,
-      );
-      if (tabId) activateTab(tabId);
-    },
-    [activateTab],
-  );
-  const onVisitBack = useCallback(() => visitTab("back"), [visitTab]);
-  const onVisitForward = useCallback(() => visitTab("forward"), [visitTab]);
-
-  const onActivate = useCallback(
-    (slot: number) => {
-      const tab = tabInSlot(deckProjectTabs, slot);
-      if (tab) activateTab(tab.id);
-    },
-    [activateTab, deckProjectTabs],
-  );
-
   const paneDeps = useStableFlow(
     (): PaneDeps => ({
       store: workspaceStore,
@@ -2196,20 +2134,8 @@ function Workspace({
     }),
   );
   // These depend on render state; stable flows reach the current ones here.
-  const renderedTabActions = useRef({
-    onNext,
-    onPrev,
-    onActivate,
-    onCloseFocused,
-    onSelectRemoteSession,
-  });
-  renderedTabActions.current = {
-    onNext,
-    onPrev,
-    onActivate,
-    onCloseFocused,
-    onSelectRemoteSession,
-  };
+  const renderedTabActions = useRef({ onCloseFocused, onSelectRemoteSession });
+  renderedTabActions.current = { onCloseFocused, onSelectRemoteSession };
   const sessionListDeps = useStableFlow(
     (): SessionListDeps => ({
       ...paneDeps,
@@ -2220,129 +2146,26 @@ function Workspace({
       prefetch: (sessionId) => onPrefetchHistorySession(sessionId),
     }),
   );
-  const onFocusPane = useCallback(
-    (paneId: string) => focusPane(paneDeps, paneId),
-    [],
+  const openDiffDeps = useStableFlow(
+    (): OpenDiffDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      activeTabIdRef,
+      gitCwd: () => gitCwdRef.current,
+      sidebarCwd: () => sidebarCwdRef.current,
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+    }),
   );
-
-  const onOpenDiff = useCallback(
-    (
-      path?: string,
-      session?: { sessionId: string; cwd: string },
-      changeKind?: GitFileDiffKind,
-      pin = false,
-      options?: { exact?: boolean },
-    ) => {
-      void openDiff(openDiffDeps, path, { session, changeKind, pin, exact: options?.exact });
-    },
-    [],
-  );
-
-  // A Familiar view covers the workspace, so its session changes open on the
-  // overview's Changes tab instead of in a project tab hidden behind it.
-  const openMonoChanges = useCallback((request: MonoChangesRequest) => {
-    setFamiliarShownSession(null);
-    setFamiliarOverviewDocument(null);
-    setFamiliarChangesRequest(request);
-    setFamiliarOverviewTab("changes");
-    setFamiliarOverviewOpen(true);
-  }, []);
-  const onOpenMonoDiff = useCallback(
-    (path?: string, session?: { sessionId: string; cwd: string }) => {
-      if (!session) {
-        onOpenDiff(path);
-        return;
-      }
-      openMonoChanges({ path });
-    },
-    [onOpenDiff, openMonoChanges],
-  );
-  const onCommitMonoChanges = useCallback(
-    () => openMonoChanges({}),
-    [openMonoChanges],
-  );
-
-  const onOpenWorkingTreeDiff = useCallback(
-    (path: string, kind?: GitFileDiffKind, pin?: boolean) =>
-      onOpenDiff(path, undefined, kind, pin, { exact: true }),
-    [onOpenDiff],
-  );
-
-  /** Stack one section's working-tree changes in one review, whatever the diff-view setting. */
-  const onOpenAllChanges = useCallback(
-    (kind: GitFileDiffKind) => {
-      setTabs((prev) =>
-        prev.map((tab) =>
-          tab.id === activeTabId
-            ? openChangesTab(
-                tab,
-                gitCwdRef.current,
-                undefined,
-                kind,
-                sidebarCwdRef.current,
-              )
-            : tab,
-        ),
-      );
-      setComposerFocused(false);
-    },
-    [activeTabId],
-  );
-
-  const onOpenCommit = useCallback(
-    (commit: GitHistoryCommit, pin?: boolean) => {
-      setTabs((prev) =>
-        prev.map((tab) =>
-          tab.id === activeTabId
-            ? openCommitTab(
-                tab,
-                gitCwdRef.current,
-                {
-                  sha: commit.sha,
-                  shortSha: commit.shortSha,
-                  subject: commit.subject,
-                },
-                sidebarCwdRef.current,
-                pin,
-              )
-            : tab,
-        ),
-      );
-      setComposerFocused(false);
-    },
-    [activeTabId],
-  );
-
-  const onShowSourceControl = useCallback(() => {
-    setSidebarTab("changes");
-  }, []);
-
-  const onToggleChanges = useCallback(() => {
-    onShowSourceControl();
-  }, [onShowSourceControl]);
-
-  const onReorderTabs = useCallback(
-    (ids: string[], movedId?: string) =>
-      reorderWorkspaceTabs(tabLayoutDeps, ids, movedId),
-    [],
-  );
-
-  const onReorderFiles = useCallback(
-    (paneId: string, ids: string[]) =>
-      reorderPaneFiles(workspaceStore, paneId, ids),
-    [],
-  );
-
-  const onMovePane = useCallback(
-    (fromId: string, toId: string, edge: PaneEdge) =>
-      movePaneTo(workspaceStore, fromId, toId, edge),
-    [],
-  );
-
-  const onDetachPane = useCallback(
-    (paneId: string, targetTabId: string, position: "before" | "after") =>
-      detachPane(paneDeps, paneId, targetTabId, position),
-    [],
+  const deckProjectTabsRef = useLatestRef(deckProjectTabs);
+  const tabActions = useStableFlow(() =>
+    createTabActions({
+      pane: paneDeps,
+      diff: openDiffDeps,
+      layout: tabLayoutDeps,
+      visits: tabVisits,
+      deckTabs: () => deckProjectTabsRef.current,
+    }),
   );
 
   const focusOpenSession = useCallback(
@@ -2711,9 +2534,9 @@ function Workspace({
     (dir: FocusDir) => {
       if (!activeTab) return;
       const next = neighborLeafId(activeTab.layout, activeTab.focusedId, dir);
-      if (next) onFocusPane(next);
+      if (next) tabActions.focusPane(next);
     },
-    [activeTab, onFocusPane],
+    [activeTab],
   );
 
 
@@ -2771,17 +2594,6 @@ function Workspace({
     }),
   );
   const fileActions = useStableFlow(() => createFileActions(fileDeps));
-  const openDiffDeps = useStableFlow(
-    (): OpenDiffDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      activeTabIdRef,
-      gitCwd: () => gitCwdRef.current,
-      sidebarCwd: () => sidebarCwdRef.current,
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-    }),
-  );
   const placeSessionDeps = useStableFlow(
     (): PlaceSessionDeps => ({
       store: workspaceStore,
@@ -3538,8 +3350,8 @@ function Workspace({
       closeFamiliarView: () => closeFamiliarView(),
       setSidebarTab: (tab, project) => setSidebarTab(tab, project),
       setComposerFocused: (focused) => setComposerFocused(focused),
-      visitBack: () => onVisitBack(),
-      visitForward: () => onVisitForward(),
+      visitBack: () => tabActions.visitBack(),
+      visitForward: () => tabActions.visitForward(),
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
       selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
     }),
@@ -3667,11 +3479,11 @@ function Workspace({
         closeTitleTab: (tabId) => tabClose.closeTitleTab(tabId),
         closeTabs: (ids, fallbackId) => tabClose.closeTabs(ids, fallbackId),
         closeEveryTab: (ids) => tabClose.closeEveryTab(ids),
-        reorderTabs: (ids, movedId) => onReorderTabs(ids, movedId),
+        reorderTabs: tabActions.reorderTabs,
         closeFocused: () => renderedTabActions.current.onCloseFocused(),
-        next: () => renderedTabActions.current.onNext(),
-        prev: () => renderedTabActions.current.onPrev(),
-        activate: (slot) => renderedTabActions.current.onActivate(slot),
+        next: tabActions.next,
+        prev: tabActions.prev,
+        activate: tabActions.activateSlot,
         closeOtherTabs: () => tabClose.closeOtherTabs(),
         closeAllTabs: () => tabClose.closeAllTabs(),
       },
@@ -3722,8 +3534,8 @@ function Workspace({
     onCloseFocused: onCloseVisibleTab,
     onNext: () => onCycleVisibleTab(1),
     onPrev: () => onCycleVisibleTab(-1),
-    onVisitBack,
-    onVisitForward,
+    onVisitBack: tabActions.visitBack,
+    onVisitForward: tabActions.visitForward,
     onActivate: onActivateVisibleTab,
     onSplit,
     onFocusDir,
@@ -3860,7 +3672,7 @@ function Workspace({
       : undefined,
     recents,
     hideProjectPicker: true,
-    onFocus: onFocusPane,
+    onFocus: tabActions.focusPane,
     onClose: tabClose.closePane,
     onCwdChange: worktreeActions.changeProject,
     onBranchChange: worktreeActions.changeBranch,
@@ -3898,7 +3710,7 @@ function Workspace({
     onQuestionReply,
     onQuestionInteraction,
     onOpenFile: fileActions.open,
-    onOpenDiff,
+    onOpenDiff: tabActions.openDiff,
     onOpenPlan: fileActions.openPlan,
     onBuildPlan,
     onSecondOpinion,
@@ -3936,7 +3748,7 @@ function Workspace({
             session={familiarShownSessionPane}
             // The Familiar view covers the workspace, so a review opens
             // beside the chat rather than in a hidden tab.
-            onOpenDiff={onOpenMonoDiff}
+            onOpenDiff={tabActions.openMonoDiff}
             // The Familiar runs this session; handing it off or asking for a
             // second opinion belongs in its own tab.
             onSecondOpinion={undefined}
@@ -3969,7 +3781,7 @@ function Workspace({
         onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
         onApproval={onApproval}
         onOpenFile={fileActions.open}
-        onOpenDiff={onOpenDiff}
+        onOpenDiff={tabActions.openDiff}
       />
     ) : null;
   const familiarSettingsDialog =
@@ -4132,9 +3944,9 @@ function Workspace({
       onFileDeleted={fileActions.deleted}
       onGoBack={surfaces.railBack}
       onGoForward={surfaces.railForward}
-      onOpenDiff={onOpenWorkingTreeDiff}
-      onOpenAllChanges={onOpenAllChanges}
-      onOpenCommit={onOpenCommit}
+      onOpenDiff={tabActions.openWorkingTreeDiff}
+      onOpenAllChanges={tabActions.openAllChanges}
+      onOpenCommit={tabActions.openCommit}
       selectedDiffPath={
         activeTab ? selectedChangePath(activeTab, gitCwd) : undefined
       }
@@ -4264,7 +4076,7 @@ function Workspace({
                         onGoToFile={surfaces.goToFile}
                         onToggleSidebar={onToggleSidebar}
                         onToggleSessionSidebar={onToggleSessionSidebarShortcut}
-                        onShowSourceControl={onToggleChanges}
+                        onShowSourceControl={tabActions.showSourceControl}
                         onCloseTab={tabClose.closeTab}
                         onCloseOtherTabs={tabClose.closeOtherTabs}
                         onCloseAllTabs={tabClose.closeAllTabs}
@@ -4315,13 +4127,13 @@ function Workspace({
                                   onCloseFile={tabClose.closeFile}
                                   onCloseOtherFiles={tabClose.closeOtherFiles}
                                   onPinFile={fileActions.pin}
-                                  onReorderFiles={onReorderFiles}
+                                  onReorderFiles={tabActions.reorderFiles}
                                   onFileDirtyChange={fileActions.setDirty}
                                   onFileErrorCountChange={fileActions.setErrorCount}
                                   transcriptPool={transcriptPool}
                                   onUpdatePlan={onUpdatePlan}
-                                  onMovePane={onMovePane}
-                                  onDetachPane={onDetachPane}
+                                  onMovePane={tabActions.movePane}
+                                  onDetachPane={tabActions.detachPane}
                                   onTerminalMetaChange={terminals.changeMeta}
                                 />
                                 <FamiliarSessionPanes
@@ -4334,8 +4146,8 @@ function Workspace({
                                   composerFocusToken={composerFocusToken}
                                   shownSessionActive={familiarShownSessionActive}
                                   onOpenArtifact={onOpenMonoArtifact}
-                                  onOpenDiff={onOpenMonoDiff}
-                                  onCommitChanges={onCommitMonoChanges}
+                                  onOpenDiff={tabActions.openMonoDiff}
+                                  onCommitChanges={tabActions.commitMonoChanges}
                                   onOpenFamiliarSession={onOpenFamiliarSession}
                                   activityTurnId={familiarOverview.activityShownTurnId}
                                   launchedSessions={familiarOverview.launchedSessions}
