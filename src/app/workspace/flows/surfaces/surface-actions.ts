@@ -4,7 +4,7 @@ import type { SettingsAnchor } from "@/features/settings/ui/SettingsView";
 import {
   findInProject,
   openAppView,
-  openAutomationSession,
+  openConversation,
   openFilePicker,
   railBack,
   railForward,
@@ -42,7 +42,7 @@ export function createSurfaceActions(deps: SurfaceDeps) {
     leaveInbox: () => setInboxViewOpen(false),
     leaveNotes: () => setNotesViewOpen(false),
     leaveAutomations: () => deps.setAutomationsViewOpen(false),
-    openAutomationSession: (sessionId: string) => openAutomationSession(deps, sessionId),
+    openConversation: (sessionId: string) => openConversation(deps, sessionId),
     openSettings: showSettings,
     openSettingsHome: () => showSettings(),
     openReminderSettings: () => showSettings("general", "notifications"),

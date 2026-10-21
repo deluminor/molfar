@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { openAppView, openFilePicker, railBack, railForward } from "./overlay-views";
+import { testSession } from "@/integrations/harness/core/test-session";
+import { openAppView, openConversation, openFilePicker, railBack, railForward } from "./overlay-views";
 import { closeSettings, openSettings } from "./settings-surface";
 import { setupSurfaces } from "./surface.fixture";
 
@@ -61,5 +62,36 @@ describe("settings", () => {
 
     closeSettings(deps);
     expect(store.getState()).toMatchObject({ settingsOpen: false, inboxViewOpen: true });
+  });
+});
+
+describe("openConversation", () => {
+  it("leaves every view for the conversation in its project", async () => {
+    const { deps, store } = setupSurfaces();
+    store.setState({ searchViewOpen: true, settingsOpen: true, filePickerOpen: true });
+    deps.ensureOpenSession.mockResolvedValue({ ...testSession("claude", "/work/other"), id: "s" } as never);
+
+    await openConversation(deps, "s");
+
+    expect(store.getState()).toMatchObject({
+      searchViewOpen: false,
+      inboxViewOpen: false,
+      notesViewOpen: false,
+      settingsOpen: false,
+      filePickerOpen: false,
+      projectCwd: "/work/other",
+    });
+    expect(deps.setAutomationsViewOpen).toHaveBeenCalledWith(false);
+    expect(deps.setSidebarTab).toHaveBeenCalledWith("sessions", "/work/other");
+    expect(deps.selectHistorySession).toHaveBeenCalledWith("s");
+  });
+
+  it("refuses a conversation that is gone and keeps the views", async () => {
+    const { deps, store } = setupSurfaces();
+    store.setState({ searchViewOpen: true });
+
+    await expect(openConversation(deps, "s")).rejects.toThrow("no longer available");
+    expect(store.getState().searchViewOpen).toBe(true);
+    expect(deps.selectHistorySession).not.toHaveBeenCalled();
   });
 });

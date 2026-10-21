@@ -3,7 +3,7 @@ import { isBlankSession } from "@/features/projects/model/project-return";
 import { forgetHarnessSession } from "@/integrations/harness";
 import { newDefaultSession } from "@/features/sessions/model/session";
 import { leafIds, type PaneEdge, type WorkspaceTab } from "@/features/workspace/model/layout";
-import { applyPlaceSessionOnPane } from "@/features/workspace/model/workspace-tab-groups";
+import { applyPlaceSessionOnPane, applyPlaceTabOnPane } from "@/features/workspace/model/workspace-tab-groups";
 import type { WorkspaceStore } from "../../store/types";
 import type { SessionPersistence } from "../session-history/session-persistence";
 
@@ -64,4 +64,36 @@ export async function placeSessionOnPane(
   deps.selectTab(result.activeTabId);
   setProjectTerminalFocused(false);
   deps.setComposerFocused(true);
+}
+
+/** Drops a whole tab onto a pane edge of another tab, replacing the target when it is blank. */
+export function placeTabOnPane(deps: PlaceSessionDeps, sourceTabId: string, targetId: string, edge: PaneEdge): void {
+  const targetTab = deps.tabsRef.current.find((tab) => leafIds(tab.layout).includes(targetId));
+  if (!targetTab || targetTab.id === sourceTabId) return;
+
+  const blankTarget = deps.sessionsRef.current.find(
+    (session) => session.id === targetId && isBlankSession(session),
+  );
+  const result = applyPlaceTabOnPane({
+    tabs: deps.tabsRef.current,
+    sessions: deps.sessionsRef.current,
+    sourceTabId,
+    targetId,
+    edge,
+    replaceTarget: blankTarget != null,
+  });
+  if (!result) return;
+
+  if (blankTarget) {
+    deps.persistence.forgetSaved(blankTarget.id);
+    void forgetHarnessSession(blankTarget.harness, blankTarget.id);
+  }
+  const { setTabs, setProjectTerminalFocused } = deps.store.getState();
+  deps.sessionsRef.current = result.sessions;
+  deps.tabsRef.current = result.tabs;
+  deps.setSessions(result.sessions);
+  setTabs(result.tabs);
+  deps.selectTab(result.activeTabId);
+  setProjectTerminalFocused(false);
+  deps.setComposerFocused(result.sessions.some((session) => session.id === result.focusedId));
 }

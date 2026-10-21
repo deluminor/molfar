@@ -53,8 +53,8 @@ export function findInProject(deps: SurfaceDeps): void {
   state.setSearchFocusToken((token) => token + 1);
 }
 
-/** Leaves the automations view for a conversation one of its runs started. */
-export async function openAutomationSession(deps: SurfaceDeps, sessionId: string): Promise<void> {
+/** Leaves the views for a conversation an automation run or a reminder points at. */
+export async function openConversation(deps: SurfaceDeps, sessionId: string): Promise<void> {
   const session = await deps.ensureOpenSession(sessionId);
   if (!session) throw new Error("This conversation is no longer available.");
   const state = deps.store.getState();

@@ -24,7 +24,6 @@ import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
 import { useWorkspaceSessions } from "./workspace/hooks/use-workspace-sessions";
 import type { AppSessionPlacement } from "@/features/agent-app/model/agent-app";
-import type { CiRepairRequest } from "@/features/inbox/model/ci-repair";
 import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
@@ -77,6 +76,10 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
+import { createComposerCardActions } from "./workspace/flows/composer/composer-cards";
+import { createFamiliarActions } from "./workspace/flows/familiars/familiar-actions";
+import { createReminderActions } from "./workspace/flows/reminders/reminder-actions";
 import { useFamiliarRail } from "./workspace/hooks/familiars/use-familiar-rail";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import {
@@ -90,15 +93,11 @@ import { submitSession as submitToSession } from "./workspace/flows/submission/s
 import type { Submit } from "./workspace/flows/submission/submit-types";
 import { createTurnQueueActions } from "./workspace/flows/turn-queue/turn-queue-actions";
 import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
-import { dismissComposerCard } from "./workspace/flows/composer/composer-cards";
-import { repairChecks } from "./workspace/flows/inbox/ci-repair";
 import { createInboxAsk } from "./workspace/flows/inbox/inbox-ask";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
 import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/inbox/inbox-related-sessions";
-import { openInboxSession, startInboxItem } from "./workspace/flows/inbox/inbox-start";
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
-import { addNoteToChat } from "./workspace/flows/notes/add-note-to-chat";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
 import type { WorktreeDeps } from "./workspace/flows/worktrees/worktree-deps";
 import { checkOpenWorktreeFiles } from "./workspace/flows/worktrees/worktree-removal";
@@ -253,7 +252,6 @@ import {
   openEditorTab,
   splitPane,
   type FocusDir,
-  type PaneEdge,
   type SplitDir,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
@@ -305,7 +303,6 @@ import type { Block } from "@/domain/session/block";
 import type { ModelTarget } from "@/domain/session/turn";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
-  applyPlaceTabOnPane,
   filterTabsForProject,
   workspaceTabCwd,
   workspaceTabWorktree,
@@ -317,7 +314,6 @@ import {
 import {
   loadNotes,
 } from "@/features/notes/notes";
-import type { NoteComposerCard } from "@/domain/notes/note-card";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
@@ -363,7 +359,7 @@ import {
 } from "@/features/familiars/model/familiar";
 import type { FamiliarRemovalDeps } from "./workspace/flows/familiars/familiar-removal";
 import type { OpenDiffDeps } from "./workspace/flows/files/open-diff";
-import { placeSessionOnPane, type PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
+import type { PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
@@ -398,7 +394,6 @@ import {
 } from "@/features/connections/model/remote-projects";
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
 import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
-import type { InboxItem } from "@/features/inbox/model/github-tasks";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
 import {
@@ -437,7 +432,6 @@ import { preloadNavigationWhenIdle } from "./model/preload-navigation";
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 
 
-import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
 import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
 
 import {
@@ -452,7 +446,6 @@ import {
 } from "@/features/settings/model/settings";
 
 import {
-  isBlankSession,
   reconcileProjectReturn,
   type ProjectReturnMemory,
 } from "@/features/projects/model/project-return";
@@ -542,7 +535,6 @@ function Workspace({
     setSettingsOpen,
     setWhatsNewVersion,
     setFamiliarViewId,
-    setFamiliarSettingsFor,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -1956,30 +1948,9 @@ function Workspace({
     [activateTab, openSessionTab, sessionDefaults?.runtimeMode],
   );
 
-  const onStartInboxItem = useCallback(
-    (item: InboxItem, body?: string) => startInboxItem(inboxDeps, item, body),
-    [],
-  );
-  const onAddNoteToChat = useCallback(
-    (card: NoteComposerCard) => addNoteToChat(inboxDeps, card),
-    [],
-  );
-  useAddNoteToChat(onAddNoteToChat);
-
-  const onInboxCardDismiss = useCallback(
-    (sessionId: string) => dismissComposerCard(setSessions, sessionId, "inboxCard"),
-    [],
-  );
-  const setLinkedWorkItemUpdateCard = linkedUpdateCards.update;
-  const onLinkedWorkItemUpdateCardDismiss = linkedUpdateCards.dismiss;
-  const onNoteCardDismiss = useCallback(
-    (sessionId: string) => dismissComposerCard(setSessions, sessionId, "noteCard"),
-    [],
-  );
-  const onHandoffCardDismiss = useCallback(
-    (sessionId: string) => dismissComposerCard(setSessions, sessionId, "handoffCard"),
-    [],
-  );
+  const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
+  useAddNoteToChat(inboxActions.addNoteToChat);
+  const composerCards = useStableFlow(() => createComposerCardActions(setSessions));
 
   const onSplit = useCallback(
     (dir: SplitDir) => {
@@ -2121,8 +2092,7 @@ function Workspace({
       focusOpenSession: (sessionId) => focusOpenSession(sessionId),
       replaceBlankPane: (session) => replaceBlankPaneWithSession(session),
       linkedUpdates: () => linkedSessionUpdatesRef.current,
-      revealLinkedUpdate: (sessionId, update) =>
-        revealLinkedSessionUpdate(sessionId, update),
+      revealLinkedUpdate: (sessionId, update) => linkedUpdateCards.reveal(sessionId, update),
     }),
   );
   // These depend on render state; stable flows reach the current ones here.
@@ -2149,12 +2119,27 @@ function Workspace({
       setSidebarTab: (tab, project) => setSidebarTab(tab, project),
     }),
   );
+  const placeSessionDeps = useStableFlow(
+    (): PlaceSessionDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      tabsRef,
+      persistence: sessionPersistence,
+      scope: tabCloseScope,
+      projectCwd: () => projectCwdRef.current,
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      setSessions: (next) => setSessions(next),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+    }),
+  );
   const deckProjectTabsRef = useLatestRef(deckProjectTabs);
   const tabActions = useStableFlow(() =>
     createTabActions({
       pane: paneDeps,
       diff: openDiffDeps,
       layout: tabLayoutDeps,
+      place: placeSessionDeps,
       visits: tabVisits,
       deckTabs: () => deckProjectTabsRef.current,
     }),
@@ -2212,7 +2197,6 @@ function Workspace({
 
   const onPrefetchHistorySession = sessionLoader.prefetch;
 
-  const revealLinkedSessionUpdate = linkedUpdateCards.reveal;
   const inboxAsk = useStableFlow(() =>
     createInboxAsk({
       store: workspaceStore,
@@ -2223,8 +2207,6 @@ function Workspace({
       stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
     }),
   );
-  const onAskInboxItem = inboxAsk.ask;
-  const onRestartInboxAsk = inboxAsk.restart;
 
   useEffect(() => {
     if (!inboxAskPortal || !inboxViewOpen) return;
@@ -2245,144 +2227,62 @@ function Workspace({
     else if (familiarId) saveOpenFamiliar(undefined);
   }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
 
-  const onToggleFamiliar = useCallback(
-    () => familiarView.toggle(familiarsEnabled),
-    [familiarsEnabled],
+  const familiarsEnabledRef = useLatestRef(familiarsEnabled);
+  const familiarActions = useStableFlow(() =>
+    createFamiliarActions({
+      store: workspaceStore,
+      view: familiarView,
+      familiarsEnabled: () => familiarsEnabledRef.current,
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
+    }),
   );
-
-  /** A new Familiar opens straight away, ready to be told what it works on. */
-  const onCreateFamiliar = useCallback((projects?: readonly string[]) => {
-    const familiarId = createFamiliar(projects).id;
-    setFamiliarSettingsFor(familiarId);
-    void onOpenFamiliar(familiarId);
-  }, [onOpenFamiliar]);
 
   const onSelectHistorySession = useCallback(
     (sessionId: string) => selectHistorySession(paneDeps, sessionId),
     [],
   );
 
-  const onOpenMonoLaunchedSession = useCallback(
-    async (sessionId: string) => {
-      const session = await ensureOpenSession(sessionId);
-      if (!session) throw new Error("This session is no longer available.");
-      closeFamiliarView();
-      setSidebarTab("sessions", session.cwd);
-      await onSelectHistorySession(sessionId);
-    },
-    [ensureOpenSession, closeFamiliarView, setSidebarTab, onSelectHistorySession],
-  );
 
-  const onOpenFamiliarSession = useCallback(
-    (
-      familiarSessionId: string,
-      _turnId: string,
-      _blocks: Block[],
-      launchedId: string,
-    ) => familiarView.showLaunchedSession(familiarSessionId, launchedId),
-    [],
+  const surfaceDeps = useStableFlow(
+    (): SurfaceDeps => ({
+      store: workspaceStore,
+      setAutomationsViewOpen,
+      setAutomationsSurfaceOpen,
+      setLocalSurface,
+      automationsSurfaceOpen: () => automationsSurfaceOpenRef.current,
+      localSurface: () => localSurfaceRef.current,
+      settingsReturnView: settingsReturnViewRef,
+      rememberAppView: (view) => rememberAppView(view),
+      cancelNavigation: () => workspaceNavigation.cancel(),
+      closeFamiliarView: () => closeFamiliarView(),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      visitBack: () => tabActions.visitBack(),
+      visitForward: () => tabActions.visitForward(),
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
+    }),
   );
-
-  const openReminderSession = useCallback(
-    async (sessionId: string) => {
-      const session = await ensureOpenSession(sessionId);
-      if (!session)
-        throw new Error("This conversation is no longer available.");
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      setSettingsOpen(false);
-      setFilePickerOpen(false);
-      setSidebarTab("sessions", session.cwd);
-      setProjectCwd(session.cwd);
-      setRecents(rememberProject(session.cwd));
-      await onSelectHistorySession(sessionId);
-    },
-    [ensureOpenSession, onSelectHistorySession],
+  const surfaces = useStableFlow(() => createSurfaceActions(surfaceDeps));
+  useSettingsOpenEvents(surfaces.openSettings, surfaces.openRemoteProjectDialog);
+  const reminders = useStableFlow(() =>
+    createReminderActions({
+      sessionsRef,
+      upsertSession,
+      dismissDueReminder: (sessionId) => sessionRemindersRef.current.dismissDue(sessionId),
+      updateLinkedCard: linkedUpdateCards.update,
+    }),
   );
-
-  const ensureReminderSessionsSaved = useCallback(
-    async (ids: readonly string[]) => {
-      for (const id of ids) {
-        const session = sessionsRef.current.find(
-          (session) => session.id === id,
-        );
-        if (session && !(await upsertSession(session))) {
-          throw new Error(
-            "Send a message in this conversation before setting a reminder.",
-          );
-        }
-      }
-    },
-    [],
-  );
-
   const sessionReminders = useSessionReminders(
-    openReminderSession,
-    ensureReminderSessionsSaved,
+    surfaces.openConversation,
+    reminders.ensureSaved,
     sessions
       .filter((session) => !session.inboxAsk)
       .map((session) => session.id),
   );
-
-  const dismissNoticesForContinuedSession = useCallback(
-    (sessionId: string) => {
-      void sessionReminders.dismissDue(sessionId);
-      const updatedAt = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      )?.linkedWorkItemUpdateCard?.updatedAt;
-      if (updatedAt == null) return;
-      markLinkedSessionUpdateSeen(sessionId, updatedAt);
-      setLinkedWorkItemUpdateCard(sessionId, (card) =>
-        card?.updatedAt === updatedAt ? undefined : card,
-      );
-    },
-    [sessionReminders.dismissDue, setLinkedWorkItemUpdateCard],
-  );
-
-  const onPlaceSessionOnPane = useCallback(
-    (sessionId: string, targetId: string, edge: PaneEdge) =>
-      placeSessionOnPane(placeSessionDeps, sessionId, targetId, edge),
-    [],
-  );
-
-  const onPlaceTabOnPane = useCallback(
-    (sourceTabId: string, targetId: string, edge: PaneEdge) => {
-      const targetTab = tabsRef.current.find((tab) =>
-        leafIds(tab.layout).includes(targetId),
-      );
-      if (!targetTab || targetTab.id === sourceTabId) return;
-
-      const blankTarget = sessionsRef.current.find(
-        (session) => session.id === targetId && isBlankSession(session),
-      );
-      const result = applyPlaceTabOnPane({
-        tabs: tabsRef.current,
-        sessions: sessionsRef.current,
-        sourceTabId,
-        targetId,
-        edge,
-        replaceTarget: blankTarget != null,
-      });
-      if (!result) return;
-
-      if (blankTarget) {
-        sessionPersistence.forgetSaved(blankTarget.id);
-        void forgetHarnessSession(blankTarget.harness, blankTarget.id);
-      }
-      sessionsRef.current = result.sessions;
-      tabsRef.current = result.tabs;
-      setSessions(result.sessions);
-      setTabs(result.tabs);
-      setActiveTabId(result.activeTabId);
-      setProjectTerminalFocused(false);
-      setComposerFocused(
-        result.sessions.some((session) => session.id === result.focusedId),
-      );
-    },
-    [],
-  );
+  const sessionRemindersRef = useLatestRef(sessionReminders);
 
   const sessionActionDeps = useStableFlow(
     (): SessionActionsDeps => ({
@@ -2586,20 +2486,6 @@ function Workspace({
     }),
   );
   const fileActions = useStableFlow(() => createFileActions(fileDeps));
-  const placeSessionDeps = useStableFlow(
-    (): PlaceSessionDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      tabsRef,
-      persistence: sessionPersistence,
-      scope: tabCloseScope,
-      projectCwd: () => projectCwdRef.current,
-      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
-      setSessions: (next) => setSessions(next),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-    }),
-  );
 
 
 
@@ -2632,13 +2518,12 @@ function Workspace({
           workspaceNavigation,
           enqueueHarnessEvent,
           flushHarnessEvents,
-          dismissNoticesForContinuedSession,
+          dismissNoticesForContinuedSession: reminders.dismissContinuedNotices,
           applyProjectLocationChange: projectActions.moveLocation,
         },
         ...args,
       ),
     [
-      dismissNoticesForContinuedSession,
       enqueueHarnessEvent,
       flushHarnessEvents,
     ],
@@ -3253,28 +3138,6 @@ function Workspace({
     [],
   );
 
-  const surfaceDeps = useStableFlow(
-    (): SurfaceDeps => ({
-      store: workspaceStore,
-      setAutomationsViewOpen,
-      setAutomationsSurfaceOpen,
-      setLocalSurface,
-      automationsSurfaceOpen: () => automationsSurfaceOpenRef.current,
-      localSurface: () => localSurfaceRef.current,
-      settingsReturnView: settingsReturnViewRef,
-      rememberAppView: (view) => rememberAppView(view),
-      cancelNavigation: () => workspaceNavigation.cancel(),
-      closeFamiliarView: () => closeFamiliarView(),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      visitBack: () => tabActions.visitBack(),
-      visitForward: () => tabActions.visitForward(),
-      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
-      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
-    }),
-  );
-  const surfaces = useStableFlow(() => createSurfaceActions(surfaceDeps));
-  useSettingsOpenEvents(surfaces.openSettings, surfaces.openRemoteProjectDialog);
 
   const onReload = useCallback(() => {
     void (async () => {
@@ -3283,18 +3146,6 @@ function Workspace({
     })();
   }, []);
 
-  const onOpenLinkedWorkItem = linkedPanels.open;
-
-  const onOpenInboxSession = useCallback(
-    (sessionId: string) => openInboxSession(inboxDeps, sessionId),
-    [],
-  );
-
-  const onRepairChecks = useCallback(
-    (item: InboxItem, request: CiRepairRequest, sessionId?: string) =>
-      repairChecks(inboxDeps, item, request, sessionId),
-    [],
-  );
 
   const {
     onOpenLocalSurface,
@@ -3458,7 +3309,7 @@ function Workspace({
     onFocusDir,
     onToggleSidebar,
     onToggleSessionSidebar: onToggleSessionSidebarShortcut,
-    onToggleFamiliar,
+    onToggleFamiliar: familiarActions.toggle,
     onGoToFile: surfaces.goToFile,
     onOpenCommandPalette: surfaces.openCommandPalette,
     onReload,
@@ -3616,11 +3467,11 @@ function Workspace({
     onUsageLimitResumeAtReset: usageLimits.setResumeAtReset,
     onUsageLimitDismiss: usageLimits.dismiss,
     onUsageLimitAccountChange: usageLimits.changeAccount,
-    onInboxCardDismiss,
-    onLinkedWorkItemUpdateCardDismiss,
-    onNoteCardDismiss,
-    onHandoffCardDismiss,
-    onOpenLinkedWorkItem,
+    onInboxCardDismiss: composerCards.dismissInbox,
+    onLinkedWorkItemUpdateCardDismiss: linkedUpdateCards.dismiss,
+    onNoteCardDismiss: composerCards.dismissNote,
+    onHandoffCardDismiss: composerCards.dismissHandoff,
+    onOpenLinkedWorkItem: linkedPanels.open,
     onArchiveSession: historyActions.archive,
     onDeleteSession: historyActions.delete,
     onApproval: turnActions.approve,
@@ -3695,7 +3546,7 @@ function Workspace({
         history={history}
         shownSession={familiarShownSessionView}
         onShowLaunchedSession={familiarView.showLaunchedSession}
-        onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
+        onOpenSessionInWorkspace={familiarActions.openLaunchedInWorkspace}
         onApproval={turnActions.approve}
         onOpenFile={fileActions.open}
         onOpenDiff={tabActions.openDiff}
@@ -3724,7 +3575,7 @@ function Workspace({
     sessions,
     unseenReplies: familiarReplies.counts,
     onOpen: onOpenFamiliar,
-    onCreate: onCreateFamiliar,
+    onCreate: familiarActions.create,
     onDelete: historyActions.deleteFamiliar,
   });
 
@@ -3800,7 +3651,7 @@ function Workspace({
       onArchiveTab={historyActions.archiveTitleTab}
       onDeleteTab={historyActions.deleteTitleTab}
       onReorder={onReorderDisplayedTabs}
-      onPlaceOnPane={onPlaceTabOnPane}
+      onPlaceOnPane={tabActions.placeTab}
       onPinFile={fileActions.pin}
       onSelectProject={projectActions.select}
     />
@@ -3843,7 +3694,7 @@ function Workspace({
       onRemoteSessionDeleted={tabClose.closeDeletedRemoteSession}
       onPrefetchSession={onPrefetchHistorySession}
       onSessionNavigationOrder={onSessionNavigationOrder}
-      onPlaceSessionOnPane={onPlaceSessionOnPane}
+      onPlaceSessionOnPane={tabActions.placeSession}
       onRenameSession={historyActions.rename}
       onArchiveSession={historyActions.archive}
       onArchiveSessions={historyActions.archiveMany}
@@ -3883,7 +3734,7 @@ function Workspace({
       onNewTerminal={terminals.openNew}
       onSearch={surfaces.openSearch}
       onOpenInbox={surfaces.openInbox}
-      onOpenInboxItem={onOpenLinkedWorkItem}
+      onOpenInboxItem={linkedPanels.open}
       onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
       onOpenKnowledge={railSurfaces.knowledge ? onOpenKnowledge : undefined}
       knowledgeActive={localSurface === "knowledge"}
@@ -4065,7 +3916,7 @@ function Workspace({
                                   onOpenArtifact={onOpenMonoArtifact}
                                   onOpenDiff={tabActions.openMonoDiff}
                                   onCommitChanges={tabActions.commitMonoChanges}
-                                  onOpenFamiliarSession={onOpenFamiliarSession}
+                                  onOpenFamiliarSession={familiarActions.showLaunchedFromTurn}
                                   activityTurnId={familiarOverview.activityShownTurnId}
                                   launchedSessions={familiarOverview.launchedSessions}
                                 />
@@ -4080,8 +3931,8 @@ function Workspace({
                                 : activeLinkedWorkItemPanel?.sessionId
                             }
                             repairSessions={repairSessions}
-                            onRepairChecks={onRepairChecks}
-                            onOpenSession={onOpenInboxSession}
+                            onRepairChecks={inboxActions.repairChecks}
+                            onOpenSession={inboxActions.openSession}
                             onClosePanel={linkedPanels.close}
                           />
                         </main>
@@ -4156,20 +4007,20 @@ function Workspace({
                     onLeaveNotes={surfaces.leaveNotes}
                     inbox={{
                       onClose: surfaces.leaveInbox,
-                      onStart: onStartInboxItem,
-                      onAsk: onAskInboxItem,
-                      onAskRestart: onRestartInboxAsk,
+                      onStart: inboxActions.start,
+                      onAsk: inboxAsk.ask,
+                      onAskRestart: inboxAsk.restart,
                       sessions: inboxRelatedSessions,
                       repairSessions,
-                      onRepairChecks,
-                      onOpenSession: onOpenInboxSession,
+                      onRepairChecks: inboxActions.repairChecks,
+                      onOpenSession: inboxActions.openSession,
                       onOpenIntegrations: surfaces.openInboxIntegrations,
                     }}
                     automations={{
                       onFocusAutomationConsumed: onAutomationsFocusConsumed,
                       onClose: surfaces.leaveAutomations,
                       onLaunch: (automation, run) => launchAutomation(automation, run, true),
-                      onOpenSession: surfaces.openAutomationSession,
+                      onOpenSession: surfaces.openConversation,
                     }}
                   />
                   <WorkspaceSettings

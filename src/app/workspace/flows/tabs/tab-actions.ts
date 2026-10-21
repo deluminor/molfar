@@ -9,6 +9,7 @@ import {
 } from "@/features/workspace/model/layout";
 import { openDiff } from "../files/open-diff";
 import { detachPane, focusPane } from "./pane-focus";
+import { placeSessionOnPane, placeTabOnPane } from "./place-session";
 import type { TabActionsDeps } from "./tab-actions-deps";
 import { cycleTab, tabInSlot } from "./tab-cycle";
 import { movePaneTo, reorderPaneFiles, reorderTabs } from "./tab-layout";
@@ -83,6 +84,10 @@ export function createTabActions(deps: TabActionsDeps) {
       detachPane(pane, paneId, targetTabId, position),
     reorderTabs: (ids: string[], movedId?: string) => reorderTabs(deps.layout, ids, movedId),
     reorderFiles: (paneId: string, ids: string[]) => reorderPaneFiles(store, paneId, ids),
+    placeSession: (sessionId: string, targetId: string, edge: PaneEdge) =>
+      placeSessionOnPane(deps.place, sessionId, targetId, edge),
+    placeTab: (sourceTabId: string, targetId: string, edge: PaneEdge) =>
+      placeTabOnPane(deps.place, sourceTabId, targetId, edge),
     openDiff: showDiff,
     openWorkingTreeDiff: (path: string, kind?: GitFileDiffKind, pin?: boolean) =>
       showDiff(path, undefined, kind, pin, { exact: true }),

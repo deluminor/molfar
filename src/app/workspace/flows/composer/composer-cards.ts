@@ -15,3 +15,12 @@ export function dismissComposerCard(
     ),
   );
 }
+
+/** The composer card dismissers bound to `setSessions`, created once for the workspace. */
+export function createComposerCardActions(setSessions: Dispatch<SetStateAction<Session[]>>) {
+  return {
+    dismissInbox: (sessionId: string) => dismissComposerCard(setSessions, sessionId, "inboxCard"),
+    dismissNote: (sessionId: string) => dismissComposerCard(setSessions, sessionId, "noteCard"),
+    dismissHandoff: (sessionId: string) => dismissComposerCard(setSessions, sessionId, "handoffCard"),
+  };
+}
