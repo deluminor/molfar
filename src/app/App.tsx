@@ -359,7 +359,7 @@ import { WorkspaceUsageFooter } from "./workspace/ui/workspace-chrome/WorkspaceU
 import { FamiliarSessionPanes } from "./workspace/ui/workspace-main/FamiliarSessionPanes";
 import { LinkedWorkItemPanels } from "./workspace/ui/workspace-main/LinkedWorkItemPanels";
 import { ProjectTerminalDocks } from "./workspace/ui/workspace-main/ProjectTerminalDocks";
-import type { SharedPaneProps } from "./workspace/ui/workspace-main/types";
+import { sharedPaneProps } from "./workspace/ui/workspace-main/shared-pane-props";
 import { WorkspaceTabPanes } from "./workspace/ui/workspace-main/WorkspaceTabPanes";
 import { WorkspaceDialogs } from "./workspace/ui/notices/WorkspaceDialogs";
 import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
@@ -2950,62 +2950,8 @@ function Workspace({
     create: () => createFamiliar().id,
   });
 
-  const sessionPaneProps: SharedPaneProps = {
-    workspaceSwitchingSessionId: workspaceNavigation.pending
-      ? active?.id
-      : undefined,
-    recents,
-    hideProjectPicker: true,
-    onFocus: tabActions.focusPane,
-    onClose: tabClose.closePane,
-    onCwdChange: worktreeActions.changeProject,
-    onBranchChange: worktreeActions.changeBranch,
-    onWorktreeChange: worktreeActions.changeFromComposer,
-    onRemoteSnapshot,
-    onWorkspaceModeChange: worktreeActions.changeWorkspaceMode,
-    onWorktreeBaseChange: worktreeActions.changeBase,
-    onManageWorktrees: surfaces.manageWorktrees,
-    onModelChange: composerActions.changeModel,
-    onModelSettingsChange: composerActions.changeModelSettings,
-    onRuntimeModeChange: composerActions.changeRuntimeMode,
-    onSaveDraft: composerActions.saveDraft,
-    onRemoveDraft: composerActions.removeDraft,
-    onSubmit: submission.send,
-    onStop: turnActions.stop,
-    onCompactContext: turnActions.compact,
-    onPlaceSessionInFolder: projectActions.placeSessionInFolder,
-    onDeleteQueuedMessage: queueActions.removeQueued,
-    onEditQueuedMessage: queueActions.editQueued,
-    onQueuedMessageEditingChange: queueActions.setQueuedEditing,
-    onSteerQueuedMessage: queueActions.steerQueued,
-    onResumeQueue: queueActions.resume,
-    onUsageLimitResume: usageLimits.resume,
-    onUsageLimitResumeAtReset: usageLimits.setResumeAtReset,
-    onUsageLimitDismiss: usageLimits.dismiss,
-    onUsageLimitAccountChange: usageLimits.changeAccount,
-    onInboxCardDismiss: composerCards.dismissInbox,
-    onLinkedWorkItemUpdateCardDismiss: linkedUpdateCards.dismiss,
-    onNoteCardDismiss: composerCards.dismissNote,
-    onHandoffCardDismiss: composerCards.dismissHandoff,
-    onOpenLinkedWorkItem: linkedPanels.open,
-    onArchiveSession: historyActions.archive,
-    onDeleteSession: historyActions.delete,
-    onApproval: turnActions.approve,
-    onQuestionReply: turnActions.answer,
-    onQuestionInteraction: turnActions.keepQuestionOpen,
-    onOpenFile: fileActions.open,
-    onOpenDiff: tabActions.openDiff,
-    onOpenPlan: fileActions.openPlan,
-    onBuildPlan: queueActions.buildPlan,
-    onSecondOpinion: secondOpinions.secondOpinion,
-    onHandoff: secondOpinions.handoff,
-    onBtwSubmit: btw.submit,
-    onBtwRetry: btw.retry,
-    onBtwDelete: btw.remove,
-    onBtwStop: btw.stop,
-    onBtwModelChange: btw.changeModel,
-    onNewTerminal: terminals.openInSession,
-  };
+  const workspaceSwitchingSessionId = workspaceNavigation.pending ? active?.id : undefined;
+  const sessionPaneProps = sharedPaneProps(handlers, recents, workspaceSwitchingSessionId);
 
   // Renames, mascot picks and new projects show up on the rail.
   const familiarViewFamiliar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
@@ -3340,27 +3286,16 @@ function Workspace({
                               <div className="relative min-h-0 min-w-0 flex-1">
                                 <WorkspaceTabPanes
                                   store={workspaceStore}
-                                  paneProps={sessionPaneProps}
+                                  workspaceSwitchingSessionId={workspaceSwitchingSessionId}
                                   sessions={sessions}
                                   activeSessionId={active?.id}
                                   composerFocused={composerFocused}
                                   composerFocusToken={composerFocusToken}
-                                  onSelectFile={fileActions.selectSurface}
-                                  onCloseFile={tabClose.closeFile}
-                                  onCloseOtherFiles={tabClose.closeOtherFiles}
-                                  onPinFile={fileActions.pin}
-                                  onReorderFiles={tabActions.reorderFiles}
-                                  onFileDirtyChange={fileActions.setDirty}
-                                  onFileErrorCountChange={fileActions.setErrorCount}
                                   transcriptPool={transcriptPool}
-                                  onUpdatePlan={queueActions.updatePlan}
-                                  onMovePane={tabActions.movePane}
-                                  onDetachPane={tabActions.detachPane}
-                                  onTerminalMetaChange={terminals.changeMeta}
                                 />
                                 <FamiliarSessionPanes
                                   store={workspaceStore}
-                                  paneProps={sessionPaneProps}
+                                  workspaceSwitchingSessionId={workspaceSwitchingSessionId}
                                   sessions={sessions}
                                   insetLayout={insetLayout}
                                   familiar={familiarViewFamiliar}
@@ -3368,9 +3303,6 @@ function Workspace({
                                   composerFocusToken={composerFocusToken}
                                   shownSessionActive={familiarShownSessionActive}
                                   onOpenArtifact={onOpenMonoArtifact}
-                                  onOpenDiff={tabActions.openMonoDiff}
-                                  onCommitChanges={tabActions.commitMonoChanges}
-                                  onOpenFamiliarSession={familiarActions.showLaunchedFromTurn}
                                   activityTurnId={familiarOverview.activityShownTurnId}
                                   launchedSessions={familiarOverview.launchedSessions}
                                 />

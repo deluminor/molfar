@@ -10,18 +10,16 @@ import {
 import { SessionPane, type SessionPaneProps } from "@/features/sessions/ui/SessionPane";
 import { FamiliarViewActions } from "../../../shell/TitleBar";
 import { showFamiliarActivity } from "../../flows/familiars/familiar-overview";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import { shownFamiliarSession } from "../../store/familiars-slice";
 import type { WorkspaceStore } from "../../store/types";
-import type { SharedPaneProps } from "./types";
+import { useSharedPaneProps } from "./use-shared-pane-props";
 
-type Props = Pick<
-  SessionPaneProps,
-  "composerFocusToken" | "onOpenArtifact" | "onOpenDiff" | "onCommitChanges" | "onOpenFamiliarSession"
-> & {
+type Props = Pick<SessionPaneProps, "composerFocusToken" | "onOpenArtifact"> & {
   store: WorkspaceStore;
-  paneProps: SharedPaneProps;
+  workspaceSwitchingSessionId: string | undefined;
   sessions: Session[];
   insetLayout: boolean;
   /** The Familiar in view. */
@@ -36,7 +34,7 @@ type Props = Pick<
 /** Each Familiar's chat, kept mounted and shown over the workspace while its Familiar is in view. */
 export function FamiliarSessionPanes({
   store,
-  paneProps,
+  workspaceSwitchingSessionId,
   sessions,
   insetLayout,
   familiar,
@@ -45,8 +43,10 @@ export function FamiliarSessionPanes({
   shownSessionActive,
   activityTurnId,
   launchedSessions,
-  ...chatProps
+  onOpenArtifact,
 }: Props) {
+  const handlers = useWorkspaceHandlers();
+  const paneProps = useSharedPaneProps(store, workspaceSwitchingSessionId);
   const familiarViewId = useWorkspaceField(store, "familiarViewId");
   const familiarOverviewOpen = useWorkspaceField(store, "familiarOverviewOpen");
   const projectTerminalFocused = useWorkspaceField(store, "projectTerminalFocused");
@@ -95,11 +95,11 @@ export function FamiliarSessionPanes({
             composerFocused={chatActive && composerFocused}
             composerFocusToken={composerFocusToken}
             onShowFamiliarActivity={onShowFamiliarActivity}
-            onOpenArtifact={chatProps.onOpenArtifact}
-            onOpenDiff={chatProps.onOpenDiff}
-            onCommitChanges={chatProps.onCommitChanges}
+            onOpenArtifact={onOpenArtifact}
+            onOpenDiff={handlers.tabs.openMonoDiff}
+            onCommitChanges={handlers.tabs.commitMonoChanges}
             familiarActivityTurnId={activityTurnId}
-            onOpenFamiliarSession={chatProps.onOpenFamiliarSession}
+            onOpenFamiliarSession={handlers.familiars.showLaunchedFromTurn}
             familiarLaunchedSessions={visible ? launchedSessions : undefined}
             openFamiliarSessionId={shownFamiliarSessionId}
             // The inset footer stays under a Familiar and shows its usage.

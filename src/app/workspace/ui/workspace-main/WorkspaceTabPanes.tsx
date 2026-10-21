@@ -1,30 +1,18 @@
 import type { ComponentProps } from "react";
 import { setSplitRatio } from "@/features/workspace/model/layout";
 import { PaneTree } from "@/features/workspace/ui/PaneTree";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
-import type { SharedPaneProps } from "./types";
+import { useSharedPaneProps } from "./use-shared-pane-props";
 
 type Props = Pick<
   ComponentProps<typeof PaneTree>,
-  | "sessions"
-  | "composerFocusToken"
-  | "onSelectFile"
-  | "onCloseFile"
-  | "onCloseOtherFiles"
-  | "onPinFile"
-  | "onReorderFiles"
-  | "onFileDirtyChange"
-  | "onFileErrorCountChange"
-  | "transcriptPool"
-  | "onUpdatePlan"
-  | "onMovePane"
-  | "onDetachPane"
-  | "onTerminalMetaChange"
+  "sessions" | "composerFocusToken" | "transcriptPool"
 > & {
   store: WorkspaceStore;
-  paneProps: SharedPaneProps;
+  workspaceSwitchingSessionId: string | undefined;
   /** The session "Add to chat" targets in the active tab. */
   activeSessionId: string | undefined;
   composerFocused: boolean;
@@ -33,11 +21,13 @@ type Props = Pick<
 /** One pane tree per workspace tab; only the active tab shows, and none behind a Familiar. */
 export function WorkspaceTabPanes({
   store,
-  paneProps,
+  workspaceSwitchingSessionId,
   activeSessionId,
   composerFocused,
   ...treeProps
 }: Props) {
+  const handlers = useWorkspaceHandlers();
+  const paneProps = useSharedPaneProps(store, workspaceSwitchingSessionId);
   const tabs = useWorkspaceField(store, "tabs");
   const activeTabId = useWorkspaceField(store, "activeTabId");
   const familiarViewId = useWorkspaceField(store, "familiarViewId");
@@ -76,6 +66,17 @@ export function WorkspaceTabPanes({
           <PaneTree
             {...paneProps}
             {...treeProps}
+            onSelectFile={handlers.files.selectSurface}
+            onCloseFile={handlers.tabClose.closeFile}
+            onCloseOtherFiles={handlers.tabClose.closeOtherFiles}
+            onPinFile={handlers.files.pin}
+            onReorderFiles={handlers.tabs.reorderFiles}
+            onFileDirtyChange={handlers.files.setDirty}
+            onFileErrorCountChange={handlers.files.setErrorCount}
+            onUpdatePlan={handlers.queue.updatePlan}
+            onMovePane={handlers.tabs.movePane}
+            onDetachPane={handlers.tabs.detachPane}
+            onTerminalMetaChange={handlers.terminals.changeMeta}
             visible={active && !inboxViewOpen && !familiarCovers}
             layout={tab.layout}
             editorPanes={[...tab.editorPanes, ...(tab.terminalPanes ?? [])]}

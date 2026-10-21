@@ -8,8 +8,8 @@ import { newTab, splitPane } from "@/features/workspace/model/layout";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { FamiliarSessionPanes } from "./FamiliarSessionPanes";
-import type { SharedPaneProps } from "./types";
 import { WorkspaceTabPanes } from "./WorkspaceTabPanes";
 
 type Seen = Record<string, unknown>;
@@ -41,15 +41,15 @@ vi.mock("@/features/familiars/model/familiar", () => ({
   familiarLook: (familiar: Familiar) => ({ name: familiar.id }),
 }));
 
-const paneProps = { recents: [] } as unknown as SharedPaneProps;
 const session = (id: string) => ({ id }) as unknown as Session;
 
 let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function render<P extends object>(component: FunctionComponent<P>, props: P): void {
-  act(() => root.render(createElement(component, props)));
+  act(() => root.render(withWorkspaceHandlers(createElement(component, props), handlers)));
 }
 
 function lastOf(list: Seen[]): Seen | undefined {
@@ -61,6 +61,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
+  handlers = fakeWorkspaceHandlers();
   seen.trees = [];
   seen.panes = [];
   seen.actions = [];
@@ -75,19 +76,10 @@ describe("WorkspaceTabPanes", () => {
   const tabProps = () =>
     ({
       store,
-      paneProps,
+      workspaceSwitchingSessionId: undefined,
       sessions: [],
       activeSessionId: "s1",
       composerFocused: true,
-      onSelectFile: vi.fn(),
-      onCloseFile: vi.fn(),
-      onCloseOtherFiles: vi.fn(),
-      onPinFile: vi.fn(),
-      onReorderFiles: vi.fn(),
-      onFileDirtyChange: vi.fn(),
-      onUpdatePlan: vi.fn(),
-      onMovePane: vi.fn(),
-      onDetachPane: vi.fn(),
     }) as Parameters<typeof WorkspaceTabPanes>[0];
 
   it("shows and focuses only the active tab", () => {
@@ -115,6 +107,22 @@ describe("WorkspaceTabPanes", () => {
     expect(container.querySelector("[data-workspace-tab]")?.getAttribute("aria-hidden")).toBe("true");
   });
 
+  it("hands every tree the shared pane props and file callbacks from the handlers", () => {
+    const tab = newTab("s1");
+    store.setState({ tabs: [tab], activeTabId: tab.id });
+    render(WorkspaceTabPanes, { ...tabProps(), workspaceSwitchingSessionId: "s1" });
+
+    expect(lastOf(seen.trees)).toMatchObject({
+      workspaceSwitchingSessionId: "s1",
+      recents: store.getState().recents,
+      hideProjectPicker: true,
+      onSubmit: handlers.submission.send,
+      onOpenDiff: handlers.tabs.openDiff,
+      onPinFile: handlers.files.pin,
+      onTerminalMetaChange: handlers.terminals.changeMeta,
+    });
+  });
+
   it("stores a split's new ratio on its tab", () => {
     const tab = { ...newTab("s1"), layout: splitPane(newTab("s1").layout, "s1", "right", "s2") };
     const splitId = tab.layout.type === "split" ? tab.layout.id : "";
@@ -134,7 +142,7 @@ describe("FamiliarSessionPanes", () => {
   const familiarProps = (overrides = {}) =>
     ({
       store,
-      paneProps,
+      workspaceSwitchingSessionId: undefined,
       sessions: [session("s1"), session("familiar-1"), session("familiar-2")],
       insetLayout: true,
       familiar,
@@ -158,6 +166,18 @@ describe("FamiliarSessionPanes", () => {
     expect(shown?.familiarLaunchedSessions).toBeInstanceOf(Map);
     expect(hidden).toMatchObject({ visible: false, focused: false, familiarLaunchedSessions: undefined });
     expect(shown?.familiarComposerUsage).toBe(false);
+  });
+
+  it("opens a Familiar's diffs and launched sessions beside its chat", () => {
+    store.setState({ familiarViewId: "familiar-1" });
+    render(FamiliarSessionPanes, familiarProps());
+
+    expect(seen.panes.at(-2)).toMatchObject({
+      onSubmit: handlers.submission.send,
+      onOpenDiff: handlers.tabs.openMonoDiff,
+      onCommitChanges: handlers.tabs.commitMonoChanges,
+      onOpenFamiliarSession: handlers.familiars.showLaunchedFromTurn,
+    });
   });
 
   it("hands focus to a launched session shown beside the chat", () => {
