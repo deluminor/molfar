@@ -1,32 +1,35 @@
 import type { ComponentProps } from "react";
+import type { Session } from "@/domain/session/session";
 import { findProjectTerminal } from "@/features/projects/model/project-terminal";
 import { isLocalProject } from "@/features/projects/model/recents";
+import type { WorkspaceTab } from "@/features/workspace/model/layout";
 import { UsageFooter } from "../../../shell/UsageFooter";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
+import { useFooterUsage } from "./use-footer-usage";
+import { useRunningTerminals } from "./use-running-terminals";
 
 type Props = Pick<
   ComponentProps<typeof UsageFooter>,
   | "pressureSlot"
-  | "providers"
-  | "session"
-  | "project"
   | "onSelectAccount"
   | "onManageAccounts"
-  | "terminals"
-  | "terminalOpen"
   | "onToggleTerminal"
   | "onNewTerminal"
   | "onToggleProjectTerminal"
   | "inset"
-> & { store: WorkspaceStore };
+> & {
+  store: WorkspaceStore;
+  /** The session whose plan usage shows. */
+  source: Session | undefined;
+  activeTab: WorkspaceTab | undefined;
+};
 
 /** The usage footer, with the current project's terminals; a Familiar in full view has none of its own. */
 export function WorkspaceUsageFooter({
   store,
-  project,
-  terminals,
-  terminalOpen,
+  source,
+  activeTab,
   onNewTerminal,
   onToggleProjectTerminal,
   ...footerProps
@@ -34,6 +37,8 @@ export function WorkspaceUsageFooter({
   const projectCwd = useWorkspaceField(store, "projectCwd");
   const projectTerminals = useWorkspaceField(store, "projectTerminals");
   const familiarViewId = useWorkspaceField(store, "familiarViewId");
+  const usage = useFooterUsage(source);
+  const running = useRunningTerminals(store, activeTab);
   const dock = findProjectTerminal(projectTerminals, projectCwd);
   const terminalsShown = !familiarViewId;
   const localTerminals = terminalsShown && isLocalProject(projectCwd);
@@ -41,9 +46,11 @@ export function WorkspaceUsageFooter({
   return (
     <UsageFooter
       {...footerProps}
-      project={project ?? projectCwd}
-      terminals={terminalsShown ? terminals : undefined}
-      terminalOpen={terminalsShown && terminalOpen}
+      providers={usage.providers}
+      session={usage.session}
+      project={source?.cwd ?? projectCwd}
+      terminals={terminalsShown ? running.terminals : undefined}
+      terminalOpen={terminalsShown && running.open}
       onNewTerminal={localTerminals ? onNewTerminal : undefined}
       onToggleProjectTerminal={localTerminals ? onToggleProjectTerminal : undefined}
       projectTerminalActive={terminalsShown && !!dock && dock.pane.files.length > 0}

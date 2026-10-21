@@ -75,7 +75,7 @@ import {
   homeDir,
   type GitHistoryCommit,
 } from "@/platform/tauri/fs";
-import { displayPath, pathKey, projectName } from "@/shared/lib/paths";
+import { pathKey, projectName } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
@@ -332,7 +332,6 @@ import {
   confirmCloseTerminals,
 } from "@/features/terminal/model/terminal-close";
 import {
-  listRunningTerminals,
   newTerminalCwd,
   type TerminalMetaPatch,
 } from "@/features/terminal/model/terminal-tab";
@@ -342,7 +341,6 @@ import {
   forgetHarnessSession,
   migrateFamiliarCodexSession,
   isLiveHarness,
-  latestTurnNeedsHarnessLogin,
   pickTextHarness,
   probeHarnessAvailability,
   refreshHarnessCatalogs,
@@ -354,11 +352,9 @@ import {
   type ApprovalDecision,
   type UserQuestionReply,
 } from "@/integrations/harness";
-import { supportsHarnessLogin } from "@/integrations/harness/core/auth-support";
 
 import {
   focusedFileTab,
-  isCommitTab,
   isFilesystemTab,
   isolateTerminalPanes,
   leafIds,
@@ -369,7 +365,6 @@ import {
   openCommitTab,
   openEditorTab,
   splitPane,
-  type FilePaneTab,
   type FocusDir,
   type PaneEdge,
   type SplitDir,
@@ -405,10 +400,7 @@ import {
   sameProjectPath,
 } from "@/features/projects/model/recents";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
-import {
-  type ProviderAccountProvider,
-  DEFAULT_PROVIDER_ACCOUNT_ID,
-} from "@/domain/harness/provider-account";
+import type { ProviderAccountProvider } from "@/domain/harness/provider-account";
 import { newWorkspaceSession } from "./model/new-workspace-session";
 import {
   newDefaultSession,
@@ -421,7 +413,6 @@ import {
 import {
   sessionWorkCwd,
   sessionNeedsInput,
-  lastUserBlockId,
 } from "@/domain/session/session-state";
 import type {
   LinkedWorkItem,
@@ -550,6 +541,17 @@ import {
   LinkedWorkItemPanel,
   NotesView,
 } from "./workspace/ui/app-views/lazy-views";
+import {
+  isBusySession,
+  openSessionIds,
+} from "./model/session-id-sets";
+import { useProviderSignInPrompt } from "./workspace/hooks/use-provider-sign-in-prompt";
+import { useSessionIdSet } from "./workspace/hooks/use-session-id-set";
+import {
+  selectedChangeKind,
+  selectedChangePath,
+  selectedCommitSha,
+} from "./model/selected-change";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
 import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
 import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
@@ -620,22 +622,6 @@ import {
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 
-function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
-  if (a.size !== b.size) return false;
-  for (const value of a) {
-    if (!b.has(value)) return false;
-  }
-  return true;
-}
-
-function openSessionIds(tabs: WorkspaceTab[]): Set<string> {
-  const ids = new Set<string>();
-  for (const tab of tabs) {
-    for (const id of leafIds(tab.layout)) ids.add(id);
-  }
-  return ids;
-}
-
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
 
@@ -690,7 +676,6 @@ function Workspace({
     setWorkerDetailRequest,
     setSettingsOpen,
     setWhatsNewVersion,
-    setProviderSignInRequest,
     setRemoteProjectDialogOpen,
     setFamiliarViewId,
     setFamiliarOverviewOpen,
@@ -899,7 +884,6 @@ function Workspace({
     localSurface: null,
   });
   const whatsNewVersion = useWorkspaceField(workspaceStore, "whatsNewVersion");
-  const providerSignInRequest = useWorkspaceField(workspaceStore, "providerSignInRequest");
   const familiarsEnabled = useSyncExternalStore(
     subscribeFamiliarsEnabled,
     loadFamiliarsEnabled,
@@ -919,20 +903,6 @@ function Workspace({
   const leaveCoveringFamiliar = useCallback(() => {
     if (workspaceStore.getState().familiarViewId) closeFamiliarView();
   }, [closeFamiliarView]);
-  const seenProviderSignInRequestsRef = useRef<Set<string> | null>(null);
-  const seenProviderSignInRequests =
-    seenProviderSignInRequestsRef.current ??
-    (seenProviderSignInRequestsRef.current = new Set(
-      sessions.flatMap((session) => {
-        if (
-          !supportsHarnessLogin(session.harness) ||
-          !latestTurnNeedsHarnessLogin(session.blocks)
-        ) {
-          return [];
-        }
-        return [providerSignInRequestKey(session)];
-      }),
-    ));
   const editorNavigationToken = useRef(0);
   const filePickerOpen = useWorkspaceField(workspaceStore, "filePickerOpen");
   const dirtyFiles = useWorkspaceField(workspaceStore, "dirtyFiles");
@@ -1577,21 +1547,7 @@ function Workspace({
     Boolean(sidebarCwd) && sidebarCwd !== "~",
   );
 
-  const nextBusySessionIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const session of sessions) {
-      if (session.busy) {
-        ids.add(session.id);
-        if (session.orchestrationLeadId) ids.add(session.orchestrationLeadId);
-      }
-    }
-    return ids;
-  }, [sessions]);
-  const busySessionIdsRef = useRef(nextBusySessionIds);
-  if (!setsEqual(busySessionIdsRef.current, nextBusySessionIds)) {
-    busySessionIdsRef.current = nextBusySessionIds;
-  }
-  const busySessionIds = busySessionIdsRef.current;
+  const busySessionIds = useSessionIdSet(sessions, isBusySession);
 
   /** Probe the active session's harness for its live model catalog whenever
    * the active harness changes. Catalogs load lazily (probing spawns a CLI
@@ -1609,105 +1565,9 @@ function Workspace({
   // Familiar's tab keeps the footer, which then reads the Familiar's model.
   const usageSource =
     insetLayout && familiarViewSession ? familiarViewSession : active;
-  const usageProviders = useMemo(() => {
-    if (
-      usageSource?.harness === "claude" ||
-      usageSource?.harness === "codex" ||
-      usageSource?.harness === "opencode" ||
-      usageSource?.harness === "devin"
-    ) {
-      return [usageSource.harness];
-    }
-    return [];
-  }, [usageSource?.harness]);
-  const usageSession = useMemo(() => {
-    if (!usageSource) return undefined;
-    return {
-      id: usageSource.id,
-      harness: usageSource.harness,
-      model: usageSource.model,
-      authRequired: latestTurnNeedsHarnessLogin(usageSource.blocks),
-      providerAccountId:
-        usageSource.providerAccountId ??
-        (usageSource.blocks.some((block) => block.role === "user")
-          ? DEFAULT_PROVIDER_ACCOUNT_ID
-          : undefined),
-    };
-  }, [
-    usageSource?.id,
-    usageSource?.harness,
-    usageSource?.model,
-    usageSource?.blocks,
-    usageSource?.providerAccountId,
-  ]);
-  const activeProviderSignInRequest = useMemo(() => {
-    if (
-      !active ||
-      !supportsHarnessLogin(active.harness) ||
-      !latestTurnNeedsHarnessLogin(active.blocks)
-    ) {
-      return null;
-    }
-    return {
-      key: providerSignInRequestKey(active),
-      sessionId: active.id,
-      harness: active.harness,
-    };
-  }, [active]);
-  useEffect(() => {
-    if (!activeProviderSignInRequest) return;
-    if (seenProviderSignInRequests.has(activeProviderSignInRequest.key)) {
-      return;
-    }
-    seenProviderSignInRequests.add(activeProviderSignInRequest.key);
-    setProviderSignInRequest(activeProviderSignInRequest);
-  }, [activeProviderSignInRequest, seenProviderSignInRequests]);
-  useEffect(() => {
-    if (
-      providerSignInRequest &&
-      active?.id !== providerSignInRequest.sessionId
-    ) {
-      setProviderSignInRequest(null);
-    }
-  }, [active?.id, providerSignInRequest]);
-  const runningTerminals = useMemo(() => {
-    const files: FilePaneTab[] = [];
-    const dock = findProjectTerminal(projectTerminals, projectCwd);
-    if (dock) files.push(...dock.pane.files);
-    for (const tab of tabs) {
-      for (const pane of tab.terminalPanes ?? []) {
-        files.push(...pane.files);
-      }
-    }
-    return listRunningTerminals(files);
-  }, [projectCwd, projectTerminals, tabs]);
-  const runningTerminalOpen = useMemo(() => {
-    const ids = new Set(runningTerminals.map((terminal) => terminal.id));
-    if (
-      currentProjectDock?.open &&
-      currentProjectDock.pane.files.some((file) => ids.has(file.id))
-    ) {
-      return true;
-    }
-    const focused = activeTab ? focusedFileTab(activeTab) : undefined;
-    return !!focused && ids.has(focused.id);
-  }, [activeTab, currentProjectDock, runningTerminals]);
+  useProviderSignInPrompt(workspaceStore, sessions, active);
 
-  const nextApprovalSessionIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const session of sessions) {
-      if (sessionNeedsInput(session)) {
-        ids.add(session.id);
-        if (session.orchestrationLeadId) ids.add(session.orchestrationLeadId);
-      }
-    }
-    return ids;
-  }, [sessions]);
-  const approvalSessionIdsRef = useRef(nextApprovalSessionIds);
-  if (!setsEqual(approvalSessionIdsRef.current, nextApprovalSessionIds)) {
-    approvalSessionIdsRef.current = nextApprovalSessionIds;
-  }
-  const approvalSessionIds = approvalSessionIdsRef.current;
+  const approvalSessionIds = useSessionIdSet(sessions, sessionNeedsInput);
 
   const activeSessionId = inboxViewOpen
     ? inboxAskPortal?.sessionId
@@ -4914,13 +4774,10 @@ function Workspace({
       <WorkspaceUsageFooter
         store={workspaceStore}
         pressureSlot={setPressureChipHost}
-        providers={usageProviders}
-        session={usageSession}
-        project={usageSource?.cwd}
+        source={usageSource}
+        activeTab={activeTab}
         onSelectAccount={onSelectProviderAccount}
         onManageAccounts={onManageProviderAccounts}
-        terminals={runningTerminals}
-        terminalOpen={runningTerminalOpen}
         onToggleTerminal={onToggleRunningTerminal}
         onNewTerminal={onNewTerminal}
         onToggleProjectTerminal={onToggleProjectTerminal}
@@ -5242,34 +5099,6 @@ function Workspace({
     </SessionStateContext.Provider>
   );
 }
-function providerSignInRequestKey(session: Session): string {
-  const lastBlockId = session.blocks[session.blocks.length - 1]?.id;
-  return `${session.id}:${lastUserBlockId(session) ?? lastBlockId ?? "auth"}`;
-}
-
-function selectedChangePath(
-  tab: WorkspaceTab,
-  gitCwd?: string,
-): string | undefined {
-  const file = focusedFileTab(tab);
-  if (!file || !isFilesystemTab(file) || !file.review) return undefined;
-  return displayPath(file.path, gitCwd || file.cwd);
-}
-
-function selectedChangeKind(tab: WorkspaceTab): GitFileDiffKind | undefined {
-  const file = focusedFileTab(tab);
-  return file?.review ? file.changeKind : undefined;
-}
-
-function selectedCommitSha(tab: WorkspaceTab): string | undefined {
-  const focused = focusedFileTab(tab);
-  if (focused && isCommitTab(focused)) return focused.commit.sha;
-  for (const pane of tab.editorPanes) {
-    const file = pane.files.find((entry) => entry.id === pane.activeFileId);
-    if (file && isCommitTab(file)) return file.commit.sha;
-  }
-}
-
 function sameSettings(
   a: Record<string, string> | undefined,
   b: Record<string, string> | undefined,

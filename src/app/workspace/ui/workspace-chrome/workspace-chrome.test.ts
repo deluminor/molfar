@@ -2,6 +2,7 @@
 import { act, createElement, type FunctionComponent } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Session } from "@/domain/session/session";
 import type { ProjectTerminalDock } from "@/features/projects/model/project-terminal";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
@@ -93,28 +94,30 @@ describe("WorkspaceMenuBar", () => {
 });
 
 describe("WorkspaceUsageFooter", () => {
-  const footerProps = () =>
+  const vite = { id: "term", path: "Terminal", cwd: "/work/app", terminal: true, foreground: "vite" };
+  const footerProps = (source?: Partial<Session>) =>
     ({
       store,
-      providers: [],
-      terminals: [{ id: "term" }],
-      terminalOpen: true,
+      source: source && { blocks: [], ...source },
+      activeTab: undefined,
       onNewTerminal: vi.fn(),
       onToggleProjectTerminal: vi.fn(),
     }) as unknown as Parameters<typeof WorkspaceUsageFooter>[0];
 
-  it("shows the current local project's terminals and dock state", () => {
-    const dock = { projectPath: "/work/app", open: true, pane: { files: [{}] } };
+  it("shows the session's plan usage and the current local project's running terminals", () => {
+    const dock = { projectPath: "/work/app", open: true, pane: { files: [vite] } };
     store.setState({
       projectCwd: "/work/app",
       projectTerminals: [dock as unknown as ProjectTerminalDock],
     });
-    const props = footerProps();
+    const props = footerProps({ id: "s1", harness: "claude", model: "opus" });
     render(WorkspaceUsageFooter, props);
 
     expect(seen.footer).toMatchObject({
+      providers: ["claude"],
+      session: { id: "s1", harness: "claude", model: "opus", authRequired: false },
       project: "/work/app",
-      terminals: props.terminals,
+      terminals: [{ id: "term", process: "vite" }],
       terminalOpen: true,
       onNewTerminal: props.onNewTerminal,
       projectTerminalActive: true,
@@ -122,11 +125,17 @@ describe("WorkspaceUsageFooter", () => {
     });
   });
 
-  it("drops the terminals under a Familiar in full view", () => {
-    store.setState({ projectCwd: "/work/app", familiarViewId: "familiar-1" });
-    render(WorkspaceUsageFooter, { ...footerProps(), project: "/work/familiar" });
+  it("drops the terminals under a Familiar in full view and follows the Familiar's project", () => {
+    const dock = { projectPath: "/work/app", open: true, pane: { files: [vite] } };
+    store.setState({
+      projectCwd: "/work/app",
+      projectTerminals: [dock as unknown as ProjectTerminalDock],
+      familiarViewId: "familiar-1",
+    });
+    render(WorkspaceUsageFooter, footerProps({ id: "familiar-1", harness: "pi", cwd: "/work/familiar" }));
 
     expect(seen.footer).toMatchObject({
+      providers: [],
       project: "/work/familiar",
       terminals: undefined,
       terminalOpen: false,
@@ -135,6 +144,16 @@ describe("WorkspaceUsageFooter", () => {
       projectTerminalActive: false,
       projectTerminalOpen: false,
     });
+  });
+
+  it("keeps the usage session while only the session object changes", () => {
+    const blocks: never[] = [];
+    render(WorkspaceUsageFooter, footerProps({ id: "s1", harness: "codex", blocks }));
+    const first = seen.footer?.session;
+
+    render(WorkspaceUsageFooter, footerProps({ id: "s1", harness: "codex", blocks }));
+
+    expect(seen.footer?.session).toBe(first);
   });
 });
 
