@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { changeBranch, changeWorkspaceMode, changeWorktreeBase } from "./session-checkout";
 import { changeSessionProject } from "./session-project";
+import { createWorktreeActions } from "./worktree-actions";
 import { session, setupWorktrees } from "./worktree.fixture";
 
 vi.mock("@/platform/tauri/fs", () => ({ notifyGitChanged: vi.fn() }));
@@ -60,5 +61,19 @@ describe("changeSessionProject", () => {
     expect(sessions()[0].cwd).toBe("/work/demo");
     expect(deps.openSessionTab).toHaveBeenCalledWith(expect.objectContaining({ cwd: "/work/other" }), "/work/other");
     expect(deps.focusComposer).toHaveBeenCalled();
+  });
+});
+
+describe("createWorktreeActions", () => {
+  it("changes the session's checkout and project through the bound flows", () => {
+    const { deps, sessions, store } = setupWorktrees([session({ cwd: "~" })]);
+    const worktrees = createWorktreeActions(deps);
+
+    worktrees.changeWorkspaceMode("s", "worktree", "main");
+    worktrees.changeBase("s", "develop");
+    expect(sessions()[0]).toMatchObject({ workspaceMode: "worktree", worktreeBase: "develop" });
+
+    worktrees.changeProject("s", "/work/other");
+    expect(store.getState().projectCwd).toBe("/work/other");
   });
 });

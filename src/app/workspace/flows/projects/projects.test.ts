@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { newTab } from "@/features/workspace/model/layout";
 import { openProjects, selectProject } from "./open-projects";
+import { createProjectActions } from "./project-actions";
 import { projectSession, setupProjects } from "./project.fixture";
 import { moveProjectLocation } from "./project-location";
 import { removeProject } from "./remove-project";
@@ -104,5 +105,25 @@ describe("moveProjectLocation", () => {
     expect(deps.projectCwdRef.current).toBe("/work/moved");
     expect(store.getState().projectCwd).toBe("/work/moved");
     expect(deps.fileMoved).toHaveBeenCalledWith("/work/demo", "/work/moved");
+  });
+});
+
+describe("createProjectActions", () => {
+  it("restores an archived project into the recents and selects it", () => {
+    const { deps, store } = setupProjects([demo()], [{ ...newTab("d"), id: "t" }]);
+
+    createProjectActions(deps).restore("/work/other");
+
+    expect(store.getState().recents.map((recent) => recent.path)).toContain("/work/other");
+    expect(deps.navigation.selectProject).toHaveBeenCalledWith("/work/other");
+  });
+
+  it("shows the sidebar project's workspace", () => {
+    const { deps, store } = setupProjects([demo()], [{ ...newTab("d"), id: "t" }]);
+
+    createProjectActions(deps).selectWorkspace();
+
+    expect(store.getState().projectCwd).toBe("/work/demo");
+    expect(deps.navigation.selectWorkspace).toHaveBeenCalledWith("/work/demo", undefined);
   });
 });

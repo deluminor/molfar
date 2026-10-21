@@ -70,7 +70,6 @@ import {
   type WorktreeFocus,
   useWorktreeFocus,
 } from "@/features/source-control/model/worktree-focus";
-import type { Worktree } from "@/features/source-control/model/worktrees";
 import {
   homeDir,
   type GitHistoryCommit,
@@ -116,44 +115,15 @@ import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/lin
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { addNoteToChat } from "./workspace/flows/notes/add-note-to-chat";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
-import {
-  changeBranch,
-  changeWorkspaceMode,
-  changeWorktreeBase,
-} from "./workspace/flows/worktrees/session-checkout";
-import { changeSessionProject } from "./workspace/flows/worktrees/session-project";
 import type { WorktreeDeps } from "./workspace/flows/worktrees/worktree-deps";
-import {
-  checkOpenWorktreeFiles,
-  checkRemoval,
-  removeSessionWorktree,
-} from "./workspace/flows/worktrees/worktree-removal";
-import { changeWorktree } from "./workspace/flows/worktrees/worktree-switch";
-import {
-  pickProjects,
-  selectProject,
-  selectWorkspace,
-} from "./workspace/flows/projects/open-projects";
+import { checkOpenWorktreeFiles } from "./workspace/flows/worktrees/worktree-removal";
+import { createWorktreeActions } from "./workspace/flows/worktrees/worktree-actions";
 import type { ProjectDeps } from "./workspace/flows/projects/project-deps";
-import { moveProjectLocation } from "./workspace/flows/projects/project-location";
-import { removeProject } from "./workspace/flows/projects/remove-project";
-import { placeInFolder } from "./workspace/flows/projects/session-folder";
+import { createProjectActions } from "./workspace/flows/projects/project-actions";
 import type { FileDeps } from "./workspace/flows/files/file-deps";
-import { fileDeleted, fileMoved } from "./workspace/flows/files/file-paths";
-import {
-  pinFile,
-  selectFileSurface,
-  setFileDirty,
-  setFileErrorCount,
-} from "./workspace/flows/files/file-state";
-import { openFile, openPlan } from "./workspace/flows/files/open-file";
+import { createFileActions } from "./workspace/flows/files/file-actions";
 import type { ComposerDeps } from "./workspace/flows/composer/composer-deps";
-import {
-  changeModel,
-  changeModelSettings,
-  changeRuntimeMode,
-} from "./workspace/flows/composer/composer-model";
-import { removeDraft, saveDraft } from "./workspace/flows/composer/drafts";
+import { createComposerActions } from "./workspace/flows/composer/composer-actions";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import type { AutomationDeps } from "./workspace/flows/automations/automation-deps";
 import { createAutomationRuns } from "./workspace/flows/automations/automation-runs";
@@ -328,7 +298,6 @@ import {
 
 import type { WindowTransferPayload } from "./model/window-transfer";
 
-import type { OpenFileFn } from "@/features/search/model/search";
 import {
   finishSessionTurn,
   flushSessionCheckpoint,
@@ -366,16 +335,13 @@ import {
 import type {
   LinkedWorkItem,
   Session,
-  WorkspaceMode,
 } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type { Attachment } from "@/domain/session/attachment";
 import type {
   ModelTarget,
   PlanBuildTarget,
 } from "@/domain/session/turn";
-import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
-import type { HarnessId } from "@/domain/harness/harness";
+import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
   applyPlaceTabOnPane,
   filterTabsForProject,
@@ -450,7 +416,6 @@ import {
   detachFamiliarTabs,
   ensureFamiliarSession,
 } from "@/features/familiars/model/familiar-workspace";
-import type { SessionFolderTarget } from "@/features/sessions/model/session-folders";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import {
   TranscriptPool,
@@ -956,7 +921,7 @@ function Workspace({
     pins: workspacePins.current,
     tabWorkspace,
     moveSession: (id, tree, isCurrent) =>
-      onWorktreeChange(id, tree, false, isCurrent),
+      worktreeActions.change(id, tree, false, isCurrent),
     activateTab: (id) => {
       if (tabsRef.current.some((tab) => tab.id === id)) {
         activateTab(id, undefined, "workspace");
@@ -2663,16 +2628,7 @@ function Workspace({
       projectOfTab: (tabId) => projectOfTab(tabId),
     }),
   );
-  const onCheckWorktreeRemoval = useCallback(
-    (cwd: string, path: string, force: boolean) =>
-      checkRemoval(worktreeDeps, cwd, path, force),
-    [],
-  );
-  const onRemoveWorktree = useCallback(
-    (cwd: string, path: string, force: boolean, keepSessions = false) =>
-      removeSessionWorktree(worktreeDeps, cwd, path, force, keepSessions),
-    [],
-  );
+  const worktreeActions = useStableFlow(() => createWorktreeActions(worktreeDeps));
 
   const activateTabRef = useRef(activateTab);
   activateTabRef.current = activateTab;
@@ -2713,7 +2669,7 @@ function Workspace({
       invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
       sidebarCwd: () => sidebarCwdRef.current,
       stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
-      removeWorktree: (cwd, path, force) => onRemoveWorktree(cwd, path, force),
+      removeWorktree: (cwd, path, force) => worktreeActions.remove(cwd, path, force),
     }),
   );
   const onRemoveHistorySession = useCallback(
@@ -2922,39 +2878,6 @@ function Workspace({
     [activeTab, onFocusPane],
   );
 
-  const onCwdChange = useCallback(
-    (sessionId: string, cwd: string) =>
-      changeSessionProject(worktreeDeps, sessionId, cwd),
-    [],
-  );
-  const onBranchChange = useCallback(
-    (sessionId: string) => changeBranch(worktreeDeps, sessionId),
-    [],
-  );
-  const onWorkspaceModeChange = useCallback(
-    (sessionId: string, mode: WorkspaceMode, base?: string) =>
-      changeWorkspaceMode(worktreeDeps, sessionId, mode, base),
-    [],
-  );
-  const onWorktreeBaseChange = useCallback(
-    (sessionId: string, base: string) =>
-      changeWorktreeBase(worktreeDeps, sessionId, base),
-    [],
-  );
-  const onWorktreeChange = useCallback(
-    (
-      sessionId: string,
-      tree: Worktree,
-      fromComposer = false,
-      isCurrent: () => boolean = () => true,
-    ) => changeWorktree(worktreeDeps, sessionId, tree, fromComposer, isCurrent),
-    [],
-  );
-  const onComposerWorktreeChange = useCallback(
-    (sessionId: string, tree: Worktree) =>
-      changeWorktree(worktreeDeps, sessionId, tree, true),
-    [],
-  );
 
   const projectDeps = useStableFlow(
     (): ProjectDeps => ({
@@ -2984,39 +2907,14 @@ function Workspace({
       activateTab: (tabId, paneId) => activateTab(tabId, paneId),
       insertBeside: (tabs, tab, besideTabId, cwd) =>
         insertBeside(tabs, tab, besideTabId, cwd),
-      changeSessionProject: (sessionId, cwd) => onCwdChange(sessionId, cwd),
+      changeSessionProject: (sessionId, cwd) => worktreeActions.changeProject(sessionId, cwd),
       selectTab: (tabId) => setActiveTabId(tabId),
       focusComposer: () => setComposerFocused(true),
-      fileMoved: (from, to) => onFileMoved(from, to),
+      fileMoved: (from, to) => fileActions.moved(from, to),
     }),
   );
-  const onSelectWorkspace = useCallback(
-    (focus?: WorktreeFocus) => selectWorkspace(projectDeps, focus),
-    [],
-  );
-  const onSelectProject = useCallback(
-    (path: string) => selectProject(projectDeps, path),
-    [],
-  );
-  const pickProject = useCallback(() => pickProjects(projectDeps), []);
-  const onPlaceSessionInFolder = useCallback(
-    (sessionId: string, target: SessionFolderTarget) =>
-      placeInFolder(sessionsRef.current, sessionId, target),
-    [],
-  );
-  const onRemoveProject = useCallback(
-    (path: string, options: { purgeData: boolean }) =>
-      removeProject(projectDeps, path, options),
-    [],
-  );
+  const projectActions = useStableFlow(() => createProjectActions(projectDeps));
 
-  const onRestoreProject = useCallback(
-    (path: string) => {
-      setRecents(rememberProject(path));
-      onSelectProject(path);
-    },
-    [onSelectProject],
-  );
 
   const fileDeps = useStableFlow(
     (): FileDeps => ({
@@ -3034,6 +2932,7 @@ function Workspace({
       setComposerFocused: (focused) => setComposerFocused(focused),
     }),
   );
+  const fileActions = useStableFlow(() => createFileActions(fileDeps));
   const openDiffDeps = useStableFlow(
     (): OpenDiffDeps => ({
       store: workspaceStore,
@@ -3059,41 +2958,8 @@ function Workspace({
       setComposerFocused: (focused) => setComposerFocused(focused),
     }),
   );
-  const onFileMoved = useCallback(
-    (from: string, to: string) => fileMoved(fileDeps, from, to),
-    [],
-  );
 
-  const applyProjectLocationChange = useCallback(
-    (from: string, to: string) => moveProjectLocation(projectDeps, from, to),
-    [],
-  );
 
-  const onFileDeleted = useCallback(
-    (path: string) => fileDeleted(fileDeps, path),
-    [],
-  );
-  const onOpenFile = useCallback<OpenFileFn>((path, navigation, options) => {
-    closeFamiliarView();
-    void openFile(fileDeps, path, navigation, options);
-  }, []);
-  const onOpenPlan = useCallback(
-    (sessionId: string, blockId: string) => openPlan(fileDeps, sessionId, blockId),
-    [],
-  );
-  const onPinFile = useCallback((fileId: string) => pinFile(fileDeps, fileId), []);
-  const onFileDirtyChange = useCallback(
-    (fileId: string, dirty: boolean) => setFileDirty(fileDeps, fileId, dirty),
-    [],
-  );
-  const onFileErrorCountChange = useCallback(
-    (fileId: string, count: number) => setFileErrorCount(fileDeps, fileId, count),
-    [],
-  );
-  const onSelectFileSurface = useCallback(
-    (paneId: string, fileId: string) => selectFileSurface(fileDeps, paneId, fileId),
-    [],
-  );
 
   const composerDeps = useStableFlow(
     (): ComposerDeps => ({
@@ -3104,35 +2970,7 @@ function Workspace({
       invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
     }),
   );
-  const onModelChange = useCallback(
-    (sessionId: string, harness: HarnessId, model: string) =>
-      changeModel(composerDeps, sessionId, harness, model),
-    [],
-  );
-  const onModelSettingsChange = useCallback(
-    (sessionId: string, modelSettings: Record<string, string>) =>
-      changeModelSettings(composerDeps, sessionId, modelSettings),
-    [],
-  );
-  const onRuntimeModeChange = useCallback(
-    (sessionId: string, runtimeMode: RuntimeMode) =>
-      changeRuntimeMode(composerDeps, sessionId, runtimeMode),
-    [],
-  );
-  const onSaveDraft = useCallback(
-    (
-      sessionId: string,
-      text: string,
-      attachments: Attachment[] = [],
-      appRequestId?: string,
-    ) => saveDraft(composerDeps, sessionId, text, attachments, appRequestId),
-    [],
-  );
-  const onRemoveDraft = useCallback(
-    (sessionId: string, draftBlockId: string) =>
-      removeDraft(composerDeps, sessionId, draftBlockId),
-    [],
-  );
+  const composerActions = useStableFlow(() => createComposerActions(composerDeps));
 
   const submitSession = useCallback(
     (...args: Parameters<Submit>): SubmissionAcceptance =>
@@ -3153,12 +2991,11 @@ function Workspace({
           enqueueHarnessEvent,
           flushHarnessEvents,
           dismissNoticesForContinuedSession,
-          applyProjectLocationChange,
+          applyProjectLocationChange: projectActions.moveLocation,
         },
         ...args,
       ),
     [
-      applyProjectLocationChange,
       dismissNoticesForContinuedSession,
       enqueueHarnessEvent,
       flushHarnessEvents,
@@ -3222,7 +3059,7 @@ function Workspace({
       setSidebarTab: (tab, project) => setSidebarTab(tab, project),
       closeAutomations: () => setAutomationsViewOpen(false),
       submitSession: (...args) => submitSessionRef.current(...args),
-      saveDraft: (...args) => onSaveDraft(...args),
+      saveDraft: (...args) => composerActions.saveDraft(...args),
     }),
   );
   const automationRuns = useStableFlow(() => createAutomationRuns(automationDeps));
@@ -3526,7 +3363,7 @@ function Workspace({
     submit: (sessionId, text, attachments) =>
       submitSessionRef.current(sessionId, text, attachments),
     stop: (sessionId) => onStop(sessionId),
-    setRuntimeMode: onRuntimeModeChange,
+    setRuntimeMode: composerActions.changeRuntimeMode,
     approve: onApproval,
     answer: onQuestionReply,
     launch: (launch, id) => launchQuickSessionRef.current(launch, id),
@@ -3602,7 +3439,7 @@ function Workspace({
       flushHarnessEvents,
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
       submitSession: (...args) => submitSessionRef.current(...args),
-      saveDraft: (...args) => onSaveDraft(...args),
+      saveDraft: (...args) => composerActions.saveDraft(...args),
       stopSession: (sessionId) => stopSessionRef.current(sessionId),
       removeSession: (...args) => removeSessionRef.current(...args),
       launchQuickSession: (...args) => launchQuickSession(...args),
@@ -3960,12 +3797,12 @@ function Workspace({
       stepProject(
         {
           currentProject: () => projectCwdRef.current,
-          selectProject: onSelectProject,
+          selectProject: projectActions.select,
           noteStep: noteProjectStep,
         },
         delta,
       ),
-    [onSelectProject],
+    [],
   );
 
   const onOpenBoardCard = useCallback(
@@ -4064,7 +3901,7 @@ function Workspace({
     onOpenSearch: surfaces.openSearch,
     onOpenInbox: surfaces.openInbox,
     onOpenNotes: surfaces.openNotes,
-    pickProject,
+    pickProject: projectActions.pick,
     onNewTerminal: terminals.openNew,
     onNewTerminalTab: terminals.openNewTab,
     onToggleProjectTerminal: terminals.toggleDock,
@@ -4176,7 +4013,7 @@ function Workspace({
       const sessionId = findFamiliar(monoId)?.sessionId;
       if (sessionId) onOpenMonoArtifact(sessionId, id);
     },
-    openFile: onOpenFile,
+    openFile: fileActions.open,
     resume: onUsageLimitResume,
     create: () => createFamiliar().id,
   });
@@ -4189,22 +4026,22 @@ function Workspace({
     hideProjectPicker: true,
     onFocus: onFocusPane,
     onClose: tabClose.closePane,
-    onCwdChange,
-    onBranchChange,
-    onWorktreeChange: onComposerWorktreeChange,
+    onCwdChange: worktreeActions.changeProject,
+    onBranchChange: worktreeActions.changeBranch,
+    onWorktreeChange: worktreeActions.changeFromComposer,
     onRemoteSnapshot,
-    onWorkspaceModeChange,
-    onWorktreeBaseChange,
+    onWorkspaceModeChange: worktreeActions.changeWorkspaceMode,
+    onWorktreeBaseChange: worktreeActions.changeBase,
     onManageWorktrees: surfaces.manageWorktrees,
-    onModelChange,
-    onModelSettingsChange,
-    onRuntimeModeChange,
-    onSaveDraft,
-    onRemoveDraft,
+    onModelChange: composerActions.changeModel,
+    onModelSettingsChange: composerActions.changeModelSettings,
+    onRuntimeModeChange: composerActions.changeRuntimeMode,
+    onSaveDraft: composerActions.saveDraft,
+    onRemoveDraft: composerActions.removeDraft,
     onSubmit,
     onStop,
     onCompactContext,
-    onPlaceSessionInFolder,
+    onPlaceSessionInFolder: projectActions.placeSessionInFolder,
     onDeleteQueuedMessage,
     onEditQueuedMessage,
     onQueuedMessageEditingChange,
@@ -4224,9 +4061,9 @@ function Workspace({
     onApproval,
     onQuestionReply,
     onQuestionInteraction,
-    onOpenFile,
+    onOpenFile: fileActions.open,
     onOpenDiff,
-    onOpenPlan,
+    onOpenPlan: fileActions.openPlan,
     onBuildPlan,
     onSecondOpinion,
     onHandoff,
@@ -4295,7 +4132,7 @@ function Workspace({
         onShowLaunchedSession={familiarView.showLaunchedSession}
         onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
         onApproval={onApproval}
-        onOpenFile={onOpenFile}
+        onOpenFile={fileActions.open}
         onOpenDiff={onOpenDiff}
       />
     ) : null;
@@ -4305,9 +4142,9 @@ function Workspace({
         store={workspaceStore}
         familiar={familiarViewFamiliar}
         session={familiarViewSession}
-        onModelChange={onModelChange}
-        onModelSettingsChange={onModelSettingsChange}
-        onRuntimeModeChange={onRuntimeModeChange}
+        onModelChange={composerActions.changeModel}
+        onModelSettingsChange={composerActions.changeModelSettings}
+        onRuntimeModeChange={composerActions.changeRuntimeMode}
         onReset={onResetFamiliar}
       />
     ) : null;
@@ -4399,8 +4236,8 @@ function Workspace({
       onDeleteTab={onDeleteTitleTab}
       onReorder={onReorderDisplayedTabs}
       onPlaceOnPane={onPlaceTabOnPane}
-      onPinFile={onPinFile}
-      onSelectProject={onSelectProject}
+      onPinFile={fileActions.pin}
+      onSelectProject={projectActions.select}
     />
   );
 
@@ -4411,7 +4248,7 @@ function Workspace({
       cwd={sidebarCwd}
       gitCwd={gitCwd}
       worktreeTabStats={worktreeTabStats}
-      onSelectWorkspace={onSelectWorkspace}
+      onSelectWorkspace={projectActions.selectWorkspace}
       workspaceSwitchPending={
         workspaceNavigation.pending?.project === sidebarCwd
       }
@@ -4453,10 +4290,10 @@ function Workspace({
       onCancelReminders={sessionReminders.cancel}
       onDeleteSession={onDeleteHistorySession}
       onDeleteSessions={onDeleteHistorySessions}
-      onOpenFile={onOpenFile}
+      onOpenFile={fileActions.open}
       onOpenTerminal={terminals.open}
-      onFileMoved={onFileMoved}
-      onFileDeleted={onFileDeleted}
+      onFileMoved={fileActions.moved}
+      onFileDeleted={fileActions.deleted}
       onGoBack={surfaces.railBack}
       onGoForward={surfaces.railForward}
       onOpenDiff={onOpenWorkingTreeDiff}
@@ -4472,9 +4309,9 @@ function Workspace({
       liveAgents={liveAgents}
       onSelectAgent={onSelectLiveAgent}
       onStopAgent={onCloseLiveAgent}
-      onSelectProject={onSelectProject}
-      onOpenProject={pickProject}
-      onRemoveProject={onRemoveProject}
+      onSelectProject={projectActions.select}
+      onOpenProject={projectActions.pick}
+      onRemoveProject={projectActions.remove}
       familiars={sidebarFamiliars}
       onNew={onNew}
       openSessions={openProjectSessions}
@@ -4595,7 +4432,7 @@ function Workspace({
                         onCloseTab={tabClose.closeTab}
                         onCloseOtherTabs={tabClose.closeOtherTabs}
                         onCloseAllTabs={tabClose.closeAllTabs}
-                        onPickProject={pickProject}
+                        onPickProject={projectActions.pick}
                         onFindInProject={surfaces.findInProject}
                         onSearch={surfaces.openSearch}
                         onOpenInbox={surfaces.openInbox}
@@ -4638,13 +4475,13 @@ function Workspace({
                                   activeSessionId={active?.id}
                                   composerFocused={composerFocused}
                                   composerFocusToken={composerFocusToken}
-                                  onSelectFile={onSelectFileSurface}
+                                  onSelectFile={fileActions.selectSurface}
                                   onCloseFile={tabClose.closeFile}
                                   onCloseOtherFiles={tabClose.closeOtherFiles}
-                                  onPinFile={onPinFile}
+                                  onPinFile={fileActions.pin}
                                   onReorderFiles={onReorderFiles}
-                                  onFileDirtyChange={onFileDirtyChange}
-                                  onFileErrorCountChange={onFileErrorCountChange}
+                                  onFileDirtyChange={fileActions.setDirty}
+                                  onFileErrorCountChange={fileActions.setErrorCount}
                                   transcriptPool={transcriptPool}
                                   onUpdatePlan={onUpdatePlan}
                                   onMovePane={onMovePane}
@@ -4747,9 +4584,9 @@ function Workspace({
                       />
                     }
                     onToggleSidebar={onToggleSidebar}
-                    onOpenFile={onOpenFile}
+                    onOpenFile={fileActions.open}
                     onOpenHistorySession={onSelectHistorySession}
-                    onOpenProject={onSelectProject}
+                    onOpenProject={projectActions.select}
                     onLeaveSearch={surfaces.leaveSearch}
                     onLeaveNotes={surfaces.leaveNotes}
                     inbox={{
@@ -4775,8 +4612,8 @@ function Workspace({
                     cwd={sidebarCwd}
                     sessions={sidebarHistory}
                     liveSessions={sessions}
-                    onRemoveWorktree={onRemoveWorktree}
-                    onCheckWorktreeRemoval={onCheckWorktreeRemoval}
+                    onRemoveWorktree={worktreeActions.remove}
+                    onCheckWorktreeRemoval={worktreeActions.checkRemoval}
                     onDeleteWorktreeSessions={onDeleteWorktreeSessions}
                     headerHost={insetLayout ? settingsHeaderHost : undefined}
                     onClose={surfaces.closeSettings}
@@ -4784,8 +4621,8 @@ function Workspace({
                     onOpenSession={surfaces.openArchivedSession}
                     onArchiveSession={onArchiveHistorySession}
                     onDeleteSession={onDeleteHistorySession}
-                    onRestoreProject={onRestoreProject}
-                    onRemoveProject={onRemoveProject}
+                    onRestoreProject={projectActions.restore}
+                    onRemoveProject={projectActions.remove}
                     onOpenWhatsNew={onOpenWhatsNew}
                   />
                   {insetLayout ? null : usageFooter}
@@ -4815,7 +4652,7 @@ function Workspace({
             store={workspaceStore}
             cwd={filesCwd}
             openPaths={openFilePaths}
-            onOpenFile={onOpenFile}
+            onOpenFile={fileActions.open}
             onReload={onReload}
           />
           <WorkspaceNotices
@@ -4833,7 +4670,7 @@ function Workspace({
             reminders={sessionReminders}
             onOpenReminderSettings={surfaces.openReminderSettings}
           />
-          <WorkspaceDialogs store={workspaceStore} onOpenProject={onSelectProject} />
+          <WorkspaceDialogs store={workspaceStore} onOpenProject={projectActions.select} />
         </div>
         <TranscriptPoolOutlet pool={transcriptPool} />
       </OrchestrationWorkers.Provider>

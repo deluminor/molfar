@@ -3,6 +3,7 @@ import type { Session } from "@/domain/session/session";
 import { testSession } from "@/integrations/harness/core/test-session";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
+import { createComposerActions } from "./composer-actions";
 import type { ComposerDeps } from "./composer-deps";
 import { changeModel, changeRuntimeMode } from "./composer-model";
 import { dismissComposerCard } from "./composer-cards";
@@ -99,5 +100,21 @@ describe("drafts", () => {
     dismissComposerCard(deps.setSessions, "s", "noteCard");
 
     expect(session().noteCard).toBeUndefined();
+  });
+});
+
+describe("createComposerActions", () => {
+  it("changes the model settings and permission mode, and saves a draft", () => {
+    const { deps, session } = setup();
+    const composer = createComposerActions(deps);
+
+    composer.changeModelSettings("s", { effort: "high" });
+    composer.changeRuntimeMode("s", "full-access");
+    expect(session()).toMatchObject({ modelSettings: { effort: "high" }, runtimeMode: "full-access" });
+
+    expect(composer.saveDraft("s", "later")).toBe(true);
+    const draft = session().blocks.at(-1);
+    expect(draft?.text).toBe("later");
+    expect(composer.removeDraft("s", draft?.id ?? "")).toBe(true);
   });
 });

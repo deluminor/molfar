@@ -10,10 +10,16 @@ import { testSession } from "@/integrations/harness/core/test-session";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import { dropOpenFiles } from "./drop-open-files";
+import { createFileActions } from "./file-actions";
+import type { FileDeps } from "./file-deps";
 import { fileDeleted, fileMoved } from "./file-paths";
 import { setFileDirty, setFileErrorCount } from "./file-state";
 
-vi.mock("@/features/files/model/file-index", () => ({ invalidateProjectFiles: vi.fn() }));
+vi.mock("@/features/files/model/file-index", () => ({
+  invalidateProjectFiles: vi.fn(),
+  resolveFileOpenRequest: vi.fn(async (_cwd: string, path: string) => path),
+  rememberOpenedFile: vi.fn(),
+}));
 
 const file = (path: string) => newFileTab(path, "/work/demo", false, undefined, "/work/demo");
 
@@ -87,5 +93,53 @@ describe("file state", () => {
 
     setFileErrorCount(deps, "f", 0);
     expect(deps.store.getState().fileErrorCounts.has("f")).toBe(false);
+  });
+});
+
+describe("createFileActions", () => {
+  function setupActions(tabs: WorkspaceTab[]) {
+    const { store, tabsRef } = setup(tabs);
+    const deps = {
+      store,
+      sessionsRef: { current: store.getState().sessions },
+      tabsRef,
+      activeTabIdRef: { current: "t" },
+      gitCwd: () => "/work/demo",
+      sidebarCwd: () => "/work/demo",
+      editorNavigationToken: { current: 0 },
+      closeFamiliarView: vi.fn(),
+      insertBesideActive: vi.fn((current: WorkspaceTab[], tab: WorkspaceTab) => [...current, tab]),
+      activateTab: vi.fn(),
+      selectTab: vi.fn(),
+      setComposerFocused: vi.fn(),
+    } satisfies FileDeps;
+    return { deps, store, files: createFileActions(deps) };
+  }
+
+  it("tracks unsaved files and error counts", () => {
+    const { store, files } = setupActions([tabWith(["/work/demo/a.ts"])]);
+
+    files.setDirty("f", true);
+    files.setErrorCount("f", 2);
+
+    expect(store.getState().dirtyFiles.has("f")).toBe(true);
+    expect(store.getState().fileErrorCounts.get("f")).toBe(2);
+  });
+
+  it("follows moved files on disk", () => {
+    const { store, files } = setupActions([tabWith(["/work/demo/src/a.ts"])]);
+
+    files.moved("/work/demo/src", "/work/demo/lib");
+
+    expect(paths(store.getState().tabs[0])).toEqual(["/work/demo/lib/a.ts"]);
+  });
+
+  it("leaves a covering Familiar view and opens the file in the active tab", async () => {
+    const { deps, store, files } = setupActions([tabWith([])]);
+
+    files.open("/work/demo/a.ts");
+    expect(deps.closeFamiliarView).toHaveBeenCalled();
+
+    await vi.waitFor(() => expect(paths(store.getState().tabs[0])).toEqual(["/work/demo/a.ts"]));
   });
 });
