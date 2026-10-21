@@ -39,6 +39,10 @@ const EMPTY_LIST = new Set([
   "session_list_linked",
   "session_take_in_flight",
   "stat_files",
+  "task_board_artifacts_list",
+  "task_board_cards_list",
+  "task_board_runs_list",
+  "task_board_runs_running",
 ]);
 
 const FALSE = new Set([
