@@ -72,7 +72,7 @@
     "lint/suspicious/noControlCharactersInRegex": 2
   },
   "src/app/App.tsx": {
-    "lint/correctness/useExhaustiveDependencies": 33
+    "lint/correctness/useExhaustiveDependencies": 32
   },
   "src/app/hooks/use-familiar-habits.test.ts": {
     "lint/style/noNonNullAssertion": 5

@@ -205,20 +205,9 @@ import {
   type SessionListDeps,
 } from "./workspace/flows/tabs/session-list-navigation";
 import type { SurfaceDeps } from "./workspace/flows/surfaces/surface-deps";
-import {
-  findInProject,
-  openAppView,
-  openAutomationSession,
-  openFilePicker,
-  railBack,
-  railForward,
-} from "./workspace/flows/surfaces/overlay-views";
-import {
-  closeSettings,
-  openNotificationSettings,
-  openSettings as openSettingsSurface,
-  selectSettingsSection,
-} from "./workspace/flows/surfaces/settings-surface";
+import { openAppView } from "./workspace/flows/surfaces/overlay-views";
+import { createSurfaceActions } from "./workspace/flows/surfaces/surface-actions";
+import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -476,8 +465,6 @@ import {
   warmNativeSkills,
 } from "@/features/skills/model/skills";
 import {
-  OPEN_CONNECTIONS_EVENT,
-  OPEN_REMOTE_PROJECT_EVENT,
   rememberRemoteSession,
   REMOTE_HISTORY_UPDATED,
   remoteTabCwd,
@@ -491,10 +478,8 @@ import {
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
 import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
 import type { InboxItem } from "@/features/inbox/model/github-tasks";
-import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
-import type { SettingsAnchor } from "@/features/settings/ui/SettingsView";
 import {
   AutomationsView,
   InboxView,
@@ -543,7 +528,6 @@ import {
   loadNotesEnabled,
   subscribeLiveAgentsEnabled,
   subscribeNotesEnabled,
-  type SettingsSectionId,
 } from "@/features/settings/model/settings";
 
 import {
@@ -636,7 +620,6 @@ function Workspace({
     setWorkerDetailRequest,
     setSettingsOpen,
     setWhatsNewVersion,
-    setRemoteProjectDialogOpen,
     setFamiliarViewId,
     setFamiliarOverviewOpen,
     setFamiliarOverviewTab,
@@ -3888,11 +3871,9 @@ function Workspace({
       selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
     }),
   );
-  const onGoToFile = useCallback(() => openFilePicker(surfaceDeps, ""), []);
-  const onOpenCommandPalette = useCallback(
-    () => openFilePicker(surfaceDeps, ">"),
-    [],
-  );
+  const surfaces = useStableFlow(() => createSurfaceActions(surfaceDeps));
+  useSettingsOpenEvents(surfaces.openSettings, surfaces.openRemoteProjectDialog);
+
   const onReload = useCallback(() => {
     void (async () => {
       if (!(await confirmReload(dirtyFilesRef.current.size > 0))) return;
@@ -3900,46 +3881,18 @@ function Workspace({
     })();
   }, []);
 
-  const onFindInProject = useCallback(() => findInProject(surfaceDeps), []);
-
-  const onOpenSearch = useCallback(() => openAppView(surfaceDeps, "search"), []);
-
-  const onLeaveSearch = useCallback(() => {
-    setSearchViewOpen(false);
-  }, []);
-
-  const onOpenInbox = useCallback(() => openAppView(surfaceDeps, "inbox"), []);
-
   const onOpenLinkedWorkItem = linkedPanels.open;
-
-  const onLeaveInbox = useCallback(() => {
-    setInboxViewOpen(false);
-  }, []);
 
   const onOpenInboxSession = useCallback(
     (sessionId: string) => openInboxSession(inboxDeps, sessionId),
     [],
   );
+
   const onRepairChecks = useCallback(
     (item: InboxItem, request: CiRepairRequest, sessionId?: string) =>
       repairChecks(inboxDeps, item, request, sessionId),
     [],
   );
-
-  const onOpenNotes = useCallback(() => openAppView(surfaceDeps, "notes"), []);
-
-  const onLeaveNotes = useCallback(() => {
-    setNotesViewOpen(false);
-  }, []);
-
-  const onOpenAutomations = useCallback(
-    () => openAppView(surfaceDeps, "automations"),
-    [],
-  );
-
-  const onLeaveAutomations = useCallback(() => {
-    setAutomationsViewOpen(false);
-  }, []);
 
   const {
     onOpenLocalSurface,
@@ -3962,69 +3915,6 @@ function Workspace({
     onSelectHistorySession,
     railBadges,
   });
-
-  const onOpenAutomationSession = useCallback(
-    (sessionId: string) => openAutomationSession(surfaceDeps, sessionId),
-    [],
-  );
-
-  const openSettings = useCallback(
-    (section?: SettingsSectionId, anchor?: SettingsAnchor) =>
-      openSettingsSurface(surfaceDeps, section, anchor),
-    [],
-  );
-
-  const onOpenSettings = useCallback(() => openSettings(), [openSettings]);
-  useEffect(() => {
-    const openConnections = () => openSettings("connections");
-    window.addEventListener(OPEN_CONNECTIONS_EVENT, openConnections);
-    return () =>
-      window.removeEventListener(OPEN_CONNECTIONS_EVENT, openConnections);
-  }, [openSettings]);
-  useEffect(() => {
-    const open = () => setRemoteProjectDialogOpen(true);
-    window.addEventListener(OPEN_REMOTE_PROJECT_EVENT, open);
-    return () => window.removeEventListener(OPEN_REMOTE_PROJECT_EVENT, open);
-  }, []);
-
-  useEffect(() => {
-    const onOpenMcp = () => openSettings("mcp");
-    window.addEventListener("molfar:open-mcp-settings", onOpenMcp);
-    return () =>
-      window.removeEventListener("molfar:open-mcp-settings", onOpenMcp);
-  }, [openSettings]);
-
-  const onOpenNotificationSettings = useCallback(
-    (path?: string) => openNotificationSettings(surfaceDeps, path),
-    [],
-  );
-
-  const onOpenInboxIntegrations = useCallback(
-    (source: ConnectableInboxSource) => openSettings("inbox", source),
-    [openSettings],
-  );
-
-  const onCloseSettings = useCallback(() => closeSettings(surfaceDeps), []);
-
-  const onSelectSettingsSection = useCallback(
-    (section: SettingsSectionId) => selectSettingsSection(surfaceDeps, section),
-    [],
-  );
-
-  const onOpenArchivedSession = useCallback(
-    (sessionId: string) => {
-      setSettingsOpen(false);
-      void onSelectHistorySession(sessionId);
-    },
-    [onSelectHistorySession],
-  );
-
-  const onRailBack = useCallback(
-    () => railBack(surfaceDeps, () => closeSettings(surfaceDeps)),
-    [],
-  );
-
-  const onRailForward = useCallback(() => railForward(surfaceDeps), []);
 
   useEffect(() => {
     if (sidebarTab === "inbox") setSidebarTab("sessions");
@@ -4167,20 +4057,20 @@ function Workspace({
     onToggleSidebar,
     onToggleSessionSidebar: onToggleSessionSidebarShortcut,
     onToggleFamiliar,
-    onGoToFile,
-    onOpenCommandPalette,
+    onGoToFile: surfaces.goToFile,
+    onOpenCommandPalette: surfaces.openCommandPalette,
     onReload,
-    onFindInProject,
-    onOpenSearch,
-    onOpenInbox,
-    onOpenNotes,
+    onFindInProject: surfaces.findInProject,
+    onOpenSearch: surfaces.openSearch,
+    onOpenInbox: surfaces.openInbox,
+    onOpenNotes: surfaces.openNotes,
     pickProject,
     onNewTerminal: terminals.openNew,
     onNewTerminalTab: terminals.openNewTab,
     onToggleProjectTerminal: terminals.toggleDock,
     onNavigateSessionList,
     onNavigateProjectList,
-    openSettings,
+    openSettings: surfaces.openSettings,
     onOpenApprovalSession,
     onOpenBoardCard,
   });
@@ -4264,15 +4154,6 @@ function Workspace({
     [],
   );
 
-  const onManageWorktrees = useCallback(
-    () => openSettings("worktrees"),
-    [openSettings],
-  );
-  const onManageProviderAccounts = useCallback(
-    () => openSettings("providers", "provider-accounts"),
-    [openSettings],
-  );
-
   useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
     open: (monoId) =>
       ensureFamiliarSession(monoId, {
@@ -4314,7 +4195,7 @@ function Workspace({
     onRemoteSnapshot,
     onWorkspaceModeChange,
     onWorktreeBaseChange,
-    onManageWorktrees,
+    onManageWorktrees: surfaces.manageWorktrees,
     onModelChange,
     onModelSettingsChange,
     onRuntimeModeChange,
@@ -4502,15 +4383,15 @@ function Workspace({
       onSettingsHeaderHost={setSettingsHeaderHost}
       onNew={onNew}
       onCloseFamiliarView={closeFamiliarView}
-      onGoBack={onRailBack}
-      onGoForward={onRailForward}
+      onGoBack={surfaces.railBack}
+      onGoForward={surfaces.railForward}
       onToggleSidebar={onToggleSidebar}
       onToggleSessionSidebar={onToggleSessionSidebar}
       onSelect={onSelectTitleTab}
       onNewTerminal={terminals.openNew}
-      onOpenSettings={onOpenSettings}
-      onOpenInbox={onOpenInbox}
-      onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+      onOpenSettings={surfaces.openSettingsHome}
+      onOpenInbox={surfaces.openInbox}
+      onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
       onClose={onCloseDisplayedTab}
       onCloseMany={onCloseDisplayedTabs}
       onCloseAll={onCloseAllDisplayedTabs}
@@ -4548,7 +4429,7 @@ function Workspace({
         tab: rightPanelTab,
         onTabChange: showRightPanel,
       }}
-      onOpenFilesSearch={onFindInProject}
+      onOpenFilesSearch={surfaces.findInProject}
       sessions={sidebarHistory}
       busySessionIds={busySessionIds}
       approvalSessionIds={approvalSessionIds}
@@ -4576,8 +4457,8 @@ function Workspace({
       onOpenTerminal={terminals.open}
       onFileMoved={onFileMoved}
       onFileDeleted={onFileDeleted}
-      onGoBack={onRailBack}
-      onGoForward={onRailForward}
+      onGoBack={surfaces.railBack}
+      onGoForward={surfaces.railForward}
       onOpenDiff={onOpenWorkingTreeDiff}
       onOpenAllChanges={onOpenAllChanges}
       onOpenCommit={onOpenCommit}
@@ -4598,14 +4479,14 @@ function Workspace({
       onNew={onNew}
       openSessions={openProjectSessions}
       onNewTerminal={terminals.openNew}
-      onSearch={onOpenSearch}
-      onOpenInbox={onOpenInbox}
+      onSearch={surfaces.openSearch}
+      onOpenInbox={surfaces.openInbox}
       onOpenInboxItem={onOpenLinkedWorkItem}
-      onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+      onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
       onOpenKnowledge={railSurfaces.knowledge ? onOpenKnowledge : undefined}
       knowledgeActive={localSurface === "knowledge"}
-      onOpenAutomations={onOpenAutomations}
-      onGoToFile={onGoToFile}
+      onOpenAutomations={surfaces.openAutomations}
+      onGoToFile={surfaces.goToFile}
       automationsActive={automationsSurfaceOpen}
       railExtraActions={localSurfaceRailActions}
       localSurfaces={{
@@ -4621,10 +4502,10 @@ function Workspace({
       unseenFinishedIds={unseenFinishedIds}
       inboxUnseen={inboxUnseen}
       linkedSessionUpdateIds={linkedSessionUpdateIds}
-      onOpenSettings={onOpenSettings}
-      onOpenNotificationSettings={onOpenNotificationSettings}
-      onSelectSettingsSection={onSelectSettingsSection}
-      onCloseSettings={onCloseSettings}
+      onOpenSettings={surfaces.openSettingsHome}
+      onOpenNotificationSettings={surfaces.openNotificationSettings}
+      onSelectSettingsSection={surfaces.selectSettingsSection}
+      onCloseSettings={surfaces.closeSettings}
       onOpenWhatsNew={onOpenWhatsNew}
     />
   );
@@ -4638,7 +4519,7 @@ function Workspace({
         source={usageSource}
         activeTab={activeTab}
         onSelectAccount={onSelectProviderAccount}
-        onManageAccounts={onManageProviderAccounts}
+        onManageAccounts={surfaces.manageProviderAccounts}
         onToggleTerminal={terminals.toggleRunning}
         onNewTerminal={terminals.openNew}
         onToggleProjectTerminal={terminals.toggleDock}
@@ -4707,7 +4588,7 @@ function Workspace({
                         onNew={onNew}
                         onNewTerminal={terminals.openNew}
                         onToggleTerminal={terminals.toggleDock}
-                        onGoToFile={onGoToFile}
+                        onGoToFile={surfaces.goToFile}
                         onToggleSidebar={onToggleSidebar}
                         onToggleSessionSidebar={onToggleSessionSidebarShortcut}
                         onShowSourceControl={onToggleChanges}
@@ -4715,10 +4596,10 @@ function Workspace({
                         onCloseOtherTabs={tabClose.closeOtherTabs}
                         onCloseAllTabs={tabClose.closeAllTabs}
                         onPickProject={pickProject}
-                        onFindInProject={onFindInProject}
-                        onSearch={onOpenSearch}
-                        onOpenInbox={onOpenInbox}
-                        onOpenNotes={notesEnabled ? onOpenNotes : undefined}
+                        onFindInProject={surfaces.findInProject}
+                        onSearch={surfaces.openSearch}
+                        onOpenInbox={surfaces.openInbox}
+                        onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
                       />
                     ) : null}
                     <div className="flex min-h-0 min-w-0 flex-1">
@@ -4859,9 +4740,9 @@ function Workspace({
                         onToggleSidebar={onToggleSidebar}
                         onOpenSession={onOpenHomeSession}
                         onOpenAutomation={onOpenHomeAutomation}
-                        onOpenAutomations={onOpenAutomations}
+                        onOpenAutomations={surfaces.openAutomations}
                         onOpenUsage={onOpenUsageSurface}
-                        onOpenInbox={onOpenInbox}
+                        onOpenInbox={surfaces.openInbox}
                         taskBoard={taskBoard}
                       />
                     }
@@ -4869,10 +4750,10 @@ function Workspace({
                     onOpenFile={onOpenFile}
                     onOpenHistorySession={onSelectHistorySession}
                     onOpenProject={onSelectProject}
-                    onLeaveSearch={onLeaveSearch}
-                    onLeaveNotes={onLeaveNotes}
+                    onLeaveSearch={surfaces.leaveSearch}
+                    onLeaveNotes={surfaces.leaveNotes}
                     inbox={{
-                      onClose: onLeaveInbox,
+                      onClose: surfaces.leaveInbox,
                       onStart: onStartInboxItem,
                       onAsk: onAskInboxItem,
                       onAskRestart: onRestartInboxAsk,
@@ -4880,13 +4761,13 @@ function Workspace({
                       repairSessions,
                       onRepairChecks,
                       onOpenSession: onOpenInboxSession,
-                      onOpenIntegrations: onOpenInboxIntegrations,
+                      onOpenIntegrations: surfaces.openInboxIntegrations,
                     }}
                     automations={{
                       onFocusAutomationConsumed: onAutomationsFocusConsumed,
-                      onClose: onLeaveAutomations,
+                      onClose: surfaces.leaveAutomations,
                       onLaunch: (automation, run) => launchAutomation(automation, run, true),
-                      onOpenSession: onOpenAutomationSession,
+                      onOpenSession: surfaces.openAutomationSession,
                     }}
                   />
                   <WorkspaceSettings
@@ -4898,9 +4779,9 @@ function Workspace({
                     onCheckWorktreeRemoval={onCheckWorktreeRemoval}
                     onDeleteWorktreeSessions={onDeleteWorktreeSessions}
                     headerHost={insetLayout ? settingsHeaderHost : undefined}
-                    onClose={onCloseSettings}
-                    onSelectSection={onSelectSettingsSection}
-                    onOpenSession={onOpenArchivedSession}
+                    onClose={surfaces.closeSettings}
+                    onSelectSection={surfaces.selectSettingsSection}
+                    onOpenSession={surfaces.openArchivedSession}
                     onArchiveSession={onArchiveHistorySession}
                     onDeleteSession={onDeleteHistorySession}
                     onRestoreProject={onRestoreProject}
@@ -4950,7 +4831,7 @@ function Workspace({
             onFocusApprovalSession={onOpenApprovalSession}
             onApproval={onApproval}
             reminders={sessionReminders}
-            onOpenReminderSettings={() => openSettings("general", "notifications")}
+            onOpenReminderSettings={surfaces.openReminderSettings}
           />
           <WorkspaceDialogs store={workspaceStore} onOpenProject={onSelectProject} />
         </div>
