@@ -17,6 +17,9 @@ import { newTab } from "@/features/workspace/model/layout";
 import { submitWithSettlement } from "../../../model/managed-submission";
 import { type AutomationDeps, revealSessions } from "./automation-deps";
 import { newAutomationSession, reusableSession, stampedSession } from "./automation-session";
+import { launchQuickSession } from "./quick-launch";
+
+type QuickLaunchArgs = Parameters<typeof launchQuickSession> extends [AutomationDeps, ...infer Rest] ? Rest : never;
 
 function runStatus(status: "completed" | "cancelled" | "failed") {
   if (status === "completed") return "succeeded" as const;
@@ -151,7 +154,12 @@ export function createAutomationRuns(deps: AutomationDeps) {
       .catch(() => undefined);
   };
 
-  return { launch, ensureRecovery, inboxAppeared };
+  return {
+    launch,
+    ensureRecovery,
+    inboxAppeared,
+    launchQuick: (...args: QuickLaunchArgs) => launchQuickSession(deps, ...args),
+  };
 }
 
 export type AutomationRuns = ReturnType<typeof createAutomationRuns>;

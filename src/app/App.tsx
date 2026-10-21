@@ -23,7 +23,6 @@ import { flushSync } from "react-dom";
 import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
 import { useWorkspaceSessions } from "./workspace/hooks/use-workspace-sessions";
-import type { AppSessionPlacement } from "@/features/agent-app/model/agent-app";
 import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
@@ -42,7 +41,6 @@ import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { updateSessionState } from "./model/session-state";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import type { SettingsReturnView } from "./model/settings-return/types";
-import type { SubmissionAcceptance } from "./model/submission-acceptance";
 
 import {
   prefetchProjectFiles,
@@ -89,8 +87,7 @@ import {
 } from "./workspace/flows/familiars/familiar-overview";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
-import { submitSession as submitToSession } from "./workspace/flows/submission/submit-session";
-import type { Submit } from "./workspace/flows/submission/submit-types";
+import { createSubmissionActions } from "./workspace/flows/submission/submission-actions";
 import { createTurnQueueActions } from "./workspace/flows/turn-queue/turn-queue-actions";
 import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
 import { createInboxAsk } from "./workspace/flows/inbox/inbox-ask";
@@ -111,7 +108,6 @@ import { createComposerActions } from "./workspace/flows/composer/composer-actio
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import type { AutomationDeps } from "./workspace/flows/automations/automation-deps";
 import { createAutomationRuns } from "./workspace/flows/automations/automation-runs";
-import { launchQuickSession as launchQuickSessionInWorkspace } from "./workspace/flows/automations/quick-launch";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
@@ -188,7 +184,6 @@ import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 
 import {
   orchestrator,
-  type ControlOutcome,
 } from "@/features/orchestration/model/orchestration";
 import {
   attachOrchestrationWorkers,
@@ -297,7 +292,6 @@ import {
   setWindowFocused,
 } from "@/features/notifications/model/notifications";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
-import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import {
   deleteSession,
   getSession,
@@ -983,7 +977,6 @@ function Workspace({
   const projectLocationSyncs = useRef(
     new Map<string, ReturnType<typeof synchronizeProjectLocation>>(),
   );
-  const submitAfterProjectSyncRef = useRef<Submit>(() => false);
 
   useEffect(() => {
     for (const project of recents) {
@@ -1298,7 +1291,7 @@ function Workspace({
       sidebarCwd: () => sidebarCwdRef.current,
       selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
-      submit: (...args) => onSubmitRef.current(...args),
+      submit: (...args) => submission.send(...args),
     }),
   );
   const linkedPanels = useStableFlow(() => createLinkedWorkItemPanels(inboxDeps));
@@ -2398,48 +2391,25 @@ function Workspace({
   );
   const composerActions = useStableFlow(() => createComposerActions(composerDeps));
 
-  const submitSession = useCallback(
-    (...args: Parameters<Submit>): SubmissionAcceptance =>
-      submitToSession(
-        {
-          sessionsRef,
-          setSessions,
-          turnGen,
-          activeSessionIdRef,
-          removingSessionIds,
-          switchingWorktrees,
-          removingWorktreePaths,
-          projectLocationSyncs,
-          workspacePins,
-          submitAfterProjectSyncRef,
-          editedResends,
-          workspaceNavigation,
-          enqueueHarnessEvent,
-          flushHarnessEvents,
-          dismissNoticesForContinuedSession: reminders.dismissContinuedNotices,
-          applyProjectLocationChange: projectActions.moveLocation,
-        },
-        ...args,
-      ),
-    [
+  const submission = useStableFlow(() =>
+    createSubmissionActions({
+      sessionsRef,
+      setSessions,
+      turnGen,
+      activeSessionIdRef,
+      removingSessionIds,
+      switchingWorktrees,
+      removingWorktreePaths,
+      projectLocationSyncs,
+      workspacePins,
+      editedResends,
+      workspaceNavigation,
       enqueueHarnessEvent,
       flushHarnessEvents,
-    ],
-  );
-  submitAfterProjectSyncRef.current = submitSession;
-  // Interactive callers use the immediate result to clear their composer. The
-  // queued-launch receiver uses submitSession to await the actual acceptance.
-  const onSubmit = useCallback(
-    (...args: Parameters<Submit>): boolean => {
-      // Reject before async preparation can make the composer clear its draft.
-      if (workspaceNavigation.isSwitching(args[0])) return false;
-      const result = submitSession(...args);
-      if (typeof result === "boolean") return result;
-      // Deferred errors have already been displayed by submitAfterProjectSync.
-      void result.catch(() => undefined);
-      return true;
-    },
-    [submitSession],
+      dismissNoticesForContinuedSession: (sessionId) =>
+        reminders.dismissContinuedNotices(sessionId),
+      applyProjectLocationChange: (from, to) => projectActions.moveLocation(from, to),
+    }),
   );
 
   const familiarChat = useStableFlow(() =>
@@ -2464,7 +2434,7 @@ function Workspace({
         setSessions(next);
       },
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
-      submitSession: (...args) => submitSessionRef.current(...args),
+      submitSession: submission.submit,
       stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
       noteReply: familiarReplies.noteReply,
     }),
@@ -2483,7 +2453,7 @@ function Workspace({
       focusOpenSession: (sessionId) => focusOpenSession(sessionId),
       setSidebarTab: (tab, project) => setSidebarTab(tab, project),
       closeAutomations: () => setAutomationsViewOpen(false),
-      submitSession: (...args) => submitSessionRef.current(...args),
+      submitSession: submission.submit,
       saveDraft: (...args) => composerActions.saveDraft(...args),
     }),
   );
@@ -2506,30 +2476,10 @@ function Workspace({
     familiarCompletions.closeInactive();
   }, [sessions]);
 
-  const launchQuickSession = useCallback(
-    (
-      launch: QuickLaunch,
-      deliveryId: string,
-      placement?: AppSessionPlacement,
-      onSettled?: (outcome: ControlOutcome) => void,
-      openTab?: boolean,
-    ) =>
-      launchQuickSessionInWorkspace(
-        automationDeps,
-        launch,
-        deliveryId,
-        placement,
-        onSettled,
-        openTab,
-      ),
-    [],
-  );
-  useQuickComposerLaunches(launchQuickSession);
-  const launchQuickSessionRef = useRef(launchQuickSession);
-  launchQuickSessionRef.current = launchQuickSession;
+  useQuickComposerLaunches(automationRuns.launchQuick);
   const { taskBoard, isMainWindow, railBadges } = useWorkspaceTaskBoard({
     launch: (launch, id, onSettled) =>
-      launchQuickSessionRef.current(launch, id, undefined, onSettled, false),
+      automationRuns.launchQuick(launch, id, undefined, onSettled, false),
     sessions: () => sessionsRef.current,
     loadSession: getSession,
     stop: async (id) => {
@@ -2539,14 +2489,10 @@ function Workspace({
   });
   const taskBoardRef = useRef(taskBoard);
   taskBoardRef.current = taskBoard;
-  const submitSessionRef = useRef(submitSession);
-  submitSessionRef.current = submitSession;
 
   useAutomationSchedule(automationRuns);
   const onInboxAppeared = automationRuns.inboxAppeared;
 
-  const onSubmitRef = useRef(onSubmit);
-  onSubmitRef.current = onSubmit;
   const turnQueue = useStableFlow(
     (): TurnQueueDeps => ({
       sessions: () => sessionsRef.current,
@@ -2554,14 +2500,14 @@ function Workspace({
       updateSessionsNow: (update) => {
         updateSessionState(sessionsRef, setSessions, update);
       },
-      submit: (...args) => onSubmitRef.current(...args),
+      submit: submission.send,
       enqueueHarnessEvent,
       flushHarnessEvents,
     }),
   );
   const queueActions = useStableFlow(() => createTurnQueueActions(turnQueue));
 
-  useQueueDispatch(sessions, turnQueue, submitSession);
+  useQueueDispatch(sessions, turnQueue, submission.submit);
 
   const usageLimits = useStableFlow(() => createUsageLimits(turnQueue));
   usageLimitAccountChangeRef.current = usageLimits.changeAccount;
@@ -2574,14 +2520,14 @@ function Workspace({
         activeTabIdRef,
         appendTab: (tab, cwd) => appendTab(tab, cwd),
       },
-      submit: (...args) => onSubmitRef.current(...args),
+      submit: submission.send,
     }),
   );
 
   const unseenFinishedRef = useRef(unseenFinishedIds);
   unseenFinishedRef.current = unseenFinishedIds;
 
-  useAutoContinue(sessions, turnControl.sessions, onSubmit);
+  useAutoContinue(sessions, turnControl.sessions, submission.send);
 
   const closeLiveAgentDeps = useStableFlow(
     (): CloseLiveAgentDeps => ({
@@ -2635,12 +2581,12 @@ function Workspace({
     openSession: async (sessionId) =>
       (await ensureOpenSession(sessionId)) ?? undefined,
     submit: (sessionId, text, attachments) =>
-      submitSessionRef.current(sessionId, text, attachments),
+      submission.submit(sessionId, text, attachments),
     stop: (sessionId) => turnActions.stop(sessionId),
     setRuntimeMode: composerActions.changeRuntimeMode,
     approve: turnActions.approve,
     answer: turnActions.answer,
-    launch: (launch, id) => launchQuickSessionRef.current(launch, id),
+    launch: (launch, id) => automationRuns.launchQuick(launch, id),
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   });
 
@@ -2668,7 +2614,7 @@ function Workspace({
       checkOpenWorktreeFiles: (path: string) =>
         checkOpenWorktreeFiles(worktreeDeps, path),
     })),
-    submitSession,
+    submission.submit,
   );
 
   useEffect(() => {
@@ -2687,11 +2633,11 @@ function Workspace({
       board: () => taskBoardRef.current,
       flushHarnessEvents,
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
-      submitSession: (...args) => submitSessionRef.current(...args),
+      submitSession: submission.submit,
       saveDraft: (...args) => composerActions.saveDraft(...args),
       stopSession: turnActions.stop,
       removeSession: historyActions.remove,
-      launchQuickSession: (...args) => launchQuickSession(...args),
+      launchQuickSession: automationRuns.launchQuick,
     }),
   );
   useControlRequests(useStableFlow(() => createControlRequests(agentAppDeps)));
@@ -2734,7 +2680,7 @@ function Workspace({
       orchestrator,
       setSessions: (next) => setSessions(next),
       saveSession: (session) => upsertSession(session),
-      submit: (...args) => onSubmitRef.current(...args),
+      submit: submission.send,
     }),
   );
   const orchestrationActions = useStableFlow(() => ({
@@ -3109,7 +3055,7 @@ function Workspace({
           setSessions(sessionsRef.current);
         },
       }),
-    submit: onSubmit,
+    submit: submission.send,
     stop: turnActions.stop,
     approval: turnActions.approve,
     question: turnActions.answer,
@@ -3145,7 +3091,7 @@ function Workspace({
     onRuntimeModeChange: composerActions.changeRuntimeMode,
     onSaveDraft: composerActions.saveDraft,
     onRemoveDraft: composerActions.removeDraft,
-    onSubmit,
+    onSubmit: submission.send,
     onStop: turnActions.stop,
     onCompactContext: turnActions.compact,
     onPlaceSessionInFolder: projectActions.placeSessionInFolder,
