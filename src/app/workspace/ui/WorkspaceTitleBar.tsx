@@ -8,7 +8,7 @@ import {
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
 import { isLocalProject, looksLikeProject } from "@/features/projects/model/recents";
-import { loadNotesEnabled, subscribeNotesEnabled } from "@/features/settings/model/settings";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import {
   type AppView,
@@ -63,7 +63,7 @@ export function WorkspaceTitleBar({
   const tabVisitNav = useWorkspaceField(store, "tabVisitNav");
   const recents = useWorkspaceField(store, "recents");
   const { setFamiliarOverviewOpen, setFamiliarSettingsFor } = useWorkspaceActions(store);
-  const notesEnabled = useSyncExternalStore(subscribeNotesEnabled, loadNotesEnabled, () => true);
+  const notesEnabled = useNotesEnabled();
   // Renames and mascot picks re-render the Familiar's title.
   useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
   const familiar = familiarViewId ? familiarForSession(familiarViewId) : undefined;

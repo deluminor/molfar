@@ -8,6 +8,7 @@ import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
 import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
+import { saveNotesEnabled } from "@/features/settings/model/settings";
 import { WorkspaceAppViews } from "./WorkspaceAppViews";
 
 type Seen = Record<string, Record<string, unknown> | undefined>;
@@ -41,7 +42,6 @@ function mount(patch: Partial<Props> = {}) {
     store,
     insetLayout: false,
     openAppViews: [],
-    notesEnabled: true,
     automationsOpen: false,
     besideRail: true,
     compactRail: false,
@@ -61,6 +61,7 @@ function mount(patch: Partial<Props> = {}) {
 }
 
 beforeEach(() => {
+  saveNotesEnabled(true);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   container = document.createElement("div");
   root = createRoot(container);
@@ -85,7 +86,8 @@ describe("WorkspaceAppViews", () => {
 
   it("keeps tabbed views mounted but inactive in the inset layout", () => {
     const openAppViews: AppView[] = ["search", "notes", "automations"];
-    mount({ insetLayout: true, openAppViews, notesEnabled: false });
+    saveNotesEnabled(false);
+    mount({ insetLayout: true, openAppViews });
 
     expect(Object.keys(seen).sort()).toEqual(["automations", "search"]);
     expect(seen.search).toMatchObject({ open: false, tabbed: true });

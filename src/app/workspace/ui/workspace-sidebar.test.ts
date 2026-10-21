@@ -6,6 +6,7 @@ import { createWorkspaceStore } from "../store/create-workspace-store";
 import { testWorkspaceState } from "../store/test-state";
 import type { WorkspaceStore } from "../store/types";
 import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../testing/workspace-handlers";
+import { saveNotesEnabled } from "@/features/settings/model/settings";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
 
 const { seen } = vi.hoisted(() => ({
@@ -166,14 +167,16 @@ describe("WorkspaceSidebar", () => {
 
   it("takes its callbacks from the workspace handlers, notes only when enabled", () => {
     const handlers = fakeWorkspaceHandlers();
-    mount({ notesEnabled: false }, handlers);
+    saveNotesEnabled(false);
+    mount({}, handlers);
 
     expect(seen.props?.onOpenFile).toBe(handlers.files.open);
     expect(seen.props?.onSelectSession).toBe(handlers.sessionOpeners.selectHistory);
     expect(seen.props?.onPrefetchSession).toBe(handlers.prefetchSession);
     expect(seen.props?.onOpenNotes).toBeUndefined();
 
-    mount({ notesEnabled: true }, handlers);
+    act(() => saveNotesEnabled(true));
+    mount({}, handlers);
     expect(seen.props?.onOpenNotes).toBe(handlers.surfaces.openNotes);
   });
 });

@@ -1,3 +1,4 @@
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { MenuBar } from "../../../shell/MenuBar";
 import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { zoomUi } from "../../hooks/commands/ui-zoom";
@@ -6,7 +7,6 @@ import type { WorkspaceStore } from "../../store/types";
 
 type Props = {
   store: WorkspaceStore;
-  notesEnabled: boolean;
 };
 
 const zoomIn = () => zoomUi("zoom-in");
@@ -14,7 +14,8 @@ const zoomOut = () => zoomUi("zoom-out");
 const zoomReset = () => zoomUi("zoom-reset");
 
 /** The in-window menu bar, for platforms without a native one. */
-export function WorkspaceMenuBar({ store, notesEnabled }: Props) {
+export function WorkspaceMenuBar({ store }: Props) {
+  const notesEnabled = useNotesEnabled();
   const activeTabId = useWorkspaceField(store, "activeTabId");
   const { newSessions, terminals, surfaces, navigation, tabs, tabClose, projects } =
     useWorkspaceHandlers();

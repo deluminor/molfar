@@ -9,6 +9,7 @@ import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
 import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { InsetRightPanel } from "./InsetRightPanel";
+import { saveNotesEnabled } from "@/features/settings/model/settings";
 import { WorkspaceMenuBar } from "./WorkspaceMenuBar";
 import { WorkspaceSettings } from "./WorkspaceSettings";
 import { WorkspaceUsageFooter } from "./WorkspaceUsageFooter";
@@ -67,7 +68,10 @@ afterEach(() => {
 });
 
 describe("WorkspaceMenuBar", () => {
-  const menuProps = (notesEnabled = false) => ({ store, notesEnabled });
+  const menuProps = (notesEnabled = false) => {
+    saveNotesEnabled(notesEnabled);
+    return { store };
+  };
 
   it("closes the active tab and offers nothing to close without one", () => {
     render(WorkspaceMenuBar, menuProps());

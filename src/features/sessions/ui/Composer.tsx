@@ -123,10 +123,9 @@ import {
   COMPOSER_RUNNER_CHANGE_EVENT,
   loadComposerRunner,
   loadModelControls,
-  loadNotesEnabled,
   subscribeModelControls,
-  subscribeNotesEnabled,
 } from "@/features/settings/model/settings";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { isNoteMentionPath, loadNotes, peekNotes, rankNoteFiles, notesAsProjectFiles, type Note } from "@/features/notes/notes";
 import { resolveTabGroupLogo } from "@/features/workspace/model/tab-groups";
 import { useComposerSkills } from "./use-composer-skills";
@@ -500,11 +499,7 @@ export function Composer({
     loadInsetLayout,
     () => INSET_LAYOUT_DEFAULT,
   );
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const modelControls = useSyncExternalStore(
     subscribeModelControls,
     loadModelControls,

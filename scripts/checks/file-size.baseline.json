@@ -180,7 +180,7 @@
     "lines": 1318
   },
   "src/app/App.tsx": {
-    "lines": 3120
+    "lines": 3112
   },
   "src/app/hooks/use-familiar-habits.ts": {
     "lines": 311
@@ -510,7 +510,7 @@
     "lines": 868
   },
   "src/features/sessions/ui/Composer.tsx": {
-    "lines": 2663
+    "lines": 2658
   },
   "src/features/sessions/ui/ComposerRunner.tsx": {
     "lines": 513
@@ -537,7 +537,7 @@
     "lines": 606
   },
   "src/features/sessions/ui/SessionPane.tsx": {
-    "lines": 1306
+    "lines": 1299
   },
   "src/features/sessions/ui/SessionReview.tsx": {
     "lines": 370

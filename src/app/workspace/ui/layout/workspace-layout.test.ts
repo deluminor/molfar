@@ -47,7 +47,6 @@ function mount(patch: Partial<Props> = {}): void {
   const props: Props = {
     store,
     insetLayout,
-    notesEnabled: false,
     chrome: chrome({ insetLayout }),
     titleBar: slot("title"),
     sidebar: slot("sidebar"),

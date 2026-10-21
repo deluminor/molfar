@@ -20,10 +20,7 @@ import {
 } from "../model/transcript-jump";
 import { HarnessIcon } from "./HarnessIcon";
 import { createNote, noteTitle } from "@/features/notes/notes";
-import {
-  loadNotesEnabled,
-  subscribeNotesEnabled,
-} from "@/features/settings/model/settings";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 
 /**
  * One orchestration worker, watched from its lead's workspace.
@@ -77,11 +74,7 @@ export function AgentTabView({
     });
     return () => cancelAnimationFrame(frame);
   }, [visible, navigatorReady, jumpRequest, navigateBlock, session?.id]);
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const saveNote = useCallback(
     async (text: string) => {
       if (!session) return;

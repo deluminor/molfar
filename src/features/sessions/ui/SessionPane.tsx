@@ -96,10 +96,7 @@ import {
   type QuoteRequest,
 } from "../model/quote-draft";
 import { createNote, noteTitle } from "@/features/notes/notes";
-import {
-  loadNotesEnabled,
-  subscribeNotesEnabled,
-} from "@/features/settings/model/settings";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { getComposerDraft, setComposerDraft } from "../model/draft-cache";
 import { isAstraModel } from "../model/astra-welcome";
 import { isOpus55Model } from "../model/opus-welcome";
@@ -595,11 +592,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const acknowledgeQuote = useCallback((handledId: number) => {
     setQuoteRequest((current) => acknowledgeQuoteRequest(current, handledId));
   }, []);
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const saveNote = useCallback(
     async (text: string) => {
       const sessionTitle = sessionDisplayTitle(session.title, session.harness);

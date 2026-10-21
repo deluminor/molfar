@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { Session } from "@/domain/session/session";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { requestTranscriptJump } from "@/features/sessions/model/transcript-jump";
 import type { AppView } from "@/features/workspace/model/app-view-tabs";
 import { AppViewSurface } from "@/features/workspace/ui/AppViewSurface";
@@ -18,7 +19,6 @@ type Props = {
   insetLayout: boolean;
   /** Views kept mounted behind their title tabs in the inset layout. */
   openAppViews: readonly AppView[];
-  notesEnabled: boolean;
   automationsOpen: boolean;
   besideRail: boolean;
   compactRail: boolean;
@@ -41,7 +41,6 @@ export function WorkspaceAppViews({
   store,
   insetLayout,
   openAppViews,
-  notesEnabled,
   automationsOpen,
   besideRail,
   compactRail,
@@ -58,6 +57,7 @@ export function WorkspaceAppViews({
 }: Props) {
   const handlers = useWorkspaceHandlers();
   const { surfaces } = handlers;
+  const notesEnabled = useNotesEnabled();
   const onToggleSidebar = handlers.navigation.toggleSidebar;
   const searchOpen = useWorkspaceField(store, "searchViewOpen");
   const searchFocusToken = useWorkspaceField(store, "searchViewFocusToken");

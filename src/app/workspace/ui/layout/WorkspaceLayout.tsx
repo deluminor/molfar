@@ -8,7 +8,6 @@ import type { WorkspaceChrome } from "./workspace-chrome";
 type Props = {
   store: WorkspaceStore;
   insetLayout: boolean;
-  notesEnabled: boolean;
   chrome: WorkspaceChrome;
   titleBar: ReactNode;
   sidebar: ReactNode;
@@ -33,7 +32,6 @@ type Props = {
 export function WorkspaceLayout({
   store,
   insetLayout,
-  notesEnabled,
   chrome,
   titleBar,
   sidebar,
@@ -82,7 +80,7 @@ export function WorkspaceLayout({
                 aria-hidden={chrome.surfaceOpen}
                 inert={chrome.surfaceOpen || undefined}
               >
-                {!IS_MAC ? <WorkspaceMenuBar store={store} notesEnabled={notesEnabled} /> : null}
+                {!IS_MAC ? <WorkspaceMenuBar store={store} /> : null}
                 <div className="flex min-h-0 min-w-0 flex-1">
                   <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                     {chrome.titleBarInBody ? titleBar : null}

@@ -1,4 +1,5 @@
 import { type ComponentProps, useCallback } from "react";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { Sidebar } from "../../shell/Sidebar";
 import { useWorkspaceHandlers } from "../handlers/workspace-handlers";
 import { type SidebarModelInput, useSidebarModel } from "../hooks/sidebar/use-sidebar-model";
@@ -33,6 +34,7 @@ type Props = Omit<
   | "settingsSection"
   | "updateNotice"
   | "onDismissUpdate"
+  | "notesEnabled"
 > &
   Omit<SidebarModelInput, "cwd"> & {
   store: WorkspaceStore;
@@ -60,6 +62,7 @@ export function WorkspaceSidebar({
   ...passThrough
 }: Props) {
   const handlers = useWorkspaceHandlers();
+  const notesEnabled = useNotesEnabled();
   const model = useSidebarModel(store, {
     cwd: passThrough.cwd,
     gitCwd,
@@ -102,7 +105,8 @@ export function WorkspaceSidebar({
       {...passThrough}
       {...model}
       gitCwd={gitCwd}
-      {...sidebarHandlerProps(handlers, passThrough.notesEnabled)}
+      {...sidebarHandlerProps(handlers, notesEnabled)}
+      notesEnabled={notesEnabled}
       // The inset sidebar carries the links to the local surfaces, so it stays
       // beside them like it does beside the other views.
       open={sessionSidebarOpen && (inset || localSurfaces.active === null)}

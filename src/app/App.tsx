@@ -367,10 +367,9 @@ import {
   subscribeFamiliarsEnabled,
   loadIdleAgentLimit,
   loadLiveAgentsEnabled,
-  loadNotesEnabled,
   subscribeLiveAgentsEnabled,
-  subscribeNotesEnabled,
 } from "@/features/settings/model/settings";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 
 import {
   reconcileProjectReturn,
@@ -592,11 +591,7 @@ function Workspace({
     orchestrator.snapshot,
     orchestrator.snapshot,
   );
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const liveAgentsEnabled = useSyncExternalStore(
     subscribeLiveAgentsEnabled,
     loadLiveAgentsEnabled,
@@ -2935,7 +2930,6 @@ function Workspace({
         onOpen: onOpenLocalSurface,
         badges: railBadges,
       }}
-      notesEnabled={notesEnabled}
       titleBarAbove={chrome.sidebarTitleBarAbove}
       inset={insetLayout}
       unseenFinishedIds={unseenFinishedIds}
@@ -2962,8 +2956,7 @@ function Workspace({
         <WorkspaceLayout
           store={workspaceStore}
           insetLayout={insetLayout}
-          notesEnabled={notesEnabled}
-          chrome={chrome}
+              chrome={chrome}
           titleBar={workspaceTitleBar}
           sidebar={sessionSidebar}
           onInsetRailHost={setInsetRailHost}
@@ -3020,8 +3013,7 @@ function Workspace({
               store={workspaceStore}
               insetLayout={insetLayout}
               openAppViews={openAppViews}
-              notesEnabled={notesEnabled}
-              automationsOpen={automationsSurfaceOpen}
+                      automationsOpen={automationsSurfaceOpen}
               besideRail={chrome.appViewBesideRail}
               compactRail={chrome.appViewCompactRail}
               gitCwd={gitCwd}
