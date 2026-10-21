@@ -51,19 +51,13 @@ import type { SubmissionAcceptance } from "./model/submission-acceptance";
 import {
   prefetchProjectFiles,
 } from "@/features/files/model/file-index";
-import { FilePicker } from "@/features/files/ui/FilePicker";
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
 import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
 import {
-  DeleteSessionDialog,
-} from "@/features/sessions/ui/DeleteSessionDialog";
-import {
   applyInsetLayout,
   INSET_LAYOUT_DEFAULT,
   loadInsetLayout,
-  RIGHT_PANEL_WIDTH_MAX,
-  RIGHT_PANEL_WIDTH_MIN,
   subscribeInsetLayout,
   type SidebarTabId,
 } from "@/features/settings/model/appearance";
@@ -71,14 +65,6 @@ import {
   loadProjectSidebarTab,
   saveProjectSidebarTab,
 } from "@/features/settings/model/project-sidebar-tab";
-import {
-  applyUiScale,
-  loadUiScale,
-  saveUiScale,
-  UI_SCALE_DEFAULT,
-  zoomInUiScale,
-  zoomOutUiScale,
-} from "@/features/settings/model/ui-scale";
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import {
   type WorktreeFocus,
@@ -93,7 +79,6 @@ import { displayPath, pathKey, projectName } from "@/shared/lib/paths";
 import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
-import { MenuBar } from "./shell/MenuBar";
 import { noteProjectStep } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
@@ -315,7 +300,6 @@ import {
 } from "./workspace/flows/tabs/close/pane-close";
 import { WorkspaceSidebar } from "./workspace/ui/WorkspaceSidebar";
 import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
-import { UsageFooter } from "./shell/UsageFooter";
 
 import {
   orchestrator,
@@ -414,7 +398,6 @@ import {
   type synchronizeProjectLocation,
 } from "@/features/projects/model/project-location";
 import {
-  isLocalProject,
   isRemoteProjectPath,
   lastProjectPath,
   looksLikeProject,
@@ -566,9 +549,13 @@ import {
   InboxView,
   LinkedWorkItemPanel,
   NotesView,
-  SettingsView,
 } from "./workspace/ui/app-views/lazy-views";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
+import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
+import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
+import { WorkspaceMenuBar } from "./workspace/ui/workspace-chrome/WorkspaceMenuBar";
+import { WorkspaceSettings } from "./workspace/ui/workspace-chrome/WorkspaceSettings";
+import { WorkspaceUsageFooter } from "./workspace/ui/workspace-chrome/WorkspaceUsageFooter";
 import { FamiliarSessionPanes } from "./workspace/ui/workspace-main/FamiliarSessionPanes";
 import { LinkedWorkItemPanels } from "./workspace/ui/workspace-main/LinkedWorkItemPanels";
 import { ProjectTerminalDocks } from "./workspace/ui/workspace-main/ProjectTerminalDocks";
@@ -702,10 +689,8 @@ function Workspace({
     setInspectedWorkerId,
     setWorkerDetailRequest,
     setSettingsOpen,
-    setCollapsedProjectRailMode,
     setWhatsNewVersion,
     setProviderSignInRequest,
-    setSessionDeleteDialog,
     setRemoteProjectDialogOpen,
     setFamiliarViewId,
     setFamiliarOverviewOpen,
@@ -719,7 +704,6 @@ function Workspace({
   const recents = useWorkspaceField(workspaceStore, "recents");
   const { sessions, setSessions, sessionsRef, sessionState } =
     useWorkspaceSessions(workspaceStore);
-  const sessionDeleteDialog = useWorkspaceField(workspaceStore, "sessionDeleteDialog");
   const switchingWorktrees = useRef(new Map<string, string>());
   const removingWorktreePaths = useRef(new Set<string>());
   const deleteConfirmationPending = useRef(false);
@@ -949,14 +933,8 @@ function Workspace({
         return [providerSignInRequestKey(session)];
       }),
     ));
-  const settingsSection = useWorkspaceField(workspaceStore, "settingsSection");
-  const settingsAnchor = useWorkspaceField(workspaceStore, "settingsAnchor");
-  const notificationProjectPath = useWorkspaceField(workspaceStore, "notificationProjectPath");
-  const notificationSettingsRequest = useWorkspaceField(workspaceStore, "notificationSettingsRequest");
   const editorNavigationToken = useRef(0);
   const filePickerOpen = useWorkspaceField(workspaceStore, "filePickerOpen");
-  const filePickerInitialQuery = useWorkspaceField(workspaceStore, "filePickerInitialQuery");
-  const filePickerResetToken = useWorkspaceField(workspaceStore, "filePickerResetToken");
   const dirtyFiles = useWorkspaceField(workspaceStore, "dirtyFiles");
   const history = useWorkspaceField(workspaceStore, "history");
   const [, refreshRemoteTabTitles] = useState(0);
@@ -4569,6 +4547,10 @@ function Workspace({
     () => openSettings("worktrees"),
     [openSettings],
   );
+  const onManageProviderAccounts = useCallback(
+    () => openSettings("providers", "provider-accounts"),
+    [openSettings],
+  );
 
   useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
     open: (monoId) =>
@@ -4929,31 +4911,19 @@ function Workspace({
   const usageFooter =
     (chromeSurfaceOpen && !(insetLayout && activeAppView)) ||
     (familiarCovers && !insetLayout) ? null : (
-      <UsageFooter
+      <WorkspaceUsageFooter
+        store={workspaceStore}
         pressureSlot={setPressureChipHost}
         providers={usageProviders}
         session={usageSession}
-        project={usageSource?.cwd ?? projectCwd}
+        project={usageSource?.cwd}
         onSelectAccount={onSelectProviderAccount}
-        onManageAccounts={() => openSettings("providers", "provider-accounts")}
-        // A Familiar in full view has no terminal of its own.
-        terminals={familiarCovers ? undefined : runningTerminals}
-        terminalOpen={!familiarCovers && runningTerminalOpen}
+        onManageAccounts={onManageProviderAccounts}
+        terminals={runningTerminals}
+        terminalOpen={runningTerminalOpen}
         onToggleTerminal={onToggleRunningTerminal}
-        onNewTerminal={
-          !familiarCovers && isLocalProject(projectCwd) ? onNewTerminal : undefined
-        }
-        onToggleProjectTerminal={
-          !familiarCovers && isLocalProject(projectCwd)
-            ? onToggleProjectTerminal
-            : undefined
-        }
-        projectTerminalActive={
-          !familiarCovers &&
-          !!currentProjectDock &&
-          currentProjectDock.pane.files.length > 0
-        }
-        projectTerminalOpen={!familiarCovers && !!currentProjectDock?.open}
+        onNewTerminal={onNewTerminal}
+        onToggleProjectTerminal={onToggleProjectTerminal}
         inset={insetLayout}
       />
     );
@@ -5014,21 +4984,16 @@ function Workspace({
                     inert={chromeSurfaceOpen || undefined}
                   >
                     {!IS_MAC ? (
-                      <MenuBar
+                      <WorkspaceMenuBar
+                        store={workspaceStore}
                         onNew={onNew}
                         onNewTerminal={onNewTerminal}
                         onToggleTerminal={onToggleProjectTerminal}
                         onGoToFile={onGoToFile}
                         onToggleSidebar={onToggleSidebar}
-                        onToggleSessionSidebar={
-                          onToggleSessionSidebarShortcut
-                        }
+                        onToggleSessionSidebar={onToggleSessionSidebarShortcut}
                         onShowSourceControl={onToggleChanges}
-                        onCloseCurrentTab={
-                          activeTabId
-                            ? () => onCloseTab(activeTabId)
-                            : undefined
-                        }
+                        onCloseTab={onCloseTab}
                         onCloseOtherTabs={onCloseOtherTabs}
                         onCloseAllTabs={onCloseAllTabs}
                         onPickProject={pickProject}
@@ -5036,22 +5001,6 @@ function Workspace({
                         onSearch={onOpenSearch}
                         onOpenInbox={onOpenInbox}
                         onOpenNotes={notesEnabled ? onOpenNotes : undefined}
-                        onZoomIn={() => {
-                          const next = saveUiScale(
-                            zoomInUiScale(loadUiScale()),
-                          );
-                          void applyUiScale(next);
-                        }}
-                        onZoomOut={() => {
-                          const next = saveUiScale(
-                            zoomOutUiScale(loadUiScale()),
-                          );
-                          void applyUiScale(next);
-                        }}
-                        onZoomReset={() => {
-                          saveUiScale(UI_SCALE_DEFAULT);
-                          void applyUiScale(UI_SCALE_DEFAULT);
-                        }}
                       />
                     ) : null}
                     <div className="flex min-h-0 min-w-0 flex-1">
@@ -5222,72 +5171,34 @@ function Workspace({
                       onOpenSession: onOpenAutomationSession,
                     }}
                   />
-                  {settingsOpen ? (
-                    <SettingsView
-                      section={settingsSection}
-                      anchor={settingsAnchor}
-                      notificationProjectPath={notificationProjectPath}
-                      notificationSettingsRequest={notificationSettingsRequest}
-                      recents={recents}
-                      cwd={sidebarCwd}
-                      sessions={sidebarHistory}
-                      liveSessions={sessions}
-                      onRemoveWorktree={onRemoveWorktree}
-                      onCheckWorktreeRemoval={onCheckWorktreeRemoval}
-                      onDeleteWorktreeSessions={onDeleteWorktreeSessions}
-                      besideRail
-                      headerHost={insetLayout ? settingsHeaderHost : undefined}
-                      onClose={onCloseSettings}
-                      onSelectSection={onSelectSettingsSection}
-                      onOpenSession={onOpenArchivedSession}
-                      onArchiveSession={onArchiveHistorySession}
-                      onDeleteSession={onDeleteHistorySession}
-                      onRestoreProject={onRestoreProject}
-                      onDeleteProject={(path) =>
-                        onRemoveProject(path, { purgeData: true })
-                      }
-                      onOpenWhatsNew={onOpenWhatsNew}
-                      collapsedProjectRailMode={collapsedProjectRailMode}
-                      onCollapsedProjectRailModeChange={
-                        setCollapsedProjectRailMode
-                      }
-                    />
-                  ) : null}
+                  <WorkspaceSettings
+                    store={workspaceStore}
+                    cwd={sidebarCwd}
+                    sessions={sidebarHistory}
+                    liveSessions={sessions}
+                    onRemoveWorktree={onRemoveWorktree}
+                    onCheckWorktreeRemoval={onCheckWorktreeRemoval}
+                    onDeleteWorktreeSessions={onDeleteWorktreeSessions}
+                    headerHost={insetLayout ? settingsHeaderHost : undefined}
+                    onClose={onCloseSettings}
+                    onSelectSection={onSelectSettingsSection}
+                    onOpenSession={onOpenArchivedSession}
+                    onArchiveSession={onArchiveHistorySession}
+                    onDeleteSession={onDeleteHistorySession}
+                    onRestoreProject={onRestoreProject}
+                    onRemoveProject={onRemoveProject}
+                    onOpenWhatsNew={onOpenWhatsNew}
+                  />
                   {insetLayout ? null : usageFooter}
                 </div>
                 {insetLayout ? (
-                  // Part of the card: the project tools beside the
-                  // workspace, behind a hairline.
-                  <div
-                    ref={setRightPanelRef}
-                    inert={rightPanelClosing || undefined}
-                    className={
-                      insetRightPanelShown
-                        ? "relative flex h-full shrink-0 flex-col overflow-hidden border-l border-stroke"
-                        : "hidden"
-                    }
-                  >
-                    <div
-                      ref={setRightPanelHost}
-                      aria-label="Project tools"
-                      className="flex min-h-0 flex-1 flex-col"
-                    />
-                    <div
-                      role="separator"
-                      aria-orientation="vertical"
-                      aria-label="Resize right sidebar"
-                      aria-valuenow={rightPanelResize.width}
-                      aria-valuemin={RIGHT_PANEL_WIDTH_MIN}
-                      aria-valuemax={RIGHT_PANEL_WIDTH_MAX}
-                      className={`absolute inset-y-0 -left-px z-10 w-1.5 cursor-col-resize touch-none ${
-                        rightPanelResize.dragging
-                          ? "bg-content/15"
-                          : "hover:bg-content/10"
-                      }`}
-                      onPointerDown={rightPanelResize.onPointerDown}
-                      onDoubleClick={rightPanelResize.onDoubleClick}
-                    />
-                  </div>
+                  <InsetRightPanel
+                    shown={insetRightPanelShown}
+                    closing={rightPanelClosing}
+                    resize={rightPanelResize}
+                    onPane={setRightPanelRef}
+                    onHost={setRightPanelHost}
+                  />
                 ) : null}
               </div>
               {insetLayout
@@ -5301,31 +5212,13 @@ function Workspace({
             </div>
           </div>
 
-          {filePickerOpen ? (
-            <FilePicker
-              key={filePickerResetToken}
-              open
-              cwd={filesCwd}
-              openPaths={openFilePaths}
-              initialQuery={filePickerInitialQuery}
-              onOpenFile={onOpenFile}
-              onRunAction={(id) => {
-                if (id === "reload") actions.current.onReload();
-              }}
-              onClose={() => setFilePickerOpen(false)}
-            />
-          ) : null}
-
-          {sessionDeleteDialog && (
-            <DeleteSessionDialog
-              title={sessionDeleteDialog.title}
-              unusedWorktree={sessionDeleteDialog.unusedWorktree}
-              onClose={(choice) => {
-                sessionDeleteDialog.resolve(choice);
-                setSessionDeleteDialog(undefined);
-              }}
-            />
-          )}
+          <WorkspacePickerDialogs
+            store={workspaceStore}
+            cwd={filesCwd}
+            openPaths={openFilePaths}
+            onOpenFile={onOpenFile}
+            onReload={onReload}
+          />
           <WorkspaceNotices
             pressure={{
               sessions: sessionsRef,
