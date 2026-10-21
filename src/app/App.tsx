@@ -14,7 +14,6 @@ import {
 } from "react";
 import { useStore } from "zustand";
 import { useStableValue } from "@/shared/hooks/use-stable-value";
-import { beginLayoutTransition } from "@/shared/lib/layout-transition";
 import {
   appViewTabId,
   familiarTabId,
@@ -347,9 +346,7 @@ import {
   type OrchestrationWorkerDetail,
 } from "@/features/orchestration/ui/orchestration-actions";
 import {
-  applyDockGridStyle,
   findProjectTerminal,
-  isVerticalDock,
   type DockSide,
 } from "@/features/projects/model/project-terminal";
 
@@ -541,6 +538,7 @@ import { openDiff, type OpenDiffDeps } from "./workspace/flows/files/open-diff";
 import { placeSessionOnPane, type PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
+import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { createFamiliarHabitHost } from "./workspace/flows/familiars/habit-host";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import {
@@ -4604,142 +4602,22 @@ function Workspace({
   useWorkspaceKeys(commandDeps);
   useMenuCommands(commandDeps);
 
-  const dockGridRef = useRef<HTMLDivElement>(null);
-  const dockDragSize = useRef<number | null>(null);
-  const paintDockSize = useCallback((size: number) => {
-    const dock = findProjectTerminal(
-      projectTerminalsRef.current,
-      projectCwdRef.current,
-    );
-    const el = dockGridRef.current;
-    if (!dock || !el || workspaceStore.getState().familiarViewId) return;
-    dockDragSize.current = size;
-    applyDockGridStyle(el, dock.side, size);
-  }, []);
-  const commitDockSize = useCallback(
-    (size: number) => {
-      dockDragSize.current = null;
-      onProjectTerminalSize(size);
-    },
-    [onProjectTerminalSize],
+  const dockPaintTarget = useCallback(
+    () =>
+      workspaceStore.getState().familiarViewId
+        ? undefined
+        : findProjectTerminal(projectTerminalsRef.current, projectCwdRef.current),
+    [],
   );
-  const dockWasOpen = useRef<{ path: string; open: boolean } | null>(null);
-  const dockAnimation = useRef<{ key: string; stop: () => void } | null>(
-    null,
-  );
-  // The project whose dock stays rendered while it slides shut.
-  const [dockClosing, setDockClosing] = useState<string | null>(null);
-  const dockClosingShown =
-    dockClosing != null &&
-    !familiarCovers &&
-    !!currentProjectDock &&
-    !currentProjectDock.open &&
-    sameProjectPath(dockClosing, projectCwd);
-  useLayoutEffect(() => {
-    if (familiarCovers) dockDragSize.current = null;
-    if (dockDragSize.current != null) return;
-    const el = dockGridRef.current;
-    if (!el) return;
-    const dock = currentProjectDock;
-    const open = dockVisible && !familiarCovers && !!dock;
-    const side = dock && (open || dockClosingShown) ? dock.side : null;
-    const size = dock?.size ?? 0;
-    // Only a dock opening or closing in place slides; a project switch or a
-    // familiar covering the workspace shows or hides it at once.
-    const previous = dockWasOpen.current;
-    const inPlace = !!previous && sameProjectPath(previous.path, projectCwd);
-    dockWasOpen.current = { path: projectCwd, open };
-    const key = side ? `${open ? "open" : "close"}:${side}:${size}` : "";
-    // Unrelated dock updates, like a terminal retitling itself, leave a
-    // running slide alone.
-    if (inPlace && dockAnimation.current?.key === key) return;
-    const reduceMotion = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const animates =
-      insetLayout && !reduceMotion && typeof el.animate === "function";
-    // Render the dock once more so it can slide out; the grid keeps its
-    // track until then.
-    if (
-      animates &&
-      inPlace &&
-      previous.open &&
-      !open &&
-      dock &&
-      !familiarCovers
-    ) {
-      setDockClosing(projectCwd);
-      return;
-    }
-    const host = el.querySelector<HTMLElement>(":scope > [data-dock-shown]");
-    const vertical = side ? isVerticalDock(side) : true;
-    // A reversal mid-slide starts from wherever the track currently is.
-    const current = host
-      ? vertical
-        ? host.getBoundingClientRect().height
-        : host.getBoundingClientRect().width
-      : 0;
-    const reversing = !!dockAnimation.current;
-    dockAnimation.current?.stop();
-    dockAnimation.current = null;
-    applyDockGridStyle(el, side, size);
-    const opening = open && inPlace && (!previous.open || reversing);
-    const closing = !open && !!side;
-    if (!side || !animates || !(opening || closing)) return;
-    const section = host?.firstElementChild;
-    if (!host || !(section instanceof HTMLElement)) return;
-    // The terminal keeps its full size and rides the moving edge, so it fits
-    // once instead of on every frame.
-    const property = vertical ? "gridTemplateRows" : "gridTemplateColumns";
-    const leading = side === "top" || side === "left";
-    host.style.display = "flex";
-    host.style.flexDirection = vertical ? "column" : "row";
-    host.style.justifyContent = leading ? "flex-end" : "flex-start";
-    section.style.flexShrink = "0";
-    if (vertical) section.style.height = `${size}px`;
-    else section.style.width = `${size}px`;
-    const track = (px: number) =>
-      leading ? `${px}px minmax(0, 1fr)` : `minmax(0, 1fr) ${px}px`;
-    const from = reversing ? current : opening ? 0 : size;
-    const endTransition = beginLayoutTransition();
-    const animation = el.animate(
-      [{ [property]: track(from) }, { [property]: track(opening ? size : 0) }],
-      {
-        duration: opening ? 240 : 200,
-        easing: "cubic-bezier(0.32, 0.72, 0, 1)",
-        fill: "forwards",
-      },
-    );
-    // Mounting the terminal can hold up the next frame; the slide starts
-    // once that frame is out, not partway through.
-    animation.pause();
-    const start = requestAnimationFrame(() => animation.play());
-    const stop = () => {
-      cancelAnimationFrame(start);
-      animation.onfinish = null;
-      animation.cancel();
-      host.style.display = "";
-      host.style.flexDirection = "";
-      host.style.justifyContent = "";
-      section.style.flexShrink = "";
-      section.style.height = "";
-      section.style.width = "";
-      endTransition();
-      if (dockAnimation.current?.stop === stop) dockAnimation.current = null;
-      if (closing) setDockClosing(null);
-    };
-    // A closed dock holds its last frame until it is no longer rendered.
-    animation.onfinish = opening ? stop : () => setDockClosing(null);
-    dockAnimation.current = { key, stop };
-  }, [
-    currentProjectDock,
-    dockVisible,
-    dockClosingShown,
+  const dockSlide = useDockSlide({
+    dock: currentProjectDock,
+    projectCwd,
     familiarCovers,
     insetLayout,
-    projectCwd,
-  ]);
-  useEffect(() => () => dockAnimation.current?.stop(), []);
+    paintTarget: dockPaintTarget,
+    commitSize: onProjectTerminalSize,
+  });
+  const dockClosingShown = dockSlide.closingShown;
 
   const lastRemoteSnapshot = useRef(new Map<string, HostSession>());
   const onRemoteSnapshot = useCallback(
@@ -5434,7 +5312,7 @@ function Workspace({
 
                         <main className="relative flex min-h-0 min-w-0 flex-1">
                           <div
-                            ref={dockGridRef}
+                            ref={dockSlide.gridRef}
                             className="grid h-full min-h-0 min-w-0 flex-1"
                           >
                             {projectTerminals.map((dock) => {
@@ -5462,8 +5340,8 @@ function Workspace({
                                     onFocus={focusProjectTerminal}
                                     onHide={onHideProjectTerminal}
                                     onSideChange={onProjectTerminalSide}
-                                    onSizePaint={paintDockSize}
-                                    onSizeCommit={commitDockSize}
+                                    onSizePaint={dockSlide.paintSize}
+                                    onSizeCommit={dockSlide.commitSize}
                                     onAddTerminal={onNewTerminal}
                                     onSelectTerminal={onSelectProjectTerminal}
                                     onCloseTerminal={onCloseProjectTerminal}
