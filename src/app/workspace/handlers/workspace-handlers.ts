@@ -28,6 +28,7 @@ import type { createTurnQueueActions } from "../flows/turn-queue/turn-queue-acti
 import type { createUsageLimits } from "../flows/turn-queue/usage-limits";
 import type { createWorktreeActions } from "../flows/worktrees/worktree-actions";
 import type { createDisplayedTabs } from "../title-tabs/displayed-tabs";
+import type { createVisibleTabShortcuts } from "../title-tabs/visible-tab-shortcuts";
 
 /** The workspace's action objects, each created once, so the value never changes after boot. */
 export type WorkspaceHandlers = {
@@ -59,6 +60,7 @@ export type WorkspaceHandlers = {
   terminals: ReturnType<typeof createTerminalActions>;
   turns: ReturnType<typeof createTurnControlActions>;
   usageLimits: ReturnType<typeof createUsageLimits>;
+  visibleTabs: ReturnType<typeof createVisibleTabShortcuts>;
   workerPanes: ReturnType<typeof createWorkerPaneActions>;
   worktrees: ReturnType<typeof createWorktreeActions>;
 };

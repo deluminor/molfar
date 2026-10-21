@@ -122,7 +122,8 @@ import { createNavigationActions } from "./workspace/flows/surfaces/navigation-a
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useWorkspaceChrome } from "./workspace/ui/layout/use-workspace-chrome";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
-import type { CommandDeps, WorkspaceActions } from "./workspace/hooks/commands/command-deps";
+import { commandActions } from "./workspace/hooks/commands/command-actions";
+import type { CommandDeps } from "./workspace/hooks/commands/command-deps";
 import { useCommandRunner } from "./workspace/hooks/commands/use-command-runner";
 import { useMenuCommands } from "./workspace/hooks/commands/use-menu-commands";
 import { useNativeKeybindings } from "./workspace/hooks/commands/use-native-keybindings";
@@ -2788,13 +2789,6 @@ function Workspace({
     createVisibleTabShortcuts(displayedTabsDeps, displayedTabs),
   );
   const onSelectTitleTab = displayedTabs.selectTitleTab;
-  const {
-    closeVisibleTab: onCloseVisibleTab,
-    cycleVisibleTab: onCycleVisibleTab,
-    activateVisibleTab: onActivateVisibleTab,
-    closeOtherVisibleTabs: onCloseOtherVisibleTabs,
-    closeAllVisibleTabs: onCloseAllVisibleTabs,
-  } = visibleTabShortcuts;
 
   displayedTabNavigation.current = {
     tabs: insetLayout ? titleTabs : [],
@@ -2816,39 +2810,43 @@ function Workspace({
     titleTabs,
   };
 
-  const actions = useLatestRef<WorkspaceActions>({
-    onNewFocused: newSessions.newFocused,
-    onArchiveFocusedSession: historyActions.archiveFocused,
-    onCloseOtherTabs: onCloseOtherVisibleTabs,
-    onCloseAllTabs: onCloseAllVisibleTabs,
-    onCloseFocused: onCloseVisibleTab,
-    onNext: () => onCycleVisibleTab(1),
-    onPrev: () => onCycleVisibleTab(-1),
-    onVisitBack: tabActions.visitBack,
-    onVisitForward: tabActions.visitForward,
-    onActivate: onActivateVisibleTab,
-    onSplit: newSessions.split,
-    onFocusDir: tabActions.focusDir,
-    onToggleSidebar: navigation.toggleSidebar,
-    onToggleSessionSidebar: navigation.toggleSessionSidebarShortcut,
-    onToggleFamiliar: familiarActions.toggle,
-    onGoToFile: surfaces.goToFile,
-    onOpenCommandPalette: surfaces.openCommandPalette,
-    onReload: navigation.reload,
-    onFindInProject: surfaces.findInProject,
-    onOpenSearch: surfaces.openSearch,
-    onOpenInbox: surfaces.openInbox,
-    onOpenNotes: surfaces.openNotes,
-    pickProject: projectActions.pick,
-    onNewTerminal: terminals.openNew,
-    onNewTerminalTab: terminals.openNewTab,
-    onToggleProjectTerminal: terminals.toggleDock,
-    onNavigateSessionList: navigation.navigateSessionList,
-    onNavigateProjectList: navigation.navigateProjectList,
-    openSettings: surfaces.openSettings,
-    onOpenApprovalSession: workerPanes.openSession,
-    onOpenBoardCard: navigation.openBoardCard,
-  });
+  const onRemoteSnapshot = useStableFlow(() => createRemoteSnapshotSync(setSessions));
+  const handlers = useStableFlow(
+    (): WorkspaceHandlers => ({
+      btw,
+      composer: composerActions,
+      composerCards,
+      displayedTabs,
+      familiarView,
+      familiars: familiarActions,
+      files: fileActions,
+      history: historyActions,
+      inbox: inboxActions,
+      inboxAsk,
+      linkedPanels,
+      linkedUpdateCards,
+      navigation,
+      newSessions,
+      prefetchSession: onPrefetchHistorySession,
+      projects: projectActions,
+      providerAccounts,
+      queue: queueActions,
+      remoteSnapshot: onRemoteSnapshot,
+      secondOpinions,
+      sessionOpeners,
+      submission,
+      surfaces,
+      tabClose,
+      tabs: tabActions,
+      terminals,
+      turns: turnActions,
+      usageLimits,
+      visibleTabs: visibleTabShortcuts,
+      workerPanes,
+      worktrees: worktreeActions,
+    }),
+  );
+  const actions = useLatestRef(commandActions(handlers));
   const run = useCommandRunner();
   const isMainWindowRef = useLatestRef(isMainWindow);
   const commandDeps = useStableFlow(
@@ -2886,41 +2884,6 @@ function Workspace({
   });
   const dockClosingShown = dockSlide.closingShown;
 
-  const onRemoteSnapshot = useStableFlow(() => createRemoteSnapshotSync(setSessions));
-  const handlers = useStableFlow(
-    (): WorkspaceHandlers => ({
-      btw,
-      composer: composerActions,
-      composerCards,
-      displayedTabs,
-      familiarView,
-      familiars: familiarActions,
-      files: fileActions,
-      history: historyActions,
-      inbox: inboxActions,
-      inboxAsk,
-      linkedPanels,
-      linkedUpdateCards,
-      navigation,
-      newSessions,
-      prefetchSession: onPrefetchHistorySession,
-      projects: projectActions,
-      providerAccounts,
-      queue: queueActions,
-      remoteSnapshot: onRemoteSnapshot,
-      secondOpinions,
-      sessionOpeners,
-      submission,
-      surfaces,
-      tabClose,
-      tabs: tabActions,
-      terminals,
-      turns: turnActions,
-      usageLimits,
-      workerPanes,
-      worktrees: worktreeActions,
-    }),
-  );
 
   useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
     open: (monoId) =>
