@@ -53,8 +53,6 @@ import type { SubmissionAcceptance } from "./model/submission-acceptance";
 
 import {
   prefetchProjectFiles,
-  rememberOpenedFile,
-  resolveOpenablePath,
 } from "@/features/files/model/file-index";
 import { FilePicker } from "@/features/files/ui/FilePicker";
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
@@ -405,12 +403,10 @@ import {
   leafIds,
   neighborLeafId,
   newAgentTab,
-  newFileTab,
   newTab,
   openChangesTab,
   openCommitTab,
   openEditorTab,
-  openSessionChangesTab,
   setSplitRatio,
   splitPane,
   type FilePaneTab,
@@ -482,7 +478,6 @@ import type {
 import { type RuntimeMode, DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import type { HarnessId } from "@/domain/harness/harness";
 import {
-  applyPlaceSessionOnPane,
   applyPlaceTabOnPane,
   filterTabsForProject,
   workspaceTabCwd,
@@ -549,6 +544,8 @@ import {
   resetFamiliar,
   type FamiliarRemovalDeps,
 } from "./workspace/flows/familiars/familiar-removal";
+import { openDiff, type OpenDiffDeps } from "./workspace/flows/files/open-diff";
+import { placeSessionOnPane, type PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import {
@@ -612,7 +609,6 @@ import {
   loadCloseToTray,
   loadFamiliarsEnabled,
   subscribeFamiliarsEnabled,
-  loadDiffViewer,
   loadIdleAgentLimit,
   loadLiveAgentsEnabled,
   loadNotesEnabled,
@@ -2692,53 +2688,9 @@ function Workspace({
       pin = false,
       options?: { exact?: boolean },
     ) => {
-      void (async () => {
-        const diffCwd = session?.cwd ?? gitCwdRef.current;
-        const diffProjectCwd = session
-          ? sessionsRef.current.find((entry) => entry.id === session.sessionId)
-              ?.cwd
-          : sidebarCwdRef.current;
-        const resolved = path
-          ? options?.exact
-            ? path
-            : ((await resolveOpenablePath(diffCwd, path)) ?? path)
-          : undefined;
-        if (resolved) rememberOpenedFile(diffCwd, resolved);
-        setTabs((prev) =>
-          prev.map((tab) => {
-            if (tab.id !== activeTabId) return tab;
-            if (session) {
-              return openSessionChangesTab(
-                tab,
-                session.cwd,
-                session.sessionId,
-                resolved,
-                diffProjectCwd,
-                pin,
-              );
-            }
-            if (loadDiffViewer() === "unified") {
-              return openChangesTab(
-                tab,
-                diffCwd,
-                resolved,
-                changeKind,
-                diffProjectCwd,
-              );
-            }
-            if (!resolved) return tab;
-            return openEditorTab(
-              tab,
-              newFileTab(resolved, diffCwd, true, changeKind, diffProjectCwd),
-              { pin },
-            );
-          }),
-        );
-        setSidebarTab("changes", diffProjectCwd);
-        setComposerFocused(false);
-      })();
+      void openDiff(openDiffDeps, path, { session, changeKind, pin, exact: options?.exact });
     },
-    [activeTabId],
+    [],
   );
 
   // A Familiar view covers the workspace, so its session changes open on the
@@ -3030,61 +2982,9 @@ function Workspace({
   );
 
   const onPlaceSessionOnPane = useCallback(
-    async (sessionId: string, targetId: string, edge: PaneEdge) => {
-      if (sessionId === targetId) return;
-      const targetTab = tabsRef.current.find((tab) =>
-        leafIds(tab.layout).includes(targetId),
-      );
-      if (!targetTab) return;
-
-      const alreadyHere = leafIds(targetTab.layout).includes(sessionId);
-      if (!alreadyHere) {
-        const session = await ensureOpenSession(sessionId);
-        if (!session) return;
-      }
-
-      const tab = tabsRef.current.find((entry) => entry.id === targetTab.id);
-      if (!tab || !leafIds(tab.layout).includes(targetId)) return;
-
-      const replaceTarget =
-        !leafIds(tab.layout).includes(sessionId) &&
-        isBlankSession(
-          sessionsRef.current.find((entry) => entry.id === targetId),
-        );
-
-      if (replaceTarget) {
-        sessionPersistence.forgetSaved(targetId);
-        const blank = sessionsRef.current.find(
-          (entry) => entry.id === targetId,
-        );
-        if (blank) void forgetHarnessSession(blank.harness, targetId);
-      }
-
-      const result = applyPlaceSessionOnPane({
-        tabs: tabsRef.current,
-        sessions: sessionsRef.current,
-        sessionId,
-        targetId,
-        edge,
-        replaceTarget,
-        scope: tabCloseScope,
-        createReplacement: (seed) =>
-          newDefaultSession(
-            seed?.cwd ?? projectCwdRef.current,
-            seed?.runtimeMode,
-          ),
-      });
-      if (!result) return;
-
-      sessionsRef.current = result.sessions;
-      tabsRef.current = result.tabs;
-      setSessions(result.sessions);
-      setTabs(result.tabs);
-      setActiveTabId(result.activeTabId);
-      setProjectTerminalFocused(false);
-      setComposerFocused(true);
-    },
-    [ensureOpenSession, tabCloseScope],
+    (sessionId: string, targetId: string, edge: PaneEdge) =>
+      placeSessionOnPane(placeSessionDeps, sessionId, targetId, edge),
+    [],
   );
 
   const onPlaceTabOnPane = useCallback(
@@ -3548,6 +3448,31 @@ function Workspace({
       closeFamiliarView: () => closeFamiliarView(),
       insertBesideActive: (tabs, tab, cwd) => insertBesideActive(tabs, tab, cwd),
       activateTab: (tabId, paneId) => activateTab(tabId, paneId),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+    }),
+  );
+  const openDiffDeps = useStableFlow(
+    (): OpenDiffDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      activeTabIdRef,
+      gitCwd: () => gitCwdRef.current,
+      sidebarCwd: () => sidebarCwdRef.current,
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+    }),
+  );
+  const placeSessionDeps = useStableFlow(
+    (): PlaceSessionDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      tabsRef,
+      persistence: sessionPersistence,
+      scope: tabCloseScope,
+      projectCwd: () => projectCwdRef.current,
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      setSessions: (next) => setSessions(next),
       selectTab: (tabId) => setActiveTabId(tabId),
       setComposerFocused: (focused) => setComposerFocused(focused),
     }),
