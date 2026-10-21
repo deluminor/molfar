@@ -62,10 +62,7 @@ import {
   saveProjectSidebarTab,
 } from "@/features/settings/model/project-sidebar-tab";
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
-import {
-  type WorktreeFocus,
-  useWorktreeFocus,
-} from "@/features/source-control/model/worktree-focus";
+import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus";
 import { homeDir } from "@/platform/tauri/fs";
 import { pathKey, projectName } from "@/shared/lib/paths";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
@@ -119,6 +116,7 @@ import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { createTabActions } from "./workspace/flows/tabs/tab-actions";
+import { createNewSessionActions } from "./workspace/flows/tabs/new-session/new-session-actions";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
 import {
   type ProviderAccountDeps,
@@ -178,7 +176,6 @@ import {
   insertBeside as insertTabBeside,
   insertBesideActive as insertTabBesideActiveTab,
   openSessionTab as openWorkspaceSessionTab,
-  splitFocusedPane,
   type TabLayoutDeps,
 } from "./workspace/flows/tabs/tab-layout";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
@@ -238,7 +235,6 @@ import {
   leafIds,
   neighborLeafId,
   type FocusDir,
-  type SplitDir,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
 
@@ -271,7 +267,6 @@ import {
 } from "@/features/projects/model/recents";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { ProviderAccountProvider } from "@/domain/harness/provider-account";
-import { newWorkspaceSession } from "./model/new-workspace-session";
 import { newDefaultSession } from "@/features/sessions/model/session";
 import { sessionDisplayTitle } from "@/domain/session/title";
 import {
@@ -355,7 +350,6 @@ import {
   warmNativeSkills,
 } from "@/features/skills/model/skills";
 import {
-  rememberRemoteSession,
   REMOTE_HISTORY_UPDATED,
   remoteTabCwd,
 } from "@/features/connections/model/connections";
@@ -366,7 +360,6 @@ import {
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
-import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
 import {
@@ -846,7 +839,7 @@ function Workspace({
         setComposerFocused(true);
       }
     },
-    createTab: (project, focus) => createWorkspaceTab(project, focus),
+    createTab: (project, focus) => newSessions.createTab(project, focus),
   });
   // Every ordinary tab activation supersedes an unfinished workspace request,
   // including opening a session in the same tab or selecting a project.
@@ -1234,6 +1227,8 @@ function Workspace({
   }, [tabs]);
 
   const sessionDefaults = active ?? sessions[0];
+  const sessionDefaultsRef = useLatestRef(sessionDefaults);
+  const activeTabRef = useLatestRef(activeTab);
 
   const activeSkillContext = active
     ? nativeSkillContextForSession(active)
@@ -1867,80 +1862,9 @@ function Workspace({
     setWhatsNewVersion(document.source.version);
   }, []);
 
-  const createWorkspaceTab = useCallback(
-    (cwd: string, focus?: WorktreeFocus) => {
-      const session = {
-        ...newDefaultSession(cwd, sessionDefaults?.runtimeMode),
-        ...(focus && !sameProjectPath(focus.path, cwd)
-          ? { worktreeCwd: focus.path, branch: focus.branch ?? undefined }
-          : {}),
-      };
-      return openSessionTab(session, cwd).id;
-    },
-    [openSessionTab, sessionDefaults?.runtimeMode],
-  );
-
-  const onNew = useCallback(() => {
-    setSearchViewOpen(false);
-    setInboxViewOpen(false);
-    setNotesViewOpen(false);
-    setAutomationsViewOpen(false);
-    const cwd = sidebarCwd;
-    const session = newWorkspaceSession(cwd, sessionDefaults?.runtimeMode);
-    const tab = openSessionTab(session, cwd);
-    setActiveTabId(tab.id);
-    setComposerFocused(true);
-    return session.id;
-  }, [openSessionTab, sessionDefaults?.runtimeMode, sidebarCwd]);
-
-  const onSelectRemoteSession = useCallback(
-    (project: string, remoteSessionId: string) => {
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      const existing = findRemoteSessionTab(
-        tabsRef.current,
-        sessionsRef.current,
-        project,
-        remoteSessionId,
-      );
-      if (existing) {
-        activateTab(existing.tab.id, existing.shellId);
-        return;
-      }
-      // Reserve a dedicated tab immediately. An apparently blank remote tab
-      // may hold composer text or a create/upload that the host has not accepted.
-      const session = newDefaultSession(project, sessionDefaults?.runtimeMode);
-      rememberRemoteSession(session.id, remoteSessionId);
-      const tab = openSessionTab(session, project);
-      setActiveTabId(tab.id);
-    },
-    [activateTab, openSessionTab, sessionDefaults?.runtimeMode],
-  );
-
   const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
   const composerCards = useStableFlow(() => createComposerCardActions(setSessions));
-
-  const onSplit = useCallback(
-    (dir: SplitDir) => {
-      closeFamiliarView();
-      if (!activeTab) return;
-      const session = newDefaultSession(
-        sessionDefaults?.cwd ?? projectCwd,
-        sessionDefaults?.runtimeMode,
-      );
-      splitFocusedPane(workspaceStore, activeTab.id, dir, session);
-      setComposerFocused(true);
-    },
-    [
-      activeTab,
-      projectCwd,
-      sessionDefaults?.cwd,
-      sessionDefaults?.runtimeMode,
-    ],
-  );
 
   const terminalDeps = useStableFlow(
     (): TerminalDeps => ({
@@ -1992,18 +1916,25 @@ function Workspace({
   );
   const tabClose = useStableFlow(() => createTabCloseActions(tabCloseDeps));
 
-  /** ⌘T / Ctrl+T: add a dock terminal while the dock has focus, else a tab. */
-  const onNewFocused = useCallback(() => {
-    if (terminals.focusedDockTerminal()) terminals.openNew();
-    else onNew();
-  }, [onNew]);
-
-  /** ⌘W / Ctrl+W: close the focused dock terminal, else the focused pane. */
-  const onCloseFocused = useCallback(() => {
-    const fileId = terminals.focusedDockTerminal();
-    if (fileId) terminals.close(fileId);
-    else tabClose.closePane();
-  }, []);
+  const newSessions = useStableFlow(() =>
+    createNewSessionActions({
+      store: workspaceStore,
+      tabsRef,
+      sessionsRef,
+      defaults: () => sessionDefaultsRef.current,
+      activeTab: () => activeTabRef.current,
+      sidebarCwd: () => sidebarCwdRef.current,
+      projectCwd: () => projectCwdRef.current,
+      setAutomationsViewOpen: (open) => setAutomationsViewOpen(open),
+      openSessionTab: (session, cwd) => openSessionTab(session, cwd),
+      activateTab: (tabId, paneId) => activateTab(tabId, paneId),
+      selectTab: (tabId) => setActiveTabId(tabId),
+      setComposerFocused: (focused) => setComposerFocused(focused),
+      closeFamiliarView: () => closeFamiliarView(),
+      terminals,
+      closePane: () => tabClose.closePane(),
+    }),
+  );
 
   /** Open tabs per workspace in the sidebar's project, keyed by worktree
    * path, so the switcher can show what each worktree still has open. */
@@ -2066,16 +1997,12 @@ function Workspace({
       revealLinkedUpdate: (sessionId, update) => linkedUpdateCards.reveal(sessionId, update),
     }),
   );
-  // These depend on render state; stable flows reach the current ones here.
-  const renderedTabActions = useRef({ onCloseFocused, onSelectRemoteSession });
-  renderedTabActions.current = { onCloseFocused, onSelectRemoteSession };
   const sessionListDeps = useStableFlow(
     (): SessionListDeps => ({
       ...paneDeps,
       navigationIds: sessionNavigationIdsRef,
       selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
-      selectRemoteSession: (project, remoteSessionId) =>
-        renderedTabActions.current.onSelectRemoteSession(project, remoteSessionId),
+      selectRemoteSession: newSessions.selectRemoteSession,
       prefetch: (sessionId) => onPrefetchHistorySession(sessionId),
     }),
   );
@@ -3012,7 +2939,7 @@ function Workspace({
         closeTabs: (ids, fallbackId) => tabClose.closeTabs(ids, fallbackId),
         closeEveryTab: (ids) => tabClose.closeEveryTab(ids),
         reorderTabs: tabActions.reorderTabs,
-        closeFocused: () => renderedTabActions.current.onCloseFocused(),
+        closeFocused: newSessions.closeFocused,
         next: tabActions.next,
         prev: tabActions.prev,
         activate: tabActions.activateSlot,
@@ -3059,7 +2986,7 @@ function Workspace({
   };
 
   const actions = useLatestRef<WorkspaceActions>({
-    onNewFocused,
+    onNewFocused: newSessions.newFocused,
     onArchiveFocusedSession: historyActions.archiveFocused,
     onCloseOtherTabs: onCloseOtherVisibleTabs,
     onCloseAllTabs: onCloseAllVisibleTabs,
@@ -3069,7 +2996,7 @@ function Workspace({
     onVisitBack: tabActions.visitBack,
     onVisitForward: tabActions.visitForward,
     onActivate: onActivateVisibleTab,
-    onSplit,
+    onSplit: newSessions.split,
     onFocusDir,
     onToggleSidebar: navigation.toggleSidebar,
     onToggleSessionSidebar: navigation.toggleSessionSidebarShortcut,
@@ -3398,7 +3325,7 @@ function Workspace({
       rightPanelOpen={rightPanelOpen}
       onToggleRightPanel={onToggleRightPanel}
       onSettingsHeaderHost={setSettingsHeaderHost}
-      onNew={onNew}
+      onNew={newSessions.newSession}
       onCloseFamiliarView={closeFamiliarView}
       onGoBack={surfaces.railBack}
       onGoForward={surfaces.railForward}
@@ -3454,7 +3381,7 @@ function Workspace({
       status={historyFailed ? "error" : "idle"}
       pending={historyPending}
       onSelectSession={onSelectHistorySession}
-      onSelectRemoteSession={onSelectRemoteSession}
+      onSelectRemoteSession={newSessions.selectRemoteSession}
       onRemoteSessionDeleted={tabClose.closeDeletedRemoteSession}
       onPrefetchSession={onPrefetchHistorySession}
       onSessionNavigationOrder={navigation.setSessionNavigationOrder}
@@ -3493,7 +3420,7 @@ function Workspace({
       onOpenProject={projectActions.pick}
       onRemoveProject={projectActions.remove}
       familiars={sidebarFamiliars}
-      onNew={onNew}
+      onNew={newSessions.newSession}
       openSessions={openProjectSessions}
       onNewTerminal={terminals.openNew}
       onSearch={surfaces.openSearch}
@@ -3602,7 +3529,7 @@ function Workspace({
                     {!IS_MAC ? (
                       <WorkspaceMenuBar
                         store={workspaceStore}
-                        onNew={onNew}
+                        onNew={newSessions.newSession}
                         onNewTerminal={terminals.openNew}
                         onToggleTerminal={terminals.toggleDock}
                         onGoToFile={surfaces.goToFile}
