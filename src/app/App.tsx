@@ -19,7 +19,6 @@ import {
   familiarTabId,
   type AppView,
 } from "@/features/workspace/model/app-view-tabs";
-import { AppViewSurface } from "@/features/workspace/ui/AppViewSurface";
 import { flushSync } from "react-dom";
 import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
@@ -574,13 +573,19 @@ import { AddRemoteProjectDialog } from "@/features/connections/ui/AddRemoteProje
 import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
 import type { InboxItem } from "@/features/inbox/model/github-tasks";
 import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
-import { requestTranscriptJump } from "@/features/sessions/model/transcript-jump";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
 import type { SettingsAnchor } from "@/features/settings/ui/SettingsView";
 import { ProjectTerminalDock } from "@/features/terminal/ui/ProjectTerminalDock";
 import { PaneTree } from "@/features/workspace/ui/PaneTree";
-import { lazySurface } from "@/shared/ui/lazy-surface";
+import {
+  AutomationsView,
+  InboxView,
+  LinkedWorkItemPanel,
+  NotesView,
+  SettingsView,
+} from "./workspace/ui/app-views/lazy-views";
+import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
 import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-state";
 import { preloadNavigationWhenIdle } from "./model/preload-navigation";
@@ -637,46 +642,6 @@ import {
   type ResumedWorkspace,
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
-
-const SearchView = lazySurface(
-  async () => {
-    const module = await import("@/features/search/ui/SearchView");
-    return { default: module.SearchView };
-  },
-  { suspense: false },
-);
-const SettingsView = lazySurface(
-  async () => {
-    const module = await import("@/features/settings/ui/SettingsView");
-    return { default: module.SettingsView };
-  },
-  { suspense: false },
-);
-const InboxView = lazySurface(
-  async () => {
-    const module = await import("@/features/inbox/ui/InboxView");
-    return { default: module.InboxView };
-  },
-  { suspense: false },
-);
-const LinkedWorkItemPanel = lazySurface(async () => {
-  const module = await import("@/features/inbox/ui/InboxView");
-  return { default: module.LinkedWorkItemPanel };
-});
-const NotesView = lazySurface(
-  async () => {
-    const module = await import("@/features/notes/ui/NotesView");
-    return { default: module.NotesView };
-  },
-  { suspense: false },
-);
-const AutomationsView = lazySurface(
-  async () => {
-    const module = await import("@/features/automations/ui/AutomationsView");
-    return { default: module.AutomationsView };
-  },
-  { suspense: false },
-);
 
 function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false;
@@ -747,7 +712,6 @@ function Workspace({
     setSearchViewOpen,
     setInboxViewOpen,
     setLinkedWorkItemPanels,
-    setInboxAskPortal,
     setNotesViewOpen,
     setInspectedWorkerId,
     setWorkerDetailRequest,
@@ -876,7 +840,6 @@ function Workspace({
   const filesSearchOpen = useWorkspaceField(workspaceStore, "filesSearchOpen");
   const searchFocusToken = useWorkspaceField(workspaceStore, "searchFocusToken");
   const searchViewOpen = useWorkspaceField(workspaceStore, "searchViewOpen");
-  const searchViewFocusToken = useWorkspaceField(workspaceStore, "searchViewFocusToken");
   const inboxViewOpen = useWorkspaceField(workspaceStore, "inboxViewOpen");
   const linkedWorkItemPanels = useWorkspaceField(workspaceStore, "linkedWorkItemPanels");
   const inboxAskPortal = useWorkspaceField(workspaceStore, "inboxAskPortal");
@@ -4832,6 +4795,8 @@ function Workspace({
     automationsViewOpen;
   const compactProjectRail = collapsedProjectRailMode === "compact";
   const compactRailActive = compactProjectRail && !projectRailOpen;
+  const appViewBesideRail = insetLayout || projectRailOpen || compactProjectRail;
+  const appViewCompactRail = !insetLayout && compactRailActive;
   const compactTitleNavigation =
     IS_MAC && compactRailActive && !chromeSurfaceOpen;
   const compactTitleBar = compactTitleNavigation && !familiarCovers;
@@ -5475,143 +5440,88 @@ function Workspace({
                       {familiarSettingsDialog}
                     </div>
                   </div>
-                  {searchViewOpen ||
-                  (insetLayout && openAppViews.includes("search")) ? (
-                    <AppViewSurface active={searchViewOpen}>
-                      <SearchView
-                        tabbed={insetLayout}
-                        open={searchViewOpen}
-                        cwd={gitCwd}
-                        recents={recents}
-                        history={projectHistory}
-                        sessions={sessions.filter((session) => !session.inboxAsk)}
-                        focusToken={searchViewFocusToken}
-                        besideRail={
-                          insetLayout || projectRailOpen || compactProjectRail
-                        }
-                        compactRail={!insetLayout && compactRailActive}
-                        onClose={onLeaveSearch}
-                        onToggleSidebar={onToggleSidebar}
-                        onOpenFile={onOpenFile}
-                        onOpenSession={(sessionId, blockId, query) => {
-                          if (blockId)
-                            requestTranscriptJump(sessionId, blockId, query);
-                          void onSelectHistorySession(sessionId);
-                        }}
-                        onOpenProject={onSelectProject}
-                      />
-                    </AppViewSurface>
-                  ) : null}
-                  <div className="hidden" aria-hidden>
-                    {sessions
-                      .filter((session) => session.inboxAsk)
-                      .map((session) => {
-                        const visible =
-                          inboxViewOpen &&
-                          inboxAskPortal?.sessionId === session.id;
-                        return (
-                          <SessionSurface
-                            key={session.id}
-                            host={visible ? inboxAskPortal.host : undefined}
-                          >
-                            <SessionPane
-                              {...sessionPaneProps}
-                              session={session}
-                              visible={visible}
-                              focused={visible}
-                              inSplit={false}
-                              composerFocused={composerFocused}
-                              composerFocusToken={composerFocusToken}
-                            />
-                          </SessionSurface>
-                        );
-                      })}
-                  </div>
-                  {inboxViewOpen ||
-                  (insetLayout && openAppViews.includes("inbox")) ? (
-                    <AppViewSurface active={inboxViewOpen}>
-                      <InboxView
-                        tabbed={insetLayout}
-                        active={inboxViewOpen}
-                        cwd={sidebarCwd}
-                        scopeProject={appViewScope}
-                        recents={recents}
-                        besideRail={
-                          insetLayout || projectRailOpen || compactProjectRail
-                        }
-                        compactRail={!insetLayout && compactRailActive}
-                        onClose={onLeaveInbox}
-                        onToggleSidebar={onToggleSidebar}
-                        onStart={onStartInboxItem}
-                        onAsk={onAskInboxItem}
-                        onAskRestart={onRestartInboxAsk}
-                        onAskMount={setInboxAskPortal}
-                        sessions={inboxRelatedSessions}
-                        repairSessions={repairSessions}
-                        onRepairChecks={onRepairChecks}
-                        onOpenSession={onOpenInboxSession}
-                        onOpenIntegrations={onOpenInboxIntegrations}
-                      />
-                    </AppViewSurface>
-                  ) : null}
-                  {notesViewOpen ||
-                  (insetLayout && notesEnabled && openAppViews.includes("notes")) ? (
-                    <AppViewSurface active={notesViewOpen}>
-                      <NotesView
-                        tabbed={insetLayout}
-                        active={notesViewOpen}
-                        besideRail={
-                          insetLayout || projectRailOpen || compactProjectRail
-                        }
-                        compactRail={!insetLayout && compactRailActive}
-                        cwd={projectCwd}
-                        scopeProject={appViewScope}
-                        recents={recents}
-                        onClose={onLeaveNotes}
-                        onToggleSidebar={onToggleSidebar}
-                      />
-                    </AppViewSurface>
-                  ) : null}
-                  <LocalSurfaceViews
-                    surface={localSurface}
-                    besideRail={
-                      insetLayout || projectRailOpen || compactProjectRail
+                  <WorkspaceAppViews
+                    store={workspaceStore}
+                    insetLayout={insetLayout}
+                    openAppViews={openAppViews}
+                    notesEnabled={notesEnabled}
+                    automationsOpen={automationsSurfaceOpen}
+                    besideRail={appViewBesideRail}
+                    compactRail={appViewCompactRail}
+                    gitCwd={gitCwd}
+                    sidebarCwd={sidebarCwd}
+                    scopeProject={appViewScope}
+                    history={projectHistory}
+                    sessions={sessions}
+                    automationsFocusId={automationsFocusId}
+                    inboxAsk={
+                      <div className="hidden" aria-hidden>
+                        {sessions
+                          .filter((session) => session.inboxAsk)
+                          .map((session) => {
+                            const visible =
+                              inboxViewOpen &&
+                              inboxAskPortal?.sessionId === session.id;
+                            return (
+                              <SessionSurface
+                                key={session.id}
+                                host={visible ? inboxAskPortal.host : undefined}
+                              >
+                                <SessionPane
+                                  {...sessionPaneProps}
+                                  session={session}
+                                  visible={visible}
+                                  focused={visible}
+                                  inSplit={false}
+                                  composerFocused={composerFocused}
+                                  composerFocusToken={composerFocusToken}
+                                />
+                              </SessionSurface>
+                            );
+                          })}
+                      </div>
                     }
-                    compactRail={!insetLayout && compactRailActive}
-                    projectPaths={recents.map((project) => project.path)}
-                    projectCwd={projectCwd}
-                    onClose={onLeaveLocalSurface}
-                    onToggleSidebar={onToggleSidebar}
-                    onOpenSession={onOpenHomeSession}
-                    onOpenAutomation={onOpenHomeAutomation}
-                    onOpenAutomations={onOpenAutomations}
-                    onOpenUsage={onOpenUsageSurface}
-                    onOpenInbox={onOpenInbox}
-                    taskBoard={taskBoard}
-                  />
-                  {automationsSurfaceOpen ||
-                  (insetLayout && openAppViews.includes("automations")) ? (
-                    <AppViewSurface active={automationsSurfaceOpen}>
-                      <AutomationsView
-                        tabbed={insetLayout}
-                        besideRail={
-                          insetLayout || projectRailOpen || compactProjectRail
-                        }
-                        compactRail={!insetLayout && compactRailActive}
-                        cwd={projectCwd}
-                        scopeProject={appViewScope}
-                        recents={recents}
-                        focusAutomationId={automationsFocusId}
-                        onFocusAutomationConsumed={onAutomationsFocusConsumed}
-                        onClose={onLeaveAutomations}
+                    localSurfaces={
+                      <LocalSurfaceViews
+                        surface={localSurface}
+                        besideRail={appViewBesideRail}
+                        compactRail={appViewCompactRail}
+                        projectPaths={recents.map((project) => project.path)}
+                        projectCwd={projectCwd}
+                        onClose={onLeaveLocalSurface}
                         onToggleSidebar={onToggleSidebar}
-                        onLaunch={(automation, run) =>
-                          launchAutomation(automation, run, true)
-                        }
-                        onOpenSession={onOpenAutomationSession}
+                        onOpenSession={onOpenHomeSession}
+                        onOpenAutomation={onOpenHomeAutomation}
+                        onOpenAutomations={onOpenAutomations}
+                        onOpenUsage={onOpenUsageSurface}
+                        onOpenInbox={onOpenInbox}
+                        taskBoard={taskBoard}
                       />
-                    </AppViewSurface>
-                  ) : null}
+                    }
+                    onToggleSidebar={onToggleSidebar}
+                    onOpenFile={onOpenFile}
+                    onOpenHistorySession={onSelectHistorySession}
+                    onOpenProject={onSelectProject}
+                    onLeaveSearch={onLeaveSearch}
+                    onLeaveNotes={onLeaveNotes}
+                    inbox={{
+                      onClose: onLeaveInbox,
+                      onStart: onStartInboxItem,
+                      onAsk: onAskInboxItem,
+                      onAskRestart: onRestartInboxAsk,
+                      sessions: inboxRelatedSessions,
+                      repairSessions,
+                      onRepairChecks,
+                      onOpenSession: onOpenInboxSession,
+                      onOpenIntegrations: onOpenInboxIntegrations,
+                    }}
+                    automations={{
+                      onFocusAutomationConsumed: onAutomationsFocusConsumed,
+                      onClose: onLeaveAutomations,
+                      onLaunch: (automation, run) => launchAutomation(automation, run, true),
+                      onOpenSession: onOpenAutomationSession,
+                    }}
+                  />
                   {settingsOpen ? (
                     <SettingsView
                       section={settingsSection}

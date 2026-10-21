@@ -70,6 +70,7 @@ function overviewData(patch: Partial<FamiliarOverviewData> = {}): FamiliarOvervi
 }
 
 beforeEach(() => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
@@ -79,6 +80,7 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => root.unmount());
+  vi.unstubAllGlobals();
 });
 
 describe("FamiliarOverviewPanel", () => {
