@@ -46,7 +46,6 @@ import {
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { submitWithSettlement } from "./model/managed-submission";
-import { requestBoardFocus } from "@/features/task-board/model/board-focus";
 import { updateSessionState } from "./model/session-state";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import type { SettingsReturnView } from "./model/settings-return/types";
@@ -78,8 +77,6 @@ import {
   loadInsetLayout,
   RIGHT_PANEL_WIDTH_MAX,
   RIGHT_PANEL_WIDTH_MIN,
-  saveProjectRailOpen,
-  saveSessionSidebarOpen,
   subscribeInsetLayout,
   type SidebarTabId,
 } from "@/features/settings/model/appearance";
@@ -197,6 +194,14 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
+import { openBoardCard } from "./workspace/flows/surfaces/board-surface";
+import { stepProject } from "./workspace/flows/surfaces/project-navigation";
+import {
+  togglePrimarySidebar,
+  toggleProjectRail,
+  toggleSessionSidebar,
+  toggleSessionSidebarShortcut,
+} from "./workspace/flows/surfaces/sidebar-toggles";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
 import type { CommandDeps, WorkspaceActions } from "./workspace/hooks/commands/command-deps";
@@ -437,9 +442,7 @@ import {
   isLocalProject,
   isRemoteProjectPath,
   lastProjectPath,
-  loadRecents,
   looksLikeProject,
-  projectRailItems,
   rememberProject,
   sameProjectPath,
 } from "@/features/projects/model/recents";
@@ -565,9 +568,6 @@ import type { MonoChangesRequest } from "@/features/familiars/ui/FamiliarChanges
 import {
   warmNativeSkills,
 } from "@/features/skills/model/skills";
-import {
-  adjacentItemId,
-} from "@/features/workspace/model/tab-keys";
 import {
   OPEN_CONNECTIONS_EVENT,
   OPEN_REMOTE_PROJECT_EVENT,
@@ -765,8 +765,6 @@ function Workspace({
     setInspectedWorkerId,
     setWorkerDetailRequest,
     setSettingsOpen,
-    setProjectRailOpen,
-    setSessionSidebarOpen,
     setCollapsedProjectRailMode,
     setUpdateNotice,
     setWhatsNewVersion,
@@ -4568,46 +4566,28 @@ function Workspace({
     sameSessionSummaries,
   );
 
-  const onToggleSessionSidebar = useCallback(() => {
-    setSessionSidebarOpen((open) => {
-      const next = !open;
-      saveSessionSidebarOpen(next);
-      return next;
-    });
-  }, []);
-
-  // The inset layout has no project rail, so its sidebar takes the primary
-  // toggle.
-  const onToggleSidebar = useCallback(() => {
-    if (insetLayout) {
-      onToggleSessionSidebar();
-      return;
-    }
-    setProjectRailOpen((open) => {
-      const next = !open;
-      saveProjectRailOpen(next);
-      return next;
-    });
-  }, [insetLayout, onToggleSessionSidebar]);
-
-  // The inset layout's sidebar already answers the primary toggle, so the
-  // session sidebar's shortcut takes the right panel instead.
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
-  const onToggleSessionSidebarShortcut = useCallback(() => {
-    if (insetLayout) {
-      rightPanelToggleRef.current?.();
-      return;
-    }
-    onToggleSessionSidebar();
-  }, [insetLayout, onToggleSessionSidebar]);
-
-  const onToggleProjectRail = useCallback(() => {
-    setProjectRailOpen((open) => {
-      const next = !open;
-      saveProjectRailOpen(next);
-      return next;
-    });
-  }, []);
+  const onToggleSessionSidebar = useCallback(
+    () => toggleSessionSidebar(workspaceStore),
+    [workspaceStore],
+  );
+  const onToggleSidebar = useCallback(
+    () => togglePrimarySidebar(workspaceStore, insetLayout),
+    [workspaceStore, insetLayout],
+  );
+  const onToggleSessionSidebarShortcut = useCallback(
+    () =>
+      toggleSessionSidebarShortcut(
+        workspaceStore,
+        insetLayout,
+        rightPanelToggleRef.current,
+      ),
+    [workspaceStore, insetLayout],
+  );
+  const onToggleProjectRail = useCallback(
+    () => toggleProjectRail(workspaceStore),
+    [workspaceStore],
+  );
 
   const surfaceDeps = useStableFlow(
     (): SurfaceDeps => ({
@@ -4808,24 +4788,20 @@ function Workspace({
   );
 
   const onNavigateProjectList = useCallback(
-    (delta: number) => {
-      const current = normalizeProjectPath(projectCwdRef.current);
-      const ids = projectRailItems(loadRecents(), current).map(
-        (project) => project.path,
-      );
-      const next = adjacentItemId(ids, current, delta);
-      if (!next || sameProjectPath(next, current)) return;
-      noteProjectStep(next, delta);
-      onSelectProject(next);
-    },
+    (delta: number) =>
+      stepProject(
+        {
+          currentProject: () => projectCwdRef.current,
+          selectProject: onSelectProject,
+          noteStep: noteProjectStep,
+        },
+        delta,
+      ),
     [onSelectProject],
   );
 
   const onOpenBoardCard = useCallback(
-    (cardId: string) => {
-      requestBoardFocus(cardId);
-      onOpenLocalSurface("board");
-    },
+    (cardId: string) => openBoardCard(onOpenLocalSurface, cardId),
     [onOpenLocalSurface],
   );
   const onOpenUsageSurface = useCallback(
