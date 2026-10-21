@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/domain/session/session";
 import type { Familiar } from "@/features/familiars/model/familiar";
+import { saveNotesEnabled } from "@/features/settings/model/settings";
 import { createWorkspaceStore } from "../store/create-workspace-store";
 import { testWorkspaceState } from "../store/test-state";
 import type { WorkspaceStore } from "../store/types";
@@ -25,14 +26,16 @@ vi.mock("@/features/source-control/hooks/use-project-diff-stats", () => ({
   useProjectDiffStats: diffStats,
 }));
 vi.mock("@/features/familiars/model/familiar", () => ({
+  familiarForSession: (sessionId: string) => (sessionId === "f1" ? { id: "f1" } : undefined),
   familiarLook: (familiar: Familiar) => ({ name: familiar.id }),
   familiarState: () => "idle",
+  familiarsSnapshot: () => 0,
+  subscribeFamiliars: () => () => {},
 }));
 
 type Props = ComponentProps<typeof WorkspaceTitleBar>;
 
 const tab = { id: "t1" } as unknown as Props["tabs"][number];
-const familiar = { id: "f1" } as unknown as Familiar;
 const familiarSession = { id: "f1" } as unknown as Session;
 
 let container: HTMLDivElement;
@@ -46,17 +49,13 @@ function props(overrides: Partial<Props> = {}): Props {
     inset: false,
     cwd: "/work/app",
     gitCwd: "",
-    familiar: undefined,
     familiarSession: undefined,
-    familiarTabId: undefined,
-    overviewShown: false,
     activeAppView: undefined,
     compactRail: false,
     showRightPanelToggle: false,
     rightPanelOpen: false,
     onToggleRightPanel: vi.fn(),
     onSettingsHeaderHost: vi.fn(),
-    notesEnabled: false,
     ...overrides,
   };
 }
@@ -101,7 +100,7 @@ describe("WorkspaceTitleBar", () => {
 
   it("hides the project's tabs behind a Familiar in full view", () => {
     store.setState({ familiarViewId: "f1", familiarOverviewOpen: true });
-    mount({ familiar, familiarSession, overviewShown: true });
+    mount({ familiarSession });
 
     expect(seen.props?.tabs).toEqual([]);
     expect(seen.props?.activeId).toBe("");
@@ -112,7 +111,7 @@ describe("WorkspaceTitleBar", () => {
 
   it("toggles the Familiar's overview and opens its settings through the store", () => {
     store.setState({ familiarViewId: "f1", familiarOverviewOpen: false });
-    mount({ familiar, familiarSession });
+    mount({ familiarSession });
 
     const toggleOverview = seen.props?.onToggleFamiliarOverview as () => void;
     const openSettings = seen.props?.onOpenFamiliarSettings as () => void;
@@ -125,7 +124,7 @@ describe("WorkspaceTitleBar", () => {
 
   it("keeps the Familiar as one of the inset layout's tabs", () => {
     store.setState({ familiarViewId: "f1" });
-    mount({ inset: true, familiar, familiarSession, familiarTabId: "familiar:f1" });
+    mount({ inset: true, familiarSession });
 
     expect(seen.props?.tabs).toEqual([tab]);
     expect(seen.props?.activeId).toBe("familiar:f1");
@@ -171,6 +170,7 @@ describe("WorkspaceTitleBar", () => {
 
   it("takes its callbacks from the workspace handlers, notes only when enabled", () => {
     const handlers = fakeWorkspaceHandlers();
+    saveNotesEnabled(false);
     mount({}, handlers);
 
     expect(seen.props?.onSelect).toBe(handlers.displayedTabs.selectTitleTab);
@@ -178,7 +178,8 @@ describe("WorkspaceTitleBar", () => {
     expect(seen.props?.onPlaceOnPane).toBe(handlers.tabs.placeTab);
     expect(seen.props?.onOpenNotes).toBeUndefined();
 
-    mount({ notesEnabled: true }, handlers);
+    act(() => saveNotesEnabled(true));
+    mount({}, handlers);
     expect(seen.props?.onOpenNotes).toBe(handlers.surfaces.openNotes);
   });
 });

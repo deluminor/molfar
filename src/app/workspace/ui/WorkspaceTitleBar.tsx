@@ -1,13 +1,20 @@
-import type { ComponentProps } from "react";
+import { type ComponentProps, useSyncExternalStore } from "react";
 import type { Session } from "@/domain/session/session";
 import {
-  type Familiar,
+  familiarForSession,
   familiarLook,
   familiarState,
+  familiarsSnapshot,
+  subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
 import { isLocalProject, looksLikeProject } from "@/features/projects/model/recents";
+import { loadNotesEnabled, subscribeNotesEnabled } from "@/features/settings/model/settings";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
-import { type AppView, appViewTabId } from "@/features/workspace/model/app-view-tabs";
+import {
+  type AppView,
+  appViewTabId,
+  familiarTabId,
+} from "@/features/workspace/model/app-view-tabs";
 import { TitleBar } from "../../shell/TitleBar";
 import { useWorkspaceHandlers } from "../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../hooks/use-workspace-actions";
@@ -21,16 +28,12 @@ type Props = Pick<TitleBarProps, "tabs" | "cwd" | "rightPanelOpen"> & {
   store: WorkspaceStore;
   inset: boolean;
   gitCwd: string;
-  familiar: Familiar | undefined;
   familiarSession: Session | undefined;
-  familiarTabId: string | undefined;
-  overviewShown: boolean;
   activeAppView: AppView | undefined;
   compactRail: boolean;
   showRightPanelToggle: boolean;
   onToggleRightPanel: () => void;
   onSettingsHeaderHost: (host: HTMLDivElement | null) => void;
-  notesEnabled: boolean;
 };
 
 const NO_TITLE_TABS: TitleBarProps["tabs"] = [];
@@ -42,16 +45,12 @@ export function WorkspaceTitleBar({
   inset,
   cwd,
   gitCwd,
-  familiar,
   familiarSession,
-  familiarTabId,
-  overviewShown,
   activeAppView,
   compactRail,
   showRightPanelToggle,
   onToggleRightPanel,
   onSettingsHeaderHost,
-  notesEnabled,
   ...passThrough
 }: Props) {
   const handlers = useWorkspaceHandlers();
@@ -64,7 +63,12 @@ export function WorkspaceTitleBar({
   const tabVisitNav = useWorkspaceField(store, "tabVisitNav");
   const recents = useWorkspaceField(store, "recents");
   const { setFamiliarOverviewOpen, setFamiliarSettingsFor } = useWorkspaceActions(store);
+  const notesEnabled = useSyncExternalStore(subscribeNotesEnabled, loadNotesEnabled, () => true);
+  // Renames and mascot picks re-render the Familiar's title.
+  useSyncExternalStore(subscribeFamiliars, familiarsSnapshot);
+  const familiar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
   const covers = !!familiarViewId;
+  const overviewShown = !!familiar && !!familiarSession;
   // The same shared stats the sidebar's Changes tab reads, so the toggle
   // that opens it can carry its dot.
   const rightPanelChanges = useProjectDiffStats(
@@ -82,7 +86,7 @@ export function WorkspaceTitleBar({
   const onOpenFamiliarSettings = familiar ? () => setFamiliarSettingsFor(familiar.id) : undefined;
 
   let activeId = activeTabId;
-  if (familiarSession) activeId = inset ? (familiarTabId ?? "") : "";
+  if (familiarSession) activeId = inset && familiar ? familiarTabId(familiar.id) : "";
   else if (inset && activeAppView) activeId = appViewTabId(activeAppView);
 
   return (

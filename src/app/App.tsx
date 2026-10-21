@@ -2895,17 +2895,13 @@ function Workspace({
       inset={insetLayout}
       cwd={sidebarCwd}
       gitCwd={gitCwd}
-      familiar={familiarViewFamiliar}
       familiarSession={familiarViewSession}
-      familiarTabId={familiarViewTabId}
-      overviewShown={!!familiarOverviewPanel}
       activeAppView={activeAppView}
       compactRail={chrome.compactTitleNavigation}
       showRightPanelToggle={chrome.showRightPanelToggle}
       rightPanelOpen={rightPanelOpen}
       onToggleRightPanel={onToggleRightPanel}
       onSettingsHeaderHost={setSettingsHeaderHost}
-      notesEnabled={notesEnabled}
     />
   );
 
