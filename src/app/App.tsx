@@ -56,12 +56,8 @@ import { FilePicker } from "@/features/files/ui/FilePicker";
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 import { HarnessUpdateNotice } from "@/features/providers/ui/HarnessUpdateNotice";
 import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
-import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
-import {
-  FamiliarOverview,
-} from "@/features/familiars/ui/FamiliarOverview";
-import { FamiliarSettingsDialog } from "@/features/familiars/ui/FamiliarSettingsDialog";
-import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
+import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
+import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
 import {
   DeleteSessionDialog,
 } from "@/features/sessions/ui/DeleteSessionDialog";
@@ -769,7 +765,6 @@ function Workspace({
     setFamiliarChangesRequest,
     setFamiliarShownSession,
     setFamiliarOverviewDocument,
-    setFamiliarShownSessionFocused,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -788,13 +783,10 @@ function Workspace({
   const activeTabId = useWorkspaceField(workspaceStore, "activeTabId");
   const familiarViewId = useWorkspaceField(workspaceStore, "familiarViewId");
   const familiarOverviewOpen = useWorkspaceField(workspaceStore, "familiarOverviewOpen");
-  const familiarOverviewTab = useWorkspaceField(workspaceStore, "familiarOverviewTab");
-  const familiarSettingsFor = useWorkspaceField(workspaceStore, "familiarSettingsFor");
   const onOpenMonoArtifact = useCallback(
     (_sessionId: string, id: string) => openOverviewDocument(workspaceStore, id),
     [],
   );
-  const familiarChangesRequest = useWorkspaceField(workspaceStore, "familiarChangesRequest");
   useEffect(() => {
     const listening = listen<string>(
       ARTIFACT_DELETED_EVENT,
@@ -814,7 +806,6 @@ function Workspace({
       void listening.then((unlisten) => unlisten());
     };
   }, []);
-  const familiarOverviewDocument = useWorkspaceField(workspaceStore, "familiarOverviewDocument");
   useEffect(() => {
     if (!familiarOverviewOpen) leaveOverviewItems(workspaceStore);
   }, [familiarOverviewOpen]);
@@ -4751,24 +4742,6 @@ function Workspace({
     familiarViewSession,
     sessions,
   );
-  const selectedFamiliarActivity = familiarOverview.selectedActivity;
-  const familiarActivityView =
-    familiarViewSession && selectedFamiliarActivity ? (
-      <FamiliarActivityView
-        key={selectedFamiliarActivity.turnId}
-        blocks={selectedFamiliarActivity.blocks}
-        live={selectedFamiliarActivity.live}
-        cwd={sessionWorkCwd(familiarViewSession)}
-        onApproval={
-          familiarViewSession.worktreeRemoved
-            ? undefined
-            : (requestId, decision) =>
-                onApproval(familiarViewSession.id, requestId, decision)
-        }
-        onOpenFile={onOpenFile}
-        onOpenDiff={onOpenDiff}
-      />
-    ) : null;
   const familiarShownSessionPane = shownFamiliarSessionId
     ? sessions.find((session) => session.id === shownFamiliarSessionId)
     : undefined;
@@ -4808,76 +4781,31 @@ function Workspace({
     : undefined;
   const familiarOverviewPanel =
     familiarViewFamiliar && familiarViewSession ? (
-      <FamiliarOverview
-        key={familiarViewFamiliar.id}
-        open={familiarOverviewOpen}
-        familiarId={familiarViewFamiliar.id}
-        cwd={familiarViewSession.cwd}
-        agent={familiarLook(familiarViewFamiliar)}
-        state={familiarState(familiarViewSession)}
-        launches={familiarOverview.launches}
+      <FamiliarOverviewPanel
+        store={workspaceStore}
+        familiar={familiarViewFamiliar}
+        session={familiarViewSession}
+        overview={familiarOverview}
         sessions={sessions}
         history={history}
-        documents={familiarOverview.documents}
-        activity={familiarActivityView}
-        changes={{
-          sessionId: familiarViewSession.id,
-          cwd: familiarOverview.cwd,
-          totals: familiarOverview.changeTotals,
-          request: familiarChangesRequest,
-          textHarness: familiarViewSession.harness,
-          projects: familiarViewFamiliar.projects,
-        }}
-        tab={familiarOverviewTab}
-        onTabChange={setFamiliarOverviewTab}
-        onOpenSession={(sessionId) =>
-          familiarView.showLaunchedSession(familiarViewSession.id, sessionId)
-        }
         shownSession={familiarShownSessionView}
-        // Back lands on every session it started.
-        onBackFromSession={() => {
-          setFamiliarShownSession(null);
-          setFamiliarShownSessionFocused(false);
-        }}
+        onShowLaunchedSession={familiarView.showLaunchedSession}
         onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
-        onOpenDocument={(id) => {
-          setFamiliarShownSession(null);
-          setFamiliarOverviewDocument(id);
-        }}
-        shownDocumentId={familiarOverviewDocument ?? undefined}
-        onBackFromDocument={() => setFamiliarOverviewDocument(null)}
+        onApproval={onApproval}
         onOpenFile={onOpenFile}
-        onClose={() => setFamiliarOverviewOpen(false)}
-        windowControls={familiarCovers && !IS_MAC ? <WindowControls /> : undefined}
+        onOpenDiff={onOpenDiff}
       />
     ) : null;
   const familiarSettingsDialog =
-    familiarCovers &&
-    familiarViewFamiliar &&
-    familiarViewSession &&
-    familiarSettingsFor === familiarViewFamiliar.id ? (
-      <FamiliarSettingsDialog
-        key={familiarViewFamiliar.id}
-        familiarId={familiarViewFamiliar.id}
-        agent={familiarLook(familiarViewFamiliar)}
-        status={familiarState(familiarViewSession).status}
-        cwd={familiarViewSession.cwd}
-        harness={familiarViewSession.harness}
-        model={familiarViewSession.model}
-        modelSettings={familiarViewSession.modelSettings}
-        runtimeMode={familiarViewSession.runtimeMode}
-        busy={!!familiarViewSession.busy}
-        onModelChange={(harness, model) =>
-          onModelChange(familiarViewSession.id, harness, model)
-        }
-        onModelSettingsChange={(settings) =>
-          onModelSettingsChange(familiarViewSession.id, settings)
-        }
-        onRuntimeModeChange={(mode) =>
-          onRuntimeModeChange(familiarViewSession.id, mode)
-        }
-        onReset={() => onResetFamiliar(familiarViewSession.id)}
-        onClose={() => setFamiliarSettingsFor(null)}
+    familiarCovers && familiarViewFamiliar && familiarViewSession ? (
+      <FamiliarSettingsPanel
+        store={workspaceStore}
+        familiar={familiarViewFamiliar}
+        session={familiarViewSession}
+        onModelChange={onModelChange}
+        onModelSettingsChange={onModelSettingsChange}
+        onRuntimeModeChange={onRuntimeModeChange}
+        onReset={onResetFamiliar}
       />
     ) : null;
   const busyProjectPaths = useStableValue(

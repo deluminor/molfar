@@ -10,6 +10,8 @@ import type { WorkspaceStore } from "../../store/types";
 import { useWorkspaceField } from "../use-workspace-field";
 import { useFamiliarLaunchedSessions } from "./use-familiar-launched-sessions";
 
+export type FamiliarOverviewData = ReturnType<typeof useFamiliarOverviewData>;
+
 /** What the open Familiar's chat and overview show, derived from its session. */
 export function useFamiliarOverviewData(
   store: WorkspaceStore,
