@@ -2860,14 +2860,6 @@ function Workspace({
         }}
       />
     ) : null;
-  const familiarSettingsDialog =
-    familiarCovers && familiarViewFamiliar && familiarViewSession ? (
-      <FamiliarSettingsPanel
-        store={workspaceStore}
-        familiar={familiarViewFamiliar}
-        session={familiarViewSession}
-      />
-    ) : null;
 
   const chrome = useWorkspaceChrome(workspaceStore, {
     insetLayout,
@@ -3022,7 +3014,7 @@ function Workspace({
             />
           }
           familiarOverview={familiarCovers ? familiarOverviewPanel : null}
-          familiarSettings={familiarSettingsDialog}
+          familiarSettings={<FamiliarSettingsPanel store={workspaceStore} session={familiarViewSession} />}
           appViews={
             <WorkspaceAppViews
               store={workspaceStore}

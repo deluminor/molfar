@@ -1,6 +1,6 @@
 import type { Session } from "@/domain/session/session";
 import {
-  type Familiar,
+  familiarForSession,
   familiarLook,
   familiarState,
 } from "@/features/familiars/model/familiar";
@@ -12,20 +12,18 @@ import type { WorkspaceStore } from "../../store/types";
 
 type Props = {
   store: WorkspaceStore;
-  familiar: Familiar;
-  session: Session;
+  /** The chat of the Familiar in view. */
+  session: Session | undefined;
 };
 
-/** The open Familiar's settings dialog, while it is the one asked for. */
-export function FamiliarSettingsPanel({
-  store,
-  familiar,
-  session,
-}: Props) {
+/** The settings dialog of the Familiar in view, while it is the one asked for. */
+export function FamiliarSettingsPanel({ store, session }: Props) {
   const { composer, history } = useWorkspaceHandlers();
+  const familiarViewId = useWorkspaceField(store, "familiarViewId");
   const settingsFor = useWorkspaceField(store, "familiarSettingsFor");
   const { setFamiliarSettingsFor } = useWorkspaceActions(store);
-  if (settingsFor !== familiar.id) return null;
+  const familiar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
+  if (!familiar || !session || settingsFor !== familiar.id) return null;
 
   return (
     <FamiliarSettingsDialog

@@ -21,6 +21,7 @@ const seen = vi.hoisted(() => ({
 const SessionPaneStub = vi.hoisted(() => () => null);
 
 vi.mock("@/features/familiars/model/familiar", () => ({
+  familiarForSession: (sessionId: string) => (sessionId === "familiar-chat" ? familiar : undefined),
   familiarLook: () => ({ name: "Owl" }),
   familiarState: () => ({ status: "idle" }),
 }));
@@ -44,7 +45,12 @@ type OverviewProps = ComponentProps<typeof FamiliarOverview>;
 type SettingsProps = ComponentProps<typeof FamiliarSettingsDialog>;
 type ActivityStub = { live: boolean; onApproval?: (requestId: number, decision: string) => void };
 
-const familiar: Familiar = { id: "owl", mascot: "owl", color: "#fff", projects: ["/work/demo"] };
+const familiar: Familiar = vi.hoisted(() => ({
+  id: "owl",
+  mascot: "owl",
+  color: "#fff",
+  projects: ["/work/demo"],
+}));
 const session = { ...newDefaultSession("/work/familiar"), id: "familiar-chat" };
 
 let container: HTMLDivElement;
@@ -203,23 +209,33 @@ describe("FamiliarOverviewPanel", () => {
 });
 
 describe("FamiliarSettingsPanel", () => {
-  function mount() {
+  function mount(shown: { session: typeof session | undefined } = { session }) {
     act(() =>
       root.render(
-        withWorkspaceHandlers(createElement(FamiliarSettingsPanel, { store, familiar, session }), handlers),
+        withWorkspaceHandlers(createElement(FamiliarSettingsPanel, { store, session: shown.session }), handlers),
       ),
     );
   }
 
   it("stays closed unless this Familiar's settings were asked for", () => {
-    store.setState({ familiarSettingsFor: "other" });
+    store.setState({ familiarViewId: "familiar-chat", familiarSettingsFor: "other" });
     mount();
 
     expect(settingsProps()).toBeUndefined();
   });
 
+  it("stays closed without a Familiar in view or its chat", () => {
+    store.setState({ familiarViewId: "familiar-chat", familiarSettingsFor: "owl" });
+    mount({ session: undefined });
+    expect(settingsProps()).toBeUndefined();
+
+    act(() => store.setState({ familiarViewId: null }));
+    mount();
+    expect(settingsProps()).toBeUndefined();
+  });
+
   it("binds model changes and reset to the Familiar's chat and closes through the store", () => {
-    store.setState({ familiarSettingsFor: "owl" });
+    store.setState({ familiarViewId: "familiar-chat", familiarSettingsFor: "owl" });
     mount();
 
     const props = settingsProps();
