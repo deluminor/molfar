@@ -76,6 +76,7 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import { createSecondOpinionActions } from "./workspace/flows/second-opinion/second-opinion-actions";
 import { createWorkerPaneActions } from "./workspace/flows/orchestration-workers/worker-pane-actions";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
@@ -165,7 +166,6 @@ import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
 import type { CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
-import { handoffSession } from "./workspace/flows/turn-control/handoff-session";
 import type { HarnessReplyDeps } from "./workspace/flows/turn-control/harness-replies";
 import { createTurnControlActions } from "./workspace/flows/turn-control/turn-control-actions";
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
@@ -247,8 +247,6 @@ import {
   isolateTerminalPanes,
   leafIds,
   neighborLeafId,
-  newTab,
-  splitPane,
   type FocusDir,
   type SplitDir,
   type WorkspaceTab,
@@ -284,21 +282,13 @@ import {
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { ProviderAccountProvider } from "@/domain/harness/provider-account";
 import { newWorkspaceSession } from "./model/new-workspace-session";
-import {
-  newDefaultSession,
-  newSession,
-} from "@/features/sessions/model/session";
-import {
-  formatSessionTitle,
-  sessionDisplayTitle,
-} from "@/domain/session/title";
+import { newDefaultSession } from "@/features/sessions/model/session";
+import { sessionDisplayTitle } from "@/domain/session/title";
 import {
   sessionWorkCwd,
   sessionNeedsInput,
 } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
-import type { Block } from "@/domain/session/block";
-import type { ModelTarget } from "@/domain/session/turn";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
   filterTabsForProject,
@@ -340,11 +330,6 @@ import {
 import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import { useUnseenReplyCounts } from "@/features/sessions/hooks/use-unseen-reply-counts";
-import {
-  buildSecondOpinionRequest,
-  harnessForTurn,
-  SECOND_OPINION_TITLE,
-} from "@/features/sessions/model/second-opinion";
 import {
   createFamiliar,
   findFamiliar,
@@ -2666,100 +2651,19 @@ function Workspace({
   usageLimitAccountChangeRef.current = usageLimits.changeAccount;
   useUsageLimitTimers(sessions, turnQueue, usageLimits.resume);
 
-  const openSessionBeside = useCallback(
-    (
-      sourceId: string,
-      session: Session,
-      cwd: string,
-      focusComposer = false,
-    ) => {
-      const nextSessions = [...sessionsRef.current, session];
-      sessionsRef.current = nextSessions;
-      setSessions(nextSessions);
-
-      const tab = tabsRef.current.find((entry) =>
-        leafIds(entry.layout).includes(sourceId),
-      );
-      if (tab) {
-        const nextTabs = tabsRef.current.map((entry) =>
-          entry.id === tab.id
-            ? {
-                ...entry,
-                layout: splitPane(entry.layout, sourceId, "right", session.id),
-                focusedId: session.id,
-                diffFocused: false,
-              }
-            : entry,
-        );
-        tabsRef.current = nextTabs;
-        setTabs(nextTabs);
-        if (tab.id !== activeTabIdRef.current) setActiveTabId(tab.id);
-      } else {
-        const nextTab = newTab(session.id);
-        appendTab(nextTab, cwd);
-        setActiveTabId(nextTab.id);
-      }
-
-      setProjectTerminalFocused(false);
-      setComposerFocused(focusComposer);
-    },
-    [appendTab],
+  const secondOpinions = useStableFlow(() =>
+    createSecondOpinionActions({
+      beside: {
+        ...placeSessionDeps,
+        activeTabIdRef,
+        appendTab: (tab, cwd) => appendTab(tab, cwd),
+      },
+      submit: (...args) => onSubmitRef.current(...args),
+    }),
   );
-
-  const onSecondOpinion = useCallback(
-    (sourceId: string, target: ModelTarget, turn: Block[]) => {
-      const source = sessionsRef.current.find(
-        (session) => session.id === sourceId,
-      );
-      if (!source || source.worktreeRemoved) return;
-      const { harness, model, modelSettings } = target;
-      const cwd = sessionWorkCwd(source);
-      const from = harnessForTurn(source.blocks, turn, source.harness);
-      const request = buildSecondOpinionRequest({
-        from,
-        to: harness,
-        turn,
-        cwd,
-      });
-      const session = {
-        ...newSession(harness, source.cwd, model, source.runtimeMode),
-        worktreeCwd: source.worktreeCwd,
-        branch: source.branch,
-        modelSettings: mergeModelSettings(
-          resolveModel(harness, model),
-          modelSettings,
-        ),
-        title: formatSessionTitle(harness, SECOND_OPINION_TITLE),
-      };
-      openSessionBeside(sourceId, session, source.cwd);
-      onSubmit(session.id, request.prompt, [], request.options);
-    },
-    [onSubmit, openSessionBeside],
-  );
-  const onBtwSubmit = btw.submit;
-  const onBtwModelChange = btw.changeModel;
-  const onBtwDelete = btw.remove;
-  const onBtwStop = btw.stop;
-  const onBtwRetry = btw.retry;
 
   const unseenFinishedRef = useRef(unseenFinishedIds);
   unseenFinishedRef.current = unseenFinishedIds;
-
-  const onHandoff = useCallback(
-    (sourceId: string, target: ModelTarget, turn: Block[]) => {
-      const source = sessionsRef.current.find(
-        (session) => session.id === sourceId,
-      );
-      if (!source || source.worktreeRemoved) return;
-      openSessionBeside(
-        sourceId,
-        handoffSession(source, target, turn),
-        source.cwd,
-        true,
-      );
-    },
-    [openSessionBeside],
-  );
 
   useAutoContinue(sessions, turnControl.sessions, onSubmit);
 
@@ -3398,13 +3302,13 @@ function Workspace({
     onOpenDiff: tabActions.openDiff,
     onOpenPlan: fileActions.openPlan,
     onBuildPlan: queueActions.buildPlan,
-    onSecondOpinion,
-    onHandoff,
-    onBtwSubmit,
-    onBtwRetry,
-    onBtwDelete,
-    onBtwStop,
-    onBtwModelChange,
+    onSecondOpinion: secondOpinions.secondOpinion,
+    onHandoff: secondOpinions.handoff,
+    onBtwSubmit: btw.submit,
+    onBtwRetry: btw.retry,
+    onBtwDelete: btw.remove,
+    onBtwStop: btw.stop,
+    onBtwModelChange: btw.changeModel,
     onNewTerminal: terminals.openInSession,
   };
 
