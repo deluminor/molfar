@@ -261,43 +261,9 @@ import {
 } from "./workspace/flows/tabs/tab-layout";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import type { TerminalDeps } from "./workspace/flows/terminals/terminal-deps";
-import {
-  closeOtherProjectTerminals,
-  closeProjectTerminal,
-  focusedDockTerminal as focusedDockTerminalOf,
-  focusProjectTerminal as focusDockTerminal,
-  hideProjectTerminal,
-  reorderProjectTerminals,
-  selectProjectTerminal,
-  setProjectTerminalSide,
-  setProjectTerminalSize,
-  toggleProjectTerminal,
-} from "./workspace/flows/terminals/dock-terminals";
-import {
-  changeTerminalMeta,
-  openTerminal,
-  openTerminalInSession,
-  toggleRunningTerminal,
-} from "./workspace/flows/terminals/workspace-terminals";
+import { createTerminalActions } from "./workspace/flows/terminals/terminal-actions";
 import type { TabCloseDeps } from "./workspace/flows/tabs/close/tab-close-deps";
-import {
-  closeOtherTabs,
-  closeTab,
-  closeTabs,
-} from "./workspace/flows/tabs/close/tab-close";
-import {
-  closeFile,
-  closeOtherFiles,
-} from "./workspace/flows/tabs/close/file-close";
-import { closeDeletedRemoteSession } from "./workspace/flows/tabs/close/tab-clear";
-import {
-  closeAllTabs,
-  closeEveryTab,
-} from "./workspace/flows/tabs/close/tab-close-all";
-import {
-  closePane,
-  closeTitleTab,
-} from "./workspace/flows/tabs/close/pane-close";
+import { createTabCloseActions } from "./workspace/flows/tabs/close/tab-close-actions";
 import { WorkspaceSidebar } from "./workspace/ui/WorkspaceSidebar";
 import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 
@@ -315,10 +281,7 @@ import {
   OrchestrationWorkers,
   type OrchestrationWorkerDetail,
 } from "@/features/orchestration/ui/orchestration-actions";
-import {
-  findProjectTerminal,
-  type DockSide,
-} from "@/features/projects/model/project-terminal";
+import { findProjectTerminal } from "@/features/projects/model/project-terminal";
 
 import {
   sessionChildHarnesses,
@@ -331,10 +294,7 @@ import {
   confirmCloseTerminal,
   confirmCloseTerminals,
 } from "@/features/terminal/model/terminal-close";
-import {
-  newTerminalCwd,
-  type TerminalMetaPatch,
-} from "@/features/terminal/model/terminal-tab";
+import { newTerminalCwd } from "@/features/terminal/model/terminal-tab";
 import {
   bindHarnessSession,
   cancelHarnessTurn,
@@ -2155,69 +2115,7 @@ function Workspace({
       confirmCloseTerminals,
     }),
   );
-  const focusProjectTerminal = useCallback(
-    () => focusDockTerminal(terminalDeps),
-    [],
-  );
-  const onOpenTerminal = useCallback(
-    (cwd: string, asWorkspaceTab = false, occupySessionId?: string) =>
-      openTerminal(terminalDeps, cwd, asWorkspaceTab, occupySessionId),
-    [],
-  );
-  const onNewTerminal = useCallback(() => openTerminal(terminalDeps, ""), []);
-  const onNewTerminalTab = useCallback(
-    () => openTerminal(terminalDeps, "", true),
-    [],
-  );
-  const onNewTerminalInSession = useCallback(
-    (sessionId: string) => openTerminalInSession(terminalDeps, sessionId),
-    [],
-  );
-  const onToggleProjectTerminal = useCallback(
-    () => toggleProjectTerminal(terminalDeps),
-    [],
-  );
-  const onHideProjectTerminal = useCallback(
-    () => hideProjectTerminal(terminalDeps),
-    [],
-  );
-  const onProjectTerminalSide = useCallback(
-    (side: DockSide) => setProjectTerminalSide(terminalDeps, side),
-    [],
-  );
-  const onProjectTerminalSize = useCallback(
-    (size: number) => setProjectTerminalSize(terminalDeps, size),
-    [],
-  );
-  const onSelectProjectTerminal = useCallback(
-    (fileId: string) => selectProjectTerminal(terminalDeps, fileId),
-    [],
-  );
-  const onReorderProjectTerminals = useCallback(
-    (ids: string[]) => reorderProjectTerminals(terminalDeps, ids),
-    [],
-  );
-  const onCloseProjectTerminal = useCallback(
-    (fileId: string) => closeProjectTerminal(terminalDeps, fileId),
-    [],
-  );
-  const onCloseOtherProjectTerminals = useCallback(
-    (fileId: string) => closeOtherProjectTerminals(terminalDeps, fileId),
-    [],
-  );
-  const onTerminalMetaChange = useCallback(
-    (fileId: string, patch: TerminalMetaPatch) =>
-      changeTerminalMeta(terminalDeps, fileId, patch),
-    [],
-  );
-  const onToggleRunningTerminal = useCallback(
-    (fileId: string) => toggleRunningTerminal(terminalDeps, fileId),
-    [],
-  );
-  const focusedDockTerminal = useCallback(
-    () => focusedDockTerminalOf(terminalDeps),
-    [],
-  );
+  const terminals = useStableFlow(() => createTerminalActions(terminalDeps));
 
   const tabCloseDeps = useStableFlow(
     (): TabCloseDeps => ({
@@ -2241,57 +2139,20 @@ function Workspace({
       confirmCloseTerminals,
     }),
   );
-  const onCloseTab = useCallback(
-    (id: string, opts?: { confirmedTerminalIds?: string[] }) =>
-      closeTab(tabCloseDeps, id, opts),
-    [],
-  );
-  const onCloseTabs = useCallback(
-    (ids: string[], fallbackId: string, opts?: { confirmed?: boolean }) =>
-      closeTabs(tabCloseDeps, ids, fallbackId, opts),
-    [],
-  );
-  const onCloseOtherTabs = useCallback(() => closeOtherTabs(tabCloseDeps), []);
-  const onCloseFile = useCallback(
-    (paneId: string, fileId: string) => closeFile(tabCloseDeps, paneId, fileId),
-    [],
-  );
-  const onCloseOtherFiles = useCallback(
-    (paneId: string, fileId: string) =>
-      closeOtherFiles(tabCloseDeps, paneId, fileId),
-    [],
-  );
-  const onRemoteSessionDeleted = useCallback(
-    (remoteSessionId: string) =>
-      closeDeletedRemoteSession(tabCloseDeps, remoteSessionId),
-    [],
-  );
-  const onCloseEveryTab = useCallback(
-    (scope?: readonly string[]) => closeEveryTab(tabCloseDeps, scope),
-    [],
-  );
-  const onCloseAllTabs = useCallback(() => closeAllTabs(tabCloseDeps), []);
-  const onClosePane = useCallback(
-    (sessionId?: string) => closePane(tabCloseDeps, sessionId),
-    [],
-  );
-  const onCloseTitleTab = useCallback(
-    (id: string) => closeTitleTab(tabCloseDeps, id),
-    [],
-  );
+  const tabClose = useStableFlow(() => createTabCloseActions(tabCloseDeps));
 
   /** ⌘T / Ctrl+T: add a dock terminal while the dock has focus, else a tab. */
   const onNewFocused = useCallback(() => {
-    if (focusedDockTerminal()) onNewTerminal();
+    if (terminals.focusedDockTerminal()) terminals.openNew();
     else onNew();
-  }, [focusedDockTerminal, onNew, onNewTerminal]);
+  }, [onNew]);
 
   /** ⌘W / Ctrl+W: close the focused dock terminal, else the focused pane. */
   const onCloseFocused = useCallback(() => {
-    const fileId = focusedDockTerminal();
-    if (fileId) onCloseProjectTerminal(fileId);
-    else onClosePane();
-  }, [focusedDockTerminal, onCloseProjectTerminal, onClosePane]);
+    const fileId = terminals.focusedDockTerminal();
+    if (fileId) terminals.close(fileId);
+    else tabClose.closePane();
+  }, []);
 
   /** Open tabs per workspace in the sidebar's project, keyed by worktree
    * path, so the switcher can show what each worktree still has open. */
@@ -3621,7 +3482,7 @@ function Workspace({
         unseenFinishedRef.current.delete(sessionId);
       },
       stop: (sessionId) => onStop(sessionId),
-      closeTab: (tabId) => onCloseTab(tabId),
+      closeTab: (tabId) => tabClose.closeTab(tabId),
       persist: (session) => persistSession(session),
       updateTabs: (update) => setTabs(update),
     }),
@@ -4240,16 +4101,16 @@ function Workspace({
       activateTab: (tabId) => activateTab(tabId),
       closeFamiliarView: () => closeFamiliarView(),
       workspace: {
-        closeTitleTab: (tabId) => onCloseTitleTab(tabId),
-        closeTabs: (ids, fallbackId) => onCloseTabs(ids, fallbackId),
-        closeEveryTab: (ids) => onCloseEveryTab(ids),
+        closeTitleTab: (tabId) => tabClose.closeTitleTab(tabId),
+        closeTabs: (ids, fallbackId) => tabClose.closeTabs(ids, fallbackId),
+        closeEveryTab: (ids) => tabClose.closeEveryTab(ids),
         reorderTabs: (ids, movedId) => onReorderTabs(ids, movedId),
         closeFocused: () => renderedTabActions.current.onCloseFocused(),
         next: () => renderedTabActions.current.onNext(),
         prev: () => renderedTabActions.current.onPrev(),
         activate: (slot) => renderedTabActions.current.onActivate(slot),
-        closeOtherTabs: () => onCloseOtherTabs(),
-        closeAllTabs: () => onCloseAllTabs(),
+        closeOtherTabs: () => tabClose.closeOtherTabs(),
+        closeAllTabs: () => tabClose.closeAllTabs(),
       },
     }),
   );
@@ -4314,9 +4175,9 @@ function Workspace({
     onOpenInbox,
     onOpenNotes,
     pickProject,
-    onNewTerminal,
-    onNewTerminalTab,
-    onToggleProjectTerminal,
+    onNewTerminal: terminals.openNew,
+    onNewTerminalTab: terminals.openNewTab,
+    onToggleProjectTerminal: terminals.toggleDock,
     onNavigateSessionList,
     onNavigateProjectList,
     openSettings,
@@ -4363,7 +4224,7 @@ function Workspace({
     familiarCovers,
     insetLayout,
     paintTarget: dockPaintTarget,
-    commitSize: onProjectTerminalSize,
+    commitSize: terminals.setDockSize,
   });
   const dockClosingShown = dockSlide.closingShown;
 
@@ -4446,7 +4307,7 @@ function Workspace({
     recents,
     hideProjectPicker: true,
     onFocus: onFocusPane,
-    onClose: onClosePane,
+    onClose: tabClose.closePane,
     onCwdChange,
     onBranchChange,
     onWorktreeChange: onComposerWorktreeChange,
@@ -4493,7 +4354,7 @@ function Workspace({
     onBtwDelete,
     onBtwStop,
     onBtwModelChange,
-    onNewTerminal: onNewTerminalInSession,
+    onNewTerminal: terminals.openInSession,
   };
 
   // Renames, mascot picks and new projects show up on the rail.
@@ -4646,7 +4507,7 @@ function Workspace({
       onToggleSidebar={onToggleSidebar}
       onToggleSessionSidebar={onToggleSessionSidebar}
       onSelect={onSelectTitleTab}
-      onNewTerminal={onNewTerminal}
+      onNewTerminal={terminals.openNew}
       onOpenSettings={onOpenSettings}
       onOpenInbox={onOpenInbox}
       onOpenNotes={notesEnabled ? onOpenNotes : undefined}
@@ -4696,7 +4557,7 @@ function Workspace({
       pending={historyPending}
       onSelectSession={onSelectHistorySession}
       onSelectRemoteSession={onSelectRemoteSession}
-      onRemoteSessionDeleted={onRemoteSessionDeleted}
+      onRemoteSessionDeleted={tabClose.closeDeletedRemoteSession}
       onPrefetchSession={onPrefetchHistorySession}
       onSessionNavigationOrder={onSessionNavigationOrder}
       onPlaceSessionOnPane={onPlaceSessionOnPane}
@@ -4712,7 +4573,7 @@ function Workspace({
       onDeleteSession={onDeleteHistorySession}
       onDeleteSessions={onDeleteHistorySessions}
       onOpenFile={onOpenFile}
-      onOpenTerminal={onOpenTerminal}
+      onOpenTerminal={terminals.open}
       onFileMoved={onFileMoved}
       onFileDeleted={onFileDeleted}
       onGoBack={onRailBack}
@@ -4736,7 +4597,7 @@ function Workspace({
       familiars={sidebarFamiliars}
       onNew={onNew}
       openSessions={openProjectSessions}
-      onNewTerminal={onNewTerminal}
+      onNewTerminal={terminals.openNew}
       onSearch={onOpenSearch}
       onOpenInbox={onOpenInbox}
       onOpenInboxItem={onOpenLinkedWorkItem}
@@ -4778,9 +4639,9 @@ function Workspace({
         activeTab={activeTab}
         onSelectAccount={onSelectProviderAccount}
         onManageAccounts={onManageProviderAccounts}
-        onToggleTerminal={onToggleRunningTerminal}
-        onNewTerminal={onNewTerminal}
-        onToggleProjectTerminal={onToggleProjectTerminal}
+        onToggleTerminal={terminals.toggleRunning}
+        onNewTerminal={terminals.openNew}
+        onToggleProjectTerminal={terminals.toggleDock}
         inset={insetLayout}
       />
     );
@@ -4844,15 +4705,15 @@ function Workspace({
                       <WorkspaceMenuBar
                         store={workspaceStore}
                         onNew={onNew}
-                        onNewTerminal={onNewTerminal}
-                        onToggleTerminal={onToggleProjectTerminal}
+                        onNewTerminal={terminals.openNew}
+                        onToggleTerminal={terminals.toggleDock}
                         onGoToFile={onGoToFile}
                         onToggleSidebar={onToggleSidebar}
                         onToggleSessionSidebar={onToggleSessionSidebarShortcut}
                         onShowSourceControl={onToggleChanges}
-                        onCloseTab={onCloseTab}
-                        onCloseOtherTabs={onCloseOtherTabs}
-                        onCloseAllTabs={onCloseAllTabs}
+                        onCloseTab={tabClose.closeTab}
+                        onCloseOtherTabs={tabClose.closeOtherTabs}
+                        onCloseAllTabs={tabClose.closeAllTabs}
                         onPickProject={pickProject}
                         onFindInProject={onFindInProject}
                         onSearch={onOpenSearch}
@@ -4872,17 +4733,17 @@ function Workspace({
                             <ProjectTerminalDocks
                               store={workspaceStore}
                               closingShown={dockClosingShown}
-                              onFocus={focusProjectTerminal}
-                              onHide={onHideProjectTerminal}
-                              onSideChange={onProjectTerminalSide}
+                              onFocus={terminals.focusDock}
+                              onHide={terminals.hideDock}
+                              onSideChange={terminals.setDockSide}
                               onSizePaint={dockSlide.paintSize}
                               onSizeCommit={dockSlide.commitSize}
-                              onAddTerminal={onNewTerminal}
-                              onSelectTerminal={onSelectProjectTerminal}
-                              onCloseTerminal={onCloseProjectTerminal}
-                              onCloseOtherTerminals={onCloseOtherProjectTerminals}
-                              onReorderTerminals={onReorderProjectTerminals}
-                              onTerminalMetaChange={onTerminalMetaChange}
+                              onAddTerminal={terminals.openNew}
+                              onSelectTerminal={terminals.select}
+                              onCloseTerminal={terminals.close}
+                              onCloseOtherTerminals={terminals.closeOthers}
+                              onReorderTerminals={terminals.reorder}
+                              onTerminalMetaChange={terminals.changeMeta}
                             />
                             <div
                               className="relative flex min-h-0 min-w-0 flex-row"
@@ -4897,8 +4758,8 @@ function Workspace({
                                   composerFocused={composerFocused}
                                   composerFocusToken={composerFocusToken}
                                   onSelectFile={onSelectFileSurface}
-                                  onCloseFile={onCloseFile}
-                                  onCloseOtherFiles={onCloseOtherFiles}
+                                  onCloseFile={tabClose.closeFile}
+                                  onCloseOtherFiles={tabClose.closeOtherFiles}
                                   onPinFile={onPinFile}
                                   onReorderFiles={onReorderFiles}
                                   onFileDirtyChange={onFileDirtyChange}
@@ -4907,7 +4768,7 @@ function Workspace({
                                   onUpdatePlan={onUpdatePlan}
                                   onMovePane={onMovePane}
                                   onDetachPane={onDetachPane}
-                                  onTerminalMetaChange={onTerminalMetaChange}
+                                  onTerminalMetaChange={terminals.changeMeta}
                                 />
                                 <FamiliarSessionPanes
                                   store={workspaceStore}
