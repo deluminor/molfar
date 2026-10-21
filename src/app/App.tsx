@@ -2792,10 +2792,6 @@ function Workspace({
     createVisibleTabShortcuts(displayedTabsDeps, displayedTabs),
   );
   const onSelectTitleTab = displayedTabs.selectTitleTab;
-  const onCloseDisplayedTab = displayedTabs.closeDisplayedTab;
-  const onCloseDisplayedTabs = displayedTabs.closeDisplayedTabs;
-  const onCloseAllDisplayedTabs = displayedTabs.closeAllDisplayedTabs;
-  const onReorderDisplayedTabs = displayedTabs.reorderDisplayedTabs;
   const {
     closeVisibleTab: onCloseVisibleTab,
     cycleVisibleTab: onCycleVisibleTab,
@@ -3154,26 +3150,7 @@ function Workspace({
       rightPanelOpen={rightPanelOpen}
       onToggleRightPanel={onToggleRightPanel}
       onSettingsHeaderHost={setSettingsHeaderHost}
-      onNew={newSessions.newSession}
-      onCloseFamiliarView={closeFamiliarView}
-      onGoBack={surfaces.railBack}
-      onGoForward={surfaces.railForward}
-      onToggleSidebar={navigation.toggleSidebar}
-      onToggleSessionSidebar={navigation.toggleSessionSidebar}
-      onSelect={onSelectTitleTab}
-      onNewTerminal={terminals.openNew}
-      onOpenSettings={surfaces.openSettingsHome}
-      onOpenInbox={surfaces.openInbox}
-      onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
-      onClose={onCloseDisplayedTab}
-      onCloseMany={onCloseDisplayedTabs}
-      onCloseAll={onCloseAllDisplayedTabs}
-      onArchiveTab={historyActions.archiveTitleTab}
-      onDeleteTab={historyActions.deleteTitleTab}
-      onReorder={onReorderDisplayedTabs}
-      onPlaceOnPane={tabActions.placeTab}
-      onPinFile={fileActions.pin}
-      onSelectProject={projectActions.select}
+      notesEnabled={notesEnabled}
     />
   );
 

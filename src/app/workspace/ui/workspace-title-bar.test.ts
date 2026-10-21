@@ -7,6 +7,7 @@ import type { Familiar } from "@/features/familiars/model/familiar";
 import { createWorkspaceStore } from "../store/create-workspace-store";
 import { testWorkspaceState } from "../store/test-state";
 import type { WorkspaceStore } from "../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../testing/workspace-handlers";
 import { WorkspaceTitleBar } from "./WorkspaceTitleBar";
 
 const { seen, diffStats } = vi.hoisted(() => ({
@@ -55,20 +56,14 @@ function props(overrides: Partial<Props> = {}): Props {
     rightPanelOpen: false,
     onToggleRightPanel: vi.fn(),
     onSettingsHeaderHost: vi.fn(),
-    onNew: vi.fn(),
-    onCloseFamiliarView: vi.fn(),
-    onToggleSidebar: vi.fn(),
-    onSelect: vi.fn(),
-    onClose: vi.fn(),
-    onCloseMany: vi.fn(),
-    onReorder: vi.fn(),
+    notesEnabled: false,
     ...overrides,
   };
 }
 
-function mount(overrides: Partial<Props> = {}): Props {
+function mount(overrides: Partial<Props> = {}, handlers = fakeWorkspaceHandlers()): Props {
   const all = props(overrides);
-  act(() => root.render(createElement(WorkspaceTitleBar, all)));
+  act(() => root.render(withWorkspaceHandlers(createElement(WorkspaceTitleBar, all), handlers)));
   return all;
 }
 
@@ -156,13 +151,14 @@ describe("WorkspaceTitleBar", () => {
 
   it("closes the Familiar in view before a new session from the inset title bar", () => {
     store.setState({ familiarViewId: "f1" });
-    const all = mount({ inset: true });
+    const handlers = fakeWorkspaceHandlers();
+    mount({ inset: true }, handlers);
 
     const onNewSession = seen.props?.onNewSession as () => void;
     onNewSession();
 
-    expect(all.onCloseFamiliarView).toHaveBeenCalled();
-    expect(all.onNew).toHaveBeenCalled();
+    expect(handlers.familiarView.close).toHaveBeenCalled();
+    expect(handlers.newSessions.newSession).toHaveBeenCalled();
   });
 
   it("hosts the Settings header in the inset title bar", () => {
@@ -171,5 +167,18 @@ describe("WorkspaceTitleBar", () => {
 
     expect(seen.props?.content).toBeTruthy();
     expect(seen.props?.onNewSession).toBeUndefined();
+  });
+
+  it("takes its callbacks from the workspace handlers, notes only when enabled", () => {
+    const handlers = fakeWorkspaceHandlers();
+    mount({}, handlers);
+
+    expect(seen.props?.onSelect).toBe(handlers.displayedTabs.selectTitleTab);
+    expect(seen.props?.onCloseMany).toBe(handlers.displayedTabs.closeDisplayedTabs);
+    expect(seen.props?.onPlaceOnPane).toBe(handlers.tabs.placeTab);
+    expect(seen.props?.onOpenNotes).toBeUndefined();
+
+    mount({ notesEnabled: true }, handlers);
+    expect(seen.props?.onOpenNotes).toBe(handlers.surfaces.openNotes);
   });
 });

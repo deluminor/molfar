@@ -9,36 +9,15 @@ import { isLocalProject, looksLikeProject } from "@/features/projects/model/rece
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import { type AppView, appViewTabId } from "@/features/workspace/model/app-view-tabs";
 import { TitleBar } from "../../shell/TitleBar";
+import { useWorkspaceHandlers } from "../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../store/types";
+import { titleBarHandlerProps } from "./title-bar-handler-props";
 
 type TitleBarProps = ComponentProps<typeof TitleBar>;
 
-type Props = Pick<
-  TitleBarProps,
-  | "tabs"
-  | "cwd"
-  | "rightPanelOpen"
-  | "onGoBack"
-  | "onGoForward"
-  | "onToggleSidebar"
-  | "onToggleSessionSidebar"
-  | "onSelect"
-  | "onNewTerminal"
-  | "onOpenSettings"
-  | "onOpenInbox"
-  | "onOpenNotes"
-  | "onClose"
-  | "onCloseMany"
-  | "onCloseAll"
-  | "onArchiveTab"
-  | "onDeleteTab"
-  | "onReorder"
-  | "onPlaceOnPane"
-  | "onPinFile"
-  | "onSelectProject"
-> & {
+type Props = Pick<TitleBarProps, "tabs" | "cwd" | "rightPanelOpen"> & {
   store: WorkspaceStore;
   inset: boolean;
   gitCwd: string;
@@ -51,8 +30,7 @@ type Props = Pick<
   showRightPanelToggle: boolean;
   onToggleRightPanel: () => void;
   onSettingsHeaderHost: (host: HTMLDivElement | null) => void;
-  onNew: () => void;
-  onCloseFamiliarView: () => void;
+  notesEnabled: boolean;
 };
 
 const NO_TITLE_TABS: TitleBarProps["tabs"] = [];
@@ -73,10 +51,10 @@ export function WorkspaceTitleBar({
   showRightPanelToggle,
   onToggleRightPanel,
   onSettingsHeaderHost,
-  onNew,
-  onCloseFamiliarView,
+  notesEnabled,
   ...passThrough
 }: Props) {
+  const handlers = useWorkspaceHandlers();
   const settingsOpen = useWorkspaceField(store, "settingsOpen");
   const familiarViewId = useWorkspaceField(store, "familiarViewId");
   const familiarOverviewOpen = useWorkspaceField(store, "familiarOverviewOpen");
@@ -96,8 +74,8 @@ export function WorkspaceTitleBar({
 
   // A new session takes over from a Familiar in view.
   const onNewFromTitleBar = () => {
-    if (store.getState().familiarViewId) onCloseFamiliarView();
-    onNew();
+    if (store.getState().familiarViewId) handlers.familiarView.close();
+    handlers.newSessions.newSession();
   };
 
   const onToggleFamiliarOverview = () => setFamiliarOverviewOpen((open) => !open);
@@ -110,6 +88,7 @@ export function WorkspaceTitleBar({
   return (
     <TitleBar
       {...passThrough}
+      {...titleBarHandlerProps(handlers, notesEnabled)}
       // A Familiar in full view stands apart from the project's tabs, except
       // in the inset layout, where it is one of them.
       tabs={covers && !inset ? NO_TITLE_TABS : tabs}
