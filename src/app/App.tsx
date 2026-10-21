@@ -107,6 +107,7 @@ import type { AutomationDeps } from "./workspace/flows/automations/automation-de
 import { createAutomationRuns } from "./workspace/flows/automations/automation-runs";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
+import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { createTabActions } from "./workspace/flows/tabs/tab-actions";
 import { createNewSessionActions } from "./workspace/flows/tabs/new-session/new-session-actions";
@@ -171,10 +172,6 @@ import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 import {
   orchestrator,
 } from "@/features/orchestration/model/orchestration";
-import {
-  attachOrchestrationWorkers,
-  consolidateOrchestrationTabs,
-} from "@/features/orchestration/model/orchestration-workspace";
 import {
   OrchestrationActions,
   OrchestrationWorkers,
@@ -2531,19 +2528,13 @@ function Workspace({
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   });
 
-  useEffect(() => {
-    setSessions((prev) => attachOrchestrationWorkers(prev, orchestrationRuns));
-  }, [orchestrationRuns]);
-
-  useEffect(() => {
-    const next = consolidateOrchestrationTabs(
-      tabs,
-      activeTabId,
-      orchestrationRuns,
-    );
-    if (next.tabs !== tabs) setTabs(next.tabs);
-    if (next.activeTabId !== activeTabId) setActiveTabId(next.activeTabId);
-  }, [tabs, activeTabId, orchestrationRuns]);
+  useOrchestrationSync(
+    orchestrationRuns,
+    sessions,
+    tabs,
+    activeTabId,
+    useStableFlow(() => ({ setSessions, setTabs, setActiveTabId: (tabId: string) => setActiveTabId(tabId) })),
+  );
 
   useOrchestratorBinding(
     useStableFlow(() => ({
@@ -2557,10 +2548,6 @@ function Workspace({
     })),
     submission.submit,
   );
-
-  useEffect(() => {
-    orchestrator.sync();
-  }, [sessions]);
 
 
   const agentAppDeps = useStableFlow(
