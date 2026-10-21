@@ -17,8 +17,6 @@ export type ProposalActionsDeps = {
   submit: Submit;
 };
 
-export type ProposalActions = ReturnType<typeof createProposalActions>;
-
 /** Edits, confirms and retries the orchestration proposal card in a lead's chat. */
 export function createProposalActions(deps: ProposalActionsDeps) {
   const find = (leadId: string) => deps.sessionsRef.current.find((entry) => entry.id === leadId);
@@ -81,5 +79,5 @@ export function createProposalActions(deps: ProposalActionsDeps) {
     deps.submit(leadId, proposal.request, [], { intent: "orchestrate", orchestrationRetry: proposal });
   };
 
-  return { update, confirm, retry, updateCard };
+  return { update, confirm, retry };
 }
