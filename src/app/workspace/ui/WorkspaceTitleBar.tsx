@@ -9,6 +9,7 @@ import { isLocalProject, looksLikeProject } from "@/features/projects/model/rece
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import { type AppView, appViewTabId } from "@/features/workspace/model/app-view-tabs";
 import { TitleBar } from "../../shell/TitleBar";
+import { useWorkspaceActions } from "../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../store/types";
 
@@ -19,8 +20,6 @@ type Props = Pick<
   | "tabs"
   | "cwd"
   | "rightPanelOpen"
-  | "onToggleFamiliarOverview"
-  | "onOpenFamiliarSettings"
   | "onGoBack"
   | "onGoForward"
   | "onToggleSidebar"
@@ -73,8 +72,6 @@ export function WorkspaceTitleBar({
   compactRail,
   showRightPanelToggle,
   onToggleRightPanel,
-  onToggleFamiliarOverview,
-  onOpenFamiliarSettings,
   onSettingsHeaderHost,
   onNew,
   onCloseFamiliarView,
@@ -88,6 +85,7 @@ export function WorkspaceTitleBar({
   const activeTabId = useWorkspaceField(store, "activeTabId");
   const tabVisitNav = useWorkspaceField(store, "tabVisitNav");
   const recents = useWorkspaceField(store, "recents");
+  const { setFamiliarOverviewOpen, setFamiliarSettingsFor } = useWorkspaceActions(store);
   const covers = !!familiarViewId;
   // The same shared stats the sidebar's Changes tab reads, so the toggle
   // that opens it can carry its dot.
@@ -101,6 +99,9 @@ export function WorkspaceTitleBar({
     if (store.getState().familiarViewId) onCloseFamiliarView();
     onNew();
   };
+
+  const onToggleFamiliarOverview = () => setFamiliarOverviewOpen((open) => !open);
+  const onOpenFamiliarSettings = familiar ? () => setFamiliarSettingsFor(familiar.id) : undefined;
 
   let activeId = activeTabId;
   if (familiarSession) activeId = inset ? (familiarTabId ?? "") : "";

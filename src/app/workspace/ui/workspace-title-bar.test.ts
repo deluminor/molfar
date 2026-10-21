@@ -54,8 +54,6 @@ function props(overrides: Partial<Props> = {}): Props {
     showRightPanelToggle: false,
     rightPanelOpen: false,
     onToggleRightPanel: vi.fn(),
-    onToggleFamiliarOverview: vi.fn(),
-    onOpenFamiliarSettings: vi.fn(),
     onSettingsHeaderHost: vi.fn(),
     onNew: vi.fn(),
     onCloseFamiliarView: vi.fn(),
@@ -108,15 +106,26 @@ describe("WorkspaceTitleBar", () => {
 
   it("hides the project's tabs behind a Familiar in full view", () => {
     store.setState({ familiarViewId: "f1", familiarOverviewOpen: true });
-    const all = mount({ familiar, familiarSession, overviewShown: true });
+    mount({ familiar, familiarSession, overviewShown: true });
 
     expect(seen.props?.tabs).toEqual([]);
     expect(seen.props?.activeId).toBe("");
     expect(seen.props?.canGoBack).toBe(true);
     expect(seen.props?.hideWindowControls).toBe(true);
     expect(seen.props?.familiar).toEqual({ look: { name: "f1" }, state: "idle" });
-    expect(seen.props?.onToggleFamiliarOverview).toBe(all.onToggleFamiliarOverview);
-    expect(seen.props?.onOpenFamiliarSettings).toBe(all.onOpenFamiliarSettings);
+  });
+
+  it("toggles the Familiar's overview and opens its settings through the store", () => {
+    store.setState({ familiarViewId: "f1", familiarOverviewOpen: false });
+    mount({ familiar, familiarSession });
+
+    const toggleOverview = seen.props?.onToggleFamiliarOverview as () => void;
+    const openSettings = seen.props?.onOpenFamiliarSettings as () => void;
+
+    act(() => toggleOverview());
+    expect(store.getState().familiarOverviewOpen).toBe(true);
+    act(() => openSettings());
+    expect(store.getState().familiarSettingsFor).toBe("f1");
   });
 
   it("keeps the Familiar as one of the inset layout's tabs", () => {
