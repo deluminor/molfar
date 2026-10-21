@@ -53,15 +53,11 @@ import {
 } from "@/features/files/model/file-index";
 import { FilePicker } from "@/features/files/ui/FilePicker";
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
-import { HarnessUpdateNotice } from "@/features/providers/ui/HarnessUpdateNotice";
-import { ApprovalToasts } from "@/features/sessions/ui/ApprovalToasts";
 import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
 import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
 import {
   DeleteSessionDialog,
 } from "@/features/sessions/ui/DeleteSessionDialog";
-import { ProviderSignInDialog } from "@/features/sessions/ui/ProviderSignInDialog";
-import { ResourcePressureNotice } from "@/features/notifications/ui/ResourcePressureNotice";
 import {
   applyInsetLayout,
   INSET_LAYOUT_DEFAULT,
@@ -99,7 +95,6 @@ import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { MenuBar } from "./shell/MenuBar";
-import { NewLayoutNotice } from "./shell/NewLayoutNotice";
 import { noteProjectStep, Sidebar } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
@@ -321,10 +316,7 @@ import {
   closeTitleTab,
 } from "./workspace/flows/tabs/close/pane-close";
 import { FamiliarViewActions, TitleBar } from "./shell/TitleBar";
-import { AppDialog } from "./shell/AppDialog";
-import { UpdatePromptDialog } from "./shell/UpdatePromptDialog";
 import { UsageFooter } from "./shell/UsageFooter";
-import { WhatsNewDialog } from "./shell/WhatsNewDialog";
 
 import {
   orchestrator,
@@ -542,7 +534,6 @@ import {
 } from "@/features/familiars/model/familiar-workspace";
 import type { SessionFolderTarget } from "@/features/sessions/model/session-folders";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
-import { ReminderNotices } from "@/features/sessions/ui/ReminderNotices";
 import {
   TranscriptPool,
   TranscriptPoolOutlet,
@@ -569,7 +560,6 @@ import {
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
 import { remoteSessionState } from "@/features/connections/model/remote-session-state";
-import { AddRemoteProjectDialog } from "@/features/connections/ui/AddRemoteProjectDialog";
 import { findRemoteSessionTab } from "@/features/connections/model/remote-session-tabs";
 import type { InboxItem } from "@/features/inbox/model/github-tasks";
 import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
@@ -586,6 +576,8 @@ import {
   SettingsView,
 } from "./workspace/ui/app-views/lazy-views";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
+import { WorkspaceDialogs } from "./workspace/ui/notices/WorkspaceDialogs";
+import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
 import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-state";
 import { preloadNavigationWhenIdle } from "./model/preload-navigation";
@@ -1844,9 +1836,6 @@ function Workspace({
       familiarCovers,
     ],
   );
-  const [reminderNoticesHeight, setReminderNoticesHeight] = useState(0);
-  const [harnessUpdateHeight, setHarnessUpdateHeight] = useState(0);
-  const [newLayoutNoticeHeight, setNewLayoutNoticeHeight] = useState(0);
   // The footer's slot for the resource pressure chip. Monitoring continues
   // while the footer is hidden.
   const [pressureChipHost, setPressureChipHost] =
@@ -4325,7 +4314,6 @@ function Workspace({
     return () =>
       window.removeEventListener(OPEN_CONNECTIONS_EVENT, openConnections);
   }, [openSettings]);
-  const remoteProjectDialogOpen = useWorkspaceField(workspaceStore, "remoteProjectDialogOpen");
   useEffect(() => {
     const open = () => setRemoteProjectDialogOpen(true);
     window.addEventListener(OPEN_REMOTE_PROJECT_EVENT, open);
@@ -5626,73 +5614,22 @@ function Workspace({
               }}
             />
           )}
-          <HarnessUpdateNotice
-            topOffset={
-              12 + (reminderNoticesHeight ? reminderNoticesHeight + 8 : 0)
-            }
-            onHeightChange={setHarnessUpdateHeight}
-          />
-          <NewLayoutNotice
-            topOffset={
-              12 +
-              (reminderNoticesHeight ? reminderNoticesHeight + 8 : 0) +
-              (harnessUpdateHeight ? harnessUpdateHeight + 8 : 0)
-            }
-            onHeightChange={setNewLayoutNoticeHeight}
-          />
-          <ResourcePressureNotice
-            sessions={sessionsRef}
-            onStopAgent={(id) => onStop(id, true)}
-            onStopSession={onStop}
-            onPressureChange={transcriptPool.setResourcePressure}
-            chipHost={pressureChipHost}
-            insetChip={insetLayout}
-          />
-          <ApprovalToasts
-            notices={hiddenApprovalToasts}
-            topOffset={
-              12 +
-              (reminderNoticesHeight ? reminderNoticesHeight + 8 : 0) +
-              (harnessUpdateHeight ? harnessUpdateHeight + 8 : 0) +
-              (newLayoutNoticeHeight ? newLayoutNoticeHeight + 8 : 0)
-            }
-            onFocusSession={onOpenApprovalSession}
+          <WorkspaceNotices
+            pressure={{
+              sessions: sessionsRef,
+              onStopAgent: (id) => onStop(id, true),
+              onStopSession: onStop,
+              onPressureChange: transcriptPool.setResourcePressure,
+              chipHost: pressureChipHost,
+              insetChip: insetLayout,
+            }}
+            approvalNotices={hiddenApprovalToasts}
+            onFocusApprovalSession={onOpenApprovalSession}
             onApproval={onApproval}
+            reminders={sessionReminders}
+            onOpenReminderSettings={() => openSettings("general", "notifications")}
           />
-          <ReminderNotices
-            reminders={sessionReminders.due}
-            error={sessionReminders.error}
-            onOpen={sessionReminders.open}
-            onSnooze={sessionReminders.schedule}
-            onDismiss={sessionReminders.cancel}
-            onRetry={sessionReminders.refresh}
-            onOpenSettings={() => openSettings("general", "notifications")}
-            onHeightChange={setReminderNoticesHeight}
-          />
-          {whatsNewVersion ? (
-            <WhatsNewDialog
-              version={whatsNewVersion}
-              onClose={() => setWhatsNewVersion(null)}
-            />
-          ) : null}
-          <UpdatePromptDialog />
-          <AppDialog />
-          {remoteProjectDialogOpen ? (
-            <AddRemoteProjectDialog
-              onCancel={() => setRemoteProjectDialogOpen(false)}
-              onOpen={(key) => {
-                setRemoteProjectDialogOpen(false);
-                onSelectProject(key);
-              }}
-            />
-          ) : null}
-          {providerSignInRequest ? (
-            <ProviderSignInDialog
-              key={providerSignInRequest.key}
-              harness={providerSignInRequest.harness}
-              onClose={() => setProviderSignInRequest(null)}
-            />
-          ) : null}
+          <WorkspaceDialogs store={workspaceStore} onOpenProject={onSelectProject} />
         </div>
         <TranscriptPoolOutlet pool={transcriptPool} />
       </OrchestrationWorkers.Provider>
