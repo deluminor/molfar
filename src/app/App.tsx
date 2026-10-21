@@ -94,7 +94,7 @@ import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { MenuBar } from "./shell/MenuBar";
-import { noteProjectStep, Sidebar } from "./shell/Sidebar";
+import { noteProjectStep } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
@@ -315,6 +315,7 @@ import {
   closeTitleTab,
 } from "./workspace/flows/tabs/close/pane-close";
 import { FamiliarViewActions } from "./shell/TitleBar";
+import { WorkspaceSidebar } from "./workspace/ui/WorkspaceSidebar";
 import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 import { UsageFooter } from "./shell/UsageFooter";
 
@@ -695,7 +696,6 @@ function Workspace({
     setProjectTerminalFocused,
     setHistory,
     setStoredLinkedSessions,
-    setFilesSearchOpen,
     setFilePickerOpen,
     setSearchViewOpen,
     setInboxViewOpen,
@@ -705,7 +705,6 @@ function Workspace({
     setWorkerDetailRequest,
     setSettingsOpen,
     setCollapsedProjectRailMode,
-    setUpdateNotice,
     setWhatsNewVersion,
     setProviderSignInRequest,
     setSessionDeleteDialog,
@@ -821,12 +820,9 @@ function Workspace({
     [],
   );
   const projectRailOpen = useWorkspaceField(workspaceStore, "projectRailOpen");
-  const sessionSidebarOpen = useWorkspaceField(workspaceStore, "sessionSidebarOpen");
   const tabCloseScope = "project" as const;
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
-  const filesSearchOpen = useWorkspaceField(workspaceStore, "filesSearchOpen");
-  const searchFocusToken = useWorkspaceField(workspaceStore, "searchFocusToken");
   const searchViewOpen = useWorkspaceField(workspaceStore, "searchViewOpen");
   const inboxViewOpen = useWorkspaceField(workspaceStore, "inboxViewOpen");
   const linkedWorkItemPanels = useWorkspaceField(workspaceStore, "linkedWorkItemPanels");
@@ -925,7 +921,6 @@ function Workspace({
     automations: false,
     localSurface: null,
   });
-  const updateNotice = useWorkspaceField(workspaceStore, "updateNotice");
   const whatsNewVersion = useWorkspaceField(workspaceStore, "whatsNewVersion");
   const providerSignInRequest = useWorkspaceField(workspaceStore, "providerSignInRequest");
   const familiarsEnabled = useSyncExternalStore(
@@ -1198,7 +1193,6 @@ function Workspace({
   const tabVisits = useStableFlow(() =>
     createTabVisits(workspaceStore, activeTabId),
   );
-  const tabVisitNav = useWorkspaceField(workspaceStore, "tabVisitNav");
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
   const inFlightSyncKey = useRef<string | null>(null);
@@ -4769,7 +4763,6 @@ function Workspace({
     onCreate: onCreateFamiliar,
     onDelete: onDeleteFamiliar,
   });
-  const onDismissUpdate = useCallback(() => setUpdateNotice(null), []);
 
   const chromeSurfaceOpen =
     searchViewOpen ||
@@ -4856,7 +4849,9 @@ function Workspace({
   );
 
   const sessionSidebar = (
-    <Sidebar
+    <WorkspaceSidebar
+      store={workspaceStore}
+      automationsViewOpen={automationsViewOpen}
       cwd={sidebarCwd}
       gitCwd={gitCwd}
       worktreeTabStats={worktreeTabStats}
@@ -4870,25 +4865,15 @@ function Workspace({
           : undefined
       }
       explorerRootLabel={explorerRootLabel}
-      // The inset sidebar carries the links to the local surfaces, so it stays
-      // beside them like it does beside the other views.
-      open={sessionSidebarOpen && (insetLayout || localSurface === null)}
-      tab={insetLayout ? "sessions" : sidebarTab}
+      tab={sidebarTab}
       onTabChange={setSidebarTab}
-      rightPanel={
-        insetLayout && !settingsOpen && !familiarCovers
-          ? {
-              host: rightPanelHost,
-              open: rightPanelOpen || rightPanelClosing,
-              tab: rightPanelTab,
-              onTabChange: showRightPanel,
-            }
-          : undefined
-      }
-      filesSearchOpen={filesSearchOpen}
-      onFilesSearchOpenChange={setFilesSearchOpen}
+      rightPanel={{
+        host: rightPanelHost,
+        open: rightPanelOpen || rightPanelClosing,
+        tab: rightPanelTab,
+        onTabChange: showRightPanel,
+      }}
       onOpenFilesSearch={onFindInProject}
-      searchFocusToken={searchFocusToken}
       sessions={sidebarHistory}
       busySessionIds={busySessionIds}
       approvalSessionIds={approvalSessionIds}
@@ -4916,16 +4901,6 @@ function Workspace({
       onOpenTerminal={onOpenTerminal}
       onFileMoved={onFileMoved}
       onFileDeleted={onFileDeleted}
-      canGoBack={
-        !!familiarViewId ||
-        tabVisitNav.canBack ||
-        searchViewOpen ||
-        settingsOpen ||
-        inboxViewOpen ||
-        notesViewOpen ||
-        automationsViewOpen
-      }
-      canGoForward={tabVisitNav.canForward}
       onGoBack={onRailBack}
       onGoForward={onRailForward}
       onOpenDiff={onOpenWorkingTreeDiff}
@@ -4937,7 +4912,6 @@ function Workspace({
       selectedDiffKind={activeTab ? selectedChangeKind(activeTab) : undefined}
       selectedCommitSha={activeTab ? selectedCommitSha(activeTab) : undefined}
       textHarness={pickTextHarness(active?.harness)}
-      recents={recents}
       busyProjectPaths={busyProjectPaths}
       liveAgents={liveAgents}
       onSelectAgent={onSelectLiveAgent}
@@ -4946,7 +4920,6 @@ function Workspace({
       onOpenProject={pickProject}
       onRemoveProject={onRemoveProject}
       familiars={sidebarFamiliars}
-      familiarViewActive={familiarCovers}
       onNew={onNew}
       openSessions={openProjectSessions}
       onNewTerminal={onNewTerminal}
@@ -4958,9 +4931,6 @@ function Workspace({
       knowledgeActive={localSurface === "knowledge"}
       onOpenAutomations={onOpenAutomations}
       onGoToFile={onGoToFile}
-      searchActive={searchViewOpen}
-      inboxActive={inboxViewOpen}
-      notesActive={notesViewOpen}
       automationsActive={automationsSurfaceOpen}
       railExtraActions={localSurfaceRailActions}
       localSurfaces={{
@@ -4970,25 +4940,17 @@ function Workspace({
         badges: railBadges,
       }}
       notesEnabled={notesEnabled}
-      // The inset layout has no project rail: the sidebar header's menu
-      // switches projects.
-      projectRailOpen={!insetLayout && projectRailOpen}
-      compactProjectRail={!insetLayout && compactProjectRail}
       titleBarAbove={insetLayout || compactTitleBar}
       inset={insetLayout}
       onToggleProjectRail={onToggleProjectRail}
       unseenFinishedIds={unseenFinishedIds}
       inboxUnseen={inboxUnseen}
       linkedSessionUpdateIds={linkedSessionUpdateIds}
-      settingsOpen={settingsOpen}
-      settingsSection={settingsSection}
       onOpenSettings={onOpenSettings}
       onOpenNotificationSettings={onOpenNotificationSettings}
       onSelectSettingsSection={onSelectSettingsSection}
       onCloseSettings={onCloseSettings}
-      updateNotice={updateNotice}
       onOpenWhatsNew={onOpenWhatsNew}
-      onDismissUpdate={onDismissUpdate}
     />
   );
 
