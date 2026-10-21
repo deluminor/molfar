@@ -392,7 +392,6 @@ import {
   stopHarnessSession,
   configureHarnessIdlePark,
   stopHarnessTextPrompts,
-  stopStreaming,
   type ApprovalDecision,
   type UserQuestionReply,
 } from "@/integrations/harness";
@@ -542,10 +541,14 @@ import {
   familiarLook,
   familiarsSnapshot,
   familiarState,
-  removeFamiliar,
   saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
+import {
+  deleteFamiliar,
+  resetFamiliar,
+  type FamiliarRemovalDeps,
+} from "./workspace/flows/familiars/familiar-removal";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import {
@@ -555,7 +558,6 @@ import {
 import {
   detachFamiliarTabs,
   ensureFamiliarSession,
-  resetFamiliarSession,
 } from "@/features/familiars/model/familiar-workspace";
 import type { SessionFolderTarget } from "@/features/sessions/model/session-folders";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
@@ -2943,70 +2945,6 @@ function Workspace({
     void onOpenFamiliar(familiarId);
   }, [onOpenFamiliar]);
 
-  const onResetFamiliar = useCallback(
-    async (sessionId: string): Promise<void> => {
-      const current = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (!current || !isFamiliarSession(sessionId))
-        throw new Error("This Familiar's conversation is no longer available.");
-      if (removingSessionIds.current.has(sessionId))
-        throw new Error("This conversation is already being reset.");
-
-      removingSessionIds.current.add(sessionId);
-      sessionPersistence.dropPending(sessionId);
-      invalidateLoadedSession(sessionId);
-      try {
-        await resetFamiliarSession(current, {
-          stop: async (id) => {
-            const latest = (await stopSessionForRemoval(id)) ?? current;
-            const stopped = {
-              ...stopStreaming(latest),
-              queueStatus: "paused" as const,
-            };
-            sessionsRef.current = sessionsRef.current.map((session) =>
-              session.id === id ? stopped : session,
-            );
-            setSessions(sessionsRef.current);
-            return stopped;
-          },
-          remove: async (stopped) => {
-            await Promise.all(
-              sessionChildHarnesses(stopped).map((harness) =>
-                forgetHarnessSession(harness, sessionId),
-              ),
-            );
-            await flushSessionCheckpoint(sessionId);
-            const imagePaths = stopped.blocks.flatMap((block) =>
-              block.role === "image" && block.image ? [block.image.path] : [],
-            );
-            await orchestrator.deleteSession(sessionId, () =>
-              deleteSession(sessionId, imagePaths),
-            );
-          },
-          replace: (fresh) => {
-            sessionPersistence.forget(sessionId);
-            invalidateLoadedSession(sessionId);
-            sessionsRef.current = sessionsRef.current.map((session) =>
-              session.id === sessionId ? fresh : session,
-            );
-            setSessions(sessionsRef.current);
-            setHistory((history) =>
-              history.filter((entry) => entry.id !== sessionId),
-            );
-            setStoredLinkedSessions((history) =>
-              history.filter((entry) => entry.id !== sessionId),
-            );
-            familiarView.replaceSession(sessionId, fresh.id);
-          },
-        });
-      } finally {
-        removingSessionIds.current.delete(sessionId);
-      }
-    },
-    [invalidateLoadedSession, stopSessionForRemoval],
-  );
-
   const onSelectHistorySession = useCallback(
     (sessionId: string) => selectHistorySession(paneDeps, sessionId),
     [],
@@ -3407,37 +3345,33 @@ function Workspace({
     [onRemoveHistorySession],
   );
 
-  /** Deletes the Familiar's conversation, then the Familiar. Its files stay on disk. */
+  const familiarRemovalDeps = useStableFlow(
+    (): FamiliarRemovalDeps => ({
+      store: workspaceStore,
+      sessionsRef,
+      removingSessionIds,
+      persistence: sessionPersistence,
+      view: familiarView,
+      commitSessions: (next) => {
+        sessionsRef.current = next;
+        setSessions(next);
+      },
+      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
+      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
+      flushCheckpoint: flushSessionCheckpoint,
+      deleteStoredSession: (sessionId, imagePaths) =>
+        orchestrator.deleteSession(sessionId, () => deleteSession(sessionId, imagePaths)),
+      removeSession: (sessionId, mode, skipDeleteConfirm) =>
+        onRemoveHistorySession(sessionId, mode, skipDeleteConfirm),
+    }),
+  );
+  const onResetFamiliar = useCallback(
+    (sessionId: string) => resetFamiliar(familiarRemovalDeps, sessionId),
+    [],
+  );
   const onDeleteFamiliar = useCallback(
-    async (familiarId: string) => {
-      const familiar = findFamiliar(familiarId);
-      if (!familiar) return;
-      const { name } = familiarLook(familiar);
-      const confirmed = await confirmApp(
-        `Delete ${name}? Its conversation will be deleted and its habits stop. This can’t be undone.`,
-        { title: "MOLFAR", kind: "warning", okLabel: "Delete" },
-      );
-      if (!confirmed) return;
-      if (familiar.sessionId) {
-        if (workspaceStore.getState().familiarViewId === familiar.sessionId) closeFamiliarView();
-        if (
-          sessionsRef.current.some(
-            (session) => session.id === familiar.sessionId,
-          ) ||
-          history.some((entry) => entry.id === familiar.sessionId)
-        ) {
-          const removed = await onRemoveHistorySession(
-            familiar.sessionId,
-            "delete",
-            true,
-          );
-          if (!removed) return;
-        }
-      }
-      removeFamiliar(familiarId);
-      familiarView.forget(familiarId);
-    },
-    [closeFamiliarView, history, onRemoveHistorySession],
+    (familiarId: string) => deleteFamiliar(familiarRemovalDeps, familiarId),
+    [],
   );
 
   const onDeleteHistorySessions = useCallback(
