@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Block, Session } from "@/domain/session/session";
 import { testSession } from "@/integrations/harness/core/test-session";
-import { type ProviderAccountDeps, selectProviderAccount } from "./provider-account";
+import { createProviderAccountActions, type ProviderAccountDeps, selectProviderAccount } from "./provider-account";
 
 const turn: Block[] = [{ id: "ask", role: "user", text: "Fix the build" }];
 
@@ -70,5 +70,20 @@ describe("selectProviderAccount", () => {
 
     expect(deps.updateSessions).not.toHaveBeenCalled();
     expect(deps.appendTab).not.toHaveBeenCalled();
+  });
+});
+
+describe("createProviderAccountActions", () => {
+  it("selects for the session focused at call time", () => {
+    const { deps } = setup({ usageLimit: {}, blocks: turn });
+    let active: string | undefined;
+    const accounts = createProviderAccountActions({ ...deps, activeSessionId: () => active });
+
+    accounts.select("claude", "work");
+    expect(deps.continueLimited).not.toHaveBeenCalled();
+
+    active = "s";
+    accounts.select("claude", "work");
+    expect(deps.continueLimited).toHaveBeenCalledWith("s", "work");
   });
 });

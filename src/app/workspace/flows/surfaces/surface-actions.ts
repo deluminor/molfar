@@ -1,6 +1,8 @@
 import type { ConnectableInboxSource } from "@/features/inbox/model/inbox-filters";
 import type { SettingsSectionId } from "@/features/settings/model/settings";
 import type { SettingsAnchor } from "@/features/settings/ui/SettingsView";
+import { releaseNotesForVersion } from "@/features/updates/model/release-notes";
+import { alertApp } from "@/shared/lib/app-dialog";
 import {
   findInProject,
   openAppView,
@@ -28,6 +30,7 @@ export function createSurfaceActions(deps: SurfaceDeps) {
     setNotesViewOpen,
     setSettingsOpen,
     setRemoteProjectDialogOpen,
+    setWhatsNewVersion,
   } = deps.store.getState();
 
   return {
@@ -59,6 +62,14 @@ export function createSurfaceActions(deps: SurfaceDeps) {
     openRemoteProjectDialog: () => setRemoteProjectDialogOpen(true),
     railBack: () => railBack(deps, leaveSettings),
     railForward: () => railForward(deps),
+    openWhatsNew: (version: string) => {
+      const document = releaseNotesForVersion(version);
+      if (!document) {
+        void alertApp("Release notes for this version are not available in this build.");
+        return;
+      }
+      setWhatsNewVersion(document.source.version);
+    },
   };
 }
 

@@ -1,13 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
+import { newTab, splitPane, type WorkspaceTab } from "@/features/workspace/model/layout";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import { openDiff } from "../files/open-diff";
 import type { PaneDeps } from "./pane-deps";
+import { focusPane } from "./pane-focus";
 import { createTabActions } from "./tab-actions";
 import type { TabActionsDeps } from "./tab-actions-deps";
 
 vi.mock("../files/open-diff", () => ({ openDiff: vi.fn(async () => undefined) }));
+vi.mock("./pane-focus", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./pane-focus")>()),
+  focusPane: vi.fn(),
+}));
 
 const tab = (id: string, sessionId: string): WorkspaceTab => ({ ...newTab(sessionId), id });
 
@@ -22,14 +27,16 @@ function setup(tabs: WorkspaceTab[] = [tab("t1", "a"), tab("t2", "b"), tab("t3",
     activateTab: vi.fn(),
   } as unknown as PaneDeps;
   const deck = { current: tabs };
+  const active = { current: tabs[0] as WorkspaceTab | undefined };
   const deps = {
     pane,
     diff: { gitCwd: () => "/work/demo", sidebarCwd: () => "/work/demo", setSidebarTab: vi.fn() },
     layout: {},
     visits: { step: vi.fn(() => "t3") },
     deckTabs: () => deck.current,
+    activeTab: () => active.current,
   } as unknown as TabActionsDeps;
-  return { deps, store, deck, activeTabIdRef, actions: createTabActions(deps) };
+  return { deps, store, deck, active, activeTabIdRef, actions: createTabActions(deps) };
 }
 
 describe("createTabActions", () => {
@@ -117,5 +124,20 @@ describe("createTabActions", () => {
     actions.showSourceControl();
 
     expect(deps.diff.setSidebarTab).toHaveBeenCalledWith("changes");
+  });
+
+  it("focuses the neighbouring pane of the active tab read at call time", () => {
+    const { deps, active, actions } = setup();
+    const split = { ...newTab("a"), id: "t9" };
+    active.current = { ...split, layout: splitPane(split.layout, "a", "right", "b") };
+
+    actions.focusDir("right");
+    expect(focusPane).toHaveBeenLastCalledWith(deps.pane, "b");
+
+    vi.mocked(focusPane).mockClear();
+    actions.focusDir("up");
+    active.current = undefined;
+    actions.focusDir("left");
+    expect(focusPane).not.toHaveBeenCalled();
   });
 });

@@ -43,4 +43,14 @@ describe("createTerminalActions", () => {
     expect(dock()?.open).toBe(false);
     expect(terminals.focusedDockTerminal()).toBeNull();
   });
+
+  it("paints the project's dock unless a Familiar covers the workspace", () => {
+    const { deps, store, dock } = setupTerminals();
+    const terminals = createTerminalActions(deps);
+    terminals.openNew();
+
+    expect(terminals.dockPaintTarget()).toBe(dock());
+    store.getState().setFamiliarViewId("familiar-chat");
+    expect(terminals.dockPaintTarget()).toBeUndefined();
+  });
 });

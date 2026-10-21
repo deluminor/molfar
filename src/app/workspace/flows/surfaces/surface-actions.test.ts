@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
+import { alertApp } from "@/shared/lib/app-dialog";
 import { createSurfaceActions } from "./surface-actions";
 import { setupSurfaces } from "./surface.fixture";
 
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
   startTransition: (run: () => void) => run(),
+}));
+vi.mock("@/shared/lib/app-dialog", () => ({ alertApp: vi.fn(async () => undefined) }));
+vi.mock("@/features/updates/model/release-notes", () => ({
+  releaseNotesForVersion: (version: string) =>
+    version === "1.2.3" ? { source: { version: "1.2.3" }, markdown: "" } : null,
 }));
 
 describe("createSurfaceActions", () => {
@@ -59,5 +65,17 @@ describe("createSurfaceActions", () => {
       filePickerOpen: true,
       filePickerInitialQuery: ">",
     });
+  });
+
+  it("opens What's New for a bundled version and explains a missing one", () => {
+    const { deps, store } = setupSurfaces();
+    const surfaces = createSurfaceActions(deps);
+
+    surfaces.openWhatsNew("9.9.9");
+    expect(alertApp).toHaveBeenCalledOnce();
+    expect(store.getState().whatsNewVersion).toBeNull();
+
+    surfaces.openWhatsNew("1.2.3");
+    expect(store.getState().whatsNewVersion).toBe("1.2.3");
   });
 });

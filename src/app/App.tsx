@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { alertApp, getAppDialog } from "@/shared/lib/app-dialog";
+import { getAppDialog } from "@/shared/lib/app-dialog";
 import {
   Suspense,
   useCallback,
@@ -112,10 +112,8 @@ import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { createTabActions } from "./workspace/flows/tabs/tab-actions";
 import { createNewSessionActions } from "./workspace/flows/tabs/new-session/new-session-actions";
 import { createSessionOpenerActions } from "./workspace/flows/tabs/session-opener-actions";
-import {
-  type ProviderAccountDeps,
-  selectProviderAccount,
-} from "./workspace/flows/composer/provider-account";
+import { createProviderAccountActions } from "./workspace/flows/composer/provider-account";
+import { createRemoteSnapshotSync } from "./workspace/flows/remote-sessions/remote-snapshot";
 import { createNavigationActions } from "./workspace/flows/surfaces/navigation-actions";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
@@ -211,16 +209,11 @@ import {
   isFilesystemTab,
   isolateTerminalPanes,
   leafIds,
-  neighborLeafId,
-  type FocusDir,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
 
 
 
-import {
-  releaseNotesForVersion,
-} from "@/features/updates/model/release-notes";
 
 import type { WindowTransferPayload } from "./model/window-transfer";
 
@@ -244,7 +237,6 @@ import {
   sameProjectPath,
 } from "@/features/projects/model/recents";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
-import type { ProviderAccountProvider } from "@/domain/harness/provider-account";
 import { newDefaultSession } from "@/features/sessions/model/session";
 import { sessionDisplayTitle } from "@/domain/session/title";
 import {
@@ -330,13 +322,11 @@ import {
   REMOTE_HISTORY_UPDATED,
   remoteTabCwd,
 } from "@/features/connections/model/connections";
-import type { HostSession } from "@/domain/remote/protocol";
 import {
   remotePath,
   remoteProjectFor,
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
-import { remoteSessionState } from "@/features/connections/model/remote-session-state";
 import { SessionPane } from "@/features/sessions/ui/SessionPane";
 import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
 import {
@@ -474,7 +464,6 @@ function Workspace({
     setNotesViewOpen,
     setInspectedWorkerId,
     setSettingsOpen,
-    setWhatsNewVersion,
     setFamiliarViewId,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
@@ -1780,37 +1769,17 @@ function Workspace({
     createTabLayoutActions({ focus: tabFocusDeps, layout: tabLayoutDeps }),
   );
 
-  const usageLimitAccountChangeRef = useRef<
-    ((sessionId: string, accountId: string) => Promise<void>) | null
-  >(null);
-  const providerAccountDeps = useStableFlow(
-    (): ProviderAccountDeps => ({
+  const providerAccounts = useStableFlow(() =>
+    createProviderAccountActions({
+      activeSessionId: () => newChatDefaultsRef.current.active?.id,
       sessions: () => sessionsRef.current,
-      updateSessions: (update) =>
-        updateSessionState(sessionsRef, setSessions, update),
-      continueLimited: (sessionId, accountId) =>
-        void usageLimitAccountChangeRef.current?.(sessionId, accountId),
+      updateSessions: (update) => updateSessionState(sessionsRef, setSessions, update),
+      continueLimited: (sessionId, accountId) => void usageLimits.changeAccount(sessionId, accountId),
       appendTab: tabLayout.append,
       setActiveTabId: (tabId) => setActiveTabIdRef.current(tabId),
       setComposerFocused,
     }),
   );
-  const onSelectProviderAccount = useCallback(
-    (provider: ProviderAccountProvider, accountId: string) =>
-      selectProviderAccount(providerAccountDeps, active?.id, provider, accountId),
-    [active?.id],
-  );
-
-  const onOpenWhatsNew = useCallback((version: string) => {
-    const document = releaseNotesForVersion(version);
-    if (!document) {
-      void alertApp(
-        "Release notes for this version are not available in this build.",
-      );
-      return;
-    }
-    setWhatsNewVersion(document.source.version);
-  }, []);
 
   const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
@@ -1990,6 +1959,7 @@ function Workspace({
       place: placeSessionDeps,
       visits: tabVisits,
       deckTabs: () => deckProjectTabsRef.current,
+      activeTab: () => activeTabRef.current,
     }),
   );
 
@@ -2252,14 +2222,6 @@ function Workspace({
     }),
   );
 
-  const onFocusDir = useCallback(
-    (dir: FocusDir) => {
-      if (!activeTab) return;
-      const next = neighborLeafId(activeTab.layout, activeTab.focusedId, dir);
-      if (next) tabActions.focusPane(next);
-    },
-    [activeTab],
-  );
 
 
   const projectDeps = useStableFlow(
@@ -2448,7 +2410,6 @@ function Workspace({
   useQueueDispatch(sessions, turnQueue, submission.submit);
 
   const usageLimits = useStableFlow(() => createUsageLimits(turnQueue));
-  usageLimitAccountChangeRef.current = usageLimits.changeAccount;
   useUsageLimitTimers(sessions, turnQueue, usageLimits.resume);
 
   const secondOpinions = useStableFlow(() =>
@@ -2871,7 +2832,7 @@ function Workspace({
     onVisitForward: tabActions.visitForward,
     onActivate: onActivateVisibleTab,
     onSplit: newSessions.split,
-    onFocusDir,
+    onFocusDir: tabActions.focusDir,
     onToggleSidebar: navigation.toggleSidebar,
     onToggleSessionSidebar: navigation.toggleSessionSidebarShortcut,
     onToggleFamiliar: familiarActions.toggle,
@@ -2919,58 +2880,17 @@ function Workspace({
   useWorkspaceKeys(commandDeps);
   useMenuCommands(commandDeps);
 
-  const dockPaintTarget = useCallback(
-    () =>
-      workspaceStore.getState().familiarViewId
-        ? undefined
-        : findProjectTerminal(projectTerminalsRef.current, projectCwdRef.current),
-    [],
-  );
   const dockSlide = useDockSlide({
     dock: currentProjectDock,
     projectCwd,
     familiarCovers,
     insetLayout,
-    paintTarget: dockPaintTarget,
+    paintTarget: terminals.dockPaintTarget,
     commitSize: terminals.setDockSize,
   });
   const dockClosingShown = dockSlide.closingShown;
 
-  const lastRemoteSnapshot = useRef(new Map<string, HostSession>());
-  const onRemoteSnapshot = useCallback(
-    (shellId: string, snapshot?: HostSession) => {
-      if (!snapshot) {
-        lastRemoteSnapshot.current.delete(shellId);
-        setSessions((current) =>
-          current.map((entry) =>
-            entry.id === shellId
-              ? {
-                  ...entry,
-                  title: "New remote session",
-                  blocks: [],
-                  busy: false,
-                }
-              : entry,
-          ),
-        );
-        return;
-      }
-      if (lastRemoteSnapshot.current.get(shellId) === snapshot) return;
-      lastRemoteSnapshot.current.set(shellId, snapshot);
-      setSessions((current) => {
-        const shell = current.find((entry) => entry.id === shellId);
-        if (!shell) return current;
-        const project = remoteProjectFor(shell.cwd);
-        if (!project) return current;
-        return current.map((entry) =>
-          entry.id === shellId
-            ? remoteSessionState(entry, snapshot, project)
-            : entry,
-        );
-      });
-    },
-    [],
-  );
+  const onRemoteSnapshot = useStableFlow(() => createRemoteSnapshotSync(setSessions));
 
   useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
     open: (monoId) =>
@@ -3324,7 +3244,7 @@ function Workspace({
       onOpenNotificationSettings={surfaces.openNotificationSettings}
       onSelectSettingsSection={surfaces.selectSettingsSection}
       onCloseSettings={surfaces.closeSettings}
-      onOpenWhatsNew={onOpenWhatsNew}
+      onOpenWhatsNew={surfaces.openWhatsNew}
     />
   );
 
@@ -3336,7 +3256,7 @@ function Workspace({
         pressureSlot={setPressureChipHost}
         source={usageSource}
         activeTab={activeTab}
-        onSelectAccount={onSelectProviderAccount}
+        onSelectAccount={providerAccounts.select}
         onManageAccounts={surfaces.manageProviderAccounts}
         onToggleTerminal={terminals.toggleRunning}
         onNewTerminal={terminals.openNew}
@@ -3604,7 +3524,7 @@ function Workspace({
                     onDeleteSession={historyActions.delete}
                     onRestoreProject={projectActions.restore}
                     onRemoveProject={projectActions.remove}
-                    onOpenWhatsNew={onOpenWhatsNew}
+                    onOpenWhatsNew={surfaces.openWhatsNew}
                   />
                   {insetLayout ? null : usageFooter}
                 </div>

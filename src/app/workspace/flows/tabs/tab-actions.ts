@@ -2,6 +2,8 @@ import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import type { GitHistoryCommit } from "@/platform/tauri/fs";
 import type { MonoChangesRequest } from "@/features/familiars/ui/FamiliarChangesView";
 import {
+  type FocusDir,
+  neighborLeafId,
   openChangesTab,
   openCommitTab,
   type PaneEdge,
@@ -79,6 +81,12 @@ export function createTabActions(deps: TabActionsDeps) {
       if (tab) pane.activateTab(tab.id);
     },
     focusPane: (paneId: string) => focusPane(pane, paneId),
+    focusDir: (dir: FocusDir) => {
+      const tab = deps.activeTab();
+      if (!tab) return;
+      const next = neighborLeafId(tab.layout, tab.focusedId, dir);
+      if (next) focusPane(pane, next);
+    },
     movePane: (fromId: string, toId: string, edge: PaneEdge) => movePaneTo(store, fromId, toId, edge),
     detachPane: (paneId: string, targetTabId: string, position: "before" | "after") =>
       detachPane(pane, paneId, targetTabId, position),

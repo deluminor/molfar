@@ -13,4 +13,5 @@ export type TabActionsDeps = {
   visits: TabVisits;
   /** The tabs the deck shows for the current project, as last rendered. */
   deckTabs(): readonly WorkspaceTab[];
+  activeTab(): WorkspaceTab | undefined;
 };

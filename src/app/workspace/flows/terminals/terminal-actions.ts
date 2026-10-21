@@ -1,4 +1,4 @@
-import type { DockSide } from "@/features/projects/model/project-terminal";
+import { type DockSide, findProjectTerminal } from "@/features/projects/model/project-terminal";
 import type { TerminalMetaPatch } from "@/features/terminal/model/terminal-tab";
 import {
   closeOtherProjectTerminals,
@@ -40,6 +40,9 @@ export function createTerminalActions(deps: TerminalDeps) {
     closeOthers: (fileId: string) => closeOtherProjectTerminals(deps, fileId),
     changeMeta: (fileId: string, patch: TerminalMetaPatch) => changeTerminalMeta(deps, fileId, patch),
     toggleRunning: (fileId: string) => toggleRunningTerminal(deps, fileId),
+    /** The dock a size drag paints; none while a Familiar covers the workspace. */
+    dockPaintTarget: () =>
+      deps.store.getState().familiarViewId ? undefined : findProjectTerminal(deps.docks(), deps.projectCwd()),
   };
 }
 

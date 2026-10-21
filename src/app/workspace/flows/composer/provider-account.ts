@@ -55,3 +55,11 @@ export function selectProviderAccount(
   deps.setActiveTabId(tab.id);
   deps.setComposerFocused(true);
 }
+
+/** Account switching for the session focused at call time, created once for the workspace. */
+export function createProviderAccountActions(deps: ProviderAccountDeps & { activeSessionId(): string | undefined }) {
+  return {
+    select: (provider: ProviderAccountProvider, accountId: string) =>
+      selectProviderAccount(deps, deps.activeSessionId(), provider, accountId),
+  };
+}
