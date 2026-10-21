@@ -60,7 +60,7 @@ import { useProjectBranches } from "@/features/source-control/hooks/use-project-
 import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus";
 import { homeDir } from "@/platform/tauri/fs";
 import { pathKey, projectName } from "@/shared/lib/paths";
-import { HAS_NATIVE_GLASS, IS_MAC } from "@/shared/lib/platform";
+import { IS_MAC } from "@/shared/lib/platform";
 import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { noteProjectStep } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
@@ -351,7 +351,7 @@ import {
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
 import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
 import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
-import { WorkspaceMenuBar } from "./workspace/ui/workspace-chrome/WorkspaceMenuBar";
+import { WorkspaceLayout } from "./workspace/ui/layout/WorkspaceLayout";
 import { WorkspaceSettings } from "./workspace/ui/workspace-chrome/WorkspaceSettings";
 import { WorkspaceUsageFooter } from "./workspace/ui/workspace-chrome/WorkspaceUsageFooter";
 import { FamiliarSessionPanes } from "./workspace/ui/workspace-main/FamiliarSessionPanes";
@@ -3121,212 +3121,146 @@ function Workspace({
     <WorkspaceHandlersContext.Provider value={handlers}>
     <OrchestrationActions.Provider value={orchestrationActions}>
       <OrchestrationWorkers.Provider value={orchestrationWorkers}>
-        <div
-          className={`workspace-background flex h-full flex-col text-content ${
-            insetLayout
-              ? "inset-shell inset-outer"
-              : HAS_NATIVE_GLASS
-                ? "bg-background-base/[var(--window-background-opacity)]"
-                : "bg-background-base"
-          }`}
-        >
-          {chrome.titleBarSpansWindow ? workspaceTitleBar : null}
-          <div className="flex min-h-0 min-w-0 flex-1">
-            {insetLayout ? (
-              <div
-                ref={setInsetRailHost}
-                className="inset-rail-host flex h-full shrink-0"
-              >
-                {sessionSidebar}
-              </div>
-            ) : null}
-            {/* `contents` keeps the classic layout's flat row; the inset
-                layout stacks the tabs, the card and the footer. */}
-            <div
-              className={
-                insetLayout
-                  ? "flex min-h-0 min-w-0 flex-1 flex-col"
-                  : "contents"
+        <WorkspaceLayout
+          store={workspaceStore}
+          insetLayout={insetLayout}
+          notesEnabled={notesEnabled}
+          chrome={chrome}
+          titleBar={workspaceTitleBar}
+          sidebar={sessionSidebar}
+          onInsetRailHost={setInsetRailHost}
+          dockGridRef={dockSlide.gridRef}
+          docks={
+            <ProjectTerminalDocks
+              store={workspaceStore}
+              closingShown={dockClosingShown}
+              onSizePaint={dockSlide.paintSize}
+              onSizeCommit={dockSlide.commitSize}
+            />
+          }
+          panes={
+            <>
+              <WorkspaceTabPanes
+                store={workspaceStore}
+                workspaceSwitchingSessionId={workspaceSwitchingSessionId}
+                sessions={sessions}
+                activeSessionId={active?.id}
+                composerFocused={composerFocused}
+                composerFocusToken={composerFocusToken}
+                transcriptPool={transcriptPool}
+              />
+              <FamiliarSessionPanes
+                store={workspaceStore}
+                workspaceSwitchingSessionId={workspaceSwitchingSessionId}
+                sessions={sessions}
+                insetLayout={insetLayout}
+                familiar={familiarViewFamiliar}
+                composerFocused={composerFocused}
+                composerFocusToken={composerFocusToken}
+                shownSessionActive={familiarShownSessionActive}
+                onOpenArtifact={onOpenMonoArtifact}
+                activityTurnId={familiarOverview.activityShownTurnId}
+                launchedSessions={familiarOverview.launchedSessions}
+              />
+            </>
+          }
+          linkedPanels={
+            <LinkedWorkItemPanels
+              store={workspaceStore}
+              shownSessionId={
+                chrome.surfaceOpen || familiarCovers
+                  ? undefined
+                  : activeLinkedWorkItemPanel?.sessionId
               }
-            >
-              <div
-                className={
-                  insetLayout
-                    ? "inset-card mr-1.5 flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[10px] border border-stroke"
-                    : "contents"
-                }
-              >
-                {insetLayout ? null : sessionSidebar}
-
-                <div
-                  className={`flex min-h-0 min-w-0 flex-1 flex-col${
-                    insetLayout ? "" : " body-glass"
-                  }`}
-                >
-                  <div
-                    className={
-                      chrome.surfaceOpen
-                        ? "hidden"
-                        : "flex min-h-0 min-w-0 flex-1 flex-col"
-                    }
-                    aria-hidden={chrome.surfaceOpen}
-                    inert={chrome.surfaceOpen || undefined}
-                  >
-                    {!IS_MAC ? (
-                      <WorkspaceMenuBar
-                        store={workspaceStore}
-                        notesEnabled={notesEnabled}
-                      />
-                    ) : null}
-                    <div className="flex min-h-0 min-w-0 flex-1">
-                      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                        {chrome.titleBarInBody ? workspaceTitleBar : null}
-
-                        <main className="relative flex min-h-0 min-w-0 flex-1">
-                          <div
-                            ref={dockSlide.gridRef}
-                            className="grid h-full min-h-0 min-w-0 flex-1"
-                          >
-                            <ProjectTerminalDocks
-                              store={workspaceStore}
-                              closingShown={dockClosingShown}
-                              onSizePaint={dockSlide.paintSize}
-                              onSizeCommit={dockSlide.commitSize}
-                            />
-                            <div
-                              className="relative flex min-h-0 min-w-0 flex-row"
-                              style={{ gridArea: "main" }}
-                            >
-                              <div className="relative min-h-0 min-w-0 flex-1">
-                                <WorkspaceTabPanes
-                                  store={workspaceStore}
-                                  workspaceSwitchingSessionId={workspaceSwitchingSessionId}
-                                  sessions={sessions}
-                                  activeSessionId={active?.id}
-                                  composerFocused={composerFocused}
-                                  composerFocusToken={composerFocusToken}
-                                  transcriptPool={transcriptPool}
-                                />
-                                <FamiliarSessionPanes
-                                  store={workspaceStore}
-                                  workspaceSwitchingSessionId={workspaceSwitchingSessionId}
-                                  sessions={sessions}
-                                  insetLayout={insetLayout}
-                                  familiar={familiarViewFamiliar}
-                                  composerFocused={composerFocused}
-                                  composerFocusToken={composerFocusToken}
-                                  shownSessionActive={familiarShownSessionActive}
-                                  onOpenArtifact={onOpenMonoArtifact}
-                                  activityTurnId={familiarOverview.activityShownTurnId}
-                                  launchedSessions={familiarOverview.launchedSessions}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <LinkedWorkItemPanels
-                            store={workspaceStore}
-                            shownSessionId={
-                              chrome.surfaceOpen || familiarCovers
-                                ? undefined
-                                : activeLinkedWorkItemPanel?.sessionId
-                            }
-                            repairSessions={repairSessions}
-                          />
-                        </main>
-                      </div>
-                      {familiarCovers ? familiarOverviewPanel : null}
-                      {familiarSettingsDialog}
-                    </div>
-                  </div>
-                  <WorkspaceAppViews
-                    store={workspaceStore}
-                    insetLayout={insetLayout}
-                    openAppViews={openAppViews}
-                    notesEnabled={notesEnabled}
-                    automationsOpen={automationsSurfaceOpen}
-                    besideRail={chrome.appViewBesideRail}
-                    compactRail={chrome.appViewCompactRail}
-                    gitCwd={gitCwd}
-                    sidebarCwd={sidebarCwd}
-                    scopeProject={appViewScope}
-                    history={projectHistory}
-                    sessions={sessions}
-                    automationsFocusId={automationsFocusId}
-                    inboxAsk={
-                      <InboxAskPanes
-                        store={workspaceStore}
-                        sessions={sessions}
-                        composerFocused={composerFocused}
-                        composerFocusToken={composerFocusToken}
-                        workspaceSwitchingSessionId={workspaceSwitchingSessionId}
-                      />
-                    }
-                    localSurfaces={
-                      <LocalSurfaceViews
-                        surface={localSurface}
-                        besideRail={chrome.appViewBesideRail}
-                        compactRail={chrome.appViewCompactRail}
-                        projectPaths={recents.map((project) => project.path)}
-                        projectCwd={projectCwd}
-                        onClose={onLeaveLocalSurface}
-                        onToggleSidebar={navigation.toggleSidebar}
-                        onOpenSession={onOpenHomeSession}
-                        onOpenAutomation={onOpenHomeAutomation}
-                        onOpenAutomations={surfaces.openAutomations}
-                        onOpenUsage={navigation.openUsage}
-                        onOpenInbox={surfaces.openInbox}
-                        taskBoard={taskBoard}
-                      />
-                    }
-                    inbox={{ sessions: inboxRelatedSessions, repairSessions }}
-                    automations={{
-                      onFocusAutomationConsumed: onAutomationsFocusConsumed,
-                      onLaunch: (automation, run) => launchAutomation(automation, run, true),
-                    }}
-                  />
-                  <WorkspaceSettings
-                    store={workspaceStore}
-                    cwd={sidebarCwd}
-                    sessions={sidebarHistory}
-                    liveSessions={sessions}
-                    headerHost={insetLayout ? settingsHeaderHost : undefined}
-                  />
-                  {insetLayout ? null : usageFooter}
-                </div>
-                {insetLayout ? (
-                  <InsetRightPanel
-                    shown={chrome.insetRightPanelShown}
-                    closing={rightPanelClosing}
-                    resize={rightPanelResize}
-                    onPane={setRightPanelRef}
-                    onHost={setRightPanelHost}
-                  />
-                ) : null}
-              </div>
-              {insetLayout
-                ? (usageFooter ??
-                  // Settings has no footer, so the card runs down to the same
-                  // gutter as its right edge.
-                  <div
-                    className={`${settingsOpen ? "h-1.5" : "h-[30px]"} shrink-0`}
-                  />)
-                : null}
-            </div>
-          </div>
-
-          <WorkspacePickerDialogs store={workspaceStore} cwd={filesCwd} openPaths={openFilePaths} />
-          <WorkspaceNotices
-            pressure={{
-              sessions: sessionsRef,
-              onPressureChange: transcriptPool.setResourcePressure,
-              chipHost: pressureChipHost,
-              insetChip: insetLayout,
-            }}
-            approvalNotices={hiddenApprovalToasts}
-            reminders={sessionReminders}
-          />
-          <WorkspaceDialogs store={workspaceStore} />
-        </div>
+              repairSessions={repairSessions}
+            />
+          }
+          familiarOverview={familiarCovers ? familiarOverviewPanel : null}
+          familiarSettings={familiarSettingsDialog}
+          appViews={
+            <WorkspaceAppViews
+              store={workspaceStore}
+              insetLayout={insetLayout}
+              openAppViews={openAppViews}
+              notesEnabled={notesEnabled}
+              automationsOpen={automationsSurfaceOpen}
+              besideRail={chrome.appViewBesideRail}
+              compactRail={chrome.appViewCompactRail}
+              gitCwd={gitCwd}
+              sidebarCwd={sidebarCwd}
+              scopeProject={appViewScope}
+              history={projectHistory}
+              sessions={sessions}
+              automationsFocusId={automationsFocusId}
+              inboxAsk={
+                <InboxAskPanes
+                  store={workspaceStore}
+                  sessions={sessions}
+                  composerFocused={composerFocused}
+                  composerFocusToken={composerFocusToken}
+                  workspaceSwitchingSessionId={workspaceSwitchingSessionId}
+                />
+              }
+              localSurfaces={
+                <LocalSurfaceViews
+                  surface={localSurface}
+                  besideRail={chrome.appViewBesideRail}
+                  compactRail={chrome.appViewCompactRail}
+                  projectPaths={recents.map((project) => project.path)}
+                  projectCwd={projectCwd}
+                  onClose={onLeaveLocalSurface}
+                  onToggleSidebar={navigation.toggleSidebar}
+                  onOpenSession={onOpenHomeSession}
+                  onOpenAutomation={onOpenHomeAutomation}
+                  onOpenAutomations={surfaces.openAutomations}
+                  onOpenUsage={navigation.openUsage}
+                  onOpenInbox={surfaces.openInbox}
+                  taskBoard={taskBoard}
+                />
+              }
+              inbox={{ sessions: inboxRelatedSessions, repairSessions }}
+              automations={{
+                onFocusAutomationConsumed: onAutomationsFocusConsumed,
+                onLaunch: (automation, run) => launchAutomation(automation, run, true),
+              }}
+            />
+          }
+          settings={
+            <WorkspaceSettings
+              store={workspaceStore}
+              cwd={sidebarCwd}
+              sessions={sidebarHistory}
+              liveSessions={sessions}
+              headerHost={insetLayout ? settingsHeaderHost : undefined}
+            />
+          }
+          usageFooter={usageFooter}
+          rightPanel={
+            <InsetRightPanel
+              shown={chrome.insetRightPanelShown}
+              closing={rightPanelClosing}
+              resize={rightPanelResize}
+              onPane={setRightPanelRef}
+              onHost={setRightPanelHost}
+            />
+          }
+          overlays={
+            <>
+              <WorkspacePickerDialogs store={workspaceStore} cwd={filesCwd} openPaths={openFilePaths} />
+              <WorkspaceNotices
+                pressure={{
+                  sessions: sessionsRef,
+                  onPressureChange: transcriptPool.setResourcePressure,
+                  chipHost: pressureChipHost,
+                  insetChip: insetLayout,
+                }}
+                approvalNotices={hiddenApprovalToasts}
+                reminders={sessionReminders}
+              />
+              <WorkspaceDialogs store={workspaceStore} />
+            </>
+          }
+        />
         <TranscriptPoolOutlet pool={transcriptPool} />
       </OrchestrationWorkers.Provider>
     </OrchestrationActions.Provider>
