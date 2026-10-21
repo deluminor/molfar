@@ -4175,7 +4175,7 @@ function Workspace({
       confirm: proposalActions.confirm,
       retry: proposalActions.retry,
     }),
-    [onOpenApprovalSession, queueWorkerPanes, proposalActions],
+    [onOpenApprovalSession, queueWorkerPanes],
   );
 
   const onSelectLiveAgent = useCallback(

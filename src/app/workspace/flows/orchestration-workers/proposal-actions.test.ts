@@ -39,8 +39,9 @@ function setup(card = proposal("ready"), sessionOverrides: Partial<Session> = {}
     saveSession: vi.fn(async () => true),
     submit: vi.fn(),
   } satisfies ProposalActionsDeps;
-  const statusOf = () => deps.sessionsRef.current[0]!.blocks[0]!.orchestration?.status;
-  return { deps, actions: createProposalActions(deps), statusOf };
+  const cardOf = () => deps.sessionsRef.current[0]?.blocks[0]?.orchestration;
+  const statusOf = () => cardOf()?.status;
+  return { deps, actions: createProposalActions(deps), statusOf, cardOf };
 }
 
 describe("proposal actions", () => {
@@ -91,7 +92,7 @@ describe("proposal actions", () => {
   it("applies task and worker-count edits only to a ready proposal", () => {
     const ready = setup();
     ready.actions.update("lead", "card", proposal("ready", { tasks: [{ id: "t" }] as never, settings: { maxWorkers: 4 } as never }));
-    expect(ready.deps.sessionsRef.current[0]!.blocks[0]!.orchestration?.tasks).toHaveLength(1);
+    expect(ready.cardOf()?.tasks).toHaveLength(1);
 
     const approved = setup(proposal("approved"));
     approved.actions.update("lead", "card", proposal("ready", { tasks: [{ id: "t" }] as never }));
