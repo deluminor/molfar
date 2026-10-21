@@ -88,14 +88,7 @@ import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
 import { submitSession as submitToSession } from "./workspace/flows/submission/submit-session";
 import type { Submit } from "./workspace/flows/submission/submit-types";
-import { buildPlan, updatePlan } from "./workspace/flows/turn-queue/plan-block";
-import {
-  editQueuedMessage,
-  removeQueuedMessage,
-  resumeQueue,
-  setQueuedMessageEditing,
-  steerQueuedMessage,
-} from "./workspace/flows/turn-queue/queue-actions";
+import { createTurnQueueActions } from "./workspace/flows/turn-queue/turn-queue-actions";
 import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
 import { dismissComposerCard } from "./workspace/flows/composer/composer-cards";
 import { repairChecks } from "./workspace/flows/inbox/ci-repair";
@@ -171,15 +164,9 @@ import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
 import { closeLiveAgent, type CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
-import { compactContext } from "./workspace/flows/turn-control/compact-context";
 import { handoffSession } from "./workspace/flows/turn-control/handoff-session";
-import {
-  answerApproval,
-  answerQuestion,
-  type HarnessReplyDeps,
-  keepQuestionOpen,
-} from "./workspace/flows/turn-control/harness-replies";
-import { stopTurn } from "./workspace/flows/turn-control/stop-turn";
+import type { HarnessReplyDeps } from "./workspace/flows/turn-control/harness-replies";
+import { createTurnControlActions } from "./workspace/flows/turn-control/turn-control-actions";
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
 import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
 import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
@@ -253,8 +240,6 @@ import {
   stopHarnessSession,
   configureHarnessIdlePark,
   stopHarnessTextPrompts,
-  type ApprovalDecision,
-  type UserQuestionReply,
 } from "@/integrations/harness";
 
 import {
@@ -317,10 +302,7 @@ import {
 } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import type { Block } from "@/domain/session/block";
-import type {
-  ModelTarget,
-  PlanBuildTarget,
-} from "@/domain/session/turn";
+import type { ModelTarget } from "@/domain/session/turn";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
   applyPlaceTabOnPane,
@@ -1102,6 +1084,16 @@ function Workspace({
       enqueueHarnessEvent,
       flushHarnessEvents,
     }),
+  );
+  const harnessReplyDeps = useStableFlow(
+    (): HarnessReplyDeps => ({
+      sessions: () => sessionsRef.current,
+      decideFamiliarApproval: (familiarId, blockId, decided) =>
+        familiarChat.decide(familiarId, blockId, decided),
+    }),
+  );
+  const turnActions = useStableFlow(() =>
+    createTurnControlActions({ control: turnControl, reply: harnessReplyDeps }),
   );
 
   const stopSessionForRemoval = useCallback(
@@ -2758,7 +2750,7 @@ function Workspace({
     sessions: () => sessionsRef.current,
     loadSession: getSession,
     stop: async (id) => {
-      await flushSync(() => stopSessionRef.current(id));
+      await flushSync(() => turnActions.stop(id));
       flushHarnessEvents();
     },
   });
@@ -2784,52 +2776,13 @@ function Workspace({
       flushHarnessEvents,
     }),
   );
-
-  const onUpdatePlan = useCallback(
-    (sessionId: string, blockId: string, text: string) =>
-      updatePlan(turnQueue, sessionId, blockId, text),
-    [],
-  );
-  const onBuildPlan = useCallback(
-    (sessionId: string, blockId: string, target?: PlanBuildTarget) =>
-      buildPlan(turnQueue, sessionId, blockId, target),
-    [],
-  );
+  const queueActions = useStableFlow(() => createTurnQueueActions(turnQueue));
 
   useQueueDispatch(sessions, turnQueue, submitSession);
 
-  const onDeleteQueuedMessage = useCallback(
-    (sessionId: string, messageId: string) =>
-      removeQueuedMessage(turnQueue, sessionId, messageId),
-    [],
-  );
-  const onQueuedMessageEditingChange = useCallback(
-    (sessionId: string, messageId?: string) =>
-      setQueuedMessageEditing(turnQueue, sessionId, messageId),
-    [],
-  );
-  const onEditQueuedMessage = useCallback(
-    (sessionId: string, messageId: string, text: string) =>
-      editQueuedMessage(turnQueue, sessionId, messageId, text),
-    [],
-  );
-  const onSteerQueuedMessage = useCallback(
-    (sessionId: string, messageId: string) =>
-      steerQueuedMessage(turnQueue, sessionId, messageId),
-    [],
-  );
-  const onResumeQueue = useCallback(
-    (sessionId: string) => resumeQueue(turnQueue, sessionId),
-    [],
-  );
-
   const usageLimits = useStableFlow(() => createUsageLimits(turnQueue));
-  const onUsageLimitDismiss = usageLimits.dismiss;
-  const onUsageLimitResumeAtReset = usageLimits.setResumeAtReset;
-  const onUsageLimitResume = usageLimits.resume;
-  const onUsageLimitAccountChange = usageLimits.changeAccount;
-  usageLimitAccountChangeRef.current = onUsageLimitAccountChange;
-  useUsageLimitTimers(sessions, turnQueue, onUsageLimitResume);
+  usageLimitAccountChangeRef.current = usageLimits.changeAccount;
+  useUsageLimitTimers(sessions, turnQueue, usageLimits.resume);
 
   const openSessionBeside = useCallback(
     (
@@ -2928,16 +2881,6 @@ function Workspace({
 
   useAutoContinue(sessions, turnControl.sessions, onSubmit);
 
-  const onCompactContext = useCallback(
-    (sessionId: string) => compactContext(turnControl, sessionId),
-    [],
-  );
-  const onStop = useCallback(
-    (sessionId: string, managed = false) =>
-      stopTurn(turnControl, sessionId, managed),
-    [],
-  );
-
   const closeLiveAgentDeps = useStableFlow(
     (): CloseLiveAgentDeps => ({
       sessions: () => sessionsRef.current,
@@ -2951,7 +2894,7 @@ function Workspace({
         });
         unseenFinishedRef.current.delete(sessionId);
       },
-      stop: (sessionId) => onStop(sessionId),
+      stop: (sessionId) => turnActions.stop(sessionId),
       closeTab: (tabId) => tabClose.closeTab(tabId),
       persist: (session) => persistSession(session),
       updateTabs: (update) => setTabs(update),
@@ -2968,26 +2911,8 @@ function Workspace({
       tabs: () => tabsRef.current,
       activeTabId: () => activeTabIdRef.current,
       terminalFocused: () => projectTerminalFocusedRef.current,
-      stop: (sessionId: string) => onStop(sessionId),
+      stop: (sessionId: string) => turnActions.stop(sessionId),
     })),
-  );
-
-  const harnessReplyDeps = useStableFlow(
-    (): HarnessReplyDeps => ({
-      sessions: () => sessionsRef.current,
-      decideFamiliarApproval: (familiarId, blockId, decided) =>
-        familiarChat.decide(familiarId, blockId, decided),
-    }),
-  );
-  const onApproval = useCallback(
-    (sessionId: string, requestId: number, decision: ApprovalDecision) =>
-      answerApproval(harnessReplyDeps, sessionId, requestId, decision),
-    [],
-  );
-  const onQuestionReply = useCallback(
-    (sessionId: string, requestId: number, reply: UserQuestionReply) =>
-      answerQuestion(harnessReplyDeps, sessionId, requestId, reply),
-    [],
   );
 
   useWorkspaceCompanion({
@@ -3012,19 +2937,13 @@ function Workspace({
       (await ensureOpenSession(sessionId)) ?? undefined,
     submit: (sessionId, text, attachments) =>
       submitSessionRef.current(sessionId, text, attachments),
-    stop: (sessionId) => onStop(sessionId),
+    stop: (sessionId) => turnActions.stop(sessionId),
     setRuntimeMode: composerActions.changeRuntimeMode,
-    approve: onApproval,
-    answer: onQuestionReply,
+    approve: turnActions.approve,
+    answer: turnActions.answer,
     launch: (launch, id) => launchQuickSessionRef.current(launch, id),
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   });
-
-  const onQuestionInteraction = useCallback(
-    (sessionId: string, requestId: number) =>
-      keepQuestionOpen(harnessReplyDeps, sessionId, requestId),
-    [],
-  );
 
   const onOpenApprovalSession = useCallback(
     (sessionId: string) => {
@@ -3060,7 +2979,7 @@ function Workspace({
       store: workspaceStore,
       sessionsRef,
       setSessions,
-      stop: (sessionId: string, managed: boolean) => onStop(sessionId, managed),
+      stop: (sessionId: string, managed: boolean) => turnActions.stop(sessionId, managed),
       flushHarnessEvents,
       checkOpenWorktreeFiles: (path: string) =>
         checkOpenWorktreeFiles(worktreeDeps, path),
@@ -3072,8 +2991,6 @@ function Workspace({
     orchestrator.sync();
   }, [sessions]);
 
-  const stopSessionRef = useRef(onStop);
-  stopSessionRef.current = onStop;
 
   const agentAppDeps = useStableFlow(
     (): AgentAppDeps => ({
@@ -3088,7 +3005,7 @@ function Workspace({
       ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
       submitSession: (...args) => submitSessionRef.current(...args),
       saveDraft: (...args) => composerActions.saveDraft(...args),
-      stopSession: (sessionId) => stopSessionRef.current(sessionId),
+      stopSession: turnActions.stop,
       removeSession: historyActions.remove,
       launchQuickSession: (...args) => launchQuickSession(...args),
     }),
@@ -3651,10 +3568,10 @@ function Workspace({
         },
       }),
     submit: onSubmit,
-    stop: onStop,
-    approval: onApproval,
-    question: onQuestionReply,
-    questionInteraction: onQuestionInteraction,
+    stop: turnActions.stop,
+    approval: turnActions.approve,
+    question: turnActions.answer,
+    questionInteraction: turnActions.keepQuestionOpen,
     reveal: onOpenFamiliar,
     openArtifact: async (monoId, id) => {
       await onOpenFamiliar(monoId);
@@ -3662,7 +3579,7 @@ function Workspace({
       if (sessionId) onOpenMonoArtifact(sessionId, id);
     },
     openFile: fileActions.open,
-    resume: onUsageLimitResume,
+    resume: usageLimits.resume,
     create: () => createFamiliar().id,
   });
 
@@ -3687,18 +3604,18 @@ function Workspace({
     onSaveDraft: composerActions.saveDraft,
     onRemoveDraft: composerActions.removeDraft,
     onSubmit,
-    onStop,
-    onCompactContext,
+    onStop: turnActions.stop,
+    onCompactContext: turnActions.compact,
     onPlaceSessionInFolder: projectActions.placeSessionInFolder,
-    onDeleteQueuedMessage,
-    onEditQueuedMessage,
-    onQueuedMessageEditingChange,
-    onSteerQueuedMessage,
-    onResumeQueue,
-    onUsageLimitResume,
-    onUsageLimitResumeAtReset,
-    onUsageLimitDismiss,
-    onUsageLimitAccountChange,
+    onDeleteQueuedMessage: queueActions.removeQueued,
+    onEditQueuedMessage: queueActions.editQueued,
+    onQueuedMessageEditingChange: queueActions.setQueuedEditing,
+    onSteerQueuedMessage: queueActions.steerQueued,
+    onResumeQueue: queueActions.resume,
+    onUsageLimitResume: usageLimits.resume,
+    onUsageLimitResumeAtReset: usageLimits.setResumeAtReset,
+    onUsageLimitDismiss: usageLimits.dismiss,
+    onUsageLimitAccountChange: usageLimits.changeAccount,
     onInboxCardDismiss,
     onLinkedWorkItemUpdateCardDismiss,
     onNoteCardDismiss,
@@ -3706,13 +3623,13 @@ function Workspace({
     onOpenLinkedWorkItem,
     onArchiveSession: historyActions.archive,
     onDeleteSession: historyActions.delete,
-    onApproval,
-    onQuestionReply,
-    onQuestionInteraction,
+    onApproval: turnActions.approve,
+    onQuestionReply: turnActions.answer,
+    onQuestionInteraction: turnActions.keepQuestionOpen,
     onOpenFile: fileActions.open,
     onOpenDiff: tabActions.openDiff,
     onOpenPlan: fileActions.openPlan,
-    onBuildPlan,
+    onBuildPlan: queueActions.buildPlan,
     onSecondOpinion,
     onHandoff,
     onBtwSubmit,
@@ -3779,7 +3696,7 @@ function Workspace({
         shownSession={familiarShownSessionView}
         onShowLaunchedSession={familiarView.showLaunchedSession}
         onOpenSessionInWorkspace={onOpenMonoLaunchedSession}
-        onApproval={onApproval}
+        onApproval={turnActions.approve}
         onOpenFile={fileActions.open}
         onOpenDiff={tabActions.openDiff}
       />
@@ -4131,7 +4048,7 @@ function Workspace({
                                   onFileDirtyChange={fileActions.setDirty}
                                   onFileErrorCountChange={fileActions.setErrorCount}
                                   transcriptPool={transcriptPool}
-                                  onUpdatePlan={onUpdatePlan}
+                                  onUpdatePlan={queueActions.updatePlan}
                                   onMovePane={tabActions.movePane}
                                   onDetachPane={tabActions.detachPane}
                                   onTerminalMetaChange={terminals.changeMeta}
@@ -4306,15 +4223,15 @@ function Workspace({
           <WorkspaceNotices
             pressure={{
               sessions: sessionsRef,
-              onStopAgent: (id) => onStop(id, true),
-              onStopSession: onStop,
+              onStopAgent: (id) => turnActions.stop(id, true),
+              onStopSession: turnActions.stop,
               onPressureChange: transcriptPool.setResourcePressure,
               chipHost: pressureChipHost,
               insetChip: insetLayout,
             }}
             approvalNotices={hiddenApprovalToasts}
             onFocusApprovalSession={onOpenApprovalSession}
-            onApproval={onApproval}
+            onApproval={turnActions.approve}
             reminders={sessionReminders}
             onOpenReminderSettings={surfaces.openReminderSettings}
           />
