@@ -194,6 +194,10 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { detachPane, focusPane } from "./workspace/flows/tabs/pane-focus";
 import { selectHistorySession } from "./workspace/flows/tabs/select-history-session";
+import {
+  type ProviderAccountDeps,
+  selectProviderAccount,
+} from "./workspace/flows/composer/provider-account";
 import { openBoardCard } from "./workspace/flows/surfaces/board-surface";
 import { stepProject } from "./workspace/flows/surfaces/project-navigation";
 import {
@@ -2253,57 +2257,22 @@ function Workspace({
   const usageLimitAccountChangeRef = useRef<
     ((sessionId: string, accountId: string) => Promise<void>) | null
   >(null);
+  const providerAccountDeps = useStableFlow(
+    (): ProviderAccountDeps => ({
+      sessions: () => sessionsRef.current,
+      updateSessions: (update) =>
+        updateSessionState(sessionsRef, setSessions, update),
+      continueLimited: (sessionId, accountId) =>
+        void usageLimitAccountChangeRef.current?.(sessionId, accountId),
+      appendTab,
+      setActiveTabId: (tabId) => setActiveTabIdRef.current(tabId),
+      setComposerFocused,
+    }),
+  );
   const onSelectProviderAccount = useCallback(
-    (provider: ProviderAccountProvider, accountId: string) => {
-      const current = sessionsRef.current.find(
-        (session) => session.id === active?.id,
-      );
-      if (!current || current.harness !== provider) return;
-
-      // A limited session continues in place under the selected account.
-      if (current.usageLimit && !current.busy) {
-        void usageLimitAccountChangeRef.current?.(current.id, accountId);
-        return;
-      }
-
-      if (current.blocks.length === 0 && !current.busy) {
-        if (current.providerAccountId === accountId) return;
-        updateSessionState(sessionsRef, setSessions, (sessions) =>
-          sessions.map((session) =>
-            session.id === current.id
-              ? { ...session, providerAccountId: accountId }
-              : session,
-          ),
-        );
-        return;
-      }
-
-      const currentId =
-        current.providerAccountId ?? DEFAULT_PROVIDER_ACCOUNT_ID;
-      if (currentId === accountId) return;
-
-      // Provider thread ids are account-owned. Keep the current conversation
-      // pinned to its account and open a clean one for the selected profile.
-      const session = {
-        ...newSession(
-          current.harness,
-          current.cwd,
-          current.model,
-          current.runtimeMode,
-          current.modelSettings,
-        ),
-        providerAccountId: accountId,
-      };
-      const tab = newTab(session.id);
-      updateSessionState(sessionsRef, setSessions, (sessions) => [
-        ...sessions,
-        session,
-      ]);
-      appendTab(tab, current.cwd);
-      setActiveTabId(tab.id);
-      setComposerFocused(true);
-    },
-    [active?.id, appendTab],
+    (provider: ProviderAccountProvider, accountId: string) =>
+      selectProviderAccount(providerAccountDeps, active?.id, provider, accountId),
+    [active?.id],
   );
 
   const onOpenWhatsNew = useCallback((version: string) => {
@@ -4569,11 +4538,11 @@ function Workspace({
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
   const onToggleSessionSidebar = useCallback(
     () => toggleSessionSidebar(workspaceStore),
-    [workspaceStore],
+    [],
   );
   const onToggleSidebar = useCallback(
     () => togglePrimarySidebar(workspaceStore, insetLayout),
-    [workspaceStore, insetLayout],
+    [insetLayout],
   );
   const onToggleSessionSidebarShortcut = useCallback(
     () =>
@@ -4582,11 +4551,11 @@ function Workspace({
         insetLayout,
         rightPanelToggleRef.current,
       ),
-    [workspaceStore, insetLayout],
+    [insetLayout],
   );
   const onToggleProjectRail = useCallback(
     () => toggleProjectRail(workspaceStore),
-    [workspaceStore],
+    [],
   );
 
   const surfaceDeps = useStableFlow(
