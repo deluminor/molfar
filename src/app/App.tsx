@@ -242,7 +242,6 @@ import {
 } from "@/features/projects/model/recents";
 import { normalizeProjectPath } from "@/shared/lib/project-path";
 import { newDefaultSession } from "@/features/sessions/model/session";
-import { sessionDisplayTitle } from "@/domain/session/title";
 import {
   sessionWorkCwd,
   sessionNeedsInput,
@@ -2965,38 +2964,6 @@ function Workspace({
     : undefined;
   const familiarShownSessionActive =
     !!familiarShownSessionPane && familiarShownSessionFocused;
-  const familiarShownSessionView = familiarShownSessionPane
-    ? {
-        sessionId: familiarShownSessionPane.id,
-        title: sessionDisplayTitle(
-          familiarShownSessionPane.title,
-          familiarShownSessionPane.harness,
-        ),
-        pane: (
-          <SessionPane
-            {...sessionPaneProps}
-            session={familiarShownSessionPane}
-            // The Familiar view covers the workspace, so a review opens
-            // beside the chat rather than in a hidden tab.
-            onOpenDiff={tabActions.openMonoDiff}
-            // The Familiar runs this session; handing it off or asking for a
-            // second opinion belongs in its own tab.
-            onSecondOpinion={undefined}
-            onHandoff={undefined}
-            visible={familiarCovers}
-            focused={familiarShownSessionActive && !projectTerminalFocused}
-            inSplit={false}
-            addToChatTarget={false}
-            composerFocused={
-              familiarShownSessionActive &&
-              composerFocused &&
-              !projectTerminalFocused
-            }
-            composerFocusToken={composerFocusToken}
-          />
-        ),
-      }
-    : undefined;
   const familiarOverviewPanel =
     familiarViewFamiliar && familiarViewSession ? (
       <FamiliarOverviewPanel
@@ -3006,12 +2973,13 @@ function Workspace({
         overview={familiarOverview}
         sessions={sessions}
         history={history}
-        shownSession={familiarShownSessionView}
-        onShowLaunchedSession={familiarView.showLaunchedSession}
-        onOpenSessionInWorkspace={familiarActions.openLaunchedInWorkspace}
-        onApproval={turnActions.approve}
-        onOpenFile={fileActions.open}
-        onOpenDiff={tabActions.openDiff}
+        shownSession={{
+          session: familiarShownSessionPane,
+          active: familiarShownSessionActive,
+          composerFocused,
+          composerFocusToken,
+          workspaceSwitchingSessionId,
+        }}
       />
     ) : null;
   const familiarSettingsDialog =
@@ -3020,10 +2988,6 @@ function Workspace({
         store={workspaceStore}
         familiar={familiarViewFamiliar}
         session={familiarViewSession}
-        onModelChange={composerActions.changeModel}
-        onModelSettingsChange={composerActions.changeModelSettings}
-        onRuntimeModeChange={composerActions.changeRuntimeMode}
-        onReset={historyActions.resetFamiliar}
       />
     ) : null;
   const busyProjectPaths = useStableValue(

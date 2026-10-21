@@ -9,6 +9,7 @@ import { newDefaultSession } from "@/features/sessions/model/session";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import type { FamiliarOverviewData } from "../../hooks/familiars/use-familiar-overview-data";
 import { FamiliarOverviewPanel } from "./FamiliarOverviewPanel";
 import { FamiliarSettingsPanel } from "./FamiliarSettingsPanel";
@@ -17,6 +18,7 @@ const seen = vi.hoisted(() => ({
   overview: undefined as unknown,
   settings: undefined as unknown,
 }));
+const SessionPaneStub = vi.hoisted(() => () => null);
 
 vi.mock("@/features/familiars/model/familiar", () => ({
   familiarLook: () => ({ name: "Owl" }),
@@ -34,6 +36,7 @@ vi.mock("@/features/familiars/ui/FamiliarSettingsDialog", () => ({
     return null;
   },
 }));
+vi.mock("@/features/sessions/ui/SessionPane", () => ({ SessionPane: SessionPaneStub }));
 vi.mock("@/features/familiars/ui/FamiliarActivityView", () => ({ FamiliarActivityView: () => null }));
 vi.mock("@/features/window-chrome/ui/WindowControls", () => ({ WindowControls: () => null }));
 
@@ -47,6 +50,7 @@ const session = { ...newDefaultSession("/work/familiar"), id: "familiar-chat" };
 let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function overviewProps(): OverviewProps {
   return seen.overview as OverviewProps;
@@ -74,6 +78,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
+  handlers = fakeWorkspaceHandlers();
   seen.overview = undefined;
   seen.settings = undefined;
 });
@@ -84,25 +89,29 @@ afterEach(() => {
 });
 
 describe("FamiliarOverviewPanel", () => {
-  const onShowLaunchedSession = vi.fn(async () => {});
-  const onApproval = vi.fn();
+  const noShownSession = {
+    session: undefined,
+    active: false,
+    composerFocused: true,
+    composerFocusToken: 0,
+    workspaceSwitchingSessionId: undefined,
+  };
 
-  function mount(overview = overviewData()) {
+  function mount(overview = overviewData(), shownSession = noShownSession) {
     act(() =>
       root.render(
-        createElement(FamiliarOverviewPanel, {
-          store,
-          familiar,
-          session,
-          overview,
-          sessions: [],
-          history: [],
-          onShowLaunchedSession,
-          onOpenSessionInWorkspace: async () => {},
-          onApproval,
-          onOpenFile: () => {},
-          onOpenDiff: () => {},
-        }),
+        withWorkspaceHandlers(
+          createElement(FamiliarOverviewPanel, {
+            store,
+            familiar,
+            session,
+            overview,
+            sessions: [],
+            history: [],
+            shownSession,
+          }),
+          handlers,
+        ),
       ),
     );
   }
@@ -153,7 +162,33 @@ describe("FamiliarOverviewPanel", () => {
 
     void overviewProps().onOpenSession("launched");
 
-    expect(onShowLaunchedSession).toHaveBeenCalledWith("familiar-chat", "launched");
+    expect(handlers.familiarView.showLaunchedSession).toHaveBeenCalledWith("familiar-chat", "launched");
+  });
+
+  it("shows a launched session's pane beside the chat, its diffs opening there", () => {
+    const launched = { ...newDefaultSession("/work/demo"), id: "launched", title: "Fix it" };
+    store.setState({ familiarViewId: "familiar-chat" });
+    mount(overviewData(), { ...noShownSession, session: launched, active: true });
+
+    const shown = overviewProps().shownSession;
+    const pane = shown?.pane as { type: unknown; props: Record<string, unknown> };
+    expect(shown?.sessionId).toBe("launched");
+    expect(pane.type).toBe(SessionPaneStub);
+    expect(pane.props).toMatchObject({
+      session: launched,
+      visible: true,
+      focused: true,
+      composerFocused: true,
+      addToChatTarget: false,
+      onSubmit: handlers.submission.send,
+      onOpenDiff: handlers.tabs.openMonoDiff,
+      onSecondOpinion: undefined,
+      onHandoff: undefined,
+    });
+
+    act(() => store.setState({ projectTerminalFocused: true }));
+    const unfocused = overviewProps().shownSession?.pane as { props: Record<string, unknown> };
+    expect(unfocused.props).toMatchObject({ focused: false, composerFocused: false });
   });
 
   it("shows the selected turn's activity and answers its approvals in the Familiar's chat", () => {
@@ -163,26 +198,15 @@ describe("FamiliarOverviewPanel", () => {
     const activity = element.props;
     expect(activity.live).toBe(true);
     activity.onApproval?.(7, "accept");
-    expect(onApproval).toHaveBeenCalledWith("familiar-chat", 7, "accept");
+    expect(handlers.turns.approve).toHaveBeenCalledWith("familiar-chat", 7, "accept");
   });
 });
 
 describe("FamiliarSettingsPanel", () => {
-  const onModelChange = vi.fn();
-  const onReset = vi.fn(async () => {});
-
   function mount() {
     act(() =>
       root.render(
-        createElement(FamiliarSettingsPanel, {
-          store,
-          familiar,
-          session,
-          onModelChange,
-          onModelSettingsChange: () => {},
-          onRuntimeModeChange: () => {},
-          onReset,
-        }),
+        withWorkspaceHandlers(createElement(FamiliarSettingsPanel, { store, familiar, session }), handlers),
       ),
     );
   }
@@ -201,8 +225,8 @@ describe("FamiliarSettingsPanel", () => {
     const props = settingsProps();
     props?.onModelChange("codex", "gpt");
     void props?.onReset?.();
-    expect(onModelChange).toHaveBeenCalledWith("familiar-chat", "codex", "gpt");
-    expect(onReset).toHaveBeenCalledWith("familiar-chat");
+    expect(handlers.composer.changeModel).toHaveBeenCalledWith("familiar-chat", "codex", "gpt");
+    expect(handlers.history.resetFamiliar).toHaveBeenCalledWith("familiar-chat");
 
     act(() => props?.onClose());
     expect(store.getState().familiarSettingsFor).toBeNull();

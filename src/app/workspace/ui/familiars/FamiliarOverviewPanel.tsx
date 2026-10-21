@@ -1,4 +1,3 @@
-import type { ComponentProps } from "react";
 import type { Session } from "@/domain/session/session";
 import { sessionWorkCwd } from "@/domain/session/session-state";
 import {
@@ -8,16 +7,18 @@ import {
 } from "@/features/familiars/model/familiar";
 import { FamiliarActivityView } from "@/features/familiars/ui/FamiliarActivityView";
 import { FamiliarOverview } from "@/features/familiars/ui/FamiliarOverview";
-import type { ShownFamiliarSession } from "@/features/familiars/ui/FamiliarSessionList";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
 import { IS_MAC } from "@/shared/lib/platform";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import type { FamiliarOverviewData } from "../../hooks/familiars/use-familiar-overview-data";
 import { useWorkspaceActions } from "../../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
-
-type ActivityProps = ComponentProps<typeof FamiliarActivityView>;
+import {
+  type FamiliarShownSessionInput,
+  useFamiliarShownSession,
+} from "./use-familiar-shown-session";
 
 type Props = {
   store: WorkspaceStore;
@@ -26,15 +27,7 @@ type Props = {
   overview: FamiliarOverviewData;
   sessions: readonly Session[];
   history: readonly SessionSummary[];
-  shownSession?: ShownFamiliarSession;
-  onShowLaunchedSession: (familiarSessionId: string, sessionId: string) => Promise<void>;
-  onOpenSessionInWorkspace: (sessionId: string) => Promise<void>;
-  onApproval: (
-    sessionId: string,
-    ...reply: Parameters<NonNullable<ActivityProps["onApproval"]>>
-  ) => void;
-  onOpenFile: NonNullable<ActivityProps["onOpenFile"]>;
-  onOpenDiff: ActivityProps["onOpenDiff"];
+  shownSession: FamiliarShownSessionInput;
 };
 
 /** The open Familiar's overview beside its chat, over the workspace. */
@@ -46,12 +39,9 @@ export function FamiliarOverviewPanel({
   sessions,
   history,
   shownSession,
-  onShowLaunchedSession,
-  onOpenSessionInWorkspace,
-  onApproval,
-  onOpenFile,
-  onOpenDiff,
 }: Props) {
+  const handlers = useWorkspaceHandlers();
+  const shown = useFamiliarShownSession(store, shownSession);
   const open = useWorkspaceField(store, "familiarOverviewOpen");
   const tab = useWorkspaceField(store, "familiarOverviewTab");
   const documentId = useWorkspaceField(store, "familiarOverviewDocument");
@@ -74,10 +64,10 @@ export function FamiliarOverviewPanel({
       onApproval={
         session.worktreeRemoved
           ? undefined
-          : (requestId, decision) => onApproval(session.id, requestId, decision)
+          : (requestId, decision) => handlers.turns.approve(session.id, requestId, decision)
       }
-      onOpenFile={onOpenFile}
-      onOpenDiff={onOpenDiff}
+      onOpenFile={handlers.files.open}
+      onOpenDiff={handlers.tabs.openDiff}
     />
   ) : null;
 
@@ -104,21 +94,21 @@ export function FamiliarOverviewPanel({
       }}
       tab={tab}
       onTabChange={setFamiliarOverviewTab}
-      onOpenSession={(sessionId) => onShowLaunchedSession(session.id, sessionId)}
-      shownSession={shownSession}
+      onOpenSession={(sessionId) => handlers.familiarView.showLaunchedSession(session.id, sessionId)}
+      shownSession={shown}
       // Back lands on every session it started.
       onBackFromSession={() => {
         setFamiliarShownSession(null);
         setFamiliarShownSessionFocused(false);
       }}
-      onOpenSessionInWorkspace={onOpenSessionInWorkspace}
+      onOpenSessionInWorkspace={handlers.familiars.openLaunchedInWorkspace}
       onOpenDocument={(id) => {
         setFamiliarShownSession(null);
         setFamiliarOverviewDocument(id);
       }}
       shownDocumentId={documentId ?? undefined}
       onBackFromDocument={() => setFamiliarOverviewDocument(null)}
-      onOpenFile={onOpenFile}
+      onOpenFile={handlers.files.open}
       onClose={() => setFamiliarOverviewOpen(false)}
       windowControls={IS_MAC ? undefined : <WindowControls />}
     />
