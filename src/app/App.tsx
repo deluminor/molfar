@@ -331,8 +331,6 @@ import {
   remoteProjectFor,
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
-import { SessionPane } from "@/features/sessions/ui/SessionPane";
-import { SessionSurface } from "@/features/sessions/ui/SessionSurface";
 import {
   AutomationsView,
   InboxView,
@@ -359,7 +357,7 @@ import { WorkspaceUsageFooter } from "./workspace/ui/workspace-chrome/WorkspaceU
 import { FamiliarSessionPanes } from "./workspace/ui/workspace-main/FamiliarSessionPanes";
 import { LinkedWorkItemPanels } from "./workspace/ui/workspace-main/LinkedWorkItemPanels";
 import { ProjectTerminalDocks } from "./workspace/ui/workspace-main/ProjectTerminalDocks";
-import { sharedPaneProps } from "./workspace/ui/workspace-main/shared-pane-props";
+import { InboxAskPanes } from "./workspace/ui/app-views/InboxAskPanes";
 import { WorkspaceTabPanes } from "./workspace/ui/workspace-main/WorkspaceTabPanes";
 import { WorkspaceDialogs } from "./workspace/ui/notices/WorkspaceDialogs";
 import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
@@ -2952,7 +2950,6 @@ function Workspace({
   });
 
   const workspaceSwitchingSessionId = workspaceNavigation.pending ? active?.id : undefined;
-  const sessionPaneProps = sharedPaneProps(handlers, recents, workspaceSwitchingSessionId);
 
   // Renames, mascot picks and new projects show up on the rail.
   const familiarViewFamiliar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
@@ -3256,31 +3253,13 @@ function Workspace({
                     sessions={sessions}
                     automationsFocusId={automationsFocusId}
                     inboxAsk={
-                      <div className="hidden" aria-hidden>
-                        {sessions
-                          .filter((session) => session.inboxAsk)
-                          .map((session) => {
-                            const visible =
-                              inboxViewOpen &&
-                              inboxAskPortal?.sessionId === session.id;
-                            return (
-                              <SessionSurface
-                                key={session.id}
-                                host={visible ? inboxAskPortal.host : undefined}
-                              >
-                                <SessionPane
-                                  {...sessionPaneProps}
-                                  session={session}
-                                  visible={visible}
-                                  focused={visible}
-                                  inSplit={false}
-                                  composerFocused={composerFocused}
-                                  composerFocusToken={composerFocusToken}
-                                />
-                              </SessionSurface>
-                            );
-                          })}
-                      </div>
+                      <InboxAskPanes
+                        store={workspaceStore}
+                        sessions={sessions}
+                        composerFocused={composerFocused}
+                        composerFocusToken={composerFocusToken}
+                        workspaceSwitchingSessionId={workspaceSwitchingSessionId}
+                      />
                     }
                     localSurfaces={
                       <LocalSurfaceViews
