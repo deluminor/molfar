@@ -2906,6 +2906,7 @@ function Workspace({
       newSessions,
       prefetchSession: onPrefetchHistorySession,
       projects: projectActions,
+      providerAccounts,
       queue: queueActions,
       remoteSnapshot: onRemoteSnapshot,
       secondOpinions,
@@ -3134,11 +3135,6 @@ function Workspace({
         pressureSlot={setPressureChipHost}
         source={usageSource}
         activeTab={activeTab}
-        onSelectAccount={providerAccounts.select}
-        onManageAccounts={surfaces.manageProviderAccounts}
-        onToggleTerminal={terminals.toggleRunning}
-        onNewTerminal={terminals.openNew}
-        onToggleProjectTerminal={terminals.toggleDock}
         inset={insetLayout}
       />
     );
@@ -3202,21 +3198,7 @@ function Workspace({
                     {!IS_MAC ? (
                       <WorkspaceMenuBar
                         store={workspaceStore}
-                        onNew={newSessions.newSession}
-                        onNewTerminal={terminals.openNew}
-                        onToggleTerminal={terminals.toggleDock}
-                        onGoToFile={surfaces.goToFile}
-                        onToggleSidebar={navigation.toggleSidebar}
-                        onToggleSessionSidebar={navigation.toggleSessionSidebarShortcut}
-                        onShowSourceControl={tabActions.showSourceControl}
-                        onCloseTab={tabClose.closeTab}
-                        onCloseOtherTabs={tabClose.closeOtherTabs}
-                        onCloseAllTabs={tabClose.closeAllTabs}
-                        onPickProject={projectActions.pick}
-                        onFindInProject={surfaces.findInProject}
-                        onSearch={surfaces.openSearch}
-                        onOpenInbox={surfaces.openInbox}
-                        onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
+                        notesEnabled={notesEnabled}
                       />
                     ) : null}
                     <div className="flex min-h-0 min-w-0 flex-1">
@@ -3378,18 +3360,7 @@ function Workspace({
                     cwd={sidebarCwd}
                     sessions={sidebarHistory}
                     liveSessions={sessions}
-                    onRemoveWorktree={worktreeActions.remove}
-                    onCheckWorktreeRemoval={worktreeActions.checkRemoval}
-                    onDeleteWorktreeSessions={historyActions.deleteWorktreeSessions}
                     headerHost={insetLayout ? settingsHeaderHost : undefined}
-                    onClose={surfaces.closeSettings}
-                    onSelectSection={surfaces.selectSettingsSection}
-                    onOpenSession={surfaces.openArchivedSession}
-                    onArchiveSession={historyActions.archive}
-                    onDeleteSession={historyActions.delete}
-                    onRestoreProject={projectActions.restore}
-                    onRemoveProject={projectActions.remove}
-                    onOpenWhatsNew={surfaces.openWhatsNew}
                   />
                   {insetLayout ? null : usageFooter}
                 </div>

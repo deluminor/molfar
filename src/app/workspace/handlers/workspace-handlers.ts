@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import type { createBtw } from "../flows/btw/btw-actions";
 import type { createComposerActions } from "../flows/composer/composer-actions";
 import type { createComposerCardActions } from "../flows/composer/composer-cards";
+import type { createProviderAccountActions } from "../flows/composer/provider-account";
 import type { createFamiliarActions } from "../flows/familiars/familiar-actions";
 import type { createFamiliarView } from "../flows/familiars/familiar-view";
 import type { createFileActions } from "../flows/files/file-actions";
@@ -42,6 +43,7 @@ export type WorkspaceHandlers = {
   newSessions: ReturnType<typeof createNewSessionActions>;
   prefetchSession: (sessionId: string) => void;
   projects: ReturnType<typeof createProjectActions>;
+  providerAccounts: ReturnType<typeof createProviderAccountActions>;
   queue: ReturnType<typeof createTurnQueueActions>;
   remoteSnapshot: ReturnType<typeof createRemoteSnapshotSync>;
   secondOpinions: ReturnType<typeof createSecondOpinionActions>;

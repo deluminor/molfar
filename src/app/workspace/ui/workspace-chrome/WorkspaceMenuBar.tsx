@@ -1,15 +1,12 @@
-import type { ComponentProps } from "react";
 import { MenuBar } from "../../../shell/MenuBar";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { zoomUi } from "../../hooks/commands/ui-zoom";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
 
-type Props = Omit<
-  ComponentProps<typeof MenuBar>,
-  "onCloseCurrentTab" | "onZoomIn" | "onZoomOut" | "onZoomReset"
-> & {
+type Props = {
   store: WorkspaceStore;
-  onCloseTab: (tabId: string) => void;
+  notesEnabled: boolean;
 };
 
 const zoomIn = () => zoomUi("zoom-in");
@@ -17,13 +14,28 @@ const zoomOut = () => zoomUi("zoom-out");
 const zoomReset = () => zoomUi("zoom-reset");
 
 /** The in-window menu bar, for platforms without a native one. */
-export function WorkspaceMenuBar({ store, onCloseTab, ...menuProps }: Props) {
+export function WorkspaceMenuBar({ store, notesEnabled }: Props) {
   const activeTabId = useWorkspaceField(store, "activeTabId");
+  const { newSessions, terminals, surfaces, navigation, tabs, tabClose, projects } =
+    useWorkspaceHandlers();
 
   return (
     <MenuBar
-      {...menuProps}
-      onCloseCurrentTab={activeTabId ? () => onCloseTab(activeTabId) : undefined}
+      onNew={newSessions.newSession}
+      onNewTerminal={terminals.openNew}
+      onToggleTerminal={terminals.toggleDock}
+      onGoToFile={surfaces.goToFile}
+      onToggleSidebar={navigation.toggleSidebar}
+      onToggleSessionSidebar={navigation.toggleSessionSidebarShortcut}
+      onShowSourceControl={tabs.showSourceControl}
+      onCloseCurrentTab={activeTabId ? () => tabClose.closeTab(activeTabId) : undefined}
+      onCloseOtherTabs={tabClose.closeOtherTabs}
+      onCloseAllTabs={tabClose.closeAllTabs}
+      onPickProject={projects.pick}
+      onFindInProject={surfaces.findInProject}
+      onSearch={surfaces.openSearch}
+      onOpenInbox={surfaces.openInbox}
+      onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
       onZoomIn={zoomIn}
       onZoomOut={zoomOut}
       onZoomReset={zoomReset}

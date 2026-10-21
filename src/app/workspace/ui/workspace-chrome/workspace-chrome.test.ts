@@ -7,6 +7,7 @@ import type { ProjectTerminalDock } from "@/features/projects/model/project-term
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { InsetRightPanel } from "./InsetRightPanel";
 import { WorkspaceMenuBar } from "./WorkspaceMenuBar";
 import { WorkspaceSettings } from "./WorkspaceSettings";
@@ -42,9 +43,10 @@ vi.mock("../../hooks/commands/ui-zoom", () => ({ zoomUi }));
 let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function render<P extends object>(component: FunctionComponent<P>, props: P): void {
-  act(() => root.render(createElement(component, props)));
+  act(() => root.render(withWorkspaceHandlers(createElement(component, props), handlers)));
 }
 
 beforeEach(() => {
@@ -52,6 +54,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
+  handlers = fakeWorkspaceHandlers();
   seen.menu = undefined;
   seen.footer = undefined;
   seen.settings = undefined;
@@ -64,19 +67,30 @@ afterEach(() => {
 });
 
 describe("WorkspaceMenuBar", () => {
-  const menuProps = (onCloseTab = vi.fn()) =>
-    ({ store, onCloseTab }) as unknown as Parameters<typeof WorkspaceMenuBar>[0];
+  const menuProps = (notesEnabled = false) => ({ store, notesEnabled });
 
   it("closes the active tab and offers nothing to close without one", () => {
-    const onCloseTab = vi.fn();
-    render(WorkspaceMenuBar, menuProps(onCloseTab));
+    render(WorkspaceMenuBar, menuProps());
     expect(seen.menu?.onCloseCurrentTab).toBeUndefined();
 
     act(() => store.setState({ activeTabId: "t1" }));
     const closeCurrent = seen.menu?.onCloseCurrentTab as () => void;
     closeCurrent();
 
-    expect(onCloseTab).toHaveBeenCalledWith("t1");
+    expect(handlers.tabClose.closeTab).toHaveBeenCalledWith("t1");
+  });
+
+  it("takes its menu commands from the workspace handlers, notes only when enabled", () => {
+    render(WorkspaceMenuBar, menuProps());
+    expect(seen.menu).toMatchObject({
+      onNew: handlers.newSessions.newSession,
+      onToggleSessionSidebar: handlers.navigation.toggleSessionSidebarShortcut,
+      onPickProject: handlers.projects.pick,
+      onOpenNotes: undefined,
+    });
+
+    render(WorkspaceMenuBar, menuProps(true));
+    expect(seen.menu?.onOpenNotes).toBe(handlers.surfaces.openNotes);
   });
 
   it("zooms the app UI", () => {
@@ -100,8 +114,6 @@ describe("WorkspaceUsageFooter", () => {
       store,
       source: source && { blocks: [], ...source },
       activeTab: undefined,
-      onNewTerminal: vi.fn(),
-      onToggleProjectTerminal: vi.fn(),
     }) as unknown as Parameters<typeof WorkspaceUsageFooter>[0];
 
   it("shows the session's plan usage and the current local project's running terminals", () => {
@@ -119,7 +131,9 @@ describe("WorkspaceUsageFooter", () => {
       project: "/work/app",
       terminals: [{ id: "term", process: "vite" }],
       terminalOpen: true,
-      onNewTerminal: props.onNewTerminal,
+      onNewTerminal: handlers.terminals.openNew,
+      onToggleProjectTerminal: handlers.terminals.toggleDock,
+      onSelectAccount: handlers.providerAccounts.select,
       projectTerminalActive: true,
       projectTerminalOpen: true,
     });
@@ -159,8 +173,7 @@ describe("WorkspaceUsageFooter", () => {
 
 describe("WorkspaceSettings", () => {
   it("renders only while Settings is open, with its section and rail mode from the store", () => {
-    const onRemoveProject = vi.fn();
-    const props = { store, onRemoveProject } as unknown as Parameters<typeof WorkspaceSettings>[0];
+    const props = { store } as unknown as Parameters<typeof WorkspaceSettings>[0];
     render(WorkspaceSettings, props);
     expect(seen.settings).toBeUndefined();
 
@@ -172,7 +185,8 @@ describe("WorkspaceSettings", () => {
     deleteProject("/work/app");
     act(() => changeRailMode("compact"));
 
-    expect(onRemoveProject).toHaveBeenCalledWith("/work/app", { purgeData: true });
+    expect(handlers.projects.remove).toHaveBeenCalledWith("/work/app", { purgeData: true });
+    expect(seen.settings?.onClose).toBe(handlers.surfaces.closeSettings);
     expect(store.getState().collapsedProjectRailMode).toBe("compact");
   });
 });
