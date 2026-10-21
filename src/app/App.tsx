@@ -68,6 +68,10 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import {
+  type WorkspaceHandlers,
+  WorkspaceHandlersContext,
+} from "./workspace/handlers/workspace-handlers";
 import { createSecondOpinionActions } from "./workspace/flows/second-opinion/second-opinion-actions";
 import { createWorkerPaneActions } from "./workspace/flows/orchestration-workers/worker-pane-actions";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
@@ -2891,6 +2895,37 @@ function Workspace({
   const dockClosingShown = dockSlide.closingShown;
 
   const onRemoteSnapshot = useStableFlow(() => createRemoteSnapshotSync(setSessions));
+  const handlers = useStableFlow(
+    (): WorkspaceHandlers => ({
+      btw,
+      composer: composerActions,
+      composerCards,
+      displayedTabs,
+      familiarView,
+      familiars: familiarActions,
+      files: fileActions,
+      history: historyActions,
+      linkedPanels,
+      linkedUpdateCards,
+      navigation,
+      newSessions,
+      prefetchSession: onPrefetchHistorySession,
+      projects: projectActions,
+      queue: queueActions,
+      remoteSnapshot: onRemoteSnapshot,
+      secondOpinions,
+      sessionOpeners,
+      submission,
+      surfaces,
+      tabClose,
+      tabs: tabActions,
+      terminals,
+      turns: turnActions,
+      usageLimits,
+      workerPanes,
+      worktrees: worktreeActions,
+    }),
+  );
 
   useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
     open: (monoId) =>
@@ -3149,7 +3184,6 @@ function Workspace({
       cwd={sidebarCwd}
       gitCwd={gitCwd}
       worktreeTabStats={worktreeTabStats}
-      onSelectWorkspace={projectActions.selectWorkspace}
       workspaceSwitchPending={
         workspaceNavigation.pending?.project === sidebarCwd
       }
@@ -3167,39 +3201,15 @@ function Workspace({
         tab: rightPanelTab,
         onTabChange: showRightPanel,
       }}
-      onOpenFilesSearch={surfaces.findInProject}
       sessions={sidebarHistory}
       busySessionIds={busySessionIds}
       approvalSessionIds={approvalSessionIds}
       activeSessionId={activeSessionId}
       status={historyFailed ? "error" : "idle"}
       pending={historyPending}
-      onSelectSession={sessionOpeners.selectHistory}
-      onSelectRemoteSession={newSessions.selectRemoteSession}
-      onRemoteSessionDeleted={tabClose.closeDeletedRemoteSession}
-      onPrefetchSession={onPrefetchHistorySession}
-      onSessionNavigationOrder={navigation.setSessionNavigationOrder}
-      onPlaceSessionOnPane={tabActions.placeSession}
-      onRenameSession={historyActions.rename}
-      onArchiveSession={historyActions.archive}
-      onArchiveSessions={historyActions.archiveMany}
-      onPinSession={historyActions.pin}
-      onPinSessions={historyActions.pinMany}
-      onSetSessionLinkedWorkItem={historyActions.setLinkedWorkItem}
       reminders={sessionReminders.reminders}
       onSetReminders={sessionReminders.schedule}
       onCancelReminders={sessionReminders.cancel}
-      onDeleteSession={historyActions.delete}
-      onDeleteSessions={historyActions.deleteMany}
-      onOpenFile={fileActions.open}
-      onOpenTerminal={terminals.open}
-      onFileMoved={fileActions.moved}
-      onFileDeleted={fileActions.deleted}
-      onGoBack={surfaces.railBack}
-      onGoForward={surfaces.railForward}
-      onOpenDiff={tabActions.openWorkingTreeDiff}
-      onOpenAllChanges={tabActions.openAllChanges}
-      onOpenCommit={tabActions.openCommit}
       selectedDiffPath={
         activeTab ? selectedChangePath(activeTab, gitCwd) : undefined
       }
@@ -3208,23 +3218,10 @@ function Workspace({
       textHarness={pickTextHarness(active?.harness)}
       busyProjectPaths={busyProjectPaths}
       liveAgents={liveAgents}
-      onSelectAgent={workerPanes.selectLiveAgent}
-      onStopAgent={workerPanes.closeLiveAgent}
-      onSelectProject={projectActions.select}
-      onOpenProject={projectActions.pick}
-      onRemoveProject={projectActions.remove}
       familiars={sidebarFamiliars}
-      onNew={newSessions.newSession}
       openSessions={openProjectSessions}
-      onNewTerminal={terminals.openNew}
-      onSearch={surfaces.openSearch}
-      onOpenInbox={surfaces.openInbox}
-      onOpenInboxItem={linkedPanels.open}
-      onOpenNotes={notesEnabled ? surfaces.openNotes : undefined}
       onOpenKnowledge={railSurfaces.knowledge ? onOpenKnowledge : undefined}
       knowledgeActive={localSurface === "knowledge"}
-      onOpenAutomations={surfaces.openAutomations}
-      onGoToFile={surfaces.goToFile}
       automationsActive={automationsSurfaceOpen}
       railExtraActions={localSurfaceRailActions}
       localSurfaces={{
@@ -3236,15 +3233,9 @@ function Workspace({
       notesEnabled={notesEnabled}
       titleBarAbove={insetLayout || compactTitleBar}
       inset={insetLayout}
-      onToggleProjectRail={navigation.toggleProjectRail}
       unseenFinishedIds={unseenFinishedIds}
       inboxUnseen={inboxUnseen}
       linkedSessionUpdateIds={linkedSessionUpdateIds}
-      onOpenSettings={surfaces.openSettingsHome}
-      onOpenNotificationSettings={surfaces.openNotificationSettings}
-      onSelectSettingsSection={surfaces.selectSettingsSection}
-      onCloseSettings={surfaces.closeSettings}
-      onOpenWhatsNew={surfaces.openWhatsNew}
     />
   );
 
@@ -3267,6 +3258,7 @@ function Workspace({
 
   return (
     <SessionStateContext.Provider value={sessionState}>
+    <WorkspaceHandlersContext.Provider value={handlers}>
     <OrchestrationActions.Provider value={orchestrationActions}>
       <OrchestrationWorkers.Provider value={orchestrationWorkers}>
         <div
@@ -3576,6 +3568,7 @@ function Workspace({
         <TranscriptPoolOutlet pool={transcriptPool} />
       </OrchestrationWorkers.Provider>
     </OrchestrationActions.Provider>
+    </WorkspaceHandlersContext.Provider>
     </SessionStateContext.Provider>
   );
 }

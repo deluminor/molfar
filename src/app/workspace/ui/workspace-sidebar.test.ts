@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createWorkspaceStore } from "../store/create-workspace-store";
 import { testWorkspaceState } from "../store/test-state";
 import type { WorkspaceStore } from "../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../testing/workspace-handlers";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
 
 const { seen } = vi.hoisted(() => ({
@@ -31,7 +32,7 @@ let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
 
-function mount(overrides: Partial<Props> = {}): void {
+function mount(overrides: Partial<Props> = {}, handlers = fakeWorkspaceHandlers()): void {
   const props = {
     store,
     inset: false,
@@ -41,7 +42,7 @@ function mount(overrides: Partial<Props> = {}): void {
     localSurfaces: { active: null, visible: {}, onOpen: () => {}, badges: {} },
     ...overrides,
   } as unknown as Props;
-  act(() => root.render(createElement(WorkspaceSidebar, props)));
+  act(() => root.render(withWorkspaceHandlers(createElement(WorkspaceSidebar, props), handlers)));
 }
 
 beforeEach(() => {
@@ -134,5 +135,18 @@ describe("WorkspaceSidebar", () => {
     expect(store.getState().filesSearchOpen).toBe(true);
     expect(store.getState().updateNotice).toBeNull();
     expect(seen.props?.filesSearchOpen).toBe(true);
+  });
+
+  it("takes its callbacks from the workspace handlers, notes only when enabled", () => {
+    const handlers = fakeWorkspaceHandlers();
+    mount({ notesEnabled: false }, handlers);
+
+    expect(seen.props?.onOpenFile).toBe(handlers.files.open);
+    expect(seen.props?.onSelectSession).toBe(handlers.sessionOpeners.selectHistory);
+    expect(seen.props?.onPrefetchSession).toBe(handlers.prefetchSession);
+    expect(seen.props?.onOpenNotes).toBeUndefined();
+
+    mount({ notesEnabled: true }, handlers);
+    expect(seen.props?.onOpenNotes).toBe(handlers.surfaces.openNotes);
   });
 });

@@ -1,13 +1,16 @@
 import { type ComponentProps, useCallback } from "react";
 import { Sidebar } from "../../shell/Sidebar";
+import { useWorkspaceHandlers } from "../handlers/workspace-handlers";
 import { useWorkspaceActions } from "../hooks/use-workspace-actions";
 import { useWorkspaceField } from "../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../store/types";
+import { sidebarHandlerProps } from "./sidebar-handler-props";
 
 type SidebarProps = ComponentProps<typeof Sidebar>;
 
 type Props = Omit<
   SidebarProps,
+  | keyof ReturnType<typeof sidebarHandlerProps>
   | "open"
   | "inset"
   | "rightPanel"
@@ -46,6 +49,7 @@ export function WorkspaceSidebar({
   localSurfaces,
   ...passThrough
 }: Props) {
+  const handlers = useWorkspaceHandlers();
   const sessionSidebarOpen = useWorkspaceField(store, "sessionSidebarOpen");
   const projectRailOpen = useWorkspaceField(store, "projectRailOpen");
   const collapsedProjectRailMode = useWorkspaceField(store, "collapsedProjectRailMode");
@@ -76,6 +80,7 @@ export function WorkspaceSidebar({
   return (
     <Sidebar
       {...passThrough}
+      {...sidebarHandlerProps(handlers, passThrough.notesEnabled)}
       // The inset sidebar carries the links to the local surfaces, so it stays
       // beside them like it does beside the other views.
       open={sessionSidebarOpen && (inset || localSurfaces.active === null)}
