@@ -6,6 +6,7 @@ import type { ProjectTerminalDock } from "@/features/projects/model/project-term
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
 import type { WorkspaceStore } from "../../store/types";
+import { fakeWorkspaceHandlers, withWorkspaceHandlers } from "../../testing/workspace-handlers";
 import { LinkedWorkItemPanels } from "./LinkedWorkItemPanels";
 import { ProjectTerminalDocks } from "./ProjectTerminalDocks";
 
@@ -34,9 +35,10 @@ const dock = (projectPath: string, open: boolean) =>
 let container: HTMLDivElement;
 let root: Root;
 let store: WorkspaceStore;
+let handlers: ReturnType<typeof fakeWorkspaceHandlers>;
 
 function render<P extends object>(component: FunctionComponent<P>, props: P): void {
-  act(() => root.render(createElement(component, props)));
+  act(() => root.render(withWorkspaceHandlers(createElement(component, props), handlers)));
 }
 
 beforeEach(() => {
@@ -44,6 +46,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   store = createWorkspaceStore(testWorkspaceState());
+  handlers = fakeWorkspaceHandlers();
   seen.docks = [];
   seen.panels = [];
 });
@@ -54,10 +57,12 @@ afterEach(() => {
 });
 
 describe("ProjectTerminalDocks", () => {
-  const dockProps = (closingShown = false) =>
-    ({ store, closingShown, onFocus: vi.fn(), onHide: vi.fn() }) as unknown as Parameters<
-      typeof ProjectTerminalDocks
-    >[0];
+  const dockProps = (closingShown = false) => ({
+    store,
+    closingShown,
+    onSizePaint: vi.fn(),
+    onSizeCommit: vi.fn(),
+  });
 
   function shown(): (string | undefined)[] {
     return [...container.querySelectorAll("[data-dock-shown]")].map(
@@ -75,6 +80,11 @@ describe("ProjectTerminalDocks", () => {
 
     expect(shown()).toEqual(["dock"]);
     expect(seen.docks.slice(-2).map((props) => props.focused)).toEqual([true, false]);
+    expect(seen.docks.at(-1)).toMatchObject({
+      onFocus: handlers.terminals.focusDock,
+      onCloseTerminal: handlers.terminals.close,
+      onTerminalMetaChange: handlers.terminals.changeMeta,
+    });
   });
 
   it("keeps a closing dock shown until its slide ends, and hides it behind a Familiar", () => {
@@ -100,9 +110,9 @@ describe("LinkedWorkItemPanels", () => {
         ["s2", panel("s2")],
       ]) as never,
     });
-    const onClosePanel = vi.fn();
-    const onOpenSession = vi.fn();
-    render(LinkedWorkItemPanels, { store, shownSessionId: "s2", onClosePanel, onOpenSession });
+    render(LinkedWorkItemPanels, { store, shownSessionId: "s2" });
+    const onClosePanel = handlers.linkedPanels.close;
+    const onOpenSession = handlers.inbox.openSession;
 
     const [first, second] = seen.panels.slice(-2);
     expect(first?.visible).toBe(false);
@@ -120,12 +130,7 @@ describe("LinkedWorkItemPanels", () => {
 
   it("shows no panel while the workspace is covered", () => {
     store.setState({ linkedWorkItemPanels: new Map([["s1", panel("s1")]]) as never });
-    render(LinkedWorkItemPanels, {
-      store,
-      shownSessionId: undefined,
-      onClosePanel: vi.fn(),
-      onOpenSession: vi.fn(),
-    });
+    render(LinkedWorkItemPanels, { store, shownSessionId: undefined });
 
     expect(seen.panels.at(-1)?.visible).toBe(false);
   });

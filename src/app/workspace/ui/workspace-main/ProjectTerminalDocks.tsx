@@ -1,10 +1,11 @@
 import type { ComponentProps } from "react";
 import { sameProjectPath } from "@/features/projects/model/recents";
 import { ProjectTerminalDock } from "@/features/terminal/ui/ProjectTerminalDock";
+import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import { useWorkspaceField } from "../../hooks/use-workspace-field";
 import type { WorkspaceStore } from "../../store/types";
 
-type Props = Omit<ComponentProps<typeof ProjectTerminalDock>, "dock" | "focused"> & {
+type Props = Pick<ComponentProps<typeof ProjectTerminalDock>, "onSizePaint" | "onSizeCommit"> & {
   store: WorkspaceStore;
   /** A dock mid-slide stays rendered until it has closed. */
   closingShown: boolean;
@@ -16,6 +17,7 @@ export function ProjectTerminalDocks({ store, closingShown, ...dockProps }: Prop
   const projectCwd = useWorkspaceField(store, "projectCwd");
   const projectTerminalFocused = useWorkspaceField(store, "projectTerminalFocused");
   const familiarViewId = useWorkspaceField(store, "familiarViewId");
+  const { terminals } = useWorkspaceHandlers();
 
   return projectTerminals.map((dock) => {
     const show =
@@ -31,7 +33,20 @@ export function ProjectTerminalDocks({ store, closingShown, ...dockProps }: Prop
         aria-hidden={!show}
         data-dock-shown={show ? "" : undefined}
       >
-        <ProjectTerminalDock {...dockProps} dock={dock} focused={show && projectTerminalFocused} />
+        <ProjectTerminalDock
+          {...dockProps}
+          dock={dock}
+          focused={show && projectTerminalFocused}
+          onFocus={terminals.focusDock}
+          onHide={terminals.hideDock}
+          onSideChange={terminals.setDockSide}
+          onAddTerminal={terminals.openNew}
+          onSelectTerminal={terminals.select}
+          onCloseTerminal={terminals.close}
+          onCloseOtherTerminals={terminals.closeOthers}
+          onReorderTerminals={terminals.reorder}
+          onTerminalMetaChange={terminals.changeMeta}
+        />
       </div>
     );
   });

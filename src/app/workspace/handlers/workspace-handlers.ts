@@ -6,6 +6,8 @@ import type { createProviderAccountActions } from "../flows/composer/provider-ac
 import type { createFamiliarActions } from "../flows/familiars/familiar-actions";
 import type { createFamiliarView } from "../flows/familiars/familiar-view";
 import type { createFileActions } from "../flows/files/file-actions";
+import type { createInboxActions } from "../flows/inbox/inbox-actions";
+import type { createInboxAsk } from "../flows/inbox/inbox-ask";
 import type { createLinkedUpdateCards } from "../flows/linked-work-items/linked-update-card";
 import type { createLinkedWorkItemPanels } from "../flows/linked-work-items/linked-work-item-panel";
 import type { createWorkerPaneActions } from "../flows/orchestration-workers/worker-pane-actions";
@@ -37,6 +39,8 @@ export type WorkspaceHandlers = {
   familiars: ReturnType<typeof createFamiliarActions>;
   files: ReturnType<typeof createFileActions>;
   history: ReturnType<typeof createSessionHistoryActions>;
+  inbox: ReturnType<typeof createInboxActions>;
+  inboxAsk: ReturnType<typeof createInboxAsk>;
   linkedPanels: ReturnType<typeof createLinkedWorkItemPanels>;
   linkedUpdateCards: ReturnType<typeof createLinkedUpdateCards>;
   navigation: ReturnType<typeof createNavigationActions>;

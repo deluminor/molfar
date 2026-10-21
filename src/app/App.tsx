@@ -2900,6 +2900,8 @@ function Workspace({
       familiars: familiarActions,
       files: fileActions,
       history: historyActions,
+      inbox: inboxActions,
+      inboxAsk,
       linkedPanels,
       linkedUpdateCards,
       navigation,
@@ -3213,17 +3215,8 @@ function Workspace({
                             <ProjectTerminalDocks
                               store={workspaceStore}
                               closingShown={dockClosingShown}
-                              onFocus={terminals.focusDock}
-                              onHide={terminals.hideDock}
-                              onSideChange={terminals.setDockSide}
                               onSizePaint={dockSlide.paintSize}
                               onSizeCommit={dockSlide.commitSize}
-                              onAddTerminal={terminals.openNew}
-                              onSelectTerminal={terminals.select}
-                              onCloseTerminal={terminals.close}
-                              onCloseOtherTerminals={terminals.closeOthers}
-                              onReorderTerminals={terminals.reorder}
-                              onTerminalMetaChange={terminals.changeMeta}
                             />
                             <div
                               className="relative flex min-h-0 min-w-0 flex-row"
@@ -3263,9 +3256,6 @@ function Workspace({
                                 : activeLinkedWorkItemPanel?.sessionId
                             }
                             repairSessions={repairSessions}
-                            onRepairChecks={inboxActions.repairChecks}
-                            onOpenSession={inboxActions.openSession}
-                            onClosePanel={linkedPanels.close}
                           />
                         </main>
                       </div>
