@@ -76,6 +76,8 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import { createWorkerPaneActions } from "./workspace/flows/orchestration-workers/worker-pane-actions";
+import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { createComposerCardActions } from "./workspace/flows/composer/composer-cards";
 import { createFamiliarActions } from "./workspace/flows/familiars/familiar-actions";
@@ -162,7 +164,7 @@ import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-event
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
-import { closeLiveAgent, type CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
+import type { CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
 import { handoffSession } from "./workspace/flows/turn-control/handoff-session";
 import type { HarnessReplyDeps } from "./workspace/flows/turn-control/harness-replies";
 import { createTurnControlActions } from "./workspace/flows/turn-control/turn-control-actions";
@@ -204,12 +206,10 @@ import {
 import {
   attachOrchestrationWorkers,
   consolidateOrchestrationTabs,
-  prepareOrchestrationWorkerDetails,
 } from "@/features/orchestration/model/orchestration-workspace";
 import {
   OrchestrationActions,
   OrchestrationWorkers,
-  type OrchestrationWorkerDetail,
 } from "@/features/orchestration/ui/orchestration-actions";
 import { findProjectTerminal } from "@/features/projects/model/project-terminal";
 
@@ -247,9 +247,7 @@ import {
   isolateTerminalPanes,
   leafIds,
   neighborLeafId,
-  newAgentTab,
   newTab,
-  openEditorTab,
   splitPane,
   type FocusDir,
   type SplitDir,
@@ -531,7 +529,6 @@ function Workspace({
     setLinkedWorkItemPanels,
     setNotesViewOpen,
     setInspectedWorkerId,
-    setWorkerDetailRequest,
     setSettingsOpen,
     setWhatsNewVersion,
     setFamiliarViewId,
@@ -2785,9 +2782,6 @@ function Workspace({
       updateTabs: (update) => setTabs(update),
     }),
   );
-  const onCloseLiveAgent = useCallback((sessionId: string) => {
-    void closeLiveAgent(closeLiveAgentDeps, sessionId);
-  }, []);
 
   useEscapeStop(
     useStableFlow(() => ({
@@ -2829,21 +2823,6 @@ function Workspace({
     launch: (launch, id) => launchQuickSessionRef.current(launch, id),
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   });
-
-  const onOpenApprovalSession = useCallback(
-    (sessionId: string) => {
-      const parentId =
-        sessionsRef.current.find((session) => session.id === sessionId)
-          ?.orchestrationLeadId ?? orchestrator.forSession(sessionId)?.leadId;
-      if (parentId && parentId !== sessionId) {
-        setInspectedWorkerId(sessionId);
-        if (!focusOpenSession(parentId)) void onSelectHistorySession(parentId);
-      } else if (!focusOpenSession(sessionId)) {
-        void onSelectHistorySession(sessionId);
-      }
-    },
-    [focusOpenSession, onSelectHistorySession],
-  );
 
   useEffect(() => {
     setSessions((prev) => attachOrchestrationWorkers(prev, orchestrationRuns));
@@ -2898,81 +2877,35 @@ function Workspace({
   useControlRequests(useStableFlow(() => createControlRequests(agentAppDeps)));
 
   const confirmingOrchestration = useRef(new Set<string>());
-  const queueWorkerPanes = useCallback(
-    (workers: OrchestrationWorkerDetail[]) => {
-      // Finished workers are not open; load stored transcripts before the
-      // tabs appear so the pane does not flash the empty state.
-      void prepareOrchestrationWorkerDetails(workers, {
-        openLead: async (leadId) => {
-          if (!focusOpenSession(leadId)) await onSelectHistorySession(leadId);
-        },
-        openWorker: ensureOpenSession,
-        hasSession: (id) =>
-          sessionsRef.current.some((session) => session.id === id),
-      })
-        .then((request) => {
-          if (request?.workers.length) setWorkerDetailRequest(request);
-        })
-        .catch(console.error);
-    },
-    [ensureOpenSession, focusOpenSession, onSelectHistorySession],
+  const workerPanes = useStableFlow(() =>
+    createWorkerPaneActions({
+      store: workspaceStore,
+      sessionsRef,
+      setAutomationsViewOpen,
+      focusOpenSession: (sessionId) => focusOpenSession(sessionId),
+      selectHistorySession: (sessionId) => onSelectHistorySession(sessionId),
+      ensureOpenSession: (sessionId) => ensureOpenSession(sessionId),
+      closeLive: closeLiveAgentDeps,
+    }),
   );
-  const onOpenWorkerDetails = useCallback(
-    (worker: OrchestrationWorkerDetail) => {
-      setInspectedWorkerId(worker.sessionId);
-      queueWorkerPanes([worker]);
-    },
-    [queueWorkerPanes],
+  useWorkerDetailPanes(
+    tabs,
+    workerDetailRequest,
+    useStableFlow(() => ({
+      store: workspaceStore,
+      sessionsRef,
+      projectCwd: () => projectCwdRef.current,
+      selectTab: (tabId: string) => setActiveTabId(tabId),
+      setComposerFocused: (focused: boolean) => setComposerFocused(focused),
+    })),
   );
-  useEffect(() => {
-    if (!workerDetailRequest) return;
-    const { leadId, workers } = workerDetailRequest;
-    const tab = tabs.find((entry) => leafIds(entry.layout).includes(leadId));
-    if (!tab) {
-      // Still opening: this runs again on the commit that lands the lead. If
-      // the lead never arrived at all, drop the request rather than let it
-      // fire against some later tab change.
-      if (!sessionsRef.current.some((entry) => entry.id === leadId)) {
-        setWorkerDetailRequest(null);
-      }
-      return;
-    }
-    setWorkerDetailRequest(null);
-    // Every agent of a run shares one pane, the way files do: `openEditorTab`
-    // focuses an open tab, adds to the pane already beside the lead, or splits
-    // one off when there is none.
-    const cwd =
-      sessionsRef.current.find((entry) => entry.id === leadId)?.cwd ??
-      projectCwdRef.current;
-    const files = workers.map((worker) =>
-      newAgentTab(worker.title, cwd, {
-        sessionId: worker.sessionId,
-        leadId,
-        harness: worker.harness,
-      }),
-    );
-    setTabs((prev) =>
-      prev.map((entry) => {
-        if (entry.id !== tab.id) return entry;
-        const opened = files.reduce(
-          (next, file) => openEditorTab(next, file),
-          entry,
-        );
-        // Leave the first worker focused so View agents lands on the start
-        // of the run rather than the last tab added.
-        return files[0] ? openEditorTab(opened, files[0]) : opened;
-      }),
-    );
-    setActiveTabId(tab.id);
-    setComposerFocused(false);
-  }, [tabs, workerDetailRequest]);
   const orchestrationWorkers = useMemo(
     () => ({
       selectedId: inspectedWorkerId,
       inspect: setInspectedWorkerId,
-      openDetails: onOpenWorkerDetails,
+      openDetails: workerPanes.openDetails,
     }),
-    [inspectedWorkerId, onOpenWorkerDetails],
+    [inspectedWorkerId],
   );
   const proposalActions = useStableFlow(() =>
     createProposalActions({
@@ -2984,27 +2917,11 @@ function Workspace({
       submit: (...args) => onSubmitRef.current(...args),
     }),
   );
-  const orchestrationActions = useMemo(
-    () => ({
-      open: onOpenApprovalSession,
-      openAgents: queueWorkerPanes,
-      update: proposalActions.update,
-      confirm: proposalActions.confirm,
-      retry: proposalActions.retry,
-    }),
-    [onOpenApprovalSession, queueWorkerPanes],
-  );
-
-  const onSelectLiveAgent = useCallback(
-    (sessionId: string) => {
-      setSearchViewOpen(false);
-      setInboxViewOpen(false);
-      setNotesViewOpen(false);
-      setAutomationsViewOpen(false);
-      onOpenApprovalSession(sessionId);
-    },
-    [onOpenApprovalSession],
-  );
+  const orchestrationActions = useStableFlow(() => ({
+    ...proposalActions,
+    open: workerPanes.openSession,
+    openAgents: workerPanes.openAgents,
+  }));
 
   const shownViewTabId = settingsOpen
     ? undefined
@@ -3324,7 +3241,7 @@ function Workspace({
     onNavigateSessionList,
     onNavigateProjectList,
     openSettings: surfaces.openSettings,
-    onOpenApprovalSession,
+    onOpenApprovalSession: workerPanes.openSession,
     onOpenBoardCard,
   });
   const run = useCommandRunner();
@@ -3723,8 +3640,8 @@ function Workspace({
       textHarness={pickTextHarness(active?.harness)}
       busyProjectPaths={busyProjectPaths}
       liveAgents={liveAgents}
-      onSelectAgent={onSelectLiveAgent}
-      onStopAgent={onCloseLiveAgent}
+      onSelectAgent={workerPanes.selectLiveAgent}
+      onStopAgent={workerPanes.closeLiveAgent}
       onSelectProject={projectActions.select}
       onOpenProject={projectActions.pick}
       onRemoveProject={projectActions.remove}
@@ -4081,7 +3998,7 @@ function Workspace({
               insetChip: insetLayout,
             }}
             approvalNotices={hiddenApprovalToasts}
-            onFocusApprovalSession={onOpenApprovalSession}
+            onFocusApprovalSession={workerPanes.openSession}
             onApproval={turnActions.approve}
             reminders={sessionReminders}
             onOpenReminderSettings={surfaces.openReminderSettings}
