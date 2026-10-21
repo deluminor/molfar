@@ -84,7 +84,6 @@ import {
   type WorktreeFocus,
   useWorktreeFocus,
 } from "@/features/source-control/model/worktree-focus";
-import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import type { Worktree } from "@/features/source-control/model/worktrees";
 import {
   homeDir,
@@ -315,7 +314,8 @@ import {
   closePane,
   closeTitleTab,
 } from "./workspace/flows/tabs/close/pane-close";
-import { FamiliarViewActions, TitleBar } from "./shell/TitleBar";
+import { FamiliarViewActions } from "./shell/TitleBar";
+import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 import { UsageFooter } from "./shell/UsageFooter";
 
 import {
@@ -512,7 +512,6 @@ import {
   familiarForSession,
   familiarLook,
   familiarsSnapshot,
-  familiarState,
   saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
@@ -650,9 +649,6 @@ function openSessionIds(tabs: WorkspaceTab[]): Set<string> {
   }
   return ids;
 }
-
-/** Stable empty tab list for the title bar while a Familiar is in full view. */
-const NO_TITLE_TABS: [] = [];
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -4807,88 +4803,43 @@ function Workspace({
     rightPanelRef,
     setRightPanelClosing,
   );
-  // The same shared stats the sidebar's Changes tab reads, so the toggle
-  // that opens it can carry its dot.
   const showRightPanelToggle =
     insetLayout && !settingsOpen && looksLikeProject(sidebarCwd);
   rightPanelToggleRef.current =
     showRightPanelToggle && !(familiarCovers && familiarViewFamiliar) && !activeAppView
       ? onToggleRightPanel
       : null;
-  const rightPanelChanges = useProjectDiffStats(
-    gitCwd || sidebarCwd,
-    showRightPanelToggle && isLocalProject(sidebarCwd),
-  );
   const onToggleFamiliarOverview = () => setFamiliarOverviewOpen(!familiarOverviewOpen);
   const onOpenFamiliarViewSettings = familiarViewFamiliar
     ? () => setFamiliarSettingsFor(familiarViewFamiliar.id)
     : undefined;
-  // A new session takes over from a Familiar in view.
-  const onNewFromTitleBar = () => {
-    if (workspaceStore.getState().familiarViewId) closeFamiliarView();
-    onNew();
-  };
   const workspaceTitleBar = (
-    <TitleBar
-      // A Familiar in full view stands apart from the project's tabs, except
-      // in the inset layout, where it is one of them.
-      tabs={familiarCovers && !insetLayout ? NO_TITLE_TABS : titleTabs}
-      content={
-        insetLayout && settingsOpen ? (
-          <div
-            ref={setSettingsHeaderHost}
-            data-settings-title
-            className="flex h-full min-w-0 flex-1"
-          />
-        ) : undefined
-      }
-      familiar={
-        familiarCovers && familiarViewFamiliar && familiarViewSession
-          ? { look: familiarLook(familiarViewFamiliar), state: familiarState(familiarViewSession) }
-          : undefined
-      }
-      // The inset layout keeps these in the Familiar's pane, under its tab.
-      onToggleFamiliarOverview={
-        familiarCovers && !insetLayout ? onToggleFamiliarOverview : undefined
-      }
-      familiarOverviewOpen={familiarOverviewOpen}
-      onOpenFamiliarSettings={
-        familiarCovers && !insetLayout ? onOpenFamiliarViewSettings : undefined
-      }
-      hideWindowControls={familiarCovers && familiarOverviewOpen && !!familiarOverviewPanel}
-      activeId={
-        familiarViewSession
-          ? insetLayout
-            ? (familiarViewTabId ?? "")
-            : ""
-          : insetLayout && activeAppView
-            ? appViewTabId(activeAppView)
-            : activeTabId
-      }
-      cwd={sidebarCwd}
-      projectRailOpen={projectRailOpen}
-      sessionSidebarOpen={sessionSidebarOpen}
-      compactRail={!insetLayout && compactTitleNavigation}
+    <WorkspaceTitleBar
+      store={workspaceStore}
+      tabs={titleTabs}
       inset={insetLayout}
+      cwd={sidebarCwd}
+      gitCwd={gitCwd}
+      familiar={familiarViewFamiliar}
+      familiarSession={familiarViewSession}
+      familiarTabId={familiarViewTabId}
+      overviewShown={!!familiarOverviewPanel}
+      activeAppView={activeAppView}
+      compactRail={compactTitleNavigation}
+      showRightPanelToggle={showRightPanelToggle}
       rightPanelOpen={rightPanelOpen}
-      onToggleRightPanel={
-        showRightPanelToggle ? onToggleRightPanel : undefined
-      }
-      rightPanelDot={(rightPanelChanges?.files ?? 0) > 0}
-      rightPanelUnavailable={!!activeAppView}
-      canGoBack={!!familiarViewId || tabVisitNav.canBack}
-      canGoForward={tabVisitNav.canForward}
+      onToggleRightPanel={onToggleRightPanel}
+      onToggleFamiliarOverview={onToggleFamiliarOverview}
+      onOpenFamiliarSettings={onOpenFamiliarViewSettings}
+      onSettingsHeaderHost={setSettingsHeaderHost}
+      onNew={onNew}
+      onCloseFamiliarView={closeFamiliarView}
       onGoBack={onRailBack}
       onGoForward={onRailForward}
       onToggleSidebar={onToggleSidebar}
       onToggleSessionSidebar={onToggleSessionSidebar}
       onSelect={onSelectTitleTab}
       onNewTerminal={onNewTerminal}
-      onNewSession={
-        insetLayout && !settingsOpen && looksLikeProject(sidebarCwd)
-          ? onNewFromTitleBar
-          : undefined
-      }
       onOpenSettings={onOpenSettings}
       onOpenInbox={onOpenInbox}
       onOpenNotes={notesEnabled ? onOpenNotes : undefined}
@@ -4900,7 +4851,6 @@ function Workspace({
       onReorder={onReorderDisplayedTabs}
       onPlaceOnPane={onPlaceTabOnPane}
       onPinFile={onPinFile}
-      recents={recents}
       onSelectProject={onSelectProject}
     />
   );
