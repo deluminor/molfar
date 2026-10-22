@@ -69,6 +69,7 @@ import { useProjectFlows } from "./workspace/hooks/flows/use-project-flows";
 import { useSubmissionFlows } from "./workspace/hooks/flows/use-submission-flows";
 import { useTurnQueueFlows } from "./workspace/hooks/flows/use-turn-queue-flows";
 import { useOrchestrationFlows } from "./workspace/hooks/flows/use-orchestration-flows";
+import { useTitleTabFlows } from "./workspace/hooks/flows/use-title-tab-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import {
   type WorkspaceHandlers,
@@ -94,8 +95,6 @@ import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
-import { createRemoteSnapshotSync } from "./workspace/flows/remote-sessions/remote-snapshot";
-import { createNavigationActions } from "./workspace/flows/surfaces/navigation-actions";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useWorkspaceChrome } from "./workspace/ui/layout/use-workspace-chrome";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
@@ -109,14 +108,10 @@ import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
-import { createDisplayedTabs } from "./workspace/title-tabs/displayed-tabs";
 import type {
   DisplayedTabNavigation,
-  DisplayedTabsDeps,
   VisibleTabs,
 } from "./workspace/title-tabs/displayed-tabs-deps";
-import { createVisibleTabShortcuts } from "./workspace/title-tabs/visible-tab-shortcuts";
-import { openAppView } from "./workspace/flows/surfaces/overlay-views";
 import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -633,8 +628,6 @@ function Workspace({
   >(new Map());
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
-  const dirtyFilesRef = useRef(dirtyFiles);
-  dirtyFilesRef.current = dirtyFiles;
   const projectTerminalsRef = useRef(projectTerminals);
   projectTerminalsRef.current = projectTerminals;
   const projectTerminalFocusedRef = useRef(projectTerminalFocused);
@@ -1976,22 +1969,21 @@ function Workspace({
     onSelectHistorySession: sessionOpeners.selectHistory,
     railBadges,
   });
-  const navigation = useStableFlow(() =>
-    createNavigationActions({
-      store: workspaceStore,
-      insetLayout: () => insetLayoutRef.current,
-      rightPanelToggle: () => rightPanelToggleRef.current,
-      hasDirtyFiles: () => dirtyFilesRef.current.size > 0,
-      reload: () => window.location.reload(),
-      sessionList: sessionListDeps,
-      project: {
-        currentProject: () => projectCwdRef.current,
-        selectProject: projectActions.select,
-        noteStep: noteProjectStep,
-      },
-      openLocalSurface: (surface) => onOpenLocalSurface(surface),
-    }),
-  );
+  const { navigation, displayedTabs, visibleTabShortcuts, remoteSnapshot } = useTitleTabFlows(flowCore, {
+    navigation: displayedTabNavigation,
+    setOpenAppViews,
+    setOpenFamiliarTabs,
+    setTitleTabOrder,
+    openLocalSurface: (surface) => onOpenLocalSurface(surface),
+    sessionList: sessionListDeps,
+    tabActions,
+    surfaceDeps,
+    tabFlows,
+    projectActions,
+    noteProjectStep,
+    rightPanelToggleRef,
+    visibleTabsRef,
+  });
 
   useEffect(() => {
     if (sidebarTab === "inbox") setSidebarTab("sessions");
@@ -2022,40 +2014,6 @@ function Workspace({
     );
   }, []);
 
-  const displayedTabsDeps = useStableFlow(
-    (): DisplayedTabsDeps => ({
-      store: workspaceStore,
-      navigation: displayedTabNavigation,
-      visible: () => visibleTabsRef.current,
-      activeTabIdRef,
-      setOpenAppViews,
-      setOpenFamiliarTabs,
-      setTitleTabOrder,
-      setAutomationsViewOpen,
-      openFamiliar: (familiarId) => onOpenFamiliar(familiarId),
-      openAppView: (view) => openAppView(surfaceDeps, view),
-      activateTab: (tabId) => tabLayout.activate(tabId),
-      closeFamiliarView: () => closeFamiliarView(),
-      workspace: {
-        closeTitleTab: (tabId) => tabClose.closeTitleTab(tabId),
-        closeTabs: (ids, fallbackId) => tabClose.closeTabs(ids, fallbackId),
-        closeEveryTab: (ids) => tabClose.closeEveryTab(ids),
-        reorderTabs: tabActions.reorderTabs,
-        closeFocused: newSessions.closeFocused,
-        next: tabActions.next,
-        prev: tabActions.prev,
-        activate: tabActions.activateSlot,
-        closeOtherTabs: () => tabClose.closeOtherTabs(),
-        closeAllTabs: () => tabClose.closeAllTabs(),
-      },
-    }),
-  );
-  const displayedTabs = useStableFlow(() => createDisplayedTabs(displayedTabsDeps));
-  const visibleTabShortcuts = useStableFlow(() =>
-    createVisibleTabShortcuts(displayedTabsDeps, displayedTabs),
-  );
-  const onSelectTitleTab = displayedTabs.selectTitleTab;
-
   displayedTabNavigation.current = {
     tabs: insetLayout ? titleTabs : [],
     activeId: settingsOpen
@@ -2065,7 +2023,7 @@ function Workspace({
         : activeAppView
           ? appViewTabId(activeAppView)
           : activeTabId,
-    select: onSelectTitleTab,
+    select: displayedTabs.selectTitleTab,
   };
 
   visibleTabsRef.current = {
@@ -2076,7 +2034,6 @@ function Workspace({
     titleTabs,
   };
 
-  const onRemoteSnapshot = useStableFlow(() => createRemoteSnapshotSync(setSessions));
   const handlers = useStableFlow(
     (): WorkspaceHandlers => ({
       btw,
@@ -2097,7 +2054,7 @@ function Workspace({
       projects: projectActions,
       providerAccounts,
       queue: queueActions,
-      remoteSnapshot: onRemoteSnapshot,
+      remoteSnapshot,
       secondOpinions,
       sessionOpeners,
       submission,
