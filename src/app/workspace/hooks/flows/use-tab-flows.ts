@@ -34,7 +34,7 @@ export function createTabFlows(core: WorkspaceFlowCore, input: TabFlowsInput) {
     cache: core.loadedSessionCache.current,
     persistence: core.persistence,
     forgetHarness: (session) => void forgetHarnessSession(session.harness, session.id),
-    leaveCoveringViews: () => core.closeFamiliarView(),
+    leaveCoveringViews: () => core.familiarView.close(),
   };
   const layout: TabLayoutDeps = {
     store,
@@ -81,7 +81,7 @@ export function createTabFlows(core: WorkspaceFlowCore, input: TabFlowsInput) {
     activateTab: (tabId) => tabLayout.activate(tabId),
     persist: (session) => core.persistence.persist(session),
     refreshHistory: () => void core.refreshHistory(sidebarCwdRef.current),
-    closeFamiliarView: () => core.closeFamiliarView(),
+    closeFamiliarView: () => core.familiarView.close(),
     confirmDiscardUnsaved,
     confirmCloseTerminal,
     confirmCloseTerminals,
@@ -100,7 +100,7 @@ export function createTabFlows(core: WorkspaceFlowCore, input: TabFlowsInput) {
     activateTab: (tabId, paneId) => tabLayout.activate(tabId, paneId),
     selectTab: (tabId) => core.selectTab(tabId),
     setComposerFocused: (focused) => core.setComposerFocused(focused),
-    closeFamiliarView: () => core.closeFamiliarView(),
+    closeFamiliarView: () => core.familiarView.close(),
     terminals,
     closePane: () => tabClose.closePane(),
   });

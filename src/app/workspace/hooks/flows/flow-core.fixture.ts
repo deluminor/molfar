@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import type { Session } from "@/domain/session/session";
+import type { FamiliarView } from "../../flows/familiars/familiar-view";
 import type { SessionPersistence } from "../../flows/session-history/session-persistence";
 import { createWorkspaceStore } from "../../store/create-workspace-store";
 import { testWorkspaceState } from "../../store/test-state";
@@ -25,16 +26,22 @@ export function fakeFlowCore(state: Partial<WorkspaceInitialState> = {}): Worksp
     activeTabIdRef: { current: store.getState().activeTabId },
     projectCwdRef: { current: store.getState().projectCwd },
     sidebarCwdRef: { current: store.getState().projectCwd },
+    gitCwdRef: { current: store.getState().projectCwd },
     sessionDefaultsRef: { current: undefined },
     activeTabRef: { current: undefined },
     insetLayoutRef: { current: false },
     persistence,
+    loader: { load: vi.fn(async () => null), prefetch: vi.fn(), invalidate: vi.fn(), loadingIds: vi.fn(() => []) },
     loadedSessionCache: { current: new Map() },
+    openingSessionIds: { current: new Set() },
+    removingSessionIds: { current: new Set() },
+    familiarView: { open: vi.fn(async () => undefined), close: vi.fn() } as unknown as FamiliarView,
+    navigation: { cancel: vi.fn() },
     setActiveTabId: vi.fn(),
     selectTab: vi.fn(),
     setComposerFocused: vi.fn(),
     setAutomationsViewOpen: vi.fn(),
-    closeFamiliarView: vi.fn(),
+    setSidebarTab: vi.fn(),
     leaveCoveringFamiliar: vi.fn(),
     refreshHistory: vi.fn(async () => undefined),
     projectOfTab: vi.fn(() => undefined),

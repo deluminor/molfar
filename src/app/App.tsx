@@ -32,7 +32,6 @@ import { createSessionLoader } from "./workspace/flows/session-history/session-l
 import type { SessionActionsDeps } from "./workspace/flows/session-history/session-actions";
 import { createSessionHistoryActions } from "./workspace/flows/session-history/session-history-actions";
 import type { SessionRemovalChangeDeps } from "./workspace/flows/session-history/session-removal-change";
-import type { OpenSavedSessionDeps } from "./workspace/flows/session-history/open-saved-session";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { updateSessionState } from "./model/session-state";
@@ -70,6 +69,7 @@ import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
 import type { WorkspaceFlowCore } from "./workspace/hooks/flows/workspace-flow-core";
 import { useTabFlows } from "./workspace/hooks/flows/use-tab-flows";
+import { useSessionOpenerFlows } from "./workspace/hooks/flows/use-session-opener-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
@@ -114,9 +114,6 @@ import { createAutomationRuns } from "./workspace/flows/automations/automation-r
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
-import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
-import { createTabActions } from "./workspace/flows/tabs/tab-actions";
-import { createSessionOpenerActions } from "./workspace/flows/tabs/session-opener-actions";
 import { createProviderAccountActions } from "./workspace/flows/composer/provider-account";
 import { createRemoteSnapshotSync } from "./workspace/flows/remote-sessions/remote-snapshot";
 import { createNavigationActions } from "./workspace/flows/surfaces/navigation-actions";
@@ -143,7 +140,6 @@ import type {
   VisibleTabs,
 } from "./workspace/title-tabs/displayed-tabs-deps";
 import { createVisibleTabShortcuts } from "./workspace/title-tabs/visible-tab-shortcuts";
-import type { SessionListDeps } from "./workspace/flows/tabs/session-list-navigation";
 import type { SurfaceDeps } from "./workspace/flows/surfaces/surface-deps";
 import { openAppView } from "./workspace/flows/surfaces/overlay-views";
 import { createSurfaceActions } from "./workspace/flows/surfaces/surface-actions";
@@ -184,7 +180,6 @@ import {
 } from "@/integrations/harness/core/models/resolve-model";
 import { newTerminalCwd } from "@/features/terminal/model/terminal-tab";
 import {
-  bindHarnessSession,
   cancelHarnessTurn,
   migrateFamiliarCodexSession,
   isLiveHarness,
@@ -260,7 +255,6 @@ import {
   deleteSession,
   getSession,
   readSession,
-  repairSession,
   listLinkedSessions,
   listSessionsByProject,
   replaceInFlightSessions,
@@ -284,8 +278,6 @@ import {
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
 import type { FamiliarRemovalDeps } from "./workspace/flows/familiars/familiar-removal";
-import type { OpenDiffDeps } from "./workspace/flows/files/open-diff";
-import type { PlaceSessionDeps } from "./workspace/flows/tabs/place-session";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
@@ -542,7 +534,6 @@ function Workspace({
     (id: string) => tabProjectsRef.current.get(id),
     [],
   );
-  const tabCloseScope = "project" as const;
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
   const searchViewOpen = useWorkspaceField(workspaceStore, "searchViewOpen");
@@ -1687,23 +1678,20 @@ function Workspace({
   const flowCore = useStableFlow(
     (): WorkspaceFlowCore => ({
       store: workspaceStore,
-      sessionsRef, setSessions, tabsRef, activeTabIdRef, projectCwdRef, sidebarCwdRef,
-      sessionDefaultsRef, activeTabRef, insetLayoutRef, loadedSessionCache,
+      sessionsRef, setSessions, tabsRef, activeTabIdRef, projectCwdRef, sidebarCwdRef, gitCwdRef,
+      sessionDefaultsRef, activeTabRef, insetLayoutRef,
       persistence: sessionPersistence,
+      loader: sessionLoader,
+      loadedSessionCache, openingSessionIds, removingSessionIds, familiarView,
+      navigation: workspaceNavigation,
       setActiveTabId: setActiveTabIdState,
       selectTab: setActiveTabId,
-      setComposerFocused, setAutomationsViewOpen, closeFamiliarView, leaveCoveringFamiliar,
+      setComposerFocused, setAutomationsViewOpen, setSidebarTab, leaveCoveringFamiliar,
       refreshHistory, projectOfTab, tabWorkspace,
     }),
   );
-  const {
-    focus: tabFocusDeps,
-    layout: tabLayoutDeps,
-    tabLayout,
-    terminals,
-    tabClose,
-    newSessions,
-  } = useTabFlows(flowCore, { terminalCwdRef, displayedTabNavigation });
+  const tabFlows = useTabFlows(flowCore, { terminalCwdRef, displayedTabNavigation });
+  const { tabLayout, terminals, tabClose, newSessions } = tabFlows;
 
   useEffect(() => {
     tabVisits.sync(new Set(tabs.map((tab) => tab.id)), activeTabId);
@@ -1747,112 +1735,22 @@ function Workspace({
     workspaceNavigation.revision,
   ]);
 
-  const paneDeps = useStableFlow(
-    (): PaneDeps => ({
-      store: workspaceStore,
-      tabsRef,
-      activeTabIdRef,
-      sessionsRef,
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      closeFamiliarView: () => closeFamiliarView(),
-      closeAutomations: () => setAutomationsViewOpen(false),
-      cancelNavigation: () => workspaceNavigation.cancel(),
-      activateTab: (tabId, paneId) => tabLayout.activate(tabId, paneId),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      appendTab: (tab, cwd) => tabLayout.append(tab, cwd),
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      openFamiliar: (familiarId) => onOpenFamiliar(familiarId),
-      focusOpenSession: (sessionId) => sessionOpeners.focusOpen(sessionId),
-      replaceBlankPane: (session) => sessionOpeners.replaceBlankPane(session),
-      linkedUpdates: () => linkedSessionUpdatesRef.current,
-      revealLinkedUpdate: (sessionId, update) => linkedUpdateCards.reveal(sessionId, update),
-    }),
-  );
-  const sessionListDeps = useStableFlow(
-    (): SessionListDeps => ({
-      ...paneDeps,
-      navigationIds: sessionNavigationIdsRef,
-      selectHistorySession: (sessionId) => sessionOpeners.selectHistory(sessionId),
-      selectRemoteSession: newSessions.selectRemoteSession,
-      prefetch: (sessionId) => onPrefetchHistorySession(sessionId),
-    }),
-  );
-  const openDiffDeps = useStableFlow(
-    (): OpenDiffDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      activeTabIdRef,
-      gitCwd: () => gitCwdRef.current,
-      sidebarCwd: () => sidebarCwdRef.current,
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-    }),
-  );
-  const placeSessionDeps = useStableFlow(
-    (): PlaceSessionDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      tabsRef,
-      persistence: sessionPersistence,
-      scope: tabCloseScope,
-      projectCwd: () => projectCwdRef.current,
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      setSessions: (next) => setSessions(next),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-    }),
-  );
   const deckProjectTabsRef = useLatestRef(deckProjectTabs);
-  const tabActions = useStableFlow(() =>
-    createTabActions({
-      pane: paneDeps,
-      diff: openDiffDeps,
-      layout: tabLayoutDeps,
-      place: placeSessionDeps,
-      visits: tabVisits,
-      deckTabs: () => deckProjectTabsRef.current,
-      activeTab: () => activeTabRef.current,
-    }),
-  );
+  const {
+    sessionList: sessionListDeps,
+    place: placeSessionDeps,
+    tabActions,
+    sessionOpeners,
+  } = useSessionOpenerFlows(flowCore, {
+    tabFlows,
+    visits: tabVisits,
+    linkedUpdateCards,
+    linkedUpdatesRef: linkedSessionUpdatesRef,
+    navigationIdsRef: sessionNavigationIdsRef,
+    deckTabsRef: deckProjectTabsRef,
+  });
 
   const invalidateLoadedSession = sessionLoader.invalidate;
-
-  const openSavedSessionDeps = useStableFlow(
-    (): OpenSavedSessionDeps => ({
-      openSessions: () => sessionsRef.current,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        setSessions(next);
-      },
-      loader: sessionLoader,
-      repair: (restored) => repairSession(restored, { persist: false }),
-      updateSessions: (update) => updateSessionState(sessionsRef, setSessions, update),
-      opening: openingSessionIds.current,
-      cache: loadedSessionCache.current,
-      isRemoving: (sessionId) => removingSessionIds.current.has(sessionId),
-      persistence: sessionPersistence,
-      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
-      bindProvider: (restored) => {
-        if (
-          restored.worktreeRemoved ||
-          !restored.providerSessionId ||
-          !isLiveHarness(restored.harness)
-        )
-          return;
-        bindHarnessSession(
-          restored.harness,
-          restored.id,
-          restored.providerSessionId,
-          sessionWorkCwd(restored),
-          restored.providerAccountId,
-          restored.blocks,
-        );
-      },
-    }),
-  );
-  const sessionOpeners = useStableFlow(() =>
-    createSessionOpenerActions({ focus: tabFocusDeps, saved: openSavedSessionDeps, pane: paneDeps }),
-  );
 
   const onPrefetchHistorySession = sessionLoader.prefetch;
 

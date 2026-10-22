@@ -39,6 +39,6 @@ describe("createTabFlows", () => {
 
     createTabFlows(core, input).focus.leaveCoveringViews();
 
-    expect(core.closeFamiliarView).toHaveBeenCalledOnce();
+    expect(core.familiarView.close).toHaveBeenCalledOnce();
   });
 });
