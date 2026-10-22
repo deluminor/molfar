@@ -6,21 +6,20 @@ import { createDisplayedTabs } from "../../title-tabs/displayed-tabs";
 import type { DisplayedTabsDeps, VisibleTabs } from "../../title-tabs/displayed-tabs-deps";
 import { createVisibleTabShortcuts } from "../../title-tabs/visible-tab-shortcuts";
 import { useStableFlow } from "../use-stable-flow";
-import type { ProjectFlows } from "./use-project-flows";
-import type { SessionOpenerFlows } from "./use-session-opener-flows";
-import type { SurfaceFlows } from "./use-surface-flows";
-import type { TabFlows } from "./use-tab-flows";
 import type { WorkspaceFlowCore } from "./workspace-flow-core";
+import {
+  createWorkspaceHandlers,
+  type OwnWorkspaceHandlers,
+  type WorkspaceFlowBundles,
+} from "./workspace-handlers-value";
 
 export type TitleTabFlowsInput = Pick<
   DisplayedTabsDeps,
   "navigation" | "setOpenAppViews" | "setOpenFamiliarTabs" | "setTitleTabOrder"
 > &
-  Pick<NavigationActionsDeps, "openLocalSurface"> &
-  Pick<SessionOpenerFlows, "sessionList" | "tabActions"> &
-  Pick<SurfaceFlows, "surfaceDeps"> & {
-    tabFlows: TabFlows;
-    projectActions: Pick<ProjectFlows["projectActions"], "select">;
+  Pick<NavigationActionsDeps, "openLocalSurface"> & {
+    flows: WorkspaceFlowBundles;
+    own: OwnWorkspaceHandlers;
     noteProjectStep: ProjectNavigationDeps["noteStep"];
     rightPanelToggleRef: { readonly current: (() => void) | null };
     visibleTabsRef: { readonly current: VisibleTabs };
@@ -28,8 +27,9 @@ export type TitleTabFlowsInput = Pick<
 
 export function createTitleTabFlows(core: WorkspaceFlowCore, input: TitleTabFlowsInput) {
   const { store } = core;
-  const { tabLayout, tabClose, newSessions } = input.tabFlows;
-  const { tabActions } = input;
+  const { flows } = input;
+  const { tabLayout, tabClose, newSessions } = flows.tab;
+  const { tabActions } = flows.openers;
 
   const navigation = createNavigationActions({
     store,
@@ -37,10 +37,10 @@ export function createTitleTabFlows(core: WorkspaceFlowCore, input: TitleTabFlow
     rightPanelToggle: () => input.rightPanelToggleRef.current,
     hasDirtyFiles: () => store.getState().dirtyFiles.size > 0,
     reload: () => window.location.reload(),
-    sessionList: input.sessionList,
+    sessionList: flows.openers.sessionList,
     project: {
       currentProject: () => core.projectCwdRef.current,
-      selectProject: input.projectActions.select,
+      selectProject: flows.project.projectActions.select,
       noteStep: input.noteProjectStep,
     },
     openLocalSurface: (surface) => input.openLocalSurface(surface),
@@ -56,7 +56,7 @@ export function createTitleTabFlows(core: WorkspaceFlowCore, input: TitleTabFlow
     setTitleTabOrder: input.setTitleTabOrder,
     setAutomationsViewOpen: core.setAutomationsViewOpen,
     openFamiliar: (familiarId) => core.familiarView.open(familiarId),
-    openAppView: (view) => openAppView(input.surfaceDeps, view),
+    openAppView: (view) => openAppView(flows.surface.surfaceDeps, view),
     activateTab: (tabId) => tabLayout.activate(tabId),
     closeFamiliarView: () => core.familiarView.close(),
     workspace: {
@@ -73,16 +73,20 @@ export function createTitleTabFlows(core: WorkspaceFlowCore, input: TitleTabFlow
     },
   };
   const displayedTabs = createDisplayedTabs(displayedTabsDeps);
-  const visibleTabShortcuts = createVisibleTabShortcuts(displayedTabsDeps, displayedTabs);
 
-  const remoteSnapshot = createRemoteSnapshotSync(core.setSessions);
+  const handlers = createWorkspaceHandlers(core, flows, input.own, {
+    navigation,
+    displayedTabs,
+    visibleTabs: createVisibleTabShortcuts(displayedTabsDeps, displayedTabs),
+    remoteSnapshot: createRemoteSnapshotSync(core.setSessions),
+  });
 
-  return { navigation, displayedTabs, visibleTabShortcuts, remoteSnapshot };
+  return { navigation, displayedTabs, handlers };
 }
 
 export type TitleTabFlows = ReturnType<typeof createTitleTabFlows>;
 
-/** Sidebar and project navigation, the displayed title tabs and their shortcuts, created once. */
+/** Sidebar and project navigation, the displayed title tabs and the Workspace handlers value, created once. */
 export function useTitleTabFlows(core: WorkspaceFlowCore, input: TitleTabFlowsInput): TitleTabFlows {
   return useStableFlow(() => createTitleTabFlows(core, input));
 }

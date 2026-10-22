@@ -71,10 +71,7 @@ import { useTurnQueueFlows } from "./workspace/hooks/flows/use-turn-queue-flows"
 import { useOrchestrationFlows } from "./workspace/hooks/flows/use-orchestration-flows";
 import { useTitleTabFlows } from "./workspace/hooks/flows/use-title-tab-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
-import {
-  type WorkspaceHandlers,
-  WorkspaceHandlersContext,
-} from "./workspace/handlers/workspace-handlers";
+import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handlers";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
@@ -1638,7 +1635,7 @@ function Workspace({
     }),
   );
   const tabFlows = useTabFlows(flowCore, { terminalCwdRef, displayedTabNavigation });
-  const { tabLayout, terminals, tabClose, newSessions } = tabFlows;
+  const { tabLayout, terminals, newSessions } = tabFlows;
 
   useEffect(() => {
     tabVisits.sync(new Set(tabs.map((tab) => tab.id)), activeTabId);
@@ -1670,12 +1667,7 @@ function Workspace({
   ]);
 
   const deckProjectTabsRef = useLatestRef(deckProjectTabs);
-  const {
-    sessionList: sessionListDeps,
-    place: placeSessionDeps,
-    tabActions,
-    sessionOpeners,
-  } = useSessionOpenerFlows(flowCore, {
+  const openerFlows = useSessionOpenerFlows(flowCore, {
     tabFlows,
     visits: tabVisits,
     linkedUpdateCards,
@@ -1683,8 +1675,7 @@ function Workspace({
     navigationIdsRef: sessionNavigationIdsRef,
     deckTabsRef: deckProjectTabsRef,
   });
-
-  const onPrefetchHistorySession = sessionLoader.prefetch;
+  const { tabActions, sessionOpeners } = openerFlows;
 
   useEffect(() => {
     if (!inboxAskPortal || !inboxViewOpen) return;
@@ -1706,7 +1697,7 @@ function Workspace({
   }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
 
   const familiarsEnabledRef = useLatestRef(familiarsEnabled);
-  const { inboxAsk, familiarActions, surfaceDeps, surfaces, reminders } = useSurfaceFlows(flowCore, {
+  const surfaceFlows = useSurfaceFlows(flowCore, {
     tabActions,
     sessionOpeners,
     localSurfaces,
@@ -1716,6 +1707,7 @@ function Workspace({
     linkedUpdateCards,
     dismissDueReminder: (sessionId) => sessionRemindersRef.current.dismissDue(sessionId),
   });
+  const { surfaces, reminders } = surfaceFlows;
   useSettingsOpenEvents(surfaces.openSettings, surfaces.openRemoteProjectDialog);
   const sessionReminders = useSessionReminders(
     surfaces.openConversation,
@@ -1726,13 +1718,14 @@ function Workspace({
   );
   const sessionRemindersRef = useLatestRef(sessionReminders);
 
-  const { worktreeDeps, worktreeActions, historyActions } = useHistoryFlows(flowCore, {
+  const historyFlows = useHistoryFlows(flowCore, {
     tabFlows,
     deleteConfirmationPending,
     automationsViewOpenRef,
   });
+  const { worktreeActions, historyActions } = historyFlows;
 
-  const { projectActions, fileActions, composerActions } = useProjectFlows(flowCore, {
+  const projectFlows = useProjectFlows(flowCore, {
     tabFlows,
     worktreeActions,
     projectTerminalsRef,
@@ -1740,21 +1733,22 @@ function Workspace({
     readProjectReturnMemory,
     editorNavigationToken,
   });
+  const { projectActions, fileActions, composerActions } = projectFlows;
 
-  const { submission, familiarChat, familiarHabitHost, automationRuns, familiarCompletions } =
-    useSubmissionFlows(flowCore, {
-      activeSessionIdRef,
-      projectLocationSyncs,
-      editedResends,
-      enqueueHarnessEvent,
-      flushHarnessEvents,
-      tabFlows,
-      sessionOpeners,
-      reminders,
-      projectActions,
-      composerActions,
-      noteReply: familiarReplies.noteReply,
-    });
+  const submissionFlows = useSubmissionFlows(flowCore, {
+    activeSessionIdRef,
+    projectLocationSyncs,
+    editedResends,
+    enqueueHarnessEvent,
+    flushHarnessEvents,
+    tabFlows,
+    sessionOpeners,
+    reminders,
+    projectActions,
+    composerActions,
+    noteReply: familiarReplies.noteReply,
+  });
+  const { submission, familiarChat, familiarHabitHost, automationRuns, familiarCompletions } = submissionFlows;
   useFamiliarHabits(familiarHabitHost);
 
   const launchAutomation = automationRuns.launch;
@@ -1781,15 +1775,15 @@ function Workspace({
   useAutomationSchedule(automationRuns);
   const onInboxAppeared = automationRuns.inboxAppeared;
 
-  const { turnQueue, queueActions, usageLimits, providerAccounts, secondOpinions, composerCards } =
-    useTurnQueueFlows(flowCore, {
-      enqueueHarnessEvent,
-      flushHarnessEvents,
-      tabFlows,
-      place: placeSessionDeps,
-      submission,
-      activeSessionId: () => newChatDefaultsRef.current.active?.id,
-    });
+  const turnQueueFlows = useTurnQueueFlows(flowCore, {
+    enqueueHarnessEvent,
+    flushHarnessEvents,
+    tabFlows,
+    place: openerFlows.place,
+    submission,
+    activeSessionId: () => newChatDefaultsRef.current.active?.id,
+  });
+  const { turnQueue, usageLimits } = turnQueueFlows;
 
   useQueueDispatch(sessions, turnQueue, submission.submit);
   useUsageLimitTimers(sessions, turnQueue, usageLimits.resume);
@@ -1799,20 +1793,12 @@ function Workspace({
 
   useAutoContinue(sessions, turnControl.sessions, submission.send);
 
-  const {
-    escapeStop,
-    orchestrationSync,
-    orchestratorBinding,
-    controlRequests,
-    workerPanes,
-    workerDetailPanes,
-    orchestrationActions,
-  } = useOrchestrationFlows(flowCore, {
+  const orchestrationFlows = useOrchestrationFlows(flowCore, {
     flushHarnessEvents,
     submission,
     automationRuns,
     familiarCompletions,
-    worktreeDeps,
+    worktreeDeps: historyFlows.worktreeDeps,
     historyActions,
     turnActions,
     tabFlows,
@@ -1823,8 +1809,9 @@ function Workspace({
     unseenFinishedRef,
     projectTerminalFocusedRef,
   });
+  const { orchestratorBinding, workerPanes, orchestrationActions } = orchestrationFlows;
 
-  useEscapeStop(escapeStop);
+  useEscapeStop(orchestrationFlows.escapeStop);
 
   useWorkspaceCompanion({
     taskBoard,
@@ -1856,12 +1843,12 @@ function Workspace({
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   });
 
-  useOrchestrationSync(orchestrationRuns, sessions, tabs, activeTabId, orchestrationSync);
+  useOrchestrationSync(orchestrationRuns, sessions, tabs, activeTabId, orchestrationFlows.orchestrationSync);
 
   useOrchestratorBinding(orchestratorBinding, submission.submit);
-  useControlRequests(controlRequests);
+  useControlRequests(orchestrationFlows.controlRequests);
 
-  useWorkerDetailPanes(tabs, workerDetailRequest, workerDetailPanes);
+  useWorkerDetailPanes(tabs, workerDetailRequest, orchestrationFlows.workerDetailPanes);
 
   const orchestrationWorkers = useMemo(
     () => ({
@@ -1969,17 +1956,23 @@ function Workspace({
     onSelectHistorySession: sessionOpeners.selectHistory,
     railBadges,
   });
-  const { navigation, displayedTabs, visibleTabShortcuts, remoteSnapshot } = useTitleTabFlows(flowCore, {
+  const { navigation, displayedTabs, handlers } = useTitleTabFlows(flowCore, {
     navigation: displayedTabNavigation,
     setOpenAppViews,
     setOpenFamiliarTabs,
     setTitleTabOrder,
     openLocalSurface: (surface) => onOpenLocalSurface(surface),
-    sessionList: sessionListDeps,
-    tabActions,
-    surfaceDeps,
-    tabFlows,
-    projectActions,
+    flows: {
+      tab: tabFlows,
+      openers: openerFlows,
+      surface: surfaceFlows,
+      history: historyFlows,
+      project: projectFlows,
+      submission: submissionFlows,
+      turnQueue: turnQueueFlows,
+      orchestration: orchestrationFlows,
+    },
+    own: { btw, turns: turnActions, inbox: inboxActions, linkedPanels, linkedUpdateCards },
     noteProjectStep,
     rightPanelToggleRef,
     visibleTabsRef,
@@ -2034,41 +2027,6 @@ function Workspace({
     titleTabs,
   };
 
-  const handlers = useStableFlow(
-    (): WorkspaceHandlers => ({
-      btw,
-      composer: composerActions,
-      composerCards,
-      displayedTabs,
-      familiarView,
-      familiars: familiarActions,
-      files: fileActions,
-      history: historyActions,
-      inbox: inboxActions,
-      inboxAsk,
-      linkedPanels,
-      linkedUpdateCards,
-      navigation,
-      newSessions,
-      prefetchSession: onPrefetchHistorySession,
-      projects: projectActions,
-      providerAccounts,
-      queue: queueActions,
-      remoteSnapshot,
-      secondOpinions,
-      sessionOpeners,
-      submission,
-      surfaces,
-      tabClose,
-      tabs: tabActions,
-      terminals,
-      turns: turnActions,
-      usageLimits,
-      visibleTabs: visibleTabShortcuts,
-      workerPanes,
-      worktrees: worktreeActions,
-    }),
-  );
   const actions = useLatestRef(commandActions(handlers));
   const run = useCommandRunner();
   const isMainWindowRef = useLatestRef(isMainWindow);

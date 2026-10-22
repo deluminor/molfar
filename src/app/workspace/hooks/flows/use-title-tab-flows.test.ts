@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { familiarTabId } from "@/features/workspace/model/app-view-tabs";
 import { fakeFlowCore } from "./flow-core.fixture";
+import type { HistoryFlows } from "./use-history-flows";
+import type { OrchestrationFlows } from "./use-orchestration-flows";
+import type { ProjectFlows } from "./use-project-flows";
 import type { SessionOpenerFlows } from "./use-session-opener-flows";
+import type { SubmissionFlows } from "./use-submission-flows";
 import type { SurfaceFlows } from "./use-surface-flows";
 import { createTabFlows } from "./use-tab-flows";
 import { createTitleTabFlows, type TitleTabFlowsInput } from "./use-title-tab-flows";
+import type { TurnQueueFlows } from "./use-turn-queue-flows";
+import type { OwnWorkspaceHandlers } from "./workspace-handlers-value";
 
 const confirmReload = vi.hoisted(() => vi.fn(async () => false));
 vi.mock("../../../model/app-lifecycle", () => ({ confirmReload }));
@@ -21,11 +27,17 @@ function setup() {
     setOpenFamiliarTabs: vi.fn(),
     setTitleTabOrder: vi.fn(),
     openLocalSurface: vi.fn(),
-    sessionList: {} as SessionOpenerFlows["sessionList"],
-    tabActions: {} as SessionOpenerFlows["tabActions"],
-    surfaceDeps: {} as SurfaceFlows["surfaceDeps"],
-    tabFlows,
-    projectActions: { select: vi.fn() },
+    flows: {
+      tab: tabFlows,
+      openers: { sessionList: {}, tabActions: {}, sessionOpeners: {} } as SessionOpenerFlows,
+      surface: { surfaceDeps: {} } as SurfaceFlows,
+      history: {} as HistoryFlows,
+      project: { projectActions: { select: vi.fn() } } as unknown as ProjectFlows,
+      submission: { submission: {} } as SubmissionFlows,
+      turnQueue: {} as TurnQueueFlows,
+      orchestration: { workerPanes: {} } as OrchestrationFlows,
+    },
+    own: {} as OwnWorkspaceHandlers,
     noteProjectStep: vi.fn(),
     rightPanelToggleRef: { current: null },
     visibleTabsRef: { current: { insetLayout: true, activeTabId: "", titleTabs: [] } },
@@ -58,5 +70,17 @@ describe("createTitleTabFlows", () => {
     flows.navigation.reload();
 
     await vi.waitFor(() => expect(confirmReload).toHaveBeenCalledWith(true));
+  });
+
+  it("hands out the Workspace handlers from the domain flows and the core", () => {
+    const { core, input, flows } = setup();
+
+    expect(flows.handlers.newSessions).toBe(input.flows.tab.newSessions);
+    expect(flows.handlers.tabs).toBe(input.flows.openers.tabActions);
+    expect(flows.handlers.submission).toBe(input.flows.submission.submission);
+    expect(flows.handlers.familiarView).toBe(core.familiarView);
+    expect(flows.handlers.prefetchSession).toBe(core.loader.prefetch);
+    expect(flows.handlers.navigation).toBe(flows.navigation);
+    expect(flows.handlers.displayedTabs).toBe(flows.displayedTabs);
   });
 });
