@@ -37,9 +37,11 @@ export type WorkspaceFlowCore = {
   removingWorktreePaths: { readonly current: Set<string> };
   /** Tab or session id -> the workspace it was opened or moved in. */
   workspacePins: { readonly current: Map<string, string> };
+  /** Session id -> its running turn; a newer turn makes older events stale. */
+  turnGen: { readonly current: Map<string, number> };
   familiarView: FamiliarView;
   /** The workspace switch's stable controls; its render state is not here. */
-  navigation: Pick<ReturnType<typeof useWorkspaceNavigation>, "cancel">;
+  navigation: Pick<ReturnType<typeof useWorkspaceNavigation>, "cancel" | "selectProject" | "selectWorkspace">;
   /** Makes a tab active without leaving a running workspace switch. */
   setActiveTabId(tabId: string): void;
   /** Makes a tab active as a click does: cancels a workspace switch, leaves a covering Familiar. */

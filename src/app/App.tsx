@@ -66,6 +66,7 @@ import type { WorkspaceFlowCore } from "./workspace/hooks/flows/workspace-flow-c
 import { useTabFlows } from "./workspace/hooks/flows/use-tab-flows";
 import { useSessionOpenerFlows } from "./workspace/hooks/flows/use-session-opener-flows";
 import { useHistoryFlows } from "./workspace/hooks/flows/use-history-flows";
+import { useProjectFlows } from "./workspace/hooks/flows/use-project-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
@@ -96,12 +97,6 @@ import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/lin
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
 import { checkOpenWorktreeFiles } from "./workspace/flows/worktrees/worktree-removal";
-import type { ProjectDeps } from "./workspace/flows/projects/project-deps";
-import { createProjectActions } from "./workspace/flows/projects/project-actions";
-import type { FileDeps } from "./workspace/flows/files/file-deps";
-import { createFileActions } from "./workspace/flows/files/file-actions";
-import type { ComposerDeps } from "./workspace/flows/composer/composer-deps";
-import { createComposerActions } from "./workspace/flows/composer/composer-actions";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import type { AutomationDeps } from "./workspace/flows/automations/automation-deps";
 import { createAutomationRuns } from "./workspace/flows/automations/automation-runs";
@@ -1665,7 +1660,7 @@ function Workspace({
       persistence: sessionPersistence,
       loader: sessionLoader,
       loadedSessionCache, openingSessionIds, removingSessionIds,
-      switchingWorktrees, removingWorktreePaths, workspacePins, familiarView,
+      switchingWorktrees, removingWorktreePaths, workspacePins, turnGen, familiarView,
       navigation: workspaceNavigation,
       setActiveTabId: setActiveTabIdState,
       selectTab: setActiveTabId,
@@ -1732,8 +1727,6 @@ function Workspace({
     navigationIdsRef: sessionNavigationIdsRef,
     deckTabsRef: deckProjectTabsRef,
   });
-
-  const invalidateLoadedSession = sessionLoader.invalidate;
 
   const onPrefetchHistorySession = sessionLoader.prefetch;
 
@@ -1825,72 +1818,14 @@ function Workspace({
     automationsViewOpenRef,
   });
 
-  const projectDeps = useStableFlow(
-    (): ProjectDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      tabsRef,
-      activeTabIdRef,
-      projectCwdRef,
-      projectTerminalsRef,
-      turnGen,
-      loadedSessionCache,
-      loadingSessionIds: () => sessionLoader.loadingIds(),
-      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
-      persistence: sessionPersistence,
-      setSidebarTabSelection,
-      sidebarCwd: () => sidebarCwdRef.current,
-      closeAutomations: () => setAutomationsViewOpen(false),
-      closeFamiliarView: () => closeFamiliarView(),
-      navigation: {
-        cancel: () => workspaceNavigation.cancel(),
-        selectProject: (path) => workspaceNavigation.selectProject(path),
-        selectWorkspace: (project, focus) =>
-          workspaceNavigation.selectWorkspace(project, focus),
-      },
-      readProjectReturnMemory: () => readProjectReturnMemory(),
-      activateTab: (tabId, paneId) => tabLayout.activate(tabId, paneId),
-      insertBeside: tabLayout.insertBeside,
-      changeSessionProject: (sessionId, cwd) => worktreeActions.changeProject(sessionId, cwd),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      focusComposer: () => setComposerFocused(true),
-      fileMoved: (from, to) => fileActions.moved(from, to),
-    }),
-  );
-  const projectActions = useStableFlow(() => createProjectActions(projectDeps));
-
-
-  const fileDeps = useStableFlow(
-    (): FileDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      tabsRef,
-      activeTabIdRef,
-      gitCwd: () => gitCwdRef.current,
-      sidebarCwd: () => sidebarCwdRef.current,
-      editorNavigationToken,
-      closeFamiliarView: () => closeFamiliarView(),
-      insertBesideActive: (tabs, tab, cwd) => tabLayout.insertBesideActive(tabs, tab, cwd),
-      activateTab: (tabId, paneId) => tabLayout.activate(tabId, paneId),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-    }),
-  );
-  const fileActions = useStableFlow(() => createFileActions(fileDeps));
-
-
-
-  const composerDeps = useStableFlow(
-    (): ComposerDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      persistence: sessionPersistence,
-      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
-    }),
-  );
-  const composerActions = useStableFlow(() => createComposerActions(composerDeps));
+  const { projectActions, fileActions, composerActions } = useProjectFlows(flowCore, {
+    tabFlows,
+    worktreeActions,
+    projectTerminalsRef,
+    setSidebarTabSelection,
+    readProjectReturnMemory,
+    editorNavigationToken,
+  });
 
   const submission = useStableFlow(() =>
     createSubmissionActions({
