@@ -68,6 +68,8 @@ import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
 import { useWorkspaceField } from "./workspace/hooks/use-workspace-field";
 import { shownFamiliarSession } from "./workspace/store/familiars-slice";
 import { useStableFlow } from "./workspace/hooks/use-stable-flow";
+import type { WorkspaceFlowCore } from "./workspace/hooks/flows/workspace-flow-core";
+import { useTabFlows } from "./workspace/hooks/flows/use-tab-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
@@ -114,7 +116,6 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
 import type { PaneDeps } from "./workspace/flows/tabs/pane-deps";
 import { createTabActions } from "./workspace/flows/tabs/tab-actions";
-import { createNewSessionActions } from "./workspace/flows/tabs/new-session/new-session-actions";
 import { createSessionOpenerActions } from "./workspace/flows/tabs/session-opener-actions";
 import { createProviderAccountActions } from "./workspace/flows/composer/provider-account";
 import { createRemoteSnapshotSync } from "./workspace/flows/remote-sessions/remote-snapshot";
@@ -132,7 +133,6 @@ import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import type { AgentAppDeps } from "./workspace/flows/agent-app/agent-app-deps";
 import { createControlRequests } from "./workspace/flows/agent-app/control-requests";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
-import { confirmDiscardUnsaved } from "./model/confirm-discard-unsaved";
 import type { RemoveSessionDeps } from "./workspace/flows/session-removal/remove-session";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
@@ -162,14 +162,7 @@ import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
 import { useWorkspaceTaskBoard } from "./workspace/hooks/use-workspace-task-board";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
-import type { TabFocusDeps } from "./workspace/flows/tabs/tab-focus";
-import type { TabLayoutDeps } from "./workspace/flows/tabs/tab-layout";
-import { createTabLayoutActions } from "./workspace/flows/tabs/tab-layout-actions";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
-import type { TerminalDeps } from "./workspace/flows/terminals/terminal-deps";
-import { createTerminalActions } from "./workspace/flows/terminals/terminal-actions";
-import type { TabCloseDeps } from "./workspace/flows/tabs/close/tab-close-deps";
-import { createTabCloseActions } from "./workspace/flows/tabs/close/tab-close-actions";
 import { WorkspaceSidebar } from "./workspace/ui/WorkspaceSidebar";
 import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 
@@ -189,15 +182,10 @@ import {
   mergeModelSettings,
   resolveModel,
 } from "@/integrations/harness/core/models/resolve-model";
-import {
-  confirmCloseTerminal,
-  confirmCloseTerminals,
-} from "@/features/terminal/model/terminal-close";
 import { newTerminalCwd } from "@/features/terminal/model/terminal-tab";
 import {
   bindHarnessSession,
   cancelHarnessTurn,
-  forgetHarnessSession,
   migrateFamiliarCodexSession,
   isLiveHarness,
   pickTextHarness,
@@ -1696,42 +1684,30 @@ function Workspace({
     setSessions,
   });
 
-  const setActiveTabIdRef = useRef(setActiveTabId);
-  setActiveTabIdRef.current = setActiveTabId;
-  const tabFocusDeps = useStableFlow(
-    (): TabFocusDeps => ({
+  const flowCore = useStableFlow(
+    (): WorkspaceFlowCore => ({
       store: workspaceStore,
-      tabs: () => tabsRef.current,
-      sessions: () => sessionsRef.current,
-      activeTabId: () => activeTabIdRef.current,
-      projectCwd: () => projectCwdRef.current,
-      selectTab: (tabId, reason) => {
-        if (reason === "workspace") setActiveTabIdState(tabId);
-        else setActiveTabIdRef.current(tabId);
-      },
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      cache: loadedSessionCache.current,
+      sessionsRef, setSessions, tabsRef, activeTabIdRef, projectCwdRef, sidebarCwdRef,
+      sessionDefaultsRef, activeTabRef, insetLayoutRef, loadedSessionCache,
       persistence: sessionPersistence,
-      forgetHarness: (session) =>
-        void forgetHarnessSession(session.harness, session.id),
-      leaveCoveringViews: () => closeFamiliarView(),
+      setActiveTabId: setActiveTabIdState,
+      selectTab: setActiveTabId,
+      setComposerFocused, setAutomationsViewOpen, closeFamiliarView, leaveCoveringFamiliar,
+      refreshHistory, projectOfTab, tabWorkspace,
     }),
   );
+  const {
+    focus: tabFocusDeps,
+    layout: tabLayoutDeps,
+    tabLayout,
+    terminals,
+    tabClose,
+    newSessions,
+  } = useTabFlows(flowCore, { terminalCwdRef, displayedTabNavigation });
 
   useEffect(() => {
     tabVisits.sync(new Set(tabs.map((tab) => tab.id)), activeTabId);
   }, [activeTabId, tabs]);
-
-  const tabLayoutDeps = useStableFlow(
-    (): TabLayoutDeps => ({
-      store: workspaceStore,
-      activeTabId: () => activeTabIdRef.current,
-      projectOfTab,
-    }),
-  );
-  const tabLayout = useStableFlow(() =>
-    createTabLayoutActions({ focus: tabFocusDeps, layout: tabLayoutDeps }),
-  );
 
   const providerAccounts = useStableFlow(() =>
     createProviderAccountActions({
@@ -1740,7 +1716,7 @@ function Workspace({
       updateSessions: (update) => updateSessionState(sessionsRef, setSessions, update),
       continueLimited: (sessionId, accountId) => void usageLimits.changeAccount(sessionId, accountId),
       appendTab: tabLayout.append,
-      setActiveTabId: (tabId) => setActiveTabIdRef.current(tabId),
+      setActiveTabId: (tabId) => setActiveTabId(tabId),
       setComposerFocused,
     }),
   );
@@ -1748,76 +1724,6 @@ function Workspace({
   const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
   const composerCards = useStableFlow(() => createComposerCardActions(setSessions));
-
-  const terminalDeps = useStableFlow(
-    (): TerminalDeps => ({
-      store: workspaceStore,
-      projectCwd: () => projectCwdRef.current,
-      sidebarCwd: () => sidebarCwdRef.current,
-      terminalCwd: () => terminalCwdRef.current,
-      docks: () => projectTerminalsRef.current,
-      lastDockSide: () => lastDockSideRef.current,
-      tabs: () => tabsRef.current,
-      sessions: () => sessionsRef.current,
-      activeTabId: () => activeTabIdRef.current,
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      appendTab: (tab, cwd) => tabLayout.append(tab, cwd),
-      leaveCoveringFamiliar: () => leaveCoveringFamiliar(),
-      dropBlankSession: (session) => {
-        sessionPersistence.forgetSaved(session.id);
-        void forgetHarnessSession(session.harness, session.id);
-        setSessions((prev) => prev.filter((entry) => entry.id !== session.id));
-      },
-      confirmCloseTerminal,
-      confirmCloseTerminals,
-    }),
-  );
-  const terminals = useStableFlow(() => createTerminalActions(terminalDeps));
-
-  const tabCloseDeps = useStableFlow(
-    (): TabCloseDeps => ({
-      store: workspaceStore,
-      tabs: () => tabsRef.current,
-      sessions: () => sessionsRef.current,
-      activeTabId: () => activeTabIdRef.current,
-      projectCwd: () => projectCwdRef.current,
-      dirtyFiles: () => dirtyFilesRef.current,
-      setSessions: (update) => setSessions(update),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      insetLayout: () => insetLayoutRef.current,
-      navigation: () => displayedTabNavigation.current,
-      tabWorkspace: (tab, list) => tabWorkspace(tab, list),
-      activateTab: (tabId) => tabLayout.activate(tabId),
-      persist: (session) => persistSession(session),
-      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
-      closeFamiliarView: () => closeFamiliarView(),
-      confirmDiscardUnsaved,
-      confirmCloseTerminal,
-      confirmCloseTerminals,
-    }),
-  );
-  const tabClose = useStableFlow(() => createTabCloseActions(tabCloseDeps));
-
-  const newSessions = useStableFlow(() =>
-    createNewSessionActions({
-      store: workspaceStore,
-      tabsRef,
-      sessionsRef,
-      defaults: () => sessionDefaultsRef.current,
-      activeTab: () => activeTabRef.current,
-      sidebarCwd: () => sidebarCwdRef.current,
-      projectCwd: () => projectCwdRef.current,
-      setAutomationsViewOpen: (open) => setAutomationsViewOpen(open),
-      openSessionTab: (session, cwd) => tabLayout.openSessionTab(session, cwd),
-      activateTab: (tabId, paneId) => tabLayout.activate(tabId, paneId),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      closeFamiliarView: () => closeFamiliarView(),
-      terminals,
-      closePane: () => tabClose.closePane(),
-    }),
-  );
 
   const deckProjectTabs = useMemo(() => {
     // A projectless session belongs to no project, so it stands on its own
