@@ -30,7 +30,6 @@ import { createSessionPersistence } from "./workspace/flows/session-history/sess
 import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
-import { updateSessionState } from "./model/session-state";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import type { SettingsReturnView } from "./model/settings-return/types";
 
@@ -68,16 +67,15 @@ import { useSessionOpenerFlows } from "./workspace/hooks/flows/use-session-opene
 import { useHistoryFlows } from "./workspace/hooks/flows/use-history-flows";
 import { useProjectFlows } from "./workspace/hooks/flows/use-project-flows";
 import { useSubmissionFlows } from "./workspace/hooks/flows/use-submission-flows";
+import { useTurnQueueFlows } from "./workspace/hooks/flows/use-turn-queue-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
 } from "./workspace/handlers/workspace-handlers";
-import { createSecondOpinionActions } from "./workspace/flows/second-opinion/second-opinion-actions";
 import { createWorkerPaneActions } from "./workspace/flows/orchestration-workers/worker-pane-actions";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
-import { createComposerCardActions } from "./workspace/flows/composer/composer-cards";
 import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import {
@@ -87,8 +85,6 @@ import {
 } from "./workspace/flows/familiars/familiar-overview";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
-import { createTurnQueueActions } from "./workspace/flows/turn-queue/turn-queue-actions";
-import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
 import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/inbox/inbox-related-sessions";
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
@@ -99,7 +95,6 @@ import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
-import { createProviderAccountActions } from "./workspace/flows/composer/provider-account";
 import { createRemoteSnapshotSync } from "./workspace/flows/remote-sessions/remote-snapshot";
 import { createNavigationActions } from "./workspace/flows/surfaces/navigation-actions";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
@@ -126,7 +121,6 @@ import type {
 import { createVisibleTabShortcuts } from "./workspace/title-tabs/visible-tab-shortcuts";
 import { openAppView } from "./workspace/flows/surfaces/overlay-views";
 import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
-import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
 import type { CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
@@ -1662,21 +1656,8 @@ function Workspace({
     tabVisits.sync(new Set(tabs.map((tab) => tab.id)), activeTabId);
   }, [activeTabId, tabs]);
 
-  const providerAccounts = useStableFlow(() =>
-    createProviderAccountActions({
-      activeSessionId: () => newChatDefaultsRef.current.active?.id,
-      sessions: () => sessionsRef.current,
-      updateSessions: (update) => updateSessionState(sessionsRef, setSessions, update),
-      continueLimited: (sessionId, accountId) => void usageLimits.changeAccount(sessionId, accountId),
-      appendTab: tabLayout.append,
-      setActiveTabId: (tabId) => setActiveTabId(tabId),
-      setComposerFocused,
-    }),
-  );
-
   const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
-  const composerCards = useStableFlow(() => createComposerCardActions(setSessions));
 
   const deckProjectTabs = useMemo(() => {
     // A projectless session belongs to no project, so it stands on its own
@@ -1812,35 +1793,18 @@ function Workspace({
   useAutomationSchedule(automationRuns);
   const onInboxAppeared = automationRuns.inboxAppeared;
 
-  const turnQueue = useStableFlow(
-    (): TurnQueueDeps => ({
-      sessions: () => sessionsRef.current,
-      updateSessions: (update) => setSessions(update),
-      updateSessionsNow: (update) => {
-        updateSessionState(sessionsRef, setSessions, update);
-      },
-      submit: submission.send,
+  const { turnQueue, queueActions, usageLimits, providerAccounts, secondOpinions, composerCards } =
+    useTurnQueueFlows(flowCore, {
       enqueueHarnessEvent,
       flushHarnessEvents,
-    }),
-  );
-  const queueActions = useStableFlow(() => createTurnQueueActions(turnQueue));
+      tabFlows,
+      place: placeSessionDeps,
+      submission,
+      activeSessionId: () => newChatDefaultsRef.current.active?.id,
+    });
 
   useQueueDispatch(sessions, turnQueue, submission.submit);
-
-  const usageLimits = useStableFlow(() => createUsageLimits(turnQueue));
   useUsageLimitTimers(sessions, turnQueue, usageLimits.resume);
-
-  const secondOpinions = useStableFlow(() =>
-    createSecondOpinionActions({
-      beside: {
-        ...placeSessionDeps,
-        activeTabIdRef,
-        appendTab: (tab, cwd) => tabLayout.append(tab, cwd),
-      },
-      submit: submission.send,
-    }),
-  );
 
   const unseenFinishedRef = useRef(unseenFinishedIds);
   unseenFinishedRef.current = unseenFinishedIds;
