@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Suspense,
@@ -76,11 +75,10 @@ import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes"
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
-import {
-  forgetOverviewDocument,
-  leaveOverviewItems,
-  openOverviewDocument,
-} from "./workspace/flows/familiars/familiar-overview";
+import { openOverviewDocument } from "./workspace/flows/familiars/familiar-overview";
+import { useFamiliarOverviewSync } from "./workspace/hooks/familiars/use-familiar-overview-sync";
+import { useFamiliarTabMigration } from "./workspace/hooks/familiars/use-familiar-tab-migration";
+import { useFamiliarTurnClose } from "./workspace/hooks/familiars/use-familiar-turn-close";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
@@ -238,19 +236,12 @@ import {
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
-import {
-  detachFamiliarTabs,
-  ensureFamiliarSession,
-} from "@/features/familiars/model/familiar-workspace";
+import { ensureFamiliarSession } from "@/features/familiars/model/familiar-workspace";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import {
   TranscriptPool,
   TranscriptPoolOutlet,
 } from "@/features/sessions/ui/TranscriptPool";
-import {
-  removeArtifactCard,
-  ARTIFACT_DELETED_EVENT,
-} from "@/features/artifacts/artifacts";
 import {
   warmNativeSkills,
 } from "@/features/skills/model/skills";
@@ -391,7 +382,6 @@ function Workspace({
     setNotesViewOpen,
     setInspectedWorkerId,
     setSettingsOpen,
-    setFamiliarViewId,
   } = useWorkspaceActions(workspaceStore);
   const projectCwd = useWorkspaceField(workspaceStore, "projectCwd");
   const recents = useWorkspaceField(workspaceStore, "recents");
@@ -408,33 +398,11 @@ function Workspace({
   const projectTerminalFocused = useWorkspaceField(workspaceStore, "projectTerminalFocused");
   const activeTabId = useWorkspaceField(workspaceStore, "activeTabId");
   const familiarViewId = useWorkspaceField(workspaceStore, "familiarViewId");
-  const familiarOverviewOpen = useWorkspaceField(workspaceStore, "familiarOverviewOpen");
   const onOpenMonoArtifact = useCallback(
     (_sessionId: string, id: string) => openOverviewDocument(workspaceStore, id),
     [],
   );
-  useEffect(() => {
-    const listening = listen<string>(
-      ARTIFACT_DELETED_EVENT,
-      ({ payload: id }) => {
-        const previous = sessionsRef.current;
-        const updated = previous.map((session) =>
-          removeArtifactCard(session, id),
-        );
-        if (updated.some((session, index) => session !== previous[index])) {
-          sessionsRef.current = updated;
-          setSessions(updated);
-        }
-        forgetOverviewDocument(workspaceStore, id);
-      },
-    );
-    return () => {
-      void listening.then((unlisten) => unlisten());
-    };
-  }, []);
-  useEffect(() => {
-    if (!familiarOverviewOpen) leaveOverviewItems(workspaceStore);
-  }, [familiarOverviewOpen]);
+  useFamiliarOverviewSync(workspaceStore, sessionsRef, setSessions);
   const familiarShownSessionFocused = useWorkspaceField(
     workspaceStore,
     "familiarShownSessionFocused",
@@ -633,24 +601,16 @@ function Workspace({
   activeTabIdRef.current = activeTabId;
   useLayoutEffect(() => commitTabSwitch(activeTabId), [activeTabId]);
 
-  useLayoutEffect(() => {
-    const migration = detachFamiliarTabs(
-      tabs,
-      sessions,
-      activeTabId,
-      projectCwd,
-      (cwd) => newDefaultSession(cwd),
-    );
-    if (!migration) return;
-    tabsRef.current = migration.tabs;
-    sessionsRef.current = [...sessions, ...migration.addedSessions];
-    setTabs(migration.tabs);
-    setSessions(sessionsRef.current);
-    setActiveTabIdState(migration.activeTabId);
-    if (migration.agentViewId) {
-      setFamiliarViewId(migration.agentViewId);
-    }
-  }, [tabs, sessions, activeTabId, projectCwd]);
+  useFamiliarTabMigration({
+    store: workspaceStore,
+    tabs,
+    sessions,
+    activeTabId,
+    projectCwd,
+    tabsRef,
+    sessionsRef,
+    setSessions,
+  });
 
   const projectWorktree = useWorktreeFocus(projectCwd);
   /** Tab or session id -> the workspace it was opened or moved in. A tab
@@ -1753,10 +1713,7 @@ function Workspace({
 
   const launchAutomation = automationRuns.launch;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: every session change may end a Familiar's turn.
-  useEffect(() => {
-    familiarCompletions.closeInactive();
-  }, [sessions]);
+  useFamiliarTurnClose(familiarCompletions, sessions);
 
   useQuickComposerLaunches(automationRuns.launchQuick);
   const { taskBoard, isMainWindow, railBadges } = useWorkspaceTaskBoard({
