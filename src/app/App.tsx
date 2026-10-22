@@ -67,6 +67,7 @@ import { useTabFlows } from "./workspace/hooks/flows/use-tab-flows";
 import { useSessionOpenerFlows } from "./workspace/hooks/flows/use-session-opener-flows";
 import { useHistoryFlows } from "./workspace/hooks/flows/use-history-flows";
 import { useProjectFlows } from "./workspace/hooks/flows/use-project-flows";
+import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
@@ -76,8 +77,6 @@ import { createWorkerPaneActions } from "./workspace/flows/orchestration-workers
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { createComposerCardActions } from "./workspace/flows/composer/composer-cards";
-import { createFamiliarActions } from "./workspace/flows/familiars/familiar-actions";
-import { createReminderActions } from "./workspace/flows/reminders/reminder-actions";
 import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import {
@@ -90,7 +89,6 @@ import { createBtw } from "./workspace/flows/btw/btw-actions";
 import { createSubmissionActions } from "./workspace/flows/submission/submission-actions";
 import { createTurnQueueActions } from "./workspace/flows/turn-queue/turn-queue-actions";
 import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
-import { createInboxAsk } from "./workspace/flows/inbox/inbox-ask";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
 import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/inbox/inbox-related-sessions";
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
@@ -128,9 +126,7 @@ import type {
   VisibleTabs,
 } from "./workspace/title-tabs/displayed-tabs-deps";
 import { createVisibleTabShortcuts } from "./workspace/title-tabs/visible-tab-shortcuts";
-import type { SurfaceDeps } from "./workspace/flows/surfaces/surface-deps";
 import { openAppView } from "./workspace/flows/surfaces/overlay-views";
-import { createSurfaceActions } from "./workspace/flows/surfaces/surface-actions";
 import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
 import { createUsageLimits } from "./workspace/flows/turn-queue/usage-limits";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
@@ -527,11 +523,7 @@ function Workspace({
   const localSurfaces = useLocalSurfaceState();
   const {
     localSurface,
-    setLocalSurface,
-    localSurfaceRef,
     automationsSurfaceOpen,
-    setAutomationsSurfaceOpen,
-    automationsSurfaceOpenRef,
     automationsFocusId,
     automationsViewOpen,
     setAutomationsViewOpen,
@@ -1730,17 +1722,6 @@ function Workspace({
 
   const onPrefetchHistorySession = sessionLoader.prefetch;
 
-  const inboxAsk = useStableFlow(() =>
-    createInboxAsk({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      sidebarCwd: () => sidebarCwdRef.current,
-      removingSessionIds,
-      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
-    }),
-  );
-
   useEffect(() => {
     if (!inboxAskPortal || !inboxViewOpen) return;
     setComposerFocused(true);
@@ -1761,48 +1742,17 @@ function Workspace({
   }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
 
   const familiarsEnabledRef = useLatestRef(familiarsEnabled);
-  const familiarActions = useStableFlow(() =>
-    createFamiliarActions({
-      store: workspaceStore,
-      view: familiarView,
-      familiarsEnabled: () => familiarsEnabledRef.current,
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-      selectHistorySession: (sessionId) => sessionOpeners.selectHistory(sessionId),
-    }),
-  );
-
-
-  const surfaceDeps = useStableFlow(
-    (): SurfaceDeps => ({
-      store: workspaceStore,
-      setAutomationsViewOpen,
-      setAutomationsSurfaceOpen,
-      setLocalSurface,
-      automationsSurfaceOpen: () => automationsSurfaceOpenRef.current,
-      localSurface: () => localSurfaceRef.current,
-      settingsReturnView: settingsReturnViewRef,
-      rememberAppView: (view) => rememberAppView(view),
-      cancelNavigation: () => workspaceNavigation.cancel(),
-      closeFamiliarView: () => closeFamiliarView(),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      visitBack: () => tabActions.visitBack(),
-      visitForward: () => tabActions.visitForward(),
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      selectHistorySession: (sessionId) => sessionOpeners.selectHistory(sessionId),
-    }),
-  );
-  const surfaces = useStableFlow(() => createSurfaceActions(surfaceDeps));
+  const { inboxAsk, familiarActions, surfaceDeps, surfaces, reminders } = useSurfaceFlows(flowCore, {
+    tabActions,
+    sessionOpeners,
+    localSurfaces,
+    settingsReturnView: settingsReturnViewRef,
+    rememberAppView,
+    familiarsEnabledRef,
+    linkedUpdateCards,
+    dismissDueReminder: (sessionId) => sessionRemindersRef.current.dismissDue(sessionId),
+  });
   useSettingsOpenEvents(surfaces.openSettings, surfaces.openRemoteProjectDialog);
-  const reminders = useStableFlow(() =>
-    createReminderActions({
-      sessionsRef,
-      upsertSession,
-      dismissDueReminder: (sessionId) => sessionRemindersRef.current.dismissDue(sessionId),
-      updateLinkedCard: linkedUpdateCards.update,
-    }),
-  );
   const sessionReminders = useSessionReminders(
     surfaces.openConversation,
     reminders.ensureSaved,
