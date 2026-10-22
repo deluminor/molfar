@@ -67,6 +67,7 @@ import { useTabFlows } from "./workspace/hooks/flows/use-tab-flows";
 import { useSessionOpenerFlows } from "./workspace/hooks/flows/use-session-opener-flows";
 import { useHistoryFlows } from "./workspace/hooks/flows/use-history-flows";
 import { useProjectFlows } from "./workspace/hooks/flows/use-project-flows";
+import { useSubmissionFlows } from "./workspace/hooks/flows/use-submission-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import {
   type WorkspaceHandlers,
@@ -86,7 +87,6 @@ import {
 } from "./workspace/flows/familiars/familiar-overview";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
-import { createSubmissionActions } from "./workspace/flows/submission/submission-actions";
 import { createTurnQueueActions } from "./workspace/flows/turn-queue/turn-queue-actions";
 import type { TurnQueueDeps } from "./workspace/flows/turn-queue/turn-queue-deps";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
@@ -96,8 +96,6 @@ import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
 import { checkOpenWorktreeFiles } from "./workspace/flows/worktrees/worktree-removal";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
-import type { AutomationDeps } from "./workspace/flows/automations/automation-deps";
-import { createAutomationRuns } from "./workspace/flows/automations/automation-runs";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
 import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
@@ -137,8 +135,6 @@ import { createTurnControlActions } from "./workspace/flows/turn-control/turn-co
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
 import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
 import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
-import { createFamiliarChat } from "./workspace/flows/familiars/familiar-chat";
-import { createFamiliarCompletions } from "./workspace/flows/familiars/familiar-completions";
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
 import { useWorkspaceTaskBoard } from "./workspace/hooks/use-workspace-task-board";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
@@ -260,7 +256,6 @@ import {
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
-import { createFamiliarHabitHost } from "./workspace/flows/familiars/habit-host";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import {
   detachFamiliarTabs,
@@ -1777,86 +1772,24 @@ function Workspace({
     editorNavigationToken,
   });
 
-  const submission = useStableFlow(() =>
-    createSubmissionActions({
-      sessionsRef,
-      setSessions,
-      turnGen,
+  const { submission, familiarChat, familiarHabitHost, automationRuns, familiarCompletions } =
+    useSubmissionFlows(flowCore, {
       activeSessionIdRef,
-      removingSessionIds,
-      switchingWorktrees,
-      removingWorktreePaths,
       projectLocationSyncs,
-      workspacePins,
       editedResends,
-      workspaceNavigation,
       enqueueHarnessEvent,
       flushHarnessEvents,
-      dismissNoticesForContinuedSession: (sessionId) =>
-        reminders.dismissContinuedNotices(sessionId),
-      applyProjectLocationChange: (from, to) => projectActions.moveLocation(from, to),
-    }),
-  );
-
-  const familiarChat = useStableFlow(() =>
-    createFamiliarChat({
-      openSessions: () => sessionsRef.current,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        setSessions(next);
-      },
-      persist: (session) => sessionPersistence.persist(session),
-      schedule: (run, ms) => window.setTimeout(run, ms),
-    }),
-  );
-
-  const familiarHabitHost = useStableFlow(() =>
-    createFamiliarHabitHost({
-      sessionsRef,
-      activeSessionIdRef,
-      chat: familiarChat,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        setSessions(next);
-      },
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      submitSession: submission.submit,
-      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
+      tabFlows,
+      sessionOpeners,
+      reminders,
+      projectActions,
+      composerActions,
       noteReply: familiarReplies.noteReply,
-    }),
-  );
+    });
   useFamiliarHabits(familiarHabitHost);
 
-  const automationDeps = useStableFlow(
-    (): AutomationDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      tabsRef,
-      appendTab: (tab, cwd) => tabLayout.append(tab, cwd),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      focusOpenSession: (sessionId) => sessionOpeners.focusOpen(sessionId),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-      closeAutomations: () => setAutomationsViewOpen(false),
-      submitSession: submission.submit,
-      saveDraft: (...args) => composerActions.saveDraft(...args),
-    }),
-  );
-  const automationRuns = useStableFlow(() => createAutomationRuns(automationDeps));
   const launchAutomation = automationRuns.launch;
 
-  const familiarCompletions = useStableFlow(() =>
-    createFamiliarCompletions({
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      isRemoving: (sessionId) => removingSessionIds.current.has(sessionId),
-      setSessions,
-      isBusyOnTurn: (familiarId, turn) => {
-        const familiar = sessionsRef.current.find((session) => session.id === familiarId);
-        return !!familiar?.busy && turnGen.current.get(familiarId) === turn;
-      },
-    }),
-  );
   // biome-ignore lint/correctness/useExhaustiveDependencies: every session change may end a Familiar's turn.
   useEffect(() => {
     familiarCompletions.closeInactive();

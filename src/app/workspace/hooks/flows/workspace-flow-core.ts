@@ -41,7 +41,10 @@ export type WorkspaceFlowCore = {
   turnGen: { readonly current: Map<string, number> };
   familiarView: FamiliarView;
   /** The workspace switch's stable controls; its render state is not here. */
-  navigation: Pick<ReturnType<typeof useWorkspaceNavigation>, "cancel" | "selectProject" | "selectWorkspace">;
+  navigation: Pick<
+    ReturnType<typeof useWorkspaceNavigation>,
+    "cancel" | "selectProject" | "selectWorkspace" | "isSwitching"
+  >;
   /** Makes a tab active without leaving a running workspace switch. */
   setActiveTabId(tabId: string): void;
   /** Makes a tab active as a click does: cancels a workspace switch, leaves a covering Familiar. */

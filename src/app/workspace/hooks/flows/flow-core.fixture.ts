@@ -41,7 +41,7 @@ export function fakeFlowCore(state: Partial<WorkspaceInitialState> = {}): Worksp
     workspacePins: { current: new Map() },
     turnGen: { current: new Map() },
     familiarView: { open: vi.fn(async () => undefined), close: vi.fn() } as unknown as FamiliarView,
-    navigation: { cancel: vi.fn(), selectProject: vi.fn(), selectWorkspace: vi.fn() },
+    navigation: { cancel: vi.fn(), selectProject: vi.fn(), selectWorkspace: vi.fn(), isSwitching: vi.fn(() => false) },
     setActiveTabId: vi.fn(),
     selectTab: vi.fn(),
     setComposerFocused: vi.fn(),
