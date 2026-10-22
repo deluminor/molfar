@@ -31,7 +31,7 @@ MOLFAR uses its own semver line, starting at 1.0.0. The remote host must match t
 | Update packages (`.app.tar.gz`, NSIS `.exe`) | Tauri updater key (minisign) | Secrets `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; public key in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` |
 | macOS app | Apple Developer ID (optional) | Secrets `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_API_KEY`, `APPLE_API_KEY_P8`, `APPLE_API_ISSUER` |
 
-**Keep a backup of the updater private key and its password outside GitHub** (a password manager). Installed apps only accept updates signed by that key: if it is lost, every existing install has to be updated by hand once with a build carrying a new public key. If it leaks, set `APP_UPDATER_DISABLED = true` in `src/app/model/forkPolicy.ts` (and `src-tauri/src/menu.rs`), rotate the key, and ship a manual release.
+**Keep a backup of the updater private key and its password outside GitHub** (a password manager). Installed apps only accept updates signed by that key: if it is lost, every existing install has to be updated by hand once with a build carrying a new public key. If it leaks, set `APP_UPDATER_DISABLED = true` in `src/app/model/fork-policy.ts` (and `src-tauri/src/menu.rs`), rotate the key, and ship a manual release.
 
 Without the Apple secrets the macOS build is ad-hoc signed and not notarized; users confirm the first launch once (see README → Download). Adding the secrets switches the workflow to signing and notarization automatically.
 
@@ -46,9 +46,23 @@ MOLFAR is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** 
 
 `main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are MOLFAR's own. MonoCode's authors and full history live in the MonoCode repository; MOLFAR's history before the reset is kept in the private [`molfar-archive`](https://github.com/deluminor/molfar-archive) repository (not mirrored here — a branch with that history would inflate GitHub's contributors list). Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge upstream/main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches MonoCode's `main`.
 
-`.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `upstream/main` as a three-way patch to the working tree and index, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, or `3` if MonoCode rewrote its history.
+`.github/upstream-sync.json` records the last MonoCode commit whose changes are in `main`. `node scripts/upstream/apply.mjs` applies the diff from that commit to `upstream/main` to the working tree and index one path at a time, as three-way patches, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, `3` if MonoCode rewrote its history, or `4` if some changes became pending ports (below).
 
-Before applying, the patch is translated through MOLFAR's renames (`scripts/upstream/rename-map.mjs`, currently Monos → Familiars): upstream paths follow MOLFAR's renamed files and directories, relative imports are rewritten to match, and each identifier or word containing a renamed term takes the spelling MOLFAR uses — first in the target file, then across the tree — so names MOLFAR deliberately kept (persisted keys such as `mono_id`, `font-mono`) stay as they are. Identifiers MOLFAR has never seen take the renamed spelling. MOLFAR-owned and license files apply verbatim. `apply.mjs` lists every remapped path under `remapped`. When MOLFAR renames another upstream concept, add a rule to `RENAMES`.
+Before applying, the changes are translated through MOLFAR's renames (`scripts/upstream/rename-map.mjs`, currently Monos → Familiars): upstream paths follow MOLFAR's renamed files and directories, relative imports are rewritten to match, and each identifier or word containing a renamed term takes the spelling MOLFAR uses — first in the target file, then across the tree — so names MOLFAR deliberately kept (persisted keys such as `mono_id`, `font-mono`) stay as they are. Identifiers MOLFAR has never seen take the renamed spelling. MOLFAR-owned and license files apply verbatim. `apply.mjs` lists every remapped path under `remapped`. When MOLFAR renames another upstream concept, add a rule to `RENAMES`.
+
+MOLFAR restructures code that came from MonoCode (split modules, kebab-case file names, a workspace store), so the same file often lives elsewhere in MOLFAR. `.github/upstream-moves.json` records every move relative to `refactorBase`, the commit before the restructuring:
+
+| Section | Meaning | What `apply.mjs` does with an upstream change to the path |
+| --- | --- | --- |
+| `renames` | old path → new path | applies it to the new path |
+| `splits` | old path → `targets` + `notes` | writes a pending port |
+| `extractions` | old path (still present) → declarations moved elsewhere | applies it; lists the moves under `extracted` so the agent checks them |
+| `removed` | old path → reason | writes a pending port |
+| (no entry, path missing) | | writes a pending port |
+
+Pending ports land in `.upstream-pending/<from>..<to>/` (ignored by git) with a `manifest.json`; the sync agent ports each into the new modules, or lists it under **Needs human** in the sync PR. Any change that moves or removes a MonoCode-derived path updates the map in the same commit: run `node scripts/upstream/moves.mjs` to add detected renames, describe splits and removals by hand, and `node scripts/upstream/moves.mjs --check` (part of `check:web`) verifies that the map covers the tree.
+
+The **Sync MonoCode upstream** automation in MOLFAR (Tuesday and Friday, 09:00; prompt kept in `docs/automations/upstream-sync.md`) fetches `upstream/main`, applies the patch on a sync branch, commits it as one commit, and opens a sync PR into `main` with release notes and a cross-linked Issue. It keeps MOLFAR's side in the MOLFAR-owned paths below, and resolves product-code conflicts by combining both sides: it keeps MOLFAR's features and names and ports in the upstream change. A **Sync blocked** Issue is opened only when the two sides are truly incompatible, or when checks still fail after sync-caused errors are fixed. Sync PRs can be merged with any method.
 
 Every sync, including one that applies cleanly, also:
 
@@ -64,17 +78,17 @@ gh repo set-default deluminor/molfar                                    # once p
 git fetch upstream main
 git switch -c sync/upstream-into-main-$(date +%Y%m%d) origin/main
 node scripts/upstream/apply.mjs                                        # applies the patch, updates .github/upstream-sync.json
-# resolve conflicts, keep MOLFAR-owned paths below, commit, open a PR into main
+# resolve conflicts, port .upstream-pending/ entries, keep MOLFAR-owned paths below, commit, open a PR into main
 ```
 
 These parts are MOLFAR-owned; keep ours when porting upstream changes:
 
 - `.github/workflows/release.yml`, `scripts/release/`
-- `src/app/model/forkPolicy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`
+- `src/app/model/fork-policy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`
 - `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`
 - host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`)
 - version numbers and `CHANGELOG.md`
 
 License notices are the exception. Keep MOLFAR's additions, but always port upstream changes to them: a new or changed copyright line in `LICENSE`, `NOTICE` content, `LICENSE*`/`NOTICE*` files under `vendor/` or anywhere else, and copyright or SPDX headers in source files. MIT requires every copy to carry these notices, so dropping an upstream change here is a license violation, not just a style choice.
 
-Every build ships the notices: macOS, Windows and Linux bundles include `LICENSE` and `NOTICE` as resources; `THIRD-PARTY-NOTICES.md` (generated by `vite build` from the bundled JavaScript dependencies) and `THIRD-PARTY-NOTICES-RUST.md` (generated by `scripts/licenses/rust-notices.mjs` in `beforeBuildCommand` from the Rust crates linked into the binary for the build platform, with crates.io source links for MPL-2.0 crates) are part of the frontend that Tauri embeds into every binary; the host packages include `MOLFAR-LICENSE`, `MOLFAR-NOTICE`, Node's `LICENSE`, and `THIRD-PARTY-NOTICES.md` for the npm packages bundled into `host.mjs` (written by `host/build.mjs` from the esbuild metafile). Code copied into MOLFAR's own source keeps its full notice in `NOTICE` too, because minification strips source headers: today that is the Visual Studio Code portion of `gitGraph.ts`. Crates and packages that ship no license file of their own borrow one from a sibling in the same repository (for example `alloc-stdlib` from `alloc-no-stdlib`). Bundle resources must be files committed to the repository, because `cargo check` validates them without a frontend build.
+Every build ships the notices: macOS, Windows and Linux bundles include `LICENSE` and `NOTICE` as resources; `THIRD-PARTY-NOTICES.md` (generated by `vite build` from the bundled JavaScript dependencies) and `THIRD-PARTY-NOTICES-RUST.md` (generated by `scripts/licenses/rust-notices.mjs` in `beforeBuildCommand` from the Rust crates linked into the binary for the build platform, with crates.io source links for MPL-2.0 crates) are part of the frontend that Tauri embeds into every binary; the host packages include `MOLFAR-LICENSE`, `MOLFAR-NOTICE`, Node's `LICENSE`, and `THIRD-PARTY-NOTICES.md` for the npm packages bundled into `host.mjs` (written by `host/build.mjs` from the esbuild metafile). Code copied into MOLFAR's own source keeps its full notice in `NOTICE` too, because minification strips source headers: today that is the Visual Studio Code portion of `git-graph.ts`. Crates and packages that ship no license file of their own borrow one from a sibling in the same repository (for example `alloc-stdlib` from `alloc-no-stdlib`). Bundle resources must be files committed to the repository, because `cargo check` validates them without a frontend build.

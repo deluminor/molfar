@@ -1,6 +1,11 @@
-import { useGithubPrChecks } from "../hooks/useGithubPrChecks";
-import { summarizePrChecks } from "../model/githubPrChecks";
-import type { CiRepairRequest } from "../model/ciRepair";
+import { IconButton } from "@/shared/ui/IconButton";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { type GithubLabel } from "@/domain/work-items/work-item";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { type LinkedWorkItem } from "@/domain/session/session";
+import { useGithubPrChecks } from "../hooks/use-github-pr-checks";
+import { summarizePrChecks } from "../model/github-pr-checks";
+import type { CiRepairRequest } from "../model/ci-repair";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,
@@ -27,7 +32,7 @@ import {
   RefreshCw,
   Search,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -43,48 +48,15 @@ import {
   InboxTreeGutter,
   inboxTreeIndentPx,
 } from "./InboxTreeGutter";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { Popover } from "../../../shared/ui/Popover";
-import { IconButton, OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { paneWidthStorageKey } from "../../../shared/lib/paneWidthStorage";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import {
-  githubStatus,
-  githubPrDiff,
-  githubPrAction,
-  githubReviewDecisionLabel,
-  githubWorkItem,
-  githubWorkItemComment,
-  githubWorkItemDetails,
-  githubWorkItemThread,
-  gitlabAttentionLabel,
-  inboxItemKey,
-  inboxItemRef,
-  inboxItemStatus,
-  inboxListIsFresh,
-  inboxProjectsForRail,
-  listInboxItems,
-  peekGithubPrDiff,
-  peekGithubWorkItem,
-  peekGithubWorkItemDetails,
-  peekGithubWorkItemThread,
-  peekInboxList,
-  formatRelativeTime,
-  inboxPersonAvatarUrl,
-  type GithubLabel,
-  type GithubPrAction,
-  type GithubPrDiff,
-  GITHUB_WORK_ITEM_FRESH_MS,
-  type GithubWorkItemDetails,
-  type GithubWorkItemThread,
-  type InboxItem,
-  type InboxProviderErrors,
-  type InboxQuery,
-} from "../model/githubTasks";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { Popover } from "@/shared/ui/Popover";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { paneWidthStorageKey } from "@/shared/lib/pane-width-storage";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { githubStatus, githubPrDiff, githubPrAction, githubReviewDecisionLabel, githubWorkItem, githubWorkItemComment, githubWorkItemDetails, githubWorkItemThread, gitlabAttentionLabel, inboxItemKey, inboxItemRef, inboxItemStatus, inboxListIsFresh, inboxProjectsForRail, listInboxItems, peekGithubPrDiff, peekGithubWorkItem, peekGithubWorkItemDetails, peekGithubWorkItemThread, peekInboxList, formatRelativeTime, inboxPersonAvatarUrl, type GithubPrAction, type GithubPrDiff, GITHUB_WORK_ITEM_FRESH_MS, type GithubWorkItemDetails, type GithubWorkItemThread, type InboxItem, type InboxProviderErrors, type InboxQuery } from "../model/github-tasks";
 import {
   applyInboxFilters,
   connectableInboxSources,
@@ -108,40 +80,36 @@ import {
   type InboxFilters,
   type InboxFiltersBySource,
   type InboxSource,
-} from "../model/inboxFilters";
+} from "../model/inbox-filters";
 import {
   buildJiraIssueTree,
   defaultExpandedJiraKeys,
   flattenJiraIssueTree,
-} from "../model/jiraIssueTree";
+} from "../model/jira-issue-tree";
 import { ConfluenceInboxPanel } from "./confluence/ConfluenceInboxPanel";
-import { copyText } from "../../../platform/tauri/clipboard";
-import { projectKey, projectName } from "../../../shared/lib/paths";
-import { inProjectScope } from "../../projects/model/projectScope";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { playCue } from "../../settings/model/sounds";
+import { copyText } from "@/platform/tauri/clipboard";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { inProjectScope } from "@/features/projects/model/project-scope";
+import { IS_MAC } from "@/shared/lib/platform";
+import { playCue } from "@/features/settings/model/sounds";
 import {
   sameProjectPath,
   type RecentProject,
-} from "../../projects/model/recents";
-import {
-  sessionDisplayTitle,
-  type LinkedWorkItem,
-} from "../../sessions/model/session";
-import type { SessionSummary } from "../../sessions/data/sessionStore";
+} from "@/features/projects/model/recents";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   inboxItemMatchesLinkedWorkItem,
   linkedWorkItemInboxKey,
   relatedSessionsForInboxItem,
-} from "../../sessions/model/sessionWorkItem";
+} from "@/features/sessions/model/session-work-item";
 import {
   isInboxEntryUnseen,
   markInboxItemSeen,
   markInboxItemsSeen,
   rememberInboxItems,
   useInboxSeenTick,
-} from "../model/inboxSeen";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/listWindow";
+} from "../model/inbox-seen";
+import { LIST_PAGE_SIZE, listWindowSize } from "@/shared/lib/list-window";
 import {
   LINEAR_CHANGE_EVENT,
   linearConnected,
@@ -193,7 +161,7 @@ import {
   peekAzureDevOpsWorkItemDetails,
   peekAzureDevOpsWorkItemThread,
   type AzureDevOpsWorkItemThread,
-} from "../model/azureDevOps";
+} from "../model/azure-dev-ops";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -201,8 +169,8 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+} from "@/features/workspace/model/tab-groups";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import {
   InboxComments,
   InboxCommentForm,
@@ -218,7 +186,7 @@ import {
   InboxDiscussionPanel,
   type InboxSessionPortal,
 } from "./InboxDiscussionPanel";
-import { inboxAskKey } from "../model/inboxAsk";
+import { inboxAskKey } from "../model/inbox-ask";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;

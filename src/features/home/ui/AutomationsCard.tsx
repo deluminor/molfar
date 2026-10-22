@@ -2,7 +2,7 @@ import { useCallback, type MouseEvent, type ReactNode } from "react";
 import {
   automationRowMeta,
   type RecentAutomationRow,
-} from "../model/recentAutomations";
+} from "../model/recent-automations";
 import { HomeCard } from "./HomeCard";
 
 type Props = {

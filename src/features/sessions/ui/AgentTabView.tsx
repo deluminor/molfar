@@ -1,3 +1,8 @@
+import { findModel } from "@/integrations/harness/core/models/catalog-store";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import { type Session } from "@/domain/session/session";
 import {
   useCallback,
   useEffect,
@@ -6,26 +11,16 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AgentTranscript } from "./AgentTranscript";
-import { useSessionSnapshot } from "../model/sessionStateStore";
+import { useSessionSnapshot } from "../model/session-state-store";
 import { TranscriptFind } from "./TranscriptFind";
 import {
   clearTranscriptJump,
   peekTranscriptJump,
   subscribeTranscriptJump,
-} from "../model/transcriptJump";
+} from "../model/transcript-jump";
 import { HarnessIcon } from "./HarnessIcon";
-import { findModel } from "../model/models";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  sessionWorkCwd,
-  type Session,
-} from "../model/session";
-import { createNote, noteTitle } from "../../notes";
-import {
-  loadNotesEnabled,
-  subscribeNotesEnabled,
-} from "../../settings/model/settings";
+import { createNote, noteTitle } from "@/features/notes/notes";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 
 /**
  * One orchestration worker, watched from its lead's workspace.
@@ -79,11 +74,7 @@ export function AgentTabView({
     });
     return () => cancelAnimationFrame(frame);
   }, [visible, navigatorReady, jumpRequest, navigateBlock, session?.id]);
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const saveNote = useCallback(
     async (text: string) => {
       if (!session) return;

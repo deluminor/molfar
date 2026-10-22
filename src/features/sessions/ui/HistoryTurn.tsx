@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { historyHosts } from "./useMeasuredHistory";
+import { historyHosts } from "./use-measured-history";
 
 /** A stable portal keeps offscreen content mounted without retaining layout. */
 export function HistoryTurn({

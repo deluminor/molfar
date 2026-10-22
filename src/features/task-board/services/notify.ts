@@ -1,4 +1,4 @@
-import { announceProjectEvent } from "../../notifications/model/notifications";
+import { announceProjectEvent } from "@/features/notifications/model/notifications";
 import type { BoardNotice, NotifyPort } from "./ports";
 
 /** Notification click payloads with this prefix open the board on a card. */

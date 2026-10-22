@@ -1,3 +1,4 @@
+import type { Attachment } from "@/domain/session/attachment";
 import {
   lazy,
   Suspense,
@@ -7,32 +8,31 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { isImeComposition } from "../../../shared/lib/keyboard";
-import { ArrowUp, Plus, SmilePlus } from "../../../shared/ui/icons";
-import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
-import type { Attachment } from "../../sessions/model/session";
+import { isImeComposition } from "@/shared/lib/keyboard";
+import { ArrowUp, Plus, SmilePlus } from "@/shared/ui/icons";
+import { AttachmentChip } from "@/features/sessions/ui/AttachmentChip";
 import {
   attachmentsFromFiles,
   filesFromClipboard,
   mergeAttachments,
   pickAttachments,
   revokeAttachment,
-} from "../../sessions/model/attachments";
+} from "@/features/sessions/model/attachments";
 import {
   getComposerDraft,
   setComposerDraft,
-} from "../../sessions/model/draftCache";
-import { useFileDrop } from "../../sessions/hooks/useFileDrop";
-import { resizeComposer } from "../../sessions/model/composerResize";
-import { useComposerAutocorrect } from "../../settings/model/displayPrefs";
+} from "@/features/sessions/model/draft-cache";
+import { useFileDrop } from "@/features/sessions/hooks/use-file-drop";
+import { resizeComposer } from "@/features/sessions/model/composer-resize";
+import { useComposerAutocorrect } from "@/features/settings/model/display-prefs";
 import {
   consumeQuoteRequest,
   type QuoteRequest,
-} from "../../sessions/model/quoteDraft";
+} from "@/features/sessions/model/quote-draft";
 
 // Loaded on first open, with its emoji data, so neither weighs on startup.
 const EmojiPickerPopover = lazy(() =>
-  import("../../../shared/ui/EmojiPicker").then((module) => ({
+  import("@/shared/ui/EmojiPicker").then((module) => ({
     default: module.EmojiPickerPopover,
   })),
 );

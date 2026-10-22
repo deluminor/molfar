@@ -6,7 +6,7 @@ import {
   Search,
   Star,
   Zap,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   Fragment,
   useEffect,
@@ -20,37 +20,42 @@ import {
 } from "react";
 import {
   coerceModelPickerTab,
-  getModelSnapshot,
   getPickerVisibilitySnapshot,
-  isEffortSettingId,
   loadFavoriteModels,
   loadRecentModelChoices,
   saveFavoriteModels,
   showProviderInModelPicker,
-  subscribeModels,
   subscribePickerVisibility,
-  type AgentModel,
   type ModelPickerTab,
-  type ModelSetting,
 } from "../model/models";
+import {
+  getModelSnapshot,
+  subscribeModels,
+} from "@/integrations/harness/core/models/catalog-store";
+import { isEffortSettingId } from "@/domain/models/model-settings";
+import type { AgentModel, ModelSetting } from "@/domain/models/agent-model";
 import {
   isProviderHidden,
   projectProvidersRevision,
   subscribeProjectProviders,
-} from "../model/projectProviders";
+} from "../model/project-providers";
 import {
   harnessUnavailableHint,
   subscribeHarnessAvailability,
   getHarnessAvailabilitySnapshot,
-} from "../../../integrations/harness/core/availability";
-import { useModelSource, type ModelSource } from "./modelSource";
-import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../model/session";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { LAYER } from "../../../shared/lib/layers";
+} from "@/integrations/harness/core/availability";
+import { useModelSource, type ModelSource } from "./model-source";
+import {
+  HARNESS_TITLE,
+  HARNESSES,
+  type HarnessId,
+} from "@/domain/harness/harness";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { LAYER } from "@/shared/lib/layers";
 import { HarnessIcon } from "./HarnessIcon";
-import { Popover } from "../../../shared/ui/Popover";
-import { MOD } from "../../../platform/tauri/platform";
-import { keybindingPressed } from "../../settings/model/settings";
+import { Popover } from "@/shared/ui/Popover";
+import { MOD } from "@/shared/lib/platform";
+import { keybindingPressed } from "@/features/settings/model/settings";
 import "./ModelPicker.css";
 
 type Props = {

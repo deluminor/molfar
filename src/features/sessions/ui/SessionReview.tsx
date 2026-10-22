@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronRight, FileDiff } from "../../../shared/ui/icons";
+import { basename } from "@/shared/lib/paths";
+import { ChevronDown, ChevronRight, FileDiff } from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -14,12 +15,12 @@ import {
 import {
   EMPTY_SESSION_REVIEW,
   sessionReviewCache,
-} from "../model/sessionReviewCache";
-import { invalidateProjectFiles } from "../../files/model/fileIndex";
-import { invalidateWatchedFiles } from "../../files/model/fileWatch";
-import { basename, notifyGitChanged } from "../../../platform/tauri/fs";
-import { formatInteger } from "../../../shared/lib/numbers";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+} from "../model/session-review-cache";
+import { invalidateProjectFiles } from "@/features/files/model/file-index";
+import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
+import { notifyGitChanged } from "@/platform/tauri/fs";
+import { formatInteger } from "@/shared/lib/numbers";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 
 type Props = {
   sessionId: string;

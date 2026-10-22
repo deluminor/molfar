@@ -1,11 +1,15 @@
-import type { ToolPreview, ToolPreviewKind, ToolPreviewLine } from "../../../features/sessions/model/session";
-import { displayPath } from "../../../shared/lib/paths";
+import type {
+  ToolPreview,
+  ToolPreviewKind,
+  ToolPreviewLine,
+} from "@/domain/session/agent-run";
+import { displayPath } from "@/shared/lib/paths";
 import {
   formatShellIntent,
   inferShellIntent,
   rewriteReadableTitle,
   unwrapShellCommand,
-} from "./shellIntent";
+} from "./shell-intent";
 
 export const MAX_PREVIEW_LINES = 6;
 export const MAX_LINE_CHARS = 120;

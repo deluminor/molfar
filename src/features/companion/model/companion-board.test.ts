@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { TaskBoardRuntime } from "../../task-board/hooks/use-task-board-engine";
-import { runAction } from "../../task-board/services/actions";
-import { createCard } from "../../task-board/services/card-create";
-import { createFakePorts } from "../../task-board/services/testing/fake-ports";
+import type { TaskBoardRuntime } from "@/features/task-board/hooks/use-task-board-engine";
+import { runAction } from "@/features/task-board/services/actions";
+import { createCard } from "@/features/task-board/services/card-create";
+import { createFakePorts } from "@/features/task-board/services/testing/fake-ports";
 import { createCompanionBoard, type BoardCardSummary } from "./companion-board";
 
 let fake: ReturnType<typeof createFakePorts>;

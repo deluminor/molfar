@@ -1,12 +1,8 @@
 import { expect, it } from "vitest";
 import {
   defaultFamiliarName,
-  familiarMessagePage,
-  familiarMessages,
-  familiarReply,
   familiarState,
 } from "./familiar";
-import type { Block } from "../../sessions/model/session";
 
 it("is idle between turns", () => {
   expect(familiarState({ blocks: [], busy: false })).toEqual({

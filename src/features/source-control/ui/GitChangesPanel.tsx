@@ -1,4 +1,12 @@
-import { alertApp, confirmApp } from "../../../app/model/appDialog";
+import { basename } from "@/shared/lib/paths";
+import {
+  type GitChangedFile,
+  type GitDiffIndex,
+  type GitFileDiffKind,
+} from "@/domain/git/working-tree";
+import { type GitPr } from "@/domain/git/pull-request";
+import { type HarnessId } from "@/domain/harness/harness";
+import { alertApp, confirmApp } from "@/shared/lib/app-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Check,
@@ -19,7 +27,7 @@ import {
   Undo2,
   WandSparkles,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -29,10 +37,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Popover } from "../../../shared/ui/Popover";
-import { PaneHeader } from "../../../shared/ui/PaneHeader";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { WorkingTreeDiffSurface } from "./workingTreeDiffSurface";
+import { Popover } from "@/shared/ui/Popover";
+import { PaneHeader } from "@/shared/ui/PaneHeader";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { WorkingTreeDiffSurface } from "./working-tree-diff-surface";
 import {
   GitHistoryGraph,
   GraphResizeSash,
@@ -41,47 +49,22 @@ import {
   loadGraphPanelHeight,
   saveGraphPanelHeight,
 } from "./GitHistoryGraph";
-import {
-  basename,
-  gitCommit,
-  gitDiffIndex,
-  gitDiscardAll,
-  gitDiscardFile,
-  gitHeadMessage,
-  gitPrCreate,
-  gitPrStatus,
-  gitPull,
-  gitPush,
-  gitRangeContext,
-  gitStageAll,
-  gitStageFile,
-  gitSync,
-  gitUnstageAll,
-  gitUnstageFile,
-  notifyGitChanged,
-  subscribeGitChanged,
-  type GitChangedFile,
-  type GitDiffIndex,
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-  type GitPr,
-} from "../../../platform/tauri/fs";
-import type { HarnessId } from "../../sessions/model/session";
-import { recordInboxSelfActivity } from "../../inbox/model/inboxSelfActivity";
+import { gitCommit, gitDiffIndex, gitDiscardAll, gitDiscardFile, gitHeadMessage, gitPrCreate, gitPrStatus, gitPull, gitPush, gitRangeContext, gitStageAll, gitStageFile, gitSync, gitUnstageAll, gitUnstageFile, notifyGitChanged, subscribeGitChanged, type GitHistoryCommit } from "@/platform/tauri/fs";
+import { recordInboxSelfActivity } from "@/features/inbox/model/inbox-self-activity";
 import {
   loadChangesView,
   saveChangesView,
   type ChangesView,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   generateCommitMessage,
   generatePrContent,
-} from "../../../integrations/harness";
-import { invalidateWatchedFiles } from "../../files/model/fileWatch";
-import { MOD } from "../../../platform/tauri/platform";
-import { applyProjectDiffStats } from "../hooks/useProjectDiffStats";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { isRemoteProjectPath } from "../../projects/model/recents";
+} from "@/integrations/harness";
+import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
+import { MOD } from "@/shared/lib/platform";
+import { applyProjectDiffStats } from "../hooks/use-project-diff-stats";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
 
 const GIT_POLL_MS = 2000;
 

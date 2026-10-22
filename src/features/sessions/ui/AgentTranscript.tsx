@@ -1,3 +1,17 @@
+import { type Attachment } from "@/domain/session/attachment";
+import { type FamiliarSpawnedSession } from "@/domain/session/familiar-session";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { hasPendingApproval } from "@/domain/session/session-state";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import { type AgentStep, type ToolPreview } from "@/domain/session/agent-run";
+import { type Block } from "@/domain/session/block";
+import { type InterjectionMeta } from "@/domain/session/block-meta";
+import {
+  type ModelTarget,
+  type PlanBuildTarget,
+  type TurnMetrics,
+} from "@/domain/session/turn";
+import { isFailedStatus } from "@/domain/session/tool-status";
 import {
   ArrowUp,
   Check,
@@ -16,7 +30,7 @@ import {
   Trash2,
   Wrench,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   startTransition,
@@ -37,95 +51,84 @@ import { GeneratedImage } from "./GeneratedImage";
 import { MolfarSparkles } from "./MolfarSparkles";
 import { OrchestratorConstellation } from "./OrchestratorConstellation";
 import { PlanStepsBurst } from "./PlanStepsBurst";
-import { settleCatchUpFades } from "./wordFade";
-import { revealMeasuredTurn, useMeasuredHistory } from "./useMeasuredHistory";
+import { settleCatchUpFades } from "./word-fade";
+import { revealMeasuredTurn, useMeasuredHistory } from "./use-measured-history";
 import {
   layoutTransitionActive,
   onLayoutTransitionEnd,
-} from "../../../shared/lib/layoutTransition";
+} from "@/shared/lib/layout-transition";
 import {
   ownStepBlock,
   ToolDetailSession,
   useToolDetail,
-} from "./useToolDetail";
+} from "./use-tool-detail";
 import { HistoryTurn } from "./HistoryTurn";
-import { streamMeasurement } from "../model/streamingPerformance";
-import { useReplyReflowAnchor } from "./useReplyReflowAnchor";
-import { FilePreview } from "../../files/ui/FilePreview";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+import { streamMeasurement } from "../model/streaming-performance";
+import { useReplyReflowAnchor } from "./use-reply-reflow-anchor";
+import { FilePreview } from "@/features/files/ui/FilePreview";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { ToolDiffPreview } from "./ToolDiffPreview";
 import { PlanPreview } from "./PlanPreview";
-import { OrchestrationPreview } from "../../orchestration/ui/OrchestrationPreview";
+import { OrchestrationPreview } from "@/features/orchestration/ui/OrchestrationPreview";
 import { TaskListPreview } from "./TaskListPreview";
 import { HandoffButton, SecondOpinionButton } from "./SecondOpinionButton";
 import { SecondOpinionCard } from "./SecondOpinionCard";
-import { NoteMiniCard } from "../../notes/ui/NoteMiniCard";
-import { ArtifactCard } from "../../artifacts/ui/ArtifactCard";
-import { artifactCards } from "../../artifacts/artifacts";
+import { NoteMiniCard } from "@/features/notes/ui/NoteMiniCard";
+import { ArtifactCard } from "@/features/artifacts/ui/ArtifactCard";
+import { artifactCards } from "@/features/artifacts/artifacts";
 
 import { TerminalSpinner } from "./TerminalSpinner";
-import { Popover } from "../../../shared/ui/Popover";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { PixelMascot } from "../../projects/ui/PixelMascot";
-import type { FamiliarLook } from "../../familiars/model/familiar";
+import { Popover } from "@/shared/ui/Popover";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
+import type { FamiliarLook } from "@/features/familiars/model/familiar";
 import {
   familiarSpawnedSessions as spawnedSessionsFromReceipts,
   sanitizeFamiliarSpawnedSessions,
   type LaunchedSessionView,
-} from "../../familiars/model/familiarSpawnedSessions";
-import { LaunchedSessionCard } from "../../familiars/ui/LaunchedSessionCard";
-import type { MessageDelivery } from "../../familiars/model/familiarMessaging";
-import { familiarReactionBlocks } from "../../familiars/model/familiarReaction";
-import type { ApprovalDecision } from "../../../integrations/harness";
+} from "@/features/familiars/model/familiar-spawned-sessions";
+import { LaunchedSessionCard } from "@/features/familiars/ui/LaunchedSessionCard";
+import type { MessageDelivery } from "@/features/familiars/model/familiar-messaging";
+import { familiarReactionBlocks } from "@/features/familiars/model/familiar-reaction";
+import type { ApprovalDecision } from "@/integrations/harness";
 import {
   isHarnessAuthError,
   supportsHarnessLogin,
-} from "../../../integrations/harness/core/authSupport";
+} from "@/integrations/harness/core/auth-support";
 import {
   isEditTool,
   isReadTool,
   isSearchTool,
   stubFilePreview,
-} from "../../../integrations/harness/core/preview";
-import { copyMessage } from "../../../platform/tauri/clipboard";
-import type { Attachment, FamiliarSpawnedSession } from "../model/session";
-import { visibleUserPrompt } from "../../orchestration/model/orchestration";
-import { playCue } from "../../settings/model/sounds";
-import { legacyTaskListFromText } from "../model/taskList";
-import { resolveModel } from "../model/models";
-import { harnessForTurn } from "../model/secondOpinion";
-import { TranscriptTurnCache } from "../model/transcriptTurnCache";
-import { Shimmer } from "../../../shared/ui/Shimmer";
-import {
-  hasPendingApproval,
-  HARNESS_TITLE,
-  type AgentStep,
-  type Block,
-  type HarnessId,
-  type InterjectionMeta,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type ToolPreview,
-  type TurnMetrics,
-} from "../model/session";
+} from "@/integrations/harness/core/preview";
+import { copyMessage } from "@/platform/tauri/clipboard";
+import { visibleUserPrompt } from "@/features/orchestration/model/orchestration";
+import { playCue } from "@/features/settings/model/sounds";
+import { legacyTaskListFromText } from "@/domain/session/task-list";
+import { harnessForTurn } from "../model/second-opinion";
+import { TranscriptTurnCache } from "../model/transcript-turn-cache";
+import { Shimmer } from "@/shared/ui/Shimmer";
 import { HarnessIcon } from "./HarnessIcon";
-import { TranscriptPacing, TranscriptVisibility } from "./transcriptVisibility";
+import {
+  TranscriptPacing,
+  TranscriptVisibility,
+} from "./transcript-visibility";
 import {
   innerScrollerTakes,
   useLockOverscroll,
-} from "../../../shared/hooks/useLockOverscroll";
-import { useTranscriptLayout } from "../hooks/useTranscriptLayout";
-import { useTranscriptAnchor } from "../hooks/useTranscriptAnchor";
-import { useBottomChatMotion } from "../hooks/useBottomChatMotion";
-import { useTranscriptSelection } from "../hooks/useTranscriptSelection";
-import type { TranscriptLayout } from "../../settings/model/appearance";
+} from "@/shared/hooks/use-lock-overscroll";
+import { useTranscriptLayout } from "../hooks/use-transcript-layout";
+import { useTranscriptAnchor } from "../hooks/use-transcript-anchor";
+import { useBottomChatMotion } from "../hooks/use-bottom-chat-motion";
+import { useTranscriptSelection } from "../hooks/use-transcript-selection";
+import type { TranscriptLayout } from "@/features/settings/model/appearance";
 import { AgentMarkdown } from "./AgentMarkdown";
 import { FamiliarWorkTicker } from "./FamiliarWorkTicker";
-import { familiarWorkStatus } from "../model/familiarWorkStatus";
-import { isEmojiOnlyMessage } from "../model/emojiMessage";
+import { familiarWorkStatus } from "../model/familiar-work-status";
+import { isEmojiOnlyMessage } from "../model/emoji-message";
 import { attachmentPreviewSrc } from "../model/attachments";
 import { TranscriptSelectionMenu } from "./TranscriptSelectionMenu";
-import { parseUserMessageLink } from "../model/linkPreview";
+import { parseUserMessageLink } from "../model/link-preview";
 import { UserLinkPreview } from "./UserLinkPreview";
 import {
   activityPhaseTitle,
@@ -135,7 +138,6 @@ import {
   foldableWork,
   foldedBlocks,
   initialThinkingIndex,
-  isFailedStatus,
   isIncompleteTool,
   isSubagentBlock,
   isThinkingBlock,
@@ -162,23 +164,23 @@ import {
   type ActivityPhaseKind,
   type ToolCallState,
   type TurnItem,
-} from "../model/transcriptActivity";
-import { lastUserTurnBlock } from "../model/editLastTurn";
+} from "../model/transcript-activity";
+import { lastUserTurnBlock } from "../model/edit-last-turn";
 import {
   molfarToolCall,
   molfarWorkSummary,
   type MolfarToolCall,
-} from "../model/molfarToolCall";
+} from "../model/molfar-tool-call";
 import {
   isOperatorUserTurn,
   operatorUserPrompt,
-} from "../model/operatorCommand";
+} from "../model/operator-command";
 import {
   clearTranscriptHighlights,
   paintTranscriptHighlights,
   transcriptMutationNeedsRepaint,
   transcriptWordRanges,
-} from "../model/transcriptHighlights";
+} from "../model/transcript-highlights";
 
 const NEAR_BOTTOM_PX = 16;
 const WHEEL_HOLD_MS = 150;

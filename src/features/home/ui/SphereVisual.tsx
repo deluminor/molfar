@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { useSphereAnimation } from "../hooks/useSphereAnimation";
+import { useSphereAnimation } from "../hooks/use-sphere-animation";
 
 export const SphereVisual = memo(function SphereVisual(): ReactNode {
   const { canvasRef, status } = useSphereAnimation();

@@ -1,12 +1,12 @@
-import type { ReleaseNotesTabSource } from "../../../app/model/releaseNotes";
-import type { GitFileDiffKind } from "../../../platform/tauri/fs";
+import type { ReleaseNotesTabSource } from "@/features/updates/model/release-notes";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import {
   applyTerminalMeta,
   defaultTerminalTitle,
   type TerminalMetaPatch,
-} from "../../terminal/model/terminalTab";
-import type { HarnessId } from "../../sessions/model/session";
-import { pathKey } from "../../../shared/lib/paths";
+} from "@/features/terminal/model/terminal-tab";
+import type { HarnessId } from "@/domain/harness/harness";
+import { pathKey } from "@/shared/lib/paths";
 
 /**
  * Split tree for a tab. Same-direction splits share a group so

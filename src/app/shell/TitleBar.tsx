@@ -14,7 +14,7 @@ import {
   Terminal,
   X,
   Zap,
-} from "../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -26,86 +26,52 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { basename } from "../../platform/tauri/fs";
-import { looksLikeProject } from "../../features/projects/model/recents";
-import type { HarnessId } from "../../features/sessions/model/session";
-import { CwdPicker } from "../../features/projects/ui/CwdPicker";
-import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
+import { basename } from "@/shared/lib/paths";
+import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
+import type { HarnessId } from "@/domain/harness/harness";
+import { CwdPicker } from "@/features/projects/ui/CwdPicker";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   useAnimatedReorder,
   type ReorderExternalDrop,
-} from "../../shared/hooks/useAnimatedReorder";
-import { useTabCloseMotion } from "../../features/workspace/hooks/useTabCloseMotion";
-import { TabWidthMotion } from "./ClosingTab";
-import { FileTypeIcon } from "../../features/files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+} from "@/shared/hooks/use-animated-reorder";
+import { useTabCloseMotion } from "@/features/workspace/hooks/use-tab-close-motion";
+import { TabWidthMotion } from "@/shared/ui/ClosingTab";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
-import { TabLabel } from "../../shared/ui/TabLabel";
-import { WindowControls } from "./WindowControls";
-import { PixelMascot } from "../../features/projects/ui/PixelMascot";
-import { FamiliarRailMascot } from "../../features/familiars/ui/FamiliarRailMascot";
+import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
+import { TabLabel } from "@/shared/ui/TabLabel";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
+import { FamiliarRailMascot } from "@/features/familiars/ui/FamiliarRailMascot";
 import {
   FAMILIAR_STATUS_LABEL,
   type FamiliarLook,
   type FamiliarState,
-} from "../../features/familiars/model/familiar";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../platform/tauri/platform";
-import { useTrafficLightsVisible } from "../../platform/tauri/useTrafficLightsVisible";
-import type { RecentProject } from "../../features/projects/model/recents";
+} from "@/features/familiars/model/familiar";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
+import { useTrafficLightsVisible } from "@/platform/tauri/use-traffic-lights-visible";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../features/files/ui/ExplorerMenu";
+} from "@/features/files/ui/ExplorerMenu";
 import {
   paneDropFromPoint,
   setExternalPaneDrop,
   useExternalTitleTabDrop,
-} from "../../features/workspace/model/paneDrop";
-import type { PaneEdge } from "../../features/workspace/model/layout";
-import {
-  APP_VIEW_LABELS,
-  type AppView,
-} from "../../features/workspace/model/appViewTabs";
+} from "@/features/workspace/model/pane-drop";
+import type { PaneEdge } from "@/features/workspace/model/layout";
+import { IconButton } from "@/shared/ui/IconButton";
+import { TabVisitNav } from "@/features/window-chrome/ui/OverlayNav";
+import type { Tab } from "@/features/workspace/model/title-tab";
+import { APP_VIEW_LABELS } from "@/features/workspace/model/app-view-tabs";
 
 const APP_VIEW_ICONS = {
   search: Search,
   inbox: Inbox,
   notes: StickyNote,
   automations: Zap,
-};
-
-export type Tab = {
-  id: string;
-  appView?: AppView;
-  /** A Familiar open as a tab; its name is the title. */
-  familiar?: { mascot: string; color: string; status: FamiliarState["status"] };
-  /** Project folder name, e.g. `agent-terminal`. */
-  project: string;
-  /** Focused conversation title; empty for a fresh session. */
-  title: string;
-  /** Other conversation titles in this tab, focused session omitted. */
-  more: string[];
-  sessionCount: number;
-  harnesses: HarnessId[];
-  /** Harnesses with an in-flight turn in this tab. */
-  busyHarnesses: HarnessId[];
-  /** Harnesses with a finished response that has not been focused yet. */
-  doneHarnesses?: HarnessId[];
-  /** Open file basenames, active files first. */
-  files: string[];
-  /** Split layout with more than one pane in this tab. */
-  multiPane?: boolean;
-  /** Focus is on a file/terminal pane rather than a conversation pane. */
-  fileFocused?: boolean;
-  /** The sole pane is a fresh conversation with no user turn or open file. */
-  blank?: boolean;
-  /** Explicit tab group; absent means ungrouped. */
-  groupId?: string;
-  dirty?: boolean;
-  terminal?: boolean;
-  /** File id when the whole tab is one preview file; double-click pins it. */
-  previewFileId?: string;
 };
 
 /** How far below the tab bar a dragged tab must go before it targets a pane. */
@@ -516,90 +482,6 @@ function TabStripChevron({
   );
 }
 
-export function IconButton({
-  label,
-  active,
-  accent,
-  disabled,
-  onClick,
-  onOpenContextMenu,
-  children,
-}: {
-  label: string;
-  active?: boolean;
-  accent?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
-  onOpenContextMenu?: (x: number, y: number) => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      aria-pressed={active || accent}
-      aria-disabled={disabled}
-      data-tauri-drag-region="false"
-      onClick={() => {
-        if (disabled) return;
-        onClick?.();
-      }}
-      onContextMenu={
-        onOpenContextMenu
-          ? (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              if (disabled) return;
-              event.currentTarget.focus();
-              onOpenContextMenu(event.clientX, event.clientY);
-            }
-          : undefined
-      }
-      onKeyDown={
-        onOpenContextMenu
-          ? (event) => {
-              if (
-                event.key !== "ContextMenu" &&
-                !(event.shiftKey && event.key === "F10")
-              )
-                return;
-              event.preventDefault();
-              event.stopPropagation();
-              if (disabled) return;
-              event.currentTarget.focus();
-              const rect = event.currentTarget.getBoundingClientRect();
-              onOpenContextMenu(rect.left, rect.bottom);
-            }
-          : undefined
-      }
-      className={`grid size-6 place-items-center rounded-md ${
-        disabled
-          ? "text-content/25"
-          : accent
-            ? "text-accent hover:bg-content/10"
-            : active
-              ? "text-content hover:bg-content/10"
-              : "text-content/50 hover:bg-content/10 hover:text-content"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function DevModeLabel() {
-  if (!import.meta.env.DEV) return null;
-  return (
-    <span
-      title="Development build"
-      className="mr-1 min-w-0 truncate rounded-md bg-skill/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-skill"
-    >
-      Development
-    </span>
-  );
-}
-
 /** The Development badge as an icon, for the inset title bar. */
 export function DevModeIcon() {
   if (!import.meta.env.DEV) return null;
@@ -612,61 +494,6 @@ export function DevModeIcon() {
     >
       <Code className="size-3.5" strokeWidth={1.75} />
     </span>
-  );
-}
-
-/** Flex spacer that keeps the Development badge next to the visit arrows. */
-export function DevModeSlot() {
-  return (
-    <div className="flex min-w-0 flex-1 items-center justify-end">
-      <DevModeLabel />
-    </div>
-  );
-}
-
-export function TabVisitNav({
-  canGoBack = false,
-  canGoForward = false,
-  onGoBack,
-  onGoForward,
-  onTogglePanel,
-  panelActive = false,
-  panelLabel = "Toggle Projects",
-}: {
-  canGoBack?: boolean;
-  canGoForward?: boolean;
-  onGoBack?: () => void;
-  onGoForward?: () => void;
-  onTogglePanel?: () => void;
-  panelActive?: boolean;
-  panelLabel?: string;
-}) {
-  return (
-    <div className="flex shrink-0 items-center">
-      <IconButton
-        label={`Back (${MOD}[)`}
-        disabled={!canGoBack}
-        onClick={onGoBack}
-      >
-        <ChevronLeft className="size-3.5" strokeWidth={1.75} />
-      </IconButton>
-      <IconButton
-        label={`Forward (${MOD}])`}
-        disabled={!canGoForward}
-        onClick={onGoForward}
-      >
-        <ChevronRight className="size-3.5" strokeWidth={1.75} />
-      </IconButton>
-      {onTogglePanel ? (
-        <IconButton
-          label={panelLabel}
-          active={panelActive}
-          onClick={onTogglePanel}
-        >
-          <PanelLeft className="size-3.5" strokeWidth={1.75} />
-        </IconButton>
-      ) : null}
-    </div>
   );
 }
 
@@ -706,34 +533,6 @@ export function FamiliarViewActions({
       {onOpenSettings ? (
         <IconButton label={`${name} settings`} onClick={onOpenSettings}>
           <Settings className="size-3.5" strokeWidth={1.75} />
-        </IconButton>
-      ) : null}
-    </div>
-  );
-}
-
-/** Back + rail toggle for overlay surfaces when the project rail is closed. */
-export function OverlayNav({
-  onBack,
-  onToggleSidebar,
-}: {
-  onBack?: () => void;
-  onToggleSidebar?: () => void;
-}) {
-  if (!onBack && !onToggleSidebar) return null;
-  return (
-    <div className="flex shrink-0 items-center px-1.5">
-      {onBack ? (
-        <IconButton label={`Back (${MOD}[)`} onClick={onBack}>
-          <ChevronLeft className="size-3.5" strokeWidth={1.75} />
-        </IconButton>
-      ) : null}
-      {onToggleSidebar ? (
-        <IconButton
-          label={`Toggle Sidebar (${MOD}B)`}
-          onClick={onToggleSidebar}
-        >
-          <PanelLeft className="size-3.5" strokeWidth={1.75} />
         </IconButton>
       ) : null}
     </div>

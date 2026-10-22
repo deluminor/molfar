@@ -1,0 +1,243 @@
+import { act, createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { emit } from "@tauri-apps/api/event";
+import { clearMocks, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
+import { vi } from "vitest";
+import type { HarnessId } from "@/domain/harness/harness";
+import { defaultIpcAnswer } from "./ipc-defaults";
+import { createFakeHarness, type FakeHarness } from "./fake-harness";
+
+// Browsers mark a cancelled animation's `finished` rejection as handled;
+// happy-dom leaves it unhandled, which fails the run for pane slides.
+const cancelAnimation = Animation.prototype.cancel;
+Animation.prototype.cancel = function cancel(this: Animation) {
+  this.finished.catch(() => undefined);
+  cancelAnimation.call(this);
+};
+
+export type IpcArgs = Record<string, unknown> | undefined;
+export type IpcRoute = (args: IpcArgs) => unknown;
+export type IpcCall = { command: string; args: IpcArgs };
+
+export type AppHarness = {
+  host: HTMLElement;
+  calls: IpcCall[];
+  harness: FakeHarness;
+  commands(name: string): IpcCall[];
+  emit(event: string, payload?: unknown): Promise<void>;
+  /** Runs harness or store actions inside act, then lets effects settle. */
+  drive(action: () => void): Promise<void>;
+  /** Text of what is on screen, without panes kept mounted behind aria-hidden. */
+  visibleText(): string;
+  /** Clicks the visible button whose text or aria-label is `label`. */
+  click(label: string): Promise<void>;
+  /** Opens the context menu of an element, as a right click does. */
+  openContextMenu(element: Element): Promise<void>;
+  /** Clicks the open menu's item whose label starts with `label`. */
+  chooseMenuItem(label: string): Promise<void>;
+  /** Replaces a controlled input's value and presses Enter. */
+  submitInput(input: HTMLInputElement, value: string): Promise<void>;
+  /** Types into the visible composer and presses Enter. */
+  submitPrompt(text: string): Promise<void>;
+  settle(ms?: number): Promise<void>;
+  /** Lets React work until `condition` holds; fails after `timeoutMs`. */
+  until(condition: () => boolean, timeoutMs?: number): Promise<void>;
+  unmount(): Promise<void>;
+};
+
+/**
+ * Renders the real app against mocked Tauri IPC, windows and events. Modules
+ * are reset first, so module-level stores start empty for every call.
+ */
+export async function renderApp(
+  options: {
+    routes?: Record<string, IpcRoute>;
+    harness?: HarnessId;
+    /** Project the app reopens on launch; none boots into `~`. */
+    project?: string;
+    /** Projects in the rail besides `project`, remembered before it. */
+    otherProjects?: string[];
+    /** localStorage entries (settings) present at launch. */
+    storage?: Record<string, string>;
+    /** Boots as `main.tsx` does: the saved workspace is loaded and passed to App. */
+    boot?: boolean;
+    /** When boot is done; a visible composer unless a view covers the workspace. */
+    ready?: (host: HTMLElement) => boolean;
+  } = {},
+): Promise<AppHarness> {
+  vi.resetModules();
+  localStorage.clear();
+  for (const [key, value] of Object.entries(options.storage ?? {}))
+    localStorage.setItem(key, value);
+
+  const calls: IpcCall[] = [];
+  const routes: Record<string, IpcRoute> = {
+    resolve_project_location: (args) => ({
+      path: args?.path,
+      identity: args?.identity ?? args?.path,
+    }),
+    ...options.routes,
+  };
+  mockWindows("main");
+  mockIPC(
+    (command, args) => {
+      const payload = args as IpcArgs;
+      calls.push({ command, args: payload });
+      const route = routes[command];
+      return route ? route(payload) : defaultIpcAnswer(command);
+    },
+    { shouldMockEvents: true },
+  );
+
+  if (options.project) {
+    const recents = await import("@/features/projects/model/recents");
+    for (const other of options.otherProjects ?? []) recents.rememberProject(other);
+    recents.rememberProject(options.project);
+  }
+
+  const { default: App } = await import("../../App");
+  const props = options.boot
+    ? await (await import("../../model/app-lifecycle")).loadBootWorkspace()
+    : {};
+  const registry = await import("@/integrations/harness/core/registry");
+  const harness = createFakeHarness(options.harness ?? "cursor");
+  registry.registerHarness(harness.adapter);
+
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root: Root = createRoot(host);
+  await act(async () => {
+    root.render(createElement(App, props));
+  });
+
+  const settle = async (ms = 50) => {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, ms));
+    });
+  };
+  const until = async (condition: () => boolean, timeoutMs = 15_000) => {
+    const deadline = Date.now() + timeoutMs;
+    while (!condition()) {
+      if (Date.now() > deadline)
+        throw new Error(`Condition not met within ${timeoutMs}ms`);
+      await settle(25);
+    }
+  };
+  const visibleComposer = () =>
+    [
+      ...host.querySelectorAll<HTMLTextAreaElement>(
+        "textarea.composer-field:not([disabled])",
+      ),
+    ].find((candidate) => !candidate.closest('[aria-hidden="true"]'));
+
+  // Booting is IPC-driven and its timing depends on machine load.
+  await until(() => (options.ready ? options.ready(host) : !!visibleComposer()));
+  await settle();
+
+  return {
+    host,
+    calls,
+    harness,
+    commands: (name) => calls.filter((call) => call.command === name),
+    emit: async (event, payload) => {
+      await act(async () => {
+        await emit(event, payload);
+      });
+      await settle();
+    },
+    drive: async (action) => {
+      await act(async () => {
+        action();
+      });
+      await settle();
+    },
+    visibleText: () => {
+      const copy = host.cloneNode(true) as HTMLElement;
+      for (const hidden of copy.querySelectorAll('[aria-hidden="true"]')) {
+        hidden.remove();
+      }
+      return copy.textContent ?? "";
+    },
+    click: async (label) => {
+      const find = () =>
+        [...host.querySelectorAll<HTMLElement>("button")].find(
+          (candidate) =>
+            !candidate.closest('[aria-hidden="true"]') &&
+            (candidate.getAttribute("aria-label") === label ||
+              candidate.textContent?.trim() === label),
+        );
+      await until(() => !!find());
+      const button = find();
+      if (!button) throw new Error(`No visible button labelled "${label}"`);
+      await act(async () => {
+        button.click();
+      });
+      await settle();
+    },
+    openContextMenu: async (element) => {
+      await act(async () => {
+        element.dispatchEvent(
+          new MouseEvent("contextmenu", {
+            bubbles: true,
+            clientX: 10,
+            clientY: 10,
+          }),
+        );
+      });
+      await settle();
+    },
+    chooseMenuItem: async (label) => {
+      const find = () =>
+        [
+          ...document.querySelectorAll<HTMLElement>(
+            "button, [role='menuitem']",
+          ),
+        ].find((item) => item.textContent?.trim().startsWith(label));
+      await until(() => !!find());
+      await act(async () => {
+        find()?.click();
+      });
+      await settle();
+    },
+    submitInput: async (input, value) => {
+      // React tracks controlled inputs through the native value setter.
+      const setValue = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      await act(async () => {
+        setValue?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        );
+      });
+      await settle();
+    },
+    submitPrompt: async (text) => {
+      await until(() => !!visibleComposer());
+      const field = visibleComposer();
+      if (!field) throw new Error("No enabled composer on screen");
+      await act(async () => {
+        field.focus();
+        field.value = text;
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        field.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        );
+      });
+      await settle();
+    },
+    settle,
+    until,
+    unmount: async () => {
+      await act(async () => {
+        root.unmount();
+      });
+      host.remove();
+      // Effects unlisten asynchronously; the mocked event plugin must outlive them.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      clearMocks();
+    },
+  };
+}

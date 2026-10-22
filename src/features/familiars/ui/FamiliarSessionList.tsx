@@ -1,22 +1,25 @@
+import { IconButton } from "@/shared/ui/IconButton";
+import { hasPendingApproval } from "@/domain/session/session-state";
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
+import type { Session } from "@/domain/session/session";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/listWindow";
-import { projectName } from "../../../shared/lib/paths";
-import { IconButton } from "../../../app/shell/TitleBar";
+import { LIST_PAGE_SIZE, listWindowSize } from "@/shared/lib/list-window";
+import { projectName } from "@/shared/lib/paths";
 import {
   ExternalLink,
   PanelRightToggle,
   Search,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   getSession,
   listSessionsByProject,
   type SessionSummary,
-} from "../../sessions/data/sessionStore";
+} from "@/features/sessions/data/session-store";
 import {
   filterSessionsByArchive,
   filterSessionsByQuery,
   summaryFromSession,
-} from "../../sessions/data/sessionHistory";
+} from "@/features/sessions/data/session-history";
 import {
   DEFAULT_SESSION_SIDEBAR_FILTERS,
   filterSessionsByHarness,
@@ -24,16 +27,11 @@ import {
   filterSessionsByStatus,
   filterSessionsByTime,
   type SessionSidebarFilters,
-} from "../../sessions/model/sessionFilters";
-import { fuzzyMatch } from "../../../shared/lib/fuzzy";
-import {
-  hasPendingApproval,
-  type FamiliarSpawnedSession,
-  type Session,
-} from "../../sessions/model/session";
-import { SessionCard } from "../../../app/shell/Sidebar";
+} from "@/features/sessions/model/session-filters";
+import { fuzzyMatch } from "@/shared/lib/fuzzy";
+import { SessionCard } from "@/app/shell/Sidebar";
 import type { FamiliarLook } from "../model/familiar";
-import { EmptyState, PageHeader } from "./familiarPanelParts";
+import { EmptyState, PageHeader } from "./familiar-panel-parts";
 
 /** A launched session open over the overview, live and fully usable. */
 export type ShownFamiliarSession = {

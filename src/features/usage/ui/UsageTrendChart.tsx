@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { UsageTrendPoint } from "../model/usageSnapshots";
+import type { UsageTrendPoint } from "../model/usage-snapshots";
 
 type Props = {
   points: readonly UsageTrendPoint[];

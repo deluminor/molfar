@@ -3,7 +3,7 @@ import {
   type JsonRpcHandlers,
   type JsonRpcId,
   type JsonRpcMessage,
-} from "./jsonRpc";
+} from "./json-rpc";
 
 export type { JsonRpcMessage };
 

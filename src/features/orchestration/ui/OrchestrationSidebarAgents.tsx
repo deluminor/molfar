@@ -1,23 +1,23 @@
+import { findModel } from "@/integrations/harness/core/models/catalog-store";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
 import { useContext, useEffect, useState, useSyncExternalStore } from "react";
-import { findModel } from "../../sessions/model/models";
 import { orchestrator } from "../model/orchestration";
 import {
   orchestrationTaskLabel,
   type OrchestrationSummary,
-} from "../model/orchestrationSummary";
-import { HARNESS_TITLE } from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+} from "../model/orchestration-summary";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   OrchestrationActions,
   OrchestrationWorkers,
-} from "./OrchestrationActions";
+} from "./orchestration-actions";
 import {
   Check,
   ChevronDown,
   ChevronRight,
   CircleAlert,
-} from "../../../shared/ui/icons";
-import { TerminalSpinner } from "../../sessions/ui/TerminalSpinner";
+} from "@/shared/ui/icons";
+import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
 
 export function OrchestrationSidebarAgents({
   leadId,

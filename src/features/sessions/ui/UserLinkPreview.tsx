@@ -17,8 +17,8 @@ import {
   GitPullRequestClosed,
   GitPullRequestDraft,
   type IconComponent,
-} from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
+} from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
 import {
   formatRelativeTime,
   githubWorkItem,
@@ -27,13 +27,13 @@ import {
   peekGithubWorkItemDetails,
   type GithubWorkItem,
   type GithubWorkItemDetails,
-} from "../../inbox/model/githubTasks";
+} from "@/features/inbox/model/github-tasks";
 import {
   fetchLinkPreviewMetadata,
   type GithubWorkItemLink,
   type LinkPreviewMetadata,
   type UserLink,
-} from "../model/linkPreview";
+} from "../model/link-preview";
 
 export function UserLinkPreview({
   link,

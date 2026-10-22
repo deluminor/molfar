@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newSession } from "../sessions/model/session";
+import { newSession } from "@/features/sessions/model/session";
 import {
   artifactCards,
   recordArtifactCard,

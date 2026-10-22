@@ -11,7 +11,7 @@ import {
   Sparkles,
   Terminal,
   type IconComponent,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import type { BoardActionType } from "../model/transitions";
 import type { BoardColumn } from "../types/card";
 

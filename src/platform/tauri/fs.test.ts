@@ -1,3 +1,4 @@
+import { type GitDiffIndex } from "@/domain/git/working-tree";
 import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -7,7 +8,6 @@ import {
   gitDiffStats,
   gitDiffFiles,
   notifyGitChanged,
-  type GitDiffIndex,
   gitHeadMessage,
   isCheckoutBlockedByChanges,
   listSkills,

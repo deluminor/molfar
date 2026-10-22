@@ -31,22 +31,21 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
-} from "../../../shared/ui/icons";
-import { formatInteger } from "../../../shared/lib/numbers";
+} from "@/shared/ui/icons";
+import { formatInteger } from "@/shared/lib/numbers";
 import { minimalSetup } from "codemirror";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MarkdownViewShell,
   useMarkdownMode,
-} from "../../sessions/ui/MarkdownModeToggle";
-import { loadFileViewMode, saveFileViewMode } from "../model/fileViewMode";
-import { useColorScheme } from "../../../shared/hooks/useColorScheme";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { isLightScheme } from "../../settings/model/appearance";
-import { loadAutosave, loadFormatOnSave } from "../../settings/model/settings";
-import { formatText } from "../../../shared/lib/format";
+} from "@/features/sessions/ui/MarkdownModeToggle";
+import { loadFileViewMode, saveFileViewMode } from "../model/file-view-mode";
+import { useColorScheme } from "@/features/settings/hooks/use-color-scheme";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { isLightScheme } from "@/features/settings/model/appearance";
+import { loadAutosave, loadFormatOnSave } from "@/features/settings/model/settings";
+import { formatText } from "@/shared/lib/format";
 import {
-  basename,
   gitDiffFiles,
   gitFileDiff,
   gitStageContents,
@@ -54,18 +53,18 @@ import {
   readTextFile,
   subscribeGitChanged,
   writeTextFile,
-  type GitFileDiffKind,
-} from "../../../platform/tauri/fs";
-import { syncWatchedMtime, watchFile } from "../model/fileWatch";
-import { displayPath } from "../../../shared/lib/paths";
-import type { EditorNavigation } from "../../search/model/search";
-import { MarkdownDocumentPreview } from "../../sessions/ui/MarkdownDocumentPreview";
+} from "@/platform/tauri/fs";
+import { basename, displayPath } from "@/shared/lib/paths";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
+import { syncWatchedMtime, watchFile } from "../model/file-watch";
+import type { EditorNavigation } from "@/features/search/model/search";
+import { MarkdownDocumentPreview } from "@/features/sessions/ui/MarkdownDocumentPreview";
 import {
   DiffCommentComposer,
   type DiffCommentComposerTarget,
-} from "../../source-control/ui/DiffCommentComposer";
-import { editorAutocomplete } from "../editor/editorAutocomplete";
-import { languageForPath, schemeExtensions } from "../editor/editorChrome";
+} from "@/features/source-control/ui/DiffCommentComposer";
+import { editorAutocomplete } from "../editor/editor-autocomplete";
+import { languageForPath, schemeExtensions } from "../editor/editor-chrome";
 import {
   detectLineEnding,
   type LineEnding,
@@ -73,12 +72,12 @@ import {
   preserveEditorViewport,
   replaceEditorDoc,
   restoreLineEnding,
-} from "../editor/editorDoc";
+} from "../editor/editor-doc";
 import {
   editorMatching,
   editorTyping,
   tryExpandEmmet,
-} from "../editor/editorEditing";
+} from "../editor/editor-editing";
 import {
   EditorSelectionMenu,
   type EditorSelectionTarget,
@@ -91,10 +90,10 @@ import {
   diffScrollToChunk,
   editorGit,
   setGitOriginal,
-} from "../editor/editorGit";
-import { editorLint } from "../editor/editorLint";
-import { editorSearch } from "../editor/editorSearch";
-import { editorScrollbar } from "../editor/editorScrollbar";
+} from "../editor/editor-git";
+import { editorLint } from "../editor/editor-lint";
+import { editorSearch } from "../editor/editor-search";
+import { editorScrollbar } from "../editor/editor-scrollbar";
 import { FilePreviewSearch } from "./FilePreviewSearch";
 
 type EditorNavigationRequest = EditorNavigation & { token: number };
@@ -175,7 +174,7 @@ export function FileEditor({
   const applyDiskContent = useCallback((raw: string) => {
     // CodeMirror documents are LF-only; keep the editor in that convention
     // and restore the file's own line endings on save. Feeding CRLF text
-    // into the LF document doubles every line (see editorDoc.ts).
+    // into the LF document doubles every line (see editor-doc.ts).
     eolRef.current = detectLineEnding(raw);
     const content = normalizeLineBreaks(raw);
     setLoadState((current) => {

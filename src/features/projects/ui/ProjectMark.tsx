@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -7,8 +7,8 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
+} from "@/features/workspace/model/tab-groups";
+import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
 import { ProjectMascot } from "./ProjectMascot";
 

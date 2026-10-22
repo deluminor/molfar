@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildPlanPrompt,
-  consumePlanCommand,
-  isProviderFailureText,
-  isReviewablePlan,
-  planTurnPrompt,
-} from "./plan";
+import { buildPlanPrompt, consumePlanCommand, planTurnPrompt } from "./plan";
+import { isProviderFailureText, isReviewablePlan } from "@/domain/session/plan";
 
 describe("plan mode prompts", () => {
   it("consumes only a leading /plan command", () => {

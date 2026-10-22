@@ -8,7 +8,7 @@ import {
   ListBullet,
   StickyNote,
   type IconComponent,
-} from "../../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import type { ArtifactKind, ArtifactMeta } from "../../types/artifact";
 import type { DetailIntent } from "./detail-intent";
 

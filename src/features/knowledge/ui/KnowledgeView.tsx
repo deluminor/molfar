@@ -1,8 +1,8 @@
 import { useState, type ChangeEvent } from "react";
-import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
-import { FolderTree, RefreshCw, Search } from "../../../shared/ui/icons";
-import { ModalPanel } from "../../../shared/ui/Modal";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
+import { SurfaceHeader } from "@/features/home/ui/SurfaceHeader";
+import { FolderTree, RefreshCw, Search } from "@/shared/ui/icons";
+import { ModalPanel } from "@/shared/ui/Modal";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { useVault } from "../hooks/vault/use-vault";
 import { useVaultDocument } from "../hooks/documents/use-vault-document";
 import { KnowledgeStatus } from "./KnowledgeStatus";

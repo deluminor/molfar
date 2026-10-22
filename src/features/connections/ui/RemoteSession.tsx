@@ -1,49 +1,48 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { SessionPaneProps } from "../../sessions/ui/SessionPane";
+import type { SessionPaneProps } from "@/features/sessions/ui/SessionPane";
+import type { Session, WorkspaceMode } from "@/domain/session/session";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
 import type {
-  Attachment,
-  Block,
-  ComposerTurnOptions,
-  HarnessId,
-  RuntimeMode,
-  Session,
-  WorkspaceMode,
   PlanBuildTarget,
-} from "../../sessions/model/session";
-import { uploadRemoteAttachments } from "../model/remoteAttachments";
-import { temporaryWorktreeBranchName } from "../../source-control/model/worktrees";
-import type { AgentModel } from "../../sessions/model/models";
+  ComposerTurnOptions,
+} from "@/domain/session/turn";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { HarnessId } from "@/domain/harness/harness";
+import { uploadRemoteAttachments } from "../model/remote-attachments";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import { temporaryWorktreeBranchName } from "@/domain/git/worktree-branch";
+import type { AgentModel } from "@/domain/models/agent-model";
 import {
   ModelSourceContext,
   type ModelSource,
-} from "../../sessions/ui/modelSource";
-import { notifyGitChanged } from "../../../platform/tauri/fs";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import { registerRemoteSessionActions } from "../model/remoteSessionActions";
+} from "@/features/sessions/ui/model-source";
+import { notifyGitChanged } from "@/platform/tauri/fs";
+import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
+import { registerRemoteSessionActions } from "../model/remote-session-actions";
 import {
   clearPendingRemoteCommand,
-  loadRemoteSession,
   OPEN_CONNECTIONS_EVENT,
   pendingRemoteCommand,
   pendingRemoteFollowup,
   rememberRemotePendingWorktree,
   rememberRemoteSession,
   REMOTE_HISTORY_CHANGE,
-  remoteRequest,
   reportRemoteMachineStatus,
   remotePendingWorktree,
   remoteSessionFor,
   savePendingRemoteCommand,
   useRemoteMachines,
 } from "../model/connections";
-import { parseRemotePath, remotePath, remoteProjectFor, type RemoteProject } from "../model/remoteProjects";
+import { remoteRequest } from "@/integrations/remote/remote-request";
+import { loadRemoteSession } from "@/integrations/remote/session-sync";
+import { parseRemotePath, remotePath, remoteProjectFor, type RemoteProject } from "../model/remote-projects";
 import {
   carryModelSettings,
   findRemoteModel,
   remoteModelControls,
   sameModelSettings,
-} from "../model/remoteModels";
+} from "../model/remote-models";
 import {
   isRemoteProvider,
   REMOTE_PROVIDERS,
@@ -57,7 +56,7 @@ import {
   type RemoteAttachment,
   type RemoteMachine,
   type RemoteProvider,
-} from "../model/protocol";
+} from "@/domain/remote/protocol";
 
 export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
   remoteSession: boolean;

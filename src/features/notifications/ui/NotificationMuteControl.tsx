@@ -1,19 +1,19 @@
 import { useRef, useState } from "react";
-import { useProjectNotificationPreferences } from "../hooks/useProjectNotificationPreferences";
+import { useProjectNotificationPreferences } from "../hooks/use-project-notification-preferences";
 import {
   notificationMuteActions,
   notificationMuteDeadline,
   notificationMuteStatus,
-} from "./notificationMuteActions";
+} from "./notification-mute-actions";
 import { NotificationMuteDatePicker } from "./NotificationMuteDatePicker";
-import { ExplorerMenu } from "../../files/ui/ExplorerMenu";
-import { Popover } from "../../../shared/ui/Popover";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
-import { BellOff, ChevronDown } from "../../../shared/ui/icons";
+import { ExplorerMenu } from "@/features/files/ui/ExplorerMenu";
+import { Popover } from "@/shared/ui/Popover";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { BellOff, ChevronDown } from "@/shared/ui/icons";
 import {
   isProjectMuted,
   updateNotificationPreferences,
-} from "../model/notificationPreferences";
+} from "../model/notification-preferences";
 
 type Props = {
   projectIds: readonly string[];

@@ -40,16 +40,16 @@ import {
   type Coin,
   type Obstacle,
   type RunnerTrack,
-} from "../model/composerRunner";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+} from "../model/composer-runner";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+} from "@/features/workspace/model/tab-groups";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 
 type Props = {
   boxRef: RefObject<HTMLElement | null>;

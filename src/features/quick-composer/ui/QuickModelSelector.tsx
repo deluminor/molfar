@@ -1,3 +1,7 @@
+import { findModel, getModelSnapshot, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import { modelEffortSetting } from "@/domain/models/model-settings";
+import type { AgentModel } from "@/domain/models/agent-model";
+import { HARNESSES, HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import "./QuickModelSelector.css";
 import {
   useEffect,
@@ -8,32 +12,13 @@ import {
   useSyncExternalStore,
 } from "react";
 import { emit } from "@tauri-apps/api/event";
-import { Check, RotateCcw, Search, Star, Zap } from "../../../shared/ui/icons";
-import {
-  findModel,
-  getModelSnapshot,
-  getPickerVisibilitySnapshot,
-  loadFavoriteModels,
-  modelEffortSetting,
-  modelsFor,
-  preferredModelSettings,
-  saveFavoriteModels,
-  showProviderInModelPicker,
-  subscribeModels,
-  subscribePickerVisibility,
-  type AgentModel,
-  type ModelPickerTab,
-} from "../../sessions/model/models";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  type HarnessId,
-} from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { Check, RotateCcw, Search, Star, Zap } from "@/shared/ui/icons";
+import { getPickerVisibilitySnapshot, loadFavoriteModels, preferredModelSettings, saveFavoriteModels, showProviderInModelPicker, subscribePickerVisibility, type ModelPickerTab } from "@/features/sessions/model/models";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   filterQuickModels,
   QUICK_COMPOSER_CATALOG_REQUEST_EVENT,
-} from "../model/quickComposer";
+} from "../model/quick-composer";
 
 type Props = {
   model: AgentModel;

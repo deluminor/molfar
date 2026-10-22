@@ -5,8 +5,8 @@ import {
   Folder,
   Plus,
   Wrench,
-} from "../../../../shared/ui/icons";
-import type { ConfluenceNode } from "../../model/confluence/types";
+} from "@/shared/ui/icons";
+import type { ConfluenceNode } from "@/features/confluence/model/types";
 
 type Props = {
   node: ConfluenceNode;

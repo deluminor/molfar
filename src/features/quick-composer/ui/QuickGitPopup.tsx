@@ -7,18 +7,18 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
-import { BranchPicker } from "../../source-control/ui/BranchPicker";
+import { NativePopupHost } from "@/shared/ui/NativePopupHost";
+import { BranchPicker } from "@/features/source-control/ui/BranchPicker";
 import {
   seedProjectBranches,
   useProjectBranchesState,
-} from "../../source-control/hooks/useProjectBranches";
-import { WorkspacePicker } from "../../workspace/ui/WorkspacePicker";
+} from "@/features/source-control/hooks/use-project-branches";
+import { WorkspacePicker } from "@/features/workspace/ui/WorkspacePicker";
 import {
   QUICK_GIT_REQUEST,
   type QuickGitRequest,
-} from "../model/quickGitPopup";
-import type { QuickWorkspace } from "../model/quickWorkspace";
+} from "../model/quick-git-popup";
+import type { QuickWorkspace } from "../model/quick-workspace";
 
 export function QuickGitPopup({ onShown }: { onShown: () => void }) {
   const [request, setRequest] = useState<QuickGitRequest | null>(null);

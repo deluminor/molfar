@@ -20,7 +20,7 @@ import {
   SOUNDS_SUSPEND_MS,
   SOUNDS_VOLUME,
 } from "./sounds";
-import { updateNotificationPreferences } from "../../notifications/model/notificationPreferences";
+import { updateNotificationPreferences } from "@/features/notifications/model/notification-preferences";
 
 const KEY = "molfar.sounds";
 

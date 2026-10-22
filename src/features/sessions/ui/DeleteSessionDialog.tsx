@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { prettyCwd } from "../../../shared/lib/paths";
-import { Modal } from "../../../shared/ui/Modal";
+import { prettyCwd } from "@/shared/lib/paths";
+import { Modal } from "@/shared/ui/Modal";
 
 export type SessionDeleteChoice = {
   confirmed: boolean;

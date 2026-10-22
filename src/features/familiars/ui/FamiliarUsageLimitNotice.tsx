@@ -1,11 +1,8 @@
-import {
-  HARNESS_TITLE,
-  type HarnessId,
-  type Session,
-} from "../../sessions/model/session";
-import { UsageLimitNotice } from "../../sessions/ui/UsageLimitNotice";
-import { ModelPicker } from "../../sessions/ui/ModelPicker";
-import { UsageLimitAccountPicker } from "../../sessions/ui/UsageLimitAccountPicker";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import { type Session } from "@/domain/session/session";
+import { UsageLimitNotice } from "@/features/sessions/ui/UsageLimitNotice";
+import { ModelPicker } from "@/features/sessions/ui/ModelPicker";
+import { UsageLimitAccountPicker } from "@/features/sessions/ui/UsageLimitAccountPicker";
 
 export function FamiliarUsageLimitNotice({
   session,

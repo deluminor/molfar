@@ -1,4 +1,4 @@
-import { AiIdea, ChevronDown, Gauge, Maximize2, Zap } from "../../../shared/ui/icons";
+import { AiIdea, ChevronDown, Gauge, Maximize2, Zap } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -6,14 +6,14 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   getModelSnapshot,
-  resolveModel,
   subscribeModels,
-  type ModelSetting,
-} from "../model/models";
-import type { HarnessId } from "../model/session";
+} from "@/integrations/harness/core/models/catalog-store";
+import type { ModelSetting } from "@/domain/models/agent-model";
+import type { HarnessId } from "@/domain/harness/harness";
 
 type Props = {
   harness: HarnessId;

@@ -1,4 +1,7 @@
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { hasPendingApproval } from "@/domain/session/session-state";
+import type { Block } from "@/domain/session/block";
+import type { Session } from "@/domain/session/session";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -8,17 +11,12 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupMascot,
   TAB_GROUP_COLORS,
-} from "../../workspace/model/tabGroups";
-import {
-  hasPendingApproval,
-  type Block,
-  type Session,
-} from "../../sessions/model/session";
+} from "@/features/workspace/model/tab-groups";
 import {
   PROJECT_MASCOTS,
   projectMascot,
-} from "../../projects/model/projectMascots";
-import { removeFamiliarBackground } from "./familiarBackground";
+} from "@/features/projects/model/project-mascots";
+import { removeFamiliarBackground } from "./familiar-background";
 
 /** The project palette's colors, plus indigo for a Familiar's ninth preset. */
 export const FAMILIAR_COLORS = [

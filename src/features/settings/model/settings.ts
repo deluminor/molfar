@@ -1,10 +1,4 @@
-import {
-  ALT,
-  IS_MAC,
-  IS_WIN,
-  MOD,
-  SHIFT,
-} from "../../../platform/tauri/platform";
+import { ALT, IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
 import {
   canonicalShortcut,
   isGlobalShortcut,
@@ -12,8 +6,8 @@ import {
   quickComposerShortcutLabel,
   shortcutFromKeyEvent,
   shortcutTokens,
-} from "../../quick-composer/model/quickComposerShortcut";
-import { readFlag, writeFlag } from "./storageFlags";
+} from "@/features/quick-composer/model/quick-composer-shortcut";
+import { readFlag, writeFlag } from "@/shared/lib/storage-flags";
 
 const SECTION_KEY = "molfar.settingsSection";
 
@@ -1180,18 +1174,6 @@ export function subscribeAutosave(onStoreChange: () => void) {
     window.removeEventListener(AUTOSAVE_CHANGE_EVENT, onStoreChange);
     window.removeEventListener("storage", onStorage);
   };
-}
-
-const CLAUDE_HOOKS_KEY = "molfar.claudeHooks";
-
-export const CLAUDE_HOOKS_DEFAULT = true;
-
-export function loadClaudeHooks(): boolean {
-  return readFlag(CLAUDE_HOOKS_KEY) ?? CLAUDE_HOOKS_DEFAULT;
-}
-
-export function saveClaudeHooks(value: boolean) {
-  writeFlag(CLAUDE_HOOKS_KEY, value);
 }
 
 const IDLE_AGENT_LIMIT_KEY = "molfar.idleAgentLimit";

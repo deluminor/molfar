@@ -1,3 +1,4 @@
+import { isNoteImagePath } from "@/features/notes/note-images";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -31,38 +32,37 @@ import type { Pluggable, PluggableList } from "unified";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../files/ui/ExplorerMenu";
-import { FileActionError } from "../../files/ui/FileActionError";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { boundedCode } from "../../files/editor/codeHighlightPlugin";
-import { createLazyMermaidPlugin } from "../../files/editor/mermaidPlugin";
+} from "@/features/files/ui/ExplorerMenu";
+import { FileActionError } from "@/features/files/ui/FileActionError";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { boundedCode } from "@/features/files/editor/code-highlight-plugin";
+import { createLazyMermaidPlugin } from "@/features/files/editor/mermaid-plugin";
 import {
   displayPath,
   isExtensionlessFileName,
   resolveDocumentImage,
   resolveWorkspaceFileReference,
-} from "../../../shared/lib/paths";
-import type { EditorNavigation, OpenFileFn } from "../../search/model/search";
-import { remarkWorkspaceFileLinks } from "../../files/model/markdownFileLinks";
-import { isAtxHeadingLine } from "../../files/model/markdownSource";
-import { useColorScheme } from "../../../shared/hooks/useColorScheme";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { copyText } from "../../../platform/tauri/clipboard";
-import { openPathWithDefaultApp, revealPath } from "../../../platform/tauri/fs";
+} from "@/shared/lib/paths";
+import type { EditorNavigation, OpenFileFn } from "@/features/search/model/search";
+import { remarkWorkspaceFileLinks } from "@/features/files/model/markdown-file-links";
+import { isAtxHeadingLine } from "@/features/files/model/markdown-source";
+import { useColorScheme } from "@/features/settings/hooks/use-color-scheme";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { copyText } from "@/platform/tauri/clipboard";
+import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
 import {
   INBOX_MEDIA_PREFIXES,
   isInboxMediaUrl,
-} from "../../inbox/model/inboxMedia";
-import { isNoteImagePath } from "../../notes";
-import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
-import { InboxMedia } from "../../inbox/ui/InboxMedia";
+} from "@/features/inbox/model/inbox-media";
+import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
+import { InboxMedia } from "@/features/inbox/ui/InboxMedia";
 import { DocumentImage, ImageAltText } from "./DocumentImage";
 import { isLocalMediaPath, LocalMedia } from "./LocalMedia";
 import {
   rehypeHoldImageSources,
   rehypeRestoreImageSources,
-} from "./documentImageSources";
-import { rehypeHardBreaks } from "./hardBreaks";
+} from "./document-image-sources";
+import { rehypeHardBreaks } from "./hard-breaks";
 import {
   pacedRevealPreferred,
   rehypeWordFade,
@@ -71,15 +71,18 @@ import {
   useStreamedText,
   useWordFading,
   WORD_FADE_MS,
-} from "./wordFade";
-import { parseStreamingMarkdown } from "./streamingMarkdown";
+} from "./word-fade";
+import { parseStreamingMarkdown } from "./streaming-markdown";
 import { HighlightedCodeBlock } from "./HighlightedCodeBlock";
-import { TranscriptPacing, TranscriptVisibility } from "./transcriptVisibility";
-import { usePacedReveal } from "../../settings/model/displayPrefs";
+import {
+  TranscriptPacing,
+  TranscriptVisibility,
+} from "./transcript-visibility";
+import { usePacedReveal } from "@/features/settings/model/display-prefs";
 import {
   useStreamPresentation,
   type StreamMeasurement,
-} from "../model/streamingPerformance";
+} from "../model/streaming-performance";
 
 const MERMAID_BASE_CONFIG = {
   startOnLoad: false,

@@ -1,25 +1,18 @@
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { type Session } from "@/domain/session/session";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import {
-  Check,
-  ChevronDown,
-  CircleAlert,
-  Loader,
-} from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { Modal } from "../../../shared/ui/Modal";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import {
-  sessionDisplayTitle,
-  type Session,
-} from "../../sessions/model/session";
+import { Check, ChevronDown, CircleAlert, Loader } from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { Modal } from "@/shared/ui/Modal";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   emptyPressure,
   samplePressure,
   type PressureState,
   type ResourceSample,
-} from "../model/resourcePressure";
+} from "../model/resource-pressure";
 
 type OwnedProcess = {
   pid: number;

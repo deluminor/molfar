@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { InboxPulseState } from "../hooks/useInboxPulse";
+import type { InboxPulseState } from "../hooks/use-inbox-pulse";
 import { HomeCard } from "./HomeCard";
 
 type Props = {

@@ -1,6 +1,7 @@
+import { sessionWorkCwd } from "@/domain/session/session-state";
 import { describe, expect, it, vi } from "vitest";
-import { newFileTab, newTerminalFile } from "../../workspace/model/layout";
-import { newSession, sessionWorkCwd } from "../../sessions/model/session";
+import { newFileTab, newTerminalFile } from "@/features/workspace/model/layout";
+import { newSession } from "@/features/sessions/model/session";
 import {
   sessionInWorktree,
   detachSessionWorktree,

@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode, type RefObject } from "react";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 
 /** A destructive reset that asks first, then reports a failure in place. */
 export function ConfirmReset({

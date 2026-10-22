@@ -1,17 +1,12 @@
+import { basename, prettyParent, projectKey, projectName } from "@/shared/lib/paths";
 import {
   useEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
-import { useProjectAppearance } from "../hooks/useProjectAppearance";
-import { basename } from "../../../platform/tauri/fs";
-import {
-  prettyParent,
-  projectKey,
-  projectName,
-} from "../../../shared/lib/paths";
+import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
+import { useProjectAppearance } from "../hooks/use-project-appearance";
 import {
   looksLikeProject,
   projectRailItems,
@@ -23,14 +18,14 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { Check, ChevronDown, Plus, Search } from "../../../shared/ui/icons";
-import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
+} from "@/features/workspace/model/tab-groups";
+import { Check, ChevronDown, Plus, Search } from "@/shared/ui/icons";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
 import { ProjectMascot } from "./ProjectMascot";
 import { PixelMascot } from "./PixelMascot";
-import { FamiliarRailMascot } from "../../familiars/ui/FamiliarRailMascot";
-import { FAMILIAR_STATUS_LABEL, type FamiliarStatus } from "../../familiars/model/familiar";
+import { FamiliarRailMascot } from "@/features/familiars/ui/FamiliarRailMascot";
+import { FAMILIAR_STATUS_LABEL, type FamiliarStatus } from "@/features/familiars/model/familiar";
 
 /** A Familiar the picker offers beside the projects. */
 export type PickerFamiliar = {

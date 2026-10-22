@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 import type { NewCard } from "../services/card-create";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "./button-styles";
 import { ProjectFilterMenu } from "./ProjectFilterMenu";

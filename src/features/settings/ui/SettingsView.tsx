@@ -1,10 +1,17 @@
+import { defaultModelId, getModelSnapshot, hasLiveCatalog, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { HARNESSES, HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { PROVIDER_ACCOUNT_PROVIDERS, supportsAccountProfiles, type ProviderAccount, type ProviderAccountProvider } from "@/domain/harness/provider-account";
+import { loadClaudeHooks, saveClaudeHooks } from "@/integrations/harness/providers/claude/claude-hooks-setting";
+import { type Session } from "@/domain/session/session";
 import { invoke } from "@tauri-apps/api/core";
 import { createPortal } from "react-dom";
 import { Toggle } from "./Toggle";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ConnectionsSettings } from "../../connections/ui/ConnectionsSettings";
-import { CompanionSettings } from "../../companion/ui/CompanionSettings";
-import { confirmApp } from "../../../app/model/appDialog";
+import { ConnectionsSettings } from "@/features/connections/ui/ConnectionsSettings";
+import { CompanionSettings } from "@/features/companion/ui/CompanionSettings";
+import { confirmApp } from "@/shared/lib/app-dialog";
 import {
   ArrowDownCircle,
   Check,
@@ -21,7 +28,7 @@ import {
   Search,
   Trash2,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   createContext,
   useCallback,
@@ -36,28 +43,28 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   ColorPickerPopover,
   ColorSwatchRow,
-} from "../../../shared/ui/ColorPickerPopover";
-import { Popover } from "../../../shared/ui/Popover";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
+} from "@/shared/ui/ColorPickerPopover";
+import { Popover } from "@/shared/ui/Popover";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import { JiraSettings } from "./JiraSettings";
 import { GradientBlurBackground } from "./GradientBlurBackground";
 import { McpSettings } from "./McpSettings";
-import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
-import { RemoveProjectDialog } from "../../projects/ui/RemoveProjectDialog";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useColorScheme } from "../../../shared/hooks/useColorScheme";
+import { InboxProviderMark } from "@/features/inbox/ui/InboxProviderMark";
+import { RemoveProjectDialog } from "@/features/projects/ui/RemoveProjectDialog";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useColorScheme } from "../hooks/use-color-scheme";
 import {
   WORKSPACE_THEMES,
   WORKSPACE_THEME_DEFAULT,
   isWorkspaceThemeId,
   type WorkspacePalette,
   type WorkspaceThemeId,
-} from "../model/workspaceThemes";
+} from "../model/workspace-themes";
 import {
   applyChatBackground,
   applyChatBackgroundEmptyOpacity,
@@ -157,7 +164,7 @@ import {
 import {
   pickAndSaveChatBackground,
   removeChatBackground,
-} from "../../projects/model/chatBackground";
+} from "@/features/projects/model/chat-background";
 import {
   applyUiScale,
   loadUiScale,
@@ -165,70 +172,50 @@ import {
   subscribeUiScale,
   UI_SCALE_DEFAULT,
   UI_SCALE_PERCENTS,
-} from "../model/uiScale";
+} from "../model/ui-scale";
 import {
   getHarnessAvailabilitySnapshot,
   harnessUnavailableHint,
   isHarnessAvailable,
   probeHarnessAvailability,
   subscribeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
+} from "@/integrations/harness/core/availability";
 import {
   inspectHarnessBinary,
   type HarnessBinaryInspection,
-} from "../../../integrations/harness/core/child";
+} from "@/integrations/harness/core/child";
 import {
   loadProviderBinaryPath,
   providerBinaryPathChangePending,
   saveProviderBinaryPath,
   type ConfigurableBinaryProvider,
-} from "../../providers/model/providerBinaryPaths";
+} from "@/integrations/harness/core/provider-binary-paths";
 import {
   compareSemver,
   MINIMUM_OPENCODE_VERSION,
   parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
+} from "@/integrations/harness/providers/opencode/opencode-protocol";
 import {
   enforceHarnessIdleLimit,
   refreshHarnessCatalogs,
-} from "../../../integrations/harness/core/registry";
-import { loginHarness } from "../../../integrations/harness/core/auth";
-import {
-  defaultModelId,
-  firstEnabledHarness,
-  getModelSnapshot,
-  hasLiveCatalog,
-  loadDefaultModels,
-  loadHiddenPickerProviders,
-  loadLastModelChoice,
-  modelsFor,
-  resolveModel,
-  saveDefaultModel,
-  saveLastModelChoice,
-  savePickerProviderVisible,
-  subscribeModels,
-} from "../../sessions/model/models";
+} from "@/integrations/harness/core/registry";
+import { loginHarness } from "@/integrations/harness/core/auth";
+import { firstEnabledHarness, loadDefaultModels, loadHiddenPickerProviders, loadLastModelChoice, saveDefaultModel, saveLastModelChoice, savePickerProviderVisible } from "@/features/sessions/model/models";
 import {
   pathKey,
   prettyCwd,
   projectKey,
   projectName,
-} from "../../../shared/lib/paths";
-import { revealPath } from "../../../platform/tauri/fs";
-import { IS_LINUX, IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
+} from "@/shared/lib/paths";
+import { revealPath } from "@/platform/tauri/fs";
+import { IS_LINUX, IS_MAC, IS_WIN } from "@/shared/lib/platform";
 import {
   loadArchivedProjects,
   looksLikeProject,
   subscribeArchivedProjects,
   type ArchivedProject,
   type RecentProject,
-} from "../../projects/model/recents";
-import {
-  HARNESSES,
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  type HarnessId,
-} from "../../sessions/model/session";
+} from "@/features/projects/model/recents";
 import {
   loadProjectProviderSettings,
   projectProvidersRevision,
@@ -236,26 +223,15 @@ import {
   setProjectDefaultProvider,
   setProjectProviderHidden,
   subscribeProjectProviders,
-} from "../../sessions/model/projectProviders";
-import {
-  newProviderAccount,
-  providerAccounts,
-  PROVIDER_ACCOUNT_PROVIDERS,
-  removeProviderAccount,
-  renameProviderAccount,
-  saveProviderAccount,
-  subscribeProviderAccounts,
-  supportsAccountProfiles,
-  type ProviderAccount,
-  type ProviderAccountProvider,
-} from "../../providers/model/providerAccounts";
-import { removeProviderAccountCredentials } from "../../providers/model/providerAccountCredentials";
+} from "@/features/sessions/model/project-providers";
+import { newProviderAccount, providerAccounts, removeProviderAccount, renameProviderAccount, saveProviderAccount, subscribeProviderAccounts } from "@/features/providers/model/provider-accounts";
+import { removeProviderAccountCredentials } from "@/features/providers/model/provider-account-credentials";
 import {
   identityKey,
   identityOrganizationTag,
   useProviderAccountIdentities,
-} from "../../providers/model/providerAccountIdentity";
-import { ProviderAccountSubtitle } from "../../providers/ui/ProviderAccountSubtitle";
+} from "@/features/providers/model/provider-account-identity";
+import { ProviderAccountSubtitle } from "@/features/providers/ui/ProviderAccountSubtitle";
 import {
   saveComposerAutocorrect,
   savePacedReveal,
@@ -268,38 +244,38 @@ import {
   useMaskEmails,
   useRailFamiliarsPinned,
   useShowRemainingUsage,
-} from "../model/displayPrefs";
+} from "../model/display-prefs";
 import {
   accountStatus,
   accountUsageKey,
   useProviderAccountUsage,
-} from "../../providers/model/accountUsage";
-import { clearCachedRateLimits } from "../../providers/model/rateLimitsCache";
+} from "@/features/providers/model/account-usage";
+import { clearCachedRateLimits } from "@/features/providers/model/rate-limits-cache";
 import {
   AccountStatusLabel,
   AccountUsageMeters,
   AccountUsageRefresh,
-} from "../../providers/ui/ProviderAccountUsage";
+} from "@/features/providers/ui/ProviderAccountUsage";
 import {
   loadSessionSidebarFilters,
   saveSessionSidebarFilters,
-} from "../../sessions/model/sessionFilters";
-import type { SessionSummary } from "../../sessions/data/sessionStore";
+} from "@/features/sessions/model/session-filters";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import {
   clearInboxCache,
   githubStatus,
   type GithubStatus,
-} from "../../inbox/model/githubTasks";
+} from "@/features/inbox/model/github-tasks";
 import {
   disconnectGitlab,
   gitlabConnected,
   saveGitlabConfig,
-} from "../../inbox/model/gitlab";
+} from "@/features/inbox/model/gitlab";
 import {
   azureDevOpsConnected,
   disconnectAzureDevOps,
   saveAzureDevOpsConfig,
-} from "../../inbox/model/azureDevOps";
+} from "@/features/inbox/model/azure-dev-ops";
 import {
   disconnectLinear,
   LINEAR_CHANGE_EVENT,
@@ -310,7 +286,7 @@ import {
   saveHiddenLinearTeamIds,
   saveLinearToken,
   type LinearTeam,
-} from "../../inbox/model/linear";
+} from "@/features/inbox/model/linear";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -320,11 +296,11 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { PixelMascot } from "../../projects/ui/PixelMascot";
+} from "@/features/workspace/model/tab-groups";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
 import {
   defaultFamiliarName,
   listFamiliars,
@@ -334,13 +310,12 @@ import {
   subscribeFamiliars,
   updateFamiliar,
   type Familiar,
-} from "../../familiars/model/familiar";
-import { resetFamiliarDefaults } from "../../familiars/model/familiarFiles";
-import { ConfirmReset } from "../../familiars/ui/ConfirmReset";
+} from "@/features/familiars/model/familiar";
+import { resetFamiliarDefaults } from "@/features/familiars/model/familiar-files";
+import { ConfirmReset } from "@/features/familiars/ui/ConfirmReset";
 import {
   filterKeybindings,
   currentKeybindings,
-  loadClaudeHooks,
   loadIdleAgentLimit,
   loadCloseToTray,
   loadCollapsedProjectRailMode,
@@ -361,7 +336,6 @@ import {
   loadQuickComposerEnabled,
   loadQuickComposerShortcut,
   loadTabAnimationsEnabled,
-  saveClaudeHooks,
   saveIdleAgentLimit,
   IDLE_AGENT_LIMITS,
   type IdleAgentLimit,
@@ -407,16 +381,16 @@ import {
   saveRailSurfaceVisible,
   type RailSurfaceId,
   type RailSurfaceVisibility,
-} from "../model/projectRail";
+} from "../model/project-rail";
 import { loadSoundsEnabled, saveSoundsEnabled } from "../model/sounds";
-import { setQuickComposerShortcut } from "../../quick-composer/model/quickComposer";
+import { setQuickComposerShortcut } from "@/features/quick-composer/model/quick-composer";
 import {
   isGlobalShortcut,
   QUICK_COMPOSER_DEFAULT_SHORTCUT,
   quickComposerShortcutLabel,
   quickComposerShortcutPreview,
   shortcutFromKeyEvent,
-} from "../../quick-composer/model/quickComposerShortcut";
+} from "@/features/quick-composer/model/quick-composer-shortcut";
 import {
   cachedNotificationPermission,
   loadNotificationsEnabled,
@@ -425,7 +399,7 @@ import {
   requestNotificationPermission,
   saveNotificationsEnabled,
   type NotificationPermission,
-} from "../../notifications/model/notifications";
+} from "@/features/notifications/model/notifications";
 import {
   installPendingUpdate,
   packageManagedInstall,
@@ -433,17 +407,16 @@ import {
   readAppVersion,
   runUpdateFlow,
   type UpdaterSnapshot,
-} from "../../../app/model/updater";
-import { APP_UPDATER_DISABLED } from "../../../app/model/forkPolicy";
+} from "@/features/updates/model/updater";
+import { APP_UPDATER_DISABLED } from "@/features/updates/model/fork-policy";
 
-import { SkillsPage } from "../../skills/ui/SkillsPage";
-import { ProjectNotificationSettings } from "../../notifications/ui/ProjectNotificationSettings";
-import { WorktreesPage } from "../../source-control/ui/WorktreesPage";
+import { SkillsPage } from "@/features/skills/ui/SkillsPage";
+import { ProjectNotificationSettings } from "@/features/notifications/ui/ProjectNotificationSettings";
+import { WorktreesPage } from "@/features/source-control/ui/WorktreesPage";
 import {
   removeWorktree,
   type RemoveWorktree,
-} from "../../source-control/model/worktrees";
-import type { Session } from "../../sessions/model/session";
+} from "@/features/source-control/model/worktrees";
 
 /**
  * The `data-setting-id` Settings should reveal when it opens: one of the ids in

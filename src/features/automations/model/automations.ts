@@ -1,12 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { HarnessId, RuntimeMode } from "../../sessions/model/session";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { HarnessId } from "@/domain/harness/harness";
+import type { AutomationScheduleKind } from "@/domain/automations/schedule";
 
 export const AUTOMATIONS_CHANGED = "molfar:automations-changed";
 const LOCAL_CHANGED = "molfar:automations-local-changed";
 
 export type AutomationWorkspaceMode = "current" | "worktree" | "existing";
-export type AutomationScheduleKind = "hourly" | "daily" | "weekdays" | "weekly";
 export type AutomationTriggerKind =
   "time" | "github" | "linear" | "jira" | "gitlab" | "azuredevops";
 

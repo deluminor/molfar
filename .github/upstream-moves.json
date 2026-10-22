@@ -1,0 +1,2238 @@
+{
+  "refactorBase": "4995f498d49a8e38d4dc2b1430cd3d21f9ddf1ef",
+  "renames": {
+    "docs/architecture/vatra-system.archify.html": "docs/architecture/molfar-system.archify.html",
+    "docs/architecture/vatra-system.architecture.json": "docs/architecture/molfar-system.architecture.json",
+    "docs/architecture/vatra-system.html": "docs/architecture/molfar-system.html",
+    "src/app/hooks/useFamiliarHabits.test.ts": "src/app/hooks/use-familiar-habits.test.ts",
+    "src/app/hooks/useFamiliarHabits.ts": "src/app/hooks/use-familiar-habits.ts",
+    "src/app/hooks/useFloatingFamiliar.test.ts": "src/app/hooks/use-floating-familiar.test.ts",
+    "src/app/hooks/useFloatingFamiliar.ts": "src/app/hooks/use-floating-familiar.ts",
+    "src/app/hooks/useIdleSessionDetach.test.ts": "src/app/hooks/use-idle-session-detach.test.ts",
+    "src/app/hooks/useIdleSessionDetach.ts": "src/app/hooks/use-idle-session-detach.ts",
+    "src/app/hooks/useWorkspaceNavigation.test.ts": "src/app/hooks/use-workspace-navigation.test.ts",
+    "src/app/hooks/useWorkspaceNavigation.ts": "src/app/hooks/use-workspace-navigation.ts",
+    "src/app/model/appDialog.test.ts": "src/shared/lib/app-dialog.test.ts",
+    "src/app/model/appDialog.ts": "src/shared/lib/app-dialog.ts",
+    "src/app/model/appLifecycle.test.ts": "src/app/model/app-lifecycle.test.ts",
+    "src/app/model/appLifecycle.ts": "src/app/model/app-lifecycle.ts",
+    "src/app/model/bootWorkspace.test.ts": "src/app/model/boot-workspace.test.ts",
+    "src/app/model/forkPolicy.ts": "src/features/updates/model/fork-policy.ts",
+    "src/app/model/forkUpdaterPolicy.test.ts": "src/features/updates/model/fork-updater-policy.test.ts",
+    "src/app/model/harnessFlush.test.ts": "src/app/workspace/flows/harness-events/harness-flush.test.ts",
+    "src/app/model/harnessFlush.ts": "src/app/workspace/flows/harness-events/harness-flush.ts",
+    "src/app/model/local-surfaces/useLocalSurfaceActions.tsx": "src/app/model/local-surfaces/use-local-surface-actions.tsx",
+    "src/app/model/local-surfaces/useLocalSurfaceState.ts": "src/app/model/local-surfaces/use-local-surface-state.ts",
+    "src/app/model/managedSubmission.test.ts": "src/app/model/managed-submission.test.ts",
+    "src/app/model/managedSubmission.ts": "src/app/model/managed-submission.ts",
+    "src/app/model/newWorkspaceSession.test.ts": "src/app/model/new-workspace-session.test.ts",
+    "src/app/model/newWorkspaceSession.ts": "src/app/model/new-workspace-session.ts",
+    "src/app/model/preloadNavigation.test.ts": "src/app/model/preload-navigation.test.ts",
+    "src/app/model/preloadNavigation.ts": "src/app/model/preload-navigation.ts",
+    "src/app/model/quickLaunchSession.test.ts": "src/app/model/quick-launch-session.test.ts",
+    "src/app/model/quickLaunchSession.ts": "src/app/model/quick-launch-session.ts",
+    "src/app/model/releaseNotes.test.ts": "src/features/updates/model/release-notes.test.ts",
+    "src/app/model/releaseNotes.ts": "src/features/updates/model/release-notes.ts",
+    "src/app/model/releaseNotesWorkspace.test.ts": "src/app/model/release-notes-workspace.test.ts",
+    "src/app/model/releaseNotesWorkspace.ts": "src/app/model/release-notes-workspace.ts",
+    "src/app/model/sessionState.test.ts": "src/app/model/session-state.test.ts",
+    "src/app/model/sessionState.ts": "src/app/model/session-state.ts",
+    "src/app/model/submissionAcceptance.test.ts": "src/app/model/submission-acceptance.test.ts",
+    "src/app/model/submissionAcceptance.ts": "src/app/model/submission-acceptance.ts",
+    "src/app/model/updateNotice.test.ts": "src/features/updates/model/update-notice.test.ts",
+    "src/app/model/updateNotice.ts": "src/features/updates/model/update-notice.ts",
+    "src/app/model/updatePrompt.test.ts": "src/features/updates/model/update-prompt.test.ts",
+    "src/app/model/updatePrompt.ts": "src/features/updates/model/update-prompt.ts",
+    "src/app/model/updatePromptInstall.test.ts": "src/features/updates/model/update-prompt-install.test.ts",
+    "src/app/model/updatePromptInstall.ts": "src/features/updates/model/update-prompt-install.ts",
+    "src/app/model/updater.test.ts": "src/features/updates/model/updater.test.ts",
+    "src/app/model/updater.ts": "src/features/updates/model/updater.ts",
+    "src/app/model/updaterConfig.test.ts": "src/features/updates/model/updater-config.test.ts",
+    "src/app/model/updateRecheck.test.ts": "src/features/updates/model/update-recheck.test.ts",
+    "src/app/model/updateRecheck.ts": "src/features/updates/model/update-recheck.ts",
+    "src/app/model/windowTransfer.test.ts": "src/app/model/window-transfer.test.ts",
+    "src/app/model/windowTransfer.ts": "src/app/model/window-transfer.ts",
+    "src/app/model/windowTransferBootstrap.ts": "src/app/model/window-transfer-bootstrap.ts",
+    "src/app/shell/AppDialog.test.ts": "src/app/shell/app-dialog.test.ts",
+    "src/app/shell/ClosingTab.tsx": "src/shared/ui/ClosingTab.tsx",
+    "src/app/shell/FamiliarRailSection.test.ts": "src/app/shell/familiar-rail-section.test.ts",
+    "src/app/shell/GithubStarPrompt.test.ts": "src/app/shell/github-star-prompt.test.ts",
+    "src/app/shell/GlassBackdrop.tsx": "src/shared/ui/GlassBackdrop.tsx",
+    "src/app/shell/PiUsage.test.ts": "src/app/shell/pi-usage.test.ts",
+    "src/app/shell/RailAction.test.ts": "src/shared/ui/rail-action.test.ts",
+    "src/app/shell/RailAction.tsx": "src/shared/ui/RailAction.tsx",
+    "src/app/shell/SidebarKnowledgeNavigation.test.ts": "src/app/shell/sidebar-knowledge-navigation.test.ts",
+    "src/app/shell/SidebarRename.test.ts": "src/app/shell/sidebar-rename.test.ts",
+    "src/app/shell/SidebarUpdate.test.ts": "src/app/shell/sidebar-update.test.ts",
+    "src/app/shell/SidebarUpdateRecheck.test.ts": "src/app/shell/sidebar-update-recheck.test.ts",
+    "src/app/shell/TitleBar.test.ts": "src/app/shell/title-bar.test.ts",
+    "src/app/shell/TitleBarMenu.test.ts": "src/app/shell/title-bar-menu.test.ts",
+    "src/app/shell/TitleBarPaneDrop.test.ts": "src/app/shell/title-bar-pane-drop.test.ts",
+    "src/app/shell/TitleBarStatus.test.ts": "src/app/shell/title-bar-status.test.ts",
+    "src/app/shell/UpdatePromptDialog.test.ts": "src/app/shell/update-prompt-dialog.test.ts",
+    "src/app/shell/UpdatePromptFooter.test.ts": "src/app/shell/update-prompt-footer.test.ts",
+    "src/app/shell/UpdateRailCard.test.ts": "src/app/shell/update-rail-card.test.ts",
+    "src/app/shell/UsageFooter.test.ts": "src/app/shell/usage-footer.test.ts",
+    "src/app/shell/UsageFooterAuth.test.ts": "src/app/shell/usage-footer-auth.test.ts",
+    "src/app/shell/UsageProviderChip.test.ts": "src/app/shell/usage-provider-chip.test.ts",
+    "src/app/shell/useProjectMenu.tsx": "src/app/shell/use-project-menu.tsx",
+    "src/app/shell/WhatsNewDialog.test.ts": "src/app/shell/whats-new-dialog.test.ts",
+    "src/app/shell/WindowControls.tsx": "src/features/window-chrome/ui/WindowControls.tsx",
+    "src/app/ui/ReleaseNotesSurface.tsx": "src/features/updates/ui/ReleaseNotesSurface.tsx",
+    "src/debugFamiliarScroll.ts": "src/debug-familiar-scroll.ts",
+    "src/features/agent-app/model/agentApp.test.ts": "src/features/agent-app/model/agent-app.test.ts",
+    "src/features/agent-app/model/agentApp.ts": "src/features/agent-app/model/agent-app.ts",
+    "src/features/agent-app/model/agentAppBoard.ts": "src/features/agent-app/model/agent-app-board.ts",
+    "src/features/agent-app/model/agentAppMemory.test.ts": "src/features/agent-app/model/agent-app-memory.test.ts",
+    "src/features/agent-app/model/agentAppSoul.test.ts": "src/features/agent-app/model/agent-app-soul.test.ts",
+    "src/features/agent-app/model/sessionConversation.test.ts": "src/features/agent-app/model/session-conversation.test.ts",
+    "src/features/agent-app/model/sessionConversation.ts": "src/features/agent-app/model/session-conversation.ts",
+    "src/features/artifacts/ui/ArtifactPanel.test.ts": "src/features/artifacts/ui/artifact-panel.test.ts",
+    "src/features/automations/model/automationEvents.test.ts": "src/features/automations/model/automation-events.test.ts",
+    "src/features/automations/model/automationEvents.ts": "src/features/automations/model/automation-events.ts",
+    "src/features/automations/model/automationTemplates.test.ts": "src/features/automations/model/automation-templates.test.ts",
+    "src/features/automations/model/automationTemplates.ts": "src/features/automations/model/automation-templates.ts",
+    "src/features/automations/ui/AutomationsView.test.ts": "src/features/automations/ui/automations-view.test.ts",
+    "src/features/companion/hooks/useCompanionBridge.ts": "src/features/companion/hooks/use-companion-bridge.ts",
+    "src/features/companion/model/companionExecutor.test.ts": "src/features/companion/model/companion-executor.test.ts",
+    "src/features/companion/model/companionExecutor.ts": "src/features/companion/model/companion-executor.ts",
+    "src/features/companion/model/companionLaunch.ts": "src/features/companion/model/companion-launch.ts",
+    "src/features/companion/model/companionProjects.ts": "src/features/companion/model/companion-projects.ts",
+    "src/features/companion/model/companionVault.ts": "src/features/companion/model/companion-vault.ts",
+    "src/features/companion/model/companionView.ts": "src/features/companion/model/companion-view.ts",
+    "src/features/connections/model/hostUpdate.test.ts": "src/features/connections/model/host-update.test.ts",
+    "src/features/connections/model/hostUpdate.ts": "src/features/connections/model/host-update.ts",
+    "src/features/connections/model/protocol.test.ts": "src/domain/remote/protocol.test.ts",
+    "src/features/connections/model/protocol.ts": "src/domain/remote/protocol.ts",
+    "src/features/connections/model/remoteAttachmentPreviews.test.ts": "src/integrations/remote/attachment-previews.test.ts",
+    "src/features/connections/model/remoteAttachmentPreviews.ts": "src/integrations/remote/attachment-previews.ts",
+    "src/features/connections/model/remoteAttachments.test.ts": "src/features/connections/model/remote-attachments.test.ts",
+    "src/features/connections/model/remoteAttachments.ts": "src/features/connections/model/remote-attachments.ts",
+    "src/features/connections/model/remoteCommands.test.ts": "src/features/connections/model/remote-commands.test.ts",
+    "src/features/connections/model/remoteCommands.ts": "src/features/connections/model/remote-commands.ts",
+    "src/features/connections/model/remoteModels.test.ts": "src/features/connections/model/remote-models.test.ts",
+    "src/features/connections/model/remoteModels.ts": "src/features/connections/model/remote-models.ts",
+    "src/features/connections/model/remoteOutbox.test.ts": "src/features/connections/model/remote-outbox.test.ts",
+    "src/features/connections/model/remoteProjects.test.ts": "src/features/connections/model/remote-projects.test.ts",
+    "src/features/connections/model/remoteProjects.ts": "src/features/connections/model/remote-projects.ts",
+    "src/features/connections/model/remoteSessionActions.ts": "src/features/connections/model/remote-session-actions.ts",
+    "src/features/connections/model/remoteSessionState.test.ts": "src/features/connections/model/remote-session-state.test.ts",
+    "src/features/connections/model/remoteSessionState.ts": "src/features/connections/model/remote-session-state.ts",
+    "src/features/connections/model/remoteSessionTabs.test.ts": "src/features/connections/model/remote-session-tabs.test.ts",
+    "src/features/connections/model/remoteSessionTabs.ts": "src/features/connections/model/remote-session-tabs.ts",
+    "src/features/connections/ui/AddRemoteProjectDialog.test.ts": "src/features/connections/ui/add-remote-project-dialog.test.ts",
+    "src/features/connections/ui/ConnectionsSettings.test.ts": "src/features/connections/ui/connections-settings.test.ts",
+    "src/features/connections/ui/RemoteSession.test.ts": "src/features/connections/ui/remote-session.test.ts",
+    "src/features/familiars/floatingMain.test.ts": "src/features/familiars/floating-main.test.ts",
+    "src/features/familiars/floatingMain.tsx": "src/features/familiars/floating-main.tsx",
+    "src/features/familiars/hooks/useFamiliarTranscript.test.ts": "src/features/familiars/hooks/use-familiar-transcript.test.ts",
+    "src/features/familiars/hooks/useFamiliarTranscript.ts": "src/features/familiars/hooks/use-familiar-transcript.ts",
+    "src/features/familiars/model/familiarActivity.test.ts": "src/features/familiars/model/familiar-activity.test.ts",
+    "src/features/familiars/model/familiarActivity.ts": "src/features/familiars/model/familiar-activity.ts",
+    "src/features/familiars/model/familiarBackground.test.ts": "src/features/familiars/model/familiar-background.test.ts",
+    "src/features/familiars/model/familiarBackground.ts": "src/features/familiars/model/familiar-background.ts",
+    "src/features/familiars/model/familiarCards.ts": "src/features/familiars/model/familiar-cards.ts",
+    "src/features/familiars/model/familiarCompletionBatches.test.ts": "src/features/familiars/model/familiar-completion-batches.test.ts",
+    "src/features/familiars/model/familiarConversation.test.ts": "src/features/familiars/model/familiar-conversation.test.ts",
+    "src/features/familiars/model/familiarConversation.ts": "src/features/familiars/model/familiar-conversation.ts",
+    "src/features/familiars/model/familiarFiles.test.ts": "src/features/familiars/model/familiar-files.test.ts",
+    "src/features/familiars/model/familiarFiles.ts": "src/features/familiars/model/familiar-files.ts",
+    "src/features/familiars/model/familiarHabits.test.ts": "src/features/familiars/model/familiar-habits.test.ts",
+    "src/features/familiars/model/familiarHabits.ts": "src/features/familiars/model/familiar-habits.ts",
+    "src/features/familiars/model/familiarMemory.test.ts": "src/features/familiars/model/familiar-memory.test.ts",
+    "src/features/familiars/model/familiarMemory.ts": "src/features/familiars/model/familiar-memory.ts",
+    "src/features/familiars/model/familiarMessaging.test.ts": "src/features/familiars/model/familiar-messaging.test.ts",
+    "src/features/familiars/model/familiarMessaging.ts": "src/features/familiars/model/familiar-messaging.ts",
+    "src/features/familiars/model/familiarMigration.test.ts": "src/features/familiars/model/familiar-migration.test.ts",
+    "src/features/familiars/model/familiarReaction.test.ts": "src/features/familiars/model/familiar-reaction.test.ts",
+    "src/features/familiars/model/familiarReaction.ts": "src/features/familiars/model/familiar-reaction.ts",
+    "src/features/familiars/model/familiarRoster.test.ts": "src/features/familiars/model/familiar-roster.test.ts",
+    "src/features/familiars/model/familiarRotation.test.ts": "src/features/familiars/model/familiar-rotation.test.ts",
+    "src/features/familiars/model/familiarRotation.ts": "src/features/familiars/model/familiar-rotation.ts",
+    "src/features/familiars/model/familiarSessionCompletion.test.ts": "src/features/familiars/model/familiar-session-completion.test.ts",
+    "src/features/familiars/model/familiarSessionCompletion.ts": "src/features/familiars/model/familiar-session-completion.ts",
+    "src/features/familiars/model/familiarSpawnedSessions.test.ts": "src/features/familiars/model/familiar-spawned-sessions.test.ts",
+    "src/features/familiars/model/familiarSpawnedSessions.ts": "src/features/familiars/model/familiar-spawned-sessions.ts",
+    "src/features/familiars/model/familiarUsageLimit.test.ts": "src/features/familiars/model/familiar-usage-limit.test.ts",
+    "src/features/familiars/model/familiarUsageLimit.ts": "src/features/familiars/model/familiar-usage-limit.ts",
+    "src/features/familiars/model/familiarWorkspace.test.ts": "src/features/familiars/model/familiar-workspace.test.ts",
+    "src/features/familiars/model/familiarWorkspace.ts": "src/features/familiars/model/familiar-workspace.ts",
+    "src/features/familiars/model/floatingFamiliar.test.ts": "src/features/familiars/model/floating-familiar.test.ts",
+    "src/features/familiars/model/floatingFamiliar.ts": "src/features/familiars/model/floating-familiar.ts",
+    "src/features/familiars/ui/FamiliarActivityView.test.ts": "src/features/familiars/ui/familiar-activity-view.test.ts",
+    "src/features/familiars/ui/FamiliarChangesView.test.ts": "src/features/familiars/ui/familiar-changes-view.test.ts",
+    "src/features/familiars/ui/FamiliarComposer.ime.test.ts": "src/features/familiars/ui/familiar-composer.ime.test.ts",
+    "src/features/familiars/ui/FamiliarComposer.test.ts": "src/features/familiars/ui/familiar-composer.test.ts",
+    "src/features/familiars/ui/FamiliarComposerFileDrop.test.ts": "src/features/familiars/ui/familiar-composer-file-drop.test.ts",
+    "src/features/familiars/ui/FamiliarFilePages.test.ts": "src/features/familiars/ui/familiar-file-pages.test.ts",
+    "src/features/familiars/ui/FamiliarIntro.test.ts": "src/features/familiars/ui/familiar-intro.test.ts",
+    "src/features/familiars/ui/FamiliarMemoryPage.test.ts": "src/features/familiars/ui/familiar-memory-page.test.ts",
+    "src/features/familiars/ui/FamiliarOverview.test.ts": "src/features/familiars/ui/familiar-overview.test.ts",
+    "src/features/familiars/ui/familiarPanelParts.tsx": "src/features/familiars/ui/familiar-panel-parts.tsx",
+    "src/features/familiars/ui/FamiliarSessionList.test.ts": "src/features/familiars/ui/familiar-session-list.test.ts",
+    "src/features/familiars/ui/FamiliarSettingsDialog.test.ts": "src/features/familiars/ui/familiar-settings-dialog.test.ts",
+    "src/features/familiars/ui/FamiliarUsageLimitNotice.test.ts": "src/features/familiars/ui/familiar-usage-limit-notice.test.ts",
+    "src/features/familiars/ui/FloatingFamiliarChat.motion.test.ts": "src/features/familiars/ui/floating-familiar-chat.motion.test.ts",
+    "src/features/familiars/ui/FloatingFamiliarChat.test.ts": "src/features/familiars/ui/floating-familiar-chat.test.ts",
+    "src/features/familiars/ui/HabitRow.test.ts": "src/features/familiars/ui/habit-row.test.ts",
+    "src/features/familiars/ui/HabitsList.test.ts": "src/features/familiars/ui/habits-list.test.ts",
+    "src/features/familiars/ui/PanelStack.test.ts": "src/features/familiars/ui/panel-stack.test.ts",
+    "src/features/files/editor/codeHighlightPlugin.test.ts": "src/features/files/editor/code-highlight-plugin.test.ts",
+    "src/features/files/editor/codeHighlightPlugin.ts": "src/features/files/editor/code-highlight-plugin.ts",
+    "src/features/files/editor/editorAutocomplete.ts": "src/features/files/editor/editor-autocomplete.ts",
+    "src/features/files/editor/editorChrome.ts": "src/features/files/editor/editor-chrome.ts",
+    "src/features/files/editor/editorDoc.test.ts": "src/features/files/editor/editor-doc.test.ts",
+    "src/features/files/editor/editorDoc.ts": "src/features/files/editor/editor-doc.ts",
+    "src/features/files/editor/editorEditing.ts": "src/features/files/editor/editor-editing.ts",
+    "src/features/files/editor/editorGit.gutter.test.ts": "src/features/files/editor/editor-git.gutter.test.ts",
+    "src/features/files/editor/editorGit.test.ts": "src/features/files/editor/editor-git.test.ts",
+    "src/features/files/editor/editorGit.ts": "src/features/files/editor/editor-git.ts",
+    "src/features/files/editor/editorLanguage.test.ts": "src/features/files/editor/editor-language.test.ts",
+    "src/features/files/editor/editorLanguage.ts": "src/features/files/editor/editor-language.ts",
+    "src/features/files/editor/editorLint.test.ts": "src/features/files/editor/editor-lint.test.ts",
+    "src/features/files/editor/editorLint.ts": "src/features/files/editor/editor-lint.ts",
+    "src/features/files/editor/editorScrollbar.test.ts": "src/features/files/editor/editor-scrollbar.test.ts",
+    "src/features/files/editor/editorScrollbar.ts": "src/features/files/editor/editor-scrollbar.ts",
+    "src/features/files/editor/editorSearch.test.ts": "src/features/files/editor/editor-search.test.ts",
+    "src/features/files/editor/editorSearch.ts": "src/features/files/editor/editor-search.ts",
+    "src/features/files/editor/mermaidPlugin.ts": "src/features/files/editor/mermaid-plugin.ts",
+    "src/features/files/editor/syntaxTokens.test.ts": "src/features/files/editor/syntax-tokens.test.ts",
+    "src/features/files/editor/syntaxTokens.ts": "src/features/files/editor/syntax-tokens.ts",
+    "src/features/files/model/editorSelection.test.ts": "src/features/files/model/editor-selection.test.ts",
+    "src/features/files/model/editorSelection.ts": "src/features/files/model/editor-selection.ts",
+    "src/features/files/model/fileIndex.resume.test.ts": "src/features/files/model/file-index.resume.test.ts",
+    "src/features/files/model/fileIndex.test.ts": "src/features/files/model/file-index.test.ts",
+    "src/features/files/model/fileIndex.ts": "src/features/files/model/file-index.ts",
+    "src/features/files/model/fileMentions.test.ts": "src/features/files/model/file-mentions.test.ts",
+    "src/features/files/model/fileMentions.ts": "src/features/files/model/file-mentions.ts",
+    "src/features/files/model/fileName.ts": "src/features/files/model/file-name.ts",
+    "src/features/files/model/filePreview.test.ts": "src/features/files/model/file-preview.test.ts",
+    "src/features/files/model/filePreview.ts": "src/features/files/model/file-preview.ts",
+    "src/features/files/model/fileTree.test.ts": "src/features/files/model/file-tree.test.ts",
+    "src/features/files/model/fileTree.ts": "src/features/files/model/file-tree.ts",
+    "src/features/files/model/fileViewMode.ts": "src/features/files/model/file-view-mode.ts",
+    "src/features/files/model/fileWatch.test.ts": "src/features/files/model/file-watch.test.ts",
+    "src/features/files/model/fileWatch.ts": "src/features/files/model/file-watch.ts",
+    "src/features/files/model/markdownFileLinks.ts": "src/features/files/model/markdown-file-links.ts",
+    "src/features/files/model/markdownSource.test.ts": "src/features/files/model/markdown-source.test.ts",
+    "src/features/files/model/markdownSource.ts": "src/features/files/model/markdown-source.ts",
+    "src/features/files/ui/BinaryFileView.test.ts": "src/features/files/ui/binary-file-view.test.ts",
+    "src/features/files/ui/FileEditorCrlfGit.test.ts": "src/features/files/ui/file-editor-crlf-git.test.ts",
+    "src/features/files/ui/FilePane.agent.test.ts": "src/features/files/ui/file-pane.agent.test.ts",
+    "src/features/files/ui/FilePane.remote.test.ts": "src/features/files/ui/file-pane.remote.test.ts",
+    "src/features/files/ui/FilePaneLineEndings.test.ts": "src/features/files/ui/file-pane-line-endings.test.ts",
+    "src/features/files/ui/FilePaneNavigation.test.ts": "src/features/files/ui/file-pane-navigation.test.ts",
+    "src/features/files/ui/FilePicker.test.ts": "src/features/files/ui/file-picker.test.ts",
+    "src/features/files/ui/FilePreviewSearch.test.ts": "src/features/files/ui/file-preview-search.test.ts",
+    "src/features/files/ui/FileTree.test.ts": "src/features/files/ui/file-tree.test.ts",
+    "src/features/files/ui/FileTypeIcon.test.ts": "src/features/files/ui/file-type-icon.test.ts",
+    "src/features/files/ui/FileViewMode.test.ts": "src/features/files/ui/file-view-mode.test.ts",
+    "src/features/home/hooks/useFireAnimation.ts": "src/features/home/hooks/use-fire-animation.ts",
+    "src/features/home/hooks/useHomeDashboard.test.ts": "src/features/home/hooks/use-home-dashboard.test.ts",
+    "src/features/home/hooks/useHomeDashboard.ts": "src/features/home/hooks/use-home-dashboard.ts",
+    "src/features/home/hooks/useHomeLayoutEditing.test.ts": "src/features/home/hooks/use-home-layout-editing.test.ts",
+    "src/features/home/hooks/useHomeLayoutEditing.ts": "src/features/home/hooks/use-home-layout-editing.ts",
+    "src/features/home/hooks/useHostStats.ts": "src/features/home/hooks/use-host-stats.ts",
+    "src/features/home/hooks/useInboxPulse.test.ts": "src/features/home/hooks/use-inbox-pulse.test.ts",
+    "src/features/home/hooks/useInboxPulse.ts": "src/features/home/hooks/use-inbox-pulse.ts",
+    "src/features/home/hooks/useOrbAnimation.ts": "src/features/home/hooks/use-orb-animation.ts",
+    "src/features/home/hooks/useSessionActivity.ts": "src/features/home/hooks/use-session-activity.ts",
+    "src/features/home/hooks/useUsagePulse.ts": "src/features/home/hooks/use-usage-pulse.ts",
+    "src/features/home/model/fire/animation.test.ts": "src/features/home/model/brand-visual/animation.test.ts",
+    "src/features/home/model/fire/animation.ts": "src/features/home/model/brand-visual/animation.ts",
+    "src/features/home/model/heatmapLayout.test.ts": "src/features/home/model/heatmap-layout.test.ts",
+    "src/features/home/model/heatmapLayout.ts": "src/features/home/model/heatmap-layout.ts",
+    "src/features/home/model/homeChrome.test.ts": "src/features/home/model/home-chrome.test.ts",
+    "src/features/home/model/homeData.test.ts": "src/features/home/model/home-data.test.ts",
+    "src/features/home/model/homeData.ts": "src/features/home/model/home-data.ts",
+    "src/features/home/model/homeLayout.test.ts": "src/features/home/model/home-layout.test.ts",
+    "src/features/home/model/homeLayout.ts": "src/features/home/model/home-layout.ts",
+    "src/features/home/model/homePolish.test.ts": "src/features/home/model/home-polish.test.ts",
+    "src/features/home/model/homeStatus.ts": "src/features/home/model/home-status.ts",
+    "src/features/home/model/homeWidgetRegistry.ts": "src/features/home/model/home-widget-registry.ts",
+    "src/features/home/model/hostHistory.test.ts": "src/features/home/model/host-history.test.ts",
+    "src/features/home/model/hostHistory.ts": "src/features/home/model/host-history.ts",
+    "src/features/home/model/hostStats.ts": "src/features/home/model/host-stats.ts",
+    "src/features/home/model/inboxPulse.test.ts": "src/features/home/model/inbox-pulse.test.ts",
+    "src/features/home/model/inboxPulse.ts": "src/features/home/model/inbox-pulse.ts",
+    "src/features/home/model/recentAutomations.ts": "src/features/home/model/recent-automations.ts",
+    "src/features/home/model/recentSessions.ts": "src/features/home/model/recent-sessions.ts",
+    "src/features/home/model/sessionActivity.test.ts": "src/features/home/model/session-activity.test.ts",
+    "src/features/home/model/sessionActivity.ts": "src/features/home/model/session-activity.ts",
+    "src/features/home/model/usagePulse.test.ts": "src/features/home/model/usage-pulse.test.ts",
+    "src/features/home/model/usagePulse.ts": "src/features/home/model/usage-pulse.ts",
+    "src/features/home/ui/BrandCard.test.ts": "src/features/home/ui/brand-card.test.ts",
+    "src/features/home/ui/LocalSurfaceRailActions.test.ts": "src/features/home/ui/local-surface-rail-actions.test.ts",
+    "src/features/home/ui/OrbVisual.test.ts": "src/features/home/ui/orb-visual.test.ts",
+    "src/features/inbox/hooks/useGithubPrChecks.test.ts": "src/features/inbox/hooks/use-github-pr-checks.test.ts",
+    "src/features/inbox/hooks/useGithubPrChecks.ts": "src/features/inbox/hooks/use-github-pr-checks.ts",
+    "src/features/inbox/hooks/useInboxUnseen.test.ts": "src/features/inbox/hooks/use-inbox-unseen.test.ts",
+    "src/features/inbox/hooks/useInboxUnseen.ts": "src/features/inbox/hooks/use-inbox-unseen.ts",
+    "src/features/inbox/model/azureDevOps.ts": "src/features/inbox/model/azure-dev-ops.ts",
+    "src/features/inbox/model/ciRepair.test.ts": "src/features/inbox/model/ci-repair.test.ts",
+    "src/features/inbox/model/ciRepair.ts": "src/features/inbox/model/ci-repair.ts",
+    "src/features/inbox/model/ciRepairSessions.test.ts": "src/features/inbox/model/ci-repair-sessions.test.ts",
+    "src/features/inbox/model/ciRepairSessions.ts": "src/features/inbox/model/ci-repair-sessions.ts",
+    "src/features/inbox/model/ciRepairTracking.test.ts": "src/features/inbox/model/ci-repair-tracking.test.ts",
+    "src/features/inbox/model/ciRepairTracking.ts": "src/features/inbox/model/ci-repair-tracking.ts",
+    "src/features/inbox/model/confluence/api.ts": "src/features/confluence/model/api.ts",
+    "src/features/inbox/model/confluence/constants.ts": "src/features/confluence/model/constants.ts",
+    "src/features/inbox/model/confluence/hiddenSpaces.test.ts": "src/features/confluence/model/hidden-spaces.test.ts",
+    "src/features/inbox/model/confluence/hiddenSpaces.ts": "src/features/confluence/model/hidden-spaces.ts",
+    "src/features/inbox/model/confluence/kinds.test.ts": "src/features/confluence/model/kinds.test.ts",
+    "src/features/inbox/model/confluence/kinds.ts": "src/features/confluence/model/kinds.ts",
+    "src/features/inbox/model/confluence/mentions.test.ts": "src/features/confluence/model/mentions.test.ts",
+    "src/features/inbox/model/confluence/mentions.ts": "src/features/confluence/model/mentions.ts",
+    "src/features/inbox/model/confluence/prompt.test.ts": "src/features/confluence/model/prompt.test.ts",
+    "src/features/inbox/model/confluence/prompt.ts": "src/features/confluence/model/prompt.ts",
+    "src/features/inbox/model/confluence/types.ts": "src/features/confluence/model/types.ts",
+    "src/features/inbox/model/githubPrChecks.test.ts": "src/features/inbox/model/github-pr-checks.test.ts",
+    "src/features/inbox/model/githubPrChecks.ts": "src/features/inbox/model/github-pr-checks.ts",
+    "src/features/inbox/model/githubTasks.providers.test.ts": "src/features/inbox/model/github-tasks.providers.test.ts",
+    "src/features/inbox/model/githubTasks.repositories.test.ts": "src/features/inbox/model/github-tasks.repositories.test.ts",
+    "src/features/inbox/model/githubTasks.test.ts": "src/features/inbox/model/github-tasks.test.ts",
+    "src/features/inbox/model/githubTasks.ts": "src/features/inbox/model/github-tasks.ts",
+    "src/features/inbox/model/githubWorkItemFreshness.test.ts": "src/features/inbox/model/github-work-item-freshness.test.ts",
+    "src/features/inbox/model/inboxActivityRequest.ts": "src/features/inbox/model/inbox-activity-request.ts",
+    "src/features/inbox/model/inboxAsk.test.ts": "src/features/inbox/model/inbox-ask.test.ts",
+    "src/features/inbox/model/inboxAsk.ts": "src/features/inbox/model/inbox-ask.ts",
+    "src/features/inbox/model/inboxContext.ts": "src/features/inbox/model/inbox-context.ts",
+    "src/features/inbox/model/inboxFilters.test.ts": "src/features/inbox/model/inbox-filters.test.ts",
+    "src/features/inbox/model/inboxFilters.ts": "src/features/inbox/model/inbox-filters.ts",
+    "src/features/inbox/model/inboxMedia.test.ts": "src/features/inbox/model/inbox-media.test.ts",
+    "src/features/inbox/model/inboxMedia.ts": "src/features/inbox/model/inbox-media.ts",
+    "src/features/inbox/model/inboxNotifications.test.ts": "src/features/inbox/model/inbox-notifications.test.ts",
+    "src/features/inbox/model/inboxNotifications.ts": "src/features/inbox/model/inbox-notifications.ts",
+    "src/features/inbox/model/inboxSeen.test.ts": "src/features/inbox/model/inbox-seen.test.ts",
+    "src/features/inbox/model/inboxSeen.ts": "src/features/inbox/model/inbox-seen.ts",
+    "src/features/inbox/model/inboxSelfActivity.test.ts": "src/features/inbox/model/inbox-self-activity.test.ts",
+    "src/features/inbox/model/inboxSelfActivity.ts": "src/features/inbox/model/inbox-self-activity.ts",
+    "src/features/inbox/model/jiraIssueTree.test.ts": "src/features/inbox/model/jira-issue-tree.test.ts",
+    "src/features/inbox/model/jiraIssueTree.ts": "src/features/inbox/model/jira-issue-tree.ts",
+    "src/features/inbox/model/linkedSessionSeen.test.ts": "src/features/inbox/model/linked-session-seen.test.ts",
+    "src/features/inbox/model/linkedSessionSeen.ts": "src/features/inbox/model/linked-session-seen.ts",
+    "src/features/inbox/model/linkedSessionUpdates.test.ts": "src/features/inbox/model/linked-session-updates.test.ts",
+    "src/features/inbox/model/linkedSessionUpdates.ts": "src/features/inbox/model/linked-session-updates.ts",
+    "src/features/inbox/model/linkedWorkItemActivity.test.ts": "src/features/inbox/model/linked-work-item-activity.test.ts",
+    "src/features/inbox/model/linkedWorkItemActivity.ts": "src/features/inbox/model/linked-work-item-activity.ts",
+    "src/features/inbox/ui/confluence/ConfluenceListBody.test.ts": "src/features/inbox/ui/confluence/confluence-list-body.test.ts",
+    "src/features/inbox/ui/confluence/ConfluenceReader.test.ts": "src/features/inbox/ui/confluence/confluence-reader.test.ts",
+    "src/features/inbox/ui/confluence/errorText.ts": "src/features/inbox/ui/confluence/error-text.ts",
+    "src/features/inbox/ui/confluence/useConfluenceChat.ts": "src/features/inbox/ui/confluence/use-confluence-chat.ts",
+    "src/features/inbox/ui/confluence/useConfluenceSearch.ts": "src/features/inbox/ui/confluence/use-confluence-search.ts",
+    "src/features/inbox/ui/confluence/useConfluenceSelection.ts": "src/features/inbox/ui/confluence/use-confluence-selection.ts",
+    "src/features/inbox/ui/confluence/useConfluenceTree.ts": "src/features/inbox/ui/confluence/use-confluence-tree.ts",
+    "src/features/inbox/ui/InboxComments.test.ts": "src/features/inbox/ui/inbox-comments.test.ts",
+    "src/features/inbox/ui/InboxDetail.polling.test.ts": "src/features/inbox/ui/inbox-detail.polling.test.ts",
+    "src/features/inbox/ui/InboxNotificationIndicators.test.ts": "src/features/inbox/ui/inbox-notification-indicators.test.ts",
+    "src/features/inbox/ui/InboxNotificationMenu.test.ts": "src/app/shell/inbox-notification-menu.test.ts",
+    "src/features/inbox/ui/InboxPrChecks.test.ts": "src/features/inbox/ui/inbox-pr-checks.test.ts",
+    "src/features/inbox/ui/InboxPrChecksRepair.test.ts": "src/features/inbox/ui/inbox-pr-checks-repair.test.ts",
+    "src/features/inbox/ui/InboxPrOverview.test.ts": "src/features/inbox/ui/inbox-pr-overview.test.ts",
+    "src/features/inbox/ui/InboxTreeGutter.test.ts": "src/features/inbox/ui/inbox-tree-gutter.test.ts",
+    "src/features/inbox/ui/InboxView.test.ts": "src/features/inbox/ui/inbox-view.test.ts",
+    "src/features/inbox/ui/LinkedWorkItemPanel.test.ts": "src/features/inbox/ui/linked-work-item-panel.test.ts",
+    "src/features/inbox/ui/LinkedWorkItemUpdateNotice.test.ts": "src/features/inbox/ui/linked-work-item-update-notice.test.ts",
+    "src/features/inbox/ui/ProjectNotificationMenu.test.ts": "src/app/shell/project-notification-menu.test.ts",
+    "src/features/knowledge/ui/tree/KnowledgeTree.test.ts": "src/features/knowledge/ui/tree/knowledge-tree.test.ts",
+    "src/features/notes/noteImages.test.ts": "src/features/notes/note-images.test.ts",
+    "src/features/notes/noteImages.ts": "src/features/notes/note-images.ts",
+    "src/features/notes/types/note-source.ts": "src/domain/notes/note-source.ts",
+    "src/features/notes/ui/NotesView.test.ts": "src/features/notes/ui/notes-view.test.ts",
+    "src/features/notifications/hooks/projectNotificationFlow.test.ts": "src/features/notifications/hooks/project-notification-flow.test.ts",
+    "src/features/notifications/hooks/useInputNotifications.test.ts": "src/features/notifications/hooks/use-input-notifications.test.ts",
+    "src/features/notifications/hooks/useInputNotifications.ts": "src/features/notifications/hooks/use-input-notifications.ts",
+    "src/features/notifications/hooks/useNotificationProjects.ts": "src/features/notifications/hooks/use-notification-projects.ts",
+    "src/features/notifications/hooks/useProjectNotificationPreferences.ts": "src/features/notifications/hooks/use-project-notification-preferences.ts",
+    "src/features/notifications/hooks/useSessionReminders.test.ts": "src/features/notifications/hooks/use-session-reminders.test.ts",
+    "src/features/notifications/hooks/useSessionReminders.ts": "src/features/notifications/hooks/use-session-reminders.ts",
+    "src/features/notifications/model/approvalToast.test.ts": "src/features/notifications/model/approval-toast.test.ts",
+    "src/features/notifications/model/approvalToast.ts": "src/features/notifications/model/approval-toast.ts",
+    "src/features/notifications/model/dockBadge.test.ts": "src/features/notifications/model/dock-badge.test.ts",
+    "src/features/notifications/model/dockBadge.ts": "src/features/notifications/model/dock-badge.ts",
+    "src/features/notifications/model/notificationDelivery.test.ts": "src/features/notifications/model/notification-delivery.test.ts",
+    "src/features/notifications/model/notificationPreferences.test.ts": "src/features/notifications/model/notification-preferences.test.ts",
+    "src/features/notifications/model/notificationPreferences.ts": "src/features/notifications/model/notification-preferences.ts",
+    "src/features/notifications/model/notificationProjects.test.ts": "src/features/notifications/model/notification-projects.test.ts",
+    "src/features/notifications/model/notificationProjects.ts": "src/features/notifications/model/notification-projects.ts",
+    "src/features/notifications/ui/notificationMuteActions.ts": "src/features/notifications/ui/notification-mute-actions.ts",
+    "src/features/notifications/ui/NotificationMuteControl.test.ts": "src/features/notifications/ui/notification-mute-control.test.ts",
+    "src/features/notifications/ui/ProjectNotificationSettings.test.ts": "src/features/notifications/ui/project-notification-settings.test.ts",
+    "src/features/orchestration/model/orchestrationCatalog.test.ts": "src/features/orchestration/model/orchestration-catalog.test.ts",
+    "src/features/orchestration/model/orchestrationCatalog.ts": "src/features/orchestration/model/orchestration-catalog.ts",
+    "src/features/orchestration/model/orchestrationPlan.test.ts": "src/features/orchestration/model/orchestration-plan.test.ts",
+    "src/features/orchestration/model/orchestrationPlan.ts": "src/features/orchestration/model/orchestration-plan.ts",
+    "src/features/orchestration/model/orchestrationState.ts": "src/features/orchestration/model/orchestration-state.ts",
+    "src/features/orchestration/model/orchestrationSummary.ts": "src/features/orchestration/model/orchestration-summary.ts",
+    "src/features/orchestration/model/orchestrationWorkspace.test.ts": "src/features/orchestration/model/orchestration-workspace.test.ts",
+    "src/features/orchestration/model/orchestrationWorkspace.ts": "src/features/orchestration/model/orchestration-workspace.ts",
+    "src/features/orchestration/ui/OrchestrationActions.ts": "src/features/orchestration/ui/orchestration-actions.ts",
+    "src/features/orchestration/ui/OrchestrationFlow.test.ts": "src/features/orchestration/ui/orchestration-flow.test.ts",
+    "src/features/projects/hooks/useProjectAppearance.ts": "src/features/projects/hooks/use-project-appearance.ts",
+    "src/features/projects/hooks/useTabGroupLogos.ts": "src/features/projects/hooks/use-tab-group-logos.ts",
+    "src/features/projects/model/chatBackground.test.ts": "src/features/projects/model/chat-background.test.ts",
+    "src/features/projects/model/chatBackground.ts": "src/features/projects/model/chat-background.ts",
+    "src/features/projects/model/pixelMascots.test.ts": "src/features/projects/model/pixel-mascots.test.ts",
+    "src/features/projects/model/pixelMascots.ts": "src/features/projects/model/pixel-mascots.ts",
+    "src/features/projects/model/projectChatBackground.test.ts": "src/features/projects/model/project-chat-background.test.ts",
+    "src/features/projects/model/projectChatBackground.ts": "src/features/projects/model/project-chat-background.ts",
+    "src/features/projects/model/projectData.test.ts": "src/features/projects/model/project-data.test.ts",
+    "src/features/projects/model/projectData.ts": "src/features/projects/model/project-data.ts",
+    "src/features/projects/model/projectGroups.test.ts": "src/features/projects/model/project-groups.test.ts",
+    "src/features/projects/model/projectGroups.ts": "src/features/projects/model/project-groups.ts",
+    "src/features/projects/model/projectLocation.test.ts": "src/features/projects/model/project-location.test.ts",
+    "src/features/projects/model/projectLocation.ts": "src/features/projects/model/project-location.ts",
+    "src/features/projects/model/projectLocationError.ts": "src/features/projects/model/project-location-error.ts",
+    "src/features/projects/model/projectLogos.test.ts": "src/features/projects/model/project-logos.test.ts",
+    "src/features/projects/model/projectLogos.ts": "src/features/projects/model/project-logos.ts",
+    "src/features/projects/model/projectMascots.test.ts": "src/features/projects/model/project-mascots.test.ts",
+    "src/features/projects/model/projectMascots.ts": "src/features/projects/model/project-mascots.ts",
+    "src/features/projects/model/projectOpenRun.test.ts": "src/features/projects/model/project-open-run.test.ts",
+    "src/features/projects/model/projectOpenRun.ts": "src/features/projects/model/project-open-run.ts",
+    "src/features/projects/model/projectReturn.test.ts": "src/features/projects/model/project-return.test.ts",
+    "src/features/projects/model/projectReturn.ts": "src/features/projects/model/project-return.ts",
+    "src/features/projects/model/projectTerminal.test.ts": "src/features/projects/model/project-terminal.test.ts",
+    "src/features/projects/model/projectTerminal.ts": "src/features/projects/model/project-terminal.ts",
+    "src/features/projects/ui/ProjectBackgroundDialog.test.ts": "src/features/projects/ui/project-background-dialog.test.ts",
+    "src/features/projects/ui/ProjectGroups.test.ts": "src/app/shell/project-groups.test.ts",
+    "src/features/projects/ui/SearchableProjectPickerFamiliars.test.ts": "src/features/projects/ui/searchable-project-picker-familiars.test.ts",
+    "src/features/projects/ui/useProjectBackgroundEffect.test.ts": "src/features/projects/ui/use-project-background-effect.test.ts",
+    "src/features/projects/ui/useProjectBackgroundEffect.ts": "src/features/projects/ui/use-project-background-effect.ts",
+    "src/features/providers/model/accountUsage.test.ts": "src/features/providers/model/account-usage.test.ts",
+    "src/features/providers/model/accountUsage.ts": "src/features/providers/model/account-usage.ts",
+    "src/features/providers/model/harnessUpdates.test.ts": "src/features/providers/model/harness-updates.test.ts",
+    "src/features/providers/model/harnessUpdates.ts": "src/features/providers/model/harness-updates.ts",
+    "src/features/providers/model/piUsage.test.ts": "src/features/providers/model/pi-usage.test.ts",
+    "src/features/providers/model/piUsage.ts": "src/features/providers/model/pi-usage.ts",
+    "src/features/providers/model/providerAccountCredentials.ts": "src/features/providers/model/provider-account-credentials.ts",
+    "src/features/providers/model/providerAccountIdentity.ts": "src/features/providers/model/provider-account-identity.ts",
+    "src/features/providers/model/providerAccounts.test.ts": "src/features/providers/model/provider-accounts.test.ts",
+    "src/features/providers/model/providerAccounts.ts": "src/features/providers/model/provider-accounts.ts",
+    "src/features/providers/model/providerBinaryPaths.test.ts": "src/integrations/harness/core/provider-binary-paths.test.ts",
+    "src/features/providers/model/providerBinaryPaths.ts": "src/integrations/harness/core/provider-binary-paths.ts",
+    "src/features/providers/model/rateLimitsCache.ts": "src/features/providers/model/rate-limits-cache.ts",
+    "src/features/providers/model/rateLimitsFetch.test.ts": "src/features/providers/model/rate-limits-fetch.test.ts",
+    "src/features/providers/model/rateLimitsFetch.ts": "src/features/providers/model/rate-limits-fetch.ts",
+    "src/features/providers/ui/HarnessUpdateNotice.test.ts": "src/features/providers/ui/harness-update-notice.test.ts",
+    "src/features/providers/ui/ProviderAccountUsage.test.ts": "src/features/providers/ui/provider-account-usage.test.ts",
+    "src/features/quick-composer/hooks/useQuickComposerLaunches.ts": "src/features/quick-composer/hooks/use-quick-composer-launches.ts",
+    "src/features/quick-composer/model/launchDelivery.test.ts": "src/features/quick-composer/model/launch-delivery.test.ts",
+    "src/features/quick-composer/model/launchDelivery.ts": "src/features/quick-composer/model/launch-delivery.ts",
+    "src/features/quick-composer/model/prepareQuickComposer.test.ts": "src/features/quick-composer/model/prepare-quick-composer.test.ts",
+    "src/features/quick-composer/model/prepareQuickComposer.ts": "src/features/quick-composer/model/prepare-quick-composer.ts",
+    "src/features/quick-composer/model/quickAttachments.test.ts": "src/features/quick-composer/model/quick-attachments.test.ts",
+    "src/features/quick-composer/model/quickAttachments.ts": "src/features/quick-composer/model/quick-attachments.ts",
+    "src/features/quick-composer/model/quickComposer.test.ts": "src/features/quick-composer/model/quick-composer.test.ts",
+    "src/features/quick-composer/model/quickComposer.ts": "src/features/quick-composer/model/quick-composer.ts",
+    "src/features/quick-composer/model/quickComposerDefaults.test.ts": "src/features/quick-composer/model/quick-composer-defaults.test.ts",
+    "src/features/quick-composer/model/quickComposerShortcut.test.ts": "src/features/quick-composer/model/quick-composer-shortcut.test.ts",
+    "src/features/quick-composer/model/quickComposerShortcut.ts": "src/features/quick-composer/model/quick-composer-shortcut.ts",
+    "src/features/quick-composer/model/quickGitPopup.ts": "src/features/quick-composer/model/quick-git-popup.ts",
+    "src/features/quick-composer/model/quickWorkspace.test.ts": "src/features/quick-composer/model/quick-workspace.test.ts",
+    "src/features/quick-composer/model/quickWorkspace.ts": "src/features/quick-composer/model/quick-workspace.ts",
+    "src/features/quick-composer/ui/QuickComposer.attachments.test.ts": "src/features/quick-composer/ui/quick-composer.attachments.test.ts",
+    "src/features/quick-composer/ui/QuickComposer.commands.test.ts": "src/features/quick-composer/ui/quick-composer.commands.test.ts",
+    "src/features/quick-composer/ui/QuickGitPopup.firstOpen.test.ts": "src/features/quick-composer/ui/quick-git-popup.first-open.test.ts",
+    "src/features/quick-composer/ui/QuickGitPopup.test.ts": "src/features/quick-composer/ui/quick-git-popup.test.ts",
+    "src/features/quick-composer/ui/QuickModelSelector.test.ts": "src/features/quick-composer/ui/quick-model-selector.test.ts",
+    "src/features/quick-composer/ui/QuickPermissions.test.ts": "src/features/quick-composer/ui/quick-permissions.test.ts",
+    "src/features/quick-composer/ui/QuickProjectIcon.test.ts": "src/features/quick-composer/ui/quick-project-icon.test.ts",
+    "src/features/quick-composer/ui/QuickWorkspaceControls.test.ts": "src/features/quick-composer/ui/quick-workspace-controls.test.ts",
+    "src/features/quick-composer/ui/useQuickAttachments.test.ts": "src/features/quick-composer/ui/use-quick-attachments.test.ts",
+    "src/features/quick-composer/ui/useQuickAttachments.ts": "src/features/quick-composer/ui/use-quick-attachments.ts",
+    "src/features/quick-composer/ui/useQuickPickerMotion.test.ts": "src/features/quick-composer/ui/use-quick-picker-motion.test.ts",
+    "src/features/quick-composer/ui/useQuickPickerMotion.ts": "src/features/quick-composer/ui/use-quick-picker-motion.ts",
+    "src/features/search/model/appSearch.test.ts": "src/features/search/model/app-search.test.ts",
+    "src/features/search/model/appSearch.ts": "src/features/search/model/app-search.ts",
+    "src/features/sessions/data/familiarSessionStore.test.ts": "src/features/sessions/data/familiar-session-store.test.ts",
+    "src/features/sessions/data/knowledgeSourcePersistence.test.ts": "src/features/sessions/data/knowledge-source-persistence.test.ts",
+    "src/features/sessions/data/sessionCache.test.ts": "src/features/sessions/data/session-cache.test.ts",
+    "src/features/sessions/data/sessionCache.ts": "src/features/sessions/data/session-cache.ts",
+    "src/features/sessions/data/sessionHistory.test.ts": "src/features/sessions/data/session-history.test.ts",
+    "src/features/sessions/data/sessionHistory.ts": "src/features/sessions/data/session-history.ts",
+    "src/features/sessions/data/sessionStore.test.ts": "src/features/sessions/data/session-store.test.ts",
+    "src/features/sessions/data/sessionStore.ts": "src/features/sessions/data/session-store.ts",
+    "src/features/sessions/data/sessionStoreConcurrency.test.ts": "src/features/sessions/data/session-store-concurrency.test.ts",
+    "src/features/sessions/data/sessionStoreLinkedWorkItem.test.ts": "src/features/sessions/data/session-store-linked-work-item.test.ts",
+    "src/features/sessions/data/sessionStoreRestore.test.ts": "src/features/sessions/data/session-store-restore.test.ts",
+    "src/features/sessions/hooks/useBottomChatMotion.test.ts": "src/features/sessions/hooks/use-bottom-chat-motion.test.ts",
+    "src/features/sessions/hooks/useBottomChatMotion.ts": "src/features/sessions/hooks/use-bottom-chat-motion.ts",
+    "src/features/sessions/hooks/useFileDrop.ts": "src/features/sessions/hooks/use-file-drop.ts",
+    "src/features/sessions/hooks/useTranscriptAnchor.ts": "src/features/sessions/hooks/use-transcript-anchor.ts",
+    "src/features/sessions/hooks/useTranscriptLayout.ts": "src/features/sessions/hooks/use-transcript-layout.ts",
+    "src/features/sessions/hooks/useTranscriptSelection.ts": "src/features/sessions/hooks/use-transcript-selection.ts",
+    "src/features/sessions/hooks/useUnseenFinishedSessions.ts": "src/features/sessions/hooks/use-unseen-finished-sessions.ts",
+    "src/features/sessions/hooks/useUnseenReplyCounts.ts": "src/features/sessions/hooks/use-unseen-reply-counts.ts",
+    "src/features/sessions/model/addChatToWorkspace.test.ts": "src/features/sessions/model/add-chat-to-workspace.test.ts",
+    "src/features/sessions/model/addChatToWorkspace.ts": "src/features/sessions/model/add-chat-to-workspace.ts",
+    "src/features/sessions/model/agentTabs.test.ts": "src/features/sessions/model/agent-tabs.test.ts",
+    "src/features/sessions/model/archiveShortcut.test.ts": "src/features/sessions/model/archive-shortcut.test.ts",
+    "src/features/sessions/model/archiveShortcut.ts": "src/features/sessions/model/archive-shortcut.ts",
+    "src/features/sessions/model/astraWelcome.test.ts": "src/features/sessions/model/astra-welcome.test.ts",
+    "src/features/sessions/model/astraWelcome.ts": "src/features/sessions/model/astra-welcome.ts",
+    "src/features/sessions/model/attachmentsPreparation.test.ts": "src/features/sessions/model/attachments-preparation.test.ts",
+    "src/features/sessions/model/checkpointEdits.test.ts": "src/features/sessions/model/checkpoint-edits.test.ts",
+    "src/features/sessions/model/checkpointEdits.ts": "src/features/sessions/model/checkpoint-edits.ts",
+    "src/features/sessions/model/ciRepairContext.test.ts": "src/features/sessions/model/ci-repair-context.test.ts",
+    "src/features/sessions/model/composerResize.test.ts": "src/features/sessions/model/composer-resize.test.ts",
+    "src/features/sessions/model/composerResize.ts": "src/features/sessions/model/composer-resize.ts",
+    "src/features/sessions/model/composerRunner.test.ts": "src/features/sessions/model/composer-runner.test.ts",
+    "src/features/sessions/model/composerRunner.ts": "src/features/sessions/model/composer-runner.ts",
+    "src/features/sessions/model/contextUsage.test.ts": "src/domain/session/context-usage.test.ts",
+    "src/features/sessions/model/contextUsage.ts": "src/domain/session/context-usage.ts",
+    "src/features/sessions/model/draftCache.test.ts": "src/features/sessions/model/draft-cache.test.ts",
+    "src/features/sessions/model/draftCache.ts": "src/features/sessions/model/draft-cache.ts",
+    "src/features/sessions/model/draftCommand.ts": "src/features/sessions/model/draft-command.ts",
+    "src/features/sessions/model/editLastTurn.test.ts": "src/features/sessions/model/edit-last-turn.test.ts",
+    "src/features/sessions/model/editLastTurn.ts": "src/features/sessions/model/edit-last-turn.ts",
+    "src/features/sessions/model/emojiMessage.test.ts": "src/features/sessions/model/emoji-message.test.ts",
+    "src/features/sessions/model/emojiMessage.ts": "src/features/sessions/model/emoji-message.ts",
+    "src/features/sessions/model/familiarWorkStatus.test.ts": "src/features/sessions/model/familiar-work-status.test.ts",
+    "src/features/sessions/model/familiarWorkStatus.ts": "src/features/sessions/model/familiar-work-status.ts",
+    "src/features/sessions/model/handoffTurn.ts": "src/features/sessions/model/handoff-turn.ts",
+    "src/features/sessions/model/inFlight.test.ts": "src/features/sessions/model/in-flight.test.ts",
+    "src/features/sessions/model/inFlight.ts": "src/features/sessions/model/in-flight.ts",
+    "src/features/sessions/model/linkPreview.test.ts": "src/features/sessions/model/link-preview.test.ts",
+    "src/features/sessions/model/linkPreview.ts": "src/features/sessions/model/link-preview.ts",
+    "src/features/sessions/model/liveAgents.test.ts": "src/features/sessions/model/live-agents.test.ts",
+    "src/features/sessions/model/liveAgents.ts": "src/features/sessions/model/live-agents.ts",
+    "src/features/sessions/model/mcpCommand.test.ts": "src/features/sessions/model/mcp-command.test.ts",
+    "src/features/sessions/model/mcpCommand.ts": "src/features/sessions/model/mcp-command.ts",
+    "src/features/sessions/model/mcpPicker.test.ts": "src/features/sessions/model/mcp-picker.test.ts",
+    "src/features/sessions/model/mcpPicker.ts": "src/features/sessions/model/mcp-picker.ts",
+    "src/features/sessions/model/messageQueue.test.ts": "src/features/sessions/model/message-queue.test.ts",
+    "src/features/sessions/model/messageQueue.ts": "src/features/sessions/model/message-queue.ts",
+    "src/features/sessions/model/ompInterjections.test.ts": "src/features/sessions/model/omp-interjections.test.ts",
+    "src/features/sessions/model/ompInterjections.ts": "src/features/sessions/model/omp-interjections.ts",
+    "src/features/sessions/model/operatorCommand.test.ts": "src/features/sessions/model/operator-command.test.ts",
+    "src/features/sessions/model/operatorCommand.ts": "src/features/sessions/model/operator-command.ts",
+    "src/features/sessions/model/opusWelcome.test.ts": "src/features/sessions/model/opus-welcome.test.ts",
+    "src/features/sessions/model/opusWelcome.ts": "src/features/sessions/model/opus-welcome.ts",
+    "src/features/sessions/model/orchestratorCommand.ts": "src/features/sessions/model/orchestrator-command.ts",
+    "src/features/sessions/model/projectProviders.test.ts": "src/features/sessions/model/project-providers.test.ts",
+    "src/features/sessions/model/projectProviders.ts": "src/features/sessions/model/project-providers.ts",
+    "src/features/sessions/model/projectSessionDefaults.test.ts": "src/features/sessions/model/project-session-defaults.test.ts",
+    "src/features/sessions/model/promptOutline.test.ts": "src/features/sessions/model/prompt-outline.test.ts",
+    "src/features/sessions/model/promptOutline.ts": "src/features/sessions/model/prompt-outline.ts",
+    "src/features/sessions/model/promptPreparation.test.ts": "src/features/sessions/model/prompt-preparation.test.ts",
+    "src/features/sessions/model/promptPreparation.ts": "src/features/sessions/model/prompt-preparation.ts",
+    "src/features/sessions/model/queuedFollowUp.test.ts": "src/features/sessions/model/queued-follow-up.test.ts",
+    "src/features/sessions/model/queuedFollowUp.ts": "src/features/sessions/model/queued-follow-up.ts",
+    "src/features/sessions/model/quoteDraft.test.ts": "src/features/sessions/model/quote-draft.test.ts",
+    "src/features/sessions/model/quoteDraft.ts": "src/features/sessions/model/quote-draft.ts",
+    "src/features/sessions/model/secondOpinion.test.ts": "src/features/sessions/model/second-opinion.test.ts",
+    "src/features/sessions/model/secondOpinion.ts": "src/features/sessions/model/second-opinion.ts",
+    "src/features/sessions/model/sessionDone.test.ts": "src/features/sessions/model/session-done.test.ts",
+    "src/features/sessions/model/sessionDone.ts": "src/features/sessions/model/session-done.ts",
+    "src/features/sessions/model/sessionDraft.test.ts": "src/features/sessions/model/session-draft.test.ts",
+    "src/features/sessions/model/sessionFilters.test.ts": "src/features/sessions/model/session-filters.test.ts",
+    "src/features/sessions/model/sessionFilters.ts": "src/features/sessions/model/session-filters.ts",
+    "src/features/sessions/model/sessionFolderCommand.test.ts": "src/features/sessions/model/session-folder-command.test.ts",
+    "src/features/sessions/model/sessionFolderCommand.ts": "src/features/sessions/model/session-folder-command.ts",
+    "src/features/sessions/model/sessionFolders.test.ts": "src/features/sessions/model/session-folders.test.ts",
+    "src/features/sessions/model/sessionFolders.ts": "src/features/sessions/model/session-folders.ts",
+    "src/features/sessions/model/sessionReminders.test.ts": "src/features/sessions/model/session-reminders.test.ts",
+    "src/features/sessions/model/sessionReminders.ts": "src/features/sessions/model/session-reminders.ts",
+    "src/features/sessions/model/sessionRemoval.test.ts": "src/features/sessions/model/session-removal.test.ts",
+    "src/features/sessions/model/sessionRemoval.ts": "src/features/sessions/model/session-removal.ts",
+    "src/features/sessions/model/sessionReviewCache.ts": "src/features/sessions/model/session-review-cache.ts",
+    "src/features/sessions/model/sessionSelection.test.ts": "src/features/sessions/model/session-selection.test.ts",
+    "src/features/sessions/model/sessionSelection.ts": "src/features/sessions/model/session-selection.ts",
+    "src/features/sessions/model/sessionSkills.test.ts": "src/features/sessions/model/session-skills.test.ts",
+    "src/features/sessions/model/sessionSkills.ts": "src/features/sessions/model/session-skills.ts",
+    "src/features/sessions/model/sessionTitle.test.ts": "src/domain/session/generated-title.test.ts",
+    "src/features/sessions/model/sessionTitle.ts": "src/domain/session/generated-title.ts",
+    "src/features/sessions/model/sessionWorkItem.test.ts": "src/features/sessions/model/session-work-item.test.ts",
+    "src/features/sessions/model/sessionWorkItem.ts": "src/features/sessions/model/session-work-item.ts",
+    "src/features/sessions/model/sessionWorkspaceLifecycle.test.ts": "src/features/sessions/model/session-workspace-lifecycle.test.ts",
+    "src/features/sessions/model/sessionWorkspaceLifecycle.ts": "src/features/sessions/model/session-workspace-lifecycle.ts",
+    "src/features/sessions/model/speechBubble.test.ts": "src/features/sessions/model/speech-bubble.test.ts",
+    "src/features/sessions/model/speechBubble.ts": "src/features/sessions/model/speech-bubble.ts",
+    "src/features/sessions/model/taskList.test.ts": "src/domain/session/task-list.test.ts",
+    "src/features/sessions/model/taskList.ts": "src/domain/session/task-list.ts",
+    "src/features/sessions/model/transcriptActivity.test.ts": "src/features/sessions/model/transcript-activity.test.ts",
+    "src/features/sessions/model/transcriptActivity.ts": "src/features/sessions/model/transcript-activity.ts",
+    "src/features/sessions/model/transcriptFind.test.ts": "src/features/sessions/model/transcript-find.test.ts",
+    "src/features/sessions/model/transcriptFind.ts": "src/features/sessions/model/transcript-find.ts",
+    "src/features/sessions/model/transcriptHighlights.test.ts": "src/features/sessions/model/transcript-highlights.test.ts",
+    "src/features/sessions/model/transcriptHighlights.ts": "src/features/sessions/model/transcript-highlights.ts",
+    "src/features/sessions/model/transcriptJump.test.ts": "src/features/sessions/model/transcript-jump.test.ts",
+    "src/features/sessions/model/transcriptJump.ts": "src/features/sessions/model/transcript-jump.ts",
+    "src/features/sessions/model/transcriptSelection.test.ts": "src/features/sessions/model/transcript-selection.test.ts",
+    "src/features/sessions/model/transcriptSelection.ts": "src/features/sessions/model/transcript-selection.ts",
+    "src/features/sessions/model/transcriptTurnCache.test.ts": "src/features/sessions/model/transcript-turn-cache.test.ts",
+    "src/features/sessions/model/transcriptTurnCache.ts": "src/features/sessions/model/transcript-turn-cache.ts",
+    "src/features/sessions/model/usageLimit.test.ts": "src/features/sessions/model/usage-limit.test.ts",
+    "src/features/sessions/model/usageLimit.ts": "src/features/sessions/model/usage-limit.ts",
+    "src/features/sessions/model/userQuestion.test.ts": "src/domain/session/user-question.test.ts",
+    "src/features/sessions/model/userQuestion.ts": "src/domain/session/user-question.ts",
+    "src/features/sessions/model/vatraToolCall.test.ts": "src/features/sessions/model/molfar-tool-call.test.ts",
+    "src/features/sessions/model/vatraToolCall.ts": "src/features/sessions/model/molfar-tool-call.ts",
+    "src/features/sessions/ui/AgentMarkdown.test.ts": "src/features/sessions/ui/agent-markdown.test.ts",
+    "src/features/sessions/ui/AgentMarkdownFileLinks.test.ts": "src/features/sessions/ui/agent-markdown-file-links.test.ts",
+    "src/features/sessions/ui/AgentMarkdownMenu.test.ts": "src/features/sessions/ui/agent-markdown-menu.test.ts",
+    "src/features/sessions/ui/agentMarkdownSpacing.test.ts": "src/features/sessions/ui/agent-markdown-spacing.test.ts",
+    "src/features/sessions/ui/AgentTabView.test.ts": "src/features/sessions/ui/agent-tab-view.test.ts",
+    "src/features/sessions/ui/AgentTranscript.bubbleWidth.test.ts": "src/features/sessions/ui/agent-transcript.bubble-width.test.ts",
+    "src/features/sessions/ui/AgentTranscript.copy.test.ts": "src/features/sessions/ui/agent-transcript.copy.test.ts",
+    "src/features/sessions/ui/AgentTranscript.firstPaint.test.ts": "src/features/sessions/ui/agent-transcript.first-paint.test.ts",
+    "src/features/sessions/ui/AgentTranscript.foldProse.test.ts": "src/features/sessions/ui/agent-transcript.fold-prose.test.ts",
+    "src/features/sessions/ui/AgentTranscript.habits.test.ts": "src/features/sessions/ui/agent-transcript.habits.test.ts",
+    "src/features/sessions/ui/AgentTranscript.inlineWork.test.ts": "src/features/sessions/ui/agent-transcript.inline-work.test.ts",
+    "src/features/sessions/ui/AgentTranscript.interjection.test.ts": "src/features/sessions/ui/agent-transcript.interjection.test.ts",
+    "src/features/sessions/ui/AgentTranscript.performance.test.ts": "src/features/sessions/ui/agent-transcript.performance.test.ts",
+    "src/features/sessions/ui/AgentTranscript.promptRise.test.ts": "src/features/sessions/ui/agent-transcript.prompt-rise.test.ts",
+    "src/features/sessions/ui/AgentTranscript.search.test.ts": "src/features/sessions/ui/agent-transcript.search.test.ts",
+    "src/features/sessions/ui/AgentTranscript.test.ts": "src/features/sessions/ui/agent-transcript.test.ts",
+    "src/features/sessions/ui/AgentTranscriptErrorDisclosure.test.ts": "src/features/sessions/ui/agent-transcript-error-disclosure.test.ts",
+    "src/features/sessions/ui/AgentTranscriptPacing.test.ts": "src/features/sessions/ui/agent-transcript-pacing.test.ts",
+    "src/features/sessions/ui/AgentTranscriptScroll.test.ts": "src/features/sessions/ui/agent-transcript-scroll.test.ts",
+    "src/features/sessions/ui/AgentTranscriptSecondOpinion.test.ts": "src/features/sessions/ui/agent-transcript-second-opinion.test.ts",
+    "src/features/sessions/ui/ApprovalToasts.test.ts": "src/features/sessions/ui/approval-toasts.test.ts",
+    "src/features/sessions/ui/AttachmentChip.test.ts": "src/features/sessions/ui/attachment-chip.test.ts",
+    "src/features/sessions/ui/BtwQuestionBurst.test.ts": "src/features/sessions/ui/btw-question-burst.test.ts",
+    "src/features/sessions/ui/BtwSheet.test.ts": "src/features/sessions/ui/btw-sheet.test.ts",
+    "src/features/sessions/ui/Composer.ime.test.ts": "src/features/sessions/ui/composer.ime.test.ts",
+    "src/features/sessions/ui/Composer.paste.test.ts": "src/features/sessions/ui/composer.paste.test.ts",
+    "src/features/sessions/ui/Composer.pasteImage.test.ts": "src/features/sessions/ui/composer.paste-image.test.ts",
+    "src/features/sessions/ui/Composer.test.ts": "src/features/sessions/ui/composer.test.ts",
+    "src/features/sessions/ui/ComposerFileDrop.test.ts": "src/features/sessions/ui/composer-file-drop.test.ts",
+    "src/features/sessions/ui/ComposerRunner.test.ts": "src/features/sessions/ui/composer-runner.test.ts",
+    "src/features/sessions/ui/CursorSubagentRecovery.test.ts": "src/features/sessions/ui/cursor-subagent-recovery.test.ts",
+    "src/features/sessions/ui/EmptySession.test.ts": "src/features/sessions/ui/empty-session.test.ts",
+    "src/features/sessions/ui/FamiliarWorkTicker.test.ts": "src/features/sessions/ui/familiar-work-ticker.test.ts",
+    "src/features/sessions/ui/hardBreaks.test.ts": "src/features/sessions/ui/hard-breaks.test.ts",
+    "src/features/sessions/ui/hardBreaks.ts": "src/features/sessions/ui/hard-breaks.ts",
+    "src/features/sessions/ui/LiveAgentsPreview.test.ts": "src/features/sessions/ui/live-agents-preview.test.ts",
+    "src/features/sessions/ui/MarkdownDocumentPreview.test.ts": "src/features/sessions/ui/markdown-document-preview.test.ts",
+    "src/features/sessions/ui/MessageQueue.test.ts": "src/features/sessions/ui/message-queue.test.ts",
+    "src/features/sessions/ui/modeCommands.tsx": "src/features/sessions/ui/mode-commands.tsx",
+    "src/features/sessions/ui/ModelPicker.test.ts": "src/features/sessions/ui/model-picker.test.ts",
+    "src/features/sessions/ui/modelSource.ts": "src/features/sessions/ui/model-source.ts",
+    "src/features/sessions/ui/ProviderSignInDialog.test.ts": "src/features/sessions/ui/provider-sign-in-dialog.test.ts",
+    "src/features/sessions/ui/QuestionForm.test.ts": "src/features/sessions/ui/question-form.test.ts",
+    "src/features/sessions/ui/SecondOpinionButton.test.ts": "src/features/sessions/ui/second-opinion-button.test.ts",
+    "src/features/sessions/ui/SessionFolderPicker.test.ts": "src/features/sessions/ui/session-folder-picker.test.ts",
+    "src/features/sessions/ui/SessionPaneMessaging.test.ts": "src/features/sessions/ui/session-pane-messaging.test.ts",
+    "src/features/sessions/ui/SessionPaneScroll.test.ts": "src/features/sessions/ui/session-pane-scroll.test.ts",
+    "src/features/sessions/ui/sessionReminderPresets.ts": "src/features/sessions/ui/session-reminder-presets.ts",
+    "src/features/sessions/ui/SessionReview.test.ts": "src/features/sessions/ui/session-review.test.ts",
+    "src/features/sessions/ui/streamingMarkdown.test.ts": "src/features/sessions/ui/streaming-markdown.test.ts",
+    "src/features/sessions/ui/streamingMarkdown.ts": "src/features/sessions/ui/streaming-markdown.ts",
+    "src/features/sessions/ui/ToolDiffPreview.test.ts": "src/features/sessions/ui/tool-diff-preview.test.ts",
+    "src/features/sessions/ui/TranscriptFind.test.ts": "src/features/sessions/ui/transcript-find.test.ts",
+    "src/features/sessions/ui/TranscriptPool.test.ts": "src/features/sessions/ui/transcript-pool.test.ts",
+    "src/features/sessions/ui/TranscriptSelectionMenu.test.ts": "src/features/sessions/ui/transcript-selection-menu.test.ts",
+    "src/features/sessions/ui/turnCelebration.test.ts": "src/features/sessions/ui/turn-celebration.test.ts",
+    "src/features/sessions/ui/turnCelebration.ts": "src/features/sessions/ui/turn-celebration.ts",
+    "src/features/sessions/ui/useComposerDockMotion.test.ts": "src/features/sessions/ui/use-composer-dock-motion.test.ts",
+    "src/features/sessions/ui/useComposerDockMotion.ts": "src/features/sessions/ui/use-composer-dock-motion.ts",
+    "src/features/sessions/ui/useComposerSkills.test.ts": "src/features/sessions/ui/use-composer-skills.test.ts",
+    "src/features/sessions/ui/useComposerSkills.ts": "src/features/sessions/ui/use-composer-skills.ts",
+    "src/features/sessions/ui/UserLinkPreview.test.ts": "src/features/sessions/ui/user-link-preview.test.ts",
+    "src/features/sessions/ui/VatraSparkles.tsx": "src/features/sessions/ui/MolfarSparkles.tsx",
+    "src/features/sessions/ui/wordFade.test.ts": "src/features/sessions/ui/word-fade.test.ts",
+    "src/features/sessions/ui/wordFade.tsx": "src/features/sessions/ui/word-fade.tsx",
+    "src/features/settings/model/appShortcuts.test.ts": "src/features/settings/model/app-shortcuts.test.ts",
+    "src/features/settings/model/appShortcuts.ts": "src/features/settings/model/app-shortcuts.ts",
+    "src/features/settings/model/displayPrefs.test.ts": "src/features/settings/model/display-prefs.test.ts",
+    "src/features/settings/model/displayPrefs.ts": "src/features/settings/model/display-prefs.ts",
+    "src/features/settings/model/mcpSettingsCache.test.ts": "src/features/settings/model/mcp-settings-cache.test.ts",
+    "src/features/settings/model/mcpSettingsCache.ts": "src/features/settings/model/mcp-settings-cache.ts",
+    "src/features/settings/model/nativeGlass.test.ts": "src/features/settings/model/native-glass.test.ts",
+    "src/features/settings/model/newThreadBackgroundEffects.test.ts": "src/features/settings/model/new-thread-background-effects.test.ts",
+    "src/features/settings/model/newThreadBackgroundEffects.ts": "src/features/settings/model/new-thread-background-effects.ts",
+    "src/features/settings/model/newThreadBackgroundEffects.worker.ts": "src/features/settings/model/new-thread-background-effects.worker.ts",
+    "src/features/settings/model/projectRail.test.ts": "src/features/settings/model/project-rail.test.ts",
+    "src/features/settings/model/projectRail.ts": "src/features/settings/model/project-rail.ts",
+    "src/features/settings/model/projectSidebarTab.test.ts": "src/features/settings/model/project-sidebar-tab.test.ts",
+    "src/features/settings/model/projectSidebarTab.ts": "src/features/settings/model/project-sidebar-tab.ts",
+    "src/features/settings/model/storageFlags.ts": "src/shared/lib/storage-flags.ts",
+    "src/features/settings/model/uiScale.test.ts": "src/features/settings/model/ui-scale.test.ts",
+    "src/features/settings/model/uiScale.ts": "src/features/settings/model/ui-scale.ts",
+    "src/features/settings/model/zoomKeybinding.test.ts": "src/features/settings/model/zoom-keybinding.test.ts",
+    "src/features/settings/model/zoomKeybinding.ts": "src/features/settings/model/zoom-keybinding.ts",
+    "src/features/settings/ui/JiraSettings.test.ts": "src/features/settings/ui/jira-settings.test.ts",
+    "src/features/settings/ui/McpSettings.test.ts": "src/features/settings/ui/mcp-settings.test.ts",
+    "src/features/settings/ui/QuickComposerShortcutEditor.test.ts": "src/features/settings/ui/quick-composer-shortcut-editor.test.ts",
+    "src/features/settings/ui/SettingsView.test.ts": "src/features/settings/ui/settings-view.test.ts",
+    "src/features/skills/model/createBoardTask.ts": "src/features/skills/model/create-board-task.ts",
+    "src/features/skills/model/createSkill.ts": "src/features/skills/model/create-skill.ts",
+    "src/features/skills/model/skillCatalog.test.ts": "src/features/skills/model/skill-catalog.test.ts",
+    "src/features/skills/model/slashCommands.ts": "src/features/skills/model/slash-commands.ts",
+    "src/features/skills/ui/SkillDocumentPreview.test.ts": "src/features/skills/ui/skill-document-preview.test.ts",
+    "src/features/skills/ui/SkillPicker.test.ts": "src/features/skills/ui/skill-picker.test.ts",
+    "src/features/skills/ui/SkillPromptField.test.ts": "src/features/skills/ui/skill-prompt-field.test.ts",
+    "src/features/skills/ui/SkillsPage.test.ts": "src/features/skills/ui/skills-page.test.ts",
+    "src/features/source-control/hooks/useGitFileStatuses.ts": "src/features/source-control/hooks/use-git-file-statuses.ts",
+    "src/features/source-control/hooks/useProjectBranches.ts": "src/features/source-control/hooks/use-project-branches.ts",
+    "src/features/source-control/hooks/useProjectDiffStats.ts": "src/features/source-control/hooks/use-project-diff-stats.ts",
+    "src/features/source-control/hooks/useProjectWorktrees.ts": "src/features/source-control/hooks/use-project-worktrees.ts",
+    "src/features/source-control/model/diffComment.test.ts": "src/features/source-control/model/diff-comment.test.ts",
+    "src/features/source-control/model/diffComment.ts": "src/features/source-control/model/diff-comment.ts",
+    "src/features/source-control/model/gitGraph.test.ts": "src/features/source-control/model/git-graph.test.ts",
+    "src/features/source-control/model/gitGraph.ts": "src/features/source-control/model/git-graph.ts",
+    "src/features/source-control/model/gitText.ts": "src/domain/git/git-text.ts",
+    "src/features/source-control/model/lineDiff.test.ts": "src/features/source-control/model/line-diff.test.ts",
+    "src/features/source-control/model/lineDiff.ts": "src/features/source-control/model/line-diff.ts",
+    "src/features/source-control/model/prDiff.test.ts": "src/features/source-control/model/pr-diff.test.ts",
+    "src/features/source-control/model/prDiff.ts": "src/features/source-control/model/pr-diff.ts",
+    "src/features/source-control/model/stableDiff.test.ts": "src/features/source-control/model/stable-diff.test.ts",
+    "src/features/source-control/model/stableDiff.ts": "src/features/source-control/model/stable-diff.ts",
+    "src/features/source-control/model/unifiedDiff.test.ts": "src/features/source-control/model/unified-diff.test.ts",
+    "src/features/source-control/model/unifiedDiff.ts": "src/features/source-control/model/unified-diff.ts",
+    "src/features/source-control/model/unifiedDiffWindow.test.ts": "src/features/source-control/model/unified-diff-window.test.ts",
+    "src/features/source-control/model/unifiedDiffWindow.ts": "src/features/source-control/model/unified-diff-window.ts",
+    "src/features/source-control/model/workingTreeDiff.test.ts": "src/features/source-control/model/working-tree-diff.test.ts",
+    "src/features/source-control/model/workingTreeDiff.ts": "src/features/source-control/model/working-tree-diff.ts",
+    "src/features/source-control/model/worktreeFocus.test.ts": "src/features/source-control/model/worktree-focus.test.ts",
+    "src/features/source-control/model/worktreeFocus.ts": "src/features/source-control/model/worktree-focus.ts",
+    "src/features/source-control/ui/BranchPicker.test.ts": "src/features/source-control/ui/branch-picker.test.ts",
+    "src/features/source-control/ui/GitChangesPanel.test.ts": "src/features/source-control/ui/git-changes-panel.test.ts",
+    "src/features/source-control/ui/GithubPrActions.test.ts": "src/features/source-control/ui/github-pr-actions.test.ts",
+    "src/features/source-control/ui/SidebarWorktreeSwitcher.test.ts": "src/features/source-control/ui/sidebar-worktree-switcher.test.ts",
+    "src/features/source-control/ui/SwitchBranchDialog.test.ts": "src/features/source-control/ui/switch-branch-dialog.test.ts",
+    "src/features/source-control/ui/UnifiedDiffView.expansion.test.ts": "src/features/source-control/ui/unified-diff-view.expansion.test.ts",
+    "src/features/source-control/ui/UnifiedDiffView.markers.test.ts": "src/features/source-control/ui/unified-diff-view.markers.test.ts",
+    "src/features/source-control/ui/Worktrees.test.ts": "src/features/source-control/ui/worktrees.test.ts",
+    "src/features/terminal/arcade/gridArcade.ts": "src/features/terminal/arcade/grid-arcade.ts",
+    "src/features/terminal/arcade/gridGames.test.ts": "src/features/terminal/arcade/grid-games.test.ts",
+    "src/features/terminal/arcade/gridGames.ts": "src/features/terminal/arcade/grid-games.ts",
+    "src/features/terminal/arcade/pacmanArcade.test.ts": "src/features/terminal/arcade/pacman-arcade.test.ts",
+    "src/features/terminal/arcade/pacmanArcade.ts": "src/features/terminal/arcade/pacman-arcade.ts",
+    "src/features/terminal/arcade/snakeArcade.test.ts": "src/features/terminal/arcade/snake-arcade.test.ts",
+    "src/features/terminal/arcade/snakeArcade.ts": "src/features/terminal/arcade/snake-arcade.ts",
+    "src/features/terminal/model/terminalChrome.test.ts": "src/features/terminal/model/terminal-chrome.test.ts",
+    "src/features/terminal/model/terminalChrome.ts": "src/features/terminal/model/terminal-chrome.ts",
+    "src/features/terminal/model/terminalClose.test.ts": "src/features/terminal/model/terminal-close.test.ts",
+    "src/features/terminal/model/terminalClose.ts": "src/features/terminal/model/terminal-close.ts",
+    "src/features/terminal/model/terminalKeys.test.ts": "src/features/terminal/model/terminal-keys.test.ts",
+    "src/features/terminal/model/terminalKeys.ts": "src/features/terminal/model/terminal-keys.ts",
+    "src/features/terminal/model/terminalLayout.test.ts": "src/features/terminal/model/terminal-layout.test.ts",
+    "src/features/terminal/model/terminalLayout.ts": "src/features/terminal/model/terminal-layout.ts",
+    "src/features/terminal/model/terminalTab.test.ts": "src/features/terminal/model/terminal-tab.test.ts",
+    "src/features/terminal/model/terminalTab.ts": "src/features/terminal/model/terminal-tab.ts",
+    "src/features/terminal/ui/TerminalView.test.ts": "src/features/terminal/ui/terminal-view.test.ts",
+    "src/features/usage/model/fetchUsage.ts": "src/features/usage/model/fetch-usage.ts",
+    "src/features/usage/model/usageCard.test.ts": "src/features/usage/model/usage-card.test.ts",
+    "src/features/usage/model/usageCard.ts": "src/features/usage/model/usage-card.ts",
+    "src/features/usage/model/usageFetch.ts": "src/features/usage/model/usage-fetch.ts",
+    "src/features/usage/model/usageProviders.test.ts": "src/features/usage/model/usage-providers.test.ts",
+    "src/features/usage/model/usageProviders.ts": "src/features/usage/model/usage-providers.ts",
+    "src/features/usage/model/usageSnapshots.test.ts": "src/features/usage/model/usage-snapshots.test.ts",
+    "src/features/usage/model/usageSnapshots.ts": "src/features/usage/model/usage-snapshots.ts",
+    "src/features/workspace/hooks/useTabCloseMotion.ts": "src/features/workspace/hooks/use-tab-close-motion.ts",
+    "src/features/workspace/model/paneDrop.ts": "src/features/workspace/model/pane-drop.ts",
+    "src/features/workspace/model/tabGroups.test.ts": "src/features/workspace/model/tab-groups.test.ts",
+    "src/features/workspace/model/tabGroups.ts": "src/features/workspace/model/tab-groups.ts",
+    "src/features/workspace/model/tabKeys.test.ts": "src/features/workspace/model/tab-keys.test.ts",
+    "src/features/workspace/model/tabKeys.ts": "src/features/workspace/model/tab-keys.ts",
+    "src/features/workspace/model/tabVisitHistory.test.ts": "src/features/workspace/model/tab-visit-history.test.ts",
+    "src/features/workspace/model/tabVisitHistory.ts": "src/features/workspace/model/tab-visit-history.ts",
+    "src/features/workspace/model/workspaceSnapshot.test.ts": "src/features/workspace/model/workspace-snapshot.test.ts",
+    "src/features/workspace/model/workspaceSnapshot.ts": "src/features/workspace/model/workspace-snapshot.ts",
+    "src/features/workspace/model/workspaceTabGroups.test.ts": "src/features/workspace/model/workspace-tab-groups.test.ts",
+    "src/features/workspace/model/workspaceTabGroups.ts": "src/features/workspace/model/workspace-tab-groups.ts",
+    "src/features/workspace/ui/PaneTreeEnter.test.ts": "src/features/workspace/ui/pane-tree-enter.test.ts",
+    "src/features/workspace/ui/PaneTreeTitleDrop.test.ts": "src/features/workspace/ui/pane-tree-title-drop.test.ts",
+    "src/features/workspace/ui/SurfaceTabs.test.ts": "src/features/workspace/ui/surface-tabs.test.ts",
+    "src/features/workspace/ui/SurfaceTabsMenu.test.ts": "src/features/workspace/ui/surface-tabs-menu.test.ts",
+    "src/features/workspace/ui/TabCloseMotion.test.ts": "src/app/shell/tab-close-motion.test.ts",
+    "src/features/workspace/ui/TabGroupMenu.test.ts": "src/features/workspace/ui/tab-group-menu.test.ts",
+    "src/features/workspace/ui/TabMiddleClick.test.ts": "src/app/shell/tab-middle-click.test.ts",
+    "src/integrations/harness/core/abortTextPrompt.test.ts": "src/integrations/harness/core/abort-text-prompt.test.ts",
+    "src/integrations/harness/core/abortTextPrompt.ts": "src/integrations/harness/core/abort-text-prompt.ts",
+    "src/integrations/harness/core/acpSubagents.test.ts": "src/integrations/harness/core/acp-subagents.test.ts",
+    "src/integrations/harness/core/acpSubagents.ts": "src/integrations/harness/core/acp-subagents.ts",
+    "src/integrations/harness/core/applyBatch.test.ts": "src/integrations/harness/core/apply-batch.test.ts",
+    "src/integrations/harness/core/authSupport.ts": "src/integrations/harness/core/auth-support.ts",
+    "src/integrations/harness/core/availabilityState.ts": "src/integrations/harness/core/availability-state.ts",
+    "src/integrations/harness/core/commitMessage.test.ts": "src/integrations/harness/core/commit-message.test.ts",
+    "src/integrations/harness/core/fileAttachments.test.ts": "src/integrations/harness/core/file-attachments.test.ts",
+    "src/integrations/harness/core/jsonRpc.test.ts": "src/integrations/harness/core/json-rpc.test.ts",
+    "src/integrations/harness/core/jsonRpc.ts": "src/integrations/harness/core/json-rpc.ts",
+    "src/integrations/harness/core/nativeCommands.ts": "src/integrations/harness/core/native-commands.ts",
+    "src/integrations/harness/core/providerNames.ts": "src/integrations/harness/core/provider-names.ts",
+    "src/integrations/harness/core/sessionMcpServers.test.ts": "src/integrations/harness/core/session-mcp-servers.test.ts",
+    "src/integrations/harness/core/sessionMcpServers.ts": "src/integrations/harness/core/session-mcp-servers.ts",
+    "src/integrations/harness/core/shellIntent.test.ts": "src/integrations/harness/core/shell-intent.test.ts",
+    "src/integrations/harness/core/shellIntent.ts": "src/integrations/harness/core/shell-intent.ts",
+    "src/integrations/harness/core/streamText.test.ts": "src/integrations/harness/core/stream-text.test.ts",
+    "src/integrations/harness/core/streamText.ts": "src/integrations/harness/core/stream-text.ts",
+    "src/integrations/harness/core/textHarness.ts": "src/integrations/harness/core/text-harness.ts",
+    "src/integrations/harness/providers/antigravity/antigravityAdapter.ts": "src/integrations/harness/providers/antigravity/antigravity-adapter.ts",
+    "src/integrations/harness/providers/antigravity/antigravityCatalog.ts": "src/integrations/harness/providers/antigravity/antigravity-catalog.ts",
+    "src/integrations/harness/providers/antigravity/antigravityLive.test.ts": "src/integrations/harness/providers/antigravity/antigravity-live.test.ts",
+    "src/integrations/harness/providers/antigravity/antigravityProtocol.test.ts": "src/integrations/harness/providers/antigravity/antigravity-protocol.test.ts",
+    "src/integrations/harness/providers/antigravity/antigravityProtocol.ts": "src/integrations/harness/providers/antigravity/antigravity-protocol.ts",
+    "src/integrations/harness/providers/antigravity/antigravityReal.test.ts": "src/integrations/harness/providers/antigravity/antigravity-real.test.ts",
+    "src/integrations/harness/providers/antigravity/antigravitySoak.test.ts": "src/integrations/harness/providers/antigravity/antigravity-soak.test.ts",
+    "src/integrations/harness/providers/claude/claudeAdapter.ts": "src/integrations/harness/providers/claude/claude-adapter.ts",
+    "src/integrations/harness/providers/claude/claudeCatalog.ts": "src/integrations/harness/providers/claude/claude-catalog.ts",
+    "src/integrations/harness/providers/claude/claudeGit.ts": "src/integrations/harness/providers/claude/claude-git.ts",
+    "src/integrations/harness/providers/claude/claudeLive.test.ts": "src/integrations/harness/providers/claude/claude-live.test.ts",
+    "src/integrations/harness/providers/claude/claudeProtocol.test.ts": "src/integrations/harness/providers/claude/claude-protocol.test.ts",
+    "src/integrations/harness/providers/claude/claudeProtocol.ts": "src/integrations/harness/providers/claude/claude-protocol.ts",
+    "src/integrations/harness/providers/claude/claudeText.ts": "src/integrations/harness/providers/claude/claude-text.ts",
+    "src/integrations/harness/providers/claude/claudeTitle.ts": "src/integrations/harness/providers/claude/claude-title.ts",
+    "src/integrations/harness/providers/codex/codexAdapter.ts": "src/integrations/harness/providers/codex/codex-adapter.ts",
+    "src/integrations/harness/providers/codex/codexApprovalUi.test.ts": "src/features/sessions/ui/codex-approval-ui.test.ts",
+    "src/integrations/harness/providers/codex/codexAttachments.test.ts": "src/features/sessions/model/codex-attachments.test.ts",
+    "src/integrations/harness/providers/codex/codexCatalog.ts": "src/integrations/harness/providers/codex/codex-catalog.ts",
+    "src/integrations/harness/providers/codex/codexElicitation.test.ts": "src/integrations/harness/providers/codex/codex-elicitation.test.ts",
+    "src/integrations/harness/providers/codex/codexElicitation.ts": "src/integrations/harness/providers/codex/codex-elicitation.ts",
+    "src/integrations/harness/providers/codex/codexGit.ts": "src/integrations/harness/providers/codex/codex-git.ts",
+    "src/integrations/harness/providers/codex/codexLive.test.ts": "src/integrations/harness/providers/codex/codex-live.test.ts",
+    "src/integrations/harness/providers/codex/codexProtocol.test.ts": "src/integrations/harness/providers/codex/codex-protocol.test.ts",
+    "src/integrations/harness/providers/codex/codexProtocol.ts": "src/integrations/harness/providers/codex/codex-protocol.ts",
+    "src/integrations/harness/providers/codex/codexQuestions.test.ts": "src/integrations/harness/providers/codex/codex-questions.test.ts",
+    "src/integrations/harness/providers/codex/codexQuestions.ts": "src/integrations/harness/providers/codex/codex-questions.ts",
+    "src/integrations/harness/providers/codex/codexStore.test.ts": "src/integrations/harness/providers/codex/codex-store.test.ts",
+    "src/integrations/harness/providers/codex/codexStore.ts": "src/integrations/harness/providers/codex/codex-store.ts",
+    "src/integrations/harness/providers/codex/codexText.test.ts": "src/integrations/harness/providers/codex/codex-text.test.ts",
+    "src/integrations/harness/providers/codex/codexText.ts": "src/integrations/harness/providers/codex/codex-text.ts",
+    "src/integrations/harness/providers/codex/codexTitle.ts": "src/integrations/harness/providers/codex/codex-title.ts",
+    "src/integrations/harness/providers/cursor/cursorAdapter.ts": "src/integrations/harness/providers/cursor/cursor-adapter.ts",
+    "src/integrations/harness/providers/cursor/cursorCatalog.test.ts": "src/integrations/harness/providers/cursor/cursor-catalog.test.ts",
+    "src/integrations/harness/providers/cursor/cursorCatalog.ts": "src/integrations/harness/providers/cursor/cursor-catalog.ts",
+    "src/integrations/harness/providers/cursor/cursorGit.ts": "src/integrations/harness/providers/cursor/cursor-git.ts",
+    "src/integrations/harness/providers/cursor/cursorLive.test.ts": "src/integrations/harness/providers/cursor/cursor-live.test.ts",
+    "src/integrations/harness/providers/cursor/cursorStore.ts": "src/integrations/harness/providers/cursor/cursor-store.ts",
+    "src/integrations/harness/providers/cursor/cursorSubagents.test.ts": "src/integrations/harness/providers/cursor/cursor-subagents.test.ts",
+    "src/integrations/harness/providers/cursor/cursorSubagents.ts": "src/integrations/harness/providers/cursor/cursor-subagents.ts",
+    "src/integrations/harness/providers/cursor/cursorText.test.ts": "src/integrations/harness/providers/cursor/cursor-text.test.ts",
+    "src/integrations/harness/providers/cursor/cursorText.ts": "src/integrations/harness/providers/cursor/cursor-text.ts",
+    "src/integrations/harness/providers/cursor/cursorTitle.ts": "src/integrations/harness/providers/cursor/cursor-title.ts",
+    "src/integrations/harness/providers/devin/devinAdapter.ts": "src/integrations/harness/providers/devin/devin-adapter.ts",
+    "src/integrations/harness/providers/devin/devinAuth.ts": "src/integrations/harness/providers/devin/devin-auth.ts",
+    "src/integrations/harness/providers/devin/devinCatalog.ts": "src/integrations/harness/providers/devin/devin-catalog.ts",
+    "src/integrations/harness/providers/devin/devinLive.test.ts": "src/integrations/harness/providers/devin/devin-live.test.ts",
+    "src/integrations/harness/providers/devin/devinProtocol.test.ts": "src/integrations/harness/providers/devin/devin-protocol.test.ts",
+    "src/integrations/harness/providers/devin/devinProtocol.ts": "src/integrations/harness/providers/devin/devin-protocol.ts",
+    "src/integrations/harness/providers/devin/devinSubagents.test.ts": "src/integrations/harness/providers/devin/devin-subagents.test.ts",
+    "src/integrations/harness/providers/devin/devinSubagents.ts": "src/integrations/harness/providers/devin/devin-subagents.ts",
+    "src/integrations/harness/providers/devin/devinText.ts": "src/integrations/harness/providers/devin/devin-text.ts",
+    "src/integrations/harness/providers/fx/fxAdapter.ts": "src/integrations/harness/providers/fx/fx-adapter.ts",
+    "src/integrations/harness/providers/fx/fxCatalog.ts": "src/integrations/harness/providers/fx/fx-catalog.ts",
+    "src/integrations/harness/providers/fx/fxLive.test.ts": "src/integrations/harness/providers/fx/fx-live.test.ts",
+    "src/integrations/harness/providers/fx/fxProtocol.test.ts": "src/integrations/harness/providers/fx/fx-protocol.test.ts",
+    "src/integrations/harness/providers/fx/fxProtocol.ts": "src/integrations/harness/providers/fx/fx-protocol.ts",
+    "src/integrations/harness/providers/fx/fxTool.ts": "src/integrations/harness/providers/fx/fx-tool.ts",
+    "src/integrations/harness/providers/grok/grokAdapter.ts": "src/integrations/harness/providers/grok/grok-adapter.ts",
+    "src/integrations/harness/providers/grok/grokCatalog.ts": "src/integrations/harness/providers/grok/grok-catalog.ts",
+    "src/integrations/harness/providers/grok/grokGit.ts": "src/integrations/harness/providers/grok/grok-git.ts",
+    "src/integrations/harness/providers/grok/grokLive.test.ts": "src/integrations/harness/providers/grok/grok-live.test.ts",
+    "src/integrations/harness/providers/grok/grokProtocol.test.ts": "src/integrations/harness/providers/grok/grok-protocol.test.ts",
+    "src/integrations/harness/providers/grok/grokProtocol.ts": "src/integrations/harness/providers/grok/grok-protocol.ts",
+    "src/integrations/harness/providers/grok/grokText.test.ts": "src/integrations/harness/providers/grok/grok-text.test.ts",
+    "src/integrations/harness/providers/grok/grokText.ts": "src/integrations/harness/providers/grok/grok-text.ts",
+    "src/integrations/harness/providers/grok/grokTitle.ts": "src/integrations/harness/providers/grok/grok-title.ts",
+    "src/integrations/harness/providers/hermes/hermesAdapter.ts": "src/integrations/harness/providers/hermes/hermes-adapter.ts",
+    "src/integrations/harness/providers/hermes/hermesCatalog.ts": "src/integrations/harness/providers/hermes/hermes-catalog.ts",
+    "src/integrations/harness/providers/hermes/hermesLive.test.ts": "src/integrations/harness/providers/hermes/hermes-live.test.ts",
+    "src/integrations/harness/providers/hermes/hermesProtocol.test.ts": "src/integrations/harness/providers/hermes/hermes-protocol.test.ts",
+    "src/integrations/harness/providers/hermes/hermesProtocol.ts": "src/integrations/harness/providers/hermes/hermes-protocol.ts",
+    "src/integrations/harness/providers/omp/ompAdapter.ts": "src/integrations/harness/providers/omp/omp-adapter.ts",
+    "src/integrations/harness/providers/omp/ompLive.test.ts": "src/integrations/harness/providers/omp/omp-live.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeAdapter.ts": "src/integrations/harness/providers/opencode/opencode-adapter.ts",
+    "src/integrations/harness/providers/opencode/opencodeCatalog.ts": "src/integrations/harness/providers/opencode/opencode-catalog.ts",
+    "src/integrations/harness/providers/opencode/opencodeClient.test.ts": "src/integrations/harness/providers/opencode/opencode-client.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeClient.ts": "src/integrations/harness/providers/opencode/opencode-client.ts",
+    "src/integrations/harness/providers/opencode/opencodeGit.ts": "src/integrations/harness/providers/opencode/opencode-git.ts",
+    "src/integrations/harness/providers/opencode/opencodeLive.test.ts": "src/integrations/harness/providers/opencode/opencode-live.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeProtocol.test.ts": "src/integrations/harness/providers/opencode/opencode-protocol.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeProtocol.ts": "src/integrations/harness/providers/opencode/opencode-protocol.ts",
+    "src/integrations/harness/providers/opencode/opencodeService.test.ts": "src/integrations/harness/providers/opencode/opencode-service.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeService.ts": "src/integrations/harness/providers/opencode/opencode-service.ts",
+    "src/integrations/harness/providers/opencode/opencodeText.test.ts": "src/integrations/harness/providers/opencode/opencode-text.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeText.ts": "src/integrations/harness/providers/opencode/opencode-text.ts",
+    "src/integrations/harness/providers/opencode/opencodeTitle.ts": "src/integrations/harness/providers/opencode/opencode-title.ts",
+    "src/integrations/harness/providers/opencode/opencodeV2Events.test.ts": "src/integrations/harness/providers/opencode/opencode-v2-events.test.ts",
+    "src/integrations/harness/providers/opencode/opencodeV2Events.ts": "src/integrations/harness/providers/opencode/opencode-v2-events.ts",
+    "src/integrations/harness/providers/pi/piAdapter.ts": "src/integrations/harness/providers/pi/pi-adapter.ts",
+    "src/integrations/harness/providers/pi/piCatalog.test.ts": "src/integrations/harness/providers/pi/pi-catalog.test.ts",
+    "src/integrations/harness/providers/pi/piCatalog.ts": "src/integrations/harness/providers/pi/pi-catalog.ts",
+    "src/integrations/harness/providers/pi/piClient.test.ts": "src/integrations/harness/providers/pi/pi-client.test.ts",
+    "src/integrations/harness/providers/pi/piClient.ts": "src/integrations/harness/providers/pi/pi-client.ts",
+    "src/integrations/harness/providers/pi/piFamily.ts": "src/integrations/harness/providers/pi/pi-family.ts",
+    "src/integrations/harness/providers/pi/piFlavor.ts": "src/integrations/harness/providers/pi/pi-flavor.ts",
+    "src/integrations/harness/providers/pi/piLive.test.ts": "src/integrations/harness/providers/pi/pi-live.test.ts",
+    "src/integrations/harness/providers/pi/piProtocol.test.ts": "src/integrations/harness/providers/pi/pi-protocol.test.ts",
+    "src/integrations/harness/providers/pi/piProtocol.ts": "src/integrations/harness/providers/pi/pi-protocol.ts",
+    "src/integrations/harness/providers/pi/piSkills.test.ts": "src/integrations/harness/providers/pi/pi-skills.test.ts",
+    "src/integrations/harness/providers/pi/piSkills.ts": "src/integrations/harness/providers/pi/pi-skills.ts",
+    "src/integrations/harness/providers/pi/piSubagents.test.ts": "src/integrations/harness/providers/pi/pi-subagents.test.ts",
+    "src/integrations/harness/providers/pi/piSubagents.ts": "src/integrations/harness/providers/pi/pi-subagents.ts",
+    "src/integrations/harness/providers/pi/piText.test.ts": "src/integrations/harness/providers/pi/pi-text.test.ts",
+    "src/integrations/harness/providers/pi/piText.ts": "src/integrations/harness/providers/pi/pi-text.ts",
+    "src/integrations/harness/providers/pi/piTitle.ts": "src/integrations/harness/providers/pi/pi-title.ts",
+    "src/platform/tauri/clipboard.test.ts": "src/features/sessions/model/message-clipboard.test.ts",
+    "src/platform/tauri/platform.ts": "src/shared/lib/platform.ts",
+    "src/platform/tauri/trackpadZoom.test.ts": "src/platform/tauri/trackpad-zoom.test.ts",
+    "src/platform/tauri/trackpadZoom.ts": "src/platform/tauri/trackpad-zoom.ts",
+    "src/platform/tauri/vault.test.ts": "src/features/knowledge/model/vault/vault-client.test.ts",
+    "src/platform/tauri/vault.ts": "src/features/knowledge/model/vault/vault-client.ts",
+    "src/shared/hooks/useAnimatedReorder.test.ts": "src/shared/hooks/use-animated-reorder.test.ts",
+    "src/shared/hooks/useAnimatedReorder.ts": "src/shared/hooks/use-animated-reorder.ts",
+    "src/shared/hooks/useAnimatedReorderConcurrency.test.ts": "src/shared/hooks/use-animated-reorder-concurrency.test.ts",
+    "src/shared/hooks/useColorScheme.ts": "src/features/settings/hooks/use-color-scheme.ts",
+    "src/shared/hooks/useDragResize.test.ts": "src/shared/hooks/use-drag-resize.test.ts",
+    "src/shared/hooks/useDragResize.ts": "src/shared/hooks/use-drag-resize.ts",
+    "src/shared/hooks/useLockOverscroll.test.ts": "src/shared/hooks/use-lock-overscroll.test.ts",
+    "src/shared/hooks/useLockOverscroll.ts": "src/shared/hooks/use-lock-overscroll.ts",
+    "src/shared/hooks/useSortable.ts": "src/shared/hooks/use-sortable.ts",
+    "src/shared/hooks/useStableValue.test.ts": "src/shared/hooks/use-stable-value.test.ts",
+    "src/shared/hooks/useStableValue.ts": "src/shared/hooks/use-stable-value.ts",
+    "src/shared/lib/colorUtils.test.ts": "src/shared/lib/color-utils.test.ts",
+    "src/shared/lib/colorUtils.ts": "src/shared/lib/color-utils.ts",
+    "src/shared/lib/draftRestore.test.ts": "src/shared/lib/draft-restore.test.ts",
+    "src/shared/lib/draftRestore.ts": "src/shared/lib/draft-restore.ts",
+    "src/shared/lib/dragPoint.test.ts": "src/shared/lib/drag-point.test.ts",
+    "src/shared/lib/dragPoint.ts": "src/shared/lib/drag-point.ts",
+    "src/shared/lib/emojiData.test.ts": "src/shared/lib/emoji-data.test.ts",
+    "src/shared/lib/emojiData.ts": "src/shared/lib/emoji-data.ts",
+    "src/shared/lib/jsonText.ts": "src/shared/lib/json-text.ts",
+    "src/shared/lib/listWindow.test.ts": "src/shared/lib/list-window.test.ts",
+    "src/shared/lib/listWindow.ts": "src/shared/lib/list-window.ts",
+    "src/shared/lib/markdownFrontmatter.ts": "src/shared/lib/markdown-frontmatter.ts",
+    "src/shared/lib/paneWidthStorage.test.ts": "src/shared/lib/pane-width-storage.test.ts",
+    "src/shared/lib/paneWidthStorage.ts": "src/shared/lib/pane-width-storage.ts",
+    "src/shared/lib/remotePaths.ts": "src/shared/lib/remote-paths.ts",
+    "src/shared/ui/DateTimePicker.test.ts": "src/shared/ui/date-time-picker.test.ts",
+    "src/shared/ui/ImageLightbox.tsx": "src/features/sessions/ui/ImageLightbox.tsx",
+    "src/shared/ui/lazySurface.test.ts": "src/shared/ui/lazy-surface.test.ts",
+    "src/shared/ui/lazySurface.tsx": "src/shared/ui/lazy-surface.tsx",
+    "src/shared/ui/Modal.test.ts": "src/shared/ui/modal.test.ts",
+    "src/shared/ui/modalEscape.test.ts": "src/shared/ui/modal-escape.test.ts",
+    "src/shared/ui/modalEscape.ts": "src/shared/ui/modal-escape.ts",
+    "src/shared/ui/PrivateEmail.test.ts": "src/features/settings/ui/private-email.test.ts",
+    "src/shared/ui/PrivateEmail.tsx": "src/features/settings/ui/PrivateEmail.tsx",
+    "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
+  },
+  "splits": {
+    "src/features/providers/model/rateLimits.test.ts": {
+      "targets": [
+        "src/features/providers/model/rate-limits.test.ts",
+        "src/domain/rate-limits/rate-limit-window.test.ts",
+        "src/integrations/harness/core/usage-window.test.ts",
+        "src/integrations/harness/providers/claude/claude-usage.test.ts",
+        "src/integrations/harness/providers/codex/codex-rate-limits.test.ts",
+        "src/integrations/harness/providers/opencode/opencode-usage.test.ts",
+        "src/integrations/harness/providers/devin/devin-usage.test.ts"
+      ],
+      "notes": "Each describe block moved next to the module it tests; formatter tests stay."
+    },
+    "src/features/providers/model/rateLimits.ts": {
+      "targets": [
+        "src/features/providers/model/rate-limits.ts",
+        "src/domain/rate-limits/rate-limit.ts",
+        "src/domain/rate-limits/rate-limit-state.ts",
+        "src/domain/rate-limits/rate-limit-window.ts",
+        "src/integrations/harness/core/usage-window.ts",
+        "src/integrations/harness/providers/claude/claude-usage.ts",
+        "src/integrations/harness/providers/codex/codex-rate-limits.ts",
+        "src/integrations/harness/providers/opencode/opencode-usage.ts",
+        "src/integrations/harness/providers/devin/devin-usage.ts"
+      ],
+      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) → src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits → rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt → rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers → src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage → providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits → providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage → providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts. Devin: DevinUsage and parseDevinUsage → providers/devin/devin-usage.ts; formatExtraUsageBalance stays with the formatters; DAILY_WINDOW_MINUTES → domain/rate-limits/rate-limit.ts."
+    },
+    "src/features/sessions/model/models.test.ts": {
+      "targets": [
+        "src/features/sessions/model/models.test.ts",
+        "src/integrations/harness/core/models/catalog.test.ts"
+      ],
+      "notes": "The \"every bundled model resolves to its own native id\" suite moved to src/integrations/harness/core/models/catalog.test.ts; everything else stays."
+    },
+    "src/features/sessions/model/models.ts": {
+      "targets": [
+        "src/features/sessions/model/models.ts",
+        "src/domain/models/agent-model.ts",
+        "src/domain/models/native-id.ts",
+        "src/domain/models/model-settings.ts",
+        "src/integrations/harness/core/models/catalog.ts",
+        "src/integrations/harness/core/models/default-model.ts",
+        "src/integrations/harness/core/models/catalog-store.ts",
+        "src/integrations/harness/core/models/resolve-model.ts"
+      ],
+      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) → src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) → native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) → model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID → src/integrations/harness/core/models/catalog.ts; pickDefaultId → default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) → catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId → resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
+    },
+    "src/features/sessions/model/session.ts": {
+      "targets": [
+        "src/features/sessions/model/session.ts",
+        "src/domain/harness/harness.ts",
+        "src/domain/session/runtime-mode.ts",
+        "src/domain/session/task-list.ts",
+        "src/domain/session/turn.ts",
+        "src/domain/session/block-meta.ts",
+        "src/domain/session/agent-run.ts",
+        "src/domain/session/attachment.ts",
+        "src/domain/session/message-queue.ts",
+        "src/domain/session/block.ts",
+        "src/domain/session/session.ts",
+        "src/domain/session/session-state.ts",
+        "src/domain/session/title.ts",
+        "src/domain/session/familiar-session.ts"
+      ],
+      "notes": "Session factories that read provider settings (newSession, newDefaultSession, newSessionForProject, retargetSessionToProject, newSessionLike) stay in features/sessions/model/session.ts. Everything else moved to src/domain: HarnessId, HARNESSES, HARNESS_LABEL, HARNESS_TITLE, harnessSupportsAttachments -> domain/harness/harness.ts; RuntimeMode + RUNTIME_MODE* -> domain/session/runtime-mode.ts; TaskList* types -> domain/session/task-list.ts; TurnIntent, EditedResendRejection, ComposerTurnOptions, ModelTarget, PlanBuildTarget, TurnModel, TurnMetrics -> turn.ts; Plan/Handoff/Btw/SecondOpinion/Interjection meta types -> block-meta.ts; ToolPreview*, AgentStep*, AgentRunMeta -> agent-run.ts; Attachment, AttachmentKind, GeneratedImageMeta -> attachment.ts; QueuedMessage, MessageQueueStatus, UsageLimit -> message-queue.ts; BlockRole, Block -> block.ts; Session, LinkedWorkItem, WorkspaceMode, PendingHarnessSwitch -> domain/session/session.ts; hasPendingApproval, sessionNeedsInput, sessionDraftBlock, removeSessionDraft, sessionWorkCwd -> session-state.ts; titleFromPrompt, formatSessionTitle, canReplaceSessionTitle, sessionDisplayTitle -> title.ts. FamiliarSpawnedSession, MonoSpawnedSession, FamiliarSessionCompletion -> domain/session/familiar-session.ts."
+    }
+  },
+  "extractions": {
+    "src/app/App.tsx": [
+      {
+        "names": [
+          "useState: projectCwd, recents (boot initialisers → initial-projects.ts / initial-workspace.ts)"
+        ],
+        "target": "src/app/workspace/store/projects-slice.ts"
+      },
+      {
+        "names": [
+          "useState: sessions, tabs, activeTabId, tabVisitNav (blank seed session/tab → initial-workspace.ts)"
+        ],
+        "target": "src/app/workspace/store/tabs-slice.ts"
+      },
+      {
+        "names": [
+          "useState: projectTerminals, lastDockSide, projectTerminalFocused"
+        ],
+        "target": "src/app/workspace/store/terminals-slice.ts"
+      },
+      {
+        "names": [
+          "useState: history, storedLinkedSessions, loadedProjects, historyErrorCwd"
+        ],
+        "target": "src/app/workspace/store/history-slice.ts"
+      },
+      {
+        "names": [
+          "useState: filesSearchOpen, editorNavigation, filePickerOpen, filePickerInitialQuery, filePickerResetToken, dirtyFiles, fileErrorCounts"
+        ],
+        "target": "src/app/workspace/store/files-slice.ts"
+      },
+      {
+        "names": [
+          "useState: searchViewOpen, searchFocusToken, searchViewFocusToken, inboxViewOpen, linkedWorkItemPanels, inboxAskPortal, notesViewOpen, inspectedWorkerId, workerDetailRequest, settingsOpen, settingsSection, settingsAnchor, notificationProjectPath, notificationSettingsRequest; type LinkedWorkItemPanelState"
+        ],
+        "target": "src/app/workspace/store/surfaces-slice.ts"
+      },
+      {
+        "names": [
+          "useState: projectRailOpen, sessionSidebarOpen, collapsedProjectRailMode, updateNotice, whatsNewVersion, providerSignInRequest, sessionDeleteDialog, remoteProjectDialogOpen"
+        ],
+        "target": "src/app/workspace/store/shell-slice.ts"
+      },
+      {
+        "names": [
+          "flushHarnessEvents, applyApprovalEvent, enqueueHarnessEvent, harnessQueued, harnessFlush (App keeps flushHarnessEvents/enqueueHarnessEvent as harnessEvents.flush/enqueue)"
+        ],
+        "target": "src/app/workspace/flows/harness-events/harness-event-pipeline.ts"
+      },
+      {
+        "names": [
+          "foreground check inside enqueueHarnessEvent"
+        ],
+        "target": "src/app/workspace/flows/harness-events/foreground-session.ts"
+      },
+      {
+        "names": [
+          "refreshHistory (App keeps refreshHistory = refreshProjectHistory(workspaceStore, cwd, deps))"
+        ],
+        "target": "src/app/workspace/flows/session-history/refresh-history.ts"
+      },
+      {
+        "names": [
+          "persistSession, the debounced persistence effect, lastPersisted, lastBoundProvider, lastPersistedUserBlock, observedSessions, pendingPersist (App: sessionPersistence.* — persist, observe, writePending, markImported, markSaved, forgetSaved, dropPending, forgetUserTurn, mapPending)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-persistence.ts"
+      },
+      {
+        "names": [
+          "lastUserBlockId"
+        ],
+        "target": "src/domain/session/session-state.ts"
+      },
+      {
+        "names": [
+          "invalidateLoadedSession, loadStoredSession, onPrefetchHistorySession, sessionLoads, sessionLoadEpochs, activeSessionPrefetch (App: sessionLoader.invalidate / load / prefetch / loadingIds; loadedSessionCache and openingSessionIds stay refs passed in)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-loader.ts"
+      },
+      {
+        "names": [
+          "onRenameHistorySession body (renameSession)",
+          "onPinHistorySession body (pinSession)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-actions.ts"
+      },
+      {
+        "names": [
+          "onRemoveHistorySession: unused worktree lookup"
+        ],
+        "target": "src/app/workspace/flows/session-history/unused-worktree.ts"
+      },
+      {
+        "names": [
+          "onRemoveHistorySession: workspace.apply (stopped / orchestrationReleased / removed)"
+        ],
+        "target": "src/app/workspace/flows/session-history/session-removal-change.ts"
+      },
+      {
+        "names": [
+          "filesInWorkspaceTabs"
+        ],
+        "target": "src/features/workspace/model/tab-files.ts"
+      },
+      {
+        "names": [
+          "ensureOpenSession body (openSavedSession; provider binding stays in App as bindProvider)"
+        ],
+        "target": "src/app/workspace/flows/session-history/open-saved-session.ts"
+      },
+      {
+        "names": [
+          "tabVisitRef, tabVisitFromHistoryRef, commitTabVisit, the visit-recording effect, onVisitBack/onVisitForward stepping (App: tabVisits.sync / step via visitTab)"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-visits.ts"
+      },
+      {
+        "names": [
+          "onNext/onPrev index wrap, onActivate slot lookup"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-cycle.ts"
+      },
+      {
+        "names": [
+          "activateTab, focusOpenSession, replaceBlankPaneWithSession bodies (App keeps the names; selectTab = setActiveTabId / setActiveTabIdState)"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-focus.ts"
+      },
+      {
+        "names": [
+          "insertBeside, insertBesideActive, appendTab bodies; newTab + setSessions + appendTab became openSessionTab (createWorkspaceTab, onNew, onSelectProviderAccount, onSelectRemoteSession, inbox/note sessions, project switch); onSplit setSessions/setTabs = splitFocusedPane; onReorderTabs = reorderTabs; onReorderFiles = reorderPaneFiles; onMovePane = movePaneTo"
+        ],
+        "target": "src/app/workspace/flows/tabs/tab-layout.ts"
+      },
+      {
+        "names": [
+          "useState: familiarViewId, familiarOverviewOpen, familiarOverviewTab, familiarSettingsFor, familiarChangesRequest, familiarActivity, familiarShownSession, familiarOverviewDocument, familiarShownSessionFocused; shownFamiliarSessionId (refs → workspaceStore.getState())"
+        ],
+        "target": "src/app/workspace/store/familiars-slice.ts"
+      },
+      {
+        "names": [
+          "taskBoardSessions, isMainWindow, taskBoard, boardAttention, railBadges, syncBoardDockBadge effect"
+        ],
+        "target": "src/app/workspace/hooks/use-workspace-task-board.ts"
+      },
+      {
+        "names": [
+          "companionBoard, useCompanionBridge deps (projects, projectLabel, submit wrapper, vault, notes)"
+        ],
+        "target": "src/app/workspace/hooks/use-workspace-companion.ts"
+      },
+      {
+        "names": [
+          "onOpenMonoArtifact, onShowFamiliarActivity, ARTIFACT_DELETED_EVENT overview reset, overview-hidden effect (App keeps thin callbacks)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-overview.ts"
+      },
+      {
+        "names": [
+          "familiarViewRequest, lastFamiliarIdRef, closeFamiliarView, onOpenFamiliar, onToggleFamiliar, showFamiliarLaunchedSession, reset replace branch of onResetFamiliar (App: familiarView.close/open/toggle/replaceSession/showLaunchedSession/forget)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-view.ts"
+      },
+      {
+        "names": [
+          "selectedFamiliarActivity, familiarActivityShownTurnId, familiarEditedPaths, familiarChangeTotals, familiarLaunches, familiarDocuments (App: familiarOverview.*)"
+        ],
+        "target": "src/app/workspace/hooks/familiars/use-familiar-overview-data.ts"
+      },
+      {
+        "names": [
+          "storedLaunchTitles, unopenedLaunchesKey effect, familiarLaunchesKey, familiarLaunchedSessions"
+        ],
+        "target": "src/app/workspace/hooks/familiars/use-familiar-launched-sessions.ts"
+      },
+      {
+        "names": [
+          "familiarRailState, familiarRail, onOpenRailFamiliar, onDeleteRailFamiliar, sidebarFamiliars"
+        ],
+        "target": "src/app/workspace/hooks/familiars/use-familiar-rail.ts"
+      },
+      {
+        "names": [
+          "decideFamiliarBlockRef, appendToFamiliar, decideFamiliarBlock (App: familiarChat.append/decide)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-chat.ts"
+      },
+      {
+        "names": [
+          "queueFamiliarSessionCompletion(Ref), familiarCompletionBatches, closeInactive effect (App: familiarCompletions.batches/closeInactive)"
+        ],
+        "target": "src/app/workspace/flows/familiars/familiar-completions.ts"
+      },
+      {
+        "names": [
+          "updateBtwThread, removeBtwThread"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-thread-edit.ts"
+      },
+      {
+        "names": [
+          "btwRequestsRef, closed-session abort effect, unmount abort"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-requests.ts"
+      },
+      {
+        "names": [
+          "runBtwRequest"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-run.ts"
+      },
+      {
+        "names": [
+          "btw turn prelude shared by onBtwModelChange/onBtwDelete/onBtwRetry"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-turn.ts"
+      },
+      {
+        "names": [
+          "onBtwSubmit, onBtwModelChange, onBtwDelete, onBtwStop, onBtwRetry (App: btw.submit/changeModel/remove/stop/retry)"
+        ],
+        "target": "src/app/workspace/flows/btw/btw-actions.ts"
+      },
+      {
+        "names": [
+          "onHandoff session build (App: handoffSession, opened beside the source)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/handoff-session.ts"
+      },
+      {
+        "names": [
+          "onCompactContext (App: compactContext)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/compact-context.ts"
+      },
+      {
+        "names": [
+          "onStop (App: stopTurn, stoppedSession)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/stop-turn.ts"
+      },
+      {
+        "names": [
+          "onCloseLiveAgent (App: closeLiveAgent)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/close-live-agent.ts"
+      },
+      {
+        "names": [
+          "onApproval, onQuestionReply, onQuestionInteraction (App: answerApproval/answerQuestion/keepQuestionOpen)"
+        ],
+        "target": "src/app/workspace/flows/turn-control/harness-replies.ts"
+      },
+      {
+        "names": [
+          "Escape-stops-focused-turn effect"
+        ],
+        "target": "src/app/workspace/hooks/use-escape-stop.ts"
+      },
+      {
+        "names": [
+          "autoContinueKey + auto-continue effect"
+        ],
+        "target": "src/app/workspace/hooks/use-auto-continue.ts"
+      },
+      {
+        "names": [
+          "nudgeWorkspace"
+        ],
+        "target": "src/app/model/nudge-workspace.ts"
+      },
+      {
+        "names": [
+          "Submit, SubmitOptions"
+        ],
+        "target": "src/app/workspace/flows/submission/submit-types.ts"
+      },
+      {
+        "names": [
+          "onUpdatePlan, onBuildPlan (App: updatePlan/buildPlan)"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/plan-block.ts"
+      },
+      {
+        "names": [
+          "queue dispatch timer body (canSendQueuedHead, dispatchQueuedHead)"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/queue-dispatch.ts"
+      },
+      {
+        "names": [
+          "queueDispatchingRef, queueDispatchVersion, queue dispatch effect"
+        ],
+        "target": "src/app/workspace/hooks/use-queue-dispatch.ts"
+      },
+      {
+        "names": [
+          "onDeleteQueuedMessage, onQueuedMessageEditingChange, onEditQueuedMessage, onSteerQueuedMessage, onResumeQueue"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/queue-actions.ts"
+      },
+      {
+        "names": [
+          "onUsageLimitDismiss, onUsageLimitResumeAtReset, onUsageLimitResume, onUsageLimitAccountChange, usageLimitSwitching (App: usageLimits.*)"
+        ],
+        "target": "src/app/workspace/flows/turn-queue/usage-limits.ts"
+      },
+      {
+        "names": [
+          "usageResumingRef, usageLimitTick, usageResetLookups, resume-at-reset and reset lookup effects"
+        ],
+        "target": "src/app/workspace/hooks/use-usage-limit-timers.ts"
+      },
+      {
+        "names": [
+          "currentWorkspace"
+        ],
+        "target": "src/app/model/current-workspace.ts"
+      },
+      {
+        "names": [
+          "withHarnessChoice, withPlanBuildTarget"
+        ],
+        "target": "src/app/model/harness-choice.ts"
+      },
+      {
+        "names": [
+          "withPlanStatus, lastAssistantTextInTurn, userTurnCards"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-blocks.ts"
+      },
+      {
+        "names": [
+          "trackSessionEdits, nudgeOpenEditors"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-file-effects.ts"
+      },
+      {
+        "names": [
+          "submitSession (App: submitToSession with the same deps)"
+        ],
+        "target": "src/app/workspace/flows/submission/submit-session.ts"
+      },
+      {
+        "names": [
+          "submitSession availability guards (editedResends, orchestration, managed, removing, worktree)"
+        ],
+        "target": "src/app/workspace/flows/submission/submission-guards.ts"
+      },
+      {
+        "names": [
+          "submitSession preflight (draft, build target, edited resend, intent, operator, cards, harnessText)"
+        ],
+        "target": "src/app/workspace/flows/submission/submission-preflight.ts"
+      },
+      {
+        "names": [
+          "submitSession Familiar follow-ups (enqueue, steer queued head)"
+        ],
+        "target": "src/app/workspace/flows/submission/familiar-follow-up.ts"
+      },
+      {
+        "names": [
+          "submitSession busy follow-ups (queue or steer)"
+        ],
+        "target": "src/app/workspace/flows/submission/busy-follow-up.ts"
+      },
+      {
+        "names": [
+          "submitSession project location sync"
+        ],
+        "target": "src/app/workspace/flows/submission/project-sync.ts"
+      },
+      {
+        "names": [
+          "submitSession turn setup (rotation, proposal draft, title seed, cards)"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-setup.ts"
+      },
+      {
+        "names": [
+          "commitSubmittedTurn"
+        ],
+        "target": "src/app/workspace/flows/submission/submitted-session.ts"
+      },
+      {
+        "names": [
+          "launchTitleGeneration"
+        ],
+        "target": "src/app/workspace/flows/submission/title-generation.ts"
+      },
+      {
+        "names": [
+          "submitSession turn runner (async IIFE, catch, finally)"
+        ],
+        "target": "src/app/workspace/flows/submission/run-turn.ts"
+      },
+      {
+        "names": [
+          "draft worktree creation and branch naming"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-worktree.ts"
+      },
+      {
+        "names": [
+          "pendingSwitch outgoing handoff, revealHandoff"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-handoff.ts"
+      },
+      {
+        "names": [
+          "routePlanEvent, applyTurnEvent, routeTurnEvent, acceptEditedResend, recoverEditedResend"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-events.ts"
+      },
+      {
+        "names": [
+          "edited resend rewind"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-rewind.ts"
+      },
+      {
+        "names": [
+          "turnPrompt, sendText"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-prompt.ts"
+      },
+      {
+        "names": [
+          "Familiar rotation, agent files, appContext"
+        ],
+        "target": "src/app/workspace/flows/submission/familiar-turn-context.ts"
+      },
+      {
+        "names": [
+          "molfar_app operator context"
+        ],
+        "target": "src/app/workspace/flows/submission/operator-app-context.ts"
+      },
+      {
+        "names": [
+          "turn finally/catch: finished session, worktree-gone detach, announce"
+        ],
+        "target": "src/app/workspace/flows/submission/turn-finish.ts"
+      },
+      {
+        "names": [
+          "onStartInboxItem, onOpenInboxSession (App: startInboxItem/openInboxSession)"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-start.ts"
+      },
+      {
+        "names": [
+          "leave inbox/notes/automations views, open a composer session"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-deps.ts"
+      },
+      {
+        "names": [
+          "onAskInboxItem, onRestartInboxAsk, openingInboxSessions (App: inboxAsk.ask/restart)"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-ask.ts"
+      },
+      {
+        "names": [
+          "onRepairChecks (App: repairChecks)"
+        ],
+        "target": "src/app/workspace/flows/inbox/ci-repair.ts"
+      },
+      {
+        "names": [
+          "inboxRelatedSessions memo body"
+        ],
+        "target": "src/app/workspace/flows/inbox/inbox-related-sessions.ts"
+      },
+      {
+        "names": [
+          "onAddNoteToChat (App: addNoteToChat)"
+        ],
+        "target": "src/app/workspace/flows/notes/add-note-to-chat.ts"
+      },
+      {
+        "names": [
+          "ADD_NOTE_TO_CHAT_EVENT effect"
+        ],
+        "target": "src/app/workspace/hooks/use-add-note-to-chat.ts"
+      },
+      {
+        "names": [
+          "setLinkedWorkItemUpdateCard, onLinkedWorkItemUpdateCardDismiss, revealLinkedSessionUpdate, linkedWorkItemActivityFetches (App: linkedUpdateCards.*)"
+        ],
+        "target": "src/app/workspace/flows/linked-work-items/linked-update-card.ts"
+      },
+      {
+        "names": [
+          "onOpenLinkedWorkItem, closeLinkedWorkItemPanel, linkedWorkItemPanelRequest (App: linkedPanels.open/close)"
+        ],
+        "target": "src/app/workspace/flows/linked-work-items/linked-work-item-panel.ts"
+      },
+      {
+        "names": [
+          "onSetHistorySessionLinkedWorkItem (App: setHistorySessionLinkedWorkItem)"
+        ],
+        "target": "src/app/workspace/flows/linked-work-items/history-link.ts"
+      },
+      {
+        "names": [
+          "onInboxCardDismiss, onNoteCardDismiss, onHandoffCardDismiss"
+        ],
+        "target": "src/app/workspace/flows/composer/composer-cards.ts"
+      },
+      {
+        "names": [
+          "checkOpenWorktreeFiles, onCheckWorktreeRemoval, onRemoveWorktree (App: checkRemoval/removeSessionWorktree)"
+        ],
+        "target": "src/app/workspace/flows/worktrees/worktree-removal.ts"
+      },
+      {
+        "names": [
+          "onWorktreeChange, onComposerWorktreeChange (App: changeWorktree)"
+        ],
+        "target": "src/app/workspace/flows/worktrees/worktree-switch.ts"
+      },
+      {
+        "names": [
+          "onBranchChange, onWorkspaceModeChange, onWorktreeBaseChange"
+        ],
+        "target": "src/app/workspace/flows/worktrees/session-checkout.ts"
+      },
+      {
+        "names": [
+          "onCwdChange (App: changeSessionProject)"
+        ],
+        "target": "src/app/workspace/flows/worktrees/session-project.ts"
+      },
+      {
+        "names": [
+          "worktree flow deps"
+        ],
+        "target": "src/app/workspace/flows/worktrees/worktree-deps.ts"
+      },
+      {
+        "names": [
+          "onSelectWorkspace, openProjects, onSelectProject, pickProject (App: selectWorkspace/openProjects/selectProject/pickProjects)"
+        ],
+        "target": "src/app/workspace/flows/projects/open-projects.ts"
+      },
+      {
+        "names": [
+          "onRemoveProject (App: removeProject)"
+        ],
+        "target": "src/app/workspace/flows/projects/remove-project.ts"
+      },
+      {
+        "names": [
+          "applyProjectLocationChange (App: moveProjectLocation)"
+        ],
+        "target": "src/app/workspace/flows/projects/project-location.ts"
+      },
+      {
+        "names": [
+          "onPlaceSessionInFolder (App: placeInFolder)"
+        ],
+        "target": "src/app/workspace/flows/projects/session-folder.ts"
+      },
+      {
+        "names": [
+          "project flow deps"
+        ],
+        "target": "src/app/workspace/flows/projects/project-deps.ts"
+      },
+      {
+        "names": [
+          "onFileMoved, onFileDeleted"
+        ],
+        "target": "src/app/workspace/flows/files/file-paths.ts"
+      },
+      {
+        "names": [
+          "dropOpenFiles"
+        ],
+        "target": "src/app/workspace/flows/files/drop-open-files.ts"
+      },
+      {
+        "names": [
+          "onOpenFile, onOpenPlan (App: openFile/openPlan)"
+        ],
+        "target": "src/app/workspace/flows/files/open-file.ts"
+      },
+      {
+        "names": [
+          "onPinFile, onFileDirtyChange, onFileErrorCountChange, onSelectFileSurface"
+        ],
+        "target": "src/app/workspace/flows/files/file-state.ts"
+      },
+      {
+        "names": [
+          "file flow deps"
+        ],
+        "target": "src/app/workspace/flows/files/file-deps.ts"
+      },
+      {
+        "names": [
+          "onModelChange, onModelSettingsChange, onRuntimeModeChange"
+        ],
+        "target": "src/app/workspace/flows/composer/composer-model.ts"
+      },
+      {
+        "names": [
+          "onSaveDraft, onRemoveDraft"
+        ],
+        "target": "src/app/workspace/flows/composer/drafts.ts"
+      },
+      {
+        "names": [
+          "composer flow deps"
+        ],
+        "target": "src/app/workspace/flows/composer/composer-deps.ts"
+      },
+      {
+        "names": [
+          "ADD_TO_CHAT_EVENT effect"
+        ],
+        "target": "src/app/workspace/hooks/use-add-to-chat.ts"
+      },
+      {
+        "names": [
+          "launchAutomation, ensureAutomationRecovery, onInboxAppeared, automationSessionReservations, automationRecoveryRef (App: automationRuns.*)"
+        ],
+        "target": "src/app/workspace/flows/automations/automation-runs.ts"
+      },
+      {
+        "names": [
+          "automation session reuse/creation"
+        ],
+        "target": "src/app/workspace/flows/automations/automation-session.ts"
+      },
+      {
+        "names": [
+          "launchQuickSession workspace (App: launchQuickSessionInWorkspace)"
+        ],
+        "target": "src/app/workspace/flows/automations/quick-launch.ts"
+      },
+      {
+        "names": [
+          "automation flow deps"
+        ],
+        "target": "src/app/workspace/flows/automations/automation-deps.ts"
+      },
+      {
+        "names": [
+          "due automation polling effect"
+        ],
+        "target": "src/app/workspace/hooks/use-automation-schedule.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind layout effect"
+        ],
+        "target": "src/app/workspace/hooks/use-orchestrator-binding.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind createWorker"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/create-worker.ts"
+      },
+      {
+        "names": [
+          "createWorker workspace selection (shared, retained, new worktree)"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-workspace.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind integrateWorker, cleanupWorker"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-checkout.ts"
+      },
+      {
+        "names": [
+          "orchestrator.bind submit, steer, respondApproval, answerQuestion, stop"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-control.ts"
+      },
+      {
+        "names": [
+          "orchestration worker deps"
+        ],
+        "target": "src/app/workspace/flows/orchestration-workers/worker-deps.ts"
+      },
+      {
+        "names": [
+          "onFocusPane, onDetachPane (App: focusPane/detachPane)"
+        ],
+        "target": "src/app/workspace/flows/tabs/pane-focus.ts"
+      },
+      {
+        "names": [
+          "onSelectHistorySession (App: selectHistorySession)"
+        ],
+        "target": "src/app/workspace/flows/tabs/select-history-session.ts"
+      },
+      {
+        "names": [
+          "pane flow deps"
+        ],
+        "target": "src/app/workspace/flows/tabs/pane-deps.ts"
+      },
+      {
+        "names": [
+          "onOpenSearch, onOpenInbox, onOpenNotes, onOpenAutomations, onGoToFile, onOpenCommandPalette, onFindInProject, onOpenAutomationSession, onRailBack, onRailForward"
+        ],
+        "target": "src/app/workspace/flows/surfaces/overlay-views.ts"
+      },
+      {
+        "names": [
+          "openSettings, onCloseSettings, onOpenNotificationSettings, onSelectSettingsSection"
+        ],
+        "target": "src/app/workspace/flows/surfaces/settings-surface.ts"
+      },
+      {
+        "names": [
+          "surface flow deps, closing overlay views"
+        ],
+        "target": "src/app/workspace/flows/surfaces/surface-deps.ts"
+      },
+      {
+        "names": [
+          "onNavigateSessionList (App: navigateSessionList)"
+        ],
+        "target": "src/app/workspace/flows/tabs/session-list-navigation.ts"
+      },
+      {
+        "names": [
+          "toTitleTab, conversationTitle"
+        ],
+        "target": "src/app/workspace/title-tabs/to-title-tab.ts"
+      },
+      {
+        "names": [
+          "titleTabsEqual"
+        ],
+        "target": "src/app/workspace/title-tabs/title-tabs-equal.ts"
+      },
+      {
+        "names": [
+          "orderedTitleTabs, placeholderTab, nextTitleTabs (App: titleTabList)"
+        ],
+        "target": "src/app/workspace/title-tabs/title-tab-list.ts"
+      },
+      {
+        "names": [
+          "onSelectTitleTab, onCloseAppView, onCloseFamiliarTab, closeViewTab, onCloseDisplayedTab(s), onCloseAllDisplayedTabs, onReorderDisplayedTabs"
+        ],
+        "target": "src/app/workspace/title-tabs/displayed-tabs.ts"
+      },
+      {
+        "names": [
+          "onCloseVisibleTab, onCycleVisibleTab, onActivateVisibleTab, onCloseOtherVisibleTabs, onCloseAllVisibleTabs"
+        ],
+        "target": "src/app/workspace/title-tabs/visible-tab-shortcuts.ts"
+      },
+      {
+        "names": [
+          "displayedTabNavigation type, displayed tab deps"
+        ],
+        "target": "src/app/workspace/title-tabs/displayed-tabs-deps.ts"
+      },
+      {
+        "names": [
+          "openAppViews, openFamiliarTabs, titleTabOrder, rememberAppView, shownFamiliarTabs, title tab order effect"
+        ],
+        "target": "src/app/workspace/hooks/use-title-tab-state.ts"
+      },
+      {
+        "names": [
+          "actions ref shape (WorkspaceActions), command deps"
+        ],
+        "target": "src/app/workspace/hooks/commands/command-deps.ts"
+      },
+      {
+        "names": [
+          "run + debounce (App: useCommandRunner)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-command-runner.ts"
+      },
+      {
+        "names": [
+          "keydown capture effect (App: useWorkspaceKeys)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-workspace-keys.ts"
+      },
+      {
+        "names": [
+          "tab command chords in the keydown handler"
+        ],
+        "target": "src/app/workspace/hooks/commands/tab-command-key.ts"
+      },
+      {
+        "names": [
+          "editor find and app shortcuts in the keydown handler"
+        ],
+        "target": "src/app/workspace/hooks/commands/app-shortcut-key.ts"
+      },
+      {
+        "names": [
+          "menu listen effect, notification click (App: useMenuCommands)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-menu-commands.ts"
+      },
+      {
+        "names": [
+          "autosave / keybinding overrides effect (App: useNativeKeybindings)"
+        ],
+        "target": "src/app/workspace/hooks/commands/use-native-keybindings.ts"
+      },
+      {
+        "names": [
+          "zoom in/out/reset"
+        ],
+        "target": "src/app/workspace/hooks/commands/ui-zoom.ts"
+      },
+      {
+        "names": [
+          "molfar-control-request listener (App: useControlRequests)"
+        ],
+        "target": "src/app/workspace/hooks/use-control-requests.ts"
+      },
+      {
+        "names": [
+          "control request handling, appReceipts"
+        ],
+        "target": "src/app/workspace/flows/agent-app/control-requests.ts"
+      },
+      {
+        "names": [
+          "handleAgentApp host object"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-host.ts"
+      },
+      {
+        "names": [
+          "CLI source: canAccessProject, rememberSession, monitorCompletion, dismissCompletion"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-source.ts"
+      },
+      {
+        "names": [
+          "CLI start"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-launch.ts"
+      },
+      {
+        "names": [
+          "CLI send, draft"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-messages.ts"
+      },
+      {
+        "names": [
+          "CLI sessions, session, stop, remove"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-sessions.ts"
+      },
+      {
+        "names": [
+          "CLI saveNote, postArtifact, familiarOf"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-content.ts"
+      },
+      {
+        "names": [
+          "app CLI deps"
+        ],
+        "target": "src/app/workspace/flows/agent-app/agent-app-deps.ts"
+      },
+      {
+        "names": [
+          "onRemoveHistorySession (App: removeSession)"
+        ],
+        "target": "src/app/workspace/flows/session-removal/remove-session.ts"
+      },
+      {
+        "names": [
+          "confirmDiscardUnsaved"
+        ],
+        "target": "src/app/model/confirm-discard-unsaved.ts"
+      },
+      {
+        "names": [
+          "onCloseTab, onCloseTabs, onCloseOtherTabs (finishTabClose)"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-close.ts"
+      },
+      {
+        "names": [
+          "onCloseFile, onCloseOtherFiles"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/file-close.ts"
+      },
+      {
+        "names": [
+          "onClearTabSession, onRemoteSessionDeleted"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-clear.ts"
+      },
+      {
+        "names": [
+          "onCloseEveryTab, onCloseAllTabs, seedSession"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-close-all.ts"
+      },
+      {
+        "names": [
+          "onClosePane, onCloseTitleTab"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/pane-close.ts"
+      },
+      {
+        "names": [
+          "planWorkspaceTabClose calls, closing file/dirty/remote helpers"
+        ],
+        "target": "src/app/workspace/flows/tabs/close/tab-close-steps.ts"
+      },
+      {
+        "names": [
+          "isBlankWorkspaceTab"
+        ],
+        "target": "src/app/model/blank-workspace-tab.ts"
+      },
+      {
+        "names": [
+          "activeTab fallback"
+        ],
+        "target": "src/app/model/active-workspace-tab.ts"
+      },
+      {
+        "names": [
+          "focusProjectTerminal, openProjectTerminal, onToggleProjectTerminal, onHideProjectTerminal, onProjectTerminalSide, onProjectTerminalSize, onSelectProjectTerminal, onReorderProjectTerminals, onCloseProjectTerminal, onCloseOtherProjectTerminals, focusedDockTerminal"
+        ],
+        "target": "src/app/workspace/flows/terminals/dock-terminals.ts"
+      },
+      {
+        "names": [
+          "onOpenTerminal, onNewTerminal, onNewTerminalTab, onNewTerminalInSession, onTerminalMetaChange, onToggleRunningTerminal"
+        ],
+        "target": "src/app/workspace/flows/terminals/workspace-terminals.ts"
+      }
+    ],
+    "src/app/shell/TitleBar.tsx": [
+      {
+        "names": [
+          "IconButton"
+        ],
+        "target": "src/shared/ui/IconButton.tsx"
+      },
+      {
+        "names": [
+          "OverlayNav",
+          "TabVisitNav",
+          "DevModeLabel",
+          "DevModeSlot"
+        ],
+        "target": "src/features/window-chrome/ui/OverlayNav.tsx"
+      },
+      {
+        "names": [
+          "Tab"
+        ],
+        "target": "src/features/workspace/model/title-tab.ts"
+      }
+    ],
+    "src/features/connections/model/connections.ts": [
+      {
+        "names": [
+          "remoteRequest"
+        ],
+        "target": "src/integrations/remote/remote-request.ts"
+      },
+      {
+        "names": [
+          "syncRemoteSession",
+          "loadRemoteSession"
+        ],
+        "target": "src/integrations/remote/session-sync.ts"
+      }
+    ],
+    "src/features/inbox/model/githubTasks.ts": [
+      {
+        "names": [
+          "GithubTaskKind",
+          "InboxProvider",
+          "InboxKind",
+          "GithubLabel"
+        ],
+        "target": "src/domain/work-items/work-item.ts"
+      },
+      {
+        "names": [
+          "InboxComposerCard"
+        ],
+        "target": "src/domain/work-items/inbox-card.ts"
+      }
+    ],
+    "src/features/inbox/model/inboxAsk.ts": [
+      {
+        "names": [
+          "InboxAskContext"
+        ],
+        "target": "src/domain/work-items/inbox-ask-context.ts"
+      }
+    ],
+    "src/features/inbox/model/linkedWorkItemActivity.ts": [
+      {
+        "names": [
+          "LinkedWorkItemActivityKind",
+          "LinkedWorkItemActivityCounts",
+          "LinkedWorkItemActivityEntry",
+          "LinkedWorkItemUpdateCard"
+        ],
+        "target": "src/domain/work-items/linked-activity.ts"
+      }
+    ],
+    "src/features/notes/notes.ts": [
+      {
+        "names": [
+          "NoteCardMeta",
+          "NoteComposerCard",
+          "noteCardMeta"
+        ],
+        "target": "src/domain/notes/note-card.ts"
+      }
+    ],
+    "src/features/orchestration/model/orchestrationPlan.ts": [
+      {
+        "names": [
+          "OrchestrationChoice",
+          "OrchestrationSettings",
+          "ProposedTask",
+          "OrchestrationProposal"
+        ],
+        "target": "src/domain/orchestration/proposal.ts"
+      }
+    ],
+    "src/features/projects/model/recents.ts": [
+      {
+        "names": [
+          "normalizeProjectPath"
+        ],
+        "target": "src/shared/lib/project-path.ts"
+      }
+    ],
+    "src/features/providers/model/providerAccounts.ts": [
+      {
+        "names": [
+          "DEFAULT_PROVIDER_ACCOUNT_ID",
+          "sameProviderAccountId",
+          "PROVIDER_ACCOUNT_PROVIDERS",
+          "ProviderAccountProvider",
+          "supportsProviderAccounts",
+          "ProviderAccount"
+        ],
+        "target": "src/domain/harness/provider-account.ts"
+      }
+    ],
+    "src/features/search/model/search.ts": [
+      {
+        "names": [
+          "ProjectSearchMatch",
+          "ProjectSearchResult",
+          "ProjectSearchOptions"
+        ],
+        "target": "src/domain/search/project-search.ts"
+      }
+    ],
+    "src/features/sessions/model/attachments.ts": [
+      {
+        "names": [
+          "FOLDER_MIME",
+          "VISION_MIME",
+          "isVisionImage",
+          "normalizeImageMime",
+          "isAttachmentFolder"
+        ],
+        "target": "src/domain/session/attachment-mime.ts"
+      },
+      {
+        "names": [
+          "PromptContentBlock",
+          "ATTACHMENT_ONLY_PROMPT",
+          "promptText",
+          "promptBlocks",
+          "attachmentPath",
+          "attachmentPathText",
+          "contentBlockFor",
+          "fileUri"
+        ],
+        "target": "src/domain/session/attachment-prompt.ts"
+      },
+      {
+        "names": [
+          "MAX_ATTACHMENTS",
+          "MAX_EMBED_BYTES"
+        ],
+        "target": "src/domain/session/attachment-limits.ts"
+      }
+    ],
+    "src/features/sessions/model/handoff.ts": [
+      {
+        "names": [
+          "HandoffComposerCard"
+        ],
+        "target": "src/domain/session/handoff-card.ts"
+      }
+    ],
+    "src/features/sessions/model/plan.ts": [
+      {
+        "names": [
+          "planTurnKey",
+          "isProviderFailureText",
+          "isReviewablePlan"
+        ],
+        "target": "src/domain/session/plan.ts"
+      }
+    ],
+    "src/features/sessions/model/session.ts": [
+      {
+        "names": [
+          "newSession (the Session literal; newSession now calls blankSession)"
+        ],
+        "target": "src/domain/session/blank-session.ts"
+      }
+    ],
+    "src/features/sessions/model/sessionWorkItem.ts": [
+      {
+        "names": [
+          "GITHUB_URL_RE",
+          "validNumber",
+          "githubUrl",
+          "parseGithubWorkItemUrl"
+        ],
+        "target": "src/domain/work-items/github-url.ts"
+      }
+    ],
+    "src/features/sessions/model/transcriptActivity.ts": [
+      {
+        "names": [
+          "isFailedStatus"
+        ],
+        "target": "src/domain/session/tool-status.ts"
+      }
+    ],
+    "src/features/settings/model/settings.ts": [
+      {
+        "names": [
+          "CLAUDE_HOOKS_KEY",
+          "CLAUDE_HOOKS_DEFAULT",
+          "loadClaudeHooks",
+          "saveClaudeHooks"
+        ],
+        "target": "src/integrations/harness/providers/claude/claude-hooks-setting.ts"
+      }
+    ],
+    "src/features/source-control/model/worktrees.ts": [
+      {
+        "names": [
+          "temporaryWorktreeBranchName",
+          "orchestrationWorktreeBranchName",
+          "namedWorktreeBranch"
+        ],
+        "target": "src/domain/git/worktree-branch.ts"
+      }
+    ],
+    "src/integrations/harness/core/apply.test.ts": [
+      {
+        "names": [
+          "it(\"does not adopt a saved plan block when the turn counter starts over\")"
+        ],
+        "target": "src/features/sessions/data/session-store-plan-key.test.ts"
+      }
+    ],
+    "src/integrations/harness/providers/claude/claudeLive.test.ts": [
+      {
+        "names": [
+          "transcript folding assertions in \"claude background tasks\" (groupTurnItems, foldableWork, foldedBlocks, workSummaryLine)"
+        ],
+        "target": "src/features/sessions/model/transcript-activity-background.test.ts"
+      }
+    ],
+    "src/platform/tauri/clipboard.ts": [
+      {
+        "names": [
+          "NativeClipboardPaste",
+          "attachmentsFromClipboardPaths",
+          "nativeClipboardAttachments"
+        ],
+        "target": "src/features/sessions/model/clipboard-attachments.ts"
+      }
+    ],
+    "src/platform/tauri/fs.ts": [
+      {
+        "names": [
+          "FsEntry",
+          "ProjectFile",
+          "FileMtime"
+        ],
+        "target": "src/domain/files/file-entry.ts"
+      },
+      {
+        "names": [
+          "GitDiffStats",
+          "GitChangedFile",
+          "GitDiffIndex",
+          "GitFileDiff",
+          "GitFileDiffKind"
+        ],
+        "target": "src/domain/git/working-tree.ts"
+      },
+      {
+        "names": [
+          "GitPr"
+        ],
+        "target": "src/domain/git/pull-request.ts"
+      },
+      {
+        "names": [
+          "basename"
+        ],
+        "target": "src/shared/lib/paths.ts"
+      }
+    ],
+    "src/shared/ui/icons.test.ts": [
+      {
+        "names": [
+          "it(\"optically insets the detailed Hermes artwork at UI icon sizes\")"
+        ],
+        "target": "src/features/sessions/ui/harness-icon.test.ts"
+      }
+    ]
+  },
+  "removed": {
+    "docs/architecture/images/vatra-system.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/architecture/images/molfar-system.png.",
+    "docs/brand/vatra-app.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-app.svg.",
+    "docs/brand/vatra-glyph.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-glyph.svg.",
+    "docs/brand/vatra.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar.svg.",
+    "public/vatra.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): public/molfar.png.",
+    "src-tauri/src/legacy_identity/copy.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_identity/legacy_process.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_identity/mod.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_identity/tests.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/legacy_session_db.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src/features/notes/index.ts": "Barrel removed (MOLFAR forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly.",
+    "src/shared/lib/legacyStorageMigration.test.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src/shared/lib/legacyStorageMigration.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply."
+  }
+}

@@ -1,14 +1,14 @@
-import type {
-  AgentRunMeta,
-  AgentStep,
-  Attachment,
-  Block,
-  Session,
-  TaskListItem,
-  ToolPreview,
-} from "../../../features/sessions/model/session";
-import { mergeContextUsage } from "../../../features/sessions/model/contextUsage";
-import { displayPath } from "../../../shared/lib/paths";
+import { hasReadableText } from "@/shared/lib/readable-text";
+import { usageLimitFromError } from "@/domain/session/usage-limit-error";
+import type { AgentRunMeta, AgentStep, ToolPreview } from "@/domain/session/agent-run";
+import type { Attachment } from "@/domain/session/attachment";
+import type { Block } from "@/domain/session/block";
+import type { Session } from "@/domain/session/session";
+import { type TaskListItem, taskListText } from "@/domain/session/task-list";
+import { isReviewablePlan } from "@/domain/session/plan";
+import { resolveModel } from "./models/resolve-model";
+import { mergeContextUsage } from "@/domain/session/context-usage";
+import { displayPath } from "@/shared/lib/paths";
 import {
   composeToolTitle,
   isFileTool,
@@ -16,13 +16,8 @@ import {
   mergeToolPreview,
   stubFilePreview,
 } from "./preview";
-import { joinStreamText } from "./streamText";
-import { hasReadableText } from "../../../features/sessions/model/transcriptActivity";
-import { taskListText } from "../../../features/sessions/model/taskList";
-import { isReviewablePlan } from "../../../features/sessions/model/plan";
-import { resolveModel } from "../../../features/sessions/model/models";
+import { joinStreamText } from "./stream-text";
 import type { HarnessEvent } from "./types";
-import { usageLimitFromError } from "../../../features/sessions/model/usageLimit";
 
 /** Apply one delivery batch without copying the transcript for every token. */
 export function applyHarnessEvents(

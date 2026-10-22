@@ -5,20 +5,20 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ImagePlus, MoreHorizontal, Plus, Trash2 } from "../../shared/ui/icons";
-import { Popover, type PopoverAnchor } from "../../shared/ui/Popover";
-import { Shimmer } from "../../shared/ui/Shimmer";
-import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
-import { FamiliarRailMascot } from "../../features/familiars/ui/FamiliarRailMascot";
-import { FamiliarIntroCard } from "../../features/familiars/ui/FamiliarIntro";
-import { RailAction } from "./RailAction";
-import { saveFamiliarsEnabled } from "../../features/settings/model/settings";
-import { ProjectBackgroundDialog } from "../../features/projects/ui/ProjectBackgroundDialog";
-import { familiarBackgroundKey } from "../../features/familiars/model/familiarBackground";
+import { ImagePlus, MoreHorizontal, Plus, Trash2 } from "@/shared/ui/icons";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
+import { Shimmer } from "@/shared/ui/Shimmer";
+import { useAnimatedReorder } from "@/shared/hooks/use-animated-reorder";
+import { FamiliarRailMascot } from "@/features/familiars/ui/FamiliarRailMascot";
+import { FamiliarIntroCard } from "@/features/familiars/ui/FamiliarIntro";
+import { RailAction } from "@/shared/ui/RailAction";
+import { saveFamiliarsEnabled } from "@/features/settings/model/settings";
+import { ProjectBackgroundDialog } from "@/features/projects/ui/ProjectBackgroundDialog";
+import { familiarBackgroundKey } from "@/features/familiars/model/familiar-background";
 import {
   ColorPicker,
   MascotPicker,
-} from "../../features/familiars/ui/familiarPanelParts";
+} from "@/features/familiars/ui/familiar-panel-parts";
 import {
   defaultFamiliarName,
   findFamiliar,
@@ -35,7 +35,7 @@ import {
   subscribeFamiliars,
   updateFamiliar,
   type FamiliarState,
-} from "../../features/familiars/model/familiar";
+} from "@/features/familiars/model/familiar";
 
 export type FamiliarRailProps = {
   /** The Familiar open in the main area, if any. */

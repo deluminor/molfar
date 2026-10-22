@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { projectName } from "../../../../shared/lib/paths";
-import { AlertCircle, ExternalLink, PenLine } from "../../../../shared/ui/icons";
-import { AgentMarkdown } from "../../../sessions/ui/AgentMarkdown";
+import { projectName } from "@/shared/lib/paths";
+import { AlertCircle, ExternalLink, PenLine } from "@/shared/ui/icons";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import { parseDelivery } from "../../model/delivery-text";
 import { transition } from "../../model/transitions";
 import type { OwnerAction } from "../../services/actions";

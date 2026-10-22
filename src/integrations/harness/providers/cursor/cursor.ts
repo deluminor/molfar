@@ -1,12 +1,12 @@
-import { TurnNotReadyError } from "../../core/types";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
-import { promptBlocks } from "../../../../features/sessions/model/attachments";
+import { nativeModelId } from "../../core/models/resolve-model";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { promptBlocks } from "@/domain/session/attachment-prompt";
+import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type SendTurnInput, type SteerTurnInput } from "../../core/types";
+import { AcpSubagents } from "../../core/acp-subagents";
 import {
   isTaskListToolName,
   taskListFromToolInput,
-} from "../../../../features/sessions/model/taskList";
+} from "@/domain/session/task-list";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -15,32 +15,26 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/sessionMcpServers";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import {
   readStoredCursorToolCalls,
   readStoredCursorSubagentRuns,
   type StoredCursorToolCall,
   type StoredCursorSubagentRun,
-} from "./cursorStore";
+} from "./cursor-store";
 import {
   cursorAgentLabel,
   cursorSubagentEvents,
   kindFromCursorToolName,
-} from "./cursorSubagents";
-import { stopCursorTitleGeneration } from "./cursorTitle";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+} from "./cursor-subagents";
+import { stopCursorTitleGeneration } from "./cursor-title";
 import {
   CUSTOM_OPTION_ID,
   questionPromptTitle,
   questionsFromUnknown,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "@/domain/session/user-question";
 import {
   agentToolTitle,
   composeToolTitle,

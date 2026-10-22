@@ -1,6 +1,6 @@
-import type { ControlOutcome } from "../../orchestration/model/orchestration";
-import { listSkills } from "../../../platform/tauri/fs";
-import { loadDisabledSkillPaths } from "../../skills/model/skills";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
+import { listSkills } from "@/platform/tauri/fs";
+import { loadDisabledSkillPaths } from "@/features/skills/model/skills";
 import { COLUMN_LABEL, isAgentStage, READ_ONLY_STAGES } from "../constants/columns";
 import { PROMPT_WARN_CHARS } from "../constants/limits";
 import { dirtyCheckoutError } from "../model/checkout-checks";

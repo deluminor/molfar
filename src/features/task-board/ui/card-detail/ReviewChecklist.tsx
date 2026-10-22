@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { MarkdownDocumentPreview } from "../../../sessions/ui/MarkdownDocumentPreview";
+import { MarkdownDocumentPreview } from "@/features/sessions/ui/MarkdownDocumentPreview";
 import { defaultSelected, parseReview } from "../../model/artifacts/review";
 import type { FindingSeverity } from "../../types/artifact";
 import { FIELD, PRIMARY_BUTTON } from "../button-styles";

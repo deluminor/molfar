@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
-import { PROJECT_MASCOTS } from "../../projects/model/projectMascots";
-import { PixelMascot } from "../../projects/ui/PixelMascot";
-import { TAB_GROUP_COLORS } from "../../workspace/model/tabGroups";
-import { playCue } from "../../settings/model/sounds";
+import { PROJECT_MASCOTS } from "@/features/projects/model/project-mascots";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
+import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
+import { playCue } from "@/features/settings/model/sounds";
 type Look = { mascot: string; color: string };
 
 type Props = {

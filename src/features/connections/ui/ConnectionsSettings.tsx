@@ -1,20 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import { Internet, Loader, Plus, Trash2 } from "../../../shared/ui/icons";
+import { Internet, Loader, Plus, Trash2 } from "@/shared/ui/icons";
 import {
   connectMachine,
   disconnectMachine,
   refreshRemoteMachines,
-  remoteRequest,
   useRemoteMachines,
 } from "../model/connections";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 import {
   REMOTE_PROVIDERS,
   type HostDescriptor,
   type RemoteMachine,
   type SshSetup,
-} from "../model/protocol";
-import { hostUpdateReason } from "../model/hostUpdate";
+} from "@/domain/remote/protocol";
+import { hostUpdateReason } from "../model/host-update";
 
 const input =
   "w-full rounded-lg border border-content/15 bg-content/3 px-3 py-2 text-[13px] outline-none focus:border-content/35";

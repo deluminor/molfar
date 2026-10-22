@@ -1,16 +1,16 @@
+import { basename } from "@/shared/lib/paths";
+import { IconButton } from "@/shared/ui/IconButton";
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
-import { basename } from "../../platform/tauri/fs";
-import { MOD } from "../../platform/tauri/platform";
-import { useProjectAppearance } from "../../features/projects/hooks/useProjectAppearance";
+import { MOD } from "@/shared/lib/platform";
+import { useProjectAppearance } from "@/features/projects/hooks/use-project-appearance";
 import {
   projectRailItems,
   sameProjectPath,
   type RecentProject,
-} from "../../features/projects/model/recents";
-import { resolveTabGroupLabel } from "../../features/workspace/model/tabGroups";
-import { projectKey, projectName } from "../../shared/lib/paths";
-import { Plus, Settings } from "../../shared/ui/icons";
-import { IconButton } from "./TitleBar";
+} from "@/features/projects/model/recents";
+import { resolveTabGroupLabel } from "@/features/workspace/model/tab-groups";
+import { projectKey, projectName } from "@/shared/lib/paths";
+import { Plus, Settings } from "@/shared/ui/icons";
 
 /** How far a switched-in project slides, and for how long. */
 const SLIDE_DISTANCE = 28;

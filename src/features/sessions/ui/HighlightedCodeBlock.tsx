@@ -13,8 +13,8 @@ import { CodeBlockContainer, CodeBlockHeader } from "streamdown";
 import {
   boundedCode,
   requestCodeHighlight,
-} from "../../files/editor/codeHighlightPlugin";
-import { TranscriptVisibility } from "./transcriptVisibility";
+} from "@/features/files/editor/code-highlight-plugin";
+import { TranscriptVisibility } from "./transcript-visibility";
 
 type Tokens = HighlightResult["tokens"][number];
 

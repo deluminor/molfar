@@ -7,7 +7,7 @@ import {
 import {
   cancelSessionSearch,
   searchSessions,
-} from "../../sessions/data/sessionStore";
+} from "@/features/sessions/data/session-store";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),

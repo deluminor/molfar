@@ -1,3 +1,4 @@
+import { basename } from "@/shared/lib/paths";
 import {
   Check,
   ChevronDown,
@@ -7,7 +8,7 @@ import {
   MessageSquarePlus,
   Undo2,
   UnfoldVertical,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -18,37 +19,36 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import {
   lockOverscroll,
   useLockOverscroll,
-} from "../../../shared/hooks/useLockOverscroll";
-import { formatInteger } from "../../../shared/lib/numbers";
-import { basename } from "../../../platform/tauri/fs";
-import type { SyntaxToken } from "../../files/editor/syntaxTokens";
+} from "@/shared/hooks/use-lock-overscroll";
+import { formatInteger } from "@/shared/lib/numbers";
+import type { SyntaxToken } from "@/features/files/editor/syntax-tokens";
 import {
   DiffCommentComposer,
   type DiffCommentComposerTarget,
 } from "./DiffCommentComposer";
-import { PaneHeader } from "../../../shared/ui/PaneHeader";
-import type { UnifiedLine } from "../model/unifiedDiff";
-import { windowRows } from "../model/unifiedDiffWindow";
+import { PaneHeader } from "@/shared/ui/PaneHeader";
+import type { UnifiedLine } from "../model/unified-diff";
+import { windowRows } from "../model/unified-diff-window";
 import {
   DIFF_FILE_HEADER_PX,
   ReviewDocumentBuilder,
   type ReviewDocument,
   type ReviewRow,
   type UnifiedDiffFileModel,
-} from "../model/unifiedDiffDocument";
+} from "../model/unified-diff-document";
 import {
   cachedDiffHighlight,
   highlightDiffInBackground,
-} from "../model/diffHighlight";
-import { reuseUnchangedById } from "../model/stableDiff";
-import { useDiffViewport } from "../hooks/useDiffViewport";
+} from "../model/diff-highlight";
+import { reuseUnchangedById } from "../model/stable-diff";
+import { useDiffViewport } from "../hooks/use-diff-viewport";
 import "./unifiedDiff.css";
 
-export type { UnifiedDiffFileModel } from "../model/unifiedDiffDocument";
+export type { UnifiedDiffFileModel } from "../model/unified-diff-document";
 type InitialExpansion = "all" | "first" | "none";
 type Props = {
   files: UnifiedDiffFileModel[];

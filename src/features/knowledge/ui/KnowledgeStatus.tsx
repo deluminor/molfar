@@ -1,5 +1,5 @@
-import { LoaderCircle } from "../../../shared/ui/icons";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
+import { LoaderCircle } from "@/shared/ui/icons";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
 import type { KnowledgeStatusProps } from "./types";
 
 export function KnowledgeStatus({

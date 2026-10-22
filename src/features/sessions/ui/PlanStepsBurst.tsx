@@ -1,5 +1,5 @@
 import { useMemo, useRef, type CSSProperties } from "react";
-import { useCelebrationBox, useTurnCelebration } from "./turnCelebration";
+import { useCelebrationBox, useTurnCelebration } from "./turn-celebration";
 
 // Last mark's delay plus its flight through the bubble, with fade slack.
 const CELEBRATE_MS = 3200;

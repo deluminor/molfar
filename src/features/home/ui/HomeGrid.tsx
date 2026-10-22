@@ -13,8 +13,8 @@ import {
   type HomeLayout,
   type HomeLayoutUpdate,
   type HomeWidgetId,
-} from "../model/homeLayout";
-import { HOME_WIDGET_LABELS } from "../model/homeWidgetRegistry";
+} from "../model/home-layout";
+import { HOME_WIDGET_LABELS } from "../model/home-widget-registry";
 import { HomeCardEditContext, type HomeCardEdit } from "./HomeCardEditContext";
 
 export type HomeWidgets = Record<HomeWidgetId, ReactNode>;

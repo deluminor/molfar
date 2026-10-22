@@ -1,3 +1,18 @@
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import { type Attachment } from "@/domain/session/attachment";
+import { type Block } from "@/domain/session/block";
+import { type HarnessId } from "@/domain/harness/harness";
+import {
+  type LinkedWorkItem,
+  type Session,
+  type WorkspaceMode,
+} from "@/domain/session/session";
+import {
+  type ComposerTurnOptions,
+  type ModelTarget,
+  type PlanBuildTarget,
+} from "@/domain/session/turn";
+import { type RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   memo,
   useCallback,
@@ -9,20 +24,20 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { setGrabbing, suppressTextSelection } from "../../../shared/lib/drag";
-import { beginLayoutTransition } from "../../../shared/lib/layoutTransition";
+import { setGrabbing, suppressTextSelection } from "@/shared/lib/drag";
+import { beginLayoutTransition } from "@/shared/lib/layout-transition";
 import {
   paneDropFromPoint,
   setExternalTitleTabDrop,
   titleTabDropFromPoint,
   useExternalPaneDrop,
   type TitleTabDropPosition,
-} from "../model/paneDrop";
+} from "../model/pane-drop";
 import type {
   ApprovalDecision,
   UserQuestionReply,
-} from "../../../integrations/harness";
-import type { EditorNavigationTarget } from "../../search/model/search";
+} from "@/integrations/harness";
+import type { EditorNavigationTarget } from "@/features/search/model/search";
 import {
   layoutLeaves,
   layoutSashes,
@@ -37,26 +52,13 @@ import {
 import {
   sameProjectPath,
   type RecentProject,
-} from "../../projects/model/recents";
-import type { TerminalMetaPatch } from "../../terminal/model/terminalTab";
-import {
-  sessionWorkCwd,
-  type Attachment,
-  type Block,
-  type HarnessId,
-  type LinkedWorkItem,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type RuntimeMode,
-  type Session,
-  type WorkspaceMode,
-  type ComposerTurnOptions,
-} from "../../sessions/model/session";
-import { FilePane } from "../../files/ui/FilePane";
-import { SessionPane } from "../../sessions/ui/SessionPane";
-import type { TranscriptPool } from "../../sessions/ui/TranscriptPool";
-import type { SessionFolderTarget } from "../../sessions/model/sessionFolders";
-import type { Worktree } from "../../source-control/model/worktrees";
+} from "@/features/projects/model/recents";
+import type { TerminalMetaPatch } from "@/features/terminal/model/terminal-tab";
+import { FilePane } from "@/features/files/ui/FilePane";
+import { SessionPane } from "@/features/sessions/ui/SessionPane";
+import type { TranscriptPool } from "@/features/sessions/ui/TranscriptPool";
+import type { SessionFolderTarget } from "@/features/sessions/model/session-folders";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 
 type Shared = {
   workspaceSwitchingSessionId?: string;

@@ -5,18 +5,18 @@ import {
   useState,
   type ComponentProps,
 } from "react";
-import { AlertCircle, Loader } from "../../../shared/ui/icons";
+import { AlertCircle, Loader } from "@/shared/ui/icons";
 import {
   sessionCheckpointFileDiff,
   sessionCheckpointStatus,
   subscribeReviewChanged,
   type CheckpointFile,
-} from "../../sessions/model/checkpoint";
-import { forEachConcurrent } from "../../../shared/lib/concurrent";
-import type { UnifiedFileDiff } from "../model/unifiedDiff";
-import { prepareUnifiedDiff } from "../model/diffWorker";
+} from "@/features/sessions/model/checkpoint";
+import { forEachConcurrent } from "@/shared/lib/concurrent";
+import type { UnifiedFileDiff } from "../model/unified-diff";
+import { prepareUnifiedDiff } from "../model/diff-worker";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
-import { pruneMap } from "../model/stableDiff";
+import { pruneMap } from "../model/stable-diff";
 
 type Props = {
   cwd: string;

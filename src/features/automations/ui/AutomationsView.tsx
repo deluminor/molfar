@@ -1,3 +1,6 @@
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   useCallback,
   useEffect,
@@ -9,14 +12,13 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { confirmApp } from "../../../app/model/appDialog";
-import { OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { gitBranches } from "../../../platform/tauri/fs";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { LAYER } from "../../../shared/lib/layers";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { confirmApp } from "@/shared/lib/app-dialog";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { gitBranches } from "@/platform/tauri/fs";
+import { IS_MAC } from "@/shared/lib/platform";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { LAYER } from "@/shared/lib/layers";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   AlertCircle,
   CheckCircle,
@@ -38,49 +40,47 @@ import {
   Trash2,
   X,
   Zap,
-} from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
+} from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
+import { SearchableSelect } from "@/shared/ui/SearchableSelect";
 import {
   AZUREDEVOPS_CHANGE_EVENT,
   azureDevOpsConnected,
-} from "../../inbox/model/azureDevOps";
+} from "@/features/inbox/model/azure-dev-ops";
 import {
   formatRelativeTime,
   githubStatus,
-} from "../../inbox/model/githubTasks";
-import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../../inbox/model/gitlab";
-import { JIRA_CHANGE_EVENT, jiraConnected } from "../../inbox/model/jira";
-import { LINEAR_CHANGE_EVENT, linearConnected } from "../../inbox/model/linear";
-import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { inProjectScope } from "../../projects/model/projectScope";
+} from "@/features/inbox/model/github-tasks";
+import { GITLAB_CHANGE_EVENT, gitlabConnected } from "@/features/inbox/model/gitlab";
+import { JIRA_CHANGE_EVENT, jiraConnected } from "@/features/inbox/model/jira";
+import { LINEAR_CHANGE_EVENT, linearConnected } from "@/features/inbox/model/linear";
+import { InboxProviderMark } from "@/features/inbox/ui/InboxProviderMark";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { inProjectScope } from "@/features/projects/model/project-scope";
 import {
   looksLikeProject,
   type RecentProject,
-} from "../../projects/model/recents";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
+} from "@/features/projects/model/recents";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { SearchableProjectPicker } from "@/features/projects/ui/SearchableProjectPicker";
 import {
   defaultSessionChoice,
   firstEnabledHarness,
-  modelsFor,
   preferredModelId,
-  resolveModel,
-} from "../../sessions/model/models";
+} from "@/features/sessions/model/models";
 import {
   loadSessionFolders,
   subscribeSessionFolders,
-} from "../../sessions/model/sessionFolders";
-import { AccessPicker } from "../../sessions/ui/AccessPicker";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
+} from "@/features/sessions/model/session-folders";
+import { AccessPicker } from "@/features/sessions/ui/AccessPicker";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { ModelControlPills, ModelPicker } from "@/features/sessions/ui/ModelPicker";
 import {
   loadModelControls,
   subscribeModelControls,
-} from "../../settings/model/settings";
-import { SkillPromptField } from "../../skills/ui/SkillPromptField";
+} from "@/features/settings/model/settings";
+import { SkillPromptField } from "@/features/skills/ui/SkillPromptField";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -90,7 +90,7 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+} from "@/features/workspace/model/tab-groups";
 import {
   AUTOMATION_WEEKDAYS,
   applyTriggers,
@@ -125,7 +125,7 @@ import {
   type AutomationTemplate,
   type AutomationTemplateCategoryId,
   type AutomationTemplateIcon,
-} from "../model/automationTemplates";
+} from "../model/automation-templates";
 
 type Props = {
   tabbed?: boolean;

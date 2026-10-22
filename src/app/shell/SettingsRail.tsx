@@ -14,12 +14,12 @@ import {
   SmartPhone,
   Sparkles,
   type IconComponent,
-} from "../../shared/ui/icons";
-import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
+} from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   settingsSectionsByGroup,
   type SettingsSectionId,
-} from "../../features/settings/model/settings";
+} from "@/features/settings/model/settings";
 
 const SECTION_ICONS: Record<SettingsSectionId, IconComponent> = {
   general: SlidersHorizontal,

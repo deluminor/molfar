@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Clock, Pause, Play, Trash2, Zap } from "../../../shared/ui/icons";
-import { mascotPath } from "../../projects/model/projectMascots";
+import { Clock, Pause, Play, Trash2, Zap } from "@/shared/ui/icons";
+import { mascotPath } from "@/features/projects/model/project-mascots";
 import type { FamiliarState } from "../model/familiar";
-import { subscribeFamiliarFiles } from "../model/familiarFiles";
+import { subscribeFamiliarFiles } from "../model/familiar-files";
 import {
   checkHabitsNow,
   habitScheduleLabel,
@@ -13,9 +13,9 @@ import {
   subscribeHabitsRunning,
   updateHabits,
   type Habit,
-} from "../model/familiarHabits";
+} from "../model/familiar-habits";
 import { RunningFor, useHabitRunning } from "./HabitPage";
-import { Empty, Section } from "./familiarPanelParts";
+import { Empty, Section } from "./familiar-panel-parts";
 
 /** Each Familiar's habits as last loaded, so switching back shows them at once. */
 const loadedHabits = new Map<string, Habit[]>();

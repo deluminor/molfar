@@ -1,5 +1,9 @@
+import {
+  type GitChangedFile,
+  type GitFileDiffKind,
+} from "@/domain/git/working-tree";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Loader } from "../../../shared/ui/icons";
+import { AlertCircle, Loader } from "@/shared/ui/icons";
 import {
   gitDiffFiles,
   gitDiscardFile,
@@ -8,22 +12,20 @@ import {
   gitStageFile,
   notifyGitChanged,
   subscribeGitChanged,
-  type GitChangedFile,
-  type GitFileDiffKind,
-} from "../../../platform/tauri/fs";
-import { forEachConcurrent } from "../../../shared/lib/concurrent";
-import type { UnifiedFileDiff } from "../model/unifiedDiff";
-import { prepareUnifiedDiff } from "../model/diffWorker";
+} from "@/platform/tauri/fs";
+import { forEachConcurrent } from "@/shared/lib/concurrent";
+import type { UnifiedFileDiff } from "../model/unified-diff";
+import { prepareUnifiedDiff } from "../model/diff-worker";
 import {
   prioritizeWorkingTreeDiffEntries,
   workingTreeDiffEntries,
   workingTreeDiffEntryLabel,
   workingTreeDiffFocusId,
-} from "../model/workingTreeDiff";
-import { stageChunkText } from "../../files/editor/editorGit";
-import { LINE_DIFF_CONFIG } from "../model/lineDiff";
+} from "../model/working-tree-diff";
+import { stageChunkText } from "@/features/files/editor/editor-git";
+import { LINE_DIFF_CONFIG } from "../model/line-diff";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
-import { pruneMap } from "../model/stableDiff";
+import { pruneMap } from "../model/stable-diff";
 
 type Props = {
   cwd: string;

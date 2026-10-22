@@ -1,7 +1,7 @@
+import { HARNESSES, HARNESS_LABEL } from "@/domain/harness/harness";
 import type { ReactNode } from "react";
-import { ExternalLink } from "../../../../shared/ui/icons";
-import { HARNESS_LABEL, HARNESSES } from "../../../sessions/model/session";
-import { HarnessIcon } from "../../../sessions/ui/HarnessIcon";
+import { ExternalLink } from "@/shared/ui/icons";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { COLUMN_LABEL } from "../../constants/columns";
 import { COLUMN_LOOK } from "../../constants/column-look";
 import { elapsedLabel } from "../../model/card-status";

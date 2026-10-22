@@ -1,20 +1,13 @@
-import {
-  clampUsedPercent,
-  DAILY_WINDOW_MINUTES,
-  formatExtraUsageBalance,
-  formatResetDuration,
-  formatUsagePercent,
-  formatWindowLabel,
-  type ProviderRateLimits,
-  type RateLimitWindow,
-} from "../model/rateLimits";
+import { clampUsedPercent } from "@/domain/rate-limits/rate-limit-window";
+import { DAILY_WINDOW_MINUTES, type ProviderRateLimits, type RateLimitWindow } from "@/domain/rate-limits/rate-limit";
+import { formatExtraUsageBalance, formatResetDuration, formatUsagePercent, formatWindowLabel } from "../model/rate-limits";
 import type {
   AccountStatus,
   AccountStatusTone,
   AccountUsage,
-} from "../model/accountUsage";
-import { RefreshCw } from "../../../shared/ui/icons";
-import { useShowRemainingUsage } from "../../settings/model/displayPrefs";
+} from "../model/account-usage";
+import { RefreshCw } from "@/shared/ui/icons";
+import { useShowRemainingUsage } from "@/features/settings/model/display-prefs";
 
 const STATUS_DOT: Record<AccountStatusTone, string> = {
   ready: "bg-emerald-400",

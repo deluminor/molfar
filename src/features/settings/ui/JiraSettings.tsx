@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
-import { PrivateEmail } from "../../../shared/ui/PrivateEmail";
-import { clearInboxCache } from "../../inbox/model/githubTasks";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { PrivateEmail } from "./PrivateEmail";
+import { clearInboxCache } from "@/features/inbox/model/github-tasks";
 import {
   disconnectJira,
   JIRA_CHANGE_EVENT,
@@ -14,9 +14,9 @@ import {
   saveJiraConfig,
   type JiraProject,
   type JiraStatus,
-} from "../../inbox/model/jira";
-import { clearConfluenceCache } from "../../inbox/model/confluence/api";
-import { notifyConfluenceChange } from "../../inbox/model/confluence/hiddenSpaces";
+} from "@/features/inbox/model/jira";
+import { clearConfluenceCache } from "@/features/confluence/model/api";
+import { notifyConfluenceChange } from "@/features/confluence/model/hidden-spaces";
 
 export function JiraSettings() {
   const [status, setStatus] = useState<JiraStatus | null>(null);

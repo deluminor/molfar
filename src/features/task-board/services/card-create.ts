@@ -1,5 +1,5 @@
-import { pathKey } from "../../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
+import { pathKey } from "@/shared/lib/paths";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 import { formatTask } from "../model/artifacts/task";
 import type { Card } from "../types/card";
 import type { EnginePorts } from "./ports";

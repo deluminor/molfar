@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as settings from "./settings";
+import * as claudeHooksSetting from "@/integrations/harness/providers/claude/claude-hooks-setting";
 import * as appearance from "./appearance";
 
 const platform = vi.hoisted(() => ({ isWindows: true }));
-vi.mock("../../../platform/tauri/platform", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../platform/tauri/platform")>()),
+vi.mock("@/shared/lib/platform", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/lib/platform")>()),
   get IS_WIN() {
     return platform.isWindows;
   },
@@ -89,8 +90,8 @@ describe.each([
   ],
   [
     "molfar.claudeHooks",
-    settings.loadClaudeHooks,
-    settings.saveClaudeHooks,
+    claudeHooksSetting.loadClaudeHooks,
+    claudeHooksSetting.saveClaudeHooks,
     true,
     undefined,
   ],

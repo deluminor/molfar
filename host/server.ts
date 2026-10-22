@@ -1,3 +1,7 @@
+import type { LinkedWorkItem } from "../src/domain/session/session";
+import { parseGithubWorkItemUrl } from "../src/domain/work-items/github-url";
+import { setHarnessModels } from "../src/integrations/harness/core/models/catalog-store";
+import type { AgentModel } from "../src/domain/models/agent-model";
 import {
   createServer,
   type IncomingMessage,
@@ -11,11 +15,9 @@ import {
   HOST_PROTOCOL_VERSION,
   type HostModelCatalog,
   type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import { HostEngine } from "./engine";
 import { writeAttachmentChunk, readAttachmentChunk } from "./attachments";
-import type { LinkedWorkItem } from "../src/features/sessions/model/session";
-import { parseGithubWorkItemUrl } from "../src/features/sessions/model/sessionWorkItem";
 import { SyncTransfers } from "./sync-transfer";
 import { browseHostDirectories } from "./browse";
 import {
@@ -41,17 +43,16 @@ import {
   writeHostFile,
 } from "./workspace";
 import { WorkspaceCommands } from "./workspace-commands";
-import { discoverCodexModels } from "../src/integrations/harness/providers/codex/codexCatalog";
-import { discoverClaudeModels } from "../src/integrations/harness/providers/claude/claudeCatalog";
-import { discoverCursorModels } from "../src/integrations/harness/providers/cursor/cursorCatalog";
-import { discoverGrokModels } from "../src/integrations/harness/providers/grok/grokCatalog";
-import { discoverOpenCodeModels } from "../src/integrations/harness/providers/opencode/opencodeCatalog";
-import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness/providers/pi/piCatalog";
-import { discoverFxModels } from "../src/integrations/harness/providers/fx/fxCatalog";
-import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermesCatalog";
-import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravityCatalog";
-import { discoverDevinModels } from "../src/integrations/harness/providers/devin/devinCatalog";
-import { setHarnessModels, type AgentModel } from "../src/features/sessions/model/models";
+import { discoverCodexModels } from "../src/integrations/harness/providers/codex/codex-catalog";
+import { discoverClaudeModels } from "../src/integrations/harness/providers/claude/claude-catalog";
+import { discoverCursorModels } from "../src/integrations/harness/providers/cursor/cursor-catalog";
+import { discoverGrokModels } from "../src/integrations/harness/providers/grok/grok-catalog";
+import { discoverOpenCodeModels } from "../src/integrations/harness/providers/opencode/opencode-catalog";
+import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness/providers/pi/pi-catalog";
+import { discoverFxModels } from "../src/integrations/harness/providers/fx/fx-catalog";
+import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermes-catalog";
+import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravity-catalog";
+import { discoverDevinModels } from "../src/integrations/harness/providers/devin/devin-catalog";
 import {
   resolveAntigravityBinary,
   resolveClaudeBinary,
