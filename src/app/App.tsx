@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { getAppDialog } from "@/shared/lib/app-dialog";
 import {
   Suspense,
   useCallback,
@@ -29,9 +28,6 @@ import { isForegroundSession } from "./workspace/flows/harness-events/foreground
 import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
 import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
 import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
-import type { SessionActionsDeps } from "./workspace/flows/session-history/session-actions";
-import { createSessionHistoryActions } from "./workspace/flows/session-history/session-history-actions";
-import type { SessionRemovalChangeDeps } from "./workspace/flows/session-history/session-removal-change";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { updateSessionState } from "./model/session-state";
@@ -60,7 +56,6 @@ import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus
 import { homeDir } from "@/platform/tauri/fs";
 import { pathKey } from "@/shared/lib/paths";
 import { IS_MAC } from "@/shared/lib/platform";
-import { getUpdatePrompt } from "@/features/updates/model/update-prompt";
 import { noteProjectStep } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
@@ -70,6 +65,7 @@ import { useStableFlow } from "./workspace/hooks/use-stable-flow";
 import type { WorkspaceFlowCore } from "./workspace/hooks/flows/workspace-flow-core";
 import { useTabFlows } from "./workspace/hooks/flows/use-tab-flows";
 import { useSessionOpenerFlows } from "./workspace/hooks/flows/use-session-opener-flows";
+import { useHistoryFlows } from "./workspace/hooks/flows/use-history-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
@@ -99,9 +95,7 @@ import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
-import type { WorktreeDeps } from "./workspace/flows/worktrees/worktree-deps";
 import { checkOpenWorktreeFiles } from "./workspace/flows/worktrees/worktree-removal";
-import { createWorktreeActions } from "./workspace/flows/worktrees/worktree-actions";
 import type { ProjectDeps } from "./workspace/flows/projects/project-deps";
 import { createProjectActions } from "./workspace/flows/projects/project-actions";
 import type { FileDeps } from "./workspace/flows/files/file-deps";
@@ -130,7 +124,6 @@ import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import type { AgentAppDeps } from "./workspace/flows/agent-app/agent-app-deps";
 import { createControlRequests } from "./workspace/flows/agent-app/control-requests";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
-import type { RemoveSessionDeps } from "./workspace/flows/session-removal/remove-session";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
 import { createDisplayedTabs } from "./workspace/title-tabs/displayed-tabs";
@@ -208,7 +201,6 @@ import type { WindowTransferPayload } from "./model/window-transfer";
 
 import {
   finishSessionTurn,
-  flushSessionCheckpoint,
 } from "@/features/sessions/model/checkpoint";
 import {
   createEditedResendCoordinator,
@@ -252,15 +244,12 @@ import {
 } from "@/features/notifications/model/notifications";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import {
-  deleteSession,
   getSession,
   readSession,
   listLinkedSessions,
   listSessionsByProject,
   replaceInFlightSessions,
   saveWorkspaceSnapshot,
-  setSessionArchived,
-  setSessionPinned,
   upsertSession,
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
@@ -277,7 +266,6 @@ import {
   saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
-import type { FamiliarRemovalDeps } from "./workspace/flows/familiars/familiar-removal";
 import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
@@ -629,7 +617,6 @@ function Workspace({
     automations: false,
     localSurface: null,
   });
-  const whatsNewVersion = useWorkspaceField(workspaceStore, "whatsNewVersion");
   const familiarsEnabled = useSyncExternalStore(
     subscribeFamiliarsEnabled,
     loadFamiliarsEnabled,
@@ -650,7 +637,6 @@ function Workspace({
     if (workspaceStore.getState().familiarViewId) closeFamiliarView();
   }, [closeFamiliarView]);
   const editorNavigationToken = useRef(0);
-  const filePickerOpen = useWorkspaceField(workspaceStore, "filePickerOpen");
   const dirtyFiles = useWorkspaceField(workspaceStore, "dirtyFiles");
   const history = useWorkspaceField(workspaceStore, "history");
   const [, refreshRemoteTabTitles] = useState(0);
@@ -825,10 +811,6 @@ function Workspace({
   const settingsOpenRef = useRef(settingsOpen);
   settingsOpenRef.current = settingsOpen;
   const sessionNavigationIdsRef = useRef<readonly string[]>([]);
-  const filePickerOpenRef = useRef(filePickerOpen);
-  filePickerOpenRef.current = filePickerOpen;
-  const whatsNewVersionRef = useRef(whatsNewVersion);
-  whatsNewVersionRef.current = whatsNewVersion;
   useEffect(() => {
     btw.abortClosed(new Set(sessions.map((session) => session.id)));
   }, [sessions]);
@@ -1678,16 +1660,17 @@ function Workspace({
   const flowCore = useStableFlow(
     (): WorkspaceFlowCore => ({
       store: workspaceStore,
-      sessionsRef, setSessions, tabsRef, activeTabIdRef, projectCwdRef, sidebarCwdRef, gitCwdRef,
+      sessionsRef, setSessions, tabsRef, setTabs, activeTabIdRef, projectCwdRef, sidebarCwdRef, gitCwdRef,
       sessionDefaultsRef, activeTabRef, insetLayoutRef,
       persistence: sessionPersistence,
       loader: sessionLoader,
-      loadedSessionCache, openingSessionIds, removingSessionIds, familiarView,
+      loadedSessionCache, openingSessionIds, removingSessionIds,
+      switchingWorktrees, removingWorktreePaths, workspacePins, familiarView,
       navigation: workspaceNavigation,
       setActiveTabId: setActiveTabIdState,
       selectTab: setActiveTabId,
       setComposerFocused, setAutomationsViewOpen, setSidebarTab, leaveCoveringFamiliar,
-      refreshHistory, projectOfTab, tabWorkspace,
+      refreshHistory, stopSessionForRemoval, projectOfTab, tabWorkspace,
     }),
   );
   const tabFlows = useTabFlows(flowCore, { terminalCwdRef, displayedTabNavigation });
@@ -1836,143 +1819,11 @@ function Workspace({
   );
   const sessionRemindersRef = useLatestRef(sessionReminders);
 
-  const sessionActionDeps = useStableFlow(
-    (): SessionActionsDeps => ({
-      store: workspaceStore,
-      openSessions: () => sessionsRef.current,
-      loader: sessionLoader,
-      persistence: sessionPersistence,
-      cache: loadedSessionCache.current,
-      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
-      getSession,
-      upsertSession,
-      setSessionPinned,
-    }),
-  );
-
-  const worktreeDeps = useStableFlow(
-    (): WorktreeDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      tabsRef,
-      setTabs,
-      projectTerminals: () => projectTerminalsRef.current,
-      projectCwd: () => projectCwdRef.current,
-      removingSessionIds,
-      switchingWorktrees,
-      removingWorktreePaths,
-      workspacePins,
-      persistence: sessionPersistence,
-      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
-      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
-      appendTab: (tab, cwd) => tabLayout.append(tab, cwd),
-      openSessionTab: (session, cwd) => tabLayout.openSessionTab(session, cwd),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      focusComposer: () => setComposerFocused(true),
-      refreshHistory: (cwd) => refreshHistory(cwd),
-      projectOfTab: (tabId) => projectOfTab(tabId),
-    }),
-  );
-  const worktreeActions = useStableFlow(() => createWorktreeActions(worktreeDeps));
-
-  const removalChangeDeps = useStableFlow(
-    (): SessionRemovalChangeDeps => ({
-      store: workspaceStore,
-      openSessions: () => sessionsRef.current,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        setSessions(next);
-      },
-      commitTabs: (next) => {
-        tabsRef.current = next;
-        setTabs(next);
-      },
-      activeTabId: () => activeTabIdRef.current,
-      activateTab: (tabId) => tabLayout.activate(tabId),
-      setComposerFocused: (focused) => setComposerFocused(focused),
-      loader: sessionLoader,
-      persistence: sessionPersistence,
-      cache: loadedSessionCache.current,
-      refreshHistory: () => void refreshHistory(sidebarCwdRef.current),
-    }),
-  );
-
-  const removeSessionDeps = useStableFlow(
-    (): RemoveSessionDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      tabsRef,
-      activeTabIdRef,
-      dirtyFilesRef,
-      removingSessionIds,
-      switchingWorktrees,
-      deleteConfirmationPending,
-      persistence: sessionPersistence,
-      removalChange: removalChangeDeps,
-      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
-      sidebarCwd: () => sidebarCwdRef.current,
-      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
-      removeWorktree: (cwd, path, force) => worktreeActions.remove(cwd, path, force),
-    }),
-  );
-  const familiarRemovalDeps = useStableFlow(
-    (): Omit<FamiliarRemovalDeps, "removeSession"> => ({
-      store: workspaceStore,
-      sessionsRef,
-      removingSessionIds,
-      persistence: sessionPersistence,
-      view: familiarView,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        setSessions(next);
-      },
-      invalidateLoadedSession: (sessionId) => invalidateLoadedSession(sessionId),
-      stopSessionForRemoval: (sessionId) => stopSessionForRemoval(sessionId),
-      flushCheckpoint: flushSessionCheckpoint,
-      deleteStoredSession: (sessionId, imagePaths) =>
-        orchestrator.deleteSession(sessionId, () => deleteSession(sessionId, imagePaths)),
-    }),
-  );
-  const historyActions = useStableFlow(() =>
-    createSessionHistoryActions({
-      session: sessionActionDeps,
-      removal: removeSessionDeps,
-      link: {
-        store: workspaceStore,
-        sessionsRef,
-        setSessions,
-        sidebarCwd: () => sidebarCwdRef.current,
-        forgetLoaded: (id) => {
-          invalidateLoadedSession(id);
-          loadedSessionCache.current.delete(id);
-        },
-        refreshHistory,
-      },
-      familiarRemoval: familiarRemovalDeps,
-      setSessionArchived,
-      archiveContext: () => ({
-        activeTabId: activeTabIdRef.current,
-        tabs: tabsRef.current,
-        sessions: sessionsRef.current,
-        projectTerminalFocused: projectTerminalFocusedRef.current,
-        surfaceOpen: Boolean(
-          workspaceStore.getState().familiarViewId ||
-          searchViewOpenRef.current ||
-          inboxViewOpenRef.current ||
-          notesViewOpenRef.current ||
-          automationsViewOpenRef.current ||
-          settingsOpenRef.current ||
-          filePickerOpenRef.current ||
-          whatsNewVersionRef.current ||
-          getUpdatePrompt() ||
-          getAppDialog(),
-        ),
-      }),
-    }),
-  );
-
-
+  const { worktreeDeps, worktreeActions, historyActions } = useHistoryFlows(flowCore, {
+    tabFlows,
+    deleteConfirmationPending,
+    automationsViewOpenRef,
+  });
 
   const projectDeps = useStableFlow(
     (): ProjectDeps => ({

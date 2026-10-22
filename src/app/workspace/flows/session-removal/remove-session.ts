@@ -21,7 +21,7 @@ export type RemoveSessionDeps = {
   sessionsRef: { readonly current: Session[] };
   tabsRef: { readonly current: WorkspaceTab[] };
   activeTabIdRef: { readonly current: string };
-  dirtyFilesRef: { readonly current: Set<string> };
+  dirtyFiles(): Set<string>;
   removingSessionIds: { readonly current: Set<string> };
   switchingWorktrees: { readonly current: Map<string, string> };
   /** Only one delete confirmation is open at a time. */
@@ -65,7 +65,7 @@ async function confirmClosingTabs(
   mode: "archive" | "delete",
 ): Promise<boolean> {
   const files = filesInWorkspaceTabs(closedTabs);
-  const unsaved = files.some((file) => isFilesystemTab(file) && deps.dirtyFilesRef.current.has(file.id));
+  const unsaved = files.some((file) => isFilesystemTab(file) && deps.dirtyFiles().has(file.id));
   if (
     unsaved &&
     !(await confirmDiscardUnsaved(
@@ -128,7 +128,7 @@ export async function removeSession(
           tabs: deps.tabsRef.current,
           sessions: deps.sessionsRef.current,
           activeTabId: deps.activeTabIdRef.current,
-          dirtyFiles: deps.dirtyFilesRef.current,
+          dirtyFiles: deps.dirtyFiles(),
         }),
         apply: (change) => applySessionRemovalChange(deps.removalChange, { sessionId, summary }, change),
       },

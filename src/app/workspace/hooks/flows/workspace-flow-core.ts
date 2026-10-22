@@ -5,7 +5,7 @@ import type { useWorkspaceNavigation } from "../../../hooks/use-workspace-naviga
 import type { FamiliarView } from "../../flows/familiars/familiar-view";
 import type { SessionLoader } from "../../flows/session-history/session-loader";
 import type { SessionPersistence } from "../../flows/session-history/session-persistence";
-import type { WorkspaceStore } from "../../store/types";
+import type { WorkspaceActions, WorkspaceStore } from "../../store/types";
 import type { WorkspaceSessions } from "../use-workspace-sessions";
 
 /**
@@ -17,6 +17,7 @@ export type WorkspaceFlowCore = {
   sessionsRef: WorkspaceSessions["sessionsRef"];
   setSessions: WorkspaceSessions["setSessions"];
   tabsRef: { current: WorkspaceTab[] };
+  setTabs: WorkspaceActions["setTabs"];
   activeTabIdRef: { current: string };
   projectCwdRef: { current: string };
   sidebarCwdRef: { readonly current: string };
@@ -31,6 +32,11 @@ export type WorkspaceFlowCore = {
   loadedSessionCache: { readonly current: Map<string, Session> };
   openingSessionIds: { readonly current: Set<string> };
   removingSessionIds: { readonly current: Set<string> };
+  /** Sessions selecting a worktree, by the worktree's path. */
+  switchingWorktrees: { readonly current: Map<string, string> };
+  removingWorktreePaths: { readonly current: Set<string> };
+  /** Tab or session id -> the workspace it was opened or moved in. */
+  workspacePins: { readonly current: Map<string, string> };
   familiarView: FamiliarView;
   /** The workspace switch's stable controls; its render state is not here. */
   navigation: Pick<ReturnType<typeof useWorkspaceNavigation>, "cancel">;
@@ -43,6 +49,8 @@ export type WorkspaceFlowCore = {
   setSidebarTab(tab: SidebarTabId, project?: string): void;
   leaveCoveringFamiliar(): void;
   refreshHistory(cwd: string): Promise<void>;
+  /** Stops a session's turn and harness before it leaves the workspace. */
+  stopSessionForRemoval(sessionId: string): Promise<Session | undefined>;
   projectOfTab(tabId: string): string | undefined;
   tabWorkspace(tab: WorkspaceTab, sessions: readonly Session[]): string | null;
 };

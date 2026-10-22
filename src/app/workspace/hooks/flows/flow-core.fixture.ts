@@ -23,6 +23,7 @@ export function fakeFlowCore(state: Partial<WorkspaceInitialState> = {}): Worksp
       sessionsRef.current = typeof update === "function" ? update(sessionsRef.current) : update;
     }),
     tabsRef: { current: store.getState().tabs },
+    setTabs: vi.fn(),
     activeTabIdRef: { current: store.getState().activeTabId },
     projectCwdRef: { current: store.getState().projectCwd },
     sidebarCwdRef: { current: store.getState().projectCwd },
@@ -35,6 +36,9 @@ export function fakeFlowCore(state: Partial<WorkspaceInitialState> = {}): Worksp
     loadedSessionCache: { current: new Map() },
     openingSessionIds: { current: new Set() },
     removingSessionIds: { current: new Set() },
+    switchingWorktrees: { current: new Map() },
+    removingWorktreePaths: { current: new Set() },
+    workspacePins: { current: new Map() },
     familiarView: { open: vi.fn(async () => undefined), close: vi.fn() } as unknown as FamiliarView,
     navigation: { cancel: vi.fn() },
     setActiveTabId: vi.fn(),
@@ -44,6 +48,7 @@ export function fakeFlowCore(state: Partial<WorkspaceInitialState> = {}): Worksp
     setSidebarTab: vi.fn(),
     leaveCoveringFamiliar: vi.fn(),
     refreshHistory: vi.fn(async () => undefined),
+    stopSessionForRemoval: vi.fn(async () => undefined),
     projectOfTab: vi.fn(() => undefined),
     tabWorkspace: vi.fn(() => null),
   };
