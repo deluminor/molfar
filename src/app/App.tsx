@@ -68,12 +68,12 @@ import { useHistoryFlows } from "./workspace/hooks/flows/use-history-flows";
 import { useProjectFlows } from "./workspace/hooks/flows/use-project-flows";
 import { useSubmissionFlows } from "./workspace/hooks/flows/use-submission-flows";
 import { useTurnQueueFlows } from "./workspace/hooks/flows/use-turn-queue-flows";
+import { useOrchestrationFlows } from "./workspace/hooks/flows/use-orchestration-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import {
   type WorkspaceHandlers,
   WorkspaceHandlersContext,
 } from "./workspace/handlers/workspace-handlers";
-import { createWorkerPaneActions } from "./workspace/flows/orchestration-workers/worker-pane-actions";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
@@ -90,7 +90,6 @@ import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
-import { checkOpenWorktreeFiles } from "./workspace/flows/worktrees/worktree-removal";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
 import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-binding";
@@ -107,8 +106,6 @@ import { useMenuCommands } from "./workspace/hooks/commands/use-menu-commands";
 import { useNativeKeybindings } from "./workspace/hooks/commands/use-native-keybindings";
 import { useWorkspaceKeys } from "./workspace/hooks/commands/use-workspace-keys";
 import { useLatestRef } from "./workspace/hooks/use-latest-ref";
-import type { AgentAppDeps } from "./workspace/flows/agent-app/agent-app-deps";
-import { createControlRequests } from "./workspace/flows/agent-app/control-requests";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
 import { titleTabList } from "./workspace/title-tabs/title-tab-list";
 import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
@@ -123,7 +120,6 @@ import { openAppView } from "./workspace/flows/surfaces/overlay-views";
 import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
-import type { CloseLiveAgentDeps } from "./workspace/flows/turn-control/close-live-agent";
 import type { HarnessReplyDeps } from "./workspace/flows/turn-control/harness-replies";
 import { createTurnControlActions } from "./workspace/flows/turn-control/turn-control-actions";
 import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
@@ -247,7 +243,6 @@ import {
   saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
-import { createProposalActions } from "./workspace/flows/orchestration-workers/proposal-actions";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
@@ -1811,36 +1806,32 @@ function Workspace({
 
   useAutoContinue(sessions, turnControl.sessions, submission.send);
 
-  const closeLiveAgentDeps = useStableFlow(
-    (): CloseLiveAgentDeps => ({
-      sessions: () => sessionsRef.current,
-      tabs: () => tabsRef.current,
-      dismiss: (sessionId) => {
-        setDismissedLiveAgentIds((prev) => {
-          if (prev.has(sessionId)) return prev;
-          const next = new Set(prev);
-          next.add(sessionId);
-          return next;
-        });
-        unseenFinishedRef.current.delete(sessionId);
-      },
-      stop: (sessionId) => turnActions.stop(sessionId),
-      closeTab: (tabId) => tabClose.closeTab(tabId),
-      persist: (session) => persistSession(session),
-      updateTabs: (update) => setTabs(update),
-    }),
-  );
+  const {
+    escapeStop,
+    orchestrationSync,
+    orchestratorBinding,
+    controlRequests,
+    workerPanes,
+    workerDetailPanes,
+    orchestrationActions,
+  } = useOrchestrationFlows(flowCore, {
+    flushHarnessEvents,
+    submission,
+    automationRuns,
+    familiarCompletions,
+    worktreeDeps,
+    historyActions,
+    turnActions,
+    tabFlows,
+    sessionOpeners,
+    composerActions,
+    board: () => taskBoardRef.current,
+    setDismissedLiveAgentIds,
+    unseenFinishedRef,
+    projectTerminalFocusedRef,
+  });
 
-  useEscapeStop(
-    useStableFlow(() => ({
-      store: workspaceStore,
-      sessions: () => sessionsRef.current,
-      tabs: () => tabsRef.current,
-      activeTabId: () => activeTabIdRef.current,
-      terminalFocused: () => projectTerminalFocusedRef.current,
-      stop: (sessionId: string) => turnActions.stop(sessionId),
-    })),
-  );
+  useEscapeStop(escapeStop);
 
   useWorkspaceCompanion({
     taskBoard,
@@ -1872,94 +1863,21 @@ function Workspace({
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   });
 
-  useOrchestrationSync(
-    orchestrationRuns,
-    sessions,
-    tabs,
-    activeTabId,
-    useStableFlow(() => ({ setSessions, setTabs, setActiveTabId: (tabId: string) => setActiveTabId(tabId) })),
-  );
+  useOrchestrationSync(orchestrationRuns, sessions, tabs, activeTabId, orchestrationSync);
 
-  useOrchestratorBinding(
-    useStableFlow(() => ({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      stop: (sessionId: string, managed: boolean) => turnActions.stop(sessionId, managed),
-      flushHarnessEvents,
-      checkOpenWorktreeFiles: (path: string) =>
-        checkOpenWorktreeFiles(worktreeDeps, path),
-    })),
-    submission.submit,
-  );
+  useOrchestratorBinding(orchestratorBinding, submission.submit);
+  useControlRequests(controlRequests);
 
+  useWorkerDetailPanes(tabs, workerDetailRequest, workerDetailPanes);
 
-  const agentAppDeps = useStableFlow(
-    (): AgentAppDeps => ({
-      sessionsRef,
-      setSessions,
-      turnGen,
-      removingSessionIds,
-      switchingWorktrees,
-      completions: familiarCompletions.batches,
-      board: () => taskBoardRef.current,
-      flushHarnessEvents,
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      submitSession: submission.submit,
-      saveDraft: (...args) => composerActions.saveDraft(...args),
-      stopSession: turnActions.stop,
-      removeSession: historyActions.remove,
-      launchQuickSession: automationRuns.launchQuick,
-    }),
-  );
-  useControlRequests(useStableFlow(() => createControlRequests(agentAppDeps)));
-
-  const confirmingOrchestration = useRef(new Set<string>());
-  const workerPanes = useStableFlow(() =>
-    createWorkerPaneActions({
-      store: workspaceStore,
-      sessionsRef,
-      setAutomationsViewOpen,
-      focusOpenSession: (sessionId) => sessionOpeners.focusOpen(sessionId),
-      selectHistorySession: (sessionId) => sessionOpeners.selectHistory(sessionId),
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      closeLive: closeLiveAgentDeps,
-    }),
-  );
-  useWorkerDetailPanes(
-    tabs,
-    workerDetailRequest,
-    useStableFlow(() => ({
-      store: workspaceStore,
-      sessionsRef,
-      projectCwd: () => projectCwdRef.current,
-      selectTab: (tabId: string) => setActiveTabId(tabId),
-      setComposerFocused: (focused: boolean) => setComposerFocused(focused),
-    })),
-  );
   const orchestrationWorkers = useMemo(
     () => ({
       selectedId: inspectedWorkerId,
       inspect: setInspectedWorkerId,
       openDetails: workerPanes.openDetails,
     }),
-    [inspectedWorkerId],
+    [inspectedWorkerId, workerPanes.openDetails],
   );
-  const proposalActions = useStableFlow(() =>
-    createProposalActions({
-      sessionsRef,
-      confirming: confirmingOrchestration,
-      orchestrator,
-      setSessions: (next) => setSessions(next),
-      saveSession: (session) => upsertSession(session),
-      submit: submission.send,
-    }),
-  );
-  const orchestrationActions = useStableFlow(() => ({
-    ...proposalActions,
-    open: workerPanes.openSession,
-    openAgents: workerPanes.openAgents,
-  }));
 
   const shownViewTabId = settingsOpen
     ? undefined
