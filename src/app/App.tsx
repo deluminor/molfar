@@ -117,13 +117,9 @@ import { orchestrator } from "@/features/orchestration/model/orchestration";
 import { OrchestrationActions, OrchestrationWorkers } from "@/features/orchestration/ui/orchestration-actions";
 import { findProjectTerminal } from "@/features/projects/model/project-terminal";
 import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
-import { mergeModelSettings, resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   cancelHarnessTurn,
-  isLiveHarness,
   pickTextHarness,
-  probeHarnessAvailability,
-  refreshHarnessCatalogs,
   registerBuiltinHarnesses,
   stopHarnessSession,
 } from "@/integrations/harness";
@@ -212,6 +208,7 @@ import {
 } from "./workspace/hooks/lifecycle/use-window-unload";
 import { useWindowClose } from "./workspace/hooks/lifecycle/use-window-close";
 import { useFamiliarThreadMigration } from "./workspace/hooks/lifecycle/use-familiar-thread-migration";
+import { useHarnessBootRefresh } from "./workspace/hooks/lifecycle/use-harness-boot-refresh";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -710,33 +707,7 @@ function Workspace({
 
   useFamiliarThreadMigration(familiarsSnap, sessionsRef);
 
-  useEffect(() => {
-    void probeHarnessAvailability();
-    // Only the harnesses already in this window. Probing every installed CLI
-    // at boot left unused agents (especially Pi) running in the background.
-    const harnesses = [
-      ...new Set(sessionsRef.current.map((session) => session.harness)),
-    ];
-    void refreshHarnessCatalogs(harnesses).then(() => {
-      setSessions((prev) =>
-        prev.map((session) => {
-          if (!isLiveHarness(session.harness)) return session;
-          const resolved = resolveModel(session.harness, session.model);
-          const modelSettings = mergeModelSettings(
-            resolved,
-            session.modelSettings,
-          );
-          if (
-            resolved.id === session.model &&
-            sameSettings(modelSettings, session.modelSettings)
-          ) {
-            return session;
-          }
-          return { ...session, model: resolved.id, modelSettings };
-        }),
-      );
-    });
-  }, []);
+  useHarnessBootRefresh(sessionsRef, setSessions);
 
   const activeTab = activeWorkspaceTab(tabs, activeTabId, sessions, projectCwd);
   const active =
@@ -1644,16 +1615,4 @@ function Workspace({
     </WorkspaceHandlersContext.Provider>
     </SessionStateContext.Provider>
   );
-}
-function sameSettings(
-  a: Record<string, string> | undefined,
-  b: Record<string, string> | undefined,
-): boolean {
-  const left = a ?? {};
-  const right = b ?? {};
-  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
-  for (const key of keys) {
-    if (left[key] !== right[key]) return false;
-  }
-  return true;
 }
