@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { openSessionIds } from "../../../model/session-id-sets";
 import type { SessionPersistence } from "../../flows/session-history/session-persistence";
 import type { WorkspaceSessions } from "../use-workspace-sessions";
-import type { ResumedWorkspace } from "../../../model/app-lifecycle";
+import { isAppQuitting, type ResumedWorkspace } from "../../../model/app-lifecycle";
 import type { WindowTransferPayload } from "../../../model/window-transfer";
 import type { WorkspaceTab } from "@/features/workspace/model/layout";
 
@@ -23,7 +23,11 @@ export function useImportedSessionMarks(
   }, [windowTransfer, resumed, persistence]);
 }
 
-/** Writes changed chats 650 ms after the last change; a new turn or bound provider thread writes at once. */
+/**
+ * Writes changed chats 650 ms after the last change; a new turn or bound provider thread writes at once.
+ * A quit writes every chat itself, so a write coming due while quitting stays pending: written after
+ * `quit_ready`, it would race the exit and overwrite the quit's interrupted turns.
+ */
 export function useSessionAutosave(
   persistence: Pick<SessionPersistence, "observe" | "writePending">,
   sessionState: Pick<WorkspaceSessions["sessionState"], "snapshot" | "observe">,
@@ -40,10 +44,9 @@ export function useSessionAutosave(
       )
         return;
       if (timer !== undefined) window.clearTimeout(timer);
-      timer = window.setTimeout(
-        () => void persistence.writePending(),
-        650,
-      );
+      timer = window.setTimeout(() => {
+        if (!isAppQuitting()) void persistence.writePending();
+      }, 650);
     };
     observe();
     const unsubscribe = sessionState.observe(observe);

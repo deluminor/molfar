@@ -10,9 +10,16 @@ import {
   useSessionAutosave,
 } from "./use-session-autosave";
 
+const quit = vi.hoisted(() => ({ quitting: false }));
+
+vi.mock("../../../model/app-lifecycle", () => ({ isAppQuitting: () => quit.quitting }));
+
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  quit.quitting = false;
+});
 
 const session = (id: string): Session => ({ id }) as unknown as Session;
 const resumedWith = (...ids: string[]): ResumedWorkspace =>
@@ -85,6 +92,29 @@ describe("useSessionAutosave", () => {
     vi.runAllTimers();
 
     expect(persistence.writePending).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("leaves the pending chats to the quit when the write comes due while quitting", () => {
+    vi.useFakeTimers();
+    const { persistence } = setup(true);
+    quit.quitting = true;
+    vi.runAllTimers();
+
+    expect(persistence.writePending).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("writes the pending chats again after a quit is called off", () => {
+    vi.useFakeTimers();
+    const { persistence, listeners } = setup(true);
+    quit.quitting = true;
+    vi.runAllTimers();
+    quit.quitting = false;
+    listeners[0]?.();
+    vi.runAllTimers();
+
+    expect(persistence.writePending).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
 

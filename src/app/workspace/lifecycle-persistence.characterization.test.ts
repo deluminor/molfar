@@ -76,6 +76,22 @@ describe("Workspace coordinated quit", () => {
     expect(callsSince(app, mark, "quit_ready")[0]?.args).toEqual({ id: 7, persisted: true });
   });
 
+  it("sends no debounced chat write after reporting ready", async () => {
+    app = await renderApp({ project: "/work/demo" });
+    await answeredSession(app, "hello", "world reply");
+    const mark = app.calls.length;
+
+    const { commitQuit } = await lifecycle();
+    await app.drive(() => void commitQuit(5));
+    await app.until(() => callsSince(current(), mark, "quit_ready").length > 0);
+    await app.settle(1000);
+
+    const after = app.calls.slice(mark);
+    const ready = after.findIndex((call) => call.command === "quit_ready");
+    expect(after.slice(ready + 1).filter((call) => call.command === "session_upsert")).toEqual([]);
+    expect(JSON.stringify(upsertedSessions(app, mark).at(-1))).toContain("world reply");
+  });
+
   it("reports the window's running turns when the coordinator polls", async () => {
     app = await renderApp({ project: "/work/demo" });
     await startTurn(app, "keep going");
