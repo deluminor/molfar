@@ -2036,8 +2036,11 @@
   "src/shared/ui/TabLabel.tsx": {
     "lint/correctness/useExhaustiveDependencies": 1
   },
+  "src/styles/composer-frost.css": {
+    "lint/style/noDescendingSpecificity": 1
+  },
   "src/styles/index.css": {
     "lint/complexity/noImportantStyles": 36,
-    "lint/style/noDescendingSpecificity": 34
+    "lint/style/noDescendingSpecificity": 33
   }
 }

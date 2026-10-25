@@ -9,7 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { createPortal } from "react-dom";
 import { Toggle } from "./Toggle";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ConnectionsSettings } from "@/features/connections/ui/ConnectionsSettings";
+import { ConnectionsPage } from "./ConnectionsPage";
 import { CompanionSettings } from "@/features/companion/ui/CompanionSettings";
 import { confirmApp } from "@/shared/lib/app-dialog";
 import {
@@ -195,10 +195,7 @@ import {
   MINIMUM_OPENCODE_VERSION,
   parseOpenCodeVersion,
 } from "@/integrations/harness/providers/opencode/opencode-protocol";
-import {
-  enforceHarnessIdleLimit,
-  refreshHarnessCatalogs,
-} from "@/integrations/harness/core/registry";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
 import { loginHarness } from "@/integrations/harness/core/auth";
 import { firstEnabledHarness, loadDefaultModels, loadHiddenPickerProviders, loadLastModelChoice, saveDefaultModel, saveLastModelChoice, savePickerProviderVisible } from "@/features/sessions/model/models";
 import {
@@ -313,10 +310,11 @@ import {
 } from "@/features/familiars/model/familiar";
 import { resetFamiliarDefaults } from "@/features/familiars/model/familiar-files";
 import { ConfirmReset } from "@/features/familiars/ui/ConfirmReset";
+import { IDLE_AGENT_LIMITS } from "@/features/settings/model/idle-agent-limit";
+import { useIdleAgentLimit } from "@/features/settings/hooks/use-idle-agent-limit";
 import {
   filterKeybindings,
   currentKeybindings,
-  loadIdleAgentLimit,
   loadCloseToTray,
   loadCollapsedProjectRailMode,
   loadComposerRunner,
@@ -336,9 +334,6 @@ import {
   loadQuickComposerEnabled,
   loadQuickComposerShortcut,
   loadTabAnimationsEnabled,
-  saveIdleAgentLimit,
-  IDLE_AGENT_LIMITS,
-  type IdleAgentLimit,
   saveCloseToTray,
   saveCollapsedProjectRailMode,
   saveComposerRunner,
@@ -628,7 +623,7 @@ export function SettingsView({
               {section === "general" ? (
                 <GeneralPage onOpenWhatsNew={onOpenWhatsNew} />
               ) : null}
-              {section === "connections" ? <ConnectionsSettings /> : null}
+              {section === "connections" ? <ConnectionsPage /> : null}
               {section === "companion" ? <CompanionSettings /> : null}
               {section === "appearance" ? (
                 <AppearancePage appearance={appearance} />
@@ -3445,8 +3440,7 @@ function ProvidersPage({
   const [choice, setChoice] = useState(loadLastModelChoice);
   const [defaultModels, setDefaultModels] = useState(loadDefaultModels);
   const [claudeHooks, setClaudeHooks] = useState(loadClaudeHooks);
-  const [idleAgentLimit, setIdleAgentLimit] =
-    useState<IdleAgentLimit>(loadIdleAgentLimit);
+  const [idleAgentLimit, onIdleAgentLimit] = useIdleAgentLimit();
   const [scope, setScope] = useState<string>(GLOBAL_PROVIDER_SCOPE);
   const [hiddenGlobally, setHiddenGlobally] = useState(
     loadHiddenPickerProviders,
@@ -3504,14 +3498,6 @@ function ProvidersPage({
   const onClaudeHooks = (next: boolean) => {
     saveClaudeHooks(next);
     setClaudeHooks(next);
-  };
-
-  const onIdleAgentLimit = (next: string) => {
-    const limit = Number(next) as IdleAgentLimit;
-    saveIdleAgentLimit(limit);
-    setIdleAgentLimit(limit);
-    // A lower limit takes effect now, not at the next finished turn.
-    enforceHarnessIdleLimit();
   };
 
   const onModelChange = (harness: HarnessId, model: string) => {

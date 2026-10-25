@@ -137,6 +137,7 @@ const fixtureInvoke = async (
   if (command === "plugin:event|listen") return 0;
   if (command === "plugin:event|unlisten") return;
   if (command === "control_load") return null;
+  if (command === "mobile_status") return { enabled: false };
   if (command === "reminder_list") return [];
   if (command === "reminder_take_open") return null;
   if (
@@ -296,12 +297,16 @@ createRoot(document.getElementById("root")!).render(
     }}
   >
     <App
-      resumed={{
-        sessions,
-        tabs,
-        activeTabId: tabs[0].id,
-        projectCwd: projectRoot,
-      }}
+      resumed={
+        params.has("empty")
+          ? null
+          : {
+              sessions,
+              tabs,
+              activeTabId: tabs[0].id,
+              projectCwd: projectRoot,
+            }
+      }
     />
   </Profiler>,
 );

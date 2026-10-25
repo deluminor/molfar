@@ -23,6 +23,8 @@ export type SubmitOptions = ComposerTurnOptions & {
   managed?: boolean;
   orchestrationRetry?: OrchestrationProposal;
   appRequestId?: string;
+  /** An app request that may arrive mid-turn, steering or queuing as one typed here would. */
+  followsUp?: boolean;
   familiarSessionCompletion?: Block["familiarSessionCompletion"];
   onSettled?: (outcome: ControlOutcome) => void;
   refreshTitle?: boolean;

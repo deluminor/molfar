@@ -1,0 +1,82 @@
+/* The positioned composer box already creates a stacking context. Keep its
+   blur behind the live field and highlight layer, as a separate surface, so
+   caret/hover repaints do not repaint the backdrop-filter's own content.
+   Avoid transforms or paint containment here: pickers must escape the box.
+   The layer bleeds past the box and is clipped back to it, so the blur near
+   the edges averages the backdrop beyond them instead of leaving a band of
+   unblurred background just inside. */
+[data-composer-box] {
+  --composer-radius: var(--radius-lg, 0.5rem);
+  --composer-blur: var(--blur-sm);
+}
+
+/* The inset layout rounds the box like a multi-line user message. */
+html.layout-inset [data-composer-box] {
+  --composer-radius: var(--radius-xl, 0.75rem);
+  --composer-blur: 24px;
+  border-radius: var(--composer-radius);
+}
+
+[data-composer-box]::before {
+  --composer-blur-bleed: calc(var(--composer-blur) * 2);
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--composer-blur-bleed));
+  z-index: -1;
+  clip-path: inset(var(--composer-blur-bleed) round var(--composer-radius));
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-content) 3%, transparent);
+  -webkit-backdrop-filter: blur(var(--composer-blur));
+  backdrop-filter: blur(var(--composer-blur));
+}
+
+/* WebView2 on Windows ignores the rounded clip-path on a backdrop-filter, so
+   the bleed shows as square corners past the border. Clip to the box with
+   border-radius instead, which it does honor, and give up the edge bleed. */
+html:not(.is-mac) [data-composer-box]::before {
+  inset: 0;
+  clip-path: none;
+  border-radius: inherit;
+}
+
+/* The queue ledge tucks behind the inset composer: inset by its corner
+   radius, a quieter edge than the box itself, and the same frost. */
+html.layout-inset [data-message-queue] {
+  padding-inline: var(--radius-xl, 0.75rem);
+}
+
+html.layout-inset [data-message-queue-card] {
+  border-color: color-mix(in srgb, var(--color-content) 6%, transparent);
+  border-top-left-radius: var(--radius-xl, 0.75rem);
+  border-top-right-radius: var(--radius-xl, 0.75rem);
+  background: color-mix(in srgb, var(--color-content) 2.5%, transparent);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+html.layout-inset.theme-light [data-message-queue-card] {
+  border-color: color-mix(in srgb, var(--color-content) 8%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.layout-inset:not(.theme-light) .agent-chat-composer {
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+/* The light box is already solid, so a blur behind it has nothing to frost
+   and only smears its shadow in over the edges. */
+html.theme-light [data-composer-box]::before {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.theme-light [data-composer-box],
+html.theme-light .agent-chat-composer {
+  background: var(--color-background-base);
+  box-shadow:
+    0 6px 24px color-mix(in srgb, var(--color-content) 9%, transparent),
+    0 2px 6px color-mix(in srgb, var(--color-content) 6%, transparent);
+}
