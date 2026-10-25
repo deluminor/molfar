@@ -11,7 +11,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useStore } from "zustand";
-import { useStableValue } from "@/shared/hooks/use-stable-value";
 import {
   appViewTabId,
   familiarTabId,
@@ -76,8 +75,10 @@ import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handlers";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
-import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
 import { useSidebarTab } from "./workspace/hooks/sidebar/use-sidebar-tab";
+import { useLiveAgentsView } from "./workspace/hooks/sidebar/use-live-agents-view";
+import { useSidebarHistoryView } from "./workspace/hooks/sidebar/use-sidebar-history-view";
+import { useApprovalToastsView } from "./workspace/hooks/notifications/use-approval-toasts-view";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import { openOverviewDocument } from "./workspace/flows/familiars/familiar-overview";
 import { useFamiliarOverviewSync } from "./workspace/hooks/familiars/use-familiar-overview-sync";
@@ -199,7 +200,6 @@ import {
 
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
-import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
 import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import {
   useDockBadge,
@@ -215,7 +215,6 @@ import {
   upsertSession,
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
-import { liveAgentsFromSessions } from "@/features/sessions/model/live-agents";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
 import { useUnseenReplyCounts } from "@/features/sessions/hooks/use-unseen-reply-counts";
 import {
@@ -281,11 +280,7 @@ import {
   reconcileProjectReturn,
   type ProjectReturnMemory,
 } from "@/features/projects/model/project-return";
-import {
-  historyWithLiveSessions,
-  mergeProjectHistorySummary,
-  sameSessionSummaries,
-} from "@/features/sessions/data/session-history";
+import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
 import {
   inFlightRefs,
   inFlightSnapshotKey,
@@ -1091,48 +1086,21 @@ function Workspace({
     activeSessionId,
   );
 
-  const liveAgentRows = useMemo(() => {
-    if (!liveAgentsEnabled) return [];
-    return liveAgentsFromSessions(
-      promptableSessions,
-      unseenFinishedIds,
-      new Set(
-        listFamiliars().flatMap((familiar) =>
-          familiar.sessionId ? [familiar.sessionId] : [],
-        ),
-      ),
-    ).filter(
-      (agent) => !agent.done || !dismissedLiveAgentIds.has(agent.id),
-    );
-  }, [
+  const liveAgents = useLiveAgentsView({
     liveAgentsEnabled,
     promptableSessions,
     unseenFinishedIds,
     familiarsSnap,
     dismissedLiveAgentIds,
-  ]);
-  // Rebuilt for every streamed batch; identity only moves when a row does.
-  const liveAgents = useStableValue(liveAgentRows);
+  });
 
-  const hiddenApprovalToasts = useMemo(
-    () =>
-      hiddenApprovalNotices(
-        familiarViewId
-          ? promptableSessions.filter((session) => session.id !== familiarViewId)
-          : promptableSessions,
-        familiarCovers ? "" : activeTabId,
-        tabs,
-        composerFocused,
-      ),
-    [
-      promptableSessions,
-      activeTabId,
-      tabs,
-      composerFocused,
-      familiarViewId,
-      familiarCovers,
-    ],
-  );
+  const hiddenApprovalToasts = useApprovalToastsView({
+    promptableSessions,
+    activeTabId,
+    tabs,
+    composerFocused,
+    familiarViewId,
+  });
   // The footer's slot for the resource pressure chip. Monitoring continues
   // while the footer is hidden.
   const [pressureChipHost, setPressureChipHost] =
@@ -1637,35 +1605,13 @@ function Workspace({
   }
   const titleTabs = titleTabsRef.current;
 
-  // `history` now spans every visited project; consumers that expect the
-  // current project only get this slice.
-  const projectHistory = useMemo(
-    () => history.filter((entry) => sameProjectPath(entry.cwd, sidebarCwd)),
-    [history, sidebarCwd],
-  );
-
-  const sidebarHistoryRows = useMemo(
-    () =>
-      historyWithLiveSessions(
-        history,
-        // A habit's hidden run is never one of the project's chats.
-        promptableSessions,
-        sidebarCwd,
-        projectGitHint(sidebarCwd, projectBranches?.current ?? undefined),
-        orchestrationRuns,
-      ),
-    [
-      history,
-      projectBranches,
-      promptableSessions,
-      sidebarCwd,
-      orchestrationRuns,
-    ],
-  );
-  const sidebarHistory = useStableValue(
-    sidebarHistoryRows,
-    sameSessionSummaries,
-  );
+  const { projectHistory, sidebarHistory } = useSidebarHistoryView({
+    history,
+    promptableSessions,
+    sidebarCwd,
+    projectBranches,
+    orchestrationRuns,
+  });
   const {
     unseen: inboxUnseen,
     linkedSessionUpdateIds,
