@@ -139,9 +139,6 @@ import { createEditedResendCoordinator } from "@/features/sessions/model/edit-la
 import { rememberProjectLocation, type synchronizeProjectLocation } from "@/features/projects/model/project-location";
 import {
   isRemoteProjectPath,
-  lastProjectPath,
-  looksLikeProject,
-  rememberProject,
   sameProjectPath,
 } from "@/features/projects/model/recents";
 import { newDefaultSession } from "@/features/sessions/model/session";
@@ -229,6 +226,7 @@ import {
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
+import { useDefaultProject } from "./workspace/hooks/lifecycle/use-boot-effects";
 import {
   useImportedSessionMarks,
   useSessionAutosave,
@@ -276,8 +274,6 @@ function Workspace({
     ),
   );
   const {
-    setProjectCwd,
-    setRecents,
     setTabs,
     setActiveTabId: setActiveTabIdState,
     setHistory,
@@ -1127,19 +1123,7 @@ function Workspace({
     projectReturnRef,
   });
 
-  useEffect(() => {
-    if (lastProjectPath()) return;
-    void invoke<string>("default_cwd")
-      .then((cwd) => {
-        if (!looksLikeProject(cwd)) return;
-        setProjectCwd(cwd);
-        setRecents((prev) => (prev.length > 0 ? prev : rememberProject(cwd)));
-        setSessions((prev) =>
-          prev.map((s) => (s.cwd === "~" ? { ...s, cwd } : s)),
-        );
-      })
-      .catch(() => {});
-  }, []);
+  useDefaultProject(workspaceStore, setSessions);
 
   useIsolatedTerminalPanes(workspaceStore, tabs);
 
