@@ -39,15 +39,10 @@ import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import { workspaceCwds } from "./model/workspace-cwds";
 import type { SettingsReturnView } from "./model/settings-return/types";
-
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
 import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
-import {
-  INSET_LAYOUT_DEFAULT,
-  loadInsetLayout,
-  subscribeInsetLayout,
-} from "@/features/settings/model/appearance";
+import { INSET_LAYOUT_DEFAULT, loadInsetLayout, subscribeInsetLayout } from "@/features/settings/model/appearance";
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus";
 import { homeDir } from "@/platform/tauri/fs";
@@ -105,10 +100,7 @@ import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
 import { useTitleTabsView } from "./workspace/title-tabs/use-title-tabs-view";
 import { useDeckProjectTabs } from "./workspace/title-tabs/use-deck-project-tabs";
-import type {
-  DisplayedTabNavigation,
-  VisibleTabs,
-} from "./workspace/title-tabs/displayed-tabs-deps";
+import type { DisplayedTabNavigation, VisibleTabs } from "./workspace/title-tabs/displayed-tabs-deps";
 import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
@@ -123,23 +115,11 @@ import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
 import { initialWorkspaceState } from "./workspace/store/initial-workspace";
 import { WorkspaceSidebar } from "./workspace/ui/WorkspaceSidebar";
 import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
-
-import {
-  orchestrator,
-} from "@/features/orchestration/model/orchestration";
-import {
-  OrchestrationActions,
-  OrchestrationWorkers,
-} from "@/features/orchestration/ui/orchestration-actions";
+import { orchestrator } from "@/features/orchestration/model/orchestration";
+import { OrchestrationActions, OrchestrationWorkers } from "@/features/orchestration/ui/orchestration-actions";
 import { findProjectTerminal } from "@/features/projects/model/project-terminal";
-
-import {
-  sessionChildHarnesses,
-} from "@/features/sessions/model/handoff";
-import {
-  mergeModelSettings,
-  resolveModel,
-} from "@/integrations/harness/core/models/resolve-model";
+import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
+import { mergeModelSettings, resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   cancelHarnessTurn,
   migrateFamiliarCodexSession,
@@ -152,29 +132,11 @@ import {
   stopHarnessSession,
   stopHarnessTextPrompts,
 } from "@/integrations/harness";
-
-import {
-  focusedFileTab,
-  leafIds,
-  type WorkspaceTab,
-} from "@/features/workspace/model/layout";
-
-
-
-
+import { focusedFileTab, leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
 import type { WindowTransferPayload } from "./model/window-transfer";
-
-import {
-  finishSessionTurn,
-} from "@/features/sessions/model/checkpoint";
-import {
-  createEditedResendCoordinator,
-} from "@/features/sessions/model/edit-last-turn";
-
-import {
-  rememberProjectLocation,
-  type synchronizeProjectLocation,
-} from "@/features/projects/model/project-location";
+import { finishSessionTurn } from "@/features/sessions/model/checkpoint";
+import { createEditedResendCoordinator } from "@/features/sessions/model/edit-last-turn";
+import { rememberProjectLocation, type synchronizeProjectLocation } from "@/features/projects/model/project-location";
 import {
   isRemoteProjectPath,
   lastProjectPath,
@@ -186,18 +148,11 @@ import { newDefaultSession } from "@/features/sessions/model/session";
 import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
-import {
-  workspaceTabCwd,
-  workspaceTabWorktree,
-} from "@/features/workspace/model/workspace-tab-groups";
-
+import { workspaceTabCwd, workspaceTabWorktree } from "@/features/workspace/model/workspace-tab-groups";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { syncDockBadge } from "@/features/notifications/model/dock-badge";
-import {
-  useDockBadge,
-  useNotificationPermissionProbe,
-} from "./workspace/hooks/notifications/use-notification-effects";
+import { useDockBadge, useNotificationPermissionProbe } from "./workspace/hooks/notifications/use-notification-effects";
 import { setWindowFocused } from "@/features/notifications/model/notifications";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import {
@@ -224,14 +179,8 @@ import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import { ensureFamiliarSession } from "@/features/familiars/model/familiar-workspace";
-import {
-  TranscriptPool,
-  TranscriptPoolOutlet,
-} from "@/features/sessions/ui/TranscriptPool";
-import {
-  isBusySession,
-  openSessionIds,
-} from "./model/session-id-sets";
+import { TranscriptPool, TranscriptPoolOutlet } from "@/features/sessions/ui/TranscriptPool";
+import { isBusySession, openSessionIds } from "./model/session-id-sets";
 import { useProviderSignInPrompt } from "./workspace/hooks/use-provider-sign-in-prompt";
 import { useSessionIdSet } from "./workspace/hooks/use-session-id-set";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
@@ -257,10 +206,7 @@ import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
 import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-state";
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
-
-
 import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
-
 import {
   loadCloseToTray,
   loadFamiliarsEnabled,
@@ -269,21 +215,10 @@ import {
   subscribeLiveAgentsEnabled,
 } from "@/features/settings/model/settings";
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
-
-import {
-  reconcileProjectReturn,
-  type ProjectReturnMemory,
-} from "@/features/projects/model/project-return";
+import { reconcileProjectReturn, type ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
-import {
-  inFlightRefs,
-  inFlightSnapshotKey,
-  shouldWriteInFlightSnapshot,
-} from "@/features/sessions/model/in-flight";
-import {
-  collectWorkspaceSnapshot,
-  workspaceSnapshotKey,
-} from "@/features/workspace/model/workspace-snapshot";
+import { inFlightRefs, inFlightSnapshotKey, shouldWriteInFlightSnapshot } from "@/features/sessions/model/in-flight";
+import { collectWorkspaceSnapshot, workspaceSnapshotKey } from "@/features/workspace/model/workspace-snapshot";
 import {
   bindResumedSessions,
   closeBusyWindow,
