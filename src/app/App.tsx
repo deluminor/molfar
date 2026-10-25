@@ -39,7 +39,6 @@ import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
 import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
 import {
-  applyInsetLayout,
   INSET_LAYOUT_DEFAULT,
   loadInsetLayout,
   subscribeInsetLayout,
@@ -92,6 +91,8 @@ import { useOrchestratorBinding } from "./workspace/hooks/use-orchestrator-bindi
 import { useOrchestrationSync } from "./workspace/hooks/use-orchestration-sync";
 import { useRightPanel, useRightPanelSlide } from "./workspace/hooks/use-right-panel";
 import { useWorkspaceChrome } from "./workspace/ui/layout/use-workspace-chrome";
+import { useInsetLayoutShell } from "./workspace/ui/layout/use-inset-layout-shell";
+import { useChromeResets } from "./workspace/ui/layout/use-chrome-resets";
 import { useTitleTabState } from "./workspace/hooks/use-title-tab-state";
 import { commandActions } from "./workspace/hooks/commands/command-actions";
 import type { CommandDeps } from "./workspace/hooks/commands/command-deps";
@@ -372,7 +373,6 @@ function Workspace({
     setRecents,
     setTabs,
     setActiveTabId: setActiveTabIdState,
-    setProjectTerminalFocused,
     setHistory,
     setStoredLinkedSessions,
     setFilePickerOpen,
@@ -458,7 +458,6 @@ function Workspace({
     [],
   );
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
-  const dockVisible = !!currentProjectDock?.open;
   const searchViewOpen = useWorkspaceField(workspaceStore, "searchViewOpen");
   const inboxViewOpen = useWorkspaceField(workspaceStore, "inboxViewOpen");
   const linkedWorkItemPanels = useWorkspaceField(workspaceStore, "linkedWorkItemPanels");
@@ -501,9 +500,6 @@ function Workspace({
     loadInsetLayout,
     () => INSET_LAYOUT_DEFAULT,
   );
-  const [insetRailHost, setInsetRailHost] = useState<HTMLDivElement | null>(
-    null,
-  );
   // Where Settings puts its breadcrumb and actions in the inset title bar.
   const [settingsHeaderHost, setSettingsHeaderHost] =
     useState<HTMLDivElement | null>(null);
@@ -522,25 +518,7 @@ function Workspace({
     paneRef: rightPanelRef,
     setPane: setRightPanelRef,
   } = useRightPanel();
-  useLayoutEffect(() => {
-    applyInsetLayout(insetLayout);
-  }, [insetLayout]);
-  // The title bar's navigation spans the open rail, so its tabs line up with
-  // the card. Written straight to the shell to follow a rail drag per frame.
-  useLayoutEffect(() => {
-    const host = insetRailHost;
-    const shell = host?.closest<HTMLElement>(".inset-shell");
-    if (!host || !shell) return;
-    const sync = () =>
-      shell.style.setProperty("--inset-rail-width", `${host.offsetWidth}px`);
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(host);
-    return () => {
-      observer.disconnect();
-      shell.style.removeProperty("--inset-rail-width");
-    };
-  }, [insetRailHost]);
+  const setInsetRailHost = useInsetLayoutShell(insetLayout);
   const settingsReturnViewRef = useRef<SettingsReturnView>({
     search: false,
     inbox: false,
@@ -1935,13 +1913,12 @@ function Workspace({
     visibleTabsRef,
   });
 
-  useEffect(() => {
-    if (sidebarTab === "inbox") setSidebarTab("sessions");
-  }, [sidebarTab]);
-
-  useEffect(() => {
-    if (!dockVisible) setProjectTerminalFocused(false);
-  }, [dockVisible]);
+  useChromeResets({
+    store: workspaceStore,
+    sidebarTab,
+    setSidebarTab,
+    dockVisible: !!currentProjectDock?.open,
+  });
 
   const openFilePaths = useMemo(() => {
     const paths: string[] = [];
@@ -1958,11 +1935,6 @@ function Workspace({
     return paths;
   }, [tabs]);
 
-  useEffect(() => {
-    void invoke("set_traffic_lights_visible", { visible: true }).catch(
-      () => {},
-    );
-  }, []);
 
   displayedTabNavigation.current = {
     tabs: insetLayout ? titleTabs : [],

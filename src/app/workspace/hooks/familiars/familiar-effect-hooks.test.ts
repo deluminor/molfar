@@ -33,6 +33,8 @@ const session = (id: string, cards: string[] = []): Session =>
     blocks: [{ id: `${id}-b`, artifactCards: cards.map((card) => ({ id: card })) }],
   }) as unknown as Session;
 
+vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+
 function mount(hook: () => void) {
   function Probe() {
     hook();
