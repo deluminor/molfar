@@ -120,7 +120,6 @@ import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
 import { mergeModelSettings, resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   cancelHarnessTurn,
-  migrateFamiliarCodexSession,
   isLiveHarness,
   pickTextHarness,
   probeHarnessAvailability,
@@ -212,6 +211,7 @@ import {
   useWorkspaceTeardown,
 } from "./workspace/hooks/lifecycle/use-window-unload";
 import { useWindowClose } from "./workspace/hooks/lifecycle/use-window-close";
+import { useFamiliarThreadMigration } from "./workspace/hooks/lifecycle/use-familiar-thread-migration";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -708,57 +708,7 @@ function Workspace({
     lastDockSideRef,
   });
 
-  useEffect(() => {
-    let cancelled = false;
-    // Retain known existing Familiar threads before hiding their original entries.
-    // Sending a turn uses the same migration lock, so it can safely overlap.
-    void (async () => {
-      for (const mono of listFamiliars()) {
-        if (cancelled) return;
-        if (!mono.sessionId) continue;
-        try {
-          const session =
-            sessionsRef.current.find((s) => s.id === mono.sessionId) ??
-            (await getSession(mono.sessionId));
-          if (
-            !session ||
-            cancelled ||
-            sessionsRef.current.find((s) => s.id === session.id)?.busy
-          )
-            continue;
-          const cwd = sessionWorkCwd(session);
-          if (!cwd || cwd === "~") continue;
-          const threadIds = new Set<string>();
-          if (session.harness === "codex" && session.providerSessionId)
-            threadIds.add(session.providerSessionId);
-          for (const block of session.blocks) {
-            for (const thread of block.btwThreads ?? []) {
-              if (
-                (thread.harness ?? session.harness) === "codex" &&
-                thread.providerThreadId
-              )
-                threadIds.add(thread.providerThreadId);
-            }
-          }
-          for (const threadId of threadIds) {
-            if (cancelled) return;
-            await migrateFamiliarCodexSession({
-              sessionId: session.id,
-              threadId,
-              cwd,
-              providerAccountId: session.providerAccountId,
-            });
-          }
-        } catch (error) {
-          // Keep the original context intact; the next native operation retries.
-          console.warn("Could not migrate saved Familiar Codex context", error);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [familiarsSnap]);
+  useFamiliarThreadMigration(familiarsSnap, sessionsRef);
 
   useEffect(() => {
     void probeHarnessAvailability();
