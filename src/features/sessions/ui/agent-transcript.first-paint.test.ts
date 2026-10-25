@@ -13,6 +13,10 @@ vi.mock("../hooks/use-transcript-anchor", () => ({
   useTranscriptAnchor: () => false,
 }));
 
+// The window grows one turn per frame + 16ms; slow CI runners need more than
+// the 1s waitFor default to build all 17 remaining turns.
+const WINDOW_BUILD = { timeout: 5000 };
+
 let container: HTMLDivElement;
 let root: Root;
 
@@ -59,7 +63,7 @@ describe("transcript first paint", () => {
     );
     expect(renderedTurns()).toBe(3);
 
-    await vi.waitFor(() => expect(renderedTurns()).toBe(20));
+    await vi.waitFor(() => expect(renderedTurns()).toBe(20), WINDOW_BUILD);
     expect(container.textContent).toContain("Load earlier messages");
   });
 
@@ -79,7 +83,7 @@ describe("transcript first paint", () => {
       get: () => renderedTurns() * 100,
     });
 
-    await vi.waitFor(() => expect(renderedTurns()).toBe(20));
+    await vi.waitFor(() => expect(renderedTurns()).toBe(20), WINDOW_BUILD);
     expect(scroller.scrollTop).toBe(2000);
   });
 
