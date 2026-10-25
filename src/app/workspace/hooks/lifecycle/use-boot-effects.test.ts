@@ -5,7 +5,12 @@ import type { Session } from "@/domain/session/session";
 import type { WorkspaceStore } from "../../store/types";
 import { mountHook } from "../../testing/mount-hook";
 import type { WindowTransferPayload } from "../../../model/window-transfer";
-import { useDefaultProject, useReopenFamiliar } from "./use-boot-effects";
+import type { RecentProject } from "@/features/projects/model/recents";
+import {
+  useDefaultProject,
+  useProjectLocations,
+  useReopenFamiliar,
+} from "./use-boot-effects";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(async (_command: string) => "/home/me"),
@@ -14,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   loadOpenFamiliar: vi.fn((): string | undefined => "f1"),
   findFamiliar: vi.fn((id: string) => (id === "f1" ? { id } : undefined)),
   saveOpenFamiliar: vi.fn(),
+  rememberProjectLocation: vi.fn(async (_path: string) => undefined),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
@@ -23,6 +29,9 @@ vi.mock("@/features/projects/model/recents", () => ({
   rememberProject: (cwd: string) => [{ path: cwd }],
 }));
 
+vi.mock("@/features/projects/model/project-location", () => ({
+  rememberProjectLocation: mocks.rememberProjectLocation,
+}));
 vi.mock("@/features/familiars/model/familiar", () => ({
   loadOpenFamiliar: mocks.loadOpenFamiliar,
   findFamiliar: mocks.findFamiliar,
@@ -112,5 +121,19 @@ describe("useReopenFamiliar", () => {
 
     expect(open).not.toHaveBeenCalled();
     expect(mocks.loadOpenFamiliar).not.toHaveBeenCalled();
+  });
+});
+
+describe("useProjectLocations", () => {
+  it("remembers every recent project each time the list changes, ignoring failures", async () => {
+    mocks.rememberProjectLocation.mockRejectedValueOnce(new Error("gone"));
+    let recents = [{ path: "/a" }, { path: "/b" }] as RecentProject[];
+    const { rerender } = mountHook(() => useProjectLocations(recents));
+    rerender();
+    recents = [{ path: "/c" }] as RecentProject[];
+    rerender();
+    await act(async () => undefined);
+
+    expect(mocks.rememberProjectLocation.mock.calls).toEqual([["/a"], ["/b"], ["/c"]]);
   });
 });

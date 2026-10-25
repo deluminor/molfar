@@ -5,9 +5,11 @@ import {
   loadOpenFamiliar,
   saveOpenFamiliar,
 } from "@/features/familiars/model/familiar";
+import { rememberProjectLocation } from "@/features/projects/model/project-location";
 import {
   lastProjectPath,
   looksLikeProject,
+  type RecentProject,
   rememberProject,
 } from "@/features/projects/model/recents";
 import type { WindowTransferPayload } from "../../../model/window-transfer";
@@ -53,4 +55,13 @@ export function useReopenFamiliar(
     if (familiarId && findFamiliar(familiarId)) void onOpenFamiliar(familiarId);
     else if (familiarId) saveOpenFamiliar(undefined);
   }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
+}
+
+/** Records each recent project's identity, so a moved folder is found again. */
+export function useProjectLocations(recents: RecentProject[]): void {
+  useEffect(() => {
+    for (const project of recents) {
+      void rememberProjectLocation(project.path).catch(() => undefined);
+    }
+  }, [recents]);
 }

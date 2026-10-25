@@ -136,7 +136,7 @@ import { focusedFileTab, leafIds, type WorkspaceTab } from "@/features/workspace
 import type { WindowTransferPayload } from "./model/window-transfer";
 import { finishSessionTurn } from "@/features/sessions/model/checkpoint";
 import { createEditedResendCoordinator } from "@/features/sessions/model/edit-last-turn";
-import { rememberProjectLocation, type synchronizeProjectLocation } from "@/features/projects/model/project-location";
+import type { synchronizeProjectLocation } from "@/features/projects/model/project-location";
 import {
   isRemoteProjectPath,
   sameProjectPath,
@@ -227,6 +227,7 @@ import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-
 import {
   useDefaultProject,
   useReopenFamiliar,
+  useProjectLocations,
 } from "./workspace/hooks/lifecycle/use-boot-effects";
 import {
   useImportedSessionMarks,
@@ -642,11 +643,7 @@ function Workspace({
     new Map<string, ReturnType<typeof synchronizeProjectLocation>>(),
   );
 
-  useEffect(() => {
-    for (const project of recents) {
-      void rememberProjectLocation(project.path).catch(() => undefined);
-    }
-  }, [recents]);
+  useProjectLocations(recents);
 
   useImportedSessionMarks(sessionPersistence, windowTransfer, resumed);
 
