@@ -26,6 +26,7 @@ import {
 } from "./workspace/hooks/harness/use-harness-effects";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
+import { foregroundSurface } from "./workspace/flows/harness-events/foreground-surface";
 import {
   useProjectFilePrefetch,
   useProjectHistory,
@@ -103,6 +104,7 @@ import { useWorkspaceKeys } from "./workspace/hooks/commands/use-workspace-keys"
 import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
 import { useTitleTabsView } from "./workspace/title-tabs/use-title-tabs-view";
+import { useDeckProjectTabs } from "./workspace/title-tabs/use-deck-project-tabs";
 import type {
   DisplayedTabNavigation,
   VisibleTabs,
@@ -153,7 +155,6 @@ import {
 
 import {
   focusedFileTab,
-  isFilesystemTab,
   leafIds,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
@@ -186,7 +187,6 @@ import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import {
-  filterTabsForProject,
   workspaceTabCwd,
   workspaceTabWorktree,
 } from "@/features/workspace/model/workspace-tab-groups";
@@ -426,7 +426,6 @@ function Workspace({
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const searchViewOpen = useWorkspaceField(workspaceStore, "searchViewOpen");
   const inboxViewOpen = useWorkspaceField(workspaceStore, "inboxViewOpen");
-  const linkedWorkItemPanels = useWorkspaceField(workspaceStore, "linkedWorkItemPanels");
   const inboxAskPortal = useWorkspaceField(workspaceStore, "inboxAskPortal");
   const notesViewOpen = useWorkspaceField(workspaceStore, "notesViewOpen");
   const localSurfaces = useLocalSurfaceState();
@@ -630,37 +629,18 @@ function Workspace({
   searchViewOpenRef.current = searchViewOpen;
   const inboxViewOpenRef = useRef(inboxViewOpen);
   inboxViewOpenRef.current = inboxViewOpen;
-  const foregroundSurfaceRef = useRef<{
-    workspaceVisible: boolean;
-    standaloneSessionId?: string;
-    /** A session shown beside the Familiar's chat. */
-    sideSessionId?: string;
-  }>({ workspaceVisible: true });
-  foregroundSurfaceRef.current = {
-    workspaceVisible:
-      !searchViewOpen &&
-      !inboxViewOpen &&
-      !notesViewOpen &&
-      !automationsViewOpen &&
-      !settingsOpen &&
-      !familiarViewId,
-    standaloneSessionId: inboxViewOpen
-      ? inboxAskPortal?.sessionId
-      : !searchViewOpen &&
-          !notesViewOpen &&
-          !automationsViewOpen &&
-          !settingsOpen
-        ? (familiarViewId ?? undefined)
-        : undefined,
-    sideSessionId:
-      !inboxViewOpen &&
-      !searchViewOpen &&
-      !notesViewOpen &&
-      !automationsViewOpen &&
-      !settingsOpen
-        ? shownFamiliarSessionId
-        : undefined,
-  };
+  const foregroundSurfaceRef = useLatestRef(
+    foregroundSurface({
+      searchViewOpen,
+      inboxViewOpen,
+      notesViewOpen,
+      automationsViewOpen,
+      settingsOpen,
+      familiarViewId,
+      inboxAskSessionId: inboxAskPortal?.sessionId,
+      shownFamiliarSessionId,
+    }),
+  );
   const notesViewOpenRef = useRef(notesViewOpen);
   notesViewOpenRef.current = notesViewOpen;
   const automationsViewOpenRef = useRef(automationsViewOpen);
@@ -942,14 +922,6 @@ function Workspace({
     ? sessions.find((session) => session.id === familiarViewId)
     : undefined;
   const familiarCovers = !!familiarViewId;
-  const activeTabSessionIds = activeTab ? leafIds(activeTab.layout) : [];
-  const activeLinkedWorkItemPanel = activeTab
-    ? (linkedWorkItemPanels.get(activeTab.focusedId) ??
-      [...linkedWorkItemPanels.values()]
-        .reverse()
-        .find((panel) => activeTabSessionIds.includes(panel.sessionId)) ??
-      null)
-    : null;
 
   useLinkedPanelPrune(workspaceStore, tabs);
 
@@ -1351,27 +1323,15 @@ function Workspace({
   const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
 
-  const deckProjectTabs = useMemo(() => {
-    // A projectless session belongs to no project, so it stands on its own
-    // rather than trailing the last project's tabs.
-    const active = tabs.find((tab) => tab.id === activeTabId);
-    if (active && !workspaceTabCwd(active, sessions)) return [active];
-    // Each worktree keeps its own tabs; the others stay open, just hidden.
-    const worktree = projectWorktree?.path ?? projectCwd;
-    return filterTabsForProject(tabs, sessions, projectCwd).filter((tab) => {
-      if (tab.id === activeTabId) return true;
-      const workspace = tabWorkspace(tab, sessions);
-      return !workspace || sameProjectPath(workspace, worktree);
-    });
-  }, [
-    activeTabId,
+  const deckProjectTabs = useDeckProjectTabs({
     tabs,
+    activeTabId,
     sessions,
     projectCwd,
-    projectWorktree?.path,
+    worktreePath: projectWorktree?.path,
     tabWorkspace,
-    workspaceNavigation.revision,
-  ]);
+    navigationRevision: workspaceNavigation.revision,
+  });
 
   const deckProjectTabsRef = useLatestRef(deckProjectTabs);
   const openerFlows = useSessionOpenerFlows(flowCore, {
@@ -1648,20 +1608,6 @@ function Workspace({
     dockVisible: !!currentProjectDock?.open,
   });
 
-  const openFilePaths = useMemo(() => {
-    const paths: string[] = [];
-    const seen = new Set<string>();
-    for (const tab of tabs) {
-      for (const pane of tab.editorPanes) {
-        for (const file of pane.files) {
-          if (!isFilesystemTab(file) || seen.has(file.path)) continue;
-          seen.add(file.path);
-          paths.push(file.path);
-        }
-      }
-    }
-    return paths;
-  }, [tabs]);
 
 
   displayedTabNavigation.current = {
@@ -1912,11 +1858,8 @@ function Workspace({
           linkedPanels={
             <LinkedWorkItemPanels
               store={workspaceStore}
-              shownSessionId={
-                chrome.surfaceOpen || familiarCovers
-                  ? undefined
-                  : activeLinkedWorkItemPanel?.sessionId
-              }
+              activeTab={activeTab}
+              covered={chrome.surfaceOpen || familiarCovers}
               repairSessions={repairSessions}
             />
           }
@@ -1990,7 +1933,7 @@ function Workspace({
           }
           overlays={
             <>
-              <WorkspacePickerDialogs store={workspaceStore} cwd={filesCwd} openPaths={openFilePaths} />
+              <WorkspacePickerDialogs store={workspaceStore} cwd={filesCwd} />
               <WorkspaceNotices
                 pressure={{
                   sessions: sessionsRef,

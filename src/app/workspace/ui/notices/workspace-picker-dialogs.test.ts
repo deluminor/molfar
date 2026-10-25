@@ -35,7 +35,7 @@ function mount(): void {
   act(() =>
     root.render(
       withWorkspaceHandlers(
-        createElement(WorkspacePickerDialogs, { store, cwd: "/work/app", openPaths: [] }),
+        createElement(WorkspacePickerDialogs, { store, cwd: "/work/app" }),
         handlers,
       ),
     ),
@@ -62,7 +62,7 @@ describe("WorkspacePickerDialogs", () => {
     expect(seen.picker).toBeUndefined();
 
     act(() => store.setState({ filePickerOpen: true, filePickerInitialQuery: ">" }));
-    expect(seen.picker).toMatchObject({ open: true, initialQuery: ">", cwd: "/work/app" });
+    expect(seen.picker).toMatchObject({ open: true, initialQuery: ">", cwd: "/work/app", openPaths: [] });
 
     const runAction = seen.picker?.onRunAction as (id: string) => void;
     const close = seen.picker?.onClose as () => void;

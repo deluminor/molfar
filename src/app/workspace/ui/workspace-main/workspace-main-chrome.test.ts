@@ -110,7 +110,7 @@ describe("LinkedWorkItemPanels", () => {
         ["s2", panel("s2")],
       ]) as never,
     });
-    render(LinkedWorkItemPanels, { store, shownSessionId: "s2" });
+    render(LinkedWorkItemPanels, { store, activeTab: { id: "t", focusedId: "s2", layout: { type: "leaf", id: "s2" } } as never, covered: false });
     const onClosePanel = handlers.linkedPanels.close;
     const onOpenSession = handlers.inbox.openSession;
 
@@ -130,7 +130,7 @@ describe("LinkedWorkItemPanels", () => {
 
   it("shows no panel while the workspace is covered", () => {
     store.setState({ linkedWorkItemPanels: new Map([["s1", panel("s1")]]) as never });
-    render(LinkedWorkItemPanels, { store, shownSessionId: undefined });
+    render(LinkedWorkItemPanels, { store, activeTab: { id: "t", focusedId: "s1", layout: { type: "leaf", id: "s1" } } as never, covered: true });
 
     expect(seen.panels.at(-1)?.visible).toBe(false);
   });
