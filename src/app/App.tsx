@@ -212,10 +212,10 @@ import { useSessionReminders } from "@/features/notifications/hooks/use-session-
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
 import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import {
-  loadNotificationsEnabled,
-  probeNotificationPermission,
-  setWindowFocused,
-} from "@/features/notifications/model/notifications";
+  useDockBadge,
+  useNotificationPermissionProbe,
+} from "./workspace/hooks/notifications/use-notification-effects";
+import { setWindowFocused } from "@/features/notifications/model/notifications";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import {
   getSession,
@@ -1176,10 +1176,7 @@ function Workspace({
   );
   useInputNotifications(promptableSessions, activeSessionId);
 
-  // Cache the OS decision so a turn ending later can skip a denied banner.
-  useEffect(() => {
-    if (loadNotificationsEnabled()) void probeNotificationPermission();
-  }, []);
+  useNotificationPermissionProbe();
   const unseenFinishedIds = useUnseenFinishedSessions(
     sessions,
     busySessionIds,
@@ -1251,9 +1248,7 @@ function Workspace({
   const [pressureChipHost, setPressureChipHost] =
     useState<HTMLSpanElement | null>(null);
 
-  useEffect(() => {
-    syncDockBadge(sessions);
-  }, [sessions]);
+  useDockBadge(sessions);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
