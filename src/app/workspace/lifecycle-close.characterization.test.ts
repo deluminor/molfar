@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceSnapshot } from "@/features/workspace/model/workspace-snapshot";
 import { type AppHarness, renderApp } from "./testing/app-harness";
 import {
@@ -17,8 +17,9 @@ import { answeredSession } from "./testing/workspace-steps";
 
 // Pins what closing and reloading a window persist, and in which order,
 // before the lifecycle effects leave App.tsx (global refactor, Session 16).
-// happy-dom reports a "Darwin" platform, which reads as Windows here, so
-// close to tray is on unless a test turns it off.
+// Pinned to Windows, the only platform with a tray, so close to tray is on
+// unless a test turns it off. happy-dom derives the platform from the host,
+// so an unpinned run takes the Linux branch on Linux CI.
 
 vi.setConfig({ testTimeout: 60_000 });
 
@@ -26,9 +27,14 @@ const TRAY_OFF = { "molfar.closeToTray": "0" };
 
 let app: AppHarness | undefined;
 
+beforeEach(() => {
+  vi.spyOn(navigator, "platform", "get").mockReturnValue("Win32");
+});
+
 afterEach(async () => {
   await app?.unmount();
   app = undefined;
+  vi.restoreAllMocks();
 });
 
 function current(): AppHarness {
