@@ -57,9 +57,9 @@ import { useTitleTabFlows } from "./workspace/hooks/flows/use-title-tab-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import { useSessionStorage } from "./workspace/hooks/flows/use-session-storage";
 import { useHarnessTurnFlows } from "./workspace/hooks/flows/use-harness-turn-flows";
+import { useInboxFlows } from "./workspace/hooks/flows/use-inbox-flows";
 import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handlers";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
-import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { useSidebarTab } from "./workspace/hooks/sidebar/use-sidebar-tab";
 import { useLiveAgentsView } from "./workspace/hooks/sidebar/use-live-agents-view";
 import { useSidebarHistoryView } from "./workspace/hooks/sidebar/use-sidebar-history-view";
@@ -70,10 +70,6 @@ import { useFamiliarOverviewSync } from "./workspace/hooks/familiars/use-familia
 import { useFamiliarTabMigration } from "./workspace/hooks/familiars/use-familiar-tab-migration";
 import { useFamiliarTurnClose } from "./workspace/hooks/familiars/use-familiar-turn-close";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
-import { createBtw } from "./workspace/flows/btw/btw-actions";
-import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
-import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
-import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import { useAutomationSchedule } from "./workspace/hooks/use-automation-schedule";
@@ -174,7 +170,6 @@ import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
 import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-state";
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
-import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
 import {
   loadFamiliarsEnabled,
   subscribeFamiliarsEnabled,
@@ -421,19 +416,6 @@ function Workspace({
   useRemoteHistoryRerender();
   const storedLinkedSessions = useWorkspaceField(workspaceStore, "storedLinkedSessions");
 
-  const btw = useStableFlow(() =>
-    createBtw({
-      openSessions: () => sessionsRef.current,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        setSessions(next);
-      },
-      persist: (session) => sessionPersistence.persist(session),
-    }),
-  );
-  const linkedSessionUpdatesRef = useRef<
-    ReadonlyMap<string, LinkedSessionUpdate>
-  >(new Map());
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
   const projectTerminalsRef = useRef(projectTerminals);
@@ -556,6 +538,29 @@ function Workspace({
   const settingsOpenRef = useRef(settingsOpen);
   settingsOpenRef.current = settingsOpen;
   const sessionNavigationIdsRef = useRef<readonly string[]>([]);
+  const { btw, linkedPanels, addToChatDeps, linkedUpdatesRef, linkedUpdateCards, inboxActions } = useInboxFlows({
+    store: workspaceStore,
+    sessionsRef,
+    setSessions,
+    tabsRef,
+    activeTabIdRef,
+    projectCwdRef,
+    persist: (session) => sessionPersistence.persist(session),
+    closeAutomations: () => setAutomationsViewOpen(false),
+    setSidebarTab: (tab, project) => setSidebarTab(tab, project),
+    openSessionTab: (session, cwd) => tabLayout.openSessionTab(session, cwd),
+    selectTab: (tabId) => setActiveTabId(tabId),
+    focusComposer: () => setComposerFocused(true),
+    defaultCwd: () => {
+      const { active, sessionDefaults } = newChatDefaultsRef.current;
+      return active?.cwd || sessionDefaults?.cwd || projectCwdRef.current;
+    },
+    runtimeMode: () => newChatDefaultsRef.current.sessionDefaults?.runtimeMode,
+    sidebarCwd: () => sidebarCwdRef.current,
+    selectHistorySession: (sessionId) => sessionOpeners.selectHistory(sessionId),
+    ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
+    submit: (...args) => submission.send(...args),
+  });
   useBtwAbortClosed(btw, sessions);
 
   useWorkspaceTeardown(btw);
@@ -663,40 +668,7 @@ function Workspace({
   );
   const newChatDefaultsRef = useRef({ active, sessionDefaults });
   newChatDefaultsRef.current = { active, sessionDefaults };
-  const inboxDeps = useStableFlow(
-    (): InboxDeps => ({
-      store: workspaceStore,
-      sessionsRef,
-      setSessions,
-      closeAutomations: () => setAutomationsViewOpen(false),
-      setSidebarTab: (tab, project) => setSidebarTab(tab, project),
-      openSessionTab: (session, cwd) => tabLayout.openSessionTab(session, cwd),
-      selectTab: (tabId) => setActiveTabId(tabId),
-      focusComposer: () => setComposerFocused(true),
-      defaultCwd: () => {
-        const { active, sessionDefaults } = newChatDefaultsRef.current;
-        return active?.cwd || sessionDefaults?.cwd || projectCwdRef.current;
-      },
-      runtimeMode: () => newChatDefaultsRef.current.sessionDefaults?.runtimeMode,
-      sidebarCwd: () => sidebarCwdRef.current,
-      selectHistorySession: (sessionId) => sessionOpeners.selectHistory(sessionId),
-      ensureOpenSession: (sessionId) => sessionOpeners.ensureOpen(sessionId),
-      submit: (...args) => submission.send(...args),
-    }),
-  );
-  const linkedPanels = useStableFlow(() => createLinkedWorkItemPanels(inboxDeps));
-  useAddToChat(
-    useStableFlow(() => ({ ...inboxDeps, tabsRef, activeTabIdRef, projectCwdRef })),
-    sessionDefaults?.cwd,
-    sessionDefaults?.runtimeMode,
-  );
-  const linkedUpdateCards = useStableFlow(() =>
-    createLinkedUpdateCards({
-      sessionsRef,
-      setSessions,
-      linkedUpdates: () => linkedSessionUpdatesRef.current,
-    }),
-  );
+  useAddToChat(addToChatDeps, sessionDefaults?.cwd, sessionDefaults?.runtimeMode);
   const projectBranches = useProjectBranches(
     sidebarCwd,
     Boolean(sidebarCwd) && sidebarCwd !== "~",
@@ -880,7 +852,6 @@ function Workspace({
 
   useTabVisitsSync(tabVisits, tabs, activeTabId);
 
-  const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
 
   const deckProjectTabs = useDeckProjectTabs({
@@ -898,7 +869,7 @@ function Workspace({
     tabFlows,
     visits: tabVisits,
     linkedUpdateCards,
-    linkedUpdatesRef: linkedSessionUpdatesRef,
+    linkedUpdatesRef,
     navigationIdsRef: sessionNavigationIdsRef,
     deckTabsRef: deckProjectTabsRef,
   });
@@ -1105,7 +1076,7 @@ function Workspace({
     onAppeared: onInboxAppeared,
     scopeProject: appViewScope,
   });
-  linkedSessionUpdatesRef.current = linkedSessionUpdates;
+  linkedUpdatesRef.current = linkedSessionUpdates;
   const { inboxRelatedSessions, repairSessions } = useInboxView(storedLinkedSessions, history, sessions);
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
   const {
