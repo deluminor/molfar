@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
+import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { WorkspaceSnapshot } from "@/features/workspace/model/workspace-snapshot";
 import { type AppHarness, renderApp } from "./testing/app-harness";
 import {
   answerDialog,
@@ -162,5 +164,40 @@ describe("Workspace reload (page unload)", () => {
 
     expect(callsSince(current(), mark, "workspace_set_snapshot")).toEqual([]);
     expect(callsSince(current(), mark, "harness_kill_all")).toEqual([]);
+  });
+
+  it("saves the open project, its active tab and the chat the project returns to", async () => {
+    const app = await idleChat();
+    const mark = app.calls.length;
+
+    await app.drive(() => window.dispatchEvent(new Event("beforeunload")));
+    await app.until(() => callsSince(app, mark, "harness_kill_all").length > 0);
+
+    const [save] = callsSince(app, mark, "workspace_set_snapshot");
+    const snapshot = (save?.args as { snapshot: WorkspaceSnapshot } | undefined)?.snapshot;
+    expect(snapshot?.projectCwd).toBe("/work/demo");
+    expect(snapshot?.tabs.map((tab) => tab.id)).toContain(snapshot?.activeTabId);
+    const active = snapshot?.tabs.find((tab) => tab.id === snapshot.activeTabId);
+    expect(snapshot?.projectReturnTargets).toEqual([
+      { projectPath: "/work/demo", tabId: active?.focusedId },
+    ]);
+  });
+
+  it("stops listening once the workspace is gone", async () => {
+    await idleChat();
+    await current().unmount();
+    app = undefined;
+    const calls: string[] = [];
+    mockIPC((command) => {
+      calls.push(command);
+      return null;
+    });
+
+    window.dispatchEvent(new Event("beforeunload"));
+    window.dispatchEvent(new Event("pagehide"));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    clearMocks();
+
+    expect(calls).toEqual([]);
   });
 });
