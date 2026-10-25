@@ -1,4 +1,4 @@
-import type { Block } from "./session";
+import type { Block } from "@/domain/session/block";
 
 /**
  * Everything the agent wrote in the session's latest turn, in full. Settlement

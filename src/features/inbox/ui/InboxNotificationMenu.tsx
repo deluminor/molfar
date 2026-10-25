@@ -4,20 +4,20 @@ import {
   knownInboxEntries,
   markInboxItemsSeen,
   useInboxSeenTick,
-} from "../model/inboxSeen";
-import { useProjectNotificationPreferences } from "../../notifications/hooks/useProjectNotificationPreferences";
+} from "../model/inbox-seen";
+import { useProjectNotificationPreferences } from "@/features/notifications/hooks/use-project-notification-preferences";
 import {
   isProjectMuted,
   updateNotificationPreferences,
-} from "../../notifications/model/notificationPreferences";
-import { useNotificationProjects } from "../../notifications/hooks/useNotificationProjects";
-import { ExplorerMenu, type ExplorerMenuItem } from "../../files/ui/ExplorerMenu";
-import { NotificationMuteDatePicker } from "../../notifications/ui/NotificationMuteDatePicker";
-import { Popover } from "../../../shared/ui/Popover";
+} from "@/features/notifications/model/notification-preferences";
+import { useNotificationProjects } from "@/features/notifications/hooks/use-notification-projects";
+import { ExplorerMenu, type ExplorerMenuItem } from "@/features/files/ui/ExplorerMenu";
+import { NotificationMuteDatePicker } from "@/features/notifications/ui/NotificationMuteDatePicker";
+import { Popover } from "@/shared/ui/Popover";
 import {
   notificationMuteActions,
   notificationMuteDeadline,
-} from "../../notifications/ui/notificationMuteActions";
+} from "@/features/notifications/ui/notification-mute-actions";
 
 type Props = {
   x: number;

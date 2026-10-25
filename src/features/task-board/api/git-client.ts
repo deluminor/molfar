@@ -5,8 +5,8 @@ import {
   gitSnapshot,
   type GitRangeContext,
   type GitSnapshot,
-} from "../../../platform/tauri/fs";
-import { createWorktree, listWorktrees, removeWorktree } from "../../source-control/model/worktrees";
+} from "@/platform/tauri/fs";
+import { createWorktree, listWorktrees, removeWorktree } from "@/features/source-control/model/worktrees";
 
 export type PullRequestInput = { title: string; body: string; base: string; head: string };
 

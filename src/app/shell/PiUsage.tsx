@@ -1,17 +1,14 @@
+import { idleRateLimits } from "@/domain/rate-limits/rate-limit-state";
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw } from "../../shared/ui/icons";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+import { RefreshCw } from "@/shared/ui/icons";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   fetchPiUsage,
   piBillingProvider,
   piUsageProvider,
   type PiUsageProvider,
-} from "../../features/providers/model/piUsage";
-import {
-  idleRateLimits,
-  RATE_LIMIT_MIN_REFETCH_MS,
-  RATE_LIMIT_POLL_MS,
-} from "../../features/providers/model/rateLimits";
+} from "@/features/providers/model/pi-usage";
+import { RATE_LIMIT_MIN_REFETCH_MS, RATE_LIMIT_POLL_MS } from "@/features/providers/model/rate-limits";
 import { UsageProviderChip, type UsageChipVariant } from "./UsageProviderChip";
 
 export function PiUsage({

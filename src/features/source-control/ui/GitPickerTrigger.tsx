@@ -1,7 +1,7 @@
 import { useContext } from "react";
-import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
+import { NativePopupHost } from "@/shared/ui/NativePopupHost";
 import type { ComponentPropsWithoutRef } from "react";
-import { FolderTree, GitBranch } from "../../../shared/ui/icons";
+import { FolderTree, GitBranch } from "@/shared/ui/icons";
 
 type Props = Omit<
   ComponentPropsWithoutRef<"button">,

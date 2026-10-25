@@ -13,7 +13,7 @@ import {
   loadRecentEmoji,
   rememberEmoji,
   saveEmojiSkinTone,
-} from "../lib/emojiData";
+} from "../lib/emoji-data";
 
 const COLUMNS = 8;
 

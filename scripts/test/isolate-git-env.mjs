@@ -1,3 +1,7 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 // Git exports GIT_DIR and friends to hooks (the pre-push hook runs the test
 // suite). Tests that spawn git in temporary directories inherit them, so their
 // `git init`, `git config` and `git commit` would hit this repository instead.
@@ -23,3 +27,11 @@ const REPOSITORY_ENV_VARS = [
 for (const name of REPOSITORY_ENV_VARS) {
   delete process.env[name];
 }
+
+// A developer's global core.hooksPath (e.g. a commit message policy) would run
+// in the temporary repositories tests create and reject their commits. Point
+// hooks at an empty directory for every git process the tests start.
+const noHooks = mkdtempSync(join(tmpdir(), "molfar-test-no-hooks-"));
+process.env.GIT_CONFIG_COUNT = "1";
+process.env.GIT_CONFIG_KEY_0 = "core.hooksPath";
+process.env.GIT_CONFIG_VALUE_0 = noHooks;

@@ -7,8 +7,8 @@ import {
   type ReactElement,
 } from "react";
 import { createPortal } from "react-dom";
-import { estimateRetainedBytes } from "../data/sessionCache";
-import { detachedHistoryNodes } from "./useMeasuredHistory";
+import { estimateRetainedBytes } from "../data/session-cache";
+import { detachedHistoryNodes } from "./use-measured-history";
 
 /** Transcripts kept mounted after their pane closes, so a revisit skips the rebuild. */
 export const TRANSCRIPT_POOL_LIMIT = 4;

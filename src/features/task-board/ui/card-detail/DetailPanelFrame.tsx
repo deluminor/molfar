@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useDragResize } from "../../../../shared/hooks/useDragResize";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
 
 const MIN_WIDTH = 380;
 const DEFAULT_WIDTH = 520;

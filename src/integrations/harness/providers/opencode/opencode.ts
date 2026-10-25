@@ -1,13 +1,8 @@
-import { TurnNotReadyError } from "../../core/types";
-import {
-  modelContextWindow,
-  nativeModelId,
-} from "../../../../features/sessions/model/models";
-import type {
-  RuntimeMode,
-  TurnMetrics,
-} from "../../../../features/sessions/model/session";
-import { taskListFromToolInput } from "../../../../features/sessions/model/taskList";
+import { modelContextWindow, nativeModelId } from "../../core/models/resolve-model";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { TurnMetrics } from "@/domain/session/turn";
+import { TurnNotReadyError, type ApprovalDecision, type CompactContextInput, type HarnessEvent, type HarnessSessionInput, type RewindLastTurnInput, type RewindLastTurnResult, type SendTurnInput, type SteerTurnInput } from "../../core/types";
+import { taskListFromToolInput } from "@/domain/session/task-list";
 import {
   closeHarnessSse,
   execChild,
@@ -22,7 +17,7 @@ import {
   OpenCodeClient,
   OpenCodeHttpError,
   type OpenCodeMessage,
-} from "./opencodeClient";
+} from "./opencode-client";
 import {
   appendOpenCodeAssistantTextDelta,
   asRecord,
@@ -50,35 +45,25 @@ import {
   toolKindFromName,
   type OpenCodeApiGeneration,
   type OpenCodePart,
-} from "./opencodeProtocol";
-import { resolveOpenCodeV2Service } from "./opencodeService";
+} from "./opencode-protocol";
+import { resolveOpenCodeV2Service } from "./opencode-service";
 import {
   OpenCodeV2InboxTracker,
   type OpenCodeV2InboxOutcome,
-} from "./opencodeV2Events";
+} from "./opencode-v2-events";
 import {
   composeToolTitle,
   extractShellCommand,
   extractSkillName,
 } from "../../core/preview";
-import { streamTextDelta } from "../../core/streamText";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+import { streamTextDelta } from "../../core/stream-text";
 import {
   questionPromptTitle,
   questionsFromUnknown,
   selectedAnswerLabels,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "@/domain/session/user-question";
 
 type PendingApproval = {
   id: string;

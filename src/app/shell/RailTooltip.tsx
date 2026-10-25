@@ -5,9 +5,9 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { formatInteger } from "../../shared/lib/numbers";
-import type { PopoverSide } from "../../shared/lib/popover";
-import { Popover } from "../../shared/ui/Popover";
+import { formatInteger } from "@/shared/lib/numbers";
+import type { PopoverSide } from "@/shared/lib/popover";
+import { Popover } from "@/shared/ui/Popover";
 
 type Tip = {
   el: HTMLElement;

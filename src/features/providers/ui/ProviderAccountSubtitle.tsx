@@ -1,5 +1,5 @@
-import type { ProviderAccountIdentity } from "../model/providerAccountIdentity";
-import { PrivateEmail } from "../../../shared/ui/PrivateEmail";
+import type { ProviderAccountIdentity } from "../model/provider-account-identity";
+import { PrivateEmail } from "@/features/settings/ui/PrivateEmail";
 
 export function ProviderAccountSubtitle({
   identity,

@@ -1,4 +1,4 @@
-vi.mock("../../../integrations/harness/core/registry", () => ({
+vi.mock("@/integrations/harness/core/registry", () => ({
   getHarness: (id: string) =>
     id === "pi" || id === "omp"
       ? {

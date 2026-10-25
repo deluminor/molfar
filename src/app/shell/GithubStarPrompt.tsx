@@ -3,8 +3,8 @@ import { useEffect, useSyncExternalStore } from "react";
 import {
   githubMolfarStarStatus,
   starMolfarOnGithub,
-} from "../../features/inbox/model/githubTasks";
-import { Loader, Star, X } from "../../shared/ui/icons";
+} from "@/features/inbox/model/github-tasks";
+import { Loader, Star, X } from "@/shared/ui/icons";
 
 const MOLFAR_GITHUB_URL = "https://github.com/deluminor/molfar";
 const DISMISSED_STORAGE_KEY = "molfar.githubStarPrompt.dismissed.v1";

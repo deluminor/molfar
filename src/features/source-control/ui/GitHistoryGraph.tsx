@@ -13,15 +13,15 @@ import {
   RefreshCw,
   Search,
   X,
-} from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { suppressTextSelection } from "../../../shared/lib/drag";
-import { PaneHeader } from "../../../shared/ui/PaneHeader";
+} from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { suppressTextSelection } from "@/shared/lib/drag";
+import { PaneHeader } from "@/shared/ui/PaneHeader";
 import {
   gitHistory,
   subscribeGitChanged,
   type GitHistoryCommit,
-} from "../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   GRAPH_ROW_PX,
   SWIMLANE_WIDTH,
@@ -29,7 +29,7 @@ import {
   layoutGitGraph,
   type GraphRef,
   type HistoryItemViewModel,
-} from "../model/gitGraph";
+} from "../model/git-graph";
 
 type Props = {
   cwd: string;

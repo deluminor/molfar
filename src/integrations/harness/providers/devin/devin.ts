@@ -1,7 +1,7 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
-import { AcpSubagents } from "../../core/acpSubagents";
-import { DevinSubagents } from "./devinSubagents";
+import { nativeModelId } from "../../core/models/resolve-model";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { AcpSubagents } from "../../core/acp-subagents";
+import { DevinSubagents } from "./devin-subagents";
 import {
   killChild,
   resolveDevinBinary,
@@ -9,8 +9,8 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
-import type { NativeCommand } from "../../core/nativeCommands";
+import { JsonRpcClient, type JsonRpcId } from "../../core/json-rpc";
+import type { NativeCommand } from "../../core/native-commands";
 import type {
   ApprovalDecision,
   CompactContextInput,
@@ -27,8 +27,8 @@ import {
   resolveSettingConfigId,
   sessionIdFromResult,
   type SessionConfigOption,
-} from "../antigravity/antigravityProtocol";
-import { readDevinApiKey } from "./devinAuth";
+} from "../antigravity/antigravity-protocol";
+import { readDevinApiKey } from "./devin-auth";
 import {
   DEVIN_AUTH_HELP,
   devinAsksBeforeEdits,
@@ -52,7 +52,7 @@ import {
   type DevinModeId,
   type DevinModelFamily,
   type DevinToolInfo,
-} from "./devinProtocol";
+} from "./devin-protocol";
 
 type Live = {
   threadId: string;

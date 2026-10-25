@@ -9,8 +9,8 @@ import {
   computeHeatmapCellLayout,
   type HeatmapCellLayout,
   type HeatmapVariant,
-} from "../model/heatmapLayout";
-import type { ActivityCell, ActivityYearGrid } from "../model/sessionActivity";
+} from "../model/heatmap-layout";
+import type { ActivityCell, ActivityYearGrid } from "../model/session-activity";
 
 type Props = {
   grid: ActivityYearGrid;

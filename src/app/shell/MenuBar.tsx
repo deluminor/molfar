@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../features/files/ui/ExplorerMenu";
-import { ALT, MOD, SHIFT } from "../../platform/tauri/platform";
-import { APP_UPDATER_DISABLED } from "../model/forkPolicy";
-import { runUpdateFlow } from "../model/updater";
+} from "@/features/files/ui/ExplorerMenu";
+import { ALT, MOD, SHIFT } from "@/shared/lib/platform";
+import { APP_UPDATER_DISABLED } from "@/features/updates/model/fork-policy";
+import { runUpdateFlow } from "@/features/updates/model/updater";
 import {
   keybindingShortcutLabel,
   loadAutosave,
@@ -14,7 +14,7 @@ import {
   saveAutosave,
   subscribeAutosave,
   subscribeKeybindings,
-} from "../../features/settings/model/settings";
+} from "@/features/settings/model/settings";
 
 type MenuKey = "file" | "view" | "terminal";
 

@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from "react";
-import { ChevronDown } from "../../../shared/ui/icons";
+import { ChevronDown } from "@/shared/ui/icons";
 
 /** Scroll events update the button without rerendering the session pane. */
 export function useTranscriptJumpVisibility() {

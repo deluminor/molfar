@@ -13,7 +13,7 @@ const child = vi.hoisted(() => ({
 }));
 
 vi.mock("./child", () => child);
-vi.mock("../../../platform/tauri/fs", () => ({ homeDir: vi.fn(async () => "/home/alice") }));
+vi.mock("@/platform/tauri/fs", () => ({ homeDir: vi.fn(async () => "/home/alice") }));
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => ({ label: "test-window" }),
 }));

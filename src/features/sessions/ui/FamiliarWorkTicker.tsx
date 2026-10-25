@@ -7,9 +7,9 @@ import {
   Search,
   Terminal,
   Wrench,
-} from "../../../shared/ui/icons";
-import { Shimmer } from "../../../shared/ui/Shimmer";
-import type { FamiliarWorkStatus } from "../model/familiarWorkStatus";
+} from "@/shared/ui/icons";
+import { Shimmer } from "@/shared/ui/Shimmer";
+import type { FamiliarWorkStatus } from "../model/familiar-work-status";
 
 const TICK_MS = 340;
 const HOLD_MS = 850;

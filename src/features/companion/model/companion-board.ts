@@ -1,10 +1,10 @@
-import { parsePrPatch } from "../../source-control/model/prDiff";
-import type { TaskBoardRuntime } from "../../task-board/hooks/use-task-board-engine";
-import { latestVersions } from "../../task-board/services/artifact-reader";
-import { isStalled, needsYou } from "../../task-board/model/attention";
-import { legalDropTargets } from "../../task-board/model/transitions";
-import type { Card } from "../../task-board/types/card";
-import type { StageRun } from "../../task-board/types/stage";
+import { parsePrPatch } from "@/features/source-control/model/pr-diff";
+import type { TaskBoardRuntime } from "@/features/task-board/hooks/use-task-board-engine";
+import { latestVersions } from "@/features/task-board/services/artifact-reader";
+import { isStalled, needsYou } from "@/features/task-board/model/attention";
+import { legalDropTargets } from "@/features/task-board/model/transitions";
+import type { Card } from "@/features/task-board/types/card";
+import type { StageRun } from "@/features/task-board/types/stage";
 import { BoardInputError, cardId, column, ownerAction, text, updatedAt } from "./companion-board-input";
 
 const PATCH_MAX = 60_000;

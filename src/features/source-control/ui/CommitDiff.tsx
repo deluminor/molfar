@@ -1,13 +1,10 @@
+import { type GitChangedFile } from "@/domain/git/working-tree";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Loader } from "../../../shared/ui/icons";
-import {
-  gitCommitFileDiff,
-  gitCommitFiles,
-  type GitChangedFile,
-} from "../../../platform/tauri/fs";
-import { forEachConcurrent } from "../../../shared/lib/concurrent";
-import type { UnifiedFileDiff } from "../model/unifiedDiff";
-import { prepareUnifiedDiff } from "../model/diffWorker";
+import { AlertCircle, Loader } from "@/shared/ui/icons";
+import { gitCommitFileDiff, gitCommitFiles } from "@/platform/tauri/fs";
+import { forEachConcurrent } from "@/shared/lib/concurrent";
+import type { UnifiedFileDiff } from "../model/unified-diff";
+import { prepareUnifiedDiff } from "../model/diff-worker";
 import { UnifiedDiffView, type UnifiedDiffFileModel } from "./UnifiedDiffView";
 
 type Props = {

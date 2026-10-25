@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AgentTranscript } from "../../src/features/sessions/ui/AgentTranscript";
-import type { Block } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/domain/session/block";
 import {
   saveTranscriptAnchor,
   saveTranscriptLayout,

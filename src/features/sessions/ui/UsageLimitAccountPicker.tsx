@@ -1,3 +1,9 @@
+import { type HarnessId } from "@/domain/harness/harness";
+import {
+  sameProviderAccountId,
+  supportsProviderAccounts,
+  type ProviderAccount,
+} from "@/domain/harness/provider-account";
 import {
   useId,
   useRef,
@@ -5,17 +11,13 @@ import {
   useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { ChevronDown } from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
-import type { HarnessId } from "../model/session";
+import { ChevronDown } from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
 import { HarnessIcon } from "./HarnessIcon";
 import {
   providerAccounts,
-  sameProviderAccountId,
   subscribeProviderAccounts,
-  supportsProviderAccounts,
-  type ProviderAccount,
-} from "../../providers/model/providerAccounts";
+} from "@/features/providers/model/provider-accounts";
 
 /** The provider's other accounts, offered when the current one is limited. */
 export function UsageLimitAccountPicker({

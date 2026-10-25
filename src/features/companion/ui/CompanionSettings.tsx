@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
-import { Loader, Trash2 } from "../../../shared/ui/icons";
+import { Loader, Trash2 } from "@/shared/ui/icons";
 
 type BindMode = "serve" | "tailnet";
 

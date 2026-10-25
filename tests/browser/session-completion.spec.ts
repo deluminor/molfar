@@ -1,6 +1,6 @@
 import type { ReaderAnchor } from "./readerAnchor";
 import { expect, test, type Page } from "@playwright/test";
-import type { Block } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/domain/session/block";
 
 type Fixture = Window & {
   captureReaderAnchor(): ReaderAnchor;

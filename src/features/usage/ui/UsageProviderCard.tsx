@@ -4,7 +4,7 @@ import {
   usageWindowFooter,
   type UsageCardState,
   type UsageWindow,
-} from "../model/usageCard";
+} from "../model/usage-card";
 
 const BAR_TONE: Record<ReturnType<typeof usageBarTone>, string> = {
   low: "bg-accent/70",

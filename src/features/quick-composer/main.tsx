@@ -1,8 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { IS_MAC } from "../../platform/tauri/platform";
-import { installNativeContextMenuGuard } from "../../shared/lib/nativeContextMenu";
+import { IS_MAC } from "@/shared/lib/platform";
+import { installNativeContextMenuGuard } from "@/shared/lib/native-context-menu";
 import {
   applyAccentColor,
   applyThemeDarkLightness,
@@ -13,10 +13,10 @@ import {
   loadThemeHue,
   loadThemePreference,
   loadThemeSaturation,
-} from "../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import { QuickGitPopup } from "./ui/QuickGitPopup";
 import { QuickComposer } from "./ui/QuickComposer";
-import "../../styles/index.css";
+import "@/styles/index.css";
 
 /**
  * Only the theme, not the workspace's glass, backgrounds, or scale: the panel

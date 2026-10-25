@@ -1,3 +1,5 @@
+import { normalizeProjectPath } from "@/shared/lib/project-path";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   createPath,
   homeDir,
@@ -5,31 +7,30 @@ import {
   readTextFile,
   writeTextFile,
   type DiscoveredSkill,
-} from "../../../platform/tauri/fs";
-import { invalidateProjectFiles } from "../../files/model/fileIndex";
-import { joinPath } from "../../../shared/lib/paths";
-import { isLocalProject, normalizeProjectPath } from "../../projects/model/recents";
-import { isMarkdownBlockquotePosition } from "../../sessions/model/quoteDraft";
-import type { HarnessId } from "../../sessions/model/session";
-import { getHarness } from "../../../integrations/harness/core/registry";
-import type { NativeCommand } from "../../../integrations/harness/core/nativeCommands";
+} from "@/platform/tauri/fs";
+import { invalidateProjectFiles } from "@/features/files/model/file-index";
+import { joinPath } from "@/shared/lib/paths";
+import { isLocalProject } from "@/features/projects/model/recents";
+import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
+import { getHarness } from "@/integrations/harness/core/registry";
+import type { NativeCommand } from "@/integrations/harness/core/native-commands";
 import {
   CREATE_SKILL_BODY,
   CREATE_SKILL_DESCRIPTION,
   CREATE_SKILL_NAME,
-} from "./createSkill";
+} from "./create-skill";
 import {
   CREATE_BOARD_TASK_SKILL_BODY,
   CREATE_BOARD_TASK_SKILL_DESCRIPTION,
   CREATE_BOARD_TASK_SKILL_NAME,
-} from "./createBoardTask";
+} from "./create-board-task";
 
 export {
   rankSkills,
   replaceSlashToken,
   slashTokenAt,
   type SlashToken,
-} from "./slashCommands";
+} from "./slash-commands";
 
 const DISABLED_SKILL_PATHS_KEY = "molfar.disabledSkillPaths";
 

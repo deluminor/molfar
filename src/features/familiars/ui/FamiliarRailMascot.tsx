@@ -1,4 +1,4 @@
-import { PixelMascot } from "../../projects/ui/PixelMascot";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
 import type { FamiliarStatus } from "../model/familiar";
 
 /** The rail mascot and its status circle, shared by both rail layouts. */

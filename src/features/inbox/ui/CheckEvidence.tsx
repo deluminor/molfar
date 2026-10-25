@@ -1,9 +1,9 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useState } from "react";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { AlertCircle, CircleX, ExternalLink } from "../../../shared/ui/icons";
-import { gitCommitFileDiff } from "../../../platform/tauri/fs";
-import type { GithubCheckDetails } from "../model/githubPrChecks";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { AlertCircle, CircleX, ExternalLink } from "@/shared/ui/icons";
+import { gitCommitFileDiff } from "@/platform/tauri/fs";
+import type { GithubCheckDetails } from "../model/github-pr-checks";
 
 type Annotation = GithubCheckDetails["annotations"][number];
 type SourceCache = Map<string, Promise<string | null>>;

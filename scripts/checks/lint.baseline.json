@@ -1,0 +1,2043 @@
+{
+  "host/attachments.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "host/attachments.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "host/child-backend.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "host/child-backend.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/noAssignInExpressions": 2
+  },
+  "host/cli.ts": {
+    "lint/suspicious/noConsole": 13
+  },
+  "host/engine.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "host/engine.ts": {
+    "lint/complexity/useOptionalChain": 1,
+    "lint/style/noNonNullAssertion": 4,
+    "lint/style/useImportType": 1,
+    "lint/suspicious/noConsole": 2
+  },
+  "host/git-worktrees.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "host/large-sync.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "host/package.mjs": {
+    "lint/suspicious/noConsole": 1
+  },
+  "host/server.test.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/noExplicitAny": 1
+  },
+  "host/server.ts": {
+    "lint/style/useImportType": 1
+  },
+  "host/service.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "host/store.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "host/sync-transfer.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "host/windows-bootstrap.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "host/windows.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "host/windows.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "host/workspace-commands.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "host/workspace.ts": {
+    "lint/style/noNonNullAssertion": 4,
+    "lint/suspicious/noControlCharactersInRegex": 1
+  },
+  "scripts/release/changelog.mjs": {
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "scripts/upstream/rename-upstream.mjs": {
+    "lint/suspicious/noControlCharactersInRegex": 2
+  },
+  "src/app/App.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/hooks/use-familiar-habits.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/app/hooks/use-familiar-habits.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/app/hooks/use-floating-familiar.ts": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/app/hooks/use-idle-session-detach.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/app/hooks/use-idle-session-detach.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/hooks/use-workspace-navigation.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/app/hooks/use-workspace-navigation.ts": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/app/model/preload-navigation.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 2
+  },
+  "src/app/model/quick-launch-session.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/app/model/release-notes-workspace.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/app/shell/familiar-rail-section.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/app/shell/FamiliarRailSection.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useKeyWithClickEvents": 1,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/shell/github-star-prompt.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/app/shell/inbox-notification-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 8
+  },
+  "src/app/shell/MenuBar.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/shell/NewLayoutNotice.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/shell/project-groups.test.ts": {
+    "lint/style/noNonNullAssertion": 17
+  },
+  "src/app/shell/project-notification-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/app/shell/ProjectRail.tsx": {
+    "lint/a11y/noStaticElementInteractions": 2,
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/style/useImportType": 1
+  },
+  "src/app/shell/ProjectSpaces.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 4
+  },
+  "src/app/shell/SettingsRail.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1
+  },
+  "src/app/shell/sidebar-knowledge-navigation.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/app/shell/sidebar-rename.test.ts": {
+    "lint/style/noNonNullAssertion": 104,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/app/shell/Sidebar.tsx": {
+    "lint/a11y/noStaticElementInteractions": 2,
+    "lint/a11y/useAriaPropsSupportedByRole": 2,
+    "lint/a11y/useKeyWithClickEvents": 1,
+    "lint/a11y/useSemanticElements": 3,
+    "lint/correctness/useExhaustiveDependencies": 15,
+    "lint/style/noNonNullAssertion": 3,
+    "lint/style/useImportType": 4,
+    "lint/suspicious/noArrayIndexKey": 1,
+    "lint/suspicious/noConfusingVoidType": 2,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/app/shell/tab-close-motion.test.ts": {
+    "lint/style/noNonNullAssertion": 10
+  },
+  "src/app/shell/tab-middle-click.test.ts": {
+    "lint/style/noNonNullAssertion": 15
+  },
+  "src/app/shell/title-bar-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/app/shell/title-bar-pane-drop.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/app/shell/title-bar-status.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/app/shell/title-bar.test.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/app/shell/TitleBar.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/app/shell/usage-footer-auth.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/app/shell/usage-footer-project-account.test.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/style/useImportType": 2
+  },
+  "src/app/shell/usage-footer.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/app/shell/usage-provider-chip.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/app/shell/UsageFooter.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/app/shell/UsageProviderChip.tsx": {
+    "lint/a11y/noAutofocus": 1,
+    "lint/a11y/noSvgWithoutTitle": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/app/shell/use-project-menu.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/shell/WhatsNewDialog.tsx": {
+    "lint/a11y/useSemanticElements": 3
+  },
+  "src/app/workspace/hooks/harness/use-harness-effects.ts": {
+    "lint/correctness/useExhaustiveDependencies": 3
+  },
+  "src/app/workspace/hooks/lifecycle/use-familiar-thread-migration.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/hooks/lifecycle/use-project-return-memory.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/hooks/lifecycle/use-workspace-autosave.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/hooks/sidebar/use-live-agents-view.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/hooks/tabs/use-tab-effects.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/title-tabs/use-deck-project-tabs.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/title-tabs/use-title-tabs-view.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/assets/providers/antigravity.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/claude.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/codex.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/cursor.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/devin.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/fx.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/grok.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/hermes.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/opencode.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/assets/providers/pi.svg": {
+    "lint/a11y/noSvgWithoutTitle": 1
+  },
+  "src/debug-familiar-scroll.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/noConsole": 2
+  },
+  "src/domain/session/context-usage.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/domain/session/user-question.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/agent-app/model/agent-app-memory.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/agent-app/model/agent-app.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/agent-app/model/agent-app.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/agent-app/model/session-conversation.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/artifacts/ui/artifact-panel.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/artifacts/ui/ArtifactPanel.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "src/features/artifacts/ui/HtmlArtifactFrame.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 3
+  },
+  "src/features/automations/ui/AutomationsView.tsx": {
+    "lint/a11y/noAutofocus": 2,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/companion/ui/CompanionSettings.tsx": {
+    "lint/a11y/useButtonType": 5,
+    "lint/security/noDangerouslySetInnerHtml": 1
+  },
+  "src/features/confluence/model/mentions.ts": {
+    "lint/suspicious/noAssignInExpressions": 2
+  },
+  "src/features/connections/model/connections.ts": {
+    "lint/correctness/useExhaustiveDependencies": 11
+  },
+  "src/features/connections/model/remote-session-actions.ts": {
+    "lint/suspicious/noConfusingVoidType": 2
+  },
+  "src/features/connections/ui/add-remote-project-dialog.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/connections/ui/AddRemoteProjectDialog.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 5,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/connections/ui/connections-settings.test.ts": {
+    "lint/style/noNonNullAssertion": 9
+  },
+  "src/features/connections/ui/ConnectionsSettings.tsx": {
+    "lint/a11y/noAutofocus": 2,
+    "lint/a11y/useButtonType": 10,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/connections/ui/remote-session.test.ts": {
+    "lint/a11y/useButtonType": 4,
+    "lint/style/noNonNullAssertion": 49
+  },
+  "src/features/connections/ui/RemoteSession.tsx": {
+    "lint/complexity/useOptionalChain": 1,
+    "lint/correctness/noUnusedVariables": 1,
+    "lint/correctness/useExhaustiveDependencies": 22,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/hooks/use-familiar-transcript.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/hooks/use-familiar-transcript.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/familiars/model/familiar-completion-batches.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/model/familiar-habits.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/model/familiar-habits.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/familiars/model/familiar-messaging.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/familiars/model/familiar-messaging.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/features/familiars/model/familiar-migration.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/model/familiar-reaction.ts": {
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/familiars/model/familiar-roster.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/model/familiar-session-completion.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/familiars/model/familiar-session-completion.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/familiars/model/familiar-usage-limit.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/familiars/model/familiar-workspace.test.ts": {
+    "lint/style/noNonNullAssertion": 7
+  },
+  "src/features/familiars/model/familiar.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/model/floating-familiar.ts": {
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/familiars/ui/familiar-activity-view.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/familiars/ui/familiar-changes-view.test.ts": {
+    "lint/style/noNonNullAssertion": 21
+  },
+  "src/features/familiars/ui/familiar-composer-file-drop.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/familiars/ui/familiar-composer.ime.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/familiars/ui/familiar-composer.test.ts": {
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/features/familiars/ui/familiar-file-pages.test.ts": {
+    "lint/style/noNonNullAssertion": 18
+  },
+  "src/features/familiars/ui/familiar-intro.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/familiars/ui/familiar-memory-page.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/familiars/ui/familiar-overview.test.ts": {
+    "lint/style/noNonNullAssertion": 12
+  },
+  "src/features/familiars/ui/familiar-panel-parts.tsx": {
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/familiars/ui/familiar-session-list.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/familiars/ui/familiar-settings-dialog.test.ts": {
+    "lint/style/noNonNullAssertion": 8,
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "src/features/familiars/ui/familiar-usage-limit-notice.test.ts": {
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/features/familiars/ui/FamiliarChangesView.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/familiars/ui/FamiliarComposer.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 3,
+    "lint/suspicious/noConfusingVoidType": 2,
+    "lint/suspicious/noFocusedTests": 2
+  },
+  "src/features/familiars/ui/FamiliarFilePages.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/familiars/ui/FamiliarHabits.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/familiars/ui/FamiliarOverview.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/familiars/ui/FamiliarProjectCommit.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/familiars/ui/FamiliarSessionList.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 3,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/familiars/ui/FamiliarSettingsDialog.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/familiars/ui/FamiliarSidebar.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/familiars/ui/FamiliarUsageLimitNotice.tsx": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/familiars/ui/floating-familiar-chat.motion.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/familiars/ui/floating-familiar-chat.test.ts": {
+    "lint/a11y/useButtonType": 1,
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/features/familiars/ui/FloatingFamiliarChat.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/style/noNonNullAssertion": 3,
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "src/features/familiars/ui/panel-stack.test.ts": {
+    "lint/correctness/noChildrenProp": 1
+  },
+  "src/features/familiars/ui/PanelStack.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 3
+  },
+  "src/features/files/editor/code-highlight-engine.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/files/editor/code-highlight-plugin.ts": {
+    "lint/performance/noBarrelFile": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/files/editor/code-highlight-worker.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/files/editor/editor-chrome.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/features/files/editor/editor-doc.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/files/editor/editor-git.gutter.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/files/editor/editor-git.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/files/editor/editor-git.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/style/useConst": 1
+  },
+  "src/features/files/editor/editor-language.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/files/model/editor-selection.ts": {
+    "lint/suspicious/noControlCharactersInRegex": 2
+  },
+  "src/features/files/model/file-index.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/files/model/file-mentions.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/files/model/file-mentions.ts": {
+    "lint/style/noNonNullAssertion": 5,
+    "lint/suspicious/noAssignInExpressions": 2
+  },
+  "src/features/files/model/file-watch.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 2
+  },
+  "src/features/files/ui/binary-file-view.test.ts": {
+    "lint/style/noNonNullAssertion": 13
+  },
+  "src/features/files/ui/BinaryFileView.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useKeyWithClickEvents": 1,
+    "lint/a11y/useMediaCaption": 1,
+    "lint/correctness/useExhaustiveDependencies": 3
+  },
+  "src/features/files/ui/ExplorerMenu.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/files/ui/file-editor-crlf-git.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/files/ui/file-pane-line-endings.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/files/ui/file-pane-navigation.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/files/ui/file-pane.reviews.test.ts": {
+    "lint/a11y/useButtonType": 1,
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/files/ui/file-picker.test.ts": {
+    "lint/style/noNonNullAssertion": 14
+  },
+  "src/features/files/ui/file-preview-search.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/files/ui/file-tree.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/files/ui/file-view-mode.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/files/ui/FileEditor.tsx": {
+    "lint/complexity/useOptionalChain": 1,
+    "lint/correctness/useExhaustiveDependencies": 10
+  },
+  "src/features/files/ui/FilePane.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1
+  },
+  "src/features/files/ui/FilePicker.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 5
+  },
+  "src/features/files/ui/FilePreview.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/suspicious/noArrayIndexKey": 3,
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/files/ui/FilePreviewSearch.tsx": {
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/files/ui/FileTree.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/style/useImportType": 1
+  },
+  "src/features/files/ui/FileTypeIcon.tsx": {
+    "lint/security/noDangerouslySetInnerHtml": 1
+  },
+  "src/features/home/model/host-history.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/features/home/ui/brand-card.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/home/ui/FireVisual.tsx": {
+    "lint/a11y/noAriaHiddenOnFocusable": 1
+  },
+  "src/features/home/ui/HiddenWidgetsStrip.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/home/ui/HomeView.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/home/ui/OrbVisual.tsx": {
+    "lint/a11y/noAriaHiddenOnFocusable": 1,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/home/ui/SphereVisual.tsx": {
+    "lint/a11y/noAriaHiddenOnFocusable": 1
+  },
+  "src/features/home/ui/StatusCard.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1
+  },
+  "src/features/home/ui/YearHeatmap.tsx": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/inbox/hooks/use-github-pr-checks.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/inbox/hooks/use-inbox-unseen.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/inbox/hooks/use-inbox-unseen.ts": {
+    "lint/correctness/useExhaustiveDependencies": 3,
+    "lint/style/useImportType": 1
+  },
+  "src/features/inbox/model/github-tasks.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/inbox/model/github-tasks.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/inbox/model/inbox-ask.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/inbox/model/inbox-media.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/inbox/model/inbox-seen.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/inbox/model/inbox-seen.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/inbox/model/inbox-self-activity.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/inbox/model/jira.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/inbox/ui/CheckEvidence.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/suspicious/noArrayIndexKey": 2,
+    "lint/suspicious/noControlCharactersInRegex": 2
+  },
+  "src/features/inbox/ui/CheckRepairForm.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/suspicious/noImplicitAnyLet": 1
+  },
+  "src/features/inbox/ui/CheckRepairProgress.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/inbox/ui/confluence/ConfluenceInboxPanel.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/inbox/ui/inbox-detail.polling.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/inbox/ui/inbox-notification-indicators.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/inbox/ui/inbox-pr-checks-repair.test.ts": {
+    "lint/style/noNonNullAssertion": 21,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/inbox/ui/inbox-pr-checks.test.ts": {
+    "lint/correctness/noUnusedFunctionParameters": 1,
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/inbox/ui/InboxComments.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/inbox/ui/InboxDiscussionPanel.tsx": {
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/inbox/ui/InboxFiltersMenu.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/inbox/ui/InboxMedia.tsx": {
+    "lint/a11y/useKeyWithClickEvents": 1,
+    "lint/a11y/useMediaCaption": 1
+  },
+  "src/features/inbox/ui/InboxNotificationMenu.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/inbox/ui/InboxPrChecks.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/inbox/ui/InboxView.tsx": {
+    "lint/a11y/useSemanticElements": 5,
+    "lint/correctness/useExhaustiveDependencies": 11,
+    "lint/style/useImportType": 2
+  },
+  "src/features/knowledge/hooks/documents/use-knowledge-context.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/knowledge/hooks/documents/use-vault-document.ts": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/knowledge/ui/document/document.css": {
+    "lint/complexity/noImportantStyles": 2
+  },
+  "src/features/knowledge/ui/document/KnowledgeDocument.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/knowledge/ui/graph/use-knowledge-graph.test.ts": {
+    "lint/complexity/useArrowFunction": 1
+  },
+  "src/features/knowledge/ui/graph/use-knowledge-graph.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/knowledge/ui/KnowledgeView.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/knowledge/ui/side-panel/KnowledgeSidePanel.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/knowledge/ui/tree/KnowledgeTree.tsx": {
+    "lint/a11y/useButtonType": 1
+  },
+  "src/features/notes/notes.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/notes/notes.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/notes/ui/index.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/features/notes/ui/notes-view.test.ts": {
+    "lint/correctness/useHookAtTopLevel": 1,
+    "lint/style/noNonNullAssertion": 57
+  },
+  "src/features/notes/ui/NotesView.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/notifications/hooks/project-notification-flow.test.ts": {
+    "lint/style/noNonNullAssertion": 9
+  },
+  "src/features/notifications/hooks/use-session-reminders.test.ts": {
+    "lint/style/noNonNullAssertion": 3,
+    "lint/suspicious/noExplicitAny": 2,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/notifications/hooks/use-session-reminders.ts": {
+    "lint/correctness/useExhaustiveDependencies": 4,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/notifications/model/notification-preferences.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/notifications/model/notification-projects.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/notifications/model/notifications.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/notifications/ui/notification-mute-actions.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/notifications/ui/notification-mute-control.test.ts": {
+    "lint/style/noNonNullAssertion": 7
+  },
+  "src/features/notifications/ui/project-notification-settings.test.ts": {
+    "lint/correctness/noUnsafeOptionalChaining": 1,
+    "lint/style/noNonNullAssertion": 13
+  },
+  "src/features/notifications/ui/ProjectNotificationSettings.tsx": {
+    "lint/a11y/noLabelWithoutControl": 1,
+    "lint/a11y/useAriaPropsForRole": 1,
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/notifications/ui/resource-pressure-notice.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/notifications/ui/ResourcePressureNotice.tsx": {
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/useImportType": 1,
+    "lint/suspicious/noConfusingVoidType": 3
+  },
+  "src/features/orchestration/model/orchestration-plan.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/orchestration/model/orchestration-summary.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/orchestration/model/orchestration-workspace.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/orchestration/model/orchestration.test.ts": {
+    "lint/correctness/noUnusedVariables": 1,
+    "lint/style/noNonNullAssertion": 51
+  },
+  "src/features/orchestration/model/orchestration.ts": {
+    "lint/complexity/useOptionalChain": 10,
+    "lint/performance/noBarrelFile": 1,
+    "lint/style/noNonNullAssertion": 55,
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/features/orchestration/ui/orchestration-flow.test.ts": {
+    "lint/style/noNonNullAssertion": 27
+  },
+  "src/features/orchestration/ui/OrchestrationPreview.tsx": {
+    "lint/a11y/noLabelWithoutControl": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 2,
+    "lint/a11y/useButtonType": 3,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/orchestration/ui/OrchestrationSidebarAgents.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useKeyWithClickEvents": 1
+  },
+  "src/features/projects/model/project-open-run.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/projects/model/project-terminal.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/projects/model/recents.test.ts": {
+    "lint/correctness/noUnusedVariables": 1
+  },
+  "src/features/projects/ui/CwdPicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/projects/ui/PixelMascot.tsx": {
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/projects/ui/project-background-dialog.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/projects/ui/ProjectBackgroundDialog.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/projects/ui/RemoveProjectDialog.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1
+  },
+  "src/features/projects/ui/searchable-project-picker-familiars.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/providers/model/account-usage.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/providers/model/harness-updates.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/providers/model/provider-account-identity.ts": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/providers/model/provider-accounts.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/providers/ui/harness-update-notice.test.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/providers/ui/HarnessUpdateNotice.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/quick-composer/model/prepare-quick-composer.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 2
+  },
+  "src/features/quick-composer/model/quick-composer-shortcut.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/quick-composer/model/quick-composer-shortcut.ts": {
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/features/quick-composer/model/quick-workspace.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/quick-composer/model/quick-workspace.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/quick-composer/ui/quick-composer.attachments.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/quick-composer/ui/quick-composer.commands.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/quick-composer/ui/quick-git-popup.first-open.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/quick-composer/ui/quick-git-popup.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/quick-composer/ui/quick-model-selector.test.ts": {
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/features/quick-composer/ui/quick-permissions.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/quick-composer/ui/quick-project-icon.test.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/style/useImportType": 1
+  },
+  "src/features/quick-composer/ui/quick-workspace-controls.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/quick-composer/ui/QuickComposer.tsx": {
+    "lint/a11y/noStaticElementInteractions": 2,
+    "lint/a11y/useAriaPropsSupportedByRole": 2,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/quick-composer/ui/QuickGitPopup.tsx": {
+    "lint/suspicious/noFocusedTests": 1
+  },
+  "src/features/quick-composer/ui/QuickModelSelector.tsx": {
+    "lint/a11y/noNoninteractiveElementToInteractiveRole": 1,
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 3
+  },
+  "src/features/quick-composer/ui/QuickProjectIcon.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/quick-composer/ui/QuickWorkspaceControls.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/quick-composer/ui/use-quick-attachments.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/quick-composer/ui/use-quick-picker-motion.ts": {
+    "lint/suspicious/noFocusedTests": 1
+  },
+  "src/features/search/ui/SearchView.tsx": {
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 4,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/sessions/data/familiar-session-store.test.ts": {
+    "lint/style/noNonNullAssertion": 15
+  },
+  "src/features/sessions/data/session-store-restore.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/data/session-store.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/noControlCharactersInRegex": 2
+  },
+  "src/features/sessions/hooks/use-bottom-chat-motion.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/sessions/hooks/use-bottom-chat-motion.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/model/add-chat-to-workspace.test.ts": {
+    "lint/style/noNonNullAssertion": 26
+  },
+  "src/features/sessions/model/add-chat-to-workspace.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/model/ci-repair-context.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/model/codex-attachments.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/sessions/model/edit-last-turn.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/sessions/model/message-clipboard.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/sessions/model/molfar-tool-call.ts": {
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/features/sessions/model/omp-interjections.test.ts": {
+    "lint/style/noNonNullAssertion": 14
+  },
+  "src/features/sessions/model/omp-interjections.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/sessions/model/queued-follow-up.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/model/session-folders.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/model/session-removal.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/model/session-state-store.ts": {
+    "lint/style/useImportType": 1,
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/sessions/model/session-work-item.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/model/streaming-performance.test.ts": {
+    "lint/style/noNonNullAssertion": 3,
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/model/streaming-performance.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/model/transcript-activity.test.ts": {
+    "lint/style/noNonNullAssertion": 13
+  },
+  "src/features/sessions/model/transcript-highlights.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/model/transcript-jump.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/model/transcript-turn-cache.test.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/model/usage-limit.test.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/agent-markdown-file-links.test.ts": {
+    "lint/style/noNonNullAssertion": 8
+  },
+  "src/features/sessions/ui/agent-markdown-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 14
+  },
+  "src/features/sessions/ui/agent-markdown-spacing.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/sessions/ui/agent-markdown.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/agent-tab-view.test.ts": {
+    "lint/style/noNonNullAssertion": 18
+  },
+  "src/features/sessions/ui/agent-transcript-pacing.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/ui/agent-transcript-scroll.test.ts": {
+    "lint/style/noNonNullAssertion": 20
+  },
+  "src/features/sessions/ui/agent-transcript.bubble-width.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/agent-transcript.copy.test.ts": {
+    "lint/style/noNonNullAssertion": 17
+  },
+  "src/features/sessions/ui/agent-transcript.fold-prose.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/agent-transcript.habits.test.ts": {
+    "lint/style/noNonNullAssertion": 19
+  },
+  "src/features/sessions/ui/agent-transcript.inline-work.test.ts": {
+    "lint/style/noNonNullAssertion": 36
+  },
+  "src/features/sessions/ui/agent-transcript.interjection.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/ui/agent-transcript.performance.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/sessions/ui/agent-transcript.prompt-rise.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/agent-transcript.search.test.ts": {
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "src/features/sessions/ui/agent-transcript.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/ui/AgentMarkdown.tsx": {
+    "lint/a11y/noNoninteractiveTabindex": 2,
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/correctness/useHookAtTopLevel": 1,
+    "lint/security/noDangerouslySetInnerHtml": 1,
+    "lint/suspicious/noArrayIndexKey": 2,
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/features/sessions/ui/AgentTabView.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 7,
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/AgentTranscript.tsx": {
+    "lint/a11y/noNoninteractiveTabindex": 1,
+    "lint/a11y/noStaticElementInteractions": 2,
+    "lint/a11y/useAriaPropsSupportedByRole": 8,
+    "lint/a11y/useKeyWithClickEvents": 2,
+    "lint/a11y/useSemanticElements": 3,
+    "lint/correctness/useExhaustiveDependencies": 11,
+    "lint/style/noNonNullAssertion": 3,
+    "lint/style/useImportType": 6,
+    "lint/suspicious/noAssignInExpressions": 2,
+    "lint/suspicious/noConfusingVoidType": 6,
+    "lint/suspicious/useIterableCallbackReturn": 2
+  },
+  "src/features/sessions/ui/approval-toasts.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/AstraWelcome.tsx": {
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/sessions/ui/attachment-chip.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/sessions/ui/btw-sheet.test.ts": {
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/sessions/ui/BtwQuestionBurst.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/sessions/ui/BtwSheet.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 4,
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noConfusingVoidType": 1,
+    "lint/suspicious/useIterableCallbackReturn": 5
+  },
+  "src/features/sessions/ui/codex-approval-ui.test.ts": {
+    "lint/style/noNonNullAssertion": 16
+  },
+  "src/features/sessions/ui/composer-file-drop.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/sessions/ui/composer.ime.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/composer.paste-image.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/sessions/ui/composer.paste.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/sessions/ui/composer.test.ts": {
+    "lint/style/noNonNullAssertion": 71,
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/sessions/ui/Composer.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 9,
+    "lint/style/useImportType": 10,
+    "lint/suspicious/noArrayIndexKey": 5,
+    "lint/suspicious/noConfusingVoidType": 3
+  },
+  "src/features/sessions/ui/ComposerRunner.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/sessions/ui/ContextMeter.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1
+  },
+  "src/features/sessions/ui/cursor-subagent-recovery.test.ts": {
+    "lint/style/noNonNullAssertion": 9
+  },
+  "src/features/sessions/ui/document-image.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/ui/DocumentImage.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1
+  },
+  "src/features/sessions/ui/FamiliarWorkTicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/sessions/ui/FileMentionPicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/sessions/ui/HighlightedCodeBlock.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/suspicious/noArrayIndexKey": 3
+  },
+  "src/features/sessions/ui/ImageLightbox.tsx": {
+    "lint/a11y/useKeyWithClickEvents": 1
+  },
+  "src/features/sessions/ui/LinkSessionWorkItemDialog.tsx": {
+    "lint/a11y/noAutofocus": 1
+  },
+  "src/features/sessions/ui/live-agents-preview.test.ts": {
+    "lint/style/noNonNullAssertion": 9
+  },
+  "src/features/sessions/ui/LocalMedia.tsx": {
+    "lint/a11y/useKeyWithClickEvents": 1,
+    "lint/a11y/useMediaCaption": 1
+  },
+  "src/features/sessions/ui/MarkdownSourceEditor.tsx": {
+    "lint/a11y/noAutofocus": 1,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/sessions/ui/McpServerPicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 3
+  },
+  "src/features/sessions/ui/message-queue.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/MessageQueue.tsx": {
+    "lint/a11y/noAutofocus": 1
+  },
+  "src/features/sessions/ui/model-picker.test.ts": {
+    "lint/style/noNonNullAssertion": 59
+  },
+  "src/features/sessions/ui/ModelPicker.tsx": {
+    "lint/a11y/noNoninteractiveElementToInteractiveRole": 1,
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 3,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 11,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/sessions/ui/MolfarSparkles.tsx": {
+    "lint/a11y/noSvgWithoutTitle": 1,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/sessions/ui/OpusWelcome.tsx": {
+    "lint/a11y/noSvgWithoutTitle": 1,
+    "lint/suspicious/noArrayIndexKey": 3
+  },
+  "src/features/sessions/ui/OrchestratorConstellation.tsx": {
+    "lint/a11y/noSvgWithoutTitle": 1,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/sessions/ui/PlanStepsBurst.tsx": {
+    "lint/a11y/noSvgWithoutTitle": 1,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/sessions/ui/PromptOutline.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/provider-sign-in-dialog.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/ProviderSignInDialog.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/sessions/ui/ProviderSignInPanel.tsx": {
+    "lint/a11y/noAutofocus": 1
+  },
+  "src/features/sessions/ui/question-form.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/QuestionForm.tsx": {
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/sessions/ui/ReminderNotices.tsx": {
+    "lint/a11y/useButtonType": 6,
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/sessions/ui/second-opinion-button.test.ts": {
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/features/sessions/ui/SecondOpinionButton.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/sessions/ui/session-folder-picker.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/sessions/ui/session-pane-messaging.test.ts": {
+    "lint/a11y/useButtonType": 1,
+    "lint/style/noNonNullAssertion": 12
+  },
+  "src/features/sessions/ui/session-pane-scroll.test.ts": {
+    "lint/style/noNonNullAssertion": 8
+  },
+  "src/features/sessions/ui/session-reminder-presets.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/session-review.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/sessions/ui/SessionFiltersMenu.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/sessions/ui/SessionFolderPicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/SessionPane.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 3,
+    "lint/style/useImportType": 7,
+    "lint/suspicious/noConfusingVoidType": 4
+  },
+  "src/features/sessions/ui/TaskListPreview.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 4
+  },
+  "src/features/sessions/ui/tool-diff-preview.test.ts": {
+    "lint/correctness/noChildrenProp": 2,
+    "lint/style/noNonNullAssertion": 11
+  },
+  "src/features/sessions/ui/transcript-find.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/sessions/ui/transcript-pool.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/sessions/ui/transcript-selection-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/TranscriptFind.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/sessions/ui/TranscriptPool.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/features/sessions/ui/TranscriptSelectionMenu.tsx": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/turn-celebration.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/sessions/ui/UsageLimitAccountPicker.tsx": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/use-measured-history.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/use-reply-reflow-anchor.test.ts": {
+    "lint/style/noNonNullAssertion": 14
+  },
+  "src/features/sessions/ui/use-reply-reflow-anchor.ts": {
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/sessions/ui/use-tool-detail.test.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/use-tool-detail.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/sessions/ui/user-link-preview.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/features/sessions/ui/UserLinkPreview.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 2
+  },
+  "src/features/sessions/ui/word-fade.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/sessions/ui/word-fade.tsx": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/features/settings/model/display-prefs.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/settings/model/mcp-settings-cache.ts": {
+    "lint/style/noNonNullAssertion": 2,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/settings/model/project-sidebar-tab.ts": {
+    "lint/suspicious/noPrototypeBuiltins": 2
+  },
+  "src/features/settings/model/sounds.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/settings/model/sounds.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/features/settings/ui/jira-settings.test.ts": {
+    "lint/style/noNonNullAssertion": 8
+  },
+  "src/features/settings/ui/mcp-settings.test.ts": {
+    "lint/style/noNonNullAssertion": 22
+  },
+  "src/features/settings/ui/McpSettings.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/settings/ui/private-email.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/settings/ui/quick-composer-shortcut-editor.test.ts": {
+    "lint/style/noNonNullAssertion": 10
+  },
+  "src/features/settings/ui/settings-view.test.ts": {
+    "lint/style/noNonNullAssertion": 73
+  },
+  "src/features/settings/ui/SettingsView.tsx": {
+    "lint/a11y/noAutofocus": 2,
+    "lint/a11y/useSemanticElements": 2,
+    "lint/complexity/useOptionalChain": 1,
+    "lint/correctness/useExhaustiveDependencies": 8,
+    "lint/correctness/useHookAtTopLevel": 2,
+    "lint/style/useImportType": 1
+  },
+  "src/features/skills/model/skill-catalog.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/skills/model/skills.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/skills/model/skills.ts": {
+    "lint/performance/noBarrelFile": 1,
+    "lint/suspicious/noAssignInExpressions": 2
+  },
+  "src/features/skills/model/slash-commands.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/skills/ui/skill-prompt-field.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/skills/ui/SkillPicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/skills/ui/SkillPromptField.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/skills/ui/skills-page.test.ts": {
+    "lint/style/noNonNullAssertion": 15,
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "src/features/skills/ui/SkillsPage.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/source-control/model/diff-highlight.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/source-control/model/diff-highlight.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/source-control/model/diff-worker.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/source-control/model/diff-worker.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/source-control/model/git-graph.test.ts": {
+    "lint/style/noNonNullAssertion": 10
+  },
+  "src/features/source-control/model/line-diff.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/source-control/model/unified-diff-document.test.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/source-control/model/worktrees.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/source-control/model/worktrees.ts": {
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/source-control/ui/branch-picker.test.ts": {
+    "lint/style/noNonNullAssertion": 24
+  },
+  "src/features/source-control/ui/BranchPicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/source-control/ui/CommitDiff.tsx": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/source-control/ui/DeleteWorktreeDialog.tsx": {
+    "lint/style/useImportType": 1
+  },
+  "src/features/source-control/ui/DiffCommentComposer.tsx": {
+    "lint/a11y/noAutofocus": 1
+  },
+  "src/features/source-control/ui/git-changes-panel.test.ts": {
+    "lint/style/noNonNullAssertion": 14,
+    "lint/suspicious/noAssignInExpressions": 1,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/source-control/ui/git-history-graph.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/source-control/ui/GitChangesPanel.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 3,
+    "lint/style/useImportType": 3
+  },
+  "src/features/source-control/ui/GitHistoryGraph.tsx": {
+    "lint/a11y/useSemanticElements": 1,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/features/source-control/ui/github-pr-actions.test.ts": {
+    "lint/style/noNonNullAssertion": 8,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/source-control/ui/sidebar-worktree-switcher.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/source-control/ui/SidebarWorktreeSwitcher.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/source-control/ui/switch-branch-dialog.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/source-control/ui/SwitchBranchDialog.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/features/source-control/ui/unifiedDiff.css": {
+    "lint/style/noDescendingSpecificity": 3
+  },
+  "src/features/source-control/ui/UnifiedDiffView.tsx": {
+    "lint/a11y/noNoninteractiveTabindex": 2,
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 5,
+    "lint/style/noNonNullAssertion": 3,
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/source-control/ui/WorkingTreeDiff.tsx": {
+    "lint/complexity/useOptionalChain": 3,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/useImportType": 1
+  },
+  "src/features/source-control/ui/WorktreePicker.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/source-control/ui/worktrees.test.ts": {
+    "lint/style/noNonNullAssertion": 52
+  },
+  "src/features/source-control/ui/WorktreesPage.tsx": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/features/task-board/hooks/use-card-detail.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/task-board/hooks/use-task-board.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/task-board/services/engine-review.test.ts": {
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/task-board/services/stage-fail.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/features/task-board/services/stage-settle.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/features/task-board/ui/board/StageSkillsEditor.tsx": {
+    "lint/a11y/noAutofocus": 1
+  },
+  "src/features/task-board/ui/BoardView.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/task-board/ui/card-detail/ArtifactTab.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/task-board/ui/card-detail/DetailPanelFrame.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/task-board/ui/card-detail/QuestionsForm.tsx": {
+    "lint/a11y/noAutofocus": 1
+  },
+  "src/features/task-board/ui/task-board.css": {
+    "lint/complexity/noImportantStyles": 1
+  },
+  "src/features/terminal/arcade/pacman-arcade.test.ts": {
+    "lint/style/noNonNullAssertion": 9
+  },
+  "src/features/terminal/arcade/pacman-arcade.ts": {
+    "lint/complexity/useOptionalChain": 1,
+    "lint/style/noNonNullAssertion": 13
+  },
+  "src/features/terminal/arcade/snake-arcade.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noFocusedTests": 1
+  },
+  "src/features/terminal/model/terminal-tab.ts": {
+    "lint/suspicious/noControlCharactersInRegex": 5
+  },
+  "src/features/terminal/ui/ProjectTerminalDock.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/suspicious/noRedeclare": 1
+  },
+  "src/features/terminal/ui/terminal-view.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/terminal/ui/TerminalGridBackground.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/terminal/ui/TerminalView.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/features/updates/model/release-notes.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/features/updates/model/release-notes.ts": {
+    "lint/suspicious/noAssignInExpressions": 1
+  },
+  "src/features/updates/model/updater.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/usage/model/fetch-usage.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/usage/model/usage-snapshots.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/usage/ui/UsageProvidersSkeleton.tsx": {
+    "lint/suspicious/noArrayIndexKey": 1
+  },
+  "src/features/usage/ui/UsageTrendChart.tsx": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/usage/ui/UsageView.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
+  "src/features/workspace/model/app-view-tabs.ts": {
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/features/workspace/model/layout.test.ts": {
+    "lint/style/noNonNullAssertion": 25
+  },
+  "src/features/workspace/model/tab-groups.ts": {
+    "lint/performance/noBarrelFile": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/workspace/model/tab-keys.test.ts": {
+    "lint/suspicious/noShadowRestrictedNames": 2
+  },
+  "src/features/workspace/model/tab-visit-history.test.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/features/workspace/model/workspace-snapshot.test.ts": {
+    "lint/style/noNonNullAssertion": 7
+  },
+  "src/features/workspace/model/workspace-tab-groups.test.ts": {
+    "lint/style/noNonNullAssertion": 23
+  },
+  "src/features/workspace/model/workspace-tab-groups.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/workspace/ui/pane-tree-enter.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/workspace/ui/pane-tree-title-drop.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/features/workspace/ui/PaneTree.tsx": {
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/style/noNonNullAssertion": 2,
+    "lint/style/useImportType": 6,
+    "lint/suspicious/noConfusingVoidType": 4
+  },
+  "src/features/workspace/ui/surface-tabs-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/features/workspace/ui/SurfaceTabs.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1,
+    "lint/a11y/useAriaPropsSupportedByRole": 1,
+    "lint/a11y/useSemanticElements": 1,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/correctness/useJsxKeyInIterable": 1
+  },
+  "src/features/workspace/ui/tab-group-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 3
+  },
+  "src/features/workspace/ui/TabGroupMenu.tsx": {
+    "lint/a11y/useSemanticElements": 2,
+    "lint/correctness/useExhaustiveDependencies": 2,
+    "lint/suspicious/noConfusingVoidType": 1
+  },
+  "src/features/workspace/ui/WorkspacePicker.tsx": {
+    "lint/a11y/useAriaPropsSupportedByRole": 1
+  },
+  "src/integrations/harness/core/acp-subagents.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/integrations/harness/core/acp-subagents.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/core/apply.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/integrations/harness/core/auth.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/integrations/harness/core/availability.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/integrations/harness/core/child.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 2
+  },
+  "src/integrations/harness/core/json-rpc.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/core/models/catalog-store.ts": {
+    "lint/suspicious/noAssignInExpressions": 2
+  },
+  "src/integrations/harness/core/provider-binary-paths.test.ts": {
+    "lint/correctness/noUnusedVariables": 1
+  },
+  "src/integrations/harness/core/registry.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/integrations/harness/core/registry.ts": {
+    "lint/style/useImportType": 4,
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/core/shell-intent.test.ts": {
+    "lint/suspicious/noUselessEscapeInString": 1
+  },
+  "src/integrations/harness/index.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/integrations/harness/providers/antigravity/antigravity-catalog.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/antigravity/antigravity-live.test.ts": {
+    "lint/style/noNonNullAssertion": 7,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/integrations/harness/providers/antigravity/antigravity-real.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/providers/antigravity/antigravity-soak.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/integrations/harness/providers/antigravity/antigravity.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/claude/claude-catalog.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/claude/claude-git.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/claude/claude-live.test.ts": {
+    "lint/style/noNonNullAssertion": 6
+  },
+  "src/integrations/harness/providers/claude/claude-text.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/providers/claude/claude-title.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/claude/claude.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/integrations/harness/providers/codex/codex-catalog.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/codex/codex-elicitation.ts": {
+    "lint/suspicious/noPrototypeBuiltins": 1
+  },
+  "src/integrations/harness/providers/codex/codex-git.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/codex/codex-live.test.ts": {
+    "lint/correctness/noUnsafeOptionalChaining": 1,
+    "lint/style/noNonNullAssertion": 69
+  },
+  "src/integrations/harness/providers/codex/codex-text.ts": {
+    "lint/complexity/useOptionalChain": 1,
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/providers/codex/codex-title.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/codex/codex.ts": {
+    "lint/suspicious/noConsole": 1,
+    "lint/suspicious/noImplicitAnyLet": 2
+  },
+  "src/integrations/harness/providers/cursor/cursor-catalog.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/providers/cursor/cursor-catalog.ts": {
+    "lint/suspicious/noConsole": 3,
+    "lint/suspicious/noControlCharactersInRegex": 1
+  },
+  "src/integrations/harness/providers/cursor/cursor-git.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/cursor/cursor-live.test.ts": {
+    "lint/style/noNonNullAssertion": 9
+  },
+  "src/integrations/harness/providers/cursor/cursor-subagents.ts": {
+    "lint/style/noNonNullAssertion": 4
+  },
+  "src/integrations/harness/providers/cursor/cursor-title.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/devin/devin-catalog.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/devin/devin-live.test.ts": {
+    "lint/style/noNonNullAssertion": 37
+  },
+  "src/integrations/harness/providers/devin/devin-protocol.test.ts": {
+    "lint/style/noNonNullAssertion": 7
+  },
+  "src/integrations/harness/providers/devin/devin-protocol.ts": {
+    "lint/style/noNonNullAssertion": 10,
+    "lint/suspicious/noControlCharactersInRegex": 5
+  },
+  "src/integrations/harness/providers/devin/devin-subagents.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/integrations/harness/providers/devin/devin.ts": {
+    "lint/suspicious/noAssignInExpressions": 1,
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/fx/fx-catalog.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/fx/fx-live.test.ts": {
+    "lint/style/noNonNullAssertion": 15,
+    "lint/suspicious/noConsole": 3
+  },
+  "src/integrations/harness/providers/fx/fx-protocol.ts": {
+    "lint/suspicious/noControlCharactersInRegex": 1
+  },
+  "src/integrations/harness/providers/fx/fx-tool.ts": {
+    "lint/complexity/useOptionalChain": 1
+  },
+  "src/integrations/harness/providers/fx/fx.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/grok/grok-catalog.ts": {
+    "lint/suspicious/noConsole": 3
+  },
+  "src/integrations/harness/providers/grok/grok-git.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/grok/grok-live.test.ts": {
+    "lint/style/noNonNullAssertion": 12
+  },
+  "src/integrations/harness/providers/grok/grok-protocol.ts": {
+    "lint/suspicious/noControlCharactersInRegex": 1
+  },
+  "src/integrations/harness/providers/grok/grok-text.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/grok/grok-title.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/grok/grok.ts": {
+    "lint/suspicious/noConsole": 3
+  },
+  "src/integrations/harness/providers/hermes/hermes-catalog.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/hermes/hermes-live.test.ts": {
+    "lint/style/noNonNullAssertion": 17
+  },
+  "src/integrations/harness/providers/hermes/hermes.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/omp/omp-live.test.ts": {
+    "lint/style/noNonNullAssertion": 8
+  },
+  "src/integrations/harness/providers/opencode/opencode-catalog.ts": {
+    "lint/style/noNonNullAssertion": 3,
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/opencode/opencode-client.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/integrations/harness/providers/opencode/opencode-git.ts": {
+    "lint/suspicious/noConsole": 2
+  },
+  "src/integrations/harness/providers/opencode/opencode-live.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/integrations/harness/providers/opencode/opencode-title.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/opencode/opencode.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/pi/pi-catalog.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/providers/pi/pi-catalog.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/pi/pi-family.ts": {
+    "lint/suspicious/noAssignInExpressions": 1,
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/harness/providers/pi/pi-live.test.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/integrations/harness/providers/pi/pi-protocol.test.ts": {
+    "lint/style/noNonNullAssertion": 8
+  },
+  "src/integrations/harness/providers/pi/pi-protocol.ts": {
+    "lint/suspicious/noControlCharactersInRegex": 6
+  },
+  "src/integrations/harness/providers/pi/pi-skills.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/integrations/harness/providers/pi/pi-text.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/integrations/harness/providers/pi/pi-title.ts": {
+    "lint/suspicious/noConsole": 1
+  },
+  "src/integrations/remote/attachment-previews.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/platform/tauri/clipboard.ts": {
+    "lint/style/noNonNullAssertion": 1,
+    "lint/suspicious/noShadowRestrictedNames": 1
+  },
+  "src/platform/tauri/fs.test.ts": {
+    "lint/style/useImportType": 1
+  },
+  "src/platform/tauri/fs.ts": {
+    "lint/performance/noBarrelFile": 1
+  },
+  "src/platform/tauri/pty.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/platform/tauri/pty.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/platform/tauri/trackpad-zoom.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/platform/tauri/trackpad-zoom.ts": {
+    "lint/suspicious/noConfusingVoidType": 2
+  },
+  "src/shared/hooks/use-animated-reorder-concurrency.test.ts": {
+    "lint/a11y/useButtonType": 1,
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/shared/hooks/use-animated-reorder.test.ts": {
+    "lint/suspicious/useIterableCallbackReturn": 2
+  },
+  "src/shared/hooks/use-animated-reorder.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/shared/hooks/use-drag-resize.ts": {
+    "lint/correctness/useExhaustiveDependencies": 2
+  },
+  "src/shared/lib/draft-restore.test.ts": {
+    "lint/style/noNonNullAssertion": 7
+  },
+  "src/shared/lib/emoji-data.ts": {
+    "lint/style/noNonNullAssertion": 2
+  },
+  "src/shared/lib/native-context-menu.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/shared/lib/paths.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/shared/lib/paths.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/shared/lib/popover.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/shared/ui/ColorPickerPopover.tsx": {
+    "lint/a11y/useFocusableInteractive": 2
+  },
+  "src/shared/ui/date-time-picker.test.ts": {
+    "lint/style/noNonNullAssertion": 5
+  },
+  "src/shared/ui/DateTimePicker.tsx": {
+    "lint/a11y/useFocusableInteractive": 4,
+    "lint/a11y/useSemanticElements": 5,
+    "lint/correctness/useExhaustiveDependencies": 1,
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/shared/ui/EmojiPicker.tsx": {
+    "lint/a11y/noLabelWithoutControl": 1
+  },
+  "src/shared/ui/lazy-surface.test.ts": {
+    "lint/a11y/useButtonType": 3,
+    "lint/style/noNonNullAssertion": 7
+  },
+  "src/shared/ui/MatchText.tsx": {
+    "lint/suspicious/noArrayIndexKey": 2
+  },
+  "src/shared/ui/modal.test.ts": {
+    "lint/correctness/noChildrenProp": 4
+  },
+  "src/shared/ui/Modal.tsx": {
+    "lint/a11y/noStaticElementInteractions": 1
+  },
+  "src/shared/ui/Popover.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/shared/ui/rail-action.test.ts": {
+    "lint/style/noNonNullAssertion": 1
+  },
+  "src/shared/ui/searchable-select.test.ts": {
+    "lint/style/noNonNullAssertion": 4,
+    "lint/suspicious/useIterableCallbackReturn": 1
+  },
+  "src/shared/ui/SearchableSelect.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/shared/ui/TabLabel.tsx": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/styles/index.css": {
+    "lint/complexity/noImportantStyles": 36,
+    "lint/style/noDescendingSpecificity": 34
+  }
+}

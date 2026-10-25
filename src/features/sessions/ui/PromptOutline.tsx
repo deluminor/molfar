@@ -1,3 +1,4 @@
+import { type Block } from "@/domain/session/block";
 import {
   useCallback,
   useEffect,
@@ -19,10 +20,9 @@ import {
   RIPPLE_SPAN,
   type OutlineAnchor,
   type OutlineBand,
-} from "../model/promptOutline";
-import type { Block } from "../model/session";
-import { Popover } from "../../../shared/ui/Popover";
-import { revealMeasuredTurn } from "./useMeasuredHistory";
+} from "../model/prompt-outline";
+import { Popover } from "@/shared/ui/Popover";
+import { revealMeasuredTurn } from "./use-measured-history";
 
 const OPEN_DELAY_MS = 25;
 const SCROLL_INSET_PX = 8;

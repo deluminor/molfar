@@ -5,23 +5,23 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Gauge, RefreshCw } from "../../../shared/ui/icons";
-import { useSessionActivity } from "../../home/hooks/useSessionActivity";
-import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
-import { YearHeatmap } from "../../home/ui/YearHeatmap";
-import { refreshUsageCards } from "../model/fetchUsage";
+import { Gauge, RefreshCw } from "@/shared/ui/icons";
+import { useSessionActivity } from "@/features/home/hooks/use-session-activity";
+import { SurfaceHeader } from "@/features/home/ui/SurfaceHeader";
+import { YearHeatmap } from "@/features/home/ui/YearHeatmap";
+import { refreshUsageCards } from "../model/fetch-usage";
 import {
   isUsageCardsPending,
   listedUsageProviders,
   usageProviderTitle,
-} from "../model/usageProviders";
+} from "../model/usage-providers";
 import {
   loadUsageSnapshots,
   recordUsageSnapshots,
   usageTrendSeries,
   type UsageDaySnapshot,
-} from "../model/usageSnapshots";
-import type { UsageCardState, UsageProviderId } from "../model/usageCard";
+} from "../model/usage-snapshots";
+import type { UsageCardState, UsageProviderId } from "../model/usage-card";
 import { UsageProviderCard } from "./UsageProviderCard";
 import { UsageProvidersSkeleton } from "./UsageProvidersSkeleton";
 import { UsageTrendChart } from "./UsageTrendChart";

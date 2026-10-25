@@ -1,3 +1,6 @@
+import { basename, prettyCwd, projectKey, projectName } from "@/shared/lib/paths";
+import type { GitDiffIndex } from "@/domain/git/working-tree";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   useCallback,
   useEffect,
@@ -5,49 +8,42 @@ import {
   useState,
   type ComponentProps,
 } from "react";
-import { Popover } from "../../../shared/ui/Popover";
+import { Popover } from "@/shared/ui/Popover";
 import {
   Check,
   ChevronDown,
   FileDiff,
   FolderTree,
   GitBranch,
-} from "../../../shared/ui/icons";
-import {
-  basename,
-  gitLocateFiles,
-  subscribeGitChanged,
-  type GitDiffIndex,
-} from "../../../platform/tauri/fs";
-import { prettyCwd, projectKey, projectName } from "../../../shared/lib/paths";
+} from "@/shared/ui/icons";
+import { gitLocateFiles, subscribeGitChanged } from "@/platform/tauri/fs";
 import {
   sessionCheckpointStatus,
   subscribeReviewChanged,
-} from "../../sessions/model/checkpoint";
-import type { HarnessId } from "../../sessions/model/session";
-import { useProjectAppearance } from "../../projects/hooks/useProjectAppearance";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
+} from "@/features/sessions/model/checkpoint";
+import { useProjectAppearance } from "@/features/projects/hooks/use-project-appearance";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
 import {
   resolveTabGroupColor,
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { EmptyState, PageHeader } from "./familiarPanelParts";
-import { listWorktrees } from "../../source-control/model/worktrees";
+} from "@/features/workspace/model/tab-groups";
+import { EmptyState, PageHeader } from "./familiar-panel-parts";
+import { listWorktrees } from "@/features/source-control/model/worktrees";
 import {
   MonoProjectCommit,
   useProjectIndex,
   type MonoProjectFile,
 } from "./FamiliarProjectCommit";
-import { lazySurface } from "../../../shared/ui/lazySurface";
-import { isImagePath, isVideoPath } from "../../files/model/filePreview";
-import { BinaryFileView } from "../../files/ui/BinaryFileView";
+import { lazySurface } from "@/shared/ui/lazy-surface";
+import { isImagePath, isVideoPath } from "@/features/files/model/file-preview";
+import { BinaryFileView } from "@/features/files/ui/BinaryFileView";
 
 const FileEditor = lazySurface(async () => {
-  const module = await import("../../files/ui/FileEditor");
+  const module = await import("@/features/files/ui/FileEditor");
   return { default: module.FileEditor };
 });
 

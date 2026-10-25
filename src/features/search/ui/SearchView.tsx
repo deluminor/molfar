@@ -1,4 +1,4 @@
-import { Folder, LoaderCircle, MessageSquare, Search } from "../../../shared/ui/icons";
+import { Folder, LoaderCircle, MessageSquare, Search } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -8,13 +8,13 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { MatchText } from "../../../shared/ui/MatchText";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { MatchText } from "@/shared/ui/MatchText";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   conversationRowsFrom,
   flattenGrouped,
@@ -28,27 +28,27 @@ import {
   searchSessionMessages,
   type AppSearchHit,
   type SearchScope,
-} from "../model/appSearch";
+} from "../model/app-search";
 import {
   loadProjectFiles,
   peekProjectFiles,
   rankProjectFiles,
   recentOpenedFiles,
-} from "../../files/model/fileIndex";
-import { prettyCwd, projectName } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { isLocalProject, type RecentProject } from "../../projects/model/recents";
+} from "@/features/files/model/file-index";
+import { prettyCwd, projectName } from "@/shared/lib/paths";
+import { IS_MAC } from "@/shared/lib/platform";
+import { isLocalProject, type RecentProject } from "@/features/projects/model/recents";
 import {
   cancelProjectSearch,
   searchProject,
   type OpenFileFn,
 } from "../model/search";
-import { type Session } from "../../sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   cancelSessionSearch,
   searchSessions,
   type SessionSummary,
-} from "../../sessions/data/sessionStore";
+} from "@/features/sessions/data/session-store";
 
 const SCOPES: { id: SearchScope; label: string }[] = [
   { id: "all", label: "All" },

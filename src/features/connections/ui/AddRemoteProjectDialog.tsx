@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LAYER } from "../../../shared/lib/layers";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import { ChevronRight, Folder } from "../../../shared/ui/icons";
+import { LAYER } from "@/shared/lib/layers";
+import { SearchableSelect } from "@/shared/ui/SearchableSelect";
+import { ChevronRight, Folder } from "@/shared/ui/icons";
 import {
   OPEN_CONNECTIONS_EVENT,
-  remoteRequest,
   useRemoteMachines,
 } from "../model/connections";
-import { rememberRemoteProject } from "../model/remoteProjects";
-import type { HostDirectory, HostProject } from "../model/protocol";
+import { remoteRequest } from "@/integrations/remote/remote-request";
+import { rememberRemoteProject } from "../model/remote-projects";
+import type { HostDirectory, HostProject } from "@/domain/remote/protocol";
 
 /** Adds a project whose folder is on a connected machine. Sessions in it run
  * on that machine; the project otherwise behaves like any other in the rail. */

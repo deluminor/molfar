@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown } from "../../../../shared/ui/icons";
+import { ChevronDown } from "@/shared/ui/icons";
 
 /** Collapsed preview height; content up to `FOLD_PX + FOLD_SLACK_PX` is shown whole. */
 const FOLD_PX = 240;

@@ -1,6 +1,6 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import { nativeModelId } from "../../core/models/resolve-model";
+import { AcpSubagents } from "../../core/acp-subagents";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -9,7 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/sessionMcpServers";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import {
   autoPermissionOption,
   asRecord,
@@ -24,7 +24,7 @@ import {
   resolveSettingConfigId,
   sessionIdFromResult,
   type SessionConfigOption,
-} from "./antigravityProtocol";
+} from "./antigravity-protocol";
 import type {
   ApprovalDecision,
   HarnessEvent,

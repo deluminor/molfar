@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -13,6 +14,7 @@ export default defineConfig(async ({ mode }) => {
     worker: { format: "es" },
     resolve: {
       alias: [
+        { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
         ...(mode.startsWith("benchmark")
           ? [
               {

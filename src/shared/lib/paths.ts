@@ -1,4 +1,4 @@
-import { IS_WIN } from "../../platform/tauri/platform";
+import { IS_WIN } from "./platform";
 
 function windowsPath(path: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(path) || path.startsWith("\\\\") || path.startsWith("//");
@@ -330,4 +330,12 @@ export function projectName(cwd: string): string {
  */
 export function projectKey(cwd: string): string {
   return pathKey(cwd);
+}
+/** Last path segment, or `/` for the filesystem root. */
+
+export function basename(path: string): string {
+  const trimmed = slash(path).replace(/\/+$/, "") || "/";
+  if (/^[A-Za-z]:$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split("/").filter(Boolean);
+  return parts[parts.length - 1] ?? trimmed;
 }

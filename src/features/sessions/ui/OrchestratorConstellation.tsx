@@ -1,5 +1,5 @@
 import { useMemo, useRef, type CSSProperties } from "react";
-import { useCelebrationBox, useTurnCelebration } from "./turnCelebration";
+import { useCelebrationBox, useTurnCelebration } from "./turn-celebration";
 
 // The hub must make it beyond the bubble's top edge before cleanup.
 const CELEBRATE_MS = 3100;

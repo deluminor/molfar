@@ -1,0 +1,43 @@
+import type { Dispatch, SetStateAction } from "react";
+import type { Session } from "@/domain/session/session";
+import type { useWorkspaceNavigation } from "../../../hooks/use-workspace-navigation";
+import type { WindowTransferPayload } from "../../../model/window-transfer";
+import type { FamiliarView } from "../../flows/familiars/familiar-view";
+import type { TabVisits } from "../../flows/tabs/tab-visits";
+import type { WorkspaceCore } from "../core/use-workspace-core";
+import type { createHarnessTurnFlows } from "../flows/use-harness-turn-flows";
+import type { createInboxFlows } from "../flows/use-inbox-flows";
+import type { ProjectFlowsInput } from "../flows/use-project-flows";
+import type { createSessionStorage } from "../flows/use-session-storage";
+import type { SubmissionFlowsInput } from "../flows/use-submission-flows";
+import type { TurnQueueFlowsInput } from "../flows/use-turn-queue-flows";
+import type { WorkspaceFlowCore } from "../flows/workspace-flow-core";
+import type { useSidebarTab } from "../sidebar/use-sidebar-tab";
+
+/** What the Workspace built before its domain flows; read each render unless a flow keeps it. */
+export type WorkspaceFlowsInput = {
+  windowTransfer: WindowTransferPayload | null;
+  core: WorkspaceCore;
+  storage: ReturnType<typeof createSessionStorage>;
+  harness: ReturnType<typeof createHarnessTurnFlows>;
+  inbox: ReturnType<typeof createInboxFlows>;
+  familiarView: FamiliarView;
+  navigation: ReturnType<typeof useWorkspaceNavigation>;
+  selectTab: WorkspaceFlowCore["selectTab"];
+  leaveCoveringFamiliar(): void;
+  sidebar: Pick<ReturnType<typeof useSidebarTab>, "setSidebarTab" | "setSidebarTabSelection">;
+  sidebarCwdRef: WorkspaceFlowCore["sidebarCwdRef"];
+  gitCwdRef: WorkspaceFlowCore["gitCwdRef"];
+  terminalCwdRef: { readonly current: string };
+  sessionDefaultsRef: WorkspaceFlowCore["sessionDefaultsRef"];
+  activeTabRef: WorkspaceFlowCore["activeTabRef"];
+  activeSessionIdRef: SubmissionFlowsInput["activeSessionIdRef"];
+  activeChatId: TurnQueueFlowsInput["activeSessionId"];
+  tabVisits: TabVisits;
+  refreshHistory: WorkspaceFlowCore["refreshHistory"];
+  readProjectReturnMemory: ProjectFlowsInput["readProjectReturnMemory"];
+  noteReply: SubmissionFlowsInput["noteReply"];
+  unseenFinishedIds: Set<string>;
+  setDismissedLiveAgentIds: Dispatch<SetStateAction<Set<string>>>;
+  sessionDefaults: Session | undefined;
+};

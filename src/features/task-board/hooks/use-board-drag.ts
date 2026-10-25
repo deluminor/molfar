@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
-import { setGrabbing, suppressTextSelection } from "../../../shared/lib/drag";
+import { setGrabbing, suppressTextSelection } from "@/shared/lib/drag";
 import { legalDropTargets, type DropTarget } from "../model/transitions";
 import type { BoardColumn, Card } from "../types/card";
 import { columnFromPoint, edgeScrollStep } from "./board-drag-geometry";

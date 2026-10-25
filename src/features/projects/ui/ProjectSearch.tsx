@@ -4,7 +4,7 @@ import {
   LoaderCircle,
   Regex,
   WholeWord,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -17,11 +17,13 @@ import {
   cancelProjectSearch,
   searchProject,
   type OpenFileFn,
-  type ProjectSearchMatch,
-  type ProjectSearchOptions,
-  type ProjectSearchResult,
-} from "../../search/model/search";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
+} from "@/features/search/model/search";
+import type {
+  ProjectSearchMatch,
+  ProjectSearchOptions,
+  ProjectSearchResult,
+} from "@/domain/search/project-search";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 
 type Props = {
   cwd: string;

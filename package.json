@@ -18,7 +18,11 @@
     "pretest:host": "npm run host:build",
     "test:host": "vitest run --config host/vitest.config.ts",
     "check": "npm run check:web && npm run check:rust",
-    "check:web": "vitest run && tsc --noEmit",
+    "check:web": "vitest run && tsc --noEmit && npm run lint && npm run check:size && npm run check:boundaries && npm run check:moves",
+    "lint": "node scripts/checks/lint.mjs",
+    "check:size": "node scripts/checks/file-size.mjs",
+    "check:boundaries": "node scripts/checks/boundaries.mjs",
+    "check:moves": "node scripts/upstream/moves.mjs --check",
     "check:rust": "cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test",
     "set-version": "node scripts/bump-version.mjs",
     "tauri": "tauri",
@@ -86,9 +90,11 @@
     "remend": "^1.3.0",
     "shiki": "^3.23.0",
     "streamdown": "^2.5.0",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4",
     "@tauri-apps/cli": "^2",

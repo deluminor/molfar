@@ -1,3 +1,4 @@
+import type { MessageQueueStatus, QueuedMessage } from "@/domain/session/message-queue";
 import { useEffect, useRef, useState } from "react";
 import {
   Check,
@@ -8,9 +9,8 @@ import {
   Play,
   Trash2,
   X,
-} from "../../../shared/ui/icons";
-import { isImeComposition } from "../../../shared/lib/keyboard";
-import type { MessageQueueStatus, QueuedMessage } from "../model/session";
+} from "@/shared/ui/icons";
+import { isImeComposition } from "@/shared/lib/keyboard";
 
 export function MessageQueue({
   messages,

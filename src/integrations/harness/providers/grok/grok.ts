@@ -1,6 +1,6 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import { nativeModelId } from "../../core/models/resolve-model";
+import { AcpSubagents } from "../../core/acp-subagents";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -9,7 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/sessionMcpServers";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import {
   AUTH_HELP,
   askQuestionResponse,
@@ -29,7 +29,7 @@ import {
   pickAutoOption,
   planFromExitPlan,
   sessionIdFromResult,
-} from "./grokProtocol";
+} from "./grok-protocol";
 import type {
   ApprovalDecision,
   CompactContextInput,
@@ -38,7 +38,10 @@ import type {
   SendTurnInput,
   SteerTurnInput,
 } from "../../core/types";
-import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
+import {
+  questionPromptTitle,
+  type UserQuestionReply,
+} from "@/domain/session/user-question";
 
 type Live = {
   subagents: AcpSubagents;

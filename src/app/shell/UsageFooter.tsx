@@ -1,4 +1,8 @@
-import { RefreshCw, Terminal } from "../../shared/ui/icons";
+import { errorRateLimits, unavailableRateLimits } from "@/domain/rate-limits/rate-limit-state";
+import type { RateLimitProvider } from "@/domain/rate-limits/rate-limit";
+import { HARNESS_LABEL, HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import type { ProviderAccountProvider } from "@/domain/harness/provider-account";
+import { RefreshCw, Terminal } from "@/shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -6,34 +10,24 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
-import { consumeCodexRateLimitResetCredit } from "../../features/providers/model/rateLimitsFetch";
-import {
-  errorRateLimits,
-  unavailableRateLimits,
-  type RateLimitProvider,
-} from "../../features/providers/model/rateLimits";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { Popover, type PopoverDismissReason } from "@/shared/ui/Popover";
+import { consumeCodexRateLimitResetCredit } from "@/features/providers/model/rate-limits-fetch";
 import {
   getCachedRateLimits,
   loadRateLimits,
   setCachedRateLimits,
   useCachedRateLimits,
-} from "../../features/providers/model/rateLimitsCache";
-import {
-  HARNESS_LABEL,
-  HARNESS_TITLE,
-  type HarnessId,
-} from "../../features/sessions/model/session";
+} from "@/features/providers/model/rate-limits-cache";
 import {
   loginHarness,
   supportsHarnessLogin,
-} from "../../integrations/harness/core/auth";
+} from "@/integrations/harness/core/auth";
 import {
   runningTerminalChipLabel,
   type RunningTerminal,
-} from "../../features/terminal/model/terminalTab";
-import { MOD } from "../../platform/tauri/platform";
+} from "@/features/terminal/model/terminal-tab";
+import { MOD } from "@/shared/lib/platform";
 import {
   USAGE_CHIP_CLASSES,
   USAGE_REFRESH_CLASSES,
@@ -44,17 +38,8 @@ import { PiUsage } from "./PiUsage";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,
-} from "../../features/sessions/ui/ProviderSignInPanel";
-import {
-  newProviderAccount,
-  providerAccountExists,
-  providerAccounts,
-  saveProviderAccount,
-  selectProviderAccount,
-  selectedProviderAccountId,
-  subscribeProviderAccounts,
-  type ProviderAccountProvider,
-} from "../../features/providers/model/providerAccounts";
+} from "@/features/sessions/ui/ProviderSignInPanel";
+import { newProviderAccount, providerAccountExists, providerAccounts, saveProviderAccount, selectProviderAccount, selectedProviderAccountId, subscribeProviderAccounts } from "@/features/providers/model/provider-accounts";
 
 const CLOCK_MS = 30_000;
 

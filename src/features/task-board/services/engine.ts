@@ -1,4 +1,4 @@
-import type { ControlOutcome } from "../../orchestration/model/orchestration";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
 import { isStalled } from "../model/attention";
 import type { Card } from "../types/card";
 import type { EnginePorts } from "./ports";

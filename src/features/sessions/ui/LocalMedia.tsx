@@ -1,11 +1,11 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { readBinaryFile, REMOTE_PATH_PREFIX } from "../../../platform/tauri/fs";
+import { readBinaryFile, REMOTE_PATH_PREFIX } from "@/platform/tauri/fs";
 import {
   isImagePath,
   sniffImageMime,
   videoMimeForPath,
-} from "../../files/model/filePreview";
+} from "@/features/files/model/file-preview";
 
 /** Whether a path names a file `LocalMedia` can show. */
 export function isLocalMediaPath(path: string): boolean {

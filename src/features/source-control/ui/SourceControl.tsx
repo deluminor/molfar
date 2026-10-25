@@ -1,5 +1,6 @@
-import type { HarnessId } from "../../sessions/model/session";
-import type { GitFileDiffKind, GitHistoryCommit } from "../../../platform/tauri/fs";
+import type { HarnessId } from "@/domain/harness/harness";
+import type { GitHistoryCommit } from "@/platform/tauri/fs";
+import type { GitFileDiffKind } from "@/domain/git/working-tree";
 import { GitChangesPanel } from "./GitChangesPanel";
 
 type Props = {

@@ -4,12 +4,14 @@ import {
   linkedWorkItemActivityPrompt,
   linkedWorkItemTerminalState,
   linkedWorkItemUpdateSummary,
-  type LinkedWorkItemActivityEntry,
-  type LinkedWorkItemUpdateCard,
-} from "../model/linkedWorkItemActivity";
-import { formatRelativeTime } from "../model/githubTasks";
-import { announceLinkedActivity } from "../../settings/model/sounds";
-import { GlassBackdrop } from "../../../app/shell/GlassBackdrop";
+} from "../model/linked-work-item-activity";
+import type {
+  LinkedWorkItemUpdateCard,
+  LinkedWorkItemActivityEntry,
+} from "@/domain/work-items/linked-activity";
+import { formatRelativeTime } from "../model/github-tasks";
+import { announceLinkedActivity } from "@/features/settings/model/sounds";
+import { GlassBackdrop } from "@/shared/ui/GlassBackdrop";
 import {
   Archive,
   Check,
@@ -22,7 +24,7 @@ import {
   MessageSquare,
   Trash2,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 type Props = {
   sessionId: string;

@@ -5,13 +5,13 @@ import {
   loadInsetLayout,
   saveInsetLayout,
   subscribeInsetLayout,
-} from "../../features/settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   saveNewLayoutPromptDismissed,
   useNewLayoutPromptDismissed,
-} from "../../features/settings/model/displayPrefs";
-import { LAYER } from "../../shared/lib/layers";
-import { GlassBackdrop } from "./GlassBackdrop";
+} from "@/features/settings/model/display-prefs";
+import { LAYER } from "@/shared/lib/layers";
+import { GlassBackdrop } from "@/shared/ui/GlassBackdrop";
 
 export function NewLayoutNotice({
   topOffset = 12,

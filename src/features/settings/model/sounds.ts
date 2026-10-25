@@ -1,10 +1,10 @@
 import { play, setEnabled, setVolume, type SoundName } from "cuelume";
-import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linkedWorkItemActivity";
+import type { LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
 import {
   allowsProjectNotification,
   type NotificationSubject,
-} from "../../notifications/model/notificationPreferences";
-import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
+} from "@/features/notifications/model/notification-preferences";
+import { inboxNotificationProject } from "@/features/notifications/model/notification-projects";
 
 const KEY = "molfar.sounds";
 const ENABLED_AT_KEY = "molfar.soundsEnabledAt";

@@ -1,8 +1,8 @@
-import { TurnNotReadyError } from "../../core/types";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import { nativeModelId } from "../../core/models/resolve-model";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type HarnessSessionInput, type SendTurnInput, type SteerTurnInput } from "../../core/types";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
-import { AcpSubagents } from "../../core/acpSubagents";
+import { AcpSubagents } from "../../core/acp-subagents";
 import {
   killChild,
   resolveHermesBinary,
@@ -11,7 +11,7 @@ import {
   watchChild,
   readHarnessTextFile,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/sessionMcpServers";
+import { loadSessionMcpServers } from "../../core/session-mcp-servers";
 import {
   HERMES_AUTH_HELP,
   hermesBackgroundDispatch,
@@ -22,20 +22,13 @@ import {
   hermesStderrAuthError,
   hermesStartupError,
   type HermesBackgroundDispatch,
-} from "./hermesProtocol";
+} from "./hermes-protocol";
 import {
   eventsFromAcpUpdate,
   permissionOptionId,
   permissionRequestFromAcp,
   pickAutoOption,
-} from "../grok/grokProtocol";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  HarnessSessionInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+} from "../grok/grok-protocol";
 
 type Live = {
   subagents: AcpSubagents;

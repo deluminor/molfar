@@ -1,13 +1,13 @@
-import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
-import { useProjectAppearance } from "../hooks/useProjectAppearance";
-import { basename } from "../../../platform/tauri/fs";
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { basename } from "@/shared/lib/paths";
+import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
+import { useProjectAppearance } from "../hooks/use-project-appearance";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   resolveTabGroupColor,
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
+} from "@/features/workspace/model/tab-groups";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
 import { ProjectMascot } from "./ProjectMascot";
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatNextDueAt, type HomeStatus } from "../model/homeStatus";
+import { formatNextDueAt, type HomeStatus } from "../model/home-status";
 import { HomeCard } from "./HomeCard";
 
 type Props = {

@@ -1,7 +1,7 @@
+import { IconButton } from "@/shared/ui/IconButton";
 import { useEffect, useRef, useState } from "react";
-import { isImeComposition } from "../../../shared/lib/keyboard";
-import { IconButton } from "../../../app/shell/TitleBar";
-import { Pencil, Plus, StickyNote, Trash2 } from "../../../shared/ui/icons";
+import { isImeComposition } from "@/shared/lib/keyboard";
+import { Pencil, Plus, StickyNote, Trash2 } from "@/shared/ui/icons";
 import type { FamiliarLook, FamiliarState } from "../model/familiar";
 import {
   FamiliarFileConflict,
@@ -9,7 +9,7 @@ import {
   loadFamiliarFiles,
   subscribeFamiliarFiles,
   type FamiliarFiles,
-} from "../model/familiarFiles";
+} from "../model/familiar-files";
 import {
   addMemoryEntry,
   memoryDate,
@@ -18,7 +18,7 @@ import {
   withLineEdited,
   withoutLine,
   type MemoryLine,
-} from "../model/familiarMemory";
+} from "../model/familiar-memory";
 import { HabitButton } from "./FamiliarHabits";
 import {
   AutoTextarea,
@@ -26,7 +26,7 @@ import {
   FileField,
   MemoryGauge,
   PageHeader,
-} from "./familiarPanelParts";
+} from "./familiar-panel-parts";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
   month: "short",

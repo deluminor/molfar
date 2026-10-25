@@ -1,5 +1,6 @@
-import { pathKey, prettyCwd, slash } from "../../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
+import { pathKey, prettyCwd, slash } from "@/shared/lib/paths";
+import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
 const KEY = "molfar.recentProjects";
 const RAIL_ORDER_KEY = "molfar.projectRailOrder";
@@ -18,10 +19,6 @@ export type ArchivedProject = {
   path: string;
   archivedAt: number;
 };
-
-export function normalizeProjectPath(path: string): string {
-  return slash(path).replace(/\/+$/, "") || "/";
-}
 
 function normalize(path: string): string {
   return normalizeProjectPath(path);

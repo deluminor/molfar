@@ -1,11 +1,8 @@
+import type { Artifact } from "@/domain/artifacts/artifact";
 import { useEffect, useState } from "react";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import { HtmlArtifactFrame } from "./HtmlArtifactFrame";
-import {
-  ARTIFACTS_CHANGED_EVENT,
-  getArtifact,
-  type Artifact,
-} from "../artifacts";
+import { ARTIFACTS_CHANGED_EVENT, getArtifact } from "../artifacts";
 
 /** Load an artifact and follow later saves, for every reader frame. */
 export function useArtifact(id: string) {

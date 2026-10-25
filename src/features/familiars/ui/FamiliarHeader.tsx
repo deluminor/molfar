@@ -3,7 +3,7 @@ import {
   type FamiliarLook,
   type FamiliarState,
 } from "../model/familiar";
-import { PixelMascot } from "../../projects/ui/PixelMascot";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
 import { FamiliarStatus } from "./FamiliarStatus";
 
 type Props = {

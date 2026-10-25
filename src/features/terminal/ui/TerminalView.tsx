@@ -9,25 +9,25 @@ import {
   spawnPty,
   subscribePty,
   writePty,
-} from "../../../platform/tauri/pty";
-import { isOscColorQuery, oscColorReply } from "../model/terminalChrome";
+} from "@/platform/tauri/pty";
+import { isOscColorQuery, oscColorReply } from "../model/terminal-chrome";
 import {
   isMacTerminalClearShortcut,
   macTerminalShortcutData,
-} from "../model/terminalKeys";
+} from "../model/terminal-keys";
 import {
   defaultTerminalTitle,
   scanOscCwd,
   type TerminalMetaPatch,
-} from "../model/terminalTab";
-import { isLightScheme, SCHEME_CHANGE_EVENT } from "../../settings/model/appearance";
+} from "../model/terminal-tab";
+import { isLightScheme, SCHEME_CHANGE_EVENT } from "@/features/settings/model/appearance";
 import {
   applyTerminalChrome,
   fitTerminal,
   resetGridStretch,
   type TerminalFitMode,
-} from "../model/terminalLayout";
-import { IS_MAC } from "../../../platform/tauri/platform";
+} from "../model/terminal-layout";
+import { IS_MAC } from "@/shared/lib/platform";
 import "@xterm/xterm/css/xterm.css";
 
 type Props = {

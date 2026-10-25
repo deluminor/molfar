@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { recordInboxSelfActivity } from "./inboxSelfActivity";
+import { recordInboxSelfActivity } from "./inbox-self-activity";
 
 export type LinearTeam = {
   id: string;

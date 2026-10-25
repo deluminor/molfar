@@ -1,18 +1,15 @@
-import { applyHarnessEvent } from "../../../integrations/harness/core/apply";
-import type { HarnessEvent } from "../../../integrations/harness/core/types";
-import { displayPath } from "../../../shared/lib/paths";
-import type {
-  Attachment,
-  Block,
-  BtwMessage,
-  BtwThread,
-  HarnessId,
-} from "./session";
+import { applyHarnessEvent } from "@/integrations/harness/core/apply";
+import type { HarnessEvent } from "@/integrations/harness/core/types";
+import { displayPath } from "@/shared/lib/paths";
+import type { Block } from "@/domain/session/block";
+import type { Attachment } from "@/domain/session/attachment";
+import type { BtwMessage, BtwThread } from "@/domain/session/block-meta";
+import type { HarnessId } from "@/domain/harness/harness";
 import { newSession } from "./session";
-import type { BuiltinSkill } from "../../skills/model/skills";
-import { harnessForTurn } from "./secondOpinion";
-import { groupTurns } from "./transcriptActivity";
-import { resolveModel } from "./models";
+import type { BuiltinSkill } from "@/features/skills/model/skills";
+import { harnessForTurn } from "./second-opinion";
+import { groupTurns } from "./transcript-activity";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 
 /**
  * Harnesses with an isolated text runner suitable for read-only side

@@ -1,15 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
-import { HARNESSES, type HarnessId, type Session } from "../../sessions/model/session";
-import { pathKey } from "../../../shared/lib/paths";
-import type { ApprovalDecision, HarnessEvent } from "../../../integrations/harness/core/types";
-import { pendingApprovalForSession } from "../../notifications/model/approvalToast";
-import type { UserQuestionReply } from "../../sessions/model/userQuestion";
+import type { Session } from "@/domain/session/session";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
+import { pathKey } from "@/shared/lib/paths";
+import type { ApprovalDecision, HarnessEvent } from "@/integrations/harness/core/types";
+import { pendingApprovalForSession } from "@/features/notifications/model/approval-toast";
+import type { UserQuestionReply } from "@/domain/session/user-question";
 import {
   validateOrchestrationSettings,
   validateProposedTasks,
-  type OrchestrationChoice,
-  type OrchestrationProposal,
-} from "./orchestrationPlan";
+} from "./orchestration-plan";
+import type {
+  OrchestrationChoice,
+  OrchestrationProposal,
+} from "@/domain/orchestration/proposal";
 import {
   normalizeOrchestrationRun,
   orchestrationCheckoutCwd,
@@ -19,14 +22,14 @@ import {
   type OrchestrationRun,
   type OrchestrationTask,
   type OrchestrationWorkspace,
-} from "./orchestrationState";
+} from "./orchestration-state";
 
 export {
   orchestrationCheckoutCwd,
   orchestrationProjectCwd,
   orchestrationWorkspace,
   workspaceIdentity,
-} from "./orchestrationState";
+} from "./orchestration-state";
 export type {
   DispatchStage,
   DispatchState,
@@ -36,7 +39,7 @@ export type {
   OrchestrationWorkspace,
   TaskStatus,
   WorkspacePolicy,
-} from "./orchestrationState";
+} from "./orchestration-state";
 export type ControlOutcome = {
   status: "completed" | "failed" | "cancelled";
   text: string;

@@ -1,20 +1,20 @@
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { LAYER } from "../../../shared/lib/layers";
+import { LAYER } from "@/shared/lib/layers";
 import {
   loadNotificationsEnabled,
   NOTIFICATIONS_CHANGE_EVENT,
-} from "../../notifications/model/notifications";
-import { projectName } from "../../../shared/lib/paths";
-import { sessionDisplayTitle } from "../model/session";
+} from "@/features/notifications/model/notifications";
+import { projectName } from "@/shared/lib/paths";
+import { sessionDisplayTitle } from "@/domain/session/title";
 import {
   formatReminderTime,
   reminderTime,
   type SessionReminder,
-} from "../model/sessionReminders";
-import { ExplorerMenu } from "../../files/ui/ExplorerMenu";
-import { Clock } from "../../../shared/ui/icons";
-import { sessionReminderPresets } from "./sessionReminderPresets";
+} from "../model/session-reminders";
+import { ExplorerMenu } from "@/features/files/ui/ExplorerMenu";
+import { Clock } from "@/shared/ui/icons";
+import { sessionReminderPresets } from "./session-reminder-presets";
 
 function subscribeNotifications(callback: () => void) {
   window.addEventListener(NOTIFICATIONS_CHANGE_EVENT, callback);

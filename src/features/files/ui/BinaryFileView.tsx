@@ -1,3 +1,4 @@
+import { basename, displayPath } from "@/shared/lib/paths";
 import {
   useCallback,
   useEffect,
@@ -13,28 +14,20 @@ import {
   Minus,
   Plus,
   RotateCcw,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { ExplorerMenu } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { copyText } from "../../../platform/tauri/clipboard";
+import { copyText } from "@/platform/tauri/clipboard";
 import {
   formatFileSize,
   sniffImageMime,
   videoMimeForPath,
-} from "../model/filePreview";
-import { watchFile } from "../model/fileWatch";
-import {
-  basename,
-  copyFileToClipboard,
-  openPathWithDefaultApp,
-  readBinaryFile,
-  REMOTE_PATH_PREFIX,
-  revealPath,
-} from "../../../platform/tauri/fs";
-import { displayPath } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { claimTrackpadMagnify } from "../../../platform/tauri/trackpadZoom";
-import { resolveZoomKeybinding } from "../../settings/model/zoomKeybinding";
+} from "../model/file-preview";
+import { watchFile } from "../model/file-watch";
+import { copyFileToClipboard, openPathWithDefaultApp, readBinaryFile, REMOTE_PATH_PREFIX, revealPath } from "@/platform/tauri/fs";
+import { IS_MAC } from "@/shared/lib/platform";
+import { claimTrackpadMagnify } from "@/platform/tauri/trackpad-zoom";
+import { resolveZoomKeybinding } from "@/features/settings/model/zoom-keybinding";
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 16;

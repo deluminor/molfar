@@ -20,7 +20,7 @@ vi.mock("./StageSkillsEditor", () => ({
   StageSkillsEditor: () => createElement("div", { "data-stage-skills": "" }),
 }));
 
-vi.mock("../../../../platform/tauri/fs", () => ({
+vi.mock("@/platform/tauri/fs", () => ({
   listSkills: vi.fn(async () => []),
 }));
 

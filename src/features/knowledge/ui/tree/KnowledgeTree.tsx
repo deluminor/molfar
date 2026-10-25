@@ -4,7 +4,7 @@ import {
   File,
   Folder,
   FolderOpen,
-} from "../../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { buildTree } from "./build-tree";
 import type { EntryNode, KnowledgeTreeProps } from "./types";
 

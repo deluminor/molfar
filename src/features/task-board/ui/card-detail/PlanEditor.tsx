@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { PenLine } from "../../../../shared/ui/icons";
-import { MarkdownDocumentPreview } from "../../../sessions/ui/MarkdownDocumentPreview";
-import { MarkdownSourceEditor } from "../../../sessions/ui/MarkdownSourceEditor";
+import { PenLine } from "@/shared/ui/icons";
+import { MarkdownDocumentPreview } from "@/features/sessions/ui/MarkdownDocumentPreview";
+import { MarkdownSourceEditor } from "@/features/sessions/ui/MarkdownSourceEditor";
 import { OUTLINE_BUTTON, PRIMARY_BUTTON, QUIET_BUTTON } from "../button-styles";
 
 type Props = {

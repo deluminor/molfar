@@ -1,7 +1,7 @@
+import { IconButton } from "@/shared/ui/IconButton";
 import type { CSSProperties, ReactNode } from "react";
-import { IconButton } from "../../../app/shell/TitleBar";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { PanelRightToggle } from "../../../shared/ui/icons";
+import { useDragResize } from "@/shared/hooks/use-drag-resize";
+import { PanelRightToggle } from "@/shared/ui/icons";
 
 const MIN_WIDTH = 340;
 const DEFAULT_WIDTH = 400;

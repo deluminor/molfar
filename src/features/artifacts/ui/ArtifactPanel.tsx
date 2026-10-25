@@ -1,9 +1,9 @@
+import { IconButton } from "@/shared/ui/IconButton";
 import { useEffect, useRef, useState } from "react";
-import { Copy, PanelRightToggle, Trash2 } from "../../../shared/ui/icons";
-import { copyMessage } from "../../../platform/tauri/clipboard";
-import { IconButton } from "../../../app/shell/TitleBar";
-import { FamiliarSidebarHeader } from "../../familiars/ui/FamiliarSidebar";
-import { PageHeader } from "../../familiars/ui/familiarPanelParts";
+import { Copy, PanelRightToggle, Trash2 } from "@/shared/ui/icons";
+import { copyMessage } from "@/platform/tauri/clipboard";
+import { FamiliarSidebarHeader } from "@/features/familiars/ui/FamiliarSidebar";
+import { PageHeader } from "@/features/familiars/ui/familiar-panel-parts";
 import { artifactLabel, deleteArtifact } from "../artifacts";
 import { ArtifactContent, useArtifact } from "./ArtifactContent";
 

@@ -3692,7 +3692,7 @@ html.theme-light .familiar-pill {
 }
 
 /*
- * A streamed word fading in as it is shown (wordFade.tsx).
+ * A streamed word fading in as it is shown (word-fade.tsx).
  * Opacity only: a word that moved would jostle the line it is set on. The
  * fade plays as a word's span is added, and words already on screen keep
  * theirs while the reply is coming in. The spans come off once the fade

@@ -1,5 +1,6 @@
-import { resolveLaunchChoice, type LaunchChoice } from "../../sessions/model/launch-choice";
-import { HARNESSES, RUNTIME_MODES, type RuntimeMode } from "../../sessions/model/session";
+import { HARNESSES } from "@/domain/harness/harness";
+import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
+import { resolveLaunchChoice, type LaunchChoice } from "@/features/sessions/model/launch-choice";
 import { AGENT_STAGES } from "../constants/columns";
 import type { BoardSettings } from "../types/settings";
 import type { AgentStage, StageModelConfig, StageOverrides } from "../types/stage";

@@ -1,4 +1,5 @@
-import type { HarnessId, RuntimeMode } from "../../sessions/model/session";
+import type { HarnessId } from "@/domain/harness/harness";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 
 export type AgentStage = "grill" | "implement" | "code_review" | "rework";
 

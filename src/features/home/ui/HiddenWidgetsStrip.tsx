@@ -1,6 +1,6 @@
 import { useCallback, type MouseEvent, type ReactNode } from "react";
-import { HOME_WIDGET_IDS, type HomeWidgetId } from "../model/homeLayout";
-import { HOME_WIDGET_LABELS } from "../model/homeWidgetRegistry";
+import { HOME_WIDGET_IDS, type HomeWidgetId } from "../model/home-layout";
+import { HOME_WIDGET_LABELS } from "../model/home-widget-registry";
 
 type Props = {
   hidden: readonly HomeWidgetId[];

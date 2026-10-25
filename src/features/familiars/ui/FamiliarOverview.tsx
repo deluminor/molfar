@@ -1,6 +1,10 @@
+import { IconButton } from "@/shared/ui/IconButton";
+import type { ArtifactCard } from "@/domain/artifacts/artifact";
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
+import type { Session } from "@/domain/session/session";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { FoldingTab } from "../../../shared/ui/FoldingTab";
-import { IconButton } from "../../../app/shell/TitleBar";
+import { FoldingTab } from "@/shared/ui/FoldingTab";
 import {
   Clock,
   File,
@@ -10,34 +14,32 @@ import {
   MessageMultiple,
   Plus,
   Search,
-} from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { artifactLabel, type ArtifactCard } from "../../artifacts/artifacts";
-import type { SessionSummary } from "../../sessions/data/sessionStore";
-import type { FamiliarSpawnedSession, Session } from "../../sessions/model/session";
+} from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { artifactLabel } from "@/features/artifacts/artifacts";
+import type { SessionSummary } from "@/features/sessions/data/session-store";
 import type { FamiliarLook, FamiliarState } from "../model/familiar";
-import { HABITS_MAX } from "../model/familiarHabits";
+import { HABITS_MAX } from "../model/familiar-habits";
 import { HabitPage } from "./HabitPage";
 import { NewHabitPage } from "./NewHabitPage";
 import { habitActions, HabitsList, useHabits } from "./FamiliarHabits";
-import { ArtifactReader } from "../../artifacts/ui/ArtifactPanel";
-import { ArtifactIcon } from "../../artifacts/ui/ArtifactCard";
+import { ArtifactReader } from "@/features/artifacts/ui/ArtifactPanel";
+import { ArtifactIcon } from "@/features/artifacts/ui/ArtifactCard";
 import {
   LaunchedSessionPage,
   FamiliarSessionList,
   type ShownFamiliarSession,
 } from "./FamiliarSessionList";
-import { EmptyState } from "./familiarPanelParts";
+import { EmptyState } from "./familiar-panel-parts";
 import { PanelStack, type StackPage } from "./PanelStack";
-import { SessionFiltersMenu } from "../../sessions/ui/SessionFiltersMenu";
+import { SessionFiltersMenu } from "@/features/sessions/ui/SessionFiltersMenu";
 import {
   DEFAULT_SESSION_SIDEBAR_FILTERS,
   hasActiveSessionFilters,
   type SessionSidebarFilters,
-} from "../../sessions/model/sessionFilters";
-import { HARNESSES, type HarnessId } from "../../sessions/model/session";
+} from "@/features/sessions/model/session-filters";
 import { FamiliarSidebar, FamiliarSidebarHeader } from "./FamiliarSidebar";
-import type { SessionChangeTotals } from "../../sessions/ui/SessionReview";
+import type { SessionChangeTotals } from "@/features/sessions/ui/SessionReview";
 import { FamiliarChangesView, type MonoChangesRequest } from "./FamiliarChangesView";
 
 export type FamiliarOverviewTab =

@@ -1,11 +1,11 @@
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { sessionDisplayTitle } from "@/domain/session/title";
 import { useEffect, type ReactNode } from "react";
-import { formatInteger } from "../../../shared/lib/numbers";
-import { prettyCwd } from "../../../shared/lib/paths";
-import { Popover } from "../../../shared/ui/Popover";
-import { NO_BRANCH_LABEL } from "../../source-control/model/worktrees";
-import type { SessionSummary } from "../data/sessionStore";
-import { resolveModel } from "../model/models";
-import { sessionDisplayTitle } from "../model/session";
+import { formatInteger } from "@/shared/lib/numbers";
+import { prettyCwd } from "@/shared/lib/paths";
+import { Popover } from "@/shared/ui/Popover";
+import { NO_BRANCH_LABEL } from "@/features/source-control/model/worktrees";
+import type { SessionSummary } from "../data/session-store";
 import { HarnessIcon } from "./HarnessIcon";
 
 export function SessionCardPreview({

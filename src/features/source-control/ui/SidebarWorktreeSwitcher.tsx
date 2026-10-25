@@ -5,12 +5,12 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
-import { useWorktreeFocus, type WorktreeFocus } from "../model/worktreeFocus";
+import { useProjectWorktrees } from "../hooks/use-project-worktrees";
+import { useWorktreeFocus, type WorktreeFocus } from "../model/worktree-focus";
 import { createWorktree } from "../model/worktrees";
-import { pathKey, prettyCwd } from "../../../shared/lib/paths";
-import { Popover } from "../../../shared/ui/Popover";
-import { LAYER } from "../../../shared/lib/layers";
+import { pathKey, prettyCwd } from "@/shared/lib/paths";
+import { Popover } from "@/shared/ui/Popover";
+import { LAYER } from "@/shared/lib/layers";
 import {
   Check,
   ChevronDown,
@@ -24,7 +24,7 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 /** Clicks inside the project menu or its flyouts are not outside. */
 const PROJECT_MENU = "[data-project-menu]";

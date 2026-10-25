@@ -1,18 +1,10 @@
-import { isHarnessAvailable } from "../../../integrations/harness/core/availability";
-import {
-  defaultSessionChoice,
-  mergeModelSettings,
-  modelEffortSetting,
-  modelsFor,
-  resolveModel,
-} from "./models";
-import {
-  HARNESSES,
-  HARNESS_LABEL,
-  RUNTIME_MODES,
-  type HarnessId,
-  type RuntimeMode,
-} from "./session";
+import { mergeModelSettings, resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { modelEffortSetting } from "@/domain/models/model-settings";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
+import { HARNESSES, HARNESS_LABEL, type HarnessId } from "@/domain/harness/harness";
+import { RUNTIME_MODES, type RuntimeMode } from "@/domain/session/runtime-mode";
+import { isHarnessAvailable } from "@/integrations/harness/core/availability";
+import { defaultSessionChoice } from "./models";
 
 export class LaunchChoiceError extends Error {}
 

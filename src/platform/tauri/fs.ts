@@ -1,10 +1,23 @@
 import { invoke as invokeLocal } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { joinPath, slash } from "../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../shared/lib/remotePaths";
-import type { InterjectionMeta } from "../../features/sessions/model/session";
+import { joinPath, slash } from "@/shared/lib/paths";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
+import type { InterjectionMeta } from "@/domain/session/block-meta";
+import type {
+  FileMtime,
+  FsEntry,
+  ProjectFile,
+} from "@/domain/files/file-entry";
+import type {
+  GitDiffIndex,
+  GitChangedFile,
+  GitDiffStats,
+  GitFileDiffKind,
+  GitFileDiff,
+} from "@/domain/git/working-tree";
+import type { GitPr } from "@/domain/git/pull-request";
 
-export { REMOTE_PATH_PREFIX } from "../../shared/lib/remotePaths";
+export { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
 type RemoteCommandRunner = (
   command: string,
@@ -89,13 +102,6 @@ export function claudeShellCommands(
   });
 }
 
-export type FsEntry = {
-  name: string;
-  path: string;
-  isDir: boolean;
-  ignored: boolean;
-};
-
 export type ProjectLocation = {
   path: string;
   identity: string;
@@ -126,13 +132,6 @@ export function openInExternalEditor(
 ): Promise<void> {
   return invoke<void>("open_in_external_editor", { editorId, cwd });
 }
-
-export type ProjectFile = {
-  name: string;
-  path: string;
-  relative: string;
-  isDir?: boolean;
-};
 
 export function listDir(path: string): Promise<FsEntry[]> {
   return invoke<FsEntry[]>("list_dir", { path });
@@ -173,40 +172,9 @@ export function listProjectFiles(cwd: string): Promise<ProjectFile[]> {
   return invoke<ProjectFile[]>("list_project_files", { cwd });
 }
 
-export type GitDiffStats = {
-  files: number;
-  additions: number;
-  deletions: number;
-};
-
 export function gitDiffStats(cwd: string): Promise<GitDiffStats> {
   return readGit<GitDiffStats>("git_diff_stats", cwd);
 }
-
-export type GitChangedFile = {
-  path: string;
-  relative: string;
-  status: "modified" | "added" | "deleted" | "untracked" | string;
-  additions: number;
-  deletions: number;
-  staged: boolean;
-  unstaged: boolean;
-};
-
-export type GitDiffIndex = {
-  branch: string | null;
-  head: string | null;
-  files: GitChangedFile[];
-  additions: number;
-  deletions: number;
-  remote: string | null;
-  upstream: string | null;
-  defaultBranch: string | null;
-  ahead: number;
-  behind: number;
-  aheadOfDefault: number;
-  headPushed: boolean;
-};
 
 const pendingGitReads = new Map<string, Promise<unknown>>();
 let gitReadEpoch = 0;
@@ -240,18 +208,6 @@ export function gitDiffIndex(cwd: string): Promise<GitDiffIndex> {
 export function gitDiffFiles(cwd: string): Promise<GitDiffIndex> {
   return readGit<GitDiffIndex>("git_diff_files", cwd);
 }
-
-export type GitFileDiff = {
-  path: string;
-  relative: string;
-  status: string;
-  original: string;
-  current: string;
-  binary: boolean;
-  tooLarge: boolean;
-};
-
-export type GitFileDiffKind = "staged" | "unstaged";
 
 export function gitFileDiff(
   cwd: string,
@@ -408,13 +364,6 @@ export type GitSnapshot = { head: string; porcelain: string; fingerprint: string
 export function gitSnapshot(cwd: string): Promise<GitSnapshot> {
   return invokeLocal<GitSnapshot>("git_snapshot", { cwd });
 }
-
-export type GitPr = {
-  number: number;
-  title: string;
-  url: string;
-  state: string;
-};
 
 export function gitPrStatus(cwd: string): Promise<GitPr | null> {
   return invoke<GitPr | null>("git_pr_status", { cwd });
@@ -591,11 +540,6 @@ export function readFilePreview(
   });
 }
 
-export type FileMtime = {
-  path: string;
-  mtimeMs: number | null;
-};
-
 export function statFiles(paths: string[]): Promise<FileMtime[]> {
   if (paths.length === 0) return Promise.resolve([]);
   const groups = new Map<string, string[]>();
@@ -664,10 +608,3 @@ export function writeTextFile(path: string, content: string): Promise<void> {
   return invoke<void>("write_text_file", { path, content });
 }
 
-/** Last path segment, or `/` for the filesystem root. */
-export function basename(path: string): string {
-  const trimmed = slash(path).replace(/\/+$/, "") || "/";
-  if (/^[A-Za-z]:$/.test(trimmed)) return trimmed;
-  const parts = trimmed.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? trimmed;
-}

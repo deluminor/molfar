@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { confirmApp } = vi.hoisted(() => ({ confirmApp: vi.fn(async () => true) }));
-vi.mock("../../../../app/model/appDialog", () => ({ confirmApp }));
+vi.mock("@/shared/lib/app-dialog", () => ({ confirmApp }));
 vi.mock("../board/StageModelEditor", () => ({ StageModelEditor: () => null }));
 
 import type { Card } from "../../types/card";

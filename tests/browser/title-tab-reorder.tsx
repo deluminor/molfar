@@ -2,7 +2,8 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { emit, TauriEvent } from "@tauri-apps/api/event";
-import { TitleBar, type Tab } from "../../src/app/shell/TitleBar";
+import { TitleBar } from "../../src/app/shell/TitleBar";
+import type { Tab } from "../../src/features/workspace/model/title-tab";
 import "../../src/styles/index.css";
 
 // Keep the real title bar and window controls, replacing only native IPC.

@@ -1,6 +1,6 @@
 import { Profiler, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { buildUnifiedFile } from "../../src/features/source-control/model/unifiedDiff";
+import { buildUnifiedFile } from "../../src/features/source-control/model/unified-diff";
 import {
   applyThemePreference,
   saveThemePreference,
