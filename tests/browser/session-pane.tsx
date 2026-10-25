@@ -9,7 +9,7 @@ import {
   TranscriptPool,
   TranscriptPoolOutlet,
 } from "../../src/features/sessions/ui/TranscriptPool";
-import type { Block } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/domain/session/block";
 import {
   saveTranscriptAnchor,
   saveTranscriptLayout,

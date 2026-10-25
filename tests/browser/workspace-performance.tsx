@@ -1,11 +1,9 @@
 import { Profiler } from "react";
 import { captureReaderAnchor, readerAnchorTop } from "./readerAnchor";
 import { createRoot } from "react-dom/client";
-import {
-  newSession,
-  type Block,
-} from "../../src/features/sessions/model/session";
-import { SessionStateStore } from "../../src/features/sessions/model/sessionStateStore";
+import { newSession } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/domain/session/block";
+import { SessionStateStore } from "../../src/features/sessions/model/session-state-store";
 import { newTab } from "../../src/features/workspace/model/layout";
 import "../../src/styles/index.css";
 
@@ -313,7 +311,7 @@ createRoot(document.getElementById("root")!).render(
 const { HarnessEventQueue } = await import("../../src/app/workspace/flows/harness-events/harness-flush");
 const { applyHarnessEvents } = await import("../../src/integrations/harness");
 const { noteStreamApplied } =
-  await import("../../src/features/sessions/model/streamingPerformance");
+  await import("../../src/features/sessions/model/streaming-performance");
 const foreground = (id: string) =>
   document
     .querySelector<HTMLElement>(`[data-session-drop="${id}"]`)
