@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { ReaderAnchor } from "./readerAnchor";
 
-type WorkspaceFixture = Window & {
+type WorkspaceFixture = typeof window & {
   workspaceHasStore: () => boolean;
   workspaceBeginStreams: () => void;
   workspaceFinishStreams: () => void;
