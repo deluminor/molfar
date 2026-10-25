@@ -164,10 +164,8 @@ import {
   createFamiliar,
   findFamiliar,
   listFamiliars,
-  loadOpenFamiliar,
   familiarForSession,
   familiarsSnapshot,
-  saveOpenFamiliar,
   subscribeFamiliars,
 } from "@/features/familiars/model/familiar";
 import { useFamiliarHabits } from "./hooks/use-familiar-habits";
@@ -226,7 +224,10 @@ import {
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
-import { useDefaultProject } from "./workspace/hooks/lifecycle/use-boot-effects";
+import {
+  useDefaultProject,
+  useReopenFamiliar,
+} from "./workspace/hooks/lifecycle/use-boot-effects";
 import {
   useImportedSessionMarks,
   useSessionAutosave,
@@ -1194,17 +1195,7 @@ function Workspace({
 
   const onOpenFamiliar = familiarView.open;
 
-  // A Familiar open when the app last closed opens again; a moved window keeps
-  // what it carried.
-  const reopenedFamiliar = useRef(false);
-  useEffect(() => {
-    if (reopenedFamiliar.current) return;
-    reopenedFamiliar.current = true;
-    if (windowTransfer || !familiarsEnabled) return;
-    const familiarId = loadOpenFamiliar();
-    if (familiarId && findFamiliar(familiarId)) void onOpenFamiliar(familiarId);
-    else if (familiarId) saveOpenFamiliar(undefined);
-  }, [familiarsEnabled, onOpenFamiliar, windowTransfer]);
+  useReopenFamiliar(familiarsEnabled, onOpenFamiliar, windowTransfer);
 
   const familiarsEnabledRef = useLatestRef(familiarsEnabled);
   const surfaceFlows = useSurfaceFlows(flowCore, {

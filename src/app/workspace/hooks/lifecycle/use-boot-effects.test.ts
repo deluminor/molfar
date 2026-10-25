@@ -4,12 +4,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/domain/session/session";
 import type { WorkspaceStore } from "../../store/types";
 import { mountHook } from "../../testing/mount-hook";
-import { useDefaultProject } from "./use-boot-effects";
+import type { WindowTransferPayload } from "../../../model/window-transfer";
+import { useDefaultProject, useReopenFamiliar } from "./use-boot-effects";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(async (_command: string) => "/home/me"),
   lastProjectPath: vi.fn((): string | null => null),
   looksLikeProject: vi.fn((_cwd: string) => true),
+  loadOpenFamiliar: vi.fn((): string | undefined => "f1"),
+  findFamiliar: vi.fn((id: string) => (id === "f1" ? { id } : undefined)),
+  saveOpenFamiliar: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
@@ -17,6 +21,12 @@ vi.mock("@/features/projects/model/recents", () => ({
   lastProjectPath: mocks.lastProjectPath,
   looksLikeProject: mocks.looksLikeProject,
   rememberProject: (cwd: string) => [{ path: cwd }],
+}));
+
+vi.mock("@/features/familiars/model/familiar", () => ({
+  loadOpenFamiliar: mocks.loadOpenFamiliar,
+  findFamiliar: mocks.findFamiliar,
+  saveOpenFamiliar: mocks.saveOpenFamiliar,
 }));
 
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -67,5 +77,40 @@ describe("useDefaultProject", () => {
 
     expect(setProjectCwd).not.toHaveBeenCalled();
     expect(setSessions).not.toHaveBeenCalled();
+  });
+});
+
+describe("useReopenFamiliar", () => {
+  it("reopens the Familiar open at last close, once", () => {
+    const open = vi.fn();
+    let enabled = true;
+    const { rerender } = mountHook(() => useReopenFamiliar(enabled, open, null));
+    enabled = false;
+    rerender();
+    enabled = true;
+    rerender();
+
+    expect(open.mock.calls).toEqual([["f1"]]);
+  });
+
+  it("forgets a saved Familiar that no longer exists", () => {
+    mocks.loadOpenFamiliar.mockReturnValueOnce("gone");
+    const open = vi.fn();
+    mountHook(() => useReopenFamiliar(true, open, null));
+
+    expect(open).not.toHaveBeenCalled();
+    expect(mocks.saveOpenFamiliar).toHaveBeenCalledWith(undefined);
+  });
+
+  it("skips a transferred window and disabled Familiars for good", () => {
+    const open = vi.fn();
+    let enabled = false;
+    const { rerender } = mountHook(() => useReopenFamiliar(enabled, open, null));
+    enabled = true;
+    rerender();
+    mountHook(() => useReopenFamiliar(true, open, { sessions: [] } as unknown as WindowTransferPayload));
+
+    expect(open).not.toHaveBeenCalled();
+    expect(mocks.loadOpenFamiliar).not.toHaveBeenCalled();
   });
 });
