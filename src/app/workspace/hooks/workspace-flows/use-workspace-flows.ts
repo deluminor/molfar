@@ -52,3 +52,5 @@ export function useWorkspaceFlows(input: WorkspaceFlowsInput) {
 
   return { flowCore, ...opening, ...running };
 }
+
+export type WorkspaceFlows = ReturnType<typeof useWorkspaceFlows>;

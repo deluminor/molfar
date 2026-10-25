@@ -1,5 +1,4 @@
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
-import { SessionStateContext } from "@/features/sessions/model/session-state-store";
 import { useIsolatedTerminalPanes } from "./workspace/hooks/tabs/use-tab-effects";
 import {
   useActiveHarnessCatalog,
@@ -17,8 +16,6 @@ import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import { workspaceCwds } from "./model/workspace-cwds";
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
-import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
-import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import { homeDir } from "@/platform/tauri/fs";
 import { noteProjectStep } from "./shell/Sidebar";
@@ -28,14 +25,15 @@ import { useSessionStorage } from "./workspace/hooks/flows/use-session-storage";
 import { useHarnessTurnFlows } from "./workspace/hooks/flows/use-harness-turn-flows";
 import { useInboxFlows } from "./workspace/hooks/flows/use-inbox-flows";
 import { useWorkspaceFlows } from "./workspace/hooks/workspace-flows/use-workspace-flows";
+import { WorkspaceView } from "./workspace/ui/workspace-view/WorkspaceView";
+import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
+import { familiarForSession } from "@/features/familiars/model/familiar";
 import { useWorkspaceCore } from "./workspace/hooks/core/use-workspace-core";
 import type { WorkspaceProps } from "./workspace/hooks/core/types";
-import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handlers";
 import { useSidebarTab } from "./workspace/hooks/sidebar/use-sidebar-tab";
 import { useLiveAgentsView } from "./workspace/hooks/sidebar/use-live-agents-view";
 import { useSidebarHistoryView } from "./workspace/hooks/sidebar/use-sidebar-history-view";
 import { useApprovalToastsView } from "./workspace/hooks/notifications/use-approval-toasts-view";
-import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { useAddToChat } from "./workspace/hooks/use-add-to-chat";
 import { useRightPanelSlide } from "./workspace/hooks/use-right-panel";
@@ -50,13 +48,7 @@ import { useWorkspaceKeys } from "./workspace/hooks/commands/use-workspace-keys"
 import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import { useTitleTabsView } from "./workspace/title-tabs/use-title-tabs-view";
 import { createTabVisits } from "./workspace/flows/tabs/tab-visits";
-import { WorkspaceSidebar } from "./workspace/ui/WorkspaceSidebar";
-import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
-import { OrchestrationActions, OrchestrationWorkers } from "@/features/orchestration/ui/orchestration-actions";
-import {
-  pickTextHarness,
-  registerBuiltinHarnesses,
-} from "@/integrations/harness";
+import { registerBuiltinHarnesses } from "@/integrations/harness";
 import { focusedFileTab, leafIds } from "@/features/workspace/model/layout";
 import { newDefaultSession } from "@/features/sessions/model/session";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
@@ -67,36 +59,20 @@ import {
   createFamiliar,
   findFamiliar,
   listFamiliars,
-  familiarForSession,
 } from "@/features/familiars/model/familiar";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import { ensureFamiliarSession } from "@/features/familiars/model/familiar-workspace";
-import { TranscriptPoolOutlet } from "@/features/sessions/ui/TranscriptPool";
 import { isBusySession } from "./model/session-id-sets";
 import { useProviderSignInPrompt } from "./workspace/hooks/use-provider-sign-in-prompt";
 import { useSessionIdSet } from "./workspace/hooks/use-session-id-set";
-import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
 import { useAppViewWarmup } from "./workspace/ui/app-views/use-app-view-warmup";
 import {
   useInboxLinkedSessions,
   useLinkedPanelPrune,
 } from "./workspace/hooks/inbox/use-inbox-effects";
 import { useInboxView } from "./workspace/hooks/inbox/use-inbox-view";
-import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
-import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
-import { WorkspaceLayout } from "./workspace/ui/layout/WorkspaceLayout";
-import { WorkspaceSettings } from "./workspace/ui/workspace-chrome/WorkspaceSettings";
-import { WorkspaceUsageFooter } from "./workspace/ui/workspace-chrome/WorkspaceUsageFooter";
-import { FamiliarSessionPanes } from "./workspace/ui/workspace-main/FamiliarSessionPanes";
-import { LinkedWorkItemPanels } from "./workspace/ui/workspace-main/LinkedWorkItemPanels";
-import { ProjectTerminalDocks } from "./workspace/ui/workspace-main/ProjectTerminalDocks";
-import { InboxAskPanes } from "./workspace/ui/app-views/InboxAskPanes";
-import { WorkspaceTabPanes } from "./workspace/ui/workspace-main/WorkspaceTabPanes";
-import { WorkspaceDialogs } from "./workspace/ui/notices/WorkspaceDialogs";
-import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
-import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
 import {
   useWindowUnload,
@@ -142,21 +118,19 @@ function Workspace(props: AppProps) {
     workspaceStore, setActiveTabIdState, setFilePickerOpen, setSearchViewOpen, setInboxViewOpen, setNotesViewOpen,
     setSettingsOpen, projectCwd, recents, sessions, setSessions, sessionsRef, sessionState, switchingWorktrees, tabs,
     projectTerminals, lastDockSide, lastDockSideRef, activeTabId, familiarViewId, onOpenMonoArtifact,
-    familiarShownSessionFocused, shownFamiliarSessionId, composerFocused, setComposerFocused, composerFocusToken,
-    setComposerFocusToken, tabProjectsRef, displayedTabNavigation, visibleTabsRef, currentProjectDock, searchViewOpen,
-    inboxViewOpen, inboxAskPortal, notesViewOpen, localSurfaces, localSurface, automationsSurfaceOpen,
-    automationsFocusId, automationsViewOpen, setAutomationsViewOpen, railSurfaces, activeAppView, orchestrationRuns,
-    notesEnabled, liveAgentsEnabled, settingsOpen, insetLayout, settingsHeaderHost, setSettingsHeaderHost,
-    insetLayoutRef, rightPanel, setInsetRailHost, familiarsEnabled, familiarsSnap, openAppViews, setOpenAppViews,
-    setOpenFamiliarTabs, titleTabOrder, setTitleTabOrder, shownFamiliarTabs, dirtyFiles, history, storedLinkedSessions,
-    tabsRef, projectTerminalsRef, projectTerminalFocusedRef, activeTabIdRef, projectWorktree, workspacePins,
-    tabWorkspace, keepWorkspaceTab, projectCwdRef, foregroundSurfaceRef, transcriptPool, searchViewOpenRef,
-    inboxViewOpenRef, notesViewOpenRef, automationsViewOpenRef, settingsOpenRef, turnGen, skipForgetSessionIds,
+    familiarShownSessionFocused, shownFamiliarSessionId, composerFocused, setComposerFocused, setComposerFocusToken,
+    tabProjectsRef, displayedTabNavigation, visibleTabsRef, currentProjectDock, searchViewOpen, inboxViewOpen,
+    inboxAskPortal, notesViewOpen, localSurfaces, automationsViewOpen, setAutomationsViewOpen, activeAppView,
+    orchestrationRuns, notesEnabled, liveAgentsEnabled, settingsOpen, insetLayout, insetLayoutRef, rightPanel,
+    familiarsEnabled, familiarsSnap, openAppViews, setOpenAppViews, setOpenFamiliarTabs, titleTabOrder,
+    setTitleTabOrder, shownFamiliarTabs, dirtyFiles, history, storedLinkedSessions, tabsRef, projectTerminalsRef,
+    projectTerminalFocusedRef, activeTabIdRef, projectWorktree, workspacePins, tabWorkspace, keepWorkspaceTab,
+    projectCwdRef, foregroundSurfaceRef, searchViewOpenRef, inboxViewOpenRef, notesViewOpenRef, automationsViewOpenRef,
+    settingsOpenRef, turnGen, skipForgetSessionIds,
   } = core;
   const {
-    host: rightPanelHost, setHost: setRightPanelHost, open: rightPanelOpen, tab: rightPanelTab, closing: rightPanelClosing,
-    setClosing: setRightPanelClosing, show: showRightPanel, toggle: onToggleRightPanel, resize: rightPanelResize,
-    paneRef: rightPanelRef, setPane: setRightPanelRef,
+    open: rightPanelOpen, closing: rightPanelClosing, setClosing: setRightPanelClosing, show: showRightPanel,
+    toggle: onToggleRightPanel, paneRef: rightPanelRef,
   } = rightPanel;
   const familiarView = useStableFlow(() =>
     createFamiliarView({
@@ -322,12 +296,8 @@ function Workspace(props: AppProps) {
   useWarmActiveSkills(active);
 
   const activeFile = activeTab ? focusedFileTab(activeTab) : undefined;
-  const { sidebarCwd, gitCwd, terminalCwd, filesCwd, gitRootCwd, appViewScope } = workspaceCwds({
-    activeFile,
-    active,
-    projectCwd,
-    insetLayout,
-  });
+  const cwds = workspaceCwds({ activeFile, active, projectCwd, insetLayout });
+  const { sidebarCwd, gitCwd, terminalCwd, gitRootCwd, appViewScope } = cwds;
   const sidebarCwdRef = useRef(sidebarCwd);
   sidebarCwdRef.current = sidebarCwd;
   const terminalCwdRef = useRef(terminalCwd);
@@ -514,10 +484,9 @@ function Workspace(props: AppProps) {
     setDismissedLiveAgentIds, sessionDefaults,
   });
   const { flowCore, tabFlows, openerFlows, surfaceFlows, historyFlows, projectFlows, submissionFlows, turnQueueFlows } = flows;
-  const { orchestrationFlows, deckProjectTabs, sessionReminders, taskBoard, isMainWindow, railBadges, orchestrationWorkers } = flows;
+  const { orchestrationFlows, deckProjectTabs, isMainWindow, railBadges } = flows;
   const { tabLayout, terminals, newSessions } = tabFlows;
   const { sessionOpeners } = openerFlows;
-  const { surfaces } = surfaceFlows;
   const { worktreeActions } = historyFlows;
   const { submission, familiarChat, automationRuns } = submissionFlows;
   const onOpenFamiliar = familiarView.open;
@@ -542,33 +511,21 @@ function Workspace(props: AppProps) {
   });
   const { titleTabs } = titleTabsView;
 
-  const { projectHistory, sidebarHistory } = useSidebarHistoryView({
+  const histories = useSidebarHistoryView({
     history,
     promptableSessions,
     sidebarCwd,
     projectBranches,
     orchestrationRuns,
   });
-  const {
-    unseen: inboxUnseen,
-    linkedSessionUpdateIds,
-    linkedSessionUpdates,
-  } = useInboxActivity(recents, sidebarCwd, sidebarHistory, {
+  const inboxActivity = useInboxActivity(recents, sidebarCwd, histories.sidebarHistory, {
     onAppeared: automationRuns.inboxAppeared,
     scopeProject: appViewScope,
   });
-  linkedUpdatesRef.current = linkedSessionUpdates;
-  const { inboxRelatedSessions, repairSessions } = useInboxView(storedLinkedSessions, history, sessions);
+  linkedUpdatesRef.current = inboxActivity.linkedSessionUpdates;
+  const inboxView = useInboxView(storedLinkedSessions, history, sessions);
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
-  const {
-    onOpenLocalSurface,
-    onOpenKnowledge,
-    onLeaveLocalSurface,
-    onOpenHomeSession,
-    onOpenHomeAutomation,
-    onAutomationsFocusConsumed,
-    localSurfaceRailActions,
-  } = useLocalSurfaceActions({
+  const localSurfaceActions = useLocalSurfaceActions({
     surfaces: localSurfaces,
     setFilePickerOpen,
     setSettingsOpen,
@@ -581,12 +538,12 @@ function Workspace(props: AppProps) {
     onSelectHistorySession: sessionOpeners.selectHistory,
     railBadges,
   });
-  const { navigation, displayedTabs, handlers } = useTitleTabFlows(flowCore, {
+  const titleTabFlows = useTitleTabFlows(flowCore, {
     navigation: displayedTabNavigation,
     setOpenAppViews,
     setOpenFamiliarTabs,
     setTitleTabOrder,
-    openLocalSurface: (surface) => onOpenLocalSurface(surface),
+    openLocalSurface: (surface) => localSurfaceActions.onOpenLocalSurface(surface),
     flows: {
       tab: tabFlows,
       openers: openerFlows,
@@ -603,14 +560,14 @@ function Workspace(props: AppProps) {
     visibleTabsRef,
   });
 
+  const { displayedTabs, handlers } = titleTabFlows;
+
   useChromeResets({
     store: workspaceStore,
     sidebarTab,
     setSidebarTab,
     dockVisible: !!currentProjectDock?.open,
   });
-
-
 
   displayedTabNavigation.current = {
     tabs: insetLayout ? titleTabs : [],
@@ -655,8 +612,6 @@ function Workspace(props: AppProps) {
     paintTarget: terminals.dockPaintTarget,
     commitSize: terminals.setDockSize,
   });
-  const dockClosingShown = dockSlide.closingShown;
-
 
   useFloatingFamiliar(sessions, familiarsSnap, familiarsEnabled, {
     open: (monoId) =>
@@ -685,38 +640,9 @@ function Workspace(props: AppProps) {
     create: () => createFamiliar().id,
   });
 
-  const workspaceSwitchingSessionId = workspaceNavigation.pending ? active?.id : undefined;
-
   // Renames, mascot picks and new projects show up on the rail.
   const familiarViewFamiliar = familiarViewId ? familiarForSession(familiarViewId) : undefined;
-  const familiarOverview = useFamiliarOverviewData(
-    workspaceStore,
-    familiarViewSession,
-    sessions,
-  );
-  const familiarShownSessionPane = shownFamiliarSessionId
-    ? sessions.find((session) => session.id === shownFamiliarSessionId)
-    : undefined;
-  const familiarShownSessionActive =
-    !!familiarShownSessionPane && familiarShownSessionFocused;
-  const familiarOverviewPanel =
-    familiarViewFamiliar && familiarViewSession ? (
-      <FamiliarOverviewPanel
-        store={workspaceStore}
-        familiar={familiarViewFamiliar}
-        session={familiarViewSession}
-        overview={familiarOverview}
-        sessions={sessions}
-        history={history}
-        shownSession={{
-          session: familiarShownSessionPane,
-          active: familiarShownSessionActive,
-          composerFocused,
-          composerFocusToken,
-          workspaceSwitchingSessionId,
-        }}
-      />
-    ) : null;
+  const familiarOverview = useFamiliarOverviewData(workspaceStore, familiarViewSession, sessions);
 
   const chrome = useWorkspaceChrome(workspaceStore, {
     insetLayout,
@@ -737,223 +663,17 @@ function Workspace(props: AppProps) {
     chrome.showRightPanelToggle && !(familiarCovers && familiarViewFamiliar) && !activeAppView
       ? onToggleRightPanel
       : null;
-  const workspaceTitleBar = (
-    <WorkspaceTitleBar
-      store={workspaceStore}
-      tabs={titleTabs}
-      inset={insetLayout}
-      cwd={sidebarCwd}
-      gitCwd={gitCwd}
-      familiarSession={familiarViewSession}
-      activeAppView={activeAppView}
-      compactRail={chrome.compactTitleNavigation}
-      showRightPanelToggle={chrome.showRightPanelToggle}
-      rightPanelOpen={rightPanelOpen}
-      onToggleRightPanel={onToggleRightPanel}
-      onSettingsHeaderHost={setSettingsHeaderHost}
-    />
-  );
-
-  const sessionSidebar = (
-    <WorkspaceSidebar
-      store={workspaceStore}
-      automationsViewOpen={automationsViewOpen}
-      cwd={sidebarCwd}
-      gitCwd={gitCwd}
-      liveSessions={sessions}
-      activeTab={activeTab}
-      activeSession={active}
-      tabWorkspace={tabWorkspace}
-      workspaceSwitch={workspaceNavigation}
-      unseenFamiliarReplies={familiarReplies.counts}
-      tab={sidebarTab}
-      onTabChange={setSidebarTab}
-      rightPanel={{
-        host: rightPanelHost,
-        open: rightPanelOpen || rightPanelClosing,
-        tab: rightPanelTab,
-        onTabChange: showRightPanel,
-      }}
-      sessions={sidebarHistory}
-      busySessionIds={busySessionIds}
-      activeSessionId={activeSessionId}
-      reminders={sessionReminders.reminders}
-      onSetReminders={sessionReminders.schedule}
-      onCancelReminders={sessionReminders.cancel}
-      textHarness={pickTextHarness(active?.harness)}
-      liveAgents={liveAgents}
-      onOpenKnowledge={railSurfaces.knowledge ? onOpenKnowledge : undefined}
-      knowledgeActive={localSurface === "knowledge"}
-      automationsActive={automationsSurfaceOpen}
-      railExtraActions={localSurfaceRailActions}
-      localSurfaces={{
-        active: localSurface,
-        visible: railSurfaces,
-        onOpen: onOpenLocalSurface,
-        badges: railBadges,
-      }}
-      titleBarAbove={chrome.sidebarTitleBarAbove}
-      inset={insetLayout}
-      unseenFinishedIds={unseenFinishedIds}
-      inboxUnseen={inboxUnseen}
-      linkedSessionUpdateIds={linkedSessionUpdateIds}
-    />
-  );
-
-  const usageFooter = chrome.usageFooterShown ? (
-    <WorkspaceUsageFooter
-      store={workspaceStore}
-      pressureSlot={setPressureChipHost}
-      source={usageSource}
-      activeTab={activeTab}
-      inset={insetLayout}
-    />
-  ) : null;
-
   return (
-    <SessionStateContext.Provider value={sessionState}>
-    <WorkspaceHandlersContext.Provider value={handlers}>
-    <OrchestrationActions.Provider value={orchestrationFlows.orchestrationActions}>
-      <OrchestrationWorkers.Provider value={orchestrationWorkers}>
-        <WorkspaceLayout
-          store={workspaceStore}
-          insetLayout={insetLayout}
-              chrome={chrome}
-          titleBar={workspaceTitleBar}
-          sidebar={sessionSidebar}
-          onInsetRailHost={setInsetRailHost}
-          dockGridRef={dockSlide.gridRef}
-          docks={
-            <ProjectTerminalDocks
-              store={workspaceStore}
-              closingShown={dockClosingShown}
-              onSizePaint={dockSlide.paintSize}
-              onSizeCommit={dockSlide.commitSize}
-            />
-          }
-          panes={
-            <>
-              <WorkspaceTabPanes
-                store={workspaceStore}
-                workspaceSwitchingSessionId={workspaceSwitchingSessionId}
-                sessions={sessions}
-                activeSessionId={active?.id}
-                composerFocused={composerFocused}
-                composerFocusToken={composerFocusToken}
-                transcriptPool={transcriptPool}
-              />
-              <FamiliarSessionPanes
-                store={workspaceStore}
-                workspaceSwitchingSessionId={workspaceSwitchingSessionId}
-                sessions={sessions}
-                insetLayout={insetLayout}
-                familiar={familiarViewFamiliar}
-                composerFocused={composerFocused}
-                composerFocusToken={composerFocusToken}
-                shownSessionActive={familiarShownSessionActive}
-                onOpenArtifact={onOpenMonoArtifact}
-                activityTurnId={familiarOverview.activityShownTurnId}
-                launchedSessions={familiarOverview.launchedSessions}
-              />
-            </>
-          }
-          linkedPanels={
-            <LinkedWorkItemPanels
-              store={workspaceStore}
-              activeTab={activeTab}
-              covered={chrome.surfaceOpen || familiarCovers}
-              repairSessions={repairSessions}
-            />
-          }
-          familiarOverview={familiarCovers ? familiarOverviewPanel : null}
-          familiarSettings={<FamiliarSettingsPanel store={workspaceStore} session={familiarViewSession} />}
-          appViews={
-            <WorkspaceAppViews
-              store={workspaceStore}
-              insetLayout={insetLayout}
-              openAppViews={openAppViews}
-                      automationsOpen={automationsSurfaceOpen}
-              besideRail={chrome.appViewBesideRail}
-              compactRail={chrome.appViewCompactRail}
-              gitCwd={gitCwd}
-              sidebarCwd={sidebarCwd}
-              scopeProject={appViewScope}
-              history={projectHistory}
-              sessions={sessions}
-              automationsFocusId={automationsFocusId}
-              inboxAsk={
-                <InboxAskPanes
-                  store={workspaceStore}
-                  sessions={sessions}
-                  composerFocused={composerFocused}
-                  composerFocusToken={composerFocusToken}
-                  workspaceSwitchingSessionId={workspaceSwitchingSessionId}
-                />
-              }
-              localSurfaces={
-                <LocalSurfaceViews
-                  surface={localSurface}
-                  besideRail={chrome.appViewBesideRail}
-                  compactRail={chrome.appViewCompactRail}
-                  projectPaths={recents.map((project) => project.path)}
-                  projectCwd={projectCwd}
-                  onClose={onLeaveLocalSurface}
-                  onToggleSidebar={navigation.toggleSidebar}
-                  onOpenSession={onOpenHomeSession}
-                  onOpenAutomation={onOpenHomeAutomation}
-                  onOpenAutomations={surfaces.openAutomations}
-                  onOpenUsage={navigation.openUsage}
-                  onOpenInbox={surfaces.openInbox}
-                  taskBoard={taskBoard}
-                />
-              }
-              inbox={{ sessions: inboxRelatedSessions, repairSessions }}
-              automations={{
-                onFocusAutomationConsumed: onAutomationsFocusConsumed,
-                onLaunch: (automation, run) => automationRuns.launch(automation, run, true),
-              }}
-            />
-          }
-          settings={
-            <WorkspaceSettings
-              store={workspaceStore}
-              cwd={sidebarCwd}
-              sessions={sidebarHistory}
-              liveSessions={sessions}
-              headerHost={insetLayout ? settingsHeaderHost : undefined}
-            />
-          }
-          usageFooter={usageFooter}
-          rightPanel={
-            <InsetRightPanel
-              shown={chrome.insetRightPanelShown}
-              closing={rightPanelClosing}
-              resize={rightPanelResize}
-              onPane={setRightPanelRef}
-              onHost={setRightPanelHost}
-            />
-          }
-          overlays={
-            <>
-              <WorkspacePickerDialogs store={workspaceStore} cwd={filesCwd} />
-              <WorkspaceNotices
-                pressure={{
-                  sessions: sessionsRef,
-                  onPressureChange: transcriptPool.setResourcePressure,
-                  chipHost: pressureChipHost,
-                  insetChip: insetLayout,
-                }}
-                approvalNotices={hiddenApprovalToasts}
-                reminders={sessionReminders}
-              />
-              <WorkspaceDialogs store={workspaceStore} />
-            </>
-          }
-        />
-        <TranscriptPoolOutlet pool={transcriptPool} />
-      </OrchestrationWorkers.Provider>
-    </OrchestrationActions.Provider>
-    </WorkspaceHandlersContext.Provider>
-    </SessionStateContext.Provider>
+    <WorkspaceView
+      core={core}
+      flows={flows}
+      titleTabFlows={titleTabFlows}
+      view={{
+        active, activeTab, activeSessionId, usageSource, familiarViewSession, familiarViewFamiliar, familiarCovers,
+        familiarOverview, workspaceNavigation, cwds, sidebar, familiarReplyCounts: familiarReplies.counts, busySessionIds,
+        unseenFinishedIds, liveAgents, hiddenApprovalToasts, pressureChipHost, setPressureChipHost, histories,
+        inboxActivity, inboxView, localSurfaceActions, titleTabs, chrome, dockSlide,
+      }}
+    />
   );
 }
