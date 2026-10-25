@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   nextDisplayedTabAfterClose,
   reconcileTitleTabOrder,
+  shownAppView,
 } from "./app-view-tabs";
 
 describe("shared tab opening order", () => {
@@ -95,5 +96,20 @@ describe("closing mixed tabs in visible order", () => {
     expect(
       nextDisplayedTabAfterClose([], "missing", "missing"),
     ).toBeUndefined();
+  });
+});
+
+describe("shownAppView", () => {
+  const closed = { search: false, inbox: false, notes: false, automations: false };
+
+  it("shows Search over the Inbox, the Inbox over Notes and Notes over Automations", () => {
+    expect(shownAppView({ ...closed, search: true, inbox: true })).toBe("search");
+    expect(shownAppView({ ...closed, inbox: true, notes: true })).toBe("inbox");
+    expect(shownAppView({ ...closed, notes: true, automations: true })).toBe("notes");
+    expect(shownAppView({ ...closed, automations: true })).toBe("automations");
+  });
+
+  it("is none while every view is closed", () => {
+    expect(shownAppView(closed)).toBeUndefined();
   });
 });

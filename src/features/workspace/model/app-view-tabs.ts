@@ -63,3 +63,17 @@ export function nextDisplayedTabAfterClose(
   if (index < 0) return;
   return tabs[index + 1]?.id ?? tabs[index - 1]?.id;
 }
+
+/** The app view covering the workspace; a later one in this order never shows over an earlier one. */
+export function shownAppView(open: {
+  search: boolean;
+  inbox: boolean;
+  notes: boolean;
+  automations: boolean;
+}): AppView | undefined {
+  if (open.search) return "search";
+  if (open.inbox) return "inbox";
+  if (open.notes) return "notes";
+  if (open.automations) return "automations";
+  return undefined;
+}

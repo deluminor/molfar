@@ -72,7 +72,7 @@
     "lint/suspicious/noControlCharactersInRegex": 2
   },
   "src/app/App.tsx": {
-    "lint/correctness/useExhaustiveDependencies": 6
+    "lint/correctness/useExhaustiveDependencies": 5
   },
   "src/app/hooks/use-familiar-habits.test.ts": {
     "lint/style/noNonNullAssertion": 5
@@ -221,6 +221,9 @@
     "lint/correctness/useExhaustiveDependencies": 1
   },
   "src/app/workspace/hooks/tabs/use-tab-effects.ts": {
+    "lint/correctness/useExhaustiveDependencies": 1
+  },
+  "src/app/workspace/title-tabs/use-title-tabs-view.ts": {
     "lint/correctness/useExhaustiveDependencies": 1
   },
   "src/assets/providers/antigravity.svg": {

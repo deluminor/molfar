@@ -11,11 +11,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useStore } from "zustand";
-import {
-  appViewTabId,
-  familiarTabId,
-  type AppView,
-} from "@/features/workspace/model/app-view-tabs";
+import { shownAppView } from "@/features/workspace/model/app-view-tabs";
 import { flushSync } from "react-dom";
 import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
@@ -28,7 +24,6 @@ import {
   useHarnessIdlePark,
   useWarmActiveSkills,
 } from "./workspace/hooks/harness/use-harness-effects";
-import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
 import {
@@ -87,7 +82,6 @@ import { useFamiliarTurnClose } from "./workspace/hooks/familiars/use-familiar-t
 import { createFamiliarView } from "./workspace/flows/familiars/familiar-view";
 import { createBtw } from "./workspace/flows/btw/btw-actions";
 import type { InboxDeps } from "./workspace/flows/inbox/inbox-deps";
-import { inboxRelatedSessions as relatedInboxSessions } from "./workspace/flows/inbox/inbox-related-sessions";
 import { createLinkedUpdateCards } from "./workspace/flows/linked-work-items/linked-update-card";
 import { createLinkedWorkItemPanels } from "./workspace/flows/linked-work-items/linked-work-item-panel";
 import { useAddNoteToChat } from "./workspace/hooks/use-add-note-to-chat";
@@ -108,8 +102,7 @@ import { useNativeKeybindings } from "./workspace/hooks/commands/use-native-keyb
 import { useWorkspaceKeys } from "./workspace/hooks/commands/use-workspace-keys";
 import { useLatestRef } from "./workspace/hooks/use-latest-ref";
 import { useControlRequests } from "./workspace/hooks/use-control-requests";
-import { titleTabList } from "./workspace/title-tabs/title-tab-list";
-import { titleTabsEqual } from "./workspace/title-tabs/title-tabs-equal";
+import { useTitleTabsView } from "./workspace/title-tabs/use-title-tabs-view";
 import type {
   DisplayedTabNavigation,
   VisibleTabs,
@@ -248,6 +241,7 @@ import {
   useInboxLinkedSessions,
   useLinkedPanelPrune,
 } from "./workspace/hooks/inbox/use-inbox-effects";
+import { useInboxView } from "./workspace/hooks/inbox/use-inbox-view";
 import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
 import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
 import { WorkspaceLayout } from "./workspace/ui/layout/WorkspaceLayout";
@@ -446,15 +440,12 @@ function Workspace({
   } = localSurfaces;
   const inspectedWorkerId = useWorkspaceField(workspaceStore, "inspectedWorkerId");
   const workerDetailRequest = useWorkspaceField(workspaceStore, "workerDetailRequest");
-  const activeAppView: AppView | undefined = searchViewOpen
-    ? "search"
-    : inboxViewOpen
-      ? "inbox"
-      : notesViewOpen
-        ? "notes"
-        : automationsSurfaceOpen
-          ? "automations"
-          : undefined;
+  const activeAppView = shownAppView({
+    search: searchViewOpen,
+    inbox: inboxViewOpen,
+    notes: notesViewOpen,
+    automations: automationsSurfaceOpen,
+  });
   const orchestrationRuns = useSyncExternalStore(
     orchestrator.subscribe,
     orchestrator.snapshot,
@@ -951,13 +942,6 @@ function Workspace({
     ? sessions.find((session) => session.id === familiarViewId)
     : undefined;
   const familiarCovers = !!familiarViewId;
-  // The open Familiar's title tab, in the inset layout.
-  const familiarViewTabId = useMemo(() => {
-    const familiarId = familiarViewId ? familiarForSession(familiarViewId)?.id : undefined;
-    return familiarId ? familiarTabId(familiarId) : undefined;
-    // The roster is read through its snapshot.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familiarViewId, familiarsSnap]);
   const activeTabSessionIds = activeTab ? leafIds(activeTab.layout) : [];
   const activeLinkedWorkItemPanel = activeTab
     ? (linkedWorkItemPanels.get(activeTab.focusedId) ??
@@ -1576,34 +1560,25 @@ function Workspace({
     [inspectedWorkerId, workerPanes.openDetails],
   );
 
-  const shownViewTabId = settingsOpen
-    ? undefined
-    : familiarCovers
-      ? familiarViewTabId
-      : activeAppView
-        ? appViewTabId(activeAppView)
-        : undefined;
-  const nextTitleTabs = titleTabList({
-    projectTabs: deckProjectTabs,
+  const titleTabsView = useTitleTabsView({
+    deckProjectTabs,
     sessions,
     dirtyFiles,
     unseenFinishedIds,
     insetLayout,
     openAppViews,
     notesEnabled,
-    familiarTabs: shownFamiliarTabs,
+    shownFamiliarTabs,
     sidebarCwd,
-    order: titleTabOrder,
-    shownViewTabId,
+    titleTabOrder,
+    settingsOpen,
+    familiarViewId,
+    familiarsSnap,
+    activeAppView,
+    activeTabId,
+    tabProjectsRef,
   });
-  tabProjectsRef.current = new Map(
-    nextTitleTabs.map((tab) => [tab.id, tab.project]),
-  );
-  const titleTabsRef = useRef(nextTitleTabs);
-  if (!titleTabsEqual(titleTabsRef.current, nextTitleTabs)) {
-    titleTabsRef.current = nextTitleTabs;
-  }
-  const titleTabs = titleTabsRef.current;
+  const { titleTabs } = titleTabsView;
 
   const { projectHistory, sidebarHistory } = useSidebarHistoryView({
     history,
@@ -1621,14 +1596,7 @@ function Workspace({
     scopeProject: appViewScope,
   });
   linkedSessionUpdatesRef.current = linkedSessionUpdates;
-  const inboxRelatedSessions = useMemo(
-    () => relatedInboxSessions(storedLinkedSessions, history, sessions),
-    [history, sessions, storedLinkedSessions],
-  );
-  const repairSessions = useMemo(
-    () => ciRepairSessions(history, sessions),
-    [history, sessions],
-  );
+  const { inboxRelatedSessions, repairSessions } = useInboxView(storedLinkedSessions, history, sessions);
   const rightPanelToggleRef = useRef<(() => void) | null>(null);
   const {
     onOpenLocalSurface,
@@ -1698,23 +1666,10 @@ function Workspace({
 
   displayedTabNavigation.current = {
     tabs: insetLayout ? titleTabs : [],
-    activeId: settingsOpen
-      ? ""
-      : familiarCovers
-        ? (familiarViewTabId ?? "")
-        : activeAppView
-          ? appViewTabId(activeAppView)
-          : activeTabId,
+    activeId: titleTabsView.displayedActiveId,
     select: displayedTabs.selectTitleTab,
   };
-
-  visibleTabsRef.current = {
-    insetLayout,
-    familiarTabId: familiarCovers ? familiarViewTabId : undefined,
-    activeAppView,
-    activeTabId,
-    titleTabs,
-  };
+  visibleTabsRef.current = titleTabsView.visibleTabs;
 
   const actions = useLatestRef(commandActions(handlers));
   const run = useCommandRunner();
