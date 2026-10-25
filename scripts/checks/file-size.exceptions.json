@@ -1,1 +1,6 @@
-{}
+{
+  "src/app/App.tsx": {
+    "limit": 500,
+    "reason": "Root composition: the Workspace calls its core, flow and view hooks in the one order that keeps every effect's relative order; splitting the call list would reorder effects."
+  }
+}

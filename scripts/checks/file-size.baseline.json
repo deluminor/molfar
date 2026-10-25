@@ -179,9 +179,6 @@
   "src-tauri/src/worktrees.rs": {
     "lines": 1318
   },
-  "src/app/App.tsx": {
-    "lines": 679
-  },
   "src/app/hooks/use-familiar-habits.ts": {
     "lines": 311
   },
