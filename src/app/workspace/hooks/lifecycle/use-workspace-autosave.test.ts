@@ -117,14 +117,47 @@ describe("useWorkspaceSnapshotAutosave", () => {
     vi.useRealTimers();
   });
 
-  it("drops a pending save when an unchanged layout re-renders within 250 ms (logged bug, kept as is)", () => {
+  it("keeps the pending save when an unchanged layout re-renders within 250 ms", () => {
     vi.useFakeTimers();
     const { rerender, input } = setup();
+    vi.advanceTimersByTime(100);
     input.worktreePath = "/p-tree";
     rerender();
     vi.runAllTimers();
 
-    expect(mocks.saveWorkspaceSnapshot).not.toHaveBeenCalled();
+    expect(mocks.saveWorkspaceSnapshot.mock.calls.map(([snapshot]) => snapshot)).toEqual([
+      { tabs: 0, activeTabId: "t1", projectCwd: "/p" },
+    ]);
+    vi.useRealTimers();
+  });
+
+  it("saves only the latest layout when it changes again within 250 ms", () => {
+    vi.useFakeTimers();
+    const { rerender, input } = setup();
+    vi.advanceTimersByTime(100);
+    input.activeTabId = "t2";
+    rerender();
+    vi.runAllTimers();
+
+    expect(mocks.saveWorkspaceSnapshot.mock.calls.map(([snapshot]) => snapshot)).toEqual([
+      { tabs: 0, activeTabId: "t2", projectCwd: "/p" },
+    ]);
+    vi.useRealTimers();
+  });
+
+  it("retries an unchanged layout after a failed save and logs the failure", async () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mocks.saveWorkspaceSnapshot.mockRejectedValueOnce(new Error("disk full"));
+    const { rerender, input } = setup();
+    await vi.runAllTimersAsync();
+    input.worktreePath = "/p-tree";
+    rerender();
+    await vi.runAllTimersAsync();
+
+    expect(mocks.saveWorkspaceSnapshot).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith("Could not save the workspace layout", expect.any(Error));
+    warn.mockRestore();
     vi.useRealTimers();
   });
 

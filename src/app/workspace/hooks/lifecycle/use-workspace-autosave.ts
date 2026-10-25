@@ -95,9 +95,13 @@ export function useWorkspaceSnapshotAutosave({
     );
     const key = workspaceSnapshotKey(snapshot);
     if (workspaceSyncKey.current === key) return;
-    workspaceSyncKey.current = key;
+
     const timer = window.setTimeout(() => {
-      void saveWorkspaceSnapshot(snapshot).catch(() => undefined);
+      workspaceSyncKey.current = key;
+      void saveWorkspaceSnapshot(snapshot).catch((error: unknown) => {
+        if (workspaceSyncKey.current === key) workspaceSyncKey.current = null;
+        console.warn("Could not save the workspace layout", error);
+      });
     }, 250);
     return () => window.clearTimeout(timer);
   }, [
