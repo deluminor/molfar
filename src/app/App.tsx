@@ -29,8 +29,6 @@ import {
   useProjectHistory,
   useRemoteHistoryRerender,
 } from "./workspace/hooks/project-data/use-project-data-effects";
-import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
-import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
@@ -59,6 +57,7 @@ import { useTurnQueueFlows } from "./workspace/hooks/flows/use-turn-queue-flows"
 import { useOrchestrationFlows } from "./workspace/hooks/flows/use-orchestration-flows";
 import { useTitleTabFlows } from "./workspace/hooks/flows/use-title-tab-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
+import { useSessionStorage } from "./workspace/hooks/flows/use-session-storage";
 import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handlers";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
@@ -142,8 +141,6 @@ import { useDockBadge, useNotificationPermissionProbe } from "./workspace/hooks/
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import {
   getSession,
-  readSession,
-  upsertSession,
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
 import { useUnseenFinishedSessions } from "@/features/sessions/hooks/use-unseen-finished-sessions";
@@ -195,7 +192,6 @@ import {
   subscribeLiveAgentsEnabled,
 } from "@/features/settings/model/settings";
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
-import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
 import type { ResumedWorkspace } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
@@ -264,7 +260,6 @@ function Workspace({
   const {
     setTabs,
     setActiveTabId: setActiveTabIdState,
-    setHistory,
     setFilePickerOpen,
     setSearchViewOpen,
     setInboxViewOpen,
@@ -592,31 +587,13 @@ function Workspace({
   );
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
-  const removingSessionIds = useRef(new Set<string>());
-  const sessionPersistence = useStableFlow(() =>
-    createSessionPersistence({
-      upsert: upsertSession,
-      isBlocked: (sessionId) =>
-        removingSessionIds.current.has(sessionId) ||
-        switchingWorktrees.current.has(sessionId),
-      onSaved: (summary) => {
-        if (summary.cwd !== sidebarCwdRef.current) return;
-        setHistory((current) => mergeProjectHistorySummary(current, summary));
-      },
-    }),
-  );
-  const loadedSessionCache = useRef(new Map<string, Session>());
-  const openingSessionIds = useRef(new Set<string>());
-  const sessionLoader = useStableFlow(() =>
-    createSessionLoader({
-      cache: loadedSessionCache.current,
-      opening: openingSessionIds.current,
-      get: readSession,
-      isRemoving: (sessionId) => removingSessionIds.current.has(sessionId),
-      isOpen: (sessionId) =>
-        sessionsRef.current.some((session) => session.id === sessionId),
-    }),
-  );
+  const { removingSessionIds, loadedSessionCache, openingSessionIds, sessionPersistence, sessionLoader } =
+    useSessionStorage({
+      store: workspaceStore,
+      sessionsRef,
+      switchingWorktrees,
+      sidebarCwd: () => sidebarCwdRef.current,
+    });
   const [transcriptPool] = useState(() => new TranscriptPool());
   const skipForgetSessionIds = useRef(new Set<string>());
   const projectLocationSyncs = useRef(
