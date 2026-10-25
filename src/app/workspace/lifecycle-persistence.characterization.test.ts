@@ -146,6 +146,9 @@ describe("Workspace background saves", () => {
 
   it("saves the layout once after a file opens", async () => {
     app = await renderApp({ project: "/work/demo", routes: FILE_ROUTES });
+    const booted = app;
+    // Boot's own debounced layout save can land after `renderApp` on a slow host.
+    await booted.until(() => callsSince(booted, 0, "workspace_set_snapshot").length > 0);
     const mark = app.calls.length;
 
     await openNotesFile(app);
