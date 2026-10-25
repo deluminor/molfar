@@ -158,7 +158,6 @@ import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-qu
 import {
   getSession,
   readSession,
-  replaceInFlightSessions,
   saveWorkspaceSnapshot,
   upsertSession,
   type SessionSummary,
@@ -217,7 +216,6 @@ import {
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { reconcileProjectReturn } from "@/features/projects/model/project-return";
 import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
-import { inFlightRefs, inFlightSnapshotKey, shouldWriteInFlightSnapshot } from "@/features/sessions/model/in-flight";
 import { collectWorkspaceSnapshot, workspaceSnapshotKey } from "@/features/workspace/model/workspace-snapshot";
 import {
   bindResumedSessions,
@@ -238,6 +236,7 @@ import {
   useImportedSessionMarks,
   useSessionAutosave,
 } from "./workspace/hooks/lifecycle/use-session-autosave";
+import { useInFlightSnapshot } from "./workspace/hooks/lifecycle/use-workspace-autosave";
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -615,8 +614,6 @@ function Workspace({
   );
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
-  const inFlightSyncKey = useRef<string | null>(null);
-  const sawInFlight = useRef(false);
   const workspaceSyncKey = useRef<string | null>(null);
   const removingSessionIds = useRef(new Set<string>());
   const sessionPersistence = useStableFlow(() =>
@@ -1115,23 +1112,7 @@ function Workspace({
 
   useSessionAutosave(sessionPersistence, sessionState, tabsRef);
 
-  useEffect(() => {
-    const refs = inFlightRefs(sessions, tabs);
-    if (refs.length > 0) sawInFlight.current = true;
-    const key = inFlightSnapshotKey(refs);
-    if (
-      !shouldWriteInFlightSnapshot(
-        key,
-        refs,
-        inFlightSyncKey.current,
-        sawInFlight.current,
-      )
-    ) {
-      return;
-    }
-    inFlightSyncKey.current = key;
-    void replaceInFlightSessions(refs).catch(() => undefined);
-  }, [sessions, tabs]);
+  useInFlightSnapshot(sessions, tabs);
 
   useEffect(() => {
     if (windowTransfer) return;
