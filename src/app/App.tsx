@@ -21,6 +21,13 @@ import { flushSync } from "react-dom";
 import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
 import { useWorkspaceSessions } from "./workspace/hooks/use-workspace-sessions";
+import {
+  useActiveHarnessCatalog,
+  useBtwAbortClosed,
+  useForegroundFlush,
+  useHarnessIdlePark,
+  useWarmActiveSkills,
+} from "./workspace/hooks/harness/use-harness-effects";
 import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
@@ -150,7 +157,6 @@ import {
   registerBuiltinHarnesses,
   startHarnessBridge,
   stopHarnessSession,
-  configureHarnessIdlePark,
   stopHarnessTextPrompts,
 } from "@/integrations/harness";
 
@@ -238,14 +244,10 @@ import { useFamiliarHabits } from "./hooks/use-familiar-habits";
 import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import { ensureFamiliarSession } from "@/features/familiars/model/familiar-workspace";
-import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
 import {
   TranscriptPool,
   TranscriptPoolOutlet,
 } from "@/features/sessions/ui/TranscriptPool";
-import {
-  warmNativeSkills,
-} from "@/features/skills/model/skills";
 import {
   REMOTE_HISTORY_UPDATED,
   remoteTabCwd,
@@ -292,7 +294,6 @@ import {
   loadCloseToTray,
   loadFamiliarsEnabled,
   subscribeFamiliarsEnabled,
-  loadIdleAgentLimit,
   loadLiveAgentsEnabled,
   subscribeLiveAgentsEnabled,
 } from "@/features/settings/model/settings";
@@ -710,9 +711,7 @@ function Workspace({
   const settingsOpenRef = useRef(settingsOpen);
   settingsOpenRef.current = settingsOpen;
   const sessionNavigationIdsRef = useRef<readonly string[]>([]);
-  useEffect(() => {
-    btw.abortClosed(new Set(sessions.map((session) => session.id)));
-  }, [sessions]);
+  useBtwAbortClosed(btw, sessions);
 
   useEffect(
     () => () => {
@@ -826,13 +825,7 @@ function Workspace({
         }),
     }),
   );
-  // Cap warm agent CLIs, sparing the conversations on screen.
-  useEffect(() => {
-    configureHarnessIdlePark({
-      limit: loadIdleAgentLimit,
-      keep: harnessEvents.isForeground,
-    });
-  }, [harnessEvents]);
+  useHarnessIdlePark(harnessEvents);
   const flushHarnessEvents = harnessEvents.flush;
   const flushForegroundHarnessEvents = harnessEvents.flushForeground;
   const enqueueHarnessEvent = harnessEvents.enqueue;
@@ -1039,15 +1032,7 @@ function Workspace({
   const sessionDefaultsRef = useLatestRef(sessionDefaults);
   const activeTabRef = useLatestRef(activeTab);
 
-  const activeSkillContext = active
-    ? nativeSkillContextForSession(active)
-    : null;
-  const activeSkillCwd = activeSkillContext?.cwd;
-
-  useEffect(() => {
-    if (!activeSkillContext || !activeSkillCwd) return;
-    warmNativeSkills(activeSkillContext);
-  }, [activeSkillCwd, active?.id, active?.harness]);
+  useWarmActiveSkills(active);
 
   const activeFile = activeTab ? focusedFileTab(activeTab) : undefined;
   // A Familiar belongs to no project, so its view keeps the project in place.
@@ -1167,17 +1152,7 @@ function Workspace({
 
   const busySessionIds = useSessionIdSet(sessions, isBusySession);
 
-  /** Probe the active session's harness for its live model catalog whenever
-   * the active harness changes. Catalogs load lazily (probing spawns a CLI
-   * process) and the boot refresh runs before restored sessions land, so a
-   * fresh session would otherwise show only the built-in fallback model
-   * until the picker happened to be opened. Idempotent: refreshHarnessCatalogs
-   * dedupes via hasLiveCatalog and its inflight map. */
-  const activeHarness = active?.harness;
-  useEffect(() => {
-    if (!activeHarness || !isLiveHarness(activeHarness)) return;
-    void refreshHarnessCatalogs([activeHarness]);
-  }, [activeHarness]);
+  useActiveHarnessCatalog(active?.harness);
 
   // The footer's usage follows what is in view: under the inset layout a
   // Familiar's tab keeps the footer, which then reads the Familiar's model.
@@ -1320,22 +1295,17 @@ function Workspace({
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [flushHarnessEvents]);
 
-  useLayoutEffect(() => {
-    // Catch up only the newly visible panes before paint. Other streams keep
-    // their background timer instead of adding work to this tab switch.
-    flushForegroundHarnessEvents();
-  }, [
+  useForegroundFlush(flushForegroundHarnessEvents, {
     activeTabId,
     familiarViewId,
     inboxViewOpen,
-    inboxAskPortal?.sessionId,
+    inboxAskSessionId: inboxAskPortal?.sessionId,
     shownFamiliarSessionId,
     searchViewOpen,
     notesViewOpen,
     automationsViewOpen,
     settingsOpen,
-    flushForegroundHarnessEvents,
-  ]);
+  });
 
   useEffect(() => {
     let unlistenClose: (() => void) | undefined;
