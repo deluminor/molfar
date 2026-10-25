@@ -3,7 +3,7 @@ import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/domain/session/session";
 import { mountHook } from "../../testing/mount-hook";
-import { useWindowFocus } from "./use-window-focus";
+import { useVisibilityFlush, useWindowFocus } from "./use-window-focus";
 
 type FocusHandler = (event: { payload: boolean }) => void;
 
@@ -78,5 +78,18 @@ describe("useWindowFocus", () => {
     expect(mocks.setWindowFocused).toHaveBeenCalledWith(false);
     expect(input.flushForegroundHarnessEvents).not.toHaveBeenCalled();
     expect(mocks.unlisten).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useVisibilityFlush", () => {
+  it("flushes on every visibility change until unmount", () => {
+    const flush = vi.fn();
+    const { unmount } = mountHook(() => useVisibilityFlush(flush));
+    document.dispatchEvent(new Event("visibilitychange"));
+    document.dispatchEvent(new Event("visibilitychange"));
+    unmount();
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(flush).toHaveBeenCalledTimes(2);
   });
 });

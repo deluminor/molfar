@@ -73,3 +73,16 @@ export function useWindowFocus({
     setComposerFocusToken,
   ]);
 }
+
+/** Flushes pending stream output whenever the page is shown or hidden. */
+export function useVisibilityFlush(flushHarnessEvents: () => void): void {
+  useEffect(() => {
+    const onVisible = () => {
+      // Flush on hiding too: WebKit can suspend a pending animation frame,
+      // leaving the last output stranded until another event or activation.
+      flushHarnessEvents();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [flushHarnessEvents]);
+}

@@ -1,7 +1,6 @@
 import {
   Suspense,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -207,7 +206,10 @@ import {
 import { useWindowClose } from "./workspace/hooks/lifecycle/use-window-close";
 import { useFamiliarThreadMigration } from "./workspace/hooks/lifecycle/use-familiar-thread-migration";
 import { useHarnessBootRefresh } from "./workspace/hooks/lifecycle/use-harness-boot-refresh";
-import { useWindowFocus } from "./workspace/hooks/lifecycle/use-window-focus";
+import {
+  useVisibilityFlush,
+  useWindowFocus,
+} from "./workspace/hooks/lifecycle/use-window-focus";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -873,15 +875,7 @@ function Workspace({
     setComposerFocusToken,
   });
 
-  useEffect(() => {
-    const onVisible = () => {
-      // Flush on hiding too: WebKit can suspend a pending animation frame,
-      // leaving the last output stranded until another event or activation.
-      flushHarnessEvents();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [flushHarnessEvents]);
+  useVisibilityFlush(flushHarnessEvents);
 
   useForegroundFlush(flushForegroundHarnessEvents, {
     activeTabId,
