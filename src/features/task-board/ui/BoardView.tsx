@@ -4,6 +4,7 @@ import { Kanban } from "@/shared/ui/icons";
 import { SurfaceHeader } from "@/features/home/ui/SurfaceHeader";
 import { BOARD_COLUMNS, isAgentStage } from "../constants/columns";
 import { useBoardDrag, type BoardDrag } from "../hooks/use-board-drag";
+import { useBoardProject } from "../hooks/use-board-project";
 import { DROP_LABEL } from "../constants/column-look";
 import { needsYou } from "../model/attention";
 import "./task-board.css";
@@ -48,7 +49,7 @@ type Props = {
 
 /** The global Task Board surface opened from the project rail. */
 export function BoardView({ runtime, projects, besideRail, compactRail, onClose, onToggleSidebar, onOpenSession }: Props): ReactNode {
-  const [project, setProject] = useState<string | null>(null);
+  const [project, setProject] = useBoardProject(projects);
   const [archived, setArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
