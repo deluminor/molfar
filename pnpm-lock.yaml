@@ -216,8 +216,8 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
       happy-dom:
-        specifier: 20.14.0
-        version: 20.14.0
+        specifier: 21.0.4
+        version: 21.0.4
       tailwindcss:
         specifier: ^4
         version: 4.3.3
@@ -229,7 +229,7 @@ importers:
         version: 7.3.6(@types/node@26.5.0)(jiti@2.7.0)(lightningcss@1.32.0)
       vitest:
         specifier: ^3.2.4
-        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.5.0)(happy-dom@20.14.0)(jiti@2.7.0)(lightningcss@1.32.0)
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.5.0)(happy-dom@21.0.4)(jiti@2.7.0)(lightningcss@1.32.0)
 
 packages:
 
@@ -1227,9 +1227,6 @@ packages:
   '@types/node@26.5.0':
     resolution: {integrity: sha512-dVSGpriSoCgz8WnDNTuSSuSv1PC/ALXihO4ulRZt7Md8k9mlbdin3lGOcDE8SnWOgf513ByWlXd7BK4azmyg/A==}
 
-  '@types/node@26.6.3':
-    resolution: {integrity: sha512-dsqMQQoeTLqu9wynDD00q573mNzso3IdQOAfHRJqLCcmCFPoGo9A1bDpUcv/9tnKpErQWv9uKeGfl37EIS02Yg==}
-
   '@types/react-dom@19.3.0':
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
     peerDependencies:
@@ -1699,8 +1696,8 @@ packages:
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
 
-  happy-dom@20.14.0:
-    resolution: {integrity: sha512-4bRh1KzRvKDnFNTlLhzT1RZTpkKhQbQDl9j+7GXszWsvuspYdo29k6OHRf4PwiM6oLb8r/pMWeYiJjkfod5AvQ==}
+  happy-dom@21.0.4:
+    resolution: {integrity: sha512-tFm+GaLBgo6o0awHnvHaNoraVo27qJ+2tZEtZ+cIa08hXbeitrxAJajLI05hsUy/2/YTKcUjQYzHe5mCcraLBw==}
     engines: {node: '>=20.0.0'}
 
   hast-util-from-parse5@8.0.3:
@@ -3538,10 +3535,6 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
-  '@types/node@26.6.3':
-    dependencies:
-      undici-types: 8.9.0
-
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
       '@types/react': 19.3.0
@@ -3561,7 +3554,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.6.3
+      '@types/node': 26.5.0
 
   '@ungap/structured-clone@1.4.0': {}
 
@@ -3648,7 +3641,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 26.6.3
+      '@types/node': 26.5.0
 
   cac@6.7.14: {}
 
@@ -4033,9 +4026,9 @@ snapshots:
 
   hachure-fill@0.5.2: {}
 
-  happy-dom@20.14.0:
+  happy-dom@21.0.4:
     dependencies:
-      '@types/node': 26.6.3
+      '@types/node': 26.5.0
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
@@ -5099,7 +5092,7 @@ snapshots:
       jiti: 2.7.0
       lightningcss: 1.32.0
 
-  vitest@3.2.7(@types/debug@4.1.13)(@types/node@26.5.0)(happy-dom@20.14.0)(jiti@2.7.0)(lightningcss@1.32.0):
+  vitest@3.2.7(@types/debug@4.1.13)(@types/node@26.5.0)(happy-dom@21.0.4)(jiti@2.7.0)(lightningcss@1.32.0):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.7
@@ -5127,7 +5120,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.13
       '@types/node': 26.5.0
-      happy-dom: 20.14.0
+      happy-dom: 21.0.4
     transitivePeerDependencies:
       - jiti
       - less
