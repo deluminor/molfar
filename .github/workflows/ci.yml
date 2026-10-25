@@ -103,6 +103,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npx tsc --noEmit
+      - run: npx tsc --noEmit -p tests/browser/tsconfig.json
       - run: npm run check:moves
       - run: npm run lint
       - run: npm run check:size
