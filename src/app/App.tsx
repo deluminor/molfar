@@ -180,7 +180,7 @@ import { useDockSlide } from "./workspace/hooks/use-dock-slide";
 import { useFloatingFamiliar } from "./hooks/use-floating-familiar";
 import { ensureFamiliarSession } from "@/features/familiars/model/familiar-workspace";
 import { TranscriptPool, TranscriptPoolOutlet } from "@/features/sessions/ui/TranscriptPool";
-import { isBusySession, openSessionIds } from "./model/session-id-sets";
+import { isBusySession } from "./model/session-id-sets";
 import { useProviderSignInPrompt } from "./workspace/hooks/use-provider-sign-in-prompt";
 import { useSessionIdSet } from "./workspace/hooks/use-session-id-set";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
@@ -234,7 +234,10 @@ import {
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
-import { useImportedSessionMarks } from "./workspace/hooks/lifecycle/use-session-autosave";
+import {
+  useImportedSessionMarks,
+  useSessionAutosave,
+} from "./workspace/hooks/lifecycle/use-session-autosave";
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -1110,29 +1113,7 @@ function Workspace({
 
   const persistSession = sessionPersistence.persist;
 
-  useEffect(() => {
-    let timer: number | undefined;
-    const observe = () => {
-      if (
-        !sessionPersistence.observe(
-          sessionState.snapshot(),
-          openSessionIds(tabsRef.current),
-        )
-      )
-        return;
-      if (timer !== undefined) window.clearTimeout(timer);
-      timer = window.setTimeout(
-        () => void sessionPersistence.writePending(),
-        650,
-      );
-    };
-    observe();
-    const unsubscribe = sessionState.observe(observe);
-    return () => {
-      unsubscribe();
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, []);
+  useSessionAutosave(sessionPersistence, sessionState, tabsRef);
 
   useEffect(() => {
     const refs = inFlightRefs(sessions, tabs);
