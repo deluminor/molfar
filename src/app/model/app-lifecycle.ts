@@ -375,11 +375,11 @@ export async function confirmReload(
 
 export async function persistLiveTranscripts(
   sessions: Session[],
-): Promise<void> {
-  await Promise.all(
+): Promise<PromiseSettledResult<unknown>[]> {
+  return Promise.allSettled(
     sessions
       .filter(shouldPersistSession)
-      .map((session) => upsertSession(session).catch(() => null)),
+      .map((session) => upsertSession(session)),
   );
 }
 

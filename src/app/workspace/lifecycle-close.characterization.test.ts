@@ -82,14 +82,14 @@ describe("Workspace window close", () => {
     ]);
   });
 
-  it("hides a window with a running chat at once, its transcript saved without waiting and the turn kept", async () => {
+  it("hides a window with a running chat once its transcript is saved, keeping the turn", async () => {
     const app = await runningChat();
     const mark = app.calls.length;
 
     await requestWindowClose(app);
-    await app.until(() => callsSince(app, mark, "session_upsert").length > 0);
+    await app.until(() => callsSince(app, mark, "hide_window").length > 0);
 
-    expect(persistOrder(app, mark)).toEqual(["hide_window", "session_upsert"]);
+    expect(persistOrder(app, mark)).toEqual(["session_upsert", "hide_window"]);
     expect(upsertedSessions(app, mark).some(markedInterrupted)).toBe(false);
   });
 

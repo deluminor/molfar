@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect } from "react";
+import type { Session } from "@/domain/session/session";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { loadCloseToTray } from "@/features/settings/model/settings";
 import type { WorkspaceTab } from "@/features/workspace/model/layout";
@@ -16,10 +17,34 @@ import {
 } from "../../../model/app-lifecycle";
 import type { WorkspaceStateRefs } from "./types";
 
+const TRANSCRIPT_WAIT_MS = 2_000;
+
+/** Hides once the live transcripts are written; a hung write cannot keep the window up past the wait. */
+async function hideAfterTranscripts(sessions: Session[]): Promise<void> {
+  let timer: number | undefined;
+  const timedOut = new Promise<"timed-out">((resolve) => {
+    timer = window.setTimeout(() => resolve("timed-out"), TRANSCRIPT_WAIT_MS);
+  });
+  const outcome = await Promise.race([persistLiveTranscripts(sessions), timedOut]);
+  window.clearTimeout(timer);
+
+  if (outcome === "timed-out") {
+    console.warn("Hiding the window before its transcripts finished saving");
+  } else {
+    for (const result of outcome) {
+      if (result.status === "rejected") {
+        console.warn("Could not save a live transcript before hiding the window", result.reason);
+      }
+    }
+  }
+
+  await hideCurrentWindow();
+}
+
 /**
  * Hands the coordinated quit its getters and owns the window's close button:
- * a kept-alive macOS Familiar or a running chat hides the window, an idle one
- * saves chats → layout and then hides (tray) or closes.
+ * a kept-alive macOS Familiar or a running chat saves its transcripts and then
+ * hides the window, an idle one saves chats → layout and then hides (tray) or closes.
  */
 export function useWindowClose(
   readProjectReturnMemory: () => ProjectReturnMemory,
@@ -57,8 +82,7 @@ export function useWindowClose(
           (await invoke<boolean>("familiar_chat_keep_alive").catch(() => false))
         ) {
           flushHarnessEvents();
-          void persistLiveTranscripts(sessionsRef.current);
-          void hideCurrentWindow();
+          await hideAfterTranscripts(sessionsRef.current);
           return;
         }
         const toTray = loadCloseToTray();
@@ -69,8 +93,7 @@ export function useWindowClose(
             return;
           }
           // Not `persistQuitState`: that marks the live turns interrupted.
-          void persistLiveTranscripts(sessionsRef.current);
-          void hideCurrentWindow();
+          await hideAfterTranscripts(sessionsRef.current);
           return;
         }
         void persistQuitState(

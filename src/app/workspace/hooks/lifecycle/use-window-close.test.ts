@@ -19,7 +19,9 @@ const mocks = vi.hoisted(() => ({
   releaseQuit: vi.fn(),
   setQuitWorkspace: vi.fn((..._getters: unknown[]) => mocks.releaseQuit),
   persistQuitState: vi.fn(async (..._args: unknown[]) => undefined),
-  persistLiveTranscripts: vi.fn(async (_sessions: unknown) => undefined),
+  persistLiveTranscripts: vi.fn(
+    async (_sessions: unknown): Promise<PromiseSettledResult<unknown>[]> => [{ status: "fulfilled", value: null }],
+  ),
   hideCurrentWindow: vi.fn(async () => undefined),
   closeCurrentWindow: vi.fn(async () => undefined),
   closeBusyWindow: vi.fn(async () => undefined),
@@ -72,12 +74,21 @@ const readMemory = () => memory;
 const flush = vi.fn();
 const keepTab = () => true;
 
-async function close() {
+async function startClose() {
   const hook = mountHook(() => useWindowClose(readMemory, flush, keepTab, refs));
   await act(async () => undefined);
   const event = { preventDefault: vi.fn() };
-  await act(async () => mocks.onClose?.(event));
-  return { ...hook, event };
+  let closing: Promise<void> | undefined;
+  await act(async () => {
+    closing = mocks.onClose?.(event);
+  });
+  return { ...hook, event, closing };
+}
+
+async function close() {
+  const started = await startClose();
+  await act(async () => started.closing);
+  return started;
 }
 
 describe("useWindowClose", () => {
@@ -141,6 +152,58 @@ describe("useWindowClose", () => {
     expect(mocks.persistLiveTranscripts.mock.calls).toEqual([[sessions]]);
     expect(mocks.hideCurrentWindow).toHaveBeenCalledTimes(1);
     expect(mocks.persistQuitState).not.toHaveBeenCalled();
+  });
+
+  it("hides a busy window only after its transcript writes settle", async () => {
+    mocks.busy = true;
+    let finish: (results: PromiseSettledResult<unknown>[]) => void = () => undefined;
+    mocks.persistLiveTranscripts.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)));
+    const { closing } = await startClose();
+
+    expect(mocks.hideCurrentWindow).not.toHaveBeenCalled();
+
+    await act(async () => {
+      finish([{ status: "fulfilled", value: null }]);
+      await closing;
+    });
+
+    expect(mocks.hideCurrentWindow).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides a busy window anyway when its transcript write hangs, and logs it", async () => {
+    vi.useFakeTimers();
+    mocks.busy = true;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mocks.persistLiveTranscripts.mockReturnValueOnce(new Promise(() => undefined));
+    const { closing } = await startClose();
+    await act(async () => vi.advanceTimersByTimeAsync(1_999));
+
+    expect(mocks.hideCurrentWindow).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+      await closing;
+    });
+
+    expect(mocks.hideCurrentWindow).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith("Hiding the window before its transcripts finished saving");
+    warn.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it("hides a busy window after a failed transcript write, and logs the failure", async () => {
+    mocks.busy = true;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const failure = new Error("disk full");
+    mocks.persistLiveTranscripts.mockResolvedValueOnce([
+      { status: "fulfilled", value: null },
+      { status: "rejected", reason: failure },
+    ]);
+    await close();
+
+    expect(mocks.hideCurrentWindow).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith("Could not save a live transcript before hiding the window", failure);
+    warn.mockRestore();
   });
 
   it("releases the quit getters and the close listener on unmount", async () => {

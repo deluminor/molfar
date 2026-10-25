@@ -37,31 +37,31 @@ async function launch(routes?: NonNullable<Parameters<typeof renderApp>[0]>["rou
 }
 
 describe("Workspace window close on macOS", () => {
-  it("hides the window while a Familiar chat stays alive, then saves the transcripts but not the layout", async () => {
+  it("saves the transcripts but not the layout, then hides the window while a Familiar chat stays alive", async () => {
     const app = await launch({ familiar_chat_keep_alive: () => true });
     await answeredSession(app, "hello", "world reply");
     await app.settle(800);
     const mark = app.calls.length;
 
     await requestWindowClose(app);
-    await app.until(() => callsSince(app, mark, "session_upsert").length > 0);
+    await app.until(() => callsSince(app, mark, "hide_window").length > 0);
     await app.settle(200);
 
-    expect(persistOrder(app, mark)).toEqual(["hide_window", "session_upsert"]);
+    expect(persistOrder(app, mark)).toEqual(["session_upsert", "hide_window"]);
     expect(upsertedSessions(app, mark).some(markedInterrupted)).toBe(false);
     expect(callsSince(app, mark, "familiar_chat_keep_alive")).toHaveLength(1);
   });
 
-  it("hides a window with a running chat even when close to tray is off, keeping the turn", async () => {
+  it("hides a window with a running chat even when close to tray is off, after its transcript is saved", async () => {
     const app = await launch();
     await startTurn(app, "keep going");
     await app.settle(800);
     const mark = app.calls.length;
 
     await requestWindowClose(app);
-    await app.until(() => callsSince(app, mark, "session_upsert").length > 0);
+    await app.until(() => callsSince(app, mark, "hide_window").length > 0);
 
-    expect(persistOrder(app, mark)).toEqual(["hide_window", "session_upsert"]);
+    expect(persistOrder(app, mark)).toEqual(["session_upsert", "hide_window"]);
     expect(upsertedSessions(app, mark).some(markedInterrupted)).toBe(false);
   });
 });
