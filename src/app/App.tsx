@@ -158,7 +158,6 @@ import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-qu
 import {
   getSession,
   readSession,
-  saveWorkspaceSnapshot,
   upsertSession,
   type SessionSummary,
 } from "@/features/sessions/data/session-store";
@@ -214,9 +213,7 @@ import {
   subscribeLiveAgentsEnabled,
 } from "@/features/settings/model/settings";
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
-import { reconcileProjectReturn } from "@/features/projects/model/project-return";
 import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
-import { collectWorkspaceSnapshot, workspaceSnapshotKey } from "@/features/workspace/model/workspace-snapshot";
 import {
   bindResumedSessions,
   closeBusyWindow,
@@ -236,7 +233,10 @@ import {
   useImportedSessionMarks,
   useSessionAutosave,
 } from "./workspace/hooks/lifecycle/use-session-autosave";
-import { useInFlightSnapshot } from "./workspace/hooks/lifecycle/use-workspace-autosave";
+import {
+  useInFlightSnapshot,
+  useWorkspaceSnapshotAutosave,
+} from "./workspace/hooks/lifecycle/use-workspace-autosave";
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -614,7 +614,6 @@ function Workspace({
   );
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
-  const workspaceSyncKey = useRef<string | null>(null);
   const removingSessionIds = useRef(new Set<string>());
   const sessionPersistence = useStableFlow(() =>
     createSessionPersistence({
@@ -1114,31 +1113,7 @@ function Workspace({
 
   useInFlightSnapshot(sessions, tabs);
 
-  useEffect(() => {
-    if (windowTransfer) return;
-    const snapshot = collectWorkspaceSnapshot(
-      tabs,
-      sessions,
-      activeTabId,
-      projectCwd,
-      reconcileProjectReturn({
-        memory: projectReturnRef.current,
-        tabs,
-        sessions,
-        activeTabId,
-      }),
-      projectTerminals,
-      lastDockSide ?? undefined,
-      keepWorkspaceTab,
-    );
-    const key = workspaceSnapshotKey(snapshot);
-    if (workspaceSyncKey.current === key) return;
-    workspaceSyncKey.current = key;
-    const timer = window.setTimeout(() => {
-      void saveWorkspaceSnapshot(snapshot).catch(() => undefined);
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [
+  useWorkspaceSnapshotAutosave({
     tabs,
     sessions,
     activeTabId,
@@ -1147,10 +1122,10 @@ function Workspace({
     lastDockSide,
     windowTransfer,
     keepWorkspaceTab,
-    projectWorktree?.path,
-    workspaceNavigation.revision,
+    worktreePath: projectWorktree?.path,
+    navigationRevision: workspaceNavigation.revision,
     projectReturnRef,
-  ]);
+  });
 
   useEffect(() => {
     if (lastProjectPath()) return;
