@@ -245,7 +245,7 @@ test("sidebar session selection switches away from app tabs", async ({
       };
     };
     // Resumed sessions are already saved, so closing them need not write again.
-    const records = new Map(
+    const records = new Map<string, Record<string, unknown>>(
       fixture.workspaceSessions.map((session) => [
         String(session.id),
         { ...session, createdAt: Date.now(), updatedAt: Date.now() },

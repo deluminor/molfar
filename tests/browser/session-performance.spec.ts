@@ -1,7 +1,7 @@
 import type { ReaderAnchor } from "./readerAnchor";
 import { expect, test } from "@playwright/test";
 
-type Fixture = Window & {
+type Fixture = typeof window & {
   captureReaderAnchor(): ReaderAnchor;
   readerAnchorTop(anchor: ReaderAnchor): number;
   selectSession(id: number): void;
