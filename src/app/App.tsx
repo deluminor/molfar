@@ -42,6 +42,7 @@ import { createSessionLoader } from "./workspace/flows/session-history/session-l
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
 import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
+import { workspaceCwds } from "./model/workspace-cwds";
 import type { SettingsReturnView } from "./model/settings-return/types";
 
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
@@ -51,16 +52,10 @@ import {
   INSET_LAYOUT_DEFAULT,
   loadInsetLayout,
   subscribeInsetLayout,
-  type SidebarTabId,
 } from "@/features/settings/model/appearance";
-import {
-  loadProjectSidebarTab,
-  saveProjectSidebarTab,
-} from "@/features/settings/model/project-sidebar-tab";
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus";
 import { homeDir } from "@/platform/tauri/fs";
-import { pathKey } from "@/shared/lib/paths";
 import { IS_MAC } from "@/shared/lib/platform";
 import { noteProjectStep } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
@@ -82,6 +77,7 @@ import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handler
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
 import { projectGitHint } from "./workspace/hooks/sidebar/sidebar-rows";
+import { useSidebarTab } from "./workspace/hooks/sidebar/use-sidebar-tab";
 import { useFamiliarOverviewData } from "./workspace/hooks/familiars/use-familiar-overview-data";
 import { openOverviewDocument } from "./workspace/flows/familiars/familiar-overview";
 import { useFamiliarOverviewSync } from "./workspace/hooks/familiars/use-familiar-overview-sync";
@@ -148,7 +144,6 @@ import {
   mergeModelSettings,
   resolveModel,
 } from "@/integrations/harness/core/models/resolve-model";
-import { newTerminalCwd } from "@/features/terminal/model/terminal-tab";
 import {
   cancelHarnessTurn,
   migrateFamiliarCodexSession,
@@ -241,14 +236,6 @@ import {
   TranscriptPool,
   TranscriptPoolOutlet,
 } from "@/features/sessions/ui/TranscriptPool";
-import {
-  remoteTabCwd,
-} from "@/features/connections/model/connections";
-import {
-  remotePath,
-  remoteProjectFor,
-  remoteSessionGitCwd,
-} from "@/features/connections/model/remote-projects";
 import {
   isBusySession,
   openSessionIds,
@@ -994,42 +981,23 @@ function Workspace({
   useWarmActiveSkills(active);
 
   const activeFile = activeTab ? focusedFileTab(activeTab) : undefined;
-  // A Familiar belongs to no project, so its view keeps the project in place.
-  const sidebarCwd =
-    activeFile?.projectCwd ?? activeFile?.cwd ?? active?.cwd ?? projectCwd;
+  const { sidebarCwd, gitCwd, terminalCwd, filesCwd, gitRootCwd, appViewScope } = workspaceCwds({
+    activeFile,
+    active,
+    projectCwd,
+    insetLayout,
+  });
   const sidebarCwdRef = useRef(sidebarCwd);
   sidebarCwdRef.current = sidebarCwd;
-  // Each inset space is one project, so its Inbox, Notes and Automations (and
-  // the Inbox dot) show that project's items; the classic layout shows all.
-  const appViewScope =
-    insetLayout && looksLikeProject(sidebarCwd) ? sidebarCwd : undefined;
-  const [sidebarTabSelection, setSidebarTabSelection] = useState<{
-    project: string;
-    tab: SidebarTabId;
-  }>(() => ({
-    project: pathKey(sidebarCwd),
-    tab: loadProjectSidebarTab(sidebarCwd),
-  }));
-  const sidebarTab =
-    sidebarTabSelection.project === pathKey(sidebarCwd)
-      ? sidebarTabSelection.tab
-      : loadProjectSidebarTab(sidebarCwd);
-  const setSidebarTab = useCallback(
-    (tab: SidebarTabId, project?: string) => {
-      // Inset: Explorer and Changes open in the right panel; the sidebar stays
-      // on the sessions.
-      if (insetLayoutRef.current && (tab === "files" || tab === "changes")) {
-        showRightPanel(tab);
-        return;
-      }
-      const cwd = project ?? sidebarCwdRef.current;
-      saveProjectSidebarTab(cwd, tab);
-      setSidebarTabSelection({
-        project: pathKey(cwd),
-        tab: tab === "inbox" ? "sessions" : tab,
-      });
-    },
-    [showRightPanel],
+  const terminalCwdRef = useRef(terminalCwd);
+  terminalCwdRef.current = terminalCwd;
+  const gitCwdRef = useRef(gitRootCwd);
+  gitCwdRef.current = gitRootCwd;
+  const { sidebarTab, setSidebarTab, setSidebarTabSelection } = useSidebarTab(
+    sidebarCwd,
+    sidebarCwdRef,
+    insetLayoutRef,
+    showRightPanel,
   );
   const newChatDefaultsRef = useRef({ active, sessionDefaults });
   newChatDefaultsRef.current = { active, sessionDefaults };
@@ -1067,43 +1035,6 @@ function Workspace({
       linkedUpdates: () => linkedSessionUpdatesRef.current,
     }),
   );
-  const gitCwd =
-    activeFile?.cwd ?? (active ? sessionWorkCwd(active) : sidebarCwd);
-  const terminalCwd = newTerminalCwd({
-    activeFile,
-    session: active,
-    fallback: sidebarCwd,
-  });
-  const terminalCwdRef = useRef(terminalCwd);
-  terminalCwdRef.current = terminalCwd;
-  const remoteFilesProject = remoteProjectFor(sidebarCwd);
-  // The host checkout the remote tab is aimed at — the attached session's
-  // work path or a worktree picked before the first message.
-  const remoteTabCheckout = remoteFilesProject
-    ? remoteTabCwd(sidebarCwd, active?.id)
-    : undefined;
-  const filesCwd = remoteFilesProject
-    ? isRemoteProjectPath(gitCwd)
-      ? gitCwd
-      : remotePath(
-          remoteFilesProject.environmentId,
-          remoteTabCheckout ??
-            (gitCwd && gitCwd !== sidebarCwd ? gitCwd : remoteFilesProject.cwd),
-        )
-    : gitCwd;
-  // Git follows the session's own work path (a linked worktree included),
-  // never the terminal-following files cwd: a remote session working in a
-  // separate worktree diffed the main checkout and showed "No file changes".
-  const gitRootCwd = remoteFilesProject
-    ? remoteSessionGitCwd(
-        remoteFilesProject,
-        gitCwd,
-        sidebarCwd,
-        remoteTabCheckout,
-      )
-    : gitCwd;
-  const gitCwdRef = useRef(gitRootCwd);
-  gitCwdRef.current = gitRootCwd;
   const projectBranches = useProjectBranches(
     sidebarCwd,
     Boolean(sidebarCwd) && sidebarCwd !== "~",
