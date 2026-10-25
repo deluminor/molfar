@@ -1,4 +1,3 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Suspense,
   useCallback,
@@ -141,7 +140,6 @@ import { useInputNotifications } from "@/features/notifications/hooks/use-input-
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import { useDockBadge, useNotificationPermissionProbe } from "./workspace/hooks/notifications/use-notification-effects";
-import { setWindowFocused } from "@/features/notifications/model/notifications";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import {
   getSession,
@@ -209,6 +207,7 @@ import {
 import { useWindowClose } from "./workspace/hooks/lifecycle/use-window-close";
 import { useFamiliarThreadMigration } from "./workspace/hooks/lifecycle/use-familiar-thread-migration";
 import { useHarnessBootRefresh } from "./workspace/hooks/lifecycle/use-harness-boot-refresh";
+import { useWindowFocus } from "./workspace/hooks/lifecycle/use-window-focus";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -861,35 +860,18 @@ function Workspace({
 
   useDockBadge(sessions);
 
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void getCurrentWindow()
-      .onFocusChanged(({ payload: focused }) => {
-        setWindowFocused(focused);
-        if (focused) {
-          flushForegroundHarnessEvents();
-          syncDockBadge(sessionsRef.current);
-          if (
-            document.activeElement === document.body &&
-            !projectTerminalFocusedRef.current &&
-            !searchViewOpenRef.current &&
-            !inboxViewOpenRef.current &&
-            !notesViewOpenRef.current &&
-            !automationsViewOpenRef.current &&
-            !settingsOpenRef.current
-          ) {
-            setComposerFocused(true);
-            setComposerFocusToken((token) => token + 1);
-          }
-        }
-      })
-      .then((fn) => {
-        unlisten = fn;
-      });
-    return () => {
-      unlisten?.();
-    };
-  }, [flushForegroundHarnessEvents]);
+  useWindowFocus({
+    flushForegroundHarnessEvents,
+    sessionsRef,
+    projectTerminalFocusedRef,
+    searchViewOpenRef,
+    inboxViewOpenRef,
+    notesViewOpenRef,
+    automationsViewOpenRef,
+    settingsOpenRef,
+    setComposerFocused,
+    setComposerFocusToken,
+  });
 
   useEffect(() => {
     const onVisible = () => {
