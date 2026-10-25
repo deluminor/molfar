@@ -21,6 +21,7 @@ import { flushSync } from "react-dom";
 import { commitTabSwitch } from "./model/navigation-performance";
 import { SessionStateContext } from "@/features/sessions/model/session-state-store";
 import { useWorkspaceSessions } from "./workspace/hooks/use-workspace-sessions";
+import { useIsolatedTerminalPanes, useTabVisitsSync } from "./workspace/hooks/tabs/use-tab-effects";
 import {
   useActiveHarnessCatalog,
   useBtwAbortClosed,
@@ -164,7 +165,6 @@ import {
 import {
   focusedFileTab,
   isFilesystemTab,
-  isolateTerminalPanes,
   leafIds,
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
@@ -1424,17 +1424,7 @@ function Workspace({
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    setTabs((prev) => {
-      let changed = false;
-      const next = prev.map((tab) => {
-        const isolated = isolateTerminalPanes(tab);
-        if (isolated !== tab) changed = true;
-        return isolated;
-      });
-      return changed ? next : prev;
-    });
-  }, [tabs]);
+  useIsolatedTerminalPanes(workspaceStore, tabs);
 
   // Tabs are views. Hidden idle sessions drop their child. A visible session
   // keeps its child for a few minutes after a turn so follow-ups stay instant,
@@ -1473,9 +1463,7 @@ function Workspace({
   const tabFlows = useTabFlows(flowCore, { terminalCwdRef, displayedTabNavigation });
   const { tabLayout, terminals, newSessions } = tabFlows;
 
-  useEffect(() => {
-    tabVisits.sync(new Set(tabs.map((tab) => tab.id)), activeTabId);
-  }, [activeTabId, tabs]);
+  useTabVisitsSync(tabVisits, tabs, activeTabId);
 
   const inboxActions = useStableFlow(() => createInboxActions(inboxDeps));
   useAddNoteToChat(inboxActions.addNoteToChat);
