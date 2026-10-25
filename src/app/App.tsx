@@ -21,8 +21,6 @@ import {
   useHarnessIdlePark,
   useWarmActiveSkills,
 } from "./workspace/hooks/harness/use-harness-effects";
-import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
-import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
 import { foregroundSurface } from "./workspace/flows/harness-events/foreground-surface";
 import {
   useProjectFilePrefetch,
@@ -58,6 +56,7 @@ import { useOrchestrationFlows } from "./workspace/hooks/flows/use-orchestration
 import { useTitleTabFlows } from "./workspace/hooks/flows/use-title-tab-flows";
 import { useSurfaceFlows } from "./workspace/hooks/flows/use-surface-flows";
 import { useSessionStorage } from "./workspace/hooks/flows/use-session-storage";
+import { useHarnessTurnFlows } from "./workspace/hooks/flows/use-harness-turn-flows";
 import { WorkspaceHandlersContext } from "./workspace/handlers/workspace-handlers";
 import { useWorkerDetailPanes } from "./workspace/hooks/use-worker-detail-panes";
 import { createInboxActions } from "./workspace/flows/inbox/inbox-actions";
@@ -99,9 +98,6 @@ import type { DisplayedTabNavigation, VisibleTabs } from "./workspace/title-tabs
 import { useSettingsOpenEvents } from "./workspace/hooks/use-settings-open-events";
 import { useQueueDispatch } from "./workspace/hooks/use-queue-dispatch";
 import { useUsageLimitTimers } from "./workspace/hooks/use-usage-limit-timers";
-import type { HarnessReplyDeps } from "./workspace/flows/turn-control/harness-replies";
-import { createTurnControlActions } from "./workspace/flows/turn-control/turn-control-actions";
-import type { TurnControlDeps } from "./workspace/flows/turn-control/turn-control-deps";
 import { useAutoContinue } from "./workspace/hooks/use-auto-continue";
 import { useEscapeStop } from "./workspace/hooks/use-escape-stop";
 import { useWorkspaceCompanion } from "./workspace/hooks/use-workspace-companion";
@@ -113,16 +109,12 @@ import { WorkspaceTitleBar } from "./workspace/ui/WorkspaceTitleBar";
 import { orchestrator } from "@/features/orchestration/model/orchestration";
 import { OrchestrationActions, OrchestrationWorkers } from "@/features/orchestration/ui/orchestration-actions";
 import { findProjectTerminal } from "@/features/projects/model/project-terminal";
-import { sessionChildHarnesses } from "@/features/sessions/model/handoff";
 import {
-  cancelHarnessTurn,
   pickTextHarness,
   registerBuiltinHarnesses,
-  stopHarnessSession,
 } from "@/integrations/harness";
 import { focusedFileTab, leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
 import type { WindowTransferPayload } from "./model/window-transfer";
-import { finishSessionTurn } from "@/features/sessions/model/checkpoint";
 import { createEditedResendCoordinator } from "@/features/sessions/model/edit-last-turn";
 import type { synchronizeProjectLocation } from "@/features/projects/model/project-location";
 import {
@@ -130,13 +122,11 @@ import {
   sameProjectPath,
 } from "@/features/projects/model/recents";
 import { newDefaultSession } from "@/features/sessions/model/session";
-import { sessionWorkCwd } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
 import { workspaceTabCwd, workspaceTabWorktree } from "@/features/workspace/model/workspace-tab-groups";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
-import { syncDockBadge } from "@/features/notifications/model/dock-badge";
 import { useDockBadge, useNotificationPermissionProbe } from "./workspace/hooks/notifications/use-notification-effects";
 import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-quick-composer-launches";
 import {
@@ -604,75 +594,21 @@ function Workspace({
 
   useImportedSessionMarks(sessionPersistence, windowTransfer, resumed);
 
-  // Visible output advances per frame; hidden streams keep their own cadence.
-  const harnessEvents = useStableFlow(() =>
-    createHarnessEventPipeline({
-      updateSessions: (update, textOnly) => {
-        const previous = sessionsRef.current;
-        const next = sessionState.update(update, textOnly);
-        if (!textOnly && next !== previous) syncDockBadge(next);
-      },
-      isForeground: (sessionId) =>
-        isForegroundSession(sessionId, {
-          hidden: false,
-          ...foregroundSurfaceRef.current,
-          activeTab: tabsRef.current.find(
-            (entry) => entry.id === activeTabIdRef.current,
-          ),
-        }),
-    }),
-  );
+  const { harnessEvents, turnControl, turnActions, stopSessionForRemoval } = useHarnessTurnFlows({
+    sessionsRef,
+    sessionState,
+    setSessions,
+    tabsRef,
+    activeTabIdRef,
+    foregroundSurfaceRef,
+    turnGen,
+    decideFamiliarApproval: (familiarId, blockId, decided) =>
+      familiarChat.decide(familiarId, blockId, decided),
+  });
   useHarnessIdlePark(harnessEvents);
   const flushHarnessEvents = harnessEvents.flush;
   const flushForegroundHarnessEvents = harnessEvents.flushForeground;
   const enqueueHarnessEvent = harnessEvents.enqueue;
-  const turnControl = useStableFlow(
-    (): TurnControlDeps => ({
-      sessions: () => sessionsRef.current,
-      commitSessions: (next) => {
-        sessionsRef.current = next;
-        syncDockBadge(next);
-        setSessions(next);
-      },
-      updateSessions: (update) => setSessions(update),
-      turnGen: turnGen.current,
-      enqueueHarnessEvent,
-      flushHarnessEvents,
-    }),
-  );
-  const harnessReplyDeps = useStableFlow(
-    (): HarnessReplyDeps => ({
-      sessions: () => sessionsRef.current,
-      decideFamiliarApproval: (familiarId, blockId, decided) =>
-        familiarChat.decide(familiarId, blockId, decided),
-    }),
-  );
-  const turnActions = useStableFlow(() =>
-    createTurnControlActions({ control: turnControl, reply: harnessReplyDeps }),
-  );
-
-  const stopSessionForRemoval = useCallback(
-    async (sessionId: string): Promise<Session | undefined> => {
-      await orchestrator.stopForSession(sessionId);
-      const open = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (!open?.busy) return open;
-
-      turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
-      flushHarnessEvents();
-      await Promise.all(
-        sessionChildHarnesses(open).map(async (harness) => {
-          await cancelHarnessTurn(harness, sessionId).catch(() => undefined);
-          await stopHarnessSession(harness, sessionId);
-        }),
-      );
-      await finishSessionTurn(sessionId, sessionWorkCwd(open));
-      flushHarnessEvents();
-      return sessionsRef.current.find((session) => session.id === sessionId);
-    },
-    [flushHarnessEvents],
-  );
 
   useWindowUnload(resumed, readProjectReturnMemory, harnessEvents, {
     sessionsRef,
