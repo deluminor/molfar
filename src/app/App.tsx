@@ -215,7 +215,7 @@ import {
   subscribeLiveAgentsEnabled,
 } from "@/features/settings/model/settings";
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
-import { reconcileProjectReturn, type ProjectReturnMemory } from "@/features/projects/model/project-return";
+import { reconcileProjectReturn } from "@/features/projects/model/project-return";
 import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
 import { inFlightRefs, inFlightSnapshotKey, shouldWriteInFlightSnapshot } from "@/features/sessions/model/in-flight";
 import { collectWorkspaceSnapshot, workspaceSnapshotKey } from "@/features/workspace/model/workspace-snapshot";
@@ -233,6 +233,7 @@ import {
   type ResumedWorkspace,
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
+import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -595,21 +596,15 @@ function Workspace({
 
   useAppViewWarmup(workspaceStore, notesEnabled);
 
-  const projectReturnRef = useRef<ProjectReturnMemory>(
-    resumed?.projectReturnMemory ?? new Map(),
-  );
-  const readProjectReturnMemory = useCallback(() => {
-    projectReturnRef.current = reconcileProjectReturn({
-      memory: projectReturnRef.current,
-      tabs: tabsRef.current,
-      sessions: sessionsRef.current,
-      activeTabId: activeTabIdRef.current,
-    });
-    return projectReturnRef.current;
-  }, []);
-  useEffect(() => {
-    readProjectReturnMemory();
-  }, [activeTabId, tabs, sessions, readProjectReturnMemory]);
+  const { ref: projectReturnRef, read: readProjectReturnMemory } = useProjectReturnMemory({
+    initial: resumed?.projectReturnMemory,
+    tabs,
+    sessions,
+    activeTabId,
+    tabsRef,
+    sessionsRef,
+    activeTabIdRef,
+  });
 
   const tabVisits = useStableFlow(() =>
     createTabVisits(workspaceStore, activeTabId),
@@ -1198,6 +1193,7 @@ function Workspace({
     keepWorkspaceTab,
     projectWorktree?.path,
     workspaceNavigation.revision,
+    projectReturnRef,
   ]);
 
   useEffect(() => {
