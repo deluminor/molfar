@@ -1,14 +1,10 @@
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/domain/session/session";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import type { WorkspaceTab } from "@/features/workspace/model/layout";
-import {
-  type ProjectReturn,
-  useProjectReturnMemory,
-} from "./use-project-return-memory";
+import { mountHook } from "../../testing/mount-hook";
+import { useProjectReturnMemory } from "./use-project-return-memory";
 
 const reconcile = vi.hoisted(() =>
   vi.fn(({ memory, activeTabId }: { memory: ProjectReturnMemory; activeTabId: string }) =>
@@ -26,10 +22,8 @@ function mount(initial: ProjectReturnMemory | undefined) {
   const tabsRef = { current: [] as WorkspaceTab[] };
   const sessionsRef = { current: [] as Session[] };
   const activeTabIdRef = { current: "a" };
-  const result: { current?: ProjectReturn } = {};
-
-  function Probe() {
-    result.current = useProjectReturnMemory({
+  const hook = mountHook(() =>
+    useProjectReturnMemory({
       initial,
       tabs: tabsRef.current,
       sessions: sessionsRef.current,
@@ -37,14 +31,9 @@ function mount(initial: ProjectReturnMemory | undefined) {
       tabsRef,
       sessionsRef,
       activeTabIdRef,
-    });
-    return null;
-  }
-
-  const root = createRoot(document.createElement("div"));
-  act(() => root.render(createElement(Probe)));
-  const rerender = () => act(() => root.render(createElement(Probe)));
-  return { result, rerender, activeTabIdRef, tabsRef };
+    }),
+  );
+  return { ...hook, activeTabIdRef, tabsRef };
 }
 
 describe("useProjectReturnMemory", () => {

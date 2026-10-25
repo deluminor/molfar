@@ -234,6 +234,7 @@ import {
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
+import { useImportedSessionMarks } from "./workspace/hooks/lifecycle/use-session-autosave";
 
 // Register capabilities before composer hooks choose their discovery strategy.
 registerBuiltinHarnesses();
@@ -641,7 +642,6 @@ function Workspace({
   );
   const [transcriptPool] = useState(() => new TranscriptPool());
   const skipForgetSessionIds = useRef(new Set<string>());
-  const importedSessionsApplied = useRef(false);
   const projectLocationSyncs = useRef(
     new Map<string, ReturnType<typeof synchronizeProjectLocation>>(),
   );
@@ -652,13 +652,7 @@ function Workspace({
     }
   }, [recents]);
 
-  useEffect(() => {
-    if (importedSessionsApplied.current) return;
-    const imported = windowTransfer?.sessions ?? resumed?.sessions;
-    if (!imported?.length) return;
-    importedSessionsApplied.current = true;
-    for (const session of imported) sessionPersistence.markImported(session);
-  }, [windowTransfer, resumed]);
+  useImportedSessionMarks(sessionPersistence, windowTransfer, resumed);
 
   // Visible output advances per frame; hidden streams keep their own cadence.
   const harnessEvents = useStableFlow(() =>
