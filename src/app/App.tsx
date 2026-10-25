@@ -31,7 +31,11 @@ import {
 import { ciRepairSessions } from "@/features/inbox/model/ci-repair-sessions";
 import { createHarnessEventPipeline } from "./workspace/flows/harness-events/harness-event-pipeline";
 import { isForegroundSession } from "./workspace/flows/harness-events/foreground-session";
-import { refreshProjectHistory } from "./workspace/flows/session-history/refresh-history";
+import {
+  useProjectFilePrefetch,
+  useProjectHistory,
+  useRemoteHistoryRerender,
+} from "./workspace/hooks/project-data/use-project-data-effects";
 import { createSessionPersistence } from "./workspace/flows/session-history/session-persistence";
 import { createSessionLoader } from "./workspace/flows/session-history/session-loader";
 import { useIdleSessionDetach } from "./hooks/use-idle-session-detach";
@@ -39,9 +43,6 @@ import { useWorkspaceNavigation } from "./hooks/use-workspace-navigation";
 import { activeWorkspaceTab } from "./model/active-workspace-tab";
 import type { SettingsReturnView } from "./model/settings-return/types";
 
-import {
-  prefetchProjectFiles,
-} from "@/features/files/model/file-index";
 import { useInboxActivity } from "@/features/inbox/hooks/use-inbox-unseen";
 import { FamiliarSettingsPanel } from "./workspace/ui/familiars/FamiliarSettingsPanel";
 import { FamiliarOverviewPanel } from "./workspace/ui/familiars/FamiliarOverviewPanel";
@@ -221,7 +222,6 @@ import {
   getSession,
   readSession,
   listLinkedSessions,
-  listSessionsByProject,
   replaceInFlightSessions,
   saveWorkspaceSnapshot,
   upsertSession,
@@ -249,7 +249,6 @@ import {
   TranscriptPoolOutlet,
 } from "@/features/sessions/ui/TranscriptPool";
 import {
-  REMOTE_HISTORY_UPDATED,
   remoteTabCwd,
 } from "@/features/connections/model/connections";
 import {
@@ -549,12 +548,7 @@ function Workspace({
   const editorNavigationToken = useRef(0);
   const dirtyFiles = useWorkspaceField(workspaceStore, "dirtyFiles");
   const history = useWorkspaceField(workspaceStore, "history");
-  const [, refreshRemoteTabTitles] = useState(0);
-  useEffect(() => {
-    const updated = () => refreshRemoteTabTitles((value) => value + 1);
-    window.addEventListener(REMOTE_HISTORY_UPDATED, updated);
-    return () => window.removeEventListener(REMOTE_HISTORY_UPDATED, updated);
-  }, []);
+  useRemoteHistoryRerender();
   const storedLinkedSessions = useWorkspaceField(workspaceStore, "storedLinkedSessions");
 
   const btw = useStableFlow(() =>
@@ -1364,18 +1358,7 @@ function Workspace({
     };
   }, [flushHarnessEvents, keepWorkspaceTab, readProjectReturnMemory]);
 
-  const refreshHistory = useCallback(
-    (cwd: string) =>
-      refreshProjectHistory(workspaceStore, cwd, {
-        list: listSessionsByProject,
-        sidebarCwd: () => sidebarCwdRef.current,
-      }),
-    [],
-  );
-
-  useEffect(() => {
-    void refreshHistory(sidebarCwd);
-  }, [sidebarCwd, refreshHistory]);
+  const refreshHistory = useProjectHistory(workspaceStore, sidebarCwd, sidebarCwdRef);
 
   useEffect(() => {
     if (!inboxViewOpen) return;
@@ -1392,9 +1375,7 @@ function Workspace({
     };
   }, [inboxViewOpen]);
 
-  useEffect(() => {
-    prefetchProjectFiles(gitCwd);
-  }, [gitCwd]);
+  useProjectFilePrefetch(gitCwd);
 
   const persistSession = sessionPersistence.persist;
 
