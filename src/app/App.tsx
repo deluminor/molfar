@@ -202,12 +202,6 @@ import {
   workspaceTabWorktree,
 } from "@/features/workspace/model/workspace-tab-groups";
 
-import {
-  listAutomations,
-} from "@/features/automations/model/automations";
-import {
-  loadNotes,
-} from "@/features/notes/notes";
 import { useInputNotifications } from "@/features/notifications/hooks/use-input-notifications";
 import { useSessionReminders } from "@/features/notifications/hooks/use-session-reminders";
 import { hiddenApprovalNotices } from "@/features/notifications/model/approval-toast";
@@ -221,7 +215,6 @@ import { useQuickComposerLaunches } from "@/features/quick-composer/hooks/use-qu
 import {
   getSession,
   readSession,
-  listLinkedSessions,
   replaceInFlightSessions,
   saveWorkspaceSnapshot,
   upsertSession,
@@ -257,18 +250,18 @@ import {
   remoteSessionGitCwd,
 } from "@/features/connections/model/remote-projects";
 import {
-  AutomationsView,
-  InboxView,
-  LinkedWorkItemPanel,
-  NotesView,
-} from "./workspace/ui/app-views/lazy-views";
-import {
   isBusySession,
   openSessionIds,
 } from "./model/session-id-sets";
 import { useProviderSignInPrompt } from "./workspace/hooks/use-provider-sign-in-prompt";
 import { useSessionIdSet } from "./workspace/hooks/use-session-id-set";
 import { WorkspaceAppViews } from "./workspace/ui/app-views/WorkspaceAppViews";
+import { useAppViewWarmup } from "./workspace/ui/app-views/use-app-view-warmup";
+import {
+  useInboxAskFocus,
+  useInboxLinkedSessions,
+  useLinkedPanelPrune,
+} from "./workspace/hooks/inbox/use-inbox-effects";
 import { WorkspacePickerDialogs } from "./workspace/ui/notices/WorkspacePickerDialogs";
 import { InsetRightPanel } from "./workspace/ui/workspace-chrome/InsetRightPanel";
 import { WorkspaceLayout } from "./workspace/ui/layout/WorkspaceLayout";
@@ -283,7 +276,6 @@ import { WorkspaceDialogs } from "./workspace/ui/notices/WorkspaceDialogs";
 import { WorkspaceNotices } from "./workspace/ui/notices/WorkspaceNotices";
 import { useLocalSurfaceActions } from "./model/local-surfaces/use-local-surface-actions";
 import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-state";
-import { preloadNavigationWhenIdle } from "./model/preload-navigation";
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 
 
@@ -374,11 +366,9 @@ function Workspace({
     setTabs,
     setActiveTabId: setActiveTabIdState,
     setHistory,
-    setStoredLinkedSessions,
     setFilePickerOpen,
     setSearchViewOpen,
     setInboxViewOpen,
-    setLinkedWorkItemPanels,
     setNotesViewOpen,
     setInspectedWorkerId,
     setSettingsOpen,
@@ -715,21 +705,7 @@ function Workspace({
     [],
   );
 
-  useEffect(() => {
-    if (!notesEnabled) setNotesViewOpen(false);
-  }, [notesEnabled]);
-
-  useEffect(
-    () =>
-      preloadNavigationWhenIdle([
-        InboxView.preload,
-        LinkedWorkItemPanel.preload,
-        AutomationsView.preload,
-        listAutomations,
-        ...(notesEnabled ? [NotesView.preload, loadNotes] : []),
-      ]),
-    [notesEnabled],
-  );
+  useAppViewWarmup(workspaceStore, notesEnabled);
 
   const projectReturnRef = useRef<ProjectReturnMemory>(
     resumed?.projectReturnMemory ?? new Map(),
@@ -1009,18 +985,7 @@ function Workspace({
       null)
     : null;
 
-  // Panels are tab-local UI. Keep mounted panels alive while their tab is in
-  // the workspace so switching away preserves the fetched issue and its UI
-  // state, then discard them when their session leaves every open tab.
-  useEffect(() => {
-    const openSessionIds = new Set(tabs.flatMap((tab) => leafIds(tab.layout)));
-    setLinkedWorkItemPanels((current) => {
-      if ([...current.keys()].every((id) => openSessionIds.has(id))) {
-        return current;
-      }
-      return new Map([...current].filter(([id]) => openSessionIds.has(id)));
-    });
-  }, [tabs]);
+  useLinkedPanelPrune(workspaceStore, tabs);
 
   const sessionDefaults = active ?? sessions[0];
   const sessionDefaultsRef = useLatestRef(sessionDefaults);
@@ -1360,20 +1325,7 @@ function Workspace({
 
   const refreshHistory = useProjectHistory(workspaceStore, sidebarCwd, sidebarCwdRef);
 
-  useEffect(() => {
-    if (!inboxViewOpen) return;
-    let cancelled = false;
-    void listLinkedSessions()
-      .then((rows) => {
-        if (!cancelled) setStoredLinkedSessions(rows);
-      })
-      .catch(() => {
-        // Already-loaded and live sessions still provide a useful fallback.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [inboxViewOpen]);
+  useInboxLinkedSessions(workspaceStore, inboxViewOpen);
 
   useProjectFilePrefetch(gitCwd);
 
@@ -1561,10 +1513,7 @@ function Workspace({
   });
   const { tabActions, sessionOpeners } = openerFlows;
 
-  useEffect(() => {
-    if (!inboxAskPortal || !inboxViewOpen) return;
-    setComposerFocused(true);
-  }, [inboxAskPortal, inboxViewOpen]);
+  useInboxAskFocus(inboxAskPortal, inboxViewOpen, setComposerFocused);
 
   const onOpenFamiliar = familiarView.open;
 
