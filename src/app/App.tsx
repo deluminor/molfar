@@ -130,7 +130,6 @@ import {
   registerBuiltinHarnesses,
   startHarnessBridge,
   stopHarnessSession,
-  stopHarnessTextPrompts,
 } from "@/integrations/harness";
 import { focusedFileTab, leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
 import type { WindowTransferPayload } from "./model/window-transfer";
@@ -224,6 +223,7 @@ import {
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
+import { useWorkspaceTeardown } from "./workspace/hooks/lifecycle/use-window-unload";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -587,13 +587,7 @@ function Workspace({
   const sessionNavigationIdsRef = useRef<readonly string[]>([]);
   useBtwAbortClosed(btw, sessions);
 
-  useEffect(
-    () => () => {
-      btw.abortAll();
-      void stopHarnessTextPrompts();
-    },
-    [],
-  );
+  useWorkspaceTeardown(btw);
 
   useAppViewWarmup(workspaceStore, notesEnabled);
 
