@@ -128,7 +128,6 @@ import {
   probeHarnessAvailability,
   refreshHarnessCatalogs,
   registerBuiltinHarnesses,
-  startHarnessBridge,
   stopHarnessSession,
 } from "@/integrations/harness";
 import { focusedFileTab, leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
@@ -209,21 +208,21 @@ import {
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
 import {
-  bindResumedSessions,
   closeBusyWindow,
   closeCurrentWindow,
   hasInFlightSessions,
   hideCurrentWindow,
-  isAppQuitting,
   persistLiveTranscripts,
   persistQuitState,
-  reapWindowRuntime,
   setQuitWorkspace,
   type ResumedWorkspace,
 } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
-import { useWorkspaceTeardown } from "./workspace/hooks/lifecycle/use-window-unload";
+import {
+  useWindowUnload,
+  useWorkspaceTeardown,
+} from "./workspace/hooks/lifecycle/use-window-unload";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -711,37 +710,14 @@ function Workspace({
     [flushHarnessEvents],
   );
 
-  useEffect(() => {
-    if (resumed?.sessions.length) bindResumedSessions(resumed.sessions);
-    const stopBridge = startHarnessBridge();
-    const reap = () => {
-      if (isAppQuitting()) return;
-      void persistQuitState(
-        sessionsRef.current,
-        tabsRef.current,
-        activeTabIdRef.current,
-        projectCwdRef.current,
-        readProjectReturnMemory(),
-        "unload",
-        projectTerminalsRef.current,
-        lastDockSideRef.current ?? undefined,
-      ).finally(() => {
-        void reapWindowRuntime(
-          sessionsRef.current,
-          tabsRef.current,
-          projectTerminalsRef.current,
-        );
-      });
-    };
-    window.addEventListener("pagehide", reap);
-    window.addEventListener("beforeunload", reap);
-    return () => {
-      window.removeEventListener("pagehide", reap);
-      window.removeEventListener("beforeunload", reap);
-      stopBridge();
-      harnessEvents.dispose();
-    };
-  }, [resumed, readProjectReturnMemory]);
+  useWindowUnload(resumed, readProjectReturnMemory, harnessEvents, {
+    sessionsRef,
+    tabsRef,
+    activeTabIdRef,
+    projectCwdRef,
+    projectTerminalsRef,
+    lastDockSideRef,
+  });
 
   useEffect(() => {
     let cancelled = false;
