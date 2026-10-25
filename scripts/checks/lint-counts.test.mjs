@@ -40,4 +40,20 @@ describe("lintCounts", () => {
       "(configuration)": { deserialize: 1 },
     });
   });
+
+  it("keys files by forward-slash paths so Windows reports match the baseline", () => {
+    const report = {
+      diagnostics: [
+        {
+          severity: "warning",
+          category: "lint/a",
+          location: { path: "src\\features\\a.ts" },
+        },
+      ],
+    };
+
+    expect(lintCounts(report)).toEqual({
+      "src/features/a.ts": { "lint/a": 1 },
+    });
+  });
 });

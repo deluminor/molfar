@@ -34,7 +34,9 @@ export function lintCounts(report) {
 
   for (const diagnostic of report.diagnostics ?? []) {
     if (!COUNTED_SEVERITIES.has(diagnostic.severity)) continue;
-    const file = diagnostic.location?.path ?? "(configuration)";
+    // Biome reports native separators; the baseline is keyed by POSIX paths on every OS.
+    const file =
+      diagnostic.location?.path?.replaceAll("\\", "/") ?? "(configuration)";
     addCount(counts, file, diagnostic.category);
   }
 
