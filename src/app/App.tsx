@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Suspense,
@@ -46,7 +45,6 @@ import { INSET_LAYOUT_DEFAULT, loadInsetLayout, subscribeInsetLayout } from "@/f
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import { useWorktreeFocus } from "@/features/source-control/model/worktree-focus";
 import { homeDir } from "@/platform/tauri/fs";
-import { IS_MAC } from "@/shared/lib/platform";
 import { noteProjectStep } from "./shell/Sidebar";
 import { createWorkspaceStore } from "./workspace/store/create-workspace-store";
 import { useWorkspaceActions } from "./workspace/hooks/use-workspace-actions";
@@ -199,7 +197,6 @@ import { useLocalSurfaceState } from "./model/local-surfaces/use-local-surface-s
 import { LocalSurfaceViews } from "./ui/LocalSurfaceViews";
 import type { LinkedSessionUpdate } from "@/features/inbox/model/linked-session-updates";
 import {
-  loadCloseToTray,
   loadFamiliarsEnabled,
   subscribeFamiliarsEnabled,
   loadLiveAgentsEnabled,
@@ -207,22 +204,14 @@ import {
 } from "@/features/settings/model/settings";
 import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 import { mergeProjectHistorySummary } from "@/features/sessions/data/session-history";
-import {
-  closeBusyWindow,
-  closeCurrentWindow,
-  hasInFlightSessions,
-  hideCurrentWindow,
-  persistLiveTranscripts,
-  persistQuitState,
-  setQuitWorkspace,
-  type ResumedWorkspace,
-} from "./model/app-lifecycle";
+import type { ResumedWorkspace } from "./model/app-lifecycle";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { useProjectReturnMemory } from "./workspace/hooks/lifecycle/use-project-return-memory";
 import {
   useWindowUnload,
   useWorkspaceTeardown,
 } from "./workspace/hooks/lifecycle/use-window-unload";
+import { useWindowClose } from "./workspace/hooks/lifecycle/use-window-close";
 import {
   useDefaultProject,
   useReopenFamiliar,
@@ -1003,67 +992,14 @@ function Workspace({
     settingsOpen,
   });
 
-  useEffect(() => {
-    let unlistenClose: (() => void) | undefined;
-    const releaseQuit = setQuitWorkspace(
-      () => sessionsRef.current,
-      () => tabsRef.current,
-      () => activeTabIdRef.current,
-      () => projectCwdRef.current,
-      () => projectTerminalsRef.current,
-      readProjectReturnMemory,
-      flushHarnessEvents,
-      () => lastDockSideRef.current,
-      keepWorkspaceTab,
-    );
-    void getCurrentWindow()
-      .onCloseRequested(async (event) => {
-        // Listening here makes close our job. Letting the default path run
-        // calls JS `window.destroy`, which Tauri denies without a permission.
-        event.preventDefault();
-        if (
-          IS_MAC &&
-          (await invoke<boolean>("familiar_chat_keep_alive").catch(() => false))
-        ) {
-          flushHarnessEvents();
-          void persistLiveTranscripts(sessionsRef.current);
-          void hideCurrentWindow();
-          return;
-        }
-        const toTray = loadCloseToTray();
-        if (hasInFlightSessions(sessionsRef.current)) {
-          flushHarnessEvents();
-          if (!toTray && !IS_MAC) {
-            void closeBusyWindow();
-            return;
-          }
-          // Not `persistQuitState`: that marks the live turns interrupted.
-          void persistLiveTranscripts(sessionsRef.current);
-          void hideCurrentWindow();
-          return;
-        }
-        void persistQuitState(
-          sessionsRef.current,
-          tabsRef.current,
-          activeTabIdRef.current,
-          projectCwdRef.current,
-          readProjectReturnMemory(),
-          "unload",
-          projectTerminalsRef.current,
-          lastDockSideRef.current ?? undefined,
-          keepWorkspaceTab,
-        ).finally(() => {
-          void (toTray ? hideCurrentWindow() : closeCurrentWindow());
-        });
-      })
-      .then((fn) => {
-        unlistenClose = fn;
-      });
-    return () => {
-      releaseQuit();
-      unlistenClose?.();
-    };
-  }, [flushHarnessEvents, keepWorkspaceTab, readProjectReturnMemory]);
+  useWindowClose(readProjectReturnMemory, flushHarnessEvents, keepWorkspaceTab, {
+    sessionsRef,
+    tabsRef,
+    activeTabIdRef,
+    projectCwdRef,
+    projectTerminalsRef,
+    lastDockSideRef,
+  });
 
   const refreshHistory = useProjectHistory(workspaceStore, sidebarCwd, sidebarCwdRef);
 
