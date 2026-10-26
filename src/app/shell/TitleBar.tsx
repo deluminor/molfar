@@ -719,13 +719,9 @@ function TitleBarComponent({
 
   useEffect(() => {
     document.title = systemTitle;
-    try {
-      void getCurrentWindow().setTitle(systemTitle).catch((error) => {
-        logWindowChromeError("set title", error);
-      });
-    } catch (error) {
+    void getCurrentWindow().setTitle(systemTitle).catch((error) => {
       logWindowChromeError("set title", error);
-    }
+    });
   }, [systemTitle]);
 
   const contextTab = tabMenu

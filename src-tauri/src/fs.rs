@@ -4974,10 +4974,7 @@ fn git_checkout_for(root: &Path, name: &str, remote: Option<&str>) -> Result<Str
     }
     let name = git_branch_name(root, name)?;
     if let Some(remote) = remote.map(str::trim).filter(|value| !value.is_empty()) {
-        if !git_remote_names(root)
-            .iter()
-            .any(|candidate| candidate == remote)
-        {
+        if !git_remote_names(root).iter().any(|c| c == remote) {
             return Err(format!("Remote {remote} not found"));
         }
         if git_head_branch(root).as_deref() == Some(name.as_str()) {

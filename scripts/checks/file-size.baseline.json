@@ -147,7 +147,7 @@
     "lines": 564
   },
   "src-tauri/src/remote_ssh.rs": {
-    "lines": 922
+    "lines": 923
   },
   "src-tauri/src/remote.rs": {
     "lines": 728
@@ -171,7 +171,7 @@
     "lines": 265
   },
   "src-tauri/src/window.rs": {
-    "lines": 773
+    "lines": 774
   },
   "src-tauri/src/windows.rs": {
     "lines": 352
@@ -201,7 +201,7 @@
     "lines": 5910
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 1202
+    "lines": 1198
   },
   "src/app/shell/UsageFooter.tsx": {
     "lines": 727

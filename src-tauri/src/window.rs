@@ -1,6 +1,7 @@
+use crate::jsonc::mutex_lock as pl;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::{Mutex, PoisonError};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -383,11 +384,7 @@ pub fn request_quit(app: &AppHandle) {
         return;
     }
     let id = QUIT_COUNTER.fetch_add(1, Ordering::Relaxed);
-    if !begin_run(
-        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
-        id,
-        labels,
-    ) {
+    if !begin_run(&mut pl(&QUIT_RUN), id, labels) {
         resurface_prompt(app);
         return;
     }
@@ -401,12 +398,7 @@ pub fn request_quit(app: &AppHandle) {
 /// One window's live turn count, counted before anything is killed.
 #[tauri::command]
 pub fn quit_poll_reply(app: AppHandle, window: WebviewWindow, id: u32, in_flight: u32) {
-    let next = record_reply(
-        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
-        id,
-        window.label(),
-        in_flight,
-    );
+    let next = record_reply(&mut pl(&QUIT_RUN), id, window.label(), in_flight);
     if next == Next::Confirm {
         start_confirm(&app, id);
     }
@@ -416,7 +408,7 @@ pub fn quit_poll_reply(app: AppHandle, window: WebviewWindow, id: u32, in_flight
 /// close-to-tray the user cannot close that window to clear it either.
 fn resurface_prompt(app: &AppHandle) {
     let label = {
-        let guard = QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner);
+        let guard = pl(&QUIT_RUN);
         let Some(run) = guard.as_ref() else { return };
         if run.stage != Stage::Confirming {
             return;
@@ -435,7 +427,7 @@ fn resurface_prompt(app: &AppHandle) {
 #[tauri::command]
 pub fn quit_decision(app: AppHandle, window: WebviewWindow, id: u32, confirmed: bool) {
     {
-        let guard = QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner);
+        let guard = pl(&QUIT_RUN);
         let Some(run) = guard.as_ref() else { return };
         if run.id != id || run.stage != Stage::Confirming {
             return;
@@ -464,11 +456,7 @@ pub fn quit_ready(app: AppHandle, window: WebviewWindow, id: u32, persisted: boo
         let _ = app.emit(QUIT_ABORTED, ());
         return;
     }
-    let next = record_ready(
-        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
-        id,
-        window.label(),
-    );
+    let next = record_ready(&mut pl(&QUIT_RUN), id, window.label());
     if next == Next::Exit {
         confirm_quit(app);
     }
@@ -477,7 +465,7 @@ pub fn quit_ready(app: AppHandle, window: WebviewWindow, id: u32, persisted: boo
 /// A window that closes mid-quit must not be waited on forever.
 pub fn forget_quit_window(app: &AppHandle, label: &str) {
     let (id, next) = {
-        let mut guard = QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut guard = pl(&QUIT_RUN);
         let Some(id) = guard.as_ref().map(|run| run.id) else {
             return;
         };
@@ -492,10 +480,7 @@ pub fn forget_quit_window(app: &AppHandle, label: &str) {
 }
 
 fn start_confirm(app: &AppHandle, id: u32) {
-    let Some(in_flight) = close_poll(
-        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
-        id,
-    ) else {
+    let Some(in_flight) = close_poll(&mut pl(&QUIT_RUN), id) else {
         return;
     };
     if in_flight == 0 {
@@ -511,7 +496,7 @@ fn start_confirm(app: &AppHandle, id: u32) {
     // hidden window cannot be answered.
     let _ = show_hidden_or_open_new(app);
     let replied = {
-        let guard = QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner);
+        let guard = pl(&QUIT_RUN);
         guard
             .as_ref()
             .filter(|run| run.id == id)
@@ -523,11 +508,7 @@ fn start_confirm(app: &AppHandle, id: u32) {
         confirm_quit(app.clone());
         return;
     };
-    if let Some(run) = QUIT_RUN
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .as_mut()
-    {
+    if let Some(run) = pl(&QUIT_RUN).as_mut() {
         if run.id == id {
             run.prompt = Some(label.clone());
         }
@@ -546,11 +527,7 @@ fn start_confirm(app: &AppHandle, id: u32) {
 fn start_commit(app: &AppHandle, id: u32) {
     let labels = workspace_labels(app);
     let empty = labels.is_empty();
-    if !open_commit(
-        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
-        id,
-        labels,
-    ) {
+    if !open_commit(&mut pl(&QUIT_RUN), id, labels) {
         return;
     }
     if empty {
@@ -622,7 +599,7 @@ fn watch_stage(app: &AppHandle, id: u32, stage: Stage, wait: Duration) {
 }
 
 fn clear_run(id: u32) {
-    let mut guard = QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner);
+    let mut guard = pl(&QUIT_RUN);
     if guard.as_ref().is_some_and(|run| run.id == id) {
         *guard = None;
     }
@@ -630,7 +607,7 @@ fn clear_run(id: u32) {
 
 /// Persist already happened in JS. Show windows so window-state doesn't save hidden.
 pub fn confirm_quit(app: AppHandle) {
-    *QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner) = None;
+    *pl(&QUIT_RUN) = None;
     ALLOW_EXIT.store(true, Ordering::SeqCst);
     for window in workspace_windows(&app) {
         let _ = window.show();
