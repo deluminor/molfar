@@ -82,13 +82,13 @@ impl Job {
         })
     }
     pub fn view(&self) -> JobView {
-        self.inner.lock().unwrap().view.clone()
+        self.inner.lock().unwrap_or_else(PoisonError::into_inner).view.clone()
     }
     pub fn message(&self, text: &str) {
-        self.inner.lock().unwrap().view.message = text.into();
+        self.inner.lock().unwrap_or_else(PoisonError::into_inner).view.message = text.into();
     }
     pub fn complete(&self, action: impl FnOnce() -> Result<crate::remote::Machine, String>) {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
         let result = if self.cancelled.load(Ordering::Relaxed) {
             Err("Connection cancelled".into())
         } else {
@@ -106,7 +106,7 @@ impl Job {
         }
     }
     pub fn cancel(&self) {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
         if !inner.view.done {
             self.cancelled.store(true, Ordering::Relaxed);
         }
@@ -131,7 +131,7 @@ impl Job {
     fn prompt(&self, message: String, confirm: bool) -> Option<String> {
         let deadline = Instant::now() + Duration::from_secs(120);
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
             inner.answer = None;
             inner.view.prompt = Some(Prompt {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -140,7 +140,7 @@ impl Job {
             });
         }
         loop {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
             if self.cancelled.load(Ordering::Relaxed)
                 || Instant::now() >= deadline
                 || inner.view.done
@@ -488,7 +488,7 @@ impl Tunnel {
                 if count == 0 {
                     break;
                 }
-                let mut errors = errors.lock().unwrap();
+                let mut errors = errors.lock().unwrap_or_else(PoisonError::into_inner);
                 if errors.len() < 8192 {
                     errors.push_str(&String::from_utf8_lossy(&buffer[..count]));
                 }
@@ -507,7 +507,7 @@ impl Tunnel {
             if !tunnel.alive() {
                 return Err(format!(
                     "SSH connection failed: {}. Open Settings → Connections and reconnect to check access.",
-                    tunnel.stderr.lock().unwrap().trim()
+                    tunnel.stderr.lock().unwrap_or_else(PoisonError::into_inner).trim()
                 ));
             }
             if TcpStream::connect_timeout(
@@ -681,14 +681,14 @@ mod tests {
         let newer = slot(2);
         tunnels.slots().insert("host".into(), newer.clone());
         tunnels.invalidate("host", &old_lease);
-        assert!(newer.lock().unwrap().failure.is_some());
+        assert!(newer.lock().unwrap_or_else(PoisonError::into_inner).failure.is_some());
         let stale_lease = TunnelLease {
             endpoint: String::new(),
             slot: newer.clone(),
             generation: 1,
         };
         tunnels.invalidate("host", &stale_lease);
-        assert!(newer.lock().unwrap().failure.is_some());
+        assert!(newer.lock().unwrap_or_else(PoisonError::into_inner).failure.is_some());
         tunnels.invalidate(
             "host",
             &TunnelLease {
@@ -696,7 +696,7 @@ mod tests {
                 ..stale_lease
             },
         );
-        assert!(newer.lock().unwrap().failure.is_none());
+        assert!(newer.lock().unwrap_or_else(PoisonError::into_inner).failure.is_none());
     }
     // scripts/test-remote-ssh.py creates an isolated sshd, host and keypair.
     // This test uses the production tunnel lifecycle and shell transport.
