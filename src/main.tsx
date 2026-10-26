@@ -10,6 +10,7 @@ import {
 } from "@/features/settings/model/appearance";
 import { initSounds } from "@/features/settings/model/sounds";
 import { installModalEscape } from "@/shared/ui/modal-escape";
+import { ErrorBoundary } from "@/shared/ui/ErrorBoundary";
 import {
   abortQuit,
   askQuitConfirmation,
@@ -110,13 +111,15 @@ void Promise.all([
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <React.StrictMode>
         <BootGate>
-          <App
-            windowTransfer={windowTransfer}
-            resumed={resumed}
-            installedUpdate={installedUpdate}
-            history={history}
-            historyCwd={historyCwd}
-          />
+          <ErrorBoundary scope="main window" recovery="reload">
+            <App
+              windowTransfer={windowTransfer}
+              resumed={resumed}
+              installedUpdate={installedUpdate}
+              history={history}
+              historyCwd={historyCwd}
+            />
+          </ErrorBoundary>
         </BootGate>
       </React.StrictMode>,
     );

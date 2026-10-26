@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IS_MAC } from "@/shared/lib/platform";
 import { installNativeContextMenuGuard } from "@/shared/lib/native-context-menu";
+import { ErrorBoundary } from "@/shared/ui/ErrorBoundary";
 import {
   applyAccentColor,
   applyThemeDarkLightness,
@@ -41,10 +42,12 @@ installNativeContextMenuGuard();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    {new URLSearchParams(window.location.search).get("popup") === "git" ? (
-      <QuickGitPopup onShown={applyAppearance} />
-    ) : (
-      <QuickComposer onShown={applyAppearance} />
-    )}
+    <ErrorBoundary scope="quick composer" recovery="reload">
+      {new URLSearchParams(window.location.search).get("popup") === "git" ? (
+        <QuickGitPopup onShown={applyAppearance} />
+      ) : (
+        <QuickComposer onShown={applyAppearance} />
+      )}
+    </ErrorBoundary>
   </React.StrictMode>,
 );

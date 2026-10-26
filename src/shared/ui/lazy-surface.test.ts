@@ -1,12 +1,10 @@
 // @vitest-environment happy-dom
 import {
   act,
-  Component,
   createElement,
   startTransition,
   Suspense,
   useState,
-  type ReactNode,
 } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -209,29 +207,40 @@ it("shares a cold import and publishes readiness to every mounted surface", asyn
   expect(container.textContent).toBe("LatestOther");
 });
 
-it("reports a cold import failure to the surrounding error boundary", async () => {
-  class Boundary extends Component<
-    { children?: ReactNode },
-    { failed: boolean }
-  > {
-    state = { failed: false };
-    static getDerivedStateFromError() {
-      return { failed: true };
+it.each([true, false])(
+  "contains a cold import failure in the surface and retries it (suspense: %s)",
+  async (suspense) => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const load = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Cold import failed"))
+      .mockResolvedValue({
+        default: () => createElement("main", null, "Inbox content"),
+      });
+    const Surface = lazySurface(load, { suspense });
+    try {
+      await act(async () =>
+        root.render(
+          createElement(
+            Suspense,
+            { fallback: null },
+            createElement("aside", null, "Rail"),
+            createElement(Surface),
+          ),
+        ),
+      );
+      expect(container.textContent).toContain("Rail");
+      expect(container.textContent).toContain("Cold import failed");
+      expect(logged).toHaveBeenCalledWith(
+        "surface: render failed",
+        expect.objectContaining({ error: expect.any(Error) }),
+      );
+
+      await act(async () => container.querySelector("button")?.click());
+      expect(load).toHaveBeenCalledTimes(2);
+      expect(container.textContent).toBe("RailInbox content");
+    } finally {
+      logged.mockRestore();
     }
-    render() {
-      return this.state.failed ? "Load failed" : this.props.children;
-    }
-  }
-  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
-  const Surface = lazySurface(async () => {
-    throw new Error("Cold import failed");
-  });
-  try {
-    await act(async () =>
-      root.render(createElement(Boundary, null, createElement(Surface))),
-    );
-    expect(container.textContent).toBe("Load failed");
-  } finally {
-    logged.mockRestore();
-  }
-});
+  },
+);

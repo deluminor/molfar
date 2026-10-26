@@ -24,6 +24,7 @@ import { FloatingFamiliarChat } from "./ui/FloatingFamiliarChat";
 import { homeDir } from "@/platform/tauri/fs";
 import { setHomeDir } from "@/shared/lib/paths";
 import { installNativeContextMenuGuard } from "@/shared/lib/native-context-menu";
+import { ErrorBoundary } from "@/shared/ui/ErrorBoundary";
 import "@/styles/index.css";
 
 let appearanceKey = "";
@@ -63,6 +64,8 @@ void homeDir()
   .catch(() => undefined);
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <FloatingFamiliarChat onShown={applyFloatingAppearance} />
+    <ErrorBoundary scope="floating familiar" recovery="reload">
+      <FloatingFamiliarChat onShown={applyFloatingAppearance} />
+    </ErrorBoundary>
   </React.StrictMode>,
 );
