@@ -1,4 +1,5 @@
 import type { UsageCardState, UsageProviderId } from "./usage-card";
+import { asRecord } from "@/shared/lib/json-text";
 
 export const USAGE_SNAPSHOTS_STORAGE_KEY = "molfar.usageSnapshots.v1";
 export const USAGE_SNAPSHOT_LIMIT = 366;
@@ -14,12 +15,6 @@ export type UsageTrendPoint = {
   /** Mean of providers that reported that day; null when none did. */
   value: number | null;
 };
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
 
 function clampPercent(value: number): number {
   return Math.round(Math.max(0, Math.min(100, value)));

@@ -51,13 +51,7 @@ export type OpenCodePart = {
   state?: Record<string, unknown>;
 };
 
-export function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
+export { asRecord } from "@/shared/lib/json-text";
 export function stringField(
   rec: Record<string, unknown> | null | undefined,
   key: string,

@@ -1,3 +1,4 @@
+import { asRecord } from "@/shared/lib/json-text";
 /** Shared clarifying-question model for every harness that can ask the user. */
 export const CUSTOM_OPTION_ID = "__custom__";
 
@@ -228,13 +229,6 @@ function firstArray(...values: unknown[]): unknown[] {
     if (Array.isArray(value)) return value;
   }
   return [];
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function stringField(

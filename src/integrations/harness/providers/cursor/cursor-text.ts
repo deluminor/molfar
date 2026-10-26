@@ -1,4 +1,5 @@
 import { AcpClient } from "../../core/acp";
+import { asRecord } from "@/shared/lib/json-text";
 import {
   killChild,
   resolveCursorBinary,
@@ -427,9 +428,3 @@ function textFromContent(content: unknown): string {
   return "";
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}

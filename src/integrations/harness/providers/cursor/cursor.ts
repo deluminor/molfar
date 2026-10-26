@@ -1,4 +1,5 @@
 import { nativeModelId } from "../../core/models/resolve-model";
+import { asRecord } from "@/shared/lib/json-text";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { promptBlocks } from "@/domain/session/attachment-prompt";
 import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type SendTurnInput, type SteerTurnInput } from "../../core/types";
@@ -1326,13 +1327,6 @@ function resolveSettingConfigId(
     )?.id;
   }
   return undefined;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function toolLabel(

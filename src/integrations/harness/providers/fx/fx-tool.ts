@@ -1,4 +1,5 @@
 import type { ToolPreview } from "@/domain/session/agent-run";
+import { asRecord } from "@/shared/lib/json-text";
 
 /**
  * fx tool metadata recovery.
@@ -254,13 +255,6 @@ function basename(path: string): string {
   const trimmed = path.replace(/[/\\]+$/, "") || path;
   const parts = trimmed.split(/[/\\]/).filter(Boolean);
   return parts[parts.length - 1] ?? trimmed;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function stringField(

@@ -1,4 +1,5 @@
 import { homeDir } from "@/platform/tauri/fs";
+import { asRecord } from "@/shared/lib/json-text";
 import { setHarnessModels } from "../../core/models/catalog-store";
 import type {
   AgentModel,
@@ -416,13 +417,6 @@ function uniqueCursorModels(models: AgentModel[]): AgentModel[] {
     seen.add(model.nativeId);
     return true;
   });
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function unique<T>(values: T[]): T[] {
