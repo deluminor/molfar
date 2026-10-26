@@ -134,7 +134,7 @@ export function MobileSettings() {
               Your phones
             </h2>
             <span className="rounded-md border border-content/10 bg-content/5 px-1.5 py-0.5 text-[10px] font-medium text-content/60">
-              Invite-only beta
+              Preview
             </span>
           </div>
           <p className="mt-1 text-[12px] leading-relaxed text-content/45">
@@ -142,7 +142,8 @@ export function MobileSettings() {
             phone connects straight to this desktop.
           </p>
           <p className="mt-1 text-[12px] leading-relaxed text-content/45">
-            The iPhone app currently requires a TestFlight invitation.
+            The phone app isn’t in the App Store or Google Play yet. Build it
+            yourself from the mobile folder of the MOLFAR repository.
           </p>
         </div>
         <button

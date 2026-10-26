@@ -47,13 +47,20 @@ Run EAS commands from `mobile/`. The build input must include the root Cargo wor
 
 The `development` profile builds for Android or physical iOS devices; `development-simulator` builds for the iOS simulator. EAS requires an Expo account, and physical iOS distribution requires Apple signing credentials.
 
+`app.json` has no Expo `owner` or EAS project yet: MOLFAR has not published a phone app. The first `eas init` creates the project under your account and writes `owner` and `extra.eas.projectId`; review that change before committing it.
+
 ```bash
 npx eas-cli@latest login
+npx eas-cli@latest init
 npx eas-cli@latest build --platform ios --profile development-simulator
 # or: npx eas-cli@latest build --platform android --profile development
 ```
 
 Install the completed development build, then run `npm start` to connect it to Metro.
+
+## Brand artwork
+
+The icons, splash and in-app mark in `assets/` are rendered from the desktop artwork, `docs/brand/molfar-app.svg`. After changing it, run `node scripts/generate-brand-assets.mjs` from `mobile/` (it uses the repository root's Playwright Chromium).
 
 ## Check the project
 

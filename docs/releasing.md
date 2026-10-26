@@ -88,6 +88,7 @@ These parts are MOLFAR-owned; keep ours when porting upstream changes:
 - `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`
 - host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`)
 - version numbers and `CHANGELOG.md`
+- `mobile/assets/` artwork (rendered from `docs/brand/` by `mobile/scripts/generate-brand-assets.mjs`) and the Expo account fields in `mobile/app.json` (`owner`, `extra.eas`, `updates`): never take MonoCode's
 
 License notices are the exception. Keep MOLFAR's additions, but always port upstream changes to them: a new or changed copyright line in `LICENSE`, `NOTICE` content, `LICENSE*`/`NOTICE*` files under `vendor/` or anywhere else, and copyright or SPDX headers in source files. MIT requires every copy to carry these notices, so dropping an upstream change here is a license violation, not just a style choice.
 

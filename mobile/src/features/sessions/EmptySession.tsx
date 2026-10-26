@@ -11,7 +11,7 @@ import { AsciiField } from "@/features/background/AsciiField";
 import { FadingBackground } from "@/features/background/FadingBackground";
 import type { EmptyBackground } from "@/features/background/useEmptyBackground";
 import type { Project } from "@/features/workspace/types";
-import { MONOCODE_MARK } from "@/ui/brand";
+import { MOLFAR_MARK } from "@/ui/brand";
 import { themedStyles } from "@/ui/theme";
 
 import { COMPOSER_FADE, useSessionLayout } from "./SessionScreen";
@@ -92,7 +92,7 @@ export function EmptySession({
       >
         <Animated.View style={[styles.intro, fade]}>
           <Image
-            source={MONOCODE_MARK}
+            source={MOLFAR_MARK}
             style={styles.mark}
             accessibilityIgnoresInvertColors
           />

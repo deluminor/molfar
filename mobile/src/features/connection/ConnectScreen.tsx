@@ -21,7 +21,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MONOCODE_MARK } from "@/ui/brand";
+import { MOLFAR_MARK } from "@/ui/brand";
 import { LiquidView } from "@/ui/LiquidView";
 import { themedStyles, useColors, withAlpha, type Palette } from "@/ui/theme";
 import { AsciiField } from "@/features/background/AsciiField";
@@ -80,7 +80,7 @@ export function ConnectScreen() {
           entering={FadeIn.duration(700).delay(150).easing(EASE)}
         >
           <Image
-            source={MONOCODE_MARK}
+            source={MOLFAR_MARK}
             style={styles.mark}
             tintColor={colors.content}
             accessibilityIgnoresInvertColors
