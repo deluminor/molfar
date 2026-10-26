@@ -309,7 +309,7 @@
     "lines": 862
   },
   "src/features/files/model/file-index.ts": {
-    "lines": 335
+    "lines": 336
   },
   "src/features/files/model/file-mentions.ts": {
     "lines": 387
@@ -771,7 +771,7 @@
     "lines": 274
   },
   "src/shared/lib/paths.ts": {
-    "lines": 341
+    "lines": 354
   },
   "src/shared/ui/ColorPickerPopover.tsx": {
     "lines": 264

@@ -118,7 +118,7 @@ const storage: Storage = {
  * providers usually report `D:\...`; both must describe the same location.
  */
 export function orchestrationPathKey(value: string): string {
-  let slashed = stripWindowsExtendedPrefix(value).replace(/\\/g, "/");
+  const slashed = stripWindowsExtendedPrefix(value).replace(/\\/g, "/");
 
   const prefix = slashed.startsWith("//")
     ? "//"

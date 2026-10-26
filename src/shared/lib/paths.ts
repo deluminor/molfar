@@ -11,7 +11,7 @@ export function slash(path: string): string {
 
 /** Strip Windows `\\?\` extended-length prefixes before comparison. */
 export function stripWindowsExtendedPrefix(path: string): string {
-  let slashed = path.replace(/\\/g, "/");
+  const slashed = path.replace(/\\/g, "/");
   if (/^\/\/\?\/unc\//i.test(slashed)) return `//${slashed.slice(8)}`;
   if (/^\/\/\?\/[a-z]:\//i.test(slashed)) return slashed.slice(4);
   return path;
