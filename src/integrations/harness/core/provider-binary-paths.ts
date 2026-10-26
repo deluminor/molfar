@@ -62,8 +62,7 @@ export function saveProviderBinaryPath(
     const value = path?.trim();
     if (value) stored[provider] = value;
     else delete stored[provider];
-    writeJson(STORAGE_KEY, stored);
-    return true;
+    return writeJson(STORAGE_KEY, stored);
   } catch {
     return false;
   }

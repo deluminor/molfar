@@ -31,10 +31,11 @@ export function writeJson(
   key: string,
   value: unknown,
   storage?: Pick<Storage, "setItem">,
-): void {
+): boolean {
   try {
     (storage ?? globalThis.localStorage)?.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
-    // quota / private browsing should not block the feature.
+    return false;
   }
 }

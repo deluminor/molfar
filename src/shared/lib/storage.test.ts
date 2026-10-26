@@ -1,17 +1,42 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { parseStoredJson, readJson, writeJson } from "./storage";
 
+function memoryStorage(): Storage {
+  const memory = new Map<string, string>();
+  return {
+    get length() {
+      return memory.size;
+    },
+    clear: () => memory.clear(),
+    getItem: (key) => memory.get(key) ?? null,
+    key: (index) => [...memory.keys()][index] ?? null,
+    removeItem: (key) => {
+      memory.delete(key);
+    },
+    setItem: (key, value) => {
+      memory.set(key, value);
+    },
+  };
+}
+
 describe("readJson", () => {
+  let storage: Storage;
+
   afterEach(() => {
-    localStorage.clear();
+    storage.clear();
   });
 
   it("parses through the validator and falls back on bad data", () => {
-    writeJson("k", { n: 1 });
-    expect(readJson("k", (value) => (value as { n: number }).n, 0)).toBe(1);
-    writeJson("k", "not-json");
-    expect(readJson("k", (value) => (value as { n: number }).n, 0)).toBe(0);
-    expect(readJson("missing", (value) => value, null)).toBeNull();
+    storage = memoryStorage();
+    writeJson("k", { n: 1 }, storage);
+    expect(readJson("k", (value) => (value as { n: number }).n, 0, storage)).toBe(
+      1,
+    );
+    storage.setItem("k", "not-json");
+    expect(readJson("k", (value) => (value as { n: number }).n, 0, storage)).toBe(
+      0,
+    );
+    expect(readJson("missing", (value) => value, null, storage)).toBeNull();
   });
 });
 

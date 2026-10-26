@@ -84,6 +84,5 @@ export function nonBlankString(
   if (!rec) return undefined;
   const value = rec[key];
   if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  return trimmed ? trimmed : undefined;
+  return value.trim() ? value : undefined;
 }

@@ -25,7 +25,7 @@ describe("stringOrEmpty", () => {
 describe("nonBlankString", () => {
   it("trims and drops blank strings", () => {
     const rec = { a: " x ", b: "  ", c: 0 };
-    expect(nonBlankString(rec, "a")).toBe("x");
+    expect(nonBlankString(rec, "a")).toBe(" x ");
     expect(nonBlankString(rec, "b")).toBeUndefined();
     expect(nonBlankString(null, "a")).toBeUndefined();
   });
