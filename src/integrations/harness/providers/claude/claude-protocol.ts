@@ -74,15 +74,7 @@ export type ClaudeCliSettings = {
 };
 
 export { asRecord } from "@/shared/lib/json-text";
-export function stringField(
-  rec: Record<string, unknown> | null | undefined,
-  key: string,
-): string | undefined {
-  if (!rec) return undefined;
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+export { nonBlankString as stringField } from "@/shared/lib/json-text";
 export function parseClaudeVersion(output: string): string | null {
   const match = output.match(/\d+\.\d+\.\d+/);
   return match?.[0] ?? null;

@@ -1,5 +1,5 @@
 import { nativeModelId } from "../../core/models/resolve-model";
-import { asRecord } from "@/shared/lib/json-text";
+import { asRecord, nonBlankString as stringField } from "@/shared/lib/json-text";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { promptBlocks } from "@/domain/session/attachment-prompt";
 import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type SendTurnInput, type SteerTurnInput } from "../../core/types";
@@ -1580,14 +1580,6 @@ function coerceMaybeString(
   key: string,
 ): string | undefined {
   return stringField(rec, key);
-}
-
-function stringField(
-  rec: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
 }
 
 function numberField(

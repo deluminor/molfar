@@ -230,15 +230,7 @@ export function isRecoverableThreadResumeError(error: unknown): boolean {
 }
 
 export { asRecord } from "@/shared/lib/json-text";
-export function stringField(
-  rec: Record<string, unknown> | null | undefined,
-  key: string,
-): string | undefined {
-  if (!rec) return undefined;
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+export { nonBlankString as stringField } from "@/shared/lib/json-text";
 /**
  * Where a Codex item records the commands it parsed out of a script. The live
  * app-server protocol spells it `commandActions`; older rollout files on disk

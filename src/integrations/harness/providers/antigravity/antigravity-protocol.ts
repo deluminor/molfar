@@ -555,14 +555,7 @@ function textFromContent(content: unknown, separator = ""): string {
 }
 
 export { asRecord } from "@/shared/lib/json-text";
-export function stringField(
-  rec: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+export { nonBlankString as stringField } from "@/shared/lib/json-text";
 function numberField(
   rec: Record<string, unknown>,
   key: string,

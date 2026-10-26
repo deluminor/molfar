@@ -52,15 +52,7 @@ export type OpenCodePart = {
 };
 
 export { asRecord } from "@/shared/lib/json-text";
-export function stringField(
-  rec: Record<string, unknown> | null | undefined,
-  key: string,
-): string | undefined {
-  if (!rec) return undefined;
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+export { nonBlankString as stringField } from "@/shared/lib/json-text";
 export function parseOpenCodeModelSlug(
   slug: string | null | undefined,
 ): ParsedOpenCodeModelSlug | null {
