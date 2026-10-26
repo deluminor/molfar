@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
-import { createElement } from "react";
-import { flushSync } from "react-dom";
+import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Block } from "@/domain/session/block";
@@ -27,7 +26,21 @@ function renderedTurns() {
   return container.querySelectorAll("[data-transcript-turn]").length;
 }
 
+// Each historical turn waits a frame plus a timeout; step that scheduler
+// under fake timers instead of racing it against a wall-clock waitFor.
+async function growWindow() {
+  for (let step = 0; step < 100; step += 1) {
+    await act(async () => vi.runOnlyPendingTimers());
+    if (vi.getTimerCount() === 0) return;
+  }
+  throw new Error("transcript window never settled");
+}
+
 beforeEach(() => {
+  vi.useFakeTimers({
+    toFake: ["setTimeout", "clearTimeout", "requestAnimationFrame", "cancelAnimationFrame"],
+  });
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -42,14 +55,15 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  flushSync(() => root.unmount());
+  act(() => root.unmount());
   container.remove();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("transcript first paint", () => {
   it("paints the latest turns first and builds the window after", async () => {
-    flushSync(() =>
+    act(() =>
       root.render(
         createElement(AgentTranscript, {
           blocks: conversation(30),
@@ -59,12 +73,13 @@ describe("transcript first paint", () => {
     );
     expect(renderedTurns()).toBe(3);
 
-    await vi.waitFor(() => expect(renderedTurns()).toBe(20));
+    await growWindow();
+    expect(renderedTurns()).toBe(20);
     expect(container.textContent).toContain("Load earlier messages");
   });
 
   it("stays pinned to the end while the window grows above it", async () => {
-    flushSync(() =>
+    act(() =>
       root.render(
         createElement(AgentTranscript, {
           blocks: conversation(30),
@@ -79,12 +94,13 @@ describe("transcript first paint", () => {
       get: () => renderedTurns() * 100,
     });
 
-    await vi.waitFor(() => expect(renderedTurns()).toBe(20));
+    await growWindow();
+    expect(renderedTurns()).toBe(20);
     expect(scroller.scrollTop).toBe(2000);
   });
 
   it("shows every turn of a short chat at once", () => {
-    flushSync(() =>
+    act(() =>
       root.render(
         createElement(AgentTranscript, {
           blocks: conversation(2),
