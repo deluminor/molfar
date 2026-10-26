@@ -18,6 +18,5 @@ export const VERBATIM_PATHS = [
   /(^|\/)(LICENSE|NOTICE|COPYING)[^/]*$/,
   /(^|\/)package(-lock)?\.json$/,
   /(^|\/)Cargo\.(toml|lock)$/,
-  /^pnpm-lock\.yaml$/,
   /^src-tauri\/tauri(\.[a-z]+)?\.conf\.json$/,
 ];
