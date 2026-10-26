@@ -39,7 +39,7 @@
     "lines": 2420
   },
   "src-tauri/src/checkpoint.rs": {
-    "lines": 2175
+    "lines": 2174
   },
   "src-tauri/src/checkpoint/turn.rs": {
     "lines": 915
@@ -80,9 +80,6 @@
   "src-tauri/src/familiar.rs": {
     "lines": 521
   },
-  "src-tauri/src/fs.rs": {
-    "lines": 9835
-  },
   "src-tauri/src/gitlab.rs": {
     "lines": 1445
   },
@@ -96,7 +93,7 @@
     "lines": 1091
   },
   "src-tauri/src/lib.rs": {
-    "lines": 795
+    "lines": 800
   },
   "src-tauri/src/linear.rs": {
     "lines": 944
@@ -156,10 +153,10 @@
     "lines": 402
   },
   "src-tauri/src/search.rs": {
-    "lines": 679
+    "lines": 686
   },
   "src-tauri/src/session_store.rs": {
-    "lines": 3839
+    "lines": 3840
   },
   "src-tauri/src/skills.rs": {
     "lines": 1232
@@ -177,7 +174,7 @@
     "lines": 352
   },
   "src-tauri/src/worktrees.rs": {
-    "lines": 1318
+    "lines": 1320
   },
   "src/app/hooks/use-familiar-habits.ts": {
     "lines": 311

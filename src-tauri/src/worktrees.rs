@@ -4,7 +4,9 @@ use std::process::Command;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::fs::{expand_home, git_checked, git_diff_files_for, path_to_js, resolve_repo_path};
+use crate::fs::{expand_home, path_to_js};
+use crate::git::command::{git_checked, resolve_repo_path};
+use crate::git::index::git_diff_files_for;
 use crate::session_store::SessionStore;
 
 #[derive(Clone, Debug, Default, Serialize)]

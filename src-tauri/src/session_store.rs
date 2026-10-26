@@ -551,7 +551,8 @@ pub fn session_delete(
     delete_session(&conn, &session_id).map_err(|e| e.to_string())?;
     drop(conn);
     if !image_paths.is_empty() {
-        if let Err(error) = crate::fs::delete_generated_images_sync(&app, &image_paths) {
+        if let Err(error) = crate::fs::attachments::delete_generated_images_sync(&app, &image_paths)
+        {
             eprintln!("Generated image cleanup will need a retry: {error}");
         }
     }
@@ -1221,7 +1222,7 @@ pub(crate) fn upsert_session(
         .as_ref()
         .map(|value| value.trim())
         .filter(|value| !value.is_empty());
-    let git = crate::fs::git_info_for(&crate::fs::expand_home(
+    let git = crate::git::info::git_info_for(&crate::fs::expand_home(
         session
             .worktree_cwd
             .as_deref()
@@ -1703,7 +1704,7 @@ fn ceil_char_boundary(text: &str, mut index: usize) -> usize {
 }
 
 fn list_by_project(conn: &Connection, cwd: &str) -> rusqlite::Result<Vec<SessionSummary>> {
-    let git = crate::fs::git_info_for(&crate::fs::expand_home(cwd));
+    let git = crate::git::info::git_info_for(&crate::fs::expand_home(cwd));
     let mut statement = conn.prepare(
         "SELECT id, cwd, harness, model, runtime_mode, title, provider_session_id,
                 created_at, updated_at, branch, archived, pinned,

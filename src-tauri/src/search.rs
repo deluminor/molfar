@@ -5,7 +5,8 @@ use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use crate::fs::{expand_home, list_project_files_sync_cancellable, MAX_TEXT_FILE_BYTES};
+use crate::fs::project_files::list_project_files_sync_cancellable;
+use crate::fs::{expand_home, MAX_TEXT_FILE_BYTES};
 
 const MAX_MATCHES: usize = 500;
 const MAX_FILE_BYTES: u64 = 512 * 1024;
@@ -176,7 +177,7 @@ fn git_grep_capped(
 
     let args: Vec<&str> = args.iter().map(String::as_str).collect();
     let (mut raw, mut truncated) =
-        match crate::fs::git_output_capped(root, &args, max_bytes, Some(cancel)) {
+        match crate::git::output::git_output_capped(root, &args, max_bytes, Some(cancel)) {
             Some(output) => output,
             None if cancel.load(Ordering::Acquire) => {
                 return Some(SearchResult {
@@ -519,9 +520,11 @@ mod tests {
         std::fs::write(dir.0.join("app.ts"), "x\n").unwrap();
         let cancel = AtomicBool::new(true);
 
-        let files =
-            crate::fs::list_project_files_sync_cancellable(&dir.0.to_string_lossy(), Some(&cancel))
-                .unwrap();
+        let files = crate::fs::project_files::list_project_files_sync_cancellable(
+            &dir.0.to_string_lossy(),
+            Some(&cancel),
+        )
+        .unwrap();
 
         assert!(files.is_empty());
     }
@@ -536,15 +539,19 @@ mod tests {
         assert!(git(&dir.0, &["add", "app.ts"]));
 
         let cancel = AtomicBool::new(true);
-        let files =
-            crate::fs::list_project_files_sync_cancellable(&dir.0.to_string_lossy(), Some(&cancel))
-                .unwrap();
+        let files = crate::fs::project_files::list_project_files_sync_cancellable(
+            &dir.0.to_string_lossy(),
+            Some(&cancel),
+        )
+        .unwrap();
         assert!(files.is_empty());
 
         let live = AtomicBool::new(false);
-        let listed =
-            crate::fs::list_project_files_sync_cancellable(&dir.0.to_string_lossy(), Some(&live))
-                .unwrap();
+        let listed = crate::fs::project_files::list_project_files_sync_cancellable(
+            &dir.0.to_string_lossy(),
+            Some(&live),
+        )
+        .unwrap();
         assert!(listed.iter().any(|file| file.relative == "app.ts"));
     }
 
