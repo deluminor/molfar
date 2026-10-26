@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { parseStoredJson } from "@/shared/lib/storage";
 import type { WindowTransferPayload } from "./window-transfer";
 
 let transferPromise: Promise<WindowTransferPayload | null> | null = null;
@@ -8,7 +9,13 @@ export function loadWindowTransfer(): Promise<WindowTransferPayload | null> {
   if (!transferPromise) {
     transferPromise = invoke<string | null>("take_window_transfer")
       .then((raw) =>
-        raw ? (JSON.parse(raw) as WindowTransferPayload) : null,
+        raw
+          ? parseStoredJson(
+              raw,
+              (value) => value as WindowTransferPayload,
+              null,
+            )
+          : null,
       )
       .catch(() => null);
   }

@@ -1,5 +1,6 @@
 import type { UsageCardState, UsageProviderId } from "./usage-card";
 import { asRecord } from "@/shared/lib/json-text";
+import { readJson } from "@/shared/lib/storage";
 
 export const USAGE_SNAPSHOTS_STORAGE_KEY = "molfar.usageSnapshots.v1";
 export const USAGE_SNAPSHOT_LIMIT = 366;
@@ -63,9 +64,7 @@ export function parseUsageSnapshots(value: unknown): UsageDaySnapshot[] {
 
 export function loadUsageSnapshots(): UsageDaySnapshot[] {
   try {
-    const raw = localStorage.getItem(USAGE_SNAPSHOTS_STORAGE_KEY);
-    if (raw == null) return [];
-    return parseUsageSnapshots(JSON.parse(raw) as unknown);
+    return readJson(USAGE_SNAPSHOTS_STORAGE_KEY, parseUsageSnapshots, []);
   } catch (error) {
     console.error("Failed to load usage snapshots:", error);
     return [];

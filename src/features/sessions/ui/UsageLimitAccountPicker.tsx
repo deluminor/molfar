@@ -13,6 +13,7 @@ import {
 } from "react";
 import { ChevronDown } from "@/shared/ui/icons";
 import { Popover } from "@/shared/ui/Popover";
+import { parseStoredJson } from "@/shared/lib/storage";
 import { HarnessIcon } from "./HarnessIcon";
 import {
   providerAccounts,
@@ -39,9 +40,11 @@ export function UsageLimitAccountPicker({
         : "[]",
     () => "[]",
   );
-  const accounts = (JSON.parse(snapshot) as ProviderAccount[]).filter(
-    (account) => !sameProviderAccountId(account.id, accountId),
-  );
+  const accounts = parseStoredJson(
+    snapshot,
+    (value) => (Array.isArray(value) ? (value as ProviderAccount[]) : []),
+    [],
+  ).filter((account) => !sameProviderAccountId(account.id, accountId));
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const button = useRef<HTMLButtonElement>(null);

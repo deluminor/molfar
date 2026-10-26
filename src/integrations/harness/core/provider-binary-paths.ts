@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { HarnessId } from "@/domain/harness/harness";
+import { readJson, writeJson } from "@/shared/lib/storage";
 
 export type ConfigurableBinaryProvider = HarnessId;
 
@@ -7,18 +8,17 @@ const STORAGE_KEY = "molfar.providerBinaryPaths.v1";
 
 type StoredBinaryPaths = Partial<Record<ConfigurableBinaryProvider, string>>;
 
-function readProviderBinaryPaths(): StoredBinaryPaths {
-  try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return {};
-    }
-    return Object.fromEntries(
-      Object.entries(value).filter(([, path]) => typeof path === "string"),
-    ) as StoredBinaryPaths;
-  } catch {
+function parseProviderBinaryPaths(value: unknown): StoredBinaryPaths {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return {};
   }
+  return Object.fromEntries(
+    Object.entries(value).filter(([, path]) => typeof path === "string"),
+  ) as StoredBinaryPaths;
+}
+
+function readProviderBinaryPaths(): StoredBinaryPaths {
+  return readJson(STORAGE_KEY, parseProviderBinaryPaths, {});
 }
 
 const runtimeBinaryPaths = readProviderBinaryPaths();
@@ -62,7 +62,7 @@ export function saveProviderBinaryPath(
     const value = path?.trim();
     if (value) stored[provider] = value;
     else delete stored[provider];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    writeJson(STORAGE_KEY, stored);
     return true;
   } catch {
     return false;

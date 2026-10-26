@@ -7,6 +7,7 @@ import {
   launchedSessionState,
 } from "@/features/familiars/model/familiar-spawned-sessions";
 import { getSession } from "@/features/sessions/data/session-store";
+import { parseStoredJson } from "@/shared/lib/storage";
 
 /**
  * Status for the cards of the sessions the open Familiar launched, rebuilt only
@@ -71,9 +72,14 @@ export function useFamiliarLaunchedSessions(
   return useMemo(
     () =>
       new Map<string, LaunchedSessionView>(
-        (JSON.parse(launchesKey) as [string, LaunchedSessionState, string][]).map(
-          ([id, state, title]) => [id, { state, title }],
-        ),
+        parseStoredJson(
+          launchesKey,
+          (value) =>
+            Array.isArray(value)
+              ? (value as [string, LaunchedSessionState, string][])
+              : [],
+          [],
+        ).map(([id, state, title]) => [id, { state, title }]),
       ),
     [launchesKey],
   );

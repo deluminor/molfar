@@ -16,6 +16,7 @@ import {
   PROJECT_MASCOTS,
   projectMascot,
 } from "@/features/projects/model/project-mascots";
+import { readJson, parseStoredJson } from "@/shared/lib/storage";
 import { removeFamiliarBackground } from "./familiar-background";
 
 /** The project palette's colors, plus indigo for a Familiar's ninth preset. */
@@ -78,13 +79,8 @@ const LEGACY_KEYS: [string, string][] = [
   ["molfar:project-agent-handed", HANDED_KEY],
 ];
 
-function readJson(key: string): unknown {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as unknown) : undefined;
-  } catch {
-    return undefined;
-  }
+function readStoredJson(key: string): unknown {
+  return readJson(key, (value) => value, undefined);
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -111,12 +107,7 @@ function migrateMonoBackgroundKeys(): void {
   const key = "molfar:project-chat-backgrounds";
   const raw = localStorage.getItem(key);
   if (!raw) return;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw) as unknown;
-  } catch {
-    return;
-  }
+  const parsed = parseStoredJson(raw, (value) => value, undefined);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
   const store = parsed as Record<string, unknown>;
   let changed = false;
@@ -138,8 +129,8 @@ export function migrateLegacyFamiliarStorage(): void {
     migrateMonoBackgroundKeys();
     for (const [legacy, key] of LEGACY_KEYS) moveLocalStorageKey(legacy, key);
     if (localStorage.getItem(ROSTER_KEY) != null) return;
-    const agents = record(readJson(LEGACY_AGENTS_KEY));
-    const profiles = record(readJson(LEGACY_PROFILES_KEY));
+    const agents = record(readStoredJson(LEGACY_AGENTS_KEY));
+    const profiles = record(readStoredJson(LEGACY_PROFILES_KEY));
     const mascots = loadTabGroupMascots();
     const colors = loadTabGroupColors();
     const customColors = loadTabGroupCustomColors();
@@ -217,7 +208,7 @@ function parseFamiliar(value: unknown): Familiar | undefined {
 /** Every Familiar, in the order the rail shows them. */
 export function listFamiliars(): Familiar[] {
   migrateLegacyFamiliarStorage();
-  const parsed = readJson(ROSTER_KEY);
+  const parsed = readStoredJson(ROSTER_KEY);
   if (!Array.isArray(parsed)) return [];
   return parsed.flatMap((entry) => parseFamiliar(entry) ?? []);
 }

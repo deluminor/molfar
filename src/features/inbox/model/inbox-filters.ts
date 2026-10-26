@@ -5,6 +5,7 @@ import {
 } from "./github-tasks";
 import type { InboxProvider, InboxKind } from "@/domain/work-items/work-item";
 import { normalizePath } from "@/shared/lib/paths";
+import { readJson } from "@/shared/lib/storage";
 import { timeFilterStart, type SessionTimeFilter } from "@/features/sessions/model/session-filters";
 
 export type InboxTimeFilter = SessionTimeFilter;
@@ -227,13 +228,7 @@ function defaultFiltersBySource(seed: InboxFilters): InboxFiltersBySource {
 
 /** Legacy single-blob filters — used only to seed by-source migration. */
 export function loadInboxFilters(): InboxFilters {
-  try {
-    const raw = localStorage.getItem(FILTERS_KEY);
-    if (!raw) return DEFAULT_INBOX_FILTERS;
-    return parseInboxFilters(JSON.parse(raw) as unknown);
-  } catch {
-    return DEFAULT_INBOX_FILTERS;
-  }
+  return readJson(FILTERS_KEY, parseInboxFilters, DEFAULT_INBOX_FILTERS);
 }
 
 export function loadInboxFiltersBySource(): InboxFiltersBySource {
