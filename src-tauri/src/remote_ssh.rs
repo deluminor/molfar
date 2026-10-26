@@ -82,10 +82,18 @@ impl Job {
         })
     }
     pub fn view(&self) -> JobView {
-        self.inner.lock().unwrap_or_else(PoisonError::into_inner).view.clone()
+        self.inner
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .view
+            .clone()
     }
     pub fn message(&self, text: &str) {
-        self.inner.lock().unwrap_or_else(PoisonError::into_inner).view.message = text.into();
+        self.inner
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .view
+            .message = text.into();
     }
     pub fn complete(&self, action: impl FnOnce() -> Result<crate::remote::Machine, String>) {
         let mut inner = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
@@ -681,14 +689,22 @@ mod tests {
         let newer = slot(2);
         tunnels.slots().insert("host".into(), newer.clone());
         tunnels.invalidate("host", &old_lease);
-        assert!(newer.lock().unwrap_or_else(PoisonError::into_inner).failure.is_some());
+        assert!(newer
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .failure
+            .is_some());
         let stale_lease = TunnelLease {
             endpoint: String::new(),
             slot: newer.clone(),
             generation: 1,
         };
         tunnels.invalidate("host", &stale_lease);
-        assert!(newer.lock().unwrap_or_else(PoisonError::into_inner).failure.is_some());
+        assert!(newer
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .failure
+            .is_some());
         tunnels.invalidate(
             "host",
             &TunnelLease {
@@ -696,7 +712,11 @@ mod tests {
                 ..stale_lease
             },
         );
-        assert!(newer.lock().unwrap_or_else(PoisonError::into_inner).failure.is_none());
+        assert!(newer
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .failure
+            .is_none());
     }
     // scripts/test-remote-ssh.py creates an isolated sshd, host and keypair.
     // This test uses the production tunnel lifecycle and shell transport.

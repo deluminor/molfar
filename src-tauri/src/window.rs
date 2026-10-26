@@ -383,7 +383,11 @@ pub fn request_quit(app: &AppHandle) {
         return;
     }
     let id = QUIT_COUNTER.fetch_add(1, Ordering::Relaxed);
-    if !begin_run(&mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner), id, labels) {
+    if !begin_run(
+        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
+        id,
+        labels,
+    ) {
         resurface_prompt(app);
         return;
     }
@@ -397,7 +401,12 @@ pub fn request_quit(app: &AppHandle) {
 /// One window's live turn count, counted before anything is killed.
 #[tauri::command]
 pub fn quit_poll_reply(app: AppHandle, window: WebviewWindow, id: u32, in_flight: u32) {
-    let next = record_reply(&mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner), id, window.label(), in_flight);
+    let next = record_reply(
+        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
+        id,
+        window.label(),
+        in_flight,
+    );
     if next == Next::Confirm {
         start_confirm(&app, id);
     }
@@ -455,7 +464,11 @@ pub fn quit_ready(app: AppHandle, window: WebviewWindow, id: u32, persisted: boo
         let _ = app.emit(QUIT_ABORTED, ());
         return;
     }
-    let next = record_ready(&mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner), id, window.label());
+    let next = record_ready(
+        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
+        id,
+        window.label(),
+    );
     if next == Next::Exit {
         confirm_quit(app);
     }
@@ -479,7 +492,10 @@ pub fn forget_quit_window(app: &AppHandle, label: &str) {
 }
 
 fn start_confirm(app: &AppHandle, id: u32) {
-    let Some(in_flight) = close_poll(&mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner), id) else {
+    let Some(in_flight) = close_poll(
+        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
+        id,
+    ) else {
         return;
     };
     if in_flight == 0 {
@@ -507,7 +523,11 @@ fn start_confirm(app: &AppHandle, id: u32) {
         confirm_quit(app.clone());
         return;
     };
-    if let Some(run) = QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner).as_mut() {
+    if let Some(run) = QUIT_RUN
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .as_mut()
+    {
         if run.id == id {
             run.prompt = Some(label.clone());
         }
@@ -526,7 +546,11 @@ fn start_confirm(app: &AppHandle, id: u32) {
 fn start_commit(app: &AppHandle, id: u32) {
     let labels = workspace_labels(app);
     let empty = labels.is_empty();
-    if !open_commit(&mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner), id, labels) {
+    if !open_commit(
+        &mut QUIT_RUN.lock().unwrap_or_else(PoisonError::into_inner),
+        id,
+        labels,
+    ) {
         return;
     }
     if empty {
