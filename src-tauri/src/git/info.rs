@@ -72,12 +72,8 @@ pub(super) fn git_branch_name(root: &Path, name: &str) -> Result<String, String>
     if name.is_empty() {
         return Err("Branch name cannot be empty".into());
     }
-    let output = git_cmd()
-        .arg("-C")
-        .arg(root)
+    let output = git_cmd(root)
         .args(["check-ref-format", "--branch", name])
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
         .output()
         .map_err(|e| e.to_string())?;
     if !output.status.success() {

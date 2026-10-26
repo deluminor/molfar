@@ -357,7 +357,7 @@ fn git_cmd_path(cmd: &Command) -> Vec<PathBuf> {
 /// git-lfs and other filters live in Homebrew dirs a Finder launch lacks.
 #[test]
 fn read_only_git_cmd_path_adds_fixed_dirs_to_inherited_path() {
-    let path = git_cmd_path(&git_cmd());
+    let path = git_cmd_path(&git_cmd(Path::new(".")));
     assert!(path.contains(&PathBuf::from("/opt/homebrew/bin")));
     assert!(path.contains(&PathBuf::from("/usr/local/bin")));
     if let Some(inherited) = std::env::var_os("PATH") {
@@ -370,7 +370,7 @@ fn read_only_git_cmd_path_adds_fixed_dirs_to_inherited_path() {
 #[test]
 fn local_git_never_resolves_login_shell_path() {
     for action in ["status", "diff", "add", "restore", "cat-file"] {
-        let cmd = git_cmd_for_args_with_path(&[action], || {
+        let cmd = with_login_path(git_cmd(Path::new(".")), &[action], || {
             panic!("local git must not resolve the login-shell PATH")
         });
         assert!(git_cmd_path(&cmd).contains(&PathBuf::from("/opt/homebrew/bin")));
@@ -380,10 +380,24 @@ fn local_git_never_resolves_login_shell_path() {
 #[test]
 fn git_actions_that_need_helpers_use_login_shell_path() {
     for action in ["commit", "push", "pull", "fetch", "clone"] {
-        let cmd = git_cmd_for_args_with_path(&[action], || "gui-git-path".into());
+        let cmd = with_login_path(git_cmd(Path::new(".")), &[action], || "gui-git-path".into());
         assert!(cmd.get_envs().any(|(key, value)| {
             key == std::ffi::OsStr::new("PATH")
                 && value == Some(std::ffi::OsStr::new("gui-git-path"))
         }));
     }
+}
+
+#[test]
+fn git_command_drops_inherited_repository_overrides() {
+    let cmd = command(Path::new("/repo"));
+    for name in INHERITED_REPO_ENV {
+        assert!(
+            cmd.get_envs()
+                .any(|(key, value)| key == std::ffi::OsStr::new(name) && value.is_none()),
+            "{name} must be removed"
+        );
+    }
+    let args: Vec<_> = cmd.get_args().collect();
+    assert_eq!(args, ["--no-pager", "-C", "/repo"]);
 }

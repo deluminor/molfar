@@ -36,13 +36,13 @@
     "lines": 1302
   },
   "src-tauri/src/azure_devops.rs": {
-    "lines": 2420
+    "lines": 2417
   },
   "src-tauri/src/checkpoint.rs": {
-    "lines": 2174
+    "lines": 2168
   },
   "src-tauri/src/checkpoint/turn.rs": {
-    "lines": 915
+    "lines": 902
   },
   "src-tauri/src/codex_familiar_store.rs": {
     "lines": 1000
@@ -81,7 +81,7 @@
     "lines": 521
   },
   "src-tauri/src/gitlab.rs": {
-    "lines": 1445
+    "lines": 1441
   },
   "src-tauri/src/harness.rs": {
     "lines": 4324
@@ -174,7 +174,7 @@
     "lines": 352
   },
   "src-tauri/src/worktrees.rs": {
-    "lines": 1320
+    "lines": 1311
   },
   "src/app/hooks/use-familiar-habits.ts": {
     "lines": 311

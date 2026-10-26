@@ -20,19 +20,47 @@ pub(crate) fn resolve_repo_path(root: &Path, relative: &str) -> Result<String, S
     Ok(relative)
 }
 
+/// Repository overrides a parent git (a hook, a terminal `exec`) may export;
+/// inherited, they would point every command at that repository instead.
+const INHERITED_REPO_ENV: [&str; 4] = [
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_COMMON_DIR",
+    "GIT_INDEX_FILE",
+];
+
 /// Any git can start a filter: in an LFS repo `status`, `diff`, `add`, and
 /// checkouts all run `git-lfs`, which a Finder launch's bare PATH lacks. The
 /// cached search path finds it without waiting on the login shell.
-pub(super) fn git_cmd() -> Command {
+fn base_command() -> Command {
     let mut cmd = Command::new("git");
-    crate::background_work::configure_child(&mut cmd);
     crate::hide_window_console(&mut cmd);
     cmd.env("PATH", crate::harness::cached_gui_search_path());
+    for name in INHERITED_REPO_ENV {
+        cmd.env_remove(name);
+    }
     cmd
 }
 
-fn git_cmd_for_args_with_path(args: &[&str], gui_path: impl FnOnce() -> String) -> Command {
-    let mut cmd = git_cmd();
+/// `git --no-pager -C <root>` with prompts and optional locks off.
+pub(crate) fn command(root: &Path) -> Command {
+    let mut cmd = base_command();
+    cmd.arg("--no-pager")
+        .arg("-C")
+        .arg(root)
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .env("GIT_TERMINAL_PROMPT", "0");
+    cmd
+}
+
+/// [`command`] at background priority, for the app's own status/diff reads.
+pub(super) fn git_cmd(root: &Path) -> Command {
+    let mut cmd = command(root);
+    crate::background_work::configure_child(&mut cmd);
+    cmd
+}
+
+fn with_login_path(mut cmd: Command, args: &[&str], gui_path: impl FnOnce() -> String) -> Command {
     let args = args.strip_prefix(&["--literal-pathspecs"]).unwrap_or(args);
     if matches!(
         args.first().copied(),
@@ -44,19 +72,20 @@ fn git_cmd_for_args_with_path(args: &[&str], gui_path: impl FnOnce() -> String) 
     cmd
 }
 
-pub(super) fn git_cmd_for_args(args: &[&str]) -> Command {
-    git_cmd_for_args_with_path(args, crate::harness::gui_search_path)
+pub(super) fn git_cmd_for_args(root: &Path, args: &[&str]) -> Command {
+    with_login_path(git_cmd(root), args, crate::harness::gui_search_path)
+}
+
+/// `git clone` has no repository yet, so it runs without `-C`.
+pub(super) fn clone_command() -> Command {
+    let mut cmd = base_command();
+    crate::background_work::configure_child(&mut cmd);
+    with_login_path(cmd, &["clone"], crate::harness::gui_search_path)
 }
 
 pub(crate) fn git_checked(root: &Path, args: &[&str]) -> Result<(), String> {
-    let mut cmd = git_cmd_for_args(args);
-    let output = cmd
-        .arg("--no-pager")
-        .arg("-C")
-        .arg(root)
+    let output = git_cmd_for_args(root, args)
         .args(args)
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
         .output()
         .map_err(|e| e.to_string())?;
     if output.status.success() {
@@ -84,15 +113,7 @@ pub(super) fn git_run(root: &Path, args: &[&str]) -> Option<String> {
 }
 
 pub(super) fn git_output(root: &Path, args: &[&str]) -> Option<Vec<u8>> {
-    let output = git_cmd_for_args(args)
-        .arg("--no-pager")
-        .arg("-C")
-        .arg(root)
-        .args(args)
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .output()
-        .ok()?;
+    let output = git_cmd_for_args(root, args).args(args).output().ok()?;
     if git_status_ok(&output.status, args) {
         return Some(output.stdout);
     }
@@ -105,7 +126,7 @@ pub(super) fn git_status_ok(status: &std::process::ExitStatus, args: &[&str]) ->
 }
 
 pub(crate) fn git_stdout(root: &Path, args: &[&str]) -> Option<String> {
-    let output = git_cmd().arg("-C").arg(root).args(args).output().ok()?;
+    let output = git_cmd(root).args(args).output().ok()?;
     if !output.status.success() {
         return None;
     }

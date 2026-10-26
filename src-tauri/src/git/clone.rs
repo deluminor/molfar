@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 
 use crate::fs::expand_home;
-use crate::git::command::git_cmd_for_args;
+use crate::git::command::clone_command;
 
 /// Clone `url` into `parent`/`<repo-name>` and return the new directory.
 #[tauri::command]
@@ -22,7 +22,7 @@ fn clone_repo_sync(url: &str, parent: &str) -> Result<String, String> {
         return Err(format!("{} already exists", dest.display()));
     }
     let dest_str = dest.to_str().ok_or("Invalid destination path")?;
-    let output = git_cmd_for_args(&["clone"])
+    let output = clone_command()
         .args(["clone", "--", url, dest_str])
         .output()
         .map_err(|e| {

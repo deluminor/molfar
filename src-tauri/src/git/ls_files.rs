@@ -17,12 +17,8 @@ pub(crate) fn git_ignored_names(dir: &Path, names: &[&str]) -> Option<HashSet<St
     if names.is_empty() {
         return Some(HashSet::new());
     }
-    let mut child = git_cmd()
-        .arg("-C")
-        .arg(dir)
+    let mut child = git_cmd(dir)
         .args(["check-ignore", "--stdin", "-z"])
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())

@@ -128,13 +128,10 @@ pub(super) fn git_selected_context_for(
     directory.create(&index_dir).map_err(|e| e.to_string())?;
     let index = GitSelectionIndex(index_dir);
     let run = |args: &[&str]| -> Result<String, String> {
-        let output = git_cmd()
+        let output = git_cmd(root)
             .arg("--literal-pathspecs")
-            .arg("-C")
-            .arg(root)
             .args(args)
             .env("GIT_INDEX_FILE", index.0.join("index"))
-            .env("GIT_TERMINAL_PROMPT", "0")
             .env("PATH", crate::harness::gui_search_path())
             .output()
             .map_err(|e| e.to_string())?;

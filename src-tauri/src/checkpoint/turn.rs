@@ -596,25 +596,12 @@ fn resolve_edit_path(workspace: &Path, root: &Path, path: &str) -> Result<String
 }
 
 fn git_command(root: &Path, args: &[&str]) -> Command {
-    let mut command = Command::new("git");
-    crate::hide_window_console(&mut command);
+    let mut command = crate::git::command::command(root);
     command
-        .args(["--no-pager", "-C"])
-        .arg(root)
         .args(["-c", "core.fsmonitor=false"])
         .args(args)
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
         .env("GIT_LITERAL_PATHSPECS", "1")
         .env("PATH", crate::harness::gui_search_path());
-    for name in [
-        "GIT_DIR",
-        "GIT_WORK_TREE",
-        "GIT_COMMON_DIR",
-        "GIT_INDEX_FILE",
-    ] {
-        command.env_remove(name);
-    }
     command
 }
 

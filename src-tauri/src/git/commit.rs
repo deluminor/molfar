@@ -125,9 +125,7 @@ pub(super) fn git_locate_file(path: &Path) -> Result<Option<GitFileLocation>, St
     // location, and a tracked symlink belongs to the checkout holding the link.
     let directory = std::fs::canonicalize(parent).map_err(|e| e.to_string())?;
     let actual = directory.join(path.strip_prefix(parent).map_err(|e| e.to_string())?);
-    let output = git_cmd()
-        .args(["-C"])
-        .arg(&directory)
+    let output = git_cmd(&directory)
         .args(["rev-parse", "--show-toplevel"])
         .output()
         .map_err(|e| e.to_string())?;

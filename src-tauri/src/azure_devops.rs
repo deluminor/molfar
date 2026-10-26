@@ -1828,11 +1828,8 @@ fn encode_segment(value: &str) -> String {
 }
 
 fn azure_devops_repo_for(root: &Path, organization_url: &str) -> Result<String, String> {
-    let mut cmd = Command::new("git");
-    crate::hide_window_console(&mut cmd);
-    let output = cmd
+    let output = crate::git::command::command(root)
         .args(["config", "--get-regexp", r"^remote\..*\.url$"])
-        .current_dir(root)
         .output()
         .map_err(|_| "Could not run git".to_string())?;
     if !output.status.success() && output.status.code() != Some(1) {

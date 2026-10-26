@@ -938,14 +938,8 @@ fn path_contains_symlink(root: &Path, relative: &str) -> bool {
 }
 
 fn git_head(root: &Path) -> Result<Vec<u8>, String> {
-    let mut command = Command::new("git");
-    crate::hide_window_console(&mut command);
-    let output = command
-        .arg("-C")
-        .arg(root)
+    let output = crate::git::command::command(root)
         .args(["rev-parse", "--verify", "HEAD"])
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
         .output()
         .map_err(|e| e.to_string())?;
     if !output.status.success() {
