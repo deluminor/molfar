@@ -50,6 +50,7 @@ import type { ProjectReturnMemory } from "@/features/projects/model/project-retu
 import { confirmApp } from "@/shared/lib/app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";
 import { saveSnapshotUnlessBlocked, snapshotLoadFailed } from "./workspace-snapshot-guard";
+import { settleBootWrites } from "./settle-boot-writes";
 import type { WindowTransferPayload } from "./window-transfer";
 
 export type { ResumedWorkspace };
@@ -323,14 +324,14 @@ async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
 
   bootingResumed = workspace;
   if (workspace) {
-    await Promise.all(
+    await settleBootWrites(
       workspace.sessions
         // Idle transcripts already came from disk. Rewriting every open chat
         // here serialized/indexed the entire workspace before first paint.
         .filter(
           (session) => interrupted.has(session.id) && shouldPersistSession(session),
         )
-        .map((session) => upsertSession(session).catch(() => null)),
+        .map((session) => upsertSession(session)),
     );
   }
   return workspace;
@@ -433,30 +434,27 @@ export async function persistQuitState(
 }
 
 async function persistBootingResume(workspace: ResumedWorkspace): Promise<void> {
-  await Promise.all(
-    workspace.sessions
+  await settleBootWrites([
+    ...workspace.sessions
       .filter(shouldPersistSession)
-      .map((session) => upsertSession(session).catch(() => null)),
-  );
-  await saveSnapshotUnlessBlocked(
-    collectWorkspaceSnapshot(
-      workspace.tabs,
-      workspace.sessions,
-      workspace.activeTabId,
-      workspace.projectCwd,
-      workspace.projectReturnMemory ?? new Map(),
-      workspace.projectTerminals ?? [],
-      workspace.lastDockSide,
+      .map((session) => upsertSession(session)),
+    saveSnapshotUnlessBlocked(
+      collectWorkspaceSnapshot(
+        workspace.tabs,
+        workspace.sessions,
+        workspace.activeTabId,
+        workspace.projectCwd,
+        workspace.projectReturnMemory ?? new Map(),
+        workspace.projectTerminals ?? [],
+        workspace.lastDockSide,
+      ),
     ),
-  ).catch(() => undefined);
-  await replaceInFlightSessions(
-    workspace.sessions
-      .filter(wasTurnInterrupted)
-      .map((session) => ({
-        sessionId: session.id,
-        cwd: session.cwd,
-      })),
-  ).catch(() => undefined);
+    replaceInFlightSessions(
+      workspace.sessions
+        .filter(wasTurnInterrupted)
+        .map((session) => ({ sessionId: session.id, cwd: session.cwd })),
+    ),
+  ]);
 }
 
 async function confirmAndCloseWindow(

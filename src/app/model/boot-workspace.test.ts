@@ -18,6 +18,11 @@ vi.mock("@/features/sessions/data/session-store", async (original) => ({
   ...store,
 }));
 vi.mock("@/integrations/harness/core/registry", () => ({}));
+vi.mock("./window-transfer-bootstrap", () => ({ loadWindowTransfer: async () => null }));
+vi.mock("@/features/projects/model/recents", async (original) => ({
+  ...(await original<typeof import("@/features/projects/model/recents")>()),
+  lastProjectPath: () => null,
+}));
 vi.mock("@/integrations/harness/core/child", () => ({}));
 
 beforeEach(() => {
@@ -116,5 +121,38 @@ it("keeps the unread layout on disk through a reload until the user edits", asyn
   releaseSnapshotWrites();
   await unload();
   expect(store.saveWorkspaceSnapshot).toHaveBeenCalledOnce();
+  error.mockRestore();
+});
+
+it("restores the workspace and logs it when an interruption marker cannot be written", async () => {
+  const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const sessions = savedWorkspace();
+  store.listInFlightSessions.mockResolvedValue([{ sessionId: sessions[0].id, cwd: "/repo" }]);
+  store.upsertSession.mockRejectedValue(new Error("disk full"));
+  const { loadResumedWorkspace } = await import("./app-lifecycle");
+
+  const restored = await loadResumedWorkspace();
+
+  expect(restored?.tabs).toHaveLength(10);
+  expect(error).toHaveBeenCalledWith(expect.stringContaining("Boot resume"), expect.any(Error));
+  error.mockRestore();
+});
+
+it("attempts every resume write on an early quit and logs the ones that fail", async () => {
+  const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const sessions = savedWorkspace();
+  store.listInFlightSessions.mockResolvedValue([{ sessionId: sessions[0].id, cwd: "/repo" }]);
+  store.upsertSession.mockRejectedValue(new Error("disk full"));
+  store.saveWorkspaceSnapshot.mockRejectedValue(new Error("disk full"));
+  store.replaceInFlightSessions.mockRejectedValue(new Error("disk full"));
+  const { handleQuitRequested } = await import("./app-lifecycle");
+
+  await expect(handleQuitRequested()).resolves.toBe(true);
+
+  expect(store.upsertSession).toHaveBeenCalledTimes(1 + sessions.length);
+  expect(store.saveWorkspaceSnapshot).toHaveBeenCalledOnce();
+  expect(store.replaceInFlightSessions).toHaveBeenCalledOnce();
+  const logged = error.mock.calls.filter(([message]) => String(message).includes("Boot resume"));
+  expect(logged).toHaveLength(1 + sessions.length + 2);
   error.mockRestore();
 });
