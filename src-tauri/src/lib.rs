@@ -689,7 +689,6 @@ pub fn run() {
             familiar_chat::familiar_chat_switch,
             #[cfg(target_os = "macos")]
             familiar_chat::mono_menu_bar_set_visible,
-            window_transfer::stage_window_transfer,
             window_transfer::take_window_transfer,
             chat_background::save_chat_background,
             resources::resource_usage,
