@@ -197,7 +197,7 @@ describe("Familiar completion batches", () => {
     expect(ready.mock.calls[0][1].text).not.toContain("stopped-session");
   });
 
-  it("keeps other Monos and future monitored turns on the same session independent", () => {
+  it("keeps other familiars and future monitored turns on the same session independent", () => {
     const ready = vi.fn();
     const batches = new FamiliarSessionCompletionBatches(ready);
     const cancelled = batches.watch(origin, "request", "worker");

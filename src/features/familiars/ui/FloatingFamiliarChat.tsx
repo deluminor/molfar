@@ -306,7 +306,7 @@ function MonoRail({
   const [creating, setCreating] = useState(false);
   return (
     <nav
-      aria-label="Monos"
+      aria-label="Familiars"
       data-floating-mono-rail
       data-tauri-drag-region
       // 17px puts the first mascot's center level with the header's: the
@@ -355,8 +355,8 @@ function MonoRail({
       })}
       <button
         type="button"
-        title="New mono"
-        aria-label="New mono"
+        title="New familiar"
+        aria-label="New familiar"
         disabled={creating || !currentId}
         onClick={() => {
           setCreating(true);

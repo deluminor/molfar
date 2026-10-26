@@ -161,7 +161,7 @@ export async function deliverFloatingFamiliarRequest(
       host.resume(session.id);
       break;
     case "create":
-      if (!host.create) throw new Error("New Monos are unavailable here.");
+      if (!host.create) throw new Error("New familiars are unavailable here.");
       await host.create(request.monoId);
       break;
     default:

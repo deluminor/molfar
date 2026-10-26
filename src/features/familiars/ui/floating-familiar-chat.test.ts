@@ -150,7 +150,7 @@ it("lists every Mono beside the chat and switches or adds from there", async () 
     to: "second",
   });
   await act(async () =>
-    rail.querySelector<HTMLButtonElement>('[aria-label="New mono"]')!.click(),
+    rail.querySelector<HTMLButtonElement>('[aria-label="New familiar"]')!.click(),
   );
   expect(native.invoke).toHaveBeenCalledWith("familiar_chat_action", {
     monoId: "first",
@@ -158,7 +158,7 @@ it("lists every Mono beside the chat and switches or adds from there", async () 
   });
 });
 
-it("switches Monos inside the same frame, loading only the conversation", async () => {
+it("switches familiars inside the same frame, loading only the conversation", async () => {
   await render();
   const frame = container.querySelector("[data-floating-mono]");
   const rail = container.querySelector("[data-floating-mono-rail]");

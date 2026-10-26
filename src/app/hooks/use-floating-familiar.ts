@@ -119,7 +119,7 @@ export function useFloatingFamiliar(
       });
       return { monos, hosted, mascots: floatingFamiliarMenuMascots(monos) };
     };
-    // The native side only opens Monos it has heard of. This runs inside a
+    // The native side only opens familiars it has heard of. This runs inside a
     // drain, so it must not wait on the sync queue, which waits on the drain.
     const create = async (from: string) => {
       const to = current.current.host.create();
