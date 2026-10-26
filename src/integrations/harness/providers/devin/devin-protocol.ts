@@ -595,20 +595,27 @@ function fusionModelValue(
   family: DevinModelFamily,
   settings: Record<string, string>,
 ): string {
-  const variants = family.variants;
-  const first = variants.find((variant) => variant.fusion)!;
-  const lead = settings.lead ?? first.fusion!.lead;
-  const forLead = variants.filter((variant) => variant.fusion!.lead === lead);
-  const pool = forLead.length > 0 ? forLead : variants;
+  const fusionVariants = family.variants.filter(
+    (variant): variant is typeof variant & { fusion: NonNullable<typeof variant.fusion> } =>
+      variant.fusion != null,
+  );
+  if (fusionVariants.length === 0) {
+    return family.variants[0]?.value ?? family.key;
+  }
+
+  const first = fusionVariants[0];
+  const lead = settings.lead ?? first.fusion.lead;
+  const forLead = fusionVariants.filter((variant) => variant.fusion.lead === lead);
+  const pool = forLead.length > 0 ? forLead : fusionVariants;
   const effort = settings.effort;
   const matching = effort
-    ? pool.filter((variant) => variant.fusion!.leadEffort === effort)
+    ? pool.filter((variant) => variant.fusion.leadEffort === effort)
     : [];
   // A lead may offer only one effort; fall back to what it actually has.
   const withEffort = matching.length > 0 ? matching : pool;
-  const sidekick = settings.sidekick ?? first.fusion!.sidekick;
+  const sidekick = settings.sidekick ?? first.fusion.sidekick;
   return (
-    withEffort.find((variant) => variant.fusion!.sidekick === sidekick) ??
+    withEffort.find((variant) => variant.fusion.sidekick === sidekick) ??
     withEffort[0]
   ).value;
 }
