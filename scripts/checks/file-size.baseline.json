@@ -48,7 +48,7 @@
     "lines": 1000
   },
   "src-tauri/src/companion.rs": {
-    "lines": 940
+    "lines": 962
   },
   "src-tauri/src/confluence/mod.rs": {
     "lines": 271
@@ -81,7 +81,7 @@
     "lines": 521
   },
   "src-tauri/src/fs.rs": {
-    "lines": 9822
+    "lines": 9835
   },
   "src-tauri/src/gitlab.rs": {
     "lines": 1445
@@ -96,7 +96,7 @@
     "lines": 1091
   },
   "src-tauri/src/lib.rs": {
-    "lines": 796
+    "lines": 795
   },
   "src-tauri/src/linear.rs": {
     "lines": 944
@@ -201,7 +201,7 @@
     "lines": 5910
   },
   "src/app/shell/TitleBar.tsx": {
-    "lines": 1197
+    "lines": 1202
   },
   "src/app/shell/UsageFooter.tsx": {
     "lines": 727
@@ -521,9 +521,6 @@
   "src/features/sessions/ui/ModelPicker.tsx": {
     "lines": 1808
   },
-  "src/features/sessions/ui/ModelSettings.tsx": {
-    "lines": 262
-  },
   "src/features/sessions/ui/PromptOutline.tsx": {
     "lines": 406
   },
@@ -675,7 +672,7 @@
     "lines": 593
   },
   "src/integrations/harness/providers/antigravity/antigravity.ts": {
-    "lines": 837
+    "lines": 841
   },
   "src/integrations/harness/providers/claude/claude-catalog.ts": {
     "lines": 581
@@ -687,7 +684,7 @@
     "lines": 447
   },
   "src/integrations/harness/providers/claude/claude.ts": {
-    "lines": 1825
+    "lines": 1829
   },
   "src/integrations/harness/providers/codex/codex-catalog.ts": {
     "lines": 307
@@ -705,13 +702,13 @@
     "lines": 491
   },
   "src/integrations/harness/providers/cursor/cursor-text.ts": {
-    "lines": 424
+    "lines": 435
   },
   "src/integrations/harness/providers/cursor/cursor.ts": {
-    "lines": 1644
+    "lines": 1648
   },
   "src/integrations/harness/providers/devin/devin-protocol.ts": {
-    "lines": 824
+    "lines": 831
   },
   "src/integrations/harness/providers/devin/devin.ts": {
     "lines": 762
@@ -723,19 +720,19 @@
     "lines": 272
   },
   "src/integrations/harness/providers/fx/fx.ts": {
-    "lines": 534
+    "lines": 542
   },
   "src/integrations/harness/providers/grok/grok-protocol.ts": {
     "lines": 960
   },
   "src/integrations/harness/providers/grok/grok-text.ts": {
-    "lines": 378
+    "lines": 385
   },
   "src/integrations/harness/providers/grok/grok.ts": {
-    "lines": 642
+    "lines": 650
   },
   "src/integrations/harness/providers/hermes/hermes.ts": {
-    "lines": 625
+    "lines": 629
   },
   "src/integrations/harness/providers/opencode/opencode-catalog.ts": {
     "lines": 354
@@ -747,7 +744,7 @@
     "lines": 608
   },
   "src/integrations/harness/providers/opencode/opencode-text.ts": {
-    "lines": 455
+    "lines": 462
   },
   "src/integrations/harness/providers/opencode/opencode-v2-events.ts": {
     "lines": 321

@@ -101,9 +101,6 @@
   "src/app/model/quick-launch-session.test.ts": {
     "lint/style/noNonNullAssertion": 2
   },
-  "src/app/model/release-notes-workspace.test.ts": {
-    "lint/style/noNonNullAssertion": 2
-  },
   "src/app/shell/familiar-rail-section.test.ts": {
     "lint/style/noNonNullAssertion": 2
   },
@@ -267,10 +264,6 @@
   },
   "src/assets/providers/pi.svg": {
     "lint/a11y/noSvgWithoutTitle": 1
-  },
-  "src/debug-familiar-scroll.ts": {
-    "lint/style/noNonNullAssertion": 2,
-    "lint/suspicious/noConsole": 2
   },
   "src/domain/session/context-usage.ts": {
     "lint/complexity/useOptionalChain": 1
@@ -757,9 +750,6 @@
   "src/features/notes/notes.ts": {
     "lint/style/noNonNullAssertion": 2,
     "lint/suspicious/noAssignInExpressions": 1
-  },
-  "src/features/notes/ui/index.ts": {
-    "lint/performance/noBarrelFile": 1
   },
   "src/features/notes/ui/notes-view.test.ts": {
     "lint/correctness/useHookAtTopLevel": 1,
@@ -1829,7 +1819,7 @@
     "lint/style/noNonNullAssertion": 7
   },
   "src/integrations/harness/providers/devin/devin-protocol.ts": {
-    "lint/style/noNonNullAssertion": 10,
+    "lint/style/noNonNullAssertion": 4,
     "lint/suspicious/noControlCharactersInRegex": 5
   },
   "src/integrations/harness/providers/devin/devin-subagents.ts": {
