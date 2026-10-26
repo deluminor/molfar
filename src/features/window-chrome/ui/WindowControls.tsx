@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { logWindowChromeError } from "@/platform/tauri/log-window-chrome-error";
 import { Copy, Minus, Square, X } from "@/shared/ui/icons";
 import { useEffect, useState } from "react";
 
@@ -12,20 +13,22 @@ export function WindowControls() {
     const win = getCurrentWindow();
     void win.isMaximized().then((max) => {
       if (mounted) setIsMaximized(max);
-    }).catch(() => {});
+    }).catch((error) => logWindowChromeError("read maximized state", error));
 
     void win.onResized(async () => {
       try {
         const max = await win.isMaximized();
         if (mounted) setIsMaximized(max);
-      } catch {}
+      } catch (error) {
+        logWindowChromeError("resize maximized state", error);
+      }
     }).then((unlistenFn) => {
       if (mounted) {
         unlisten = unlistenFn;
       } else {
         unlistenFn();
       }
-    }).catch(() => {});
+    }).catch((error) => logWindowChromeError("resize listener", error));
 
     return () => {
       mounted = false;
@@ -34,21 +37,21 @@ export function WindowControls() {
   }, []);
 
   const handleMinimize = () => {
-    try {
-      void getCurrentWindow().minimize();
-    } catch {}
+    void getCurrentWindow().minimize().catch((error) => {
+      logWindowChromeError("minimize", error);
+    });
   };
 
   const handleToggleMaximize = () => {
-    try {
-      void getCurrentWindow().toggleMaximize();
-    } catch {}
+    void getCurrentWindow().toggleMaximize().catch((error) => {
+      logWindowChromeError("toggle maximize", error);
+    });
   };
 
   const handleClose = () => {
-    try {
-      void getCurrentWindow().close();
-    } catch {}
+    void getCurrentWindow().close().catch((error) => {
+      logWindowChromeError("close", error);
+    });
   };
 
   return (
