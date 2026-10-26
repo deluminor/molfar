@@ -8,6 +8,7 @@ const textFiles = new Map<string, string>();
 vi.mock("../../core/session-mcp-servers", async (original) => ({
   ...(await original<typeof import("../../core/session-mcp-servers")>()),
   loadSessionMcpServers: async () => [],
+  loadSessionMcpServersForSession: async () => [],
 }));
 vi.mock("../../core/child", () => ({
   resolveHermesBinary: async () => ({ path: "/fake/hermes" }),

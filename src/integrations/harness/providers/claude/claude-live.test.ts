@@ -13,6 +13,7 @@ const writeChild = vi.fn(async (_id: string, line: string) => {
 vi.mock("../../core/session-mcp-servers", async (original) => ({
   ...(await original<typeof import("../../core/session-mcp-servers")>()),
   loadSessionMcpServers: async () => [],
+  loadSessionMcpServersForSession: async () => [],
 }));
 vi.mock("../../core/child", () => ({
   resolveClaudeBinary: async () => ({ path: "/fake/claude" }),

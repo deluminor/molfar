@@ -33,6 +33,7 @@ vi.mock("@/platform/tauri/fs", () => ({ homeDir: async () => "/home/test" }));
 vi.mock("../../core/session-mcp-servers", async (original) => ({
   ...(await original<typeof import("../../core/session-mcp-servers")>()),
   loadSessionMcpServers: async () => [],
+  loadSessionMcpServersForSession: async () => [],
 }));
 vi.mock("../../core/child", () => ({
   resolveAntigravityBinary: async () => {
