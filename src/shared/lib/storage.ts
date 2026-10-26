@@ -4,10 +4,10 @@ export function readJson<T>(
   key: string,
   parse: JsonParse<T>,
   fallback: T,
-  storage: Pick<Storage, "getItem"> = localStorage,
+  storage?: Pick<Storage, "getItem">,
 ): T {
   try {
-    const raw = storage.getItem(key);
+    const raw = (storage ?? globalThis.localStorage)?.getItem(key);
     if (raw == null) return fallback;
     return parse(JSON.parse(raw));
   } catch {
@@ -30,10 +30,10 @@ export function parseStoredJson<T>(
 export function writeJson(
   key: string,
   value: unknown,
-  storage: Pick<Storage, "setItem"> = localStorage,
+  storage?: Pick<Storage, "setItem">,
 ): void {
   try {
-    storage.setItem(key, JSON.stringify(value));
+    (storage ?? globalThis.localStorage)?.setItem(key, JSON.stringify(value));
   } catch {
     // quota / private browsing should not block the feature.
   }
