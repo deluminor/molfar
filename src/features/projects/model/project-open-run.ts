@@ -2,7 +2,7 @@ import { newSessionForProject } from "@/features/sessions/model/session";
 import type { Session } from "@/domain/session/session";
 import { newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
 import { looksLikeProject } from "./recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { planProjectReturn, type ProjectReturnMemory } from "./project-return";
 
 export type ProjectOpenStep =
@@ -53,7 +53,7 @@ export function planProjectOpenRun({
   let blankReused = false;
 
   for (const path of paths) {
-    const normalized = normalizeProjectPath(path);
+    const normalized = normalizePath(path);
     if (!looksLikeProject(normalized)) continue;
 
     const decision = planProjectReturn({

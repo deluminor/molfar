@@ -1,6 +1,6 @@
 import { loadRecents, projectRailItems, sameProjectPath } from "@/features/projects/model/recents";
 import { adjacentItemId } from "@/features/workspace/model/tab-keys";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 
 export type ProjectNavigationDeps = {
   currentProject(): string;
@@ -10,7 +10,7 @@ export type ProjectNavigationDeps = {
 
 /** Steps to the next/previous project in the rail's order. */
 export function stepProject(deps: ProjectNavigationDeps, delta: number): void {
-  const current = normalizeProjectPath(deps.currentProject());
+  const current = normalizePath(deps.currentProject());
   const ids = projectRailItems(loadRecents(), current).map((project) => project.path);
   const next = adjacentItemId(ids, current, delta);
   if (!next || sameProjectPath(next, current)) return;

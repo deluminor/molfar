@@ -1,6 +1,6 @@
 import type { SessionSummary } from "@/features/sessions/data/session-store";
 import { replaceProjectHistory } from "@/features/sessions/data/session-history";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { WorkspaceStore } from "../../store/types";
 
 export type RefreshHistoryDeps = {
@@ -25,7 +25,7 @@ export async function refreshProjectHistory(
 
   const { setHistoryErrorCwd, setHistory, setLoadedProjects } =
     store.getState();
-  const key = normalizeProjectPath(cwd);
+  const key = normalizePath(cwd);
   setHistoryErrorCwd((previous) => (previous === key ? null : previous));
 
   try {

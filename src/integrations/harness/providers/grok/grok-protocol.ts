@@ -914,10 +914,7 @@ function textFromContent(content: unknown, separator = ""): string {
   return "";
 }
 
-function basename(path: string): string {
-  const parts = path.split(/[\\/]/);
-  return parts[parts.length - 1] || path;
-}
+import { basename } from "@/shared/lib/paths";
 
 export { asRecord } from "@/shared/lib/json-text";
 export { nonBlankString as stringField } from "@/shared/lib/json-text";

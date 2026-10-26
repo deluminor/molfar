@@ -1,7 +1,7 @@
 import { isHexColor } from "@/shared/lib/color-utils";
 import { compareSessionSummaries } from "../data/session-history";
 import type { SessionSummary } from "../data/session-store";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { orderByIds } from "@/shared/lib/reorder";
 import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
 
@@ -570,7 +570,7 @@ export function subscribeSessionFolders(
 
 function storageKey(cwd: string): string | null {
   if (!cwd || cwd === "~") return null;
-  return normalizeProjectPath(cwd);
+  return normalizePath(cwd);
 }
 
 function parseStore(): Record<string, SessionFolder[]> {
@@ -585,7 +585,7 @@ function parseStore(): Record<string, SessionFolder[]> {
     for (const [cwd, value] of Object.entries(parsed)) {
       if (!cwd || cwd === "~") continue;
       const folders = parseFolders(value);
-      if (folders.length > 0) out[normalizeProjectPath(cwd)] = folders;
+      if (folders.length > 0) out[normalizePath(cwd)] = folders;
     }
     return out;
   } catch {

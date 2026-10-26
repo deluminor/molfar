@@ -4,7 +4,7 @@ import {
   type InboxItem,
 } from "./github-tasks";
 import type { InboxProvider, InboxKind } from "@/domain/work-items/work-item";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { timeFilterStart, type SessionTimeFilter } from "@/features/sessions/model/session-filters";
 
 export type InboxTimeFilter = SessionTimeFilter;
@@ -321,10 +321,10 @@ export function pruneInboxFilters(
   projectPaths: Iterable<string>,
 ): InboxFilters {
   const known = new Set(
-    [...projectPaths].map((path) => normalizeProjectPath(path)),
+    [...projectPaths].map((path) => normalizePath(path)),
   );
   const hiddenProjects = filters.hiddenProjects.filter((path) =>
-    known.has(normalizeProjectPath(path)),
+    known.has(normalizePath(path)),
   );
   if (hiddenProjects.length === filters.hiddenProjects.length) return filters;
   return { ...filters, hiddenProjects };
@@ -369,11 +369,11 @@ export function filterInboxByProject(
   hiddenProjects: Iterable<string>,
 ): InboxItem[] {
   const hidden = new Set(
-    [...hiddenProjects].map((path) => normalizeProjectPath(path)),
+    [...hiddenProjects].map((path) => normalizePath(path)),
   );
   if (hidden.size === 0) return [...items];
   return items.filter((item) => {
-    const path = normalizeProjectPath(item.projectPath);
+    const path = normalizePath(item.projectPath);
     if (!path) return true;
     return !hidden.has(path);
   });

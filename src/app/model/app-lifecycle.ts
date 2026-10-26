@@ -45,7 +45,7 @@ import {
   lastProjectPath,
   sameProjectPath,
 } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { confirmApp } from "@/shared/lib/app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";
@@ -268,7 +268,7 @@ async function listProjectHistory(
   if (!cwd || cwd === "~") return null;
   try {
     const rows = await listSessionsByProject(cwd);
-    return { cwd: normalizeProjectPath(cwd), rows };
+    return { cwd: normalizePath(cwd), rows };
   } catch {
     return null;
   }

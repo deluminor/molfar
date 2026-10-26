@@ -1,5 +1,6 @@
 import type { ToolPreview } from "@/domain/session/agent-run";
 import { asRecord, nonBlankString as stringField } from "@/shared/lib/json-text";
+import { basename } from "@/shared/lib/paths";
 
 /**
  * fx tool metadata recovery.
@@ -249,11 +250,5 @@ function flattenText(value: unknown): string {
 function section(text: string, tag: string): string | undefined {
   const match = new RegExp(`<${tag}>\\n?([\\s\\S]*?)\\n?</${tag}>`).exec(text);
   return match ? match[1] : undefined;
-}
-
-function basename(path: string): string {
-  const trimmed = path.replace(/[/\\]+$/, "") || path;
-  const parts = trimmed.split(/[/\\]/).filter(Boolean);
-  return parts[parts.length - 1] ?? trimmed;
 }
 

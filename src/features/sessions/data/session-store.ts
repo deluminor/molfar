@@ -1,5 +1,5 @@
 import { ARTIFACT_KINDS } from "@/domain/artifacts/artifact";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { AgentRunMeta, AgentStep } from "@/domain/session/agent-run";
 import type { Block } from "@/domain/session/block";
 import type { BtwMessage, BtwThread, HandoffMeta, HandoffStatus, InterjectionMeta, PlanBlockMeta, SecondOpinionMeta } from "@/domain/session/block-meta";
@@ -144,7 +144,7 @@ function persistableMeta(
     : [];
   return {
     id: session.id,
-    cwd: normalizeProjectPath(session.cwd),
+    cwd: normalizePath(session.cwd),
     harness: session.harness,
     model: session.model,
     modelSettings: session.modelSettings,
@@ -495,7 +495,7 @@ export async function listSessionsByProject(
 ): Promise<SessionSummary[]> {
   if (!cwd || cwd === "~") return [];
   const rows = await invoke<SessionSummary[]>("session_list_by_project", {
-    cwd: normalizeProjectPath(cwd),
+    cwd: normalizePath(cwd),
   });
   return rows.map(normalizeSummary);
 }
@@ -505,8 +505,8 @@ export function rebaseProjectSessions(
   toCwd: string,
 ): Promise<void> {
   return invoke<void>("session_rebase_project", {
-    fromCwd: normalizeProjectPath(fromCwd),
-    toCwd: normalizeProjectPath(toCwd),
+    fromCwd: normalizePath(fromCwd),
+    toCwd: normalizePath(toCwd),
   });
 }
 
@@ -545,7 +545,7 @@ export async function searchSessions(options: {
       query,
       searchOwner: options.searchOwner,
       ...(options.cwd && options.cwd !== "~"
-        ? { cwd: normalizeProjectPath(options.cwd) }
+        ? { cwd: normalizePath(options.cwd) }
         : {}),
       ...(options.includeArchived ? { includeArchived: true } : {}),
     },
@@ -907,7 +907,7 @@ export async function replaceInFlightSessions(
       invoke("session_set_in_flight", {
         sessions: refs.map((ref) => ({
           sessionId: ref.sessionId,
-          cwd: normalizeProjectPath(ref.cwd),
+          cwd: normalizePath(ref.cwd),
         })),
       }),
     );

@@ -1,7 +1,7 @@
 import { invokeWorkspace } from "@/platform/tauri/fs";
 import { invoke } from "@tauri-apps/api/core";
 import { isLocalProject } from "@/features/projects/model/recents";
-import { pathKey, slash } from "@/shared/lib/paths";
+import { pathKey } from "@/shared/lib/paths";
 import type {
   ProjectSearchOptions,
   ProjectSearchResult,
@@ -29,10 +29,6 @@ export type OpenFileFn = (
   navigation?: EditorNavigation,
   options?: FileOpenOptions,
 ) => void;
-
-export function normalizeEditorPath(path: string): string {
-  return slash(path).replace(/\/+$/, "") || path;
-}
 
 export function editorPathsEqual(a: string, b: string): boolean {
   return pathKey(a) === pathKey(b);

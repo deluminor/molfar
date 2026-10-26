@@ -2,12 +2,13 @@ import type { ProjectFile } from "@/domain/files/file-entry";
 import { listProjectFiles } from "@/platform/tauri/fs";
 import { subscribeDirsChanged } from "./file-tree";
 import { scorePath, type FuzzyHit } from "@/shared/lib/fuzzy";
-import { resolveWorkspacePath, slash } from "@/shared/lib/paths";
-import { looksLikeProject } from "@/features/projects/model/recents";
 import {
-  normalizeEditorPath,
-  type FileOpenOptions,
-} from "@/features/search/model/search";
+  normalizePath,
+  resolveWorkspacePath,
+  slash,
+} from "@/shared/lib/paths";
+import { looksLikeProject } from "@/features/projects/model/recents";
+import type { FileOpenOptions } from "@/features/search/model/search";
 
 const MAX_RECENTS = 30;
 const MAX_RESULTS = 80;
@@ -230,9 +231,9 @@ export async function resolveOpenablePath(
   if (files.length === 0) return direct;
 
   const byPath = new Map(
-    files.map((file) => [normalizeEditorPath(file.path), file]),
+    files.map((file) => [normalizePath(file.path), file]),
   );
-  const normalizedDirect = normalizeEditorPath(direct);
+  const normalizedDirect = normalizePath(direct);
   const exact = byPath.get(normalizedDirect);
   if (exact) return exact.path;
 
@@ -240,7 +241,7 @@ export async function resolveOpenablePath(
   const exactRelative = files.find(
     (file) =>
       file.relative === relHint ||
-      normalizeEditorPath(file.relative) === relHint,
+      normalizePath(file.relative) === relHint,
   );
   if (exactRelative) return exactRelative.path;
 
@@ -284,7 +285,7 @@ function relativePathHint(href: string, cwd: string, direct: string): string {
   value = value.replace(/^\.\//, "").replace(/^\/+/, "");
 
   const base = cwd.replace(/\\/g, "/").replace(/\/+$/, "");
-  const normalizedDirect = normalizeEditorPath(direct);
+  const normalizedDirect = normalizePath(direct);
   if (base && base !== "~" && normalizedDirect.startsWith(`${base}/`)) {
     return normalizedDirect.slice(base.length + 1);
   }
@@ -298,9 +299,9 @@ function pickOpenableFile(
 ): ProjectFile {
   const recents = recentOpenedFiles(cwd);
   for (const recent of recents) {
-    const normalizedRecent = normalizeEditorPath(recent);
+    const normalizedRecent = normalizePath(recent);
     const hit = candidates.find(
-      (file) => normalizeEditorPath(file.path) === normalizedRecent,
+      (file) => normalizePath(file.path) === normalizedRecent,
     );
     if (hit) return hit;
   }

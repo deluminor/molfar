@@ -4,7 +4,7 @@ import { rebaseProjectData } from "@/features/projects/model/project-data";
 import { replaceProjectPath, sameProjectPath } from "@/features/projects/model/recents";
 import { rebaseProjectSessions } from "@/features/sessions/data/session-store";
 import { pathKey } from "@/shared/lib/paths";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { ProjectDeps } from "./project-deps";
 
 /** A project's folder moved on disk: everything that remembers its path follows it. */
@@ -26,8 +26,8 @@ export async function moveProjectLocation(deps: ProjectDeps, from: string, to: s
   state.setStoredLinkedSessions((current) => current.map(moved));
   state.setLoadedProjects((current) => {
     const next = new Set(current);
-    next.delete(normalizeProjectPath(from));
-    next.add(normalizeProjectPath(to));
+    next.delete(normalizePath(from));
+    next.add(normalizePath(to));
     return next;
   });
 

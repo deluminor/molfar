@@ -4,7 +4,7 @@ import {
 } from "@/platform/tauri/fs";
 import { pathKey } from "@/shared/lib/paths";
 import { isLocalProject, sameProjectPath } from "./recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 
 const KEY = "molfar.projectLocations";
 
@@ -36,7 +36,7 @@ function read(): Record<string, StoredProjectLocation> {
         continue;
       }
       locations[key] = {
-        path: normalizeProjectPath(candidate.path),
+        path: normalizePath(candidate.path),
         identity: candidate.identity,
       };
     }
@@ -58,14 +58,14 @@ function remember(
   locations: Record<string, StoredProjectLocation>,
   location: ProjectLocation,
 ) {
-  const path = normalizeProjectPath(location.path);
+  const path = normalizePath(location.path);
   locations[pathKey(path)] = { path, identity: location.identity };
   write(locations);
 }
 
 /** Capture an identity without searching for a moved folder. */
 export async function rememberProjectLocation(path: string): Promise<void> {
-  const normalized = normalizeProjectPath(path);
+  const normalized = normalizePath(path);
   if (!isLocalProject(normalized)) return;
   const location = await resolveProjectLocation(normalized);
   if (!location) return;
@@ -76,7 +76,7 @@ export async function rememberProjectLocation(path: string): Promise<void> {
 export async function synchronizeProjectLocation(
   path: string,
 ): Promise<ProjectLocationSync | null> {
-  const normalized = normalizeProjectPath(path);
+  const normalized = normalizePath(path);
   if (!isLocalProject(normalized)) {
     return { path: normalized, identity: "", moved: false };
   }
@@ -88,7 +88,7 @@ export async function synchronizeProjectLocation(
   );
   if (!location) return null;
 
-  const resolved = normalizeProjectPath(location.path);
+  const resolved = normalizePath(location.path);
   const moved = !sameProjectPath(normalized, resolved);
   if (moved) delete locations[oldKey];
   remember(locations, { ...location, path: resolved });
@@ -97,7 +97,7 @@ export async function synchronizeProjectLocation(
 
 export function forgetProjectLocation(path: string): void {
   const locations = read();
-  const key = pathKey(normalizeProjectPath(path));
+  const key = pathKey(normalizePath(path));
   if (!(key in locations)) return;
   delete locations[key];
   write(locations);

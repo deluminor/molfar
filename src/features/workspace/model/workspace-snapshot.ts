@@ -23,7 +23,7 @@ import {
   type DockSide,
   type ProjectTerminalDock,
 } from "@/features/projects/model/project-terminal";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { pathKey } from "@/shared/lib/paths";
 import { parseRemotePath, remotePath } from "@/features/connections/model/remote-projects";
 import {
@@ -700,7 +700,7 @@ function sanitizeProjectTerminal(raw: unknown): ProjectTerminalDock | null {
     ? pane.activeFileId
     : files[0].id;
   return {
-    projectPath: normalizeProjectPath(value.projectPath),
+    projectPath: normalizePath(value.projectPath),
     pane: { ...pane, files, activeFileId },
     side: value.side,
     size: clampDockSize(value.side, Number(value.size)),

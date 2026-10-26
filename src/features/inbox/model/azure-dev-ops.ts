@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 
 export type AzureDevOpsKind = "issue" | "pr";
 
@@ -119,7 +119,7 @@ export async function disconnectAzureDevOps(
 }
 
 export async function azureDevOpsRepo(cwd: string): Promise<string> {
-  const key = normalizeProjectPath(cwd);
+  const key = normalizePath(cwd);
   const cached = repoByPath.get(key);
   if (cached !== undefined) return cached;
   const repo = await invoke<string>("azure_devops_repo", { cwd });

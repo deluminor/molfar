@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 
 export type GitlabKind = "issue" | "pr";
 
@@ -114,7 +114,7 @@ export async function disconnectGitlab(url: string): Promise<GitlabStatus> {
 }
 
 export async function gitlabRepo(cwd: string): Promise<string> {
-  const key = normalizeProjectPath(cwd);
+  const key = normalizePath(cwd);
   const cached = repoByPath.get(key);
   if (cached !== undefined) return cached;
   const repo = await invoke<string>("gitlab_repo", { cwd });

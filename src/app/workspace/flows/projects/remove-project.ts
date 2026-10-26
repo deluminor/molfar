@@ -15,7 +15,7 @@ import { loadProjectSidebarTab } from "@/features/settings/model/project-sidebar
 import { newTab, type WorkspaceTab } from "@/features/workspace/model/layout";
 import { filterTabsForProject } from "@/features/workspace/model/workspace-tab-groups";
 import { cancelHarnessTurn, forgetHarnessSession } from "@/integrations/harness";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { selectProject } from "./open-projects";
 import type { ProjectDeps } from "./project-deps";
 
@@ -93,7 +93,7 @@ function closeProjectTabs(
 /** Archives a project, or with `purgeData` deletes it and its sessions' data. */
 export function removeProject(deps: ProjectDeps, path: string, options: { purgeData: boolean }): void {
   const { setRecents, setProjectTerminals, setProjectCwd } = deps.store.getState();
-  const normalized = normalizeProjectPath(path);
+  const normalized = normalizePath(path);
   const wasCurrent = sameProjectPath(deps.projectCwdRef.current, normalized);
   const remaining = options.purgeData ? forgetProject(normalized) : archiveProject(normalized);
   if (options.purgeData) {
