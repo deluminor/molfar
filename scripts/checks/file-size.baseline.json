@@ -261,7 +261,7 @@
     "lines": 329
   },
   "src/features/familiars/model/familiar.ts": {
-    "lines": 520
+    "lines": 511
   },
   "src/features/familiars/ui/familiar-panel-parts.tsx": {
     "lines": 451
@@ -354,7 +354,7 @@
     "lines": 259
   },
   "src/features/inbox/model/inbox-filters.ts": {
-    "lines": 520
+    "lines": 515
   },
   "src/features/inbox/ui/CheckRepairForm.tsx": {
     "lines": 312
@@ -402,7 +402,7 @@
     "lines": 348
   },
   "src/features/orchestration/model/orchestration.ts": {
-    "lines": 2165
+    "lines": 2163
   },
   "src/features/orchestration/ui/OrchestrationPreview.tsx": {
     "lines": 786
@@ -433,9 +433,6 @@
   },
   "src/features/projects/ui/SearchableProjectPicker.tsx": {
     "lines": 555
-  },
-  "src/features/providers/model/provider-accounts.ts": {
-    "lines": 261
   },
   "src/features/providers/model/rate-limits-fetch.ts": {
     "lines": 354
@@ -623,9 +620,6 @@
   "src/features/updates/model/updater.ts": {
     "lines": 327
   },
-  "src/features/usage/model/usage-card.ts": {
-    "lines": 253
-  },
   "src/features/workspace/model/layout.ts": {
     "lines": 1434
   },
@@ -660,7 +654,7 @@
     "lines": 609
   },
   "src/integrations/harness/core/preview.ts": {
-    "lines": 1090
+    "lines": 1078
   },
   "src/integrations/harness/core/registry.ts": {
     "lines": 644
@@ -669,7 +663,7 @@
     "lines": 667
   },
   "src/integrations/harness/providers/antigravity/antigravity-protocol.ts": {
-    "lines": 593
+    "lines": 582
   },
   "src/integrations/harness/providers/antigravity/antigravity.ts": {
     "lines": 841
@@ -678,7 +672,7 @@
     "lines": 581
   },
   "src/integrations/harness/providers/claude/claude-protocol.ts": {
-    "lines": 1215
+    "lines": 1203
   },
   "src/integrations/harness/providers/claude/claude-text.ts": {
     "lines": 447
@@ -690,7 +684,7 @@
     "lines": 307
   },
   "src/integrations/harness/providers/codex/codex-protocol.ts": {
-    "lines": 1428
+    "lines": 1416
   },
   "src/integrations/harness/providers/codex/codex-text.ts": {
     "lines": 520
@@ -699,13 +693,13 @@
     "lines": 1612
   },
   "src/integrations/harness/providers/cursor/cursor-catalog.ts": {
-    "lines": 491
+    "lines": 485
   },
   "src/integrations/harness/providers/cursor/cursor-text.ts": {
-    "lines": 435
+    "lines": 430
   },
   "src/integrations/harness/providers/cursor/cursor.ts": {
-    "lines": 1648
+    "lines": 1634
   },
   "src/integrations/harness/providers/devin/devin-protocol.ts": {
     "lines": 831
@@ -714,16 +708,16 @@
     "lines": 762
   },
   "src/integrations/harness/providers/fx/fx-protocol.ts": {
-    "lines": 721
+    "lines": 710
   },
   "src/integrations/harness/providers/fx/fx-tool.ts": {
-    "lines": 272
+    "lines": 254
   },
   "src/integrations/harness/providers/fx/fx.ts": {
     "lines": 542
   },
   "src/integrations/harness/providers/grok/grok-protocol.ts": {
-    "lines": 960
+    "lines": 946
   },
   "src/integrations/harness/providers/grok/grok-text.ts": {
     "lines": 385
@@ -741,7 +735,7 @@
     "lines": 808
   },
   "src/integrations/harness/providers/opencode/opencode-protocol.ts": {
-    "lines": 608
+    "lines": 596
   },
   "src/integrations/harness/providers/opencode/opencode-text.ts": {
     "lines": 462
@@ -756,7 +750,7 @@
     "lines": 1306
   },
   "src/integrations/harness/providers/pi/pi-protocol.ts": {
-    "lines": 889
+    "lines": 877
   },
   "src/integrations/harness/providers/pi/pi-text.ts": {
     "lines": 371
