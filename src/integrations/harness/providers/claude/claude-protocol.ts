@@ -73,8 +73,10 @@ export type ClaudeCliSettings = {
   disableAllHooks?: boolean;
 };
 
-export { asRecord } from "@/shared/lib/json-text";
-export { nonBlankString as stringField } from "@/shared/lib/json-text";
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 export function parseClaudeVersion(output: string): string | null {
   const match = output.match(/\d+\.\d+\.\d+/);
   return match?.[0] ?? null;

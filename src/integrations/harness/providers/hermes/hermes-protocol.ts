@@ -240,4 +240,5 @@ function dispatchRecord(value: unknown): Record<string, unknown> | null {
   return rec.status === "dispatched" && rec.mode === "background" ? rec : null;
 }
 
-export { asRecord } from "@/shared/lib/json-text";
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };

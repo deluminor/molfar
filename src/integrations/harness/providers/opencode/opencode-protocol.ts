@@ -51,8 +51,10 @@ export type OpenCodePart = {
   state?: Record<string, unknown>;
 };
 
-export { asRecord } from "@/shared/lib/json-text";
-export { nonBlankString as stringField } from "@/shared/lib/json-text";
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 export function parseOpenCodeModelSlug(
   slug: string | null | undefined,
 ): ParsedOpenCodeModelSlug | null {

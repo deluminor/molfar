@@ -916,8 +916,10 @@ function textFromContent(content: unknown, separator = ""): string {
 
 import { basename } from "@/shared/lib/paths";
 
-export { asRecord } from "@/shared/lib/json-text";
-export { nonBlankString as stringField } from "@/shared/lib/json-text";
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 function numberField(
   rec: Record<string, unknown>,
   key: string,

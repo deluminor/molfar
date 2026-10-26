@@ -229,8 +229,10 @@ export function isRecoverableThreadResumeError(error: unknown): boolean {
   ].some((snippet) => message.includes(snippet));
 }
 
-export { asRecord } from "@/shared/lib/json-text";
-export { nonBlankString as stringField } from "@/shared/lib/json-text";
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 /**
  * Where a Codex item records the commands it parsed out of a script. The live
  * app-server protocol spells it `commandActions`; older rollout files on disk
