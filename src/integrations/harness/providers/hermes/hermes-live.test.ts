@@ -5,6 +5,10 @@ let onLine: ((line: string) => void) | undefined;
 let onStderr: ((line: string) => void) | undefined;
 const textFiles = new Map<string, string>();
 
+vi.mock("../../core/session-mcp-servers", async (original) => ({
+  ...(await original<typeof import("../../core/session-mcp-servers")>()),
+  loadSessionMcpServers: async () => [],
+}));
 vi.mock("../../core/child", () => ({
   resolveHermesBinary: async () => ({ path: "/fake/hermes" }),
   spawnChild: async () => undefined,

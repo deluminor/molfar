@@ -30,6 +30,10 @@ const mock = vi.hoisted(() => {
   };
 });
 vi.mock("@/platform/tauri/fs", () => ({ homeDir: async () => "/home/test" }));
+vi.mock("../../core/session-mcp-servers", async (original) => ({
+  ...(await original<typeof import("../../core/session-mcp-servers")>()),
+  loadSessionMcpServers: async () => [],
+}));
 vi.mock("../../core/child", () => ({
   resolveAntigravityBinary: async () => {
     if (mock.resolveGates) {

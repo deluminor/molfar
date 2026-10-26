@@ -4,6 +4,10 @@ const sent: string[] = [];
 let onLine: ((line: string) => void) | undefined;
 let onExit: ((code: number) => void) | undefined;
 
+vi.mock("../../core/session-mcp-servers", async (original) => ({
+  ...(await original<typeof import("../../core/session-mcp-servers")>()),
+  loadSessionMcpServers: async () => [],
+}));
 vi.mock("../../core/child", () => ({
   resolveCursorBinary: async () => ({ path: "/fake/cursor-agent" }),
   spawnChild: async () => undefined,

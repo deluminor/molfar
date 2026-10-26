@@ -7,6 +7,10 @@ let onExit: (() => void) | undefined;
 const execChild = vi.fn(async () => "");
 const killChild = vi.fn(async () => undefined);
 
+vi.mock("../../core/session-mcp-servers", async (original) => ({
+  ...(await original<typeof import("../../core/session-mcp-servers")>()),
+  loadSessionMcpServers: async () => [],
+}));
 vi.mock("../../core/child", () => ({
   resolveGrokBinary: async () => ({ path: "/fake/grok" }),
   execChild,
