@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Pair a phone from **Settings → Connections → Your phones** to browse projects and conversations, start and continue sessions, follow streamed replies, stop responses, and view code changes. The phone companion app lives in `mobile/`; the existing **Settings → Companion** gateway is unchanged.
+- Pair a phone from **Settings → Connections → Your phones** to browse projects and conversations, start and continue sessions, follow streamed replies, stop responses, and view code changes. The phone companion app lives in `mobile/`; the existing **Settings → Companion** gateway is unchanged. Phones reach the desktop over the same Wi-Fi, or through Tailscale or another VPN address: unlike MonoCode, MOLFAR never opens a port on the router (no UPnP/NAT-PMP). See `docs/companion.md` for how phone pairing compares with Companion.
 - Swipe between projects in the new sidebar (MonoCode #1061).
 - Project and Inbox actions have keyboard-accessible context menus in the new sidebar.
 

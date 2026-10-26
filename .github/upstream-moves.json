@@ -936,7 +936,7 @@
         "src-tauri/src/mobile_access/handle.rs",
         "src-tauri/src/mobile_access/tests.rs"
       ],
-      "notes": "Module folder: host state, init and listener in mod.rs; Tauri commands in commands.rs; conversation watches in watch.rs; merged catalog and owner choice in catalog.rs; enrolment, request dispatch and router helpers in handle.rs; unit tests in tests.rs."
+      "notes": "Module folder: host state, init and listener in mod.rs; Tauri commands in commands.rs; conversation watches in watch.rs; merged catalog and owner choice in catalog.rs; enrolment and request dispatch in handle.rs; unit tests in tests.rs. Upstream's router mapping (open_router, router_* state, mobile_router::restart calls) is removed in MOLFAR: drop those hunks when porting (see removed: src-tauri/src/mobile_router.rs)."
     },
     "src/features/mobile/model/mobileWorkspace.ts": {
       "targets": [
@@ -2168,7 +2168,7 @@
       },
       {
         "names": [
-          "Connect away from home details"
+          "Connect away from home details (remote address only; MOLFAR removed the \"Open the router port automatically\" checkbox and router status)"
         ],
         "target": "src/features/mobile/ui/MobileRemoteAccess.tsx"
       }
@@ -2453,6 +2453,7 @@
     "src-tauri/src/legacy_identity/mod.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src-tauri/src/legacy_identity/tests.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src-tauri/src/legacy_session_db.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/mobile_router.rs": "Removed in MOLFAR (PR #117): automatic router port mapping (UPnP via igd-next, NAT-PMP via natpmp) exposed the phone listener to the internet without the user opening a port. MOLFAR never opens a router port by itself; remote phones use Tailscale or another VPN address (docs/companion.md). Do NOT port upstream changes here, and do not re-add igd-next, natpmp or attohttpc (a src-tauri test fails if they return).",
     "src/features/notes/index.ts": "Barrel removed (MOLFAR forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly.",
     "src/shared/lib/legacyStorageMigration.test.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src/shared/lib/legacyStorageMigration.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",

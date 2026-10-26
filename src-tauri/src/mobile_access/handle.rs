@@ -206,22 +206,3 @@ pub(super) async fn handle(
             .into())
     }
 }
-
-pub(crate) fn router_config(host: &MobileHost) -> bool {
-    let inner = host.inner.lock().unwrap();
-    inner.config.enabled && inner.config.open_router && inner.endpoint.is_some()
-}
-pub(crate) fn router_result(host: &MobileHost, address: Option<Address>, status: String) {
-    let mut inner = host.inner.lock().unwrap();
-    inner.router_address = address;
-    inner.router_status = status;
-}
-pub(crate) fn router_claim(host: &MobileHost) -> bool {
-    let mut inner = host.inner.lock().unwrap();
-    if inner.router_started {
-        false
-    } else {
-        inner.router_started = true;
-        true
-    }
-}

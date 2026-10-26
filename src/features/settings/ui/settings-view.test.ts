@@ -110,7 +110,7 @@ beforeEach(() => {
   onSelectSection = vi.fn();
   vi.mocked(invoke).mockReset().mockImplementation(async command => command === "mobile_status" ? {
     enabled: false, listening: false, name: "Desktop", fingerprint: null,
-    openRouter: true, remoteAddress: "", routerStatus: "Off", addresses: [], devices: [],
+    remoteAddress: "", addresses: [], devices: [],
   } : undefined);
 });
 

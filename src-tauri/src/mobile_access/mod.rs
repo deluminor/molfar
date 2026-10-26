@@ -10,7 +10,7 @@ mod watch;
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use catalog::*;
-pub(crate) use handle::*;
+use handle::*;
 use molfar_mobile_link::{now, Address, Gate, Identity, PORT, VERSION};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -32,26 +32,14 @@ struct Device {
     name: String,
     fingerprint: String,
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Config {
     enabled: bool,
     #[serde(default)]
-    open_router: bool,
-    #[serde(default)]
     remote_address: String,
     #[serde(default)]
     devices: Vec<Device>,
-}
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            open_router: true,
-            remote_address: String::new(),
-            devices: Vec::new(),
-        }
-    }
 }
 struct Invitation {
     expires: u64,
@@ -74,9 +62,6 @@ struct Inner {
     invitations: HashMap<String, Invitation>,
     catalogs: HashMap<String, Value>,
     pending: HashMap<String, Pending>,
-    router_address: Option<Address>,
-    router_status: String,
-    router_started: bool,
 }
 #[derive(Clone)]
 pub struct MobileHost {
@@ -110,9 +95,6 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
             catalogs: HashMap::new(),
             pending: HashMap::new(),
             watches: HashMap::new(),
-            router_address: None,
-            router_status: "Off".into(),
-            router_started: false,
         })),
         gate,
         path,
@@ -122,7 +104,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         let app = app.clone();
         tauri::async_runtime::spawn(async move {
             if let Err(error) = start(&app, &host).await {
-                host.inner.lock().unwrap().router_status = error;
+                eprintln!("[mobile] {error}");
             }
         });
     }
@@ -187,9 +169,6 @@ fn addresses(inner: &Inner) -> Vec<Address> {
             }
         })
         .collect();
-    if let Some(address) = &inner.router_address {
-        result.insert(0, address.clone());
-    }
     if let Ok(address) = Address::parse(&inner.config.remote_address) {
         result.insert(0, address);
     }
@@ -237,6 +216,5 @@ async fn start(app: &AppHandle, host: &MobileHost) -> Result<(), String> {
             async move { watch(&app, &host, &peer, request, sink) }
         },
     ));
-    crate::mobile_router::restart(host);
     Ok(())
 }

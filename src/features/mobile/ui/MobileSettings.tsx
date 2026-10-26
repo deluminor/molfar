@@ -100,14 +100,14 @@ export function MobileSettings() {
       setBusy(false);
     }
   };
-  const configure = (enabled: boolean, openRouter: boolean) =>
-    invoke("mobile_configure", { enabled, openRouter, remoteAddress: remote });
+  const configure = (enabled: boolean) =>
+    invoke("mobile_configure", { enabled, remoteAddress: remote });
   // The desktop only listens while a phone is paired or being paired.
-  const stopListening = () => configure(false, status?.openRouter ?? false);
+  const stopListening = () => configure(false);
   const pair = () =>
     act(async () => {
       if (!status?.enabled || !status.listening)
-        await configure(true, status?.openRouter ?? false);
+        await configure(true);
       known.current = new Set(status?.devices.map((device) => device.id));
       setInvite(await invoke<Invite>("mobile_invite"));
     });
@@ -176,7 +176,7 @@ export function MobileSettings() {
             type="button"
             className={`${button} shrink-0 text-content`}
             disabled={busy}
-            onClick={() => void act(() => configure(true, status.openRouter))}
+            onClick={() => void act(() => configure(true))}
           >
             Reconnect
           </button>
@@ -222,9 +222,7 @@ export function MobileSettings() {
           busy={busy}
           remote={remote}
           onRemoteChange={setRemote}
-          onConfigure={(enabled, openRouter) =>
-            void act(() => configure(enabled, openRouter))
-          }
+          onSave={() => void act(() => configure(status.enabled))}
         />
       ) : null}
     </div>

@@ -29,9 +29,7 @@ beforeEach(() => {
         listening: enabled,
         name: "Desktop",
         fingerprint: null,
-        openRouter: false,
         remoteAddress: "",
-        routerStatus: "Off",
         addresses: [],
         devices: [...devices],
       };
@@ -109,4 +107,31 @@ it("asks before removing a paired phone", async () => {
   await settle();
   expect(invoke).toHaveBeenCalledWith("mobile_revoke", { deviceId: "p1" });
   expect(container.textContent).toContain("Pixel was removed.");
+});
+
+it("offers no router port option and saves a remote address as typed", async () => {
+  enabled = true;
+  devices = [{ id: "p1", name: "Pixel", fingerprint: "f" }];
+  await act(async () => root.render(createElement(MobileSettings)));
+  await settle();
+  expect(container.textContent).not.toMatch(/router port automatically/i);
+  expect(container.querySelector('input[type="checkbox"]')).toBeNull();
+
+  const field = required(
+    container.querySelector<HTMLInputElement>('[aria-label="Remote address"]'),
+  );
+  await act(async () => {
+    const setValue = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    setValue?.call(field, "100.64.0.2");
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => button("Save").click());
+  await settle();
+  expect(invoke).toHaveBeenCalledWith("mobile_configure", {
+    enabled: true,
+    remoteAddress: "100.64.0.2",
+  });
 });

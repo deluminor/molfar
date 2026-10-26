@@ -42,7 +42,6 @@ mod mcp_session;
 mod menu;
 mod mobile_access;
 mod mobile_fs;
-mod mobile_router;
 mod notes;
 mod notifications;
 mod pasteboard;

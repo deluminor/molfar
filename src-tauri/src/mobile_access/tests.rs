@@ -103,9 +103,6 @@ fn fixture() -> (MobileHost, Identity, Identity) {
             catalogs: HashMap::new(),
             pending: HashMap::new(),
             watches: HashMap::new(),
-            router_address: None,
-            router_status: "Off".into(),
-            router_started: false,
         })),
     };
     (host, join, phone)
@@ -139,4 +136,32 @@ fn invalid_proof_or_expiration_does_not_consume_an_invitation_or_enroll_a_device
     let params = json!({"certificate":phone.certificate,"proof":phone.proof(&key).unwrap()});
     assert!(enroll(&host, &mut inner, &key, &params).is_err());
     assert!(inner.config.devices.is_empty() && !host.path.exists());
+}
+#[test]
+fn saved_router_setting_from_upstream_is_dropped_and_access_starts_off() {
+    let legacy: Config = serde_json::from_value(
+        json!({"enabled":true,"openRouter":true,"remoteAddress":"100.64.0.2","devices":[]}),
+    )
+    .unwrap();
+    assert!(legacy.enabled);
+    assert_eq!(legacy.remote_address, "100.64.0.2");
+    assert!(serde_json::to_value(&legacy)
+        .unwrap()
+        .get("openRouter")
+        .is_none());
+    assert!(!Config::default().enabled);
+}
+// MOLFAR never opens a port on the router by itself (docs/companion.md);
+// keep upstream's UPnP/NAT-PMP mapping out of the build on future syncs.
+#[test]
+fn no_router_port_mapping_crates_are_built() {
+    let manifest = include_str!("../../Cargo.toml");
+    let lock = include_str!("../../../Cargo.lock");
+    for name in ["igd-next", "natpmp", "attohttpc"] {
+        assert!(!manifest.contains(name), "src-tauri depends on {name}");
+        assert!(
+            !lock.contains(&format!("name = \"{name}\"")),
+            "Cargo.lock contains {name}"
+        );
+    }
 }

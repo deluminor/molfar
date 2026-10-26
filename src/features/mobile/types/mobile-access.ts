@@ -4,9 +4,7 @@ export type MobileStatus = {
   listening: boolean;
   name: string;
   fingerprint: string | null;
-  openRouter: boolean;
   remoteAddress: string;
-  routerStatus: string;
   addresses: { host: string; port: number }[];
   devices: Device[];
 };

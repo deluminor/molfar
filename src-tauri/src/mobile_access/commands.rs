@@ -9,7 +9,7 @@ pub fn mobile_status(host: State<'_, MobileHost>) -> Result<Value, String> {
         .lock()
         .map_err(|_| "Mobile service unavailable")?;
     Ok(
-        json!({"enabled":inner.config.enabled,"listening":inner.endpoint.is_some(),"name":name(),"fingerprint":inner.identity.as_ref().and_then(|v| v.fingerprint().ok()),"addresses":addresses(&inner),"devices":inner.config.devices,"openRouter":inner.config.open_router,"remoteAddress":inner.config.remote_address,"routerStatus":inner.router_status}),
+        json!({"enabled":inner.config.enabled,"listening":inner.endpoint.is_some(),"name":name(),"fingerprint":inner.identity.as_ref().and_then(|v| v.fingerprint().ok()),"addresses":addresses(&inner),"devices":inner.config.devices,"remoteAddress":inner.config.remote_address}),
     )
 }
 #[tauri::command]
@@ -17,7 +17,6 @@ pub async fn mobile_configure(
     app: AppHandle,
     host: State<'_, MobileHost>,
     enabled: bool,
-    open_router: bool,
     remote_address: String,
 ) -> Result<(), String> {
     if !remote_address.trim().is_empty() {
@@ -30,7 +29,6 @@ pub async fn mobile_configure(
             .map_err(|_| "Mobile service unavailable")?;
         let config = Config {
             enabled,
-            open_router,
             remote_address: remote_address.trim().into(),
             devices: inner.config.devices.clone(),
         };
@@ -51,7 +49,6 @@ pub async fn mobile_configure(
     if enabled {
         start(&app, &host).await?;
     }
-    crate::mobile_router::restart(&host);
     Ok(())
 }
 #[tauri::command]
