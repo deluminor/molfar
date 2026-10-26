@@ -9,7 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   autoPermissionOption,
   asRecord,
@@ -489,7 +489,11 @@ async function startLive(input: SendTurnInput, life: number): Promise<Live> {
     let setup: SessionSetupResult | undefined;
     let acpSessionId: string | undefined;
     let didLoad = false;
-    const mcpServers = await loadSessionMcpServers("antigravity", input.cwd);
+    const mcpServers = await loadSessionMcpServersForSession(
+      "antigravity",
+      input.cwd,
+      input.onEvent,
+    );
 
     if (canLoad && resume) {
       try {

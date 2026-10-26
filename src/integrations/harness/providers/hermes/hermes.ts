@@ -11,7 +11,7 @@ import {
   watchChild,
   readHarnessTextFile,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   HERMES_AUTH_HELP,
   hermesBackgroundDispatch,
@@ -272,7 +272,11 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     let setup: unknown;
     let acpSessionId: string | undefined;
     let didLoad = false;
-    const mcpServers = await loadSessionMcpServers("hermes", input.cwd);
+    const mcpServers = await loadSessionMcpServersForSession(
+      "hermes",
+      input.cwd,
+      input.onEvent,
+    );
     if (canLoad && resume) {
       muteGate.current = true;
       try {

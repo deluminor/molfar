@@ -9,7 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   AUTH_HELP,
   askQuestionResponse,
@@ -351,7 +351,11 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
       } catch {
         muteGate.current = true;
         try {
-          const mcpServers = await loadSessionMcpServers("grok", input.cwd);
+          const mcpServers = await loadSessionMcpServersForSession(
+            "grok",
+            input.cwd,
+            input.onEvent,
+          );
           setup = await acp.request(
             "session/load",
             {
@@ -375,7 +379,11 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
 
     if (!acpSessionId) {
       try {
-        const mcpServers = await loadSessionMcpServers("grok", input.cwd);
+        const mcpServers = await loadSessionMcpServersForSession(
+          "grok",
+          input.cwd,
+          input.onEvent,
+        );
         setup = await acp.request(
           "session/new",
           grokSessionNewParams(input.cwd, input.runtimeMode, mcpServers),

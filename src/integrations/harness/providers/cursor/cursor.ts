@@ -15,7 +15,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   readStoredCursorToolCalls,
   readStoredCursorSubagentRuns,
@@ -319,7 +319,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     let setup: SessionSetupResult | undefined;
     let acpSessionId: string | undefined;
     let didLoad = false;
-    const mcpServers = await loadSessionMcpServers("cursor", input.cwd);
+    const mcpServers = await loadSessionMcpServersForSession(
+      "cursor",
+      input.cwd,
+      input.onEvent,
+    );
 
     if (canLoad && resume) {
       muteGate.current = true;

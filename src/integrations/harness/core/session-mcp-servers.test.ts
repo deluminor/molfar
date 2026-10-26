@@ -1,11 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { invoke } from "@tauri-apps/api/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildSessionMcpServers,
+  loadSessionMcpServersForSession,
   MOLFAR_CONNECTORS_SERVER_NAME,
   toClaudeMcpConfig,
   type AcpMcpServer,
   type AcpStdioMcpServer,
 } from "./session-mcp-servers";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(),
+}));
 
 const localDocs: AcpStdioMcpServer = {
   name: "docs",
@@ -113,5 +119,30 @@ describe("toClaudeMcpConfig", () => {
 
   it("returns empty mcpServers object for empty list", () => {
     expect(toClaudeMcpConfig([])).toEqual({ mcpServers: {} });
+  });
+});
+
+describe("loadSessionMcpServersForSession", () => {
+  beforeEach(() => {
+    vi.mocked(invoke).mockReset();
+  });
+
+  it("emits a session error instead of failing silently", async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error("disk read failed"));
+    const events: Array<{ type: string; message?: string }> = [];
+
+    const servers = await loadSessionMcpServersForSession(
+      "cursor",
+      "/tmp/project",
+      (event) => events.push(event),
+    );
+
+    expect(servers).toEqual([]);
+    expect(events).toEqual([
+      {
+        type: "session.error",
+        message: "Could not load MCP servers for cursor.",
+      },
+    ]);
   });
 });

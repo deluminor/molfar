@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { HarnessEvent } from "./types";
 
 /** ACP v1 stdio MCP server — no `type` key (agents may silently drop unknown variants). */
 export type AcpStdioMcpServer = {
@@ -83,14 +84,27 @@ export async function loadSessionMcpServers(
   provider: string,
   cwd: string,
 ): Promise<AcpMcpServer[]> {
+  const payload = await invoke<SessionMcpServersPayload>("session_mcp_servers", {
+    provider,
+    cwd,
+  });
+  return buildSessionMcpServers(payload);
+}
+
+/** Like {@link loadSessionMcpServers}, but surfaces load failures on the session transcript. */
+export async function loadSessionMcpServersForSession(
+  provider: string,
+  cwd: string,
+  onEvent?: (event: HarnessEvent) => void,
+): Promise<AcpMcpServer[]> {
   try {
-    const payload = await invoke<SessionMcpServersPayload>("session_mcp_servers", {
-      provider,
-      cwd,
-    });
-    return buildSessionMcpServers(payload);
+    return await loadSessionMcpServers(provider, cwd);
   } catch (error) {
     console.error("[molfar] session_mcp_servers failed", { provider, cwd, error });
+    onEvent?.({
+      type: "session.error",
+      message: `Could not load MCP servers for ${provider}.`,
+    });
     return [];
   }
 }
