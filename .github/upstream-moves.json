@@ -2021,9 +2021,9 @@
     "src/features/projects/model/recents.ts": [
       {
         "names": [
-          "normalizeProjectPath"
+          "normalizePath"
         ],
-        "target": "src/shared/lib/project-path.ts"
+        "target": "src/shared/lib/paths.ts"
       }
     ],
     "src/features/providers/model/providerAccounts.ts": [
