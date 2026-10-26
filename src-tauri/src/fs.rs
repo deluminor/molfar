@@ -4974,6 +4974,9 @@ fn git_checkout_for(root: &Path, name: &str, remote: Option<&str>) -> Result<Str
     }
     let name = git_branch_name(root, name)?;
     if let Some(remote) = remote.map(str::trim).filter(|value| !value.is_empty()) {
+        if !git_remote_names(root).iter().any(|candidate| candidate == remote) {
+            return Err(format!("Remote {remote} not found"));
+        }
         if git_head_branch(root).as_deref() == Some(name.as_str()) {
             return Ok(name);
         }
@@ -9818,5 +9821,15 @@ mod tests {
             "feature"
         );
         assert_eq!(git_head_branch(&repo.0).as_deref(), Some("feature"));
+    }
+
+    #[test]
+    fn checkout_rejects_unknown_explicit_remote() {
+        let dir = tmp("git-checkout-remote");
+        if !init_git_commit(&dir.0, &[("a.txt", "alpha\n")]) {
+            return;
+        }
+        let err = git_checkout_for(&dir.0, "main", Some("upstream")).unwrap_err();
+        assert!(err.contains("Remote upstream not found"));
     }
 }
