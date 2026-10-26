@@ -88,6 +88,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "owner": "dxxineohp",
+    "extra": {
+      "eas": {
+        "projectId": "3ee2caac-a6ea-4dcd-a922-232f49c99547"
+      }
     }
   }
 }
