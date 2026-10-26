@@ -40,9 +40,8 @@ const prefs = [
 ];
 
 afterEach(() => {
-  vi.restoreAllMocks();
   prefs.forEach((pref) => pref.save(pref.defaultValue));
-  localStorage.clear();
+  window.localStorage.clear();
 });
 
 describe.each(prefs)("$name preference", (pref) => {
@@ -55,15 +54,17 @@ describe.each(prefs)("$name preference", (pref) => {
     pref.save(value);
 
     expect(pref.load()).toBe(value);
-    expect(localStorage.getItem(pref.key)).toBe(value ? "1" : "0");
+    expect(window.localStorage.getItem(pref.key)).toBe(value ? "1" : "0");
     expect(listener).toHaveBeenCalledTimes(1);
     unsubscribe();
   });
 
   it("keeps the saved value in memory when storage rejects the write", () => {
-    vi.spyOn(localStorage, "setItem").mockImplementation(() => {
-      throw new Error("quota");
-    });
+    const setItem = vi
+      .spyOn(window.localStorage, "setItem")
+      .mockImplementation(() => {
+        throw new Error("quota");
+      });
     const listener = vi.fn();
     const unsubscribe = pref.subscribe(listener);
     listener.mockImplementation(() => expect(pref.load()).toBe(true));
@@ -73,6 +74,7 @@ describe.each(prefs)("$name preference", (pref) => {
     expect(listener).toHaveBeenCalledTimes(1);
     expect(pref.load()).toBe(true);
     unsubscribe();
+    setItem.mockRestore();
     pref.save(false);
     expect(pref.load()).toBe(false);
   });
@@ -82,7 +84,7 @@ describe.each(prefs)("$name preference", (pref) => {
     const unsubscribe = pref.subscribe(listener);
 
     const value = !pref.defaultValue;
-    localStorage.setItem(pref.key, value ? "1" : "0");
+    window.localStorage.setItem(pref.key, value ? "1" : "0");
     window.dispatchEvent(new StorageEvent("storage", { key: pref.key }));
     expect(listener).toHaveBeenCalledTimes(1);
     expect(pref.load()).toBe(value);
@@ -90,7 +92,7 @@ describe.each(prefs)("$name preference", (pref) => {
     window.dispatchEvent(new StorageEvent("storage", { key: "unrelated" }));
     expect(listener).toHaveBeenCalledTimes(1);
 
-    localStorage.removeItem(pref.key);
+    window.localStorage.removeItem(pref.key);
     window.dispatchEvent(new StorageEvent("storage", { key: null }));
     expect(listener).toHaveBeenCalledTimes(2);
     expect(pref.load()).toBe(pref.defaultValue);

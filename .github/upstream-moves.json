@@ -2233,6 +2233,8 @@
     "src/features/notes/index.ts": "Barrel removed (MOLFAR forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly.",
     "src/shared/lib/legacyStorageMigration.test.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src/shared/lib/legacyStorageMigration.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
-    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply."
+    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "pnpm-lock.yaml": "B2 hardening: npm-only (Erik 2026-10-26); CI uses npm ci, duplicate Dependabot surface removed.",
+    "pnpm-workspace.yaml": "B2 hardening: npm-only (Erik 2026-10-26); no pnpm workspace after dropping pnpm lockfile."
   }
 }
