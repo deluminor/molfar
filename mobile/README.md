@@ -25,11 +25,11 @@ The routes are in `src/app/`:
 
 ## Pair with desktop
 
-Run the desktop app from the repository root, open **Settings → Mobile**, enable mobile access and choose **Pair device**. Scan the code in the mobile app, then choose the projects and familiars to include. You can select nothing and choose later. **Mobile Settings → Projects and familiars** changes the selection at any time; choices are remembered per desktop, including after reconnecting.
+Run the desktop app from the repository root, open **Settings → Connections → Your phones** and choose **Pair phone** (this turns on the desktop's listener). Scan the code in the mobile app, then choose the projects and familiars to include. You can select nothing and choose later. **Mobile Settings → Projects and familiars** changes the selection at any time; choices are remembered per desktop, including after reconnecting.
 
 Pairing codes expire after 15 minutes and work once. The shared Rust module uses QUIC and mutually authenticated TLS 1.3, with the desktop identity pinned by the code. Long-lived private keys are stored in the desktop OS keyring and the phone’s SecureStore. Desktop settings list paired devices and let you revoke them. Selection controls what appears on the phone; a paired device has workspace access.
 
-Remote connections go directly to the desktop. Automatic NAT-PMP/UPnP router mapping is enabled when mobile access is first enabled. A restrictive router or carrier NAT can require a reachable VPN address or manual UDP forwarding to port **38416**. Configure the remote address before generating a code. The desktop must remain awake and running.
+Remote connections go directly to the desktop. MOLFAR never opens a port on the router: away from the desktop's Wi-Fi, put both devices on Tailscale (or another VPN) and enter the desktop's VPN address under **Connect away from home → Remote address** before generating a code. The desktop listens on UDP port **38416** and must remain awake and running. See [`docs/companion.md`](../docs/companion.md#phone-pairing-vs-companion) for how this compares with Companion.
 
 Workspace lists refresh while the phone is active. Opening a conversation reads its latest 200 user/assistant blocks from the desktop, with active conversation updates, text sending, starting sessions and stopping turns. The changes view reads real Git changes on demand. Agent approvals and questions still need attention on the desktop. The app retains the workspace list for offline navigation and keeps failed-send drafts; it does not queue commands offline.
 
