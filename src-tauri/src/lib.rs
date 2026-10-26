@@ -30,6 +30,7 @@ mod gitlab;
 mod harness;
 mod harness_updates;
 mod home_host;
+mod http_client;
 mod inbox_media;
 mod jira;
 mod jsonc;

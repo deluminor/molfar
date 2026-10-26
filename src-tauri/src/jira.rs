@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -8,8 +7,8 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Manager};
 
 use crate::atlassian_adf::rich_text;
+use crate::http_client::{self, HttpFailure, Redirects};
 
-const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 const DEFAULT_LIMIT: u32 = 40;
 const COMMENT_LIMIT: u32 = 50;
 const ISSUE_FIELDS: [&str; 8] = [
@@ -309,8 +308,7 @@ fn jira_authorization(config: &JiraConfig) -> String {
 }
 
 fn jira_get(config: &JiraConfig, path: &str) -> Result<Value, String> {
-    let agent = ureq::AgentBuilder::new().timeout(HTTP_TIMEOUT).build();
-    let result = agent
+    let result = http_client::agent(Redirects::Follow)
         .get(&format!("{}{path}", config.site))
         .set("Authorization", &jira_authorization(config))
         .set("Accept", "application/json")
@@ -319,9 +317,8 @@ fn jira_get(config: &JiraConfig, path: &str) -> Result<Value, String> {
 }
 
 fn jira_post(config: &JiraConfig, path: &str, body: &Value) -> Result<Value, String> {
-    let agent = ureq::AgentBuilder::new().timeout(HTTP_TIMEOUT).build();
     let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
-    let result = agent
+    let result = http_client::agent(Redirects::Follow)
         .post(&format!("{}{path}", config.site))
         .set("Authorization", &jira_authorization(config))
         .set("Accept", "application/json")
@@ -331,22 +328,16 @@ fn jira_post(config: &JiraConfig, path: &str, body: &Value) -> Result<Value, Str
 }
 
 fn read_jira_response(result: Result<ureq::Response, ureq::Error>) -> Result<Value, String> {
-    let response = match result {
+    let response = match http_client::response(result) {
         Ok(response) => response,
-        Err(ureq::Error::Status(401, _)) => {
+        Err(HttpFailure::Status { status: 401, .. }) => {
             return Err("Jira email or API token is invalid".into());
         }
-        Err(ureq::Error::Status(status, response)) => {
-            let body = response.into_string().unwrap_or_default();
-            return Err(jira_http_error(status, &body));
-        }
-        Err(_) => return Err("Could not reach Jira".into()),
+        Err(HttpFailure::Status { status, body }) => return Err(jira_http_error(status, &body)),
+        Err(HttpFailure::Unreachable) => return Err("Could not reach Jira".into()),
     };
-    let status = response.status();
-    let body = response
-        .into_string()
-        .map_err(|_| "Jira returned an unreadable response".to_string())?;
-    if !(200..300).contains(&status) {
+    let (status, body) = http_client::text(response, "Jira")?;
+    if !http_client::is_success(status) {
         return Err(jira_http_error(status, &body));
     }
     serde_json::from_str(&body).map_err(|_| "Jira returned invalid JSON".to_string())

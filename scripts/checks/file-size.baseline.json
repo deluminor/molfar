@@ -36,7 +36,7 @@
     "lines": 1302
   },
   "src-tauri/src/azure_devops.rs": {
-    "lines": 2417
+    "lines": 2401
   },
   "src-tauri/src/checkpoint.rs": {
     "lines": 2168
@@ -81,7 +81,7 @@
     "lines": 521
   },
   "src-tauri/src/gitlab.rs": {
-    "lines": 1441
+    "lines": 1423
   },
   "src-tauri/src/harness.rs": {
     "lines": 4324
@@ -90,13 +90,13 @@
     "lines": 350
   },
   "src-tauri/src/jira.rs": {
-    "lines": 1091
+    "lines": 1082
   },
   "src-tauri/src/lib.rs": {
-    "lines": 800
+    "lines": 801
   },
   "src-tauri/src/linear.rs": {
-    "lines": 944
+    "lines": 936
   },
   "src-tauri/src/link_preview.rs": {
     "lines": 526

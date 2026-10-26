@@ -1,16 +1,14 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
+use crate::http_client::{self, HttpFailure, Redirects};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
 const DEFAULT_GITLAB_URL: &str = "https://gitlab.com";
 const DEFAULT_LIMIT: u32 = 40;
-const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 const MAX_DIFF_BYTES: usize = 2 * 1024 * 1024;
-const USER_AGENT: &str = "MOLFAR";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -819,12 +817,10 @@ fn gitlab_get(config: &GitlabConfig, path: &str) -> Result<GitlabResponse, Strin
 
 fn gitlab_get_request(config: &GitlabConfig, path: &str) -> ureq::Request {
     let url = format!("{}/api/v4{}", config.url.trim_end_matches('/'), path);
-    let agent = gitlab_agent();
-    agent
+    http_client::agent(Redirects::Refuse)
         .get(&url)
         .set("PRIVATE-TOKEN", &config.token)
         .set("Accept", "application/json")
-        .set("User-Agent", USER_AGENT)
 }
 
 fn gitlab_post_form(
@@ -833,47 +829,32 @@ fn gitlab_post_form(
     fields: &[(&str, &str)],
 ) -> Result<GitlabResponse, String> {
     let url = format!("{}/api/v4{}", config.url.trim_end_matches('/'), path);
-    let agent = gitlab_agent();
     read_gitlab_response(
-        agent
+        http_client::agent(Redirects::Refuse)
             .post(&url)
             .set("PRIVATE-TOKEN", &config.token)
             .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT)
             .send_form(fields),
     )
-}
-
-fn gitlab_agent() -> ureq::Agent {
-    ureq::AgentBuilder::new()
-        .timeout(HTTP_TIMEOUT)
-        .redirects(0)
-        .build()
 }
 
 fn read_gitlab_response(
     result: Result<ureq::Response, ureq::Error>,
 ) -> Result<GitlabResponse, String> {
-    let response = match result {
+    let response = match http_client::response(result) {
         Ok(response) => response,
-        Err(ureq::Error::Status(401, _)) | Err(ureq::Error::Status(403, _)) => {
-            return Err("GitLab access token is invalid or lacks permission".into());
-        }
-        Err(ureq::Error::Status(status, response)) => {
-            let body = response.into_string().unwrap_or_default();
-            return Err(gitlab_http_error(status, &body));
-        }
-        Err(_) => return Err("Could not reach GitLab".into()),
+        Err(HttpFailure::Status {
+            status: 401 | 403, ..
+        }) => return Err("GitLab access token is invalid or lacks permission".into()),
+        Err(HttpFailure::Status { status, body }) => return Err(gitlab_http_error(status, &body)),
+        Err(HttpFailure::Unreachable) => return Err("Could not reach GitLab".into()),
     };
-    let status = response.status();
     let has_next_page = response
         .header("X-Next-Page")
         .map(str::trim)
         .is_some_and(|value| !value.is_empty());
-    let body = response
-        .into_string()
-        .map_err(|_| "GitLab returned an unreadable response".to_string())?;
-    if !(200..300).contains(&status) {
+    let (status, body) = http_client::text(response, "GitLab")?;
+    if !http_client::is_success(status) {
         return Err(gitlab_http_error(status, &body));
     }
     let value =
@@ -1143,6 +1124,7 @@ mod tests {
     use std::io::{BufRead, BufReader, Write};
     use std::net::TcpListener;
     use std::thread;
+    use std::time::Duration;
     use std::time::Instant;
 
     fn serve_gitlab(

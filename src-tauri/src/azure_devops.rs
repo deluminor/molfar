@@ -2,21 +2,19 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::Duration;
 
+use crate::http_client::{self, HttpFailure, Redirects};
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Manager};
 
 const DEFAULT_LIMIT: u32 = 40;
-const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 const MAX_DIFF_BYTES: usize = 2 * 1024 * 1024;
 /// Per-file content cap for hunk generation; larger files stay listed.
 const MAX_DIFF_FILE_BYTES: usize = 512 * 1024;
 /// Hunks render for the first N files; the rest stay listed without hunks.
 const MAX_DIFF_HUNK_FILES: usize = 40;
-const USER_AGENT: &str = "MOLFAR";
 const API_VERSION: &str = "7.1";
 const CONNECTION_DATA_API_VERSION: &str = "7.1-preview.1";
 const WIT_COMMENTS_API_VERSION: &str = "7.1-preview.4";
@@ -1577,13 +1575,11 @@ fn basic_auth(token: &str) -> String {
 
 fn azure_get(config: &AzureDevOpsConfig, path: &str) -> Result<AzureResponse, String> {
     let url = format!("{}{}", config.url.trim_end_matches('/'), path);
-    let agent = azure_agent();
     read_azure_response(
-        agent
+        http_client::agent(Redirects::Refuse)
             .get(&url)
             .set("Authorization", &basic_auth(&config.token))
             .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT)
             .call(),
     )
 }
@@ -1595,14 +1591,12 @@ fn azure_post_json(
 ) -> Result<AzureResponse, String> {
     let url = format!("{}{}", config.url.trim_end_matches('/'), path);
     let payload = serde_json::to_string(&body).map_err(|error| error.to_string())?;
-    let agent = azure_agent();
     read_azure_response(
-        agent
+        http_client::agent(Redirects::Refuse)
             .post(&url)
             .set("Authorization", &basic_auth(&config.token))
             .set("Accept", "application/json")
             .set("Content-Type", "application/json")
-            .set("User-Agent", USER_AGENT)
             .send_string(&payload),
     )
 }
@@ -1630,20 +1624,13 @@ fn azure_current_user_id(config: &AzureDevOpsConfig) -> Result<String, String> {
     Ok(id)
 }
 
-fn azure_agent() -> ureq::Agent {
-    ureq::AgentBuilder::new()
-        .timeout(HTTP_TIMEOUT)
-        .redirects(0)
-        .build()
-}
-
 fn read_azure_response(
     result: Result<ureq::Response, ureq::Error>,
 ) -> Result<AzureResponse, String> {
     let (bytes, status, truncated) = read_azure_bytes(result, None)?;
     let body = String::from_utf8(bytes)
         .map_err(|_| "Azure DevOps returned an unreadable response".to_string())?;
-    if !(200..300).contains(&status) {
+    if !http_client::is_success(status) {
         return Err(azure_http_error(status, &body));
     }
     let value: Value = serde_json::from_str(&body)
@@ -1654,19 +1641,17 @@ fn read_azure_response(
 /// Raw-bytes variant for file content, which is not necessarily UTF-8 JSON.
 fn azure_get_bytes(config: &AzureDevOpsConfig, path: &str) -> Result<(Vec<u8>, bool), String> {
     let url = format!("{}{}", config.url.trim_end_matches('/'), path);
-    let agent = azure_agent();
     let (bytes, status, truncated) = read_azure_bytes(
-        agent
+        http_client::agent(Redirects::Refuse)
             .get(&url)
             .set("Authorization", &basic_auth(&config.token))
             .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT)
             .call(),
         // One byte past the cap is enough to flag the content as too large
         // without buffering an unbounded blob.
         Some(MAX_DIFF_FILE_BYTES),
     )?;
-    if !(200..300).contains(&status) {
+    if !http_client::is_success(status) {
         let body = String::from_utf8_lossy(&bytes);
         return Err(azure_http_error(status, &body));
     }
@@ -1677,19 +1662,18 @@ fn read_azure_bytes(
     result: Result<ureq::Response, ureq::Error>,
     max_bytes: Option<usize>,
 ) -> Result<(Vec<u8>, u16, bool), String> {
-    let response = match result {
+    let response = match http_client::response(result) {
         Ok(response) => response,
-        Err(ureq::Error::Status(401, _) | ureq::Error::Status(403, _)) => {
+        Err(HttpFailure::Status {
+            status: 401 | 403, ..
+        }) => {
             return Err("Azure DevOps personal access token is invalid or lacks permission".into());
         }
-        Err(ureq::Error::Status(404, _)) => {
+        Err(HttpFailure::Status { status: 404, .. }) => {
             return Err("Azure DevOps did not find that item".into());
         }
-        Err(ureq::Error::Status(status, response)) => {
-            let body = response.into_string().unwrap_or_default();
-            return Err(azure_http_error(status, &body));
-        }
-        Err(_) => return Err("Could not reach Azure DevOps".into()),
+        Err(HttpFailure::Status { status, body }) => return Err(azure_http_error(status, &body)),
+        Err(HttpFailure::Unreachable) => return Err("Could not reach Azure DevOps".into()),
     };
     let status = response.status();
     let truncated = response
