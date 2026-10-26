@@ -32,7 +32,6 @@ import {
   listSessionsByProject,
   loadWorkspaceSnapshot,
   replaceInFlightSessions,
-  saveWorkspaceSnapshot,
   shouldPersistSession,
   upsertSession,
   type SessionSummary,
@@ -50,6 +49,7 @@ import { normalizeProjectPath } from "@/shared/lib/project-path";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { confirmApp } from "@/shared/lib/app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";
+import { saveSnapshotUnlessBlocked, snapshotLoadFailed } from "./workspace-snapshot-guard";
 import type { WindowTransferPayload } from "./window-transfer";
 
 export type { ResumedWorkspace };
@@ -285,7 +285,7 @@ async function historyForCwd(
 
 async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
   const [snapshotRaw, refs] = await Promise.all([
-    loadWorkspaceSnapshot().catch(() => null),
+    loadWorkspaceSnapshot().catch(snapshotLoadFailed),
     listInFlightSessions().catch(() => []),
   ]);
   const interrupted = new Set(refs.map((ref) => ref.sessionId));
@@ -412,7 +412,7 @@ export async function persistQuitState(
     }),
   );
   await write(
-    saveWorkspaceSnapshot(
+    saveSnapshotUnlessBlocked(
       collectWorkspaceSnapshot(
         tabs,
         sessions,
@@ -438,7 +438,7 @@ async function persistBootingResume(workspace: ResumedWorkspace): Promise<void> 
       .filter(shouldPersistSession)
       .map((session) => upsertSession(session).catch(() => null)),
   );
-  await saveWorkspaceSnapshot(
+  await saveSnapshotUnlessBlocked(
     collectWorkspaceSnapshot(
       workspace.tabs,
       workspace.sessions,

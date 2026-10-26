@@ -4,6 +4,7 @@ import type { Session } from "@/domain/session/session";
 import type { WorkspaceTab } from "@/features/workspace/model/layout";
 import { mountHook } from "../../testing/mount-hook";
 import type { WindowTransferPayload } from "../../../model/window-transfer";
+import { releaseSnapshotWrites, snapshotLoadFailed } from "../../../model/workspace-snapshot-guard";
 import {
   useInFlightSnapshot,
   useWorkspaceSnapshotAutosave,
@@ -37,7 +38,10 @@ vi.mock("@/features/sessions/model/in-flight", async (importActual) => ({
 
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  releaseSnapshotWrites();
+  vi.clearAllMocks();
+});
 
 const session = (id: string, busy = false): Session => ({ id, cwd: "/p", busy }) as unknown as Session;
 const tabs: WorkspaceTab[] = [];
@@ -158,6 +162,29 @@ describe("useWorkspaceSnapshotAutosave", () => {
     expect(mocks.saveWorkspaceSnapshot).toHaveBeenCalledTimes(2);
     expect(warn).toHaveBeenCalledWith("Could not save the workspace layout", expect.any(Error));
     warn.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it("holds the boot layout after a failed load and saves once the user changes it", () => {
+    vi.useFakeTimers();
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    snapshotLoadFailed(new Error("disk busy"));
+    const { rerender, input } = setup();
+    vi.runAllTimers();
+    input.worktreePath = "/p-tree";
+    rerender();
+    vi.runAllTimers();
+
+    expect(mocks.saveWorkspaceSnapshot).not.toHaveBeenCalled();
+
+    input.activeTabId = "t2";
+    rerender();
+    vi.runAllTimers();
+
+    expect(mocks.saveWorkspaceSnapshot.mock.calls.map(([snapshot]) => snapshot)).toEqual([
+      { tabs: 0, activeTabId: "t2", projectCwd: "/p" },
+    ]);
+    error.mockRestore();
     vi.useRealTimers();
   });
 

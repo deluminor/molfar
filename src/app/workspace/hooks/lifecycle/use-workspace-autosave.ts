@@ -20,6 +20,7 @@ import {
   workspaceSnapshotKey,
 } from "@/features/workspace/model/workspace-snapshot";
 import type { WindowTransferPayload } from "../../../model/window-transfer";
+import { releaseSnapshotWrites, snapshotWritesBlocked } from "../../../model/workspace-snapshot-guard";
 import type { ProjectReturn } from "./use-project-return-memory";
 
 /** Records the running turns on change, so a crash can mark them interrupted; cleared once after a run. */
@@ -60,7 +61,10 @@ type WorkspaceSnapshotAutosaveInput = {
   projectReturnRef: ProjectReturn["ref"];
 };
 
-/** Saves the layout 250 ms after it changes; a moved window never overwrites the main one's. */
+/**
+ * Saves the layout 250 ms after it changes; a moved window never overwrites the main one's.
+ * After a failed boot load, the boot layout is not saved until it changes.
+ */
 export function useWorkspaceSnapshotAutosave({
   tabs,
   sessions,
@@ -75,6 +79,7 @@ export function useWorkspaceSnapshotAutosave({
   projectReturnRef,
 }: WorkspaceSnapshotAutosaveInput): void {
   const workspaceSyncKey = useRef<string | null>(null);
+  const bootKey = useRef<string | null>(null);
 
   useEffect(() => {
     if (windowTransfer) return;
@@ -94,7 +99,12 @@ export function useWorkspaceSnapshotAutosave({
       keepWorkspaceTab,
     );
     const key = workspaceSnapshotKey(snapshot);
+    bootKey.current ??= key;
     if (workspaceSyncKey.current === key) return;
+    if (snapshotWritesBlocked()) {
+      if (key === bootKey.current) return;
+      releaseSnapshotWrites();
+    }
 
     const timer = window.setTimeout(() => {
       workspaceSyncKey.current = key;
