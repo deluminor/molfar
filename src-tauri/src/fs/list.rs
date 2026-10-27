@@ -9,7 +9,7 @@ use crate::git::ls_files::git_ignored_names;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DirEntry {
-    name: String,
+    pub(crate) name: String,
     path: String,
     is_dir: bool,
     ignored: bool,

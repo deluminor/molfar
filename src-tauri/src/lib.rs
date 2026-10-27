@@ -43,6 +43,8 @@ mod macos_background;
 mod mcp;
 mod mcp_session;
 mod menu;
+mod mobile_access;
+mod mobile_fs;
 mod notes;
 mod notifications;
 mod pasteboard;
@@ -73,6 +75,7 @@ mod tray;
 mod usage_limits;
 mod vault;
 mod window;
+mod window_chrome;
 mod window_transfer;
 #[cfg(windows)]
 mod windows;
@@ -202,42 +205,6 @@ pub(crate) fn passwd_identity() -> Option<PasswdIdentity> {
     }
 }
 
-#[tauri::command]
-fn set_traffic_lights_visible(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] visible: bool,
-) {
-    #[cfg(target_os = "macos")]
-    macos::set_visible(&window, visible);
-}
-
-#[tauri::command]
-fn set_window_background_blur(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] radius: u8,
-) {
-    #[cfg(target_os = "macos")]
-    macos::set_background_blur_radius(&window, radius);
-}
-
-#[tauri::command]
-fn set_dock_badge(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] count: u32,
-) {
-    #[cfg(target_os = "macos")]
-    macos::set_window_badge(&window, count);
-}
-
-#[tauri::command]
-fn set_trackpad_zoom_enabled(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] enabled: bool,
-) {
-    #[cfg(target_os = "macos")]
-    trackpad_zoom::set_enabled(&window, enabled);
-}
-
 // Async so the window is built off the main thread. Building it from a sync
 // command deadlocks WebView2 on Windows and leaves the new window blank.
 #[tauri::command]
@@ -307,6 +274,7 @@ pub fn run() {
             if let Err(error) = companion::init(app.handle()) {
                 eprintln!("[companion] {error}");
             }
+            mobile_access::init(app.handle())?;
             reminders::init(app.handle());
             checkpoint::init(app.handle())?;
             menu::install(app.handle())?;
@@ -334,6 +302,14 @@ pub fn run() {
             menu::dispatch(app, event.id().as_ref());
         })
         .invoke_handler(tauri::generate_handler![
+            mobile_access::commands::mobile_status,
+            mobile_access::commands::mobile_configure,
+            mobile_access::commands::mobile_invite,
+            mobile_access::commands::mobile_cancel_invite,
+            mobile_access::commands::mobile_revoke,
+            mobile_access::commands::mobile_publish,
+            mobile_access::commands::mobile_reply,
+            mobile_access::commands::mobile_push,
             remote::remote_machines,
             remote::remote_connect,
             remote::remote_disconnect,
@@ -518,6 +494,8 @@ pub fn run() {
             fs::attachments::save_generated_image,
             fs::attachments::delete_generated_images,
             fs::read::read_text_file,
+            mobile_fs::mobile_list_dir,
+            mobile_fs::mobile_read_text_file,
             transcripts::omp::omp_session_interjections,
             transcripts::omp::omp_active_assistant_texts,
             transcripts::claude::claude_shell_commands,
@@ -632,10 +610,10 @@ pub fn run() {
             checkpoint::session_checkpoint_file_diff,
             checkpoint::session_checkpoint_undo,
             checkpoint::session_checkpoint_keep,
-            set_traffic_lights_visible,
-            set_window_background_blur,
-            set_dock_badge,
-            set_trackpad_zoom_enabled,
+            window_chrome::set_traffic_lights_visible,
+            window_chrome::set_window_background_blur,
+            window_chrome::set_dock_badge,
+            window_chrome::set_trackpad_zoom_enabled,
             #[cfg(target_os = "macos")]
             menu::keybindings_set_overrides,
             #[cfg(target_os = "macos")]

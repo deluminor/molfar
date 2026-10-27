@@ -93,7 +93,7 @@
     "lines": 1082
   },
   "src-tauri/src/lib.rs": {
-    "lines": 801
+    "lines": 779
   },
   "src-tauri/src/linear.rs": {
     "lines": 936
@@ -195,7 +195,7 @@
     "lines": 1293
   },
   "src/app/shell/Sidebar.tsx": {
-    "lines": 5910
+    "lines": 5815
   },
   "src/app/shell/TitleBar.tsx": {
     "lines": 1197
@@ -546,7 +546,7 @@
     "lines": 287
   },
   "src/features/settings/model/settings.ts": {
-    "lines": 1621
+    "lines": 1602
   },
   "src/features/settings/model/workspace-themes.ts": {
     "lines": 621
@@ -555,7 +555,7 @@
     "lines": 645
   },
   "src/features/settings/ui/SettingsView.tsx": {
-    "lines": 4902
+    "lines": 4888
   },
   "src/features/skills/model/skills.ts": {
     "lines": 568
@@ -585,7 +585,7 @@
     "lines": 270
   },
   "src/features/source-control/ui/SidebarWorktreeSwitcher.tsx": {
-    "lines": 645
+    "lines": 624
   },
   "src/features/source-control/ui/UnifiedDiffView.tsx": {
     "lines": 1000
@@ -780,6 +780,6 @@
     "lines": 319
   },
   "src/styles/index.css": {
-    "lines": 4519
+    "lines": 4446
   }
 }

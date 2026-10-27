@@ -12,10 +12,8 @@ import {
   inWorktreeFocus,
   useWorktreeFocus,
 } from "@/features/source-control/model/worktree-focus";
-import {
-  SidebarWorktreeSwitcher,
-  type ProjectMenuFlyout,
-} from "@/features/source-control/ui/SidebarWorktreeSwitcher";
+import { SidebarWorktreeSwitcher } from "@/features/source-control/ui/SidebarWorktreeSwitcher";
+import type { ProjectMenuFlyout } from "@/features/source-control/types/worktree-switcher";
 import {
   CurrentProjectIcon,
   useProjectLabel,
@@ -28,7 +26,6 @@ import {
   Chatting,
   Check,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   CircleAlert,
   CircleDashed,
@@ -55,6 +52,7 @@ import {
   type IconComponent,
 } from "@/shared/ui/icons";
 import { createPortal } from "react-dom";
+import { useProjectSwipe } from "./use-project-swipe";
 import {
   Fragment,
   memo,
@@ -85,7 +83,7 @@ import type { LocalSurfaceId } from "@/features/home/ui/LocalSurfaceRailActions"
 import type { RailSurfaceVisibility } from "@/features/settings/model/project-rail";
 import { formatInteger } from "@/shared/lib/numbers";
 import { type GitHistoryCommit } from "@/platform/tauri/fs";
-import { MOD, SHIFT } from "@/shared/lib/platform";
+import { MOD } from "@/shared/lib/platform";
 import { useTrafficLightsVisible } from "@/platform/tauri/use-traffic-lights-visible";
 import { copyText } from "@/platform/tauri/clipboard";
 import type { OpenFileFn } from "@/features/search/model/search";
@@ -155,11 +153,7 @@ import {
 } from "@/features/sessions/model/session-filters";
 import type { LiveAgent } from "@/features/sessions/model/live-agents";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
-import {
-  keybindingShortcutLabel,
-  subscribeKeybindings,
-  type SettingsSectionId,
-} from "@/features/settings/model/settings";
+import type { SettingsSectionId } from "@/features/settings/model/settings";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { TAB_GROUP_COLORS } from "@/features/workspace/model/tab-groups";
 import { useDragResize } from "@/shared/hooks/use-drag-resize";
@@ -208,6 +202,7 @@ import {
   SearchableProjectPicker,
 } from "@/features/projects/ui/SearchableProjectPicker";
 import { useRailTooltip } from "./RailTooltip";
+import { ProjectSpacesBar, projectPathBusy } from "./ProjectSpacesBar";
 import { useProjectMenu } from "./use-project-menu";
 import { SessionFiltersMenu } from "@/features/sessions/ui/SessionFiltersMenu";
 import { LinkSessionWorkItemDialog } from "@/features/sessions/ui/LinkSessionWorkItemDialog";
@@ -278,17 +273,6 @@ const COMPACT_TAB_ICONS: Record<SidebarTab, typeof PanelLeft> = {
   files: FileScript,
   changes: GitBranch,
 };
-
-function projectPathBusy(
-  paths: Iterable<string> | undefined,
-  cwd: string,
-): boolean {
-  if (!paths) return false;
-  for (const path of paths) {
-    if (sameProjectPath(path, cwd)) return true;
-  }
-  return false;
-}
 
 type Props = {
   cwd: string;
@@ -1017,13 +1001,12 @@ function SidebarComponent({
   // Likewise the session they cover stays current but isn't shown selected.
   const highlightedSessionId =
     otherViewActive || familiarViewActive ? undefined : activeListedSessionId;
-  // A blank session has no project to browse, so the shell stands alone until
-  // one is picked — whether or not the rail is open.
   // The inset sidebar holds the links to search, inbox, notes and
-  // automations, and lists the project's Familiars, so it stays beside them;
-  // only settings take its place.
+  // automations, and lets new users open their first project and Settings.
+  // It stays available without a project; only settings take its place.
+  // The classic sidebar only has project-scoped tools and sessions.
   const sidebarAvailable = inset
-    ? !settingsOpen && inProject
+    ? !settingsOpen
     : !otherViewActive && !familiarViewActive && inProject;
   const sidebarVisible = open && sidebarAvailable;
   // With the sidebar collapsed beside the compact rail, its tab shortcuts
@@ -2139,9 +2122,18 @@ function SidebarComponent({
   });
 
   const projectLabel = useProjectLabel(cwd);
+  const [insetInboxMenu, setInsetInboxMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const insetInboxTrigger = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!inset || !panelOpen || !sidebarAvailable) setInsetInboxMenu(null);
+  }, [inset, panelOpen, sidebarAvailable]);
   const headerProjectMenu = useProjectMenu({
     onRemoveProject,
     onOpenNotificationSettings,
+    onOpen: () => setInsetInboxMenu(null),
     // Only the inset layout uses this menu, and it has no project rail.
     railOptions: false,
   });
@@ -2165,6 +2157,8 @@ function SidebarComponent({
           const rect = row.getBoundingClientRect();
           headerProjectMenu.open(cwd, rect.right, rect.top - 8, row);
         },
+        onContextMenu: (x: number, y: number, trigger: HTMLElement) =>
+          headerProjectMenu.open(cwd, x, y, trigger),
         onCloseProjectSettings: headerProjectMenu.close,
         projectSettingsOpen: headerProjectMenu.isOpen,
         renderProjectPicker: onSelectProject
@@ -2190,6 +2184,26 @@ function SidebarComponent({
     () =>
       inset ? projectRailItems(recents, cwd).map((item) => item.path) : [],
     [inset, recents, cwd],
+  );
+  const swipeDestination = useRef<{ from: string; to: string } | null>(null);
+  const onSwipeProject = useCallback(
+    (path: string) => {
+      swipeDestination.current = { from: cwd, to: path };
+      onSelectProject?.(path);
+    },
+    [cwd, onSelectProject],
+  );
+  const projectSwipeRef = useProjectSwipe(inset, {
+    cwd,
+    projects: spaceProjects,
+    onSelectProject: onSelectProject ? onSwipeProject : undefined,
+  });
+  const setSidebarRef = useCallback(
+    (el: HTMLElement | null) => {
+      resize.setPaneRef(el);
+      projectSwipeRef(el);
+    },
+    [resize.setPaneRef, projectSwipeRef],
   );
   // Projects the rail never placed fall back to most-recent-first, which
   // reshuffles the spaces on every switch. The rail is not mounted in this
@@ -2230,6 +2244,7 @@ function SidebarComponent({
   spaceProjectsRef.current = spaceProjects;
   const spaceSlide = useRef<{
     direction: number;
+    swipe: boolean;
     overlay: HTMLDivElement | null;
     started: boolean;
     timer?: number;
@@ -2253,7 +2268,9 @@ function SidebarComponent({
     window.clearTimeout(slide.timer);
     const aside = slideRefs.current[0]?.closest("aside");
     const distance = aside?.clientWidth ?? 240;
-    const timing = { duration: 440, easing: "cubic-bezier(0.4, 0, 0.2, 1)" };
+    const timing = slide.swipe
+      ? { duration: 180, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
+      : { duration: 440, easing: "cubic-bezier(0.4, 0, 0.2, 1)" };
     for (const el of slideRefs.current) {
       if (!el || typeof el.animate !== "function") continue;
       el.style.opacity = "";
@@ -2299,6 +2316,12 @@ function SidebarComponent({
     const outgoing = outgoingSpace.current;
     outgoingSpace.current = null;
     if (sameProjectPath(from, cwd)) return;
+    const destination = swipeDestination.current;
+    swipeDestination.current = null;
+    const swipe =
+      !!destination &&
+      sameProjectPath(destination.from, from) &&
+      sameProjectPath(destination.to, cwd);
     const step = projectStep;
     projectStep = null;
     if (!inset) return;
@@ -2337,8 +2360,8 @@ function SidebarComponent({
       });
       aside.append(overlay);
     }
-    // The incoming project waits, hidden, for its first sessions, so it is
-    // not pushed in empty and filled afterwards.
+    // Clicks and shortcuts can wait for first-load sessions. A swipe starts
+    // immediately so disk/network latency does not hold the gesture still.
     for (const el of slideRefs.current) if (el) el.style.opacity = "0";
     spaceSlide.current = {
       // A step past either end wraps around but keeps moving the same way.
@@ -2349,10 +2372,12 @@ function SidebarComponent({
             ? 1
             : -1,
       overlay,
+      swipe,
       started: false,
       animations: [],
-      timer: window.setTimeout(startSpaceSlide, 400),
+      timer: swipe ? undefined : window.setTimeout(startSpaceSlide, 400),
     };
+    if (swipe) startSpaceSlide();
   }, [cwd, inset, endSpaceSlide, startSpaceSlide]);
   useLayoutEffect(() => {
     if (spaceSlide.current && !pendingFirstLoad) startSpaceSlide();
@@ -2427,6 +2452,14 @@ function SidebarComponent({
       items={insetViewNavItems({
         localSurfaces,
         onOpenInbox,
+        onOpenInboxContextMenu: (x, y) => {
+          headerProjectMenu.close();
+          insetInboxTrigger.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+          setInsetInboxMenu({ x, y });
+        },
         inboxActive,
         inboxUnseen,
         notesEnabled,
@@ -2520,7 +2553,7 @@ function SidebarComponent({
 
   const sidebarContent = (
     <aside
-      ref={resize.setPaneRef}
+      ref={setSidebarRef}
       // The inset card's own edge separates it from the sidebar.
       className={`relative flex h-full min-h-0 shrink-0 flex-col${
         inset
@@ -2646,9 +2679,19 @@ function SidebarComponent({
             <FamiliarRailSection {...railFamiliars} project={cwd} />
           ) : null}
           {!cwd || cwd === "~" ? (
-            <p className="px-3 py-2 text-[12px] text-content/50">
-              No project folder
-            </p>
+            <div className="px-3 py-2 text-[12px] text-content/50">
+              <p>No project folder</p>
+              {inset && onOpenProject ? (
+                <button
+                  type="button"
+                  onClick={onOpenProject}
+                  className="mt-2 flex items-center gap-1.5 rounded-md bg-content/5 px-2 py-1.5 text-content/70 hover:bg-content/10 hover:text-content"
+                >
+                  <Plus className="size-3.5" strokeWidth={1.75} />
+                  Open project
+                </button>
+              ) : null}
+            </div>
           ) : (
             <div>
               {/*
@@ -3056,8 +3099,8 @@ function SidebarComponent({
             />
             <div className="flex shrink-0 flex-col gap-px p-2 empty:hidden">
               <GithubStarPrompt />
-              {/* The inset header's project menu carries Settings. */}
-              {!compactProjectRail && !inset ? (
+              {/* Without a project, the inset header has no Settings menu. */}
+              {(inset ? !inProject : !compactProjectRail) ? (
                 <RailAction
                   label="Settings"
                   icon={Settings}
@@ -3075,9 +3118,21 @@ function SidebarComponent({
             cwd={cwd}
             busyProjectPaths={busyProjectPaths}
             onSelectProject={onSelectProject}
+            onProjectContextMenu={headerProjectMenu.open}
           />
         ) : null}
       </>
+      {insetInboxMenu ? (
+        <InboxNotificationMenu
+          {...insetInboxMenu}
+          projectPaths={[...collectRailProjects(recents, cwd).keys()]}
+          onOpenSettings={onOpenNotificationSettings}
+          onClose={() => {
+            setInsetInboxMenu(null);
+            insetInboxTrigger.current?.focus();
+          }}
+        />
+      ) : null}
       {sessionMenu ? (
         <ExplorerMenu
           x={sessionMenu.x}
@@ -3921,171 +3976,6 @@ function CompactRailAction({
   );
 }
 
-/** Zen-style spaces at the foot of the inset sidebar: each project's logo or
- * mascot, the current one lifted, and a way to open another. */
-/** Projects the spaces bar shows at once; the chevrons page through more. */
-const SPACES_SHOWN = 5;
-
-function ProjectSpacesBar({
-  projects,
-  cwd,
-  busyProjectPaths,
-  onSelectProject,
-}: {
-  projects: readonly string[];
-  cwd: string;
-  busyProjectPaths?: Iterable<string>;
-  onSelectProject: (path: string) => void;
-}) {
-  const projectTooltip = useRailTooltip("top");
-  const shortcuts = useSyncExternalStore(subscribeKeybindings, () =>
-    [
-      keybindingShortcutLabel("Project: Previous", `${MOD}${SHIFT}←`),
-      keybindingShortcutLabel("Project: Next", `${MOD}${SHIFT}→`),
-    ]
-      .filter(Boolean)
-      .join(" / "),
-  );
-  const shown = Math.min(projects.length, SPACES_SHOWN);
-  const lastStart = Math.max(0, projects.length - shown);
-  const activeIndex = projects.findIndex((path) => sameProjectPath(path, cwd));
-  const [start, setStart] = useState(() =>
-    Math.min(lastStart, Math.max(0, activeIndex - shown + 1)),
-  );
-  // Bring the current project into view when it changes from elsewhere,
-  // moving the window no further than it needs to.
-  useEffect(() => {
-    if (activeIndex < 0) return;
-    setStart((current) =>
-      activeIndex < current
-        ? activeIndex
-        : activeIndex >= current + shown
-          ? activeIndex - shown + 1
-          : current,
-    );
-  }, [activeIndex, shown]);
-  const first = Math.min(start, lastStart);
-  const visible = projects.slice(first, first + shown);
-  const rowRef = useRef<HTMLDivElement>(null);
-  const step = (direction: -1 | 1) => {
-    const next = Math.min(lastStart, Math.max(0, first + direction));
-    if (next === first) return;
-    setStart(next);
-    // A short slide in from the side the new project comes from.
-    const row = rowRef.current;
-    if (
-      !row ||
-      typeof row.animate !== "function" ||
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
-    row.animate(
-      [
-        { transform: `translateX(${direction * 12}px)`, opacity: 0.4 },
-        { transform: "none", opacity: 1 },
-      ],
-      { duration: 200, easing: "cubic-bezier(0.32, 0.72, 0, 1)" },
-    );
-  };
-  const chevron = (direction: -1 | 1) => {
-    const disabled = direction < 0 ? first <= 0 : first >= lastStart;
-    const Icon = direction < 0 ? ChevronLeft : ChevronRight;
-    const label = direction < 0 ? "Previous projects" : "More projects";
-    return (
-      <button
-        type="button"
-        title={label}
-        aria-label={label}
-        disabled={disabled}
-        data-tauri-drag-region="false"
-        onClick={() => step(direction)}
-        className="grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/10 hover:text-content disabled:pointer-events-none disabled:opacity-30"
-      >
-        <Icon className="size-3.5" strokeWidth={1.75} />
-      </button>
-    );
-  };
-  return (
-    // As tall as the usage footer beside it, so the two read as one strip.
-    // A mini carousel: up to five spaces spread evenly, chevrons either side.
-    // Its edges line up with the rows above, and its controls with the usage
-    // footer's; each space takes an equal share.
-    <div
-      {...projectTooltip.handlers}
-      className="flex h-[30px] shrink-0 items-center gap-1 px-2 pb-0.5"
-    >
-      {chevron(-1)}
-      <div className="min-w-0 flex-1 overflow-hidden">
-        <div
-          ref={rowRef}
-          role="tablist"
-          aria-label="Projects"
-          className="flex w-full items-center gap-1"
-        >
-          {visible.map((path) => (
-            <ProjectSpaceButton
-              key={path}
-              path={path}
-              active={sameProjectPath(path, cwd)}
-              busy={projectPathBusy(busyProjectPaths, path)}
-              shortcuts={shortcuts}
-              onSelect={() => onSelectProject(path)}
-            />
-          ))}
-        </div>
-      </div>
-      {chevron(1)}
-      {projectTooltip.tooltip}
-    </div>
-  );
-}
-
-function ProjectSpaceButton({
-  path,
-  active,
-  busy,
-  shortcuts,
-  onSelect,
-}: {
-  path: string;
-  active: boolean;
-  busy: boolean;
-  shortcuts: string;
-  onSelect: () => void;
-}) {
-  const label = useProjectLabel(path);
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      aria-label={busy ? `${label}, working` : label}
-      data-rail-tip={label}
-      data-rail-tip-detail={shortcuts || undefined}
-      data-tauri-drag-region="false"
-      onClick={active ? undefined : onSelect}
-      className={`relative grid h-5 min-w-0 flex-1 place-items-center rounded-md transition-[opacity,background-color] duration-200 ease-out motion-reduce:transition-none ${
-        active
-          ? "bg-content/10 opacity-100"
-          : "opacity-45 hover:bg-content/5 hover:opacity-100"
-      }`}
-    >
-      <CurrentProjectIcon
-        cwd={path}
-        busy={busy}
-        className="size-3"
-        mascotClassName="size-2.5"
-      />
-      {busy && !active ? (
-        <span
-          aria-hidden
-          className="absolute right-1 top-0.5 size-1.5 rounded-full bg-accent"
-        />
-      ) : null}
-    </button>
-  );
-}
-
 /** The inset layout's project tools, beside the card. */
 function RightPanel({
   tab,
@@ -4252,6 +4142,7 @@ type SidebarNavItem = {
   dot?: boolean;
   ariaLabel?: string;
   onClick: () => void;
+  onOpenContextMenu?: (x: number, y: number) => void;
 };
 
 /**
@@ -4261,6 +4152,7 @@ type SidebarNavItem = {
 function insetViewNavItems({
   localSurfaces,
   onOpenInbox,
+  onOpenInboxContextMenu,
   inboxActive,
   inboxUnseen,
   notesEnabled,
@@ -4273,6 +4165,7 @@ function insetViewNavItems({
 }: {
   localSurfaces?: Props["localSurfaces"];
   onOpenInbox?: () => void;
+  onOpenInboxContextMenu: (x: number, y: number) => void;
   inboxActive: boolean;
   inboxUnseen: boolean;
   notesEnabled: boolean;
@@ -4307,6 +4200,7 @@ function insetViewNavItems({
       active: inboxActive,
       dot: inboxUnseen,
       onClick: onOpenInbox,
+      onOpenContextMenu: onOpenInboxContextMenu,
     },
     notesEnabled &&
       onOpenNotes && {
@@ -4371,7 +4265,17 @@ function SidebarNavList({
         </>
       ) : null}
       {shown.map(
-        ({ label, icon, shortcut, active, badge, dot, ariaLabel, onClick }) => (
+        ({
+          label,
+          icon,
+          shortcut,
+          active,
+          badge,
+          dot,
+          ariaLabel,
+          onClick,
+          onOpenContextMenu,
+        }) => (
           <RailAction
             key={label}
             label={label}
@@ -4384,6 +4288,7 @@ function SidebarNavList({
               ariaLabel ?? (dot ? `${label}, new items` : undefined)
             }
             onClick={onClick}
+            onOpenContextMenu={onOpenContextMenu}
           />
         ),
       )}

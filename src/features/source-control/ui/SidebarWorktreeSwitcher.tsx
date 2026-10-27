@@ -2,8 +2,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type ReactNode,
-  type RefObject,
 } from "react";
 import { useProjectWorktrees } from "../hooks/use-project-worktrees";
 import { useWorktreeFocus, type WorktreeFocus } from "../model/worktree-focus";
@@ -25,35 +23,13 @@ import {
   Settings,
   SlidersHorizontal,
 } from "@/shared/ui/icons";
+import { projectTitleContextMenu } from "./project-title-context-menu";
+import type {
+  WorktreeSwitcherProject,
+} from "../types/worktree-switcher";
 
 /** Clicks inside the project menu or its flyouts are not outside. */
 const PROJECT_MENU = "[data-project-menu]";
-
-/** How a flyout off the project menu places itself and joins the menu. */
-export type ProjectMenuFlyout = {
-  anchor: RefObject<HTMLButtonElement | null>;
-  layer: number;
-  attributes: Record<`data-${string}`, boolean>;
-  onClose: () => void;
-};
-
-/** Names the project in the title; the project and worktree pickers move to
- * submenus. */
-export type WorktreeSwitcherProject = {
-  name: string;
-  icon: ReactNode;
-  onOpenSettings?: () => void;
-  settingsShortcut?: string;
-  /** Renders the project picker as a flyout beside its row. */
-  renderProjectPicker?: (flyout: ProjectMenuFlyout) => ReactNode;
-  /** A dialog or menu opened from a flyout keeps the menu up behind it. */
-  keepOpen?: boolean;
-  /** Opens the project's own menu (name, look, pinning, removal) as a flyout
-   * beside the given row, the same one right-clicking a project shows. */
-  onOpenProjectSettings?: (row: HTMLElement) => void;
-  onCloseProjectSettings?: () => void;
-  projectSettingsOpen?: boolean;
-};
 
 /** The sidebar title. Picking a worktree narrows the sidebar, and the
  * sessions opened from it, to that working copy and names it here. */
@@ -234,6 +210,7 @@ export function SidebarWorktreeSwitcher({
         className="size-3.5 shrink-0 animate-spin text-content/45"
       />
     ) : null;
+  const titleMenu = projectTitleContextMenu(project?.onContextMenu, closePicker);
   return (
     <>
       {project ? (
@@ -251,7 +228,9 @@ export function SidebarWorktreeSwitcher({
             if (menuOpen) closePicker();
             else setMenuOpen(true);
           }}
+          onContextMenu={titleMenu.onContextMenu}
           onKeyDown={(event) => {
+            if (titleMenu.openFromKey(event)) return;
             if (menuOpen || event.key !== "ArrowDown") return;
             event.preventDefault();
             setMenuOpen(true);

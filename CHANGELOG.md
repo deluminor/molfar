@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Pair a phone from **Settings → Connections → Your phones** to browse projects and conversations, start and continue sessions, follow streamed replies, stop responses, and view code changes. The phone companion app lives in `mobile/`; the existing **Settings → Companion** gateway is unchanged. Phones reach the desktop over the same Wi-Fi, or through Tailscale or another VPN address: unlike MonoCode, MOLFAR never opens a port on the router (no UPnP/NAT-PMP). See `docs/companion.md` for how phone pairing compares with Companion.
+- Swipe between projects in the new sidebar (MonoCode #1061).
+- Project and Inbox actions have keyboard-accessible context menus in the new sidebar.
+
+### Fixed
+
+- A failed optional MCP server lookup shows a notice while a successful provider reply still completes. Provider failures continue to fail the session.
+- A workspace layout that could not be read at startup is preserved until the layout changes, instead of being overwritten by an empty boot state.
+- Failed app surfaces offer recovery controls, and Companion question replies are validated against the pending prompt.
+- The new sidebar keeps **Open project** and **Settings** available before a project is selected.
+- The empty conversation view no longer scrolls a few pixels around the message input.
+- The message input's blurred background stays within its rounded corners on Windows.
+- Phone connections on Windows accept both IPv4 and IPv6.
+
 ## [1.0.20] - 2026-10-19
 
 ### Changed

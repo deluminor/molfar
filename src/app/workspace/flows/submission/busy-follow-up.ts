@@ -35,7 +35,7 @@ function followUpBehavior(turn: PreparedSubmission, steerable: boolean): FollowU
 }
 
 function queueFollowUp(deps: SubmissionDeps, turn: PreparedSubmission): true {
-  const { sessionId, text, attachments, rawCommand, noteCard, handoffCard, intent } = turn;
+  const { sessionId, text, attachments, rawCommand, noteCard, handoffCard, intent, options } = turn;
   deps.setSessions((prev) =>
     prev.map((s) =>
       s.id === sessionId
@@ -46,7 +46,15 @@ function queueFollowUp(deps: SubmissionDeps, turn: PreparedSubmission): true {
             handoffCard: rawCommand ? s.handoffCard : undefined,
             queuedMessages: [
               ...(s.queuedMessages ?? []),
-              { id: crypto.randomUUID(), text, attachments, noteCard, handoffCard, intent },
+              {
+                // An app request's ID, so a retried request finds it queued.
+                id: options?.appRequestId ?? crypto.randomUUID(),
+                text,
+                attachments,
+                noteCard,
+                handoffCard,
+                intent,
+              },
             ],
             queueStatus: s.queueStatus === "paused" ? "paused" : "active",
           }
@@ -73,7 +81,10 @@ function steerFollowUp(deps: SubmissionDeps, turn: PreparedSubmission): true {
       handoffCard: rawCommand ? s.handoffCard : undefined,
     };
     if (options?.queuedMessageId) next = dequeueQueuedMessage(next, options.queuedMessageId);
-    return appendSteerUser(next, turn.submittedText, visible, cards);
+    return appendSteerUser(next, turn.submittedText, visible, {
+      ...cards,
+      ...(options?.appRequestId ? { appRequestId: options.appRequestId } : {}),
+    });
   });
   sessionsRef.current = nextSessions;
   setSessions(nextSessions);

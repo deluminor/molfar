@@ -234,6 +234,8 @@ MOLFAR probes for each CLI at startup and disables the ones it cannot find. One 
 
 Prerequisites: **Node.js** ≥ 20 (CI runs 20 and 24), a current stable **Rust** toolchain, and at least one provider CLI. On Linux, install the Tauri native dependencies (`npm run setup:linux:deb` on Debian/Ubuntu); on Windows, WebView2 (the installer bootstraps it).
 
+The mobile app is a separate Expo project in [`mobile/`](mobile/README.md). Run it with `cd mobile && npm install && npm start`.
+
 ```bash
 git clone https://github.com/deluminor/molfar.git
 cd molfar

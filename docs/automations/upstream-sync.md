@@ -91,6 +91,8 @@ See `docs/releasing.md` → Syncing from upstream.
 - `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`
 - Host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`, the `host.molfar` capability)
 - Product name and branding (`MOLFAR` must not regress to `MonoCode`), `README.md`, `NOTICE`, `LICENSE`. Upstream README sections that promote MonoCode (contributors badges, acknowledgments, MonoCode links) are not taken.
+- `mobile/assets/` artwork and the Expo account fields in `mobile/app.json` (`owner`, `extra.eas`, `updates`): keep MOLFAR's.
+- Phone pairing never maps router ports. Upstream's UPnP/NAT-PMP code (`src-tauri/src/mobile_router.rs`, `open_router`/`router_*` in `src-tauri/src/mobile_access/`, the "Open the router port automatically" checkbox) and its crates (`igd-next`, `natpmp`, `attohttpc`) are removed in MOLFAR: drop those hunks and list them under **Needs human** if they no longer separate cleanly. `no_router_port_mapping_crates_are_built` in `src-tauri/src/mobile_access/tests.rs` fails if they come back.
 
 #### 4a-bis. License notices — always port upstream changes (mandatory, also on a clean patch)
 MIT requires every copy to carry the copyright and permission notices, so an upstream notice change must never be dropped, even inside the MOLFAR-owned paths above.

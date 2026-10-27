@@ -23,6 +23,7 @@ import { useQueueDispatch } from "../use-queue-dispatch";
 import { useUsageLimitTimers } from "../use-usage-limit-timers";
 import { useWorkerDetailPanes } from "../use-worker-detail-panes";
 import { useWorkspaceCompanion } from "../use-workspace-companion";
+import { useWorkspaceMobile } from "../use-workspace-mobile";
 import { useWorkspaceTaskBoard } from "../use-workspace-task-board";
 import type { WorkspaceFlowsInput } from "./types";
 import type { useOpeningFlows } from "./use-opening-flows";
@@ -140,6 +141,20 @@ export function useRunningFlows(
     answer: turnActions.answer,
     launch: (launch, id) => automationRuns.launchQuick(launch, id),
     defaultRuntimeMode: () => sessionDefaults?.runtimeMode ?? DEFAULT_RUNTIME_MODE,
+  });
+
+  useWorkspaceMobile(sessions, {
+    sessionsRef,
+    setSessions,
+    defaultRuntimeMode: sessionDefaults?.runtimeMode,
+    submit: submission.submit,
+    ensureOpen: sessionOpeners.ensureOpen,
+    rename: historyFlows.historyActions.rename,
+    remove: historyFlows.historyActions.remove,
+    stop: turnActions.stop,
+    changeModel: composerActions.changeModel,
+    changeModelSettings: composerActions.changeModelSettings,
+    changeRuntimeMode: composerActions.changeRuntimeMode,
   });
 
   useOrchestrationSync(core.orchestrationRuns, sessions, tabs, core.activeTabId, orchestrationFlows.orchestrationSync);

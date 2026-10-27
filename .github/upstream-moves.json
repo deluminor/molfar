@@ -73,6 +73,8 @@
     "src/app/shell/UsageFooterAuth.test.ts": "src/app/shell/usage-footer-auth.test.ts",
     "src/app/shell/UsageProviderChip.test.ts": "src/app/shell/usage-provider-chip.test.ts",
     "src/app/shell/useProjectMenu.tsx": "src/app/shell/use-project-menu.tsx",
+    "src/app/shell/useProjectSwipe.test.ts": "src/app/shell/use-project-swipe.test.ts",
+    "src/app/shell/useProjectSwipe.ts": "src/app/shell/use-project-swipe.ts",
     "src/app/shell/WhatsNewDialog.test.ts": "src/app/shell/whats-new-dialog.test.ts",
     "src/app/shell/WindowControls.tsx": "src/features/window-chrome/ui/WindowControls.tsx",
     "src/app/ui/ReleaseNotesSurface.tsx": "src/features/updates/ui/ReleaseNotesSurface.tsx",
@@ -331,6 +333,21 @@
     "src/features/inbox/ui/LinkedWorkItemUpdateNotice.test.ts": "src/features/inbox/ui/linked-work-item-update-notice.test.ts",
     "src/features/inbox/ui/ProjectNotificationMenu.test.ts": "src/app/shell/project-notification-menu.test.ts",
     "src/features/knowledge/ui/tree/KnowledgeTree.test.ts": "src/features/knowledge/ui/tree/knowledge-tree.test.ts",
+    "src/features/mobile/hooks/useMobileWorkspace.test.ts": "src/features/mobile/hooks/use-mobile-workspace.test.ts",
+    "src/features/mobile/hooks/useMobileWorkspace.ts": "src/features/mobile/hooks/use-mobile-workspace.ts",
+    "src/features/mobile/model/mobileAccountUsage.test.ts": "src/features/mobile/model/mobile-account-usage.test.ts",
+    "src/features/mobile/model/mobileAccountUsage.ts": "src/features/mobile/model/mobile-account-usage.ts",
+    "src/features/mobile/model/mobileAttachments.test.ts": "src/features/mobile/model/mobile-attachments.test.ts",
+    "src/features/mobile/model/mobileAttachments.ts": "src/features/mobile/model/mobile-attachments.ts",
+    "src/features/mobile/model/mobileHighlight.test.ts": "src/features/mobile/model/mobile-highlight.test.ts",
+    "src/features/mobile/model/mobileHighlight.ts": "src/features/mobile/model/mobile-highlight.ts",
+    "src/features/mobile/model/mobileProviderAccounts.test.ts": "src/features/mobile/model/mobile-provider-accounts.test.ts",
+    "src/features/mobile/model/mobileProviderAccounts.ts": "src/features/mobile/model/mobile-provider-accounts.ts",
+    "src/features/mobile/model/mobileTranscript.test.ts": "src/features/mobile/model/mobile-transcript.test.ts",
+    "src/features/mobile/model/mobileTranscript.ts": "src/features/mobile/model/mobile-transcript.ts",
+    "src/features/mobile/model/mobileWatch.test.ts": "src/features/mobile/model/mobile-watch.test.ts",
+    "src/features/mobile/model/mobileWatch.ts": "src/features/mobile/model/mobile-watch.ts",
+    "src/features/mobile/ui/MobileSettings.test.ts": "src/features/mobile/ui/mobile-settings.test.ts",
     "src/features/notes/noteImages.test.ts": "src/features/notes/note-images.test.ts",
     "src/features/notes/noteImages.ts": "src/features/notes/note-images.ts",
     "src/features/notes/types/note-source.ts": "src/domain/notes/note-source.ts",
@@ -999,6 +1016,27 @@
       ],
       "notes": "Split item-by-item, bodies unchanged; Tauri command names unchanged. Git plumbing (git_cmd*, git_checked/output/run/stdout, resolve_repo_path) \u2192 git/command.rs; git_output_capped \u2192 git/output.rs; GitInfo cache, branch/head helpers \u2192 git/info.rs; check-ignore/ls-files \u2192 git/ls_files.rs; diff stats \u2192 git/stats.rs; diff index \u2192 git/index.rs + numstat/name-status/untracked parsing \u2192 git/numstat.rs; file diff + full-context diff \u2192 git/file_diff.rs; log/decorations \u2192 git/history.rs; commit file lists \u2192 git/commit_files.rs; stage/unstage/discard \u2192 git/stage.rs; commit/staged context/locate \u2192 git/commit.rs; selected-path commits \u2192 git/selection.rs; push/pull/sync/default branch \u2192 git/remote.rs; range context/merge-base \u2192 git/range.rs; snapshot \u2192 git/snapshot.rs; branches/checkout \u2192 git/branch.rs; stash \u2192 git/stash.rs; clone \u2192 git/clone.rs. gh runner + rate-limit backoff \u2192 github/cli.rs; repo resolution \u2192 github/repo.rs; auth/star \u2192 github/status.rs; work items \u2192 github/work_items.rs, details \u2192 github/details.rs, thread \u2192 github/thread.rs (queries github/thread_queries.rs, GraphQL DTOs github/graphql.rs, comment mapping github/comments.rs), posting comments/replies \u2192 github/comment_post.rs; PR status/create/actions \u2192 github/pr.rs; PR diff \u2192 github/pr_diff.rs; checks \u2192 github/checks.rs, github/check_details.rs. OMP/Claude transcript readers \u2192 transcripts/{omp,omp_interjections,claude}.rs. File system: shared limits, expand_home, path_to_js stay in fs/mod.rs; project location \u2192 fs/project.rs; list_dir \u2192 fs/list.rs; project file walk \u2192 fs/project_files.rs + fs/walk_rules.rs; reads \u2192 fs/read.rs; binary/image/video \u2192 fs/media.rs; attachments/generated images \u2192 fs/attachments.rs; write/create \u2192 fs/write.rs; rename/copy/move/delete \u2192 fs/ops.rs; reveal/open \u2192 fs/reveal.rs. Each test sits in <module>/tests.rs next to the code it exercises; shared temp-dir/git helpers \u2192 test_support.rs."
     },
+    "src-tauri/src/mobile_access.rs": {
+      "targets": [
+        "src-tauri/src/mobile_access/mod.rs",
+        "src-tauri/src/mobile_access/commands.rs",
+        "src-tauri/src/mobile_access/watch.rs",
+        "src-tauri/src/mobile_access/catalog.rs",
+        "src-tauri/src/mobile_access/handle.rs",
+        "src-tauri/src/mobile_access/tests.rs"
+      ],
+      "notes": "Module folder: host state, init and listener in mod.rs; Tauri commands in commands.rs; conversation watches in watch.rs; merged catalog and owner choice in catalog.rs; enrolment and request dispatch in handle.rs; unit tests in tests.rs. Upstream's router mapping (open_router, router_* state, mobile_router::restart calls) is removed in MOLFAR: drop those hunks when porting (see removed: src-tauri/src/mobile_router.rs)."
+    },
+    "src/features/mobile/model/mobileWorkspace.ts": {
+      "targets": [
+        "src/features/mobile/model/mobile-catalog.ts",
+        "src/features/mobile/model/mobile-conversation.ts",
+        "src/features/mobile/model/mobile-models.ts",
+        "src/features/mobile/model/mobile-files.ts",
+        "src/features/mobile/model/mobile-git.ts"
+      ],
+      "notes": "Split by concern: catalog and new sessions (mobile-catalog), conversations and disk reads (mobile-conversation), model sheet and worktree choice (mobile-models), file browser and search (mobile-files), changes and git actions (mobile-git)."
+    },
     "src/features/providers/model/rateLimits.test.ts": {
       "targets": [
         "src/features/providers/model/rate-limits.test.ts",
@@ -1066,6 +1104,28 @@
     }
   },
   "extractions": {
+    "src-tauri/src/fs.rs": [
+      {
+        "names": [
+          "inside_root",
+          "mobile_list_dir",
+          "mobile_read_text_file",
+          "inside_root_refuses_paths_that_leave_the_project (test)"
+        ],
+        "target": "src-tauri/src/mobile_fs.rs"
+      }
+    ],
+    "src-tauri/src/lib.rs": [
+      {
+        "names": [
+          "set_traffic_lights_visible",
+          "set_window_background_blur",
+          "set_dock_badge",
+          "set_trackpad_zoom_enabled"
+        ],
+        "target": "src-tauri/src/window_chrome.rs"
+      }
+    ],
     "src/app/App.tsx": [
       {
         "names": [
@@ -2015,6 +2075,23 @@
           "onOpenTerminal, onNewTerminal, onNewTerminalTab, onNewTerminalInSession, onTerminalMetaChange, onToggleRunningTerminal"
         ],
         "target": "src/app/workspace/flows/terminals/workspace-terminals.ts"
+      },
+      {
+        "names": [
+          "useMobileWorkspace command handler (session.start, conversation.send, session.rename/delete/archive/cancel/configure)"
+        ],
+        "target": "src/app/workspace/flows/mobile/mobile-commands.ts"
+      }
+    ],
+    "src/app/shell/Sidebar.tsx": [
+      {
+        "names": [
+          "ProjectSpacesBar",
+          "ProjectSpaceButton",
+          "SPACES_SHOWN",
+          "projectPathBusy"
+        ],
+        "target": "src/app/shell/ProjectSpacesBar.tsx"
       }
     ],
     "src/app/shell/TitleBar.tsx": [
@@ -2089,6 +2166,100 @@
           "LinkedWorkItemUpdateCard"
         ],
         "target": "src/domain/work-items/linked-activity.ts"
+      }
+    ],
+    "src/features/mobile/hooks/useMobileWorkspace.ts": [
+      {
+        "names": [
+          "request dispatch for conversation.read/older, models.list, accounts.usage, project.* reads"
+        ],
+        "target": "src/features/mobile/model/mobile-reads.ts"
+      },
+      {
+        "names": [
+          "gitJobs, GIT_ACTION_WAIT_MS (project.gitAction)"
+        ],
+        "target": "src/features/mobile/model/mobile-git-jobs.ts"
+      },
+      {
+        "names": [
+          "receipts (command de-duplication)"
+        ],
+        "target": "src/features/mobile/model/mobile-receipts.ts"
+      },
+      {
+        "names": [
+          "DEFAULT_TAIL",
+          "MAX_PAGE"
+        ],
+        "target": "src/features/mobile/constants.ts"
+      }
+    ],
+    "src/features/mobile/model/mobileHighlight.ts": [
+      {
+        "names": [
+          "aliases",
+          "BY_NAME",
+          "BY_EXTENSION",
+          "languageForFile"
+        ],
+        "target": "src/features/mobile/model/mobile-language.ts"
+      }
+    ],
+    "src/features/mobile/model/mobileTranscript.ts": [
+      {
+        "names": [
+          "MobileStep",
+          "MobilePhase",
+          "MobileFoldEntry",
+          "MobileTurnItem",
+          "MobileTurn"
+        ],
+        "target": "src/features/mobile/types/transcript.ts"
+      },
+      {
+        "names": [
+          "blockItem",
+          "phasesOf",
+          "turnUserBlock",
+          "familiarTurnUserBlock",
+          "sumDurations",
+          "MAX_STEPS",
+          "fold entries (foldEntries)",
+          "Familiar live label (familiarLiveLabel)",
+          "activityBlocks"
+        ],
+        "target": "src/features/mobile/model/mobile-transcript-blocks.ts"
+      }
+    ],
+    "src/features/mobile/ui/MobileSettings.tsx": [
+      {
+        "names": [
+          "Device",
+          "Status",
+          "Invite"
+        ],
+        "target": "src/features/mobile/types/mobile-access.ts"
+      },
+      {
+        "names": [
+          "input",
+          "button",
+          "quiet"
+        ],
+        "target": "src/features/mobile/ui/mobile-settings-styles.ts"
+      },
+      {
+        "names": [
+          "paired device list and removal confirmation"
+        ],
+        "target": "src/features/mobile/ui/MobileDeviceList.tsx"
+      },
+      {
+        "names": [
+          "Connect away from home details (remote address only; MOLFAR removed the \"Open the router port automatically\" checkbox and router status)"
+        ],
+        "target": "src/features/mobile/ui/MobileRemoteAccess.tsx"
       }
     ],
     "src/features/notes/notes.ts": [
@@ -2229,6 +2400,32 @@
           "saveClaudeHooks"
         ],
         "target": "src/integrations/harness/providers/claude/claude-hooks-setting.ts"
+      },
+      {
+        "names": [
+          "IDLE_AGENT_LIMIT_KEY",
+          "IDLE_AGENT_LIMITS",
+          "IdleAgentLimit",
+          "IDLE_AGENT_LIMIT_DEFAULT",
+          "loadIdleAgentLimit",
+          "saveIdleAgentLimit"
+        ],
+        "target": "src/features/settings/model/idle-agent-limit.ts"
+      }
+    ],
+    "src/features/settings/ui/SettingsView.tsx": [
+      {
+        "names": [
+          "useState: idleAgentLimit",
+          "onIdleAgentLimit"
+        ],
+        "target": "src/features/settings/hooks/use-idle-agent-limit.ts"
+      },
+      {
+        "names": [
+          "Connections section body (ConnectionsSettings + MobileSettings)"
+        ],
+        "target": "src/features/settings/ui/ConnectionsPage.tsx"
       }
     ],
     "src/features/source-control/model/worktrees.ts": [
@@ -2239,6 +2436,21 @@
           "namedWorktreeBranch"
         ],
         "target": "src/domain/git/worktree-branch.ts"
+      }
+    ],
+    "src/features/source-control/ui/SidebarWorktreeSwitcher.tsx": [
+      {
+        "names": [
+          "ProjectMenuFlyout",
+          "WorktreeSwitcherProject"
+        ],
+        "target": "src/features/source-control/types/worktree-switcher.ts"
+      },
+      {
+        "names": [
+          "project title onContextMenu / ContextMenu-key handler"
+        ],
+        "target": "src/features/source-control/ui/project-title-context-menu.ts"
       }
     ],
     "src/integrations/harness/core/apply.test.ts": [
@@ -2306,6 +2518,14 @@
         ],
         "target": "src/features/sessions/ui/harness-icon.test.ts"
       }
+    ],
+    "src/styles/index.css": [
+      {
+        "names": [
+          "composer box frost: [data-composer-box], ::before, message queue ledge, light composer"
+        ],
+        "target": "src/styles/composer-frost.css"
+      }
     ]
   },
   "removed": {
@@ -2313,12 +2533,16 @@
     "docs/brand/vatra-app.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-app.svg.",
     "docs/brand/vatra-glyph.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-glyph.svg.",
     "docs/brand/vatra.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar.svg.",
+    "mobile/assets/images/monocode-mark-black.png": "Unused MonoCode artwork; MOLFAR has no black variant of its mark.",
+    "mobile/assets/images/monocode-mark-inverse.png": "MonoCode artwork replaced by MOLFAR's mark, rendered from docs/brand/molfar-app.svg by mobile/scripts/generate-brand-assets.mjs: mobile/assets/images/molfar-mark.png and molfar-mark-inverse.png. Keep MOLFAR's; never port upstream artwork.",
+    "mobile/assets/images/monocode-mark.png": "MonoCode artwork replaced by MOLFAR's mark, rendered from docs/brand/molfar-app.svg by mobile/scripts/generate-brand-assets.mjs: mobile/assets/images/molfar-mark.png and molfar-mark-inverse.png. Keep MOLFAR's; never port upstream artwork.",
     "public/vatra.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): public/molfar.png.",
     "src-tauri/src/legacy_identity/copy.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src-tauri/src/legacy_identity/legacy_process.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src-tauri/src/legacy_identity/mod.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src-tauri/src/legacy_identity/tests.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src-tauri/src/legacy_session_db.rs": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "src-tauri/src/mobile_router.rs": "Removed in MOLFAR (PR #117): automatic router port mapping (UPnP via igd-next, NAT-PMP via natpmp) exposed the phone listener to the internet without the user opening a port. MOLFAR never opens a router port by itself; remote phones use Tailscale or another VPN address (docs/companion.md). Do NOT port upstream changes here, and do not re-add igd-next, natpmp or attohttpc (a src-tauri test fails if they return).",
     "src/features/notes/index.ts": "Barrel removed (MOLFAR forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly.",
     "src/shared/lib/legacyStorageMigration.test.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src/shared/lib/legacyStorageMigration.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",

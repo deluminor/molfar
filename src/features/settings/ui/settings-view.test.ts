@@ -108,7 +108,10 @@ beforeEach(() => {
   document.body.append(container);
   root = createRoot(container);
   onSelectSection = vi.fn();
-  vi.mocked(invoke).mockReset().mockResolvedValue(undefined);
+  vi.mocked(invoke).mockReset().mockImplementation(async command => command === "mobile_status" ? {
+    enabled: false, listening: false, name: "Desktop", fingerprint: null,
+    remoteAddress: "", addresses: [], devices: [],
+  } : undefined);
 });
 
 afterEach(async () => {

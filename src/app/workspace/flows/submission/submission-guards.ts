@@ -63,7 +63,7 @@ export function submittableSession(
     return undefined;
 
   const storedCurrent = sessionsRef.current.find((s) => s.id === sessionId);
-  if (options?.appRequestId && storedCurrent?.busy) return undefined;
+  if (options?.appRequestId && !options.followsUp && storedCurrent?.busy) return undefined;
   if (
     options?.ciRepair &&
     storedCurrent &&

@@ -26,19 +26,26 @@ function renderedTurns() {
   return container.querySelectorAll("[data-transcript-turn]").length;
 }
 
-// Each historical turn waits a frame plus a timeout; step that scheduler
-// under fake timers instead of racing it against a wall-clock waitFor.
-async function growWindow() {
-  for (let step = 0; step < 100; step += 1) {
-    await act(async () => vi.runOnlyPendingTimers());
-    if (vi.getTimerCount() === 0) return;
+async function warmHistory() {
+  // Each background turn waits for a frame and a timer, then a React commit.
+  // Drive those stages separately instead of racing CI's wall-clock speed.
+  for (let count = 4; count <= 20; count++) {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    expect(renderedTurns()).toBe(count);
   }
-  throw new Error("transcript window never settled");
 }
 
 beforeEach(() => {
   vi.useFakeTimers({
-    toFake: ["setTimeout", "clearTimeout", "requestAnimationFrame", "cancelAnimationFrame"],
+    toFake: [
+      "setTimeout",
+      "clearTimeout",
+      "requestAnimationFrame",
+      "cancelAnimationFrame",
+      "performance",
+    ],
   });
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(
@@ -73,8 +80,7 @@ describe("transcript first paint", () => {
     );
     expect(renderedTurns()).toBe(3);
 
-    await growWindow();
-    expect(renderedTurns()).toBe(20);
+    await warmHistory();
     expect(container.textContent).toContain("Load earlier messages");
   });
 
@@ -94,8 +100,7 @@ describe("transcript first paint", () => {
       get: () => renderedTurns() * 100,
     });
 
-    await growWindow();
-    expect(renderedTurns()).toBe(20);
+    await warmHistory();
     expect(scroller.scrollTop).toBe(2000);
   });
 

@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["MolfarLinkModule"] },
+  "android": { "modules": ["expo.modules.molfarlink.MolfarLinkModule"] }
+}
