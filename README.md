@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
 
-https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
+https://github.com/user-attachments/assets/1fca2322-211a-48ea-a4b4-2196333efeb3
 
 ## Architecture
 
