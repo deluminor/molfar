@@ -1,8 +1,8 @@
-name: Monocode Native Preview
+name: MOLFAR Native Preparation
 
 on:
   push:
-    branches: [mc/migrate-monocode-to-gpui]
+    branches: [migration/gpui]
   workflow_dispatch:
   pull_request:
     paths:
@@ -10,6 +10,11 @@ on:
       - 'crates/monocode-gpui/**'
       - 'crates/mobile-link/**'
       - 'vendor/gpui-pre*/**'
+      - 'vendor/portable-pty/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/gpui-upstream-*.json'
+      - 'scripts/gpui-sync/**'
       - 'scripts/*native*'
       - 'scripts/native-editor/**'
       - 'scripts/native-settings/**'
@@ -25,6 +30,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sync-tooling:
+    name: Native sync guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/gpui-sync/*.test.mjs scripts/gpui-sync/tests/*.test.mjs
+
   core:
     name: Core (${{ matrix.os }})
     strategy:

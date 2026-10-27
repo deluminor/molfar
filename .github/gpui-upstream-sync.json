@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "channel": "gpui",
+  "source": {
+    "repository": "hardbeat920/monocode",
+    "branch": "mc/migrate-monocode-to-gpui",
+    "attempted": "e6f58da15c0f603054bf684b957798941b0e05e0",
+    "integrated": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+    "validated": null
+  },
+  "target": {
+    "repository": "deluminor/molfar",
+    "branch": "migration/gpui",
+    "integrated": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+    "validated": null
+  },
+  "upstreamMain": "26465c620977f3951d0a532a0f7db32c3c179007"
+}

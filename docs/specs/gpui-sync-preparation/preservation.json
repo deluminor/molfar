@@ -1,0 +1,68 @@
+[
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/README.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/README.md",
+    "sha256": "8dfd0db651e913f3324a5a1d198a5e3477877c94dec82ec9659366eebef93fbb"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/analysis.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/analysis.md",
+    "sha256": "6f084451d80880db3968f546209ecd9305c69540b34ef91d5cd61533d4810520"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/baseline-checks.json",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/baseline-checks.json",
+    "sha256": "4803503bcf302a89d9e5ec4ca6dbe36c398b100efefbc4a43197d60f7620408b"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/gpui-migration-setup-and-inventory.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/gpui-migration-setup-and-inventory.md",
+    "sha256": "d2f3a010d72b2e19b2c06c306e0e0b0aa9ff40e97059e65096b0c9e2e96cbcb2"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/inventory.json",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/inventory.json",
+    "sha256": "82417213e8b4f500b462ec53f21bea07b9dcb126ce61e8d55e40e239cca5b44b"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/monocode-gpui-assessment-2026-10-26.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/monocode-gpui-assessment-2026-10-26.md",
+    "sha256": "39f676ef5c4c4cbdf9cabf52a6ac4c46e3927a46741c5369389d66dca9b558ac"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/plan.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/plan.md",
+    "sha256": "18301936db28ccc56d7695377151f345a88dbff3d4f698e127b0561fa43c2745"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/spec.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/spec.md",
+    "sha256": "3f67c6b060750c81b2b934e16e7f1dccf22f7a78052693746296be6709498a3e"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/task-status.json",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/task-status.json",
+    "sha256": "09ac09463da6d18bc2c4fa3580b117787e63f760c2b4d6978c0c094390dacd89"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/tasks.md",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/tasks.md",
+    "sha256": "31dde8baa252935ae86c2fa6331b5a8cd4f1fe8276726cb698c3c84ad3d071df"
+  },
+  {
+    "sourceCommit": "3328f3d8f8117e4a48ff0f4dd1198786cc05654e",
+    "sourcePath": "docs/specs/gpui-integration-pr/original-planning/upstream-checkpoint.json",
+    "path": "docs/specs/gpui-sync-preparation/original-planning/upstream-checkpoint.json",
+    "sha256": "fc5f6cb152b7207b3c34ee16efe9137656747623c5d48573f971e985cdac5dcf"
+  }
+]

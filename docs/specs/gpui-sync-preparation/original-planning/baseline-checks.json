@@ -1,0 +1,44 @@
+{
+  "scope": "unmodified upstream native baseline; no GUI, installation, real credentials or production data",
+  "toolchain": {
+    "rustc": "1.98.1",
+    "cargo": "1.98.1",
+    "node": "26.8.1"
+  },
+  "checks": [
+    {
+      "command": "node --test scripts/native-release.test.mjs scripts/package-native.test.mjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "result": "10 tests passed, 0 failed, 0 skipped; fake packaging tools and temporary fixture executable, not application launch",
+      "log": "scratch/baseline-packaging-tests.log"
+    },
+    {
+      "command": "cargo fmt --manifest-path crates/monocode-gpui/Cargo.toml --all --check",
+      "exitCode": 1,
+      "status": "BLOCKED",
+      "result": "Excluded vendor/portable-pty is discovered under outer MOLFAR Cargo workspace in nested worktree; no source modification attempted",
+      "log": "scratch/baseline-format.log"
+    },
+    {
+      "command": "cargo fmt --manifest-path crates/monocode-gpui/Cargo.toml -p monocode-core -p monocode-gpui --check",
+      "exitCode": 0,
+      "status": "PASS",
+      "result": "Scoped native packages format check passes; does not replace full --all check",
+      "log": "scratch/baseline-format-scoped.log"
+    },
+    {
+      "command": "CARGO_TARGET_DIR=\"$PWD/scratch/cargo-target\" cargo test --offline --locked --manifest-path crates/monocode-gpui/Cargo.toml -p monocode-core --profile native-dev",
+      "exitCode": 101,
+      "status": "BLOCKED",
+      "result": "Dependency resolution cannot find cached alacritty_terminal; compilation/tests did not execute",
+      "log": "scratch/baseline-core-tests.log"
+    },
+    {
+      "command": "native build, Clippy, GPUI tests, production TS/host suites, security dependency audit, GUI/mobile/device/performance checks",
+      "exitCode": null,
+      "status": "SKIPPED",
+      "result": "No dependencies installed; full Cargo boundary and offline dependency blockers; no feature change; GUI/mobile/app explicitly not authorized in this session"
+    }
+  ]
+}

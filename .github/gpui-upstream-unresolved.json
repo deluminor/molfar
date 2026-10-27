@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "channel": "gpui",
+  "items": [
+    {
+      "id": "MOLFAR-M01-IDENTITY-ISOLATION",
+      "description": "Native migration identity, storage, credentials and update feed must differ from both production applications before any runtime.",
+      "status": "open",
+      "sourceRange": {
+        "from": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+        "to": "ea6c8219bae954a3d8a9e8c536242b9531a683f7"
+      },
+      "affectedPaths": [
+        "crates/monocode-gpui/src/main.rs",
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "scripts/package-native.mjs"
+      ],
+      "disposition": "Separate reviewed correction required; no runtime, release or merge-readiness claim. See docs/specs/gpui-sync-preparation/original-planning/inventory.json and preparation evidence.",
+      "resolutionRevision": null
+    },
+    {
+      "id": "MOLFAR-M20-NO-ROUTER",
+      "description": "Native baseline retains UPnP/NAT-PMP implementation and dependencies. Remove and regression-guard before runtime; preserve distinct phone/Companion contracts.",
+      "status": "open",
+      "sourceRange": {
+        "from": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+        "to": "ea6c8219bae954a3d8a9e8c536242b9531a683f7"
+      },
+      "affectedPaths": [
+        "crates/monocode-core/src/mobile/router.rs",
+        "crates/monocode-core/src/mobile/host.rs",
+        "crates/monocode-core/Cargo.toml"
+      ],
+      "disposition": "Separate reviewed correction required; no runtime, release or merge-readiness claim. See docs/specs/gpui-sync-preparation/original-planning/inventory.json and preparation evidence.",
+      "resolutionRevision": null
+    },
+    {
+      "id": "GPUI-UPSTREAM-VISUAL-PLACEMENT",
+      "description": "Raw visual placement matching can suppress a published visual for ordinary links or code without rendering a replacement; frozen source review blocker.",
+      "status": "open",
+      "sourceRange": {
+        "from": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+        "to": "e6f58da15c0f603054bf684b957798941b0e05e0"
+      },
+      "affectedPaths": [
+        "crates/monocode-gpui/src/transcript/visuals.rs",
+        "crates/monocode-gpui/src/transcript.rs",
+        "crates/monocode-gpui/src/markdown_model.rs"
+      ],
+      "disposition": "Separate reviewed correction required; no runtime, release or merge-readiness claim. See docs/specs/gpui-sync-preparation/original-planning/inventory.json and preparation evidence.",
+      "resolutionRevision": null
+    },
+    {
+      "id": "NATIVE-RELEASE-FEED-RETRY",
+      "description": "Release publishes before mutable feed upload; feed failure leaves immutable release that rejects rerun. Safe asset/feed verification needs separate narrow release repair.",
+      "status": "open",
+      "sourceRange": {
+        "from": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+        "to": "ea6c8219bae954a3d8a9e8c536242b9531a683f7"
+      },
+      "affectedPaths": [
+        ".github/workflows/native-release.yml",
+        "scripts/native-release.mjs"
+      ],
+      "disposition": "Separate reviewed correction required; no runtime, release or merge-readiness claim. See docs/specs/gpui-sync-preparation/original-planning/inventory.json and preparation evidence.",
+      "resolutionRevision": null
+    },
+    {
+      "id": "NATIVE-BASELINE-DEPENDENCY-AUDIT",
+      "description": "cargo audit exits 1 with 7 vulnerabilities and 23 warnings in unchanged native lockfile; see verification.md and scratch/native-audit.log.",
+      "status": "open",
+      "sourceRange": {
+        "from": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+        "to": "ea6c8219bae954a3d8a9e8c536242b9531a683f7"
+      },
+      "affectedPaths": [
+        "crates/monocode-gpui/Cargo.lock"
+      ],
+      "disposition": "Separate reviewed correction required; no runtime, release or merge-readiness claim. See docs/specs/gpui-sync-preparation/original-planning/inventory.json and preparation evidence.",
+      "resolutionRevision": null
+    }
+  ]
+}
