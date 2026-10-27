@@ -9,4 +9,6 @@ Tracker fallback: `todo init` executable unavailable (verified 2026-10-27); this
 - [x] T05 (R05/R07) Independently inspect pinned upstream source delta; verify zero protected publishing-path changes; preserve original planning; prepare dedicated review PR or record concrete refusal.
 - [x] T06 (R07/R08) Write docs/automations/gpui-upstream-sync.md with exact entrypoint, permissions, state, guards, Wisp prompt and activation checklist; record release and parity blockers.
 - [x] T07 (R09) Run native/script checks and independent strong review; fix verified findings; record exact exits/skips.
-- [ ] T08 (R01/R02/R08/R09) Publish normal review PR(s) into migration/gpui, verify body/ref/preservation, save absolute report path and notify Wisp if supported.
+- [x] T08 (R01/R02/R08/R09) Publish normal review PR(s) into migration/gpui, verify body/ref/preservation, save absolute report path and notify Wisp if supported.
+
+- [ ] Wisp delivery: BLOCKED — supported sessions.list returned app access inactive (exit 1, retryable false). Final prompt/report saved; no private store or scheduler action attempted.
