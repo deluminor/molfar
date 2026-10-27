@@ -1,4 +1,5 @@
 import { pathKey } from "@/shared/lib/paths";
+import { readJson, writeJson } from "@/shared/lib/storage";
 import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
   supportsAccountProfiles,
@@ -231,29 +232,15 @@ function validAccountId(value: unknown): value is string {
 }
 
 function readRecord<T>(key: string): T {
-  const value = readJson<unknown>(key, {});
-  return isRecord(value) ? (value as T) : ({} as T);
+  return readJson(
+    key,
+    (value) => (isRecord(value) ? (value as T) : ({} as T)),
+    {} as T,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // A private or full storage area should not block the provider itself.
-  }
 }
 
 function announceChange(): void {

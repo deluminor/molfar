@@ -1,4 +1,4 @@
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { HarnessId } from "@/domain/harness/harness";
 import {
   createPath,
@@ -167,7 +167,7 @@ const catalogEntries = new Map<string, CatalogEntry>();
 
 export function skillCatalogKey(context: SkillCatalogContext): string {
   const sessionScoped = !!getHarness(context.harness)?.commands?.subscribe;
-  return `${context.harness}\0${normalizeProjectPath(context.cwd)}${sessionScoped && context.sessionId ? `\0${context.sessionId}` : ""}`;
+  return `${context.harness}\0${normalizePath(context.cwd)}${sessionScoped && context.sessionId ? `\0${context.sessionId}` : ""}`;
 }
 
 export function hasNativeCommands(harness: HarnessId): boolean {
@@ -198,7 +198,7 @@ export function subscribeSkills(
         kind: "native",
       }));
       catalogEntries.set(key, {
-        cwd: normalizeProjectPath(context.cwd),
+        cwd: normalizePath(context.cwd),
         skills,
         loadedAt: Date.now(),
         retryAt: 0,
@@ -219,7 +219,7 @@ export function invalidateSkills(context?: { cwd: string }) {
     catalogEntries.clear();
     return;
   }
-  const cwd = normalizeProjectPath(context.cwd);
+  const cwd = normalizePath(context.cwd);
   for (const entry of catalogEntries.values()) {
     if (entry.cwd !== cwd) continue;
     entry.generation += 1;
@@ -235,7 +235,7 @@ export function loadSkills(
 ): Promise<Skill[]> {
   const normalized = {
     harness: context.harness,
-    cwd: normalizeProjectPath(context.cwd),
+    cwd: normalizePath(context.cwd),
     ...(context.sessionId ? { sessionId: context.sessionId } : {}),
   } satisfies SkillCatalogContext;
   const key = skillCatalogKey(normalized);

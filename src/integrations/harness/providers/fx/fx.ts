@@ -9,7 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   autoPermissionOption,
   eventsFromAcpUpdate,
@@ -301,7 +301,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
       } catch {
         muteGate.current = true;
         try {
-          const mcpServers = await loadSessionMcpServers("fx", input.cwd);
+          const mcpServers = await loadSessionMcpServersForSession(
+            "fx",
+            input.cwd,
+            input.onEvent,
+          );
           setup = await acp.request<SessionSetupResult>(
             "session/load",
             {
@@ -324,7 +328,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     }
 
     if (!acpSessionId) {
-      const mcpServers = await loadSessionMcpServers("fx", input.cwd);
+      const mcpServers = await loadSessionMcpServersForSession(
+        "fx",
+        input.cwd,
+        input.onEvent,
+      );
       setup = await acp.request<SessionSetupResult>(
         "session/new",
         { cwd: input.cwd, mcpServers },

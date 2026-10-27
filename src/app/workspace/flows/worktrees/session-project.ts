@@ -11,7 +11,7 @@ import { newSession, retargetSessionToProject } from "@/features/sessions/model/
 import { leafIds, type WorkspaceTab } from "@/features/workspace/model/layout";
 import { removeTabFromGroup, tabGroupProject } from "@/features/workspace/model/tab-groups";
 import { projectName } from "@/shared/lib/paths";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { WorktreeDeps } from "./worktree-deps";
 
 /**
@@ -46,7 +46,7 @@ function leaveMismatchedGroup(
  */
 export function changeSessionProject(deps: WorktreeDeps, sessionId: string, cwd: string): void {
   const { setProjectCwd, setRecents } = deps.store.getState();
-  const normalized = normalizeProjectPath(cwd);
+  const normalized = normalizePath(cwd);
   const current = deps.sessionsRef.current.find((s) => s.id === sessionId);
   const previous = current?.cwd;
   const moved = !!previous && !sameProjectPath(previous, normalized);

@@ -12,7 +12,7 @@ import {
 } from "@/features/settings/model/settings";
 import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 import { newTab } from "@/features/workspace/model/layout";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { WindowTransferPayload } from "../../model/window-transfer";
 import { INITIAL_FAMILIARS_STATE } from "./familiars-slice";
 import { initialProjectsState } from "./initial-projects";
@@ -56,7 +56,7 @@ export function initialWorkspaceState(
     history,
     storedLinkedSessions: history.filter((session) => session.linkedWorkItem),
     loadedProjects: historyCwd
-      ? new Set([normalizeProjectPath(historyCwd)])
+      ? new Set([normalizePath(historyCwd)])
       : new Set(),
     historyErrorCwd: null,
     filesSearchOpen: false,

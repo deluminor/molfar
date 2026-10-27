@@ -438,11 +438,78 @@ describe("approvals and modes", () => {
     ).rejects.toThrow("already answered");
   });
 
+  it("rejects a malformed approval decision", async () => {
+    const { deps, handle } = setup([
+      session({ id: "s", blocks: [block({ id: "a1", role: "tool", approval: { requestId: 1 } })] }),
+    ]);
+
+    for (const decision of [undefined, "ALLOW", true, { allow: true }]) {
+      await expect(handle("approval.respond", { sessionId: "s", requestId: 1, decision })).rejects.toThrow("decision");
+    }
+    await expect(handle("approval.respond", { sessionId: "s", requestId: "1", decision: "allow" })).rejects.toThrow(
+      "requestId",
+    );
+    expect(deps.approve).not.toHaveBeenCalled();
+  });
+
   it("switches to any runtime mode the desktop offers", async () => {
     const { deps, handle } = setup([session({ id: "s" })]);
     await handle("session.mode", { sessionId: "s", runtimeMode: "full-access" });
     expect(deps.setRuntimeMode).toHaveBeenCalledWith("s", "full-access");
     await expect(handle("session.mode", { sessionId: "s", runtimeMode: "yolo" })).rejects.toThrow("runtimeMode");
+  });
+});
+
+describe("question answers", () => {
+  const asking = () =>
+    session({
+      id: "s",
+      pendingQuestion: {
+        requestId: 4,
+        questions: [
+          {
+            id: "db",
+            prompt: "Which database?",
+            multiSelect: false,
+            allowCustom: true,
+            options: [
+              { id: "pg", label: "Postgres" },
+              { id: "sqlite", label: "SQLite" },
+            ],
+          },
+        ],
+      },
+    });
+  const answer = (reply: unknown) => ({ sessionId: "s", requestId: 4, reply });
+
+  it("passes a valid answer or skip through", async () => {
+    const { deps, handle } = setup([asking()]);
+
+    await handle("question.answer", answer({ kind: "answered", answers: { db: ["pg"] } }));
+    await handle("question.answer", answer({ kind: "answered", answers: {}, custom: { db: " Mongo " } }));
+    await handle("question.answer", answer({ kind: "skipped" }));
+
+    expect(deps.answer).toHaveBeenNthCalledWith(1, "s", 4, { kind: "answered", answers: { db: ["pg"] } });
+    expect(deps.answer).toHaveBeenNthCalledWith(2, "s", 4, { kind: "answered", answers: {}, custom: { db: "Mongo" } });
+    expect(deps.answer).toHaveBeenNthCalledWith(3, "s", 4, { kind: "skipped" });
+  });
+
+  it.each([
+    ["answers is not an object", { kind: "answered", answers: ["pg"] }],
+    ["answers is a string", { kind: "answered", answers: "pg" }],
+    ["a selection is not a list", { kind: "answered", answers: { db: "pg" } }],
+    ["a selection holds a non-string", { kind: "answered", answers: { db: [1] } }],
+    ["a selection names an unknown option", { kind: "answered", answers: { db: ["mysql"] } }],
+    ["an answer names an unknown question", { kind: "answered", answers: { other: ["pg"] } }],
+    ["custom is not an object", { kind: "answered", answers: {}, custom: "Mongo" }],
+    ["custom text is not a string", { kind: "answered", answers: {}, custom: { db: 42 } }],
+    ["custom text is too long", { kind: "answered", answers: {}, custom: { db: "x".repeat(20_001) } }],
+    ["nothing is actually answered", { kind: "answered", answers: { db: [] } }],
+  ])("rejects a reply where %s", async (_case, reply) => {
+    const { deps, handle } = setup([asking()]);
+
+    await expect(handle("question.answer", answer(reply))).rejects.toThrow("reply");
+    expect(deps.answer).not.toHaveBeenCalled();
   });
 });
 

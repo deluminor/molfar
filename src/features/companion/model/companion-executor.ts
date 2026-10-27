@@ -5,7 +5,9 @@ import type { Familiar } from "@/features/familiars/model/familiar";
 import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
 import type { Note } from "@/features/notes/notes";
 import type { SessionSummary } from "@/features/sessions/data/session-store";
+import { CompanionError } from "./companion-error";
 import type { UserQuestionReply } from "@/domain/session/user-question";
+import { approvalDecision, questionReply } from "./companion-reply-input";
 import {
   companionFamiliar,
   companionProjects,
@@ -111,8 +113,6 @@ const CODE_EXTENSIONS = new Set([
 ]);
 // Base64 inflates by 4/3; this keeps one attachment under the desktop's 20 MiB cap.
 const IMAGE_BASE64_MAX = 14_000_000;
-
-export class CompanionError extends Error {}
 
 function record(value: unknown, name = "input"): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -297,24 +297,20 @@ export function createCompanionExecutor(deps: CompanionDeps) {
 
   const respondApproval = (session: Session, input: Record<string, unknown>) => {
     const requestId = requestNumber(input);
-    if (input.decision !== "allow" && input.decision !== "deny")
-      throw new CompanionError('decision must be "allow" or "deny"');
+    const decision = approvalDecision(input.decision);
     const pending = session.blocks.some(
       (block) => block.approval?.requestId === requestId && !block.approval.decided,
     );
     if (!pending) throw new CompanionError("This approval was already answered");
-    deps.approve(session.id, requestId, input.decision);
+    deps.approve(session.id, requestId, decision);
     return { answered: true };
   };
 
   const answerQuestion = (session: Session, input: Record<string, unknown>) => {
     const requestId = requestNumber(input);
-    if (session.pendingQuestion?.requestId !== requestId)
-      throw new CompanionError("This question was already answered");
-    const reply = record(input.reply, "reply");
-    if (reply.kind !== "answered" && reply.kind !== "skipped")
-      throw new CompanionError('reply.kind must be "answered" or "skipped"');
-    deps.answer(session.id, requestId, reply as UserQuestionReply);
+    const pending = session.pendingQuestion;
+    if (pending?.requestId !== requestId) throw new CompanionError("This question was already answered");
+    deps.answer(session.id, requestId, questionReply(input.reply, pending));
     return { answered: true };
   };
 

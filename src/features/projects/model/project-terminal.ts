@@ -7,7 +7,7 @@ import {
   type WorkspaceTab,
 } from "@/features/workspace/model/layout";
 import { sameProjectPath } from "./recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { Session } from "@/domain/session/session";
 import {
   applyTerminalMeta,
@@ -81,7 +81,7 @@ export function createProjectTerminal(
   side: DockSide = "bottom",
 ): ProjectTerminalDock {
   return {
-    projectPath: normalizeProjectPath(projectPath),
+    projectPath: normalizePath(projectPath),
     pane: newEditorPane(file),
     side,
     size: defaultDockSize(side),
@@ -313,7 +313,7 @@ export function splitProjectTerminalsForMove(
   const moving: ProjectTerminalDock[] = [];
   const remaining: ProjectTerminalDock[] = [];
   for (const dock of docks) {
-    const path = normalizeProjectPath(dock.projectPath);
+    const path = normalizePath(dock.projectPath);
     const stays = remainingProjects.has(path);
     const follows = movingProjects.has(path) && !stays;
     if (follows) moving.push(dock);
@@ -329,7 +329,7 @@ function projectPathsOf(
   const paths = new Set<string>();
   for (const tab of tabs) {
     const cwd = workspaceTabCwd(tab, sessions);
-    if (cwd) paths.add(normalizeProjectPath(cwd));
+    if (cwd) paths.add(normalizePath(cwd));
   }
   return paths;
 }

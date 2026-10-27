@@ -147,7 +147,7 @@ it("streams each open Familiar on transcript commits without waiting for a poll"
   });
 });
 
-it("stops publishing when Monos are disabled", async () => {
+it("stops publishing when familiars are disabled", async () => {
   await act(async () => root.render(createElement(Harness, { sessions })));
   native.invoke.mockClear();
   sessions = sessions.map((session) => ({ ...session, busy: false }));

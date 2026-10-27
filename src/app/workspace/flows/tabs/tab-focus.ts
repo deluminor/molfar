@@ -15,7 +15,7 @@ import {
   findOpenSessionTab,
   focusedWorkspaceTabCwd,
 } from "@/features/workspace/model/workspace-tab-groups";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { SessionPersistence } from "../session-history/session-persistence";
 import type { WorkspaceStore } from "../../store/types";
 
@@ -94,7 +94,7 @@ function switchToProjectOf(deps: TabFocusDeps, tab: WorkspaceTab) {
   const cwd = focusedWorkspaceTabCwd(tab, deps.sessions());
   if (!cwd || !looksLikeProject(cwd)) return;
 
-  const normalized = normalizeProjectPath(cwd);
+  const normalized = normalizePath(cwd);
   if (sameProjectPath(normalized, deps.projectCwd())) return;
 
   const { setProjectCwd, setRecents } = deps.store.getState();

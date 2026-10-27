@@ -1,7 +1,7 @@
 import {
   limitSection,
   parseJsonObject,
-  stringField,
+  stringOrEmpty,
 } from "@/shared/lib/json-text";
 
 export type CommitMessage = {
@@ -95,9 +95,9 @@ export function parseCommitMessage(raw: string): CommitMessage | null {
   const rec = parseJsonObject(raw);
   if (!rec) return null;
   const subject = sanitizeCommitSubject(
-    stringField(rec, "subject") ||
-      stringField(rec, "title") ||
-      stringField(rec, "message"),
+    stringOrEmpty(rec, "subject") ||
+      stringOrEmpty(rec, "title") ||
+      stringOrEmpty(rec, "message"),
   );
   if (!subject) return null;
   return { subject, body: commitBody(rec) };
@@ -122,8 +122,8 @@ export function formatCommitMessage(message: CommitMessage): string {
 export function parsePrContent(raw: string): PrContent | null {
   const rec = parseJsonObject(raw);
   if (!rec) return null;
-  const title = sanitizePrTitle(stringField(rec, "title"));
-  const body = stringField(rec, "body").trim();
+  const title = sanitizePrTitle(stringOrEmpty(rec, "title"));
+  const body = stringOrEmpty(rec, "body").trim();
   if (!title) return null;
   return { title, body };
 }
@@ -131,7 +131,7 @@ export function parsePrContent(raw: string): PrContent | null {
 export function parseBranchName(raw: string): string | null {
   const rec = parseJsonObject(raw);
   const branch = sanitizeBranchFragment(
-    rec ? stringField(rec, "branch") : raw,
+    rec ? stringOrEmpty(rec, "branch") : raw,
   );
   return branch || null;
 }

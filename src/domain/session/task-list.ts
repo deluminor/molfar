@@ -1,3 +1,4 @@
+import { asRecord } from "@/shared/lib/json-text";
 export function isTaskListToolName(value: string): boolean {
   const name = value
     .trim()
@@ -98,13 +99,6 @@ function statusFromLegacyMark(mark: string): TaskListItemStatus {
   if (mark === "~" || mark === "…") return "in_progress";
   if (mark === "-") return "cancelled";
   return "pending";
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function taskListItemId(value: unknown): string | undefined {

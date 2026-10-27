@@ -4,7 +4,7 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::panic::AssertUnwindSafe;
-use std::sync::{mpsc, Mutex};
+use std::sync::{mpsc, Mutex, PoisonError};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -318,7 +318,7 @@ fn panels(app: &AppHandle, mono_id: &str) -> Vec<WebviewWindow> {
         .filter(|w| w.label().starts_with(FAMILIAR_CHAT_PREFIX))
         .collect();
     let state = app.state::<MonoChatState>();
-    let inner = state.0.lock().unwrap();
+    let inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
     windows
         .into_iter()
         .filter(|w| inner.shown(w.label()) == Some(mono_id))
@@ -380,7 +380,7 @@ pub fn familiar_chat_sync(
     }
     let (roster_changed, menu_changed) = {
         let state = app.state::<MonoChatState>();
-        let mut inner = state.0.lock().unwrap();
+        let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
         inner.hosts.insert(window.label().to_owned(), hosted);
         let menu_changed = inner.menu_mascots != mascots
             || inner.monos.len() != monos.len()
@@ -407,7 +407,7 @@ pub fn familiar_chat_sync(
     if roster_changed {
         let (roster, mascots) = {
             let state = app.state::<MonoChatState>();
-            let inner = state.0.lock().unwrap();
+            let inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
             (inner.monos.clone(), inner.menu_mascots.clone())
         };
         if let Some(tray) = app.tray_by_id(TRAY).filter(|_| menu_changed) {
@@ -435,7 +435,7 @@ pub fn familiar_chat_sync(
 
 fn owner(app: &AppHandle, mono_id: &str) -> Result<String, String> {
     let state = app.state::<MonoChatState>();
-    let inner = state.0.lock().unwrap();
+    let inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
     if !inner.monos.iter().any(|m| m.id == mono_id) {
         return Err("That Familiar is no longer available.".into());
     }
@@ -508,7 +508,7 @@ fn select(app: &AppHandle, mono_id: &str) -> Result<(), String> {
     };
     let renderer_ready = {
         let state = app.state::<MonoChatState>();
-        let mut inner = state.0.lock().unwrap();
+        let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
         inner
             .shown
             .insert(window.label().to_owned(), mono_id.to_owned());
@@ -536,7 +536,7 @@ fn switch(app: &AppHandle, window: &WebviewWindow, to: &str) -> Result<(), Strin
     let owner = owner(app, to)?;
     {
         let state = app.state::<MonoChatState>();
-        let mut inner = state.0.lock().unwrap();
+        let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
         inner.shown.insert(window.label().to_owned(), to.to_owned());
         inner.view(to).error = None;
         inner.enqueue(owner.clone(), to.to_owned(), json!({"kind": "open"}), None);
@@ -736,7 +736,7 @@ pub fn familiar_chat_publish(
     workspace(&window)?;
     let publish = {
         let state = app.state::<MonoChatState>();
-        let mut inner = state.0.lock().unwrap();
+        let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
         inner.publish(window.label(), &mono_id, session)
     };
     if publish {
@@ -786,7 +786,7 @@ pub fn familiar_chat_reply(
     let result = error.map_or(Ok(()), Err);
     let (mono_id, reveal) = {
         let state = app.state::<MonoChatState>();
-        let mut inner = state.0.lock().unwrap();
+        let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
         let request = inner
             .pending
             .iter()
@@ -853,7 +853,7 @@ pub async fn familiar_chat_action(
     let (sender, receiver) = mpsc::channel();
     let (id, owner) = {
         let state = app.state::<MonoChatState>();
-        let mut inner = state.0.lock().unwrap();
+        let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
         let owner = inner
             .owners
             .get(&mono_id)
@@ -872,7 +872,7 @@ pub async fn familiar_chat_action(
         Ok(reply) => reply,
         Err(_) => {
             let state = app.state::<MonoChatState>();
-            let mut inner = state.0.lock().unwrap();
+            let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
             let accepted = inner
                 .pending
                 .iter()
@@ -892,7 +892,7 @@ pub async fn familiar_chat_action(
 #[tauri::command]
 pub fn familiar_chat_keep_alive(app: AppHandle, window: WebviewWindow) -> bool {
     let state = app.state::<MonoChatState>();
-    let inner = state.0.lock().unwrap();
+    let inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
     inner.views.keys().any(|id| {
         inner
             .owners
@@ -903,7 +903,7 @@ pub fn familiar_chat_keep_alive(app: AppHandle, window: WebviewWindow) -> bool {
 
 pub fn window_closed(app: &AppHandle, label: &str) {
     let state = app.state::<MonoChatState>();
-    let mut inner = state.0.lock().unwrap();
+    let mut inner = state.0.lock().unwrap_or_else(PoisonError::into_inner);
     if let Some(id) = inner.shown(label).map(str::to_owned) {
         inner.views.remove(&id);
         inner.owners.remove(&id);

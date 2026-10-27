@@ -1,4 +1,5 @@
 import { type HarnessId, HARNESSES } from "@/domain/harness/harness";
+import { parseStoredJson } from "@/shared/lib/storage";
 import type { SessionSummary } from "../data/session-store";
 
 export type SessionTimeFilter = "all" | "today" | "7d" | "30d";
@@ -39,6 +40,22 @@ export function harnessesInSessions(rows: SessionSummary[]): HarnessId[] {
   return HARNESSES.filter((harness) => seen.has(harness));
 }
 
+function parseSessionSidebarFilters(value: unknown): SessionSidebarFilters {
+  const parsed = (value ?? {}) as Partial<SessionSidebarFilters>;
+  return {
+    showArchived: parsed.showArchived === true,
+    hiddenHarnesses: Array.isArray(parsed.hiddenHarnesses)
+      ? parsed.hiddenHarnesses.filter(isHarnessId)
+      : [],
+    time: isTimeFilter(parsed.time) ? parsed.time : "all",
+    status: {
+      working: parsed.status?.working === true,
+      needsApproval: parsed.status?.needsApproval === true,
+      done: parsed.status?.done === true,
+    },
+  };
+}
+
 export function loadSessionSidebarFilters(): SessionSidebarFilters {
   try {
     const raw = localStorage.getItem(FILTERS_KEY);
@@ -49,19 +66,11 @@ export function loadSessionSidebarFilters(): SessionSidebarFilters {
         ? { ...DEFAULT_SESSION_SIDEBAR_FILTERS, showArchived: true }
         : DEFAULT_SESSION_SIDEBAR_FILTERS;
     }
-    const parsed = JSON.parse(raw) as Partial<SessionSidebarFilters>;
-    return {
-      showArchived: parsed.showArchived === true,
-      hiddenHarnesses: Array.isArray(parsed.hiddenHarnesses)
-        ? parsed.hiddenHarnesses.filter(isHarnessId)
-        : [],
-      time: isTimeFilter(parsed.time) ? parsed.time : "all",
-      status: {
-        working: parsed.status?.working === true,
-        needsApproval: parsed.status?.needsApproval === true,
-        done: parsed.status?.done === true,
-      },
-    };
+    return parseStoredJson(
+      raw,
+      parseSessionSidebarFilters,
+      DEFAULT_SESSION_SIDEBAR_FILTERS,
+    );
   } catch {
     return DEFAULT_SESSION_SIDEBAR_FILTERS;
   }

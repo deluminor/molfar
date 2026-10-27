@@ -4,7 +4,8 @@ import {
   type InboxItem,
 } from "./github-tasks";
 import type { InboxProvider, InboxKind } from "@/domain/work-items/work-item";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
+import { readJson } from "@/shared/lib/storage";
 import { timeFilterStart, type SessionTimeFilter } from "@/features/sessions/model/session-filters";
 
 export type InboxTimeFilter = SessionTimeFilter;
@@ -227,13 +228,7 @@ function defaultFiltersBySource(seed: InboxFilters): InboxFiltersBySource {
 
 /** Legacy single-blob filters — used only to seed by-source migration. */
 export function loadInboxFilters(): InboxFilters {
-  try {
-    const raw = localStorage.getItem(FILTERS_KEY);
-    if (!raw) return DEFAULT_INBOX_FILTERS;
-    return parseInboxFilters(JSON.parse(raw) as unknown);
-  } catch {
-    return DEFAULT_INBOX_FILTERS;
-  }
+  return readJson(FILTERS_KEY, parseInboxFilters, DEFAULT_INBOX_FILTERS);
 }
 
 export function loadInboxFiltersBySource(): InboxFiltersBySource {
@@ -321,10 +316,10 @@ export function pruneInboxFilters(
   projectPaths: Iterable<string>,
 ): InboxFilters {
   const known = new Set(
-    [...projectPaths].map((path) => normalizeProjectPath(path)),
+    [...projectPaths].map((path) => normalizePath(path)),
   );
   const hiddenProjects = filters.hiddenProjects.filter((path) =>
-    known.has(normalizeProjectPath(path)),
+    known.has(normalizePath(path)),
   );
   if (hiddenProjects.length === filters.hiddenProjects.length) return filters;
   return { ...filters, hiddenProjects };
@@ -369,11 +364,11 @@ export function filterInboxByProject(
   hiddenProjects: Iterable<string>,
 ): InboxItem[] {
   const hidden = new Set(
-    [...hiddenProjects].map((path) => normalizeProjectPath(path)),
+    [...hiddenProjects].map((path) => normalizePath(path)),
   );
   if (hidden.size === 0) return [...items];
   return items.filter((item) => {
-    const path = normalizeProjectPath(item.projectPath);
+    const path = normalizePath(item.projectPath);
     if (!path) return true;
     return !hidden.has(path);
   });

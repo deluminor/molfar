@@ -914,26 +914,12 @@ function textFromContent(content: unknown, separator = ""): string {
   return "";
 }
 
-function basename(path: string): string {
-  const parts = path.split(/[\\/]/);
-  return parts[parts.length - 1] || path;
-}
+import { basename } from "@/shared/lib/paths";
 
-export function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
-export function stringField(
-  rec: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 function numberField(
   rec: Record<string, unknown>,
   key: string,

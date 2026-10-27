@@ -1,11 +1,14 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
+  useReducer,
   useState,
   useSyncExternalStore,
   type ComponentType,
 } from "react";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 /** Keep optional surfaces out of the composer's startup dependency graph. */
 export function lazySurface<Props extends object>(
@@ -35,7 +38,11 @@ export function lazySurface<Props extends object>(
       });
     return pending;
   };
-  const Surface = lazy(preload);
+  let Surface = lazy(preload);
+  // React.lazy caches a rejection forever; a fresh wrapper lets "Try again" re-import.
+  const retry = () => {
+    Surface = lazy(preload);
+  };
   function ReadySurface(props: Props) {
     // Import completion must commit even when streaming updates keep React's
     // lower-priority Suspense retry work busy. The store publishes readiness
@@ -60,9 +67,19 @@ export function lazySurface<Props extends object>(
     );
   }
   function LazySurface(props: Props) {
+    const [, rerender] = useReducer((attempt: number) => attempt + 1, 0);
+    const onRetry = useCallback(() => {
+      retry();
+      rerender();
+    }, []);
+
     // Navigation uses the app's existing boundary so a transition keeps the
     // current screen visible until the destination has loaded.
-    return suspense ? <ReadySurface {...props} /> : <Surface {...props} />;
+    return (
+      <ErrorBoundary scope="surface" recovery="retry" onRetry={onRetry}>
+        {suspense ? <ReadySurface {...props} /> : <Surface {...props} />}
+      </ErrorBoundary>
+    );
   }
   return Object.assign(LazySurface, { preload });
 }

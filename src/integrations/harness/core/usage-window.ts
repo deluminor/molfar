@@ -1,5 +1,6 @@
 import type { RateLimitWindow } from "@/domain/rate-limits/rate-limit";
 import { clampUsedPercent } from "@/domain/rate-limits/rate-limit-window";
+import { nonBlankString } from "@/shared/lib/json-text";
 import { asRecord } from "../providers/codex/codex-protocol";
 
 export function parseResetTimestamp(value: unknown): number | null {
@@ -65,6 +66,5 @@ export function stringField(
   rec: Record<string, unknown>,
   key: string,
 ): string | null {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+  return nonBlankString(rec, key) ?? null;
 }

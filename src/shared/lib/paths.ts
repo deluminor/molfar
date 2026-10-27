@@ -9,8 +9,21 @@ export function slash(path: string): string {
     ? path.replace(/\\/g, "/") : path;
 }
 
+/** Strip Windows `\\?\` extended-length prefixes before comparison. */
+export function stripWindowsExtendedPrefix(path: string): string {
+  const slashed = path.replace(/\\/g, "/");
+  if (/^\/\/\?\/unc\//i.test(slashed)) return `//${slashed.slice(8)}`;
+  if (/^\/\/\?\/[a-z]:\//i.test(slashed)) return slashed.slice(4);
+  return path;
+}
+
 function trimSlash(path: string): string {
-  return slash(path).replace(/\/+$/, "") || "/";
+  return slash(stripWindowsExtendedPrefix(path)).replace(/\/+$/, "") || "/";
+}
+
+/** Canonical stored path: forward slashes, no trailing slash, extended prefix stripped. */
+export function normalizePath(path: string): string {
+  return trimSlash(path);
 }
 
 /** Stable comparison key for Windows paths without changing their display case. */

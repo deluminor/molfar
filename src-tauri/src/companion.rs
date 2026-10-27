@@ -229,10 +229,21 @@ fn normalize_code(code: &str) -> String {
 }
 
 fn read_store(path: &Path) -> Stored {
-    std::fs::read(path)
-        .ok()
-        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-        .unwrap_or_default()
+    let Ok(bytes) = std::fs::read(path) else {
+        return Stored::default();
+    };
+    match serde_json::from_slice::<Stored>(&bytes) {
+        Ok(stored) => stored,
+        Err(error) => {
+            eprintln!(
+                "molfar: companion store at {} is corrupt ({error}); backing up and resetting",
+                path.display()
+            );
+            let backup = path.with_extension("json.corrupt");
+            let _ = std::fs::rename(path, &backup);
+            Stored::default()
+        }
+    }
 }
 
 fn write_store(path: &Path, stored: &Stored) -> Result<(), String> {
@@ -920,6 +931,17 @@ mod tests {
         }
         assert!(host.inner.lock().unwrap().pairing.is_none());
         assert_eq!(pair(&host, &json!({"code": "ABCD2345"})).status, 403);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn corrupt_store_is_backed_up_and_reset() {
+        let dir = temp_dir();
+        let path = dir.join(STORE_FILE);
+        std::fs::write(&path, b"{not-json").unwrap();
+        let stored = read_store(&path);
+        assert!(!stored.enabled);
+        assert!(dir.join("companion.json.corrupt").exists());
         let _ = std::fs::remove_dir_all(dir);
     }
 

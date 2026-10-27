@@ -1,4 +1,6 @@
 import type { ToolPreview } from "@/domain/session/agent-run";
+import { asRecord, nonBlankString as stringField } from "@/shared/lib/json-text";
+import { basename } from "@/shared/lib/paths";
 
 /**
  * fx tool metadata recovery.
@@ -250,23 +252,3 @@ function section(text: string, tag: string): string | undefined {
   return match ? match[1] : undefined;
 }
 
-function basename(path: string): string {
-  const trimmed = path.replace(/[/\\]+$/, "") || path;
-  const parts = trimmed.split(/[/\\]/).filter(Boolean);
-  return parts[parts.length - 1] ?? trimmed;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
-function stringField(
-  rec: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}

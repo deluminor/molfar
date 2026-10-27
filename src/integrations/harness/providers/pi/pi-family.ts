@@ -1,5 +1,5 @@
 import { nativeModelId } from "../../core/models/resolve-model";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { TurnNotReadyError, type ApprovalDecision, type CompactContextInput, type HarnessEvent, type HarnessSessionInput, type RewindLastTurnInput, type SendTurnInput, type SteerTurnInput } from "../../core/types";
 import { taskListFromToolInput } from "@/domain/session/task-list";
 import type { UserQuestionReply } from "@/domain/session/user-question";
@@ -152,7 +152,7 @@ function stateFor(flavor: PiFlavor): FlavorState {
 }
 
 function commandContextKey(context: CommandContext): string {
-  return `${context.sessionId ?? ""}\0${normalizeProjectPath(context.cwd)}`;
+  return `${context.sessionId ?? ""}\0${normalizePath(context.cwd)}`;
 }
 
 export const ompCommandProvider: NativeCommandProvider = {
@@ -163,7 +163,7 @@ export const ompCommandProvider: NativeCommandProvider = {
       : undefined;
     if (
       !live ||
-      normalizeProjectPath(live.cwd) !== normalizeProjectPath(context.cwd)
+      normalizePath(live.cwd) !== normalizePath(context.cwd)
     ) {
       return discoverOmpCommands(context.cwd);
     }
@@ -185,7 +185,7 @@ export const ompCommandProvider: NativeCommandProvider = {
       : undefined;
     if (
       live?.availableCommands &&
-      normalizeProjectPath(live.cwd) === normalizeProjectPath(context.cwd)
+      normalizePath(live.cwd) === normalizePath(context.cwd)
     ) {
       onCommands(live.availableCommands);
     }

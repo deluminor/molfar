@@ -40,6 +40,7 @@ import { TabWidthMotion } from "@/shared/ui/ClosingTab";
 import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
 import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { logWindowChromeError } from "@/platform/tauri/log-window-chrome-error";
 import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
 import { TabLabel } from "@/shared/ui/TabLabel";
 import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
@@ -718,9 +719,8 @@ function TitleBarComponent({
 
   useEffect(() => {
     document.title = systemTitle;
-    try {
-      void getCurrentWindow().setTitle(systemTitle);
-    } catch {}
+    try { void getCurrentWindow().setTitle(systemTitle).catch((e) => logWindowChromeError("set title", e)); }
+    catch (e) { logWindowChromeError("set title", e); }
   }, [systemTitle]);
 
   const contextTab = tabMenu

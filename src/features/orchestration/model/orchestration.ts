@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Session } from "@/domain/session/session";
 import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
-import { pathKey } from "@/shared/lib/paths";
+import { pathKey, stripWindowsExtendedPrefix } from "@/shared/lib/paths";
 import type { ApprovalDecision, HarnessEvent } from "@/integrations/harness/core/types";
 import { pendingApprovalForSession } from "@/features/notifications/model/approval-toast";
 import type { UserQuestionReply } from "@/domain/session/user-question";
@@ -118,9 +118,7 @@ const storage: Storage = {
  * providers usually report `D:\...`; both must describe the same location.
  */
 export function orchestrationPathKey(value: string): string {
-  let slashed = value.replace(/\\/g, "/");
-  if (/^\/\/\?\/unc\//i.test(slashed)) slashed = `//${slashed.slice(8)}`;
-  else if (/^\/\/\?\/[a-z]:\//i.test(slashed)) slashed = slashed.slice(4);
+  const slashed = stripWindowsExtendedPrefix(value).replace(/\\/g, "/");
 
   const prefix = slashed.startsWith("//")
     ? "//"

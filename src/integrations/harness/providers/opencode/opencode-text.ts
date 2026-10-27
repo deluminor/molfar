@@ -51,6 +51,11 @@ let live: LiveText | null = null;
 let turns: Promise<void> = Promise.resolve();
 let serverUrl = "";
 
+function logTurnChainError(scope: string, error: unknown): undefined {
+  console.error(`[molfar] opencode text turn chain: ${scope}`, error);
+  return undefined;
+}
+
 export async function stopOpenCodeTextPrompt(): Promise<void> {
   await dropLive();
 }
@@ -58,15 +63,15 @@ export async function stopOpenCodeTextPrompt(): Promise<void> {
 export function warmupOpenCodeText(cwd: string): Promise<void> {
   if (!cwd || cwd === "~") return Promise.resolve();
   const run = turns
-    .catch(() => undefined)
+    .catch((error) => logTurnChainError("warmup", error))
     .then(async () => {
       await ensureLive(cwd);
     });
   turns = run.then(
     () => undefined,
-    () => undefined,
+    (error) => logTurnChainError("warmup settle", error),
   );
-  return run.catch(() => undefined);
+  return run.catch((error) => logTurnChainError("warmup run", error));
 }
 
 export async function runOpenCodeTextPrompt(input: {
@@ -79,10 +84,12 @@ export async function runOpenCodeTextPrompt(input: {
   signal?: AbortSignal;
   onEvent?: (event: HarnessEvent) => void;
 }): Promise<string> {
-  const run = turns.catch(() => undefined).then(() => promptOnLive(input));
+  const run = turns
+    .catch((error) => logTurnChainError("prompt", error))
+    .then(() => promptOnLive(input));
   turns = run.then(
     () => undefined,
-    () => undefined,
+    (error) => logTurnChainError("prompt settle", error),
   );
   return run;
 }

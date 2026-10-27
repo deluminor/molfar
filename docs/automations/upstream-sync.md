@@ -85,7 +85,6 @@ git rev-list --count "$SYNCED"..upstream/main
 #### 4a. MOLFAR-owned paths — keep MOLFAR's side
 See `docs/releasing.md` → Syncing from upstream.
 - Version numbers in `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `src-tauri/tauri.conf.json`: keep MOLFAR's version and identity (`productName`, `identifier`), but take MonoCode's other changes (new or bumped dependencies, config). For lockfiles run `git checkout --ours` and regenerate them with `npm install --package-lock-only --ignore-scripts` and `cargo metadata --format-version 1 >/dev/null`. Never hand-edit lockfiles.
-- `pnpm-lock.yaml` exists only in MOLFAR (upstream has none), so it never conflicts and silently goes stale. Whenever the sync changes `package.json` dependencies, also run `pnpm install --lockfile-only --ignore-scripts`. Check that the diff only touches the changed dependencies.
 - `CHANGELOG.md`: keep MOLFAR's history and MOLFAR's link references. Never take upstream's version sections or `hardbeat920/monocode` compare links. See step 6b for the `Unreleased` notes.
 - `.github/workflows/release.yml`, `scripts/release/`
 - `src/app/model/fork-policy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`

@@ -74,22 +74,10 @@ export type PiRpcResponse = {
   data?: unknown;
 };
 
-export function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
-export function stringField(
-  rec: Record<string, unknown> | null | undefined,
-  key: string,
-): string | undefined {
-  if (!rec) return undefined;
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 function toolArgsFromEvent(
   rec: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> {

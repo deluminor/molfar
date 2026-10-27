@@ -33,8 +33,6 @@
     "src/app/model/quickLaunchSession.ts": "src/app/model/quick-launch-session.ts",
     "src/app/model/releaseNotes.test.ts": "src/features/updates/model/release-notes.test.ts",
     "src/app/model/releaseNotes.ts": "src/features/updates/model/release-notes.ts",
-    "src/app/model/releaseNotesWorkspace.test.ts": "src/app/model/release-notes-workspace.test.ts",
-    "src/app/model/releaseNotesWorkspace.ts": "src/app/model/release-notes-workspace.ts",
     "src/app/model/sessionState.test.ts": "src/app/model/session-state.test.ts",
     "src/app/model/sessionState.ts": "src/app/model/session-state.ts",
     "src/app/model/submissionAcceptance.test.ts": "src/app/model/submission-acceptance.test.ts",
@@ -50,7 +48,6 @@
     "src/app/model/updaterConfig.test.ts": "src/features/updates/model/updater-config.test.ts",
     "src/app/model/updateRecheck.test.ts": "src/features/updates/model/update-recheck.test.ts",
     "src/app/model/updateRecheck.ts": "src/features/updates/model/update-recheck.ts",
-    "src/app/model/windowTransfer.test.ts": "src/app/model/window-transfer.test.ts",
     "src/app/model/windowTransfer.ts": "src/app/model/window-transfer.ts",
     "src/app/model/windowTransferBootstrap.ts": "src/app/model/window-transfer-bootstrap.ts",
     "src/app/shell/AppDialog.test.ts": "src/app/shell/app-dialog.test.ts",
@@ -81,7 +78,6 @@
     "src/app/shell/WhatsNewDialog.test.ts": "src/app/shell/whats-new-dialog.test.ts",
     "src/app/shell/WindowControls.tsx": "src/features/window-chrome/ui/WindowControls.tsx",
     "src/app/ui/ReleaseNotesSurface.tsx": "src/features/updates/ui/ReleaseNotesSurface.tsx",
-    "src/debugFamiliarScroll.ts": "src/debug-familiar-scroll.ts",
     "src/features/agent-app/model/agentApp.test.ts": "src/features/agent-app/model/agent-app.test.ts",
     "src/features/agent-app/model/agentApp.ts": "src/features/agent-app/model/agent-app.ts",
     "src/features/agent-app/model/agentAppBoard.ts": "src/features/agent-app/model/agent-app-board.ts",
@@ -733,7 +729,6 @@
     "src/features/usage/model/fetchUsage.ts": "src/features/usage/model/fetch-usage.ts",
     "src/features/usage/model/usageCard.test.ts": "src/features/usage/model/usage-card.test.ts",
     "src/features/usage/model/usageCard.ts": "src/features/usage/model/usage-card.ts",
-    "src/features/usage/model/usageFetch.ts": "src/features/usage/model/usage-fetch.ts",
     "src/features/usage/model/usageProviders.test.ts": "src/features/usage/model/usage-providers.test.ts",
     "src/features/usage/model/usageProviders.ts": "src/features/usage/model/usage-providers.ts",
     "src/features/usage/model/usageSnapshots.test.ts": "src/features/usage/model/usage-snapshots.test.ts",
@@ -927,6 +922,100 @@
     "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
   },
   "splits": {
+    "src-tauri/src/fs.rs": {
+      "targets": [
+        "src-tauri/src/fs/attachments.rs",
+        "src-tauri/src/fs/attachments/tests.rs",
+        "src-tauri/src/fs/list.rs",
+        "src-tauri/src/fs/list/tests.rs",
+        "src-tauri/src/fs/media.rs",
+        "src-tauri/src/fs/media/tests.rs",
+        "src-tauri/src/fs/mod.rs",
+        "src-tauri/src/fs/ops.rs",
+        "src-tauri/src/fs/ops/tests.rs",
+        "src-tauri/src/fs/project.rs",
+        "src-tauri/src/fs/project/tests.rs",
+        "src-tauri/src/fs/project_files.rs",
+        "src-tauri/src/fs/project_files/tests.rs",
+        "src-tauri/src/fs/read.rs",
+        "src-tauri/src/fs/read/tests.rs",
+        "src-tauri/src/fs/reveal.rs",
+        "src-tauri/src/fs/walk_rules.rs",
+        "src-tauri/src/fs/walk_rules/tests.rs",
+        "src-tauri/src/fs/write.rs",
+        "src-tauri/src/git/branch.rs",
+        "src-tauri/src/git/branch/tests.rs",
+        "src-tauri/src/git/clone.rs",
+        "src-tauri/src/git/command.rs",
+        "src-tauri/src/git/command/tests.rs",
+        "src-tauri/src/git/commit.rs",
+        "src-tauri/src/git/commit/tests.rs",
+        "src-tauri/src/git/commit_files.rs",
+        "src-tauri/src/git/commit_files/tests.rs",
+        "src-tauri/src/git/file_diff.rs",
+        "src-tauri/src/git/file_diff/tests.rs",
+        "src-tauri/src/git/history.rs",
+        "src-tauri/src/git/history/tests.rs",
+        "src-tauri/src/git/index.rs",
+        "src-tauri/src/git/index/tests.rs",
+        "src-tauri/src/git/info.rs",
+        "src-tauri/src/git/info/tests.rs",
+        "src-tauri/src/git/ls_files.rs",
+        "src-tauri/src/git/mod.rs",
+        "src-tauri/src/git/numstat.rs",
+        "src-tauri/src/git/output.rs",
+        "src-tauri/src/git/output/tests.rs",
+        "src-tauri/src/git/range.rs",
+        "src-tauri/src/git/range/tests.rs",
+        "src-tauri/src/git/remote.rs",
+        "src-tauri/src/git/remote/tests.rs",
+        "src-tauri/src/git/selection.rs",
+        "src-tauri/src/git/selection/tests.rs",
+        "src-tauri/src/git/snapshot.rs",
+        "src-tauri/src/git/snapshot/tests.rs",
+        "src-tauri/src/git/stage.rs",
+        "src-tauri/src/git/stage/tests.rs",
+        "src-tauri/src/git/stash.rs",
+        "src-tauri/src/git/stats.rs",
+        "src-tauri/src/git/stats/tests.rs",
+        "src-tauri/src/github/check_details.rs",
+        "src-tauri/src/github/check_details/tests.rs",
+        "src-tauri/src/github/checks.rs",
+        "src-tauri/src/github/checks/tests.rs",
+        "src-tauri/src/github/cli.rs",
+        "src-tauri/src/github/cli/tests.rs",
+        "src-tauri/src/github/comment_post.rs",
+        "src-tauri/src/github/comment_post/tests.rs",
+        "src-tauri/src/github/comments.rs",
+        "src-tauri/src/github/comments/tests.rs",
+        "src-tauri/src/github/details.rs",
+        "src-tauri/src/github/details/tests.rs",
+        "src-tauri/src/github/graphql.rs",
+        "src-tauri/src/github/mod.rs",
+        "src-tauri/src/github/pr.rs",
+        "src-tauri/src/github/pr/tests.rs",
+        "src-tauri/src/github/pr_diff.rs",
+        "src-tauri/src/github/pr_diff/tests.rs",
+        "src-tauri/src/github/repo.rs",
+        "src-tauri/src/github/repo/tests.rs",
+        "src-tauri/src/github/status.rs",
+        "src-tauri/src/github/status/tests.rs",
+        "src-tauri/src/github/thread.rs",
+        "src-tauri/src/github/thread/tests.rs",
+        "src-tauri/src/github/thread_queries.rs",
+        "src-tauri/src/github/work_items.rs",
+        "src-tauri/src/github/work_items/tests.rs",
+        "src-tauri/src/transcripts/claude.rs",
+        "src-tauri/src/transcripts/claude/tests.rs",
+        "src-tauri/src/transcripts/mod.rs",
+        "src-tauri/src/transcripts/omp.rs",
+        "src-tauri/src/transcripts/omp/tests.rs",
+        "src-tauri/src/transcripts/omp_interjections.rs",
+        "src-tauri/src/transcripts/omp_interjections/tests.rs",
+        "src-tauri/src/test_support.rs"
+      ],
+      "notes": "Split item-by-item, bodies unchanged; Tauri command names unchanged. Git plumbing (git_cmd*, git_checked/output/run/stdout, resolve_repo_path) \u2192 git/command.rs; git_output_capped \u2192 git/output.rs; GitInfo cache, branch/head helpers \u2192 git/info.rs; check-ignore/ls-files \u2192 git/ls_files.rs; diff stats \u2192 git/stats.rs; diff index \u2192 git/index.rs + numstat/name-status/untracked parsing \u2192 git/numstat.rs; file diff + full-context diff \u2192 git/file_diff.rs; log/decorations \u2192 git/history.rs; commit file lists \u2192 git/commit_files.rs; stage/unstage/discard \u2192 git/stage.rs; commit/staged context/locate \u2192 git/commit.rs; selected-path commits \u2192 git/selection.rs; push/pull/sync/default branch \u2192 git/remote.rs; range context/merge-base \u2192 git/range.rs; snapshot \u2192 git/snapshot.rs; branches/checkout \u2192 git/branch.rs; stash \u2192 git/stash.rs; clone \u2192 git/clone.rs. gh runner + rate-limit backoff \u2192 github/cli.rs; repo resolution \u2192 github/repo.rs; auth/star \u2192 github/status.rs; work items \u2192 github/work_items.rs, details \u2192 github/details.rs, thread \u2192 github/thread.rs (queries github/thread_queries.rs, GraphQL DTOs github/graphql.rs, comment mapping github/comments.rs), posting comments/replies \u2192 github/comment_post.rs; PR status/create/actions \u2192 github/pr.rs; PR diff \u2192 github/pr_diff.rs; checks \u2192 github/checks.rs, github/check_details.rs. OMP/Claude transcript readers \u2192 transcripts/{omp,omp_interjections,claude}.rs. File system: shared limits, expand_home, path_to_js stay in fs/mod.rs; project location \u2192 fs/project.rs; list_dir \u2192 fs/list.rs; project file walk \u2192 fs/project_files.rs + fs/walk_rules.rs; reads \u2192 fs/read.rs; binary/image/video \u2192 fs/media.rs; attachments/generated images \u2192 fs/attachments.rs; write/create \u2192 fs/write.rs; rename/copy/move/delete \u2192 fs/ops.rs; reveal/open \u2192 fs/reveal.rs. Each test sits in <module>/tests.rs next to the code it exercises; shared temp-dir/git helpers \u2192 test_support.rs."
+    },
     "src-tauri/src/mobile_access.rs": {
       "targets": [
         "src-tauri/src/mobile_access/mod.rs",
@@ -972,7 +1061,7 @@
         "src/integrations/harness/providers/opencode/opencode-usage.ts",
         "src/integrations/harness/providers/devin/devin-usage.ts"
       ],
-      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) → src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits → rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt → rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers → src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage → providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits → providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage → providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts. Devin: DevinUsage and parseDevinUsage → providers/devin/devin-usage.ts; formatExtraUsageBalance stays with the formatters; DAILY_WINDOW_MINUTES → domain/rate-limits/rate-limit.ts."
+      "notes": "Types and window constants (RateLimitProvider, RateLimitStatus, RateLimitWindow, RateLimitResetCredit(s), ProviderRateLimits, SESSION/WEEKLY/MONTHLY_WINDOW_MINUTES) \u2192 src/domain/rate-limits/rate-limit.ts; idle/fetching/unavailable/errorRateLimits \u2192 rate-limit-state.ts; clampUsedPercent, exhaustedWindowResetAt \u2192 rate-limit-window.ts. Payload parsing: parseResetTimestamp, mapUsageWindow and field helpers \u2192 src/integrations/harness/core/usage-window.ts; parseClaudeOAuthUsage \u2192 providers/claude/claude-usage.ts; parseCodexRateLimits with window classification and reset credits \u2192 providers/codex/codex-rate-limits.ts; parseOpencodeGoUsage \u2192 providers/opencode/opencode-usage.ts. Display formatters and poll intervals stay in features/providers/model/rate-limits.ts. Devin: DevinUsage and parseDevinUsage \u2192 providers/devin/devin-usage.ts; formatExtraUsageBalance stays with the formatters; DAILY_WINDOW_MINUTES \u2192 domain/rate-limits/rate-limit.ts."
     },
     "src/features/sessions/model/models.test.ts": {
       "targets": [
@@ -992,7 +1081,7 @@
         "src/integrations/harness/core/models/catalog-store.ts",
         "src/integrations/harness/core/models/resolve-model.ts"
       ],
-      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) → src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) → native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) → model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID → src/integrations/harness/core/models/catalog.ts; pickDefaultId → default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) → catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId → resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
+      "notes": "Model types (ModelSettingChoice, ModelSetting, AgentModel) \u2192 src/domain/models/agent-model.ts; native id helpers (nativeIdFrom, comparableNativeId, claudeNativeId, nativeIdForUnknownKey) \u2192 native-id.ts; setting helpers (defaultModelSettings, compatibleSettingValue, SETTING_VALUE_ALIASES, EFFORT_SETTING_IDS, isEffortSettingId, modelEffortSetting, modelEffortLabel) \u2192 model-settings.ts. Bundled MODELS and DEFAULT_MODEL_ID \u2192 src/integrations/harness/core/models/catalog.ts; pickDefaultId \u2192 default-model.ts; the live overlay store and lookups (setHarnessModels, hasLiveCatalog, resetHarnessModelOverlays, subscribeModels, getModelSnapshot, defaultModelId, modelsFor, allModels, findModel, lookupModel) \u2192 catalog-store.ts; resolveModel, modelContextWindow, nativeModelId, mergeModelSettings, encodeModelLaunchId \u2192 resolve-model.ts. Preference persistence and picker state (favorites, picker tabs and visibility, default/last/recent models, preferredModelSettings, preferredModelId, firstEnabledHarness, defaultSessionChoice) stay in features/sessions/model/models.ts. HARNESS_ORDER was dropped in favour of HARNESSES (same order)."
     },
     "src/features/sessions/model/session.ts": {
       "targets": [
@@ -1040,13 +1129,13 @@
     "src/app/App.tsx": [
       {
         "names": [
-          "useState: projectCwd, recents (boot initialisers → initial-projects.ts / initial-workspace.ts)"
+          "useState: projectCwd, recents (boot initialisers \u2192 initial-projects.ts / initial-workspace.ts)"
         ],
         "target": "src/app/workspace/store/projects-slice.ts"
       },
       {
         "names": [
-          "useState: sessions, tabs, activeTabId, tabVisitNav (blank seed session/tab → initial-workspace.ts)"
+          "useState: sessions, tabs, activeTabId, tabVisitNav (blank seed session/tab \u2192 initial-workspace.ts)"
         ],
         "target": "src/app/workspace/store/tabs-slice.ts"
       },
@@ -1100,7 +1189,7 @@
       },
       {
         "names": [
-          "persistSession, the debounced persistence effect, lastPersisted, lastBoundProvider, lastPersistedUserBlock, observedSessions, pendingPersist (App: sessionPersistence.* — persist, observe, writePending, markImported, markSaved, forgetSaved, dropPending, forgetUserTurn, mapPending)"
+          "persistSession, the debounced persistence effect, lastPersisted, lastBoundProvider, lastPersistedUserBlock, observedSessions, pendingPersist (App: sessionPersistence.* \u2014 persist, observe, writePending, markImported, markSaved, forgetSaved, dropPending, forgetUserTurn, mapPending)"
         ],
         "target": "src/app/workspace/flows/session-history/session-persistence.ts"
       },
@@ -1173,7 +1262,7 @@
       },
       {
         "names": [
-          "useState: familiarViewId, familiarOverviewOpen, familiarOverviewTab, familiarSettingsFor, familiarChangesRequest, familiarActivity, familiarShownSession, familiarOverviewDocument, familiarShownSessionFocused; shownFamiliarSessionId (refs → workspaceStore.getState())"
+          "useState: familiarViewId, familiarOverviewOpen, familiarOverviewTab, familiarSettingsFor, familiarChangesRequest, familiarActivity, familiarShownSession, familiarOverviewDocument, familiarShownSessionFocused; shownFamiliarSessionId (refs \u2192 workspaceStore.getState())"
         ],
         "target": "src/app/workspace/store/familiars-slice.ts"
       },
@@ -2197,9 +2286,9 @@
     "src/features/projects/model/recents.ts": [
       {
         "names": [
-          "normalizeProjectPath"
+          "normalizePath"
         ],
-        "target": "src/shared/lib/project-path.ts"
+        "target": "src/shared/lib/paths.ts"
       }
     ],
     "src/features/providers/model/providerAccounts.ts": [
@@ -2457,6 +2546,21 @@
     "src/features/notes/index.ts": "Barrel removed (MOLFAR forbids barrels). Import from src/features/notes/notes.ts, src/features/notes/note-images.ts or src/domain/notes/note-card.ts directly.",
     "src/shared/lib/legacyStorageMigration.test.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
     "src/shared/lib/legacyStorageMigration.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
-    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply."
+    "src/shared/lib/migrateLegacyStorageOnLoad.ts": "MonoCode-era migration and compatibility code dropped in the MOLFAR rebrand (4112be2f); MOLFAR does not import older profiles, so upstream changes here do not apply.",
+    "pnpm-lock.yaml": "B2 hardening: npm-only (Erik 2026-10-26); CI uses npm ci, duplicate Dependabot surface removed.",
+    "pnpm-workspace.yaml": "B2 hardening: npm-only (Erik 2026-10-26); no pnpm workspace after dropping pnpm lockfile.",
+    "src/app/model/release-notes-workspace.test.ts": "Hardening B4: knip-confirmed unused (874e7aa5).",
+    "src/app/model/releaseNotesWorkspace.test.ts": "Hardening B4: renamed toward src/app/model/release-notes-workspace.test.ts then deleted.",
+    "src/app/model/release-notes-workspace.ts": "Hardening B4: knip-confirmed unused (874e7aa5).",
+    "src/app/model/releaseNotesWorkspace.ts": "Hardening B4: renamed toward src/app/model/release-notes-workspace.ts then deleted.",
+    "src/app/model/window-transfer.test.ts": "Hardening B4: window transfer staging path dropped (7754520b).",
+    "src/app/model/windowTransfer.test.ts": "Hardening B4: renamed toward src/app/model/window-transfer.test.ts then deleted.",
+    "src/debug-familiar-scroll.ts": "Hardening B4: temporary debug scroll tracer removed (aa42fd43).",
+    "src/debugFamiliarScroll.ts": "Hardening B4: renamed toward src/debug-familiar-scroll.ts then deleted.",
+    "src/features/usage/model/usage-fetch.ts": "Hardening B4: knip-confirmed unused (874e7aa5).",
+    "src/features/usage/model/usageFetch.ts": "Hardening B4: renamed toward src/features/usage/model/usage-fetch.ts then deleted.",
+    "src/features/notes/ui/index.ts": "Hardening B4: knip-confirmed unused barrel (874e7aa5).",
+    "src/features/sessions/ui/ModelSettings.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
+    "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5)."
   }
 }

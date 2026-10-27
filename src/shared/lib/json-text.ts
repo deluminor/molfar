@@ -62,7 +62,27 @@ export function parseJsonObject(raw: string): Record<string, unknown> | null {
   return fallback;
 }
 
-export function stringField(rec: Record<string, unknown>, key: string): string {
+export function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return null;
+}
+
+export function stringOrEmpty(
+  rec: Record<string, unknown>,
+  key: string,
+): string {
   const value = rec[key];
   return typeof value === "string" ? value : "";
+}
+
+export function nonBlankString(
+  rec: Record<string, unknown> | null | undefined,
+  key: string,
+): string | undefined {
+  if (!rec) return undefined;
+  const value = rec[key];
+  if (typeof value !== "string") return undefined;
+  return value.trim() ? value : undefined;
 }

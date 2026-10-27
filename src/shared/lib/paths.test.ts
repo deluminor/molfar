@@ -4,6 +4,7 @@ import {
   isEqualOrInside,
   joinPath,
   parentPath,
+  pathKey,
   prettyCwd,
   projectName,
   rebasePath,
@@ -217,6 +218,16 @@ describe("parentPath and joinPath", () => {
     expect(joinPath("C:/Users/me", "code/app")).toBe("C:/Users/me/code/app");
     expect(joinPath("C:/Users/me/code", "..")).toBe("C:/Users/me");
     expect(joinPath("C:/", "Users")).toBe("C:/Users");
+  });
+});
+
+describe("pathKey", () => {
+  it("treats Windows extended and plain paths as equal", () => {
+    expect(pathKey("\\\\?\\D:\\Projects\\Repo\\src")).toBe("d:/projects/repo/src");
+    expect(pathKey("D:/Projects/Repo/src")).toBe("d:/projects/repo/src");
+    expect(pathKey("\\\\?\\UNC\\Server\\Share\\Repo\\src")).toBe(
+      "//server/share/repo/src",
+    );
   });
 });
 

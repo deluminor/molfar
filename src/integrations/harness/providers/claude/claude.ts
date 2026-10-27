@@ -13,7 +13,7 @@ import {
   writeChild,
 } from "../../core/child";
 import {
-  loadSessionMcpServers,
+  loadSessionMcpServersForSession,
   MOLFAR_CONNECTORS_SERVER_NAME,
   toClaudeMcpConfig,
 } from "../../core/session-mcp-servers";
@@ -463,7 +463,11 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     providerSessionId: claudeSessionId,
     tasks: claudeTasks,
   });
-  const sessionMcp = await loadSessionMcpServers("claude", input.cwd);
+  const sessionMcp = await loadSessionMcpServersForSession(
+    "claude",
+    input.cwd,
+    input.onEvent,
+  );
   const connectorsOnly = sessionMcp.filter(
     (server) => server.name === MOLFAR_CONNECTORS_SERVER_NAME,
   );

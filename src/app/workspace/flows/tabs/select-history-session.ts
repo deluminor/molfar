@@ -3,7 +3,7 @@ import { familiarForSession } from "@/features/familiars/model/familiar";
 import { orchestrator } from "@/features/orchestration/model/orchestration";
 import { looksLikeProject } from "@/features/projects/model/recents";
 import { newTab } from "@/features/workspace/model/layout";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { PaneDeps } from "./pane-deps";
 
 /** A worker opens inside its lead's chat, with the worker inspected. */
@@ -45,7 +45,7 @@ export async function selectHistorySession(deps: PaneDeps, sessionId: string): P
   setInboxViewOpen(false);
   setNotesViewOpen(false);
   deps.closeAutomations();
-  if (looksLikeProject(session.cwd)) setProjectCwd(normalizeProjectPath(session.cwd));
+  if (looksLikeProject(session.cwd)) setProjectCwd(normalizePath(session.cwd));
 
   const linkedUpdate = deps.linkedUpdates().get(session.id);
   placeSession(deps, session);

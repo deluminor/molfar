@@ -1,17 +1,17 @@
+import { readJson, writeJson } from "@/shared/lib/storage";
 import { CONFLUENCE_CHANGE_EVENT, HIDDEN_SPACES_KEY } from "./constants";
 import type { ConfluenceSpace } from "./types";
 
+function parseHiddenSpaceIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (id): id is string => typeof id === "string" && id.length > 0,
+  );
+}
+
 export function loadHiddenConfluenceSpaceIds(): string[] {
   try {
-    const raw = localStorage.getItem(HIDDEN_SPACES_KEY);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (id): id is string => typeof id === "string" && id.length > 0,
-    );
+    return readJson(HIDDEN_SPACES_KEY, parseHiddenSpaceIds, []);
   } catch (error) {
     console.error("Failed to read Confluence hidden spaces:", error);
     return [];
@@ -20,7 +20,7 @@ export function loadHiddenConfluenceSpaceIds(): string[] {
 
 export function saveHiddenConfluenceSpaceIds(ids: string[]): void {
   try {
-    localStorage.setItem(HIDDEN_SPACES_KEY, JSON.stringify(ids));
+    writeJson(HIDDEN_SPACES_KEY, ids);
   } catch (error) {
     console.error("Failed to save Confluence hidden spaces:", error);
   }

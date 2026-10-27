@@ -229,22 +229,10 @@ export function isRecoverableThreadResumeError(error: unknown): boolean {
   ].some((snippet) => message.includes(snippet));
 }
 
-export function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
-export function stringField(
-  rec: Record<string, unknown> | null | undefined,
-  key: string,
-): string | undefined {
-  if (!rec) return undefined;
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };
+import { nonBlankString as stringField } from "@/shared/lib/json-text";
+export { stringField };
 /**
  * Where a Codex item records the commands it parsed out of a script. The live
  * app-server protocol spells it `commandActions`; older rollout files on disk

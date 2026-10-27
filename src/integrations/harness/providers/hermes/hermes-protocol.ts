@@ -240,8 +240,5 @@ function dispatchRecord(value: unknown): Record<string, unknown> | null {
   return rec.status === "dispatched" && rec.mode === "background" ? rec : null;
 }
 
-export function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
+import { asRecord } from "@/shared/lib/json-text";
+export { asRecord };

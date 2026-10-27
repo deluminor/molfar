@@ -22,6 +22,11 @@ vi.mock("@/platform/tauri/fs", () => ({
 vi.mock("../../core/models/catalog-store", () => ({
   setHarnessModels: mocks.setHarnessModels,
 }));
+vi.mock("../../core/session-mcp-servers", async (original) => ({
+  ...(await original<typeof import("../../core/session-mcp-servers")>()),
+  loadSessionMcpServers: async () => [],
+  loadSessionMcpServersForSession: async () => [],
+}));
 vi.mock("../../core/child", () => ({
   ...mocks,
   watchChild: (_id: string, line: (value: string) => void) => {

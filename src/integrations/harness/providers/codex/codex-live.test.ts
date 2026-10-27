@@ -321,7 +321,7 @@ describe("codex live turn sequence", () => {
     await turn;
   });
 
-  it("persists Monos privately and resumes the same native thread after parking", async () => {
+  it("persists familiars privately and resumes the same native thread after parking", async () => {
     const first = await startTurn("codex-live", { codexStore: "mono" });
     expect(spawnChild.mock.calls[0][6]).toBe("mono");
     const params = parse().find((m) => m.method === "thread/start")?.params;

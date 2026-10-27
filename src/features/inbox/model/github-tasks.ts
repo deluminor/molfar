@@ -38,7 +38,7 @@ import {
   sameProjectPath,
   type RecentProject,
 } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { recordInboxSelfActivity } from "./inbox-self-activity";
 import type {
   GithubLabel,
@@ -237,7 +237,7 @@ export function inboxListCacheKey(
   query: InboxQuery,
 ): string {
   const paths = uniqueInboxProjects(projects)
-    .map((project) => normalizeProjectPath(project.path))
+    .map((project) => normalizePath(project.path))
     .sort()
     .join("|");
   const teams = [...(query.linearHiddenTeamIds ?? [])].sort().join(",");
@@ -288,7 +288,7 @@ export function starMolfarOnGithub(): Promise<void> {
 }
 
 export async function githubRepo(cwd: string): Promise<string> {
-  const key = normalizeProjectPath(cwd);
+  const key = normalizePath(cwd);
   const cached = repoByPath.get(key);
   if (cached !== undefined) return cached;
   const repositories = repositoriesByPath.get(key);
@@ -299,7 +299,7 @@ export async function githubRepo(cwd: string): Promise<string> {
 }
 
 export async function githubRepositories(cwd: string): Promise<string[]> {
-  const key = normalizeProjectPath(cwd);
+  const key = normalizePath(cwd);
   const cached = repositoriesByPath.get(key);
   if (cached) return cached;
   const repositories = await invoke<string[]>("git_github_repositories", {
@@ -1019,7 +1019,7 @@ export function inboxProjectsForRail(
   cwd: string,
 ): RecentProject[] {
   const map = collectRailProjects(recents, cwd);
-  const current = cwd ? map.get(normalizeProjectPath(cwd)) : undefined;
+  const current = cwd ? map.get(normalizePath(cwd)) : undefined;
   const rest = [...map.values()].filter(
     (project) => !current || !sameProjectPath(project.path, current.path),
   );
@@ -1032,7 +1032,7 @@ export function uniqueInboxProjects(
   const seen = new Set<string>();
   const unique: { path: string }[] = [];
   for (const project of projects) {
-    const path = normalizeProjectPath(project.path);
+    const path = normalizePath(project.path);
     if (!path || seen.has(path)) continue;
     seen.add(path);
     unique.push({ path });
@@ -1047,7 +1047,7 @@ export function groupProjectsByRepo(
   const grouped: { path: string; repo: string }[] = [];
   for (const project of resolved) {
     const repo = project.repo.trim().toLowerCase();
-    const key = repo || `path:${normalizeProjectPath(project.path)}`;
+    const key = repo || `path:${normalizePath(project.path)}`;
     if (seen.has(key)) continue;
     seen.add(key);
     grouped.push({
@@ -1110,7 +1110,7 @@ export function dedupeInboxItems(
   preferredPaths: readonly string[] = [],
 ): InboxItem[] {
   const rank = new Map(
-    preferredPaths.map((path, index) => [normalizeProjectPath(path), index]),
+    preferredPaths.map((path, index) => [normalizePath(path), index]),
   );
   const best = new Map<string, InboxItem>();
   for (const item of items) {
@@ -1129,10 +1129,10 @@ function preferInboxItem(
   rank: Map<string, number>,
 ): boolean {
   const nextRank =
-    rank.get(normalizeProjectPath(next.projectPath)) ??
+    rank.get(normalizePath(next.projectPath)) ??
     Number.POSITIVE_INFINITY;
   const currentRank =
-    rank.get(normalizeProjectPath(current.projectPath)) ??
+    rank.get(normalizePath(current.projectPath)) ??
     Number.POSITIVE_INFINITY;
   if (nextRank !== currentRank) return nextRank < currentRank;
   return next.projectPath.localeCompare(current.projectPath) < 0;

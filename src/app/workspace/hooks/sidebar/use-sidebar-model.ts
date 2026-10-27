@@ -8,7 +8,7 @@ import { loadFamiliarsEnabled, subscribeFamiliarsEnabled } from "@/features/sett
 import { useProjectBranches } from "@/features/source-control/hooks/use-project-branches";
 import type { WorkspaceTab } from "@/features/workspace/model/layout";
 import { useStableValue } from "@/shared/hooks/use-stable-value";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { selectedChangeKind, selectedChangePath, selectedCommitSha } from "../../../model/selected-change";
 import { useWorkspaceHandlers } from "../../handlers/workspace-handlers";
 import type { WorkspaceStore } from "../../store/types";
@@ -71,7 +71,7 @@ export function useSidebarModel(
     Boolean(gitCwd) && gitCwd !== "~" && !isRemoteProjectPath(cwd),
   );
 
-  const cwdKey = cwd && cwd !== "~" ? normalizeProjectPath(cwd) : null;
+  const cwdKey = cwd && cwd !== "~" ? normalizePath(cwd) : null;
   const historyFailed = cwdKey != null && historyErrorCwd === cwdKey;
   const explorerRootLabel =
     activeSession?.worktreeCwd && sameProjectPath(gitCwd, sessionWorkCwd(activeSession))

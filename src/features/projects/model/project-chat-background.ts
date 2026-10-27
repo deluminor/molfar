@@ -10,6 +10,7 @@ import {
   type ChatBackgroundScope,
   type NewThreadBackgroundEffect,
 } from "@/features/settings/model/appearance";
+import { readJson, writeJson } from "@/shared/lib/storage";
 
 const KEY = "molfar:project-chat-backgrounds";
 
@@ -46,25 +47,20 @@ function clampOpacity(value: number): number {
   );
 }
 
+function parseProjectChatBackgroundStore(
+  value: unknown,
+): Record<string, StoredProjectChatBackground> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, StoredProjectChatBackground>)
+    : {};
+}
+
 function read(): Record<string, StoredProjectChatBackground> {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === "object"
-      ? (parsed as Record<string, StoredProjectChatBackground>)
-      : {};
-  } catch {
-    return {};
-  }
+  return readJson(KEY, parseProjectChatBackgroundStore, {});
 }
 
 function write(value: Record<string, StoredProjectChatBackground>) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(value));
-  } catch {
-    // private mode / quota
-  }
+  writeJson(KEY, value);
 }
 
 function validScope(value: unknown): value is ChatBackgroundScope {

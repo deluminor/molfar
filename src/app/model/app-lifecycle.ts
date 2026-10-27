@@ -32,7 +32,6 @@ import {
   listSessionsByProject,
   loadWorkspaceSnapshot,
   replaceInFlightSessions,
-  saveWorkspaceSnapshot,
   shouldPersistSession,
   upsertSession,
   type SessionSummary,
@@ -46,10 +45,12 @@ import {
   lastProjectPath,
   sameProjectPath,
 } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import type { ProjectReturnMemory } from "@/features/projects/model/project-return";
 import { confirmApp } from "@/shared/lib/app-dialog";
 import { loadWindowTransfer } from "./window-transfer-bootstrap";
+import { saveSnapshotUnlessBlocked, snapshotLoadFailed } from "./workspace-snapshot-guard";
+import { settleBootWrites } from "./settle-boot-writes";
 import type { WindowTransferPayload } from "./window-transfer";
 
 export type { ResumedWorkspace };
@@ -267,7 +268,7 @@ async function listProjectHistory(
   if (!cwd || cwd === "~") return null;
   try {
     const rows = await listSessionsByProject(cwd);
-    return { cwd: normalizeProjectPath(cwd), rows };
+    return { cwd: normalizePath(cwd), rows };
   } catch {
     return null;
   }
@@ -285,7 +286,7 @@ async function historyForCwd(
 
 async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
   const [snapshotRaw, refs] = await Promise.all([
-    loadWorkspaceSnapshot().catch(() => null),
+    loadWorkspaceSnapshot().catch(snapshotLoadFailed),
     listInFlightSessions().catch(() => []),
   ]);
   const interrupted = new Set(refs.map((ref) => ref.sessionId));
@@ -323,14 +324,14 @@ async function loadResumedWorkspaceOnce(): Promise<ResumedWorkspace | null> {
 
   bootingResumed = workspace;
   if (workspace) {
-    await Promise.all(
+    await settleBootWrites(
       workspace.sessions
         // Idle transcripts already came from disk. Rewriting every open chat
         // here serialized/indexed the entire workspace before first paint.
         .filter(
           (session) => interrupted.has(session.id) && shouldPersistSession(session),
         )
-        .map((session) => upsertSession(session).catch(() => null)),
+        .map((session) => upsertSession(session)),
     );
   }
   return workspace;
@@ -412,7 +413,7 @@ export async function persistQuitState(
     }),
   );
   await write(
-    saveWorkspaceSnapshot(
+    saveSnapshotUnlessBlocked(
       collectWorkspaceSnapshot(
         tabs,
         sessions,
@@ -433,30 +434,27 @@ export async function persistQuitState(
 }
 
 async function persistBootingResume(workspace: ResumedWorkspace): Promise<void> {
-  await Promise.all(
-    workspace.sessions
+  await settleBootWrites([
+    ...workspace.sessions
       .filter(shouldPersistSession)
-      .map((session) => upsertSession(session).catch(() => null)),
-  );
-  await saveWorkspaceSnapshot(
-    collectWorkspaceSnapshot(
-      workspace.tabs,
-      workspace.sessions,
-      workspace.activeTabId,
-      workspace.projectCwd,
-      workspace.projectReturnMemory ?? new Map(),
-      workspace.projectTerminals ?? [],
-      workspace.lastDockSide,
+      .map((session) => upsertSession(session)),
+    saveSnapshotUnlessBlocked(
+      collectWorkspaceSnapshot(
+        workspace.tabs,
+        workspace.sessions,
+        workspace.activeTabId,
+        workspace.projectCwd,
+        workspace.projectReturnMemory ?? new Map(),
+        workspace.projectTerminals ?? [],
+        workspace.lastDockSide,
+      ),
     ),
-  ).catch(() => undefined);
-  await replaceInFlightSessions(
-    workspace.sessions
-      .filter(wasTurnInterrupted)
-      .map((session) => ({
-        sessionId: session.id,
-        cwd: session.cwd,
-      })),
-  ).catch(() => undefined);
+    replaceInFlightSessions(
+      workspace.sessions
+        .filter(wasTurnInterrupted)
+        .map((session) => ({ sessionId: session.id, cwd: session.cwd })),
+    ),
+  ]);
 }
 
 async function confirmAndCloseWindow(

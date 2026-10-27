@@ -2,7 +2,9 @@
 
 use std::path::PathBuf;
 
-use crate::fs::{expand_home, list_dir_sync, path_to_js, read_text_file_sync, DirEntry};
+use crate::fs::list::{list_dir_sync, DirEntry};
+use crate::fs::read::read_text_file_sync;
+use crate::fs::{expand_home, path_to_js};
 
 /// A path a paired phone named under a project's working copy, refused when it
 /// resolves outside it, through `..` or a symlink alike.

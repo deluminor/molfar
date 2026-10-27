@@ -1,4 +1,5 @@
 import { AcpClient } from "../../core/acp";
+import { asRecord } from "@/shared/lib/json-text";
 import {
   killChild,
   resolveCursorBinary,
@@ -7,7 +8,7 @@ import {
   watchChild,
 } from "../../core/child";
 import { abortTextPromptRace } from "../../core/abort-text-prompt";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import { mergeStream } from "../../core/stream-text";
 import type { HarnessEvent } from "../../core/types";
 
@@ -37,6 +38,11 @@ type LiveText = {
 let live: LiveText | null = null;
 let turns: Promise<void> = Promise.resolve();
 
+function logTurnChainError(scope: string, error: unknown): undefined {
+  console.error(`[molfar] cursor text turn chain: ${scope}`, error);
+  return undefined;
+}
+
 export async function stopCursorTextPrompt(childId?: string): Promise<void> {
   await dropLive();
   if (childId && childId !== TEXT_CHILD_ID) {
@@ -49,15 +55,15 @@ export async function stopCursorTextPrompt(childId?: string): Promise<void> {
 export function warmupCursorText(cwd: string): Promise<void> {
   if (!cwd || cwd === "~") return Promise.resolve();
   const run = turns
-    .catch(() => undefined)
+    .catch((error) => logTurnChainError("warmup", error))
     .then(async () => {
       await ensureLive(cwd);
     });
   turns = run.then(
     () => undefined,
-    () => undefined,
+    (error) => logTurnChainError("warmup settle", error),
   );
-  return run.catch(() => undefined);
+  return run.catch((error) => logTurnChainError("warmup run", error));
 }
 
 /** Cursor ACP turn in ask mode. Reuses a warm `cursor-agent acp` process. */
@@ -70,10 +76,12 @@ export async function runCursorTextPrompt(input: {
   signal?: AbortSignal;
   onEvent?: (event: HarnessEvent) => void;
 }): Promise<string> {
-  const run = turns.catch(() => undefined).then(() => promptOnLive(input));
+  const run = turns
+    .catch((error) => logTurnChainError("prompt", error))
+    .then(() => promptOnLive(input));
   turns = run.then(
     () => undefined,
-    () => undefined,
+    (error) => logTurnChainError("prompt settle", error),
   );
   return run;
 }
@@ -226,7 +234,11 @@ async function openSession(
   model: string,
   modelSettings?: Record<string, string>,
 ): Promise<void> {
-  const mcpServers = await loadSessionMcpServers("cursor", cwd);
+  const mcpServers = await loadSessionMcpServersForSession(
+    "cursor",
+    cwd,
+    session.onEvent,
+  );
   const setup = await session.acp.request<{
     sessionId?: string;
     configOptions?: unknown;
@@ -416,9 +428,3 @@ function textFromContent(content: unknown): string {
   return "";
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}

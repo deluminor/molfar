@@ -11,7 +11,7 @@ import {
   loadRecents,
   looksLikeProject,
 } from "@/features/projects/model/recents";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { defaultSessionChoice } from "@/features/sessions/model/models";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
@@ -220,7 +220,7 @@ export function orderQuickProjects(
     const key = pathKey(path);
     if (hidden.has(key) || seen.has(key)) continue;
     seen.add(key);
-    out.push(normalizeProjectPath(path));
+    out.push(normalizePath(path));
   }
   return out;
 }

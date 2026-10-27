@@ -36,19 +36,19 @@
     "lines": 1302
   },
   "src-tauri/src/azure_devops.rs": {
-    "lines": 2420
+    "lines": 2401
   },
   "src-tauri/src/checkpoint.rs": {
-    "lines": 2175
+    "lines": 2168
   },
   "src-tauri/src/checkpoint/turn.rs": {
-    "lines": 915
+    "lines": 902
   },
   "src-tauri/src/codex_familiar_store.rs": {
     "lines": 1000
   },
   "src-tauri/src/companion.rs": {
-    "lines": 940
+    "lines": 962
   },
   "src-tauri/src/confluence/mod.rs": {
     "lines": 271
@@ -80,11 +80,8 @@
   "src-tauri/src/familiar.rs": {
     "lines": 521
   },
-  "src-tauri/src/fs.rs": {
-    "lines": 9822
-  },
   "src-tauri/src/gitlab.rs": {
-    "lines": 1445
+    "lines": 1423
   },
   "src-tauri/src/harness.rs": {
     "lines": 4324
@@ -93,13 +90,13 @@
     "lines": 350
   },
   "src-tauri/src/jira.rs": {
-    "lines": 1091
+    "lines": 1082
   },
   "src-tauri/src/lib.rs": {
-    "lines": 774
+    "lines": 779
   },
   "src-tauri/src/linear.rs": {
-    "lines": 944
+    "lines": 936
   },
   "src-tauri/src/link_preview.rs": {
     "lines": 526
@@ -147,7 +144,7 @@
     "lines": 564
   },
   "src-tauri/src/remote_ssh.rs": {
-    "lines": 922
+    "lines": 923
   },
   "src-tauri/src/remote.rs": {
     "lines": 728
@@ -156,10 +153,10 @@
     "lines": 402
   },
   "src-tauri/src/search.rs": {
-    "lines": 679
+    "lines": 686
   },
   "src-tauri/src/session_store.rs": {
-    "lines": 3839
+    "lines": 3840
   },
   "src-tauri/src/skills.rs": {
     "lines": 1232
@@ -171,13 +168,13 @@
     "lines": 265
   },
   "src-tauri/src/window.rs": {
-    "lines": 773
+    "lines": 774
   },
   "src-tauri/src/windows.rs": {
     "lines": 352
   },
   "src-tauri/src/worktrees.rs": {
-    "lines": 1318
+    "lines": 1311
   },
   "src/app/hooks/use-familiar-habits.ts": {
     "lines": 311
@@ -186,7 +183,7 @@
     "lines": 288
   },
   "src/app/model/app-lifecycle.ts": {
-    "lines": 539
+    "lines": 537
   },
   "src/app/shell/FamiliarRailSection.tsx": {
     "lines": 392
@@ -225,7 +222,7 @@
     "lines": 2042
   },
   "src/features/companion/model/companion-executor.ts": {
-    "lines": 496
+    "lines": 492
   },
   "src/features/companion/model/companion-view.ts": {
     "lines": 288
@@ -261,7 +258,7 @@
     "lines": 329
   },
   "src/features/familiars/model/familiar.ts": {
-    "lines": 520
+    "lines": 511
   },
   "src/features/familiars/ui/familiar-panel-parts.tsx": {
     "lines": 451
@@ -309,7 +306,7 @@
     "lines": 862
   },
   "src/features/files/model/file-index.ts": {
-    "lines": 335
+    "lines": 336
   },
   "src/features/files/model/file-mentions.ts": {
     "lines": 387
@@ -354,7 +351,7 @@
     "lines": 259
   },
   "src/features/inbox/model/inbox-filters.ts": {
-    "lines": 520
+    "lines": 515
   },
   "src/features/inbox/ui/CheckRepairForm.tsx": {
     "lines": 312
@@ -402,7 +399,7 @@
     "lines": 348
   },
   "src/features/orchestration/model/orchestration.ts": {
-    "lines": 2165
+    "lines": 2163
   },
   "src/features/orchestration/ui/OrchestrationPreview.tsx": {
     "lines": 786
@@ -433,9 +430,6 @@
   },
   "src/features/projects/ui/SearchableProjectPicker.tsx": {
     "lines": 555
-  },
-  "src/features/providers/model/provider-accounts.ts": {
-    "lines": 261
   },
   "src/features/providers/model/rate-limits-fetch.ts": {
     "lines": 354
@@ -520,9 +514,6 @@
   },
   "src/features/sessions/ui/ModelPicker.tsx": {
     "lines": 1808
-  },
-  "src/features/sessions/ui/ModelSettings.tsx": {
-    "lines": 262
   },
   "src/features/sessions/ui/PromptOutline.tsx": {
     "lines": 406
@@ -626,9 +617,6 @@
   "src/features/updates/model/updater.ts": {
     "lines": 327
   },
-  "src/features/usage/model/usage-card.ts": {
-    "lines": 253
-  },
   "src/features/workspace/model/layout.ts": {
     "lines": 1434
   },
@@ -663,7 +651,7 @@
     "lines": 609
   },
   "src/integrations/harness/core/preview.ts": {
-    "lines": 1090
+    "lines": 1078
   },
   "src/integrations/harness/core/registry.ts": {
     "lines": 644
@@ -672,28 +660,28 @@
     "lines": 667
   },
   "src/integrations/harness/providers/antigravity/antigravity-protocol.ts": {
-    "lines": 593
+    "lines": 582
   },
   "src/integrations/harness/providers/antigravity/antigravity.ts": {
-    "lines": 837
+    "lines": 841
   },
   "src/integrations/harness/providers/claude/claude-catalog.ts": {
     "lines": 581
   },
   "src/integrations/harness/providers/claude/claude-protocol.ts": {
-    "lines": 1215
+    "lines": 1203
   },
   "src/integrations/harness/providers/claude/claude-text.ts": {
     "lines": 447
   },
   "src/integrations/harness/providers/claude/claude.ts": {
-    "lines": 1825
+    "lines": 1829
   },
   "src/integrations/harness/providers/codex/codex-catalog.ts": {
     "lines": 307
   },
   "src/integrations/harness/providers/codex/codex-protocol.ts": {
-    "lines": 1428
+    "lines": 1416
   },
   "src/integrations/harness/providers/codex/codex-text.ts": {
     "lines": 520
@@ -702,40 +690,40 @@
     "lines": 1612
   },
   "src/integrations/harness/providers/cursor/cursor-catalog.ts": {
-    "lines": 491
+    "lines": 485
   },
   "src/integrations/harness/providers/cursor/cursor-text.ts": {
-    "lines": 424
+    "lines": 430
   },
   "src/integrations/harness/providers/cursor/cursor.ts": {
-    "lines": 1644
+    "lines": 1634
   },
   "src/integrations/harness/providers/devin/devin-protocol.ts": {
-    "lines": 824
+    "lines": 831
   },
   "src/integrations/harness/providers/devin/devin.ts": {
     "lines": 762
   },
   "src/integrations/harness/providers/fx/fx-protocol.ts": {
-    "lines": 721
+    "lines": 710
   },
   "src/integrations/harness/providers/fx/fx-tool.ts": {
-    "lines": 272
+    "lines": 254
   },
   "src/integrations/harness/providers/fx/fx.ts": {
-    "lines": 534
+    "lines": 542
   },
   "src/integrations/harness/providers/grok/grok-protocol.ts": {
-    "lines": 960
+    "lines": 946
   },
   "src/integrations/harness/providers/grok/grok-text.ts": {
-    "lines": 378
+    "lines": 385
   },
   "src/integrations/harness/providers/grok/grok.ts": {
-    "lines": 642
+    "lines": 650
   },
   "src/integrations/harness/providers/hermes/hermes.ts": {
-    "lines": 625
+    "lines": 629
   },
   "src/integrations/harness/providers/opencode/opencode-catalog.ts": {
     "lines": 354
@@ -744,10 +732,10 @@
     "lines": 808
   },
   "src/integrations/harness/providers/opencode/opencode-protocol.ts": {
-    "lines": 608
+    "lines": 596
   },
   "src/integrations/harness/providers/opencode/opencode-text.ts": {
-    "lines": 455
+    "lines": 462
   },
   "src/integrations/harness/providers/opencode/opencode-v2-events.ts": {
     "lines": 321
@@ -759,7 +747,7 @@
     "lines": 1306
   },
   "src/integrations/harness/providers/pi/pi-protocol.ts": {
-    "lines": 889
+    "lines": 877
   },
   "src/integrations/harness/providers/pi/pi-text.ts": {
     "lines": 371
@@ -774,7 +762,7 @@
     "lines": 274
   },
   "src/shared/lib/paths.ts": {
-    "lines": 341
+    "lines": 354
   },
   "src/shared/ui/ColorPickerPopover.tsx": {
     "lines": 264

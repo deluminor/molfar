@@ -3,7 +3,8 @@ import type {
   ToolPreviewKind,
   ToolPreviewLine,
 } from "@/domain/session/agent-run";
-import { displayPath } from "@/shared/lib/paths";
+import { basename, displayPath } from "@/shared/lib/paths";
+import { asRecord } from "@/shared/lib/json-text";
 import {
   formatShellIntent,
   inferShellIntent,
@@ -969,12 +970,6 @@ function normalizePath(path: string): string {
   return path;
 }
 
-function basename(path: string): string {
-  const trimmed = path.replace(/[/\\]+$/, "") || path;
-  const parts = trimmed.split(/[/\\]/).filter(Boolean);
-  return parts[parts.length - 1] ?? trimmed;
-}
-
 function parseRecord(value: unknown): Record<string, unknown> {
   if (typeof value === "string") {
     const text = value.trim();
@@ -1010,13 +1005,6 @@ function inputRecords(...values: unknown[]): Record<string, unknown>[] {
   };
   for (const value of values) add(value);
   return out;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function commandField(value: unknown): string | undefined {

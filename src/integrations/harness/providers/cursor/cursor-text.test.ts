@@ -4,6 +4,11 @@ import type { HarnessEvent } from "../../core/types";
 const sent: string[] = [];
 let onLine: ((line: string) => void) | undefined;
 
+vi.mock("../../core/session-mcp-servers", async (original) => ({
+  ...(await original<typeof import("../../core/session-mcp-servers")>()),
+  loadSessionMcpServers: async () => [],
+  loadSessionMcpServersForSession: async () => [],
+}));
 vi.mock("../../core/child", () => ({
   resolveCursorBinary: async () => ({ path: "/fake/cursor-agent" }),
   spawnChild: async () => undefined,

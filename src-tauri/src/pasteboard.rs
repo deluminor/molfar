@@ -387,7 +387,7 @@ mod path_tests {
         // arboard strips the `file://` prefix and percent-decodes, then leaves
         // the CRLF terminator attached.
         let from_clipboard = format!("{}\r\n", file.to_string_lossy());
-        let infos = crate::fs::inspect_paths(clean_clipboard_paths(vec![from_clipboard]));
+        let infos = crate::fs::read::inspect_paths(clean_clipboard_paths(vec![from_clipboard]));
 
         std::fs::remove_dir_all(&dir).ok();
         assert_eq!(

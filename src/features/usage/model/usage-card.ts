@@ -3,6 +3,7 @@ import {
   formatUsagePercent,
 } from "@/features/providers/model/rate-limits";
 import { clampUsedPercent } from "@/domain/rate-limits/rate-limit-window";
+import { asRecord } from "@/shared/lib/json-text";
 import type {
   ProviderRateLimits,
   RateLimitWindow,
@@ -103,12 +104,6 @@ function numberField(
 ): number | null {
   const value = record[key];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
 }
 
 /** Parse Cursor GetCurrentPeriodUsage JSON into Auto / API windows. */

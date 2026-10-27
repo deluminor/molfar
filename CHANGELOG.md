@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A failed optional MCP server lookup shows a notice while a successful provider reply still completes. Provider failures continue to fail the session.
+- A workspace layout that could not be read at startup is preserved until the layout changes, instead of being overwritten by an empty boot state.
+- Failed app surfaces offer recovery controls, and Companion question replies are validated against the pending prompt.
 - The new sidebar keeps **Open project** and **Settings** available before a project is selected.
 - The empty conversation view no longer scrolls a few pixels around the message input.
 - The message input's blurred background stays within its rounded corners on Windows.

@@ -1,4 +1,5 @@
 import { nativeModelId } from "../../core/models/resolve-model";
+import { asRecord, nonBlankString as stringField } from "@/shared/lib/json-text";
 import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { promptBlocks } from "@/domain/session/attachment-prompt";
 import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type SendTurnInput, type SteerTurnInput } from "../../core/types";
@@ -15,7 +16,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/session-mcp-servers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   readStoredCursorToolCalls,
   readStoredCursorSubagentRuns,
@@ -319,7 +320,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     let setup: SessionSetupResult | undefined;
     let acpSessionId: string | undefined;
     let didLoad = false;
-    const mcpServers = await loadSessionMcpServers("cursor", input.cwd);
+    const mcpServers = await loadSessionMcpServersForSession(
+      "cursor",
+      input.cwd,
+      input.onEvent,
+    );
 
     if (canLoad && resume) {
       muteGate.current = true;
@@ -1324,13 +1329,6 @@ function resolveSettingConfigId(
   return undefined;
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
 function toolLabel(
   update: Record<string, unknown>,
   tool: Record<string, unknown>,
@@ -1582,14 +1580,6 @@ function coerceMaybeString(
   key: string,
 ): string | undefined {
   return stringField(rec, key);
-}
-
-function stringField(
-  rec: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
 }
 
 function numberField(

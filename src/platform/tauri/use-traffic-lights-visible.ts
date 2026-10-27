@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { logWindowChromeError } from "@/platform/tauri/log-window-chrome-error";
 import { useEffect, useState } from "react";
 import { IS_MAC } from "@/shared/lib/platform";
 
@@ -19,7 +20,9 @@ export function useTrafficLightsVisible(): boolean {
         try {
           const fullscreen = await win.isFullscreen();
           if (mounted && request === latest) setVisible(!fullscreen);
-        } catch {}
+        } catch (error) {
+          logWindowChromeError("fullscreen state", error);
+        }
       };
 
       void sync();
@@ -35,8 +38,10 @@ export function useTrafficLightsVisible(): boolean {
           // Cover a transition while the listener was being registered.
           void sync();
         })
-        .catch(() => {});
-    } catch {}
+        .catch((error) => logWindowChromeError("fullscreen listener", error));
+    } catch (error) {
+      logWindowChromeError("traffic lights init", error);
+    }
 
     return () => {
       mounted = false;

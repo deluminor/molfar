@@ -5,7 +5,7 @@ import {
   clearProjectChatBackgroundSetting,
   rebaseProjectChatBackgroundSetting,
 } from "./project-chat-background";
-import { normalizeProjectPath } from "@/shared/lib/project-path";
+import { normalizePath } from "@/shared/lib/paths";
 import { deleteSession, listSessionsByProject } from "@/features/sessions/data/session-store";
 import {
   clearTabGroupSettings,
@@ -30,7 +30,7 @@ export async function projectSessionCount(path: string): Promise<number> {
 
 /** Everything we persist for a project: saved chats plus its rail appearance. */
 export async function removeProjectData(path: string): Promise<void> {
-  const normalized = normalizeProjectPath(path);
+  const normalized = normalizePath(path);
   const key = projectKey(normalized);
   const sessions = await listSessionsByProject(normalized).catch(() => []);
   for (const session of sessions) {
@@ -48,8 +48,8 @@ export async function removeProjectData(path: string): Promise<void> {
 
 /** Move local project settings after the filesystem resolver finds a rename. */
 export function rebaseProjectData(from: string, to: string): void {
-  const oldKey = projectKey(normalizeProjectPath(from));
-  const newKey = projectKey(normalizeProjectPath(to));
+  const oldKey = projectKey(normalizePath(from));
+  const newKey = projectKey(normalizePath(to));
   rebaseProjectTabGroupSettings(from, to);
   rebaseProjectGroupAssignment(from, to);
   rebaseProjectChatBackgroundSetting(oldKey, newKey);
