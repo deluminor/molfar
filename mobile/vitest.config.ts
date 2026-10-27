@@ -22,6 +22,5 @@ export default defineConfig({
       "../tests/mobile/**/*.test.ts",
     ],
     maxWorkers: 1,
-    minWorkers: 1,
   },
 });
