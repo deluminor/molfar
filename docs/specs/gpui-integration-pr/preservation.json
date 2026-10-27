@@ -1,0 +1,52 @@
+[
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/baseline-checks.json",
+    "copy": "scratch/preserved-gpui-planning/baseline-checks.json",
+    "sha256": "4803503bcf302a89d9e5ec4ca6dbe36c398b100efefbc4a43197d60f7620408b"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/task-status.json",
+    "copy": "scratch/preserved-gpui-planning/task-status.json",
+    "sha256": "09ac09463da6d18bc2c4fa3580b117787e63f760c2b4d6978c0c094390dacd89"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/analysis.md",
+    "copy": "scratch/preserved-gpui-planning/analysis.md",
+    "sha256": "6f084451d80880db3968f546209ecd9305c69540b34ef91d5cd61533d4810520"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/tasks.md",
+    "copy": "scratch/preserved-gpui-planning/tasks.md",
+    "sha256": "31dde8baa252935ae86c2fa6331b5a8cd4f1fe8276726cb698c3c84ad3d071df"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/upstream-checkpoint.json",
+    "copy": "scratch/preserved-gpui-planning/upstream-checkpoint.json",
+    "sha256": "fc5f6cb152b7207b3c34ee16efe9137656747623c5d48573f971e985cdac5dcf"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/plan.md",
+    "copy": "scratch/preserved-gpui-planning/plan.md",
+    "sha256": "18301936db28ccc56d7695377151f345a88dbff3d4f698e127b0561fa43c2745"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/inventory.json",
+    "copy": "scratch/preserved-gpui-planning/inventory.json",
+    "sha256": "82417213e8b4f500b462ec53f21bea07b9dcb126ce61e8d55e40e239cca5b44b"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/docs/specs/gpui-migration/spec.md",
+    "copy": "scratch/preserved-gpui-planning/spec.md",
+    "sha256": "3f67c6b060750c81b2b934e16e7f1dccf22f7a78052693746296be6709498a3e"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/.worktrees/gpui-migration/scratch/gpui-migration-setup-and-inventory.md",
+    "copy": "scratch/preserved-gpui-planning/gpui-migration-setup-and-inventory.md",
+    "sha256": "d2f3a010d72b2e19b2c06c306e0e0b0aa9ff40e97059e65096b0c9e2e96cbcb2"
+  },
+  {
+    "source": "/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar/scratch/monocode-gpui-assessment-2026-10-26.md",
+    "copy": "scratch/preserved-gpui-planning/monocode-gpui-assessment-2026-10-26.md",
+    "sha256": "39f676ef5c4c4cbdf9cabf52a6ac4c46e3927a46741c5369389d66dca9b558ac"
+  }
+]

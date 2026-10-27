@@ -1,0 +1,882 @@
+{
+  "tooling": "todo init unavailable: no executable and no exposed task-tracking tool; durable Markdown/JSON fallback, not a claim that CLI ran",
+  "implementationApproved": false,
+  "setup": [
+    {
+      "id": "S01",
+      "title": "Inspect and fingerprint every existing worktree/head/status/diff/untracked file",
+      "status": "complete"
+    },
+    {
+      "id": "S02",
+      "title": "Verify upstream remote, fetch live GPUI and standard origin refs",
+      "status": "complete"
+    },
+    {
+      "id": "S03",
+      "title": "Create migration/gpui directly at live upstream tip in project-local registered worktree",
+      "status": "complete"
+    },
+    {
+      "id": "S04",
+      "title": "Audit shipped main, remote PR119, local-only hardening and pending PR117 separately",
+      "status": "complete"
+    },
+    {
+      "id": "S05",
+      "title": "Create 22-item native-equivalence and migration inventory with evidence/acceptance",
+      "status": "complete"
+    },
+    {
+      "id": "S06",
+      "title": "Specify isolation, parity, test, manual merge-sync and source-cutover gates",
+      "status": "complete"
+    },
+    {
+      "id": "S07",
+      "title": "Persist spec/plan/tasks/checkpoint and complete report in new worktree",
+      "status": "complete"
+    },
+    {
+      "id": "S08",
+      "title": "Run practical non-UI baseline checks and record actual failures/skips",
+      "status": "complete"
+    },
+    {
+      "id": "S09",
+      "title": "Cross-check artifacts and verify preservation of existing content",
+      "status": "complete"
+    }
+  ],
+  "implementation": [
+    {
+      "id": "T-M01-F",
+      "feature": "M01",
+      "title": "characterize behavior and fixtures",
+      "batch": "G1",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-gpui/src/main.rs",
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "scripts/package-native.mjs",
+        "scripts/bundle-native-macos.sh",
+        "crates/monocode-core/src/app_update/mod.rs"
+      ]
+    },
+    {
+      "id": "T-M01-I",
+      "feature": "M01",
+      "title": "implement approved native delta",
+      "batch": "G1",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-gpui/src/main.rs",
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "scripts/package-native.mjs",
+        "scripts/bundle-native-macos.sh",
+        "crates/monocode-core/src/app_update/mod.rs"
+      ]
+    },
+    {
+      "id": "T-M01-A",
+      "feature": "M01",
+      "title": "verify acceptance and evidence",
+      "batch": "G1",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-gpui/src/main.rs",
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "scripts/package-native.mjs",
+        "scripts/bundle-native-macos.sh",
+        "crates/monocode-core/src/app_update/mod.rs"
+      ]
+    },
+    {
+      "id": "T-M02-F",
+      "feature": "M02",
+      "title": "characterize behavior and fixtures",
+      "batch": "G2",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/provider.rs",
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/runtime.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-gpui/src/transcript.rs"
+      ]
+    },
+    {
+      "id": "T-M02-I",
+      "feature": "M02",
+      "title": "implement approved native delta",
+      "batch": "G2",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/provider.rs",
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/runtime.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-gpui/src/transcript.rs"
+      ]
+    },
+    {
+      "id": "T-M02-A",
+      "feature": "M02",
+      "title": "verify acceptance and evidence",
+      "batch": "G2",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/provider.rs",
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/runtime.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-gpui/src/transcript.rs"
+      ]
+    },
+    {
+      "id": "T-M03-F",
+      "feature": "M03",
+      "title": "characterize behavior and fixtures",
+      "batch": "G2",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/git.rs",
+        "crates/monocode-core/src/scm.rs",
+        "crates/monocode-core/src/scm/shell.rs",
+        "crates/monocode-core/src/worktree_management.rs",
+        "crates/monocode-gpui/src/terminal.rs"
+      ]
+    },
+    {
+      "id": "T-M03-I",
+      "feature": "M03",
+      "title": "implement approved native delta",
+      "batch": "G2",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/git.rs",
+        "crates/monocode-core/src/scm.rs",
+        "crates/monocode-core/src/scm/shell.rs",
+        "crates/monocode-core/src/worktree_management.rs",
+        "crates/monocode-gpui/src/terminal.rs"
+      ]
+    },
+    {
+      "id": "T-M03-A",
+      "feature": "M03",
+      "title": "verify acceptance and evidence",
+      "batch": "G2",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/git.rs",
+        "crates/monocode-core/src/scm.rs",
+        "crates/monocode-core/src/scm/shell.rs",
+        "crates/monocode-core/src/worktree_management.rs",
+        "crates/monocode-gpui/src/terminal.rs"
+      ]
+    },
+    {
+      "id": "T-M04-F",
+      "feature": "M04",
+      "title": "characterize behavior and fixtures",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono.rs",
+        "crates/monocode-core/src/mono/desktop.rs",
+        "crates/monocode-gpui/src/monos/mod.rs",
+        "crates/monocode-gpui/src/shell/mono_panes.rs"
+      ]
+    },
+    {
+      "id": "T-M04-I",
+      "feature": "M04",
+      "title": "implement approved native delta",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono.rs",
+        "crates/monocode-core/src/mono/desktop.rs",
+        "crates/monocode-gpui/src/monos/mod.rs",
+        "crates/monocode-gpui/src/shell/mono_panes.rs"
+      ]
+    },
+    {
+      "id": "T-M04-A",
+      "feature": "M04",
+      "title": "verify acceptance and evidence",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono.rs",
+        "crates/monocode-core/src/mono/desktop.rs",
+        "crates/monocode-gpui/src/monos/mod.rs",
+        "crates/monocode-gpui/src/shell/mono_panes.rs"
+      ]
+    },
+    {
+      "id": "T-M05-F",
+      "feature": "M05",
+      "title": "characterize behavior and fixtures",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono/files.rs",
+        "crates/monocode-core/src/mono/memory.rs",
+        "crates/monocode-gpui/src/monos/memory_ui.rs"
+      ]
+    },
+    {
+      "id": "T-M05-I",
+      "feature": "M05",
+      "title": "implement approved native delta",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono/files.rs",
+        "crates/monocode-core/src/mono/memory.rs",
+        "crates/monocode-gpui/src/monos/memory_ui.rs"
+      ]
+    },
+    {
+      "id": "T-M05-A",
+      "feature": "M05",
+      "title": "verify acceptance and evidence",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono/files.rs",
+        "crates/monocode-core/src/mono/memory.rs",
+        "crates/monocode-gpui/src/monos/memory_ui.rs"
+      ]
+    },
+    {
+      "id": "T-M06-F",
+      "feature": "M06",
+      "title": "characterize behavior and fixtures",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono/habits.rs",
+        "crates/monocode-gpui/src/monos/scheduler.rs",
+        "crates/monocode-gpui/src/monos/host.rs"
+      ]
+    },
+    {
+      "id": "T-M06-I",
+      "feature": "M06",
+      "title": "implement approved native delta",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono/habits.rs",
+        "crates/monocode-gpui/src/monos/scheduler.rs",
+        "crates/monocode-gpui/src/monos/host.rs"
+      ]
+    },
+    {
+      "id": "T-M06-A",
+      "feature": "M06",
+      "title": "verify acceptance and evidence",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mono/habits.rs",
+        "crates/monocode-gpui/src/monos/scheduler.rs",
+        "crates/monocode-gpui/src/monos/host.rs"
+      ]
+    },
+    {
+      "id": "T-M07-F",
+      "feature": "M07",
+      "title": "characterize behavior and fixtures",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-core/src/mono.rs"
+      ]
+    },
+    {
+      "id": "T-M07-I",
+      "feature": "M07",
+      "title": "implement approved native delta",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-core/src/mono.rs"
+      ]
+    },
+    {
+      "id": "T-M07-A",
+      "feature": "M07",
+      "title": "verify acceptance and evidence",
+      "batch": "G3",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-core/src/mono.rs"
+      ]
+    },
+    {
+      "id": "T-M08-F",
+      "feature": "M08",
+      "title": "characterize behavior and fixtures",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/ (proposed concern)",
+        "crates/monocode-gpui/src/task_board/ (proposed views)",
+        "crates/monocode-core/src/lib.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M08-I",
+      "feature": "M08",
+      "title": "implement approved native delta",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/ (proposed concern)",
+        "crates/monocode-gpui/src/task_board/ (proposed views)",
+        "crates/monocode-core/src/lib.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M08-A",
+      "feature": "M08",
+      "title": "verify acceptance and evidence",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/ (proposed concern)",
+        "crates/monocode-gpui/src/task_board/ (proposed views)",
+        "crates/monocode-core/src/lib.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M09-F",
+      "feature": "M09",
+      "title": "characterize behavior and fixtures",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/stage_config.rs (proposed)",
+        "crates/monocode-core/src/task_board/transitions.rs (proposed)",
+        "crates/monocode-gpui/src/task_board/ (proposed)"
+      ]
+    },
+    {
+      "id": "T-M09-I",
+      "feature": "M09",
+      "title": "implement approved native delta",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/stage_config.rs (proposed)",
+        "crates/monocode-core/src/task_board/transitions.rs (proposed)",
+        "crates/monocode-gpui/src/task_board/ (proposed)"
+      ]
+    },
+    {
+      "id": "T-M09-A",
+      "feature": "M09",
+      "title": "verify acceptance and evidence",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/stage_config.rs (proposed)",
+        "crates/monocode-core/src/task_board/transitions.rs (proposed)",
+        "crates/monocode-gpui/src/task_board/ (proposed)"
+      ]
+    },
+    {
+      "id": "T-M10-F",
+      "feature": "M10",
+      "title": "characterize behavior and fixtures",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/artifacts.rs (proposed)",
+        "crates/monocode-core/src/task_board/worktree.rs (proposed)",
+        "crates/monocode-core/src/task_board/dispatch.rs (proposed)"
+      ]
+    },
+    {
+      "id": "T-M10-I",
+      "feature": "M10",
+      "title": "implement approved native delta",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/artifacts.rs (proposed)",
+        "crates/monocode-core/src/task_board/worktree.rs (proposed)",
+        "crates/monocode-core/src/task_board/dispatch.rs (proposed)"
+      ]
+    },
+    {
+      "id": "T-M10-A",
+      "feature": "M10",
+      "title": "verify acceptance and evidence",
+      "batch": "G4",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/task_board/artifacts.rs (proposed)",
+        "crates/monocode-core/src/task_board/worktree.rs (proposed)",
+        "crates/monocode-core/src/task_board/dispatch.rs (proposed)"
+      ]
+    },
+    {
+      "id": "T-M11-F",
+      "feature": "M11",
+      "title": "characterize behavior and fixtures",
+      "batch": "G2 foundational / G4-G5 extensions",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/app_access.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-core/src/mono/bridge.rs",
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M11-I",
+      "feature": "M11",
+      "title": "implement approved native delta",
+      "batch": "G2 foundational / G4-G5 extensions",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/app_access.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-core/src/mono/bridge.rs",
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M11-A",
+      "feature": "M11",
+      "title": "verify acceptance and evidence",
+      "batch": "G2 foundational / G4-G5 extensions",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/app_access.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-core/src/mono/bridge.rs",
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M12-F",
+      "feature": "M12",
+      "title": "characterize behavior and fixtures",
+      "batch": "G5",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/inbox/jira.rs",
+        "crates/monocode-gpui/src/inbox/ui.rs"
+      ]
+    },
+    {
+      "id": "T-M12-I",
+      "feature": "M12",
+      "title": "implement approved native delta",
+      "batch": "G5",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/inbox/jira.rs",
+        "crates/monocode-gpui/src/inbox/ui.rs"
+      ]
+    },
+    {
+      "id": "T-M12-A",
+      "feature": "M12",
+      "title": "verify acceptance and evidence",
+      "batch": "G5",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/inbox/jira.rs",
+        "crates/monocode-gpui/src/inbox/ui.rs"
+      ]
+    },
+    {
+      "id": "T-M13-F",
+      "feature": "M13",
+      "title": "characterize behavior and fixtures",
+      "batch": "G5",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/confluence/ (proposed)",
+        "crates/monocode-core/src/connectors_mcp/ (proposed)",
+        "crates/monocode-gpui/src/inbox/ (Confluence views proposed)",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M13-I",
+      "feature": "M13",
+      "title": "implement approved native delta",
+      "batch": "G5",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/confluence/ (proposed)",
+        "crates/monocode-core/src/connectors_mcp/ (proposed)",
+        "crates/monocode-gpui/src/inbox/ (Confluence views proposed)",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M13-A",
+      "feature": "M13",
+      "title": "verify acceptance and evidence",
+      "batch": "G5",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/confluence/ (proposed)",
+        "crates/monocode-core/src/connectors_mcp/ (proposed)",
+        "crates/monocode-gpui/src/inbox/ (Confluence views proposed)",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "T-M14-F",
+      "feature": "M14",
+      "title": "characterize behavior and fixtures",
+      "batch": "G6",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/file_editor.rs"
+      ]
+    },
+    {
+      "id": "T-M14-I",
+      "feature": "M14",
+      "title": "implement approved native delta",
+      "batch": "G6",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/file_editor.rs"
+      ]
+    },
+    {
+      "id": "T-M14-A",
+      "feature": "M14",
+      "title": "verify acceptance and evidence",
+      "batch": "G6",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/file_editor.rs"
+      ]
+    },
+    {
+      "id": "T-M15-F",
+      "feature": "M15",
+      "title": "characterize behavior and fixtures",
+      "batch": "G7",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/home/ (proposed aggregation)",
+        "crates/monocode-gpui/src/home/ (proposed views)"
+      ]
+    },
+    {
+      "id": "T-M15-I",
+      "feature": "M15",
+      "title": "implement approved native delta",
+      "batch": "G7",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/home/ (proposed aggregation)",
+        "crates/monocode-gpui/src/home/ (proposed views)"
+      ]
+    },
+    {
+      "id": "T-M15-A",
+      "feature": "M15",
+      "title": "verify acceptance and evidence",
+      "batch": "G7",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/home/ (proposed aggregation)",
+        "crates/monocode-gpui/src/home/ (proposed views)"
+      ]
+    },
+    {
+      "id": "T-M16-F",
+      "feature": "M16",
+      "title": "characterize behavior and fixtures",
+      "batch": "G7",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/usage.rs",
+        "crates/monocode-core/src/usage/ (extend as needed)",
+        "crates/monocode-gpui/src/usage_dashboard/ (proposed)"
+      ]
+    },
+    {
+      "id": "T-M16-I",
+      "feature": "M16",
+      "title": "implement approved native delta",
+      "batch": "G7",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/usage.rs",
+        "crates/monocode-core/src/usage/ (extend as needed)",
+        "crates/monocode-gpui/src/usage_dashboard/ (proposed)"
+      ]
+    },
+    {
+      "id": "T-M16-A",
+      "feature": "M16",
+      "title": "verify acceptance and evidence",
+      "batch": "G7",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/usage.rs",
+        "crates/monocode-core/src/usage/ (extend as needed)",
+        "crates/monocode-gpui/src/usage_dashboard/ (proposed)"
+      ]
+    },
+    {
+      "id": "T-M17-F",
+      "feature": "M17",
+      "title": "characterize behavior and fixtures",
+      "batch": "G2 import / G7 polish",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "crates/monocode-gpui/src/settings/model.rs",
+        "crates/monocode-gpui/src/theme.rs"
+      ]
+    },
+    {
+      "id": "T-M17-I",
+      "feature": "M17",
+      "title": "implement approved native delta",
+      "batch": "G2 import / G7 polish",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "crates/monocode-gpui/src/settings/model.rs",
+        "crates/monocode-gpui/src/theme.rs"
+      ]
+    },
+    {
+      "id": "T-M17-A",
+      "feature": "M17",
+      "title": "verify acceptance and evidence",
+      "batch": "G2 import / G7 polish",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "crates/monocode-gpui/src/settings/model.rs",
+        "crates/monocode-gpui/src/theme.rs"
+      ]
+    },
+    {
+      "id": "T-M18-F",
+      "feature": "M18",
+      "title": "characterize behavior and fixtures",
+      "batch": "G2 storage/security / G4 Board integration",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/store/notes.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-gpui/src/monos/html.rs",
+        "crates/monocode-gpui/src/monos/cards.rs"
+      ]
+    },
+    {
+      "id": "T-M18-I",
+      "feature": "M18",
+      "title": "implement approved native delta",
+      "batch": "G2 storage/security / G4 Board integration",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/store/notes.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-gpui/src/monos/html.rs",
+        "crates/monocode-gpui/src/monos/cards.rs"
+      ]
+    },
+    {
+      "id": "T-M18-A",
+      "feature": "M18",
+      "title": "verify acceptance and evidence",
+      "batch": "G2 storage/security / G4 Board integration",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/store/notes.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-gpui/src/monos/html.rs",
+        "crates/monocode-gpui/src/monos/cards.rs"
+      ]
+    },
+    {
+      "id": "T-M19-F",
+      "feature": "M19",
+      "title": "characterize behavior and fixtures",
+      "batch": "G8",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/companion/ (proposed)",
+        "crates/monocode-gpui/src/settings/ (Companion settings proposed)",
+        "crates/monocode-gpui/src/shell.rs"
+      ]
+    },
+    {
+      "id": "T-M19-I",
+      "feature": "M19",
+      "title": "implement approved native delta",
+      "batch": "G8",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/companion/ (proposed)",
+        "crates/monocode-gpui/src/settings/ (Companion settings proposed)",
+        "crates/monocode-gpui/src/shell.rs"
+      ]
+    },
+    {
+      "id": "T-M19-A",
+      "feature": "M19",
+      "title": "verify acceptance and evidence",
+      "batch": "G8",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/companion/ (proposed)",
+        "crates/monocode-gpui/src/settings/ (Companion settings proposed)",
+        "crates/monocode-gpui/src/shell.rs"
+      ]
+    },
+    {
+      "id": "T-M20-F",
+      "feature": "M20",
+      "title": "characterize behavior and fixtures",
+      "batch": "G1 policy / G8 client",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mobile/host.rs",
+        "crates/monocode-core/src/mobile/router.rs",
+        "crates/monocode-core/Cargo.toml",
+        "crates/monocode-gpui/Cargo.lock",
+        "mobile/app.json",
+        "mobile/src/features/connection/nativeLink.ts"
+      ]
+    },
+    {
+      "id": "T-M20-I",
+      "feature": "M20",
+      "title": "implement approved native delta",
+      "batch": "G1 policy / G8 client",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mobile/host.rs",
+        "crates/monocode-core/src/mobile/router.rs",
+        "crates/monocode-core/Cargo.toml",
+        "crates/monocode-gpui/Cargo.lock",
+        "mobile/app.json",
+        "mobile/src/features/connection/nativeLink.ts"
+      ]
+    },
+    {
+      "id": "T-M20-A",
+      "feature": "M20",
+      "title": "verify acceptance and evidence",
+      "batch": "G1 policy / G8 client",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/mobile/host.rs",
+        "crates/monocode-core/src/mobile/router.rs",
+        "crates/monocode-core/Cargo.toml",
+        "crates/monocode-gpui/Cargo.lock",
+        "mobile/app.json",
+        "mobile/src/features/connection/nativeLink.ts"
+      ]
+    },
+    {
+      "id": "T-M21-F",
+      "feature": "M21",
+      "title": "characterize behavior and fixtures",
+      "batch": "G1-G2 then each owning slice",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/workspace.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-core/src/mcp.rs",
+        "crates/monocode-core/src/remote.rs"
+      ]
+    },
+    {
+      "id": "T-M21-I",
+      "feature": "M21",
+      "title": "implement approved native delta",
+      "batch": "G1-G2 then each owning slice",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/workspace.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-core/src/mcp.rs",
+        "crates/monocode-core/src/remote.rs"
+      ]
+    },
+    {
+      "id": "T-M21-A",
+      "feature": "M21",
+      "title": "verify acceptance and evidence",
+      "batch": "G1-G2 then each owning slice",
+      "status": "proposed_not_started",
+      "files": [
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/workspace.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-core/src/mcp.rs",
+        "crates/monocode-core/src/remote.rs"
+      ]
+    },
+    {
+      "id": "G0-BUILD",
+      "status": "proposed_not_started"
+    },
+    {
+      "id": "G1-SYNC",
+      "status": "proposed_not_started"
+    },
+    {
+      "id": "G9-PARITY",
+      "status": "proposed_not_started"
+    },
+    {
+      "id": "G9-PERF",
+      "status": "proposed_not_started"
+    },
+    {
+      "id": "G9-PLATFORM",
+      "status": "proposed_not_started"
+    },
+    {
+      "id": "G9-SYNC",
+      "status": "proposed_not_started"
+    },
+    {
+      "id": "G9-RELEASE",
+      "status": "proposed_not_started"
+    }
+  ],
+  "planningConsistency": "PASS; primary-agent final recheck after independent initial findings; feature approval still required",
+  "baselineNativeReadiness": "BLOCKED: nested full-format workspace discovery and uncached offline dependency",
+  "finalVerifiedAt": "2026-10-27T00:42:07Z"
+}

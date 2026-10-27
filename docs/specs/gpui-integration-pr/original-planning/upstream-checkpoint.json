@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "status": "planning baseline only; not installed automation or a validated release checkpoint",
+  "upstreamRepository": "git@github.com:hardbeat920/monocode.git",
+  "remoteName": "upstream",
+  "sourceBranch": "mc/migrate-monocode-to-gpui",
+  "sourceCommit": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+  "lastIntegratedUpstreamCommit": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+  "lastValidatedUpstreamCommit": null,
+  "sourceMainCommit": "26465c620977f3951d0a532a0f7db32c3c179007",
+  "localBranch": "migration/gpui",
+  "observedAt": "2026-10-26T21:49:02Z",
+  "syncMode": "manual merge-based after approved implementation",
+  "automaticMergesEnabled": false,
+  "futureTrackedRuntimeCheckpoint": ".github/gpui-upstream-sync.json (proposed, not created)",
+  "cutover": "explicit source-branch transition after ancestry/parity review; never follow main implicitly"
+}

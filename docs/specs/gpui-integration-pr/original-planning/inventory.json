@@ -1,0 +1,1108 @@
+{
+  "refs": {
+    "M": "4abd5daeee9781f2ca3025a68ce5c2d4b7c738a0",
+    "H": "cc6433f697f1ba4471f1aa76f33e7f1d7ea3e0c5",
+    "L": "9e4eb4538be7c7bddf2dcafbf83c963a91100f07",
+    "S": "02b66c63bc9c2a69a91e326ab4b5e4a390de5762",
+    "U": "ea6c8219bae954a3d8a9e8c536242b9531a683f7",
+    "P": "unversioned original Task Board planning document captured as evidence"
+  },
+  "status": "proposed migration inventory; no feature implementation approved",
+  "items": [
+    {
+      "id": "M01",
+      "title": "Branding, app identity, storage and release isolation",
+      "status": "Shipped identity; native isolation not implemented",
+      "priority": "P0",
+      "batch": "G1",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/tauri.conf.json",
+          3,
+          5
+        ],
+        [
+          "M",
+          "src-tauri/src/app_identity.rs",
+          1,
+          38
+        ],
+        [
+          "M",
+          "src-tauri/src/session_store.rs",
+          1,
+          20
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/main.rs",
+          225,
+          274
+        ],
+        [
+          "U",
+          "scripts/package-native.mjs",
+          100,
+          115
+        ]
+      ],
+      "native": "Native startup, packaging, update and desktop-preference services exist, but use MonoCode identity and production-data defaults.",
+      "uniqueDelta": "MOLFAR names/assets, app IDs, molfar.db, configuration namespaces, protocols, notification/keyring identity, CLI credentials and independent update feed. Migration identity must also differ from current production MOLFAR.",
+      "portability": "Adapt existing native identity/startup/packaging; preserve historical identifiers only inside explicit import mappings. Do not globally rename the dependency tree or wire contracts.",
+      "dependencies": "G0 build boundary; before any real native startup, scheduler or listener.",
+      "risks": "An explicit database override alone does not isolate preferences, tokens, roster, logs, notifications or updater. Release defaults can select installed MonoCode data.",
+      "proposedImprovement": "Propose one explicit migration identity/data policy and fail-closed startup path validation; disable installed-profile auto-discovery, schedulers and network listeners for migration profiles.",
+      "acceptance": [
+        "Migration app ID, paths, update channel and credentials differ from both production apps on every supported OS.",
+        "Test default/explicit DB/CLI/packaged modes; missing or corrupt copied data produces recovery state and never production fallback.",
+        "Hash original fixture sources before/after import; original database, sidecars, preferences and agent files remain unchanged."
+      ],
+      "targetFiles": [
+        "crates/monocode-gpui/src/main.rs",
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "scripts/package-native.mjs",
+        "scripts/bundle-native-macos.sh",
+        "crates/monocode-core/src/app_update/mod.rs"
+      ]
+    },
+    {
+      "id": "M02",
+      "title": "Provider, sessions, streaming, tools and remote-host contracts",
+      "status": "Common native functionality with shipped MOLFAR extensions",
+      "priority": "P0",
+      "batch": "G2",
+      "evidence": [
+        [
+          "M",
+          "src/integrations/harness/core/types.ts",
+          9,
+          177
+        ],
+        [
+          "M",
+          "src/features/sessions/data/session-store.ts",
+          40,
+          93
+        ],
+        [
+          "M",
+          "host/providers.ts",
+          1,
+          50
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/provider.rs",
+          60,
+          125
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/runtime/persistence.rs",
+          1,
+          106
+        ]
+      ],
+      "native": "Eleven provider transports, normalized native events, accounts, worker runtime, transcript and store already exist; Node remote host remains separate.",
+      "uniqueDelta": "MOLFAR custom session/card/Familiar/worktree metadata, queued-message policies, app access and pending hardening invariants. Provider selection/catalog/ordinary chat are common, not new features.",
+      "portability": "Prefer native transports/reducers and reuse TS tests as protocol fixtures; explicitly map string session IDs to native handles without losing original durable identity. Keep host wire compatibility; no wholesale JS sidecar proposed.",
+      "dependencies": "M01, copied-data schema/provenance map, current capabilities.",
+      "risks": "Different row/block representations; stale callbacks/account switch results; unsupported provider capability silently dropped; transient failure interpreted as empty history.",
+      "proposedImprovement": "Propose compact state updates and worker IO using existing native runtime; stable row IDs, scroll anchors and explicit unavailable/auth/retry states. Measure fixed workloads before claiming a speed gain.",
+      "acceptance": [
+        "Replay text/reasoning/tool/approval/question/usage/failure/cancel fixtures with matching order and terminal state.",
+        "Saved history, custom fields, queue ownership and turn provenance survive copied-data reload and round-trip.",
+        "Stop/account-switch/close during streaming cannot mutate another session or leave a provider child alive; stale responses discarded.",
+        "Keyboard transcript selection/focus and reader position survive incremental updates; empty/catalog/auth/network errors are distinct."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/provider.rs",
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/runtime.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-gpui/src/transcript.rs"
+      ]
+    },
+    {
+      "id": "M03",
+      "title": "PTY, terminal, Git and worktrees",
+      "status": "Common native capability; pending hardening policies",
+      "priority": "P0 safety / P1 interaction",
+      "batch": "G2",
+      "evidence": [
+        [
+          "M",
+          "src/platform/tauri/pty.ts",
+          1,
+          25
+        ],
+        [
+          "H",
+          "src-tauri/src/git/command.rs",
+          1,
+          84
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/terminal.rs",
+          363,
+          375
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/worktree_management.rs",
+          35,
+          62
+        ]
+      ],
+      "native": "Native Alacritty terminal, Git/SCM and worktree services already implemented, including last-panel terminal preservation.",
+      "uniqueDelta": "Reconcile MOLFAR PTY ownership/replay budgets and Git environment hardening, remote validation and safe deletion/retained-worktree policy. xterm UI is not a portability target.",
+      "portability": "Adapt small Rust algorithms and contracts into native owners. Transfer hardening regression cases rather than Tauri wrappers or directory splits.",
+      "dependencies": "M01/M02; Board later consumes these services.",
+      "risks": "Inherited GIT_DIR/GIT_WORK_TREE redirects commands; delete/force-remove risks uncommitted work; Unix foreground signaling does not prove Windows stop behavior.",
+      "proposedImprovement": "Propose stable terminal entity ownership, clear job-versus-shell close choices and bounded replay; one explicit repository command policy where existing code needs it.",
+      "acceptance": [
+        "Environment-poisoned fixture operates only on intended repository; unknown remote rejected.",
+        "Terminal resize/reconnect/hide/show preserves shell and scrollback; cancel-close preserves job; Unix and Windows tested separately.",
+        "Worktree deletion makes dirty/unpushed state visible and requires explicit destructive choice; main checkout and retained branch remain intact.",
+        "Git failures display actionable error instead of incomplete success; keyboard terminal escape/focus works."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/git.rs",
+        "crates/monocode-core/src/scm.rs",
+        "crates/monocode-core/src/scm/shell.rs",
+        "crates/monocode-core/src/worktree_management.rs",
+        "crates/monocode-gpui/src/terminal.rs"
+      ]
+    },
+    {
+      "id": "M04",
+      "title": "Familiar multi-project sessions and identity mapping",
+      "status": "Shipped; substantial common native equivalent",
+      "priority": "P0 data / P1 UI",
+      "batch": "G3",
+      "evidence": [
+        [
+          "M",
+          "src/features/familiars/model/familiar.ts",
+          27,
+          57
+        ],
+        [
+          "M",
+          "src/features/familiars/model/familiar.ts",
+          283,
+          329
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/mono.rs",
+          35,
+          61
+        ]
+      ],
+      "native": "Native Mono roster already has projects, session association, sidebar flags, documents, launches, outbox and pending reports; native Mono split panes already exist.",
+      "uniqueDelta": "MOLFAR Familiar presentation, roster key molfar:familiar-roster, directories, saved IDs and project/path policy. Multi-project support itself is not uniquely ours.",
+      "portability": "Reuse native Mono model and views; add explicit copied-roster/session mapping and focused policy adaptations. Do not port React overlay design over native split panes.",
+      "dependencies": "M01/M02; preference import, original-ID mapping.",
+      "risks": "Duplicate Familiar, missing associations silently opening a new session, removed project deleting persistent context.",
+      "proposedImprovement": "Propose visible unavailable-association repair, stable focus/selection and accessible project chips using native controls.",
+      "acceptance": [
+        "Copied roster order/labels/projects and associated session identity match source; duplicate path aliases collapse consistently.",
+        "Project removal does not delete Familiar files or conversation; missing project/session stays visible without implicit replacement.",
+        "Empty/create/remove flows are keyboard operable; project switch does not jump focus or reset draft."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/mono.rs",
+        "crates/monocode-core/src/mono/desktop.rs",
+        "crates/monocode-gpui/src/monos/mod.rs",
+        "crates/monocode-gpui/src/shell/mono_panes.rs"
+      ]
+    },
+    {
+      "id": "M05",
+      "title": "Soul, memory, topic files, redaction and conflict protection",
+      "status": "Shipped; mostly common native equivalent",
+      "priority": "P0",
+      "batch": "G3",
+      "evidence": [
+        [
+          "M",
+          "src/features/familiars/model/familiar-files.ts",
+          13,
+          50
+        ],
+        [
+          "M",
+          "src-tauri/src/familiar.rs",
+          87,
+          102
+        ],
+        [
+          "M",
+          "src-tauri/src/familiar.rs",
+          277,
+          299
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/mono/memory.rs",
+          1,
+          74
+        ]
+      ],
+      "native": "Native files/memory services already implement app-owned files, locking, dated entries, redaction and 200-line/24KiB prompt budget.",
+      "uniqueDelta": "Map familiars versus monos storage, exact existing file content, history/archive/search and MOLFAR scope policies. Markdown and JSON formats are portable.",
+      "portability": "Reuse native file/memory services after fixture reconciliation; import copied files with explicit manifest; no automatic production adoption.",
+      "dependencies": "M01/M04 and app authorization M11.",
+      "risks": "Lost updates, path escape, redaction mismatch, truncating durable files to prompt budget.",
+      "proposedImprovement": "Propose conflict UI that preserves unsaved text and offers explicit compare/reload; separate prompt truncation from durable storage.",
+      "acceptance": [
+        "SOUL/MEMORY/topic/archive fixture bytes preserved; budget applies only to context inclusion.",
+        "Stale hash, invalid path and concurrent write reject without lost update; missing optional files and corrupt JSON have explicit states.",
+        "Redaction/search/supersede/archive fixtures match; secrets never enter logs; conflict recovery remains keyboard accessible."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/mono/files.rs",
+        "crates/monocode-core/src/mono/memory.rs",
+        "crates/monocode-gpui/src/monos/memory_ui.rs"
+      ]
+    },
+    {
+      "id": "M06",
+      "title": "Habits, scheduler, hidden sessions and approval relay",
+      "status": "Shipped; native equivalent needs behavioral reconciliation",
+      "priority": "P0 data / P1 execution",
+      "batch": "G3",
+      "evidence": [
+        [
+          "M",
+          "src/features/familiars/model/familiar-habits.ts",
+          160,
+          193
+        ],
+        [
+          "M",
+          "src/app/workspace/flows/familiars/habit-host.ts",
+          24,
+          77
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/mono/habits.rs",
+          1,
+          80
+        ]
+      ],
+      "native": "Native habit schedule/claim/history policy and GPUI scheduler already exist.",
+      "uniqueDelta": "Confirm MOLFAR timeout, no-duplicate claim, hidden-session launch, approval relay and artifact/report delivery semantics against native implementation.",
+      "portability": "Reuse native scheduler; port only differing policy and test fixtures, not React effects.",
+      "dependencies": "M02/M04/M05/M11/M18; scheduler enablement only after copied-profile review.",
+      "risks": "Imported schedule runs unexpectedly; two owners execute same claim; stale approval resumes stopped task.",
+      "proposedImprovement": "Propose paused imported schedules for migration testing, explicit next-run/timezone/status and recoverable failure history.",
+      "acceptance": [
+        "Hourly/daily/weekdays/weekly/DST fixtures match; disabled habits never execute.",
+        "Concurrent claim yields one run; cancellation/timeout/deny records correct history and cannot relaunch after STOP.",
+        "Pending approval remains paused; restart cannot duplicate completion/card delivery; empty/invalid schedule UI explains recovery."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/mono/habits.rs",
+        "crates/monocode-gpui/src/monos/scheduler.rs",
+        "crates/monocode-gpui/src/monos/host.rs"
+      ]
+    },
+    {
+      "id": "M07",
+      "title": "Grouped Familiar completion reports",
+      "status": "Shipped; common feature with different algorithms",
+      "priority": "P1",
+      "batch": "G3",
+      "evidence": [
+        [
+          "M",
+          "src/features/familiars/model/familiar-session-completion.ts",
+          131,
+          245
+        ],
+        [
+          "M",
+          "src/features/familiars/model/familiar-completion-batches.test.ts",
+          34,
+          116
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/monos/host.rs",
+          791,
+          876
+        ]
+      ],
+      "native": "Native host already groups launches by origin_turn and waits before reporting.",
+      "uniqueDelta": "MOLFAR accepted/rejected launch, settlement callback, stale retry, dismissal and per-Familiar/turn batching guarantees need explicit comparison.",
+      "portability": "Reuse native completion mechanism; port missing invariants as focused native regressions.",
+      "dependencies": "M02/M04/M06/M11 and artifact cards M18.",
+      "risks": "Fast child causes early partial report; later source turn receives old report; duplicate/stale callbacks or busy Familiar cause unintended steering.",
+      "proposedImprovement": "Propose one stable consolidated report/card, queued while busy, preserving reader position and all child outcomes. Durable completion-group recovery after restart is an additional proposal; shipped TS batching is in-memory.",
+      "acceptance": [
+        "Fast completion before sibling registration still waits; rejected launch excluded; failure/cancel terminal; stale retry ignored.",
+        "Same session watched by different Familiar/turn does not cross-deliver; dismissal removes only intended result.",
+        "Baseline parity: one report per accepted batch while owned; busy Familiar queues instead of steering; report navigation preserves scroll/focus. Proposed additional durability criterion, requiring slice approval: restart recovers accepted group metadata without duplicate delivery."
+      ],
+      "targetFiles": [
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-core/src/mono.rs"
+      ]
+    },
+    {
+      "id": "M08",
+      "title": "Task Board durable stage engine and recovery",
+      "status": "Shipped MOLFAR-specific functionality",
+      "priority": "P0",
+      "batch": "G4",
+      "evidence": [
+        [
+          "M",
+          "src/features/task-board/services/engine.ts",
+          10,
+          66
+        ],
+        [
+          "M",
+          "src/features/task-board/services/ports.ts",
+          25,
+          66
+        ],
+        [
+          "M",
+          "src-tauri/src/task_board/schema.rs",
+          1,
+          67
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/orchestration.rs",
+          48,
+          66
+        ]
+      ],
+      "native": "Native orchestration handles scoped dependency plans; no equivalent durable Board engine/store found.",
+      "uniqueDelta": "Persisted cards/runs/settings, serialized claims, dispatch receipts, reconciliation, hidden card sessions and exactly-once settlement.",
+      "portability": "Reuse Rust schema/DB routines after version checks; port TS state machine into a focused core Board service with injected session/git/time/store boundaries. Native UI observes committed state.",
+      "dependencies": "M01/M02/M03/M11/M18; cancellation/settlement contract first.",
+      "risks": "Double dispatch after crash, lost final text after detachment, queued task restarting after user STOP, stale live claim.",
+      "proposedImprovement": "Propose durable transition receipts and event-driven projections; visible interrupted/needs-input states instead of optimistic success. Persisting a global engine pause across restart is an additional proposal; shipped engine STOP uses an in-memory flag.",
+      "acceptance": [
+        "Full fixture flow traverses existing stages; crash at accepted/session_prepared/turn_submitted/settled recovers without double run.",
+        "Duplicate callback settles once with full final text; unavailable runtime becomes interrupted, never false success.",
+        "Preserve existing card cancellation and review-gate behavior on reload; cancelled cards cannot silently redispatch. Proposed additional global-pause durability across restart requires slice approval. DB work stays off UI thread; empty/loading/error board states recover explicitly."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/task_board/ (proposed concern)",
+        "crates/monocode-gpui/src/task_board/ (proposed views)",
+        "crates/monocode-core/src/lib.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "M09",
+      "title": "Board per-stage models, skills and review gates",
+      "status": "Shipped MOLFAR-specific policy",
+      "priority": "P1",
+      "batch": "G4",
+      "evidence": [
+        [
+          "M",
+          "src/features/task-board/types/stage.ts",
+          4,
+          40
+        ],
+        [
+          "M",
+          "src/features/task-board/types/settings.ts",
+          4,
+          14
+        ],
+        [
+          "M",
+          "src/features/task-board/model/stage-config.ts",
+          50,
+          74
+        ],
+        [
+          "M",
+          "src/features/task-board/model/transitions.ts",
+          103,
+          129
+        ]
+      ],
+      "native": "Native model/catalog/skill and approval controls exist, but no Board column/stage inheritance policy or Board review gates.",
+      "uniqueDelta": "Per-stage overrides and column defaults, frozen run provenance, explicit plan/final gates and existing legal transition policy.",
+      "portability": "Reuse native catalog/capabilities; port resolution and transition rules with fixtures into Board domain. Do not duplicate provider model controls.",
+      "dependencies": "M08/M02 and copied Board settings.",
+      "risks": "Old model ID silently substituted; incompatible effort survives provider change; editing defaults changes historical provenance; gate bypass.",
+      "proposedImprovement": "Propose clear inherited/overridden/effective setting display and actionable missing-model/skill states.",
+      "acceptance": [
+        "Override precedence matches source; provider switch clears incompatible fields; existing run provenance remains immutable.",
+        "Unavailable model blocks launch visibly; missing skills handled explicitly; plan approval and final gate cannot be skipped.",
+        "Keyboard settings/review controls labeled; empty catalog and stale approval show useful error without dispatch."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/task_board/stage_config.rs (proposed)",
+        "crates/monocode-core/src/task_board/transitions.rs (proposed)",
+        "crates/monocode-gpui/src/task_board/ (proposed)"
+      ]
+    },
+    {
+      "id": "M10",
+      "title": "Board worktrees, versioned artifacts and file handoff",
+      "status": "Shipped MOLFAR-specific workflow",
+      "priority": "P0 safety / P1 full flow",
+      "batch": "G4",
+      "evidence": [
+        [
+          "M",
+          "src/features/task-board/services/worktree.ts",
+          6,
+          40
+        ],
+        [
+          "M",
+          "src/features/task-board/services/stage-start.ts",
+          31,
+          61
+        ],
+        [
+          "M",
+          "src/features/task-board/services/stage-start.ts",
+          119,
+          140
+        ],
+        [
+          "M",
+          "src/features/task-board/services/actions.ts",
+          77,
+          104
+        ]
+      ],
+      "native": "Native Git/worktree/checkpoint and generic artifact services exist; no equivalent Board stage file-handoff contract.",
+      "uniqueDelta": "Retained worktree/fixed base, required artifact version references under ignored .molfar/board, stage fingerprints, legal action checks, gate/delivery races.",
+      "portability": "Adapt native worktree service; preserve Board artifact store and provenance in core; pass file paths to stage prompts rather than copying artifact bodies.",
+      "dependencies": "M03/M08/M09/M18/M11.",
+      "risks": "Dirty main overwritten; stale artifact version used; startup cancellation misses newly created session; duplicate final delivery.",
+      "proposedImprovement": "Propose visible artifact prerequisites/version history and cancellation acknowledgment, with transition preconditions checked before filesystem writes.",
+      "acceptance": [
+        "Main checkout untouched; retained worktree reused without dropping dirty files; missing artifact blocks launch.",
+        "Selected versions/fingerprints match run receipt; prompt references existing input files, not expanded bodies.",
+        "Cancel during startup stops newly created session; duplicate delivery rejected; failed handoff retains evidence and offers explicit retry."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/task_board/artifacts.rs (proposed)",
+        "crates/monocode-core/src/task_board/worktree.rs (proposed)",
+        "crates/monocode-core/src/task_board/dispatch.rs (proposed)"
+      ]
+    },
+    {
+      "id": "M11",
+      "title": "App CLI, connector MCP, action authorization, idempotency and STOP",
+      "status": "Shipped base plus pending hardening; native common actions",
+      "priority": "P0",
+      "batch": "G2 foundational / G4-G5 extensions",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/src/control_cli.rs",
+          85,
+          123
+        ],
+        [
+          "M",
+          "src/features/orchestration/model/orchestration.ts",
+          838,
+          892
+        ],
+        [
+          "M",
+          "src/features/orchestration/model/orchestration.ts",
+          950,
+          963
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/app_access.rs",
+          15,
+          39
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/mono/api.rs",
+          4,
+          20
+        ]
+      ],
+      "native": "Native bridge, request IDs, auth, inflight/receipt handling and most common Mono actions already exist.",
+      "uniqueDelta": "37-action MOLFAR app surface including Board/Confluence; distinguish control task namespace from app actions. Preserve scope, read/hash-before-write, effect/receipt atomicity and paused read-only behavior.",
+      "portability": "Extend native validation/action services at domain boundaries; port only missing actions/invariants. Shared native session-control semantics serve CLI, Board, Familiar and phone adapters.",
+      "dependencies": "G2 foundation needs M01/M02 only. Board/artifact/Confluence action extensions are implemented with their owning G4/G5 services M08/M10/M13/M18; those extensions do not block the foundational action boundary.",
+      "risks": "Retry after timeout/restart mutates twice; request ID reused with different input; receipt read error treated as absent; forbidden action bypass; STOP allows hidden restart.",
+      "proposedImprovement": "Propose explicit versioned capabilities, stable actionable errors and consistent paused state; domain authorization independent of open UI.",
+      "acceptance": [
+        "Same request+input produces one effect across timeout/restart; reused ID with changed input rejected; mutation and receipt commit together.",
+        "Denied/out-of-project/stale approval or question call causes zero mutation; unknown action never falls through.",
+        "STOP pauses control dispatch/queues; paused list/get/wait allowed, no implicit resume; preserve namespace-specific self-session protections.",
+        "CLI/MCP fixture fields/errors match; cancel/disconnect does not duplicate accepted work."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/app_access.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-core/src/mono/bridge.rs",
+        "crates/monocode-gpui/src/monos/host.rs",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "M12",
+      "title": "Jira Inbox hierarchy",
+      "status": "Shipped custom hierarchy over common connector",
+      "priority": "P1",
+      "batch": "G5",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/src/jira.rs",
+          15,
+          24
+        ],
+        [
+          "M",
+          "src-tauri/src/jira.rs",
+          83,
+          88
+        ],
+        [
+          "M",
+          "src/features/inbox/model/jira-issue-tree.ts",
+          18,
+          114
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/inbox/jira.rs",
+          13,
+          15
+        ]
+      ],
+      "native": "Native Jira status/project/issues/details/thread/comments exist, but issue fields omit issuetype/parent and hierarchy metadata.",
+      "uniqueDelta": "Epic/story/subtask hierarchy, cycle/orphan-safe projection, expand/flatten and selection behavior.",
+      "portability": "Extend existing Rust adapter DTO/parsers; translate pure hierarchy projection and reuse native Inbox rows. Carry pending shared HTTP behavior, not just its file layout.",
+      "dependencies": "M01/M02, account-scoped config; M21 HTTP safeguards.",
+      "risks": "Missing parent drops issue; cycles hang UI; duplicate IDs across sites; stale old-account response replaces new results.",
+      "proposedImprovement": "Propose stable hierarchy row IDs, account-scoped expansion cache, keyboard disclosure and type text beyond color.",
+      "acceptance": [
+        "Epic/story/subtask, missing/self/cyclic parent and mixed-project fixtures retain every visible issue.",
+        "Expansion/selection survive refresh; keyboard search/navigation reaches children.",
+        "Loading/empty/auth/timeout/retry distinct; changed-account response discarded; credentials never follow unsafe redirect."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/inbox/jira.rs",
+        "crates/monocode-gpui/src/inbox/ui.rs"
+      ]
+    },
+    {
+      "id": "M13",
+      "title": "Confluence browser, context, app actions and connector MCP",
+      "status": "Shipped MOLFAR-specific integration",
+      "priority": "P1",
+      "batch": "G5",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/src/confluence/config.rs",
+          16,
+          51
+        ],
+        [
+          "M",
+          "src/features/confluence/model/api.ts",
+          23,
+          98
+        ],
+        [
+          "M",
+          "src-tauri/src/connectors_mcp/mod.rs",
+          1,
+          85
+        ],
+        [
+          "M",
+          "src-tauri/src/connectors_mcp/tools.rs",
+          6,
+          104
+        ]
+      ],
+      "native": "Native Jira and general MCP machinery exist; no corresponding Confluence browser/service or MOLFAR connectors-mcp endpoint found.",
+      "uniqueDelta": "Space/page/folder tree, pagination/search/read, context mentions, hidden spaces, shared Atlassian configuration and CLI/MCP contracts (including existing Jira comment tool).",
+      "portability": "Adapt Rust HTTP/parsing with explicit config/path service instead of AppHandle; native tree/reader/search UI; extend existing native entry points rather than copying Tauri app shell.",
+      "dependencies": "M01/M11/M12; shared connector HTTP/error policy.",
+      "risks": "Stale cache crosses accounts; incomplete pagination; content kind mismatch; MCP writes bypass capability boundary.",
+      "proposedImprovement": "Propose one connector service for UI/CLI/MCP, account-keyed cache, cancellable search/stale-result rejection and explicit read/write capability discovery.",
+      "acceptance": [
+        "Nested space/page/folder and pagination fixtures match; missing/unsupported content, invalid token and timeout recover.",
+        "Context preserves title/body/source URL; cancelled search cannot replace current selection; account disconnect clears cached pages.",
+        "MCP/action shapes and existing write behavior fixture-tested; credentials excluded from logs; reader/tree keyboard and empty/error states covered."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/confluence/ (proposed)",
+        "crates/monocode-core/src/connectors_mcp/ (proposed)",
+        "crates/monocode-gpui/src/inbox/ (Confluence views proposed)",
+        "crates/monocode-gpui/src/main.rs"
+      ]
+    },
+    {
+      "id": "M14",
+      "title": "Obsidian / Knowledge vault, graph and revision editing",
+      "status": "Shipped MOLFAR-specific integration",
+      "priority": "P1",
+      "batch": "G6",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/src/vault/mod.rs",
+          59,
+          137
+        ],
+        [
+          "M",
+          "src/features/knowledge/model/graph/resolve-links.ts",
+          4,
+          83
+        ],
+        [
+          "M",
+          "src/features/knowledge/model/document/prepare-vault-preview.ts",
+          44,
+          100
+        ]
+      ],
+      "native": "Native file/editor/search/notes exist; no vault connection, backlink graph or equivalent revision-save service found.",
+      "uniqueDelta": "Vault connection/scan/index, wiki/alias/relative links, graph, asset preview, add-to-context, cancellation and Companion vault API.",
+      "portability": "Reuse Rust scanner/path/revision routines with explicit native IO; translate link resolver using existing fixtures; adapt native editor/markdown/list before graph interaction. No React/DOM transplant.",
+      "dependencies": "M01/M02/M11, native files/editor and artifact-safe assets.",
+      "risks": "Symlink escape, overwriting external note, stale disconnected scan result, concurrent scans, large graph blocks input.",
+      "proposedImprovement": "Propose service-owned scan/cancel state, generation-stamped snapshots and bounded worker projections; accessible list alternative and reduced-motion graph.",
+      "acceptance": [
+        "Two views share one scan; cancel/reconnect rejects stale output; external edit causes revision conflict.",
+        "No outside-vault read/write; encoded/relative/ambiguous/wiki links match fixtures; missing asset explicit.",
+        "Large-vault operation remains cancellable; keyboard list/reader and graph alternative available; empty/error/retry paths preserve source files."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/knowledge/ (proposed)",
+        "crates/monocode-gpui/src/file_editor.rs"
+      ]
+    },
+    {
+      "id": "M15",
+      "title": "Home dashboard and custom brand visuals",
+      "status": "Shipped MOLFAR-specific surface",
+      "priority": "P2",
+      "batch": "G7",
+      "evidence": [
+        [
+          "M",
+          "src/features/home/model/home-layout.ts",
+          3,
+          79
+        ],
+        [
+          "M",
+          "src/features/home/model/home-widget-registry.ts",
+          4,
+          17
+        ],
+        [
+          "M",
+          "src/features/home/model/home-data.ts",
+          26,
+          39
+        ]
+      ],
+      "native": "Native workspace/usage components exist; no equivalent custom ten-widget Home grid found.",
+      "uniqueDelta": "Widget composition/layout persistence, recent sessions/automations/status and orb/fire/brand visual behavior.",
+      "portability": "Port aggregation contracts to native service and build native widgets using semantic tokens; import saved intent/order, not CSS pixel geometry.",
+      "dependencies": "M02/M04/M17/M16 and automation summaries.",
+      "risks": "Invalid saved layout silently reset; decoration masks empty/error states; background animations consume resources or impair reduced-motion users.",
+      "proposedImprovement": "Propose responsive native grid, consistent chart/card tokens, keyboard rearrangement and pause decorative work when hidden/reduced motion.",
+      "acceptance": [
+        "Copied visible widget set/order retained or explicit recoverable mapping shown; source preference never overwritten on parse failure.",
+        "Empty/loading/partial/error cards show real state; navigation to session keeps selection.",
+        "Keyboard rearrange alternative works; all animation obeys reduced motion and hidden-window pause; benchmark before claiming smoother rendering."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/home/ (proposed aggregation)",
+        "crates/monocode-gpui/src/home/ (proposed views)"
+      ]
+    },
+    {
+      "id": "M16",
+      "title": "Usage dashboard and additional provider sources",
+      "status": "Shipped custom dashboard over common usage data",
+      "priority": "P1 data / P2 surface",
+      "batch": "G7",
+      "evidence": [
+        [
+          "M",
+          "src/features/usage/model/fetch-usage.ts",
+          18,
+          72
+        ],
+        [
+          "M",
+          "src/features/usage/model/usage-card.ts",
+          11,
+          26
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/usage.rs",
+          127,
+          145
+        ]
+      ],
+      "native": "Native usage services/footer support multiple sources; generic usage is common. Dedicated MOLFAR Cursor/Antigravity dashboard paths are not equivalent to native subscription defaults.",
+      "uniqueDelta": "Independent Claude/Codex/Cursor/Antigravity dashboard cards, normalized last-good/stale/error handling, history/trends.",
+      "portability": "Reuse native sources where contracts match; adapt missing Rust fetch/parsing logic and existing fixtures; one refresh owner, no duplicate poller.",
+      "dependencies": "M01/M02 and preference mapping; shared usage data precedes independent Home/Usage views. No dependency on M15.",
+      "risks": "Unavailable rendered 0%; failure erases prior values; account switching shows old account usage; stale data displayed current.",
+      "proposedImprovement": "Propose visible source/time/stale labels and independent refresh/error handling; consistent accessible chart summaries.",
+      "acceptance": [
+        "All four shipped dashboard sources represented or explicit parity blocker recorded.",
+        "One failed refresh cannot erase other cards; last-good marked stale; missing values never fabricated.",
+        "Old-account response ignored; retry/cancellation/empty/limited states correct; chart meaning available without color/hover."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/usage.rs",
+        "crates/monocode-core/src/usage/ (extend as needed)",
+        "crates/monocode-gpui/src/usage_dashboard/ (proposed)"
+      ]
+    },
+    {
+      "id": "M17",
+      "title": "Custom settings, themes and saved defaults",
+      "status": "Shipped; many controls already common native",
+      "priority": "P0 import / P2 polish",
+      "batch": "G2 import / G7 polish",
+      "evidence": [
+        [
+          "M",
+          "src/features/settings/model/display-prefs.ts",
+          4,
+          115
+        ],
+        [
+          "M",
+          "src/features/settings/model/workspace-themes.ts",
+          6,
+          32
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/settings/model.rs",
+          288,
+          340
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/settings/model.rs",
+          385,
+          455
+        ]
+      ],
+      "native": "Native themes/glass, paced reveal, autocorrect, remaining usage and email masking controls already exist.",
+      "uniqueDelta": "MOLFAR preference keys, palettes, saved defaults, new-layout opt-in policy and cross-window persistence. Do not duplicate common native controls.",
+      "portability": "Explicit versioned import map; preserve explicit source values and use reviewed native defaults only for absent keys. Native layout need not recreate old opt-in toggle.",
+      "dependencies": "M01/M02; copied web-storage export.",
+      "risks": "False/missing conflated; autocorrect default differs; importing unsupported setting overwrites source; view ordering lost.",
+      "proposedImprovement": "Propose previewable import report listing mapped/unsupported settings, shared tokens and clear reset scope.",
+      "acceptance": [
+        "Explicit true/false/value imports match source and survive reload; missing and invalid values distinguished.",
+        "Unsupported keys retained in import manifest; no production storage access; failed write surfaced.",
+        "Settings search/keyboard/focus/reduced motion and high-contrast states verified later; absent defaults approved before adoption."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/desktop_preferences.rs",
+        "crates/monocode-gpui/src/settings/model.rs",
+        "crates/monocode-gpui/src/theme.rs"
+      ]
+    },
+    {
+      "id": "M18",
+      "title": "Document and HTML artifacts, cards and sandbox security",
+      "status": "Shipped; common native artifact base plus MOLFAR metadata",
+      "priority": "P0 security / P1 parity",
+      "batch": "G2 storage/security / G4 Board integration",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/src/artifacts.rs",
+          11,
+          53
+        ],
+        [
+          "M",
+          "src-tauri/src/artifacts.rs",
+          192,
+          242
+        ],
+        [
+          "M",
+          "src/features/artifacts/ui/HtmlArtifactFrame.tsx",
+          76,
+          80
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/store/notes.rs",
+          53,
+          110
+        ],
+        [
+          "U",
+          "crates/monocode-gpui/src/monos/html.rs",
+          246,
+          299
+        ]
+      ],
+      "native": "Native notes content_kind/artifact_kind, Mono artifact actions and sandboxed macOS WKWebView exist. Linux/Windows HTML currently falls back to text.",
+      "uniqueDelta": "MOLFAR provenance/card identity, retries/deletion/theme/size/open-link behavior; Board versioned handoff is distinct M10.",
+      "portability": "Prefer native store and sandbox host; adapt metadata/contracts. Arbitrary interactive HTML cannot be replaced by native visual widgets without explicit behavior loss.",
+      "dependencies": "M01/M02/M11 and platform HTML implementation before required-platform parity.",
+      "risks": "Privileged app bridge/network/parent escape; forged resize/navigation; doc/HTML kind collision; platform text fallback loses functionality.",
+      "proposedImprovement": "Propose validated artifact boundary, bounded resizing and explicit stale/deleted/unsupported states; accessible source fallback, never silently weaken isolation.",
+      "acceptance": [
+        "Stable IDs/provenance survive reopen; retry updates one card; delete removes intended reference.",
+        "Malicious HTML cannot call app bridge, fetch network or access parent DOM; opener/height messages validated.",
+        "Keyboard focus can enter/exit; missing/corrupt content recoverable; required-platform HTML rendering or explicit approved scope waiver before release."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/store/notes.rs",
+        "crates/monocode-core/src/mono/api.rs",
+        "crates/monocode-gpui/src/monos/html.rs",
+        "crates/monocode-gpui/src/monos/cards.rs"
+      ]
+    },
+    {
+      "id": "M19",
+      "title": "Companion HTTP/Tailscale gateway and BitChain compatibility",
+      "status": "Shipped gateway; pending PR119 hardening",
+      "priority": "P1",
+      "batch": "G8",
+      "evidence": [
+        [
+          "M",
+          "src-tauri/src/companion.rs",
+          1,
+          25
+        ],
+        [
+          "M",
+          "src/features/companion/model/protocol.ts",
+          158,
+          225
+        ],
+        [
+          "M",
+          "src/features/companion/model/companion-executor.ts",
+          373,
+          384
+        ],
+        [
+          "H",
+          "src/features/companion/model/companion-reply-input.ts",
+          1,
+          70
+        ]
+      ],
+      "native": "Native QUIC phone gateway exists but is not Companion v2 wire-compatible.",
+      "uniqueDelta": "Default-off loopback/tailnet HTTP(S), hashed device tokens, BitChain pairing, Familiar/session STOP/approval/questions, Board and vault revision actions. BitChain client lives outside this repo.",
+      "portability": "Adapt Rust gateway/auth/bounds with native service dispatch; both gateways use one authorized domain layer, not one transport implementation.",
+      "dependencies": "M01/M02/M04-M11/M14 and M21 validation/config-corruption safeguards.",
+      "risks": "Stale or forged replies; duplicated mutation after disconnect; accidental wildcard/WAN bind; token reuse across identities.",
+      "proposedImprovement": "Propose explicit reachability/offline state, per-device revoke, versioned capability negotiation and consistent bounded errors.",
+      "acceptance": [
+        "Companion v2 fixtures retain all shipped custom methods; revoked devices denied and secrets not logged.",
+        "STOP works while views hidden; stale/replayed approvals rejected; conflicts preserve vault/Board data.",
+        "Corrupt pairing store backed up with visible error; default-off/no wildcard behavior retained; pairing/cancel/offline UI accessible.",
+        "External BitChain client interoperability remains a later runtime gate, not inferred from server tests."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/companion/ (proposed)",
+        "crates/monocode-gpui/src/settings/ (Companion settings proposed)",
+        "crates/monocode-gpui/src/shell.rs"
+      ]
+    },
+    {
+      "id": "M20",
+      "title": "Pending QUIC phone app and mandatory no-UPnP policy",
+      "status": "Pending PR117 mobile candidate; security decision mandatory",
+      "priority": "P0 no-router policy / P2 client",
+      "batch": "G1 policy / G8 client",
+      "evidence": [
+        [
+          "S",
+          "mobile/app.json",
+          1,
+          35
+        ],
+        [
+          "S",
+          "src-tauri/src/mobile_access/tests.rs",
+          154,
+          166
+        ],
+        [
+          "S",
+          "docs/companion.md",
+          45,
+          112
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/mobile/host.rs",
+          59,
+          69
+        ],
+        [
+          "U",
+          "crates/monocode-core/src/mobile/host.rs",
+          249,
+          287
+        ],
+        [
+          "U",
+          "crates/monocode-core/Cargo.toml",
+          25,
+          36
+        ]
+      ],
+      "native": "Native core has QUIC MobileHost, pairing/watch/capability handling and phone app; upstream open_router defaults true and router dependencies remain.",
+      "uniqueDelta": "Pending MOLFAR Expo branding/project linkage and commit 118b5c1a89ab2737285bad00acaf0d3aa44355b6 explicitly removing automatic router mapping. Current main does not ship this mobile client.",
+      "portability": "Reuse native mobile architecture/client; carry removal of router mapping/config/dependencies and add lockfile/config regression guard before any native runtime. Do not merely change default to false.",
+      "dependencies": "M01 first; M11 domain layer; custom phone capabilities depend on migrated services; mobile distribution remains separate approval.",
+      "risks": "Fresh native profile exposes router port; old config reenables mapping; 32 unpaired slots exhausted; external client capability mismatch.",
+      "proposedImprovement": "Propose LAN/Tailscale/explicit reachability only, visible capability differences between gateways and bounded pairing/handshake resource tests. Handshake hardening is backlog unless separately implemented.",
+      "acceptance": [
+        "Default/config/legacy fixtures never invoke router mapping; dependency/lockfile/source guard rejects igd-next/natpmp mapping restoration.",
+        "Pair/revoke/reconnect/watch/STOP fixtures preserve native behavior; no listeners start by importing data.",
+        "Pending client labeled candidate until devices/platform distribution tested; no EAS build/publish or account changes in setup."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/mobile/host.rs",
+        "crates/monocode-core/src/mobile/router.rs",
+        "crates/monocode-core/Cargo.toml",
+        "crates/monocode-gpui/Cargo.lock",
+        "mobile/app.json",
+        "mobile/src/features/connection/nativeLink.ts"
+      ]
+    },
+    {
+      "id": "M21",
+      "title": "Lifecycle, persistence, validation and hardening invariants",
+      "status": "Pending PR119 remote; six additional local-only commits",
+      "priority": "P0 invariants / P2 cleanup",
+      "batch": "G1-G2 then each owning slice",
+      "evidence": [
+        [
+          "H",
+          "src/app/model/workspace-snapshot-guard.ts",
+          1,
+          24
+        ],
+        [
+          "H",
+          "src-tauri/src/git/command.rs",
+          23,
+          58
+        ],
+        [
+          "H",
+          "src-tauri/src/http_client.rs",
+          1,
+          58
+        ],
+        [
+          "H",
+          "src/features/companion/model/companion-reply-input.ts",
+          1,
+          70
+        ],
+        [
+          "L",
+          "src/app/shell/sidebar/use-sidebar-session-list.ts",
+          1,
+          60
+        ]
+      ],
+      "native": "Native runtime/store/error/platform owners exist, but different code paths; Tauri/React structures are not native fixes.",
+      "uniqueDelta": "Pending snapshot-load write guard, settled/logged boot writes, input validation, corrupt-config backup, safe Git environment/remotes, MCP load errors, lock recovery, dependency fixes. Local-only Sidebar/transcript splits and Files-tab loop fix remain separate.",
+      "portability": "Create per-invariant native owner/fixture map; preserve semantic fixes and native-appropriate recovery. Do not cherry-pick all React extractions, lockfiles or old dependency versions.",
+      "dependencies": "All slices; M01 before runtime and M02 persistence boundary.",
+      "risks": "Calling pending work shipped; assuming native already fixes bug because implementation differs; unread persisted layout overwritten by empty boot state.",
+      "proposedImprovement": "Propose fail-closed persistence/error states, structured bounded diagnostics and deterministic event/timer tests. Refactor only when required by owned native behavior, without file-size targets.",
+      "acceptance": [
+        "Snapshot load failure never overwrites unread stored layout; explicit successful recovery resumes writes.",
+        "Partial boot writes report each failure; corrupt settings retain backup; malformed phone input has zero side effects.",
+        "MCP failure is visible; inherited Git env cannot redirect repository; source-specific mutex recovery does not hide invalid state.",
+        "Native regression reproduces relevant failure then passes fix; local-only UI changes remain evidence, not resumed B7."
+      ],
+      "targetFiles": [
+        "crates/monocode-core/src/store/shared.rs",
+        "crates/monocode-gpui/src/workspace.rs",
+        "crates/monocode-gpui/src/runtime/persistence.rs",
+        "crates/monocode-core/src/mcp.rs",
+        "crates/monocode-core/src/remote.rs"
+      ]
+    },
+    {
+      "id": "M22",
+      "title": "Backlog and optional improvements boundary",
+      "status": "Not shipped parity: separate proposals only",
+      "priority": "Deferred",
+      "batch": "After G9; separate feature approval",
+      "evidence": [
+        [
+          "P",
+          "docs/specs/task-board/spec.md",
+          115,
+          123
+        ],
+        [
+          "M",
+          "src/features/task-board/types/card.ts",
+          14,
+          37
+        ],
+        [
+          "S",
+          "docs/companion.md",
+          110,
+          116
+        ]
+      ],
+      "native": "Native orchestrator depends_on exists, but does not establish Board card dependency support; native UI has distinct capabilities.",
+      "uniqueDelta": "Board card dependencies are explicitly out of scope in current Board spec. Companion full-text vault search and push notifications are unimplemented. Deferred global-refactor Stages6-10 are not product features to promise.",
+      "portability": "Do not port non-existent behavior. Keep optional dependency graph/schema/cycle policy, phone search/push and major redesigns in separate plans after parity.",
+      "dependencies": "Detailed product approval after G9; no task automatically enables backlog.",
+      "risks": "Migration scope grows by treating wishlist as existing functionality; generic orchestration confused with persistent Board dependencies.",
+      "proposedImprovement": "Propose later Board dependency design only if needed, with cycle/failure/cancel/recovery rules. Smoothness/visual improvements remain scoped to migrated slices.",
+      "acceptance": [
+        "Inventory and release checklist clearly distinguish shipped, remote pending, local pending and backlog.",
+        "No Board dependsOn schema/dispatch or push/search capability advertised before its own approved implementation and tests."
+      ],
+      "targetFiles": [
+        "docs/specs/gpui-migration/spec.md",
+        "docs/specs/gpui-migration/tasks.md"
+      ]
+    }
+  ]
+}
