@@ -5,12 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { formatSessionTitle } from "@/domain/session/title";
 import { formatReminderTime } from "@/features/sessions/model/session-reminders";
 import { Sidebar } from "./Sidebar";
+import { saveProjectRailOrder } from "../../features/projects/model/recents";
 import {
   loadSessionFolders,
   saveSessionFolders,
 } from "@/features/sessions/model/session-folders";
 import { useProjectDiffStats } from "@/features/source-control/hooks/use-project-diff-stats";
 import { copyText } from "@/platform/tauri/clipboard";
+import { required } from "@/shared/testing/required";
 import {
   createFamiliar,
   saveFamiliarSessionId,
@@ -175,6 +177,82 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe("project swipe navigation", () => {
+  it("starts a short swipe transition immediately while the destination is loading", () => {
+    const animate = vi
+      .spyOn(HTMLElement.prototype, "animate")
+      .mockImplementation(
+        () =>
+          ({
+            cancel: vi.fn(),
+            finished: new Promise(() => {}),
+          }) as unknown as Animation,
+      );
+    const paths = ["/workspace/project", "/workspace/other"];
+    saveProjectRailOrder(paths);
+    props = {
+      ...props,
+      inset: true,
+      recents: paths.map((path) => ({ path, openedAt: 1 })),
+      onSelectProject: vi.fn((cwd: string) => {
+        props = { ...props, cwd, pending: true, sessions: [] };
+        render();
+      }),
+    };
+    act(render);
+    animate.mockClear();
+    act(() => {
+      required(container.querySelector("aside")).dispatchEvent(
+        new WheelEvent("wheel", {
+          deltaX: 30,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    expect(props.onSelectProject).toHaveBeenCalledExactlyOnceWith(paths[1]);
+    expect(animate).toHaveBeenCalled();
+    expect(
+      animate.mock.calls.some(
+        ([, options]) =>
+          typeof options === "object" && options?.duration === 180,
+      ),
+    ).toBe(true);
+  });
+
+  it.each([true, false])(
+    "enables swiping only in the inset sidebar (inset=%s)",
+    (inset) => {
+      const paths = ["/workspace/project", "/workspace/other", "/workspace/last"];
+      saveProjectRailOrder(paths);
+      props = {
+        ...props,
+        inset,
+        recents: paths.map((path) => ({ path, openedAt: 1 })),
+        onSelectProject: vi.fn((cwd: string) => {
+          props = { ...props, cwd };
+          render();
+        }),
+      };
+      act(render);
+      const swipe = () => act(() => {
+        required(container.querySelector("aside")).dispatchEvent(new WheelEvent("wheel", {
+          deltaX: 80,
+          bubbles: true,
+          cancelable: true,
+        }));
+      });
+      swipe();
+      swipe();
+      if (inset) {
+        expect(props.onSelectProject).toHaveBeenCalledExactlyOnceWith(paths[1]);
+      } else {
+        expect(props.onSelectProject).not.toHaveBeenCalled();
+      }
+    },
+  );
 });
 
 describe("inset session previews", () => {

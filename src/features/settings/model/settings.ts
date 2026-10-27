@@ -57,8 +57,10 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     id: "connections",
     group: "app",
     label: "Connections",
-    description: "Connect your machines and run agents remotely through SSH.",
-    keywords: "ssh remote host machine server environment always on",
+    description:
+      "Run agents on your other machines, and pair your phone with this desktop.",
+    keywords:
+      "ssh remote host machine server environment always on mobile phone iphone qr pair router",
   },
   {
     id: "companion",
@@ -187,6 +189,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     section: "companion",
     label: "Paired devices",
     keywords: "phone iphone ipad pair qr revoke",
+  },
+  {
+    id: "mobile-access",
+    section: "connections",
+    label: "Your phones",
+    keywords: "mobile phone iphone android qr pair code device tailscale vpn remote",
   },
   {
     id: "remote-machines",
@@ -1174,33 +1182,6 @@ export function subscribeAutosave(onStoreChange: () => void) {
     window.removeEventListener(AUTOSAVE_CHANGE_EVENT, onStoreChange);
     window.removeEventListener("storage", onStorage);
   };
-}
-
-const IDLE_AGENT_LIMIT_KEY = "molfar.idleAgentLimit";
-
-/** How many finished conversations keep their agent CLI warm. */
-export const IDLE_AGENT_LIMITS = [0, 1, 2, 3, 5] as const;
-export type IdleAgentLimit = (typeof IDLE_AGENT_LIMITS)[number];
-export const IDLE_AGENT_LIMIT_DEFAULT: IdleAgentLimit = 3;
-
-export function loadIdleAgentLimit(): IdleAgentLimit {
-  try {
-    const raw = Number(localStorage.getItem(IDLE_AGENT_LIMIT_KEY) ?? NaN);
-    return (
-      IDLE_AGENT_LIMITS.find((limit) => limit === raw) ??
-      IDLE_AGENT_LIMIT_DEFAULT
-    );
-  } catch {
-    return IDLE_AGENT_LIMIT_DEFAULT;
-  }
-}
-
-export function saveIdleAgentLimit(value: IdleAgentLimit) {
-  try {
-    localStorage.setItem(IDLE_AGENT_LIMIT_KEY, String(value));
-  } catch {
-    // private mode / quota
-  }
 }
 
 const CTRL = IS_MAC ? "⌃" : "Ctrl+";

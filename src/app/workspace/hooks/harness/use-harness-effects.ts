@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect } from "react";
 import type { Session } from "@/domain/session/session";
 import { nativeSkillContextForSession } from "@/features/sessions/model/session-skills";
-import { loadIdleAgentLimit } from "@/features/settings/model/settings";
+import { loadIdleAgentLimit } from "@/features/settings/model/idle-agent-limit";
 import { warmNativeSkills } from "@/features/skills/model/skills";
 import {
   configureHarnessIdlePark,

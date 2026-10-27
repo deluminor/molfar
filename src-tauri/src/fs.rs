@@ -130,7 +130,7 @@ fn directory_identity(path: &Path) -> Result<String, String> {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DirEntry {
-    name: String,
+    pub(crate) name: String,
     path: String,
     is_dir: bool,
     ignored: bool,
@@ -6041,7 +6041,7 @@ pub async fn read_text_file(path: String) -> Result<String, String> {
         .map_err(|e| e.to_string())?
 }
 
-fn read_text_file_sync(path: &str) -> Result<String, String> {
+pub(crate) fn read_text_file_sync(path: &str) -> Result<String, String> {
     let path = expand_home(path);
     let meta = std::fs::metadata(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     if !meta.is_file() {
