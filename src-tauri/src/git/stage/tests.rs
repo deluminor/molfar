@@ -2,6 +2,7 @@ use super::*;
 
 use std::process::Command;
 
+#[cfg(unix)]
 use crate::git::command::git_run;
 use crate::git::commit::{git_commit_for, git_staged_context_for};
 use crate::git::file_diff::git_file_diff_for;
