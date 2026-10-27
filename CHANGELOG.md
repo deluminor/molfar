@@ -9,19 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Pair a phone from **Settings → Connections → Your phones** to browse projects and conversations, start and continue sessions, follow streamed replies, stop responses, and view code changes. The phone companion app lives in `mobile/`; the existing **Settings → Companion** gateway is unchanged. Phones reach the desktop over the same Wi-Fi, or through Tailscale or another VPN address: unlike MonoCode, MOLFAR never opens a port on the router (no UPnP/NAT-PMP). See `docs/companion.md` for how phone pairing compares with Companion.
-- Swipe between projects in the new sidebar (MonoCode #1061).
-- Project and Inbox actions have keyboard-accessible context menus in the new sidebar.
+- **Phone pairing** in **Settings → Connections → Your phones** lets you browse projects and conversations, start and continue sessions, follow replies as they arrive, stop responses, browse files, and view code changes from the MOLFAR mobile app. The app is a preview you must build separately; it is not yet available in app stores. Approvals and agent questions still require the desktop.
+- Swipe between projects in the new sidebar. From MonoCode #1061.
+- Open project and Inbox context menus with right-click, the Menu key, or **Shift+F10** in the new sidebar.
+
+### Changed
+
+- Mobile dependency updates retain **Expo SDK 57** compatibility and update networking and iOS project-generation tools. Some dependency advisories remain unresolved.
 
 ### Fixed
 
-- A failed optional MCP server lookup shows a notice while a successful provider reply still completes. Provider failures continue to fail the session.
-- A workspace layout that could not be read at startup is preserved until the layout changes, instead of being overwritten by an empty boot state.
-- Failed app surfaces offer recovery controls, and Companion question replies are validated against the pending prompt.
-- The new sidebar keeps **Open project** and **Settings** available before a project is selected.
-- The empty conversation view no longer scrolls a few pixels around the message input.
-- The message input's blurred background stays within its rounded corners on Windows.
-- Phone connections on Windows accept both IPv4 and IPv6.
+- An optional MCP server lookup failure now shows a notice without marking a successful agent reply as failed. Provider errors still fail the session.
+- A saved workspace layout that cannot be read at startup stays on disk until you change the layout, rather than being overwritten by an empty workspace.
+- Views that fail to load offer **Try again**; an unexpected app error offers **Reload**.
+- Companion question replies reject unknown questions, invalid choices, and empty answers before submitting them to the agent.
+- The new sidebar keeps **Open project** and **Settings** available before you select a project.
+- Empty conversations no longer scroll a few pixels around the message input.
+- On Windows, the message input’s blurred background stays within its rounded corners, and phone connections accept both IPv4 and IPv6.
+
+### Before pairing a phone
+
+- Keep the desktop awake with MOLFAR running. Connect over the same Wi-Fi, or use Tailscale or another VPN when away from home. MOLFAR does not configure router port forwarding automatically.
+- Phone pairing is separate from the existing **Settings → Companion** gateway. Pairing enables a listener reachable from the LAN and connected VPNs; removing every paired phone turns it off. See the [connection guide](https://github.com/deluminor/molfar/blob/main/docs/companion.md#phone-pairing-vs-companion) for setup, access, and network limits.
 
 ## [1.0.20] - 2026-10-19
 
