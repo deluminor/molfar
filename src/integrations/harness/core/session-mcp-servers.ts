@@ -102,8 +102,8 @@ export async function loadSessionMcpServersForSession(
   } catch (error) {
     console.error("[molfar] session_mcp_servers failed", { provider, cwd, error });
     onEvent?.({
-      type: "session.error",
-      message: `Could not load MCP servers for ${provider}.`,
+      type: "status",
+      text: `Could not load MCP servers for ${provider}; continuing without loaded MCP servers.`,
     });
     return [];
   }

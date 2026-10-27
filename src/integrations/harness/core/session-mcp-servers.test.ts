@@ -125,11 +125,12 @@ describe("toClaudeMcpConfig", () => {
 describe("loadSessionMcpServersForSession", () => {
   beforeEach(() => {
     vi.mocked(invoke).mockReset();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
-  it("emits a session error instead of failing silently", async () => {
-    vi.mocked(invoke).mockRejectedValue(new Error("disk read failed"));
-    const events: Array<{ type: string; message?: string }> = [];
+  it("reports an IPC rejection without failing the provider turn", async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error("MCP IPC unavailable"));
+    const events: Array<{ type: string; text?: string }> = [];
 
     const servers = await loadSessionMcpServersForSession(
       "cursor",
@@ -140,9 +141,30 @@ describe("loadSessionMcpServersForSession", () => {
     expect(servers).toEqual([]);
     expect(events).toEqual([
       {
-        type: "session.error",
-        message: "Could not load MCP servers for cursor.",
+        type: "status",
+        text: "Could not load MCP servers for cursor; continuing without loaded MCP servers.",
       },
     ]);
+  });
+
+  it("returns configured servers after a healthy IPC response", async () => {
+    vi.mocked(invoke).mockResolvedValue({ providerLocal: [localDocs], molfarConnectors: connectors });
+
+    await expect(loadSessionMcpServersForSession("claude", "/tmp/project")).resolves.toEqual([
+      localDocs,
+      connectors,
+    ]);
+  });
+
+  it("logs and falls back when no event callback was supplied", async () => {
+    const error = new Error("MCP IPC unavailable");
+    vi.mocked(invoke).mockRejectedValue(error);
+
+    await expect(loadSessionMcpServersForSession("claude", "/tmp/project")).resolves.toEqual([]);
+    expect(console.error).toHaveBeenCalledWith("[molfar] session_mcp_servers failed", {
+      provider: "claude",
+      cwd: "/tmp/project",
+      error,
+    });
   });
 });
