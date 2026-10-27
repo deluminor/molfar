@@ -108,3 +108,11 @@ The rewrite working branch remains migration/gpui. Merge to main must wait until
 ## Clean validation result
 
 `NODE_OPTIONS=--no-experimental-webstorage npm run --silent check:web` exited 0 after npm ci --ignore-scripts. Vitest: 796 passed files, 2 skipped; 7,123 passed tests, 13 skipped. Command also completed application and browser-test TypeScript checks, lint, file-size, boundaries and move-map gates. This validates the unchanged current-main web baseline, not native functionality. No production app/UI executed. Staged-secret scan and git diff --cached --check exited 0; preserved JSON syntax/hashes and ten unchanged original files verified. No runtime/build/native dependency/coverage claim inferred.
+
+## Verified initial publication
+
+Draft PR https://github.com/deluminor/molfar/pull/124 is OPEN and isDraft=true. Base main@3bb0af0c462761cc0f0e75be7984dc22fb15507f; assessment head molfar/gpui-integration-upstream-audit@6d5e6c16bcef9f10e4ca96d9ca6598b68a6cc9d9. Native working branch migration/gpui remains ea6c8219bae954a3d8a9e8c536242b9531a683f7 on origin. All three live refs verified after publication. Full pre-push check:web hook also exited 0 with 7,123 tests passed / 13 skipped. Published body exactly matches reviewed body and has no attribution byline. CI was pending at verification; no merge readiness inferred.
+
+GitHub push banner separately reports five repository-wide Dependabot alerts (2 high, 2 moderate, 1 low). This is broader than root npm audit (4 low): root audit does NOT certify mobile/Rust/all lockfiles. No unsolicited dependency remediation performed.
+
+After Erik said he would enable /operator, one additional supported habits.list read still returned inactive access (retryable:false). No live new-habit certification or Wisp notification could be completed. Requires actual operator activation, not only a text promise. No fallback to private stores or credentials.

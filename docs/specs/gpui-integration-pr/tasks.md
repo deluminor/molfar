@@ -7,9 +7,11 @@
 - [x] T3 / R4 Audit automation definitions, schedules, checkpoints and permissions; report visibility gaps.
 - [x] T4 / R5 Independent specialist review and practical non-UI checks.
 - [x] T5 / R3 Prepare draft PR body, parity checklist and blockers.
-- [ ] T6 / R3 Publish branch and safely representable draft PR; verify remote refs/body.
+- [x] T6 / R3 Publish branch and safely representable draft PR; verify remote refs/body.
 - [ ] T7 / R6 Write scratch/gpui-integration-pr-and-upstream-automation.md and notify Wisp if supported CLI accessible.
 
 Checkpoint: actual draft PR URL with honest base/head, or exact GitHub/permission blocker; no merge/release/schedule mutation.
 
 Wisp notification visibility blocker: supported app CLI returned inactive access requiring /operator. No private data/config fallback.
+
+Publication verified: https://github.com/deluminor/molfar/pull/124 (draft). T7 report complete; Wisp notification remains BLOCKED by inactive app access, not marked delivered.
