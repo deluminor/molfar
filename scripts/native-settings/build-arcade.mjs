@@ -4,9 +4,9 @@ import path from 'node:path';
 const root=process.cwd();
 const require=createRequire(path.join(process.env.MONOCODE_REFERENCE_ROOT||root,'package.json'));
 const {build}=require('esbuild');
-await build({stdin:{contents:`import {GRID_GAMES} from './src/features/terminal/arcade/gridGames';
-import {PROJECT_MASCOTS} from './src/features/projects/model/projectMascots';
-import * as R from './src/features/sessions/model/composerRunner';
+await build({stdin:{contents:`import {GRID_GAMES} from './src/features/terminal/arcade/grid-games';
+import {PROJECT_MASCOTS} from './src/features/projects/model/project-mascots';
+import * as R from './src/features/sessions/model/composer-runner';
 let along=0,facing=1,previousWidth=0,last=0,wasBusy=false,exitAt=null,frozen=null,learned=false,stunAt=null,hitAlong=0,hitFacing=1,nextCoinAt=Infinity,coins=[];
 export function runnerFrame(now,width,busy,obstacleJson,reduced,mascot){
  const obstacle=JSON.parse(obstacleJson),dt=Math.max(0,Math.min(80,now-last));last=now;const track=Math.max(0,width-20);

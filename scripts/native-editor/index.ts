@@ -2,15 +2,15 @@
 // in a bounded QuickJS worker. All offsets at this boundary are UTF-16.
 import { EditorState, Text } from "@codemirror/state";
 import { ensureSyntaxTree, foldable } from "@codemirror/language";
-import { CompletionContext, completeFromList } from "@codemirror/autocomplete";
+import { type Completion, CompletionContext, type CompletionSource, completeFromList } from "@codemirror/autocomplete";
 import { SearchQuery } from "@codemirror/search";
 import { highlightTree } from "@lezer/highlight";
 import { syntaxTree } from "@codemirror/language";
-import { languageForPath, syntaxTagHighlighter } from "../../src/features/files/editor/editorLanguage";
+import { languageForPath, syntaxTagHighlighter } from "../../src/features/files/editor/editor-language";
 import { Chunk } from "@codemirror/merge";
-import { isLintable, syntaxDiagnostics } from "../../src/features/files/editor/editorLint";
-import { stageChunkText, revertChunkText } from "../../src/features/files/editor/editorGit";
-import { editorTyping, tryExpandEmmet } from "../../src/features/files/editor/editorEditing";
+import { isLintable, syntaxDiagnostics } from "../../src/features/files/editor/editor-lint";
+import { stageChunkText, revertChunkText } from "../../src/features/files/editor/editor-git";
+import { editorTyping, tryExpandEmmet } from "../../src/features/files/editor/editor-editing";
 
 async function stateFor(path: string, source: string, pos = 0, fullParse = false) {
   const language = await languageForPath(path) ?? [];
@@ -66,7 +66,7 @@ globalThis.monocodeAnalyze = async (path: string, source: string, original: stri
 globalThis.monocodeComplete = async (path: string, source: string, pos: number, explicit: boolean) => {
   const state = await stateFor(path, source, pos);
   const context = new CompletionContext(state, pos, explicit);
-  const results = await Promise.all(state.languageDataAt<any>("autocomplete", pos).map(data => (Array.isArray(data) ? completeFromList(data) : data)(context)));
+  const results = await Promise.all(state.languageDataAt<CompletionSource | readonly (string | Completion)[]>("autocomplete", pos).map(data => (Array.isArray(data) ? completeFromList(data) : data)(context)));
   const options = [];
   for (const result of results) {
     if (!result) continue;
@@ -97,6 +97,7 @@ globalThis.monocodeEmmet = async (path: string, source: string, pos: number) => 
   tryExpandEmmet({ state, dispatch: spec => {
     const tr = state.update(spec);
     result = { formatted: tr.newDoc.toString(), cursorOffset: tr.newSelection.main.head };
+  // biome-ignore lint/suspicious/noExplicitAny: headless QuickJS shim; Emmet only reads state and calls dispatch.
   } } as any);
   return JSON.stringify(result);
 };
@@ -109,6 +110,7 @@ globalThis.monocodeSearch = (source: string, query: string, replacement: string,
   const matches = [];
   while (!cursor.next().done) {
     const { from, to } = cursor.value;
+    // biome-ignore lint/suspicious/noExplicitAny: SearchQuery.create() is CodeMirror-internal; it computes regexp replacements.
     if (to > from) matches.push({ from, to, insert: (search as any).create().getReplacement(cursor.value) });
   }
   return JSON.stringify({ matches, invalid: false });
