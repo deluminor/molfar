@@ -13,7 +13,10 @@ impl Familiars {
     pub(super) fn open_document(&mut self, id: &str, cx: &mut Context<Self>) {
         if self.current().is_some_and(|familiar| {
             familiar.documents.iter().any(|d| d.id == id)
-                && !familiar.desktop_document_ids.iter().any(|source| source == id)
+                && !familiar
+                    .desktop_document_ids
+                    .iter()
+                    .any(|source| source == id)
         }) {
             return;
         }
@@ -86,7 +89,8 @@ impl Familiars {
                 let (revision, data) = match result {
                     Ok(value) => value,
                     Err(error) => {
-                        this.error = Some(format!("Could not refresh this Familiar’s work: {error}"));
+                        this.error =
+                            Some(format!("Could not refresh this Familiar’s work: {error}"));
                         cx.notify();
                         return;
                     }

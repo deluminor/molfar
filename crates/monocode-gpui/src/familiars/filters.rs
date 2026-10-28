@@ -96,7 +96,8 @@ impl Familiars {
         }
         items.push(MenuItem::Separator);
         items.push(MenuAction::new("reset", "Reset filters").into());
-        let menu = cx.new(|cx| Menu::new("Filter Familiar sessions", items, window, cx).width(228.));
+        let menu =
+            cx.new(|cx| Menu::new("Filter Familiar sessions", items, window, cx).width(228.));
         let events = cx.subscribe(&menu, |this, _, event: &MenuEvent, cx| {
             if let MenuEvent::Picked(id, _) = event {
                 let f = &mut this.session_filters;

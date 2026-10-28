@@ -95,7 +95,13 @@ impl Default for PanelStack {
     }
 }
 impl PanelStack {
-    pub fn sync(&mut self, familiar: &str, route: Option<Route>, now: Instant, reduced: bool) -> bool {
+    pub fn sync(
+        &mut self,
+        familiar: &str,
+        route: Option<Route>,
+        now: Instant,
+        reduced: bool,
+    ) -> bool {
         let changed = self.familiar.as_deref() != Some(familiar) || self.route != route;
         if self.familiar.as_deref() != Some(familiar) {
             *self = Self {

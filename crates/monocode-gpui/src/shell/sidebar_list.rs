@@ -974,7 +974,9 @@ mod tests {
             .debug_bounds("menu-action-sidebar-automations")
             .unwrap();
         let inbox = visual.debug_bounds("menu-action-sidebar-inbox").unwrap();
-        let familiars = visual.debug_bounds("menu-action-sidebar-familiars").unwrap();
+        let familiars = visual
+            .debug_bounds("menu-action-sidebar-familiars")
+            .unwrap();
         let activity = visual.debug_bounds("menu-action-sidebar-activity").unwrap();
         let compact = visual
             .debug_bounds("menu-action-compact-session-cards")

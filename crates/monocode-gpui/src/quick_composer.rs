@@ -771,7 +771,10 @@ impl QuickComposer {
         crate::traffic_lights::hide(window);
         let path = std::env::temp_dir()
             .join("monocode-quick-composer")
-            .join(format!("screenshot-{}.png", monocode_core::familiar::new_id()));
+            .join(format!(
+                "screenshot-{}.png",
+                monocode_core::familiar::new_id()
+            ));
         let work = cx.background_executor().spawn({
             let path = path.clone();
             async move {

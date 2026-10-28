@@ -57,7 +57,8 @@ impl ProjectChanges {
     }
     fn projects(&self, familiar: &Familiar) -> Vec<Project> {
         let saved = self.summaries.get(&familiar.id).map(|s| &s.projects);
-        familiar.projects
+        familiar
+            .projects
             .iter()
             .map(|path| {
                 saved
@@ -74,7 +75,10 @@ impl ProjectChanges {
             .collect()
     }
     fn selected_root(&self, familiar: &Familiar, projects: &[Project]) -> Option<String> {
-        selected_root(self.selected.get(&familiar.id).map(String::as_str), projects)
+        selected_root(
+            self.selected.get(&familiar.id).map(String::as_str),
+            projects,
+        )
     }
 }
 
@@ -716,8 +720,11 @@ impl Familiars {
             .overflow_hidden()
             .child(tabs)
             .when_some(
-                selected
-                    .and_then(|root| self.project_changes.surfaces.get(&(familiar.id.clone(), root))),
+                selected.and_then(|root| {
+                    self.project_changes
+                        .surfaces
+                        .get(&(familiar.id.clone(), root))
+                }),
                 |d, surface| d.child(div().flex_1().min_h_0().child(surface.changes.clone())),
             )
             .when_some(

@@ -421,19 +421,24 @@ impl Familiars {
                     continue;
                 }
                 self.card_refresh.insert(id.clone(), now);
-                let cwd = familiar.projects.first().cloned().unwrap_or_else(|| ".".into());
+                let cwd = familiar
+                    .projects
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| ".".into());
                 let repo = value["repo"].as_str().map(str::to_owned);
                 let number = value["number"].as_u64().unwrap_or(0);
                 let view = chat.clone();
-                let work = cx
-                    .background_executor()
-                    .spawn(async move { familiar::cards::pull_request(&cwd, repo.as_deref(), number) });
+                let work = cx.background_executor().spawn(async move {
+                    familiar::cards::pull_request(&cwd, repo.as_deref(), number)
+                });
                 cx.spawn(async move |_, cx| {
                     if let Ok(metadata) = work.await {
                         for key in ["title", "state", "url", "isDraft", "additions", "deletions"] {
                             value[key] = metadata[key].clone();
                         }
-                        let _ = view.update(cx, |v, cx| v.familiar_patch_card(index, &id, value, cx));
+                        let _ =
+                            view.update(cx, |v, cx| v.familiar_patch_card(index, &id, value, cx));
                     }
                 })
                 .detach();
@@ -449,7 +454,9 @@ impl Familiars {
         if let Some(run) = self.running.get_mut(&session) {
             run.cards.push(value);
         } else if let Some(familiar) = self.roster.get_mut(familiar) {
-            familiar.pending_reports.push(format!("familiar-card:{value}"));
+            familiar
+                .pending_reports
+                .push(format!("familiar-card:{value}"));
         }
     }
 

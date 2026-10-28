@@ -155,7 +155,13 @@ impl Floating {
                             .cursor_pointer()
                             .when(!selected, |d| d.opacity(0.4).hover(|s| s.opacity(1.)))
                             .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
-                            .child(avatar::avatar(&familiar.mascot, familiar.color, "idle", 28., true))
+                            .child(avatar::avatar(
+                                &familiar.mascot,
+                                familiar.color,
+                                "idle",
+                                28.,
+                                true,
+                            ))
                             .on_click(cx.listener(move |this, _, window, cx| {
                                 if this.selected != id {
                                     this.select(id.clone(), window, cx);
@@ -434,7 +440,11 @@ impl Familiars {
         })
     }
     /// Stands in for a chat that a floating panel is showing.
-    pub(super) fn floating_placeholder(&self, familiar: &Familiar, cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn floating_placeholder(
+        &self,
+        familiar: &Familiar,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let id = familiar.id.clone();
         div()
             .flex_1()
@@ -445,7 +455,13 @@ impl Familiars {
             .items_center()
             .justify_center()
             .gap_3()
-            .child(avatar::avatar(&familiar.mascot, familiar.color, "idle", 48., true))
+            .child(avatar::avatar(
+                &familiar.mascot,
+                familiar.color,
+                "idle",
+                48.,
+                true,
+            ))
             .child(
                 div()
                     .text_size(px(13.))

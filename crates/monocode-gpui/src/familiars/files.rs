@@ -25,7 +25,10 @@ impl Familiars {
         cx.spawn(async move |this, cx| {
             let files = work.await?;
             this.update(cx, |this, cx| {
-                let familiar = this.roster.get_mut(&id).ok_or("Familiar no longer exists")?;
+                let familiar = this
+                    .roster
+                    .get_mut(&id)
+                    .ok_or("Familiar no longer exists")?;
                 familiar.name.clear();
                 let key = format!("{id}:SOUL.md");
                 this.fields.remove(&format!("file:{key}"));
@@ -247,7 +250,12 @@ impl Familiars {
         })
         .detach();
     }
-    pub(super) fn delete_familiar(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn delete_familiar(
+        &mut self,
+        id: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let prompt = window.prompt(
             gpui::PromptLevel::Warning,
             "Delete familiar?",

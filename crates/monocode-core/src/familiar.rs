@@ -295,7 +295,9 @@ pub fn load_files(root: &Path, familiar: &Familiar) -> Result<files::AgentFiles,
                 files.soul = Some(soul.into());
                 files.soul_hash = hash;
             }
-            Err(error) if error == files::CONFLICT => files = files::load(root, &familiar.id, None)?,
+            Err(error) if error == files::CONFLICT => {
+                files = files::load(root, &familiar.id, None)?
+            }
             Err(error) => return Err(error),
         }
     }
@@ -310,7 +312,8 @@ pub fn context(familiar: &Familiar, files: &files::AgentFiles, executable: &Path
     let projects = if familiar.projects.is_empty() {
         "No projects assigned yet. Ask the user to add projects in your settings before doing project work.".into()
     } else {
-        familiar.projects
+        familiar
+            .projects
             .iter()
             .map(|p| format!("- {p}"))
             .collect::<Vec<_>>()

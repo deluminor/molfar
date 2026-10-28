@@ -171,8 +171,10 @@ fn original_collapsed_picker_selects_familiars_and_projects_with_search_and_keyb
         visual.refresh().unwrap();
         assert!(visual.debug_bounds("project-picker").is_some());
     };
-    let alpha: &'static str = Box::leak(format!("project-picker-familiar-{}", ids[0]).into_boxed_str());
-    let beta: &'static str = Box::leak(format!("project-picker-familiar-{}", ids[1]).into_boxed_str());
+    let alpha: &'static str =
+        Box::leak(format!("project-picker-familiar-{}", ids[0]).into_boxed_str());
+    let beta: &'static str =
+        Box::leak(format!("project-picker-familiar-{}", ids[1]).into_boxed_str());
     open(visual);
     let alpha_row = visual.debug_bounds(alpha).unwrap();
     let beta_row = visual.debug_bounds(beta).unwrap();
@@ -189,7 +191,10 @@ fn original_collapsed_picker_selects_familiars_and_projects_with_search_and_keyb
     window
         .read_with(visual, |shell, cx| {
             assert!(shell.menu.is_none());
-            assert_eq!(shell.familiar_manager().read(cx).active.as_ref(), Some(&ids[1]));
+            assert_eq!(
+                shell.familiar_manager().read(cx).active.as_ref(),
+                Some(&ids[1])
+            );
             assert_eq!(shell.workspace.project, "/work/monocode");
             assert!(
                 shell
@@ -216,7 +221,10 @@ fn original_collapsed_picker_selects_familiars_and_projects_with_search_and_keyb
     visual.run_until_parked();
     window
         .read_with(visual, |shell, cx| {
-            assert_eq!(shell.familiar_manager().read(cx).active.as_ref(), Some(&ids[0]));
+            assert_eq!(
+                shell.familiar_manager().read(cx).active.as_ref(),
+                Some(&ids[0])
+            );
         })
         .unwrap();
 }
@@ -319,7 +327,9 @@ fn original_app_surfaces_search_uses_search_field_header_and_restores_sessions(
 }
 
 #[gpui::test]
-fn original_app_surfaces_familiar_uses_identity_header_and_restores_sessions(cx: &mut TestAppContext) {
+fn original_app_surfaces_familiar_uses_identity_header_and_restores_sessions(
+    cx: &mut TestAppContext,
+) {
     assert_original_surface(Surface::Familiar, cx);
 }
 
@@ -360,7 +370,9 @@ fn original_app_surfaces_familiar_overview_and_rail_back_use_original_controls(
         })
         .unwrap();
 
-    let hide = visual.debug_bounds("original-hide-familiar-overview").unwrap();
+    let hide = visual
+        .debug_bounds("original-hide-familiar-overview")
+        .unwrap();
     visual.simulate_click(hide.center(), Default::default());
     visual.run_until_parked();
     visual.refresh().unwrap();
@@ -372,7 +384,10 @@ fn original_app_surfaces_familiar_overview_and_rail_back_use_original_controls(
     window
         .read_with(visual, |shell, cx| {
             assert!(!shell.workspace.right_panel_open);
-            assert!(shell.familiar_active(cx), "hiding overview keeps the Familiar open");
+            assert!(
+                shell.familiar_active(cx),
+                "hiding overview keeps the Familiar open"
+            );
         })
         .unwrap();
 
@@ -416,7 +431,8 @@ fn project_clicks_leave_familiars_in_original_layout(cx: &mut TestAppContext) {
                     (
                         path,
                         Box::leak(project_selector.into_boxed_str()) as &'static str,
-                        Box::leak(format!("familiar-rail-{familiar}").into_boxed_str()) as &'static str,
+                        Box::leak(format!("familiar-rail-{familiar}").into_boxed_str())
+                            as &'static str,
                         familiar,
                     )
                 })
@@ -426,7 +442,8 @@ fn project_clicks_leave_familiars_in_original_layout(cx: &mut TestAppContext) {
         }
         // Visit both projects repeatedly after each has remembered a Familiar.
         // Exercise the real rail/space buttons, including a same-project click.
-        for (path, project_selector, familiar_selector, familiar) in targets.iter().cycle().take(4) {
+        for (path, project_selector, familiar_selector, familiar) in targets.iter().cycle().take(4)
+        {
             for reopen in [true, false] {
                 visual.refresh().unwrap();
                 let project = visual.debug_bounds(project_selector).unwrap();
@@ -450,7 +467,10 @@ fn project_clicks_leave_familiars_in_original_layout(cx: &mut TestAppContext) {
                     visual.run_until_parked();
                     window
                         .read_with(visual, |shell, cx| {
-                            assert_eq!(shell.familiar_manager().read(cx).active.as_ref(), Some(familiar));
+                            assert_eq!(
+                                shell.familiar_manager().read(cx).active.as_ref(),
+                                Some(familiar)
+                            );
                         })
                         .unwrap();
                 }
@@ -576,7 +596,8 @@ fn original_familiars_leave_project_tabs_unchanged_and_close_as_surfaces(cx: &mu
                 );
             })
             .unwrap();
-        let familiar_selector = Box::leak(format!("familiar-title-tab-{familiar}").into_boxed_str());
+        let familiar_selector =
+            Box::leak(format!("familiar-title-tab-{familiar}").into_boxed_str());
         visual.refresh().unwrap();
         let project = visual.debug_bounds(project_selector).unwrap();
         visual.simulate_click(project.center(), Default::default());
@@ -621,7 +642,9 @@ fn original_familiars_leave_project_tabs_unchanged_and_close_as_surfaces(cx: &mu
 }
 
 #[gpui::test]
-fn original_layout_hides_saved_familiar_tabs_until_returning_to_new_layout(cx: &mut TestAppContext) {
+fn original_layout_hides_saved_familiar_tabs_until_returning_to_new_layout(
+    cx: &mut TestAppContext,
+) {
     for boxy in [false, true] {
         let (window, session) = setup(cx, false, boxy);
         let visual = &mut VisualTestContext::from_window(window.into(), cx);

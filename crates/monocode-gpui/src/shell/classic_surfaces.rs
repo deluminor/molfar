@@ -119,8 +119,9 @@ impl Shell {
                         icon_button("classic-familiar-settings", "Familiar settings", "settings")
                             .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
                             .on_click(cx.listener(move |_, _, window, cx| {
-                                familiars
-                                    .update(cx, |familiars, cx| familiars.open_current_settings(window, cx))
+                                familiars.update(cx, |familiars, cx| {
+                                    familiars.open_current_settings(window, cx)
+                                })
                             })),
                     ),
             )

@@ -7,6 +7,8 @@ mod classic_sidebar;
 #[cfg(test)]
 mod classic_surface_tests;
 mod classic_surfaces;
+mod familiar_panes;
+pub(crate) mod familiars;
 mod file_panes;
 mod idle_agents;
 #[cfg(test)]
@@ -14,8 +16,6 @@ mod image_lightbox_tests;
 mod layout;
 mod live_agents;
 mod mobile_host;
-mod familiar_panes;
-pub(crate) mod familiars;
 mod notifications;
 mod orchestration;
 mod picker_preferences;
@@ -1145,14 +1145,14 @@ impl Shell {
         this.observe_accounts(cx);
         this.observe_picker_preferences(cx);
         let familiar_owner = cx.weak_entity();
-        let familiar_active =
-            this.workspace
-                .scope_focus
-                .get(&this.tab_scope())
-                .and_then(|tab| match tab {
-                    TitleTab::Familiar { id, .. } => Some(id.clone()),
-                    _ => None,
-                });
+        let familiar_active = this
+            .workspace
+            .scope_focus
+            .get(&this.tab_scope())
+            .and_then(|tab| match tab {
+                TitleTab::Familiar { id, .. } => Some(id.clone()),
+                _ => None,
+            });
         let familiars = cx.new(|cx| {
             crate::familiars::Familiars::new(
                 this.store.clone(),
@@ -1163,14 +1163,15 @@ impl Shell {
                 cx,
             )
         });
-        this.observations.push(
-            cx.subscribe(&familiars, |this, _, _: &crate::familiars::Changed, cx| {
+        this.observations.push(cx.subscribe(
+            &familiars,
+            |this, _, _: &crate::familiars::Changed, cx| {
                 this.sync_familiar_search(cx);
                 this.update_usage_provider(cx);
                 this.invalidate_chrome(cx);
                 cx.notify();
-            }),
-        );
+            },
+        ));
         this.observations.push(cx.subscribe(
             &familiars,
             |this, _, opened: &crate::familiars::TabOpened, cx| {
@@ -1682,12 +1683,15 @@ impl Shell {
         {
             return;
         }
-        let details_focus =
-            if let Some(familiars) = self.familiars.as_ref().filter(|m| m.read(cx).active.is_some()) {
-                Some(familiars.read(cx).details.focus_handle(cx))
-            } else {
-                self.right_panel.as_ref().map(|p| p.focus_handle(cx))
-            };
+        let details_focus = if let Some(familiars) = self
+            .familiars
+            .as_ref()
+            .filter(|m| m.read(cx).active.is_some())
+        {
+            Some(familiars.read(cx).details.focus_handle(cx))
+        } else {
+            self.right_panel.as_ref().map(|p| p.focus_handle(cx))
+        };
         if !open
             && details_focus
                 .as_ref()
@@ -3976,7 +3980,11 @@ impl Shell {
         if self.focus_app_view(window, cx) {
             return;
         }
-        if let Some(familiars) = self.familiars.clone().filter(|m| m.read(cx).active.is_some()) {
+        if let Some(familiars) = self
+            .familiars
+            .clone()
+            .filter(|m| m.read(cx).active.is_some())
+        {
             familiars.update(cx, |m, cx| m.focus_active(window, cx));
             return;
         }
@@ -4588,29 +4596,32 @@ impl Shell {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let content =
-            if let Some(familiars) = self.familiars.as_ref().filter(|m| m.read(cx).active.is_some()) {
-                let manager = familiars.read(cx);
-                let details = manager.details.clone();
-                let html = manager.native_detail_content(cx);
-                // Native artifact views must update their frames and clipping
-                // on every paint; replaying cached GPU quads skips that work.
-                if html {
-                    details.into_any_element()
-                } else {
-                    details
-                        .cached(StyleRefinement::default().size_full())
-                        .into_any_element()
-                }
-            } else if self.terminal_in_panel(cx)
-                && panel.read(cx).tab() == crate::right_panel::RightTab::Terminal
-            {
-                self.panel_terminal(window, cx)
+        let content = if let Some(familiars) = self
+            .familiars
+            .as_ref()
+            .filter(|m| m.read(cx).active.is_some())
+        {
+            let manager = familiars.read(cx);
+            let details = manager.details.clone();
+            let html = manager.native_detail_content(cx);
+            // Native artifact views must update their frames and clipping
+            // on every paint; replaying cached GPU quads skips that work.
+            if html {
+                details.into_any_element()
             } else {
-                panel
+                details
                     .cached(StyleRefinement::default().size_full())
                     .into_any_element()
-            };
+            }
+        } else if self.terminal_in_panel(cx)
+            && panel.read(cx).tab() == crate::right_panel::RightTab::Terminal
+        {
+            self.panel_terminal(window, cx)
+        } else {
+            panel
+                .cached(StyleRefinement::default().size_full())
+                .into_any_element()
+        };
         div()
             .id("right-panel-frame")
             .debug_selector(|| "right-panel-frame".into())
@@ -4906,8 +4917,9 @@ impl Shell {
                         }))
                         .pr(px(12. + self.window_controls))
                         .when_some(tabs, |d, tabs| {
-                            d.child(tabs)
-                                .when(!familiar, |d| d.child(titlebar_drag_area().flex_1().min_w_0()))
+                            d.child(tabs).when(!familiar, |d| {
+                                d.child(titlebar_drag_area().flex_1().min_w_0())
+                            })
                         })
                         .children(self.project_diff_stat(cx))
                         .child(self.file_search_button(cx).mx(px(CORNER_CONTROL_GAP)))
@@ -5367,7 +5379,9 @@ impl Shell {
                 let (familiars, active) = self
                     .familiars
                     .as_ref()
-                    .filter(|_| self.workspace.classic_layout && self.workspace.preferences.familiars)
+                    .filter(|_| {
+                        self.workspace.classic_layout && self.workspace.preferences.familiars
+                    })
                     .map(|manager| {
                         let manager = manager.read(cx);
                         let familiars = manager
@@ -6932,9 +6946,10 @@ impl Shell {
         // right or down rolls the headline up.
         let mut panes = Vec::new();
         for id in self.workspace.layout(tab).leaf_ids() {
-            if let (Some(title), Some(mark)) =
-                (self.familiar_pane_title(id, cx), self.familiar_pane_mark(id, cx))
-            {
+            if let (Some(title), Some(mark)) = (
+                self.familiar_pane_title(id, cx),
+                self.familiar_pane_mark(id, cx),
+            ) {
                 panes.push(TabPane {
                     key: (id, false),
                     title,
@@ -10246,7 +10261,9 @@ mod tests {
     }
 
     #[gpui::test]
-    fn familiars_and_session_title_tabs_share_width_spacing_and_scroll_slots(cx: &mut TestAppContext) {
+    fn familiars_and_session_title_tabs_share_width_spacing_and_scroll_slots(
+        cx: &mut TestAppContext,
+    ) {
         let (window, a, b) = same_project_window(cx);
         cx.update(|cx| cx.set_reduce_motion(true));
         let familiar = window
@@ -10259,7 +10276,9 @@ mod tests {
         let cx = &mut gpui::VisualTestContext::from_window(window.into(), cx);
         cx.run_until_parked();
         let familiar = cx
-            .debug_bounds(Box::leak(format!("familiar-title-tab-{familiar}").into_boxed_str()))
+            .debug_bounds(Box::leak(
+                format!("familiar-title-tab-{familiar}").into_boxed_str(),
+            ))
             .unwrap();
         let first = cx
             .debug_bounds(Box::leak(format!("title-tab-{a}").into_boxed_str()))

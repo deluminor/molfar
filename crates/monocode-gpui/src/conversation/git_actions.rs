@@ -170,7 +170,11 @@ impl Conversation {
     pub(crate) fn refresh_git_actions(&mut self, cx: &mut Context<Self>) {
         self.session_edits_generation = self.session_edits_generation.wrapping_add(1);
         let generation = self.session_edits_generation;
-        if !self.history_loaded() || self.busy || self.is_remote() || self.settings.familiar.is_some() {
+        if !self.history_loaded()
+            || self.busy
+            || self.is_remote()
+            || self.settings.familiar.is_some()
+        {
             return;
         }
         if self.session_edits.is_empty() || self.settings.worktree_removed {

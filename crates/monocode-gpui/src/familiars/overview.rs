@@ -98,14 +98,18 @@ impl Render for Overview {
         let state = self
             .manager
             .read_with(cx, |m, _| {
-                m.current().cloned().map(|familiar| (familiar, m.route.clone()))
+                m.current()
+                    .cloned()
+                    .map(|familiar| (familiar, m.route.clone()))
             })
             .ok()
             .flatten();
         let mut layers = Vec::new();
         self.native_content = false;
         if let Some((familiar, route)) = state {
-            let changed = self.stack.sync(&familiar.id, route, now, cx.reduce_motion());
+            let changed = self
+                .stack
+                .sync(&familiar.id, route, now, cx.reduce_motion());
             if changed && self.focus.contains_focused(window, cx) {
                 window.focus(&self.focus, cx);
             }

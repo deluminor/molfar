@@ -407,21 +407,23 @@ impl gpui::Render for LookEditor {
                                     .px_1()
                                     .flex()
                                     .gap(px(2.))
-                                    .children(familiar::COLORS_FAMILIAR.into_iter().enumerate().map(
-                                        |(ix, color)| {
-                                            swatch(
-                                                ("familiar-color", ix).into(),
-                                                COLOR_NAMES[ix].into(),
-                                                self.familiar.color == color,
-                                                div()
-                                                    .size(px(14.))
-                                                    .rounded_full()
-                                                    .bg(rgb(color))
-                                                    .into_any_element(),
-                                            )
-                                            .debug_selector(move || format!("familiar-color-{ix}"))
-                                            .on_click(
-                                                cx.listener(move |this, _, _, cx| {
+                                    .children(
+                                        familiar::COLORS_FAMILIAR.into_iter().enumerate().map(
+                                            |(ix, color)| {
+                                                swatch(
+                                                    ("familiar-color", ix).into(),
+                                                    COLOR_NAMES[ix].into(),
+                                                    self.familiar.color == color,
+                                                    div()
+                                                        .size(px(14.))
+                                                        .rounded_full()
+                                                        .bg(rgb(color))
+                                                        .into_any_element(),
+                                                )
+                                                .debug_selector(move || {
+                                                    format!("familiar-color-{ix}")
+                                                })
+                                                .on_click(cx.listener(move |this, _, _, cx| {
                                                     this.familiar.color = color;
                                                     this.custom_open = false;
                                                     this.custom.update(cx, |picker, cx| {
@@ -431,10 +433,10 @@ impl gpui::Render for LookEditor {
                                                         familiar: this.familiar.clone(),
                                                     });
                                                     cx.notify();
-                                                }),
-                                            )
-                                        },
-                                    ))
+                                                }))
+                                            },
+                                        ),
+                                    )
                                     .child(
                                         swatch(
                                             "familiar-custom-color".into(),
@@ -619,11 +621,13 @@ impl LookEditor {
                                             .size(px(28.))
                                             .rounded_full()
                                             .when(
-                                                !familiar::COLORS_FAMILIAR.contains(&self.familiar.color),
+                                                !familiar::COLORS_FAMILIAR
+                                                    .contains(&self.familiar.color),
                                                 |d| d.bg(rgb(self.familiar.color)),
                                             )
                                             .when(
-                                                familiar::COLORS_FAMILIAR.contains(&self.familiar.color),
+                                                familiar::COLORS_FAMILIAR
+                                                    .contains(&self.familiar.color),
                                                 |d| {
                                                     d.child(
                                                         div()
@@ -1015,10 +1019,14 @@ impl Familiars {
             .cloned()
             .collect();
         let search_bar = search_bar(filter).child(
-            icon_button("familiar-session-filter", "Filter Familiar sessions", "filter")
-                .relative()
-                .child(self.session_filter_anchor.probe())
-                .on_click(cx.listener(|this, _, window, cx| this.filter_menu(window, cx))),
+            icon_button(
+                "familiar-session-filter",
+                "Filter Familiar sessions",
+                "filter",
+            )
+            .relative()
+            .child(self.session_filter_anchor.probe())
+            .on_click(cx.listener(|this, _, window, cx| this.filter_menu(window, cx))),
         );
         let no_matches = launches.is_empty() && !familiar.launches.is_empty();
         div().size_full().flex().flex_col()
@@ -1180,7 +1188,9 @@ impl Familiars {
             .size_full()
             .flex()
             .flex_col()
-            .when(!familiar.documents.is_empty(), |d| d.child(search_bar(filter)))
+            .when(!familiar.documents.is_empty(), |d| {
+                d.child(search_bar(filter))
+            })
             .child(list)
             .into_any_element()
     }
@@ -1265,16 +1275,16 @@ impl Familiars {
                     .into_any_element()
             }
             Route::Document(id) => {
-                let Some(document) = self
-                    .work
-                    .documents
-                    .get(&id)
-                    .or_else(|| {
-                        familiar.documents
-                            .iter()
-                            .find(|d| d.id == id && !familiar.desktop_document_ids.contains(&id))
-                    })
-                    .cloned()
+                let Some(document) =
+                    self.work
+                        .documents
+                        .get(&id)
+                        .or_else(|| {
+                            familiar.documents.iter().find(|d| {
+                                d.id == id && !familiar.desktop_document_ids.contains(&id)
+                            })
+                        })
+                        .cloned()
                 else {
                     return empty(if self.work.loading_documents.contains(&id) {
                         "Loading document…"

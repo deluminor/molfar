@@ -24,7 +24,9 @@ fn conversation(cx: &mut TestAppContext) -> WindowHandle<Conversation> {
 }
 
 #[gpui::test]
-fn familiar_messages_steer_the_ready_provider_once_and_keep_their_send_time(cx: &mut TestAppContext) {
+fn familiar_messages_steer_the_ready_provider_once_and_keep_their_send_time(
+    cx: &mut TestAppContext,
+) {
     let window = conversation(cx);
     let (send, receive) = std::sync::mpsc::channel();
     window

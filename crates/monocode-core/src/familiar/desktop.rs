@@ -270,7 +270,10 @@ mod tests {
             None,
         )
         .unwrap();
-        assert_eq!(familiar.unavailable_session.as_deref(), Some("missing-uuid"));
+        assert_eq!(
+            familiar.unavailable_session.as_deref(),
+            Some("missing-uuid")
+        );
         assert!(familiar.session_id.is_none());
         assert!(store.sessions().unwrap().is_empty());
     }

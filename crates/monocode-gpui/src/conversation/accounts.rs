@@ -348,7 +348,11 @@ impl Conversation {
         self.refresh_catalog(cx);
         cx.notify();
     }
-    pub(super) fn usage_notice(&self, familiar: bool, cx: &mut Context<Self>) -> Option<AnyElement> {
+    pub(super) fn usage_notice(
+        &self,
+        familiar: bool,
+        cx: &mut Context<Self>,
+    ) -> Option<AnyElement> {
         let limit = self.settings.usage_limit.as_ref()?;
         let now = usage::now_ms();
         let waiting = limit.resets_at.is_some_and(|at| at > now);
@@ -475,7 +479,9 @@ impl Conversation {
                     waiting && armed,
                     switching,
                 )
-                .when(familiar && !(waiting && armed), |d| d.text_color(content(0.6)))
+                .when(familiar && !(waiting && armed), |d| {
+                    d.text_color(content(0.6))
+                })
                 .child(
                     icon(if waiting { "clock" } else { "play" }, 14.)
                         .text_color(if waiting && armed {

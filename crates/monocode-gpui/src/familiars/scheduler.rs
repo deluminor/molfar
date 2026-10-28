@@ -202,7 +202,11 @@ impl Familiars {
             || habit.run_requested
             || habit.enabled && habit.next_run_at <= now_ms()
     }
-    pub(super) fn habits_list(&mut self, familiar: &Familiar, cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn habits_list(
+        &mut self,
+        familiar: &Familiar,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let filter = self.field(
             "familiar-habit-search",
             "Search habits…",
@@ -353,7 +357,8 @@ impl Familiars {
         };
         div()
             .when(!page, |d| {
-                d.opacity(0.).group_hover("familiar-habit", |s| s.opacity(1.))
+                d.opacity(0.)
+                    .group_hover("familiar-habit", |s| s.opacity(1.))
             })
             .flex_shrink_0()
             .flex()

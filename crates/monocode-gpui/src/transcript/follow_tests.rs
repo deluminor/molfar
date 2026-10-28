@@ -218,7 +218,10 @@ fn familiar_pending_messages_show_thinking_and_keep_the_same_height_on_delivery(
                 "a new message shows Thinking before the outbox is saved"
             );
             let span = |visual: &mut gpui::VisualTestContext| {
-                let bottom = visual.debug_bounds("familiar-turn-ticker").unwrap().bottom();
+                let bottom = visual
+                    .debug_bounds("familiar-turn-ticker")
+                    .unwrap()
+                    .bottom();
                 let top = window
                     .update(visual, |_, window, _| {
                         let scale = window.scale_factor();

@@ -363,10 +363,12 @@ impl Shell {
     }
 
     fn notification_chat(&self, id: i64, cx: &App) -> Option<Entity<Conversation>> {
-        self.sessions
-            .get(&id)
-            .cloned()
-            .or_else(|| self.familiars.as_ref()?.read(cx).notification_entity(id, cx))
+        self.sessions.get(&id).cloned().or_else(|| {
+            self.familiars
+                .as_ref()?
+                .read(cx)
+                .notification_entity(id, cx)
+        })
     }
 
     /// Advance banners and the Dock badge while an occluded window skips render.
@@ -1253,7 +1255,8 @@ impl Shell {
                     let _ = this.update_in(cx, |this, window, cx| {
                         this.close_settings(window, cx);
                         let opened_familiar = this.familiars.clone().is_some_and(|familiars| {
-                            familiars.update(cx, |m, cx| m.open_notification_session(id, window, cx))
+                            familiars
+                                .update(cx, |m, cx| m.open_notification_session(id, window, cx))
                         });
                         if !opened_familiar {
                             this.open(id, window, cx);

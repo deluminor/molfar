@@ -267,7 +267,14 @@ fn operator_children_are_visible_durable_and_do_not_navigate_by_default(cx: &mut
             assert_eq!(shell.workspace.active, Some(caller));
             assert!(shell.sidebar_session_ids(cx).contains(&child));
             assert!(!shell.sidebar_hidden_sessions.contains(&child));
-            assert!(!shell.familiars.as_ref().unwrap().read(cx).hidden_session(child));
+            assert!(
+                !shell
+                    .familiars
+                    .as_ref()
+                    .unwrap()
+                    .read(cx)
+                    .hidden_session(child)
+            );
             let view = shell.sessions[&child].read(cx);
             assert_eq!(
                 view.settings.access,

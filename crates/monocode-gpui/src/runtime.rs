@@ -435,7 +435,8 @@ fn run_turn_using(
             prompt
         } else if let Some(familiar) = &settings.familiar {
             let files = monocode_core::familiar::load_files(&familiar.root, &familiar.familiar)?;
-            let added = monocode_core::familiar::context(&familiar.familiar, &files, &familiar.executable);
+            let added =
+                monocode_core::familiar::context(&familiar.familiar, &files, &familiar.executable);
             let fingerprint = monocode_core::familiar::files::content_hash(&added);
             familiar_fingerprint = Some(fingerprint.clone());
             let rotated = provider_id.is_some() && context.ratio().is_some_and(|r| r >= 0.8);

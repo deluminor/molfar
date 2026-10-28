@@ -188,7 +188,11 @@ impl Familiars {
             f.set_placeholder("Something it should remember", cx)
         });
         if self.field_blurs.insert(editor.entity_id()) {
-            let (familiar, row, field) = (familiar.id.clone(), original.map(str::to_owned), key.clone());
+            let (familiar, row, field) = (
+                familiar.id.clone(),
+                original.map(str::to_owned),
+                key.clone(),
+            );
             self.observations.push(cx.subscribe(
                 &editor,
                 move |this, _, _: &input::Submitted, cx| {
@@ -364,10 +368,14 @@ impl Familiars {
                                 )
                             })
                             .child(
-                                icon_button("familiar-memory-forget", "Forget memory fact", "trash")
-                                    .on_click(cx.listener(move |this, _, _, cx| {
-                                        this.edit_memory_fact(&remove, None, cx)
-                                    })),
+                                icon_button(
+                                    "familiar-memory-forget",
+                                    "Forget memory fact",
+                                    "trash",
+                                )
+                                .on_click(cx.listener(
+                                    move |this, _, _, cx| this.edit_memory_fact(&remove, None, cx),
+                                )),
                             ),
                     )
                     .into_any_element(),

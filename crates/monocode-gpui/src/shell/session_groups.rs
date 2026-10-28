@@ -2033,10 +2033,13 @@ mod tests {
             .update(cx, |shell, _, cx| {
                 if let Some(familiars) = &shell.familiars {
                     familiars.update(cx, |familiars, cx| {
-                        familiars.roster.familiars.push(monocode_core::familiar::Familiar {
-                            projects: vec![shell.workspace.project.clone()],
-                            ..Default::default()
-                        });
+                        familiars
+                            .roster
+                            .familiars
+                            .push(monocode_core::familiar::Familiar {
+                                projects: vec![shell.workspace.project.clone()],
+                                ..Default::default()
+                            });
                         cx.notify();
                     });
                 }

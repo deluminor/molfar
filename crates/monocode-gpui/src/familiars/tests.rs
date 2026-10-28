@@ -338,7 +338,11 @@ fn setup(cx: &mut TestAppContext) -> Setup {
     let (id, session, root) = cx.update(|cx| {
         let m = manager.read(cx);
         let familiar = m.current().unwrap();
-        (familiar.id.clone(), familiar.session_id.unwrap(), m.root.clone())
+        (
+            familiar.id.clone(),
+            familiar.session_id.unwrap(),
+            m.root.clone(),
+        )
     });
     Setup {
         window,
@@ -441,7 +445,9 @@ fn settings_color_popover_follows_its_mascot_when_the_window_resizes(cx: &mut Te
         visual.simulate_resize(size);
         visual.run_until_parked();
         let face = visual.debug_bounds("familiar-look").unwrap();
-        let picker = visual.debug_bounds("familiar-settings-look-picker").unwrap();
+        let picker = visual
+            .debug_bounds("familiar-settings-look-picker")
+            .unwrap();
         assert!((picker.center().x - face.center().x).abs() <= px(1.));
         assert!(picker.top() >= face.bottom());
     }
@@ -791,7 +797,9 @@ fn app_actions_are_project_scoped_and_mutation_retries_are_idempotent(cx: &mut T
     });
 }
 #[gpui::test]
-fn sidebar_hidden_launches_still_list_in_the_familiar_panel_after_a_restart(cx: &mut TestAppContext) {
+fn sidebar_hidden_launches_still_list_in_the_familiar_panel_after_a_restart(
+    cx: &mut TestAppContext,
+) {
     let s = setup(cx);
     let started = call(
         &s,
@@ -834,7 +842,9 @@ fn sidebar_hidden_launches_still_list_in_the_familiar_panel_after_a_restart(cx: 
     });
 }
 #[gpui::test]
-fn familiar_app_launch_visibility_can_be_toggled_and_survives_roster_reload(cx: &mut TestAppContext) {
+fn familiar_app_launch_visibility_can_be_toggled_and_survives_roster_reload(
+    cx: &mut TestAppContext,
+) {
     let s = setup(cx);
     let started = call(
         &s,
@@ -1258,7 +1268,9 @@ fn long_habit_draft_keeps_fields_and_schedule_inside_the_scrolling_page(cx: &mut
         assert!(bounds.right() <= body.right() + px(1.));
     }
     assert!(create.bottom() <= body.top());
-    let day = visual.debug_bounds("familiar-habit-weekday-picker").unwrap();
+    let day = visual
+        .debug_bounds("familiar-habit-weekday-picker")
+        .unwrap();
     assert!(day.left() >= schedule.left());
     assert!(day.right() <= schedule.right() + px(1.));
     visual.simulate_click(day.center(), Default::default());
@@ -1370,7 +1382,11 @@ fn habit_detail_preserves_long_content_history_and_actions_without_edit_fields(
         .unwrap();
     assert!(row.top() > description.bottom());
     assert!(description.right() <= body.right());
-    for selector in ["familiar-habit-run", "familiar-habit-toggle", "familiar-habit-delete"] {
+    for selector in [
+        "familiar-habit-run",
+        "familiar-habit-toggle",
+        "familiar-habit-delete",
+    ] {
         let action = visual.debug_bounds(selector).unwrap();
         assert!(action.bottom() <= body.top());
         assert!(action.right() <= body.right());

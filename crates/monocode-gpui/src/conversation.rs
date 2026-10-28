@@ -7,11 +7,11 @@ mod commands;
 pub(crate) mod composer_features;
 mod composer_shelf;
 mod edit_last_turn;
+mod familiar;
 mod follow_up;
 pub(crate) mod git_actions;
 mod history;
 mod mobile;
-mod familiar;
 mod notifications;
 mod remote;
 pub(crate) mod remote_plans;
@@ -36,13 +36,13 @@ use crate::{
     transcript::TranscriptView,
 };
 pub(crate) use accounts::UsageResumed;
+pub(crate) use familiar::QueueChanged as FamiliarQueueChanged;
+pub(crate) use familiar::Submitted as FamiliarSubmitted;
 use gpui::{
     AnyElement, Context, CursorStyle, Entity, EventEmitter, Focusable, MouseButton, Role,
     SharedString, StyleRefinement, Subscription, Window, canvas, div, prelude::*, px,
 };
 pub(crate) use mobile::{Waiting as MobileWaiting, mobile_access_modes};
-pub(crate) use familiar::QueueChanged as FamiliarQueueChanged;
-pub(crate) use familiar::Submitted as FamiliarSubmitted;
 use monocode_core::{
     agent::{AccessMode, Approval, Control, Decision, Settings},
     catalog::{self, Model},

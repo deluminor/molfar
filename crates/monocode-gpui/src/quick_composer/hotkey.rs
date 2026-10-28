@@ -73,7 +73,7 @@ impl Registration {
                 code,
                 mods,
                 HotKeyId {
-                    signature: u32::from_be_bytes(*b"Familiar"),
+                    signature: u32::from_be_bytes(*b"MLFR"),
                     id: 1,
                 },
                 target,

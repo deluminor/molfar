@@ -359,7 +359,9 @@ pub(crate) fn familiar_continues(source: &[Row], turn: usize) -> Option<usize> {
     }
     let prompt = prompt_start(source, turn);
     if prompt == 0
-        || source[prompt..turn].iter().any(|r| r.role != "familiar-system")
+        || source[prompt..turn]
+            .iter()
+            .any(|r| r.role != "familiar-system")
         || source[prompt - 1].is_prompt()
         || dates::familiar_opens_stretch(source, prompt)
     {
@@ -792,7 +794,8 @@ impl TranscriptView {
     pub(crate) fn response_rows(&self, turn: usize) -> (Vec<Row>, Vec<Row>) {
         let end = (turn..self.source.len())
             .find(|&i| {
-                self.source[i].is_prompt() && !(self.familiar && self.familiar_next_run_continues(turn, i))
+                self.source[i].is_prompt()
+                    && !(self.familiar && self.familiar_next_run_continues(turn, i))
             })
             .unwrap_or(self.source.len());
         let mut start = self.source[..turn.min(self.source.len())]
@@ -949,7 +952,9 @@ impl TranscriptView {
                 "list-bullet",
                 false,
             )
-            .on_click(cx.listener(move |_, _, _, cx| cx.emit(FamiliarResponseAction::Activity(turn)))),
+            .on_click(
+                cx.listener(move |_, _, _, cx| cx.emit(FamiliarResponseAction::Activity(turn))),
+            ),
         );
         div()
             .id(("familiar-turn-actions", turn))
@@ -1701,8 +1706,11 @@ impl TranscriptView {
             .rows
             .get(ix + 1)
             .is_some_and(|r| matches!(r.body, Body::Launch(_) | Body::FamiliarCard(_)));
-        let first =
-            ix == 0 || !matches!(self.rows[ix - 1].body, Body::Launch(_) | Body::FamiliarCard(_));
+        let first = ix == 0
+            || !matches!(
+                self.rows[ix - 1].body,
+                Body::Launch(_) | Body::FamiliarCard(_)
+            );
         let view = self.launches.get(&id).cloned();
         div()
             .w_full()
@@ -1805,7 +1813,10 @@ impl TranscriptView {
         let attachment_body = (!attachments.is_empty())
             .then(|| self.attachment_row(&attachments, &format!("pending-{}", message.id), cx));
         div()
-            .id(SharedString::from(format!("familiar-pending-{}", message.id)))
+            .id(SharedString::from(format!(
+                "familiar-pending-{}",
+                message.id
+            )))
             .debug_selector(|| "familiar-pending-message".into())
             .w_full()
             .flex()
@@ -1933,7 +1944,11 @@ impl TranscriptView {
                         .max_w(px(COLUMN))
                         .min_w_0()
                         .px_4()
-                        .child(self.familiar_header(self.source.len(), Some("Thinking…".into()), cx)),
+                        .child(self.familiar_header(
+                            self.source.len(),
+                            Some("Thinking…".into()),
+                            cx,
+                        )),
                 )
             })
             .into_any_element()
@@ -3312,7 +3327,9 @@ impl TranscriptView {
             } else if stopped_notice
                 || matches!(
                     role.as_str(),
-                    "familiar-document" | "familiar-launch" | monocode_core::transcript::attachments::ROLE
+                    "familiar-document"
+                        | "familiar-launch"
+                        | monocode_core::transcript::attachments::ROLE
                 )
             {
                 // Saved work references are rendered once under the settled reply.
@@ -6368,7 +6385,9 @@ mod scroll_tests {
     }
 
     #[gpui::test]
-    fn familiar_messages_stack_past_a_reaction_and_queued_bubbles_hand_over(cx: &mut TestAppContext) {
+    fn familiar_messages_stack_past_a_reaction_and_queued_bubbles_hand_over(
+        cx: &mut TestAppContext,
+    ) {
         let view = cx.new(|_| {
             let mut view = TranscriptView::new();
             view.familiar_mode("cat", 0xe86b5f, "FamiliarCat");
@@ -6482,7 +6501,10 @@ mod scroll_tests {
             view.streaming(true, cx);
             view.patch(6, vec![row("user", "And another thing")], cx);
             view.patch(7, vec![row("assistant", "Working on it")], cx);
-            assert!(view.familiar_prose_hidden(7), "live prose waits in the trail");
+            assert!(
+                view.familiar_prose_hidden(7),
+                "live prose waits in the trail"
+            );
             view.set_pending(
                 vec![PendingMessage {
                     id: "q".into(),

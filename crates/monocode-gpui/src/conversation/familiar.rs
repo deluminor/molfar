@@ -1,6 +1,6 @@
 use super::*;
 use gpui::{App, EntityInputHandler};
-use monocode_core::familiar::{Message, Familiar};
+use monocode_core::familiar::{Familiar, Message};
 use std::path::PathBuf;
 #[derive(Default)]
 pub(super) struct ChatState {
@@ -64,7 +64,12 @@ impl Conversation {
         self.follow_ups.requested = None;
         self.save_follow_ups(cx);
     }
-    pub(crate) fn familiar_quote(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn familiar_quote(
+        &mut self,
+        text: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.input.read(cx).is_composing() {
             return;
         }
@@ -128,11 +133,13 @@ impl Conversation {
         environment: std::collections::HashMap<String, String>,
         cx: &mut Context<Self>,
     ) {
-        self.input
-            .update(cx, |input, cx| input.familiar_composer(&familiar.label(), cx));
+        self.input.update(cx, |input, cx| {
+            input.familiar_composer(&familiar.label(), cx)
+        });
         let name = familiar.label();
-        self.transcript
-            .update(cx, |t, _| t.familiar_mode(&familiar.mascot, familiar.color, &name));
+        self.transcript.update(cx, |t, _| {
+            t.familiar_mode(&familiar.mascot, familiar.color, &name)
+        });
         self.settings.environment = environment;
         self.familiar_ui.pending = familiar.outbox.clone();
         self.familiar_ui
@@ -582,86 +589,85 @@ impl Conversation {
                     .pb_1p5()
                     .flex()
                     .flex_col()
-                    .children(
-                        self.familiar_ui
-                            .pending
-                            .iter()
-                            .filter(|m| m.internal)
-                            .map(|message| {
-                                let retry = message.id.clone();
-                                let remove = retry.clone();
-                                div()
-                                    .id(SharedString::from(format!("familiar-queued-{}", message.id)))
-                                    .mb_1()
-                                    .flex()
-                                    .justify_end()
-                                    .child(
-                                        div()
-                                            .max_w(px(440.))
-                                            .px_3()
-                                            .py_2()
-                                            .rounded_xl()
-                                            .border_1()
-                                            .border_color(content(0.15))
-                                            .bg(content(0.04))
-                                            .text_size(px(13.))
-                                            .text_color(content(0.6))
-                                            .child(if message.internal {
-                                                "Completion update".into()
-                                            } else {
-                                                message.text.clone()
-                                            })
-                                            .child(
+                    .children(self.familiar_ui.pending.iter().filter(|m| m.internal).map(
+                        |message| {
+                            let retry = message.id.clone();
+                            let remove = retry.clone();
+                            div()
+                                .id(SharedString::from(format!(
+                                    "familiar-queued-{}",
+                                    message.id
+                                )))
+                                .mb_1()
+                                .flex()
+                                .justify_end()
+                                .child(
+                                    div()
+                                        .max_w(px(440.))
+                                        .px_3()
+                                        .py_2()
+                                        .rounded_xl()
+                                        .border_1()
+                                        .border_color(content(0.15))
+                                        .bg(content(0.04))
+                                        .text_size(px(13.))
+                                        .text_color(content(0.6))
+                                        .child(if message.internal {
+                                            "Completion update".into()
+                                        } else {
+                                            message.text.clone()
+                                        })
+                                        .child(
+                                            div()
+                                                .text_size(px(11.))
+                                                .text_color(content(0.4))
+                                                .child(
+                                                    message
+                                                        .error
+                                                        .clone()
+                                                        .unwrap_or_else(|| "Pending".into()),
+                                                ),
+                                        )
+                                        .when(message.error.is_some(), |d| {
+                                            d.child(
                                                 div()
-                                                    .text_size(px(11.))
-                                                    .text_color(content(0.4))
+                                                    .flex()
+                                                    .gap_2()
                                                     .child(
-                                                        message
-                                                            .error
-                                                            .clone()
-                                                            .unwrap_or_else(|| "Pending".into()),
+                                                        icon_button(
+                                                            "familiar-queue-retry",
+                                                            "Retry queued message",
+                                                            "refresh-cw",
+                                                        )
+                                                        .on_click(cx.listener(
+                                                            move |_, _, _, cx| {
+                                                                cx.emit(QueueChanged {
+                                                                    id: retry.clone(),
+                                                                    remove: false,
+                                                                })
+                                                            },
+                                                        )),
+                                                    )
+                                                    .child(
+                                                        icon_button(
+                                                            "familiar-queue-discard",
+                                                            "Discard queued message",
+                                                            "close",
+                                                        )
+                                                        .on_click(cx.listener(
+                                                            move |_, _, _, cx| {
+                                                                cx.emit(QueueChanged {
+                                                                    id: remove.clone(),
+                                                                    remove: true,
+                                                                })
+                                                            },
+                                                        )),
                                                     ),
                                             )
-                                            .when(message.error.is_some(), |d| {
-                                                d.child(
-                                                    div()
-                                                        .flex()
-                                                        .gap_2()
-                                                        .child(
-                                                            icon_button(
-                                                                "familiar-queue-retry",
-                                                                "Retry queued message",
-                                                                "refresh-cw",
-                                                            )
-                                                            .on_click(cx.listener(
-                                                                move |_, _, _, cx| {
-                                                                    cx.emit(QueueChanged {
-                                                                        id: retry.clone(),
-                                                                        remove: false,
-                                                                    })
-                                                                },
-                                                            )),
-                                                        )
-                                                        .child(
-                                                            icon_button(
-                                                                "familiar-queue-discard",
-                                                                "Discard queued message",
-                                                                "close",
-                                                            )
-                                                            .on_click(cx.listener(
-                                                                move |_, _, _, cx| {
-                                                                    cx.emit(QueueChanged {
-                                                                        id: remove.clone(),
-                                                                        remove: true,
-                                                                    })
-                                                                },
-                                                            )),
-                                                        ),
-                                                )
-                                            }),
-                                    )
-                            }),
-                    )
+                                        }),
+                                )
+                        },
+                    ))
                     .children(self.usage_notice(true, cx))
                     .children(self.auth_notice(cx))
                     .child(self.approval_shelf(window, cx))
@@ -1250,7 +1256,8 @@ mod tests {
                     "id":"report-card", "type":"document", "documentId":"report-document",
                     "title":"Bug triage", "summary":"Detailed findings 🙂. ".repeat(200),
                 });
-                chat.familiar_post("familiar-card", card.to_string(), cx).unwrap();
+                chat.familiar_post("familiar-card", card.to_string(), cx)
+                    .unwrap();
                 card["title"] = json!("Updated bug triage");
                 chat.familiar_patch_card(card_index, "report-card", card.clone(), cx)
                     .unwrap();
@@ -1274,7 +1281,12 @@ mod tests {
                                 && row.text.matches('\n').count() <= 12
                         })
                 );
-                assert_eq!(rows.iter().filter(|row| row.role == "familiar-card").count(), 1);
+                assert_eq!(
+                    rows.iter()
+                        .filter(|row| row.role == "familiar-card")
+                        .count(),
+                    1
+                );
                 assert_eq!(
                     serde_json::from_str::<serde_json::Value>(&rows[card_index].text).unwrap(),
                     card,

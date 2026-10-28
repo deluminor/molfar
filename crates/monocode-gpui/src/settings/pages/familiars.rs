@@ -87,7 +87,10 @@ impl SettingsView {
             ];
             roster.push(
                 div()
-                    .id(SharedString::from(format!("settings-familiar-{}", familiar.id)))
+                    .id(SharedString::from(format!(
+                        "settings-familiar-{}",
+                        familiar.id
+                    )))
                     .child(self.row(None, ix == 0, label, Some(description.into()), controls))
                     .into_any_element(),
             );

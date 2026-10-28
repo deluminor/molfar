@@ -1255,7 +1255,8 @@ impl ProjectPicker {
         active: Option<String>,
         cx: &mut Context<Self>,
     ) -> Self {
-        self.active_familiar = active.filter(|id| familiars.iter().any(|familiar| &familiar.id == id));
+        self.active_familiar =
+            active.filter(|id| familiars.iter().any(|familiar| &familiar.id == id));
         if !familiars.is_empty() {
             self.search.update(cx, |search, cx| {
                 search.set_placeholder("Search familiars and projects...", cx)

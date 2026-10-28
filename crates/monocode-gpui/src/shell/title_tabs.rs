@@ -33,7 +33,12 @@ impl Shell {
         }
     }
 
-    pub(crate) fn click_familiar_tab(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn click_familiar_tab(
+        &mut self,
+        id: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if std::mem::take(&mut self.skip_tab_click) {
             return;
         }
@@ -206,7 +211,12 @@ impl Shell {
         false
     }
 
-    pub(crate) fn close_familiar_tab(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn close_familiar_tab(
+        &mut self,
+        id: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.workspace.classic_layout {
             if self
                 .familiars
@@ -858,7 +868,9 @@ mod interaction_tests {
             .debug_bounds(Box::leak(format!("title-tab-{first}").into_boxed_str()))
             .unwrap();
         let familiar_bounds = visual
-            .debug_bounds(Box::leak(format!("familiar-title-tab-{id}").into_boxed_str()))
+            .debug_bounds(Box::leak(
+                format!("familiar-title-tab-{id}").into_boxed_str(),
+            ))
             .unwrap();
         visual.simulate_mouse_down(
             familiar_bounds.center(),

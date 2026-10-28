@@ -260,7 +260,10 @@ mod tests {
             assert_eq!(chat.input.read(cx).content, "Unsent draft");
             assert_eq!(chat.history_actions.len(), 1);
             assert!(!chat.ready_for_external(cx));
-            assert!(chat.familiar_post("assistant", "Report".into(), cx).is_err());
+            assert!(
+                chat.familiar_post("assistant", "Report".into(), cx)
+                    .is_err()
+            );
             assert!(chat.transcript.read(cx).source_rows().is_empty());
             // Replace the launch intent with observable, provider-free work to
             // verify FIFO actions cannot run against the empty suspended view.

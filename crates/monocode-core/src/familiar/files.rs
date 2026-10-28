@@ -221,7 +221,11 @@ fn adopt_legacy_folder(root: &Path, dir: &Path, project: &str) -> Result<(), Str
     std::fs::rename(&temp, &path).map_err(|e| format!("{}: {e}", path.display()))
 }
 
-pub fn load(root: &Path, familiar: &str, legacy_project: Option<&str>) -> Result<AgentFiles, String> {
+pub fn load(
+    root: &Path,
+    familiar: &str,
+    legacy_project: Option<&str>,
+) -> Result<AgentFiles, String> {
     let _guard = FILES_LOCK.lock().map_err(|e| e.to_string())?;
     let dir = agent_dir(root, familiar, legacy_project)?;
     let soul = read_optional(&dir.join(SOUL_FILE))?;

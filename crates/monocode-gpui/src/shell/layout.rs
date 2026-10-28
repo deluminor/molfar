@@ -189,7 +189,10 @@ impl Shell {
             self.remember_title_tab(TitleTab::App(view));
         }
         if !self.workspace.classic_layout
-            && let Some(id) = self.familiars.as_ref().and_then(|m| m.read(cx).active.clone())
+            && let Some(id) = self
+                .familiars
+                .as_ref()
+                .and_then(|m| m.read(cx).active.clone())
         {
             self.remember_title_tab(self.familiar_tab(id));
             self.reveal_active_tab(cx);
@@ -755,8 +758,10 @@ impl Shell {
                         // Every project lands on a blank session, as in
                         // Monocode; this is empty only while one is created.
                         .child({
-                            if let Some(familiars) =
-                                self.familiars.clone().filter(|m| m.read(cx).active.is_some())
+                            if let Some(familiars) = self
+                                .familiars
+                                .clone()
+                                .filter(|m| m.read(cx).active.is_some())
                             {
                                 let session = familiars.read(cx).active_notification_session(cx);
                                 let linked = session.and_then(|id| self.linked_notice(id, cx));
@@ -897,7 +902,9 @@ mod tests {
     use gpui::{TestAppContext, WindowHandle};
     use std::time::{Duration, Instant};
 
-    fn mixed_window(cx: &mut TestAppContext) -> (WindowHandle<Shell>, Entity<Familiars>, String, i64) {
+    fn mixed_window(
+        cx: &mut TestAppContext,
+    ) -> (WindowHandle<Shell>, Entity<Familiars>, String, i64) {
         let (window, _, session) = window(cx);
         let (manager, id) = window
             .update(cx, |shell, w, cx| {

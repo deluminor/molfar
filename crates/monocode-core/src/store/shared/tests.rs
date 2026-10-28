@@ -7,7 +7,10 @@ fn desktop_operator_access_restores_only_from_submitted_user_messages() {
             json!({"role":"user", "text":"Start a session", "monocode":true}),
             true,
         ),
-        (json!({"role":"user", "text":"/familiar Start a session"}), true),
+        (
+            json!({"role":"user", "text":"/familiar Start a session"}),
+            true,
+        ),
         (
             json!({"role":"user", "text":"/monocode Start a session"}),
             true,

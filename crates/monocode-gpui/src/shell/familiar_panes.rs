@@ -16,7 +16,11 @@ impl Shell {
     }
 
     /// The visible Familiar as a drop target: its whole view, by edge.
-    pub(super) fn familiar_view_hit(&self, position: Point<Pixels>, cx: &App) -> Option<(i64, Edge)> {
+    pub(super) fn familiar_view_hit(
+        &self,
+        position: Point<Pixels>,
+        cx: &App,
+    ) -> Option<(i64, Edge)> {
         if !self.familiar_active(cx) || self.app_view_open() {
             return None;
         }
@@ -32,7 +36,10 @@ impl Shell {
         };
         let x = (position.x - bounds.left()).as_f32();
         let y = (position.y - bounds.top()).as_f32();
-        Some((FAMILIAR_VIEW, crate::pane_layout::edge_from_point(x, y, rect)))
+        Some((
+            FAMILIAR_VIEW,
+            crate::pane_layout::edge_from_point(x, y, rect),
+        ))
     }
 
     /// A drop on the visible Familiar first turns it into a lone pane in its own
@@ -116,7 +123,11 @@ impl Shell {
         else {
             return false;
         };
-        match self.familiars.as_ref().and_then(|m| m.read(cx).open_chat(id)) {
+        match self
+            .familiars
+            .as_ref()
+            .and_then(|m| m.read(cx).open_chat(id))
+        {
             Some(chat) => window.focus(&chat.read(cx).input.focus_handle(cx), cx),
             None => window.focus(&self.focus, cx),
         }
@@ -133,7 +144,9 @@ impl Shell {
             familiars.update(cx, |m, cx| m.close(cx));
         }
         cx.spawn(async move |this, cx| {
-            let _ = this.update_in(cx, |this, window, cx| this.open_familiar_pane(pane, window, cx));
+            let _ = this.update_in(cx, |this, window, cx| {
+                this.open_familiar_pane(pane, window, cx)
+            });
         })
         .detach();
         true
@@ -268,7 +281,9 @@ mod tests {
         let visual = &mut VisualTestContext::from_window(window.into(), cx);
         visual.run_until_parked();
         let tab = visual
-            .debug_bounds(Box::leak(format!("familiar-title-tab-{id}").into_boxed_str()))
+            .debug_bounds(Box::leak(
+                format!("familiar-title-tab-{id}").into_boxed_str(),
+            ))
             .unwrap()
             .center();
         let pane = window
@@ -302,7 +317,9 @@ mod tests {
         window
             .update(visual, |shell, w, cx| {
                 shell.open(first, w, cx);
-                shell.familiar_manager().update(cx, |m, cx| m.open(&id, w, cx));
+                shell
+                    .familiar_manager()
+                    .update(cx, |m, cx| m.open(&id, w, cx));
             })
             .unwrap();
         visual.run_until_parked();

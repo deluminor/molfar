@@ -785,7 +785,9 @@ impl SettingsView {
             Target::Mcp => "Add MCP server".into(),
             Target::Worktree => "Create worktree".into(),
             Target::DeleteTree(_) => "Delete worktree?".into(),
-            Target::ResetFamiliar(ref familiar) => format!("Reset {} to its defaults?", familiar.name),
+            Target::ResetFamiliar(ref familiar) => {
+                format!("Reset {} to its defaults?", familiar.name)
+            }
             _ => String::new(),
         };
         let form = self.management_form(cx);

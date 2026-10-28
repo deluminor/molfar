@@ -279,7 +279,11 @@ mod tests {
             );
             assert_eq!(view.familiar_stamp(0), Some(at(4, 23, 55)));
             assert_eq!(view.familiar_stamp(2), Some(at(5, 0, 5)));
-            assert_eq!(view.familiar_stamp(3), None, "no duplicate before the reply");
+            assert_eq!(
+                view.familiar_stamp(3),
+                None,
+                "no duplicate before the reply"
+            );
             assert_eq!(
                 view.familiar_stamp(5),
                 None,

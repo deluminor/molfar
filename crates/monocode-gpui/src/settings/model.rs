@@ -115,7 +115,9 @@ impl Section {
             Section::Skills => {
                 "Discover and manage file skills from project, personal, and harness folders."
             }
-            Section::Familiars => "The resident agent beside your tabs, and which projects have one.",
+            Section::Familiars => {
+                "The resident agent beside your tabs, and which projects have one."
+            }
             Section::Inbox => {
                 "Manage Inbox services and notification preferences for each project."
             }

@@ -54,7 +54,11 @@ impl Familiars {
         if !self.prefs.familiars {
             return false;
         }
-        let Some(familiar) = self.roster.of_session(id).map(|familiar| familiar.id.clone()) else {
+        let Some(familiar) = self
+            .roster
+            .of_session(id)
+            .map(|familiar| familiar.id.clone())
+        else {
             return false;
         };
         self.settings = None;

@@ -684,15 +684,16 @@ impl Shell {
                 tabs.push(tab);
             }
         }
-        let familiar_rail =
-            if self.workspace.project_rail_familiars_pinned && self.workspace.preferences.familiars {
-                self.familiars
-                    .clone()
-                    .filter(|m| !m.read(cx).roster.familiars.is_empty())
-                    .map(|m| m.update(cx, |m, cx| m.project_navigation_rail(true, cx)))
-            } else {
-                None
-            };
+        let familiar_rail = if self.workspace.project_rail_familiars_pinned
+            && self.workspace.preferences.familiars
+        {
+            self.familiars
+                .clone()
+                .filter(|m| !m.read(cx).roster.familiars.is_empty())
+                .map(|m| m.update(cx, |m, cx| m.project_navigation_rail(true, cx)))
+        } else {
+            None
+        };
         let active_familiar = self
             .familiars
             .as_ref()
@@ -705,7 +706,13 @@ impl Shell {
                         .map_or("idle", |chat| chat.read(cx).familiar_status());
                     (
                         familiar.label(),
-                        crate::familiars::avatar::avatar(&familiar.mascot, familiar.color, status, 16., true),
+                        crate::familiars::avatar::avatar(
+                            &familiar.mascot,
+                            familiar.color,
+                            status,
+                            16.,
+                            true,
+                        ),
                     )
                 })
             });

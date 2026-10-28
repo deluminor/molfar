@@ -36,7 +36,7 @@ use gpui::{
 use monocode_core::{
     agent::{AccessMode, Settings},
     familiar::{
-        self, Message, Familiar, Roster,
+        self, Familiar, Message, Roster,
         files::AgentFiles,
         habits::{self, Habit},
     },
@@ -209,8 +209,8 @@ impl Familiars {
                             let app: &mut App = cx;
                             app.defer(move |cx| {
                                 let _ = handle.update(cx, |_, window, cx| {
-                                    let _ =
-                                        owner.update(cx, |o, cx| o.familiar_quick_compose(window, cx));
+                                    let _ = owner
+                                        .update(cx, |o, cx| o.familiar_quick_compose(window, cx));
                                 });
                             });
                         }
@@ -795,27 +795,30 @@ impl Familiars {
                 let source = id.clone();
                 this.observations.push(cx.subscribe(
                     &transcript,
-                    move |this, _, event: &crate::transcript::FamiliarResponseAction, cx| match event {
-                        crate::transcript::FamiliarResponseAction::Queue { id, remove } => {
-                            this.queue_changed(&source, id, *remove, cx)
-                        }
-                        crate::transcript::FamiliarResponseAction::Activity(turn) => {
-                            this.activity_turn = Some(*turn);
-                            this.show_overview(cx);
-                            this.route = None;
-                            this.overview_tab = OverviewTab::Activity;
-                            cx.notify();
-                        }
-                        crate::transcript::FamiliarResponseAction::Quote { text, window } => {
-                            let target = target.clone();
-                            let text = text.clone();
-                            let handle = *window;
-                            let app: &mut App = cx;
-                            app.defer(move |cx| {
-                                let _ = handle.update(cx, |_, window, cx| {
-                                    target.update(cx, |v, cx| v.familiar_quote(&text, window, cx))
+                    move |this, _, event: &crate::transcript::FamiliarResponseAction, cx| {
+                        match event {
+                            crate::transcript::FamiliarResponseAction::Queue { id, remove } => {
+                                this.queue_changed(&source, id, *remove, cx)
+                            }
+                            crate::transcript::FamiliarResponseAction::Activity(turn) => {
+                                this.activity_turn = Some(*turn);
+                                this.show_overview(cx);
+                                this.route = None;
+                                this.overview_tab = OverviewTab::Activity;
+                                cx.notify();
+                            }
+                            crate::transcript::FamiliarResponseAction::Quote { text, window } => {
+                                let target = target.clone();
+                                let text = text.clone();
+                                let handle = *window;
+                                let app: &mut App = cx;
+                                app.defer(move |cx| {
+                                    let _ = handle.update(cx, |_, window, cx| {
+                                        target
+                                            .update(cx, |v, cx| v.familiar_quote(&text, window, cx))
+                                    });
                                 });
-                            });
+                            }
                         }
                     },
                 ));
@@ -879,7 +882,9 @@ impl Familiars {
                 .map(|b| b.environment(view.read(cx).summary.id))
                 .unwrap_or_default();
             let root = self.root.clone();
-            view.update(cx, |view, cx| view.configure_familiar(familiar, root, env, cx));
+            view.update(cx, |view, cx| {
+                view.configure_familiar(familiar, root, env, cx)
+            });
         }
     }
     fn enqueue(
@@ -919,7 +924,8 @@ impl Familiars {
         let mut changed = false;
         if let Some(familiar) = self.roster.get_mut(id) {
             let before = familiar.outbox.len();
-            familiar.outbox
+            familiar
+                .outbox
                 .retain(|message| !delivered.contains(&message.id));
             changed = before != familiar.outbox.len();
             for (id, error) in failures {
@@ -1317,7 +1323,13 @@ impl Familiars {
                             .size(px(16.))
                             .relative()
                             .flex_shrink_0()
-                            .child(avatar::avatar(&familiar.mascot, familiar.color, state, 16., true))
+                            .child(avatar::avatar(
+                                &familiar.mascot,
+                                familiar.color,
+                                state,
+                                16.,
+                                true,
+                            ))
                             .when(original, |d| {
                                 d.child(
                                     div()
@@ -1399,18 +1411,24 @@ impl Familiars {
                                 .invisible()
                                 .group_hover("familiar-rail-row", |s| s.visible())
                                 .child(
-                                    icon_button("familiar-options", "Familiar options", "more-horizontal")
-                                        .debug_selector({
-                                            let id = familiar.id.clone();
-                                            move || format!("familiar-rail-options-{id}")
-                                        })
-                                        .on_mouse_down(MouseButton::Left, |_, _, cx| {
-                                            cx.stop_propagation()
-                                        })
-                                        .on_click(cx.listener(move |this, _, w, cx| {
+                                    icon_button(
+                                        "familiar-options",
+                                        "Familiar options",
+                                        "more-horizontal",
+                                    )
+                                    .debug_selector({
+                                        let id = familiar.id.clone();
+                                        move || format!("familiar-rail-options-{id}")
+                                    })
+                                    .on_mouse_down(MouseButton::Left, |_, _, cx| {
+                                        cx.stop_propagation()
+                                    })
+                                    .on_click(cx.listener(
+                                        move |this, _, w, cx| {
                                             cx.stop_propagation();
                                             this.open_options(&options, None, w, cx);
-                                        })),
+                                        },
+                                    )),
                                 ),
                         )
                     })
@@ -1472,7 +1490,13 @@ impl Familiars {
                         .group_hover(group.clone(), move |s| {
                             s.opacity(1.).bg(title_tab_fill(active, true))
                         })
-                        .child(avatar::avatar(&familiar.mascot, familiar.color, "idle", 16., true))
+                        .child(avatar::avatar(
+                            &familiar.mascot,
+                            familiar.color,
+                            "idle",
+                            16.,
+                            true,
+                        ))
                         .child(
                             div()
                                 .flex_1()
@@ -1523,8 +1547,9 @@ impl Familiars {
                             let owner = this.owner.clone();
                             let id = id.clone();
                             window.defer(cx, move |window, cx| {
-                                let _ = owner
-                                    .update(cx, |shell, cx| shell.close_familiar_tab(&id, window, cx));
+                                let _ = owner.update(cx, |shell, cx| {
+                                    shell.close_familiar_tab(&id, window, cx)
+                                });
                             });
                         }
                     }),
@@ -1602,7 +1627,9 @@ impl gpui::Render for Familiars {
                             d
                         }
                     })
-                    .when(!self.original_chrome, |d| d.child(self.topbar(&familiar, cx))),
+                    .when(!self.original_chrome, |d| {
+                        d.child(self.topbar(&familiar, cx))
+                    }),
             )
             .children(self.settings_modal(&familiar, window, cx))
             .children(self.picker_surface(cx))

@@ -464,7 +464,8 @@ impl Familiars {
                             }
                             if flag(&input, "notifyOnComplete", false) {
                                 if let Some(m) = self.roster.get_mut(&familiar.id) {
-                                    let origin = source.map(|v| v.read(cx).familiar_turn).unwrap_or(0);
+                                    let origin =
+                                        source.map(|v| v.read(cx).familiar_turn).unwrap_or(0);
                                     if let Some(launch) =
                                         m.launches.iter_mut().find(|l| l.session_id == session)
                                     {
@@ -538,7 +539,9 @@ impl Familiars {
                 let allowed = self
                     .owner
                     .upgrade()
-                    .and_then(|o| o.update(cx, |owner, cx| owner.familiar_ensure_session(session, cx)))
+                    .and_then(|o| {
+                        o.update(cx, |owner, cx| owner.familiar_ensure_session(session, cx))
+                    })
                     .is_some_and(|v| v.read(cx).summary.cwd == project);
                 if !allowed {
                     self.finish_call(call, Err("Session is outside this project".into()), cx);
@@ -574,7 +577,8 @@ impl Familiars {
                 return;
             }
             "artifacts.list" => Ok(json!(
-                familiar.documents
+                familiar
+                    .documents
                     .iter()
                     .filter(|d| input
                         .get("kind")

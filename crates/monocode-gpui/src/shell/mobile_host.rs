@@ -871,7 +871,10 @@ impl Shell {
         };
         let view = match &watch.target {
             Target::Session(session) => self.sessions.get(session).cloned(),
-            Target::Familiar(familiar) => self.familiars.as_ref().and_then(|m| m.read(cx).open_chat(familiar)),
+            Target::Familiar(familiar) => self
+                .familiars
+                .as_ref()
+                .and_then(|m| m.read(cx).open_chat(familiar)),
         };
         let Some(view) = view else {
             return;
@@ -1052,7 +1055,11 @@ impl Shell {
                 Ok(reply)
             }
             ("session.cancel", Target::Familiar(familiar)) => {
-                if let Some(chat) = self.familiars.as_ref().and_then(|m| m.read(cx).open_chat(familiar)) {
+                if let Some(chat) = self
+                    .familiars
+                    .as_ref()
+                    .and_then(|m| m.read(cx).open_chat(familiar))
+                {
                     chat.update(cx, |v, cx| v.stop_if_busy(cx));
                 }
                 Ok(reply)
@@ -1366,7 +1373,10 @@ impl Shell {
                         }
                     })
                     .collect();
-                let path = root.join(format!("mobile-{}-{safe}", monocode_core::familiar::new_id()));
+                let path = root.join(format!(
+                    "mobile-{}-{safe}",
+                    monocode_core::familiar::new_id()
+                ));
                 std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
                 paths.push(path);
             }
@@ -1386,9 +1396,10 @@ impl Shell {
             Some(conversation) => self.mobile_target(&conversation, cx).and_then(|target| {
                 let view = match &target {
                     Target::Session(id) => self.sessions.get(id).cloned(),
-                    Target::Familiar(familiar) => {
-                        self.familiars.as_ref().and_then(|m| m.read(cx).open_chat(familiar))
-                    }
+                    Target::Familiar(familiar) => self
+                        .familiars
+                        .as_ref()
+                        .and_then(|m| m.read(cx).open_chat(familiar)),
                 };
                 match view {
                     Some(view) => {

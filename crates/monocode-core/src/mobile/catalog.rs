@@ -20,7 +20,9 @@ pub fn recent_sessions(sessions: &Value) -> Vec<Value> {
                 .entry(session["projectId"].as_str().unwrap_or(""))
                 .or_default();
             *count += 1;
-            *count <= RECENT_SESSIONS || session["busy"] == true || session["familiarId"].is_string()
+            *count <= RECENT_SESSIONS
+                || session["busy"] == true
+                || session["familiarId"].is_string()
         })
         .cloned()
         .collect()
