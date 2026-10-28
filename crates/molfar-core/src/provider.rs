@@ -1568,7 +1568,7 @@ fn run_operation(
         } else if protocol.request.kind == Kind::Codex {
             write_json(
                 &mut stdin,
-                json!({"id":1,"method":"initialize","params":{"clientInfo":{"name":"monocode_native","title":"MonoCode Native","version":env!("CARGO_PKG_VERSION")},"capabilities":{"experimentalApi":true}}}),
+                json!({"id":1,"method":"initialize","params":{"clientInfo":{"name":"monocode_native","title":"MOLFAR Native","version":env!("CARGO_PKG_VERSION")},"capabilities":{"experimentalApi":true}}}),
             )?;
         } else {
             write_json(

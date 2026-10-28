@@ -569,12 +569,12 @@ pub fn client(args: &[String]) -> Result<Value, String> {
         .filter(|a| !matches!(a.as_str(), "help" | "--help" | "-h"))
     else {
         return Ok(
-            json!({"help":format!("Usage: monocode-gpui visual docs\n       monocode-gpui visual check|show --input FILE [--title TITLE] [--id ID]\nFILE is JavaScript source, or JSON with source/title/id/requestId. Use - for stdin.\n{DOCUMENTATION}")}),
+            json!({"help":format!("Usage: molfar-native visual docs\n       molfar-native visual check|show --input FILE [--title TITLE] [--id ID]\nFILE is JavaScript source, or JSON with source/title/id/requestId. Use - for stdin.\n{DOCUMENTATION}")}),
         );
     };
     if action == "docs" {
         if args.len() != 1 {
-            return Err("Usage: monocode-gpui visual docs".into());
+            return Err("Usage: molfar-native visual docs".into());
         }
         return Ok(documentation());
     }
@@ -652,8 +652,8 @@ fn documentation() -> Value {
     json!({
         "documentation": DOCUMENTATION,
         "cli": {
-            "check": "monocode-gpui visual check --input FILE",
-            "show": "monocode-gpui visual show --input FILE --title TITLE"
+            "check": "molfar-native visual check --input FILE",
+            "show": "molfar-native visual show --input FILE --title TITLE"
         }
     })
 }
@@ -794,7 +794,7 @@ mod tests {
     #[test]
     fn scoped_publication_acknowledges_after_save_and_deduplicates() {
         let server = Server::start(42).unwrap();
-        let environment = server.environment(std::path::Path::new("/test/monocode-gpui"));
+        let environment = server.environment(std::path::Path::new("/test/molfar-native"));
         let child_environment = environment.clone();
         let worker =
             std::thread::spawn(move || publish_with_environment(input(), &child_environment));

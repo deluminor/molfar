@@ -104,7 +104,7 @@ export async function startDev({
             log("App packaging failed. Fix the error, then type r to retry.");
             continue;
           }
-          executable = join(target, "native-dev", "Monocode Native.app", "Contents", "MacOS", "molfar-native");
+          executable = join(target, "native-dev", "MOLFAR Native.app", "Contents", "MacOS", "molfar-native");
         }
         if (builtRevision !== revision) continue;
         await stopApp();

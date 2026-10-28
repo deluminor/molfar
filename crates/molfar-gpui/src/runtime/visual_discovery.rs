@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn existing_fallback_contexts_get_discovery_and_only_success_suppresses_retries() {
         let (_fixture, store) = fixture();
-        let executable = Path::new("/Applications/Familiar Code.app/Contents/MacOS/monocode-gpui");
+        let executable = Path::new("/Applications/Familiar Code.app/Contents/MacOS/molfar-native");
         for kind in [Kind::Pi, Kind::Omp, Kind::OpenCode, Kind::Grok, Kind::Fx] {
             let discovery =
                 Discovery::prepare(&store, 7, kind, "default", Some("existing"), executable)
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn new_contexts_accounts_executables_and_versions_receive_discovery() {
         let (_fixture, store) = fixture();
-        let executable = Path::new("/old/monocode-gpui");
+        let executable = Path::new("/old/molfar-native");
         for kind in [Kind::Pi, Kind::Omp, Kind::OpenCode] {
             let discovery =
                 Discovery::prepare(&store, 8, kind, "default", Some("old-context"), executable)
@@ -153,7 +153,7 @@ mod tests {
                     kind,
                     "default",
                     Some("old-context"),
-                    Path::new("/new/monocode-gpui")
+                    Path::new("/new/molfar-native")
                 )
                 .unwrap()
                 .is_some()
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn actual_mcp_paths_never_receive_a_cli_hint() {
         let (_fixture, store) = fixture();
-        let executable = Path::new("/app/monocode-gpui");
+        let executable = Path::new("/app/molfar-native");
         for kind in [
             Kind::Codex,
             Kind::Claude,

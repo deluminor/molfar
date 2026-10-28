@@ -45,8 +45,12 @@ test("Finder launches use development data for dev bundles and installed data fo
       });
       assert.ifError(packaged.error);
       assert.equal(packaged.status, 0, packaged.stdout + packaged.stderr);
-      const bundle = join(output, "Monocode Native.app/Contents");
+      const bundle = join(output, "MOLFAR Native.app/Contents");
       const plist = await readFile(join(bundle, "Info.plist"), "utf8");
+      const name = profile === "release" ? "MOLFAR Native" : "MOLFAR Native (Development)";
+      const appId = profile === "release" ? "com.molfar.native" : "com.molfar.native.dev";
+      assert.ok(plist.includes(`<key>CFBundleName</key><string>${name}</string>`));
+      assert.ok(plist.includes(`<key>CFBundleIdentifier</key><string>${appId}</string>`));
       assert.ok(plist.includes(`<key>MonocodeDataMode</key><string>${mode}</string>`));
       // macOS rejects menu bar items from a process that exec'd after launch.
       assert.ok(plist.includes("<key>CFBundleExecutable</key><string>molfar-native</string>"));

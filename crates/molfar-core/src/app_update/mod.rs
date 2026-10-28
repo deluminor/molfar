@@ -17,7 +17,7 @@ use std::{
     time::Duration,
 };
 
-pub const APP_ID: &str = "dev.usemono.gpui";
+pub const APP_ID: &str = "com.molfar.native";
 pub const CHANNEL: &str = "native-preview";
 const MAX_FEED: u64 = 2 * 1024 * 1024;
 const MAX_PACKAGE: u64 = 1024 * 1024 * 1024;
@@ -60,9 +60,9 @@ impl Installation {
                 .nth(3)
                 .ok_or("Cannot locate the app bundle")?;
             let plist = std::fs::read_to_string(app.join("Contents/Info.plist"))
-                .map_err(|_| "Updates require an installed Monocode Native app bundle")?;
+                .map_err(|_| "Updates require an installed MOLFAR Native app bundle")?;
             if !plist.contains(&format!("<string>{APP_ID}</string>")) {
-                return Err("This is not a Monocode Native bundle".into());
+                return Err("This is not a MOLFAR Native bundle".into());
             }
             Ok(Self {
                 kind: PackageKind::App,
@@ -92,7 +92,7 @@ impl Installation {
             }
             let marker: Marker = serde_json::from_slice(
                 &std::fs::read(marker)
-                    .map_err(|_| "Updates require an installed Monocode Native package")?,
+                    .map_err(|_| "Updates require an installed MOLFAR Native package")?,
             )
             .map_err(|e| e.to_string())?;
             let supported = if cfg!(windows) {
@@ -206,7 +206,7 @@ pub fn schedule_relaunch(executable: &Path) -> Result<(), String> {
         command
             .arg("-c")
             .arg(script)
-            .arg("monocode-native-relaunch")
+            .arg("molfar-native-relaunch")
             .arg(std::process::id().to_string())
             .arg(path)
             .args(std::env::args_os().skip(1))
@@ -296,7 +296,7 @@ fn request(url: &str) -> Result<ureq::Response, String> {
         .timeout_read(Duration::from_secs(60))
         .build()
         .get(url)
-        .set("User-Agent", "Monocode-Native-Updater")
+        .set("User-Agent", "MOLFAR-Native-Updater")
         .set("Accept-Encoding", "identity")
         .call()
         .map_err(|e| e.to_string())?;
@@ -331,7 +331,7 @@ impl Update {
             return Err("Update package exceeds its size limit".into());
         }
         let directory = tempfile::Builder::new()
-            .prefix("monocode-native-update-")
+            .prefix("molfar-native-update-")
             .tempdir()
             .map_err(|e| e.to_string())?;
         let path = directory.path().join("package");

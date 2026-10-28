@@ -28,7 +28,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
       },
     },
   );
-  const app = join(dirname(binary), "Monocode Native.app");
+  const app = join(dirname(binary), "MOLFAR Native.app");
   if (
     !process.env.APPLE_SIGNING_IDENTITY ||
     process.env.APPLE_SIGNING_IDENTITY === "-"
@@ -72,12 +72,12 @@ export async function packageMacos({ binary, version, arch, work, add }) {
     `MonocodeNative_${version}_${name}.app.tar.gz`,
     `darwin-${arch}-app`,
   );
-  run("tar", ["-czf", archive, "-C", dirname(app), "Monocode Native.app"], {
+  run("tar", ["-czf", archive, "-C", dirname(app), "MOLFAR Native.app"], {
     env: { ...process.env, COPYFILE_DISABLE: "1" },
   });
   const imageRoot = join(work, "dmg");
   await mkdir(imageRoot);
-  run("ditto", [app, join(imageRoot, "Monocode Native.app")]);
+  run("ditto", [app, join(imageRoot, "MOLFAR Native.app")]);
   run("ln", ["-s", "/Applications", join(imageRoot, "Applications")]);
   const dmg = add(`MonocodeNative_${version}_${name}.dmg`);
   const imageSizeMiB =
@@ -85,7 +85,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
   run("hdiutil", [
     "create",
     "-volname",
-    "Monocode Native",
+    "MOLFAR Native",
     "-srcfolder",
     imageRoot,
     "-ov",

@@ -26,7 +26,7 @@ export async function packageNative({
     encoding: "utf8",
     stdio: ["ignore", "pipe", "inherit"],
   }).stdout.trim();
-  if (embedded !== `Monocode Native ${version}`)
+  if (embedded !== `MOLFAR Native ${version}`)
     throw new Error(`Native executable version does not match ${version}`);
   await mkdir(out, { recursive: true });
   const work = join(out, "work");
@@ -44,27 +44,27 @@ export async function packageNative({
     await mkdir(join(debRoot, "DEBIAN"));
     await writeFile(
       join(debRoot, "DEBIAN/control"),
-      `Package: monocode-native\nVersion: ${version.replace("-preview.", "~preview.")}\nArchitecture: amd64\nMaintainer: Monocode maintainers\nSection: devel\nPriority: optional\nDepends: libasound2, libfontconfig1, libfreetype6, libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libx11-xcb1, libxcb1, libxcb-shape0, libxcb-xfixes0, libxcb-randr0, libegl1, libvulkan1, libdbus-1-3, pkexec | policykit-1\nDescription: Monocode Native experimental preview\n`,
+      `Package: molfar-native\nVersion: ${version.replace("-preview.", "~preview.")}\nArchitecture: amd64\nMaintainer: MOLFAR maintainers\nSection: devel\nPriority: optional\nDepends: libasound2, libfontconfig1, libfreetype6, libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libx11-xcb1, libxcb1, libxcb-shape0, libxcb-xfixes0, libxcb-randr0, libegl1, libvulkan1, libdbus-1-3, pkexec | policykit-1\nDescription: MOLFAR Native experimental preview\n`,
     );
     run("dpkg-deb", [
       "--build",
       "--root-owner-group",
       debRoot,
-      add(`monocode-native_${version}_amd64.deb`, "linux-x86_64-deb"),
+      add(`molfar-native_${version}_amd64.deb`, "linux-x86_64-deb"),
     ]);
     const appDir = join(work, "MonocodeNative.AppDir");
     const { desktop } = await linuxTree(appDir, binary, "appimage");
     await writeFile(
-      join(appDir, "monocode-native.desktop"),
-      desktop.replace("Exec=monocode-native %F", "Exec=molfar-native %F"),
+      join(appDir, "molfar-native.desktop"),
+      desktop.replace("Exec=molfar-native %F", "Exec=molfar-native %F"),
     );
     await cp(
       join(root, "public/monocode.png"),
-      join(appDir, "monocode-native.png"),
+      join(appDir, "molfar-native.png"),
     );
     await writeFile(
       join(appDir, "AppRun"),
-      '#!/bin/sh\nexec "$APPDIR/usr/lib/monocode-native/molfar-native" "$@"\n',
+      '#!/bin/sh\nexec "$APPDIR/usr/lib/molfar-native/molfar-native" "$@"\n',
       { mode: 0o755 },
     );
     run(
@@ -86,10 +86,10 @@ export async function packageNative({
       await mkdir(join(top, name), { recursive: true });
     const tree = join(top, "SOURCES/tree");
     await linuxTree(tree, binary, "rpm");
-    const spec = join(top, "SPECS/monocode-native.spec");
+    const spec = join(top, "SPECS/molfar-native.spec");
     await writeFile(
       spec,
-      `Name: monocode-native\nVersion: ${parsed.base}\nRelease: 0.preview.${parsed.sequence}%{?dist}\nSummary: Monocode Native experimental preview\nLicense: MIT AND Apache-2.0\nBuildArch: x86_64\nRequires: polkit\n%description\nMonocode Native experimental preview.\n%install\nmkdir -p %{buildroot}\ncp -a %{_sourcedir}/tree/. %{buildroot}/\n%files\n/usr/bin/monocode-native\n/usr/lib/monocode-native\n/usr/share/applications/monocode-native.desktop\n/usr/share/icons/hicolor/256x256/apps/monocode-native.png\n`,
+      `Name: molfar-native\nVersion: ${parsed.base}\nRelease: 0.preview.${parsed.sequence}%{?dist}\nSummary: MOLFAR Native experimental preview\nLicense: MIT AND Apache-2.0\nBuildArch: x86_64\nRequires: polkit\n%description\nMOLFAR Native experimental preview.\n%install\nmkdir -p %{buildroot}\ncp -a %{_sourcedir}/tree/. %{buildroot}/\n%files\n/usr/bin/molfar-native\n/usr/lib/molfar-native\n/usr/share/applications/molfar-native.desktop\n/usr/share/icons/hicolor/256x256/apps/molfar-native.png\n`,
     );
     run("rpmbuild", [
       "--define",
@@ -116,7 +116,7 @@ export async function packageNative({
     await cp(binary, join(stage, "molfar-native.exe"));
     await writeFile(
       join(stage, "native-install.json"),
-      JSON.stringify({ app_id: "dev.usemono.gpui", kind: "nsis" }),
+      JSON.stringify({ app_id: "com.molfar.native", kind: "nsis" }),
     );
     await notices(join(stage, "licenses"));
     const installer = add(

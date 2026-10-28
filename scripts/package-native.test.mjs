@@ -29,7 +29,7 @@ test(
     const binary = join(release, "molfar-native");
     await writeFile(
       binary,
-      "#!/bin/sh\nprintf 'Monocode Native 0.16.0-preview.2\\n'\n",
+      "#!/bin/sh\nprintf 'MOLFAR Native 0.16.0-preview.2\\n'\n",
     );
     await chmod(binary, 0o755);
     const fakeTool = `#!/usr/bin/env node
@@ -133,7 +133,7 @@ if (name === 'xcrun' && args[0] === 'stapler' && process.env.NATIVE_TEST_STAPLER
       "Applications symlink is not traversed",
     );
     const plist = await readFile(
-      join(release, "Monocode Native.app/Contents/Info.plist"),
+      join(release, "MOLFAR Native.app/Contents/Info.plist"),
       "utf8",
     );
     assert.ok(
@@ -147,7 +147,7 @@ if (name === 'xcrun' && args[0] === 'stapler' && process.env.NATIVE_TEST_STAPLER
         "<key>MonocodeNativeVersion</key><string>0.16.0-preview.2</string>",
       ),
     );
-    assert.ok(plist.includes("<string>dev.usemono.gpui</string>"));
+    assert.ok(plist.includes("<string>com.molfar.native</string>"));
     for (const action of ["staple", "validate"]) {
       await t.test(
         `${action} recovers from ticket-service failures`,
@@ -221,7 +221,7 @@ if (name === 'xcrun' && args[0] === 'stapler' && process.env.NATIVE_TEST_STAPLER
     );
     await writeFile(
       binary,
-      "#!/bin/sh\nprintf 'Monocode Native 0.16.0-preview.3\\n'\n",
+      "#!/bin/sh\nprintf 'MOLFAR Native 0.16.0-preview.3\\n'\n",
     );
     await assert.rejects(
       () =>

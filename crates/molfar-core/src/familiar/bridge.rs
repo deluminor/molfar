@@ -15,7 +15,7 @@ use std::{
 };
 
 pub const HELP: &str = r#"MonoCode app access
-Usage: monocode-gpui app ACTION --json '{...}' [--request-id ID]
+Usage: molfar-native app ACTION --json '{...}' [--request-id ID]
 Pass --input FILE or --input - to read a JSON object instead.
 Actions:
 models.list {}

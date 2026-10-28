@@ -1901,7 +1901,7 @@ impl Shell {
         };
         let answer = window.prompt(
             gpui::PromptLevel::Warning,
-            "Reload Monocode Native?",
+            "Reload MOLFAR Native?",
             Some(detail),
             &["Reload", "Cancel"],
             cx,
@@ -8280,7 +8280,7 @@ impl Render for Shell {
             .id("monocode-workspace")
             .relative()
             .role(Role::Application)
-            .aria_label("Monocode Native")
+            .aria_label("MOLFAR Native")
             .key_context("Workspace")
             .track_focus(&self.focus)
             .capture_key_up(cx.listener(|this, _, _, _| this.archive_shortcut_held = false))
@@ -8371,7 +8371,7 @@ impl Render for Shell {
                 let detail = format!("Version {}", crate::notifications::updater::version());
                 drop(window.prompt(
                     gpui::PromptLevel::Info,
-                    "Monocode Native",
+                    "MOLFAR Native",
                     Some(&detail),
                     &["OK"],
                     cx,

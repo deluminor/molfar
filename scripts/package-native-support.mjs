@@ -87,33 +87,33 @@ export async function notices(directory) {
   );
 }
 export async function linuxTree(directory, binary, kind) {
-  const app = join(directory, "usr/lib/monocode-native");
+  const app = join(directory, "usr/lib/molfar-native");
   await mkdir(app, { recursive: true });
   await cp(binary, join(app, "molfar-native"));
   await chmod(join(app, "molfar-native"), 0o755);
   await writeFile(
     join(app, "native-install.json"),
-    JSON.stringify({ app_id: "dev.usemono.gpui", kind }),
+    JSON.stringify({ app_id: "com.molfar.native", kind }),
   );
   await notices(join(app, "licenses"));
   await mkdir(join(directory, "usr/bin"), { recursive: true });
   await writeFile(
-    join(directory, "usr/bin/monocode-native"),
-    '#!/bin/sh\nexec /usr/lib/monocode-native/molfar-native "$@"\n',
+    join(directory, "usr/bin/molfar-native"),
+    '#!/bin/sh\nexec /usr/lib/molfar-native/molfar-native "$@"\n',
     { mode: 0o755 },
   );
   await mkdir(join(directory, "usr/share/applications"), { recursive: true });
   const desktop =
-    "[Desktop Entry]\nType=Application\nName=Monocode Native\nExec=monocode-native %F\nIcon=monocode-native\nCategories=Development;\nTerminal=false\nStartupWMClass=dev.usemono.gpui\n";
+    "[Desktop Entry]\nType=Application\nName=MOLFAR Native\nExec=molfar-native %F\nIcon=molfar-native\nCategories=Development;\nTerminal=false\nStartupWMClass=com.molfar.native\n";
   await writeFile(
-    join(directory, "usr/share/applications/monocode-native.desktop"),
+    join(directory, "usr/share/applications/molfar-native.desktop"),
     desktop,
   );
   const icons = join(directory, "usr/share/icons/hicolor/256x256/apps");
   await mkdir(icons, { recursive: true });
   await cp(
     join(root, "public/monocode.png"),
-    join(icons, "monocode-native.png"),
+    join(icons, "molfar-native.png"),
   );
   return { app, desktop };
 }

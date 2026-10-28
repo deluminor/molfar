@@ -582,7 +582,7 @@ impl Familiars {
             is_minimizable: false,
             display_id: display.map(|d| d.id()),
             window_background: crate::theme::window_backdrop(!is_light()),
-            app_id: Some("dev.usemono.familiar-chat".into()),
+            app_id: Some("com.molfar.native.familiar-chat".into()),
             ..Default::default()
         };
         // Opening a window draws its root immediately. Release the manager's

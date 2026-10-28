@@ -34,17 +34,17 @@ pub(crate) fn bind(cx: &mut App) {
 
 pub(crate) fn install(prefs: &crate::settings::Preferences, cx: &mut App) {
     cx.set_menus(vec![
-        Menu::new("Monocode Native").items([
-            MenuItem::action("About Monocode Native", About),
+        Menu::new("MOLFAR Native").items([
+            MenuItem::action("About MOLFAR Native", About),
             MenuItem::separator(),
             MenuItem::action("Settings…", OpenSettings),
             MenuItem::action("Check for Updates…", CheckForUpdates),
             MenuItem::separator(),
-            MenuItem::action("Hide Monocode Native", Hide),
+            MenuItem::action("Hide MOLFAR Native", Hide),
             MenuItem::action("Hide Others", HideOthers),
             MenuItem::action("Show All", ShowAll),
             MenuItem::separator(),
-            MenuItem::action("Quit Monocode Native", Quit),
+            MenuItem::action("Quit MOLFAR Native", Quit),
         ]),
         Menu::new("File").items([
             MenuItem::action("Open Project…", OpenProject),

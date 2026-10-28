@@ -1,4 +1,4 @@
-name: Monocode Native Preview
+name: MOLFAR Native Preview
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
       - run: cargo test --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-core --profile native-dev
 
   desktop:
-    name: Monocode Native (macOS)
+    name: MOLFAR Native (macOS)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

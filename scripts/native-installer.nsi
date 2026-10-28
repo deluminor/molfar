@@ -1,15 +1,15 @@
 Unicode True
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
-Name "Monocode Native"
+Name "MOLFAR Native"
 OutFile "@OUTFILE@"
-InstallDir "$LOCALAPPDATA\Programs\Monocode Native"
-InstallDirRegKey HKCU "Software\Monocode Native" "InstallDir"
+InstallDir "$LOCALAPPDATA\Programs\MOLFAR Native"
+InstallDirRegKey HKCU "Software\MOLFAR Native" "InstallDir"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 VIProductVersion "@WINDOWS_VERSION@"
-VIAddVersionKey "ProductName" "Monocode Native"
-VIAddVersionKey "FileDescription" "Monocode Native preview installer"
+VIAddVersionKey "ProductName" "MOLFAR Native"
+VIAddVersionKey "FileDescription" "MOLFAR Native preview installer"
 VIAddVersionKey "FileVersion" "@VERSION@"
 !define MUI_ICON "@ICON@"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -29,10 +29,10 @@ Function .onInit
   System::Call 'kernel32::WaitForSingleObject(p r1, i 120000) i .r2'
   System::Call 'kernel32::CloseHandle(p r1)'
   StrCmp $2 0 ready
-  Abort "Monocode Native did not close. Please try updating again."
+  Abort "MOLFAR Native did not close. Please try updating again."
   ready:
 FunctionEnd
-Section "Monocode Native"
+Section "MOLFAR Native"
   SetOutPath "$INSTDIR"
   ClearErrors
   File /oname=molfar-native.next.exe "@STAGE@\molfar-native.exe"
@@ -51,12 +51,12 @@ Section "Monocode Native"
   File "@STAGE@\native-install.json"
   File /r "@STAGE@\licenses"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
-  WriteRegStr HKCU "Software\Monocode Native" "InstallDir" "$INSTDIR"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "DisplayName" "Monocode Native"
+  WriteRegStr HKCU "Software\MOLFAR Native" "InstallDir" "$INSTDIR"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "DisplayName" "MOLFAR Native"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "DisplayVersion" "@VERSION@"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "UninstallString" '"$INSTDIR\Uninstall.exe"'
-  CreateShortcut "$SMPROGRAMS\Monocode Native.lnk" "$INSTDIR\molfar-native.exe"
-  CreateShortcut "$DESKTOP\Monocode Native.lnk" "$INSTDIR\molfar-native.exe"
+  CreateShortcut "$SMPROGRAMS\MOLFAR Native.lnk" "$INSTDIR\molfar-native.exe"
+  CreateShortcut "$DESKTOP\MOLFAR Native.lnk" "$INSTDIR\molfar-native.exe"
   Delete "$INSTDIR\molfar-native.previous.exe"
   Goto install_done
   rollback_binary:
@@ -64,7 +64,7 @@ Section "Monocode Native"
   Rename "$INSTDIR\molfar-native.previous.exe" "$INSTDIR\molfar-native.exe"
   install_failed:
   Delete "$INSTDIR\molfar-native.next.exe"
-  MessageBox MB_ICONSTOP "Monocode Native could not be updated. The previous executable was retained. Close other Monocode Native processes and try again."
+  MessageBox MB_ICONSTOP "MOLFAR Native could not be updated. The previous executable was retained. Close other MOLFAR Native processes and try again."
   Abort
   install_done:
 SectionEnd
@@ -80,13 +80,13 @@ Function .onInstSuccess
   done:
 FunctionEnd
 Section "Uninstall"
-  Delete "$SMPROGRAMS\Monocode Native.lnk"
-  Delete "$DESKTOP\Monocode Native.lnk"
+  Delete "$SMPROGRAMS\MOLFAR Native.lnk"
+  Delete "$DESKTOP\MOLFAR Native.lnk"
   Delete "$INSTDIR\molfar-native.exe"
   Delete "$INSTDIR\native-install.json"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir /r "$INSTDIR\licenses"
   RMDir "$INSTDIR"
-  DeleteRegKey HKCU "Software\Monocode Native"
+  DeleteRegKey HKCU "Software\MOLFAR Native"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative"
 SectionEnd
