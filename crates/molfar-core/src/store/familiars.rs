@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn hidden_familiar_summary_preserves_original_session_and_provider() {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let session = store.create("claude", "/project").unwrap();
         let original = store.persisted_session_id(session.id).unwrap();
         store.conn.execute(
@@ -261,7 +261,7 @@ mod tests {
     fn desktop_work_uses_saved_block_references_and_note_bodies_without_mutation() {
         use serde_json::json;
         for indexed in [false, true] {
-            let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+            let store = Store::open_desktop(Path::new(":memory:")).unwrap();
             let familiar = store.create("codex", "/familiar").unwrap();
             let child = store.create("claude", "/moved-project").unwrap();
             let original = store.persisted_session_id(familiar.id).unwrap();

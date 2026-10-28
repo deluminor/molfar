@@ -636,7 +636,7 @@ impl FileEditor {
                         Ok(analysis) => this
                             .input
                             .update(cx, |input, cx| input.set_editor_analysis(analysis, cx)),
-                        Err(error) => eprintln!("monocode: editor analysis failed: {error}"),
+                        Err(error) => eprintln!("molfar: editor analysis failed: {error}"),
                     }
                 }
             });

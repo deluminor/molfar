@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn automation_metadata_uses_the_original_desktop_session_identity() {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let session = store.create("codex", "/project").unwrap();
         store
             .set_automation_id(session.id, "automation-one")

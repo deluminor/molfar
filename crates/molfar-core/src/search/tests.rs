@@ -16,7 +16,7 @@ fn row(role: &str, text: &str, first: bool) -> Row {
 
 #[test]
 fn desktop_title_prefixes_are_hidden_before_search_highlighting() {
-    let store = Store::open_monocode(std::path::Path::new(":memory:")).unwrap();
+    let store = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
     let mut session = store.create("codex", "/project").unwrap();
     session.title = "codex · Café repair".into();
     let hits = titles(&[session.clone()], "café");

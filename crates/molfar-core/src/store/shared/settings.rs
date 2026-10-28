@@ -8,6 +8,13 @@ use std::{collections::BTreeMap, path::Path};
 type Snapshot = BTreeMap<String, String>;
 
 fn legacy(path: &Path) -> Result<Snapshot, String> {
+    if path
+        .file_name()
+        .is_none_or(|name| name != "molfar.db.gpui.json")
+    {
+        return Ok(BTreeMap::new());
+    }
+
     match std::fs::read_to_string(path) {
         Ok(raw) => parse(&raw),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(BTreeMap::new()),
@@ -23,7 +30,7 @@ pub(super) fn open(
         return Ok((BTreeMap::new(), None));
     }
     let name = database.file_name().unwrap_or_default().to_string_lossy();
-    let path = database.with_file_name(format!("{name}.gpui.sqlite3"));
+    let path = database.with_file_name(format!("{name}.native.sqlite3"));
     let old_path = database.with_file_name(format!("{name}.gpui.json"));
     if read_only && !path.exists() {
         return Ok((legacy(&old_path)?, None));
@@ -104,11 +111,11 @@ mod tests {
     #[test]
     fn legacy_settings_and_large_receipts_import_once_without_changing_desktop_data() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
-        drop(Store::open_monocode(&path).unwrap());
+        let path = dir.path().join("molfar.db");
+        drop(Store::open_desktop(&path).unwrap());
         // Exercise a legacy installation, before the sidecar existed.
-        std::fs::remove_file(dir.path().join("monocode.db.gpui.sqlite3")).unwrap();
-        let old = dir.path().join("monocode.db.gpui.json");
+        std::fs::remove_file(dir.path().join("molfar.db.native.sqlite3")).unwrap();
+        let old = dir.path().join("molfar.db.gpui.json");
         let receipt = "large result".repeat(100_000);
         let values = BTreeMap::from([
             ("workspace", "saved tabs"),
@@ -117,7 +124,7 @@ mod tests {
         let original = serde_json::to_vec(&values).unwrap();
         std::fs::write(&old, &original).unwrap();
         let desktop = std::fs::read(&path).unwrap();
-        let store = Store::open_monocode(&path).unwrap();
+        let store = Store::open_desktop(&path).unwrap();
         assert_eq!(
             store.setting("workspace").unwrap().as_deref(),
             Some("saved tabs")
@@ -130,7 +137,7 @@ mod tests {
         drop(store);
         assert_eq!(std::fs::read(&old).unwrap(), original);
         assert_eq!(std::fs::read(&path).unwrap(), desktop);
-        let reopened = Store::open_monocode(&path).unwrap();
+        let reopened = Store::open_desktop(&path).unwrap();
         assert_eq!(
             reopened.setting("workspace").unwrap().as_deref(),
             Some("new tabs")
@@ -143,7 +150,7 @@ mod tests {
         {
             use std::os::unix::fs::PermissionsExt;
             assert_eq!(
-                std::fs::metadata(dir.path().join("monocode.db.gpui.sqlite3"))
+                std::fs::metadata(dir.path().join("molfar.db.native.sqlite3"))
                     .unwrap()
                     .permissions()
                     .mode()
@@ -156,14 +163,14 @@ mod tests {
     #[test]
     fn small_updates_do_not_rewrite_large_cached_results_and_unchanged_saves_do_not_write() {
         let dir = tempfile::tempdir().unwrap();
-        let store = Store::open_monocode(&dir.path().join("monocode.db")).unwrap();
+        let store = Store::open_desktop(&dir.path().join("molfar.db")).unwrap();
         store
             .save_setting("familiar-app-receipt:1:large", &"x".repeat(10_000_000))
             .unwrap();
         let conn = store.shared.as_ref().unwrap().extras_db.as_ref().unwrap();
         conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)")
             .unwrap();
-        let wal = dir.path().join("monocode.db.gpui.sqlite3-wal");
+        let wal = dir.path().join("molfar.db.native.sqlite3-wal");
         for i in 0..10 {
             store.save_setting("workspace", &i.to_string()).unwrap();
         }
@@ -178,7 +185,7 @@ mod tests {
     #[test]
     fn failed_save_preserves_the_committed_cache_and_can_be_retried() {
         let dir = tempfile::tempdir().unwrap();
-        let store = Store::open_monocode(&dir.path().join("monocode.db")).unwrap();
+        let store = Store::open_desktop(&dir.path().join("molfar.db")).unwrap();
         store.save_setting("workspace", "old").unwrap();
         let conn = store.shared.as_ref().unwrap().extras_db.as_ref().unwrap();
         conn.execute_batch("PRAGMA query_only=ON").unwrap();
@@ -192,13 +199,13 @@ mod tests {
     #[test]
     fn read_only_legacy_access_does_not_create_or_import_settings() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
-        let old = dir.path().join("monocode.db.gpui.json");
+        let path = dir.path().join("molfar.db");
+        let old = dir.path().join("molfar.db.gpui.json");
         std::fs::write(&old, r#"{"workspace":"saved"}"#).unwrap();
         let (values, conn) = open(&path, true).unwrap();
         assert_eq!(values["workspace"], "saved");
         assert!(conn.is_none());
-        assert!(!dir.path().join("monocode.db.gpui.sqlite3").exists());
+        assert!(!dir.path().join("molfar.db.native.sqlite3").exists());
         assert_eq!(
             std::fs::read_to_string(&old).unwrap(),
             r#"{"workspace":"saved"}"#
@@ -208,10 +215,10 @@ mod tests {
     #[test]
     fn read_only_reopen_sees_current_settings_and_refuses_writes() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
-        let store = Store::open_monocode(&path).unwrap();
+        let path = dir.path().join("molfar.db");
+        let store = Store::open_desktop(&path).unwrap();
         store.save_setting("workspace", "current").unwrap();
-        let reader = Store::read_monocode(&path).unwrap();
+        let reader = Store::read_desktop(&path).unwrap();
         assert_eq!(
             reader.setting("workspace").unwrap().as_deref(),
             Some("current")
@@ -222,12 +229,23 @@ mod tests {
     #[test]
     fn failed_import_is_retryable_without_losing_legacy_data() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
-        let old = dir.path().join("monocode.db.gpui.json");
+        let path = dir.path().join("molfar.db");
+        let old = dir.path().join("molfar.db.gpui.json");
         std::fs::write(&old, "invalid JSON").unwrap();
         assert!(open(&path, false).is_err());
         assert_eq!(std::fs::read_to_string(&old).unwrap(), "invalid JSON");
         std::fs::write(&old, r#"{"workspace":"recovered"}"#).unwrap();
         assert_eq!(open(&path, false).unwrap().0["workspace"], "recovered");
+    }
+}
+
+#[cfg(test)]
+mod isolation_tests {
+    #[test]
+    fn legacy_import_only_accepts_the_molfar_database_sidecar() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("foreign.db.gpui.json");
+        std::fs::write(&path, r#"{"workspace":"private"}"#).unwrap();
+        assert!(super::legacy(&path).unwrap().is_empty());
     }
 }

@@ -1237,7 +1237,7 @@ mod tests {
             "A finding\n".repeat(26),
             "**Habit report**\n\n🙂 café 漢字\n\n".repeat(100),
         ] {
-            let mut store = Store::open_monocode(Path::new(":memory:")).unwrap();
+            let mut store = Store::open_desktop(Path::new(":memory:")).unwrap();
             let session = store.create("codex", "/project").unwrap();
             let mut history = Transcript::default();
             history.begin("user");

@@ -11309,7 +11309,7 @@ mod tests {
     }
     #[gpui::test]
     fn desktop_database_sessions_load_and_copy_their_original_ids(cx: &mut TestAppContext) {
-        let mut store = Store::open_monocode(std::path::Path::new(":memory:")).unwrap();
+        let mut store = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
         let summary = store.create("codex", "/work/monocode").unwrap();
         let id = summary.id;
         let original = store.persisted_session_id(id).unwrap();

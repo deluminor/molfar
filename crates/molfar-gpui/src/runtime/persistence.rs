@@ -127,7 +127,7 @@ mod tests {
     use molfar_core::follow_up::{Message, State};
 
     fn conversation() -> (Database, i64, Transcript) {
-        let mut store = Store::open_monocode(std::path::Path::new(":memory:")).unwrap();
+        let mut store = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
         let session = store.create("codex", "/project").unwrap();
         let mut transcript = Transcript::default();
         transcript.begin("user");

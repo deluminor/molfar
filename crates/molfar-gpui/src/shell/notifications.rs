@@ -886,7 +886,7 @@ impl Shell {
         let weak = view.downgrade();
         let store = self.store.clone();
         let work = cx.background_executor().spawn(async move {
-            locked(&store).and_then(|store| store.setting("monocode.nativeReleaseNotes"))
+            locked(&store).and_then(|store| store.setting("molfar.nativeReleaseNotes"))
         });
         cx.spawn(async move |_, cx| {
             if let Ok(Some(raw)) = work.await

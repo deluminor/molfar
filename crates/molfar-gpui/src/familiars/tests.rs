@@ -62,7 +62,7 @@ fn missing_document_uses_error_cards_without_moving_content(cx: &mut TestAppCont
 fn saved_desktop_familiar_opens_in_actual_manager_without_replacing_its_conversation(
     cx: &mut TestAppContext,
 ) {
-    let db = Store::open_monocode(std::path::Path::new(":memory:")).unwrap();
+    let db = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
     let session = db.create("codex", "/saved-project").unwrap();
     let original = db.persisted_session_id(session.id).unwrap();
     let settings = Settings {

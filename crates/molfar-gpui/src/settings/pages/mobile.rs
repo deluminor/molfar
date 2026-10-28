@@ -1309,7 +1309,7 @@ mod tests {
                                 SettingsContext {
                                     mobile: Some(Status::default()),
                                     mobile_invite: Some(molfar_core::mobile::Invite {
-                                        url: format!("monocode://pair?i={}", "A".repeat(600)),
+                                        url: format!("molfar://pair?i={}", "A".repeat(600)),
                                         expires: now() + 900,
                                     }),
                                     ..Default::default()
@@ -1434,7 +1434,7 @@ mod tests {
 
     #[test]
     fn pairing_links_fit_a_scannable_code() {
-        let url = format!("monocode://pair?i={}", "A".repeat(600));
+        let url = format!("molfar://pair?i={}", "A".repeat(600));
         let code = qr(&url).unwrap();
         assert_eq!(code.dark.len(), code.width * code.width);
         assert!(code.dark.iter().any(|&dark| dark));

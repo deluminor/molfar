@@ -545,7 +545,7 @@ mod tests {
         window
             .update(visual, |shell, _, cx| {
                 shell.mobile.invite = Some(molfar_core::mobile::Invite {
-                    url: format!("monocode://pair?invite={}", "q".repeat(500)),
+                    url: format!("molfar://pair?invite={}", "q".repeat(500)),
                     expires: molfar_core::time::now_ms() / 1000 + 900,
                 });
                 // This notifies Settings alone. The root overlay must observe it.

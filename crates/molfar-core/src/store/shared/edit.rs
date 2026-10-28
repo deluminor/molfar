@@ -215,7 +215,7 @@ mod tests {
     use super::*;
 
     fn fixture(blocks: Value) -> (Store, i64) {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let session = store.create("codex", "/project").unwrap();
         store.provider_id(session.id, "thread").unwrap();
         store

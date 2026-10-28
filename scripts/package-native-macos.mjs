@@ -18,7 +18,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
       "release",
       dirname(dirname(binary)),
       version,
-      "monocode-data",
+      "desktop-data",
     ],
     {
       env: {

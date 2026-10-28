@@ -76,7 +76,7 @@ fn operator_thread_access_survives_reopen_without_enabling_other_sessions() {
             .join(if shared { "shared.db" } else { "native.db" });
         let open = || {
             if shared {
-                Store::open_monocode(&path).unwrap()
+                Store::open_desktop(&path).unwrap()
             } else {
                 Store::open(&path).unwrap()
             }
@@ -176,7 +176,7 @@ fn conversation_pages_keep_source_cursors_prose_boundaries_and_character_caps() 
 
 #[test]
 fn operator_notes_support_desktop_ids_partial_updates_empty_bodies_and_pagination() {
-    let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+    let store = Store::open_desktop(Path::new(":memory:")).unwrap();
     let caller = store.create("codex", "/project").unwrap();
     let original = store
         .upsert_note(&NoteUpsert {
@@ -285,7 +285,7 @@ fn launch_identity_and_unsent_prompt_survive_reopen_without_duplicate_sessions()
             .join(if shared { "shared.db" } else { "legacy.db" });
         let open = || {
             if shared {
-                Store::open_monocode(&path).unwrap()
+                Store::open_desktop(&path).unwrap()
             } else {
                 Store::open(&path).unwrap()
             }

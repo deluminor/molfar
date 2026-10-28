@@ -131,7 +131,7 @@ fn restart(cx: &mut App) {
 }
 
 fn data_dir() -> PathBuf {
-    if let Some(path) = std::env::var_os("MONOCODE_NATIVE_DATA_DIR") {
+    if let Some(path) = std::env::var_os("MOLFAR_NATIVE_DATA_DIR") {
         return path.into();
     }
     #[cfg(target_os = "macos")]
@@ -145,25 +145,25 @@ fn data_dir() -> PathBuf {
         .unwrap_or_else(|| {
             PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local/share")
         });
-    base.join("MOLFAR Native (Development)")
+    base.join("com.molfar.native")
 }
 // The packaged app runs this binary directly: a launcher that execs it changes the
 // process's pid version, and macOS then refuses its menu bar item. The bundle
 // records its data mode in Info.plist instead of passing a flag.
-fn bundle_uses_monocode_data() -> Option<bool> {
+fn bundle_uses_desktop_data() -> Option<bool> {
     let exe = std::env::current_exe().ok()?;
     let plist = std::fs::read_to_string(exe.parent()?.parent()?.join("Info.plist")).ok()?;
     plist_data_mode(&plist)
 }
 fn plist_data_mode(plist: &str) -> Option<bool> {
-    let rest = plist.split("<key>MonocodeDataMode</key>").nth(1)?;
+    let rest = plist.split("<key>MolfarDataMode</key>").nth(1)?;
     let mode = rest
         .trim_start()
         .strip_prefix("<string>")?
         .split('<')
         .next()?;
     match mode {
-        "monocode-data" => Some(true),
+        "desktop-data" => Some(true),
         "dev-data" => Some(false),
         _ => None,
     }
@@ -222,8 +222,8 @@ fn main() {
     let mut chat_fixture = false;
     let mut visual_fixture = false;
     // Development stays separate; release builds use the installed app's data.
-    let mut use_monocode = bundle_uses_monocode_data().unwrap_or(!cfg!(debug_assertions));
-    let mut monocode_db = molfar_core::store::monocode_database();
+    let mut use_desktop = bundle_uses_desktop_data().unwrap_or(!cfg!(debug_assertions));
+    let mut desktop_db = molfar_core::store::desktop_database();
     let mut check_data = false;
     let mut explicit_cwd = false;
     let mut cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
@@ -232,11 +232,11 @@ fn main() {
             "--fixture" => fixture = true,
             "--chat-fixture" => chat_fixture = true,
             "--visual-fixture" => visual_fixture = true,
-            "--dev-data" => use_monocode = false,
-            "--monocode-data" => use_monocode = true,
-            "--monocode-db" => {
-                use_monocode = true;
-                monocode_db = PathBuf::from(args.next().expect("--monocode-db needs a path"));
+            "--dev-data" => use_desktop = false,
+            "--desktop-data" => use_desktop = true,
+            "--desktop-db" => {
+                use_desktop = true;
+                desktop_db = PathBuf::from(args.next().expect("--desktop-db needs a path"));
             }
             "--check-data" => check_data = true,
             "--cwd" => {
@@ -245,7 +245,7 @@ fn main() {
             }
             "--help" | "-h" => {
                 println!(
-                    "molfar-native [--cwd PATH] [--dev-data | --monocode-data | --monocode-db PATH]\nDevelopment builds use a separate database; release builds use the installed MonoCode database.\n--dev-data opens an isolated development database using Monocode's existing schema.\n--monocode-data opens the existing desktop monocode.db directly.\n--monocode-db PATH opens a specific desktop database.\n--fixture, --chat-fixture and --visual-fixture add local samples to isolated development data only.\nvisual docs prints the native visual SDK reference.\nvisual check/show --input FILE validates or publishes native session visuals.\nvisual-mcp runs the session visual tool server over standard input/output.\n--check-data validates and lists the selected store read-only, then exits."
+                    "molfar-native [--cwd PATH] [--dev-data | --desktop-data | --desktop-db PATH]\nDevelopment builds use a separate database; release builds use the installed MonoCode database.\n--dev-data opens an isolated development database using Monocode's existing schema.\n--desktop-data opens the existing desktop molfar.db directly.\n--desktop-db PATH opens a specific desktop database.\n--fixture, --chat-fixture and --visual-fixture add local samples to isolated development data only.\nvisual docs prints the native visual SDK reference.\nvisual check/show --input FILE validates or publishes native session visuals.\nvisual-mcp runs the session visual tool server over standard input/output.\n--check-data validates and lists the selected store read-only, then exits."
                 );
                 return;
             }
@@ -255,7 +255,7 @@ fn main() {
             }
         }
     }
-    if use_monocode && (fixture || chat_fixture || visual_fixture) {
+    if use_desktop && (fixture || chat_fixture || visual_fixture) {
         eprintln!(
             "Fixtures require --dev-data; they cannot be written into your Monocode database."
         );
@@ -266,27 +266,27 @@ fn main() {
         .unwrap_or(cwd)
         .to_string_lossy()
         .to_string();
-    let database = if use_monocode {
-        monocode_db
+    let database = if use_desktop {
+        desktop_db
     } else {
-        data_dir().join("monocode.db")
+        data_dir().join("molfar.db")
     };
-    if !use_monocode
+    if !use_desktop
         && database
             .canonicalize()
             .ok()
-            .zip(molfar_core::store::monocode_database().canonicalize().ok())
+            .zip(molfar_core::store::desktop_database().canonicalize().ok())
             .is_some_and(|(development, desktop)| development == desktop)
     {
         eprintln!(
-            "The isolated development directory points at the desktop database. Choose a separate MONOCODE_NATIVE_DATA_DIR."
+            "The isolated development directory points at the desktop database. Choose a separate MOLFAR_NATIVE_DATA_DIR."
         );
         std::process::exit(2);
     }
     let mut db = if check_data {
-        Store::read_monocode(&database)
+        Store::read_desktop(&database)
     } else {
-        Store::open_monocode(&database)
+        Store::open_desktop(&database)
     }
     .unwrap_or_else(|error| {
         eprintln!("Cannot open {}: {error}", database.display());
@@ -316,7 +316,7 @@ fn main() {
         eprintln!("Cannot read workspace settings: {e}");
         None
     });
-    let existing_project = if use_monocode {
+    let existing_project = if use_desktop {
         saved
             .as_deref()
             .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
@@ -533,11 +533,18 @@ mod native_tests {
         }
     }
     #[test]
+    fn native_development_data_has_its_own_app_directory() {
+        if std::env::var_os("MOLFAR_NATIVE_DATA_DIR").is_none() {
+            assert!(data_dir().ends_with("com.molfar.native"));
+        }
+    }
+
+    #[test]
     fn bundle_plist_selects_the_data_mode() {
         let plist = |mode: &str| {
-            format!("<dict>\n<key>MonocodeDataMode</key><string>{mode}</string>\n</dict>")
+            format!("<dict>\n<key>MolfarDataMode</key><string>{mode}</string>\n</dict>")
         };
-        assert_eq!(plist_data_mode(&plist("monocode-data")), Some(true));
+        assert_eq!(plist_data_mode(&plist("desktop-data")), Some(true));
         assert_eq!(plist_data_mode(&plist("dev-data")), Some(false));
         assert_eq!(plist_data_mode(&plist("other")), None);
         assert_eq!(plist_data_mode("<dict></dict>"), None);

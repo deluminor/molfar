@@ -26,9 +26,9 @@ test("Finder launches use development data for dev bundles and installed data fo
   }
   for (const [profile, override, mode] of [
     ["native-dev", undefined, "dev-data"],
-    ["release", undefined, "monocode-data"],
+    ["release", undefined, "desktop-data"],
     ["release", "dev-data", "dev-data"],
-    ["native-dev", "monocode-data", "monocode-data"],
+    ["native-dev", "desktop-data", "desktop-data"],
   ]) {
     await t.test(`${profile}: ${override ?? "default"}`, async () => {
       const output = join(target, profile);
@@ -51,7 +51,7 @@ test("Finder launches use development data for dev bundles and installed data fo
       const appId = profile === "release" ? "com.molfar.native" : "com.molfar.native.dev";
       assert.ok(plist.includes(`<key>CFBundleName</key><string>${name}</string>`));
       assert.ok(plist.includes(`<key>CFBundleIdentifier</key><string>${appId}</string>`));
-      assert.ok(plist.includes(`<key>MonocodeDataMode</key><string>${mode}</string>`));
+      assert.ok(plist.includes(`<key>MolfarDataMode</key><string>${mode}</string>`));
       // macOS rejects menu bar items from a process that exec'd after launch.
       assert.ok(plist.includes("<key>CFBundleExecutable</key><string>molfar-native</string>"));
       await assert.rejects(access(join(bundle, "MacOS/monocode-launcher")));

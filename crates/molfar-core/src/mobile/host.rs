@@ -298,7 +298,7 @@ impl MobileHost {
         let code =
             URL_SAFE_NO_PAD.encode(serde_json::to_vec(&invitation).map_err(|e| e.to_string())?);
         Ok(Invite {
-            url: format!("monocode://pair?i={code}"),
+            url: format!("molfar://pair?i={code}"),
             expires,
         })
     }
@@ -439,7 +439,7 @@ impl MobileHost {
         if let Some(identity) = &inner.identity {
             return Ok(identity.clone());
         }
-        let entry = keyring::Entry::new("com.monocode.mobile", &keyring_account(&self.path))
+        let entry = keyring::Entry::new("com.molfar.mobile", &keyring_account(&self.path))
             .map_err(|e| e.to_string())?;
         let identity = match entry.get_password() {
             Ok(value) => serde_json::from_str(&value)

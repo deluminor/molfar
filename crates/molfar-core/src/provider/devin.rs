@@ -24,7 +24,7 @@ pub(crate) const ASK_EDITS_RULE: &str = "Write(**)";
 /// The `--config` arguments for a supervised `devin acp` child.
 pub(super) fn supervised_args() -> Result<Vec<String>, String> {
     let config = ask_before_edits(read_user_config()?.as_deref())?;
-    let dir = std::env::var_os("MONOCODE_NATIVE_DATA_DIR")
+    let dir = std::env::var_os("MOLFAR_NATIVE_DATA_DIR")
         .map(PathBuf::from)
         .or_else(|| dirs_home().map(|home| PathBuf::from(home).join(".cache/molfar-native")))
         .ok_or("No user data directory available for Devin's supervised config")?

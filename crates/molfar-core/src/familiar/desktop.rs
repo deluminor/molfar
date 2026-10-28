@@ -22,7 +22,7 @@ impl Roster {
         store: &Store,
         preferences: &DesktopPreferences,
     ) -> Result<(), String> {
-        let Some(raw) = preferences.get("monocode:familiar-roster") else {
+        let Some(raw) = preferences.get("molfar:familiar-roster") else {
             return Ok(());
         };
         let roster: Value = serde_json::from_str(raw)
@@ -30,7 +30,7 @@ impl Roster {
         let entries = roster
             .as_array()
             .ok_or("Desktop Familiar roster is not an array")?;
-        let backgrounds = preferences.json("monocode:project-chat-backgrounds");
+        let backgrounds = preferences.json("molfar:project-chat-backgrounds");
         let source = entries
             .iter()
             .filter_map(|value| desktop_familiar(store, value, backgrounds.as_ref()))
@@ -234,7 +234,7 @@ mod tests {
 
     #[test]
     fn desktop_identity_retains_uuid_session_configuration_and_appearance() {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let session = store.create("codex", "/project").unwrap();
         let original = store.persisted_session_id(session.id).unwrap();
         let familiar = desktop_familiar(
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn missing_desktop_session_never_becomes_an_unclaimed_new_familiar() {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let familiar = desktop_familiar(
             &store,
             &json!({"id":"saved-mono", "sessionId":"missing-uuid"}),

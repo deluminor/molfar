@@ -197,21 +197,21 @@ pub(super) fn project_turns(
 impl Store {
     /// Open the same sessions, notes and reminders as the desktop app. Only a
     /// brand-new file gets a schema; existing schema/data is not migrated.
-    pub fn open_monocode(path: &Path) -> Result<Self, String> {
+    pub fn open_desktop(path: &Path) -> Result<Self, String> {
         Self::open_shared(path, false, None)
     }
-    pub fn read_monocode(path: &Path) -> Result<Self, String> {
+    pub fn read_desktop(path: &Path) -> Result<Self, String> {
         Self::open_shared(path, true, None)
     }
     #[cfg(test)]
-    pub(crate) fn read_monocode_with_preferences_for_test(
+    pub(crate) fn read_desktop_with_preferences_for_test(
         path: &Path,
         preferences: std::sync::Arc<crate::desktop_preferences::DesktopPreferences>,
     ) -> Result<Self, String> {
         Self::open_shared(path, true, Some(preferences))
     }
     #[cfg(test)]
-    pub(crate) fn open_monocode_with_preferences_for_test(
+    pub(crate) fn open_desktop_with_preferences_for_test(
         path: &Path,
         preferences: std::sync::Arc<crate::desktop_preferences::DesktopPreferences>,
     ) -> Result<Self, String> {
@@ -672,7 +672,7 @@ impl Store {
             .map(|raw| parse(&raw))
             .transpose()?
             .unwrap_or_default();
-        settings.model = super::monocode_import::native_model(&model, &provider);
+        settings.model = super::desktop_import::native_model(&model, &provider);
         // A prior native launch may have created an untouched default blank.
         // Seed only that blank, never a saved or resumed conversation's model.
         let default_controls = controls.iter().all(|(key, value)| {
@@ -801,7 +801,7 @@ impl Store {
             [self.persisted_session_id(id)?],
             |r| Ok((r.get(0)?, r.get(1)?)),
         ))?;
-        if settings.model != super::monocode_import::native_model(&saved_model, &provider) {
+        if settings.model != super::desktop_import::native_model(&saved_model, &provider) {
             let model = settings.model.as_deref().unwrap_or("default");
             let model = if provider == "claude" {
                 model.strip_prefix("claude-").unwrap_or(model)
@@ -862,7 +862,7 @@ impl Store {
                 }
                 if let Some(id) = &info.model_id {
                     model["id"] = json!(if info.provider == session_provider
-                        && super::monocode_import::native_model(&session_model, &session_provider)
+                        && super::desktop_import::native_model(&session_model, &session_provider)
                             .as_ref()
                             == Some(id)
                     {

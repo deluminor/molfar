@@ -62,7 +62,7 @@ for line in sys.stdin:
         break
 "#).unwrap();
     std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
-    let store = Store::open_monocode(&fixture.0.join("sessions.db")).unwrap();
+    let store = Store::open_desktop(&fixture.0.join("sessions.db")).unwrap();
     let summary = store.create("codex", fixture.0.to_str().unwrap()).unwrap();
     let session = summary.id;
     let store = Arc::new(Mutex::new(store));

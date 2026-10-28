@@ -14,7 +14,7 @@ use std::{
 };
 
 /// Tauri's application-data location, keyed by its bundle identifier.
-pub fn monocode_database() -> PathBuf {
+pub fn desktop_database() -> PathBuf {
     #[cfg(target_os = "macos")]
     let base = crate::accounts::home()
         .unwrap_or_default()
@@ -29,7 +29,7 @@ pub fn monocode_database() -> PathBuf {
                 .unwrap_or_default()
                 .join(".local/share")
         });
-    base.join("com.monocode.desktop/monocode.db")
+    base.join("com.molfar.desktop/molfar.db")
 }
 
 #[derive(Debug, Default)]
@@ -43,7 +43,7 @@ pub struct ImportReport {
 impl Store {
     /// Import each source session once. Existing native conversations, including
     /// previously imported copies, are never overwritten by a later launch.
-    pub fn import_monocode(&mut self, path: &Path) -> Result<ImportReport, String> {
+    pub fn import_desktop(&mut self, path: &Path) -> Result<ImportReport, String> {
         let path = path
             .canonicalize()
             .map_err(|e| format!("{}: {e}", path.display()))?;
@@ -123,7 +123,7 @@ fn import_sessions(
     let mut report = ImportReport::default();
     let source_key = path.to_string_lossy();
     for (source_id, cwd) in summaries {
-        let key = format!("import:monocode:{}", json!([source_key, source_id]));
+        let key = format!("import:molfar:{}", json!([source_key, source_id]));
         let exists: bool = tx.query_row(
             "SELECT EXISTS(SELECT 1 FROM native_settings WHERE key=?1)",
             [&key],
@@ -356,7 +356,7 @@ mod tests {
     #[test]
     fn copies_committed_wal_history_and_settings_without_changing_the_source() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
+        let path = dir.path().join("molfar.db");
         let source = source(&path);
         source
             .execute_batch(
@@ -398,7 +398,7 @@ mod tests {
         store
             .title(existing.id, "Existing native conversation")
             .unwrap();
-        let report = store.import_monocode(&path).unwrap();
+        let report = store.import_desktop(&path).unwrap();
         assert_eq!(
             (report.imported, report.existing, report.skipped),
             (1, 0, 0)
@@ -462,7 +462,7 @@ mod tests {
             json!([{"role":"user","text":"New conversation"}]),
             300,
         );
-        let report = store.import_monocode(&path).unwrap();
+        let report = store.import_desktop(&path).unwrap();
         assert_eq!((report.imported, report.existing), (1, 1));
         let sessions = store.sessions().unwrap();
         assert_eq!(
@@ -478,7 +478,7 @@ mod tests {
     #[test]
     fn older_schema_works_and_hidden_remote_and_empty_histories_are_skipped() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
+        let path = dir.path().join("molfar.db");
         let source = source(&path);
         let prompt = json!([{"role":"user","text":"Hello"}]);
         add(&source, "local", dir.path(), prompt.clone(), 100);
@@ -504,7 +504,7 @@ mod tests {
             )
             .unwrap();
         let mut store = Store::open(&dir.path().join("native.sqlite3")).unwrap();
-        let report = store.import_monocode(&path).unwrap();
+        let report = store.import_desktop(&path).unwrap();
         assert_eq!((report.imported, report.skipped), (1, 3));
         assert!(!store.sessions().unwrap()[0].archived);
         source
@@ -521,7 +521,7 @@ mod tests {
         source
             .execute("UPDATE sessions SET inbox_ask='{}' WHERE id='inbox'", [])
             .unwrap();
-        let report = store.import_monocode(&path).unwrap();
+        let report = store.import_desktop(&path).unwrap();
         assert_eq!(
             (report.imported, report.existing, report.skipped),
             (0, 1, 5)
@@ -531,7 +531,7 @@ mod tests {
     #[test]
     fn invalid_history_rolls_back_the_entire_import() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("monocode.db");
+        let path = dir.path().join("molfar.db");
         let source = source(&path);
         add(
             &source,
@@ -548,7 +548,7 @@ mod tests {
             )
             .unwrap();
         let mut store = Store::open(&dir.path().join("native.sqlite3")).unwrap();
-        assert!(store.import_monocode(&path).is_err());
+        assert!(store.import_desktop(&path).is_err());
         assert!(store.sessions().unwrap().is_empty());
         assert_eq!(
             store
@@ -561,7 +561,7 @@ mod tests {
         source
             .execute("DELETE FROM sessions WHERE id='invalid'", [])
             .unwrap();
-        assert_eq!(store.import_monocode(&path).unwrap().imported, 1);
+        assert_eq!(store.import_desktop(&path).unwrap().imported, 1);
     }
 
     #[test]
@@ -569,10 +569,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("missing.db");
         let mut store = Store::open(&dir.path().join("native.sqlite3")).unwrap();
-        assert!(store.import_monocode(&path).is_err());
+        assert!(store.import_desktop(&path).is_err());
         assert!(!path.exists());
         let error = store
-            .import_monocode(&dir.path().join("native.sqlite3"))
+            .import_desktop(&dir.path().join("native.sqlite3"))
             .unwrap_err();
         assert!(error.contains("Not a Monocode session database"));
     }

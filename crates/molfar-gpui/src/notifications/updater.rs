@@ -77,10 +77,10 @@ impl EventEmitter<Event> for Updater {}
 impl Updater {
     fn new(store: Database, cx: &mut Context<Self>) -> Self {
         let setup = (|| {
-            let endpoint = option_env!("MONOCODE_NATIVE_UPDATER_ENDPOINT")
+            let endpoint = option_env!("MOLFAR_NATIVE_UPDATER_ENDPOINT")
                 .filter(|v| !v.is_empty())
                 .ok_or("Automatic updates aren’t configured for this build")?;
-            let key = option_env!("MONOCODE_NATIVE_UPDATER_PUBKEY")
+            let key = option_env!("MOLFAR_NATIVE_UPDATER_PUBKEY")
                 .filter(|v| !v.is_empty())
                 .ok_or("This build has no update verification key")?;
             Config::new(endpoint, key, version())
@@ -219,15 +219,15 @@ impl Updater {
                 }
                 let _ = tx.send_blocking(Progress::Installing);
                 locked(&store)?.save_setting(
-                    "monocode.installedUpdate",
+                    "molfar.installedUpdate",
                     &serde_json::json!({"version": update.version.to_string()}).to_string(),
                 )?;
-                locked(&store)?.save_setting("monocode.nativeReleaseNotes", &serde_json::json!({"version": update.version.to_string(), "body": update.notes}).to_string())?;
+                locked(&store)?.save_setting("molfar.nativeReleaseNotes", &serde_json::json!({"version": update.version.to_string(), "body": update.notes}).to_string())?;
                 update.install(download, &installation)
             })();
             if result.is_err() {
                 let _ = locked(&store)
-                    .and_then(|store| store.save_setting("monocode.installedUpdate", ""));
+                    .and_then(|store| store.save_setting("molfar.installedUpdate", ""));
             }
             gate.lock().unwrap_or_else(|e| e.into_inner()).installing = false;
             result

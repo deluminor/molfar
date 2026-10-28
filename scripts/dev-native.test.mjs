@@ -9,11 +9,11 @@ import { parseDevArgs, startDev } from "./dev-native.mjs";
 
 test("forwards app options and rejects the retired runner flags", () => {
   assert.deepEqual(parseDevArgs([]), { args: [] });
-  assert.deepEqual(parseDevArgs(["--monocode-data", "--cwd", "a project"]), {
-    args: ["--monocode-data", "--cwd", "a project"],
+  assert.deepEqual(parseDevArgs(["--desktop-data", "--cwd", "a project"]), {
+    args: ["--desktop-data", "--cwd", "a project"],
   });
-  assert.deepEqual(parseDevArgs(["--dev-data", "--cwd", "--watch", "--monocode-db", "--bundle"]), {
-    args: ["--dev-data", "--cwd", "--watch", "--monocode-db", "--bundle"],
+  assert.deepEqual(parseDevArgs(["--dev-data", "--cwd", "--watch", "--desktop-db", "--bundle"]), {
+    args: ["--dev-data", "--cwd", "--watch", "--desktop-db", "--bundle"],
   });
   assert.deepEqual(parseDevArgs(["--", "--cwd", "a project"]), {
     args: ["--cwd", "a project"],
@@ -155,8 +155,8 @@ test("coalesces restart requests during a build without launching stale code or 
 test("macOS bundles automatically and preserves the selected data mode for Finder", async (t) => {
   for (const [args, mode] of [
     [[], "dev-data"],
-    [["--monocode-data"], "monocode-data"],
-    [["--monocode-data", "--dev-data", "--cwd", "--monocode-data"], "dev-data"],
+    [["--desktop-data"], "desktop-data"],
+    [["--desktop-data", "--dev-data", "--cwd", "--desktop-data"], "dev-data"],
   ]) {
     await t.test(`${mode}: ${JSON.stringify(args)}`, async (t) => {
       const f = await fixture(t, {}, { platform: "darwin", args });

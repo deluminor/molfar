@@ -1,8 +1,10 @@
 //! Session storage. Desktop launches use Monocode's existing schema directly.
 mod app_access;
+#[cfg(test)]
+mod branding_tests;
+mod desktop_import;
 mod familiars;
 mod managed_sessions;
-mod monocode_import;
 mod notes;
 mod remote;
 mod remote_legacy;
@@ -16,9 +18,9 @@ mod edit;
 mod shared;
 mod side_threads;
 use crate::transcript::{Row, Transcript};
+pub use desktop_import::native_model;
+pub use desktop_import::{desktop_database, ImportReport};
 pub use edit::EditSnapshot;
-pub use monocode_import::native_model;
-pub use monocode_import::{monocode_database, ImportReport};
 use rusqlite::{params, Connection};
 pub use shared::{HistoryPage, PAGE_TURNS};
 pub use side_threads::DesktopSideThread;
@@ -97,7 +99,7 @@ impl Store {
         self.conn.execute("INSERT INTO native_settings(key,value) VALUES('provider-accounts',?1) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [value]).map_err(|e| e.to_string())?;
         Ok(())
     }
-    /// Legacy prototype fixtures. Desktop launches use open_monocode, including
+    /// Legacy prototype fixtures. Desktop launches use open_desktop, including
     /// isolated development launches, so production history needs no conversion.
     pub fn open(path: &Path) -> Result<Self, String> {
         if let Some(parent) = path.parent() {

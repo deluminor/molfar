@@ -120,7 +120,7 @@ mod tests {
     fn whole_project_sidebar_keeps_seven_today_sessions_across_worktrees_lazy(
         cx: &mut TestAppContext,
     ) {
-        let store = Store::open_monocode(std::path::Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
         let mut summaries = Vec::new();
         let mut main = HashSet::new();
         let mut feature = HashSet::new();

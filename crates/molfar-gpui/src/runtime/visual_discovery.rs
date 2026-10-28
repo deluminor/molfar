@@ -84,7 +84,7 @@ mod tests {
                 .as_nanos(),
         ));
         std::fs::create_dir_all(&path).unwrap();
-        let store = Store::open_monocode(&path.join("sessions.db")).unwrap();
+        let store = Store::open_desktop(&path.join("sessions.db")).unwrap();
         (Fixture(path), store)
     }
 

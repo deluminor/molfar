@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn mobile_metadata_keeps_saved_branches_worktrees_models_and_access_without_decoding_history() {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let session = store.create("claude", "/project").unwrap();
         let id = store.persisted_session_id(session.id).unwrap();
         store.conn.execute("UPDATE sessions SET model='claude:opus-5-5[effort=high]',branch='feature/mobile',worktree_cwd='/project-worktrees/mobile',runtime_mode='full-access',model_settings='broken JSON',blocks_json='broken JSON' WHERE id=?1", [&id]).unwrap();

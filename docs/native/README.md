@@ -67,7 +67,7 @@ verification.
 
 ## Data and configuration
 
-Development stores `monocode.db` under:
+Development stores `molfar.db` under:
 
 | Platform | Development directory |
 | --- | --- |
@@ -75,12 +75,12 @@ Development stores `monocode.db` under:
 | Linux | `$XDG_DATA_HOME/Monocode Development/`, or `~/.local/share/Monocode Development/` |
 | Windows | `%LOCALAPPDATA%\Monocode Development\` |
 
-`MONOCODE_NATIVE_DATA_DIR` overrides this development directory.
+`MOLFAR_NATIVE_DATA_DIR` overrides this development directory.
 
-Release builds open `com.monocode.desktop/monocode.db` under macOS Application
+Release builds open `com.molfar.desktop/molfar.db` under macOS Application
 Support, Linux's XDG data directory, or Windows' `%APPDATA%`. The app uses the
 existing desktop schema and session IDs. GPUI preferences are saved beside the
-database in `monocode.db.gpui.sqlite3`.
+database in `molfar.db.native.sqlite3`.
 
 Supported desktop preferences and workspace state are read from the installed
 app's webview localStorage on macOS and Linux. The Windows WebView2 reader is
@@ -119,7 +119,7 @@ A synthetic long-history fixture uses development data and makes no provider
 request:
 
 ```sh
-MONOCODE_NATIVE_DATA_DIR=/tmp/monocode-native-lab npm run native:dev -- --fixture
+MOLFAR_NATIVE_DATA_DIR=/tmp/monocode-native-lab npm run native:dev -- --fixture
 ```
 
 Fixtures are refused with production data. Use a fresh temporary directory when

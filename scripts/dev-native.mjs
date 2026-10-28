@@ -93,9 +93,9 @@ export async function startDev({
         let executable = join(target, "native-dev", platform === "win32" ? "molfar-native.exe" : "molfar-native");
         if (bundle) {
           const dataMode = args.reduce((mode, arg, index) => {
-            if (["--cwd", "--monocode-db"].includes(args[index - 1])) return mode;
+            if (["--cwd", "--desktop-db"].includes(args[index - 1])) return mode;
             if (arg === "--dev-data") return "dev-data";
-            if (arg === "--monocode-data") return "monocode-data";
+            if (arg === "--desktop-data") return "desktop-data";
             return mode;
           }, "dev-data");
           const packaged = await run("bash", ["scripts/bundle-native-macos.sh", "native-dev", target, pkg.version, dataMode]);
@@ -178,7 +178,7 @@ export function parseDevArgs(argv) {
     } else {
       options.args.push(arg);
       // Preserve values even when an app path happens to match a runner flag.
-      if (["--cwd", "--monocode-db"].includes(arg) && index + 1 < argv.length) {
+      if (["--cwd", "--desktop-db"].includes(arg) && index + 1 < argv.length) {
         options.args.push(argv[++index]);
       }
     }

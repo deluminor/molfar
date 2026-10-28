@@ -887,9 +887,9 @@ fn capture_workspace(root: &Path, reference: &str) -> Result<String, String> {
             git_command(root, args)
                 .env("GIT_INDEX_FILE", &index.0)
                 .env("GIT_AUTHOR_NAME", "MonoCode")
-                .env("GIT_AUTHOR_EMAIL", "checkpoint@monocode.local")
+                .env("GIT_AUTHOR_EMAIL", "checkpoint@molfar.local")
                 .env("GIT_COMMITTER_NAME", "MonoCode")
-                .env("GIT_COMMITTER_EMAIL", "checkpoint@monocode.local"),
+                .env("GIT_COMMITTER_EMAIL", "checkpoint@molfar.local"),
         )
     };
     if run_git(root, &["rev-parse", "--verify", "HEAD"]).is_ok() {

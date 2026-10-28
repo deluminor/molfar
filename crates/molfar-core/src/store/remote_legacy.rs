@@ -48,7 +48,7 @@ impl Store {
         let projects = self.remote_projects()?;
         let preferences = self.desktop_preferences();
         let tabs = preferences
-            .and_then(|prefs| prefs.json("monocode.remote-tabs.v2"))
+            .and_then(|prefs| prefs.json("molfar.remote-tabs.v2"))
             .unwrap_or(json!({}));
         let Some(project) = projects
             .values()
@@ -65,7 +65,7 @@ impl Store {
             .map(str::to_owned);
         let cached = session_id.as_ref().and_then(|id| {
             preferences?
-                .json(&format!("monocode.remote-history.v2:{}", project.key))?
+                .json(&format!("molfar.remote-history.v2:{}", project.key))?
                 .as_array()?
                 .iter()
                 .find(|item| item["id"].as_str() == Some(id))
@@ -89,7 +89,7 @@ impl Store {
             let owners = self.legacy_command_owners()?;
             let mut ambiguous = Vec::new();
             let prefix = format!(
-                "monocode.remote-command.v1:{}:",
+                "molfar.remote-command.v1:{}:",
                 json!([remote.project.key, remote.project.environment_id])
             );
             let candidate_creates = preferences
@@ -233,7 +233,7 @@ impl Store {
             return Ok(());
         }
         let prefix = format!(
-            "monocode.remote-command.v1:{}:",
+            "molfar.remote-command.v1:{}:",
             json!([remote.project.key, remote.project.environment_id])
         );
         let mut owners = self.legacy_command_owners()?;
@@ -312,17 +312,14 @@ impl Store {
         };
         let cached = remote.session_id.as_ref().and_then(|host| {
             preferences
-                .json(&format!(
-                    "monocode.remote-history.v2:{}",
-                    remote.project.key
-                ))?
+                .json(&format!("molfar.remote-history.v2:{}", remote.project.key))?
                 .as_array()?
                 .iter()
                 .find(|item| item["id"].as_str() == Some(host))
                 .cloned()
         });
         let pending = preferences
-            .json("monocode.remote-pending-worktrees.v1")
+            .json("molfar.remote-pending-worktrees.v1")
             .and_then(|all| all[&original].as_str().map(str::to_owned));
         let cwd = cached
             .as_ref()
@@ -390,7 +387,7 @@ mod tests {
     const PROJECT: &str = "remote://legacy/home/repo";
 
     fn fixture(path: &Path) -> (i64, String, i64, String) {
-        let store = Store::open_monocode(path).unwrap();
+        let store = Store::open_desktop(path).unwrap();
         let bound = store.local_create("codex", PROJECT).unwrap();
         let blank = store.local_create("claude", PROJECT).unwrap();
         let bound_original = store.persisted_session_id(bound.id).unwrap();
@@ -405,21 +402,21 @@ mod tests {
 
     fn preferences(bound: &str, blank: &str) -> DesktopPreferences {
         let command_key = format!(
-            "monocode.remote-command.v1:{}:pending",
+            "molfar.remote-command.v1:{}:pending",
             json!([PROJECT, "legacy"])
         );
         DesktopPreferences::from_values(&[
             (
-                "monocode.remote-projects.v2",
+                "molfar.remote-projects.v2",
                 json!({PROJECT:{"key":PROJECT,"environmentId":"legacy","projectId":"host-project","cwd":"/home/repo"}}),
             ),
-            ("monocode.remote-tabs.v2", json!({bound:"host-session"})),
+            ("molfar.remote-tabs.v2", json!({bound:"host-session"})),
             (
-                "monocode.remote-pending-worktrees.v1",
+                "molfar.remote-pending-worktrees.v1",
                 json!({bound:"/home/repo-worktrees/old",blank:"/home/repo-worktrees/pending"}),
             ),
             (
-                &format!("monocode.remote-history.v2:{PROJECT}"),
+                &format!("molfar.remote-history.v2:{PROJECT}"),
                 json!([{"id":"host-session","title":"Host title","harness":"codex","cwd":"/home/repo-worktrees/current","updatedAt":123,"pinned":true}]),
             ),
             (
@@ -435,10 +432,10 @@ mod tests {
             .entries()
             .map(|(key, raw)| {
                 let mut value: Value = serde_json::from_str(raw).unwrap();
-                if key.starts_with("monocode.remote-command.v1:") {
+                if key.starts_with("molfar.remote-command.v1:") {
                     value = value["command"].clone();
                 }
-                if ambiguous && key == "monocode.remote-tabs.v2" {
+                if ambiguous && key == "molfar.remote-tabs.v2" {
                     value = json!({});
                 }
                 (key.into(), value)
@@ -458,7 +455,7 @@ mod tests {
         let path = dir.path().join("desktop.db");
         let (_, original, blank, blank_original) = fixture(&path);
         let prefs = Arc::new(bare_preferences(&original, &blank_original, false));
-        let store = Store::open_monocode_with_preferences_for_test(&path, prefs).unwrap();
+        let store = Store::open_desktop_with_preferences_for_test(&path, prefs).unwrap();
         let mut remote = store.remote_session(blank).unwrap().unwrap();
         assert_eq!(remote.outbox.len(), 1);
         assert_eq!(remote.outbox[0]["commandId"], "original-create");
@@ -479,7 +476,7 @@ mod tests {
         let (bound, original, blank, blank_original) = fixture(&path);
         let before = std::fs::read(&path).unwrap();
         let prefs = Arc::new(bare_preferences(&original, &blank_original, true));
-        let store = Store::read_monocode_with_preferences_for_test(&path, prefs).unwrap();
+        let store = Store::read_desktop_with_preferences_for_test(&path, prefs).unwrap();
         for id in [bound, blank] {
             let remote = store.remote_session(id).unwrap().unwrap();
             assert!(remote.outbox.is_empty());
@@ -504,14 +501,14 @@ mod tests {
             .entries()
             .map(|(key, raw)| (key.into(), serde_json::from_str(raw).unwrap()))
             .collect();
-        entries.push((format!("monocode.remote-command.v1:{}:second",json!([PROJECT,"legacy"])),json!({"type":"create","commandId":"second-create","projectId":"host-project","harness":"claude","model":"claude:opus"})));
+        entries.push((format!("molfar.remote-command.v1:{}:second",json!([PROJECT,"legacy"])),json!({"type":"create","commandId":"second-create","projectId":"host-project","harness":"claude","model":"claude:opus"})));
         let prefs = DesktopPreferences::from_values(
             &entries
                 .iter()
                 .map(|(key, value)| (key.as_str(), value.clone()))
                 .collect::<Vec<_>>(),
         );
-        let store = Store::read_monocode_with_preferences_for_test(&path, Arc::new(prefs)).unwrap();
+        let store = Store::read_desktop_with_preferences_for_test(&path, Arc::new(prefs)).unwrap();
         let remote = store.remote_session(blank).unwrap().unwrap();
         assert!(remote.outbox.is_empty());
         let recovery = remote.rejected.unwrap();
@@ -526,7 +523,7 @@ mod tests {
         let (bound, original, blank, blank_original) = fixture(&path);
         let before = std::fs::read(&path).unwrap();
         let prefs = Arc::new(preferences(&original, &blank_original));
-        let store = Store::read_monocode_with_preferences_for_test(&path, prefs.clone()).unwrap();
+        let store = Store::read_desktop_with_preferences_for_test(&path, prefs.clone()).unwrap();
         let rows = store.sessions().unwrap();
         assert_eq!(rows.len(), 2);
         let remote = store.remote_session(bound).unwrap().unwrap();
@@ -560,7 +557,7 @@ mod tests {
         assert!(draft.outbox[1]["sessionId"].is_null());
         assert_eq!(std::fs::read(&path).unwrap(), before);
         assert_eq!(
-            prefs.json("monocode.remote-tabs.v2").unwrap()[original],
+            prefs.json("molfar.remote-tabs.v2").unwrap()[original],
             "host-session"
         );
     }
@@ -571,7 +568,7 @@ mod tests {
         let path = dir.path().join("desktop.db");
         let (bound, original, _, blank_original) = fixture(&path);
         let prefs = Arc::new(preferences(&original, &blank_original));
-        let store = Store::open_monocode_with_preferences_for_test(&path, prefs).unwrap();
+        let store = Store::open_desktop_with_preferences_for_test(&path, prefs).unwrap();
         let project = store.remote_projects().unwrap()[PROJECT].clone();
         let refreshed=store.register_remote_summary(&project,&json!({"id":"host-session","title":"Fresh host title","harness":"codex","updatedAt":456})).unwrap();
         assert_eq!(refreshed.id, bound);

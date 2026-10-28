@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn desktop_preview_never_decodes_blocks_or_model_controls() {
-        let store = Store::open_monocode(Path::new(":memory:")).unwrap();
+        let store = Store::open_desktop(Path::new(":memory:")).unwrap();
         let session = store.create("codex", "/project").unwrap();
         let original = store.persisted_session_id(session.id).unwrap();
         store.conn.execute("UPDATE sessions SET model='codex:gpt-6-sol',model_settings='broken JSON',blocks_json='broken JSON',worktree_cwd='/linked' WHERE id=?1", [original]).unwrap();
