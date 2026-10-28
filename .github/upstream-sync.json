@@ -1,5 +1,5 @@
 {
   "upstream": "https://github.com/hardbeat920/monocode.git",
-  "branch": "main",
-  "syncedCommit": "26465c620977f3951d0a532a0f7db32c3c179007"
+  "branch": "mc/migrate-monocode-to-gpui",
+  "syncedCommit": "9ef156e66957bc1188966e2b8be33d6a33efb972"
 }

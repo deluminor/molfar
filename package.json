@@ -18,10 +18,11 @@
     "pretest:host": "npm run host:build",
     "test:host": "vitest run --config host/vitest.config.ts",
     "check": "npm run check:web && npm run check:rust",
-    "check:web": "vitest run && tsc --noEmit && tsc --noEmit -p tests/browser/tsconfig.json && npm run lint && npm run check:size && npm run check:boundaries && npm run check:moves",
+    "check:web": "vitest run && tsc --noEmit && tsc --noEmit -p tests/browser/tsconfig.json && npm run lint && npm run check:size && npm run check:boundaries && npm run check:moves && npm run check:native-branding",
     "lint": "node scripts/checks/lint.mjs",
     "check:size": "node scripts/checks/file-size.mjs",
     "check:boundaries": "node scripts/checks/boundaries.mjs",
+    "check:native-branding": "node scripts/checks/native-branding.mjs",
     "check:moves": "node scripts/upstream/moves.mjs --check",
     "check:rust": "cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test",
     "set-version": "node scripts/bump-version.mjs",
@@ -31,7 +32,12 @@
     "setup:linux:fedora": "bash scripts/install-linux-deps-fedora.sh",
     "build:linux": "tauri build --bundles deb,appimage && bash scripts/repack-appimage.sh",
     "build:fedora": "tauri build --bundles rpm",
-    "build:windows": "set \"RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-msvc\" && tauri build --bundles nsis"
+    "build:windows": "set \"RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-msvc\" && tauri build --bundles nsis",
+    "native:dev": "node scripts/dev-native.mjs",
+    "native:test:dev": "node --test scripts/dev-native.test.mjs scripts/bundle-native-macos.test.mjs scripts/native-dependencies.test.mjs scripts/native-release.test.mjs scripts/package-native.test.mjs scripts/native-brand-assets.test.mjs",
+    "native:build": "node scripts/build-native.mjs",
+    "native:test": "cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core --profile native-dev && cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --profile native-dev -- --test-threads=1",
+    "native:check": "npm run native:test:dev && cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all --check && cargo clippy --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core -p molfar-gpui --all-targets --profile native-dev -- -D warnings && npm run native:test"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

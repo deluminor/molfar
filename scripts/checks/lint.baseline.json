@@ -1398,12 +1398,15 @@
   "src/features/settings/ui/quick-composer-shortcut-editor.test.ts": {
     "lint/style/noNonNullAssertion": 10
   },
+  "src/features/settings/ui/Segmented.tsx": {
+    "lint/a11y/useSemanticElements": 1
+  },
   "src/features/settings/ui/settings-view.test.ts": {
     "lint/style/noNonNullAssertion": 73
   },
   "src/features/settings/ui/SettingsView.tsx": {
     "lint/a11y/noAutofocus": 2,
-    "lint/a11y/useSemanticElements": 2,
+    "lint/a11y/useSemanticElements": 1,
     "lint/complexity/useOptionalChain": 1,
     "lint/correctness/useExhaustiveDependencies": 8,
     "lint/correctness/useHookAtTopLevel": 2,

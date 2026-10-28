@@ -1,6 +1,8 @@
 {
   "refactorBase": "4995f498d49a8e38d4dc2b1430cd3d21f9ddf1ef",
   "renames": {
+    "crates/monocode-core/src/store/monocode_import.rs": "crates/molfar-core/src/store/desktop_import.rs",
+    "crates/monocode-gpui/assets/monocode.png": "crates/molfar-gpui/assets/molfar.png",
     "docs/architecture/vatra-system.archify.html": "docs/architecture/molfar-system.archify.html",
     "docs/architecture/vatra-system.architecture.json": "docs/architecture/molfar-system.architecture.json",
     "docs/architecture/vatra-system.html": "docs/architecture/molfar-system.html",
@@ -2426,6 +2428,12 @@
           "Connections section body (ConnectionsSettings + MobileSettings)"
         ],
         "target": "src/features/settings/ui/ConnectionsPage.tsx"
+      },
+      {
+        "names": [
+          "Segmented"
+        ],
+        "target": "src/features/settings/ui/Segmented.tsx"
       }
     ],
     "src/features/source-control/model/worktrees.ts": [
@@ -2526,6 +2534,26 @@
         ],
         "target": "src/styles/composer-frost.css"
       }
+    ],
+    "scripts/package-native.mjs": [
+      {
+        "names": [
+          "root",
+          "previewVersion",
+          "run",
+          "runStapler",
+          "logicalBytes",
+          "notices",
+          "linuxTree"
+        ],
+        "target": "scripts/package-native-support.mjs"
+      },
+      {
+        "names": [
+          "macOS branch of packageNative (bundle, sign, notarize, DMG) as packageMacos"
+        ],
+        "target": "scripts/package-native-macos.mjs"
+      }
     ]
   },
   "removed": {
@@ -2561,6 +2589,9 @@
     "src/features/usage/model/usageFetch.ts": "Hardening B4: renamed toward src/features/usage/model/usage-fetch.ts then deleted.",
     "src/features/notes/ui/index.ts": "Hardening B4: knip-confirmed unused barrel (874e7aa5).",
     "src/features/sessions/ui/ModelSettings.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
-    "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5)."
+    "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
+    ".github/workflows/native-release.yml": "MOLFAR-owned release: MonoCode native preview publishing (R2 feed, signing secrets) stays out; MOLFAR releases ship only through release.yml.",
+    "docs/agent-access.md": "MOLFAR does not carry this upstream doc; agent API behavior is documented in MOLFAR's own docs.",
+    "docs/building.md": "MOLFAR does not carry this upstream doc; build steps live in README.md (Development, MOLFAR Native preview) and docs/native/README.md."
   }
 }
