@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.21] - 2026-10-28
+
 ### Added
 
 - **Phone pairing** in **Settings → Connections → Your phones** lets you browse projects and conversations, start and continue sessions, follow replies as they arrive, stop responses, browse files, and view code changes from the MOLFAR mobile app. The app is a preview you must build separately; it is not yet available in app stores. Approvals and agent questions still require the desktop.
@@ -485,7 +487,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.20...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.21...HEAD
+[1.0.21]: https://github.com/deluminor/molfar/compare/v1.0.20...v1.0.21
 [1.0.20]: https://github.com/deluminor/molfar/compare/v1.0.19...v1.0.20
 [1.0.19]: https://github.com/deluminor/molfar/compare/v1.0.18...v1.0.19
 [1.0.18]: https://github.com/deluminor/molfar/compare/v1.0.17...v1.0.18
