@@ -1,6 +1,8 @@
 {
   "refactorBase": "4995f498d49a8e38d4dc2b1430cd3d21f9ddf1ef",
   "renames": {
+    "crates/monocode-core/src/store/monocode_import.rs": "crates/molfar-core/src/store/desktop_import.rs",
+    "crates/monocode-gpui/assets/monocode.png": "crates/molfar-gpui/assets/molfar.png",
     "docs/architecture/vatra-system.archify.html": "docs/architecture/molfar-system.archify.html",
     "docs/architecture/vatra-system.architecture.json": "docs/architecture/molfar-system.architecture.json",
     "docs/architecture/vatra-system.html": "docs/architecture/molfar-system.html",

@@ -19,7 +19,7 @@ You are running the weekly GPUI upstream sync for MOLFAR (`deluminor/molfar`), a
 - `origin/main` — MOLFAR's product branch, protected, PR-only. You never push to it.
 - `.github/upstream-sync.json` **on the GPUI branch**: `branch` is `mc/migrate-monocode-to-gpui`, and `syncedCommit` is the last GPUI-ref commit whose changes are in the GPUI branch. `main` has its own copy of this file that tracks `upstream/main`. The two are independent.
 - MOLFAR shares **no commits** with MonoCode. Upstream changes arrive only as **patches** through `apply.mjs`, never as merges.
-- The native app lives in `crates/molfar-core`, `crates/molfar-gpui`, `crates/mobile-link` and `vendor/gpui-pre*`, plus the bundle scripts `scripts/native-editor`, `scripts/native-settings`, `scripts/*native*.mjs`. The React/Tauri app stays the production app. Until parity group M01 (branding and isolation) lands, native crate names and app ids still use `monocode-*`. Do not rename those as part of a sync.
+- The native app lives in `crates/molfar-core`, `crates/molfar-gpui`, `crates/mobile-link` and `vendor/gpui-pre*`, plus the bundle scripts `scripts/native-editor`, `scripts/native-settings`, `scripts/*native*.mjs`. The React/Tauri app stays the production app. Native crate names are `molfar-core` and `molfar-gpui`; the binary is `molfar-native` and app id is `com.molfar.native`. Preserve these names. Cargo manifests are verbatim: fix crate names and path dependencies by hand after applying a patch.
 
 ## Goal
 1. Keep the GPUI branch current with `main`.
@@ -134,11 +134,13 @@ MOLFAR's structure differs from MonoCode's in several ways:
 - Product name and branding (`MOLFAR` must not regress to `MonoCode` in the React app or in native user-facing text), `README.md`, `NOTICE`, `LICENSE`. Upstream README sections that promote MonoCode are not taken. Upstream native docs content goes into MOLFAR's README "MOLFAR Native preview" section or `docs/native/`, with MOLFAR naming.
 - `mobile/assets/` artwork and the Expo account fields in `mobile/app.json` (`owner`, `extra.eas`, `updates`).
 - **Router port mapping is opt-in only.**
-  - Native app: UPnP/NAT-PMP (`crates/molfar-core/src/mobile/router.rs`, `igd-next`, `natpmp`) is allowed only behind the user's own **Open the router port automatically** toggle, and that toggle must be off by default. Keep `open_router: false` in `Config::default()` and keep `router_port_mapping_stays_off_until_the_user_turns_it_on` in `crates/molfar-core/src/mobile/host.rs`. If an upstream hunk turns mapping on by default, maps ports without the toggle, or adds another automatic mapping path, drop that part and list it under **Breaking / attention**.
+  - Native app: UPnP/NAT-PMP (`crates/molfar-core/src/mobile/router.rs`, `igd-next`, `natpmp`) is allowed only behind the user's own **Open the router port automatically** toggle, and that toggle must be off by default. Keep `Config::default().open_router == false` and keep `router_port_mapping_stays_off_until_the_user_turns_it_on` in `crates/molfar-core/src/mobile/host.rs`. If an upstream hunk turns mapping on by default, maps ports without the toggle, or adds another automatic mapping path, drop that part and list it under **Breaking / attention**.
   - Tauri app: MOLFAR removed router mapping (`src-tauri/src/mobile_router.rs`, `open_router`/`router_*` in `src-tauri/src/mobile_access/`, crates `igd-next`/`natpmp`/`attohttpc`). Drop those hunks. `no_router_port_mapping_crates_are_built` in `src-tauri/src/mobile_access/tests.rs` guards it.
 - MOLFAR's native adaptations that a sync must not undo:
+  - native identity `com.molfar.native` (`.dev` for development), binary `molfar-native`, shared `com.molfar.desktop/molfar.db`, isolated native development data, and `.native.sqlite3` metadata;
+  - desktop store APIs/flags (`desktop_database`, `open_desktop`, `--desktop-data`, `--desktop-db`) and an unconfigured native updater feed;
   - router mapping off by default (see above);
-  - the `monocode-mobile-link = { package = "molfar-mobile-link", … }` alias in `crates/molfar-core/Cargo.toml`;
+  - the direct `molfar-mobile-link` dependency in `crates/molfar-core/Cargo.toml`;
   - the `*b"MLFR"` Carbon hotkey signature;
   - kebab-case import paths in `scripts/native-editor/` and `scripts/native-settings/`;
   - the vitest exclusion of `scripts/*native*.test.mjs`;
@@ -227,13 +229,12 @@ Then:
 ```bash
 git diff origin/migration/gpui-into-main -U0 | grep -E '^\+' | grep -v '^+++' | grep -iE 'monocode|usemono|\bmono\b'
 ```
-Fix product identifiers and user-facing text:
+Any added `monocode` or `usemono` outside the legal/upstream-link allowlist is a defect. Run `node scripts/checks/native-branding.mjs`. Fix product identifiers and user-facing text:
 - React app: `monocode.*` storage keys → `molfar.*`, `monocode:*` events → `molfar:*`, `MonoCode` UI text and component names → MOLFAR.
 - Native user-facing text (window titles, menus, notifications, settings copy, error hints): MonoCode → MOLFAR wherever the branch already shows MOLFAR for the same surface. Check how the same string appears in `origin/migration/gpui-into-main`, and in the React source when a native test compares them (for example `hints_match_the_react_source`).
 - Mono → Familiar renames that upstream code brought in unrenamed. The opposite also happens: check that the rename map did not change a fixed-size or wire value. Byte literals like `*b"…"` (Carbon FourCharCodes are exactly 4 bytes), protocol ids, persisted keys, and serialized enum tags must keep their length and meaning. Check with `cargo check`, and grep the added lines for `b"` literals.
 
 Leave these alone:
-- Native crate names, binary names, bundle ids (`monocode-core`, `monocode-gpui`, `dev.usemono.gpui`) and native data paths, until parity group M01 renames them. Do not do M01 inside a sync.
 - Copyright lines, license texts and attribution notices.
 - Upstream issue/PR links in comments.
 - Code that intentionally handles legacy MonoCode data.
@@ -258,7 +259,7 @@ Inspect at least:
 - `git log --oneline "$SYNCED".."$GPUI"`
 - `git diff --stat "$SYNCED" "$GPUI"`
 - `git diff "$SYNCED" "$GPUI" -- CHANGELOG.md docs/native/` (upstream's own notes, which you verify against the code)
-- Meaningful diffs: native UI and behavior, `monocode-core` contracts (sessions, providers, transcript, remote, mobile, store), React changes that ride along, settings defaults, data paths, build and packaging. Skip formatting-only and lockfile-only noise.
+- Meaningful diffs: native UI and behavior, `molfar-core` contracts (sessions, providers, transcript, remote, mobile, store), React changes that ride along, settings defaults, data paths, build and packaging. Skip formatting-only and lockfile-only noise.
 
 #### 6a. Notes format (the #127 comment)
 ```markdown

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { KEEP_PHRASES } from "./rename-map.mjs";
+import { KEEP_PHRASES, RENAMES } from "./rename-map.mjs";
 import { countTokens, createRenamer, renameToken as renameWith } from "./rename-upstream.mjs";
 
 const renameToken = (token, renames) => renameWith(token, renames, KEEP_PHRASES);
 
-const RENAMES = [{ from: "mono", to: "familiar" }];
+
 
 function renamer(paths, tree = "") {
   return createRenamer({
@@ -27,7 +27,7 @@ describe("renameToken", () => {
   });
 
   it("leaves words that only start with the source word", () => {
-    for (const word of ["monospace", "monocode", "MonoCode", "monotonic", "MONOCHROME", "Monokai", "monosyllable"]) {
+    for (const word of ["monospace", "monotonic", "MONOCHROME", "Monokai", "monosyllable"]) {
       expect(renameToken(word, RENAMES)).toBe(word);
     }
   });
@@ -75,11 +75,11 @@ describe("translate", () => {
     );
   });
 
-  it("keeps protected words inside rewritten imports", () => {
+  it("renames mixed-case brand identifiers inside rewritten imports", () => {
     const { translate } = renamer(paths);
     const text = 'import { monoCodeSummary } from "./monoCodeToolCall";\n';
 
-    expect(translate(text, { fromFile: "src/app/App.tsx", toFile: "src/app/App.tsx" })).toBe(text);
+    expect(translate(text, { fromFile: "src/app/App.tsx", toFile: "src/app/App.tsx" })).toBe('import { molfarSummary } from "./molfarToolCall";\n');
   });
 
   it("re-relativizes imports when the importing file moved", () => {
@@ -125,5 +125,32 @@ describe("translate", () => {
     expect(translate('title="Open Mono settings"', { fromFile: "a.tsx", toFile: "a.tsx" })).toBe(
       'title="Open Familiar settings"',
     );
+  });
+});
+
+
+describe("native branding", () => {
+  it("does not infer runtime branding from a preserved upstream URL", () => {
+    const r = renamer([]);
+    expect(r.translate('"monocode"', {fromFile: "x.rs", toFile: "x.rs", fileText: "https://github.com/hardbeat920/monocode/pull/1"})).toBe('"molfar"');
+    expect(r.translate("--monocode-db PATH open_monocode monocode_database", {fromFile: "x.rs", toFile: "x.rs"})).toBe("--desktop-db PATH open_desktop desktop_database");
+  });
+  it("follows existing file spelling for standalone brand and type tokens", () => {
+    const r = renamer([]);
+    expect(r.translate('"Monocode Native"', {fromFile: "x.rs", toFile: "x.rs", fileText: '"MOLFAR Native"'})).toBe('"MOLFAR Native"');
+    expect(r.translate("struct MonoCode;", {fromFile: "x.rs", toFile: "x.rs", fileText: "struct Molfar;"})).toBe("struct Molfar;");
+  });
+  it("translates crate paths and all brand case forms before familiar names", () => {
+    const r = renamer(["crates/molfar-core/src/store.rs"]);
+    expect(r.mapPath("crates/monocode-core/src/new.rs")).toBe("crates/molfar-core/src/new.rs");
+    const translate = (text) => r.translate(text, { fromFile: "x.rs", toFile: "x.rs" });
+    expect(translate('"Monocode Native" "MonoCode"')).toBe('"MOLFAR Native" "MOLFAR"');
+    expect(translate("MonocodeArtifactClip MonoCodeCallRow MONOCODE_APP_TOKEN monocode_core::store monocode-gpui MONOCODE_X Monocode"))
+      .toBe("MolfarArtifactClip MolfarCallRow MOLFAR_APP_TOKEN molfar_core::store molfar-gpui MOLFAR_X MOLFAR");
+  });
+  it("preserves legal attribution, issue references and upstream links", () => {
+    const r = renamer([]);
+    const source = 'MOLFAR is derived from MonoCode.\nCopyright MonoCode\nSPDX-License-Identifier: MIT\nMonoCode #1142\nhttps://github.com/hardbeat920/monocode/pull/1142';
+    expect(r.translate(source, {fromFile: "x.rs", toFile: "x.rs"})).toBe(source);
   });
 });
