@@ -79,7 +79,7 @@ cat > "$native_bundle/Contents/Info.plist" <<PLIST
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
-native_identity="${MONOCODE_NATIVE_SIGNING_IDENTITY:--}"
+native_identity="${MOLFAR_NATIVE_SIGNING_IDENTITY:--}"
 if [ "$native_identity" = - ]; then
   codesign --force --sign - "$native_bundle"
 else

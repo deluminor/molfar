@@ -608,11 +608,7 @@ impl Conversation {
             stopping: false,
             notification_cancelled: false,
             draft_hint: false,
-            model: std::env::var(format!(
-                "MONOCODE_{}_MODEL",
-                summary.provider.to_uppercase()
-            ))
-            .ok(),
+            model: std::env::var(format!("MOLFAR_{}_MODEL", summary.provider.to_uppercase())).ok(),
             resolved_model: None,
             settings: Settings {
                 account,
@@ -1937,7 +1933,7 @@ impl Conversation {
             }
             return;
         }
-        if std::env::var_os("MONOCODE_NATIVE_TRACE").is_some() {
+        if std::env::var_os("MOLFAR_NATIVE_TRACE").is_some() {
             eprintln!("native settings session={} action={id}", self.summary.id);
         }
         if let Some(mode) = id.strip_prefix("access:") {
@@ -2144,7 +2140,7 @@ impl Conversation {
             return false;
         }
         let changed_model = self.summary.provider != picked.0.id() || self.model != picked.1;
-        if std::env::var_os("MONOCODE_NATIVE_TRACE").is_some() {
+        if std::env::var_os("MOLFAR_NATIVE_TRACE").is_some() {
             eprintln!(
                 "native model session={} provider={} model={:?}",
                 self.summary.id,

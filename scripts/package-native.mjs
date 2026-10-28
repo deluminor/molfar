@@ -156,6 +156,6 @@ if (
     binary,
     out,
     arch,
-    version: process.env.MONOCODE_NATIVE_VERSION,
+    version: process.env.MOLFAR_NATIVE_VERSION,
   });
 }

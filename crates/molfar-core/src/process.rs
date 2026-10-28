@@ -48,7 +48,7 @@ unsafe extern "C" {
 /// New native provider processes use a separate group for cancellation.
 pub fn isolate(command: &mut Command) {
     configure_child(command);
-    command.env("MONOCODE_HARNESS_PARENT", std::process::id().to_string());
+    command.env("MOLFAR_HARNESS_PARENT", std::process::id().to_string());
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
@@ -195,7 +195,7 @@ mod tests {
     use super::*;
     #[test]
     fn provider_child_does_not_inherit_executor_signal_mask() {
-        const CHILD: &str = "MONOCODE_SIGNAL_REGRESSION_CHILD";
+        const CHILD: &str = "MOLFAR_SIGNAL_REGRESSION_CHILD";
         unsafe {
             let mut mask = std::mem::zeroed();
             libc::pthread_sigmask(libc::SIG_SETMASK, std::ptr::null(), &mut mask);

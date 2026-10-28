@@ -54,7 +54,6 @@ def main():
         if args.profile:
             transport_test.extend(["--profile", profile])
         build_hint = "cargo build --bin molfar" + (f" --profile {profile}" if args.profile else "")
-    env_prefix = "MONOCODE" if args.native else "MOLFAR"
     desktop = desktop.resolve()
     if not desktop.is_file():
         raise RuntimeError(f"Run {build_hint} first, or pass --desktop with an existing build")
@@ -106,7 +105,7 @@ def main():
                 print("Native askpass verified the disposable SSH host fingerprint.")
             host("start")
             device = json.loads(host("pair", "--name", "Loopback test", "--json"))
-            env = {**os.environ, f"{env_prefix}_TEST_SSH_TARGET": f"{pwd.getpwuid(os.getuid()).pw_name}@127.0.0.1", f"{env_prefix}_TEST_SSH_PORT": str(ssh_port), f"{env_prefix}_TEST_HOST_PORT": str(host_port), f"{env_prefix}_TEST_SSH_KEY": str(folder / "client"), f"{env_prefix}_TEST_KNOWN_HOSTS": str(folder / "known_hosts"), f"{env_prefix}_TEST_TOKEN": device["token"], f"{env_prefix}_TEST_ENVIRONMENT": device["environmentId"]}
+            env = {**os.environ, f"MOLFAR_TEST_SSH_TARGET": f"{pwd.getpwuid(os.getuid()).pw_name}@127.0.0.1", f"MOLFAR_TEST_SSH_PORT": str(ssh_port), f"MOLFAR_TEST_HOST_PORT": str(host_port), f"MOLFAR_TEST_SSH_KEY": str(folder / "client"), f"MOLFAR_TEST_KNOWN_HOSTS": str(folder / "known_hosts"), f"MOLFAR_TEST_TOKEN": device["token"], f"MOLFAR_TEST_ENVIRONMENT": device["environmentId"]}
             subprocess.run([*transport_test, "--", "--ignored"], cwd=ROOT, env=env, check=True)
             assert json.loads(host("connection-info"))["port"] == host_port
             print("Packaged host survived both native SSH tunnel closures.")

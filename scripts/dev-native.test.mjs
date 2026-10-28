@@ -118,7 +118,7 @@ test("manual restart keeps the app on a failed build and shuts it down after a s
   assert.deepEqual(f.calls.find((call) => call.args[0] === "build").args, ["build", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "-p", "molfar-gpui", "--bin", "molfar-native", "--profile", "native-dev"]);
   const launch = f.calls.find((call) => call.command !== "cargo");
   assert.ok(launch.command.startsWith(join(f.root, "custom-target")));
-  assert.equal(launch.options.env.MONOCODE_DEV_RELOAD, "1");
+  assert.equal(launch.options.env.MOLFAR_DEV_RELOAD, "1");
   assert.deepEqual(launch.args, ["--dev-data", "--cwd", "a project with spaces"]);
 
   await writeFile(join(f.root, "fail-build"), "");

@@ -10,8 +10,8 @@ use std::sync::{
 };
 use std::time::Duration;
 
-const ADDRESS: &str = "MONOCODE_SSH_ASKPASS_ADDRESS";
-const SECRET: &str = "MONOCODE_SSH_ASKPASS_SECRET";
+const ADDRESS: &str = "MOLFAR_SSH_ASKPASS_ADDRESS";
+const SECRET: &str = "MOLFAR_SSH_ASKPASS_SECRET";
 
 #[derive(Serialize, Deserialize)]
 struct Request {

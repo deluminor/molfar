@@ -17,10 +17,10 @@ use std::{
 
 const MAX_WIRE_BYTES: usize = 1_048_576;
 const MAX_SOURCE_BYTES: usize = visual::MAX_SOURCE_BYTES;
-const ENV_ENDPOINT: &str = "MONOCODE_VISUAL_ENDPOINT";
-const ENV_TOKEN: &str = "MONOCODE_VISUAL_TOKEN";
-const ENV_SESSION: &str = "MONOCODE_VISUAL_SESSION";
-const ENV_EXECUTABLE: &str = "MONOCODE_VISUAL_EXECUTABLE";
+const ENV_ENDPOINT: &str = "MOLFAR_VISUAL_ENDPOINT";
+const ENV_TOKEN: &str = "MOLFAR_VISUAL_TOKEN";
+const ENV_SESSION: &str = "MOLFAR_VISUAL_SESSION";
+const ENV_EXECUTABLE: &str = "MOLFAR_VISUAL_EXECUTABLE";
 
 /// Loaded through visual_docs or the CLI only when authoring a visual. Keep the
 /// SDK out of ordinary prompts, server instructions and tool descriptions.

@@ -11298,7 +11298,7 @@ mod tests {
             .unwrap();
         cx.run_until_parked();
         // Pin → Rename → Copy session ID, open it, then skip the harness ID
-        // (this session has none) for the MonoCode one.
+        // (this session has none) for the MOLFAR one.
         cx.simulate_keystrokes(window.into(), "down down right down enter");
         cx.run_until_parked();
         window

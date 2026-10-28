@@ -127,7 +127,7 @@ fn paragraph(text: impl Into<SharedString>) -> Div {
 fn remove_machine(remote: &Connections, machine: Machine, revoke: bool) -> Result<Machine, String> {
     if revoke {
         remote.request(&machine.id, "devices.revokeSelf", json!({})).map_err(|reason| format!(
-            "Could not revoke access, so {} was not removed: {reason}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with monocode-host devices and monocode-host revoke <device-id>.", machine.name
+            "Could not revoke access, so {} was not removed: {reason}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with molfar-host devices and molfar-host revoke <device-id>.", machine.name
         ))?;
     }
     remote.disconnect(&machine.id)?;
@@ -946,7 +946,7 @@ impl SettingsView {
             .child(div().text_size(px(13.)).font_weight(FontWeight::MEDIUM).child(format!("Remove {} from this desktop?", machine.name)))
             .child(paragraph("This closes this desktop’s connection to the machine. It does not stop the host, and its sessions keep running and stay on that machine. You can add it again later."))
             .child(paragraph("Removing alone leaves this desktop’s credential valid on the host. Revoke access to invalidate it first; the machine must be reachable."))
-            .child(paragraph("To stop the host and turn off its background service, run ~/.monocode-host/bin/monocode-host service uninstall on that machine (%USERPROFILE%\\.monocode-host\\bin\\monocode-host.cmd service uninstall on Windows). Its sessions and history are kept."))
+            .child(paragraph("To stop the host and turn off its background service, run ~/.molfar-host/bin/molfar-host service uninstall on that machine (%USERPROFILE%\\.molfar-host\\bin\\molfar-host.cmd service uninstall on Windows). Its sessions and history are kept."))
             .child(div().flex().flex_wrap().gap_2()
                 .child(secondary_button("revoke-remove-machine", "Revoke access and remove", true, disabled).child("Revoke access and remove")
                     .on_click(cx.listener(move |this, _, _, cx| this.remove_connection(revoke_machine.clone(), true, cx))))

@@ -33,12 +33,12 @@ for line in sys.stdin:
         assert value['params']['input'] == [{'type': 'text', 'text': 'Show a native visual'}], 'Visual discovery must not alter the user prompt'
         send({'method': 'item/agentMessage/delta', 'params': {'itemId': 'before', 'delta': 'Before the visual.'}})
         time.sleep(0.05)
-        address, port = os.environ['MONOCODE_VISUAL_ENDPOINT'].rsplit(':', 1)
+        address, port = os.environ['MOLFAR_VISUAL_ENDPOINT'].rsplit(':', 1)
         with socket.create_connection((address, int(port)), timeout=4) as connection:
             connection.settimeout(4)
             request = {
-                'session': int(os.environ['MONOCODE_VISUAL_SESSION']),
-                'token': os.environ['MONOCODE_VISUAL_TOKEN'],
+                'session': int(os.environ['MOLFAR_VISUAL_SESSION']),
+                'token': os.environ['MOLFAR_VISUAL_TOKEN'],
                 'request_id': 'runtime-integration-request',
                 'document': {
                     'id': 'runtime-native', 'title': 'Native result',

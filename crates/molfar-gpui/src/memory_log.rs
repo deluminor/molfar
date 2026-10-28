@@ -1,13 +1,13 @@
-//! A memory readout for profiling: launched with `MONOCODE_MEMORY_LOG=<file>`,
+//! A memory readout for profiling: launched with `MOLFAR_MEMORY_LOG=<file>`,
 //! the app appends its footprint and GPU usage to that file every 10 seconds.
-//! `open --env MONOCODE_MEMORY_LOG=/tmp/monocode-memory.log "MOLFAR Native.app"`
+//! `open --env MOLFAR_MEMORY_LOG=/tmp/monocode-memory.log "MOLFAR Native.app"`
 use gpui::App;
 use std::{io::Write, time::Duration};
 
 const PERIOD: Duration = Duration::from_secs(10);
 
 pub(crate) fn start(cx: &mut App) {
-    let Some(path) = std::env::var_os("MONOCODE_MEMORY_LOG") else {
+    let Some(path) = std::env::var_os("MOLFAR_MEMORY_LOG") else {
         return;
     };
     let executor = cx.background_executor().clone();

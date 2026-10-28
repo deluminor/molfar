@@ -23,7 +23,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
     {
       env: {
         ...process.env,
-        MONOCODE_NATIVE_SIGNING_IDENTITY:
+        MOLFAR_NATIVE_SIGNING_IDENTITY:
           process.env.APPLE_SIGNING_IDENTITY || "",
       },
     },

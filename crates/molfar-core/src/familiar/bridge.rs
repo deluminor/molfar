@@ -115,9 +115,9 @@ impl Server {
     }
     pub fn environment(&self, session: i64) -> HashMap<String, String> {
         HashMap::from([
-            ("MONOCODE_APP_ENDPOINT".into(), self.endpoint.clone()),
-            ("MONOCODE_APP_TOKEN".into(), token(&self.secret, session)),
-            ("MONOCODE_APP_SESSION".into(), session.to_string()),
+            ("MOLFAR_APP_ENDPOINT".into(), self.endpoint.clone()),
+            ("MOLFAR_APP_TOKEN".into(), token(&self.secret, session)),
+            ("MOLFAR_APP_SESSION".into(), session.to_string()),
         ])
     }
 }
@@ -221,15 +221,15 @@ pub fn client(args: &[String]) -> Result<Value, String> {
             _ => return Err(format!("Unknown app argument: {arg}")),
         }
     }
-    let endpoint: SocketAddr = std::env::var("MONOCODE_APP_ENDPOINT")
+    let endpoint: SocketAddr = std::env::var("MOLFAR_APP_ENDPOINT")
         .map_err(|_| "App access is unavailable outside a Familiar's provider process")?
         .parse()
         .map_err(|_| "Invalid app endpoint")?;
     if !endpoint.ip().is_loopback() {
         return Err("App access requires a local endpoint".into());
     }
-    let token = std::env::var("MONOCODE_APP_TOKEN").map_err(|_| "App capability missing")?;
-    let session = std::env::var("MONOCODE_APP_SESSION")
+    let token = std::env::var("MOLFAR_APP_TOKEN").map_err(|_| "App capability missing")?;
+    let session = std::env::var("MOLFAR_APP_SESSION")
         .map_err(|_| "App session missing")?
         .parse()
         .map_err(|_| "Invalid app session")?;
@@ -294,8 +294,8 @@ mod capability_tests {
     #[test]
     fn capability_is_bound_to_its_session_and_only_authenticated_calls_reach_the_app() {
         let (server, rx) = Server::start().unwrap();
-        let credential = server.environment(7)["MONOCODE_APP_TOKEN"].clone();
-        assert_ne!(credential, server.environment(8)["MONOCODE_APP_TOKEN"]);
+        let credential = server.environment(7)["MOLFAR_APP_TOKEN"].clone();
+        assert_ne!(credential, server.environment(8)["MOLFAR_APP_TOKEN"]);
         assert!(send(&server, 8, credential.clone())
             .join()
             .unwrap()

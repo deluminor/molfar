@@ -50,7 +50,7 @@ enum Progress {
 }
 
 pub(crate) fn version() -> &'static str {
-    option_env!("MONOCODE_NATIVE_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"))
+    option_env!("MOLFAR_NATIVE_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"))
 }
 pub(crate) fn shared(store: Database, cx: &mut App) -> Entity<Updater> {
     if let Some(shared) = cx.try_global::<Shared>() {

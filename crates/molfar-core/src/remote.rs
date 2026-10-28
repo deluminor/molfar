@@ -319,7 +319,7 @@ impl Connections {
                 .bytes()
                 .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
         {
-            return Err("Enter the device token issued by monocode-host pair".into());
+            return Err("Enter the device token issued by molfar-host pair".into());
         }
         let descriptor = rpc(
             &endpoint,
@@ -514,7 +514,7 @@ impl Connections {
                 let mut machine = if let Some(mut existing) = existing {
                     if upgrade {
                         let platform = ssh::detect_platform(&target, &job, &askpass)?;
-                        job.message("Updating MonoCode Host on the machine…");
+                        job.message("Updating MOLFAR Host on the machine…");
                         let output = ssh::run_script(
                             &target,
                             platform,
@@ -537,7 +537,7 @@ impl Connections {
                     existing
                 } else {
                     let platform = ssh::detect_platform(&target, &job, &askpass)?;
-                    job.message("Installing or starting MonoCode Host…");
+                    job.message("Installing or starting MOLFAR Host…");
                     let output = ssh::run_script(
                         &target,
                         platform,

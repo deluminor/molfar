@@ -466,13 +466,13 @@ fn built_node_host_round_trip_preserves_native_wire_commands() {
         process::{Command, Stdio},
     };
     let directory = Directory::new();
-    let cli = std::env::var_os("MONOCODE_TEST_HOST_BINARY")
+    let cli = std::env::var_os("MOLFAR_TEST_HOST_BINARY")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../build/host/monocode-host.mjs")
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../build/host/molfar-host.mjs")
         });
     assert!(cli.is_file(), "Run npm run host:build first");
-    let node = std::env::var("MONOCODE_TEST_NODE").unwrap_or_else(|_| "node".into());
+    let node = std::env::var("MOLFAR_TEST_NODE").unwrap_or_else(|_| "node".into());
     let bin = directory.0.join("bin");
     std::fs::create_dir_all(&bin).unwrap();
     let provider = bin.join("codex");

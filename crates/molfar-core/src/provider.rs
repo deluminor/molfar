@@ -143,7 +143,7 @@ pub fn resolve(kind: Kind) -> Option<PathBuf> {
     resolve_auto(kind)
 }
 pub fn resolve_auto(kind: Kind) -> Option<PathBuf> {
-    let key = format!("MONOCODE_{}_BINARY", kind.id().to_uppercase());
+    let key = format!("MOLFAR_{}_BINARY", kind.id().to_uppercase());
     if let Some(path) = std::env::var_os(key).filter(|s| !s.is_empty()) {
         return Some(path.into());
     }
@@ -1362,7 +1362,7 @@ fn run_operation(
         && !request.settings.text_only)
         .then(lifecycle::claude_session_id);
     #[cfg(unix)]
-    if std::env::var_os("MONOCODE_NATIVE_TRACE").is_some() {
+    if std::env::var_os("MOLFAR_NATIVE_TRACE").is_some() {
         unsafe {
             let mut signals = std::mem::zeroed();
             libc::pthread_sigmask(libc::SIG_SETMASK, std::ptr::null(), &mut signals);
@@ -1638,7 +1638,7 @@ fn run_operation(
                         }
                         Err(e) => return Err(format!("Invalid provider JSON: {e}")),
                     };
-                    if std::env::var_os("MONOCODE_NATIVE_TRACE").is_some() {
+                    if std::env::var_os("MOLFAR_NATIVE_TRACE").is_some() {
                         let method = value["method"].as_str().unwrap_or("");
                         let item = &value["params"]["item"];
                         if !method.is_empty()

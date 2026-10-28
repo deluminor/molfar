@@ -111,7 +111,7 @@ export async function startDev({
         if (closing) return;
         if (builtRevision !== revision) continue;
         const next = launch(executable, args, {
-          env: { ...buildEnv, MONOCODE_DEV_RELOAD: "1" },
+          env: { ...buildEnv, MOLFAR_DEV_RELOAD: "1" },
           stdio: ["pipe", "inherit", "inherit"],
           // Ctrl+C reaches the runner, which lets the app run its quit hooks.
           detached: platform !== "win32",
