@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const guard = new URL("../crates/monocode-gpui/dependency_guard.rs", import.meta.url);
+const guard = new URL("../crates/molfar-gpui/dependency_guard.rs", import.meta.url);
 // The first Cargo build on a fresh Windows runner can exceed one minute.
 const cargoTimeout = process.platform === "win32" ? 180_000 : 60_000;
 

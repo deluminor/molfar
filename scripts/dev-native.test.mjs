@@ -44,7 +44,7 @@ async function fixture(t, env = {}, options = {}) {
     const root = process.cwd();
     const event = (name) => appendFileSync(join(root, "events"), name + "\\n");
     if (process.argv[2] === "metadata") {
-      console.log(JSON.stringify({ target_directory: join(root, "custom-target"), packages: [{name: "monocode-gpui", version: "0.15.0"}] }));
+      console.log(JSON.stringify({ target_directory: join(root, "custom-target"), packages: [{name: "molfar-gpui", version: "0.15.0"}] }));
     } else if (process.argv[2] === "build") {
       event("build");
       await new Promise((resolve) => setTimeout(resolve, Number(process.env.TEST_BUILD_DELAY || 30)));
@@ -115,7 +115,7 @@ test("file saves never rebuild, including edits during a requested build", { tim
 test("manual restart keeps the app on a failed build and shuts it down after a successful retry", { timeout: 20_000 }, async (t) => {
   const f = await fixture(t);
   await f.until((events) => f.starts(events) === 1);
-  assert.deepEqual(f.calls.find((call) => call.args[0] === "build").args, ["build", "--manifest-path", "crates/monocode-gpui/Cargo.toml", "--locked", "-p", "monocode-gpui", "--bin", "monocode-gpui", "--profile", "native-dev"]);
+  assert.deepEqual(f.calls.find((call) => call.args[0] === "build").args, ["build", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "-p", "molfar-gpui", "--bin", "molfar-native", "--profile", "native-dev"]);
   const launch = f.calls.find((call) => call.command !== "cargo");
   assert.ok(launch.command.startsWith(join(f.root, "custom-target")));
   assert.equal(launch.options.env.MONOCODE_DEV_RELOAD, "1");
@@ -164,7 +164,7 @@ test("macOS bundles automatically and preserves the selected data mode for Finde
       const packaged = f.calls.find((call) => call.command === "bash");
       assert.deepEqual(packaged.args, ["scripts/bundle-native-macos.sh", "native-dev", join(f.root, "custom-target"), "0.15.0", mode]);
       const app = f.calls.find((call) => !["cargo", "bash"].includes(call.command));
-      assert.equal(app.command, join(f.root, "custom-target/native-dev/Monocode Native.app/Contents/MacOS/monocode-gpui"));
+      assert.equal(app.command, join(f.root, "custom-target/native-dev/Monocode Native.app/Contents/MacOS/molfar-native"));
       assert.deepEqual(app.args, args);
       const events = await f.events();
       assert.ok(events.indexOf("built") < events.indexOf("package"));
@@ -188,7 +188,7 @@ test("Windows launches the executable from the configured build target", async (
   await f.until((events) => f.starts(events) === 1);
   assert.equal(f.calls.some((call) => call.command === "bash"), false);
   const app = f.calls.find((call) => call.command !== "cargo");
-  assert.equal(app.command, join(f.root, "custom-target/x86_64-pc-windows-msvc/native-dev/monocode-gpui.exe"));
+  assert.equal(app.command, join(f.root, "custom-target/x86_64-pc-windows-msvc/native-dev/molfar-native.exe"));
   assert.equal(app.options.detached, false);
 });
 

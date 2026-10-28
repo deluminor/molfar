@@ -101,7 +101,7 @@ The [dashboard example](examples/visual-dashboard.js) exercises charts, tabs, st
 To seed them into an isolated development conversation:
 
 ```sh
-cargo run --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev -- --dev-data --visual-fixture
+cargo run --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev -- --dev-data --visual-fixture
 ```
 
 The fixture cannot be written into the production database.

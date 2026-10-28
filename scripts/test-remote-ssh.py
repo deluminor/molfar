@@ -39,15 +39,15 @@ def main():
     profile_directory = "debug" if profile == "dev" else profile
     if args.native:
         metadata = json.loads(subprocess.check_output([
-            "cargo", "metadata", "--manifest-path", str(ROOT / "crates/monocode-gpui/Cargo.toml"),
+            "cargo", "metadata", "--manifest-path", str(ROOT / "crates/molfar-gpui/Cargo.toml"),
             "--no-deps", "--format-version", "1",
         ], cwd=ROOT, text=True))
         target = pathlib.Path(metadata["target_directory"])
         if os.environ.get("CARGO_BUILD_TARGET"):
             target /= os.environ["CARGO_BUILD_TARGET"]
-        desktop = args.desktop or target / profile_directory / "monocode-gpui"
-        transport_test = ["cargo", "test", "--manifest-path", "crates/monocode-gpui/Cargo.toml", "--locked", "--offline", "-j", "1", "-p", "monocode-core", "--profile", profile, "--lib", "remote::ssh::tests::loopback_transport_preserves_host_and_reconnects"]
-        build_hint = f"cargo build --manifest-path crates/monocode-gpui/Cargo.toml -p monocode-gpui --profile {profile}"
+        desktop = args.desktop or target / profile_directory / "molfar-native"
+        transport_test = ["cargo", "test", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "--offline", "-j", "1", "-p", "molfar-core", "--profile", profile, "--lib", "remote::ssh::tests::loopback_transport_preserves_host_and_reconnects"]
+        build_hint = f"cargo build --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --profile {profile}"
     else:
         desktop = args.desktop or ROOT / "target" / profile_directory / "molfar"
         transport_test = ["cargo", "test", "--lib", "remote_ssh::tests::loopback_transport_preserves_host_and_reconnects"]

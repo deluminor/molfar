@@ -66,7 +66,7 @@ The installed-profile integration test is ignored by default because it reads
 personal storage. To run that read-only check explicitly:
 
 ```sh
-cargo test --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core --profile native-dev installed_desktop_dir_reads -- --ignored
+cargo test --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-core --profile native-dev installed_desktop_dir_reads -- --ignored
 ```
 
 ## Preview 1 candidate — October 25, 2026
@@ -119,15 +119,15 @@ For focused work, run the relevant part:
 
 ```sh
 npm run native:test:dev
-cargo fmt --manifest-path crates/monocode-gpui/Cargo.toml --all --check
-cargo clippy --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core -p monocode-gpui --all-targets --profile native-dev -- -D warnings
+cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all --check
+cargo clippy --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-core -p monocode-gpui --all-targets --profile native-dev -- -D warnings
 npm run native:test
 ```
 
 On macOS with a Metal device, the renderer regression opens no window:
 
 ```sh
-cargo test --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev overlapping_shell_pane -- --ignored
+cargo test --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev overlapping_shell_pane -- --ignored
 ```
 
 ## Optional runtime checks
@@ -137,8 +137,8 @@ the catalog; without it, the example makes two real provider requests and checks
 streaming and resumed context:
 
 ```sh
-cargo run --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core --profile native-dev --example provider_smoke -- cursor --models
-cargo run --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core --profile native-dev --example provider_smoke -- cursor
+cargo run --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-core --profile native-dev --example provider_smoke -- cursor --models
+cargo run --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-core --profile native-dev --example provider_smoke -- cursor
 ```
 
 For long-history interaction, use the isolated fixture from the

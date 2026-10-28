@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'crates/monocode-core/**'
-      - 'crates/monocode-gpui/**'
+      - 'crates/molfar-core/**'
+      - 'crates/molfar-gpui/**'
       - 'crates/mobile-link/**'
       - 'vendor/gpui-pre*/**'
       - 'scripts/*native*'
@@ -45,8 +45,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y libdbus-1-dev pkg-config
       - run: npm run native:test:dev
-      - run: cargo clippy --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core --all-targets --profile native-dev -- -D warnings
-      - run: cargo test --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core --profile native-dev
+      - run: cargo clippy --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-core --all-targets --profile native-dev -- -D warnings
+      - run: cargo test --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-core --profile native-dev
 
   desktop:
     name: Monocode Native (macOS)
@@ -56,9 +56,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - run: cargo fmt --manifest-path crates/monocode-gpui/Cargo.toml --all --check
-      - run: cargo clippy --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core -p monocode-gpui --all-targets --profile native-dev -- -D warnings
-      - run: cargo test --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-core --profile native-dev
-      - run: cargo test --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev -- --test-threads=1
-      - run: cargo build --manifest-path crates/monocode-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev
+      - run: cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all --check
+      - run: cargo clippy --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-core -p molfar-gpui --all-targets --profile native-dev -- -D warnings
+      - run: cargo test --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-core --profile native-dev
+      - run: cargo test --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-gpui --profile native-dev -- --test-threads=1
+      - run: cargo build --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-gpui --profile native-dev
 

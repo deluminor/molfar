@@ -52,14 +52,14 @@ installed MonoCode database, and changes save there.** No extra flags are needed
 On macOS, open:
 
 ```sh
-open "crates/monocode-gpui/target/release/Monocode Native.app"
+open "crates/molfar-gpui/target/release/Monocode Native.app"
 ```
 
 The app has a separate name and application ID (`dev.usemono.gpui`) so it can be
 installed alongside MonoCode. Local source builds are signed locally, without
 Apple notarization or configured automatic updates. Linux and Windows builds
 produce a standalone executable
-under `crates/monocode-gpui/target/release/`. `CARGO_TARGET_DIR` and
+under `crates/molfar-gpui/target/release/`. `CARGO_TARGET_DIR` and
 `CARGO_BUILD_TARGET` can change these output paths.
 
 The **Monocode Native Preview** GitHub Actions workflow runs checks and build
@@ -99,7 +99,7 @@ To inspect the installed database without opening a window or changing it, use
 the executable from a release build:
 
 ```sh
-crates/monocode-gpui/target/release/monocode-gpui --check-data
+crates/molfar-gpui/target/release/monocode-gpui --check-data
 ```
 
 Provider CLI paths can be changed in Settings → Providers. CLI authentication

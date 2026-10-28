@@ -24,18 +24,18 @@ function run(command, args, capture = false) {
 }
 
 const metadata = JSON.parse(
-  run("cargo", ["metadata", "--manifest-path", "crates/monocode-gpui/Cargo.toml", "--locked", "--no-deps", "--format-version", "1"], true),
+  run("cargo", ["metadata", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "--no-deps", "--format-version", "1"], true),
 );
-const app = metadata.packages.find((pkg) => pkg.name === "monocode-gpui");
-if (!app) throw new Error("The monocode-gpui package was not found.");
+const app = metadata.packages.find((pkg) => pkg.name === "molfar-gpui");
+if (!app) throw new Error("The molfar-gpui package was not found.");
 
-run("cargo", ["build", "--manifest-path", "crates/monocode-gpui/Cargo.toml", "--locked", "-p", app.name, "--release"]);
+run("cargo", ["build", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "-p", app.name, "--release"]);
 const target = process.env.CARGO_BUILD_TARGET
   ? join(metadata.target_directory, process.env.CARGO_BUILD_TARGET)
   : metadata.target_directory;
 if (process.platform === "darwin") {
   run("bash", ["scripts/bundle-native-macos.sh", "release", target, app.version, "monocode-data"]);
 } else {
-  const executable = process.platform === "win32" ? "monocode-gpui.exe" : "monocode-gpui";
+  const executable = process.platform === "win32" ? "molfar-native.exe" : "molfar-native";
   console.log(`Executable: ${join(target, "release", executable)}`);
 }

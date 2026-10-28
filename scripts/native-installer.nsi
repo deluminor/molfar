@@ -35,18 +35,18 @@ FunctionEnd
 Section "Monocode Native"
   SetOutPath "$INSTDIR"
   ClearErrors
-  File /oname=monocode-gpui.next.exe "@STAGE@\monocode-gpui.exe"
+  File /oname=molfar-native.next.exe "@STAGE@\molfar-native.exe"
   IfErrors install_failed
   StrCpy $HadPrevious 0
-  IfFileExists "$INSTDIR\monocode-gpui.exe" 0 replace_binary
-  Delete "$INSTDIR\monocode-gpui.previous.exe"
+  IfFileExists "$INSTDIR\molfar-native.exe" 0 replace_binary
+  Delete "$INSTDIR\molfar-native.previous.exe"
   ClearErrors
-  Rename "$INSTDIR\monocode-gpui.exe" "$INSTDIR\monocode-gpui.previous.exe"
+  Rename "$INSTDIR\molfar-native.exe" "$INSTDIR\molfar-native.previous.exe"
   IfErrors install_failed
   StrCpy $HadPrevious 1
   replace_binary:
   ClearErrors
-  Rename "$INSTDIR\monocode-gpui.next.exe" "$INSTDIR\monocode-gpui.exe"
+  Rename "$INSTDIR\molfar-native.next.exe" "$INSTDIR\molfar-native.exe"
   IfErrors rollback_binary
   File "@STAGE@\native-install.json"
   File /r "@STAGE@\licenses"
@@ -55,34 +55,34 @@ Section "Monocode Native"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "DisplayName" "Monocode Native"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "DisplayVersion" "@VERSION@"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\MonocodeNative" "UninstallString" '"$INSTDIR\Uninstall.exe"'
-  CreateShortcut "$SMPROGRAMS\Monocode Native.lnk" "$INSTDIR\monocode-gpui.exe"
-  CreateShortcut "$DESKTOP\Monocode Native.lnk" "$INSTDIR\monocode-gpui.exe"
-  Delete "$INSTDIR\monocode-gpui.previous.exe"
+  CreateShortcut "$SMPROGRAMS\Monocode Native.lnk" "$INSTDIR\molfar-native.exe"
+  CreateShortcut "$DESKTOP\Monocode Native.lnk" "$INSTDIR\molfar-native.exe"
+  Delete "$INSTDIR\molfar-native.previous.exe"
   Goto install_done
   rollback_binary:
   StrCmp $HadPrevious 1 0 install_failed
-  Rename "$INSTDIR\monocode-gpui.previous.exe" "$INSTDIR\monocode-gpui.exe"
+  Rename "$INSTDIR\molfar-native.previous.exe" "$INSTDIR\molfar-native.exe"
   install_failed:
-  Delete "$INSTDIR\monocode-gpui.next.exe"
+  Delete "$INSTDIR\molfar-native.next.exe"
   MessageBox MB_ICONSTOP "Monocode Native could not be updated. The previous executable was retained. Close other Monocode Native processes and try again."
   Abort
   install_done:
 SectionEnd
 Function .onInstFailed
   StrCmp $UpdatePID "" failed_done
-  IfFileExists "$INSTDIR\monocode-gpui.exe" 0 failed_done
-  Exec '"$INSTDIR\monocode-gpui.exe"'
+  IfFileExists "$INSTDIR\molfar-native.exe" 0 failed_done
+  Exec '"$INSTDIR\molfar-native.exe"'
   failed_done:
 FunctionEnd
 Function .onInstSuccess
   StrCmp $UpdatePID "" done
-  Exec '"$INSTDIR\monocode-gpui.exe"'
+  Exec '"$INSTDIR\molfar-native.exe"'
   done:
 FunctionEnd
 Section "Uninstall"
   Delete "$SMPROGRAMS\Monocode Native.lnk"
   Delete "$DESKTOP\Monocode Native.lnk"
-  Delete "$INSTDIR\monocode-gpui.exe"
+  Delete "$INSTDIR\molfar-native.exe"
   Delete "$INSTDIR\native-install.json"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir /r "$INSTDIR\licenses"

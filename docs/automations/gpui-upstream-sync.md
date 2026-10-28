@@ -19,7 +19,7 @@ You are running the weekly GPUI upstream sync for MOLFAR (`deluminor/molfar`), a
 - `origin/main` — MOLFAR's product branch, protected, PR-only. You never push to it.
 - `.github/upstream-sync.json` **on the GPUI branch**: `branch` is `mc/migrate-monocode-to-gpui`, and `syncedCommit` is the last GPUI-ref commit whose changes are in the GPUI branch. `main` has its own copy of this file that tracks `upstream/main`. The two are independent.
 - MOLFAR shares **no commits** with MonoCode. Upstream changes arrive only as **patches** through `apply.mjs`, never as merges.
-- The native app lives in `crates/monocode-core`, `crates/monocode-gpui`, `crates/mobile-link` and `vendor/gpui-pre*`, plus the bundle scripts `scripts/native-editor`, `scripts/native-settings`, `scripts/*native*.mjs`. The React/Tauri app stays the production app. Until parity group M01 (branding and isolation) lands, native crate names and app ids still use `monocode-*`. Do not rename those as part of a sync.
+- The native app lives in `crates/molfar-core`, `crates/molfar-gpui`, `crates/mobile-link` and `vendor/gpui-pre*`, plus the bundle scripts `scripts/native-editor`, `scripts/native-settings`, `scripts/*native*.mjs`. The React/Tauri app stays the production app. Until parity group M01 (branding and isolation) lands, native crate names and app ids still use `monocode-*`. Do not rename those as part of a sync.
 
 ## Goal
 1. Keep the GPUI branch current with `main`.
@@ -121,10 +121,10 @@ MOLFAR's structure differs from MonoCode's in several ways:
 `.github/upstream-moves.json` records every move in four sections: `renames`, `splits`, `extractions` and `removed`. Read it before resolving anything.
 
 #### 4a. MOLFAR-owned paths — keep MOLFAR's side
-- Version numbers in `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `crates/monocode-gpui/Cargo.lock`, `src-tauri/tauri.conf.json`: keep MOLFAR's versions and identity, but take MonoCode's other changes (new or bumped dependencies, new scripts, config). For lockfiles, run `git checkout --ours <lockfile>` and regenerate:
+- Version numbers in `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `crates/molfar-gpui/Cargo.lock`, `src-tauri/tauri.conf.json`: keep MOLFAR's versions and identity, but take MonoCode's other changes (new or bumped dependencies, new scripts, config). For lockfiles, run `git checkout --ours <lockfile>` and regenerate:
   - `npm install --package-lock-only --ignore-scripts` (root);
   - `cargo metadata --format-version 1 >/dev/null` (root workspace);
-  - `cargo metadata --manifest-path crates/monocode-gpui/Cargo.toml --format-version 1 >/dev/null` (native workspace).
+  - `cargo metadata --manifest-path crates/molfar-gpui/Cargo.toml --format-version 1 >/dev/null` (native workspace).
 
   Check that each lockfile diff touches only the changed dependencies.
 - `CHANGELOG.md`: keep MOLFAR's history. Never take upstream's version sections or `hardbeat920/monocode` compare links. See 6b.
@@ -134,11 +134,11 @@ MOLFAR's structure differs from MonoCode's in several ways:
 - Product name and branding (`MOLFAR` must not regress to `MonoCode` in the React app or in native user-facing text), `README.md`, `NOTICE`, `LICENSE`. Upstream README sections that promote MonoCode are not taken. Upstream native docs content goes into MOLFAR's README "MOLFAR Native preview" section or `docs/native/`, with MOLFAR naming.
 - `mobile/assets/` artwork and the Expo account fields in `mobile/app.json` (`owner`, `extra.eas`, `updates`).
 - **Router port mapping is opt-in only.**
-  - Native app: UPnP/NAT-PMP (`crates/monocode-core/src/mobile/router.rs`, `igd-next`, `natpmp`) is allowed only behind the user's own **Open the router port automatically** toggle, and that toggle must be off by default. Keep `open_router: false` in `Config::default()` and keep `router_port_mapping_stays_off_until_the_user_turns_it_on` in `crates/monocode-core/src/mobile/host.rs`. If an upstream hunk turns mapping on by default, maps ports without the toggle, or adds another automatic mapping path, drop that part and list it under **Breaking / attention**.
+  - Native app: UPnP/NAT-PMP (`crates/molfar-core/src/mobile/router.rs`, `igd-next`, `natpmp`) is allowed only behind the user's own **Open the router port automatically** toggle, and that toggle must be off by default. Keep `open_router: false` in `Config::default()` and keep `router_port_mapping_stays_off_until_the_user_turns_it_on` in `crates/molfar-core/src/mobile/host.rs`. If an upstream hunk turns mapping on by default, maps ports without the toggle, or adds another automatic mapping path, drop that part and list it under **Breaking / attention**.
   - Tauri app: MOLFAR removed router mapping (`src-tauri/src/mobile_router.rs`, `open_router`/`router_*` in `src-tauri/src/mobile_access/`, crates `igd-next`/`natpmp`/`attohttpc`). Drop those hunks. `no_router_port_mapping_crates_are_built` in `src-tauri/src/mobile_access/tests.rs` guards it.
 - MOLFAR's native adaptations that a sync must not undo:
   - router mapping off by default (see above);
-  - the `monocode-mobile-link = { package = "molfar-mobile-link", … }` alias in `crates/monocode-core/Cargo.toml`;
+  - the `monocode-mobile-link = { package = "molfar-mobile-link", … }` alias in `crates/molfar-core/Cargo.toml`;
   - the `*b"MLFR"` Carbon hotkey signature;
   - kebab-case import paths in `scripts/native-editor/` and `scripts/native-settings/`;
   - the vitest exclusion of `scripts/*native*.test.mjs`;
@@ -156,7 +156,7 @@ MIT and Apache-2.0 require every copy to carry the notices, so an upstream notic
   ```
 - `LICENSE`: keep MOLFAR's text. Add every new or changed upstream copyright line next to the existing `Copyright (c) 2026 Nick` line.
 - `NOTICE`: keep MOLFAR's text and append upstream additions in substance. That covers new GPUI or Zed snapshot notices, vendored crates, bundled assets (icons, themes, editor bundles) and modifications notes. Never drop an upstream native notice.
-- License files under `vendor/**`, `docs/native/LICENSE-*`, `crates/monocode-gpui/assets/**`: take them exactly as upstream has them.
+- License files under `vendor/**`, `docs/native/LICENSE-*`, `crates/molfar-gpui/assets/**`: take them exactly as upstream has them.
 - New **source** under a license other than MIT or Apache-2.0, or a new dependency under GPL, LGPL or AGPL: stop and open `Sync blocked: license review needed (YYYY-MM-DD)` listing the files and licenses. New MPL-2.0, Apache-2.0 or other permissive dependencies are allowed; name them under **Breaking / attention**.
 - If `scripts/package-native-support.mjs` (`notices`) or `scripts/package-native.mjs` lists notice files, keep that list in sync with any notice files upstream adds.
 - Record the result under **Breaking / attention**: `License notices: unchanged`, or the exact additions.
@@ -193,7 +193,7 @@ After resolving, check every resolved file:
 - Native bundle scripts and Rust code that reference React sources by path (`import … from "../../src/…"`, `'./src/…'` inside esbuild `stdin`, `include_str!("…/src/…")`) must point at MOLFAR's paths. Check every such path resolves:
   ```bash
   grep -rnoE "(\.\./|\./)+src/[A-Za-z0-9_./-]+" scripts/native-editor scripts/native-settings scripts/*native*.mjs
-  grep -rnoE 'include_(str|bytes)!\("[^"]+"' crates/monocode-core/src crates/monocode-gpui/src
+  grep -rnoE 'include_(str|bytes)!\("[^"]+"' crates/molfar-core/src crates/molfar-gpui/src
   ```
 - New Node `*.test.mjs` files that use `node:test` belong to `native:test:dev`, not vitest. Make sure the vitest `exclude` covers them, and add them to the `native:test:dev` script if upstream did not.
 - New upstream files over 250 lines (`scripts/`, `src/`): split them like the surrounding MOLFAR code and record the split. The file-size ratchet does not apply to `crates/` and `vendor/`; leave Rust layout as upstream has it unless a MOLFAR port needs otherwise.
@@ -248,7 +248,7 @@ Update tests that assert on renamed keys or names in the same way.
   (cd scripts/native-editor && npm ci) && node scripts/native-editor/build.mjs
   node scripts/native-settings/build-arcade.mjs
   ```
-- `npm run native:check`. It covers `native:test:dev`, `cargo fmt --check`, clippy with `-D warnings`, and core and gpui tests, and takes about 15–20 minutes. Run `cargo fmt --manifest-path crates/monocode-gpui/Cargo.toml --all` first when the rename map touched Rust files.
+- `npm run native:check`. It covers `native:test:dev`, `cargo fmt --check`, clippy with `-D warnings`, and core and gpui tests, and takes about 15–20 minutes. Run `cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all` first when the rename map touched Rust files.
 - If the range touched `src-tauri/` or the root `Cargo.*`: `cargo check --quiet` in `src-tauri/`. If it touched `host/`: `npm run test:host`.
 - Sync-caused failures are yours to fix in follow-up commits on the sync branch: unresolved paths, renamed symbols, rename-map breakage, `rustfmt` after renames, lint or size ratchets, lockfiles. Re-run until green.
 - A failure not caused by this sync (it also fails on `origin/migration/gpui-into-main` alone) does not block the push. List it with its output under **Breaking / attention**.

@@ -8,9 +8,9 @@ reference. Production builds, CI, releases and updater feeds continue to use Tau
 
 | Location | Responsibility |
 | --- | --- |
-| `crates/monocode-core/` | Provider transports, persistence, accounts, Git/files, remote connections and shared services |
-| `crates/monocode-gpui/` | Native shell, composer, transcript, editor, settings and platform UI |
-| `crates/monocode-gpui/Cargo.toml` | Independent native Cargo workspace, profiles and dependency patches |
+| `crates/molfar-core/` | Provider transports, persistence, accounts, Git/files, remote connections and shared services |
+| `crates/molfar-gpui/` | Native shell, composer, transcript, editor, settings and platform UI |
+| `crates/molfar-gpui/Cargo.toml` | Independent native Cargo workspace, profiles and dependency patches |
 | `scripts/dev-native.mjs` | Development build and manual restart runner |
 | `scripts/build-native.mjs` | Optimized build and macOS packaging |
 | `scripts/native-editor/`, `scripts/native-settings/` | Generators for embedded JavaScript assets |

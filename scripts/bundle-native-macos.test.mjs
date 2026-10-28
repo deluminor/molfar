@@ -33,7 +33,7 @@ test("Finder launches use development data for dev bundles and installed data fo
     await t.test(`${profile}: ${override ?? "default"}`, async () => {
       const output = join(target, profile);
       await mkdir(output, { recursive: true });
-      const executable = join(output, "monocode-gpui");
+      const executable = join(output, "molfar-native");
       await writeFile(executable, "#!/bin/sh\nprintf '%s\\n' \"$@\"\n");
       await chmod(executable, 0o755);
       const args = ["scripts/bundle-native-macos.sh", profile, target, "0.16.0"];
@@ -49,9 +49,9 @@ test("Finder launches use development data for dev bundles and installed data fo
       const plist = await readFile(join(bundle, "Info.plist"), "utf8");
       assert.ok(plist.includes(`<key>MonocodeDataMode</key><string>${mode}</string>`));
       // macOS rejects menu bar items from a process that exec'd after launch.
-      assert.ok(plist.includes("<key>CFBundleExecutable</key><string>monocode-gpui</string>"));
+      assert.ok(plist.includes("<key>CFBundleExecutable</key><string>molfar-native</string>"));
       await assert.rejects(access(join(bundle, "MacOS/monocode-launcher")));
-      const launched = spawnSync(join(bundle, "MacOS/monocode-gpui"), ["--cwd", "a project with spaces"], {
+      const launched = spawnSync(join(bundle, "MacOS/molfar-native"), ["--cwd", "a project with spaces"], {
         encoding: "utf8",
       });
       assert.ifError(launched.error);

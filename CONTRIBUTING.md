@@ -31,7 +31,7 @@ One provider is enough. MOLFAR probes for each CLI at startup and disables the o
 ## Experimental GPUI work
 
 The production React/Tauri app continues to use the commands above. GPUI work
-lives in `crates/monocode-core` and `crates/monocode-gpui`, with an independent
+lives in `crates/molfar-core` and `crates/molfar-gpui`, with an independent
 Cargo workspace and lockfile. Use `npm run native:dev` to develop,
 `npm run native:build` to package an optimized build, and
 `npm run native:check` for its checks. Keep production UI behavior, dependencies,

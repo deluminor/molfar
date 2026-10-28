@@ -56,7 +56,7 @@ export async function packageNative({
     const { desktop } = await linuxTree(appDir, binary, "appimage");
     await writeFile(
       join(appDir, "monocode-native.desktop"),
-      desktop.replace("Exec=monocode-native %F", "Exec=monocode-gpui %F"),
+      desktop.replace("Exec=monocode-native %F", "Exec=molfar-native %F"),
     );
     await cp(
       join(root, "public/monocode.png"),
@@ -64,7 +64,7 @@ export async function packageNative({
     );
     await writeFile(
       join(appDir, "AppRun"),
-      '#!/bin/sh\nexec "$APPDIR/usr/lib/monocode-native/monocode-gpui" "$@"\n',
+      '#!/bin/sh\nexec "$APPDIR/usr/lib/monocode-native/molfar-native" "$@"\n',
       { mode: 0o755 },
     );
     run(
@@ -113,7 +113,7 @@ export async function packageNative({
   } else if (kind === "windows") {
     const stage = join(work, "windows");
     await mkdir(stage);
-    await cp(binary, join(stage, "monocode-gpui.exe"));
+    await cp(binary, join(stage, "molfar-native.exe"));
     await writeFile(
       join(stage, "native-install.json"),
       JSON.stringify({ app_id: "dev.usemono.gpui", kind: "nsis" }),

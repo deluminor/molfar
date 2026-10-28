@@ -75,22 +75,22 @@ export async function notices(directory) {
     "NOTICE",
     "docs/native/LICENSE-GPUI-APACHE",
     "docs/native/LICENSE-MERMAID-MIT",
-    "crates/monocode-gpui/assets/hugeicons.LICENSE",
-    "crates/monocode-gpui/assets/dark-plus.LICENSE",
-    "crates/monocode-gpui/assets/native-editor.LICENSE.txt",
+    "crates/molfar-gpui/assets/hugeicons.LICENSE",
+    "crates/molfar-gpui/assets/dark-plus.LICENSE",
+    "crates/molfar-gpui/assets/native-editor.LICENSE.txt",
   ]) {
     await cp(join(root, file), join(directory, file.split("/").at(-1)));
   }
   await cp(
-    join(root, "crates/monocode-gpui/assets/material/LICENSE"),
+    join(root, "crates/molfar-gpui/assets/material/LICENSE"),
     join(directory, "material-icons.LICENSE"),
   );
 }
 export async function linuxTree(directory, binary, kind) {
   const app = join(directory, "usr/lib/monocode-native");
   await mkdir(app, { recursive: true });
-  await cp(binary, join(app, "monocode-gpui"));
-  await chmod(join(app, "monocode-gpui"), 0o755);
+  await cp(binary, join(app, "molfar-native"));
+  await chmod(join(app, "molfar-native"), 0o755);
   await writeFile(
     join(app, "native-install.json"),
     JSON.stringify({ app_id: "dev.usemono.gpui", kind }),
@@ -99,7 +99,7 @@ export async function linuxTree(directory, binary, kind) {
   await mkdir(join(directory, "usr/bin"), { recursive: true });
   await writeFile(
     join(directory, "usr/bin/monocode-native"),
-    '#!/bin/sh\nexec /usr/lib/monocode-native/monocode-gpui "$@"\n',
+    '#!/bin/sh\nexec /usr/lib/monocode-native/molfar-native "$@"\n',
     { mode: 0o755 },
   );
   await mkdir(join(directory, "usr/share/applications"), { recursive: true });

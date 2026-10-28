@@ -70,19 +70,19 @@ export async function startDev({
         builtRevision = revision;
         const started = Date.now();
         log("Building… (the current app stays open)");
-        const metadataResult = await run("cargo", ["metadata", "--manifest-path", "crates/monocode-gpui/Cargo.toml", "--locked", "--no-deps", "--format-version", "1"], true);
+        const metadataResult = await run("cargo", ["metadata", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "--no-deps", "--format-version", "1"], true);
         if (closing) return;
         if (metadataResult.code !== 0) {
           log("Cargo metadata failed. Fix the error, then type r to retry.");
           continue;
         }
         const metadata = JSON.parse(metadataResult.stdout);
-        const pkg = metadata.packages.find((pkg) => pkg.name === "monocode-gpui");
-        if (!pkg) throw new Error("The monocode-gpui package was not found.");
+        const pkg = metadata.packages.find((pkg) => pkg.name === "molfar-gpui");
+        if (!pkg) throw new Error("The molfar-gpui package was not found.");
         const target = buildEnv.CARGO_BUILD_TARGET
           ? join(metadata.target_directory, buildEnv.CARGO_BUILD_TARGET)
           : metadata.target_directory;
-        const result = await run("cargo", ["build", "--manifest-path", "crates/monocode-gpui/Cargo.toml", "--locked", "-p", pkg.name, "--bin", pkg.name, "--profile", "native-dev"]);
+        const result = await run("cargo", ["build", "--manifest-path", "crates/molfar-gpui/Cargo.toml", "--locked", "-p", pkg.name, "--bin", "molfar-native", "--profile", "native-dev"]);
         if (closing) return;
         if (result.code !== 0) {
           log("Build failed. Keeping the current app; type r to retry after fixing the error.");
@@ -90,7 +90,7 @@ export async function startDev({
         }
         // Another restart request during compilation gets a fresh build first.
         if (builtRevision !== revision) continue;
-        let executable = join(target, "native-dev", platform === "win32" ? "monocode-gpui.exe" : "monocode-gpui");
+        let executable = join(target, "native-dev", platform === "win32" ? "molfar-native.exe" : "molfar-native");
         if (bundle) {
           const dataMode = args.reduce((mode, arg, index) => {
             if (["--cwd", "--monocode-db"].includes(args[index - 1])) return mode;
@@ -104,7 +104,7 @@ export async function startDev({
             log("App packaging failed. Fix the error, then type r to retry.");
             continue;
           }
-          executable = join(target, "native-dev", "Monocode Native.app", "Contents", "MacOS", "monocode-gpui");
+          executable = join(target, "native-dev", "Monocode Native.app", "Contents", "MacOS", "molfar-native");
         }
         if (builtRevision !== revision) continue;
         await stopApp();

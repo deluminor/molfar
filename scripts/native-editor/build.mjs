@@ -6,7 +6,7 @@ import vm from "node:vm";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
-const asset = path.join(root, "crates/monocode-gpui/assets/native-editor.js");
+const asset = path.join(root, "crates/molfar-gpui/assets/native-editor.js");
 const options = {
   absWorkingDir: here,
   entryPoints: ["index.ts"],

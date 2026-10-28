@@ -26,7 +26,7 @@ test(
     const release = join(directory, "target/release");
     await mkdir(bin);
     await mkdir(release, { recursive: true });
-    const binary = join(release, "monocode-gpui");
+    const binary = join(release, "molfar-native");
     await writeFile(
       binary,
       "#!/bin/sh\nprintf 'Monocode Native 0.16.0-preview.2\\n'\n",
@@ -44,7 +44,7 @@ if (name === 'ditto') {
   else {
     fs.cpSync(args[0], args[1], { recursive: true });
     if (process.env.NATIVE_TEST_SPARSE_DMG_BYTES) {
-      fs.truncateSync(path.join(args[1], 'Contents/MacOS/monocode-gpui'), Number(process.env.NATIVE_TEST_SPARSE_DMG_BYTES));
+      fs.truncateSync(path.join(args[1], 'Contents/MacOS/molfar-native'), Number(process.env.NATIVE_TEST_SPARSE_DMG_BYTES));
     }
   }
 }
