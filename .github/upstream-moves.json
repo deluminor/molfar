@@ -2426,6 +2426,12 @@
           "Connections section body (ConnectionsSettings + MobileSettings)"
         ],
         "target": "src/features/settings/ui/ConnectionsPage.tsx"
+      },
+      {
+        "names": [
+          "Segmented"
+        ],
+        "target": "src/features/settings/ui/Segmented.tsx"
       }
     ],
     "src/features/source-control/model/worktrees.ts": [
@@ -2525,6 +2531,26 @@
           "composer box frost: [data-composer-box], ::before, message queue ledge, light composer"
         ],
         "target": "src/styles/composer-frost.css"
+      }
+    ],
+    "scripts/package-native.mjs": [
+      {
+        "names": [
+          "root",
+          "previewVersion",
+          "run",
+          "runStapler",
+          "logicalBytes",
+          "notices",
+          "linuxTree"
+        ],
+        "target": "scripts/package-native-support.mjs"
+      },
+      {
+        "names": [
+          "macOS branch of packageNative (bundle, sign, notarize, DMG) as packageMacos"
+        ],
+        "target": "scripts/package-native-macos.mjs"
       }
     ]
   },

@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { previewVersion } from "./package-native.mjs";
+import { previewVersion } from "./package-native-support.mjs";
 
 export const nativeTargets = [
   "darwin-aarch64-app",

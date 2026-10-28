@@ -11,7 +11,8 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { test } from "node:test";
-import { packageNative, runStapler } from "./package-native.mjs";
+import { packageNative } from "./package-native.mjs";
+import { runStapler } from "./package-native-support.mjs";
 
 test(
   "Mac preview packaging checks notarization, preserves preview identity and emits both download and updater packages",

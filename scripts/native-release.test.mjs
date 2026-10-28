@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { nativeManifest, nativeTargets } from "./native-release.mjs";
-import { previewVersion } from "./package-native.mjs";
+import { previewVersion } from "./package-native-support.mjs";
 
 const artifacts = nativeTargets.map((target) => ({
   target,
