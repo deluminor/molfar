@@ -66,7 +66,8 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             enabled: false,
-            open_router: true,
+            // Router port mapping is opt-in: only the user's own toggle turns it on.
+            open_router: false,
             remote_address: String::new(),
             devices: Vec::new(),
         }
@@ -783,6 +784,20 @@ mod tests {
             );
         }
         (host, events, join, phone)
+    }
+
+    #[test]
+    fn router_port_mapping_stays_off_until_the_user_turns_it_on() {
+        assert!(!Config::default().open_router);
+        let saved: Config = serde_json::from_str(r#"{"enabled":true,"devices":[]}"#).unwrap();
+        assert!(!saved.open_router);
+
+        let dir =
+            std::env::temp_dir().join(format!("monocode-mobile-test-{}", uuid::Uuid::new_v4()));
+        let (host, _events) = MobileHost::open(dir.join("mobile-access.json")).unwrap();
+        assert!(!host.status().open_router);
+        host.inner.lock().unwrap().config.enabled = true;
+        assert!(!host.router_config());
     }
 
     #[test]
