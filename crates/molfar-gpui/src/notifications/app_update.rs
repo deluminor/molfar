@@ -97,7 +97,7 @@ impl Render for InstalledUpdateNotice {
                             .flex()
                             .items_center()
                             .justify_center()
-                            .child(img("monocode.png").size(px(16.))),
+                            .child(img("molfar.png").size(px(16.))),
                     )
                     .child(
                         div()

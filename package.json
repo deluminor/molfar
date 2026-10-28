@@ -33,7 +33,7 @@
     "build:fedora": "tauri build --bundles rpm",
     "build:windows": "set \"RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-msvc\" && tauri build --bundles nsis",
     "native:dev": "node scripts/dev-native.mjs",
-    "native:test:dev": "node --test scripts/dev-native.test.mjs scripts/bundle-native-macos.test.mjs scripts/native-dependencies.test.mjs scripts/native-release.test.mjs scripts/package-native.test.mjs",
+    "native:test:dev": "node --test scripts/dev-native.test.mjs scripts/bundle-native-macos.test.mjs scripts/native-dependencies.test.mjs scripts/native-release.test.mjs scripts/package-native.test.mjs scripts/native-brand-assets.test.mjs",
     "native:build": "node scripts/build-native.mjs",
     "native:test": "cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core --profile native-dev && cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --profile native-dev -- --test-threads=1",
     "native:check": "npm run native:test:dev && cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all --check && cargo clippy --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core -p molfar-gpui --all-targets --profile native-dev -- -D warnings && npm run native:test"

@@ -112,7 +112,7 @@ export async function linuxTree(directory, binary, kind) {
   const icons = join(directory, "usr/share/icons/hicolor/256x256/apps");
   await mkdir(icons, { recursive: true });
   await cp(
-    join(root, "public/molfar.png"),
+    join(root, "crates/molfar-gpui/assets/molfar-native.png"),
     join(icons, "molfar-native.png"),
   );
   return { app, desktop };

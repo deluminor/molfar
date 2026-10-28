@@ -59,7 +59,7 @@ export async function packageNative({
       desktop.replace("Exec=molfar-native %F", "Exec=molfar-native %F"),
     );
     await cp(
-      join(root, "public/molfar.png"),
+      join(root, "crates/molfar-gpui/assets/molfar-native.png"),
       join(appDir, "molfar-native.png"),
     );
     await writeFile(

@@ -398,7 +398,7 @@ mod tests {
             }
         }
         let settings = Background {
-            path: concat!(env!("CARGO_MANIFEST_DIR"), "/assets/monocode.png").into(),
+            path: concat!(env!("CARGO_MANIFEST_DIR"), "/assets/molfar.png").into(),
             effect: Effect::Dither,
             ..Default::default()
         };

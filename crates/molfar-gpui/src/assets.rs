@@ -154,7 +154,7 @@ impl AssetSource for Assets {
    "inbox-hi"=>include_bytes!("../assets/hugeicons/inbox-hi.svg"),
    "chevron-down-hi"=>include_bytes!("../assets/hugeicons/chevron-down-hi.svg"),
    "check-hi"=>include_bytes!("../assets/hugeicons/check-hi.svg"),
-   "monocode.png"=>include_bytes!("../assets/monocode.png"),
+   "molfar.png"=>include_bytes!("../assets/molfar.png"),
    "codex.svg"=>include_bytes!("../assets/codex.svg"),
    "claude.svg"=>include_bytes!("../assets/claude.svg"),
    "cursor.svg"=>include_bytes!("../assets/cursor.svg"),

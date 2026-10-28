@@ -115,7 +115,7 @@ pub(crate) fn glyph(name: &'static str, side: f32) -> gpui::Div {
         return gpui::div()
             .size(gpui::px(side))
             .flex_shrink_0()
-            .child(gpui::img("monocode.png").size(gpui::px(side)));
+            .child(gpui::img("molfar.png").size(gpui::px(side)));
     }
     gpui::div()
         .size(gpui::px(side))

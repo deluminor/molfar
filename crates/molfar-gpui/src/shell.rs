@@ -9574,7 +9574,7 @@ mod tests {
                 assert_eq!(appearance.color, Some(COLORS[4]));
                 assert_eq!(appearance.mascot.as_deref(), Some("cat"));
                 appearance.background = Some(Background {
-                    path: concat!(env!("CARGO_MANIFEST_DIR"), "/assets/monocode.png").into(),
+                    path: concat!(env!("CARGO_MANIFEST_DIR"), "/assets/molfar.png").into(),
                     ..Default::default()
                 });
                 assert!(
@@ -9792,7 +9792,7 @@ mod tests {
                         path.into(),
                         ProjectAppearance {
                             background: Some(Background {
-                                path: concat!(env!("CARGO_MANIFEST_DIR"), "/assets/monocode.png")
+                                path: concat!(env!("CARGO_MANIFEST_DIR"), "/assets/molfar.png")
                                     .into(),
                                 effect: Effect::Dither,
                                 ..Default::default()

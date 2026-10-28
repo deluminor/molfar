@@ -668,7 +668,7 @@ mod tests {
                             "/tmp/image.png".into(),
                             Arc::new(Image::from_bytes(
                                 ImageFormat::Png,
-                                include_bytes!("../../assets/monocode.png").to_vec(),
+                                include_bytes!("../../assets/molfar.png").to_vec(),
                             )),
                             800,
                             400,
