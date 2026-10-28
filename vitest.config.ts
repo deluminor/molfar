@@ -20,6 +20,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
+    // Native GPUI script tests use node:test and run through `npm run native:test:dev`.
+    exclude: ["**/node_modules/**", "scripts/*native*.test.mjs"],
     setupFiles: [
       "scripts/test/isolate-git-env.mjs",
       "scripts/test/prefer-dom-localstorage.mjs",

@@ -352,6 +352,23 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
 
+## MOLFAR Native preview
+
+The Rust + GPUI app is an experimental preview. React/Tauri remains the
+production app.
+
+To try GPUI from this checkout with Node.js 22+, Rust and Xcode on macOS:
+
+```sh
+npm run native:dev     # launch with a separate development database
+npm run native:build   # create an optimized app using installed MOLFAR data
+```
+
+Type `r` then Enter in the development terminal to rebuild and restart; there is
+no hot reload. The release app saves changes to your installed MOLFAR data.
+See the [native guide](docs/native/README.md) for prerequisites, build output,
+checks and preview limitations.
+
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 
 ## License and attribution
