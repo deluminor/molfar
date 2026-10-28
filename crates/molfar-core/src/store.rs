@@ -1,4 +1,4 @@
-//! Session storage. Desktop launches use Monocode's existing schema directly.
+//! Session storage. Desktop launches use MOLFAR's existing schema directly.
 mod app_access;
 #[cfg(test)]
 mod branding_tests;

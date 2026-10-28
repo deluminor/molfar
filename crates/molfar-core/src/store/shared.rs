@@ -262,7 +262,7 @@ impl Store {
         ] {
             if !columns.contains(required) {
                 return Err(format!(
-                    "Unsupported Monocode database: missing sessions.{required}. No schema changes were made."
+                    "Unsupported MOLFAR database: missing sessions.{required}. No schema changes were made."
                 ));
             }
         }
@@ -298,7 +298,7 @@ impl Store {
         drop(query);
         Ok(store)
     }
-    pub fn uses_monocode_schema(&self) -> bool {
+    pub fn uses_molfar_schema(&self) -> bool {
         self.shared.is_some()
     }
     /// A read-only snapshot of desktop preferences, shared by this store's
@@ -393,7 +393,7 @@ impl Store {
     }
     pub(super) fn shared_writable(&self) -> Result<(), String> {
         if self.shared.as_ref().unwrap().read_only {
-            Err("This Monocode store is read-only".into())
+            Err("This MOLFAR store is read-only".into())
         } else {
             Ok(())
         }
@@ -716,8 +716,8 @@ impl Store {
             block["role"] == "user"
                 && block["draft"] != true
                 && block["internal"] != true
-                && (block["monocode"] == true
-                    || ["familiar", "monocode"].into_iter().any(|command| {
+                && (block["molfar"] == true
+                    || ["familiar", "molfar"].into_iter().any(|command| {
                         crate::composer::consume_command(
                             block["text"].as_str().unwrap_or_default(),
                             command,

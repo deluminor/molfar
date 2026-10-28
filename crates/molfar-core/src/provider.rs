@@ -1,4 +1,4 @@
-//! Native provider transports, ported from Monocode's TS adapters.
+//! Native provider transports, ported from MOLFAR's TS adapters.
 //! Blocking work belongs to a worker; never call `run` from a render/input handler.
 use crate::agent::{AccessMode, Approval, Control, Decision, Settings, TurnMetrics};
 use crate::tool::{ToolCall, ToolState};
@@ -501,7 +501,7 @@ impl Protocol {
                         }
                         let (policy, sandbox, sandbox_policy, reviewer) = self.codex_access();
                         let mut params = json!({"cwd":self.request.cwd,"approvalPolicy":policy,"sandbox":sandbox,"sandboxPolicy":sandbox_policy,"approvalsReviewer":reviewer,
-                            "developerInstructions":format!("You are the coding agent in Monocode. Use the available tools to inspect and work in the supplied cwd. Do not ask the user to paste files or git output you can inspect yourself. Respect the selected access policy and request approval when required. {}", if self.request.settings.plan { "This is a planning turn: inspect and propose a plan without changing files." } else { "" })});
+                            "developerInstructions":format!("You are the coding agent in MOLFAR. Use the available tools to inspect and work in the supplied cwd. Do not ask the user to paste files or git output you can inspect yourself. Respect the selected access policy and request approval when required. {}", if self.request.settings.plan { "This is a planning turn: inspect and propose a plan without changing files." } else { "" })});
                         if self.request.settings.text_only {
                             params["ephemeral"] = true.into();
                             params["developerInstructions"] = "Answer the supplied text request directly. Do not call tools or inspect the workspace.".into();
@@ -1428,7 +1428,7 @@ fn run_operation(
                 if let Some(server) = crate::visual_bridge::mcp_server(&settings.environment) {
                     command.args([
                         "--mcp-config",
-                        &json!({"mcpServers":{"monocode_visual":server}}).to_string(),
+                        &json!({"mcpServers":{"molfar_visual":server}}).to_string(),
                     ]);
                 }
             }
@@ -1568,7 +1568,7 @@ fn run_operation(
         } else if protocol.request.kind == Kind::Codex {
             write_json(
                 &mut stdin,
-                json!({"id":1,"method":"initialize","params":{"clientInfo":{"name":"monocode_native","title":"MOLFAR Native","version":env!("CARGO_PKG_VERSION")},"capabilities":{"experimentalApi":true}}}),
+                json!({"id":1,"method":"initialize","params":{"clientInfo":{"name":"molfar_native","title":"MOLFAR Native","version":env!("CARGO_PKG_VERSION")},"capabilities":{"experimentalApi":true}}}),
             )?;
         } else {
             write_json(

@@ -364,6 +364,10 @@ npm run native:dev     # launch with a separate development database
 npm run native:build   # create an optimized app using installed MOLFAR data
 ```
 
+Native uses app ID `com.molfar.native` and binary `molfar-native`. Development
+builds display `MOLFAR Native (Development)` and keep data under
+`com.molfar.native`; release builds share `com.molfar.desktop/molfar.db` with Tauri.
+
 Type `r` then Enter in the development terminal to rebuild and restart; there is
 no hot reload. The release app saves changes to your installed MOLFAR data.
 See the [native guide](docs/native/README.md) for prerequisites, build output,

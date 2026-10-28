@@ -8,7 +8,7 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let dir = std::env::temp_dir().join(format!("monocode-turn-test-{}", unique_id()));
+        let dir = std::env::temp_dir().join(format!("molfar-turn-test-{}", unique_id()));
         let repo = dir.join("repo");
         std::fs::create_dir_all(&repo).unwrap();
         run_git(&repo, &["init"]).unwrap();
@@ -398,7 +398,7 @@ fn undo_restores_only_recorded_files_and_keep_retains_history() {
     f.store.forget("session").unwrap();
     assert!(run_git(
         &f.repo,
-        &["for-each-ref", "refs/monocode/checkpoints/session/"]
+        &["for-each-ref", "refs/molfar/checkpoints/session/"]
     )
     .unwrap()
     .is_empty());

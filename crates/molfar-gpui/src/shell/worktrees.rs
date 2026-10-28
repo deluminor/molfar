@@ -309,13 +309,13 @@ mod tests {
             .update(cx, |shell, w, cx| shell.open(feature_session, w, cx))
             .unwrap();
         cx.run_until_parked();
-        let project = "/work/monocode";
+        let project = "/work/molfar";
         let feature = WorktreeFocus {
-            path: "/work/monocode-worktrees/feature".into(),
+            path: "/work/molfar-worktrees/feature".into(),
             branch: Some("feature".into()),
         };
         let other = WorktreeFocus {
-            path: "/work/monocode-worktrees/other".into(),
+            path: "/work/molfar-worktrees/other".into(),
             branch: Some("other".into()),
         };
         window

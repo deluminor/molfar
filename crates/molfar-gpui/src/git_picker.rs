@@ -23,7 +23,7 @@ mod tests {
     fn all_picker_modes_start_with_cached_choices_and_keep_them_after_refresh_failure(
         cx: &mut TestAppContext,
     ) {
-        let cwd = "/nonexistent/monocode-cached-git-picker";
+        let cwd = "/nonexistent/molfar-cached-git-picker";
         crate::git_cache::remember(
             cwd,
             &Snapshot {

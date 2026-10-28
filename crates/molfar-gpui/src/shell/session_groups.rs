@@ -447,7 +447,7 @@ impl Shell {
                     .submenu(vec![
                         MenuAction::new("copy-harness-session-id", "Harness session ID")
                             .disabled(summary.provider_id.is_none()),
-                        MenuAction::new("copy-monocode-session-id", "MonoCode session ID"),
+                        MenuAction::new("copy-molfar-session-id", "MOLFAR session ID"),
                     ])
                     .into(),
                 MenuAction::new(
@@ -524,7 +524,7 @@ impl Shell {
         let summary = self.session_metadata(id, cx).summary.clone();
         let ids = self.session_menu_ids(id, cx);
         match action {
-            "copy-harness-session-id" | "copy-monocode-session-id" => {
+            "copy-harness-session-id" | "copy-molfar-session-id" => {
                 let text = if action == "copy-harness-session-id" {
                     summary.provider_id
                 } else {

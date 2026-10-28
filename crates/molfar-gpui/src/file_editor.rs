@@ -1260,7 +1260,7 @@ mod tests {
         cx: &mut TestAppContext,
     ) {
         let root =
-            std::env::temp_dir().join(format!("monocode-file-overview-{}", std::process::id()));
+            std::env::temp_dir().join(format!("molfar-file-overview-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
         let git = |args: &[&str]| {
             let result = std::process::Command::new("git")
@@ -1382,7 +1382,7 @@ mod tests {
         for (extension, source_mode) in [("md", false), ("svg", false), ("md", true), ("svg", true)]
         {
             let path = std::env::temp_dir().join(format!(
-                "monocode-preview-focus-{}.{extension}",
+                "molfar-preview-focus-{}.{extension}",
                 std::process::id()
             ));
             std::fs::write(
@@ -1449,7 +1449,7 @@ mod tests {
 
     #[gpui::test]
     fn editor_load_find_save_and_external_edits_preserve_the_draft(cx: &mut TestAppContext) {
-        let path = std::env::temp_dir().join(format!("monocode-editor-{}.rs", std::process::id()));
+        let path = std::env::temp_dir().join(format!("molfar-editor-{}.rs", std::process::id()));
         std::fs::write(&path, "fn hello() {}\r\n// hello 🙂\r\n").unwrap();
         let file = path.to_string_lossy().into_owned();
         let window = cx.update(|cx| {

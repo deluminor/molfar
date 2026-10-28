@@ -1,5 +1,5 @@
 //! Mobile access: a paired phone browses and drives the desktop workspace over
-//! the QUIC link in `monocode-mobile-link`. The host here is app-agnostic; the
+//! the QUIC link in `molfar-mobile-link`. The host here is app-agnostic; the
 //! app answers [`host::Event`]s from its own state.
 pub mod catalog;
 pub mod host;

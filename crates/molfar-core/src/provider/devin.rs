@@ -450,7 +450,7 @@ pub(crate) fn catalog_models(raw: &Value) -> Vec<crate::catalog::Model> {
         .into_iter()
         .map(|family| {
             let fallback = default_variant(&family);
-            let model_thought = raw["_monocodeThoughtLevels"]
+            let model_thought = raw["_molfarThoughtLevels"]
                 .get(&fallback.value)
                 .map(thought)
                 .unwrap_or_else(|| thought(raw));
@@ -770,8 +770,7 @@ mod tests {
 
     #[test]
     fn writes_each_config_once_by_content() {
-        let dir =
-            std::env::temp_dir().join(format!("monocode-devin-config-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("molfar-devin-config-{}", std::process::id()));
         let first = write_once(&dir, "{}").unwrap();
         assert_eq!(write_once(&dir, "{}").unwrap(), first);
         assert_eq!(std::fs::read_to_string(&first).unwrap(), "{}");

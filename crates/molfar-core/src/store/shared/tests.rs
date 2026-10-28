@@ -4,7 +4,7 @@ use super::*;
 fn desktop_operator_access_restores_only_from_submitted_user_messages() {
     for (block, enabled) in [
         (
-            json!({"role":"user", "text":"Start a session", "monocode":true}),
+            json!({"role":"user", "text":"Start a session", "molfar":true}),
             true,
         ),
         (
@@ -12,19 +12,19 @@ fn desktop_operator_access_restores_only_from_submitted_user_messages() {
             true,
         ),
         (
-            json!({"role":"user", "text":"/monocode Start a session"}),
+            json!({"role":"user", "text":"/molfar Start a session"}),
             true,
         ),
         (
-            json!({"role":"user", "text":"Start a session", "monocode":true, "draft":true}),
+            json!({"role":"user", "text":"Start a session", "molfar":true, "draft":true}),
             false,
         ),
         (
-            json!({"role":"user", "text":"Start a session", "monocode":true, "internal":true}),
+            json!({"role":"user", "text":"Start a session", "molfar":true, "internal":true}),
             false,
         ),
         (
-            json!({"role":"assistant", "text":"/familiar Start a session", "monocode":true}),
+            json!({"role":"assistant", "text":"/familiar Start a session", "molfar":true}),
             false,
         ),
         (json!({"role":"user", "text":"Start a session"}), false),

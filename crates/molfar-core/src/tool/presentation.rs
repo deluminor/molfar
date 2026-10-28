@@ -316,7 +316,7 @@ pub(super) fn present(call: &ToolCall, fallback_cwd: Option<&str>) -> ToolPresen
     shown.target = shown.target.lines().next().unwrap_or("").into();
     shown
 }
-/// A step of Monocode's own visual tools.
+/// A step of MOLFAR's own visual tools.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VisualStep {
     Docs,
@@ -324,16 +324,16 @@ pub enum VisualStep {
     Show,
 }
 
-/// Recognizes Monocode's visual tools however a provider names an MCP tool:
-/// `visual_show`, `monocode_visual:visual_show`,
-/// `mcp__monocode_visual__visual_show` or `monocode_visual.visual_show`.
+/// Recognizes MOLFAR's visual tools however a provider names an MCP tool:
+/// `visual_show`, `molfar_visual:visual_show`,
+/// `mcp__molfar_visual__visual_show` or `molfar_visual.visual_show`.
 pub fn visual_tool(name: &str) -> Option<VisualStep> {
     let (server, tool) = name
         .rsplit_once("__")
         .or_else(|| name.rsplit_once(':'))
         .or_else(|| name.rsplit_once('.'))
         .unwrap_or(("", name));
-    if !server.is_empty() && !server.contains("monocode_visual") {
+    if !server.is_empty() && !server.contains("molfar_visual") {
         return None;
     }
     match tool {
@@ -972,15 +972,15 @@ mod visual_tests {
     fn visual_tools_read_as_chart_steps_under_every_provider_name() {
         for name in [
             "visual_show",
-            "monocode_visual:visual_show",
-            "mcp__monocode_visual__visual_show",
-            "monocode_visual.visual_show",
+            "molfar_visual:visual_show",
+            "mcp__molfar_visual__visual_show",
+            "molfar_visual.visual_show",
         ] {
             assert_eq!(visual_tool(name), Some(VisualStep::Show), "{name}");
         }
         assert_eq!(visual_tool("other_server:visual_show"), None);
         assert_eq!(visual_tool("visual_publish"), None);
-        let mut call = ToolCall::new("1", "monocode_visual:visual_show");
+        let mut call = ToolCall::new("1", "molfar_visual:visual_show");
         call.input = r#"{"title":"Stars per week","source":"return () => null"}"#.into();
         call.state = ToolState::Completed;
         let shown = call.presentation();

@@ -11,7 +11,7 @@ const guard = new URL("../crates/molfar-gpui/dependency_guard.rs", import.meta.u
 const cargoTimeout = process.platform === "win32" ? 180_000 : 60_000;
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), "monocode-dependency-guard-"));
+  const root = await mkdtemp(join(tmpdir(), "molfar-dependency-guard-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, "src"));
   await writeFile(join(root, "src/lib.rs"), "");
@@ -90,5 +90,5 @@ test("GPUI refuses to enable screen capture before compiling its implementation"
   ], { encoding: "utf8", timeout: 60_000 });
   assert.ifError(result.error);
   assert.notEqual(result.status, 0, result.stdout + result.stderr);
-  assert.match(result.stderr, /Screen capture is disabled in Monocode/);
+  assert.match(result.stderr, /Screen capture is disabled.*zed-scap is excluded pending license review/);
 });

@@ -756,7 +756,7 @@ impl Shell {
                         .min_h_0()
                         .min_w_0()
                         // Every project lands on a blank session, as in
-                        // Monocode; this is empty only while one is created.
+                        // MOLFAR; this is empty only while one is created.
                         .child({
                             if let Some(familiars) = self
                                 .familiars

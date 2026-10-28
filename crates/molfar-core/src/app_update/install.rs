@@ -112,7 +112,7 @@ fn install_appimage(package: &Path, target: &Path) -> Result<Installed, String> 
         .parent()
         .ok_or("Cannot locate the AppImage directory")?;
     let stage = tempfile::Builder::new()
-        .prefix(".monocode-update-")
+        .prefix(".molfar-update-")
         .tempdir_in(parent)
         .map_err(|e| e.to_string())?;
     let prepared = stage.path().join("new.AppImage");
@@ -168,13 +168,13 @@ fn extract_app(package: &Path, directory: &Path) -> Result<(), String> {
 fn install_mac(update: &Update, package: &Path, target: &Path) -> Result<Installed, String> {
     let parent = target.parent().ok_or("Cannot locate the app directory")?;
     let (stage, authorize) = match tempfile::Builder::new()
-        .prefix(".monocode-update-")
+        .prefix(".molfar-update-")
         .tempdir_in(parent)
     {
         Ok(stage) => (stage, false),
         Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => (
             tempfile::Builder::new()
-                .prefix("monocode-update-")
+                .prefix("molfar-update-")
                 .tempdir()
                 .map_err(|e| e.to_string())?,
             true,

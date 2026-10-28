@@ -96,7 +96,7 @@ impl Section {
     pub(crate) fn description(self) -> &'static str {
         match self {
             Section::General => {
-                "The build you are running, how MonoCode reaches you, and the panels it shows."
+                "The build you are running, how MOLFAR reaches you, and the panels it shows."
             }
             Section::Connections => "Connect your machines and run agents remotely through SSH.",
             Section::Appearance => {
@@ -109,7 +109,7 @@ impl Section {
                 "How transcripts read, what the composer does with a follow-up, how files save, and how diffs open."
             }
             Section::Providers => {
-                "Provider accounts, agent CLIs MonoCode can drive, and the model new sessions start with."
+                "Provider accounts, agent CLIs MOLFAR can drive, and the model new sessions start with."
             }
             Section::Mcp => "Find MCP servers across providers and manage their connections.",
             Section::Skills => {

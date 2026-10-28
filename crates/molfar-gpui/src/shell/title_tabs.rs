@@ -449,7 +449,7 @@ mod tests {
                 );
                 shell.close(second, w, cx);
                 assert_eq!(shell.workspace.active, Some(first));
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
                 assert!(shell.workspace.tabs.contains(&other_project));
             })
             .unwrap();
@@ -579,7 +579,7 @@ mod tests {
         cx.run_until_parked();
         window
             .update(cx, |shell, _, cx| {
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
                 assert_eq!(shell.working_copy(), "/work/feature");
                 assert_eq!(shell.visible_tabs(cx).len(), 1);
                 assert!(shell.workspace.title_order.contains(&familiar_main));
@@ -620,7 +620,7 @@ mod tests {
             .unwrap();
         let restored = cx.update(|cx| {
             cx.open_window(Default::default(), |_, cx| {
-                cx.new(|cx| Shell::new(store, summaries, "/work/monocode".into(), Some(saved), cx))
+                cx.new(|cx| Shell::new(store, summaries, "/work/molfar".into(), Some(saved), cx))
             })
             .unwrap()
         });
@@ -714,13 +714,13 @@ mod interaction_tests {
             .update(cx, |shell, w, cx| {
                 for id in [other, session] {
                     shell.sessions[&id].update(cx, |view, _| {
-                        view.summary.cwd = "/work/monocode".into();
+                        view.summary.cwd = "/work/molfar".into();
                         view.summary.has_messages = true;
                     });
                 }
                 shell
                     .familiar_manager()
-                    .update(cx, |m, cx| m.create(vec!["/work/monocode".into()], w, cx));
+                    .update(cx, |m, cx| m.create(vec!["/work/molfar".into()], w, cx));
             })
             .unwrap();
         cx.run_until_parked();
@@ -834,7 +834,7 @@ mod interaction_tests {
                 assert_eq!(shell.active_title_tab(cx), Some(familiar));
                 let chat = shell.familiar_manager().read(cx).chat().unwrap();
                 assert!(chat.read(cx).input.focus_handle(cx).is_focused(w));
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
             })
             .unwrap();
     }

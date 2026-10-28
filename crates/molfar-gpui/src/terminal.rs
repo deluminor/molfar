@@ -168,7 +168,7 @@ fn spawn(cwd: &str, size: GridSize, id: u64) -> Spawned {
         ("TERM", "xterm-256color".to_owned()),
         ("COLORTERM", "truecolor".to_owned()),
         ("COLORFGBG", "15;0".to_owned()),
-        ("TERM_PROGRAM", "MonoCode".to_owned()),
+        ("TERM_PROGRAM", "MOLFAR".to_owned()),
         ("PATH", molfar_core::scm::terminal_search_path()),
         ("PWD", workdir.to_string_lossy().into_owned()),
     ] {
@@ -1657,7 +1657,7 @@ mod tests {
         );
         assert_eq!(command_label("-zsh").as_deref(), Some("zsh"));
         assert!(is_shell_name("zsh"));
-        assert_eq!(default_title("/work/monocode"), "monocode");
+        assert_eq!(default_title("/work/molfar"), "molfar");
         assert_eq!(default_title("/"), "Terminal");
     }
 

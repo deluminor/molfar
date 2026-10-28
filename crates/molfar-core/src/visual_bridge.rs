@@ -490,7 +490,7 @@ fn publish_with_environment(
     let get = |key| {
         environment
             .get(key)
-            .ok_or("Visual publication requires a running MonoCode session")
+            .ok_or("Visual publication requires a running MOLFAR session")
     };
     let endpoint: SocketAddr = get(ENV_ENDPOINT)?
         .parse()
@@ -679,7 +679,7 @@ pub fn acp_servers(environment: &HashMap<String, String>) -> Value {
     };
     // ACP's stdio server shape omits the transport discriminator.
     server.as_object_mut().unwrap().remove("type");
-    server["name"] = "monocode_visual".into();
+    server["name"] = "molfar_visual".into();
     server["env"] = [ENV_ENDPOINT, ENV_TOKEN, ENV_SESSION, ENV_EXECUTABLE]
         .into_iter()
         .map(|key| json!({"name":key,"value":environment[key]}))
@@ -701,7 +701,7 @@ pub fn configure_codex(command: &mut std::process::Command, environment: &HashMa
         ),
     ] {
         // JSON's strings and arrays are valid TOML literals for these values.
-        command.args(["-c", &format!("mcp_servers.monocode_visual.{key}={value}")]);
+        command.args(["-c", &format!("mcp_servers.molfar_visual.{key}={value}")]);
     }
 }
 
@@ -722,7 +722,7 @@ fn mcp_response(request: Value, environment: &HashMap<String, String>) -> Option
     let id = request.get("id")?.clone();
     let result = match request["method"].as_str().unwrap_or("") {
         "initialize" => Ok(
-            json!({"protocolVersion":request["params"]["protocolVersion"].as_str().unwrap_or("2024-11-05"),"capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"monocode_visual","version":env!("CARGO_PKG_VERSION")}}),
+            json!({"protocolVersion":request["params"]["protocolVersion"].as_str().unwrap_or("2024-11-05"),"capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"molfar_visual","version":env!("CARGO_PKG_VERSION")}}),
         ),
         "ping" => Ok(json!({})),
         "tools/list" => Ok(json!({"tools":tool_definitions()})),
@@ -936,7 +936,7 @@ mod tests {
         assert!(arguments.contains(ENV_TOKEN));
         assert!(!arguments.contains(&environment[ENV_TOKEN]));
         let acp = acp_servers(&environment);
-        assert_eq!(acp[0]["name"], "monocode_visual");
+        assert_eq!(acp[0]["name"], "molfar_visual");
         assert_eq!(acp[0]["env"].as_array().unwrap().len(), 4);
         assert_eq!(mcp_server(&environment).unwrap()["command"], "/test/app");
     }

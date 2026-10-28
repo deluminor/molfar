@@ -130,7 +130,7 @@ fn original_project_plus_offers_local_and_remote_folders(cx: &mut TestAppContext
         .read_with(visual, |shell, _| {
             assert!(shell.menu.is_none());
             assert!(shell.remote_project_picker.is_none());
-            assert_eq!(shell.workspace.project, "/work/monocode");
+            assert_eq!(shell.workspace.project, "/work/molfar");
         })
         .unwrap();
 }
@@ -147,7 +147,7 @@ fn original_collapsed_picker_selects_familiars_and_projects_with_search_and_keyb
             let ids = shell.familiar_manager().update(cx, |manager, cx| {
                 let mut ids = Vec::new();
                 for (name, project) in [
-                    ("Alpha assistant", "/work/monocode"),
+                    ("Alpha assistant", "/work/molfar"),
                     ("Beta helper", "/work/another-project"),
                 ] {
                     let id = manager.roster.create(vec![project.into()]).id.clone();
@@ -195,7 +195,7 @@ fn original_collapsed_picker_selects_familiars_and_projects_with_search_and_keyb
                 shell.familiar_manager().read(cx).active.as_ref(),
                 Some(&ids[1])
             );
-            assert_eq!(shell.workspace.project, "/work/monocode");
+            assert_eq!(shell.workspace.project, "/work/molfar");
             assert!(
                 shell
                     .visible_tabs(cx)
@@ -415,7 +415,7 @@ fn project_clicks_leave_familiars_in_original_layout(cx: &mut TestAppContext) {
         let (window, _) = setup(cx, true, boxy);
         let visual = &mut VisualTestContext::from_window(window.into(), cx);
         let mut targets = Vec::new();
-        for path in ["/work/monocode", "/work/another-project"] {
+        for path in ["/work/molfar", "/work/another-project"] {
             let target = window
                 .update(visual, |shell, window, cx| {
                     shell.select_project(path.into(), window, cx);
@@ -486,7 +486,7 @@ fn new_layout_projects_restore_the_last_session_or_familiar_tab(cx: &mut TestApp
         let visual = &mut VisualTestContext::from_window(window.into(), cx);
         let stable = |value: String| Box::leak(value.into_boxed_str()) as &'static str;
         let mut targets = Vec::new();
-        for path in ["/work/monocode", "/work/another-project"] {
+        for path in ["/work/molfar", "/work/another-project"] {
             let target = window
                 .update(visual, |shell, window, cx| {
                     shell.select_project(path.into(), window, cx);

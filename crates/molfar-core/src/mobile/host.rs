@@ -369,7 +369,7 @@ impl MobileHost {
         }
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
-            .thread_name("monocode-mobile")
+            .thread_name("molfar-mobile")
             .enable_all()
             .build()
             .map_err(|e| format!("Mobile service could not start: {e}"))?;
@@ -394,7 +394,7 @@ impl MobileHost {
                 // Another copy of the app (or the earlier desktop) holds the
                 // port; phones would reach it instead of this one.
                 if error.contains("in use") || error.contains("os error 48") {
-                    format!("Another MonoCode window or app is already accepting phone connections on port {PORT}. Quit it, then turn Accept connections off and on.")
+                    format!("Another MOLFAR window or app is already accepting phone connections on port {PORT}. Quit it, then turn Accept connections off and on.")
                 } else {
                     error
                 }
@@ -757,8 +757,7 @@ mod tests {
         let join = Identity::generate().unwrap();
         let phone = Identity::generate().unwrap();
         let key = join.fingerprint().unwrap();
-        let dir =
-            std::env::temp_dir().join(format!("monocode-mobile-test-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("molfar-mobile-test-{}", uuid::Uuid::new_v4()));
         let (host, events) = MobileHost::open(dir.join("mobile-access.json")).unwrap();
         host.gate.allow(key.clone(), Some(now() + 900));
         {
@@ -781,8 +780,7 @@ mod tests {
         let saved: Config = serde_json::from_str(r#"{"enabled":true,"devices":[]}"#).unwrap();
         assert!(!saved.open_router);
 
-        let dir =
-            std::env::temp_dir().join(format!("monocode-mobile-test-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("molfar-mobile-test-{}", uuid::Uuid::new_v4()));
         let (host, _events) = MobileHost::open(dir.join("mobile-access.json")).unwrap();
         assert!(!host.status().open_router);
         host.inner.lock().unwrap().config.enabled = true;

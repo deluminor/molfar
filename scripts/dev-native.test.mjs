@@ -24,7 +24,7 @@ test("forwards app options and rejects the retired runner flags", () => {
 });
 
 async function fixture(t, env = {}, options = {}) {
-  const root = await realpath(await mkdtemp(join(tmpdir(), "monocode-dev-test-")));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "molfar-dev-test-")));
   const messages = [];
   const children = [];
   const calls = [];

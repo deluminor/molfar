@@ -69,7 +69,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
   run("spctl", ["--assess", "--type", "execute", app]);
   const name = arch === "aarch64" ? "aarch64" : "x64";
   const archive = add(
-    `MonocodeNative_${version}_${name}.app.tar.gz`,
+    `MolfarNative_${version}_${name}.app.tar.gz`,
     `darwin-${arch}-app`,
   );
   run("tar", ["-czf", archive, "-C", dirname(app), "MOLFAR Native.app"], {
@@ -79,7 +79,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
   await mkdir(imageRoot);
   run("ditto", [app, join(imageRoot, "MOLFAR Native.app")]);
   run("ln", ["-s", "/Applications", join(imageRoot, "Applications")]);
-  const dmg = add(`MonocodeNative_${version}_${name}.dmg`);
+  const dmg = add(`MolfarNative_${version}_${name}.dmg`);
   const imageSizeMiB =
     Math.ceil((await logicalBytes(imageRoot)) / 1048576) + 64;
   run("hdiutil", [

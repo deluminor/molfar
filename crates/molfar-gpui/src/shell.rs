@@ -834,7 +834,7 @@ impl Shell {
             .ok()
             .and_then(|store| store.data_dir().map(std::path::Path::to_path_buf))
             .unwrap_or_else(|| {
-                std::env::temp_dir().join(format!("monocode-remote-{}", std::process::id()))
+                std::env::temp_dir().join(format!("molfar-remote-{}", std::process::id()))
             });
         let remote = Arc::new(molfar_core::remote::Connections::new(remote_dir));
         molfar_core::remote::set_default_connections(remote.clone());
@@ -6497,7 +6497,7 @@ impl Shell {
         self.refresh_sidebar_structure(cx);
         let live_agents = self.live_agents_preview(cx);
         div()
-            .id("monocode-sidebar")
+            .id("molfar-sidebar")
             .debug_selector(|| "sidebar-content".into())
             .track_focus(&self.sidebar_focus)
             .key_context("SessionSidebar")
@@ -8277,7 +8277,7 @@ impl Render for Shell {
         }
         self.sync_notices(window, cx);
         div()
-            .id("monocode-workspace")
+            .id("molfar-workspace")
             .relative()
             .role(Role::Application)
             .aria_label("MOLFAR Native")
@@ -8764,7 +8764,7 @@ mod tests {
             .update(cx, |shell, _, cx| {
                 let saved = locked(&shell.store).unwrap().ui_state().unwrap().unwrap();
                 assert_eq!(*shell.latest_state.lock().unwrap(), saved);
-                let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                 assert_eq!(restored.window.bounds(cx).get_bounds().size, dimensions);
             })
             .unwrap();
@@ -8792,7 +8792,7 @@ mod tests {
                 ));
                 let saved = locked(&shell.store).unwrap().ui_state().unwrap().unwrap();
                 assert_eq!(*shell.latest_state.lock().unwrap(), saved);
-                let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                 let bounds = restored.window.bounds(cx);
                 assert!(matches!(bounds, gpui::WindowBounds::Fullscreen(_)));
                 assert_eq!(bounds.get_bounds().size, normal_size);
@@ -8805,7 +8805,7 @@ mod tests {
         window
             .update(cx, |shell, _, cx| {
                 shell.sessions[&a].update(cx, |session, _| {
-                    session.summary.cwd = "/work/monocode".into();
+                    session.summary.cwd = "/work/molfar".into();
                     session.summary.has_messages = true;
                 });
                 shell.sessions[&b].update(cx, |session, _| session.summary.has_messages = true);
@@ -8865,7 +8865,7 @@ mod tests {
             .update(cx, |shell, _, cx| {
                 shell.sessions[&a].update(cx, |session, cx| {
                     session.busy = true;
-                    session.summary.cwd = "/work/monocode".into();
+                    session.summary.cwd = "/work/molfar".into();
                     session.summary.has_messages = true;
                     cx.emit(SessionChanged);
                 });
@@ -8914,7 +8914,7 @@ mod tests {
                 shell.workspace.classic_layout = true;
                 let mut summary = locked(&shell.store)
                     .unwrap()
-                    .create("codex", "/work/monocode")
+                    .create("codex", "/work/molfar")
                     .unwrap();
                 summary.has_messages = true;
                 let id = summary.id;
@@ -8955,7 +8955,7 @@ mod tests {
         window
             .update(cx, |shell, _, cx| {
                 shell.sessions[&a].update(cx, |session, _| {
-                    session.summary.cwd = "/work/monocode".into();
+                    session.summary.cwd = "/work/molfar".into();
                     session.summary.has_messages = true;
                 });
                 shell.sessions[&b].update(cx, |session, _| session.summary.has_messages = true);
@@ -9201,7 +9201,7 @@ mod tests {
                 shell.close(a, w, cx);
                 assert!(shell.notes.is_some());
                 assert_eq!(shell.workspace.active, Some(b));
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
             })
             .unwrap();
     }
@@ -9224,7 +9224,7 @@ mod tests {
                 assert!(shell.notes.is_some());
                 assert_eq!(shell.workspace.active, Some(b));
                 assert_eq!(shell.workspace.tabs, [c, b]);
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
             })
             .unwrap();
     }
@@ -9296,7 +9296,7 @@ mod tests {
         cx.run_until_parked();
         window
             .update(cx, |shell, w, cx| {
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
                 let blank = shell.workspace.active.unwrap();
                 assert_ne!(blank, b);
                 assert_eq!(shell.workspace.tabs, [a, blank]);
@@ -9339,7 +9339,7 @@ mod tests {
                 for _ in 0..2 {
                     let summary = locked(&shell.store)
                         .unwrap()
-                        .create("codex", "/work/monocode")
+                        .create("codex", "/work/molfar")
                         .unwrap();
                     extra.push(summary.id);
                     shell.add(summary, cx);
@@ -9360,7 +9360,7 @@ mod tests {
                 shell.run_menu(MenuTarget::Tab(a), "others", None, w, cx);
                 assert_eq!(shell.workspace.tabs, [a, d]);
                 assert_eq!(shell.workspace.active, Some(d));
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
             })
             .unwrap();
     }
@@ -9371,7 +9371,7 @@ mod tests {
             .update(cx, |shell, w, cx| {
                 let summary = locked(&shell.store)
                     .unwrap()
-                    .create("codex", "/work/monocode")
+                    .create("codex", "/work/molfar")
                     .unwrap();
                 let c = summary.id;
                 shell.add(summary, cx);
@@ -9379,7 +9379,7 @@ mod tests {
                 shell.open(b, w, cx);
                 shell.select_project("/work/another-project".into(), w, cx);
                 assert_eq!(shell.workspace.active, Some(a));
-                shell.select_project("/work/monocode".into(), w, cx);
+                shell.select_project("/work/molfar".into(), w, cx);
                 assert_eq!(shell.workspace.active, Some(b));
                 let saved = serde_json::to_string(&shell.workspace).unwrap();
                 let summaries: Vec<_> = shell
@@ -9387,8 +9387,8 @@ mod tests {
                     .iter()
                     .map(|(id, s)| (*id, s.read(cx).summary.cwd.clone()))
                     .collect();
-                let restored = Workspace::restore(Some(&saved), &summaries, "/work/monocode");
-                assert_eq!(restored.project_focus["/work/monocode"], b);
+                let restored = Workspace::restore(Some(&saved), &summaries, "/work/molfar");
+                assert_eq!(restored.project_focus["/work/molfar"], b);
                 assert_eq!(restored.project_focus["/work/another-project"], a);
                 assert_eq!(restored.active, Some(b));
             })
@@ -9401,7 +9401,7 @@ mod tests {
             .update(cx, |shell, w, cx| {
                 shell.open_review(
                     crate::review::ReviewTab::Commit {
-                        cwd: "/work/monocode".into(),
+                        cwd: "/work/molfar".into(),
                         sha: "abcdef1".into(),
                         short_sha: "abcdef1".into(),
                         subject: "Fix".into(),
@@ -9419,14 +9419,11 @@ mod tests {
         cx.run_until_parked();
         window
             .update(cx, |shell, _, cx| {
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
                 assert!(shell.workspace.tabs.contains(&a));
                 assert!(!shell.reviews.contains_key(&b));
                 let active = shell.workspace.active.unwrap();
-                assert_eq!(
-                    shell.sessions[&active].read(cx).summary.cwd,
-                    "/work/monocode"
-                );
+                assert_eq!(shell.sessions[&active].read(cx).summary.cwd, "/work/molfar");
             })
             .unwrap();
     }
@@ -9565,11 +9562,11 @@ mod tests {
         window
             .update(visual, |shell, w, cx| {
                 assert!(shell.menu.is_none());
-                assert_eq!(shell.project_label("/work/monocode"), "Small Studio");
+                assert_eq!(shell.project_label("/work/molfar"), "Small Studio");
                 let appearance = shell
                     .workspace
                     .project_appearance
-                    .get_mut("/work/monocode")
+                    .get_mut("/work/molfar")
                     .unwrap();
                 assert_eq!(appearance.color, Some(COLORS[4]));
                 assert_eq!(appearance.mascot.as_deref(), Some("cat"));
@@ -9585,7 +9582,7 @@ mod tests {
                 );
                 shell.open_menu(
                     MenuTarget::Project {
-                        path: "/work/monocode".into(),
+                        path: "/work/molfar".into(),
                         rail: false,
                     },
                     Anchor::Point(gpui::point(px(300.), px(60.))),
@@ -9677,7 +9674,7 @@ mod tests {
         visual.run_until_parked();
         window
             .update(visual, |shell, _, _| {
-                let background = shell.workspace.project_appearance["/work/monocode"]
+                let background = shell.workspace.project_appearance["/work/molfar"]
                     .background
                     .as_ref()
                     .unwrap();
@@ -9686,8 +9683,8 @@ mod tests {
                 assert!((background.empty_opacity - 0.36).abs() < 0.001);
                 let restored = Workspace::restore(
                     Some(&serde_json::to_string(&shell.workspace).unwrap()),
-                    &[(active, "/work/monocode".into())],
-                    "/work/monocode",
+                    &[(active, "/work/molfar".into())],
+                    "/work/molfar",
                 );
                 assert_eq!(
                     restored.project_appearance,
@@ -9718,7 +9715,7 @@ mod tests {
         visual.simulate_resize(gpui::size(px(820.), px(520.)));
         window
             .update(visual, |shell, w, cx| {
-                shell.open_background_dialog("/work/monocode".into(), w, cx);
+                shell.open_background_dialog("/work/molfar".into(), w, cx);
             })
             .unwrap();
         visual.run_until_parked();
@@ -9787,7 +9784,7 @@ mod tests {
         let (window, a, b) = window(cx);
         window
             .update(cx, |shell, _, cx| {
-                for path in ["/work/another-project", "/work/monocode"] {
+                for path in ["/work/another-project", "/work/molfar"] {
                     shell.workspace.project_appearance.insert(
                         path.into(),
                         ProjectAppearance {
@@ -10028,7 +10025,7 @@ mod tests {
             .update(cx, |shell, w, cx| {
                 for id in [a, b] {
                     shell.sessions[&id].update(cx, |session, cx| {
-                        session.summary.cwd = "/work/monocode".into();
+                        session.summary.cwd = "/work/molfar".into();
                         session.summary.has_messages = true;
                         cx.emit(SessionChanged);
                     });
@@ -10156,7 +10153,7 @@ mod tests {
                 shell.toggle_right_panel(w, cx);
                 shell.open_review(
                     crate::review::ReviewTab::File {
-                        cwd: "/work/monocode".into(),
+                        cwd: "/work/molfar".into(),
                         path: "README.md".into(),
                     },
                     w,
@@ -10758,7 +10755,7 @@ mod tests {
                     classic_sidebar::ClassicSidebarTab::Sessions
                 );
                 let saved = shell.latest_state.lock().unwrap().clone();
-                let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                 assert_eq!(
                     restored.classic_sidebar_tab_order,
                     ["files", "changes", "sessions"]
@@ -10920,7 +10917,7 @@ mod tests {
             .update(cx, |shell, _, cx| {
                 assert!(shell.workspace.new_layout_boxy);
                 let saved = serde_json::to_string(&shell.workspace).unwrap();
-                assert!(Workspace::restore(Some(&saved), &[], "/work/monocode").new_layout_boxy);
+                assert!(Workspace::restore(Some(&saved), &[], "/work/molfar").new_layout_boxy);
                 shell.workspace.new_layout_boxy = !shell.workspace.new_layout_boxy;
                 shell.layout_changed(cx);
                 assert!(!shell.workspace.new_layout_boxy);
@@ -11218,7 +11215,7 @@ mod tests {
     }
 
     #[gpui::test]
-    fn tab_project_and_session_keys_follow_monocode(cx: &mut TestAppContext) {
+    fn tab_project_and_session_keys_follow_molfar(cx: &mut TestAppContext) {
         let (window, a, b) = same_project_window(cx);
         cx.update(|cx| {
             input::bind(cx);
@@ -11310,7 +11307,7 @@ mod tests {
     #[gpui::test]
     fn desktop_database_sessions_load_and_copy_their_original_ids(cx: &mut TestAppContext) {
         let mut store = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
-        let summary = store.create("codex", "/work/monocode").unwrap();
+        let summary = store.create("codex", "/work/molfar").unwrap();
         let id = summary.id;
         let original = store.persisted_session_id(id).unwrap();
         store
@@ -11332,15 +11329,7 @@ mod tests {
         let database = Arc::new(Mutex::new(store));
         let window = cx.update(|cx| {
             cx.open_window(Default::default(), |_, cx| {
-                cx.new(|cx| {
-                    Shell::new(
-                        database,
-                        summaries,
-                        "/work/monocode".into(),
-                        Some(saved),
-                        cx,
-                    )
-                })
+                cx.new(|cx| Shell::new(database, summaries, "/work/molfar".into(), Some(saved), cx))
             })
             .unwrap()
         });
@@ -11395,7 +11384,7 @@ mod tests {
                 for _ in 0..18 {
                     let summary = locked(&shell.store)
                         .unwrap()
-                        .create("codex", "/work/monocode")
+                        .create("codex", "/work/molfar")
                         .unwrap();
                     let id = summary.id;
                     assert!(!summary.has_messages);
@@ -11426,7 +11415,7 @@ mod tests {
                 let id = shell.workspace.active.unwrap();
                 let anchor = Anchor::Point(gpui::point(px(400.), px(30.)));
                 shell.open_menu(MenuTarget::Tab(id), anchor, w, cx);
-                // Closing every tab preserves one fresh blank tab, as in Monocode.
+                // Closing every tab preserves one fresh blank tab, as in MOLFAR.
                 for id in shell.workspace.tabs.clone() {
                     shell.close(id, w, cx);
                 }
@@ -11440,7 +11429,7 @@ mod tests {
         let (window, a, b) = window(cx);
         window
             .update(cx, |shell, _, cx| {
-                shell.sessions[&a].update(cx, |s, _| s.summary.cwd = "/work/monocode".into());
+                shell.sessions[&a].update(cx, |s, _| s.summary.cwd = "/work/molfar".into());
                 shell.invalidate_chrome(cx);
             })
             .unwrap();
@@ -11472,7 +11461,7 @@ mod tests {
     pub(super) fn window(cx: &mut TestAppContext) -> (WindowHandle<Shell>, i64, i64) {
         let mut store = Store::open(std::path::Path::new(":memory:")).unwrap();
         let mut a = store.create("codex", "/work/another-project").unwrap();
-        let b = store.create("claude", "/work/monocode").unwrap();
+        let b = store.create("claude", "/work/molfar").unwrap();
         store
             .write_rows(
                 a.id,
@@ -11493,7 +11482,7 @@ mod tests {
             ..Default::default()
         };
         state.add_project("/work/another-project");
-        state.add_project("/work/monocode");
+        state.add_project("/work/molfar");
         state.open(a.id);
         state.open(b.id);
         let saved = serde_json::to_string(&state).unwrap();
@@ -11502,7 +11491,7 @@ mod tests {
             cx.open_window(Default::default(), |_, cx| {
                 cx.new(|cx| {
                     let mut shell =
-                        Shell::new(store, vec![b, a], "/work/monocode".into(), Some(saved), cx);
+                        Shell::new(store, vec![b, a], "/work/molfar".into(), Some(saved), cx);
                     // This shared fixture intentionally exposes both entities to
                     // interaction tests; production restoration stays lazy.
                     shell.ensure_session(ids.0, cx);
@@ -11640,7 +11629,7 @@ mod tests {
                     .elapsed(Duration::from_secs(1));
                 shell.open_review(
                     crate::review::ReviewTab::Changes {
-                        cwd: "/work/monocode".into(),
+                        cwd: "/work/molfar".into(),
                         path: None,
                         staged: None,
                     },
@@ -11789,8 +11778,7 @@ mod tests {
     ) {
         cx.update(|cx| cx.set_reduce_motion(true));
         use gpui::EntityInputHandler;
-        let path =
-            std::env::temp_dir().join(format!("monocode-file-pane-{}.rs", std::process::id()));
+        let path = std::env::temp_dir().join(format!("molfar-file-pane-{}.rs", std::process::id()));
         std::fs::write(&path, "fn main() {}\n").unwrap();
         let (window, _, id) = window(cx);
         let cx = &mut gpui::VisualTestContext::from_window(window.into(), cx);
@@ -11939,7 +11927,7 @@ mod tests {
         window
             .update(cx, |shell, _, cx| {
                 shell.sessions[&a].update(cx, |s, _| {
-                    s.summary.cwd = "/work/monocode".into();
+                    s.summary.cwd = "/work/molfar".into();
                     s.summary.has_messages = true;
                 });
                 shell.invalidate_chrome(cx);
@@ -12246,7 +12234,7 @@ mod tests {
                 if file {
                     shell.open_review(
                         crate::review::ReviewTab::File {
-                            cwd: "/work/monocode".into(),
+                            cwd: "/work/molfar".into(),
                             path: "/tmp/header-close.rs".into(),
                         },
                         w,
@@ -12572,7 +12560,7 @@ mod tests {
                 shell.open(b, window, cx);
                 shell.open_review(
                     crate::review::ReviewTab::Commit {
-                        cwd: "/work/monocode".into(),
+                        cwd: "/work/molfar".into(),
                         sha: "abcdef1".into(),
                         short_sha: "abcdef1".into(),
                         subject: "Fix".into(),
@@ -12633,7 +12621,7 @@ mod tests {
                 });
                 shell.close(b, w, cx);
                 assert_eq!(shell.workspace.active, None);
-                assert_eq!(shell.workspace.project, "/work/monocode");
+                assert_eq!(shell.workspace.project, "/work/molfar");
                 assert!(shell.sessions[&b].read(cx).busy);
                 shell.open(a, w, cx);
                 shell.open(b, w, cx);

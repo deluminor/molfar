@@ -800,7 +800,7 @@ mod tests {
                 .unwrap()
                 .as_nanos();
             let dir = std::env::temp_dir().join(format!(
-                "monocode-mobile-{label}-{}-{stamp}",
+                "molfar-mobile-{label}-{}-{stamp}",
                 std::process::id()
             ));
             std::fs::create_dir_all(&dir).unwrap();

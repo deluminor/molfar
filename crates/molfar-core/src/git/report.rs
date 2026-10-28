@@ -401,7 +401,7 @@ mod tests {
             ),
             run(
                 "git push",
-                "To github.com:chatbotkit/monocode.git\n   43b1107..3bb0c42  mc/migrate -> mc/migrate\n",
+                "To github.com:deluminor/molfar.git\n   43b1107..3bb0c42  mc/migrate -> mc/migrate\n",
             ),
         ]);
         assert_eq!(
@@ -418,10 +418,10 @@ mod tests {
         let push = report.push.unwrap();
         assert!(push.ok && !push.up_to_date);
         assert_eq!(push.branch.as_deref(), Some("mc/migrate"));
-        assert_eq!(push.repo.as_deref(), Some("chatbotkit/monocode"));
+        assert_eq!(push.repo.as_deref(), Some("deluminor/molfar"));
         assert_eq!(
             push.web.as_deref(),
-            Some("https://github.com/chatbotkit/monocode")
+            Some("https://github.com/deluminor/molfar")
         );
     }
 

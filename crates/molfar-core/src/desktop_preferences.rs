@@ -529,7 +529,7 @@ mod tests {
     fn reads_webkit_utf16_and_excludes_development_origins() {
         let root = tempfile::tempdir().unwrap();
         for (name, scheme, label) in [
-            ("production", "tauri", "Monocode 🦀"),
+            ("production", "tauri", "MOLFAR 🦀"),
             ("development", "http", "Stale name"),
         ] {
             let path = root.path().join(name).join(name);
@@ -546,7 +546,7 @@ mod tests {
             .unwrap();
         }
         let preferences = DesktopPreferences::load_webkit(root.path());
-        assert_eq!(preferences.get("molfar.test"), Some("Monocode 🦀"));
+        assert_eq!(preferences.get("molfar.test"), Some("MOLFAR 🦀"));
         assert!(!desktop_origin(&origin("http", "localhost")));
         assert!(desktop_origin(&origin("https", "tauri.localhost")));
         assert!(!desktop_origin(b"tauri localhost"));
@@ -571,7 +571,7 @@ mod tests {
             ),
             (
                 "molfar:tab-group:labels",
-                json!({"/code/agent-terminal":"Monocode"}),
+                json!({"/code/agent-terminal":"MOLFAR"}),
             ),
             (
                 "molfar:tab-group:logos",
@@ -589,7 +589,7 @@ mod tests {
         assert!(workspace["active"].is_null());
         assert_eq!(
             workspace["project_appearance"]["/code/agent-terminal"]["name"],
-            "Monocode"
+            "MOLFAR"
         );
         assert_eq!(
             workspace["project_appearance"]["/code/agent-terminal"]["logo"],

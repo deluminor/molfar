@@ -5,7 +5,7 @@ impl Store {
     /// Look up an existing Familiar conversation independently of the sidebar.
     /// Hidden sessions are valid conversations and must never be replaced.
     pub fn familiar_session(&self, id: i64) -> Result<Option<Session>, String> {
-        if !self.uses_monocode_schema() {
+        if !self.uses_molfar_schema() {
             return Ok(self
                 .sessions()?
                 .into_iter()
@@ -53,7 +53,7 @@ impl Store {
     }
     /// Cheap freshness token; the blocks themselves are loaded only on change.
     pub fn familiar_work_revision(&self, id: i64) -> Result<Option<(u64, u64, u64)>, String> {
-        if !self.uses_monocode_schema() {
+        if !self.uses_molfar_schema() {
             return Ok(None);
         }
         let original = self.persisted_session_id(id)?;
@@ -97,7 +97,7 @@ impl Store {
         id: &str,
         body: bool,
     ) -> Result<Option<crate::familiar::Document>, String> {
-        if !self.uses_monocode_schema() || !super::shared::has_table(&self.conn, "notes")? {
+        if !self.uses_molfar_schema() || !super::shared::has_table(&self.conn, "notes")? {
             return Ok(None);
         }
         let has_kind: bool = self.conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('notes') WHERE name='artifact_kind')", [], |r| r.get(0)).map_err(|e| e.to_string())?;
@@ -131,7 +131,7 @@ impl Store {
     /// Metadata comes from the saved conversation, in both indexed Familiar history
     /// and older sessions.blocks_json. No provider rollout is opened here.
     pub fn familiar_work(&self, id: i64) -> Result<Option<crate::familiar::Work>, String> {
-        if !self.uses_monocode_schema() {
+        if !self.uses_molfar_schema() {
             return Ok(None);
         }
         let original = self.persisted_session_id(id)?;
@@ -158,7 +158,7 @@ impl Store {
             'tool',CASE WHEN json_extract(block,'$.role')='tool' THEN json_extract(block,'$.tool') ELSE NULL END)
             FROM ({source}) WHERE json_type(block,'$.artifactCards')='array' OR json_type(block,'$.familiarSpawnedSessions')='array'
             OR (json_extract(block,'$.role')='tool' AND json_extract(block,'$.tool.status') IN ('completed','success')
-                AND COALESCE(json_extract(block,'$.tool.preview.title'),json_extract(block,'$.tool.title'),json_extract(block,'$.text'),'') LIKE '%monocode%app%sessions.%') ORDER BY seq"#
+                AND COALESCE(json_extract(block,'$.tool.preview.title'),json_extract(block,'$.tool.title'),json_extract(block,'$.text'),'') LIKE '%molfar%app%sessions.%') ORDER BY seq"#
         );
         let mut statement = self.conn.prepare(&query).map_err(|e| e.to_string())?;
         let values = statement

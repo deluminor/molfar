@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn captures_private_stack_reports_and_keeps_only_five() {
         let directory = std::env::temp_dir().join(format!(
-            "monocode-watchdog-test-{}",
+            "molfar-watchdog-test-{}",
             molfar_core::familiar::new_id()
         ));
         std::fs::create_dir_all(&directory).unwrap();

@@ -867,7 +867,7 @@ mod tests {
             .update(cx, |shell, _, cx| {
                 let mut summary = locked(&shell.store)
                     .unwrap()
-                    .create("codex", "/work/monocode")
+                    .create("codex", "/work/molfar")
                     .unwrap();
                 summary.has_messages = true;
                 summary.title =
@@ -931,7 +931,7 @@ mod tests {
                     assert_eq!(shell.sessions.len(), loaded);
                     assert!(!shell.sessions.contains_key(&id));
                     let saved = shell.latest_state.lock().unwrap().clone();
-                    let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                    let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                     assert!(!restored.compact_session_cards);
                 })
                 .unwrap();
@@ -1026,7 +1026,7 @@ mod tests {
                 }
                 assert!(!cx.global::<crate::settings::Preferences>().familiars);
                 let saved = shell.latest_state.lock().unwrap().clone();
-                let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                 assert!(!restored.sidebar_notes_visible);
                 assert!(!restored.sidebar_automations_visible);
                 assert!(!restored.sidebar_inbox_visible);
@@ -1116,7 +1116,7 @@ mod tests {
                     let menu = shell.menu.as_ref().unwrap().menu.read(cx);
                     assert_eq!(menu.toggle_state("sidebar-activity"), Some(false));
                     let saved = shell.latest_state.lock().unwrap().clone();
-                    let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                    let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                     assert!(!restored.sidebar_activity_visible);
                 })
                 .unwrap();
@@ -1127,7 +1127,7 @@ mod tests {
             window
                 .update(visual, |shell, _, _| {
                     let saved = shell.latest_state.lock().unwrap().clone();
-                    let restored = Workspace::restore(Some(&saved), &[], "/work/monocode");
+                    let restored = Workspace::restore(Some(&saved), &[], "/work/molfar");
                     assert!(restored.sidebar_activity_visible);
                 })
                 .unwrap();

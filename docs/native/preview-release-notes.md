@@ -1,6 +1,6 @@
-# Monocode Native 0.16.0-preview.8
+# MOLFAR Native 0.16.0-preview.8
 
-This experimental Monocode Native preview is built with Rust + GPUI. React/Tauri remains the production app.
+This experimental MOLFAR Native preview is built with Rust + GPUI. React/Tauri remains the production app.
 
 ## Changes since preview 7
 
@@ -18,11 +18,11 @@ Thanks to @parkgogogo, @knot2006, @Kaloyanes and @Hazem-Samak for their contribu
 
 ## Installation and testing
 
-Choose the download for your platform: macOS Apple Silicon or Intel, Windows x64, or Linux x64 (AppImage, Debian/Ubuntu `.deb`, or Fedora/Enterprise Linux `.rpm`). Install it alongside your existing Monocode application.
+Choose the download for your platform: macOS Apple Silicon or Intel, Windows x64, or Linux x64 (AppImage, Debian/Ubuntu `.deb`, or Fedora/Enterprise Linux `.rpm`). Install it alongside your existing MOLFAR application.
 
 **Testing status:** macOS is the primary tested platform. A Linux ARM64 source build was launched and exercised in an Ubuntu VM with a graphics workaround; the downloadable Linux x64 packages and Windows app still need runtime testing. Native system notifications currently support macOS only. HTML panels and media support remain limited on Linux and Windows.
 
-**Data:** this preview uses your existing Monocode database and saves changes there. Back up your Monocode data with the app closed before testing. Native preferences are stored separately. Avoid editing the same conversations in both apps at once.
+**Data:** this preview uses your existing MOLFAR database and saves changes there. Back up your MOLFAR data with the app closed before testing. Native preferences are stored separately. Avoid editing the same conversations in both apps at once.
 
 **Updates:** use Settings → General → About to check for updates and install the next native preview. Packaged upgrades still need runtime testing; if updating fails, download the new installer manually. Linux `.deb`/`.rpm` installs use the system authentication prompt (`pkexec`) to install the downloaded package. Cancelling authentication leaves the current version installed. Native previews receive native preview updates; production Tauri releases use their own feed.
 

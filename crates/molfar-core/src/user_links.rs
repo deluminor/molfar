@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn the_first_link_keeps_the_text_around_it() {
-        let text = "hey lets review this pr\n\nhttps://github.com/hardbeat920/monocode/pull/1142 its for the native one";
+        let text = "hey lets review this pr\n\nhttps://github.com/deluminor/molfar/pull/127 its for the native one";
         let found = parse_user_message_link(text).unwrap();
         assert_eq!(&text[..found.range.start], "hey lets review this pr\n\n");
         assert_eq!(&text[found.range.end..], " its for the native one");
@@ -167,8 +167,8 @@ mod tests {
             found.link.github_work_item,
             Some(GithubWorkItemLink {
                 kind: "pr",
-                repo: "hardbeat920/monocode".into(),
-                number: 1142,
+                repo: "deluminor/molfar".into(),
+                number: 127,
             })
         );
         assert_eq!(found.link.host, "github.com");

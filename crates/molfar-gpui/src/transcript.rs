@@ -6443,7 +6443,7 @@ mod scroll_tests {
         let start = serde_json::to_string(&ToolCall {
             id: "t".into(),
             name: "Bash".into(),
-            input: r#"{"command":"monocode app sessions.start --json {}"}"#.into(),
+            input: r#"{"command":"molfar app sessions.start --json {}"}"#.into(),
             output: r#"{"ok":true,"result":{"sessionId":776,"accepted":true}}"#.into(),
             state: ToolState::Completed,
             panel: None,
@@ -6562,7 +6562,7 @@ mod scroll_tests {
         let start = serde_json::to_string(&ToolCall {
             id: "t".into(),
             name: "Bash".into(),
-            input: r#"{"command":"monocode app sessions.start --json {}"}"#.into(),
+            input: r#"{"command":"molfar app sessions.start --json {}"}"#.into(),
             output: r#"{"ok":true,"result":{"sessionId":7,"accepted":true}}"#.into(),
             state: ToolState::Completed,
             panel: None,

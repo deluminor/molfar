@@ -149,7 +149,7 @@ fn familiar_mascot_is_beside_name_and_sidebar_switch_stays_visible(cx: &mut Test
                 name: "Big Boss".into(),
                 mascot: "ghost".into(),
                 color: 0xee99bb,
-                projects: vec!["monocode".into(), "familiar-web".into()],
+                projects: vec!["molfar".into(), "familiar-web".into()],
                 show: false,
                 folders: false,
             }];

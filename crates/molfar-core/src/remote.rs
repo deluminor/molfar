@@ -620,7 +620,7 @@ impl Connections {
                         || !supports("files.create")
                         || !supports("files.searchContent")
                     {
-                        return Err("The installed host package still lacks Explorer and Changes. Install a newer MonoCode release with updated host packages.".into());
+                        return Err("The installed host package still lacks Explorer and Changes. Install a newer MOLFAR release with updated host packages.".into());
                     }
                 }
                 if machine.name.trim().is_empty() {

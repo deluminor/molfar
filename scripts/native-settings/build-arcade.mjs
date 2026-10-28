@@ -2,7 +2,7 @@
 import {createRequire} from 'node:module';
 import path from 'node:path';
 const root=process.cwd();
-const require=createRequire(path.join(process.env.MONOCODE_REFERENCE_ROOT||root,'package.json'));
+const require=createRequire(path.join(process.env.MOLFAR_REFERENCE_ROOT||root,'package.json'));
 const {build}=require('esbuild');
 await build({stdin:{contents:`import {GRID_GAMES} from './src/features/terminal/arcade/grid-games';
 import {PROJECT_MASCOTS} from './src/features/projects/model/project-mascots';

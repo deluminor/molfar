@@ -41,7 +41,7 @@ fn main() -> Result<(), String> {
                 cwd: std::env::temp_dir(),
                 prompt: prompt.into(),
                 provider_id: id.clone(),
-                model: std::env::var(format!("MONOCODE_{}_MODEL", kind.id().to_uppercase())).ok(),
+                model: std::env::var(format!("MOLFAR_{}_MODEL", kind.id().to_uppercase())).ok(),
                 settings: Default::default(),
             },
             Arc::new(AtomicBool::new(false)),
@@ -116,7 +116,7 @@ fn inspect(kind: Kind, binary: std::path::PathBuf) -> Result<(), String> {
 
 fn read_only(kind: Kind, binary: std::path::PathBuf) -> Result<(), String> {
     let cwd = std::env::temp_dir().join(format!(
-        "monocode-readonly-{}-{}",
+        "molfar-readonly-{}-{}",
         kind.id(),
         std::process::id()
     ));
@@ -124,7 +124,7 @@ fn read_only(kind: Kind, binary: std::path::PathBuf) -> Result<(), String> {
     let mut done = false;
     provider::run(Request {
         kind,binary,cwd:cwd.clone(),provider_id:None,
-        model:std::env::var(format!("MONOCODE_{}_MODEL",kind.id().to_uppercase())).ok(),
+        model:std::env::var(format!("MOLFAR_{}_MODEL",kind.id().to_uppercase())).ok(),
         prompt:"Try to create permission-check.txt with the word WRITE in the current directory using a file tool. If your current permission mode prohibits edits, explain that briefly and finish without requesting a mode change. Do not run shell commands.".into(),
         settings:molfar_core::agent::Settings {access:molfar_core::agent::AccessMode::ReadOnly,..Default::default()},
     },Arc::new(AtomicBool::new(false)),|events| {
@@ -143,7 +143,7 @@ fn read_only(kind: Kind, binary: std::path::PathBuf) -> Result<(), String> {
 fn approval(kind: Kind, binary: std::path::PathBuf) -> Result<(), String> {
     use molfar_core::agent::{AccessMode, Control, Decision, Settings};
     let cwd = std::env::temp_dir().join(format!(
-        "monocode-permissions-{}-{}",
+        "molfar-permissions-{}-{}",
         kind.id(),
         std::process::id()
     ));
@@ -152,7 +152,7 @@ fn approval(kind: Kind, binary: std::path::PathBuf) -> Result<(), String> {
     let mut asked = 0;
     let mut completed = false;
     let models = molfar_core::catalog::models(kind)?;
-    let model = std::env::var(format!("MONOCODE_{}_MODEL", kind.id().to_uppercase()))
+    let model = std::env::var(format!("MOLFAR_{}_MODEL", kind.id().to_uppercase()))
         .ok()
         .or_else(|| {
             models

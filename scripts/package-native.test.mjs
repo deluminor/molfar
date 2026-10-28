@@ -144,7 +144,7 @@ if (name === 'xcrun' && args[0] === 'stapler' && process.env.NATIVE_TEST_STAPLER
     assert.ok(plist.includes("<key>CFBundleVersion</key><string>2</string>"));
     assert.ok(
       plist.includes(
-        "<key>MonocodeNativeVersion</key><string>0.16.0-preview.2</string>",
+        "<key>MolfarNativeVersion</key><string>0.16.0-preview.2</string>",
       ),
     );
     assert.ok(plist.includes("<string>com.molfar.native</string>"));

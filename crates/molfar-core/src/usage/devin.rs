@@ -76,7 +76,7 @@ pub(super) fn fetch_sync(app_version: &str, cli_version: &str) -> Result<DevinUs
     let body = json!({
         "metadata": {
             "apiKey": credentials.api_key,
-            "ideName": "monocode",
+            "ideName": "molfar",
             "ideVersion": app_version,
             "extensionName": "devin-cli",
             "extensionVersion": cli_version,

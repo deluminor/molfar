@@ -228,8 +228,8 @@ impl TranscriptView {
             .py_1()
             .line_height(px(20.))
             // React's activity rows are always bare: no status glyph, only
-            // a failure stays marked. Monocode's own tools carry its logo.
-            .when(visual, |d| d.child(crate::activity::glyph("monocode", 14.)))
+            // a failure stays marked. MOLFAR's own tools carry its logo.
+            .when(visual, |d| d.child(crate::activity::glyph("molfar", 14.)))
             .when(shown.action != "Run", |d| {
                 d.child(
                     div()

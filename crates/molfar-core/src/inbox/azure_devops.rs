@@ -16,7 +16,7 @@ const MAX_DIFF_BYTES: usize = 2 * 1024 * 1024;
 const MAX_DIFF_FILE_BYTES: usize = 512 * 1024;
 /// Hunks render for the first N files; the rest stay listed without hunks.
 const MAX_DIFF_HUNK_FILES: usize = 40;
-const USER_AGENT: &str = "MonoCode";
+const USER_AGENT: &str = "MOLFAR";
 const API_VERSION: &str = "7.1";
 const CONNECTION_DATA_API_VERSION: &str = "7.1-preview.1";
 const WIT_COMMENTS_API_VERSION: &str = "7.1-preview.4";
@@ -1151,10 +1151,8 @@ fn sniff_content(bytes: &[u8]) -> FileContent {
 /// owner-only permissions, so other local users on a shared machine cannot
 /// guess or read the diff scratch files.
 fn create_secure_tmp_dir() -> Option<PathBuf> {
-    let dir = std::env::temp_dir().join(format!(
-        "monocode-ado-diff-{}",
-        crate::accounts::request_id()
-    ));
+    let dir =
+        std::env::temp_dir().join(format!("molfar-ado-diff-{}", crate::accounts::request_id()));
     if fs::create_dir(&dir).is_err() {
         return None;
     }

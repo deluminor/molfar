@@ -11,7 +11,7 @@ impl Drop for Fixture {
 #[test]
 fn silent_provider_visual_is_saved_and_acknowledged_before_streaming_resumes() {
     let fixture = Fixture(std::env::temp_dir().join(format!(
-        "monocode-runtime-visual-{}-{}",
+        "molfar-runtime-visual-{}-{}",
         std::process::id(),
         std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
     )));

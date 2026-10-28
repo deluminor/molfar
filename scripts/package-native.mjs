@@ -52,7 +52,7 @@ export async function packageNative({
       debRoot,
       add(`molfar-native_${version}_amd64.deb`, "linux-x86_64-deb"),
     ]);
-    const appDir = join(work, "MonocodeNative.AppDir");
+    const appDir = join(work, "MolfarNative.AppDir");
     const { desktop } = await linuxTree(appDir, binary, "appimage");
     await writeFile(
       join(appDir, "molfar-native.desktop"),
@@ -72,7 +72,7 @@ export async function packageNative({
       [
         appDir,
         add(
-          `MonocodeNative_${version}_amd64.AppImage`,
+          `MolfarNative_${version}_amd64.AppImage`,
           "linux-x86_64-appimage",
         ),
       ],
@@ -120,7 +120,7 @@ export async function packageNative({
     );
     await notices(join(stage, "licenses"));
     const installer = add(
-      `MonocodeNative_${version}_x64-setup.exe`,
+      `MolfarNative_${version}_x64-setup.exe`,
       "windows-x86_64-nsis",
     );
     const quote = (value) =>

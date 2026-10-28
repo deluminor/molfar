@@ -2443,7 +2443,7 @@ impl Conversation {
                             .disabled(self.is_remote())
                             .icon("cursor-magic")
                             .icon_color(tint(SKY_300, 0.8))
-                            .description("Give this thread access to MonoCode"),
+                            .description("Give this thread access to MOLFAR"),
                         MenuAction::new("orchestrator", "Orchestrator")
                             .disabled(self.is_remote())
                             .icon("share")
@@ -3325,7 +3325,7 @@ mod composer_motion_tests {
 
     fn window(cx: &mut TestAppContext, width: f32) -> gpui::WindowHandle<Conversation> {
         let store = Store::open(Path::new(":memory:")).unwrap();
-        let summary = store.create("codex", "/work/monocode").unwrap();
+        let summary = store.create("codex", "/work/molfar").unwrap();
         let store = Arc::new(Mutex::new(store));
         let window = cx.update(|cx| {
             cx.open_window(
@@ -3835,7 +3835,7 @@ mod tests {
     use super::git_branch;
     #[test]
     fn reads_branch_from_repositories_and_linked_worktrees() {
-        let root = std::env::temp_dir().join(format!("monocode-branch-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("molfar-branch-{}", std::process::id()));
         let repo = root.join("repo");
         let nested = repo.join("src/deep");
         std::fs::create_dir_all(repo.join(".git")).unwrap();
@@ -3977,7 +3977,7 @@ mod menu_tests {
                 view.sync_review(cx);
                 assert_eq!(
                     view.transcript.read(cx).file_link_base.as_deref(),
-                    Some("/work/monocode")
+                    Some("/work/molfar")
                 );
             })
             .unwrap();
@@ -4178,7 +4178,7 @@ mod menu_tests {
 
     fn conversation(cx: &mut TestAppContext) -> WindowHandle<Conversation> {
         let store = Store::open(Path::new(":memory:")).unwrap();
-        let summary = store.create("claude", "/work/monocode").unwrap();
+        let summary = store.create("claude", "/work/molfar").unwrap();
         let store = Arc::new(Mutex::new(store));
         let window = cx.update(|cx| {
             input::bind(cx);
@@ -4216,7 +4216,7 @@ mod menu_tests {
             crate::popover::bind(cx);
             cx.set_reduce_motion(true);
         });
-        let cwd = "/nonexistent/monocode-composer-existing-submenu";
+        let cwd = "/nonexistent/molfar-composer-existing-submenu";
         let feature = format!("{cwd}-feature-b");
         crate::git_cache::remember(
             cwd,

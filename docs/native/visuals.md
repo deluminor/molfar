@@ -23,12 +23,12 @@ The check executes the program and validates its native component tree and repre
 The equivalent commands work with a source file:
 
 ```sh
-monocode-gpui visual docs
-monocode-gpui visual check --input /path/to/explanation.js
-monocode-gpui visual show --input /path/to/explanation.js --title "Explanation"
+molfar-gpui visual docs
+molfar-gpui visual check --input /path/to/explanation.js
+molfar-gpui visual show --input /path/to/explanation.js --title "Explanation"
 ```
 
-Reading the reference and checking also work outside a running app. Showing requires the capability inherited by the agent of a live session. CLI discovery supplies the executable path; it is also available to the agent through `MONOCODE_VISUAL_EXECUTABLE`.
+Reading the reference and checking also work outside a running app. Showing requires the capability inherited by the agent of a live session. CLI discovery supplies the executable path; it is also available to the agent through `MOLFAR_VISUAL_EXECUTABLE`.
 
 ## Programs and native controls
 
@@ -101,7 +101,7 @@ The [dashboard example](examples/visual-dashboard.js) exercises charts, tabs, st
 To seed them into an isolated development conversation:
 
 ```sh
-cargo run --manifest-path crates/molfar-gpui/Cargo.toml --locked -p monocode-gpui --profile native-dev -- --dev-data --visual-fixture
+cargo run --manifest-path crates/molfar-gpui/Cargo.toml --locked -p molfar-gpui --profile native-dev -- --dev-data --visual-fixture
 ```
 
 The fixture cannot be written into the production database.

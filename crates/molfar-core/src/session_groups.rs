@@ -571,7 +571,7 @@ mod tests {
     #[test]
     fn first_messages_link_their_explicit_github_context() {
         // A pasted URL needs no repository lookup, whatever the folder is.
-        let none = Path::new("/nonexistent/monocode-test");
+        let none = Path::new("/nonexistent/molfar-test");
         let hint = crate::session_title::WorkItemHint {
             kind: "issue".into(),
             number: 9,

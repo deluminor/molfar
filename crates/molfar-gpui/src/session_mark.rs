@@ -6,7 +6,7 @@ use gpui::{AnyElement, Context, ElementId, Hsla, Render, Role, Window, div, prel
 use std::f32::consts::TAU;
 use std::time::Duration;
 
-/// One wave across the grid, as TerminalSpinner's `monocode-spinner-wave`.
+/// One wave across the grid, as TerminalSpinner's `molfar-spinner-wave`.
 pub(crate) const SPINNER_PERIOD: Duration = Duration::from_millis(1_200);
 /// Slate, peach and pink, top row to bottom.
 const ROWS: [u32; 3] = [0x6f84a3, 0xe8b583, 0xe47fa6];

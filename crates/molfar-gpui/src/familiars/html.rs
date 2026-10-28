@@ -25,7 +25,7 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 #[cfg(target_os = "macos")]
 define_class!(
     #[unsafe(super(NSView))]
-    #[name = "MonocodeArtifactClip"]
+    #[name = "MolfarArtifactClip"]
     #[thread_kind = MainThreadOnly]
     #[ivars = std::cell::Cell<bool>]
     struct ArtifactClip;
@@ -47,7 +47,7 @@ define_class!(
 #[cfg(target_os = "macos")]
 define_class!(
     #[unsafe(super(NSObject))]
-    #[name = "MonocodeArtifactNavigation"]
+    #[name = "MolfarArtifactNavigation"]
     #[thread_kind=MainThreadOnly]
     #[ivars=gpui::AsyncApp]
     struct NavigationGuard;

@@ -13,7 +13,7 @@ struct Action {
 }
 define_class!(
     #[unsafe(super(NSMenuItem))]
-    #[name="MonocodeFamiliarMenuItem"]
+    #[name="MolfarFamiliarMenuItem"]
     #[thread_kind=MainThreadOnly]
     #[ivars=Action]
     struct Item;
@@ -59,7 +59,7 @@ impl Status {
             } else {
                 button.setTitle(&NSString::from_str("Familiar"));
             }
-            button.setToolTip(Some(&NSString::from_str("MonoCode")));
+            button.setToolTip(Some(&NSString::from_str("MOLFAR")));
         }
         Some(Self {
             item,
@@ -95,7 +95,7 @@ impl Status {
             run.clone(),
         ));
         menu.addItem(&NSMenuItem::separatorItem(mtm));
-        menu.addItem(&Item::new(mtm, "Quit MonoCode", "quit".into(), run));
+        menu.addItem(&Item::new(mtm, "Quit MOLFAR", "quit".into(), run));
         self.item.setMenu(Some(&menu));
     }
 }

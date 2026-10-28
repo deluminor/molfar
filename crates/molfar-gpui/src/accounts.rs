@@ -44,7 +44,7 @@ pub(crate) fn install(store: Database, cx: &mut App) {
         .unwrap_or_default();
     let root = root.unwrap_or_else(|| {
         std::env::temp_dir().join(format!(
-            "monocode-test-accounts-{}",
+            "molfar-test-accounts-{}",
             molfar_core::familiar::new_id()
         ))
     });

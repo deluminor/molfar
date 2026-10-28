@@ -120,7 +120,7 @@ impl State {
 
 impl crate::store::Store {
     pub fn follow_ups(&self, session: i64) -> Result<State, String> {
-        let mut state: State = if self.uses_monocode_schema() && session >= 0 {
+        let mut state: State = if self.uses_molfar_schema() && session >= 0 {
             self.shared_follow_ups(session)?
         } else {
             self.setting(&format!("follow-up:{session}"))?
@@ -151,7 +151,7 @@ impl crate::store::Store {
         Ok(state)
     }
     pub fn save_follow_ups(&self, session: i64, state: &State) -> Result<(), String> {
-        if self.uses_monocode_schema() && session >= 0 {
+        if self.uses_molfar_schema() && session >= 0 {
             return self.shared_save_follow_ups(session, state);
         }
         let key = format!("follow-up:{session}");

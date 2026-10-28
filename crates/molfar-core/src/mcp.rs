@@ -984,7 +984,7 @@ mod tests {
     #[test]
     fn writes_opencode_one_config_with_environment() {
         let root =
-            std::env::temp_dir().join(format!("monocode-opencode-one-{}", rand::random::<u128>()));
+            std::env::temp_dir().join(format!("molfar-opencode-one-{}", rand::random::<u128>()));
         let path = root.join("opencode.jsonc");
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(&path, "{\n // keep this setting\n \"theme\": \"dark\", \"mcp\": {\"existing\": {\"type\": \"remote\", \"url\": \"https://example.com\"},},\n}").unwrap();
@@ -1015,7 +1015,7 @@ mod tests {
     #[test]
     fn writes_opencode_two_config_and_normalizes_standard_env() {
         let root =
-            std::env::temp_dir().join(format!("monocode-opencode-two-{}", rand::random::<u128>()));
+            std::env::temp_dir().join(format!("molfar-opencode-two-{}", rand::random::<u128>()));
         let path = root.join("opencode.json");
         let (_, server) = server_from_json(
             "opencode",
@@ -1040,7 +1040,7 @@ mod tests {
     #[test]
     fn adds_opencode_two_server_without_changing_existing_timeouts_or_servers() {
         let root = std::env::temp_dir().join(format!(
-            "monocode-opencode-timeout-{}",
+            "molfar-opencode-timeout-{}",
             rand::random::<u128>()
         ));
         let path = root.join("opencode.json");
@@ -1083,7 +1083,7 @@ mod tests {
             serde_json::json!({"type": "local", "command": ["node", "server.js"]}),
         ] {
             let root = std::env::temp_dir().join(format!(
-                "monocode-opencode-legacy-timeout-{}",
+                "molfar-opencode-legacy-timeout-{}",
                 rand::random::<u128>()
             ));
             let path = root.join("opencode.json");
@@ -1119,7 +1119,7 @@ mod tests {
             serde_json::json!({}),
         ] {
             let root = std::env::temp_dir().join(format!(
-                "monocode-opencode-timeout-only-{}",
+                "molfar-opencode-timeout-only-{}",
                 rand::random::<u128>()
             ));
             let path = root.join("opencode.json");
@@ -1151,7 +1151,7 @@ mod tests {
     #[test]
     fn chooses_existing_opencode_jsonc_and_custom_user_config() {
         let root =
-            std::env::temp_dir().join(format!("monocode-opencode-path-{}", rand::random::<u128>()));
+            std::env::temp_dir().join(format!("molfar-opencode-path-{}", rand::random::<u128>()));
         let home = root.join("home");
         let project = root.join("project");
         std::fs::create_dir_all(&project).unwrap();
@@ -1177,8 +1177,7 @@ mod tests {
 
     #[test]
     fn concurrent_additions_keep_every_server() {
-        let root =
-            std::env::temp_dir().join(format!("monocode-mcp-lock-{}", rand::random::<u128>()));
+        let root = std::env::temp_dir().join(format!("molfar-mcp-lock-{}", rand::random::<u128>()));
         let path = root.join(".cursor/mcp.json");
         std::thread::scope(|scope| {
             for index in 0..8 {
@@ -1203,8 +1202,7 @@ mod tests {
     fn replacing_config_restricts_permissions() {
         use std::os::unix::fs::PermissionsExt;
 
-        let root =
-            std::env::temp_dir().join(format!("monocode-mcp-mode-{}", rand::random::<u128>()));
+        let root = std::env::temp_dir().join(format!("molfar-mcp-mode-{}", rand::random::<u128>()));
         let path = root.join("mcp.json");
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(&path, r#"{"mcpServers":{}}"#).unwrap();
@@ -1220,7 +1218,7 @@ mod tests {
     #[test]
     fn writes_server_without_discarding_other_configuration() {
         let root =
-            std::env::temp_dir().join(format!("monocode-mcp-write-{}", rand::random::<u128>()));
+            std::env::temp_dir().join(format!("molfar-mcp-write-{}", rand::random::<u128>()));
         let path = root.join(".cursor/mcp.json");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(
@@ -1240,7 +1238,7 @@ mod tests {
     #[test]
     fn adds_to_existing_cursor_jsonc() {
         let root =
-            std::env::temp_dir().join(format!("monocode-mcp-jsonc-{}", rand::random::<u128>()));
+            std::env::temp_dir().join(format!("molfar-mcp-jsonc-{}", rand::random::<u128>()));
         let path = root.join(".cursor/mcp.json");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(
@@ -1268,7 +1266,7 @@ mod tests {
 
     #[test]
     fn discovers_provider_configs_without_exposing_credentials() {
-        let root = std::env::temp_dir().join(format!("monocode-mcp-{}", rand::random::<u128>()));
+        let root = std::env::temp_dir().join(format!("molfar-mcp-{}", rand::random::<u128>()));
         let home = root.join("home");
         let project = root.join("project");
         std::fs::create_dir_all(home.join(".cursor")).unwrap();
@@ -1385,7 +1383,7 @@ mod tests {
     #[test]
     fn discovery_preserves_codex_enablement() {
         let root =
-            std::env::temp_dir().join(format!("monocode-mcp-enabled-{}", rand::random::<u128>()));
+            std::env::temp_dir().join(format!("molfar-mcp-enabled-{}", rand::random::<u128>()));
         std::fs::create_dir_all(&root).unwrap();
         let path = root.join("config.toml");
         std::fs::write(
@@ -1414,7 +1412,7 @@ mod tests {
 
     #[test]
     fn does_not_duplicate_home_configs_or_hide_a_server_named_servers() {
-        let root = std::env::temp_dir().join(format!("monocode-mcp-{}", rand::random::<u128>()));
+        let root = std::env::temp_dir().join(format!("molfar-mcp-{}", rand::random::<u128>()));
         let project = root.join("work/notes");
         std::fs::create_dir_all(root.join(".cursor")).unwrap();
         std::fs::create_dir_all(&project).unwrap();

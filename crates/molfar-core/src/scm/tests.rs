@@ -9,18 +9,18 @@ fn git(dir: &Path, args: &[&str]) -> bool {
     Command::new("git")
         .args([
             "-c",
-            "user.name=MonoCode",
+            "user.name=MOLFAR",
             "-c",
-            "user.email=monocode@test",
+            "user.email=molfar@test",
             "-c",
             "commit.gpgsign=false",
         ])
         .args(args)
         .current_dir(dir)
-        .env("GIT_AUTHOR_NAME", "MonoCode")
-        .env("GIT_AUTHOR_EMAIL", "monocode@test")
-        .env("GIT_COMMITTER_NAME", "MonoCode")
-        .env("GIT_COMMITTER_EMAIL", "monocode@test")
+        .env("GIT_AUTHOR_NAME", "MOLFAR")
+        .env("GIT_AUTHOR_EMAIL", "molfar@test")
+        .env("GIT_COMMITTER_NAME", "MOLFAR")
+        .env("GIT_COMMITTER_EMAIL", "molfar@test")
         .status()
         .map(|status| status.success())
         .unwrap_or(false)
@@ -32,8 +32,8 @@ fn init_git(dir: &Path, branch: &str) -> bool {
             dir,
             &["symbolic-ref", "HEAD", &format!("refs/heads/{branch}")],
         )
-        && git(dir, &["config", "user.name", "MonoCode"])
-        && git(dir, &["config", "user.email", "monocode@test"])
+        && git(dir, &["config", "user.name", "MOLFAR"])
+        && git(dir, &["config", "user.email", "molfar@test"])
         && git(dir, &["config", "commit.gpgsign", "false"])
         && git(dir, &["config", "core.autocrlf", "false"])
 }
@@ -348,7 +348,7 @@ fn history_lists_commits_parents_and_head() {
     );
     assert!(history.commits[0].head);
     assert!(!history.commits[1].head);
-    assert_eq!(history.commits[0].author, "MonoCode");
+    assert_eq!(history.commits[0].author, "MOLFAR");
     assert!(history.commits[0]
         .refs
         .iter()
@@ -686,7 +686,7 @@ fn commit_reports_signing_failure_with_hint() {
     for args in [
         ["config", "commit.gpgsign", "true"],
         ["config", "gpg.format", "openpgp"],
-        ["config", "gpg.program", "/nonexistent/monocode-gpg"],
+        ["config", "gpg.program", "/nonexistent/molfar-gpg"],
     ] {
         assert!(git(dir, &args));
     }
@@ -814,8 +814,8 @@ fn sync_pulls_then_pushes() {
         ]
     ));
     for args in [
-        ["config", "user.name", "MonoCode"],
-        ["config", "user.email", "monocode@test"],
+        ["config", "user.name", "MOLFAR"],
+        ["config", "user.email", "molfar@test"],
         ["config", "commit.gpgsign", "false"],
     ] {
         assert!(git(&b, &args));

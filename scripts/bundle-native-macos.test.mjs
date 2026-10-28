@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 test("Finder launches use development data for dev bundles and installed data for release bundles", {
   skip: process.platform === "win32",
 }, async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "monocode-bundle-data-"));
+  const directory = await mkdtemp(join(tmpdir(), "molfar-bundle-data-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const bin = join(directory, "bin");
   const target = join(directory, "target with spaces");
@@ -54,7 +54,7 @@ test("Finder launches use development data for dev bundles and installed data fo
       assert.ok(plist.includes(`<key>MolfarDataMode</key><string>${mode}</string>`));
       // macOS rejects menu bar items from a process that exec'd after launch.
       assert.ok(plist.includes("<key>CFBundleExecutable</key><string>molfar-native</string>"));
-      await assert.rejects(access(join(bundle, "MacOS/monocode-launcher")));
+      await assert.rejects(access(join(bundle, "MacOS/molfar-launcher")));
       const launched = spawnSync(join(bundle, "MacOS/molfar-native"), ["--cwd", "a project with spaces"], {
         encoding: "utf8",
       });

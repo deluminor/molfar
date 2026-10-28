@@ -1,6 +1,6 @@
-# Monocode Native preview
+# MOLFAR Native preview
 
-Monocode Native is the experimental Rust + GPUI app. The production app still
+MOLFAR Native is the experimental Rust + GPUI app. The production app still
 uses React/Tauri. Native builds have their own Cargo workspace and lockfile.
 
 ## Requirements
@@ -37,7 +37,7 @@ Type `r` then Enter in the terminal to rebuild and restart. The current app stay
 open until the new build succeeds. Ctrl+C stops the app and runner. There is no
 hot reload or automatic rebuild on save.
 
-On macOS, the command packages and launches `Monocode Native.app`. Other
+On macOS, the command packages and launches `MOLFAR Native.app`. Other
 platforms launch the executable directly.
 
 ## Build
@@ -47,22 +47,22 @@ npm run native:build
 ```
 
 This creates an optimized build without launching it. **The release app uses the
-installed MonoCode database, and changes save there.** No extra flags are needed.
+installed MOLFAR database, and changes save there.** No extra flags are needed.
 
 On macOS, open:
 
 ```sh
-open "crates/molfar-gpui/target/release/Monocode Native.app"
+open "crates/molfar-gpui/target/release/MOLFAR Native.app"
 ```
 
-The app has a separate name and application ID (`dev.usemono.gpui`) so it can be
-installed alongside MonoCode. Local source builds are signed locally, without
+The app has a separate name and application ID (`com.molfar.native`) so it can be
+installed alongside MOLFAR. Local source builds are signed locally, without
 Apple notarization or configured automatic updates. Linux and Windows builds
 produce a standalone executable
 under `crates/molfar-gpui/target/release/`. `CARGO_TARGET_DIR` and
 `CARGO_BUILD_TARGET` can change these output paths.
 
-The **Monocode Native Preview** GitHub Actions workflow runs checks and build
+The **MOLFAR Native Preview** GitHub Actions workflow runs checks and build
 verification.
 
 ## Data and configuration
@@ -71,16 +71,18 @@ Development stores `molfar.db` under:
 
 | Platform | Development directory |
 | --- | --- |
-| macOS | `~/Library/Application Support/Monocode Development/` |
-| Linux | `$XDG_DATA_HOME/Monocode Development/`, or `~/.local/share/Monocode Development/` |
-| Windows | `%LOCALAPPDATA%\Monocode Development\` |
+| macOS | `~/Library/Application Support/com.molfar.native/` |
+| Linux | `$XDG_DATA_HOME/com.molfar.native/`, or `~/.local/share/com.molfar.native/` |
+| Windows | `%LOCALAPPDATA%\com.molfar.native\` |
 
 `MOLFAR_NATIVE_DATA_DIR` overrides this development directory.
 
 Release builds open `com.molfar.desktop/molfar.db` under macOS Application
 Support, Linux's XDG data directory, or Windows' `%APPDATA%`. The app uses the
 existing desktop schema and session IDs. GPUI preferences are saved beside the
-database in `molfar.db.native.sqlite3`.
+database in `molfar.db.native.sqlite3`. On first use, native imports an existing
+`molfar.db.gpui.json` snapshot without changing the desktop database. Development
+bundles use `com.molfar.native.dev` and display `MOLFAR Native (Development)`.
 
 Supported desktop preferences and workspace state are read from the installed
 app's webview localStorage on macOS and Linux. The Windows WebView2 reader is
@@ -99,7 +101,7 @@ To inspect the installed database without opening a window or changing it, use
 the executable from a release build:
 
 ```sh
-crates/molfar-gpui/target/release/monocode-gpui --check-data
+crates/molfar-gpui/target/release/molfar-native --check-data
 ```
 
 Provider CLI paths can be changed in Settings → Providers. CLI authentication
@@ -119,7 +121,7 @@ A synthetic long-history fixture uses development data and makes no provider
 request:
 
 ```sh
-MOLFAR_NATIVE_DATA_DIR=/tmp/monocode-native-lab npm run native:dev -- --fixture
+MOLFAR_NATIVE_DATA_DIR=/tmp/molfar-native-lab npm run native:dev -- --fixture
 ```
 
 Fixtures are refused with production data. Use a fresh temporary directory when

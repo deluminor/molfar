@@ -59,7 +59,7 @@ native_build_version="$native_short_version"
 if [[ "$native_version" == *-preview.* ]]; then
   native_build_version="${native_version##*-preview.}"
 fi
-rm -f "$native_bundle/Contents/MacOS/monocode-launcher"
+rm -f "$native_bundle/Contents/MacOS/molfar-launcher"
 cat > "$native_bundle/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -72,7 +72,7 @@ cat > "$native_bundle/Contents/Info.plist" <<PLIST
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$native_short_version</string>
 <key>CFBundleVersion</key><string>$native_build_version</string>
-<key>MonocodeNativeVersion</key><string>$native_version</string>
+<key>MolfarNativeVersion</key><string>$native_version</string>
 <key>CFBundleIconFile</key><string>molfar.icns</string>
 <key>CFBundleIconName</key><string>AppIcon</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>

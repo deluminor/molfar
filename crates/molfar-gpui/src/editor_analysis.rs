@@ -103,7 +103,7 @@ pub(crate) fn complete(
     let json = context
         .with(|ctx| -> rquickjs::Result<String> {
             ctx.eval::<(), _>(include_str!("../assets/native-editor.js"))?;
-            let function: Function = ctx.globals().get("monocodeComplete")?;
+            let function: Function = ctx.globals().get("molfarComplete")?;
             function
                 .call::<_, Promise>((path, source, utf16(source, at), explicit))?
                 .finish()
@@ -129,7 +129,7 @@ pub(crate) fn search(
     let json = context
         .with(|ctx| -> rquickjs::Result<String> {
             ctx.eval::<(), _>(include_str!("../assets/native-editor.js"))?;
-            let function: Function = ctx.globals().get("monocodeSearch")?;
+            let function: Function = ctx.globals().get("molfarSearch")?;
             function.call((source, query, replacement, case, word, regex))
         })
         .map_err(|e| e.to_string())?;
@@ -153,7 +153,7 @@ pub(crate) fn chunk_action(
     let json = context
         .with(|ctx| -> rquickjs::Result<String> {
             ctx.eval::<(), _>(include_str!("../assets/native-editor.js"))?;
-            let function: Function = ctx.globals().get("monocodeChunkAction")?;
+            let function: Function = ctx.globals().get("molfarChunkAction")?;
             function.call((
                 original,
                 current,
@@ -168,7 +168,7 @@ pub(crate) fn chunk_action(
 }
 pub(crate) fn format(path: &str, source: &str, at: usize) -> Result<Option<Formatted>, String> {
     transform(
-        "monocodeFormat",
+        "molfarFormat",
         path,
         source,
         at,
@@ -177,7 +177,7 @@ pub(crate) fn format(path: &str, source: &str, at: usize) -> Result<Option<Forma
 }
 pub(crate) fn emmet(path: &str, source: &str, at: usize) -> Result<Option<Formatted>, String> {
     transform(
-        "monocodeEmmet",
+        "molfarEmmet",
         path,
         source,
         at,
@@ -196,7 +196,7 @@ fn transform(
         .with(|ctx| -> rquickjs::Result<String> {
             ctx.eval::<(), _>(bundle)?;
             let function: Function = ctx.globals().get(name)?;
-            if name == "monocodeFormat" || name == "monocodeEmmet" {
+            if name == "molfarFormat" || name == "molfarEmmet" {
                 function
                     .call::<_, Promise>((path, source, utf16(source, at)))?
                     .finish()
@@ -375,7 +375,7 @@ pub(crate) fn analyze(
     let json = context
         .with(|ctx| -> rquickjs::Result<String> {
             ctx.eval::<(), _>(include_str!("../assets/native-editor.js"))?;
-            let function: Function = ctx.globals().get("monocodeAnalyze")?;
+            let function: Function = ctx.globals().get("molfarAnalyze")?;
             function
                 .call::<_, Promise>((path, source, original))?
                 .finish()

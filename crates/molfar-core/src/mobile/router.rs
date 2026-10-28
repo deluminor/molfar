@@ -153,7 +153,7 @@ pub(super) fn restart(host: &MobileHost) {
     }
     let service = host.clone();
     let spawned = std::thread::Builder::new()
-        .name("monocode-mobile-router".into())
+        .name("molfar-mobile-router".into())
         .spawn(move || {
             let mut mapping: Option<Mapping> = None;
             let mut attempted = false;

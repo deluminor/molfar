@@ -10,7 +10,7 @@ fn verify() -> Result<(), String> {
     );
     let key = env::var("TAURI_UPDATER_PUBKEY").map_err(|_| "Missing update public key")?;
     let expected =
-        env::var("MONOCODE_NATIVE_VERSION").map_err(|_| "Missing native release version")?;
+        env::var("MOLFAR_NATIVE_VERSION").map_err(|_| "Missing native release version")?;
     let config = Config::new(
         "https://offline.example.test/native-preview/latest.json",
         &key,

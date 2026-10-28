@@ -534,7 +534,7 @@ mod tests {
                 ..Default::default()
             },
             root: PathBuf::from("/desktop/familiars"),
-            executable: PathBuf::from("monocode"),
+            executable: PathBuf::from("molfar"),
         });
         let first = key(&request);
         assert_ne!(regular, first);

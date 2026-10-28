@@ -1,6 +1,6 @@
 //! A memory readout for profiling: launched with `MOLFAR_MEMORY_LOG=<file>`,
 //! the app appends its footprint and GPU usage to that file every 10 seconds.
-//! `open --env MOLFAR_MEMORY_LOG=/tmp/monocode-memory.log "MOLFAR Native.app"`
+//! `open --env MOLFAR_MEMORY_LOG=/tmp/molfar-memory.log "MOLFAR Native.app"`
 use gpui::App;
 use std::{io::Write, time::Duration};
 

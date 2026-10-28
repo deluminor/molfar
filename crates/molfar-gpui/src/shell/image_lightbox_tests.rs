@@ -12,7 +12,7 @@ fn image_lightbox_opens_from_composer_and_sent_images_and_restores_focus(cx: &mu
     let (window, _, active) = super::tests::window(cx);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     let path = std::env::temp_dir().join(format!(
-        "monocode-lightbox-{}.png",
+        "molfar-lightbox-{}.png",
         molfar_core::familiar::new_id()
     ));
     std::fs::write(&path, base64::engine::general_purpose::STANDARD.decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=").unwrap()).unwrap();

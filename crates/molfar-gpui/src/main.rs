@@ -245,7 +245,7 @@ fn main() {
             }
             "--help" | "-h" => {
                 println!(
-                    "molfar-native [--cwd PATH] [--dev-data | --desktop-data | --desktop-db PATH]\nDevelopment builds use a separate database; release builds use the installed MonoCode database.\n--dev-data opens an isolated development database using Monocode's existing schema.\n--desktop-data opens the existing desktop molfar.db directly.\n--desktop-db PATH opens a specific desktop database.\n--fixture, --chat-fixture and --visual-fixture add local samples to isolated development data only.\nvisual docs prints the native visual SDK reference.\nvisual check/show --input FILE validates or publishes native session visuals.\nvisual-mcp runs the session visual tool server over standard input/output.\n--check-data validates and lists the selected store read-only, then exits."
+                    "molfar-native [--cwd PATH] [--dev-data | --desktop-data | --desktop-db PATH]\nDevelopment builds use a separate database; release builds use the installed MOLFAR database.\n--dev-data opens an isolated development database using MOLFAR's existing schema.\n--desktop-data opens the existing desktop molfar.db directly.\n--desktop-db PATH opens a specific desktop database.\n--fixture, --chat-fixture and --visual-fixture add local samples to isolated development data only.\nvisual docs prints the native visual SDK reference.\nvisual check/show --input FILE validates or publishes native session visuals.\nvisual-mcp runs the session visual tool server over standard input/output.\n--check-data validates and lists the selected store read-only, then exits."
                 );
                 return;
             }
@@ -256,9 +256,7 @@ fn main() {
         }
     }
     if use_desktop && (fixture || chat_fixture || visual_fixture) {
-        eprintln!(
-            "Fixtures require --dev-data; they cannot be written into your Monocode database."
-        );
+        eprintln!("Fixtures require --dev-data; they cannot be written into your MOLFAR database.");
         std::process::exit(2);
     }
     let cwd = cwd
@@ -295,7 +293,7 @@ fn main() {
     if check_data {
         match db.sessions() {
             Ok(sessions) => eprintln!(
-                "Database: {}\n{} saved sessions; existing Monocode schema; no import or migration.",
+                "Database: {}\n{} saved sessions; existing MOLFAR schema; no import or migration.",
                 database.display(),
                 sessions.len()
             ),
@@ -442,7 +440,14 @@ fn main() {
                         .wayland_decorations(cx.compositor_name()),
                     // Linux desktops match this to the .desktop file's
                     // StartupWMClass to show the app icon.
-                    app_id: Some("com.molfar.native".into()),
+                    app_id: Some(
+                        if cfg!(debug_assertions) {
+                            "com.molfar.native.dev"
+                        } else {
+                            molfar_core::app_update::APP_ID
+                        }
+                        .into(),
+                    ),
                     window_background: theme::window_backdrop(true),
                     // GPUI owns the custom chrome. AppKit must not reinterpret
                     // its controls as native titlebar double-click/drag gestures.

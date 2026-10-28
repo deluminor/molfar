@@ -1,4 +1,4 @@
-//! MonocodeSparkles, PlanStepsBurst and OrchestratorConstellation: the one-shot
+//! MolfarSparkles, PlanStepsBurst and OrchestratorConstellation: the one-shot
 //! burst inside a freshly sent /operator, Plan or Orchestrator prompt bubble.
 //! Timings, colors and keyframes follow index.css; CSS's radial gradient and
 //! rounded `overflow: hidden` are approximated with masked linear gradients and
@@ -269,7 +269,7 @@ impl Rng {
     }
 }
 
-/// turn-mode-halo / monocode-halo: a ring and glow bloom around the bubble.
+/// turn-mode-halo / molfar-halo: a ring and glow bloom around the bubble.
 fn paint_halo(bubble: &Bubble, t: f32, ring: Hsla, glow: Hsla, window: &mut Window) {
     let halo = Halo {
         delay: 150.,
@@ -448,13 +448,13 @@ fn paint_ember_glow(bubble: &Bubble, t: f32, color: Hsla, window: &mut Window) {
     }
 }
 
-/// monocode-rise: a column the bubble's height drifts up past the top edge.
+/// molfar-rise: a column the bubble's height drifts up past the top edge.
 fn rise(t: f32, delay: f32, duration: f32, h: f32, drift: f32) -> (f32, f32) {
     let p = ease(progress(t, delay, duration), RISE);
     (drift * p, -(h + 6.) * p)
 }
 
-/// monocode-twinkle's opacity, scale and rotation (as a fraction of --spin).
+/// molfar-twinkle's opacity, scale and rotation (as a fraction of --spin).
 fn twinkle(p: f32) -> (f32, f32, f32) {
     let stops = [0., 0.18, 0.42, 0.62, 1.];
     let at = |values: [f32; 5]| {
@@ -542,7 +542,7 @@ fn paint_star(center: Point<Pixels>, size: f32, turn: f32, color: Hsla, window: 
     }
 }
 
-/// MonocodeSparkles: eighteen stars and embers drift up and twinkle.
+/// MolfarSparkles: eighteen stars and embers drift up and twinkle.
 fn paint_sparkles(bubble: &Bubble, t: f32, colors: &Palette, rng: &mut Rng, window: &mut Window) {
     const COUNT: usize = 18;
     let (w, h) = (bubble.width(), bubble.height());

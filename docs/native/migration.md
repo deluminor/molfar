@@ -16,7 +16,7 @@ reference. Production builds, CI, releases and updater feeds continue to use Tau
 | `scripts/native-editor/`, `scripts/native-settings/` | Generators for embedded JavaScript assets |
 | `vendor/gpui-pre*/` | Pinned framework and platform patches |
 
-`monocode-core` has no Tauri or GPUI dependency. Keep provider and storage
+`molfar-core` has no Tauri or GPUI dependency. Keep provider and storage
 behavior in core services, with UI work in GPUI views. Development uses isolated
 data; release builds use the installed desktop database. See the
 [native guide](README.md#data-and-configuration) for paths and commands.

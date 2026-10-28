@@ -63,7 +63,7 @@ impl Target {
                     "Open Containing Folder"
                 };
                 let mut items = vec![
-                    MenuAction::new("open-monocode", "Open in MonoCode").into(),
+                    MenuAction::new("open-molfar", "Open in MOLFAR").into(),
                     MenuAction::new("open-default", "Open in Default App").into(),
                     MenuAction::new("reveal", reveal).into(),
                     MenuItem::Separator,
@@ -132,7 +132,7 @@ impl TranscriptView {
             ("copy-link", Target::Web(url)) => {
                 cx.write_to_clipboard(ClipboardItem::new_string(url.clone()))
             }
-            ("open-monocode", Target::File { path, location, .. }) => {
+            ("open-molfar", Target::File { path, location, .. }) => {
                 let target = location.map_or_else(
                     || path.clone(),
                     |(line, column)| format!("{path}:{line}:{column}"),

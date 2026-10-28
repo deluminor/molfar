@@ -247,13 +247,7 @@ mod tests {
                     shell.workspace.tabs.len(),
                 );
                 center.update(cx, |center, cx| {
-                    center.choose(
-                        Kind::Claude,
-                        target.id,
-                        "/work/monocode".into(),
-                        Some(id),
-                        cx,
-                    );
+                    center.choose(Kind::Claude, target.id, "/work/molfar".into(), Some(id), cx);
                 });
                 state
             })
@@ -347,7 +341,7 @@ mod tests {
                 shell.select_provider_account(
                     Kind::Claude,
                     &account.id,
-                    "/work/monocode",
+                    "/work/molfar",
                     Some(id),
                     cx,
                 );
@@ -357,7 +351,7 @@ mod tests {
                 shell.select_provider_account(
                     Kind::Claude,
                     molfar_core::accounts::DEFAULT,
-                    "/work/monocode",
+                    "/work/molfar",
                     Some(id),
                     cx,
                 );

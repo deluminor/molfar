@@ -596,7 +596,7 @@ mod tests {
     fn cached_worktrees_show_before_metadata_and_membership_never_loads_full_settings(
         cx: &mut TestAppContext,
     ) {
-        let cwd = "/nonexistent/monocode-cached-worktree-menu";
+        let cwd = "/nonexistent/molfar-cached-worktree-menu";
         let feature = format!("{cwd}-feature");
         crate::git_cache::remember(
             cwd,

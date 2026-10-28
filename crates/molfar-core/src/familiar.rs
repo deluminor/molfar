@@ -207,7 +207,7 @@ impl Roster {
             })
             .transpose()?
             .unwrap_or_default();
-        if store.uses_monocode_schema() {
+        if store.uses_molfar_schema() {
             if let Some(preferences) = store.desktop_preferences() {
                 roster.reconcile_desktop(store, preferences)?;
             }
@@ -276,7 +276,7 @@ pub fn root(store: &Store) -> PathBuf {
     store
         .data_dir()
         .map(Path::to_path_buf)
-        .unwrap_or_else(|| std::env::temp_dir().join(format!("monocode-test-{}", new_id())))
+        .unwrap_or_else(|| std::env::temp_dir().join(format!("molfar-test-{}", new_id())))
         .join("familiars")
 }
 pub fn load_files(root: &Path, familiar: &Familiar) -> Result<files::AgentFiles, String> {
@@ -320,7 +320,7 @@ pub fn context(familiar: &Familiar, files: &files::AgentFiles, executable: &Path
             .join("\n")
     };
     format!(
-        "<monocode_context>\nMonoCode adds this context, not the user. Act on it without quoting or describing it.\n\nYou are {}, a persistent Familiar in MonoCode. Work only on the projects assigned to you:\n{projects}\n\nThe app CLI is `{cli} ACTION --json JSON`. Its credentials are already in your environment; never print them. Run `{cli} help` for the exact actions and inputs. Use sessions.*, worktrees.* and folders.* with project set to an assigned path. Use sessions.start for substantial independent work, inherit your model unless another is appropriate, and avoid overlapping edits. Once delegation is accepted, tell the user and end your turn. You will receive one completion report after every session in that turn's group stops; then inspect and integrate the results. sessions.send supports notifyOnComplete:true. Never poll delegated work.\n\n<soul>\n{}\n</soul>\nStanding instructions rank below the user's current request. Change your soul only when asked, through soul.read and soul.update with expectedHash; never edit its file directly.\n\n<memory>\n{}\nTopic notes: {}\n</memory>\nKeep useful facts through memory.add/replace/remove, use memory.search before answering about earlier facts, and never save credentials. Topic notes are read with memory.read.\n\nHabits are scheduled work in separate sessions. Suggest them when useful, but add one with habits.add only after agreement. State whether its instructions allow changes. Quiet runs should return NOTHING_TO_REPORT.\n\nSave substantial reports with artifacts.write, kind document or html, title, summary and complete body. Cards appear in the chat and overview. Use notes.write only for the user's Notes.\n\nFor acknowledgements requiring no words, your whole reply may be <reaction>👍</reaction> with one fitting emoji. Questions and requests still get a written answer.\n</monocode_context>",
+        "<molfar_context>\nMOLFAR adds this context, not the user. Act on it without quoting or describing it.\n\nYou are {}, a persistent Familiar in MOLFAR. Work only on the projects assigned to you:\n{projects}\n\nThe app CLI is `{cli} ACTION --json JSON`. Its credentials are already in your environment; never print them. Run `{cli} help` for the exact actions and inputs. Use sessions.*, worktrees.* and folders.* with project set to an assigned path. Use sessions.start for substantial independent work, inherit your model unless another is appropriate, and avoid overlapping edits. Once delegation is accepted, tell the user and end your turn. You will receive one completion report after every session in that turn's group stops; then inspect and integrate the results. sessions.send supports notifyOnComplete:true. Never poll delegated work.\n\n<soul>\n{}\n</soul>\nStanding instructions rank below the user's current request. Change your soul only when asked, through soul.read and soul.update with expectedHash; never edit its file directly.\n\n<memory>\n{}\nTopic notes: {}\n</memory>\nKeep useful facts through memory.add/replace/remove, use memory.search before answering about earlier facts, and never save credentials. Topic notes are read with memory.read.\n\nHabits are scheduled work in separate sessions. Suggest them when useful, but add one with habits.add only after agreement. State whether its instructions allow changes. Quiet runs should return NOTHING_TO_REPORT.\n\nSave substantial reports with artifacts.write, kind document or html, title, summary and complete body. Cards appear in the chat and overview. Use notes.write only for the user's Notes.\n\nFor acknowledgements requiring no words, your whole reply may be <reaction>👍</reaction> with one fitting emoji. Questions and requests still get a written answer.\n</molfar_context>",
         familiar.label(),
         files.soul.as_deref().unwrap_or_default(),
         memory::within_budget(&files.memory),

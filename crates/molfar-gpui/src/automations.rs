@@ -1,5 +1,5 @@
 //! Native counterpart of AutomationsView: persisted list, example gallery,
-//! trigger editor and run history. All scheduling lives in monocode-core.
+//! trigger editor and run history. All scheduling lives in molfar-core.
 use crate::{
     input::{self, Input},
     pickers::{ModelList, ModelPicked, ProjectPicked, ProjectPicker, cached_model_name},

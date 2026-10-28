@@ -16,7 +16,7 @@ actions!(application, [Hide, HideOthers, ShowAll]);
 #[action(namespace = application, no_json)]
 pub(crate) struct OpenUrl(pub &'static str);
 
-const REPO: &str = "https://github.com/hardbeat920/monocode";
+const REPO: &str = "https://github.com/deluminor/molfar";
 
 pub(crate) fn bind(cx: &mut App) {
     cx.on_action(|_: &Hide, cx| cx.hide());
@@ -123,20 +123,23 @@ pub(crate) fn install(prefs: &crate::settings::Preferences, cx: &mut App) {
             MenuItem::action("Zoom", ZoomWindow),
         ]),
         Menu::new("Help").items([
-            MenuItem::action("MonoCode Website", OpenUrl("https://usemono.dev")),
+            MenuItem::action(
+                "MOLFAR Website",
+                OpenUrl("https://github.com/deluminor/molfar"),
+            ),
             MenuItem::action("View on GitHub", OpenUrl(REPO)),
             MenuItem::separator(),
             MenuItem::action(
                 "Report a Bug…",
                 OpenUrl(concat!(
-                    "https://github.com/hardbeat920/monocode",
+                    "https://github.com/deluminor/molfar",
                     "/issues/new?template=bug_report.yml"
                 )),
             ),
             MenuItem::action(
                 "Request a Feature…",
                 OpenUrl(concat!(
-                    "https://github.com/hardbeat920/monocode",
+                    "https://github.com/deluminor/molfar",
                     "/issues/new?template=feature_request.yml"
                 )),
             ),

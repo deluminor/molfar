@@ -146,7 +146,7 @@ pub fn command_action(command: &str) -> Option<String> {
         .rsplit(['/', '\\'])
         .next()?
         .trim_end_matches(".exe")
-        != "monocode"
+        != "molfar"
         || parts.get(1)? != "app"
     {
         return None;
@@ -284,17 +284,17 @@ mod tests {
     }
     #[test]
     fn desktop_receipts_recover_launches_and_accepted_followups_without_linking_listings() {
-        let start = receipt("/bin/zsh -lc 'monocode app sessions.start'", {
+        let start = receipt("/bin/zsh -lc 'molfar app sessions.start'", {
             let mut v = details("app-child");
             v["id"] = json!("app-child");
             v
         });
         let listing = receipt(
-            "monocode app sessions.list",
+            "molfar app sessions.list",
             json!({"cwd":"/repo","sessions":[{"id":"existing","title":"Continue","harness":"claude","model":"opus"}]}),
         );
         let send = receipt(
-            "monocode app sessions.send",
+            "molfar app sessions.send",
             json!({"submitted":true,"sessionId":"existing"}),
         );
         let results = block_launches(&[listing.clone(), start.clone(), send.clone()]);
@@ -305,10 +305,7 @@ mod tests {
         failed["tool"]["status"] = json!("error");
         let mut truncated = start.clone();
         truncated["tool"]["detail"] = json!("{\"ok\":true,");
-        let echo = receipt(
-            "echo monocode app sessions.start",
-            json!({"id":"app-child"}),
-        );
+        let echo = receipt("echo molfar app sessions.start", json!({"id":"app-child"}));
         assert!(block_launches(&[failed, truncated, echo, listing])
             .into_iter()
             .flatten()
