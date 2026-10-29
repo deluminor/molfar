@@ -3,6 +3,8 @@
 mod accounts;
 pub(super) mod blocks;
 mod edit;
+#[cfg(test)]
+mod molfar_tests;
 mod settings;
 #[cfg(test)]
 mod tests;
