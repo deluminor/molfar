@@ -17,6 +17,7 @@ pub use session_preview::SessionPreviewData;
 mod edit;
 mod shared;
 mod side_threads;
+mod task_board;
 use crate::transcript::{Row, Transcript};
 pub use desktop_import::native_model;
 pub use desktop_import::{desktop_database, ImportReport};

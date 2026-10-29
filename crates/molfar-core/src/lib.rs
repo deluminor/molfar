@@ -29,6 +29,7 @@ pub mod session_filters;
 pub mod session_groups;
 pub mod session_title;
 pub mod store;
+pub mod task_board;
 pub mod time;
 pub mod tool;
 pub mod transcript;

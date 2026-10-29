@@ -243,6 +243,7 @@ impl Store {
             sql(conn.execute_batch("PRAGMA journal_mode=WAL;"))?;
             let tx = sql(conn.unchecked_transaction())?;
             sql(tx.execute_batch(include_str!("shared_schema.sql")))?;
+            sql(crate::task_board::schema::ensure_tables(&tx))?;
             sql(tx.commit())?;
         }
         let columns = sql(sql(conn.prepare("PRAGMA table_info(sessions)"))?

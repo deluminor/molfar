@@ -1,4 +1,4 @@
-//! The three application destinations share one navigation and focus boundary.
+//! Application destinations share one navigation and focus boundary.
 use super::*;
 use crate::{automations, inbox, notes};
 
@@ -14,6 +14,7 @@ impl Shell {
             AppView::Inbox => "Inbox",
             AppView::Notes => "Notes",
             AppView::Automations => "Automations",
+            AppView::Board => "Board",
         })
     }
 
@@ -194,6 +195,7 @@ impl Shell {
             AppView::Notes => self.notes.clone().map(IntoElement::into_any_element),
             AppView::Inbox => self.inbox.clone().map(IntoElement::into_any_element),
             AppView::Automations => self.automations.clone().map(IntoElement::into_any_element),
+            AppView::Board => self.board.clone().map(IntoElement::into_any_element),
         }
     }
 
@@ -204,12 +206,34 @@ impl Shell {
             Some(AppView::Automations) => {
                 self.automations.as_ref().map(|view| view.focus_handle(cx))
             }
+            Some(AppView::Board) => self.board.as_ref().map(|view| view.focus_handle(cx)),
             None => return false,
         };
         if let Some(focus) = focus {
             window.focus(&focus, cx);
         }
         true
+    }
+
+    pub(super) fn open_board(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.prepare_app_view(window, cx);
+        if self.board.is_none() {
+            let view = cx.new(|cx| crate::task_board::Board::new(self.store.clone(), cx));
+            self.app_view_events.push(cx.subscribe_in(
+                &view,
+                window,
+                |this, _, _: &crate::task_board::Event, window, cx| this.close_app_view(window, cx),
+            ));
+            self.board = Some(view);
+        }
+        if let Some(view) = &self.board {
+            let cwd = self.workspace.project.clone();
+            view.update(cx, |view, cx| {
+                view.set_context(cwd);
+                view.refresh(cx);
+            });
+        }
+        self.show_app_view(AppView::Board, window, cx);
     }
 
     pub(super) fn open_notes(&mut self, window: &mut Window, cx: &mut Context<Self>) {

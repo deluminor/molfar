@@ -3,6 +3,8 @@ mod actions;
 mod app_commands;
 mod app_views;
 mod automation_runs;
+#[cfg(test)]
+mod board_tests;
 mod classic_sidebar;
 #[cfg(test)]
 mod classic_surface_tests;
@@ -678,6 +680,7 @@ pub(crate) struct Shell {
     notes: Option<Entity<Notes>>,
     inbox: Option<Entity<crate::inbox::Inbox>>,
     automations: Option<Entity<crate::automations::Automations>>,
+    board: Option<Entity<crate::task_board::Board>>,
     active_app_view: Option<app_views::AppView>,
     app_view_events: Vec<Subscription>,
     automation_state: automation_runs::State,
@@ -1037,6 +1040,7 @@ impl Shell {
             notes: None,
             inbox: None,
             automations: None,
+            board: None,
             active_app_view: None,
             app_view_events: Vec::new(),
             automation_state: Default::default(),

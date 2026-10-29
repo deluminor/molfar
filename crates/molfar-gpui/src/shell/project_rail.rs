@@ -609,6 +609,7 @@ impl Shell {
                     ("Inbox", "inbox"),
                     ("Notes", "file"),
                     ("Automations", "zap"),
+                    ("Board", "dashboard"),
                 ]
                 .into_iter()
                 .filter(|(label, _)| match *label {
@@ -657,6 +658,7 @@ impl Shell {
                             "Inbox" => this.open_inbox(w, cx),
                             "Notes" => this.open_notes(w, cx),
                             "Automations" => this.open_automations(w, cx),
+                            "Board" => this.open_board(w, cx),
                             _ => (),
                         }))
                 }),
@@ -832,6 +834,7 @@ impl Shell {
             )
             .children(
                 [
+                    (workspace::AppView::Board, true),
                     (
                         workspace::AppView::Inbox,
                         self.workspace.sidebar_inbox_visible,
@@ -856,6 +859,7 @@ impl Shell {
                     };
                     icon_button(
                         match view {
+                            workspace::AppView::Board => "rail-board",
                             workspace::AppView::Inbox => "rail-inbox",
                             workspace::AppView::Notes => "rail-notes",
                             workspace::AppView::Automations => "rail-automations",
@@ -882,6 +886,7 @@ impl Shell {
                             this.close_app_view(w, cx);
                         } else {
                             match view {
+                                workspace::AppView::Board => this.open_board(w, cx),
                                 workspace::AppView::Inbox => this.open_inbox(w, cx),
                                 workspace::AppView::Notes => this.open_notes(w, cx),
                                 workspace::AppView::Automations => this.open_automations(w, cx),
