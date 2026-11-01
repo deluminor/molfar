@@ -1,5 +1,8 @@
 mod actions;
+mod load;
 mod picker;
+#[cfg(test)]
+mod routing_tests;
 mod row;
 #[cfg(test)]
 mod tests;
@@ -46,6 +49,7 @@ pub(super) struct Panel {
     pub concurrency: Entity<Input>,
     pub stall: Entity<Input>,
     pub error: Option<String>,
+    pub pending: Option<molfar_core::task_board::stage::choice::settings::SettingsPatch>,
     _subscriptions: Vec<Subscription>,
 }
 

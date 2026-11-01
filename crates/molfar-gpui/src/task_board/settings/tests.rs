@@ -2,7 +2,7 @@ use super::super::{
     Board, Event,
     tests::{card, window},
 };
-use gpui::{Focusable, TestAppContext, VisualTestContext, WindowHandle};
+use gpui::{TestAppContext, VisualTestContext, WindowHandle};
 use molfar_core::task_board::stage::{
     agent::AgentStage,
     choice::settings::{SettingsPatch, StageModelConfig},
@@ -12,7 +12,7 @@ use std::{cell::RefCell, rc::Rc};
 
 type Events = Rc<RefCell<Vec<String>>>;
 
-fn record(window: &WindowHandle<Board>, cx: &mut TestAppContext) -> Events {
+pub(super) fn record(window: &WindowHandle<Board>, cx: &mut TestAppContext) -> Events {
     let events: Events = Rc::default();
     let board = window.update(cx, |_, _, cx| cx.entity()).unwrap();
     let recorded = events.clone();
@@ -30,7 +30,7 @@ fn record(window: &WindowHandle<Board>, cx: &mut TestAppContext) -> Events {
     events
 }
 
-fn seed(window: &WindowHandle<Board>, cx: &mut TestAppContext) {
+pub(super) fn seed(window: &WindowHandle<Board>, cx: &mut TestAppContext) {
     let config = StageModelConfig {
         harness: "codex".into(),
         model: "codex:gpt-5".into(),
@@ -55,7 +55,7 @@ fn seed(window: &WindowHandle<Board>, cx: &mut TestAppContext) {
         .unwrap();
 }
 
-fn click(visual: &mut VisualTestContext, selector: &'static str) {
+pub(super) fn click(visual: &mut VisualTestContext, selector: &'static str) {
     let bounds = visual
         .debug_bounds(selector)
         .unwrap_or_else(|| panic!("{selector}"));
@@ -117,7 +117,7 @@ fn empty_skills_mean_auto_and_reloads_keep_unsaved_fields(cx: &mut TestAppContex
                 .1
                 .update(cx, |input, cx| input.set_text("unsaved".into(), cx));
             board.save_stage_skills(AgentStage::Grill, cx);
-            board.finish_update(None, cx);
+            board.finish_settings_update(None, cx);
         })
         .unwrap();
     visual.run_until_parked();
@@ -194,42 +194,4 @@ fn failed_stage_offers_back_to_its_source_column(cx: &mut TestAppContext) {
     click(visual, "board-stage-back");
 
     assert_eq!(*events.borrow(), ["Back"]);
-}
-
-#[gpui::test]
-fn typed_keys_reach_settings_fields_and_escape_closes(cx: &mut TestAppContext) {
-    let window = window(cx);
-    seed(&window, cx);
-    let visual = &mut VisualTestContext::from_window(window.into(), cx);
-    visual.run_until_parked();
-    window
-        .update(visual, |board, window, cx| {
-            let input = board.settings.as_ref().unwrap().skills[1].1.clone();
-            window.focus(&input.read(cx).focus_handle(cx), cx);
-        })
-        .unwrap();
-
-    visual.simulate_keystrokes("d - t d d");
-    visual.run_until_parked();
-
-    window
-        .update(visual, |board, _, cx| {
-            let text = board.settings.as_ref().unwrap().skills[1]
-                .1
-                .read(cx)
-                .content
-                .to_string();
-            assert_eq!(text, "d-tdd");
-        })
-        .unwrap();
-    window
-        .update(visual, |board, window, cx| {
-            window.focus(&board.settings.as_ref().unwrap().focus, cx)
-        })
-        .unwrap();
-    visual.simulate_keystrokes("escape");
-    visual.run_until_parked();
-    window
-        .update(visual, |board, _, _| assert!(board.settings.is_none()))
-        .unwrap();
 }

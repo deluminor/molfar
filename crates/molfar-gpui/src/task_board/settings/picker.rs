@@ -97,6 +97,8 @@ impl Board {
                 updated_at,
             } => {
                 if self.stage_pending.is_some() {
+                    window.focus(&self.focus, cx);
+                    self.picker_error("Another Board action is still running.", cx);
                     return;
                 }
                 let change = StageModelOverride {

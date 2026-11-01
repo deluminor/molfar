@@ -61,7 +61,7 @@ impl Shell {
             let _ = this.update(cx, |this, cx| {
                 let error = result.err();
                 if let Some(board) = &this.board {
-                    board.update(cx, |board, cx| board.finish_update(error, cx));
+                    board.update(cx, |board, cx| board.finish_settings_update(error, cx));
                 }
                 this.poll_board(true, cx);
             });
