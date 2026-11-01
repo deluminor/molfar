@@ -2,6 +2,7 @@ use super::Store;
 mod artifacts;
 mod notices;
 mod session;
+mod settings;
 mod stage;
 mod submission;
 use crate::task_board::types::{Card, CardCreate, Snapshot};

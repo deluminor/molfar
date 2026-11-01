@@ -19,15 +19,6 @@ use rusqlite::OptionalExtension;
 use std::collections::HashSet;
 
 impl Store {
-    pub fn board_settings_json(&self) -> Result<Option<String>, String> {
-        self.conn
-            .query_row("SELECT json FROM task_board_settings WHERE id=1", [], |r| {
-                r.get(0)
-            })
-            .optional()
-            .map_err(|e| e.to_string())
-    }
-
     pub fn board_accept_grill(
         &mut self,
         id: &str,

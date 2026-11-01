@@ -1,9 +1,12 @@
 pub(crate) mod config;
 mod constants;
 mod resolve;
+pub mod settings;
 mod skills;
 pub mod types;
 
+#[cfg(test)]
+mod settings_tests;
 #[cfg(test)]
 mod stage_tests;
 #[cfg(test)]

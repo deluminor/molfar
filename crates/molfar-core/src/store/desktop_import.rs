@@ -237,6 +237,17 @@ fn import_sessions(
     Ok(report)
 }
 
+/// Encodes a native model ID in the shared desktop `provider:model` form.
+pub fn desktop_model_id(model: Option<&str>, provider: &str) -> String {
+    let model = model.unwrap_or("default");
+    let model = if provider == "claude" {
+        model.strip_prefix("claude-").unwrap_or(model)
+    } else {
+        model
+    };
+    format!("{provider}:{model}")
+}
+
 pub fn native_model(model: &str, provider: &str) -> Option<String> {
     let model = model.trim();
     let model = model.strip_prefix(&format!("{provider}:")).unwrap_or(model);

@@ -819,13 +819,9 @@ impl Store {
             |r| Ok((r.get(0)?, r.get(1)?)),
         ))?;
         if settings.model != super::desktop_import::native_model(&saved_model, &provider) {
-            let model = settings.model.as_deref().unwrap_or("default");
-            let model = if provider == "claude" {
-                model.strip_prefix("claude-").unwrap_or(model)
-            } else {
-                model
-            };
-            fields.push(("model", json!(format!("{provider}:{model}"))));
+            let model =
+                super::desktop_import::desktop_model_id(settings.model.as_deref(), &provider);
+            fields.push(("model", json!(model)));
         }
         self.shared_patch(id, &fields)?;
         self.shared_save_setting(&format!("agent:{id}"), &encode(settings)?)
