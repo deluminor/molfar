@@ -181,3 +181,15 @@ session after restart, read-only checkout fingerprints and Board ownership
 guards. An independent review's findings were fixed and re-reviewed. No actual
 app, browser, device, live provider or production data was used.
 
+## MOLFAR Board stage policy — November 1, 2026
+
+Native tests passed: 701 core, 754 GPUI and 31 native script tests, with strict
+Clippy and formatting of the native crates; two core and eleven GPUI manual or
+platform tests remain ignored. 79 upstream, release and branding tests passed,
+and `npm run native:build` produced an optimized, locally signed macOS app that
+was not launched. Fixtures cover the full shipped transition table, per-stage
+model and skill precedence, settings that the desktop Board can still read,
+Retry overrides, Back, frozen run provenance and the native Stage settings
+dialog, including real keystrokes. Two independent review rounds were addressed.
+No actual app, browser, device, live provider or production data was used.
+

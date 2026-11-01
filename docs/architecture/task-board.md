@@ -33,8 +33,12 @@ The shell coordinator (`shell/board_runtime/`) installs one visible, Board-owned
 session through the normal Conversation path. It settles only from the durable
 turn receipt, never auto-replays a prompt after restart, and keeps running when
 the Board is closed. Board sessions stay in project history but are hidden from
-Familiars and phone access. Later Grill rounds, Implement/Review/Rework, policies
-and delivery remain planned.
+Familiars and phone access. `task_board/stage/transitions/` ports the shipped transition table for every
+Board action; native decisions go through it under the card revision check.
+`stage/choice/` resolves model, access and skills per stage and saves Board
+settings as field-level patches that the desktop Board can still read. Runs record
+the model in the shared `provider:model` form. Later Grill rounds,
+Implement/Review/Rework runs, plan approval and delivery remain planned.
 
 ## Stage contract
 
