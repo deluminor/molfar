@@ -1,7 +1,7 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { listSourceFiles } from "./source-files.mjs";
 
 const LEGAL_FILE = /(?:^|\/)(?:LICENSE|NOTICE|COPYING)[^/]*$|\.LICENSE[^/]*$/i;
 const LEGAL_LINE = /Copyright|SPDX-License-Identifier|derived from|adapted from/i;
@@ -19,7 +19,7 @@ export function brandingViolations(file, content) {
 }
 
 export function checkNativeBranding(root) {
-  const files = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" }).split("\0").filter(Boolean);
+  const files = listSourceFiles(root, ["crates", "scripts", "docs/native", ".github/workflows/native.yml", "package.json"]);
   const violations = [];
 
   for (const file of files) {

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { rmSync } from "node:fs";
+import { join } from "node:path";
 import { createTestRepo } from "../upstream/test-repo.mjs";
 import { brandingViolations, checkNativeBranding } from "./native-branding.mjs";
 
@@ -30,6 +32,25 @@ it("scans tracked native surfaces and reports original package script line numbe
     });
     expect(checkNativeBranding(repo.root).sort()).toEqual([
       "crates/molfar-core/src/lib.rs:1", "package.json:4",
+    ]);
+  } finally {
+    repo.dispose();
+  }
+});
+
+it("scans a moved native module before staging and excludes ignored build output", () => {
+  const repo = createTestRepo();
+  try {
+    repo.setUp({
+      ".gitignore": "crates/molfar-core/target/\n",
+      "crates/molfar-core/src/store/task_board.rs": "MOLFAR\n",
+    });
+    rmSync(join(repo.root, "crates/molfar-core/src/store/task_board.rs"));
+    repo.write("crates/molfar-core/src/store/task_board/mod.rs", "MonoCode\n");
+    repo.write("crates/molfar-core/target/output.txt", "MonoCode\n");
+
+    expect(checkNativeBranding(repo.root)).toEqual([
+      "crates/molfar-core/src/store/task_board/mod.rs:1",
     ]);
   } finally {
     repo.dispose();
