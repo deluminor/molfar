@@ -33,6 +33,38 @@ pub(super) fn confluence_get_checked(
     read_response(result)
 }
 
+pub(super) fn confluence_post(
+    config: &AtlassianConfig,
+    path: &str,
+    body: &Value,
+) -> Result<Value, String> {
+    let url = format!("{}{path}", config.site.trim_end_matches('/'));
+    let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
+    let result = http_client::agent(Redirects::Follow)
+        .post(&url)
+        .set("Authorization", &authorization(config))
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .send_string(&payload);
+    read_response(result).map_err(|error| error.message)
+}
+
+pub(super) fn confluence_put(
+    config: &AtlassianConfig,
+    path: &str,
+    body: &Value,
+) -> Result<Value, String> {
+    let url = format!("{}{path}", config.site.trim_end_matches('/'));
+    let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
+    let result = http_client::agent(Redirects::Follow)
+        .put(&url)
+        .set("Authorization", &authorization(config))
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .send_string(&payload);
+    read_response(result).map_err(|error| error.message)
+}
+
 pub(super) fn read_response(
     result: Result<ureq::Response, ureq::Error>,
 ) -> Result<Value, HttpError> {
@@ -69,6 +101,10 @@ pub(super) fn read_response(
             status: Some(status),
             message: http_error(status, &body),
         });
+    }
+
+    if body.trim().is_empty() {
+        return Ok(serde_json::json!({}));
     }
 
     serde_json::from_str(&body).map_err(|_| HttpError {

@@ -178,7 +178,7 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 ### Orchestration and `/operator`
 
 - **Orchestration** lets a lead agent decompose a larger task into coordinated worker sessions, each in its own checkout.
-- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), worktrees, and read-only Confluence tools. Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
+- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), and worktrees. Jira/Confluence writes go through **molfar-connectors** MCP (not `/operator`). Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
 
 ### Home and Usage
 
@@ -188,7 +188,7 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 
 ### Also inside
 
-Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence tools when Atlassian is connected; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence read/write tools when Atlassian is connected — edit/create/transition/search issues and create/update pages; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Security and execution model
 

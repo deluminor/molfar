@@ -190,3 +190,11 @@ fn not_found_prefers_http_status() {
     }
     .is_not_found());
 }
+
+#[test]
+fn text_to_storage_escapes_and_splits_paragraphs() {
+    assert_eq!(
+        super::text_to_storage("Hello <world>\nnext\n\nSecond & done"),
+        "<p>Hello &lt;world&gt;<br />next</p><p>Second &amp; done</p>"
+    );
+}

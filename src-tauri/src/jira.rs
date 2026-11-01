@@ -327,6 +327,17 @@ fn jira_post(config: &JiraConfig, path: &str, body: &Value) -> Result<Value, Str
     read_jira_response(result)
 }
 
+fn jira_put(config: &JiraConfig, path: &str, body: &Value) -> Result<Value, String> {
+    let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
+    let result = http_client::agent(Redirects::Follow)
+        .put(&format!("{}{path}", config.site))
+        .set("Authorization", &jira_authorization(config))
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .send_string(&payload);
+    read_jira_response(result)
+}
+
 fn read_jira_response(result: Result<ureq::Response, ureq::Error>) -> Result<Value, String> {
     let response = match http_client::response(result) {
         Ok(response) => response,
@@ -339,6 +350,9 @@ fn read_jira_response(result: Result<ureq::Response, ureq::Error>) -> Result<Val
     let (status, body) = http_client::text(response, "Jira")?;
     if !http_client::is_success(status) {
         return Err(jira_http_error(status, &body));
+    }
+    if body.trim().is_empty() {
+        return Ok(json!({}));
     }
     serde_json::from_str(&body).map_err(|_| "Jira returned invalid JSON".to_string())
 }
@@ -619,6 +633,21 @@ fn string_field(value: &Value, key: &str) -> Option<String> {
         .map(|text| text.trim().to_string())
 }
 
+const DEFAULT_ISSUE_GET_FIELDS: [&str; 12] = [
+    "summary",
+    "description",
+    "status",
+    "issuetype",
+    "priority",
+    "labels",
+    "assignee",
+    "reporter",
+    "created",
+    "updated",
+    "resolution",
+    "project",
+];
+
 /// Posts plain text as ADF: blank lines split paragraphs, single newlines become hard breaks.
 fn text_to_adf(text: &str) -> Value {
     let paragraphs: Vec<Value> = text
@@ -640,6 +669,75 @@ fn text_to_adf(text: &str) -> Value {
         })
         .collect();
     json!({ "type": "doc", "version": 1, "content": paragraphs })
+}
+
+/// Convert MCP field values for write: string `description` becomes ADF; ADF docs pass through.
+fn pack_write_fields(fields: &Value) -> Result<Value, String> {
+    let object = fields
+        .as_object()
+        .ok_or_else(|| "fields must be a JSON object".to_string())?;
+    let mut packed = serde_json::Map::new();
+    for (key, value) in object {
+        if key == "description" {
+            packed.insert(key.clone(), pack_description_value(value)?);
+        } else {
+            packed.insert(key.clone(), value.clone());
+        }
+    }
+    Ok(Value::Object(packed))
+}
+
+fn pack_description_value(value: &Value) -> Result<Value, String> {
+    if value.is_null() {
+        return Ok(Value::Null);
+    }
+    if let Some(text) = value.as_str() {
+        return Ok(text_to_adf(text));
+    }
+    if value.get("type").and_then(Value::as_str) == Some("doc") {
+        return Ok(value.clone());
+    }
+    Err("description must be a string, ADF doc, or null".into())
+}
+
+fn fields_query(fields: Option<&[String]>) -> String {
+    match fields {
+        None | Some([]) => DEFAULT_ISSUE_GET_FIELDS.join(","),
+        Some(list) if list.iter().any(|field| field.trim() == "*all") => "*all".into(),
+        Some(list) => list
+            .iter()
+            .map(|field| field.trim())
+            .filter(|field| !field.is_empty())
+            .collect::<Vec<_>>()
+            .join(","),
+    }
+}
+
+fn issue_browse_url(site: &str, key: &str) -> String {
+    format!("{site}/browse/{key}")
+}
+
+fn summarize_issue_payload(site: &str, data: &Value) -> Result<Value, String> {
+    let key = string_field(data, "key").unwrap_or_default();
+    if key.is_empty() {
+        return Err("Jira did not return that issue".into());
+    }
+    let fields = data.get("fields").cloned().unwrap_or_else(|| json!({}));
+    let description = rich_text(fields.get("description"));
+    let mut fields_out = fields.clone();
+    if let Some(object) = fields_out.as_object_mut() {
+        object.insert("description".into(), Value::String(description.clone()));
+    }
+    Ok(json!({
+        "key": key,
+        "id": string_field(data, "id").unwrap_or_default(),
+        "url": issue_browse_url(site, &key),
+        "summary": fields.get("summary").and_then(Value::as_str).unwrap_or(""),
+        "description": description,
+        "status": fields.pointer("/status/name").and_then(Value::as_str).unwrap_or(""),
+        "issueType": fields.pointer("/issuetype/name").and_then(Value::as_str).unwrap_or(""),
+        "fields": fields_out,
+    }))
 }
 
 // ---- Config storage ----
@@ -795,6 +893,186 @@ pub(crate) fn mcp_issue_comment(key: &str, body: &str) -> Result<String, String>
         return Err("Could not post Jira comment".into());
     }
     Ok(comment_url(&config.site, key, &id))
+}
+
+pub(crate) fn mcp_issue_get(key: &str, fields: Option<Vec<String>>) -> Result<Value, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let query = fields_query(fields.as_deref()).replace('*', "%2A");
+    let data = jira_get(&config, &format!("/rest/api/3/issue/{key}?fields={query}"))?;
+    summarize_issue_payload(&config.site, &data)
+}
+
+pub(crate) fn mcp_issue_edit(key: &str, fields: &Value) -> Result<Value, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let packed = pack_write_fields(fields)?;
+    if packed
+        .as_object()
+        .map(|object| object.is_empty())
+        .unwrap_or(true)
+    {
+        return Err("fields must include at least one field to update".into());
+    }
+    jira_put(
+        &config,
+        &format!("/rest/api/3/issue/{key}"),
+        &json!({ "fields": packed }),
+    )?;
+    mcp_issue_get(key, None)
+}
+
+pub(crate) fn mcp_issue_create(
+    project_key: &str,
+    issue_type_name: &str,
+    summary: &str,
+    description: Option<&str>,
+    parent: Option<&str>,
+    additional_fields: Option<&Value>,
+) -> Result<Value, String> {
+    let config = require_disk_config()?;
+    let project_key = project_key.trim();
+    let issue_type_name = issue_type_name.trim();
+    let summary = summary.trim();
+    if project_key.is_empty() {
+        return Err("projectKey is required".into());
+    }
+    if issue_type_name.is_empty() {
+        return Err("issueTypeName is required".into());
+    }
+    if summary.is_empty() {
+        return Err("summary is required".into());
+    }
+
+    let mut fields = serde_json::Map::new();
+    fields.insert("project".into(), json!({ "key": project_key }));
+    fields.insert("issuetype".into(), json!({ "name": issue_type_name }));
+    fields.insert("summary".into(), json!(summary));
+    if let Some(text) = description.map(str::trim).filter(|text| !text.is_empty()) {
+        fields.insert("description".into(), text_to_adf(text));
+    }
+    if let Some(parent_key) = parent.map(str::trim).filter(|key| !key.is_empty()) {
+        require_issue_key(parent_key)?;
+        fields.insert("parent".into(), json!({ "key": parent_key }));
+    }
+    if let Some(extra) = additional_fields {
+        let packed = pack_write_fields(extra)?;
+        if let Some(object) = packed.as_object() {
+            for (key, value) in object {
+                fields.insert(key.clone(), value.clone());
+            }
+        }
+    }
+
+    let data = jira_post(&config, "/rest/api/3/issue", &json!({ "fields": fields }))?;
+    let key = string_field(&data, "key").unwrap_or_default();
+    if key.is_empty() {
+        return Err("Could not create Jira issue".into());
+    }
+    mcp_issue_get(&key, None)
+}
+
+pub(crate) fn mcp_issue_transitions(key: &str) -> Result<Value, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let data = jira_get(&config, &format!("/rest/api/3/issue/{key}/transitions"))?;
+    let transitions = data
+        .get("transitions")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|transition| {
+            let id = string_field(&transition, "id")?;
+            let name = string_field(&transition, "name").unwrap_or_default();
+            let to = transition
+                .pointer("/to/name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
+            Some(json!({ "id": id, "name": name, "to": to }))
+        })
+        .collect::<Vec<_>>();
+    Ok(json!({ "key": key, "transitions": transitions }))
+}
+
+pub(crate) fn mcp_issue_transition(
+    key: &str,
+    transition_id: &str,
+    fields: Option<&Value>,
+) -> Result<Value, String> {
+    let config = require_disk_config()?;
+    let key = require_issue_key(key)?;
+    let transition_id = transition_id.trim();
+    if transition_id.is_empty() {
+        return Err("transitionId is required".into());
+    }
+    let mut body = json!({ "transition": { "id": transition_id } });
+    if let Some(fields) = fields {
+        let packed = pack_write_fields(fields)?;
+        if let Some(object) = packed.as_object() {
+            if !object.is_empty() {
+                body.as_object_mut()
+                    .expect("body object")
+                    .insert("fields".into(), packed);
+            }
+        }
+    }
+    jira_post(
+        &config,
+        &format!("/rest/api/3/issue/{key}/transitions"),
+        &body,
+    )?;
+    mcp_issue_get(key, None)
+}
+
+pub(crate) fn mcp_search(
+    jql: &str,
+    max_results: Option<u32>,
+    fields: Option<Vec<String>>,
+) -> Result<Value, String> {
+    let config = require_disk_config()?;
+    let jql = jql.trim();
+    if jql.is_empty() {
+        return Err("jql is required".into());
+    }
+    let max_results = max_results.unwrap_or(DEFAULT_LIMIT).clamp(1, 100);
+    let field_list = match fields {
+        None => DEFAULT_ISSUE_GET_FIELDS
+            .iter()
+            .map(|field| (*field).to_string())
+            .collect::<Vec<_>>(),
+        Some(list) if list.is_empty() => DEFAULT_ISSUE_GET_FIELDS
+            .iter()
+            .map(|field| (*field).to_string())
+            .collect::<Vec<_>>(),
+        Some(list) if list.iter().any(|field| field.trim() == "*all") => {
+            vec!["*all".into()]
+        }
+        Some(list) => list,
+    };
+    let data = jira_post(
+        &config,
+        "/rest/api/3/search/jql",
+        &json!({
+            "jql": jql,
+            "maxResults": max_results,
+            "fields": field_list,
+        }),
+    )?;
+    let issues = data
+        .get("issues")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|issue| summarize_issue_payload(&config.site, &issue).ok())
+        .collect::<Vec<_>>();
+    Ok(json!({
+        "jql": jql,
+        "total": data.get("total").cloned().unwrap_or_else(|| json!(issues.len())),
+        "issues": issues,
+    }))
 }
 
 fn write_config(app: &AppHandle, config: &JiraConfig) -> Result<(), String> {
@@ -1078,5 +1356,65 @@ mod tests {
             jira_error_message(r#"{"errorMessages":[],"errors":{"jql":"Bad JQL"}}"#).as_deref(),
             Some("Bad JQL")
         );
+    }
+
+    #[test]
+    fn pack_write_fields_converts_description_strings() {
+        let packed = pack_write_fields(&json!({
+            "summary": "New title",
+            "description": "Line one\n\nLine two",
+            "labels": ["a"]
+        }))
+        .unwrap();
+        assert_eq!(packed["summary"], "New title");
+        assert_eq!(packed["labels"], json!(["a"]));
+        assert_eq!(packed["description"]["type"], "doc");
+        assert!(pack_write_fields(&json!("nope")).is_err());
+        assert!(pack_description_value(&json!({ "type": "paragraph" })).is_err());
+        assert_eq!(
+            pack_description_value(&json!({ "type": "doc", "version": 1, "content": [] })).unwrap()
+                ["type"],
+            "doc"
+        );
+    }
+
+    #[test]
+    fn fields_query_defaults_and_all() {
+        assert!(fields_query(None).contains("summary"));
+        assert_eq!(fields_query(Some(&["*all".into()])), "*all");
+        assert_eq!(
+            fields_query(Some(&["summary".into(), "status".into()])),
+            "summary,status"
+        );
+    }
+
+    #[test]
+    fn summarize_issue_payload_flattens_description() {
+        let payload = summarize_issue_payload(
+            SITE,
+            &json!({
+                "id": "1",
+                "key": "ENG-1",
+                "fields": {
+                    "summary": "Hello",
+                    "description": {
+                        "type": "doc",
+                        "version": 1,
+                        "content": [{
+                            "type": "paragraph",
+                            "content": [{ "type": "text", "text": "Body" }]
+                        }]
+                    },
+                    "status": { "name": "To Do" },
+                    "issuetype": { "name": "Task" }
+                }
+            }),
+        )
+        .unwrap();
+        assert_eq!(payload["key"], "ENG-1");
+        assert_eq!(payload["url"], "https://acme.atlassian.net/browse/ENG-1");
+        assert_eq!(payload["description"], "Body");
+        assert_eq!(payload["fields"]["description"], "Body");
+        assert_eq!(payload["status"], "To Do");
     }
 }
