@@ -1,3 +1,8 @@
+import type {
+  MobileRequest,
+  MobileWatchEvent,
+  MobileWorkspaceOptions,
+} from "../types/workspace";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
@@ -8,44 +13,13 @@ import {
   watchWindow,
   type WatchBaseline,
 } from "../model/mobile-watch";
-import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import type { Session } from "@/domain/session/session";
-import { DEFAULT_TAIL, MAX_PAGE } from "../constants";
+import { DEFAULT_TAIL, MAX_PAGE, PUSH_INTERVAL_MS } from "../constants";
 import { createMobileGitJobs } from "../model/mobile-git-jobs";
 import { mobileRead } from "../model/mobile-reads";
 import { createMobileReceipts } from "../model/mobile-receipts";
 
-type Request = {
-  id: string;
-  commandId: string;
-  method: string;
-  params: Record<string, unknown>;
-};
-type WatchEvent =
-  | {
-      id: string;
-      action: "start";
-      conversationId: string;
-      /** How many of the latest turns to open on. */
-      tail?: number | null;
-      /** The first turn the phone already has, to carry on from instead. */
-      from?: string | null;
-      incremental?: boolean;
-    }
-  | { id: string; action: "stop" };
-/** At most this often while a reply streams, so the phone gets ~20 frames a second. */
-const PUSH_INTERVAL_MS = 50;
-type Options = {
-  sessions: readonly Session[];
-  /** The permission mode a new desktop tab would start with. */
-  defaultRuntimeMode?: RuntimeMode;
-  command: (
-    method: string,
-    params: Record<string, unknown>,
-    commandId: string,
-  ) => Promise<unknown>;
-};
-export function useMobileWorkspace(options: Options) {
+export function useMobileWorkspace(options: MobileWorkspaceOptions) {
   const current = useRef(options);
   current.current = options;
   const wake = useRef<(() => void) | null>(null);
@@ -102,6 +76,7 @@ export function useMobileWorkspace(options: Options) {
               busy: conversation.busy,
               older,
               turns: conversation.turns,
+              question: conversation.question,
             },
             watch.incremental,
           );
@@ -113,6 +88,7 @@ export function useMobileWorkspace(options: Options) {
             baseline: watch.baseline ?? {
               busy: false,
               older: false,
+              question: "null",
               order: [],
               turns: new Map(),
             },
@@ -143,7 +119,7 @@ export function useMobileWorkspace(options: Options) {
       [...watches.values()].find(
         (watch) => watch.conversationId === conversationId,
       )?.saved;
-    const listening = listen<WatchEvent>(
+    const listening = listen<MobileWatchEvent>(
       "molfar-mobile-watch",
       ({ payload }) => {
         if (payload.action === "start") {
@@ -198,7 +174,7 @@ export function useMobileWorkspace(options: Options) {
       }
       if (!disposed) timer = setTimeout(() => void publish(), 3000);
     };
-    const listening = listen<Request>(
+    const listening = listen<MobileRequest>(
       "molfar-mobile-request",
       ({ payload }) => {
         void (async () => {

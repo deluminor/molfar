@@ -1,3 +1,4 @@
+import { mobileProjectId } from "./mobile-project-id";
 import { listWorktrees } from "@/features/source-control/model/worktrees";
 import { listFamiliars } from "@/features/familiars/model/familiar";
 import { pathKey, projectName } from "@/shared/lib/paths";
@@ -27,7 +28,6 @@ import {
 } from "./mobile-provider-accounts";
 import {
   mobileNewSession,
-  mobileProjectId,
   mobileProjectPaths,
 } from "./mobile-catalog";
 import { readSaved } from "./mobile-conversation";

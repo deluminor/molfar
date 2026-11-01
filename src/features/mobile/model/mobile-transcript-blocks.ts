@@ -1,3 +1,6 @@
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
+import type { MobileLaunchedSession } from "../types/transcript";
+import { hasPendingApproval } from "@/domain/session/session-state";
 import { familiarWorkStatus } from "@/features/sessions/model/familiar-work-status";
 import { visibleUserPrompt } from "@/features/orchestration/model/orchestration";
 import { isEmojiOnlyMessage } from "@/features/sessions/model/emoji-message";
@@ -185,4 +188,25 @@ export function familiarLiveLabel(
   if (tasks === 1) return "Waiting for background task…";
   if (tasks > 1) return `Waiting for ${tasks} background tasks…`;
   return familiarWorkStatus(activity, true).label;
+}
+
+export function mobileWaitingLabel(
+  blocks: Block[],
+  pendingQuestion?: boolean,
+): string | undefined {
+  if (hasPendingApproval(blocks)) return "Waiting for approval";
+  if (pendingQuestion) return "Waiting for answers";
+
+  return undefined;
+}
+
+export function mobileLaunchItems(
+  launch:
+    ((entry: FamiliarSpawnedSession) => MobileLaunchedSession) | undefined,
+  id: string,
+  entries: readonly FamiliarSpawnedSession[] | undefined,
+): MobileTurnItem[] {
+  if (!launch || !entries?.length) return [];
+
+  return [{ type: "sessions", id, sessions: entries.map(launch) }];
 }

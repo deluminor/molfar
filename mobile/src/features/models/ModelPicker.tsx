@@ -67,7 +67,9 @@ function useModelPicker(
 ) {
   const { projects } = useWorkspace();
   const project = projectForRoute(projects, projectId);
-  const { catalog, error } = useModelCatalog(project?.id, sessionId);
+  // A Familiar's conversation needs no project: the desktop answers for it alone.
+  const familiar = sessionId?.startsWith("familiar:") ? sessionId.slice("familiar:".length) : undefined;
+  const { catalog, error } = useModelCatalog(project?.id ?? (familiar && sessionId), sessionId);
   const { chosen, access, accounts, pickModel, pickAccess, pickAccount } =
     useSessionChoice(project, sessionId);
 
@@ -90,10 +92,11 @@ function useModelPicker(
       "default")
     : "default";
   const selectAccount = (id: string) => {
-    if (!choice || !project || id === accountId) return;
+    if (!choice || (!project && !familiar) || id === accountId) return;
     const name = model?.name ?? choice.model;
     pickAccount(choice, name, id);
-    if (sessionId)
+    if (familiar) router.dismissTo({ pathname: "/familiar/[familiarId]", params: { familiarId: familiar } });
+    else if (sessionId && project)
       router.dismissTo({
         pathname: "/project/[projectId]",
         params: { projectId: project.id },

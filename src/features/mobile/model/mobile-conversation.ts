@@ -1,3 +1,8 @@
+import { mobileProjectId } from "./mobile-project-id";
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { projectName } from "@/shared/lib/paths";
+import { launchedSessionState } from "@/features/familiars/model/familiar-spawned-sessions";
 import {
   listFamiliars,
   familiarLook,
@@ -5,6 +10,22 @@ import {
 import { getSession } from "@/features/sessions/data/session-store";
 import type { Session } from "@/domain/session/session";
 import { mobileTranscript } from "./mobile-transcript";
+
+function mobileLaunch(
+  launch: FamiliarSpawnedSession,
+  live: readonly Session[],
+) {
+  const session = live.find((entry) => entry.id === launch.sessionId);
+
+  return {
+    id: launch.sessionId,
+    projectId: mobileProjectId(launch.cwd),
+    project: projectName(launch.cwd),
+    title: sessionDisplayTitle(session?.title ?? launch.title, launch.harness),
+    harness: launch.harness,
+    state: session ? launchedSessionState(session) : ("done" as const),
+  };
+}
 
 export function mobileMessages(session: Session) {
   return session.blocks
@@ -49,10 +70,24 @@ export async function mobileConversation(
             : undefined,
           pendingQuestion: !!session.pendingQuestion,
           backgroundTasks: session.backgroundTasks,
+          ...(familiar
+            ? {
+                launch: (launch: FamiliarSpawnedSession) =>
+                  mobileLaunch(launch, live),
+              }
+            : {}),
           range,
         })
       : [],
     busy: !!session?.busy,
+    question: session?.pendingQuestion
+      ? {
+          requestId: session.pendingQuestion.requestId,
+          title: session.pendingQuestion.title,
+          questions: session.pendingQuestion.questions,
+          autoResolveAt: session.pendingQuestion.autoResolveAt,
+        }
+      : null,
   };
 }
 

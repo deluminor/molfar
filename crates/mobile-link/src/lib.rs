@@ -180,6 +180,36 @@ impl Gate {
 mod tests {
     use super::*;
     #[test]
+    fn legacy_identity_keys_and_proofs_remain_compatible() {
+        #[derive(Deserialize)]
+        struct Legacy {
+            #[serde(flatten)]
+            identity: Identity,
+            proof: String,
+            fingerprint: String,
+        }
+        // A public p256 0.13.2 fixture signed for MOLFAR enrollment. Existing paired
+        // devices must retain their identity and verify each other's proofs.
+        let legacy: Legacy =
+            serde_json::from_str(r#"{
+  "description": "Public test identity and proof generated with p256 0.13.2; never use outside tests.",
+  "certificate": "MIIBYzCCAQmgAwIBAgIUG3RUeoY0s+PGGGni2NUFeZLxMiwwCgYIKoZIzj0EAwIwITEfMB0GA1UEAwwWcmNnZW4gc2VsZiBzaWduZWQgY2VydDAgFw03NTAxMDEwMDAwMDBaGA80MDk2MDEwMTAwMDAwMFowITEfMB0GA1UEAwwWcmNnZW4gc2VsZiBzaWduZWQgY2VydDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJ/6mkhobq3G/3eAjOIKuB2fIYbVhI5ilMGaOk7j1ZMTjGxxCuA98xA6fmttdzU7Fx9pgqXhyXeCrZwdRBRhscejHTAbMBkGA1UdEQQSMBCCDm1vbm9jb2RlLmxvY2FsMAoGCCqGSM49BAMCA0gAMEUCIEbheqQAP5DH2NsoR7jrMsI/W4unK8TIkoV+Lq+sb4pFAiEAoTF/5FXRYGnAqop4ZWg/jhIIEKXAAQhSRFCnjcr1CVM=",
+  "privateKey": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/o6o9w/mID7vPsgzmQXcpDc3nSC3HKRWVX+De34T1q6hRANCAASf+ppIaG6txv93gIziCrgdnyGG1YSOYpTBmjpO49WTE4xscQrgPfMQOn5rbXc1OxcfaYKl4cl3gq2cHUQUYbHH",
+  "proof": "GuGZNtr8N2MFvh9hQPEIqB3scbbgDdN6nIg09nytvCkeBawmNf6kLMEk/oH5Suemvo12iISl1fE30ZnHPrSRlQ==",
+  "fingerprint": "656d0524a924d25a1a92393509f1b0d84d573bcf17405012a683b4ef775b7256"
+}"#).unwrap();
+        let invitation = "legacy-enrollment-invitation";
+        assert_eq!(legacy.identity.fingerprint().unwrap(), legacy.fingerprint);
+        assert_eq!(
+            verify_proof(&legacy.identity.certificate, invitation, &legacy.proof).unwrap(),
+            legacy.fingerprint
+        );
+        let proof = legacy.identity.proof(invitation).unwrap();
+        assert_eq!(proof, legacy.proof, "ECDSA proof encoding must not change");
+        assert!(verify_proof(&legacy.identity.certificate, "another-invitation", &proof).is_err());
+    }
+
+    #[test]
     fn enrollment_proof_binds_both_device_and_invitation() {
         let device = Identity::generate().unwrap();
         let other = Identity::generate().unwrap();

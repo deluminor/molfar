@@ -1,9 +1,7 @@
+import type { MobileCommandDeps } from "../flows/mobile/mobile-command-types";
 import { useMobileWorkspace } from "@/features/mobile/hooks/use-mobile-workspace";
 import type { Session } from "@/domain/session/session";
-import {
-  type MobileCommandDeps,
-  runMobileCommand,
-} from "../flows/mobile/mobile-commands";
+import { runMobileCommand } from "../flows/mobile/mobile-commands";
 
 /** Serves paired phones (Settings → Connections → Your phones) from this window's workspace. */
 export function useWorkspaceMobile(

@@ -1,6 +1,11 @@
+import { MAX_TRANSCRIPT_TURNS } from "../constants";
+import type { MobileTranscriptOptions } from "../types/transcript";
 import { familiarReactionBlocks } from "@/features/familiars/model/familiar-reaction";
+import {
+  familiarSpawnedSessions,
+  launchAnchors,
+} from "@/features/familiars/model/familiar-spawned-sessions";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
-import { hasPendingApproval } from "@/domain/session/session-state";
 import type { Session } from "@/domain/session/session";
 import {
   firstFoldableIndex,
@@ -19,6 +24,8 @@ import { TranscriptTurnCache } from "@/features/sessions/model/transcript-turn-c
 import type { MobileTurn, MobileTurnItem } from "../types/transcript";
 import {
   activityBlocks,
+  mobileWaitingLabel,
+  mobileLaunchItems,
   blockItem,
   familiarLiveLabel,
   familiarTurnUserBlock,
@@ -28,27 +35,9 @@ import {
   turnUserBlock,
 } from "./mobile-transcript-blocks";
 
-// The phone renders what AgentTranscript would, from turns the desktop has
-// already grouped and folded, so both follow one set of rules.
-
-const MAX_TURNS = 30;
-
-type Options = {
-  busy: boolean;
-  familiar?: { name: string };
-  pendingQuestion?: boolean;
-  backgroundTasks?: string[];
-  /**
-   * Which turns to build, as [start, end) over every turn's ID; the latest
-   * MAX_TURNS without one. Grouping covers the whole session, but building a
-   * turn's items is the costly part, so only the ones sent are built.
-   */
-  range?: (turnIds: string[]) => [number, number];
-};
-
 export function mobileTranscript(
   session: Session,
-  options: Options,
+  options: MobileTranscriptOptions,
 ): MobileTurn[] {
   const inlineWork = !!options.familiar;
   const blocks = inlineWork
@@ -62,13 +51,9 @@ export function mobileTranscript(
     -1,
   );
   const model = resolveModel(session.harness, session.model).name;
-  const waiting = hasPendingApproval(blocks)
-    ? "Waiting for approval"
-    : options.pendingQuestion
-      ? "Waiting for answers"
-      : undefined;
+  const waiting = mobileWaitingLabel(blocks, options.pendingQuestion);
   const [first, end] = options.range?.(turns.map((turn) => turn[0].id)) ?? [
-    Math.max(0, turns.length - MAX_TURNS),
+    Math.max(0, turns.length - MAX_TRANSCRIPT_TURNS),
     turns.length,
   ];
   return turns.slice(first, end).map((turn, offset) => {
@@ -172,6 +157,12 @@ export function mobileTranscript(
       };
     };
 
+    // As AgentTranscript: a launch's card follows the reply after it, once
+    // that reply has finished streaming; one no reply followed waits for the
+    // turn to end.
+    const launchCards = options.launch
+      ? launchAnchors(items, inlineWork ? familiarSpawnedSessions(turn) : [])
+      : undefined;
     const out: MobileTurnItem[] = [];
     items.forEach((item, itemIndex) => {
       if (showHeader && itemIndex === headerAt) out.push(header());
@@ -198,8 +189,24 @@ export function mobileTranscript(
       }
       const converted = blockItem(item.block, session.cwd);
       if (converted) out.push(converted);
+      if (settled || itemIndex < items.length - 1 || !item.block.streaming)
+        out.push(
+          ...mobileLaunchItems(
+            options.launch,
+            `${item.block.id}:launches`,
+            launchCards?.afterItem.get(itemIndex),
+          ),
+        );
     });
     if (showHeader && headerAt >= items.length) out.push(header());
+    if (settled)
+      out.push(
+        ...mobileLaunchItems(
+          options.launch,
+          `${turn[0].id}:launches`,
+          launchCards?.atEnd,
+        ),
+      );
     // Messages stacked one after another share the last one's time.
     out.forEach((entry, at) => {
       if (entry.type === "user" && out[at + 1]?.type === "user")

@@ -14,14 +14,15 @@ const catalog = {
   ],
 };
 describe("mobile workspace choices", () => {
-  it("keeps project selection isolated while familiar support is disabled", () => {
+  it("shows the picked projects and familiars, with their sessions", () => {
     const selected = selectedWorkspace(catalog, {
       projectIds: ["a"],
       familiarIds: ["m"],
     });
     expect(selected.projects).toEqual([{ id: "a" }]);
-    expect(selected.familiars).toEqual([]);
-    expect(selected.sessions.map((session) => session.id)).toEqual(["s1"]);
+    expect(selected.familiars).toEqual([{ id: "m" }]);
+    // A familiar's session counts even in a project left out.
+    expect(selected.sessions.map((session) => session.id)).toEqual(["s1", "s3"]);
   });
   it("preserves an explicit empty choice on restore", () => {
     const restored = normalizeSelection(

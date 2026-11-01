@@ -17,6 +17,7 @@ import type {
   Familiar,
   SessionSummary,
   Message,
+  QuestionPrompt,
   Turn,
 } from "@/features/workspace/types";
 import {
@@ -34,6 +35,14 @@ export type Catalog = {
   familiars: Familiar[];
   sessions: SessionSummary[];
   addresses?: Desktop["addresses"];
+  /** The desktop answers Familiar profiles, editing, reset, delete and create;
+   *  the older desktop app sends no such flag. */
+  familiarTools?: boolean;
+  /** The desktop sends this phone push notifications once it registers;
+   *  the older desktop app doesn't, and the phone posts its own. */
+  push?: boolean;
+  /** The desktop reads and saves a Familiar's soul and memory for the phone. */
+  familiarFiles?: boolean;
 };
 const EMPTY: Catalog = { projects: [], familiars: [], sessions: [] };
 const PAIRING = "molfar.mobile.pairing";
@@ -320,6 +329,8 @@ export type Conversation = {
   /** Missing from desktops that predate turn-shaped transcripts. */
   turns?: Turn[];
   busy: boolean;
+  /** What the agent waits on the user to answer; absent from an older desktop. */
+  question?: QuestionPrompt | null;
 };
 
 /** What the desktop lists this phone as, e.g. "Nick's iPhone". */
@@ -327,4 +338,15 @@ function deviceName() {
   return (
     Constants.deviceName?.trim() || (Platform.OS === "ios" ? "iPhone" : "Phone")
   );
+}
+
+/** Whether the desktop can show and change a Familiar's profile, reset or delete
+ *  it, and make new ones; where it can't, the phone leaves them out. */
+export function useFamiliarTools() {
+  return useConnection().catalog.familiarTools === true;
+}
+
+/** Whether the desktop lets the phone edit a Familiar's soul and memory. */
+export function useFamiliarFiles() {
+  return useConnection().catalog.familiarFiles === true;
 }

@@ -1,3 +1,4 @@
+import { mobileProjectId } from "./mobile-project-id";
 import { invoke } from "@tauri-apps/api/core";
 import type { FsEntry } from "@/domain/files/file-entry";
 import {
@@ -11,7 +12,7 @@ import {
   highlightProgress,
 } from "./mobile-highlight";
 import { displayPath } from "@/shared/lib/paths";
-import { mobileProjectId, mobileProjectPaths } from "./mobile-catalog";
+import { mobileProjectPaths } from "./mobile-catalog";
 import { mobileWorktree } from "./mobile-models";
 
 /** The project's checkout, or one of its worktrees when the phone names it. */
