@@ -879,27 +879,10 @@ fn scopes(provider: &str) -> &'static [&'static str] {
     }
 }
 fn form_field(label: &str, input: Entity<Input>, height: f32) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .gap(px(6.))
-        .text_size(px(12.))
-        .text_color(content(0.65))
-        .child(label.to_owned())
-        .child(
-            div()
-                .h(px(height))
-                .px(px(10.))
-                .py_1()
-                .rounded_md()
-                .border_1()
-                .border_color(content(0.1))
-                .bg(content(0.04))
-                .when(label == "JSON configuration", |d| {
-                    d.font_family(crate::fonts::familiar())
-                })
-                .child(input),
-        )
+    crate::input::form_field(label, input, height)
+        .when(label == "JSON configuration", |field| {
+            field.font_family(crate::fonts::familiar())
+        })
         .into_any_element()
 }
 

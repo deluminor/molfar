@@ -32,6 +32,10 @@ pub struct Snapshot {
     pub worktrees: Vec<Worktree>,
 }
 pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, String> {
+    String::from_utf8(git_bytes(cwd, args)?).map_err(|error| error.to_string())
+}
+
+pub(crate) fn git_bytes(cwd: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
     if crate::files::remote::is_remote(cwd) {
         return Err("This isn’t available for projects on another machine yet.".into());
     }
@@ -47,7 +51,7 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, String> {
     if !out.status.success() {
         return Err(String::from_utf8_lossy(&out.stderr).trim().to_owned());
     }
-    String::from_utf8(out.stdout).map_err(|e| e.to_string())
+    Ok(out.stdout)
 }
 /// Where a session's own paths stand against `HEAD`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

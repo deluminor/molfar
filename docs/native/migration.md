@@ -25,6 +25,20 @@ Provider transports use Codex app-server, Claude stream-json, OpenCode HTTP/SSE,
 ACP for Cursor/Grok/Antigravity/fx/Hermes/Devin, and Pi/omp RPC. They reuse the
 providers' CLI authentication and conversation IDs.
 
+## Durable turn results
+
+The existing native worker saves optional terminal provenance on the original
+prompt before its final UI update. Success, failure and cancellation are explicit;
+timing and UI readiness never imply success. Final transcript or handoff save
+failures prevent a successful terminal result. Receipt writes preserve unknown
+desktop fields and do not rewrite composer preferences or migrate tables.
+
+`Store::app_turn_result` uses the existing durable app request identity to read
+the complete persisted assistant output for that root, including explicitly
+joined steers. It bypasses UI paging and control-output limits, rejects ambiguous
+provenance, and treats missing terminal data as unknown. The Board stage lifecycle
+consumes this boundary in a later slice; it does not add another provider runner.
+
 ## Rendering and responsiveness
 
 Keep provider I/O, parsing, file access and persistence off the UI thread.

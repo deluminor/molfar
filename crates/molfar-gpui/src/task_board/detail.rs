@@ -1,6 +1,6 @@
 use super::Board;
 use crate::theme::*;
-use gpui::{AnyElement, FontWeight, div, prelude::*, px};
+use gpui::{AnyElement, Context, FontWeight, div, prelude::*, px};
 
 fn field(label: &'static str, value: impl Into<String>) -> AnyElement {
     div()
@@ -17,7 +17,7 @@ fn field(label: &'static str, value: impl Into<String>) -> AnyElement {
 }
 
 impl Board {
-    pub(super) fn detail(&self) -> AnyElement {
+    pub(super) fn detail(&self, cx: &mut Context<Self>) -> AnyElement {
         let mut detail = div()
             .id("board-detail")
             .debug_selector(|| "board-detail".into())
@@ -62,7 +62,24 @@ impl Board {
             })
             .when_some(card.worktree_path.clone(), |d, path| {
                 d.child(field("Worktree", path))
-            })
+            });
+        if snapshot.selected.as_ref() != self.selected.as_ref() {
+            return detail
+                .child(
+                    div()
+                        .id("board-detail-metadata-pending")
+                        .debug_selector(|| "board-detail-metadata-pending".into())
+                        .text_color(content(0.6))
+                        .child(if self.loading {
+                            "Updating task metadata…"
+                        } else {
+                            "Task metadata unavailable. Retry refresh."
+                        }),
+                )
+                .into_any_element();
+        }
+        detail = detail
+            .child(self.stage_actions(card, cx))
             .child(field("Stage runs", snapshot.runs.len().to_string()));
         for run in &snapshot.runs {
             detail = detail
@@ -79,6 +96,16 @@ impl Board {
         }
         detail = detail.child(field("Artifacts", snapshot.artifacts.len().to_string()));
         for artifact in &snapshot.artifacts {
+            let selected = artifact.clone();
+            detail = detail.child(
+                crate::modal::ghost_button(
+                    gpui::SharedString::from(format!("board-artifact-{}", artifact.id)),
+                    format!("Read {} v{}", artifact.kind, artifact.version),
+                )
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.open_artifact(selected.clone(), window, cx)
+                })),
+            );
             detail = detail.child(field(
                 "Version",
                 format!(

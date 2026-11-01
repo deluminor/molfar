@@ -2,12 +2,14 @@
 //! persistent native_* tables, or history conversion on open.
 mod accounts;
 pub(super) mod blocks;
+mod board_notices;
 mod edit;
 #[cfg(test)]
 mod molfar_tests;
 mod settings;
 #[cfg(test)]
 mod tests;
+mod turn_receipts;
 mod window;
 pub use window::{HistoryPage, PAGE_TURNS};
 
@@ -148,6 +150,7 @@ pub(super) fn project_turns(
     let mut turns = HashMap::new();
     let mut offset = 0;
     let mut root_turn = None;
+    let prompt_ids = turn_receipts::completion::prompt_keys(blocks)?;
     for block in blocks {
         let rows = blocks::project(std::slice::from_ref(block))?;
         if let Some(prompt) = rows.iter().rposition(Row::is_prompt) {
@@ -158,10 +161,15 @@ pub(super) fn project_turns(
             if started_at.is_some() {
                 root_turn = Some(turn);
             }
-            let joined_turn =
+            let completion = turn_receipts::completion::read(block)?;
+            let explicit_join = turn_receipts::completion::joined_turn(block, &prompt_ids)?;
+            let joined_turn = if block[turn_receipts::constants::JOINED_PROMPT].is_null() {
                 (block["role"] == "user" && block["sentAt"].is_number() && started_at.is_none())
                     .then_some(root_turn)
-                    .flatten();
+                    .flatten()
+            } else {
+                explicit_join
+            };
             let metrics = block
                 .get("turnMetrics")
                 .filter(|value| value.is_object())
@@ -172,11 +180,13 @@ pub(super) fn project_turns(
                 || metrics.is_some()
                 || block["providerTurnId"].is_string()
                 || joined_turn.is_some()
+                || completion.is_some()
             {
                 turns.insert(
                     offset + prompt + 1,
                     crate::agent::TurnInfo {
                         joined_turn,
+                        completion,
                         provider_turn_id: block["providerTurnId"].as_str().map(str::to_owned),
                         provider: model["harness"].as_str().unwrap_or("").into(),
                         model: model["name"].as_str().unwrap_or("").into(),
@@ -728,8 +738,12 @@ impl Store {
                         .is_some()
                     }))
         });
+        for info in settings.turns.values_mut() {
+            info.completion = None;
+        }
         for (turn, source) in project_turns(&blocks)? {
             let info = settings.turns.entry(turn).or_default();
+            info.completion = source.completion;
             if !source.provider.is_empty() {
                 info.provider = source.provider;
             }
@@ -823,118 +837,22 @@ impl Store {
         id: i64,
         turns: &HashMap<usize, crate::agent::TurnInfo>,
     ) -> Result<(), String> {
-        if turns.is_empty() {
-            return Ok(());
-        }
-        self.shared_writable()?;
-        let tx = sql(self.conn.unchecked_transaction())?;
-        let mut blocks = self.shared_blocks(id)?;
-        if self
-            .shared
-            .as_ref()
-            .unwrap()
-            .snapshots
-            .borrow()
-            .get(&id)
-            .is_some_and(|revision| !revision.matches(&blocks))
-        {
-            return Err("This conversation changed in another window. Reopen it before saving; its data was preserved.".into());
-        }
-        let (session_provider, session_model): (String, String) = sql(self.conn.query_row(
-            "SELECT harness,model FROM sessions WHERE id=?1",
-            [self.persisted_session_id(id)?],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        ))?;
-        let mut offset = 0;
-        let mut changed = false;
-        for block in &mut blocks {
-            let rows = blocks::project(std::slice::from_ref(block))?;
-            let turn = rows
-                .iter()
-                .rposition(Row::is_prompt)
-                .map(|prompt| offset + prompt + 1);
-            offset += rows.len();
-            let Some(info) = turn.and_then(|turn| turns.get(&turn)) else {
-                continue;
-            };
-            let mut fields = Vec::new();
-            if !info.provider.is_empty() && (!info.model.is_empty() || info.model_id.is_some()) {
-                let mut model = json!({"harness":info.provider});
-                if !info.model.is_empty() {
-                    model["name"] = json!(info.model);
-                }
-                if let Some(id) = &info.model_id {
-                    model["id"] = json!(if info.provider == session_provider
-                        && super::desktop_import::native_model(&session_model, &session_provider)
-                            .as_ref()
-                            == Some(id)
-                    {
-                        session_model.clone()
-                    } else if id.starts_with(&format!("{}:", info.provider)) {
-                        id.clone()
-                    } else {
-                        format!("{}:{id}", info.provider)
-                    });
-                }
-                fields.push(("turnModel", model));
-            }
-            if info.has_duration() {
-                fields.push(("durationMs", json!(info.duration_ms)));
-            }
-            if let Some(id) = &info.provider_turn_id {
-                fields.push(("providerTurnId", json!(id)));
-            }
-            if let Some(at) = info.started_at {
-                // A native root prompt is written with its send time before
-                // its turn receipt arrives; the desktop schema calls it startedAt.
-                if block["id"]
-                    .as_str()
-                    .is_some_and(|id| id.starts_with("gpui-"))
-                    && block["startedAt"].is_null()
-                {
-                    block["startedAt"] = json!(at);
-                    if block["sentAt"].as_u64() == Some(at) {
-                        block.as_object_mut().unwrap().remove("sentAt");
-                    }
-                    changed = true;
-                }
-            }
-            if let Some(metrics) = info.metrics.filter(|metrics| metrics.reported()) {
-                fields.push(("turnMetrics", json!({"inputTokens":metrics.input_tokens,
-                    "outputTokens":metrics.output_tokens,"cacheReadTokens":metrics.cache_read_tokens,
-                    "cacheWriteTokens":metrics.cache_write_tokens,"cacheHitPercent":metrics.cache_hit_percent})));
-            }
-            for (key, value) in fields {
-                if block[key].is_null() {
-                    block[key] = value;
-                    changed = true;
-                } else if key == "turnModel" {
-                    if let (Some(saved), Some(incoming)) =
-                        (block[key].as_object_mut(), value.as_object())
-                    {
-                        for (name, value) in incoming {
-                            if !saved.contains_key(name) {
-                                saved.insert(name.clone(), value.clone());
-                                changed = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if changed {
-            self.shared_store_blocks(id, &blocks)?;
-        }
-        sql(tx.commit())?;
-        if changed {
-            self.shared
-                .as_ref()
-                .unwrap()
-                .snapshots
-                .borrow_mut()
-                .insert(id, HistoryRevision::of(&blocks));
-        }
-        Ok(())
+        turn_receipts::write::save(self, id, turns, false)
+    }
+    pub(super) fn shared_save_turn_receipt(
+        &self,
+        id: i64,
+        turn: usize,
+        info: &crate::agent::TurnInfo,
+    ) -> Result<(), String> {
+        turn_receipts::write::save(self, id, &HashMap::from([(turn, info.clone())]), true)
+    }
+    pub(super) fn shared_app_turn_result(
+        &self,
+        id: i64,
+        request: &str,
+    ) -> Result<Option<crate::app_access::turn::StoredAppTurn>, String> {
+        turn_receipts::read::result(self, id, request)
     }
     pub(super) fn shared_context(&self, id: i64) -> Result<Option<Usage>, String> {
         let fields = format!(
@@ -1164,7 +1082,11 @@ impl Store {
         message_id: Option<&str>,
     ) -> Result<(), String> {
         self.shared_writable()?;
-        let tx = sql(self.conn.unchecked_transaction())?;
+        let tx = sql(rusqlite::Transaction::new_unchecked(
+            &self.conn,
+            rusqlite::TransactionBehavior::Immediate,
+        ))?;
+        self.board_validate_prompt_submission(id, message_id)?;
         let current = self.shared_blocks(id)?;
         if self
             .shared
@@ -1184,7 +1106,7 @@ impl Store {
                 .rev()
                 .find(|b| b["role"] == "user" && b["draft"] != true)
             {
-                prompt["appRequestId"] = json!(message);
+                prompt[turn_receipts::constants::REQUEST] = json!(message);
             }
             next.retain(|b| !(b["draft"] == true && b["id"].as_str() == Some(message)));
         }

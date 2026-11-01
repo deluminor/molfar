@@ -193,8 +193,20 @@ impl Familiars {
             files::content_hash(&call.request_id)
         );
         let store = self.store.clone();
+        let requested_session = call.input.get("sessionId").cloned();
         let lookup = cx.background_executor().spawn(async move {
-            locked(&store)?
+            let store = locked(&store)?;
+            if let Some(value) = requested_session {
+                let session = if let Some(id) = value.as_str() {
+                    store.resolve_session_id(id)?
+                } else {
+                    value.as_i64().ok_or("Invalid session ID")?
+                };
+                if store.session_task_card(session)?.is_some() {
+                    return Err("Task Board sessions are not available to Familiars.".into());
+                }
+            }
+            store
                 .setting(&receipt_key)?
                 .map(|raw| {
                     serde_json::from_str::<(String, Result<Value, String>)>(&raw)
@@ -401,7 +413,8 @@ impl Familiars {
                     .unwrap_or_default();
                 self.call_work(call,target,move|store|{
                     let db=locked(&store)?;let all=db.sessions()?;
-                    let sessions:Vec<_>=all.iter().filter(|s|!hidden.contains(&s.id)&&s.cwd==project).collect();
+                    let board=db.board_owned_session_ids()?;
+                    let sessions:Vec<_>=all.iter().filter(|s|!hidden.contains(&s.id)&&!board.contains(&s.id)&&s.cwd==project).collect();
                     let value=if action=="sessions.list" {
                         let drafts=db.draft_sessions()?;let metadata=db.mobile_session_metadata()?;
                         json!({"cwd":project,"sessions":sessions.iter().map(|s|json!({"id":s.id,"sessionId":s.id,"title":s.title,"harness":s.provider,"model":metadata.get(&s.id).and_then(|m|m.model.clone()),"busy":views.iter().any(|v|v.id==s.id&&v.busy),"hasDraft":drafts.contains(&s.id),"archived":s.archived})).collect::<Vec<_>>()})

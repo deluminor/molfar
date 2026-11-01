@@ -222,14 +222,25 @@ impl Shell {
             self.app_view_events.push(cx.subscribe_in(
                 &view,
                 window,
-                |this, _, _: &crate::task_board::Event, window, cx| this.close_app_view(window, cx),
+                |this, _, event: &crate::task_board::Event, window, cx| match event {
+                    crate::task_board::Event::Close => this.close_app_view(window, cx),
+                    crate::task_board::Event::Stage {
+                        card_id,
+                        updated_at,
+                        action,
+                    } => this.board_action(card_id.clone(), *updated_at, *action, cx),
+                    crate::task_board::Event::OpenSession(id) => {
+                        this.open_board_session(id.clone(), cx)
+                    }
+                },
             ));
             self.board = Some(view);
         }
         if let Some(view) = &self.board {
             let cwd = self.workspace.project.clone();
+            let projects = self.workspace.projects.clone();
             view.update(cx, |view, cx| {
-                view.set_context(cwd);
+                view.set_context(cwd, projects);
                 view.refresh(cx);
             });
         }

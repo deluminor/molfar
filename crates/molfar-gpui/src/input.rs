@@ -12,6 +12,8 @@ use std::{borrow::Cow, ops::Range};
 use unicode_segmentation::UnicodeSegmentation;
 
 mod code;
+mod form;
+pub(crate) use form::form_field;
 mod command;
 mod spelling;
 pub(crate) use command::{Command, CommandRemoved};

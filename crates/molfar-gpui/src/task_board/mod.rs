@@ -1,5 +1,9 @@
+mod create;
 mod detail;
 mod list;
+#[cfg(test)]
+mod loading_tests;
+mod stage;
 #[cfg(test)]
 mod tests;
 mod view;
@@ -10,6 +14,12 @@ use molfar_core::task_board::types::Snapshot;
 
 pub(crate) enum Event {
     Close,
+    Stage {
+        card_id: String,
+        updated_at: i64,
+        action: molfar_core::task_board::stage::lifecycle::types::StageAction,
+    },
+    OpenSession(String),
 }
 
 pub(crate) struct Board {
@@ -17,6 +27,9 @@ pub(crate) struct Board {
     focus: FocusHandle,
     scroll: ScrollHandle,
     cwd: String,
+    projects: Vec<String>,
+    creation: Option<create::state::Creation>,
+    create_open: bool,
     project_only: bool,
     archived: bool,
     selected: Option<String>,
@@ -24,11 +37,22 @@ pub(crate) struct Board {
     revision: u64,
     loading: bool,
     error: Option<String>,
+    stage_pending: Option<String>,
+    artifact: Option<stage::Artifact>,
+    artifact_revision: u64,
 }
 
 impl EventEmitter<Event> for Board {}
 impl Focusable for Board {
-    fn focus_handle(&self, _: &App) -> FocusHandle {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        if let Some(artifact) = &self.artifact {
+            return artifact.focus.clone();
+        }
+        if self.create_open
+            && let Some(draft) = &self.creation
+        {
+            return draft.title.read(cx).focus_handle(cx);
+        }
         self.focus.clone()
     }
 }
@@ -40,6 +64,9 @@ impl Board {
             focus: cx.focus_handle(),
             scroll: ScrollHandle::new(),
             cwd: String::new(),
+            projects: Vec::new(),
+            creation: None,
+            create_open: false,
             project_only: false,
             archived: false,
             selected: None,
@@ -47,6 +74,9 @@ impl Board {
             revision: 0,
             loading: false,
             error: None,
+            stage_pending: None,
+            artifact: None,
+            artifact_revision: 0,
         }
     }
 
@@ -60,8 +90,12 @@ impl Board {
         self.archived
     }
 
-    pub(crate) fn set_context(&mut self, cwd: String) {
+    pub(crate) fn set_context(&mut self, cwd: String, projects: Vec<String>) {
+        if self.project_only && self.cwd != cwd {
+            self.snapshot = None;
+        }
         self.cwd = cwd;
+        self.projects = projects;
     }
 
     pub(crate) fn refresh(&mut self, cx: &mut Context<Self>) {
@@ -97,7 +131,13 @@ impl Board {
                 self.error = None;
             }
             Err(error) => {
-                self.snapshot = None;
+                if self
+                    .snapshot
+                    .as_ref()
+                    .is_some_and(|snapshot| snapshot.cards.is_empty())
+                {
+                    self.snapshot = None;
+                }
                 self.error = Some(error);
             }
         }

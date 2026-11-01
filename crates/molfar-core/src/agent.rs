@@ -1,4 +1,6 @@
 //! Composer settings and approval decisions shared by the native view and transports.
+pub mod turn;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -168,6 +170,8 @@ pub struct TurnInfo {
     /// An accepted steer belongs to the provider run that opened this receipt.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub joined_turn: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completion: Option<turn::TurnCompletion>,
     pub provider_turn_id: Option<String>,
     pub provider: String,
     pub model: String,

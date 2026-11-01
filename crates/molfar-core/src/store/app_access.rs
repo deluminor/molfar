@@ -6,10 +6,7 @@ impl Store {
     /// provider accepts it. Queue delivery uses this same stable message ID.
     pub fn prepare_app_prompt(&self, id: i64, request: &str, prompt: &str) -> Result<(), String> {
         let mut state = self.follow_ups(id)?;
-        let message_id = format!(
-            "app-prompt-{}",
-            crate::familiar::files::content_hash(request)
-        );
+        let message_id = prompt_message_id(request);
         if state.draft.is_none() && !state.messages.iter().any(|m| m.id == message_id) {
             state.revision += 1;
             state.draft = Some(crate::follow_up::Message {
@@ -111,4 +108,11 @@ impl Store {
         }
         Ok(page)
     }
+}
+
+pub(super) fn prompt_message_id(request: &str) -> String {
+    format!(
+        "app-prompt-{}",
+        crate::familiar::files::content_hash(request)
+    )
 }

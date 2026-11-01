@@ -34,6 +34,7 @@ approval for every edit. Native Supervised mode does not add that guarantee.
 
 | Area | Remaining verification or work |
 | --- | --- |
+| MOLFAR Board | Native grouped list/detail, Backlog creation with initial task snapshot and the first Grill round (visible native session, durable settlement, cancel/retry/restart recovery, spec/plan artifacts, Plan approval) are implemented. Later Grill rounds, later stages, model/skill policy UI, review gates and delivery remain pending. Actual application interaction and platform verification remain outstanding. |
 | Chat | Live attachment/steering/rewind checks, complete keyboard selection and screen-reader navigation, richer nested task artifacts and provider-specific task controls |
 | History and workspace | Transcript/database paging, cache runtime checks, remaining desktop layout consumers, explicit import/export |
 | Files and Git | Platform visual/IME checks, Linux/Windows media hosting, non-Git checkpoints, per-file checkpoint Undo/Keep and orchestration checkpoint integration |

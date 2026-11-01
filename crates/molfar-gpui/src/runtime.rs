@@ -9,6 +9,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::time::Duration;
+mod completion;
 #[cfg(all(test, unix))]
 mod follow_up_tests;
 mod handoff;
@@ -16,6 +17,8 @@ mod handoff;
 mod handoff_tests;
 mod persistence;
 pub(crate) mod remote;
+#[cfg(test)]
+pub(crate) mod test_provider;
 mod visual_discovery;
 #[cfg(all(test, unix))]
 mod visual_tests;
@@ -87,6 +90,22 @@ pub(crate) fn run_turn(
 ) {
     if summary.cwd.starts_with("remote://") {
         remote::run(summary, prompt, settings, controls, store, cancel, tx);
+        return;
+    }
+    #[cfg(test)]
+    if let Some(binary) = test_provider::registered(&store, summary.id) {
+        run_turn_using(
+            TurnInput {
+                summary,
+                prompt,
+                settings,
+            },
+            controls,
+            store,
+            cancel,
+            tx,
+            |_| Some(binary),
+        );
         return;
     }
     run_turn_using(
@@ -197,13 +216,34 @@ fn run_turn_using(
         transcript.begin("assistant");
         // Keep the already painted prompt in the failure replay even if saving
         // the turn's configuration fails before its first transcript write.
-        locked(&store)?.configure_agent(summary.id, &summary.provider, &persisted)?;
-        locked(&store)?.write_rows_with_message(
-            summary.id,
-            start,
-            &transcript.rows[start..],
-            settings.familiar_message_id.as_deref(),
-        )?;
+        {
+            let mut store = locked(&store)?;
+            if let Err(error) = store.board_validate_prompt_submission(
+                summary.id,
+                settings.familiar_message_id.as_deref(),
+            ) {
+                history_loaded = false;
+                return Err(error);
+            }
+            store.configure_agent(summary.id, &summary.provider, &persisted)?;
+            let written = store.write_rows_with_message(
+                summary.id,
+                start,
+                &transcript.rows[start..],
+                settings.familiar_message_id.as_deref(),
+            );
+            if written.is_err()
+                && store
+                    .board_validate_prompt_submission(
+                        summary.id,
+                        settings.familiar_message_id.as_deref(),
+                    )
+                    .is_err()
+            {
+                history_loaded = false;
+            }
+            written?;
+        }
         let mut info =
             settings
                 .turn_model
@@ -214,6 +254,8 @@ fn run_turn_using(
                     ..Default::default()
                 });
         info.started_at = info.started_at.or(started_at);
+        info.completion = None;
+        info.joined_turn = None;
         // The receipt's key follows all continuation rows of the prompt.
         let turn = transcript
             .rows
@@ -652,6 +694,7 @@ fn run_turn_using(
                                 // while timing/metrics belong to the original run.
                                 let steer = molfar_core::agent::TurnInfo {
                                     joined_turn: Some(*root_turn),
+                                    completion: None,
                                     provider: root.provider.clone(),
                                     model: root.model.clone(),
                                     model_id: root.model_id.clone(),
@@ -898,6 +941,7 @@ fn run_turn_using(
     })();
     let cancelled =
         cancel.load(Ordering::Relaxed) || result.as_ref().is_err_and(|error| error == "Stopped");
+    let provider_error = result.as_ref().err().cloned();
     let handoff = prepared_handoff.map(|mut ready| {
         if handoff_accepted {
             None
@@ -966,6 +1010,7 @@ fn run_turn_using(
             store.finish_turn(&session, cwd, id)
         });
     }
+    let mut flush_error = None;
     let (start, rows, mut status) = if !history_loaded {
         // A rejected preflight has no row baseline. Writing an error at row 0
         // would replace a real conversation's first saved message.
@@ -994,7 +1039,10 @@ fn run_turn_using(
             std::time::Instant::now(),
         ) {
             Ok(()) => error,
-            Err(storage) => format!("{error} · Saving failed: {storage}"),
+            Err(storage) => {
+                flush_error = Some(storage.clone());
+                format!("{error} · Saving failed: {storage}")
+            }
         };
         (start, transcript.rows[start..].to_vec(), error)
     } else {
@@ -1010,7 +1058,10 @@ fn run_turn_using(
                 std::time::Instant::now(),
             )
             .map(|_| "Ready".into())
-            .unwrap_or_else(|error| format!("Saving failed: {error}"));
+            .unwrap_or_else(|error| {
+                flush_error = Some(error.clone());
+                format!("Saving failed: {error}")
+            });
         (final_start, transcript.rows[final_start..].to_vec(), status)
     };
     // Settle provenance in storage before notifying the view, including when
@@ -1020,6 +1071,13 @@ fn run_turn_using(
         info.duration_ms = info.started_at.map_or(0, |at| completed.saturating_sub(at));
         info.duration_known = true;
         info.completed_at = info.started_at.map(|_| completed);
+        info.completion = Some(completion::classify(
+            completed,
+            cancelled,
+            provider_error.as_deref(),
+            flush_error.as_deref(),
+            handoff_save.as_ref().err().map(String::as_str),
+        ));
         if let Err(error) = persistence::save_turn_receipt(&store, summary.id, turn, info) {
             status = format!("{status} · Saving turn metadata failed: {error}");
         }

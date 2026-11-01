@@ -69,9 +69,10 @@ pub fn should_notify(
         && matches!(permission, Permission::Prompt | Permission::Granted)
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Target {
     Session(i64),
+    Board(String),
     /// Preserve the due timestamp when clearing: stale clicks must never clear a
     /// newer reminder. The host must clear with Some(due_at) before opening.
     Reminder {
@@ -82,9 +83,10 @@ pub enum Target {
 
 impl Target {
     /// Sequence prevents replacement of an earlier banner for this session.
-    pub fn tag(self, sequence: u64) -> String {
+    pub fn tag(&self, sequence: u64) -> String {
         match self {
             Self::Session(id) => format!("molfar-session:{id}:{sequence}"),
+            Self::Board(id) => format!("molfar-board:{id}:{sequence}"),
             Self::Reminder { session_id, due_at } => {
                 format!("molfar-reminder:{session_id}:{due_at}")
             }
@@ -92,6 +94,18 @@ impl Target {
     }
 
     pub fn from_tag(tag: &str) -> Option<Self> {
+        if let Some(rest) = tag.strip_prefix("molfar-board:") {
+            let (id, sequence) = rest.rsplit_once(':')?;
+            sequence.parse::<u64>().ok()?;
+            if id.is_empty()
+                || !id
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+            {
+                return None;
+            }
+            return Some(Self::Board(id.to_owned()));
+        }
         if let Some(rest) = tag.strip_prefix("molfar-session:") {
             let (id, sequence) = rest.split_once(':')?;
             sequence.parse::<u64>().ok()?;
@@ -143,4 +157,29 @@ pub fn dock_badge_count(sessions: impl IntoIterator<Item = (i64, bool)>) -> usiz
         .filter_map(|(id, needs_input)| needs_input.then_some(id))
         .collect::<HashSet<_>>()
         .len()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Target;
+
+    #[test]
+    fn board_card_tags_round_trip_and_reject_unsafe_ids() {
+        let target = Target::Board("card-1_a".into());
+
+        assert_eq!(Target::from_tag(&target.tag(7)), Some(target));
+        for tag in [
+            "molfar-board::1",
+            "molfar-board:card",
+            "molfar-board:card:x",
+            "molfar-board:../card:1",
+            "molfar-board:a:b:1",
+        ] {
+            assert_eq!(Target::from_tag(tag), None, "{tag}");
+        }
+        assert_eq!(
+            Target::from_tag("molfar-session:4:1"),
+            Some(Target::Session(4))
+        );
+    }
 }

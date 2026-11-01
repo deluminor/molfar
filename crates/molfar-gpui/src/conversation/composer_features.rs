@@ -479,6 +479,13 @@ impl Conversation {
             || (!self.history_actions.is_empty() && self.history_ready())
             || self.editing_last_turn.pending()
             || self.familiar_external_pending()
+            || self.follow_ups.requested.as_ref().is_some_and(|id| {
+                self.follow_ups
+                    .state
+                    .messages
+                    .iter()
+                    .any(|message| &message.id == id && message.error.is_none())
+            })
     }
     /// An evicted history can be restored for a managed run; a user's draft
     /// or an already accepted message must keep ownership of this composer.

@@ -1,5 +1,5 @@
 //! The desktop Notes split view, backed by the same notes and image assets.
-mod preview;
+pub(crate) mod preview;
 
 use crate::{
     explorer::DraggedFile,

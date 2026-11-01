@@ -610,7 +610,7 @@ impl Shell {
         }
     }
 
-    fn dispatch_notice(
+    pub(super) fn dispatch_notice(
         &mut self,
         summary: &Session,
         category: &str,
@@ -620,9 +620,9 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         let now = molfar_core::time::now_ms();
-        let occurred = match target {
-            Target::Session(_) => now,
-            Target::Reminder { due_at, .. } => due_at,
+        let occurred = match &target {
+            Target::Session(_) | Target::Board(_) => now,
+            Target::Reminder { due_at, .. } => *due_at,
         };
         let prefs = &self.workspace.preferences;
         if !prefs.allows_project_notification(&summary.cwd, category, Some(occurred), now) {
@@ -688,12 +688,18 @@ impl Shell {
     fn open_notice_target(&mut self, target: Target, cx: &mut Context<Self>) {
         cx.spawn(async move |this, cx| {
             let _ = this.update_in(cx, |this, window, cx| {
-                let id = match target {
-                    Target::Session(id) => id,
+                if let Target::Board(card_id) = &target {
+                    this.open_board_card(card_id.clone(), window, cx);
+                    window.activate_window();
+                    return;
+                }
+                let id = match &target {
+                    Target::Session(id) => *id,
                     Target::Reminder { session_id, due_at } => {
-                        this.clear_notification_reminder(session_id, due_at, cx);
-                        session_id
+                        this.clear_notification_reminder(*session_id, *due_at, cx);
+                        *session_id
                     }
+                    Target::Board(_) => return,
                 };
                 this.close_settings(window, cx);
                 this.leave_app_views(cx);
@@ -733,11 +739,11 @@ impl Shell {
                 if this.session_summaries.contains_key(&id) {
                     // `open` normally dismisses today's due reminder. A stale
                     // OS target must preserve a newer occurrence instead.
-                    let newer = match target {
+                    let newer = match &target {
                         Target::Reminder { due_at, .. } => this
                             .reminders
                             .iter()
-                            .find(|r| r.session_id == id && r.due_at != due_at)
+                            .find(|r| r.session_id == id && r.due_at != *due_at)
                             .cloned(),
                         _ => None,
                     };

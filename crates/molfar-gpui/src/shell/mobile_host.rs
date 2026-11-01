@@ -2,6 +2,7 @@
 //! serves devices; the shell answers their requests from its own state, through
 //! the same paths as the sidebar, composer and Changes panel.
 use super::*;
+mod ownership;
 use crate::{
     accounts::Tone,
     mobile::{catalog as mobile_catalog, project, transcript as turns},
@@ -342,9 +343,13 @@ impl Shell {
     }
 
     fn mobile_catalog_sessions(&self, paths: &[String], cx: &App) -> Vec<CatalogEntry> {
+        if !self.board_state.ownership_ready {
+            return Vec::new();
+        }
         self.order
             .iter()
             .filter(|id| !self.sidebar_hidden_sessions.contains(id))
+            .filter(|id| !self.board_state.owned.contains(id))
             .filter_map(|&id| {
                 let metadata = self.session_metadata(id, cx);
                 let summary = metadata.summary;
@@ -459,7 +464,7 @@ impl Shell {
         let mut ids = self.mobile.ids.clone();
         self.mobile.publishing = true;
         let work = cx.background_executor().spawn(async move {
-            let saved = {
+            let (saved, board_owned) = {
                 let store = locked(&store)?;
                 for id in entries.iter().map(|entry| entry.id).chain(familiars.iter().filter_map(|(familiar, _)| familiar.session_id)) {
                     if let std::collections::hash_map::Entry::Vacant(entry) = ids.entry(id)
@@ -468,7 +473,7 @@ impl Shell {
                         entry.insert(value);
                     }
                 }
-                store.mobile_session_metadata()?
+                (store.mobile_session_metadata()?, store.board_owned_session_ids()?)
             };
             let mut branches = HashMap::new();
             let projects: Vec<_> = projects.into_iter().map(|mut project| {
@@ -478,6 +483,7 @@ impl Shell {
             }).collect();
             let mut sessions = Vec::new();
             for entry in entries {
+                if board_owned.contains(&entry.id) { continue; }
                 let Some(id) = ids.get(&entry.id) else {
                     continue;
                 };
@@ -555,6 +561,9 @@ impl Shell {
             .or_else(|| locked(&self.store).ok()?.resolve_existing_session_id(id))
             .filter(|id| self.session_summaries.contains_key(id))
             .ok_or("Session is no longer available")?;
+        if !self.board_state.ownership_ready || self.board_state.owned.contains(&session) {
+            return Err("Task Board sessions are not available over phone access.".into());
+        }
         Ok(Target::Session(session))
     }
 
@@ -571,6 +580,15 @@ impl Shell {
     }
 
     fn handle_mobile_request(
+        &mut self,
+        request: Request,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.authorize_mobile_request(request, window, cx);
+    }
+
+    fn handle_mobile_request_ready(
         &mut self,
         request: Request,
         window: &mut Window,
@@ -825,6 +843,10 @@ impl Shell {
     // MARK: watches
 
     fn start_mobile_watch(&mut self, start: WatchStart, cx: &mut Context<Self>) {
+        self.authorize_mobile_watch(start, cx);
+    }
+
+    fn start_mobile_watch_ready(&mut self, start: WatchStart, cx: &mut Context<Self>) {
         let target = match self.mobile_target(&start.conversation_id, cx) {
             Ok(target) => target,
             Err(error) => return start.accept(Err(error)),

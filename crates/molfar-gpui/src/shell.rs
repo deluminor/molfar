@@ -3,6 +3,7 @@ mod actions;
 mod app_commands;
 mod app_views;
 mod automation_runs;
+mod board_runtime;
 #[cfg(test)]
 mod board_tests;
 mod classic_sidebar;
@@ -681,6 +682,7 @@ pub(crate) struct Shell {
     inbox: Option<Entity<crate::inbox::Inbox>>,
     automations: Option<Entity<crate::automations::Automations>>,
     board: Option<Entity<crate::task_board::Board>>,
+    board_state: board_runtime::State,
     active_app_view: Option<app_views::AppView>,
     app_view_events: Vec<Subscription>,
     automation_state: automation_runs::State,
@@ -1041,6 +1043,7 @@ impl Shell {
             inbox: None,
             automations: None,
             board: None,
+            board_state: Default::default(),
             active_app_view: None,
             app_view_events: Vec::new(),
             automation_state: Default::default(),
@@ -1244,6 +1247,7 @@ impl Shell {
         this.apply_preferences(cx);
         this.poll_reminders(cx);
         this.initialize_automations(cx);
+        this.initialize_board_runtime(cx);
         if this.workspace.active.is_none() {
             cx.spawn(async move |this, cx| {
                 let _ = this.update_in(cx, |this, window, cx| {
@@ -1340,6 +1344,7 @@ impl Shell {
                 this.sync_search_session(id, cx);
                 this.orchestration_session_changed(id, cx);
                 this.automation_session_changed(id, cx);
+                this.board_session_changed(id, cx);
                 this.sync_review_locks(cx);
                 this.refresh_session_mark(id, cx);
                 this.notification_session_changed(id, cx);

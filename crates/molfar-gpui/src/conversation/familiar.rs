@@ -4,6 +4,7 @@ use molfar_core::familiar::{Familiar, Message};
 use std::path::PathBuf;
 #[derive(Default)]
 pub(super) struct ChatState {
+    pub(super) app_launch_generation: u64,
     pub(super) pending: Vec<Message>,
     pub(super) emoji: bool,
     pub(super) delivered: std::collections::HashSet<String>,
@@ -34,9 +35,22 @@ impl Conversation {
         send: bool,
         cx: &mut Context<Self>,
     ) {
+        self.familiar_ui.app_launch_generation += 1;
+        self.install_current_app_launch(settings, send, self.familiar_ui.app_launch_generation, cx);
+    }
+    fn install_current_app_launch(
+        &mut self,
+        settings: Settings,
+        send: bool,
+        generation: u64,
+        cx: &mut Context<Self>,
+    ) {
+        if self.familiar_ui.app_launch_generation != generation {
+            return;
+        }
         if !self.history_ready() {
             self.defer_history_action(
-                move |this, cx| this.install_app_launch(settings, send, cx),
+                move |this, cx| this.install_current_app_launch(settings, send, generation, cx),
                 cx,
             );
             return;
@@ -53,9 +67,13 @@ impl Conversation {
         self.save_message_draft(cx);
     }
     pub(crate) fn stop_app_session(&mut self, cx: &mut Context<Self>) {
+        self.familiar_ui.app_launch_generation += 1;
+        self.finish_stopping_app_session(cx);
+    }
+    fn finish_stopping_app_session(&mut self, cx: &mut Context<Self>) {
         if self.needs_history_restore() {
             self.stop_if_busy(cx);
-            self.defer_history_action(|this, cx| this.stop_app_session(cx), cx);
+            self.defer_history_action(|this, cx| this.finish_stopping_app_session(cx), cx);
             return;
         }
         self.stop_if_busy(cx);

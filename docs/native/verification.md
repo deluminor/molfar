@@ -104,6 +104,26 @@ unrelated files of the Windows build.
 
 Client-decorated Linux and the Windows 11 Snap Layouts flyout were not checked.
 
+## MOLFAR Board creation and turn receipts — October 29, 2026
+
+The MOLFAR migration branch passed `npm run native:check`: 642 core tests,
+735 GPUI tests and 31 native script tests, plus formatting and strict Clippy.
+Two core and eleven GPUI manual/platform tests remain ignored. Another 43
+upstream/release tests passed, along with native branding, rename routing and
+source-size checks.
+
+`npm run native:build` produced an optimized, locally signed macOS app without
+launching it. Synthetic fixtures cover Board creation and retry repair, typing,
+IME, focus, reduced motion and mounted refresh content. Receipt fixtures cover
+immutable success/failure/cancel provenance, exact full output, stale data and an
+actual final transcript-write failure using a mock provider and test database.
+Independent source review found no remaining behavioral issue.
+
+These checks cover creation and the receipt/data prerequisite. Native Board
+stage execution remains pending. No actual app/browser/device QA, live provider
+requests, production-data writes, Linux/Windows runtime checks or release action
+were performed. The production React/Tauri source was unchanged.
+
 ## Local checks
 
 Run the complete native check from the repository root:
@@ -145,3 +165,19 @@ For long-history interaction, use the isolated fixture from the
 [native guide](README.md#checks-and-fixtures). Check typing and scrolling while a
 separate real session streams, then switch tabs and verify draft/viewport state,
 Stop, and saved history after relaunch. Synthetic history is not sent to providers.
+
+## MOLFAR Board first Grill round — November 1, 2026
+
+Native tests passed: 677 core, 747 GPUI and 31 native script tests, with strict
+Clippy and formatting of the native crates. Two core and eleven GPUI manual or
+platform tests remain ignored. Another 79 upstream, release and branding tests
+passed, along with branding, rename routing and diff checks. `npm run native:build`
+produced an optimized, locally signed macOS app without launching it.
+
+Synthetic fixtures drive a fake provider through the real native turn path:
+settlement after the Board closes, artifact-save failure and retry, cancellation
+before install and at prompt acceptance, restart without replay, a deleted
+session after restart, read-only checkout fingerprints and Board ownership
+guards. An independent review's findings were fixed and re-reviewed. No actual
+app, browser, device, live provider or production data was used.
+

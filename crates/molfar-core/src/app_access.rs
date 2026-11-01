@@ -1,5 +1,7 @@
 //! Shared project actions for ordinary Operator threads and resident Familiars.
 //! Visibility and Familiar-only capabilities belong to the caller, not launch JSON.
+pub mod turn;
+
 use crate::{
     agent::{AccessMode, Settings},
     catalog::{Model, ModelControl},

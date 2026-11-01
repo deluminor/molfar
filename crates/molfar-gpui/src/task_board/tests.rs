@@ -6,7 +6,7 @@ use gpui::{
 use molfar_core::{store::Store, task_board::types::Card};
 use std::sync::{Arc, Mutex};
 
-fn card(id: &str, column: &str) -> Card {
+pub(super) fn card(id: &str, column: &str) -> Card {
     Card {
         id: id.into(),
         number: 1,
@@ -39,7 +39,7 @@ fn database() -> Database {
     ))
 }
 
-fn window(cx: &mut TestAppContext) -> gpui::WindowHandle<Board> {
+pub(super) fn window(cx: &mut TestAppContext) -> gpui::WindowHandle<Board> {
     cx.update(|cx| {
         cx.open_window(
             WindowOptions {

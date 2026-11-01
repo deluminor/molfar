@@ -1,5 +1,15 @@
 use serde::Serialize;
 
+#[derive(Clone, Debug)]
+pub struct CardCreate {
+    pub id: String,
+    pub project_cwd: String,
+    pub title: String,
+    pub description: String,
+    pub acceptance_criteria: String,
+    pub base_ref: Option<String>,
+}
+
 #[derive(Clone, Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Card {

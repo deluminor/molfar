@@ -35,11 +35,16 @@ fn cards_row(row: &Row<'_>) -> rusqlite::Result<Card> {
     })
 }
 
-const RUNS_SELECT: &str = "SELECT id, card_id, stage, attempt, session_id, harness, model,
+pub(crate) fn card(conn: &Connection, id: &str) -> rusqlite::Result<Option<Card>> {
+    conn.query_row(&format!("{CARDS_SELECT} WHERE id = ?1"), [id], cards_row)
+        .optional()
+}
+
+pub(crate) const RUNS_SELECT: &str = "SELECT id, card_id, stage, attempt, session_id, harness, model,
   settings_json, runtime_mode, template_version, dispatch, status, error, head_before,
   porcelain_before, fingerprint_before, head_after, started_at, completed_at FROM task_board_stage_runs";
 
-fn runs_row(row: &Row<'_>) -> rusqlite::Result<StageRun> {
+pub(crate) fn runs_row(row: &Row<'_>) -> rusqlite::Result<StageRun> {
     Ok(StageRun {
         id: row.get(0)?,
         card_id: row.get(1)?,
@@ -63,10 +68,10 @@ fn runs_row(row: &Row<'_>) -> rusqlite::Result<StageRun> {
     })
 }
 
-const ARTIFACTS_SELECT: &str =
+pub(crate) const ARTIFACTS_SELECT: &str =
     "SELECT id, card_id, kind, version, source, stage_run_id, created_at FROM task_board_artifacts";
 
-fn artifacts_row(row: &Row<'_>) -> rusqlite::Result<ArtifactMeta> {
+pub(crate) fn artifacts_row(row: &Row<'_>) -> rusqlite::Result<ArtifactMeta> {
     Ok(ArtifactMeta {
         id: row.get(0)?,
         card_id: row.get(1)?,

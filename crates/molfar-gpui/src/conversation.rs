@@ -1,4 +1,6 @@
 mod accounts;
+#[cfg(test)]
+mod app_launch_tests;
 mod approvals;
 mod attachment_drop;
 mod background_tasks;

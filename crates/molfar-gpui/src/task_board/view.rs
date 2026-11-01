@@ -3,9 +3,12 @@ use crate::theme::*;
 use gpui::{Context, FontWeight, Render, Role, Window, div, prelude::*, px};
 
 impl Render for Board {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let project_only = self.project_only;
         let archived = self.archived;
+        let overlay = self
+            .creation_overlay(window, cx)
+            .or_else(|| self.artifact_overlay(window, cx));
         div()
             .id("task-board")
             .debug_selector(|| "task-board".into())
@@ -13,16 +16,21 @@ impl Render for Board {
             .aria_label("Task Board")
             .track_focus(&self.focus)
             .size_full()
+            .relative()
             .min_h_0()
             .flex()
             .flex_col()
             .text_color(content(1.))
-            .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, _, cx| {
+            .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, window, cx| {
+                if this.create_open || this.artifact.is_some() {
+                    return;
+                }
                 if event.keystroke.modifiers.platform || event.keystroke.modifiers.control {
                     return;
                 }
                 match event.keystroke.key.as_str() {
                     "escape" => cx.emit(Event::Close),
+                    "n" => this.open_create(window, cx),
                     "p" => {
                         this.project_only = !this.project_only;
                         this.snapshot = None;
@@ -51,6 +59,15 @@ impl Render for Board {
                     .border_b_1()
                     .border_color(content(0.08))
                     .child(div().font_weight(FontWeight::SEMIBOLD).child("Board"))
+                    .when(self.loading && self.snapshot.is_some(), |header| {
+                        header.child(
+                            div()
+                                .id("board-refreshing")
+                                .text_size(px(12.))
+                                .text_color(content(0.6))
+                                .child("Refreshing…"),
+                        )
+                    })
                     .child(
                         div()
                             .id("board-project-filter")
@@ -97,11 +114,18 @@ impl Render for Board {
                     )
                     .child(div().flex_1())
                     .child(
+                        crate::modal::primary_button("board-new-task", "New task")
+                            .aria_label("New task (N)")
+                            .on_click(
+                                cx.listener(|this, _, window, cx| this.open_create(window, cx)),
+                            ),
+                    )
+                    .child(
                         icon_button("board-refresh", "Refresh Board (R)", "refresh")
                             .on_click(cx.listener(|this, _, _, cx| this.refresh(cx))),
                     ),
             )
-            .when(self.loading, |d| {
+            .when(self.loading && self.snapshot.is_none(), |d| {
                 d.child(div().id("board-loading").p_3().child("Loading Board…"))
             })
             .when_some(self.error.clone(), |d, error| {
@@ -119,15 +143,19 @@ impl Render for Board {
                         ),
                 )
             })
-            .when(!self.loading && self.error.is_none(), |d| {
-                d.child(
-                    div()
-                        .flex_1()
-                        .min_h_0()
-                        .flex()
-                        .child(self.list(cx))
-                        .child(self.detail()),
-                )
-            })
+            .when(
+                self.snapshot.is_some() || (!self.loading && self.error.is_none()),
+                |d| {
+                    d.child(
+                        div()
+                            .flex_1()
+                            .min_h_0()
+                            .flex()
+                            .child(self.list(cx))
+                            .child(self.detail(cx)),
+                    )
+                },
+            )
+            .when_some(overlay, |board, overlay| board.child(overlay))
     }
 }

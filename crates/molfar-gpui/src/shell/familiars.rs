@@ -52,6 +52,9 @@ impl Shell {
             .is_some_and(|m| m.read(cx).active.is_some())
     }
     pub(crate) fn familiar_session_views(&self, cx: &App) -> Vec<FamiliarSession> {
+        if !self.board_state.ownership_ready {
+            return Vec::new();
+        }
         // A Familiar's launches are usually hidden from the sidebar, so they are
         // known by summary only, outside the sidebar's order.
         let listed: HashSet<_> = self.order.iter().collect();
@@ -62,6 +65,7 @@ impl Shell {
         self.order
             .iter()
             .chain(hidden)
+            .filter(|id| !self.board_state.owned.contains(id))
             .map(|&id| {
                 let metadata = self.session_metadata(id, cx);
                 let live = self.sessions.get(&id).map(|v| v.read(cx));
@@ -120,6 +124,9 @@ impl Shell {
         .detach();
     }
     pub(crate) fn familiar_session_entity(&self, id: i64) -> Option<Entity<Conversation>> {
+        if self.board_state.owned.contains(&id) {
+            return None;
+        }
         self.sessions.get(&id).cloned()
     }
     pub(crate) fn familiar_ensure_session(
@@ -127,6 +134,9 @@ impl Shell {
         id: i64,
         cx: &mut Context<Self>,
     ) -> Option<Entity<Conversation>> {
+        if !self.board_state.ownership_ready || self.board_state.owned.contains(&id) {
+            return None;
+        }
         self.ensure_session(id, cx)
     }
     pub(crate) fn familiar_groups(&self, project: &str) -> molfar_core::session_groups::Groups {

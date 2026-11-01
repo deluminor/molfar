@@ -9,16 +9,31 @@ use gpui::{AnyElement, Context, ImageSource, Render, Role, Window, div, prelude:
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 use std::{path::Path, time::Instant};
 
+#[derive(Clone)]
+enum ImagePath {
+    Local(std::path::PathBuf),
+    Url(String),
+}
+
+impl ImagePath {
+    fn source(&self) -> ImageSource {
+        match self {
+            Self::Local(path) => ImageSource::from(path.clone()),
+            Self::Url(url) => ImageSource::from(url.clone()),
+        }
+    }
+}
+
 enum Row {
     Markdown(MarkdownRow),
-    Image { source: ImageSource, alt: String },
+    Image { source: ImagePath, alt: String },
     Missing(String),
 }
-pub(super) struct Preview {
+pub(crate) struct Preview {
     rows: Vec<Row>,
 }
 impl Preview {
-    pub(super) fn new(text: &str, cwd: &str, store: &Database) -> Self {
+    pub(crate) fn new(text: &str, cwd: &str, store: &Database) -> Self {
         let mut spans = Vec::new();
         let mut open = None;
         for (event, range) in Parser::new_ext(text, Options::all()).into_offset_iter() {
@@ -45,15 +60,15 @@ impl Preview {
             let source = if url.starts_with("/note-assets/") {
                 locked(store)
                     .and_then(|store| store.note_image_path(&url))
-                    .map(ImageSource::from)
+                    .map(ImagePath::Local)
             } else if url.starts_with("https://")
                 || url.starts_with("http://")
                 || url.starts_with("data:image/")
             {
-                Ok(ImageSource::from(url))
+                Ok(ImagePath::Url(url))
             } else {
                 let path = Path::new(&url);
-                Ok(ImageSource::from(if path.is_absolute() {
+                Ok(ImagePath::Local(if path.is_absolute() {
                     path.to_path_buf()
                 } else {
                     Path::new(cwd).join(path)
@@ -100,7 +115,7 @@ impl Render for Preview {
                         .w_full()
                         .min_w_0()
                         .child(
-                            crate::image_memory::image(source.clone())
+                            crate::image_memory::image(source.source())
                                 .id(("note-image", ix))
                                 .role(Role::Image)
                                 .aria_label(alt.clone())

@@ -1,4 +1,5 @@
 use super::*;
+use molfar_core::agent::turn::TurnCompletion;
 use molfar_core::{agent::Decision, follow_up::Message};
 use std::{os::unix::fs::PermissionsExt, path::PathBuf};
 
@@ -11,6 +12,15 @@ impl Drop for Fixture {
 
 #[test]
 fn accepted_steer_publishes_its_working_receipt_before_provider_output() {
+    run_steer(false);
+}
+
+#[test]
+fn failed_final_body_save_persists_failed_completion_without_publishing_success() {
+    run_steer(true);
+}
+
+fn run_steer(reject_final_save: bool) {
     let fixture = Fixture(std::env::temp_dir().join(format!(
         "molfar-runtime-steer-{}-{}",
         std::process::id(),
@@ -83,6 +93,8 @@ for line in sys.stdin:
                     turn_model: Some(molfar_core::agent::TurnInfo {
                         provider: "codex".into(),
                         model: "Chosen Model".into(),
+                        completion: Some(TurnCompletion::Succeeded { completed_at: 7 }),
+                        joined_turn: Some(999),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -101,6 +113,28 @@ for line in sys.stdin:
             .recv_blocking()
             .expect("Runtime closed before its final update");
         if update.turn_ready {
+            assert!(
+                locked(&store)
+                    .unwrap()
+                    .agent_settings(session)
+                    .unwrap()
+                    .unwrap()
+                    .turns[&1]
+                    .joined_turn
+                    .is_none(),
+                "a new root cannot inherit a supplied joined-turn identity"
+            );
+            assert!(
+                locked(&store)
+                    .unwrap()
+                    .agent_settings(session)
+                    .unwrap()
+                    .unwrap()
+                    .turns[&1]
+                    .completion
+                    .is_none(),
+                "launch settings cannot publish terminal provenance"
+            );
             controls
                 .send(Control {
                     id: message.id.clone(),
@@ -124,12 +158,23 @@ for line in sys.stdin:
             assert_eq!(settings.turns[&turn].provider, "codex");
             assert_eq!(settings.turns[&turn].model, "Chosen Model");
             assert!(!settings.turns[&turn].has_duration());
+            assert!(settings.turns[&turn].completion.is_none());
             assert_eq!(
                 settings.turns[&turn].joined_turn,
                 Some(1),
                 "the accepted steer keeps its original run after reload"
             );
             receipt_seen = true;
+            if reject_final_save {
+                rusqlite::Connection::open(fixture.0.join("sessions.db"))
+                    .unwrap()
+                    .execute_batch(
+                        "CREATE TRIGGER reject_final_body BEFORE UPDATE OF blocks_json ON sessions
+                         WHEN NEW.blocks_json LIKE '%After%'
+                         BEGIN SELECT RAISE(ABORT, 'fixture final body save rejected'); END;",
+                    )
+                    .unwrap();
+            }
             std::fs::write(fixture.0.join("receipt-observed"), "ready").unwrap();
         }
         if update.finished {
@@ -137,10 +182,36 @@ for line in sys.stdin:
         }
     };
     worker.join().unwrap();
-    assert_eq!(final_status, "Ready");
     assert!(receipt_seen);
     let saved = locked(&store).unwrap().load(session).unwrap();
-    let after = saved.rows.iter().find(|row| row.text == "After").unwrap();
-    assert_eq!(after.role, "assistant");
-    assert_eq!(saved.rows.last(), Some(after));
+    let receipts = locked(&store)
+        .unwrap()
+        .agent_settings(session)
+        .unwrap()
+        .unwrap();
+    if reject_final_save {
+        assert!(final_status.contains("Saving failed"));
+        assert!(!saved.rows.iter().any(|row| row.text == "After"));
+        assert!(matches!(
+            &receipts.turns[&1].completion,
+            Some(TurnCompletion::Failed { error, .. })
+                if error.contains("Saving transcript failed: fixture final body save rejected")
+        ));
+    } else {
+        assert_eq!(final_status, "Ready");
+        let after = saved.rows.iter().find(|row| row.text == "After").unwrap();
+        assert_eq!(after.role, "assistant");
+        assert_eq!(saved.rows.last(), Some(after));
+        assert!(matches!(
+            receipts.turns[&1].completion,
+            Some(TurnCompletion::Succeeded { .. })
+        ));
+    }
+    assert!(
+        receipts
+            .turns
+            .values()
+            .filter(|turn| turn.joined_turn.is_some())
+            .all(|turn| turn.completion.is_none())
+    );
 }

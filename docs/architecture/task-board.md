@@ -14,6 +14,28 @@ A global Kanban board whose agent stages each run in a fresh, hidden session. Sp
 | UI | `src/features/task-board/ui/` | Board local surface, columns with model chips, card drawer with artifacts, questions, review checklist, diff and gate actions |
 | Companion | `src/features/companion/model/companion-board*.ts` | `board.*` RPCs over the same owner actions |
 
+## Native preview
+
+`crates/molfar-core/src/task_board/` reads the same desktop tables and creates
+idle Backlog cards with their initial versioned task snapshot. Existing IDs
+make retries safe after a partial card/file save. Artifact publication never
+replaces conflicting files; registered snapshots remain immutable. Existing
+databases are not migrated.
+
+`crates/molfar-gpui/src/task_board/` owns the native list, detail and creation
+dialog. Database and artifact IO run in the background. The dialog reuses
+native fields, modal controls and reduced-motion-aware transitions.
+
+The first Grill round runs natively. `task_board/stage/` owns the Start, Retry and
+Cancel transitions, claims, the retained card worktree, the read-only checkout
+fingerprint, ignored input handoff, the template prompt and the output parser.
+The shell coordinator (`shell/board_runtime/`) installs one visible, Board-owned
+session through the normal Conversation path. It settles only from the durable
+turn receipt, never auto-replays a prompt after restart, and keeps running when
+the Board is closed. Board sessions stay in project history but are hidden from
+Familiars and phone access. Later Grill rounds, Implement/Review/Rework, policies
+and delivery remain planned.
+
 ## Stage contract
 
 - The engine copies the stage's input artifacts from app data into the worktree's git-ignored
