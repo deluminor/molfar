@@ -50,9 +50,6 @@
   "src-tauri/src/companion.rs": {
     "lines": 962
   },
-  "src-tauri/src/confluence/mod.rs": {
-    "lines": 271
-  },
   "src-tauri/src/control_cli.rs": {
     "lines": 781
   },
@@ -90,7 +87,7 @@
     "lines": 350
   },
   "src-tauri/src/jira.rs": {
-    "lines": 1082
+    "lines": 779
   },
   "src-tauri/src/lib.rs": {
     "lines": 779

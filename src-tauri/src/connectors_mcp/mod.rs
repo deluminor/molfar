@@ -1,13 +1,15 @@
 //! Stdio MCP server exposing MOLFAR Jira + Confluence tools.
 //! Launch: `{molfar_exe} connectors-mcp`
 
+mod definitions;
 mod tools;
 
 use std::io::{self, BufRead, Write};
 
 use serde_json::{json, Value};
 
-use tools::{call_tool, tool_definitions};
+use definitions::tool_definitions;
+use tools::call_tool;
 
 /// Run the MCP JSON-RPC loop on stdin/stdout until EOF.
 pub fn run() -> i32 {
