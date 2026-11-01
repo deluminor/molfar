@@ -47,7 +47,7 @@ pub(super) fn accept(store: &mut Store, run: &str) -> GrillContext {
     let action = if card.column_id == "backlog" {
         StageAction::Start
     } else {
-        StageAction::Retry
+        StageAction::Retry(None)
     };
     store
         .board_stage_action("card", card.updated_at, action)

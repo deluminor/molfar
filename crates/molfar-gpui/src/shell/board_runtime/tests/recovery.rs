@@ -160,7 +160,7 @@ fn artifact_save_failure_finishes_failed_and_allows_retry(cx: &mut TestAppContex
     assert!(
         locked(&fixture.store)
             .unwrap()
-            .board_stage_action("card", card.updated_at, StageAction::Retry)
+            .board_stage_action("card", card.updated_at, StageAction::Retry(None))
             .is_ok()
     );
 }

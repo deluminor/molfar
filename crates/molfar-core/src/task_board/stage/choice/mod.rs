@@ -1,5 +1,6 @@
 pub(crate) mod config;
 mod constants;
+pub mod overrides;
 mod resolve;
 pub mod settings;
 mod skills;

@@ -3,9 +3,10 @@ use super::super::{
     types::{ActionEffect, StageAction},
 };
 use super::query;
-use crate::task_board::{
-    constants::GRILL,
-    stage::transitions::{
+use crate::task_board::stage::{
+    agent::AgentStage,
+    choice::overrides::merge_retry_override,
+    transitions::{
         self,
         types::{BoardAction, Position, TransitionEffect},
     },
@@ -25,10 +26,12 @@ pub(crate) fn apply(
     if card.updated_at != expected {
         return Err("conflict: the card changed; reload and try again".into());
     }
-    let (board_action, native) = match action {
+    let stage = AgentStage::parse(&card.column_id);
+    let (board_action, native) = match &action {
         StageAction::Start => (BoardAction::Start, true),
-        StageAction::Retry => (BoardAction::Retry, card.column_id == GRILL),
-        StageAction::Cancel => (BoardAction::Cancel, card.column_id == GRILL),
+        StageAction::Retry(_) => (BoardAction::Retry, stage == Some(AgentStage::Grill)),
+        StageAction::Cancel => (BoardAction::Cancel, stage == Some(AgentStage::Grill)),
+        StageAction::Back => (BoardAction::Back, true),
     };
     let position = Position {
         column: &card.column_id,
@@ -39,6 +42,12 @@ pub(crate) fn apply(
     if !native {
         return Err("This action is not available for the current Board state.".into());
     }
+    let overrides = match (&action, stage) {
+        (StageAction::Retry(Some(change)), Some(stage)) => {
+            merge_retry_override(&card.overrides_json, stage, change)?
+        }
+        _ => card.overrides_json.clone(),
+    };
     let column = next.column.as_str();
     let state = next.run_state;
     let round = if next.effects.contains(&TransitionEffect::ResetGrillRound) {
@@ -63,7 +72,7 @@ pub(crate) fn apply(
             }
         }
     }
-    tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,grill_round=?4,last_error=?5,queued_at=?6,updated_at=?7,position=?8 WHERE id=?1",params![id,column,state,round,error,(state==QUEUED).then_some(now),now,position]).map_err(|e|e.to_string())?;
+    tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,grill_round=?4,last_error=?5,queued_at=?6,updated_at=?7,position=?8,overrides_json=?9 WHERE id=?1",params![id,column,state,round,error,(state==QUEUED).then_some(now),now,position,overrides]).map_err(|e|e.to_string())?;
     let card = query::card(&tx, id)?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(ActionEffect {

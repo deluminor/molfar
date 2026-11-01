@@ -52,7 +52,7 @@ fn stage_controls_follow_card_state() {
     );
     assert_eq!(
         stage_action(&retry),
-        Some(("Retry Grill", StageAction::Retry))
+        Some(("Retry Grill", StageAction::Retry(None)))
     );
     assert_eq!(
         stage_action(&queued),

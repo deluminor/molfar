@@ -31,7 +31,7 @@ fn grill_lifecycle_orphan_claim_is_interrupted_without_replay_and_can_retry() {
         .remove(0);
     assert_eq!(card.run_state, "failed");
     store
-        .board_stage_action("card", card.updated_at, StageAction::Retry)
+        .board_stage_action("card", card.updated_at, StageAction::Retry(None))
         .unwrap();
     assert_eq!(store.board_claim_next_grill().unwrap().unwrap().id, "card");
 }

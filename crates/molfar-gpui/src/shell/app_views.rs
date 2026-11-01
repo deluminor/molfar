@@ -228,7 +228,7 @@ impl Shell {
                         card_id,
                         updated_at,
                         action,
-                    } => this.board_action(card_id.clone(), *updated_at, *action, cx),
+                    } => this.board_action(card_id.clone(), *updated_at, action.clone(), cx),
                     crate::task_board::Event::OpenSession(id) => {
                         this.open_board_session(id.clone(), cx)
                     }

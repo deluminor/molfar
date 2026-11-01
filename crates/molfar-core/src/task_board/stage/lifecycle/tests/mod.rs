@@ -1,3 +1,4 @@
+mod actions;
 mod fixtures;
 mod races;
 mod recovery;

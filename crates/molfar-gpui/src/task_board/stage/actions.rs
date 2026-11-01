@@ -11,7 +11,7 @@ pub(super) fn stage_action(card: &Card) -> Option<(&'static str, StageAction)> {
     }
     match (card.column_id.as_str(), card.run_state.as_str()) {
         (BACKLOG, IDLE) => Some(("Start Grill", StageAction::Start)),
-        (GRILL, FAILED) => Some(("Retry Grill", StageAction::Retry)),
+        (GRILL, FAILED) => Some(("Retry Grill", StageAction::Retry(None))),
         (GRILL, QUEUED | RUNNING) => Some(("Cancel run", StageAction::Cancel)),
         _ => None,
     }
@@ -47,7 +47,7 @@ impl Board {
                     cx.emit(Event::Stage {
                         card_id: card_id.clone(),
                         updated_at,
-                        action,
+                        action: action.clone(),
                     });
                     cx.notify();
                 })),

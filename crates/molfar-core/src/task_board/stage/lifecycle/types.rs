@@ -1,16 +1,20 @@
 use crate::{
     store::Session,
     task_board::{
-        stage::{checkout::types::CheckoutSnapshot, contracts::types::ParsedArtifact},
+        stage::{
+            checkout::types::CheckoutSnapshot, choice::overrides::StageModelOverride,
+            contracts::types::ParsedArtifact,
+        },
         types::{Card, StageRun},
     },
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StageAction {
     Start,
-    Retry,
+    Retry(Option<StageModelOverride>),
     Cancel,
+    Back,
 }
 
 #[derive(Clone, Debug)]

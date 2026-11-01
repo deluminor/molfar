@@ -9,6 +9,7 @@ impl Shell {
         action: StageAction,
         cx: &mut Context<Self>,
     ) {
+        let cancel = action == StageAction::Cancel;
         let store = self.store.clone();
         let card = card_id.clone();
         let work = cx.background_executor().spawn(async move {
@@ -25,7 +26,7 @@ impl Shell {
             let _ = this.update(cx, |this, cx| {
                 let error = match result {
                     Ok(stop) => {
-                        if action == StageAction::Cancel {
+                        if cancel {
                             this.board_state.preparing.remove(&card_id);
                         }
                         if let Some(view) = stop.and_then(|id| this.sessions.get(&id)) {

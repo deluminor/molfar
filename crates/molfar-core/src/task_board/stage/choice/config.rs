@@ -9,7 +9,7 @@ pub(crate) fn is_runtime_mode(value: &str) -> bool {
     RUNTIME_MODES.contains(&value)
 }
 
-fn override_fields(value: &Value) -> Map<String, Value> {
+pub(super) fn override_fields(value: &Value) -> Map<String, Value> {
     let mut result = Map::new();
     for key in CONFIG_FIELDS {
         let Some(text) = value[key]
