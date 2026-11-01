@@ -1,4 +1,6 @@
-use super::constants::{MAX_LABEL, MAX_SKILLS_PER_COLUMN, MAX_SKILL_NAME, RUNTIME_MODES};
+use super::constants::{
+    DEFAULT_RUNTIME_MODE, MAX_LABEL, MAX_SKILLS_PER_COLUMN, MAX_SKILL_NAME, RUNTIME_MODES,
+};
 use crate::task_board::stage::{
     agent::AgentStage,
     lifecycle::constants::{
@@ -9,10 +11,14 @@ use crate::task_board::stage::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
-const COLUMNS: &str = "columns";
-const COLUMN_SKILLS: &str = "columnSkills";
-const MAX_CONCURRENT: &str = "maxConcurrentStages";
-const STALL_MINUTES: &str = "stallMinutes";
+pub const COLUMNS: &str = "columns";
+pub const COLUMN_SKILLS: &str = "columnSkills";
+pub const MAX_CONCURRENT: &str = "maxConcurrentStages";
+pub const STALL_MINUTES: &str = "stallMinutes";
+pub const HARNESS: &str = "harness";
+pub const MODEL: &str = "model";
+const EFFORT: &str = "effort";
+pub const RUNTIME_MODE: &str = "runtimeMode";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,6 +33,12 @@ pub struct StageModelConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SettingsPatch {
     Column(AgentStage, Option<StageModelConfig>),
+    ColumnModel {
+        stage: AgentStage,
+        harness: String,
+        model: String,
+    },
+    ColumnMode(AgentStage, String),
     ColumnSkills(AgentStage, Option<Vec<String>>),
     Limits {
         max_concurrent: i64,
@@ -135,6 +147,10 @@ fn validate(settings: &Map<String, Value>) -> Result<(), String> {
     validate_stage_map(settings, COLUMN_SKILLS, validate_skills)
 }
 
+fn stage_entry(settings: &Map<String, Value>, stage: AgentStage) -> Option<Value> {
+    settings.get(COLUMNS)?.get(stage.id()).cloned()
+}
+
 fn set_stage_entry(
     settings: &mut Map<String, Value>,
     key: &str,
@@ -171,6 +187,26 @@ pub fn apply(raw: Option<&str>, patch: &SettingsPatch) -> Result<String, String>
                 .transpose()
                 .map_err(|e| e.to_string())?;
             set_stage_entry(&mut settings, COLUMNS, *stage, value);
+        }
+        SettingsPatch::ColumnModel {
+            stage,
+            harness,
+            model,
+        } => {
+            let mut column = stage_entry(&settings, *stage)
+                .unwrap_or_else(|| json!({ RUNTIME_MODE: DEFAULT_RUNTIME_MODE }));
+            column[HARNESS] = json!(harness);
+            column[MODEL] = json!(model);
+            if let Some(fields) = column.as_object_mut() {
+                fields.remove(EFFORT);
+            }
+            set_stage_entry(&mut settings, COLUMNS, *stage, Some(column));
+        }
+        SettingsPatch::ColumnMode(stage, mode) => {
+            let mut column = stage_entry(&settings, *stage)
+                .ok_or("Pick a model for this stage before changing its access.")?;
+            column[RUNTIME_MODE] = json!(mode);
+            set_stage_entry(&mut settings, COLUMNS, *stage, Some(column));
         }
         SettingsPatch::ColumnSkills(stage, skills) => {
             set_stage_entry(

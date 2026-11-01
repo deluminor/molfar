@@ -7,12 +7,10 @@ use crate::theme::content;
 use gpui::{AppContext, Context, Window};
 use molfar_core::task_board::stage::{
     agent::AgentStage,
-    choice::settings::{SettingsPatch, StageModelConfig},
+    choice::settings::{COLUMN_SKILLS, MAX_CONCURRENT, STALL_MINUTES, SettingsPatch},
+    lifecycle::constants::{DEFAULT_CONCURRENCY, DEFAULT_STALL_MINUTES},
 };
 use serde_json::Value;
-
-const DEFAULT_CONCURRENCY: &str = "3";
-const DEFAULT_STALL_MINUTES: &str = "45";
 
 impl Board {
     pub(in crate::task_board) fn open_settings(
@@ -98,8 +96,16 @@ impl Board {
             }
         };
 
+        panel.error = None;
+        // Later reloads keep what the user is typing in fields they have not saved yet.
+        if panel.saved.is_some() {
+            panel.saved = Some(saved);
+            cx.notify();
+            return;
+        }
+
         for (stage, input) in &panel.skills {
-            let text = saved["columnSkills"][stage.id()]
+            let text = saved[COLUMN_SKILLS][stage.id()]
                 .as_array()
                 .map(|names| {
                     names
@@ -111,14 +117,14 @@ impl Board {
                 .unwrap_or_default();
             input.update(cx, |input, cx| input.set_text(text, cx));
         }
-        let limit = |key: &str, default: &str| {
+        let limit = |key: &str, default: String| {
             saved[key]
                 .as_i64()
-                .map_or(default.to_owned(), |value| value.to_string())
+                .map_or(default, |value| value.to_string())
         };
         let (concurrency, stall) = (
-            limit("maxConcurrentStages", DEFAULT_CONCURRENCY),
-            limit("stallMinutes", DEFAULT_STALL_MINUTES),
+            limit(MAX_CONCURRENT, DEFAULT_CONCURRENCY.to_string()),
+            limit(STALL_MINUTES, DEFAULT_STALL_MINUTES.to_string()),
         );
         panel
             .concurrency
@@ -130,7 +136,7 @@ impl Board {
         cx.notify();
     }
 
-    fn emit_settings(&mut self, patch: SettingsPatch, cx: &mut Context<Self>) {
+    pub(super) fn emit_settings(&mut self, patch: SettingsPatch, cx: &mut Context<Self>) {
         if let Some(panel) = &mut self.settings {
             panel.error = None;
         }
@@ -144,14 +150,15 @@ impl Board {
         mode: &str,
         cx: &mut Context<Self>,
     ) {
-        let Some(column) = self.settings.as_ref().and_then(|panel| panel.column(stage)) else {
+        if self
+            .settings
+            .as_ref()
+            .and_then(|panel| panel.column(stage))
+            .is_none()
+        {
             return;
-        };
-        let Ok(mut config) = serde_json::from_value::<StageModelConfig>(column.clone()) else {
-            return;
-        };
-        config.runtime_mode = mode.to_owned();
-        self.emit_settings(SettingsPatch::Column(stage, Some(config)), cx);
+        }
+        self.emit_settings(SettingsPatch::ColumnMode(stage, mode.to_owned()), cx);
     }
 
     pub(in crate::task_board) fn reset_stage_model(
@@ -173,14 +180,15 @@ impl Board {
         let Some((_, input)) = panel.skills.iter().find(|(entry, _)| *entry == stage) else {
             return;
         };
-        let skills = input
+        let skills: Vec<String> = input
             .read(cx)
             .content
             .split([',', ' ', '\n'])
             .filter(|name| !name.is_empty())
             .map(str::to_owned)
             .collect();
-        self.emit_settings(SettingsPatch::ColumnSkills(stage, Some(skills)), cx);
+        let skills = (!skills.is_empty()).then_some(skills);
+        self.emit_settings(SettingsPatch::ColumnSkills(stage, skills), cx);
     }
 
     pub(in crate::task_board) fn reset_stage_skills(

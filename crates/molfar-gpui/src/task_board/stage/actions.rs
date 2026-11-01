@@ -135,12 +135,13 @@ impl Board {
     }
 
     pub(crate) fn finish_update(&mut self, error: Option<String>, cx: &mut Context<Self>) {
-        self.stage_pending = None;
-        match (error, &mut self.settings) {
+        let from_stage = self.stage_pending.take().is_some();
+        let panel = self.settings.as_mut().filter(|_| !from_stage);
+        match (error, panel) {
             (Some(error), Some(panel)) => panel.error = Some(error),
             (Some(error), None) => self.error = Some(error),
-            (None, settings) => {
-                if settings.is_some() {
+            (None, panel) => {
+                if panel.is_some() {
                     self.load_settings(cx);
                 }
                 self.refresh(cx);

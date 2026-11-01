@@ -2,7 +2,7 @@ use super::super::{
     Board, Event,
     tests::{card, window},
 };
-use gpui::{TestAppContext, VisualTestContext, WindowHandle};
+use gpui::{Focusable, TestAppContext, VisualTestContext, WindowHandle};
 use molfar_core::task_board::stage::{
     agent::AgentStage,
     choice::settings::{SettingsPatch, StageModelConfig},
@@ -91,17 +91,45 @@ fn stage_settings_show_saved_values_and_emit_field_patches(cx: &mut TestAppConte
 
     let events = events.borrow();
     assert_eq!(events.len(), 3, "{events:?}");
-    assert!(
-        events[0].contains("Grill") && events[0].contains("supervised"),
-        "{}",
-        events[0]
-    );
-    assert!(
-        events[1].contains(r#"ColumnSkills(Implement, Some(["d-tdd", "d-verify"]))"#),
-        "{}",
-        events[1]
+    assert_eq!(events[0], r#"ColumnMode(Grill, "supervised")"#);
+    assert_eq!(
+        events[1],
+        r#"ColumnSkills(Implement, Some(["d-tdd", "d-verify"]))"#
     );
     assert_eq!(events[2], "ColumnSkills(Grill, None)");
+}
+
+#[gpui::test]
+fn empty_skills_mean_auto_and_reloads_keep_unsaved_fields(cx: &mut TestAppContext) {
+    let window = window(cx);
+    let events = record(&window, cx);
+    seed(&window, cx);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    window
+        .update(visual, |board, _, cx| {
+            let panel = board.settings.as_ref().unwrap();
+            panel.skills[0]
+                .1
+                .update(cx, |input, cx| input.set_text(String::new(), cx));
+            panel.skills[1]
+                .1
+                .update(cx, |input, cx| input.set_text("unsaved".into(), cx));
+            board.save_stage_skills(AgentStage::Grill, cx);
+            board.finish_update(None, cx);
+        })
+        .unwrap();
+    visual.run_until_parked();
+
+    assert_eq!(*events.borrow(), ["ColumnSkills(Grill, None)"]);
+    window
+        .update(visual, |board, _, cx| {
+            let panel = board.settings.as_ref().unwrap();
+            assert_eq!(panel.skills[1].1.read(cx).content.as_ref(), "unsaved");
+            assert!(panel.error.is_none());
+        })
+        .unwrap();
 }
 
 #[gpui::test]
@@ -166,4 +194,42 @@ fn failed_stage_offers_back_to_its_source_column(cx: &mut TestAppContext) {
     click(visual, "board-stage-back");
 
     assert_eq!(*events.borrow(), ["Back"]);
+}
+
+#[gpui::test]
+fn typed_keys_reach_settings_fields_and_escape_closes(cx: &mut TestAppContext) {
+    let window = window(cx);
+    seed(&window, cx);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    window
+        .update(visual, |board, window, cx| {
+            let input = board.settings.as_ref().unwrap().skills[1].1.clone();
+            window.focus(&input.read(cx).focus_handle(cx), cx);
+        })
+        .unwrap();
+
+    visual.simulate_keystrokes("d - t d d");
+    visual.run_until_parked();
+
+    window
+        .update(visual, |board, _, cx| {
+            let text = board.settings.as_ref().unwrap().skills[1]
+                .1
+                .read(cx)
+                .content
+                .to_string();
+            assert_eq!(text, "d-tdd");
+        })
+        .unwrap();
+    window
+        .update(visual, |board, window, cx| {
+            window.focus(&board.settings.as_ref().unwrap().focus, cx)
+        })
+        .unwrap();
+    visual.simulate_keystrokes("escape");
+    visual.run_until_parked();
+    window
+        .update(visual, |board, _, _| assert!(board.settings.is_none()))
+        .unwrap();
 }

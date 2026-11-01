@@ -1,12 +1,16 @@
 mod actions;
 mod picker;
+mod row;
 #[cfg(test)]
 mod tests;
 mod view;
 
 use crate::{input::Input, pickers::ModelList, popover::AnchorSlot};
 use gpui::{Entity, FocusHandle, Subscription};
-use molfar_core::task_board::stage::{agent::AgentStage, choice::constants::RUNTIME_MODES};
+use molfar_core::task_board::stage::{
+    agent::AgentStage,
+    choice::{constants::RUNTIME_MODES, settings::COLUMNS},
+};
 use serde_json::Value;
 
 const MODE_LABELS: [&str; 4] = ["Supervised", "Accept edits", "Auto", "Full access"];
@@ -47,7 +51,7 @@ pub(super) struct Panel {
 
 impl Panel {
     fn column(&self, stage: AgentStage) -> Option<&Value> {
-        self.saved.as_ref()?.get("columns")?.get(stage.id())
+        self.saved.as_ref()?.get(COLUMNS)?.get(stage.id())
     }
 
     fn anchor(&self, stage: AgentStage) -> AnchorSlot {

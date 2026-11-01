@@ -16,8 +16,8 @@ pub(crate) const ARTIFACT_KINDS: [&str; 3] = [
 
 pub const CANCELLED: &str = "cancelled";
 pub const INTERRUPTED: &str = "interrupted";
-pub(crate) const DEFAULT_CONCURRENCY: i64 = 3;
+pub const DEFAULT_CONCURRENCY: i64 = 3;
 pub(crate) const MIN_CONCURRENCY: i64 = 1;
 pub(crate) const MAX_CONCURRENCY: i64 = 10;
-pub(crate) const DEFAULT_STALL_MINUTES: u64 = 45;
+pub const DEFAULT_STALL_MINUTES: u64 = 45;
 pub(crate) const MAX_STALL_MINUTES: u64 = 1440;

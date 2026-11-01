@@ -197,3 +197,43 @@ fn unreadable_settings_are_never_overwritten() {
         assert!(apply(Some(raw), &patch).is_err(), "{raw}");
     }
 }
+
+#[test]
+fn model_and_mode_patches_change_only_their_fields() {
+    let raw = json!({"columns":{"grill":{"harness":"claude","model":"claude:x","effort":"max","runtimeMode":"supervised"}}}).to_string();
+
+    let moded = apply(
+        Some(&raw),
+        &SettingsPatch::ColumnMode(AgentStage::Grill, "full-access".into()),
+    )
+    .unwrap();
+    let model = SettingsPatch::ColumnModel {
+        stage: AgentStage::Grill,
+        harness: "codex".into(),
+        model: "codex:gpt-5".into(),
+    };
+    let modeled = apply(Some(&moded), &model).unwrap();
+    let fresh = SettingsPatch::ColumnModel {
+        stage: AgentStage::Rework,
+        harness: "codex".into(),
+        model: "codex:gpt-5".into(),
+    };
+    let created = apply(Some(&modeled), &fresh).unwrap();
+    let value: Value = serde_json::from_str(&created).unwrap();
+
+    assert_eq!(
+        value["columns"]["grill"],
+        json!({"harness":"codex","model":"codex:gpt-5","runtimeMode":"full-access"})
+    );
+    assert_eq!(value["columns"]["rework"]["runtimeMode"], "auto");
+    assert!(apply(
+        None,
+        &SettingsPatch::ColumnMode(AgentStage::Implement, "auto".into())
+    )
+    .is_err());
+    assert!(apply(
+        Some(&raw),
+        &SettingsPatch::ColumnMode(AgentStage::Grill, "read-only".into())
+    )
+    .is_err());
+}

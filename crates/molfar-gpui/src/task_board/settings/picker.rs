@@ -9,15 +9,15 @@ use molfar_core::{
     provider::Kind,
     store::{desktop_model_id, native_model},
     task_board::stage::{
+        agent::AgentStage,
         choice::{
             overrides::StageModelOverride,
-            settings::{SettingsPatch, StageModelConfig},
+            settings::{HARNESS, MODEL, SettingsPatch},
         },
         lifecycle::types::StageAction,
     },
 };
-
-const DEFAULT_RUNTIME_MODE: &str = "auto";
+use serde_json::Value;
 
 impl Board {
     pub(in crate::task_board) fn open_model_picker(
@@ -33,16 +33,21 @@ impl Board {
                 .as_ref()
                 .and_then(|panel| panel.column(*stage))
                 .cloned(),
-            PickTarget::Retry { .. } => None,
+            PickTarget::Retry { card_id, .. } => self.card_override(card_id),
         };
-        let kind = column
-            .as_ref()
-            .and_then(|config| config["harness"].as_str())
+        let default = cx
+            .try_global::<crate::settings::Preferences>()
+            .and_then(|prefs| prefs.default_provider.as_deref())
             .and_then(Kind::parse)
             .unwrap_or(Kind::Codex);
+        let kind = column
+            .as_ref()
+            .and_then(|config| config[HARNESS].as_str())
+            .and_then(Kind::parse)
+            .unwrap_or(default);
         let current = column
             .as_ref()
-            .and_then(|config| config["model"].as_str())
+            .and_then(|config| config[MODEL].as_str())
             .and_then(|model| native_model(model, kind.id()));
         let project = self.cwd.clone();
         let profile = crate::accounts::get(cx)
@@ -77,25 +82,23 @@ impl Board {
 
         match picker.target {
             PickTarget::Column(stage) => {
-                let mode = self
-                    .settings
-                    .as_ref()
-                    .and_then(|panel| panel.column(stage))
-                    .and_then(|config| config["runtimeMode"].as_str())
-                    .unwrap_or(DEFAULT_RUNTIME_MODE)
-                    .to_owned();
-                let config = StageModelConfig {
-                    harness: kind.id().into(),
-                    model,
-                    effort: None,
-                    runtime_mode: mode,
-                };
-                cx.emit(Event::Settings(SettingsPatch::Column(stage, Some(config))));
+                let harness = kind.id().into();
+                self.emit_settings(
+                    SettingsPatch::ColumnModel {
+                        stage,
+                        harness,
+                        model,
+                    },
+                    cx,
+                );
             }
             PickTarget::Retry {
                 card_id,
                 updated_at,
             } => {
+                if self.stage_pending.is_some() {
+                    return;
+                }
                 let change = StageModelOverride {
                     harness: Some(kind.id().into()),
                     model: Some(model),
@@ -117,6 +120,18 @@ impl Board {
             cx,
         );
         cx.notify();
+    }
+
+    fn card_override(&self, card_id: &str) -> Option<Value> {
+        let card = self
+            .snapshot
+            .as_ref()?
+            .cards
+            .iter()
+            .find(|card| card.id == card_id)?;
+        let stage = AgentStage::parse(&card.column_id)?;
+        let overrides: Value = serde_json::from_str(&card.overrides_json).ok()?;
+        overrides.get(stage.id()).cloned()
     }
 
     fn picker_error(&mut self, error: &str, cx: &mut Context<Self>) {
