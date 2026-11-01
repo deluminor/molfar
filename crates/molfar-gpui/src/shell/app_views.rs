@@ -232,6 +232,9 @@ impl Shell {
                     crate::task_board::Event::OpenSession(id) => {
                         this.open_board_session(id.clone(), cx)
                     }
+                    crate::task_board::Event::Settings(patch) => {
+                        this.board_update_settings(patch.clone(), cx)
+                    }
                 },
             ));
             self.board = Some(view);

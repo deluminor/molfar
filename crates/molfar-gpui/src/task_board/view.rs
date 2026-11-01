@@ -8,7 +8,8 @@ impl Render for Board {
         let archived = self.archived;
         let overlay = self
             .creation_overlay(window, cx)
-            .or_else(|| self.artifact_overlay(window, cx));
+            .or_else(|| self.artifact_overlay(window, cx))
+            .or_else(|| self.settings_overlay(window, cx));
         div()
             .id("task-board")
             .debug_selector(|| "task-board".into())
@@ -113,6 +114,13 @@ impl Render for Board {
                             })),
                     )
                     .child(div().flex_1())
+                    .child(
+                        crate::modal::ghost_button("board-stage-settings", "Stage settings")
+                            .debug_selector(|| "board-stage-settings".into())
+                            .on_click(
+                                cx.listener(|this, _, window, cx| this.open_settings(window, cx)),
+                            ),
+                    )
                     .child(
                         crate::modal::primary_button("board-new-task", "New task")
                             .aria_label("New task (N)")

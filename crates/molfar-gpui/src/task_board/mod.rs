@@ -3,6 +3,7 @@ mod detail;
 mod list;
 #[cfg(test)]
 mod loading_tests;
+mod settings;
 mod stage;
 #[cfg(test)]
 mod tests;
@@ -20,6 +21,7 @@ pub(crate) enum Event {
         action: molfar_core::task_board::stage::lifecycle::types::StageAction,
     },
     OpenSession(String),
+    Settings(molfar_core::task_board::stage::choice::settings::SettingsPatch),
 }
 
 pub(crate) struct Board {
@@ -40,6 +42,9 @@ pub(crate) struct Board {
     stage_pending: Option<String>,
     artifact: Option<stage::Artifact>,
     artifact_revision: u64,
+    settings: Option<settings::Panel>,
+    picker: Option<settings::Picker>,
+    retry_anchor: crate::popover::AnchorSlot,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -47,6 +52,9 @@ impl Focusable for Board {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         if let Some(artifact) = &self.artifact {
             return artifact.focus.clone();
+        }
+        if let Some(focus) = self.settings_focus(cx) {
+            return focus;
         }
         if self.create_open
             && let Some(draft) = &self.creation
@@ -77,6 +85,9 @@ impl Board {
             stage_pending: None,
             artifact: None,
             artifact_revision: 0,
+            settings: None,
+            picker: None,
+            retry_anchor: Default::default(),
         }
     }
 

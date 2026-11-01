@@ -83,6 +83,7 @@ fn stage_action_emits_once_until_finished_and_opens_saved_session(cx: &mut TestA
                 .push(format!("stage:{card_id}:{updated_at}:{action:?}")),
             Event::OpenSession(id) => recorded.borrow_mut().push(format!("open:{id}")),
             Event::Close => recorded.borrow_mut().push("close".into()),
+            Event::Settings(patch) => recorded.borrow_mut().push(format!("settings:{patch:?}")),
         })
         .detach();
     });
@@ -122,7 +123,7 @@ fn stage_action_emits_once_until_finished_and_opens_saved_session(cx: &mut TestA
     window
         .update(visual, |board: &mut Board, _, cx| {
             assert_eq!(board.stage_pending.as_deref(), Some("card"));
-            board.finish_stage_action(Some("Card changed".into()), cx);
+            board.finish_update(Some("Card changed".into()), cx);
             assert!(board.stage_pending.is_none());
             assert_eq!(board.error.as_deref(), Some("Card changed"));
         })

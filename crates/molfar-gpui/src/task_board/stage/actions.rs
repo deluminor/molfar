@@ -1,9 +1,24 @@
+use super::super::settings::PickTarget;
 use super::super::{Board, Event};
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Role, div, prelude::*};
-use molfar_core::task_board::constants::{BACKLOG, GRILL, IDLE, PLAN_APPROVAL};
+use molfar_core::task_board::constants::{BACKLOG, COLUMNS, GRILL, IDLE, PLAN_APPROVAL};
 use molfar_core::task_board::stage::lifecycle::constants::{FAILED, QUEUED, RUNNING};
+use molfar_core::task_board::stage::{agent::AgentStage, transitions::back_target};
 use molfar_core::task_board::{stage::lifecycle::types::StageAction, types::Card};
+
+fn back_label(card: &Card) -> Option<String> {
+    let stage = AgentStage::parse(&card.column_id)?;
+    if card.archived || card.run_state != FAILED {
+        return None;
+    }
+    let target = back_target(stage);
+    let label = COLUMNS
+        .iter()
+        .find(|(id, _)| *id == target)
+        .map_or(target, |(_, label)| label);
+    Some(format!("Back to {label}"))
+}
 
 pub(super) fn stage_action(card: &Card) -> Option<(&'static str, StageAction)> {
     if card.archived {
@@ -53,6 +68,45 @@ impl Board {
                 })),
             );
         }
+        if matches!(stage_action(card), Some((_, StageAction::Retry(_)))) {
+            let card_id = card.id.clone();
+            let updated_at = card.updated_at;
+            let anchor = self.retry_anchor.clone();
+            row = row.child(anchor.probe()).child(
+                modal::disabled(
+                    modal::ghost_button("board-retry-model", "Retry with model…"),
+                    pending,
+                )
+                .debug_selector(|| "board-retry-model".into())
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    let target = PickTarget::Retry {
+                        card_id: card_id.clone(),
+                        updated_at,
+                    };
+                    this.open_model_picker(target, anchor.clone(), window, cx)
+                })),
+            );
+        }
+        if let Some(target) = back_label(card) {
+            let card_id = card.id.clone();
+            let updated_at = card.updated_at;
+            row = row.child(
+                modal::disabled(modal::ghost_button("board-stage-back", target), pending)
+                    .debug_selector(|| "board-stage-back".into())
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        if this.stage_pending.is_some() {
+                            return;
+                        }
+                        this.stage_pending = Some(card_id.clone());
+                        cx.emit(Event::Stage {
+                            card_id: card_id.clone(),
+                            updated_at,
+                            action: StageAction::Back,
+                        });
+                        cx.notify();
+                    })),
+            );
+        }
         if let Some(session) = self.snapshot.as_ref().and_then(|snapshot| {
             snapshot
                 .runs
@@ -80,14 +134,19 @@ impl Board {
         row.into_any_element()
     }
 
-    pub(crate) fn finish_stage_action(&mut self, error: Option<String>, cx: &mut Context<Self>) {
+    pub(crate) fn finish_update(&mut self, error: Option<String>, cx: &mut Context<Self>) {
         self.stage_pending = None;
-        if let Some(error) = error {
-            self.error = Some(error);
-            cx.notify();
-        } else {
-            self.refresh(cx);
+        match (error, &mut self.settings) {
+            (Some(error), Some(panel)) => panel.error = Some(error),
+            (Some(error), None) => self.error = Some(error),
+            (None, settings) => {
+                if settings.is_some() {
+                    self.load_settings(cx);
+                }
+                self.refresh(cx);
+            }
         }
+        cx.notify();
     }
 
     pub(crate) fn reveal_card(&mut self, id: String, cx: &mut Context<Self>) {

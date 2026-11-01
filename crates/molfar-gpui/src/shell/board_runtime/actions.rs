@@ -1,5 +1,7 @@
 use super::*;
-use molfar_core::task_board::stage::lifecycle::types::StageAction;
+use molfar_core::task_board::stage::{
+    choice::settings::SettingsPatch, lifecycle::types::StageAction,
+};
 
 impl Shell {
     pub(in crate::shell) fn board_action(
@@ -37,7 +39,29 @@ impl Shell {
                     Err(error) => Some(error),
                 };
                 if let Some(board) = &this.board {
-                    board.update(cx, |board, cx| board.finish_stage_action(error, cx));
+                    board.update(cx, |board, cx| board.finish_update(error, cx));
+                }
+                this.poll_board(true, cx);
+            });
+        })
+        .detach();
+    }
+
+    pub(in crate::shell) fn board_update_settings(
+        &mut self,
+        patch: SettingsPatch,
+        cx: &mut Context<Self>,
+    ) {
+        let store = self.store.clone();
+        let work = cx
+            .background_executor()
+            .spawn(async move { locked(&store)?.board_update_settings(&patch) });
+        cx.spawn(async move |this, cx| {
+            let result = work.await;
+            let _ = this.update(cx, |this, cx| {
+                let error = result.err();
+                if let Some(board) = &this.board {
+                    board.update(cx, |board, cx| board.finish_update(error, cx));
                 }
                 this.poll_board(true, cx);
             });
