@@ -68,7 +68,7 @@ impl Store {
             .worktree_path
             .as_ref()
             .ok_or("Board stage has no retained checkout.")?;
-        if settings.model.as_deref() != Some(context.run.model.as_str())
+        if settings.model != crate::store::native_model(&context.run.model, &context.run.harness)
             || serde_json::to_value(&settings.model_settings).map_err(|e| e.to_string())?
                 != serde_json::from_str::<serde_json::Value>(&context.run.settings_json)
                     .map_err(|e| e.to_string())?

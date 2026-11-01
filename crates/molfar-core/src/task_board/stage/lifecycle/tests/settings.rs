@@ -46,3 +46,35 @@ fn board_settings_update_round_trips_and_refuses_unreadable_rows() {
         Some("broken")
     );
 }
+
+#[test]
+fn accepted_run_freezes_desktop_model_and_survives_later_edits() {
+    let (_directory, mut store) = super::fixtures::fixture();
+    let context = super::fixtures::accept(&mut store, "run-one");
+
+    let edited = StageModelConfig {
+        harness: "claude".into(),
+        model: "claude:opus".into(),
+        effort: None,
+        runtime_mode: "supervised".into(),
+    };
+    store
+        .board_update_settings(&SettingsPatch::Column(AgentStage::Grill, Some(edited)))
+        .unwrap();
+    let run = store
+        .board_snapshot(None, false, Some("card"))
+        .unwrap()
+        .runs
+        .remove(0);
+
+    assert_eq!(context.run.model, "codex:test-model");
+    assert_eq!(run.model, "codex:test-model");
+    assert_eq!(
+        (run.harness.as_str(), run.runtime_mode.as_str()),
+        ("codex", "auto")
+    );
+    assert_eq!(
+        run.template_version,
+        crate::task_board::stage::contracts::constants::TEMPLATE_VERSION
+    );
+}

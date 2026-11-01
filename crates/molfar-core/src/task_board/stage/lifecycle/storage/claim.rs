@@ -78,8 +78,9 @@ pub(crate) fn accept(
             return Err("This card already has an active stage run.".into());
         }
     }
+    let model = crate::store::desktop_model_id(Some(&choice.model), choice.kind.id());
     let attempt:i64=tx.query_row("SELECT COALESCE(MAX(attempt),0)+1 FROM task_board_stage_runs WHERE card_id=?1 AND stage=?2",params![card_id,GRILL],|r|r.get(0)).map_err(|e|e.to_string())?;
-    tx.execute("INSERT INTO task_board_stage_runs(id,card_id,stage,attempt,harness,model,settings_json,runtime_mode,template_version,dispatch,status,started_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",params![id,card_id,GRILL,attempt,choice.kind.id(),choice.model,settings,choice.runtime_mode,TEMPLATE_VERSION,ACCEPTED,RUNNING,query::now()?]).map_err(|e|e.to_string())?;
+    tx.execute("INSERT INTO task_board_stage_runs(id,card_id,stage,attempt,harness,model,settings_json,runtime_mode,template_version,dispatch,status,started_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",params![id,card_id,GRILL,attempt,choice.kind.id(),model,settings,choice.runtime_mode,TEMPLATE_VERSION,ACCEPTED,RUNNING,query::now()?]).map_err(|e|e.to_string())?;
     let context = query::context(&tx, id)?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(context)
