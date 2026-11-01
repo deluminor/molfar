@@ -1,5 +1,3 @@
-pub const GRILL: &str = "grill";
-pub const PLAN_APPROVAL: &str = "plan_approval";
 pub const QUEUED: &str = "queued";
 pub const RUNNING: &str = "running";
 pub const FAILED: &str = "failed";

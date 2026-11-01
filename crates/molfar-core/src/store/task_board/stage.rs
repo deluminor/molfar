@@ -1,12 +1,13 @@
 use super::Store;
 use crate::{
     app_access::turn::StoredAppTurn,
+    task_board::constants::GRILL,
     task_board::{
         stage::{
             checkout::types::{CheckoutSnapshot, RetainedCheckout},
             choice::types::ResolvedGrillChoice,
             lifecycle::{
-                constants::{GRILL, RUNNING},
+                constants::RUNNING,
                 storage::{claim, progress, query, settlement},
                 types::{FailureStatus, GrillContext, StageEffect, VerifiedGrillOutput},
             },

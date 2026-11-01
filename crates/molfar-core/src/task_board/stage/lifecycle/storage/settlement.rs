@@ -4,7 +4,10 @@ use super::super::{
     types::{FailureStatus, NoticeKind, StageEffect, StageNotice, VerifiedGrillOutput},
 };
 use super::query;
-use crate::task_board::{constants::IDLE, types::Card};
+use crate::task_board::{
+    constants::{GRILL, IDLE, PLAN_APPROVAL},
+    types::Card,
+};
 use rusqlite::{params, Connection, TransactionBehavior};
 use std::path::Path;
 

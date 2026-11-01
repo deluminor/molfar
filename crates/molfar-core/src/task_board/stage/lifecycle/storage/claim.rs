@@ -1,5 +1,6 @@
 use super::super::{constants::*, types::GrillContext};
 use super::query;
+use crate::task_board::constants::GRILL;
 use crate::task_board::stage::contracts::constants::TEMPLATE_VERSION;
 use crate::task_board::{read, stage::choice::types::ResolvedGrillChoice, types::Card};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};

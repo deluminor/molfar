@@ -1,7 +1,7 @@
 use super::Store;
-use crate::task_board::constants::IDLE;
+use crate::task_board::constants::{FINAL_REVIEW, IDLE, PLAN_APPROVAL};
 use crate::task_board::stage::lifecycle::{
-    constants::{DEFAULT_STALL_MINUTES, FAILED, MAX_STALL_MINUTES, PLAN_APPROVAL, RUNNING},
+    constants::{DEFAULT_STALL_MINUTES, FAILED, MAX_STALL_MINUTES, RUNNING},
     storage::{query, settlement},
     types::{NoticeKind, StageNotice},
 };
@@ -9,7 +9,7 @@ use rusqlite::params;
 
 impl Store {
     pub fn board_attention(&self) -> Result<usize, String> {
-        self.conn.query_row("SELECT COUNT(*) FROM task_board_cards WHERE archived=0 AND (run_state=?1 OR (run_state=?3 AND column_id IN (?2,'final_review')))",params![FAILED,PLAN_APPROVAL,IDLE],|r|r.get::<_,i64>(0)).map_err(|e|e.to_string()).and_then(|count|usize::try_from(count).map_err(|e|e.to_string()))
+        self.conn.query_row("SELECT COUNT(*) FROM task_board_cards WHERE archived=0 AND (run_state=?1 OR (run_state=?3 AND column_id IN (?2,?4)))",params![FAILED,PLAN_APPROVAL,IDLE,FINAL_REVIEW],|r|r.get::<_,i64>(0)).map_err(|e|e.to_string()).and_then(|count|usize::try_from(count).map_err(|e|e.to_string()))
     }
 
     pub fn board_take_stall_notices(&self, now: u64) -> Result<Vec<StageNotice>, String> {

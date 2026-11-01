@@ -1,10 +1,8 @@
 use super::super::{Board, Event};
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Role, div, prelude::*};
-use molfar_core::task_board::constants::{BACKLOG, IDLE};
-use molfar_core::task_board::stage::lifecycle::constants::{
-    FAILED, GRILL, PLAN_APPROVAL, QUEUED, RUNNING,
-};
+use molfar_core::task_board::constants::{BACKLOG, GRILL, IDLE, PLAN_APPROVAL};
+use molfar_core::task_board::stage::lifecycle::constants::{FAILED, QUEUED, RUNNING};
 use molfar_core::task_board::{stage::lifecycle::types::StageAction, types::Card};
 
 pub(super) fn stage_action(card: &Card) -> Option<(&'static str, StageAction)> {

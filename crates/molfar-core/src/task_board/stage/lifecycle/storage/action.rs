@@ -3,7 +3,13 @@ use super::super::{
     types::{ActionEffect, StageAction},
 };
 use super::query;
-use crate::task_board::constants::{BACKLOG, IDLE};
+use crate::task_board::{
+    constants::GRILL,
+    stage::transitions::{
+        self,
+        types::{BoardAction, Position, TransitionEffect},
+    },
+};
 use rusqlite::{params, Connection, TransactionBehavior};
 
 pub(crate) fn apply(
@@ -19,23 +25,28 @@ pub(crate) fn apply(
     if card.updated_at != expected {
         return Err("conflict: the card changed; reload and try again".into());
     }
-    if card.archived {
-        return Err("The card is archived.".into());
-    }
-    let (column, state, round, error) = match action {
-        StageAction::Start if card.column_id == BACKLOG && card.run_state == IDLE => {
-            (GRILL, QUEUED, 1, None)
-        }
-        StageAction::Retry if card.column_id == GRILL && card.run_state == FAILED => {
-            (GRILL, QUEUED, card.grill_round, None)
-        }
-        StageAction::Cancel
-            if card.column_id == GRILL && [QUEUED, RUNNING].contains(&card.run_state.as_str()) =>
-        {
-            (GRILL, FAILED, card.grill_round, Some("Cancelled by user."))
-        }
-        _ => return Err("This action is not available for the current Board state.".into()),
+    let (board_action, native) = match action {
+        StageAction::Start => (BoardAction::Start, true),
+        StageAction::Retry => (BoardAction::Retry, card.column_id == GRILL),
+        StageAction::Cancel => (BoardAction::Cancel, card.column_id == GRILL),
     };
+    let position = Position {
+        column: &card.column_id,
+        run_state: &card.run_state,
+        archived: card.archived,
+    };
+    let next = transitions::transition(position, board_action)?;
+    if !native {
+        return Err("This action is not available for the current Board state.".into());
+    }
+    let column = next.column.as_str();
+    let state = next.run_state;
+    let round = if next.effects.contains(&TransitionEffect::ResetGrillRound) {
+        1
+    } else {
+        card.grill_round
+    };
+    let error = (action == StageAction::Cancel).then_some("Cancelled by user.");
     let now = query::now()?.max(card.updated_at.saturating_add(1));
     let position = if card.column_id != column {
         query::next_position(&tx, column)?
