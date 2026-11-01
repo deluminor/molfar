@@ -1,7 +1,6 @@
 use crate::task_board::stage::agent::AgentStage;
 
-pub const RUNTIME_MODES: [&str; 4] =
-    ["supervised", "auto-accept-edits", "auto", "full-access"];
+pub const RUNTIME_MODES: [&str; 4] = ["supervised", "auto-accept-edits", "auto", "full-access"];
 pub(crate) const DEFAULT_RUNTIME_MODE: &str = "auto";
 pub(crate) const CONFIG_FIELDS: [&str; 4] = ["harness", "model", "effort", "runtimeMode"];
 
