@@ -5,7 +5,7 @@ use crate::{
     task_board::{
         stage::{
             checkout::types::{CheckoutSnapshot, RetainedCheckout},
-            choice::types::ResolvedGrillChoice,
+            choice::types::ResolvedStageChoice,
             lifecycle::{
                 constants::RUNNING,
                 storage::{claim, progress, query, settlement},
@@ -33,7 +33,7 @@ impl Store {
         id: &str,
         expected: i64,
         run: &str,
-        choice: &ResolvedGrillChoice,
+        choice: &ResolvedStageChoice,
     ) -> Result<GrillContext, String> {
         self.board_writable()?;
         claim::accept(&mut self.conn, id, expected, run, choice)

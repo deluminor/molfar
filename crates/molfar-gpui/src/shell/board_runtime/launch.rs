@@ -1,6 +1,6 @@
 use super::*;
 use molfar_core::task_board::{
-    stage::{choice, lifecycle::types::StageEffect},
+    stage::{agent::AgentStage, choice, lifecycle::types::StageEffect},
     types::Card,
 };
 
@@ -22,8 +22,12 @@ impl Shell {
             .or(prefs.default_provider.as_deref())
             .and_then(Kind::parse)
             .unwrap_or(Kind::Codex);
-        let selection = match choice::select(raw_settings.as_deref(), &card.overrides_json, default)
-        {
+        let selection = match choice::select(
+            AgentStage::Grill,
+            raw_settings.as_deref(),
+            &card.overrides_json,
+            default,
+        ) {
             Ok(selection) => selection,
             Err(error) => {
                 self.fail_board_claim(card, error, cx);

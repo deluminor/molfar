@@ -1,6 +1,6 @@
 use super::{super::*, fixtures::*};
 use gpui::TestAppContext;
-use molfar_core::task_board::stage::{choice, lifecycle::types::StageAction};
+use molfar_core::task_board::stage::{agent::AgentStage, choice, lifecycle::types::StageAction};
 
 fn prepared(fixture: &Fixture) -> prepare::Launch {
     let revision = fixture.card().updated_at;
@@ -14,7 +14,7 @@ fn prepared(fixture: &Fixture) -> prepare::Launch {
     let defaults = prepare::Defaults {
         fixture: Some(fixture.provider.clone()),
         card,
-        selection: choice::select(None, "{}", Kind::Codex).unwrap(),
+        selection: choice::select(AgentStage::Grill, None, "{}", Kind::Codex).unwrap(),
         model: None,
         account: Default::default(),
         disabled_skills: Vec::new(),

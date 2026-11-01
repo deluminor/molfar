@@ -4,7 +4,7 @@ use crate::{
     store::Store,
     task_board::stage::{
         checkout::types::{CheckoutSnapshot, RetainedCheckout},
-        choice::types::ResolvedGrillChoice,
+        choice::types::ResolvedStageChoice,
         lifecycle::types::{GrillContext, StageAction, VerifiedGrillOutput},
     },
 };
@@ -19,13 +19,13 @@ pub(super) fn fixture() -> (tempfile::TempDir, Store) {
     (directory, store)
 }
 
-pub(super) fn choice() -> ResolvedGrillChoice {
+pub(super) fn choice() -> ResolvedStageChoice {
     let settings = Settings {
         access: AccessMode::Auto,
         model: Some("test-model".into()),
         ..Default::default()
     };
-    ResolvedGrillChoice {
+    ResolvedStageChoice {
         kind: Kind::Codex,
         model: "test-model".into(),
         settings,

@@ -1,18 +1,18 @@
 use super::{
     skills,
-    types::{GrillSelection, ResolvedGrillChoice},
+    types::{ResolvedStageChoice, StageSelection},
 };
 use crate::{agent::Settings, app_access, catalog::Model};
 use serde_json::json;
 use std::collections::{HashMap, HashSet};
 
 pub(super) fn resolve(
-    selection: &GrillSelection,
+    selection: &StageSelection,
     defaults: Settings,
     models: &[Model],
     available_skills: &HashSet<String>,
     provider_available: bool,
-) -> Result<ResolvedGrillChoice, String> {
+) -> Result<ResolvedStageChoice, String> {
     if !provider_available {
         return Err(format!(
             "{} is not available in MOLFAR",
@@ -67,13 +67,16 @@ pub(super) fn resolve(
         selection.kind,
         models,
     )?;
-    let (skills, missing) =
-        skills::resolve(selection.configured_skills.as_deref(), available_skills);
+    let (skills, missing) = skills::resolve(
+        selection.stage,
+        selection.configured_skills.as_deref(),
+        available_skills,
+    );
     let warnings = missing
         .into_iter()
         .map(|name| format!("Configured skill is missing from the catalog: {name}"))
         .collect();
-    Ok(ResolvedGrillChoice {
+    Ok(ResolvedStageChoice {
         kind: selection.kind,
         model: model.id.clone(),
         runtime_mode: settings.access.id().into(),

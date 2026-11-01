@@ -5,7 +5,7 @@ use molfar_core::{
     task_board::{
         stage::{
             checkout,
-            choice::{self, types::GrillSelection},
+            choice::{self, types::StageSelection},
             contracts,
             lifecycle::types::{FailureStatus, StageEffect},
         },
@@ -17,7 +17,7 @@ pub(super) struct Defaults {
     #[cfg(test)]
     pub fixture: Option<super::tests::fixtures::Provider>,
     pub card: Card,
-    pub selection: GrillSelection,
+    pub selection: StageSelection,
     pub model: Option<String>,
     pub account: Profile,
     pub disabled_skills: Vec<String>,

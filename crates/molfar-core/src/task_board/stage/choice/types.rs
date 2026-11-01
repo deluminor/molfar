@@ -1,8 +1,9 @@
-use crate::{agent::Settings, provider::Kind};
+use crate::{agent::Settings, provider::Kind, task_board::stage::agent::AgentStage};
 use serde_json::Value;
 
 #[derive(Clone, Debug)]
-pub struct GrillSelection {
+pub struct StageSelection {
+    pub stage: AgentStage,
     pub kind: Kind,
     pub default_kind: Kind,
     pub input: Value,
@@ -10,7 +11,7 @@ pub struct GrillSelection {
 }
 
 #[derive(Clone, Debug)]
-pub struct ResolvedGrillChoice {
+pub struct ResolvedStageChoice {
     pub kind: Kind,
     pub model: String,
     pub settings: Settings,

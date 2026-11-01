@@ -1,6 +1,9 @@
+use super::constants::stage_skills;
+use crate::task_board::stage::agent::AgentStage;
 use std::collections::HashSet;
 
 pub(super) fn resolve(
+    stage: AgentStage,
     configured: Option<&[String]>,
     available: &HashSet<String>,
 ) -> (Vec<String>, Vec<String>) {
@@ -19,7 +22,7 @@ pub(super) fn resolve(
             }
         }
     } else {
-        for preferred in ["d-plan", "d-grill-me", "d-analyze"] {
+        for preferred in stage_skills(stage) {
             if available.contains(preferred) {
                 skills.push(preferred.into());
             } else if let Some(fallback) = preferred

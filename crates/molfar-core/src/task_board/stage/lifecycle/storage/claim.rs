@@ -2,7 +2,7 @@ use super::super::{constants::*, types::GrillContext};
 use super::query;
 use crate::task_board::constants::GRILL;
 use crate::task_board::stage::contracts::constants::TEMPLATE_VERSION;
-use crate::task_board::{read, stage::choice::types::ResolvedGrillChoice, types::Card};
+use crate::task_board::{read, stage::choice::types::ResolvedStageChoice, types::Card};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 
 pub(crate) fn next(conn: &mut Connection) -> Result<Option<Card>, String> {
@@ -47,7 +47,7 @@ pub(crate) fn accept(
     card_id: &str,
     expected: i64,
     id: &str,
-    choice: &ResolvedGrillChoice,
+    choice: &ResolvedStageChoice,
 ) -> Result<GrillContext, String> {
     crate::task_board::create::validation::id(id)?;
     let settings = serde_json::to_string(&choice.model_settings).map_err(|e| e.to_string())?;

@@ -1,4 +1,5 @@
 use super::{resolve, select};
+use crate::task_board::stage::agent::AgentStage;
 use crate::{
     agent::{AccessMode, Settings},
     catalog::Model,
@@ -26,6 +27,7 @@ fn model() -> Model {
 fn card_provider_override_drops_column_model_effort_and_preserves_fieldwise_mode() {
     let board = json!({"columns":{"grill":{"harness":"claude","model":"claude:old","effort":"max","runtimeMode":"supervised"}},"columnSkills":{"grill":[]}}).to_string();
     let selected = select(
+        AgentStage::Grill,
         Some(&board),
         r#"{"grill":{"harness":"codex"}}"#,
         Kind::Claude,
@@ -49,7 +51,7 @@ fn card_provider_override_drops_column_model_effort_and_preserves_fieldwise_mode
 
 #[test]
 fn defaults_use_auto_and_skill_slots_prefer_d_names_without_inventing_missing_skills() {
-    let selected = select(None, "malformed override", Kind::Codex).unwrap();
+    let selected = select(AgentStage::Grill, None, "malformed override", Kind::Codex).unwrap();
     let available = HashSet::from([
         "plan".into(),
         "d-plan".into(),
@@ -86,7 +88,7 @@ fn unsupported_explicit_model_effort_or_column_mode_fails_instead_of_falling_bac
         r#"{"grill":{"model":"codex:missing"}}"#,
         r#"{"grill":{"effort":"impossible"}}"#,
     ] {
-        let selected = select(None, overrides, Kind::Codex).unwrap();
+        let selected = select(AgentStage::Grill, None, overrides, Kind::Codex).unwrap();
         assert!(resolve(
             &selected,
             Settings::default(),
@@ -97,12 +99,14 @@ fn unsupported_explicit_model_effort_or_column_mode_fails_instead_of_falling_bac
         .is_err());
     }
     assert!(select(
+        AgentStage::Grill,
         Some(r#"{"columns":{"grill":{"runtimeMode":"unsafe"}}}"#),
         "{}",
         Kind::Codex
     )
     .is_err());
     let selected = select(
+        AgentStage::Grill,
         Some(r#"{"columnSkills":{"grill":["d-plan","missing","d-plan",""]}}"#),
         "{}",
         Kind::Codex,

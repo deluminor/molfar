@@ -1,16 +1,17 @@
-use super::types::GrillSelection;
-use crate::provider::Kind;
+use super::{
+    constants::{CONFIG_FIELDS, DEFAULT_RUNTIME_MODE, RUNTIME_MODES},
+    types::StageSelection,
+};
+use crate::{provider::Kind, task_board::stage::agent::AgentStage};
 use serde_json::{json, Map, Value};
 
-const MODES: [&str; 4] = ["supervised", "auto-accept-edits", "auto", "full-access"];
-
 pub(crate) fn is_runtime_mode(value: &str) -> bool {
-    MODES.contains(&value)
+    RUNTIME_MODES.contains(&value)
 }
 
 fn override_fields(value: &Value) -> Map<String, Value> {
     let mut result = Map::new();
-    for key in ["harness", "model", "effort", "runtimeMode"] {
+    for key in CONFIG_FIELDS {
         let Some(text) = value[key]
             .as_str()
             .map(str::trim)
@@ -30,10 +31,11 @@ fn override_fields(value: &Value) -> Map<String, Value> {
 }
 
 pub(super) fn selection(
+    stage: AgentStage,
     settings: Option<&str>,
     overrides: &str,
     default_kind: Kind,
-) -> Result<GrillSelection, String> {
+) -> Result<StageSelection, String> {
     let board: Value = settings
         .map(|text| {
             serde_json::from_str(text).map_err(|error| format!("Invalid Board settings: {error}"))
@@ -43,20 +45,18 @@ pub(super) fn selection(
     if !board.is_object() {
         return Err("Board settings must be an object.".into());
     }
-    let column = &board["columns"]["grill"];
+    let column = &board["columns"][stage.id()];
     let mut input = match column {
         Value::Null => Map::new(),
         Value::Object(fields) => fields
             .iter()
-            .filter(|(key, _)| {
-                ["harness", "model", "effort", "runtimeMode"].contains(&key.as_str())
-            })
+            .filter(|(key, _)| CONFIG_FIELDS.contains(&key.as_str()))
             .map(|(key, value)| (key.clone(), value.clone()))
             .collect(),
-        _ => return Err("Grill configuration must be an object.".into()),
+        _ => return Err(format!("{} configuration must be an object.", stage.id())),
     };
     let overrides: Value = serde_json::from_str(overrides).unwrap_or(Value::Null);
-    let card = override_fields(&overrides["grill"]);
+    let card = override_fields(&overrides[stage.id()]);
     if card
         .get("harness")
         .is_some_and(|harness| Some(harness) != input.get("harness"))
@@ -89,7 +89,7 @@ pub(super) fn selection(
     let mode = input
         .get("runtimeMode")
         .and_then(Value::as_str)
-        .unwrap_or("auto");
+        .unwrap_or(DEFAULT_RUNTIME_MODE);
     if !is_runtime_mode(mode) {
         return Err("Unsupported Board runtime mode.".into());
     }
@@ -97,21 +97,22 @@ pub(super) fn selection(
     input.insert("harness".into(), json!(kind.id()));
     let configured_skills = board
         .get("columnSkills")
-        .and_then(|value| value.get("grill"))
+        .and_then(|value| value.get(stage.id()))
         .map(|value| {
             value
                 .as_array()
-                .ok_or_else(|| "Grill skills must be an array.".to_owned())?
+                .ok_or_else(|| format!("{} skills must be an array.", stage.id()))?
                 .iter()
                 .map(|name| {
                     name.as_str()
                         .map(str::to_owned)
-                        .ok_or_else(|| "Grill skill names must be strings.".to_owned())
+                        .ok_or_else(|| format!("{} skill names must be strings.", stage.id()))
                 })
                 .collect::<Result<Vec<_>, _>>()
         })
         .transpose()?;
-    Ok(GrillSelection {
+    Ok(StageSelection {
+        stage,
         kind,
         default_kind,
         input: Value::Object(input),
