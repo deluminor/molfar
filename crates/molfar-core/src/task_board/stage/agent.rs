@@ -20,6 +20,19 @@ impl AgentStage {
         }
     }
 
+    pub fn is_read_only(self) -> bool {
+        matches!(self, Self::Grill | Self::CodeReview)
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Grill => "Grill (analysis and planning)",
+            Self::Implement => "Implement",
+            Self::CodeReview => "Code review",
+            Self::Rework => "Rework",
+        }
+    }
+
     pub fn parse(column: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|stage| stage.id() == column)
     }

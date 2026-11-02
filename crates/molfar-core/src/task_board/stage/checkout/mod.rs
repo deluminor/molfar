@@ -1,5 +1,6 @@
 mod branch;
 mod materialize;
+pub mod policy;
 mod snapshot;
 pub mod types;
 mod worktree;

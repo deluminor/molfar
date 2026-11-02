@@ -1,5 +1,5 @@
 use super::{
-    constants::{PLAN, QUESTIONS, SPEC},
+    constants::{QUESTIONS, REVIEW},
     types::ParsedArtifact,
 };
 use regex::Regex;
@@ -21,10 +21,16 @@ pub(crate) fn question_heading() -> &'static Regex {
     })
 }
 
-pub(super) fn read(text: &str) -> Result<Vec<ParsedArtifact>, String> {
+pub(super) fn read(
+    stage: crate::task_board::stage::agent::AgentStage,
+    text: &str,
+) -> Result<Vec<ParsedArtifact>, String> {
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
-    let missing: Vec<_> = [SPEC, PLAN]
-        .into_iter()
+    let contract = super::output_contract(stage);
+    let missing: Vec<_> = contract
+        .required
+        .iter()
+        .copied()
         .filter(|kind| body(&text, kind).is_none())
         .collect();
     if !missing.is_empty() {
@@ -32,7 +38,7 @@ pub(super) fn read(text: &str) -> Result<Vec<ParsedArtifact>, String> {
     }
 
     let mut artifacts = Vec::new();
-    for kind in [SPEC, PLAN, QUESTIONS] {
+    for kind in contract.required.iter().chain(contract.optional).copied() {
         let Some(value) = body(&text, kind) else {
             continue;
         };
@@ -41,6 +47,9 @@ pub(super) fn read(text: &str) -> Result<Vec<ParsedArtifact>, String> {
             if !value.lines().any(|line| heading.is_match(line.trim())) {
                 return Err("questions: Questions must use `## Q<n> — <title>` headings.".into());
             }
+        }
+        if kind == REVIEW {
+            super::review::parse(value).map_err(|error| format!("review: {error}"))?;
         }
         artifacts.push(ParsedArtifact {
             kind: kind.into(),

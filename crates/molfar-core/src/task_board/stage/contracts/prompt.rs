@@ -37,15 +37,18 @@ fn inputs(files: &[ManifestReference]) -> Result<String, String> {
 }
 
 pub(super) fn build(
+    stage: crate::task_board::stage::agent::AgentStage,
     card: &Card,
     files: &[ManifestReference],
     skills: &[String],
+    head: &str,
 ) -> Result<String, String> {
-    if card.grill_round < 1 {
+    if stage == crate::task_board::stage::agent::AgentStage::Grill && card.grill_round < 1 {
         return Err("Grill round must be positive.".into());
     }
+    let role = stage.label();
     let header = format!(
-        "You are the Grill (analysis and planning) stage of MOLFAR Task Board card #{}: \"{}\".\nThis is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and\nthe repository.\n\n- Project: {}\n- Working checkout (your cwd): {}\n- Branch: {}\n- Base commit: {}",
+        "You are the {role} stage of MOLFAR Task Board card #{}: \"{}\".\nThis is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and\nthe repository.\n\n- Project: {}\n- Working checkout (your cwd): {}\n- Branch: {}\n- Base commit: {}",
         card.number,
         card.title,
         card.project_cwd,
@@ -60,8 +63,18 @@ pub(super) fn build(
             skills.iter().map(|name| format!("/{name}")).collect::<Vec<_>>().join(" ")
         ));
     }
-    sections.push("## Rules\n- Work only inside the working checkout. Never push, never open pull requests, never switch branches.\n- Never add AI or tool attribution anywhere: no Co-authored-by, Generated-by or similar lines.\n- Do not mention any person by name in the artifacts you write; say \"the user\".\n- READ-ONLY stage: do not create, modify, stage or commit any file. MOLFAR compares the checkout before and after;\n  any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.".into());
+    let mut rules = "## Rules\n- Work only inside the working checkout. Never push, never open pull requests, never switch branches.\n- Never add AI or tool attribution anywhere: no Co-authored-by, Generated-by or similar lines.\n- Do not mention any person by name in the artifacts you write; say \"the user\".\n- READ-ONLY stage: do not create, modify, stage or commit any file. MOLFAR compares the checkout before and after;\n  any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.".to_owned();
+    if !stage.is_read_only() {
+        let read_only = rules.find("- READ-ONLY").expect("fixed read-only rules");
+        rules.truncate(read_only);
+        rules.push_str("- Commit your work yourself with small, atomic Conventional Commits (`type(scope): subject`).\n- Finish with a clean working tree and at least one new commit, or this stage fails.");
+    }
+    sections.push(rules);
     sections.push(inputs(files)?);
+    if stage != crate::task_board::stage::agent::AgentStage::Grill {
+        sections.extend(super::prompt_bodies::build(stage, card, head));
+        return Ok(sections.join("\n\n"));
+    }
     let goal = if card.grill_round > 1 {
         format!("Grill round {}. Fold the user's answers and notes into the spec and plan. Do not re-ask settled questions.", card.grill_round)
     } else {
