@@ -3,11 +3,22 @@ use gpui::TestAppContext;
 use molfar_core::task_board::stage::{agent::AgentStage, choice, lifecycle::types::StageAction};
 
 fn prepared(fixture: &Fixture) -> prepare::Launch {
+    prepared_round(fixture, 1)
+}
+
+fn prepared_round(fixture: &Fixture, round: i64) -> prepare::Launch {
     let revision = fixture.card().updated_at;
     let card = {
         let mut store = locked(&fixture.store).unwrap();
         store
             .board_stage_action("card", revision, StageAction::Start)
+            .unwrap();
+        rusqlite::Connection::open(store.database_path())
+            .unwrap()
+            .execute(
+                "UPDATE task_board_cards SET grill_round=?1 WHERE id='card'",
+                [round],
+            )
             .unwrap();
         store.board_claim_next_grill().unwrap().unwrap()
     };
@@ -58,19 +69,22 @@ fn cancellation_before_install_never_submits_prepared_prompt(cx: &mut TestAppCon
 
 #[gpui::test]
 fn restart_with_unsent_preparation_interrupts_without_replay(cx: &mut TestAppContext) {
-    let fixture = Fixture::new();
-    drop(prepared(&fixture));
-    let window = fixture.window(cx);
-    window
-        .update(cx, |shell, _, cx| shell.poll_board(true, cx))
-        .unwrap();
-    wait_until(cx, || fixture.card().run_state == "failed");
-    let snapshot = locked(&fixture.store)
-        .unwrap()
-        .board_snapshot(None, false, Some("card"))
-        .unwrap();
-    assert_eq!(snapshot.runs[0].status, "interrupted");
-    assert!(!fixture.root.join("submissions").exists());
+    for round in [1, 2] {
+        let fixture = Fixture::new();
+        drop(prepared_round(&fixture, round));
+        let window = fixture.window(cx);
+        window
+            .update(cx, |shell, _, cx| shell.poll_board(true, cx))
+            .unwrap();
+        wait_until(cx, || fixture.card().run_state == "failed");
+        let snapshot = locked(&fixture.store)
+            .unwrap()
+            .board_snapshot(None, false, Some("card"))
+            .unwrap();
+        assert_eq!(snapshot.runs[0].status, "interrupted");
+        assert_eq!(fixture.card().grill_round, round);
+        assert!(!fixture.root.join("submissions").exists());
+    }
 }
 
 #[test]

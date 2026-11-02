@@ -21,3 +21,5 @@ pub(crate) const MIN_CONCURRENCY: i64 = 1;
 pub(crate) const MAX_CONCURRENCY: i64 = 10;
 pub const DEFAULT_STALL_MINUTES: u64 = 45;
 pub(crate) const MAX_STALL_MINUTES: u64 = 1440;
+
+pub(crate) const STAGE_SOURCE: &str = "stage";

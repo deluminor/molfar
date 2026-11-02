@@ -15,6 +15,13 @@ pub enum StageAction {
     Retry(Option<StageModelOverride>),
     Cancel,
     Back,
+    /// Blank answers use the current recommendation; an empty list writes only the note.
+    Answer {
+        answers: Vec<super::super::owner::types::Answer>,
+        note: String,
+    },
+    RequestChanges(String),
+    EditPlan(String),
 }
 
 #[derive(Clone, Debug)]

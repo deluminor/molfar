@@ -5,4 +5,4 @@
 crates/molfar-core/src/app_update/fixtures/package.txt text eol=lf
 
 # The embedded prompt fixture must match the builder's LF output exactly.
-crates/molfar-core/src/task_board/stage/contracts/fixtures/first-grill.md text eol=lf
+crates/molfar-core/src/task_board/stage/contracts/fixtures/*.md text eol=lf

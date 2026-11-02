@@ -14,7 +14,7 @@ fn body<'a>(text: &'a str, kind: &str) -> Option<&'a str> {
     (!value.is_empty()).then_some(value)
 }
 
-fn question_heading() -> &'static Regex {
+pub(crate) fn question_heading() -> &'static Regex {
     static QUESTION: OnceLock<Regex> = OnceLock::new();
     QUESTION.get_or_init(|| {
         Regex::new(r"^##\s+Q([0-9]+)\s*(?:[—–:-]\s*)?(.*)$").expect("fixed question heading")

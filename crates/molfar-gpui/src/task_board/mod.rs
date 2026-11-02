@@ -3,6 +3,7 @@ mod detail;
 mod list;
 #[cfg(test)]
 mod loading_tests;
+mod review;
 mod settings;
 mod stage;
 #[cfg(test)]
@@ -42,6 +43,8 @@ pub(crate) struct Board {
     stage_pending: Option<String>,
     artifact: Option<stage::Artifact>,
     artifact_revision: u64,
+    review: Option<review::Panel>,
+    review_revision: u64,
     settings: Option<settings::Panel>,
     picker: Option<settings::Picker>,
     retry_anchor: crate::popover::AnchorSlot,
@@ -50,6 +53,9 @@ pub(crate) struct Board {
 impl EventEmitter<Event> for Board {}
 impl Focusable for Board {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
+        if let Some(panel) = &self.review {
+            return panel.initial_focus(cx);
+        }
         if let Some(artifact) = &self.artifact {
             return artifact.focus.clone();
         }
@@ -85,6 +91,8 @@ impl Board {
             stage_pending: None,
             artifact: None,
             artifact_revision: 0,
+            review: None,
+            review_revision: 0,
             settings: None,
             picker: None,
             retry_anchor: Default::default(),

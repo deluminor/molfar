@@ -49,9 +49,11 @@ pub(super) fn accept(store: &mut Store, run: &str) -> GrillContext {
     } else {
         StageAction::Retry(None)
     };
-    store
-        .board_stage_action("card", card.updated_at, action)
-        .unwrap();
+    if card.run_state != "queued" {
+        store
+            .board_stage_action("card", card.updated_at, action)
+            .unwrap();
+    }
     let card = store.board_claim_next_grill().unwrap().unwrap();
     store
         .board_accept_grill("card", card.updated_at, run, &choice())
@@ -91,8 +93,11 @@ pub(super) fn prepare(store: &mut Store, run: &str) -> i64 {
 }
 
 pub(super) fn complete(store: &mut Store, run: &str) -> VerifiedGrillOutput {
+    complete_with_text(store, run, "<<<MOLFAR:spec>>>\nA specification\n<<<END:spec>>>\n<<<MOLFAR:plan>>>\nA plan\n<<<END:plan>>>")
+}
+
+pub(super) fn complete_with_text(store: &mut Store, run: &str, text: &str) -> VerifiedGrillOutput {
     let session = prepare(store, run);
-    let text = "<<<MOLFAR:spec>>>\nA specification\n<<<END:spec>>>\n<<<MOLFAR:plan>>>\nA plan\n<<<END:plan>>>";
     let blocks = json!([
         {"id":"root","role":"user","text":"Prompt","startedAt":100,"appRequestId":format!("app-prompt-{}",crate::familiar::files::content_hash(run)),"nativeTurnCompletion":{"status":"succeeded","completed_at":200}},
         {"id":"answer","role":"assistant","text":text}

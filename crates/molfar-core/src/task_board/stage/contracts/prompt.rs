@@ -41,8 +41,8 @@ pub(super) fn build(
     files: &[ManifestReference],
     skills: &[String],
 ) -> Result<String, String> {
-    if card.grill_round > 1 {
-        return Err("Only the first Grill round is supported.".into());
+    if card.grill_round < 1 {
+        return Err("Grill round must be positive.".into());
     }
     let header = format!(
         "You are the Grill (analysis and planning) stage of MOLFAR Task Board card #{}: \"{}\".\nThis is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and\nthe repository.\n\n- Project: {}\n- Working checkout (your cwd): {}\n- Branch: {}\n- Base commit: {}",
@@ -62,9 +62,14 @@ pub(super) fn build(
     }
     sections.push("## Rules\n- Work only inside the working checkout. Never push, never open pull requests, never switch branches.\n- Never add AI or tool attribution anywhere: no Co-authored-by, Generated-by or similar lines.\n- Do not mention any person by name in the artifacts you write; say \"the user\".\n- READ-ONLY stage: do not create, modify, stage or commit any file. MOLFAR compares the checkout before and after;\n  any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.".into());
     sections.push(inputs(files)?);
+    let goal = if card.grill_round > 1 {
+        format!("Grill round {}. Fold the user's answers and notes into the spec and plan. Do not re-ask settled questions.", card.grill_round)
+    } else {
+        "Analyze the repository and turn the task into a spec and an implementation plan.".into()
+    };
     sections.extend([
         "## Goal".into(),
-        "Analyze the repository and turn the task into a spec and an implementation plan.".into(),
+        goal,
         "Work the open decisions as a design tree: settle everything the code can answer yourself, and ask only what".into(),
         "the user must decide. Always produce a complete draft spec and plan, even when questions remain: the user may".into(),
         "approve the plan without answering. Emit the questions block only when a decision is genuinely open.".into(),

@@ -28,7 +28,7 @@ pub(crate) fn next(conn: &mut Connection) -> Result<Option<Card>, String> {
     if running >= limit {
         return Ok(None);
     }
-    let next:Option<String>=tx.query_row("SELECT id FROM task_board_cards WHERE run_state=?1 AND column_id=?2 AND grill_round=1 AND archived=0 ORDER BY queued_at,number LIMIT 1",params![QUEUED,GRILL],|r|r.get(0)).optional().map_err(|e|e.to_string())?;
+    let next:Option<String>=tx.query_row("SELECT id FROM task_board_cards WHERE run_state=?1 AND column_id=?2 AND grill_round>=1 AND archived=0 ORDER BY queued_at,number LIMIT 1",params![QUEUED,GRILL],|r|r.get(0)).optional().map_err(|e|e.to_string())?;
     let Some(id) = next else { return Ok(None) };
     let old = query::card(&tx, &id)?;
     let now = query::now()?.max(old.updated_at.saturating_add(1));
@@ -69,7 +69,7 @@ pub(crate) fn accept(
         || card.archived
         || card.column_id != GRILL
         || card.run_state != RUNNING
-        || card.grill_round != 1
+        || card.grill_round < 1
     {
         return Err("The claimed Board card changed before acceptance.".into());
     }

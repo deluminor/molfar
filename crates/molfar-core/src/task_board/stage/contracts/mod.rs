@@ -1,5 +1,5 @@
 pub mod constants;
-mod output;
+pub(crate) mod output;
 mod prompt;
 pub mod types;
 

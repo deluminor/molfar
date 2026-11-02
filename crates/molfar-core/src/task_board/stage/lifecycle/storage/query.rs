@@ -43,7 +43,7 @@ pub(crate) fn current(conn: &Connection, ctx: &GrillContext) -> Result<bool, Str
     Ok(!ctx.card.archived
         && ctx.card.column_id == GRILL
         && ctx.card.run_state == RUNNING
-        && ctx.card.grill_round == 1
+        && ctx.card.grill_round >= 1
         && ctx.run.stage == GRILL
         && ctx.run.status == RUNNING
         && latest_id(conn, &ctx.card.id)?.as_deref() == Some(ctx.run.id.as_str()))

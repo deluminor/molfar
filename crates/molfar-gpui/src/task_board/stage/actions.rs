@@ -124,6 +124,41 @@ impl Board {
                         })),
                 );
         }
+        if card.column_id == PLAN_APPROVAL && card.run_state == IDLE && !card.archived {
+            let card_id = card.id.clone();
+            let plan_card = card.id.clone();
+            row = row
+                .child(
+                    modal::disabled(
+                        modal::primary_button("board-owner-review", "Review questions"),
+                        pending,
+                    )
+                    .debug_selector(|| "board-owner-review".into())
+                    .on_click(cx.listener(move |this, _, window, cx| {
+                        this.open_owner_review(
+                            card_id.clone(),
+                            super::super::review::Mode::Questions,
+                            window,
+                            cx,
+                        )
+                    })),
+                )
+                .child(
+                    modal::disabled(
+                        modal::ghost_button("board-owner-edit-plan", "Edit plan"),
+                        pending,
+                    )
+                    .debug_selector(|| "board-owner-edit-plan".into())
+                    .on_click(cx.listener(move |this, _, window, cx| {
+                        this.open_owner_review(
+                            plan_card.clone(),
+                            super::super::review::Mode::Plan,
+                            window,
+                            cx,
+                        )
+                    })),
+                );
+        }
         if card.column_id == PLAN_APPROVAL {
             row = row.child(
                 div()
@@ -136,6 +171,13 @@ impl Board {
 
     pub(crate) fn finish_update(&mut self, error: Option<String>, cx: &mut Context<Self>) {
         self.stage_pending = None;
+        if self.finish_owner_update(error.clone(), cx) {
+            if error.is_none() {
+                self.refresh(cx);
+            }
+            cx.notify();
+            return;
+        }
         match error {
             Some(error) => self.error = Some(error),
             None => self.refresh(cx),

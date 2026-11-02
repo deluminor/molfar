@@ -106,10 +106,14 @@ fn prepare_inner(
     let Some(context) = locked(store)?.board_record_grill_worktree(run_id, &retained)? else {
         return Ok(None);
     };
-    let input = locked(store)?.board_grill_input(&context.card.id)?;
-    let manifest = checkout::materialize(std::path::Path::new(&retained.path), &[input])?;
+    let inputs = locked(store)?.board_grill_inputs(&context.card.id)?;
+    let manifest = checkout::materialize(std::path::Path::new(&retained.path), &inputs)?;
     let before = checkout::snapshot(std::path::Path::new(&retained.path))?;
-    let prompt = contracts::build_grill_prompt(&context.card, &manifest, &resolved.skills)?;
+    let mut prompt_card = context.card.clone();
+    if inputs.len() == 1 {
+        prompt_card.grill_round = 1;
+    }
+    let prompt = contracts::build_grill_prompt(&prompt_card, &manifest, &resolved.skills)?;
     let mut settings = resolved.settings;
     settings.worktree_cwd = Some(retained.path);
     settings.new_worktree = false;

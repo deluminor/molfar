@@ -15,8 +15,10 @@ impl Store {
         action: crate::task_board::stage::lifecycle::types::StageAction,
     ) -> Result<crate::task_board::stage::lifecycle::types::ActionEffect, String> {
         self.board_writable()?;
+        let base = self.board_artifact_base()?;
         crate::task_board::stage::lifecycle::storage::action::apply(
             &mut self.conn,
+            &base,
             id,
             expected,
             action,

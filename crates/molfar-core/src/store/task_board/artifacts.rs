@@ -1,7 +1,14 @@
 use super::Store;
 use crate::task_board::{
     constants::TASK,
-    stage::{contracts::types::HandoffInput, lifecycle::artifacts},
+    stage::{
+        contracts::{
+            constants::{ANSWERS, PLAN, QUESTIONS, SPEC},
+            types::HandoffInput,
+        },
+        lifecycle::artifacts,
+        owner,
+    },
     types::ArtifactMeta,
 };
 use rusqlite::{params, OptionalExtension};
@@ -14,12 +21,56 @@ impl Store {
             .ok_or_else(|| "Board artifacts require a file-backed database.".into())
     }
 
+    pub fn board_owner_review(&self, id: &str) -> Result<owner::types::Review, String> {
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .map_err(|e| e.to_string())?;
+        let review = owner::load(&tx, &self.board_artifact_base()?, id)?;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(review)
+    }
+
+    pub fn board_grill_inputs(&self, card: &str) -> Result<Vec<HandoffInput>, String> {
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .map_err(|e| e.to_string())?;
+        let current = crate::task_board::stage::lifecycle::storage::query::card(&tx, card)?;
+        let mut inputs = vec![self.board_grill_input(card)?];
+        if current.grill_round > 1 {
+            let mut loaded = Vec::new();
+            let mut complete = true;
+            for kind in [SPEC, PLAN, ANSWERS, QUESTIONS] {
+                let version = if kind == QUESTIONS {
+                    owner::question_version(&tx, card)?
+                } else {
+                    owner::latest(&tx, card, kind)?
+                };
+                match version {
+                    Some(version) => loaded.push(HandoffInput {
+                        kind: kind.into(),
+                        version,
+                        body: self.board_stage_artifact(card, kind, version)?,
+                    }),
+                    None if kind != QUESTIONS => complete = false,
+                    None => {}
+                }
+            }
+            if complete {
+                inputs.extend(loaded);
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(inputs)
+    }
+
     pub fn board_grill_input(&self, card: &str) -> Result<HandoffInput, String> {
         let version:i64=self.conn.query_row("SELECT version FROM task_board_artifacts WHERE card_id=?1 AND kind=?2 ORDER BY version DESC LIMIT 1",params![card,TASK],|r|r.get(0)).optional().map_err(|e|e.to_string())?.ok_or("Board card has no initial task artifact.")?;
         Ok(HandoffInput {
-            kind: "task".into(),
+            kind: TASK.into(),
             version,
-            body: self.board_stage_artifact(card, "task", version)?,
+            body: self.board_stage_artifact(card, TASK, version)?,
         })
     }
 

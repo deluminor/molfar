@@ -12,9 +12,11 @@ use crate::task_board::stage::{
     },
 };
 use rusqlite::{params, Connection, TransactionBehavior};
+use std::path::Path;
 
 pub(crate) fn apply(
     conn: &mut Connection,
+    base: &Path,
     id: &str,
     expected: i64,
     action: StageAction,
@@ -32,6 +34,9 @@ pub(crate) fn apply(
         StageAction::Retry(_) => (BoardAction::Retry, stage == Some(AgentStage::Grill)),
         StageAction::Cancel => (BoardAction::Cancel, stage == Some(AgentStage::Grill)),
         StageAction::Back => (BoardAction::Back, true),
+        StageAction::Answer { .. } => (BoardAction::Answer, true),
+        StageAction::RequestChanges(_) => (BoardAction::RequestChanges, true),
+        StageAction::EditPlan(_) => (BoardAction::EditPlan, true),
     };
     let position = Position {
         column: &card.column_id,
@@ -52,11 +57,16 @@ pub(crate) fn apply(
     let state = next.run_state;
     let round = if next.effects.contains(&TransitionEffect::ResetGrillRound) {
         1
+    } else if next.effects.contains(&TransitionEffect::NextGrillRound) {
+        card.grill_round
+            .checked_add(1)
+            .ok_or("Grill round overflow")?
     } else {
         card.grill_round
     };
     let error = (action == StageAction::Cancel).then_some("Cancelled by user.");
     let now = query::now()?.max(card.updated_at.saturating_add(1));
+    crate::task_board::stage::owner::save(&tx, base, &card, &action, now)?;
     let position = if card.column_id != column {
         query::next_position(&tx, column)?
     } else {

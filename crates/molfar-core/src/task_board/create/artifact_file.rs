@@ -76,7 +76,7 @@ pub(crate) fn publish_version(
     body: &str,
 ) -> Result<(), String> {
     super::validation::id(card_id)?;
-    if !["task", "spec", "plan", "questions"].contains(&kind) || version < 1 {
+    if !crate::task_board::stage::contracts::constants::SAVED_KINDS.contains(&kind) || version < 1 {
         return Err("Invalid Board artifact path.".into());
     }
     directory(base)?;

@@ -37,7 +37,21 @@ fn first_grill_prompt_matches_executed_source_template_without_inlining_bodies()
     assert!(!prompt.contains(&card.description));
     let mut later = card;
     later.grill_round = 2;
-    assert!(super::build_grill_prompt(&later, &references, &skills).is_err());
+    let references = [
+        ("task", 2),
+        ("spec", 1),
+        ("plan", 3),
+        ("answers", 2),
+        ("questions", 1),
+    ]
+    .map(|(kind, version)| super::types::ManifestReference {
+        kind: kind.into(),
+        version,
+        path: format!(".molfar/board/{kind}-v{version}.md"),
+    });
+    let prompt = super::build_grill_prompt(&later, &references, &skills).unwrap();
+    assert_eq!(prompt, include_str!("fixtures/later-grill.md"));
+    assert!(!prompt.contains(&later.description));
 }
 
 #[test]
