@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **molfar-connectors** MCP write tools for agent sessions: `jira_issue_get`, `jira_issue_edit`, `jira_issue_create`, `jira_issue_transitions`, `jira_issue_transition`, `jira_search`, `confluence_page_create`, and `confluence_page_update` (vault Atlassian token; no `cloudId`).
+
+## [1.0.22] - 2026-11-02
+
+### Added
+
 - Answer agent questions from a paired phone, including custom answers and keeping a question open while deciding. Approval requests still require the desktop.
 - Open sessions launched by Familiars from cards in mobile conversations, and view generated visuals and documents in mobile transcripts.
 - Edit Familiar profiles, models, projects, soul and memory from the mobile app, and use the searchable drawer to switch between Familiars and projects.
@@ -506,7 +511,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.21...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.22...HEAD
+[1.0.22]: https://github.com/deluminor/molfar/compare/v1.0.21...v1.0.22
 [1.0.21]: https://github.com/deluminor/molfar/compare/v1.0.20...v1.0.21
 [1.0.20]: https://github.com/deluminor/molfar/compare/v1.0.19...v1.0.20
 [1.0.19]: https://github.com/deluminor/molfar/compare/v1.0.18...v1.0.19
