@@ -1,6 +1,7 @@
-import type { Dispatch, RefObject, SetStateAction } from "react";
-import { HARNESS_LABEL, type HarnessId } from "@/domain/harness/harness";
-import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { mobileProjectId } from "@/features/mobile/model/mobile-project-id";
+import type { MobileCommandDeps } from "./mobile-command-types";
+import { answerMobileQuestion } from "./mobile-question-command";
+import { HARNESS_LABEL } from "@/domain/harness/harness";
 import type { Session } from "@/domain/session/session";
 import {
   findFamiliar,
@@ -13,8 +14,14 @@ import {
   hasMobileAttachments,
   mobileAttachments,
 } from "@/features/mobile/model/mobile-attachments";
-import { applyMobileChoice, mobileChoice, mobileWorkspaceChoice } from "@/features/mobile/model/mobile-models";
-import { mobileNewSession, mobileProjectId } from "@/features/mobile/model/mobile-catalog";
+import {
+  applyMobileChoice,
+  mobileChoice,
+  mobileWorkspaceChoice,
+} from "@/features/mobile/model/mobile-models";
+import {
+  mobileNewSession,
+} from "@/features/mobile/model/mobile-catalog";
 import {
   loadPinnedProjects,
   loadRecents,
@@ -30,29 +37,6 @@ import {
 } from "@/integrations/harness/core/models/resolve-model";
 import { homeDir } from "@/platform/tauri/fs";
 import { updateSessionState } from "../../../model/session-state";
-import type { Submit } from "../submission/submit-types";
-
-export type MobileCommandDeps = {
-  sessionsRef: RefObject<Session[]>;
-  setSessions: Dispatch<SetStateAction<Session[]>>;
-  defaultRuntimeMode?: RuntimeMode;
-  submit: Submit;
-  ensureOpen: (sessionId: string) => Promise<Session | null | undefined>;
-  rename: (sessionId: string, title: string) => Promise<unknown>;
-  remove: (
-    sessionId: string,
-    mode: "archive" | "delete",
-    skipConfirm: boolean,
-    origin: "cli",
-  ) => Promise<boolean>;
-  stop: (sessionId: string) => unknown;
-  changeModel: (sessionId: string, harness: HarnessId, model: string) => void;
-  changeModelSettings: (
-    sessionId: string,
-    modelSettings: Record<string, string>,
-  ) => void;
-  changeRuntimeMode: (sessionId: string, runtimeMode: RuntimeMode) => void;
-};
 
 const MAX_TEXT = 100_000;
 
@@ -211,6 +195,11 @@ export async function runMobileCommand(
     configureSession(deps, session, params);
     return { sessionId: session.id };
   }
+  if (
+    method === "session.answerQuestion" ||
+    method === "session.keepQuestionOpen"
+  )
+    return answerMobileQuestion(deps, session, method, params);
   if (method !== "conversation.send")
     throw new Error("Unsupported mobile command");
 

@@ -1,6 +1,13 @@
 {
   "refactorBase": "4995f498d49a8e38d4dc2b1430cd3d21f9ddf1ef",
   "renames": {
+    "mobile/src/features/models/useFamiliarModel.ts": "mobile/src/features/models/use-familiar-model.ts",
+    "mobile/src/features/workspace/familiarAccent.ts": "mobile/src/features/workspace/familiar-accent.ts",
+    "mobile/src/features/workspace/familiarProfile.ts": "mobile/src/features/workspace/familiar-profile.ts",
+    "mobile/src/features/workspace/familiarSeen.ts": "mobile/src/features/workspace/familiar-seen.ts",
+    "mobile/src/features/workspace/lastPlace.ts": "mobile/src/features/workspace/last-place.ts",
+    "mobile/src/ui/AnimationsPaused.ts": "mobile/src/ui/animations-paused.ts",
+    "src/features/mobile/model/mobileWorkspace.test.ts": "src/features/mobile/model/mobile-question.test.ts",
     "docs/architecture/vatra-system.archify.html": "docs/architecture/molfar-system.archify.html",
     "docs/architecture/vatra-system.architecture.json": "docs/architecture/molfar-system.architecture.json",
     "docs/architecture/vatra-system.html": "docs/architecture/molfar-system.html",
@@ -919,7 +926,22 @@
     "src/shared/ui/modalEscape.ts": "src/shared/ui/modal-escape.ts",
     "src/shared/ui/PrivateEmail.test.ts": "src/features/settings/ui/private-email.test.ts",
     "src/shared/ui/PrivateEmail.tsx": "src/features/settings/ui/PrivateEmail.tsx",
-    "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
+    "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts",
+    "mobile/modules/monocode-link/android/build.gradle": "mobile/modules/molfar-link/android/build.gradle",
+    "mobile/modules/monocode-link/android/src/main/AndroidManifest.xml": "mobile/modules/molfar-link/android/src/main/AndroidManifest.xml",
+    "mobile/modules/monocode-link/android/src/main/java/expo/modules/monocodelink/MonocodeLinkModule.kt": "mobile/modules/molfar-link/android/src/main/java/expo/modules/molfarlink/MolfarLinkModule.kt",
+    "mobile/modules/monocode-link/expo-module.config.json": "mobile/modules/molfar-link/expo-module.config.json",
+    "mobile/modules/monocode-link/ios/MonocodeLink.h": "mobile/modules/molfar-link/ios/MolfarLink.h",
+    "mobile/modules/monocode-link/ios/MonocodeLink.podspec": "mobile/modules/molfar-link/ios/MolfarLink.podspec",
+    "mobile/modules/monocode-link/ios/MonocodeLinkModule.swift": "mobile/modules/molfar-link/ios/MolfarLinkModule.swift",
+    "mobile/modules/monocode-link/ios/NativeTranscriptView.swift": "mobile/modules/molfar-link/ios/NativeTranscriptView.swift",
+    "mobile/modules/monocode-link/ios/Resources/transcript-artwork.json": "mobile/modules/molfar-link/ios/Resources/transcript-artwork.json",
+    "mobile/modules/monocode-link/ios/TranscriptArtwork.swift": "mobile/modules/molfar-link/ios/TranscriptArtwork.swift",
+    "mobile/modules/monocode-link/ios/TranscriptLayout.swift": "mobile/modules/molfar-link/ios/TranscriptLayout.swift",
+    "mobile/modules/monocode-link/ios/TranscriptPresentation.swift": "mobile/modules/molfar-link/ios/TranscriptPresentation.swift",
+    "mobile/modules/monocode-link/ios/TranscriptRowView.swift": "mobile/modules/molfar-link/ios/TranscriptRowView.swift",
+    "mobile/modules/monocode-link/ios/TranscriptSession.swift": "mobile/modules/molfar-link/ios/TranscriptSession.swift",
+    "mobile/modules/monocode-link/ios/TranscriptVisual.swift": "mobile/modules/molfar-link/ios/TranscriptVisual.swift"
   },
   "splits": {
     "src-tauri/src/fs.rs": {
@@ -2213,7 +2235,9 @@
           "MobilePhase",
           "MobileFoldEntry",
           "MobileTurnItem",
-          "MobileTurn"
+          "MobileTurn",
+          "Options (MobileTranscriptOptions)",
+          "MobileLaunchedSession"
         ],
         "target": "src/features/mobile/types/transcript.ts"
       },
@@ -2227,7 +2251,9 @@
           "MAX_STEPS",
           "fold entries (foldEntries)",
           "Familiar live label (familiarLiveLabel)",
-          "activityBlocks"
+          "activityBlocks",
+          "mobileWaitingLabel",
+          "mobileLaunchItems"
         ],
         "target": "src/features/mobile/model/mobile-transcript-blocks.ts"
       }
@@ -2529,6 +2555,7 @@
     ]
   },
   "removed": {
+    "crates/mobile-link/tests/fixtures/legacy-identity.json": "Public legacy p256 identity and proof data is inlined in the cfg(test) legacy_identity_keys_and_proofs_remain_compatible test in crates/mobile-link/src/lib.rs; standalone test fixtures are excluded by the sync job.",
     "docs/architecture/images/vatra-system.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/architecture/images/molfar-system.png.",
     "docs/brand/vatra-app.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-app.svg.",
     "docs/brand/vatra-glyph.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-glyph.svg.",

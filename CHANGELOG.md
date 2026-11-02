@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Answer agent questions from a paired phone, including custom answers and keeping a question open while deciding. Approval requests still require the desktop.
+- Open sessions launched by Familiars from cards in mobile conversations, and view generated visuals and documents in mobile transcripts.
+- Edit Familiar profiles, models, projects, soul and memory from the mobile app, and use the searchable drawer to switch between Familiars and projects.
+- Receive session alerts on paired phones and open habit-run alerts in the session view.
+
+### Changed
+
+- Appearance settings name the two layouts **Classic** and **Focused** and offer an explicit choice; the stored layout preference is retained.
+- The mobile app reopens the last selected project or Familiar and tracks unread Familiar replies.
+
+### Fixed
+
+- Remote-host runtime downloads retry transient failures, reuse verified cached downloads, and recover Windows fetch failures through a bounded HTTPS fallback.
+- Prose code fences use the intended syntax highlighting in web conversations. From MonoCode #1263.
+- Mobile transcript scrolling, question transitions, and notification registration handle session changes more reliably.
+
 ## [1.0.21] - 2026-10-28
 
 ### Added
