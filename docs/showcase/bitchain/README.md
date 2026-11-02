@@ -20,15 +20,15 @@
 
 ---
 
-## Why it exists
+## Overview
 
-My day was spread across a bank app, a budgeting spreadsheet, Apple Notes, a calendar, a voice recorder, and a terminal I opened only to check whether an agent was stuck waiting for me. BitChain gives me one place that answers three questions at a glance:
+**BitChain** is a private, local-first personal platform for iPhone and iPad. Finance, notes, calendar, browser sync and a remote console for AI coding agents live as independent modules behind one home screen.
 
-1. **How am I doing this month?**
-2. **What's coming up?**
-3. **What needs me right now?**
+Under the hood it's a full-stack TypeScript monorepo: an Expo / React Native client, a headless Next.js API on Vercel and Neon Postgres. Shared Zod contracts are the single source of truth between them.
 
-The data stays mine, in my own Neon Postgres, on my own device and on my own laptop. It's also my testbed for building a product end to end the way I'd want a work project built: plan first, typed contracts, real auth, tests, guardrails and a design system I enjoy opening at midnight.
+- **Modular by design**: each module owns its data layer (requests → normalizers → queries) and its screens. The hub only composes live summaries, and architecture guardrails keep the boundaries honest.
+- **Local-first and private**: notes and voice memos live on the device first, amounts can be masked app-wide, agent traffic goes phone ↔ laptop over Tailscale, and every machine integration uses its own scoped key.
+- **Production-grade delivery**: spec-first features, strict typing end to end, short-lived JWTs with rotating refresh tokens, tests on pure domain logic, and CI/CD from GitHub Actions to Neon and Vercel.
 
 > Closed personal project. The source is private and there is no public build. This page is a public showcase, hosted next to [MOLFAR](../../../README.md), the desktop agent workspace that BitChain's Molfar module controls. Screenshots use privacy mode and blur wherever real data would show.
 
@@ -44,83 +44,6 @@ The data stays mine, in my own Neon Postgres, on my own device and on my own lap
 | **Codebase** | pnpm monorepo: `apps/mobile`, `apps/api`, `packages/api-contracts` |
 | **History** | ~400 commits since April 2025, ~90 test files, spec-first features in `docs/specs/` |
 | **Built with** | Claude Code + Codex as pair programmers, under strict plan → review → verify gates |
-
----
-
-## Screens
-
-<p align="center">
-  <img src="assets/screens-hub-molfar.png" alt="Home hub, Quick capture and the Molfar overview" />
-  <br/><sub><b>Home hub</b> with live tiles · <b>Quick capture</b> · <b>Molfar</b>: host stats, approvals and agent familiars</sub>
-</p>
-
-<p align="center">
-  <img src="assets/screens-molfar-calendar.png" alt="Molfar projects, a live agent session and the Calendar" />
-  <br/><sub><b>Molfar</b> projects · a live Claude session from the phone · <b>Calendar</b> with the Important list</sub>
-</p>
-
-<p align="center">
-  <img src="assets/screens-finance-investing-notes.png" alt="Finance overview, Investing preview and a voice note" />
-  <br/><sub><b>Finance</b> overview in privacy mode · <b>Investing</b> preview · <b>Notes</b> with a voice memo</sub>
-</p>
-
----
-
-## Tour
-
-### Hub: one home screen for everything
-
-- A time-aware greeting ("Good *night*") and live tiles instead of static icons. Each tile shows the one fact that matters: agents that need me, month budget, latest note, the next important event, synced browser spaces.
-- **Quick capture**: a note, a voice memo or an expense in one tap from the home screen.
-- **Privacy mode** (eye icon) masks every amount across the app as `• • • •`, so it's safe to open in public or screen-share.
-- **Responsive layout**: on iPad and wide windows, gutters scale and the Notes and Molfar modules switch to split workspaces.
-
-### Finance: budget, cash flow and what's due next
-
-- **Overview** for the current period: what's left of the budget, income, net, and shortcuts to Budget, Goals, Loans, Reports and Backup.
-- **Spending pace chart**: cumulative spend this month against the same point last month and the budget limit, so "am I over pace?" is visible on day 10, not day 30.
-- **Upcoming payments**: a forecast projected from last month's subscriptions and active loan repayments. It's timezone-aware, clamps short months to their last day, caps each payment at the remaining loan balance, and never creates transactions on its own.
-- **Accounts, transactions, categories, budgets, goals, loans** with multi-currency support.
-- **Statement import**: upload a Monobank or Revolut CSV, preview and edit the parsed rows, then accept.
-- **Reports and backup**: JSON export/import with merge or replace. A machine-auth report endpoint feeds my monthly money review in Obsidian.
-
-### Notes: local-first, voice-native
-
-- **Local-first**: SQLite on the device is the source of truth, so notes open instantly and work offline.
-- **Voice memos with live dictation** in Ukrainian, English and Hungarian. One microphone session produces both a live transcript and a saved recording. On-device recognition comes first, with Apple's server recognizer as a fallback.
-- **Insert transcript** into the note body, plus pin, share, search and word count.
-- **Sync**: text and memo metadata sync through Postgres (last-write-wins on `updatedAt`, soft-delete tombstones). Audio never leaves the phone that recorded it. Other devices show a "recording stays on another device" card that keeps the transcript.
-
-### Calendar: the next 90 days that matter
-
-- **Week, month and year** views over the system calendars I choose (read-only, via EventKit). Color dots per calendar.
-- **Important** calendar: a dedicated list from today to +90 days with countdowns ("in 7 days") and day grouping. That's where tax deadlines and other can't-miss dates live. The nearest one also shows on the Hub tile.
-- Tapping an event opens it in the native Calendar app. A permission-denied state offers Allow / Open Settings.
-
-### Molfar: my AI agents, from my pocket
-
-[MOLFAR](../../../README.md) is my desktop workspace for AI coding agents (this repository). BitChain is its mobile companion.
-
-- **Host at a glance**: CPU, RAM, load and the number of working agents on the laptop.
-- **Needs you**: sessions blocked on an approval or a usage limit, one tap away.
-- **Familiars**: named agent personas, each with its own role, status and last result.
-- **Projects → sessions**: open sessions grouped by repository, then by day, with a `+` to start a new session for that project.
-- **Live session chat**: read the agent's progress with collapsible tool steps, reply by text or voice, and attach photos or files.
-- **Knowledge workspace**: a searchable vault, a 3D force graph of note links and a Markdown editor with optimistic-concurrency saves.
-- **Security model**: the phone pairs by scanning a QR code with a one-time code. It only accepts HTTPS or plain HTTP inside the Tailscale `100.64.0.0/10` range. Every entry is gated by Face ID with a 5-minute grace window, because a paired phone can run agents with full access on the laptop.
-
-### Zen: my browser, mirrored
-
-Zen is my main browser on the Mac. It's built on Firefox, but Firefox Sync only knows about plain tabs. Zen's own concepts, Spaces (workspaces), Essentials, pinned tabs and folders, never reach Firefox on the phone. So I built my own sync.
-
-- **Collector on the Mac**: a small launchd job reads the Zen profile every 5 minutes and pushes one snapshot to the API. It decodes Zen's `mozLz4` session file in-process and reads bookmarks from `places.sqlite`, always from a private temporary copy, because Zen keeps those files open. It only reads; it never changes Zen.
-- **On the phone**: the Zen module shows Spaces with their emoji and colour, then Essentials, pinned tabs, folders and bookmarks, exactly as they're organised on the laptop. A link I left open there is one tap away.
-- **Privacy by design**: only titles, URLs and names are sent. History, cookies, form data and closed tabs never leave the Mac. Credentials are stripped from URLs, and `file:`, `data:` and `javascript:` links are dropped. The API keeps only the latest snapshot.
-- **Machine-authenticated endpoint**: API key in a header (never in the query string), rate-limited and body-size-limited.
-
-### Investing: coming soon
-
-Designed, not built yet: a calm portfolio view (crypto, ETFs, savings), investment plans with recurring buys and rebalancing rules, and plans linked to Finance goals. "A calm place for long-term plans, not another ticker."
 
 ---
 
@@ -196,6 +119,81 @@ Phone → axios (Bearer) → /api/mobile/* → getMobileUser() → userId
       → ok(data) | err(code, message, requestId)
 401 → refresh interceptor → rotate tokens → retry once → or sign out
 ```
+
+---
+
+## Product tour
+
+### Home hub and Molfar at a glance
+
+<p align="center">
+  <img src="assets/screens-hub-molfar.png" alt="Home hub, Quick capture and the Molfar overview" />
+</p>
+
+**Home hub** (left and centre)
+
+- A time-aware greeting ("Good *night*") and live tiles instead of static icons. Each tile shows the one fact that matters: agents that need me, month budget, latest note, the next important event, synced browser spaces.
+- **Quick capture**: a note, a voice memo or an expense in one tap from the home screen.
+- **Privacy mode** (eye icon) masks every amount across the app as `• • • •`, so it's safe to open in public or screen-share.
+- **Responsive layout**: on iPad and wide windows, gutters scale and the Notes and Molfar modules switch to split workspaces.
+
+**Molfar overview** (right). [MOLFAR](../../../README.md) is my desktop workspace for AI coding agents (this repository); BitChain is its mobile companion.
+
+- **Host at a glance**: CPU, RAM, load and the number of working agents on the laptop.
+- **Needs you**: sessions blocked on an approval or a usage limit, one tap away.
+- **Familiars**: named agent personas, each with its own role, status and last result.
+- **Security model**: the phone pairs by scanning a QR code with a one-time code. It only accepts HTTPS or plain HTTP inside the Tailscale `100.64.0.0/10` range. Every entry is gated by Face ID with a 5-minute grace window, because a paired phone can run agents with full access on the laptop.
+
+### Agent sessions and Calendar
+
+<p align="center">
+  <img src="assets/screens-molfar-calendar.png" alt="Molfar projects, a live agent session and the Calendar" />
+</p>
+
+**Molfar projects and live sessions** (left and centre)
+
+- **Projects → sessions**: open sessions grouped by repository, then by day, with a `+` to start a new session for that project.
+- **Live session chat**: read the agent's progress with collapsible tool steps, reply by text or voice, and attach photos or files.
+- **Knowledge workspace**: a searchable vault, a 3D force graph of note links and a Markdown editor with optimistic-concurrency saves.
+
+**Calendar** (right)
+
+- **Week, month and year** views over the system calendars I choose (read-only, via EventKit). Color dots per calendar.
+- **Important** calendar: a dedicated list from today to +90 days with countdowns ("in 7 days") and day grouping. That's where tax deadlines and other can't-miss dates live. The nearest one also shows on the Hub tile.
+- Tapping an event opens it in the native Calendar app. A permission-denied state offers Allow / Open Settings.
+
+### Finance, Investing and Notes
+
+<p align="center">
+  <img src="assets/screens-finance-investing-notes.png" alt="Finance overview, Investing preview and a voice note" />
+</p>
+
+**Finance** (left, in privacy mode)
+
+- **Overview** for the current period: what's left of the budget, income, net, and shortcuts to Budget, Goals, Loans, Reports and Backup.
+- **Spending pace chart**: cumulative spend this month against the same point last month and the budget limit, so "am I over pace?" is visible on day 10, not day 30.
+- **Upcoming payments**: a forecast projected from last month's subscriptions and active loan repayments. It's timezone-aware, clamps short months to their last day, caps each payment at the remaining loan balance, and never creates transactions on its own.
+- **Accounts, transactions, categories, budgets, goals, loans** with multi-currency support.
+- **Statement import**: upload a Monobank or Revolut CSV, preview and edit the parsed rows, then accept.
+- **Reports and backup**: JSON export/import with merge or replace. A machine-auth report endpoint feeds my monthly money review in Obsidian.
+
+**Investing** (centre). Designed, not built yet: a calm portfolio view (crypto, ETFs, savings), investment plans with recurring buys and rebalancing rules, and plans linked to Finance goals. "A calm place for long-term plans, not another ticker."
+
+**Notes** (right)
+
+- **Local-first**: SQLite on the device is the source of truth, so notes open instantly and work offline.
+- **Voice memos with live dictation** in Ukrainian, English and Hungarian. One microphone session produces both a live transcript and a saved recording. On-device recognition comes first, with Apple's server recognizer as a fallback.
+- **Insert transcript** into the note body, plus pin, share, search and word count.
+- **Sync**: text and memo metadata sync through Postgres (last-write-wins on `updatedAt`, soft-delete tombstones). Audio never leaves the phone that recorded it. Other devices show a "recording stays on another device" card that keeps the transcript.
+
+### Zen: my browser, mirrored
+
+Zen is my main browser on the Mac. It's built on Firefox, but Firefox Sync only knows about plain tabs. Zen's own concepts, Spaces (workspaces), Essentials, pinned tabs and folders, never reach Firefox on the phone. So I built my own sync.
+
+- **Collector on the Mac**: a small launchd job reads the Zen profile every 5 minutes and pushes one snapshot to the API. It decodes Zen's `mozLz4` session file in-process and reads bookmarks from `places.sqlite`, always from a private temporary copy, because Zen keeps those files open. It only reads; it never changes Zen.
+- **On the phone**: the Zen module shows Spaces with their emoji and colour, then Essentials, pinned tabs, folders and bookmarks, exactly as they're organised on the laptop. A link I left open there is one tap away.
+- **Privacy by design**: only titles, URLs and names are sent. History, cookies, form data and closed tabs never leave the Mac. Credentials are stripped from URLs, and `file:`, `data:` and `javascript:` links are dropped. The API keeps only the latest snapshot.
+- **Machine-authenticated endpoint**: API key in a header (never in the query string), rate-limited and body-size-limited.
 
 ---
 
