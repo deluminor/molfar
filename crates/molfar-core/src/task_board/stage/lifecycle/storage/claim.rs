@@ -1,7 +1,10 @@
-use super::super::{constants::*, types::GrillContext};
+use super::super::{constants::*, types::StageContext};
 use super::query;
-use crate::task_board::constants::GRILL;
 use crate::task_board::stage::contracts::constants::TEMPLATE_VERSION;
+use crate::task_board::{
+    constants::{CODE_REVIEW, GRILL, IMPLEMENT, REWORK},
+    stage::agent::AgentStage,
+};
 use crate::task_board::{read, stage::choice::types::ResolvedStageChoice, types::Card};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 
@@ -28,7 +31,7 @@ pub(crate) fn next(conn: &mut Connection) -> Result<Option<Card>, String> {
     if running >= limit {
         return Ok(None);
     }
-    let next:Option<String>=tx.query_row("SELECT id FROM task_board_cards WHERE run_state=?1 AND column_id=?2 AND grill_round>=1 AND archived=0 ORDER BY queued_at,number LIMIT 1",params![QUEUED,GRILL],|r|r.get(0)).optional().map_err(|e|e.to_string())?;
+    let next:Option<String>=tx.query_row("SELECT id FROM task_board_cards WHERE run_state=?1 AND column_id IN (?2,?3,?4,?5) AND (column_id!=?2 OR grill_round>=1) AND archived=0 ORDER BY queued_at,number LIMIT 1",params![QUEUED,GRILL,IMPLEMENT,CODE_REVIEW,REWORK],|r|r.get(0)).optional().map_err(|e|e.to_string())?;
     let Some(id) = next else { return Ok(None) };
     let old = query::card(&tx, &id)?;
     let now = query::now()?.max(old.updated_at.saturating_add(1));
@@ -48,7 +51,7 @@ pub(crate) fn accept(
     expected: i64,
     id: &str,
     choice: &ResolvedStageChoice,
-) -> Result<GrillContext, String> {
+) -> Result<StageContext, String> {
     crate::task_board::create::validation::id(id)?;
     let settings = serde_json::to_string(&choice.model_settings).map_err(|e| e.to_string())?;
     if !choice.model_settings.is_object()
@@ -67,9 +70,9 @@ pub(crate) fn accept(
     let card = query::card(&tx, card_id)?;
     if card.updated_at != expected
         || card.archived
-        || card.column_id != GRILL
+        || AgentStage::parse(&card.column_id).is_none()
         || card.run_state != RUNNING
-        || card.grill_round < 1
+        || (card.column_id == GRILL && card.grill_round < 1)
     {
         return Err("The claimed Board card changed before acceptance.".into());
     }
@@ -79,8 +82,8 @@ pub(crate) fn accept(
         }
     }
     let model = crate::store::desktop_model_id(Some(&choice.model), choice.kind.id());
-    let attempt:i64=tx.query_row("SELECT COALESCE(MAX(attempt),0)+1 FROM task_board_stage_runs WHERE card_id=?1 AND stage=?2",params![card_id,GRILL],|r|r.get(0)).map_err(|e|e.to_string())?;
-    tx.execute("INSERT INTO task_board_stage_runs(id,card_id,stage,attempt,harness,model,settings_json,runtime_mode,template_version,dispatch,status,started_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",params![id,card_id,GRILL,attempt,choice.kind.id(),model,settings,choice.runtime_mode,TEMPLATE_VERSION,ACCEPTED,RUNNING,query::now()?]).map_err(|e|e.to_string())?;
+    let attempt:i64=tx.query_row("SELECT COALESCE(MAX(attempt),0)+1 FROM task_board_stage_runs WHERE card_id=?1 AND stage=?2",params![card_id,card.column_id],|r|r.get(0)).map_err(|e|e.to_string())?;
+    tx.execute("INSERT INTO task_board_stage_runs(id,card_id,stage,attempt,harness,model,settings_json,runtime_mode,template_version,dispatch,status,started_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",params![id,card_id,card.column_id,attempt,choice.kind.id(),model,settings,choice.runtime_mode,TEMPLATE_VERSION,ACCEPTED,RUNNING,query::now()?]).map_err(|e|e.to_string())?;
     let context = query::context(&tx, id)?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(context)

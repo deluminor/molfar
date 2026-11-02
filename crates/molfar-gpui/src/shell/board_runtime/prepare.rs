@@ -49,10 +49,10 @@ pub(super) fn prepare(
         Ok(None) => Ok(Prepared::Stopped),
         Err(error) => {
             let mut store = locked(store)?;
-            let effect = if store.board_grill_context(run_id)?.is_some() {
-                store.board_fail_grill(run_id, FailureStatus::Failed, &error)?
+            let effect = if store.board_stage_context(run_id)?.is_some() {
+                store.board_fail_stage(run_id, FailureStatus::Failed, &error)?
             } else {
-                store.board_fail_claimed_grill(&card.id, card.updated_at, &error)?
+                store.board_fail_claimed_stage(&card.id, card.updated_at, &error)?
             };
             Ok(Prepared::Failed(Box::new(effect)))
         }
@@ -64,6 +64,7 @@ fn prepare_inner(
     run_id: &str,
     defaults: Defaults,
 ) -> Result<Option<Launch>, String> {
+    let stage = defaults.selection.stage;
     let kind = defaults.selection.kind;
     let source = locked(store)?
         .desktop_preferences()
@@ -96,36 +97,43 @@ fn prepare_inner(
     if let Some(warning) = warning {
         resolved.warnings.push(warning);
     }
-    let context = locked(store)?.board_accept_grill(
+    let context = locked(store)?.board_accept_stage(
         &defaults.card.id,
         defaults.card.updated_at,
         run_id,
         &resolved,
     )?;
     let retained = checkout::ensure_worktree(&context.card)?;
-    let Some(context) = locked(store)?.board_record_grill_worktree(run_id, &retained)? else {
+    let Some(context) = locked(store)?.board_record_stage_worktree(run_id, &retained)? else {
         return Ok(None);
     };
-    let inputs = locked(store)?.board_grill_inputs(&context.card.id)?;
+    let inputs = locked(store)?.board_stage_inputs(&context.card.id)?;
     let manifest = checkout::materialize(std::path::Path::new(&retained.path), &inputs)?;
     let before = checkout::snapshot(std::path::Path::new(&retained.path))?;
     let mut prompt_card = context.card.clone();
-    if inputs.len() == 1 {
+    checkout::policy::before(stage, &before)?;
+    if stage == molfar_core::task_board::stage::agent::AgentStage::Grill && inputs.len() == 1 {
         prompt_card.grill_round = 1;
     }
-    let prompt = contracts::build_grill_prompt(&prompt_card, &manifest, &resolved.skills)?;
+    let prompt = contracts::build_stage_prompt(
+        stage,
+        &prompt_card,
+        &manifest,
+        &resolved.skills,
+        &before.head,
+    )?;
     let mut settings = resolved.settings;
     settings.worktree_cwd = Some(retained.path);
     settings.new_worktree = false;
-    let reserved = locked(store)?.board_reserve_grill_session(run_id, &settings, &prompt)?;
+    let reserved = locked(store)?.board_reserve_stage_session(run_id, &settings, &prompt)?;
     let persisted = locked(store)?.persisted_session_id(reserved.session.id)?;
     if locked(store)?
-        .board_record_grill_prepared(run_id, &before, &persisted)?
+        .board_record_stage_prepared(run_id, &before, &persisted)?
         .is_none()
     {
         return Ok(None);
     }
-    if !locked(store)?.board_grill_is_current(run_id)? {
+    if !locked(store)?.board_stage_is_current(run_id)? {
         return Ok(None);
     }
     #[cfg(test)]

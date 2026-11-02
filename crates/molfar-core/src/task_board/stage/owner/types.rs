@@ -20,3 +20,10 @@ pub struct Review {
     pub questions: Vec<Question>,
     pub plan: String,
 }
+
+#[derive(Clone, Debug)]
+pub struct FinalReview {
+    pub card: Card,
+    pub version: i64,
+    pub review: super::super::contracts::types::CodeReview,
+}

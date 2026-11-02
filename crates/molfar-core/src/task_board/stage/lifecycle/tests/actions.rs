@@ -94,12 +94,7 @@ fn refused_retry_writes_no_override() {
 
 #[test]
 fn back_from_failed_matches_the_back_target() {
-    for (column, target) in [
-        ("grill", "backlog"),
-        ("implement", "plan_approval"),
-        ("code_review", "final_review"),
-        ("rework", "final_review"),
-    ] {
+    for (column, target) in [("grill", "backlog"), ("implement", "plan_approval")] {
         let (directory, mut store) = fixture();
         place(&directory, column, "failed", "{}");
         let revision = card(&store).updated_at;
@@ -119,20 +114,24 @@ fn back_from_failed_matches_the_back_target() {
 }
 
 #[test]
-fn later_stage_retry_and_cancel_wait_for_their_runner() {
-    let (directory, mut store) = fixture();
-    place(&directory, "implement", "failed", "{}");
-    let revision = card(&store).updated_at;
-
-    let error = store
-        .board_stage_action("card", revision, StageAction::Retry(None))
-        .unwrap_err();
-
-    assert_eq!(
-        error,
-        "This action is not available for the current Board state."
-    );
-    assert_eq!(card(&store).run_state, "failed");
+fn every_agent_stage_supports_retry_and_queued_cancellation() {
+    for stage in AgentStage::ALL {
+        let (directory, mut store) = fixture();
+        place(&directory, stage.id(), "failed", "{}");
+        let revision = card(&store).updated_at;
+        let effect = store
+            .board_stage_action("card", revision, StageAction::Retry(None))
+            .unwrap();
+        assert_eq!(effect.card.run_state, "queued");
+        let effect = store
+            .board_stage_action("card", effect.card.updated_at, StageAction::Cancel)
+            .unwrap();
+        assert_eq!(effect.card.run_state, "failed");
+        assert_eq!(
+            effect.card.last_error.as_deref(),
+            Some("Cancelled by user.")
+        );
+    }
 }
 
 #[test]

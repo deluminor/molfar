@@ -24,7 +24,7 @@ impl Store {
             return Err("Stall time must be between 1 and 1440 minutes.".into());
         }
         let mut notices = Vec::new();
-        for ctx in self.board_running_grills()? {
+        for ctx in self.board_running_stages()? {
             if !query::current(&self.conn, &ctx)?
                 || ctx.run.status != RUNNING
                 || now.saturating_sub(ctx.run.started_at.max(0) as u64) < minutes * 60_000

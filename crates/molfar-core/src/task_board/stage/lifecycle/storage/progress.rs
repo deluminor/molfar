@@ -1,4 +1,4 @@
-use super::super::{constants::*, types::GrillContext};
+use super::super::{constants::*, types::StageContext};
 use super::query;
 use crate::task_board::stage::checkout::types::{CheckoutSnapshot, RetainedCheckout};
 use rusqlite::{params, Connection, TransactionBehavior};
@@ -7,7 +7,7 @@ pub(crate) fn worktree(
     conn: &mut Connection,
     id: &str,
     tree: &RetainedCheckout,
-) -> Result<Option<GrillContext>, String> {
+) -> Result<Option<StageContext>, String> {
     if tree.path.is_empty()
         || tree.branch.is_empty()
         || tree.base_sha.is_empty()
@@ -51,7 +51,7 @@ pub(crate) fn prepared(
     id: &str,
     snapshot: &CheckoutSnapshot,
     session: &str,
-) -> Result<Option<GrillContext>, String> {
+) -> Result<Option<StageContext>, String> {
     if snapshot.head.is_empty() || snapshot.fingerprint.is_empty() {
         return Err("Board checkout snapshot is incomplete.".into());
     }
@@ -62,6 +62,9 @@ pub(crate) fn prepared(
     if !query::current(&tx, &ctx)? {
         return Ok(None);
     }
+    let stage = crate::task_board::stage::agent::AgentStage::parse(&ctx.run.stage)
+        .ok_or("Unsupported Board stage.")?;
+    crate::task_board::stage::checkout::policy::before(stage, snapshot)?;
     if ctx.run.dispatch == SUBMITTED {
         return Ok(Some(ctx));
     }

@@ -25,7 +25,7 @@ impl Store {
         )
     }
 
-    pub fn board_claim_next_grill(&mut self) -> Result<Option<Card>, String> {
+    pub fn board_claim_next_stage(&mut self) -> Result<Option<Card>, String> {
         self.board_writable()?;
         crate::task_board::stage::lifecycle::storage::claim::next(&mut self.conn)
     }

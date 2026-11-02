@@ -105,7 +105,7 @@ fn restart_with_accepted_second_round_interrupts_without_creating_a_session(
     {
         let mut store = locked(&fixture.store).unwrap();
         rusqlite::Connection::open(store.database_path()).unwrap().execute("UPDATE task_board_cards SET column_id='grill',run_state='queued',grill_round=2 WHERE id='card'", []).unwrap();
-        let card = store.board_claim_next_grill().unwrap().unwrap();
+        let card = store.board_claim_next_stage().unwrap().unwrap();
         let resolved = choice::types::ResolvedStageChoice {
             kind: Kind::Codex,
             model: "gpt-test".into(),
@@ -116,7 +116,7 @@ fn restart_with_accepted_second_round_interrupts_without_creating_a_session(
             model_settings: serde_json::json!({}),
         };
         store
-            .board_accept_grill("card", card.updated_at, "accepted-second", &resolved)
+            .board_accept_stage("card", card.updated_at, "accepted-second", &resolved)
             .unwrap();
     }
     let window = fixture.window(cx);
@@ -127,7 +127,7 @@ fn restart_with_accepted_second_round_interrupts_without_creating_a_session(
     let store = locked(&fixture.store).unwrap();
     assert_eq!(
         store
-            .board_grill_context("accepted-second")
+            .board_stage_context("accepted-second")
             .unwrap()
             .unwrap()
             .run

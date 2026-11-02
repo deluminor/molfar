@@ -1,5 +1,5 @@
-use super::super::{constants::*, types::GrillContext};
-use crate::task_board::constants::GRILL;
+use super::super::{constants::*, types::StageContext};
+use crate::task_board::{constants::GRILL, stage::agent::AgentStage};
 use crate::task_board::{
     read,
     types::{Card, StageRun},
@@ -33,18 +33,18 @@ pub(crate) fn latest_id(conn: &Connection, card: &str) -> Result<Option<String>,
     .map_err(|e| e.to_string())
 }
 
-pub(crate) fn context(conn: &Connection, id: &str) -> Result<GrillContext, String> {
+pub(crate) fn context(conn: &Connection, id: &str) -> Result<StageContext, String> {
     let run = run(conn, id)?;
     let card = card(conn, &run.card_id)?;
-    Ok(GrillContext { card, run })
+    Ok(StageContext { card, run })
 }
 
-pub(crate) fn current(conn: &Connection, ctx: &GrillContext) -> Result<bool, String> {
+pub(crate) fn current(conn: &Connection, ctx: &StageContext) -> Result<bool, String> {
     Ok(!ctx.card.archived
-        && ctx.card.column_id == GRILL
+        && AgentStage::parse(&ctx.card.column_id).is_some()
+        && ctx.card.column_id == ctx.run.stage
         && ctx.card.run_state == RUNNING
-        && ctx.card.grill_round >= 1
-        && ctx.run.stage == GRILL
+        && (ctx.run.stage != GRILL || ctx.card.grill_round >= 1)
         && ctx.run.status == RUNNING
         && latest_id(conn, &ctx.card.id)?.as_deref() == Some(ctx.run.id.as_str()))
 }

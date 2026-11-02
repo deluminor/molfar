@@ -105,12 +105,12 @@ fn poll(
     let mut deferred = Vec::new();
     if run {
         effects.extend(locked(store)?.board_reconcile_orphan_claims(cards)?);
-        let contexts = locked(store)?.board_running_grills()?;
+        let contexts = locked(store)?.board_running_stages()?;
         for context in contexts {
             if protected.contains(&context.run.id) {
                 continue;
             }
-            if !locked(store)?.board_grill_is_current(&context.run.id)? {
+            if !locked(store)?.board_stage_is_current(&context.run.id)? {
                 continue;
             }
             let effect = match settle::settle(store, &context, &active) {
@@ -119,7 +119,7 @@ fn poll(
                     deferred.push(error);
                     continue;
                 }
-                Err(error) => locked(store)?.board_fail_grill(
+                Err(error) => locked(store)?.board_fail_stage(
                     &context.run.id,
                     FailureStatus::Interrupted,
                     &error,
@@ -137,13 +137,13 @@ fn poll(
         Vec::new()
     };
     let active_runs = store
-        .board_running_grills()?
+        .board_running_stages()?
         .into_iter()
         .map(|context| context.run.id)
         .collect();
     let settings = store.board_settings_json()?;
     let card = if run {
-        store.board_claim_next_grill()?
+        store.board_claim_next_stage()?
     } else {
         None
     };

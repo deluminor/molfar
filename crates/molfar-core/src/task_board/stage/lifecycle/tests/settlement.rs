@@ -6,7 +6,7 @@ use rusqlite::Connection;
 fn grill_lifecycle_success_saves_exact_artifacts_once_and_advances_manual_gate() {
     let (_dir, mut store) = fixture();
     let output = complete(&mut store, "run-one");
-    let effect = store.board_finish_grill("run-one", &output).unwrap();
+    let effect = store.board_finish_stage("run-one", &output).unwrap();
     assert!(effect.changed);
     let card = effect.card.unwrap();
     assert_eq!(card.column_id, "plan_approval");
@@ -19,13 +19,13 @@ fn grill_lifecycle_success_saves_exact_artifacts_once_and_advances_manual_gate()
     );
     assert!(
         !store
-            .board_finish_grill("run-one", &output)
+            .board_finish_stage("run-one", &output)
             .unwrap()
             .changed
     );
     assert!(
         !store
-            .board_fail_grill("run-one", FailureStatus::Failed, "late")
+            .board_fail_stage("run-one", FailureStatus::Failed, "late")
             .unwrap()
             .changed
     );
@@ -39,13 +39,13 @@ fn grill_lifecycle_artifact_fault_rolls_back_metadata_and_retry_preserves_orphan
     let conn = Connection::open(store.database_path()).unwrap();
     conn.execute_batch("CREATE TRIGGER fail_plan BEFORE INSERT ON task_board_artifacts WHEN NEW.kind='plan' BEGIN SELECT RAISE(ABORT,'injected metadata failure'); END;").unwrap();
     assert!(store
-        .board_finish_grill("run-one", &output)
+        .board_finish_stage("run-one", &output)
         .unwrap_err()
         .contains("injected"));
     assert!(store.board_stage_artifacts("card").unwrap().is_empty());
     assert_eq!(
         store
-            .board_grill_context("run-one")
+            .board_stage_context("run-one")
             .unwrap()
             .unwrap()
             .run
@@ -56,7 +56,7 @@ fn grill_lifecycle_artifact_fault_rolls_back_metadata_and_retry_preserves_orphan
     conn.execute_batch("DROP TRIGGER fail_plan;").unwrap();
     assert!(
         store
-            .board_finish_grill("run-one", &output)
+            .board_finish_stage("run-one", &output)
             .unwrap()
             .changed
     );
@@ -70,7 +70,7 @@ fn grill_lifecycle_unknown_orphan_is_preserved_and_next_version_is_available() {
     let folder = dir.path().join("task-board/card");
     std::fs::create_dir_all(&folder).unwrap();
     std::fs::write(folder.join("spec-1.md"), "Preserve this unknown file").unwrap();
-    store.board_finish_grill("run-one", &output).unwrap();
+    store.board_finish_stage("run-one", &output).unwrap();
     assert_eq!(
         std::fs::read_to_string(folder.join("spec-1.md")).unwrap(),
         "Preserve this unknown file"
@@ -86,13 +86,13 @@ fn grill_lifecycle_dirty_byte_change_and_forged_outputs_never_advance() {
     let (_dir, mut store) = fixture();
     let mut output = complete(&mut store, "run-one");
     output.after.fingerprint = "changed bytes same porcelain".into();
-    assert!(store.board_finish_grill("run-one", &output).is_err());
+    assert!(store.board_finish_stage("run-one", &output).is_err());
     output.after.fingerprint = "same-bytes".into();
     output.artifacts[0].body = "Forged spec".into();
-    assert!(store.board_finish_grill("run-one", &output).is_err());
+    assert!(store.board_finish_stage("run-one", &output).is_err());
     assert_eq!(
         store
-            .board_grill_context("run-one")
+            .board_stage_context("run-one")
             .unwrap()
             .unwrap()
             .card

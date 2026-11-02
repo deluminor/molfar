@@ -13,8 +13,8 @@ fn grill_lifecycle_start_is_cas_guarded_and_claimed_only_once() {
     assert!(store
         .board_stage_action("card", 1, StageAction::Start)
         .is_err());
-    let claimed = store.board_claim_next_grill().unwrap().unwrap();
+    let claimed = store.board_claim_next_stage().unwrap().unwrap();
     assert_eq!(claimed.id, "card");
     assert_eq!(claimed.run_state, "running");
-    assert!(store.board_claim_next_grill().unwrap().is_none());
+    assert!(store.board_claim_next_stage().unwrap().is_none());
 }

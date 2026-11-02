@@ -12,7 +12,7 @@ fn cancelled_board_prompt_is_refused_inside_initial_transcript_write() {
     store
         .board_validate_prompt_submission(session, Some(&message))
         .unwrap();
-    let context = store.board_grill_context("run-one").unwrap().unwrap();
+    let context = store.board_stage_context("run-one").unwrap().unwrap();
     store
         .board_stage_action("card", context.card.updated_at, StageAction::Cancel)
         .unwrap();

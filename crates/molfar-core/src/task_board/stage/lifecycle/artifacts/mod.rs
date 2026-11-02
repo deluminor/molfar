@@ -1,4 +1,4 @@
-use super::constants::{ARTIFACT_KINDS, MAX_ARTIFACT};
+use super::constants::MAX_ARTIFACT;
 use crate::task_board::{
     create::{artifact_file, validation},
     stage::contracts::types::ParsedArtifact,
@@ -64,21 +64,36 @@ pub(crate) fn write(
     now: i64,
 ) -> Result<(), String> {
     validation::id(card)?;
+    let stage: String = conn
+        .query_row(
+            "SELECT stage FROM task_board_stage_runs WHERE id=?1 AND card_id=?2",
+            params![run, card],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    let stage = crate::task_board::stage::agent::AgentStage::parse(&stage)
+        .ok_or("Unsupported Board stage.")?;
+    let contract = crate::task_board::stage::contracts::output_contract(stage);
     let mut seen = std::collections::HashSet::new();
     for artifact in artifacts {
-        if !ARTIFACT_KINDS.contains(&artifact.kind.as_str())
+        if !contract
+            .required
+            .iter()
+            .chain(contract.optional)
+            .any(|kind| *kind == artifact.kind)
             || !seen.insert(&artifact.kind)
             || artifact.body.trim().is_empty()
             || artifact.body.len() > MAX_ARTIFACT
         {
-            return Err("Invalid or duplicate Grill output artifact.".into());
+            return Err("Invalid or duplicate stage output artifact.".into());
         }
     }
-    if !["spec", "plan"]
+    if !contract
+        .required
         .iter()
-        .all(|kind| artifacts.iter().any(|a| a.kind == *kind))
+        .all(|kind| artifacts.iter().any(|artifact| artifact.kind == *kind))
     {
-        return Err("Grill requires complete spec and plan artifacts.".into());
+        return Err("Stage output artifacts are incomplete.".into());
     }
     for artifact in artifacts {
         let saved:Option<i64>=conn.query_row("SELECT version FROM task_board_artifacts WHERE card_id=?1 AND kind=?2 AND stage_run_id=?3",params![card,artifact.kind,run],|r|r.get(0)).optional().map_err(|e|e.to_string())?;

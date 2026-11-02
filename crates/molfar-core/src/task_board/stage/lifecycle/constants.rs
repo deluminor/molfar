@@ -8,11 +8,6 @@ pub const SUBMITTED: &str = "turn_submitted";
 pub const SETTLED: &str = "settled";
 pub(crate) const MAX_ERROR: usize = 19_000;
 pub(crate) const MAX_ARTIFACT: usize = 2_000_000;
-pub(crate) const ARTIFACT_KINDS: [&str; 3] = [
-    crate::task_board::stage::contracts::constants::SPEC,
-    crate::task_board::stage::contracts::constants::PLAN,
-    crate::task_board::stage::contracts::constants::QUESTIONS,
-];
 
 pub const CANCELLED: &str = "cancelled";
 pub const INTERRUPTED: &str = "interrupted";

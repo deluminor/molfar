@@ -22,8 +22,12 @@ impl Shell {
             .or(prefs.default_provider.as_deref())
             .and_then(Kind::parse)
             .unwrap_or(Kind::Codex);
+        let Some(stage) = AgentStage::parse(&card.column_id) else {
+            self.fail_board_claim(card, "Unsupported Board stage.".into(), cx);
+            return;
+        };
         let selection = match choice::select(
-            AgentStage::Grill,
+            stage,
             raw_settings.as_deref(),
             &card.overrides_json,
             default,
@@ -93,7 +97,7 @@ impl Shell {
         let store = self.store.clone();
         let id = card.id.clone();
         let work = cx.background_executor().spawn(async move {
-            locked(&store)?.board_fail_claimed_grill(&card.id, card.updated_at, &error)
+            locked(&store)?.board_fail_claimed_stage(&card.id, card.updated_at, &error)
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;
@@ -128,7 +132,7 @@ impl Shell {
         let run = launch.run_id.clone();
         let work = cx
             .background_executor()
-            .spawn(async move { locked(&store)?.board_grill_is_current(&run) });
+            .spawn(async move { locked(&store)?.board_stage_is_current(&run) });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| {
@@ -171,7 +175,7 @@ impl Shell {
         let store = self.store.clone();
         let work = cx
             .background_executor()
-            .spawn(async move { locked(&store)?.board_grill_is_current(&launch.run_id) });
+            .spawn(async move { locked(&store)?.board_stage_is_current(&launch.run_id) });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| {

@@ -1,5 +1,7 @@
 mod constants;
 mod questions;
+mod rework;
+pub(crate) use rework::{current_review, load_final};
 pub mod types;
 
 use super::{
@@ -100,6 +102,14 @@ pub(crate) fn save(
             }
             (ANSWERS, questions::format(&[], &[], note))
         }
+        StageAction::Rework {
+            findings,
+            note,
+            review_version,
+        } => (
+            super::contracts::constants::REWORK_BRIEF,
+            rework::brief(conn, base, card, findings, note, *review_version)?,
+        ),
         StageAction::EditPlan(body) => {
             if body.len() > MAX_ARTIFACT {
                 return Err("Board artifact exceeds the size limit.".into());

@@ -5,7 +5,7 @@ use crate::{
     task_board::stage::{
         checkout::types::{CheckoutSnapshot, RetainedCheckout},
         choice::types::ResolvedStageChoice,
-        lifecycle::types::{GrillContext, StageAction, VerifiedGrillOutput},
+        lifecycle::types::{StageAction, StageContext, VerifiedStageOutput},
     },
 };
 use rusqlite::{params, Connection};
@@ -36,7 +36,7 @@ pub(super) fn choice() -> ResolvedStageChoice {
     }
 }
 
-pub(super) fn accept(store: &mut Store, run: &str) -> GrillContext {
+pub(super) fn accept(store: &mut Store, run: &str) -> StageContext {
     let card = store
         .board_snapshot(None, false, None)
         .unwrap()
@@ -54,9 +54,9 @@ pub(super) fn accept(store: &mut Store, run: &str) -> GrillContext {
             .board_stage_action("card", card.updated_at, action)
             .unwrap();
     }
-    let card = store.board_claim_next_grill().unwrap().unwrap();
+    let card = store.board_claim_next_stage().unwrap().unwrap();
     store
-        .board_accept_grill("card", card.updated_at, run, &choice())
+        .board_accept_stage("card", card.updated_at, run, &choice())
         .unwrap()
 }
 
@@ -77,26 +77,26 @@ pub(super) fn prepare(store: &mut Store, run: &str) -> i64 {
         base_sha: "abc123".into(),
     };
     store
-        .board_record_grill_worktree(run, &tree)
+        .board_record_stage_worktree(run, &tree)
         .unwrap()
         .unwrap();
     let session = store
-        .board_reserve_grill_session(run, &choice().settings, "Prompt manifest")
+        .board_reserve_stage_session(run, &choice().settings, "Prompt manifest")
         .unwrap()
         .session;
     let original = store.persisted_session_id(session.id).unwrap();
     store
-        .board_record_grill_prepared(run, &before(), &original)
+        .board_record_stage_prepared(run, &before(), &original)
         .unwrap()
         .unwrap();
     session.id
 }
 
-pub(super) fn complete(store: &mut Store, run: &str) -> VerifiedGrillOutput {
+pub(super) fn complete(store: &mut Store, run: &str) -> VerifiedStageOutput {
     complete_with_text(store, run, "<<<MOLFAR:spec>>>\nA specification\n<<<END:spec>>>\n<<<MOLFAR:plan>>>\nA plan\n<<<END:plan>>>")
 }
 
-pub(super) fn complete_with_text(store: &mut Store, run: &str, text: &str) -> VerifiedGrillOutput {
+pub(super) fn complete_with_text(store: &mut Store, run: &str, text: &str) -> VerifiedStageOutput {
     let session = prepare(store, run);
     let blocks = json!([
         {"id":"root","role":"user","text":"Prompt","startedAt":100,"appRequestId":format!("app-prompt-{}",crate::familiar::files::content_hash(run)),"nativeTurnCompletion":{"status":"succeeded","completed_at":200}},
@@ -110,8 +110,8 @@ pub(super) fn complete_with_text(store: &mut Store, run: &str, text: &str) -> Ve
             params![original, blocks.to_string()],
         )
         .unwrap();
-    assert!(store.board_record_grill_submitted(run).unwrap());
-    VerifiedGrillOutput {
+    assert!(store.board_record_stage_submitted(run).unwrap());
+    VerifiedStageOutput {
         artifacts: crate::task_board::stage::contracts::read_grill_output(text).unwrap(),
         after: before(),
     }

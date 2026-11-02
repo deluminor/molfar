@@ -20,7 +20,7 @@ fn prepared_round(fixture: &Fixture, round: i64) -> prepare::Launch {
                 [round],
             )
             .unwrap();
-        store.board_claim_next_grill().unwrap().unwrap()
+        store.board_claim_next_stage().unwrap().unwrap()
     };
     let defaults = prepare::Defaults {
         fixture: Some(fixture.provider.clone()),
@@ -96,7 +96,7 @@ fn cancellation_after_preparation_is_refused_at_native_prompt_acceptance() {
     assert!(
         locked(&fixture.store)
             .unwrap()
-            .board_grill_is_current(&launch.run_id)
+            .board_stage_is_current(&launch.run_id)
             .unwrap()
     );
     let revision = fixture.card().updated_at;

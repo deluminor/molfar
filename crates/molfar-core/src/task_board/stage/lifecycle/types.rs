@@ -12,6 +12,12 @@ use crate::{
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StageAction {
     Start,
+    ApprovePlan,
+    Rework {
+        findings: Vec<String>,
+        note: String,
+        review_version: i64,
+    },
     Retry(Option<StageModelOverride>),
     Cancel,
     Back,
@@ -31,18 +37,18 @@ pub struct ActionEffect {
 }
 
 #[derive(Clone, Debug)]
-pub struct GrillContext {
+pub struct StageContext {
     pub card: Card,
     pub run: StageRun,
 }
 
 #[derive(Clone, Debug)]
-pub struct ReservedGrillSession {
+pub struct ReservedStageSession {
     pub session: Session,
 }
 
 #[derive(Clone, Debug)]
-pub struct VerifiedGrillOutput {
+pub struct VerifiedStageOutput {
     pub artifacts: Vec<ParsedArtifact>,
     pub after: CheckoutSnapshot,
 }

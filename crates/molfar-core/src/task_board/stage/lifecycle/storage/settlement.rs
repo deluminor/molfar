@@ -1,11 +1,19 @@
 use super::super::{
     artifacts,
     constants::*,
-    types::{FailureStatus, NoticeKind, StageEffect, StageNotice, VerifiedGrillOutput},
+    types::{FailureStatus, NoticeKind, StageEffect, StageNotice, VerifiedStageOutput},
 };
 use super::query;
 use crate::task_board::{
-    constants::{GRILL, IDLE, PLAN_APPROVAL},
+    constants::{FINAL_REVIEW, IDLE, PLAN_APPROVAL},
+    stage::{
+        agent::AgentStage,
+        checkout::{policy, types::CheckoutSnapshot},
+        transitions::{
+            self,
+            types::{BoardAction, Position},
+        },
+    },
     types::Card,
 };
 use rusqlite::{params, Connection, TransactionBehavior};
@@ -41,7 +49,7 @@ pub(crate) fn finish(
     conn: &mut Connection,
     base: &Path,
     id: &str,
-    output: &VerifiedGrillOutput,
+    output: &VerifiedStageOutput,
 ) -> Result<StageEffect, String> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -50,31 +58,58 @@ pub(crate) fn finish(
     if !query::current(&tx, &ctx)? {
         return Ok(StageEffect::default());
     }
-    if ctx.run.head_before.as_deref() != Some(output.after.head.as_str())
-        || ctx.run.porcelain_before.as_deref() != Some(output.after.porcelain.as_str())
-        || ctx.run.fingerprint_before.as_deref() != Some(output.after.fingerprint.as_str())
-    {
-        return Err(
-            "Grill changed its read-only checkout; the retained worktree was preserved.".into(),
-        );
-    }
+    let stage = AgentStage::parse(&ctx.run.stage).ok_or("Unsupported Board stage.")?;
+    let before = CheckoutSnapshot {
+        head: ctx
+            .run
+            .head_before
+            .clone()
+            .ok_or("Stage has no starting HEAD.")?,
+        porcelain: ctx
+            .run
+            .porcelain_before
+            .clone()
+            .ok_or("Stage has no starting checkout state.")?,
+        fingerprint: ctx
+            .run
+            .fingerprint_before
+            .clone()
+            .ok_or("Stage has no starting fingerprint.")?,
+    };
+    policy::before(stage, &before)?;
+    policy::after(stage, &before, &output.after)?;
     if ![PREPARED, SUBMITTED].contains(&ctx.run.dispatch.as_str()) {
         return Err("Grill has no prepared submitted session.".into());
     }
     let now = query::now()?;
-    let position = query::next_position(&tx, PLAN_APPROVAL)?;
+    let next = transitions::transition(
+        Position {
+            column: &ctx.card.column_id,
+            run_state: &ctx.card.run_state,
+            archived: ctx.card.archived,
+        },
+        BoardAction::StageSucceeded,
+    )?;
+    let position = query::next_position(&tx, &next.column)?;
     artifacts::write(&tx, base, &ctx.card.id, id, &output.artifacts, now)?;
     tx.execute("UPDATE task_board_stage_runs SET status=?2,dispatch=?3,head_after=?4,completed_at=?5 WHERE id=?1",params![id,SUCCEEDED,SETTLED,output.after.head,now]).map_err(|e|e.to_string())?;
-    tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,last_error=NULL,queued_at=NULL,updated_at=?4,position=?5 WHERE id=?1",params![ctx.card.id,PLAN_APPROVAL,IDLE,now.max(ctx.card.updated_at.saturating_add(1)),position]).map_err(|e|e.to_string())?;
+    tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,last_error=NULL,updated_at=?4,position=?5,queued_at=?6 WHERE id=?1",params![ctx.card.id,next.column,next.run_state,now.max(ctx.card.updated_at.saturating_add(1)),position,(next.run_state==QUEUED).then_some(now)]).map_err(|e|e.to_string())?;
     let card = query::card(&tx, &ctx.card.id)?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(StageEffect {
         changed: true,
-        notice: Some(notice(
-            &card,
-            NoticeKind::Gate,
-            "Plan ready for approval.".into(),
-        )),
+        notice: if card.run_state == IDLE
+            && [PLAN_APPROVAL, FINAL_REVIEW].contains(&card.column_id.as_str())
+        {
+            let body = if card.column_id == PLAN_APPROVAL {
+                "Plan ready for approval."
+            } else {
+                "Ready for final review."
+            };
+            Some(notice(&card, NoticeKind::Gate, body.into()))
+        } else {
+            None
+        },
         card: Some(card),
     })
 }
@@ -125,7 +160,7 @@ pub(crate) fn fail_claim(
     let card = query::card(&tx, id)?;
     if card.updated_at != expected
         || card.archived
-        || card.column_id != GRILL
+        || AgentStage::parse(&card.column_id).is_none()
         || card.run_state != RUNNING
     {
         return Ok(StageEffect::default());

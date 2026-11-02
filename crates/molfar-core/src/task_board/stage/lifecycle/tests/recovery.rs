@@ -9,7 +9,7 @@ fn grill_lifecycle_orphan_claim_is_interrupted_without_replay_and_can_retry() {
     store
         .board_stage_action("card", 1, StageAction::Start)
         .unwrap();
-    store.board_claim_next_grill().unwrap().unwrap();
+    store.board_claim_next_stage().unwrap().unwrap();
     let mut active = HashSet::new();
     active.insert("card".into());
     assert!(store
@@ -33,7 +33,7 @@ fn grill_lifecycle_orphan_claim_is_interrupted_without_replay_and_can_retry() {
     store
         .board_stage_action("card", card.updated_at, StageAction::Retry(None))
         .unwrap();
-    assert_eq!(store.board_claim_next_grill().unwrap().unwrap().id, "card");
+    assert_eq!(store.board_claim_next_stage().unwrap().unwrap().id, "card");
 }
 
 #[test]
@@ -53,11 +53,11 @@ fn grill_lifecycle_stall_is_once_per_run_durable_and_does_not_cancel() {
         .board_take_stall_notices(ctx.run.started_at as u64 + 47 * 60_000)
         .unwrap()
         .is_empty());
-    assert!(store.board_grill_is_current("run-one").unwrap());
+    assert!(store.board_stage_is_current("run-one").unwrap());
 }
 
 #[test]
-fn grill_lifecycle_concurrency_counts_all_running_and_does_not_claim_other_stages() {
+fn stage_concurrency_counts_all_running_and_claims_other_agent_stages() {
     let (_dir, mut store) = fixture();
     let conn = Connection::open(store.database_path()).unwrap();
     conn.execute(
@@ -69,13 +69,13 @@ fn grill_lifecycle_concurrency_counts_all_running_and_does_not_claim_other_stage
     store
         .board_stage_action("card", 1, StageAction::Start)
         .unwrap();
-    assert!(store.board_claim_next_grill().unwrap().is_none());
+    assert!(store.board_claim_next_stage().unwrap().is_none());
     conn.execute(
         "UPDATE task_board_cards SET run_state='queued' WHERE id='other'",
         [],
     )
     .unwrap();
-    assert_eq!(store.board_claim_next_grill().unwrap().unwrap().id, "card");
+    assert_eq!(store.board_claim_next_stage().unwrap().unwrap().id, "other");
     let other = store
         .board_snapshot(None, false, None)
         .unwrap()
@@ -83,7 +83,8 @@ fn grill_lifecycle_concurrency_counts_all_running_and_does_not_claim_other_stage
         .into_iter()
         .find(|c| c.id == "other")
         .unwrap();
-    assert_eq!(other.run_state, "queued");
+    assert_eq!(other.run_state, "running");
+    assert!(store.board_claim_next_stage().unwrap().is_none());
 }
 
 #[test]

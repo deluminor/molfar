@@ -71,7 +71,7 @@ fn owner_round_two_claim_survives_restart_and_stale_first_receipt_cannot_settle_
         .unwrap();
     drop(store);
     let mut store = Store::open_desktop(&dir.path().join("molfar.db")).unwrap();
-    let inputs = store.board_grill_inputs("card").unwrap();
+    let inputs = store.board_stage_inputs("card").unwrap();
     assert_eq!(
         inputs.iter().map(|i| i.kind.as_str()).collect::<Vec<_>>(),
         ["task", "spec", "plan", "answers", "questions"]
@@ -81,10 +81,10 @@ fn owner_round_two_claim_survives_restart_and_stale_first_receipt_cannot_settle_
         "User edited"
     );
     let output = complete(&mut store, "second");
-    assert!(store.board_grill_is_current("second").unwrap());
-    assert!(!store.board_grill_is_current("first").unwrap());
-    assert!(!store.board_finish_grill("first", &output).unwrap().changed);
-    let effect = store.board_finish_grill("second", &output).unwrap();
+    assert!(store.board_stage_is_current("second").unwrap());
+    assert!(!store.board_stage_is_current("first").unwrap());
+    assert!(!store.board_finish_stage("first", &output).unwrap().changed);
+    let effect = store.board_finish_stage("second", &output).unwrap();
     assert_eq!(effect.card.unwrap().grill_round, 2);
     let review = store.board_owner_review("card").unwrap();
     assert!(review.questions.is_empty());
@@ -106,9 +106,9 @@ fn owner_cancel_and_retry_in_round_two_keep_round_and_refuse_stale_receipts() {
             StageAction::RequestChanges("Again".into()),
         )
         .unwrap();
-    let claimed = store.board_claim_next_grill().unwrap().unwrap();
+    let claimed = store.board_claim_next_stage().unwrap().unwrap();
     let context = store
-        .board_accept_grill("card", claimed.updated_at, "cancelled-second", &choice())
+        .board_accept_stage("card", claimed.updated_at, "cancelled-second", &choice())
         .unwrap();
     store
         .board_stage_action("card", context.card.updated_at, StageAction::Cancel)
@@ -125,13 +125,13 @@ fn owner_cancel_and_retry_in_round_two_keep_round_and_refuse_stale_receipts() {
     let output = complete(&mut store, "retried-second");
     assert!(
         !store
-            .board_finish_grill("cancelled-second", &output)
+            .board_finish_stage("cancelled-second", &output)
             .unwrap()
             .changed
     );
     assert!(
         store
-            .board_finish_grill("retried-second", &output)
+            .board_finish_stage("retried-second", &output)
             .unwrap()
             .changed
     );
@@ -157,7 +157,7 @@ fn owner_handoff_omits_old_questions_and_missing_metadata_falls_back_but_bad_fil
         "second",
         "<<<MOLFAR:spec>>>Updated<<<END:spec>>><<<MOLFAR:plan>>>Updated<<<END:plan>>>",
     );
-    store.board_finish_grill("second", &output).unwrap();
+    store.board_finish_stage("second", &output).unwrap();
     let review = store.board_owner_review("card").unwrap();
     store
         .board_stage_action(
@@ -166,20 +166,20 @@ fn owner_handoff_omits_old_questions_and_missing_metadata_falls_back_but_bad_fil
             StageAction::RequestChanges("Final".into()),
         )
         .unwrap();
-    let inputs = store.board_grill_inputs("card").unwrap();
+    let inputs = store.board_stage_inputs("card").unwrap();
     assert_eq!(inputs.len(), 4);
     assert!(!inputs.iter().any(|input| input.kind == "questions"));
     std::fs::remove_file(dir.path().join("task-board/card/answers-2.md")).unwrap();
-    assert!(store.board_grill_inputs("card").is_err());
+    assert!(store.board_stage_inputs("card").is_err());
     let conn = Connection::open(store.database_path()).unwrap();
     conn.execute("DELETE FROM task_board_artifacts WHERE kind='spec'", [])
         .unwrap();
-    assert!(store.board_grill_inputs("card").is_err());
+    assert!(store.board_stage_inputs("card").is_err());
     conn.execute("DELETE FROM task_board_artifacts WHERE kind='answers'", [])
         .unwrap();
-    assert_eq!(store.board_grill_inputs("card").unwrap().len(), 1);
+    assert_eq!(store.board_stage_inputs("card").unwrap().len(), 1);
     std::fs::write(dir.path().join("task-board/card/plan-2.md"), " ").unwrap();
-    assert!(store.board_grill_inputs("card").is_err());
+    assert!(store.board_stage_inputs("card").is_err());
 }
 
 #[test]
@@ -197,24 +197,24 @@ fn submitted_round_two_reopens_with_exact_receipt_and_settles_only_once() {
     drop(store);
     let mut store = Store::open_desktop(&dir.path().join("molfar.db")).unwrap();
     let context = store
-        .board_grill_context("persisted-second")
+        .board_stage_context("persisted-second")
         .unwrap()
         .unwrap();
     assert_eq!(context.card.grill_round, 2);
     assert_eq!(context.run.dispatch, "turn_submitted");
     assert!(store
-        .board_grill_result("persisted-second")
+        .board_stage_result("persisted-second")
         .unwrap()
         .is_some());
     assert!(
         store
-            .board_finish_grill("persisted-second", &output)
+            .board_finish_stage("persisted-second", &output)
             .unwrap()
             .changed
     );
     assert!(
         !store
-            .board_finish_grill("persisted-second", &output)
+            .board_finish_stage("persisted-second", &output)
             .unwrap()
             .changed
     );

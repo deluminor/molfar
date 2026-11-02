@@ -31,13 +31,44 @@ impl Store {
         Ok(review)
     }
 
-    pub fn board_grill_inputs(&self, card: &str) -> Result<Vec<HandoffInput>, String> {
+    pub fn board_final_review(&self, id: &str) -> Result<owner::types::FinalReview, String> {
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .map_err(|e| e.to_string())?;
+        let review = owner::load_final(&tx, &self.board_artifact_base()?, id)?;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(review)
+    }
+
+    pub fn board_stage_inputs(&self, card: &str) -> Result<Vec<HandoffInput>, String> {
         let tx = self
             .conn
             .unchecked_transaction()
             .map_err(|e| e.to_string())?;
         let current = crate::task_board::stage::lifecycle::storage::query::card(&tx, card)?;
-        let mut inputs = vec![self.board_grill_input(card)?];
+        let stage = crate::task_board::stage::agent::AgentStage::parse(&current.column_id)
+            .ok_or("Card is not in an agent stage.")?;
+        if stage != crate::task_board::stage::agent::AgentStage::Grill {
+            let contract =
+                crate::task_board::stage::contracts::input_contract(stage, current.grill_round);
+            let mut inputs = Vec::new();
+            for kind in contract.required.iter().chain(contract.optional).copied() {
+                let version = owner::latest(&tx, card, kind)?;
+                if let Some(version) = version {
+                    inputs.push(HandoffInput {
+                        kind: kind.into(),
+                        version,
+                        body: self.board_stage_artifact(card, kind, version)?,
+                    });
+                } else if contract.required.contains(&kind) {
+                    return Err(format!("Missing input artifact: {kind}."));
+                }
+            }
+            tx.commit().map_err(|e| e.to_string())?;
+            return Ok(inputs);
+        }
+        let mut inputs = vec![self.board_stage_input(card)?];
         if current.grill_round > 1 {
             let mut loaded = Vec::new();
             let mut complete = true;
@@ -65,7 +96,7 @@ impl Store {
         Ok(inputs)
     }
 
-    pub fn board_grill_input(&self, card: &str) -> Result<HandoffInput, String> {
+    pub fn board_stage_input(&self, card: &str) -> Result<HandoffInput, String> {
         let version:i64=self.conn.query_row("SELECT version FROM task_board_artifacts WHERE card_id=?1 AND kind=?2 ORDER BY version DESC LIMIT 1",params![card,TASK],|r|r.get(0)).optional().map_err(|e|e.to_string())?.ok_or("Board card has no initial task artifact.")?;
         Ok(HandoffInput {
             kind: TASK.into(),

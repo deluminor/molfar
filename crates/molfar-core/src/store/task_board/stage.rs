@@ -1,7 +1,7 @@
 use super::Store;
 use crate::{
     app_access::turn::StoredAppTurn,
-    task_board::constants::GRILL,
+    task_board::stage::agent::AgentStage,
     task_board::{
         stage::{
             checkout::types::{CheckoutSnapshot, RetainedCheckout},
@@ -9,7 +9,7 @@ use crate::{
             lifecycle::{
                 constants::RUNNING,
                 storage::{claim, progress, query, settlement},
-                types::{FailureStatus, GrillContext, StageEffect, VerifiedGrillOutput},
+                types::{FailureStatus, StageContext, StageEffect, VerifiedStageOutput},
             },
         },
         types::StageRun,
@@ -19,18 +19,18 @@ use rusqlite::OptionalExtension;
 use std::collections::HashSet;
 
 impl Store {
-    pub fn board_accept_grill(
+    pub fn board_accept_stage(
         &mut self,
         id: &str,
         expected: i64,
         run: &str,
         choice: &ResolvedStageChoice,
-    ) -> Result<GrillContext, String> {
+    ) -> Result<StageContext, String> {
         self.board_writable()?;
         claim::accept(&mut self.conn, id, expected, run, choice)
     }
 
-    pub fn board_grill_context(&self, id: &str) -> Result<Option<GrillContext>, String> {
+    pub fn board_stage_context(&self, id: &str) -> Result<Option<StageContext>, String> {
         let run: Option<StageRun> = self
             .conn
             .query_row(
@@ -40,25 +40,23 @@ impl Store {
             )
             .optional()
             .map_err(|e| e.to_string())?;
-        run.map(|run| query::card(&self.conn, &run.card_id).map(|card| GrillContext { card, run }))
+        run.map(|run| query::card(&self.conn, &run.card_id).map(|card| StageContext { card, run }))
             .transpose()
     }
 
-    pub fn board_grill_is_current(&self, id: &str) -> Result<bool, String> {
-        self.board_grill_context(id)?
+    pub fn board_stage_is_current(&self, id: &str) -> Result<bool, String> {
+        self.board_stage_context(id)?
             .map(|ctx| query::current(&self.conn, &ctx))
             .unwrap_or(Ok(false))
     }
 
-    pub fn board_running_grills(&self) -> Result<Vec<GrillContext>, String> {
+    pub fn board_running_stages(&self) -> Result<Vec<StageContext>, String> {
         let mut statement = self
             .conn
-            .prepare(
-                "SELECT id FROM task_board_stage_runs WHERE stage=?1 AND status=?2 ORDER BY rowid",
-            )
+            .prepare("SELECT id FROM task_board_stage_runs WHERE status=?1 ORDER BY rowid")
             .map_err(|e| e.to_string())?;
         let ids = statement
-            .query_map([GRILL, RUNNING], |r| r.get::<_, String>(0))
+            .query_map([RUNNING], |r| r.get::<_, String>(0))
             .map_err(|e| e.to_string())?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| e.to_string())?;
@@ -67,35 +65,35 @@ impl Store {
             .collect()
     }
 
-    pub fn board_record_grill_worktree(
+    pub fn board_record_stage_worktree(
         &mut self,
         id: &str,
         tree: &RetainedCheckout,
-    ) -> Result<Option<GrillContext>, String> {
+    ) -> Result<Option<StageContext>, String> {
         self.board_writable()?;
         progress::worktree(&mut self.conn, id, tree)
     }
 
-    pub fn board_record_grill_prepared(
+    pub fn board_record_stage_prepared(
         &mut self,
         id: &str,
         snapshot: &CheckoutSnapshot,
         session: &str,
-    ) -> Result<Option<GrillContext>, String> {
+    ) -> Result<Option<StageContext>, String> {
         self.board_writable()?;
         progress::prepared(&mut self.conn, id, snapshot, session)
     }
 
-    pub fn board_record_grill_submitted(&mut self, id: &str) -> Result<bool, String> {
+    pub fn board_record_stage_submitted(&mut self, id: &str) -> Result<bool, String> {
         self.board_writable()?;
-        if self.board_grill_result(id)?.is_none() {
+        if self.board_stage_result(id)?.is_none() {
             return Ok(false);
         }
         progress::submitted(&mut self.conn, id)
     }
 
-    pub fn board_grill_result(&self, id: &str) -> Result<Option<StoredAppTurn>, String> {
-        let Some(ctx) = self.board_grill_context(id)? else {
+    pub fn board_stage_result(&self, id: &str) -> Result<Option<StoredAppTurn>, String> {
+        let Some(ctx) = self.board_stage_context(id)? else {
             return Ok(None);
         };
         if !query::current(&self.conn, &ctx)? {
@@ -122,33 +120,37 @@ impl Store {
         self.app_turn_result(native, id)
     }
 
-    pub fn board_finish_grill(
+    pub fn board_finish_stage(
         &mut self,
         id: &str,
-        output: &VerifiedGrillOutput,
+        output: &VerifiedStageOutput,
     ) -> Result<StageEffect, String> {
         self.board_writable()?;
-        if !self.board_grill_is_current(id)? {
+        if !self.board_stage_is_current(id)? {
             return Ok(StageEffect::default());
         }
         let result = self
-            .board_grill_result(id)?
-            .ok_or("Grill has no exact persisted app turn.")?;
+            .board_stage_result(id)?
+            .ok_or("Board stage has no exact persisted app turn.")?;
         if !matches!(
             result.completion,
             Some(crate::agent::turn::TurnCompletion::Succeeded { .. })
         ) {
-            return Err("Grill has no successful durable completion.".into());
+            return Err("Board stage has no successful durable completion.".into());
         }
-        let parsed = crate::task_board::stage::contracts::read_grill_output(&result.text)?;
+        let context = self
+            .board_stage_context(id)?
+            .ok_or("Board run not found.")?;
+        let stage = AgentStage::parse(&context.run.stage).ok_or("Unsupported Board stage.")?;
+        let parsed = crate::task_board::stage::contracts::read_stage_output(stage, &result.text)?;
         if parsed != output.artifacts {
-            return Err("Grill artifacts differ from the exact persisted turn.".into());
+            return Err("Board stage artifacts differ from the exact persisted turn.".into());
         }
         let base = self.board_artifact_base()?;
         settlement::finish(&mut self.conn, &base, id, output)
     }
 
-    pub fn board_fail_grill(
+    pub fn board_fail_stage(
         &mut self,
         id: &str,
         status: FailureStatus,
@@ -158,7 +160,7 @@ impl Store {
         settlement::fail(&mut self.conn, id, status, error)
     }
 
-    pub fn board_fail_claimed_grill(
+    pub fn board_fail_claimed_stage(
         &mut self,
         id: &str,
         expected: i64,
@@ -175,10 +177,11 @@ impl Store {
         self.board_writable()?;
         let cards = self.board_snapshot(None, false, None)?.cards;
         let mut effects = Vec::new();
-        for card in cards
-            .into_iter()
-            .filter(|c| c.column_id == GRILL && c.run_state == RUNNING && !active.contains(&c.id))
-        {
+        for card in cards.into_iter().filter(|c| {
+            AgentStage::parse(&c.column_id).is_some()
+                && c.run_state == RUNNING
+                && !active.contains(&c.id)
+        }) {
             let latest = query::latest_id(&self.conn, &card.id)?;
             if latest
                 .map(|id| query::run(&self.conn, &id))
@@ -187,7 +190,7 @@ impl Store {
             {
                 continue;
             }
-            let effect = self.board_fail_claimed_grill(
+            let effect = self.board_fail_claimed_stage(
                 &card.id,
                 card.updated_at,
                 "Interrupted before a Board stage run was accepted. Retry explicitly.",

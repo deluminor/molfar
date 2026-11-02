@@ -25,7 +25,7 @@ pub(super) fn gate() -> (tempfile::TempDir, Store) {
         .unwrap();
     let text = "<<<MOLFAR:spec>>>Spec<<<END:spec>>><<<MOLFAR:plan>>>Plan<<<END:plan>>><<<MOLFAR:questions>>>## Q1 — Scope\r\nWhich?\r\n**Recommended:** Narrow\r\nwith tests\r\n\r\n## Q2: Target\r\nWhere?<<<END:questions>>>";
     let output = complete_with_text(&mut store, "first", text);
-    store.board_finish_grill("first", &output).unwrap();
+    store.board_finish_stage("first", &output).unwrap();
     (dir, store)
 }
 
@@ -169,7 +169,7 @@ fn owner_question_free_success_does_not_reuse_earlier_round_questions() {
         )
         .unwrap();
     let output = complete(&mut store, "second");
-    store.board_finish_grill("second", &output).unwrap();
+    store.board_finish_stage("second", &output).unwrap();
     let review = store.board_owner_review("card").unwrap();
     assert!(review.questions.is_empty());
     store

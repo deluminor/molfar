@@ -4,7 +4,7 @@ use crate::{
     task_board::stage::lifecycle::{
         constants::{ACCEPTED, PREPARED},
         storage::query,
-        types::ReservedGrillSession,
+        types::ReservedStageSession,
     },
 };
 use rusqlite::{params, OptionalExtension, Transaction, TransactionBehavior};
@@ -46,12 +46,12 @@ impl Store {
             .collect()
     }
 
-    pub fn board_reserve_grill_session(
+    pub fn board_reserve_stage_session(
         &mut self,
         id: &str,
         settings: &Settings,
         prompt: &str,
-    ) -> Result<ReservedGrillSession, String> {
+    ) -> Result<ReservedStageSession, String> {
         self.board_writable()?;
         if self.shared.is_none() {
             return Err("Board stage sessions require the desktop schema.".into());
@@ -128,7 +128,15 @@ impl Store {
         {
             return Err("Board session belongs to a different run or card.".into());
         }
-        let title = format!("#{} · Grill · {}", context.card.number, context.card.title);
+        let label = crate::task_board::constants::COLUMNS
+            .iter()
+            .find(|(id, _)| *id == context.run.stage)
+            .map(|(_, label)| *label)
+            .ok_or("Unsupported Board stage.")?;
+        let title = format!(
+            "#{} · {} · {}",
+            context.card.number, label, context.card.title
+        );
         tx.execute(
             "UPDATE sessions SET task_card_id=?2,title=?3 WHERE id=?1",
             params![original, context.card.id, title],
@@ -143,6 +151,6 @@ impl Store {
         self.configure_agent(session.id, &context.run.harness, &settings)?;
         self.prepare_app_prompt(session.id, id, prompt)?;
         session.title = title;
-        Ok(ReservedGrillSession { session })
+        Ok(ReservedStageSession { session })
     }
 }

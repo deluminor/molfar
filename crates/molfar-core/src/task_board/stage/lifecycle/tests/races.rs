@@ -34,7 +34,7 @@ fn concurrent_starts_and_claims_cannot_duplicate_card_ownership() {
             let barrier = barrier.clone();
             std::thread::spawn(move || {
                 barrier.wait();
-                store.board_claim_next_grill().unwrap()
+                store.board_claim_next_stage().unwrap()
             })
         })
         .collect();
@@ -50,7 +50,7 @@ fn concurrent_starts_and_claims_cannot_duplicate_card_ownership() {
 fn cancelled_completed_run_cannot_settle_or_stop_retry() {
     let (_dir, mut store) = fixture();
     let old_output = complete(&mut store, "run-one");
-    let old = store.board_grill_context("run-one").unwrap().unwrap();
+    let old = store.board_stage_context("run-one").unwrap().unwrap();
     store
         .board_stage_action("card", old.card.updated_at, StageAction::Cancel)
         .unwrap();
@@ -58,20 +58,20 @@ fn cancelled_completed_run_cannot_settle_or_stop_retry() {
     assert_eq!(next.run.attempt, 2);
     assert!(
         !store
-            .board_finish_grill("run-one", &old_output)
+            .board_finish_stage("run-one", &old_output)
             .unwrap()
             .changed
     );
     assert!(
         !store
-            .board_fail_grill("run-one", FailureStatus::Failed, "Late failure")
+            .board_fail_stage("run-one", FailureStatus::Failed, "Late failure")
             .unwrap()
             .changed
     );
-    assert!(store.board_grill_is_current("run-two").unwrap());
+    assert!(store.board_stage_is_current("run-two").unwrap());
     assert!(store.board_stage_artifacts("card").unwrap().is_empty());
     assert!(store
-        .board_record_grill_prepared("run-one", &before(), "board-run-one")
+        .board_record_stage_prepared("run-one", &before(), "board-run-one")
         .unwrap()
         .is_none());
 }
@@ -89,7 +89,7 @@ fn concurrent_receipt_settlement_publishes_one_artifact_set() {
             std::thread::spawn(move || {
                 barrier.wait();
                 connection
-                    .board_finish_grill("run-one", &output)
+                    .board_finish_stage("run-one", &output)
                     .unwrap()
                     .changed
             })
@@ -117,12 +117,12 @@ fn read_only_store_refuses_stage_side_effects_and_keeps_database_bytes() {
     assert!(read
         .board_stage_action("card", ctx.card.updated_at, StageAction::Cancel)
         .is_err());
-    assert!(read.board_claim_next_grill().is_err());
+    assert!(read.board_claim_next_stage().is_err());
     assert!(read
-        .board_accept_grill("card", ctx.card.updated_at, "run-two", &choice())
+        .board_accept_stage("card", ctx.card.updated_at, "run-two", &choice())
         .is_err());
     assert!(read
-        .board_fail_grill("run-one", FailureStatus::Failed, "Denied")
+        .board_fail_stage("run-one", FailureStatus::Failed, "Denied")
         .is_err());
     assert!(read.board_take_stall_notices(u64::MAX).is_err());
     drop(read);
