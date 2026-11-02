@@ -14,6 +14,14 @@ pub(crate) struct NotificationFinished {
 }
 impl EventEmitter<NotificationFinished> for Familiars {}
 
+/// A Familiar wrote to its chat on its own, as a habit's or heartbeat's report.
+/// Its main chat session and what it said, for paired phones.
+pub(crate) struct NotificationPosted {
+    pub session: i64,
+    pub body: String,
+}
+impl EventEmitter<NotificationPosted> for Familiars {}
+
 impl Familiars {
     pub(crate) fn dismiss_error(&mut self, cx: &mut Context<Self>) {
         self.error = None;
@@ -29,6 +37,13 @@ impl Familiars {
             .filter(|view| seen.insert(view.read(cx).summary.id))
             .cloned()
             .collect()
+    }
+    /// The Familiar a session belongs to: its own chat or one of its habit runs.
+    pub(crate) fn notification_familiar(&self, id: i64) -> Option<&Familiar> {
+        self.roster
+            .familiars
+            .iter()
+            .find(|m| m.session_id == Some(id) || m.habit_sessions.contains(&id))
     }
     pub(crate) fn active_notification_session(&self, cx: &App) -> Option<i64> {
         if self.settings.is_some() {

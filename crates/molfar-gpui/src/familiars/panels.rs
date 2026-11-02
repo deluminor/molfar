@@ -5,9 +5,11 @@ use crate::{
     project_settings::{BackgroundDialog, Event as BackgroundEvent},
 };
 use gpui::{AnyView, Div, FontWeight, Stateful};
+use molfar_core::familiar::heartbeat;
 use molfar_core::project_appearance::{MASCOTS, ProjectAppearance};
 #[derive(Clone, Copy, PartialEq)]
 pub(super) enum OverviewTab {
+    Overview,
     Sessions,
     Habits,
     Documents,
@@ -157,6 +159,162 @@ fn heading(title: &str, description: Option<&str>) -> Div {
                     .child(text.to_string()),
             )
         })
+}
+/// The outlined, rounded card each Sub-agents, Documents and Habits row sits in.
+pub(super) fn outlined<E: Styled + InteractiveElement>(element: E) -> E {
+    element
+        .rounded_xl()
+        .border_1()
+        .border_color(content(0.07))
+        .bg(content(0.025))
+        .hover(|s| s.bg(content(0.05)).border_color(content(0.14)))
+}
+enum AgentState {
+    Working,
+    NeedsInput,
+    Idle(u64),
+    Unavailable,
+}
+struct SubAgent<'a> {
+    id: i64,
+    title: String,
+    harness: &'a str,
+    /// The live session's model label, when it is loaded.
+    model: Option<SharedString>,
+    model_id: Option<&'a str>,
+    place: String,
+    branch: bool,
+    state: AgentState,
+}
+/// A sub-agent the Familiar started: who it is (model and provider) first, then
+/// what it was asked to do and where.
+fn sub_agent_card(agent: SubAgent) -> Stateful<Div> {
+    let kind = Kind::from_id(agent.harness);
+    let model = agent
+        .model
+        .unwrap_or_else(|| crate::pickers::cached_model_name(kind, agent.model_id));
+    // Claude models already say who made them.
+    let model: SharedString = model
+        .strip_prefix("Claude ")
+        .map_or(model.clone(), |short| short.to_owned().into());
+    let amber: gpui::Hsla = rgb(0xfbbf24).into();
+    let (label, color, live): (String, gpui::Hsla, bool) = match agent.state {
+        AgentState::Working => ("Working".into(), accent_color(), true),
+        AgentState::NeedsInput => ("Needs approval".into(), amber, true),
+        AgentState::Idle(at) => (
+            molfar_core::time::relative(at, molfar_core::time::now_ms()),
+            content(0.45),
+            false,
+        ),
+        AgentState::Unavailable => ("Unavailable".into(), content(0.45), false),
+    };
+    let needs_input = matches!(agent.state, AgentState::NeedsInput);
+    let id = agent.id;
+    outlined(
+        div()
+            .id(("familiar-launch", id as usize))
+            .debug_selector(move || format!("familiar-launch-{id}"))
+            .role(Role::Button)
+            .aria_label(format!("{}, {model}", agent.title)),
+    )
+    .when(needs_input, |d| {
+        let mut c = amber;
+        c.a = 0.45;
+        d.border_color(c)
+    })
+    .when(matches!(agent.state, AgentState::Unavailable), |d| {
+        d.opacity(0.5)
+    })
+    .flex_shrink_0()
+    .px(px(10.))
+    .py_2()
+    .flex()
+    .items_center()
+    .gap_2p5()
+    .child(
+        div()
+            .size(px(28.))
+            .flex_shrink_0()
+            .rounded_md()
+            .bg(content(0.06))
+            .flex()
+            .items_center()
+            .justify_center()
+            .child(provider_icon(agent.harness, 16.)),
+    )
+    .child(
+        div()
+            .flex_1()
+            .min_w_0()
+            .flex()
+            .flex_col()
+            // What it was asked to do, and how it is doing.
+            .child(
+                div()
+                    .flex()
+                    .min_w_0()
+                    .items_center()
+                    .gap_2()
+                    .child(
+                        div()
+                            .min_w_0()
+                            .truncate()
+                            .text_size(px(12.))
+                            .line_height(px(18.))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .text_color(content(1.))
+                            .child(agent.title),
+                    )
+                    .child(
+                        div()
+                            .ml_auto()
+                            .flex_shrink_0()
+                            .flex()
+                            .items_center()
+                            .gap_1p5()
+                            .text_size(px(11.))
+                            .text_color(color)
+                            .when(live, |d| {
+                                d.child(div().size(px(6.)).rounded_full().bg(color))
+                            })
+                            .child(label),
+                    ),
+            )
+            // Which model runs it, and where.
+            .child(
+                div()
+                    .flex()
+                    .min_w_0()
+                    .items_center()
+                    .gap_2()
+                    .text_size(px(11.))
+                    .line_height(px(16.))
+                    .text_color(content(0.5))
+                    .child(div().min_w_0().truncate().child(model))
+                    .child(
+                        div()
+                            .ml_auto()
+                            .min_w_0()
+                            .max_w(px(160.))
+                            .flex()
+                            .items_center()
+                            .gap_1()
+                            .text_color(content(0.4))
+                            .child(
+                                icon(
+                                    if agent.branch {
+                                        "git-branch"
+                                    } else {
+                                        "folder-01"
+                                    },
+                                    11.,
+                                )
+                                .text_color(content(0.4)),
+                            )
+                            .child(div().min_w_0().truncate().child(agent.place)),
+                    ),
+            ),
+    )
 }
 fn card() -> Div {
     div()
@@ -865,9 +1023,10 @@ impl Familiars {
             .as_ref()
             .and_then(|r| r.progress(self.overview_tab, window, cx));
         let tabs = [
+            (OverviewTab::Overview, "Overview", "dashboard", 0),
             (
                 OverviewTab::Sessions,
-                "Sessions",
+                "Sub-agents",
                 "message-multiple",
                 familiar.launches.len(),
             ),
@@ -906,6 +1065,7 @@ impl Familiars {
                     _ => 0.,
                 };
                 let id = match tab {
+                    OverviewTab::Overview => "familiar-overview-Overview",
                     OverviewTab::Sessions => "familiar-overview-Sessions",
                     OverviewTab::Documents => "familiar-overview-Documents",
                     OverviewTab::Habits => "familiar-overview-Habits",
@@ -965,6 +1125,7 @@ impl Familiars {
             self.pause_changes(cx);
         }
         let body = match self.overview_tab {
+            OverviewTab::Overview => self.dashboard(familiar, window, cx),
             OverviewTab::Sessions => self.session_list(familiar, cx),
             OverviewTab::Habits => self.habits_list(familiar, cx),
             OverviewTab::Documents => self.document_list(familiar, cx),
@@ -981,7 +1142,7 @@ impl Familiars {
     fn session_list(&mut self, familiar: &Familiar, cx: &mut Context<Self>) -> AnyElement {
         let filter = self.field(
             "familiar-session-search",
-            "Search sessions…",
+            "Search sub-agents…",
             String::new(),
             false,
             cx,
@@ -992,7 +1153,7 @@ impl Familiars {
             .upgrade()
             .map(|owner| owner.read(cx).familiar_session_views(cx))
             .unwrap_or_default();
-        let launches: Vec<_> = familiar
+        let mut launches: Vec<_> = familiar
             .launches
             .iter()
             .rev()
@@ -1018,55 +1179,55 @@ impl Familiars {
             })
             .cloned()
             .collect();
-        let search_bar = search_bar(filter).child(
-            icon_button(
-                "familiar-session-filter",
-                "Filter Familiar sessions",
-                "filter",
+        // Most recent activity first: running or waiting sessions, then by
+        // last update. Launch order alone puts re-attached old sessions on top.
+        launches.sort_by_cached_key(|l| {
+            std::cmp::Reverse(
+                views
+                    .iter()
+                    .find(|v| v.id == l.session_id)
+                    .map(|v| (v.busy || v.needs_input, v.updated_at)),
             )
-            .relative()
-            .child(self.session_filter_anchor.probe())
-            .on_click(cx.listener(|this, _, window, cx| this.filter_menu(window, cx))),
+        });
+        let search_bar = search_bar(filter).child(
+            icon_button("familiar-session-filter", "Filter sub-agents", "filter")
+                .relative()
+                .child(self.session_filter_anchor.probe())
+                .on_click(cx.listener(|this, _, window, cx| this.filter_menu(window, cx))),
         );
         let no_matches = launches.is_empty() && !familiar.launches.is_empty();
         div().size_full().flex().flex_col()
             .when(!familiar.launches.is_empty(),|d|d.child(search_bar))
-            .child(div().id("familiar-session-list").debug_selector(|| "familiar-session-list".into()).flex_1().min_h_0().overflow_y_scroll().px(px(6.)).py_2().flex().flex_col().gap_1()
-                .when(familiar.launches.is_empty(),|d|d.child(empty_state("message-multiple",&format!("Ask {} to start a session on one of your projects, like a bug fix or a review, and it shows up here.",familiar.label()))))
-                .when(no_matches,|d|d.child(empty_state("search-01",if query.trim().is_empty(){"No sessions match these filters."}else{"No sessions match this search."})))
+            .child(div().id("familiar-session-list").debug_selector(|| "familiar-session-list".into()).flex_1().min_h_0().overflow_y_scroll().p_2().flex().flex_col().gap_1p5()
+                .when(familiar.launches.is_empty(),|d|d.child(empty_state("message-multiple",&format!("Ask {} to hand work to a sub-agent on one of your projects, like a bug fix or a review, and it shows up here.",familiar.label()))))
+                .when(no_matches,|d|d.child(empty_state("search-01",if query.trim().is_empty(){"No sub-agents match these filters."}else{"No sub-agents match this search."})))
                 .children(launches.into_iter().map(|launch|{
-                    // Sidebar.tsx's SessionCard with `modelInFooter`.
-                    let id=launch.session_id;let state=views.iter().find(|v|v.id==id);
-                    let title=state.map(|s|s.title.clone()).unwrap_or(launch.title.clone());
-                    let cwd=state.map(|s|&s.cwd).unwrap_or(&launch.cwd);
-                    let project=familiar.projects.iter().find(|p|molfar_core::files::path_key(p)==molfar_core::files::path_key(cwd)).unwrap_or(cwd);
-                    let project=std::path::Path::new(project).file_name().map_or(project.clone(),|n|n.to_string_lossy().to_string());
-                    let branch=state.and_then(|s|s.branch.clone());
-                    let model:SharedString=state.map(|s|s.model.clone()).filter(|model| !model.is_empty()).unwrap_or_else(||launch.model.clone().unwrap_or_default().into());
-                    let status=match state{
-                        Some(s) if s.needs_input=>div().flex().items_center().gap_1().text_color(rgb(0xfbbf24)).child(icon("circle-alert",12.).text_color(rgb(0xfbbf24))).child("Need approval").into_any_element(),
-                        Some(s) if s.busy=>div().text_color(crate::theme::accent_color()).child("Working...").into_any_element(),
-                        Some(s)=>div().text_color(content(0.45)).child(molfar_core::time::relative(s.updated_at,molfar_core::time::now_ms())).into_any_element(),
-                        None=>div().text_color(content(0.45)).child("Unavailable").into_any_element(),
-                    };
-                    let place=match &branch{Some(b)=>format!("{project} · {b}"),None=>project};
-                    div().id(("familiar-launch",id as usize)).debug_selector(move||format!("familiar-launch-{id}")).group("familiar-launch").role(Role::Button).aria_label(title.clone())
-                        .px(px(10.)).py_2().rounded_md().border_1().border_color(if state.is_some_and(|s|s.needs_input){content(0.3)}else{gpui::transparent_black()})
-                        .when(state.is_some_and(|s|s.needs_input),|d|d.bg(content(0.2)))
-                        .hover(|s|s.bg(content(0.05)))
-                        .when(state.is_none(),|d|d.opacity(0.5))
-                        .flex().flex_col()
-                        .child(div().flex().min_w_0().items_center().gap_1p5()
-                            .child(div().min_w_0().truncate().text_size(px(13.)).line_height(px(18.)).font_weight(FontWeight::SEMIBOLD).text_color(content(1.)).child(title))
-                            .child(div().ml_auto().pl_2().flex_shrink_0().text_size(px(11.)).child(status)))
-                        .child(div().mt_1().flex().min_w_0().items_center().gap_2()
-                            .child(div().flex_1().min_w_0().flex().items_center().gap_1().text_size(px(11.)).text_color(content(0.45))
-                                .child(icon(if branch.is_some(){"git-branch"}else{"folder-01"},12.).text_color(content(0.45)))
-                                .child(div().min_w_0().truncate().child(place)))
-                            .child(div().flex_shrink_0().flex().items_center().text_size(px(11.)).text_color(content(0.5))
-                                .child(div().max_w(px(0.)).overflow_hidden().whitespace_nowrap().group_hover("familiar-launch",|s|s.max_w(px(128.)).pr(px(6.))).child(model))
-                                .child(provider_icon(&launch.harness,14.))))
-                        .on_click(cx.listener(move|this,_,_,cx|{this.route=Some(Route::Session(id));cx.notify();}))
+                    let id = launch.session_id;
+                    let state = views.iter().find(|v| v.id == id);
+                    let title = state.map(|s| s.title.clone()).unwrap_or(launch.title.clone());
+                    let cwd = state.map(|s| &s.cwd).unwrap_or(&launch.cwd);
+                    let project = familiar.projects.iter().find(|p| molfar_core::files::path_key(p) == molfar_core::files::path_key(cwd)).unwrap_or(cwd);
+                    let project = std::path::Path::new(project).file_name().map_or(project.clone(), |n| n.to_string_lossy().to_string());
+                    let branch = state.and_then(|s| s.branch.clone());
+                    sub_agent_card(SubAgent {
+                        id,
+                        title,
+                        harness: &launch.harness,
+                        model: state.map(|s| s.model.clone()).filter(|m| !m.is_empty()),
+                        model_id: launch.model.as_deref(),
+                        place: match &branch { Some(b) => format!("{project} · {b}"), None => project },
+                        branch: branch.is_some(),
+                        state: match state {
+                            Some(s) if s.needs_input => AgentState::NeedsInput,
+                            Some(s) if s.busy => AgentState::Working,
+                            Some(s) => AgentState::Idle(s.updated_at),
+                            None => AgentState::Unavailable,
+                        },
+                    })
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.route = Some(Route::Session(id));
+                        cx.notify();
+                    }))
 }))).into_any_element()
     }
     fn document_list(&mut self, familiar: &Familiar, cx: &mut Context<Self>) -> AnyElement {
@@ -1092,7 +1253,7 @@ impl Familiars {
             .p_2()
             .flex()
             .flex_col()
-            .gap_px()
+            .gap_1p5()
             .when(familiar.documents.is_empty(), |d| {
                 d.child(empty_state(
                     "file",
@@ -1108,13 +1269,9 @@ impl Familiars {
             .children(documents.into_iter().map(|document| {
                 // FamiliarOverview's DocumentRow: laid out like a habit.
                 let id = document.id.clone();
-                let label = if document.kind == "html" {
-                    "Visual"
-                } else {
-                    "Document"
-                };
-                div()
-                    .id(SharedString::from(format!("familiar-document-{id}")))
+                let visual = matches!(document.kind.as_str(), "html" | "visual");
+                let label = if visual { "Visual" } else { "Document" };
+                outlined(div().id(SharedString::from(format!("familiar-document-{id}"))))
                     .debug_selector({
                         let id = id.clone();
                         move || format!("familiar-document-{id}")
@@ -1126,10 +1283,9 @@ impl Familiars {
                     .flex()
                     .items_center()
                     .gap_2p5()
-                    .rounded_md()
-                    .px_2()
+                    .flex_shrink_0()
+                    .px(px(10.))
                     .py_2()
-                    .hover(|s| s.bg(content(0.05)))
                     .child(
                         div()
                             .size(px(28.))
@@ -1140,14 +1296,7 @@ impl Familiars {
                             .items_center()
                             .justify_center()
                             .child(
-                                icon(
-                                    if document.kind == "html" {
-                                        "chart-square"
-                                    } else {
-                                        "file"
-                                    },
-                                    14.,
-                                )
+                                icon(if visual { "chart-square" } else { "file" }, 14.)
                                 .text_color(content(0.6)),
                             ),
                     )
@@ -1275,16 +1424,18 @@ impl Familiars {
                     .into_any_element()
             }
             Route::Document(id) => {
-                let Some(document) =
-                    self.work
-                        .documents
-                        .get(&id)
-                        .or_else(|| {
-                            familiar.documents.iter().find(|d| {
-                                d.id == id && !familiar.desktop_document_ids.contains(&id)
-                            })
+                let Some(document) = self
+                    .work
+                    .documents
+                    .get(&id)
+                    .or_else(|| {
+                        familiar.documents.iter().find(|d| {
+                            d.id == id
+                                && (d.kind == "visual"
+                                    || !familiar.desktop_document_ids.contains(&id))
                         })
-                        .cloned()
+                    })
+                    .cloned()
                 else {
                     return empty(if self.work.loading_documents.contains(&id) {
                         "Loading document…"
@@ -1309,6 +1460,32 @@ impl Familiars {
                         .clone();
                     html.update(cx, |html, _| html.set_interactive(interactive));
                     html.into_any_element()
+                } else if document.kind == "visual" {
+                    // The same native dither visual the chat shows, on its own page.
+                    let visual = match self.visual_documents.get(&id) {
+                        Some(view) => Some(view.clone()),
+                        None => serde_json::from_str(&document.body).ok().map(|visual| {
+                            // The page header already titles it.
+                            let view = cx.new(|cx| {
+                                let mut view = crate::visuals::VisualView::new(visual, cx);
+                                view.set_inline(Some(String::new()), cx);
+                                view
+                            });
+                            self.visual_documents.insert(id.clone(), view.clone());
+                            view
+                        }),
+                    };
+                    match visual {
+                        Some(view) => div()
+                            .id("familiar-visual-document")
+                            .size_full()
+                            .overflow_y_scroll()
+                            .px_4()
+                            .py_3()
+                            .child(view)
+                            .into_any_element(),
+                        None => empty("Visual unavailable"),
+                    }
                 } else {
                     self.documents
                         .entry(id.clone())
@@ -1327,16 +1504,23 @@ impl Familiars {
                     .size_full()
                     .flex()
                     .flex_col()
-                    .child(
-                        self.page_header(&document.title, cx).child(
-                            icon_button("familiar-document-copy", "Copy document", "response-copy")
+                    .child(self.page_header(&document.title, cx).when(
+                        document.kind != "visual",
+                        |header| {
+                            header.child(
+                                icon_button(
+                                    "familiar-document-copy",
+                                    "Copy document",
+                                    "response-copy",
+                                )
                                 .on_click(move |_, _, cx| {
                                     cx.write_to_clipboard(gpui::ClipboardItem::new_string(
                                         document.body.clone(),
                                     ))
                                 }),
-                        ),
-                    )
+                            )
+                        },
+                    ))
                     .child(div().flex_1().min_h_0().child(view))
                     .into_any_element()
             }
@@ -1728,10 +1912,56 @@ impl Familiars {
                 .child(switch_setting("Group in a folder",&format!("Sessions it starts go in a “{}” folder in your project sidebar.",familiar.label()),!familiar.show_started_sessions_in_sidebar,
                     self.switch("familiar-group-started",familiar.show_started_sessions_in_sidebar&&familiar.use_sidebar_folders,!familiar.show_started_sessions_in_sidebar,|m,on|m.use_sidebar_folders=on,cx))
                     .border_t_1().border_color(content(0.04))))
+            .child(heading("Heartbeat",Some("When it has been quiet for a while, it looks over its recent work, sessions you left, your notes and inbox, and suggests what to do next. It never acts without asking.")))
+            .child(card()
+                .child(switch_setting("Check in on its own","Quiet check-ins leave nothing behind; you only hear from it when it has an idea.",false,
+                    self.switch("familiar-heartbeat",familiar.heartbeat_minutes>0,false,|m,on|m.heartbeat_minutes=if on {heartbeat::DEFAULT_MINUTES} else {0},cx)))
+                .child(setting("After it has been quiet for",None,self.heartbeat_intervals(familiar,cx))
+                    .when(familiar.heartbeat_minutes==0,|d|d.opacity(0.4)).border_t_1().border_color(content(0.04))))
             .child(heading("Conversation",None))
             .child(card().child(setting("Reset conversation",Some("Clear all messages and start fresh. Its soul, memory and habits stay."),
                 div().id("familiar-reset").role(Role::Button).aria_label("Reset").flex().items_center().px_3().py_1p5().rounded_md().text_size(px(12.)).border_1().border_color(content(0.04)).text_color(rgb(0xff6467)).hover(|s|s.bg(rgb(0xfb2c36).opacity(0.1))).child("Reset")
                     .on_click(cx.listener(move |this,_,w,cx|this.reset_conversation(&reset,w,cx))).into_any_element())))
+            .into_any_element()
+    }
+    fn heartbeat_intervals(&self, familiar: &Familiar, cx: &mut Context<Self>) -> AnyElement {
+        let enabled = familiar.heartbeat_minutes > 0;
+        div()
+            .flex()
+            .gap_1()
+            .children(heartbeat::INTERVALS.iter().map(|&minutes| {
+                let selected = enabled && familiar.heartbeat_minutes == minutes;
+                let label = if minutes < 60 {
+                    format!("{minutes}m")
+                } else {
+                    format!("{}h", minutes / 60)
+                };
+                div()
+                    .id(("familiar-heartbeat-interval", minutes as usize))
+                    .role(Role::Button)
+                    .aria_label(label.clone())
+                    .aria_selected(selected)
+                    .px_2()
+                    .py_0p5()
+                    .rounded_md()
+                    .text_size(px(12.))
+                    .border_1()
+                    .border_color(content(if selected { 0.2 } else { 0.06 }))
+                    .when(selected, |d| d.bg(content(0.08)).text_color(content(1.)))
+                    .when(!selected, |d| d.text_color(content(0.55)))
+                    .when(enabled, |d| d.hover(|s| s.bg(content(0.05))))
+                    .child(label)
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        if let Some(id) = this.active.clone()
+                            && let Some(m) = this.roster.get_mut(&id)
+                            && m.heartbeat_minutes > 0
+                        {
+                            m.heartbeat_minutes = minutes;
+                            this.save(cx);
+                            cx.notify();
+                        }
+                    }))
+            }))
             .into_any_element()
     }
     fn switch(

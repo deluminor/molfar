@@ -2,6 +2,7 @@
 mod app_access;
 #[cfg(test)]
 mod branding_tests;
+mod contributions;
 mod desktop_import;
 mod familiars;
 mod managed_sessions;
@@ -18,6 +19,7 @@ mod edit;
 mod shared;
 mod side_threads;
 mod task_board;
+mod thread_files;
 mod turn_receipts;
 use crate::transcript::{Row, Transcript};
 pub use desktop_import::{desktop_database, ImportReport};
@@ -1027,8 +1029,15 @@ impl Store {
         tx.commit().map_err(|e| e.to_string())?;
         Ok(due)
     }
-    /// Deletes the conversation, its settings and reminder for good.
+    /// Deletes the conversation, its settings, reminder and folder for good.
     pub fn delete(&mut self, id: i64) -> Result<(), String> {
+        // Resolve the folder first; the persisted id is gone after deletion.
+        let dir = self.thread_dir(id).ok().flatten();
+        self.delete_rows(id)?;
+        thread_files::remove_dir(dir);
+        Ok(())
+    }
+    fn delete_rows(&mut self, id: i64) -> Result<(), String> {
         if self.remote_session(id)?.is_some() {
             return self.delete_remote_session(id);
         }

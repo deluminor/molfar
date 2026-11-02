@@ -351,6 +351,7 @@ impl Shell {
         molfar_core::provider::configure_idle_agents(
             self.workspace.preferences.idle_agents as usize,
         );
+        molfar_core::accounts::set_claude_entrypoint(self.workspace.preferences.claude_entrypoint);
         if let Some(familiars) = &self.familiars {
             let prefs = self.workspace.preferences.clone();
             familiars.update(cx, |m, cx| m.set_preferences(prefs, cx));

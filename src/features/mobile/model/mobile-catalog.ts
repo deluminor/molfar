@@ -1,3 +1,4 @@
+import { mobileProjectId } from "./mobile-project-id";
 import {
   loadRecents,
   loadPinnedProjects,
@@ -27,8 +28,6 @@ import {
   loadTabGroupMascots,
 } from "@/features/workspace/model/tab-groups";
 import { mobileMessages } from "./mobile-conversation";
-
-export const mobileProjectId = (path: string) => encodeURIComponent(path);
 
 /**
  * A session the phone starts in `cwd`, as a new desktop tab would start it:

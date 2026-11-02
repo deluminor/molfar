@@ -486,10 +486,10 @@
     "lines": 1210
   },
   "src/features/sessions/ui/AgentMarkdown.tsx": {
-    "lines": 1259
+    "lines": 1252
   },
   "src/features/sessions/ui/AgentTranscript.tsx": {
-    "lines": 5499
+    "lines": 5457
   },
   "src/features/sessions/ui/AstraWelcome.css": {
     "lines": 328

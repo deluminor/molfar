@@ -921,7 +921,29 @@
     "src/shared/ui/modalEscape.ts": "src/shared/ui/modal-escape.ts",
     "src/shared/ui/PrivateEmail.test.ts": "src/features/settings/ui/private-email.test.ts",
     "src/shared/ui/PrivateEmail.tsx": "src/features/settings/ui/PrivateEmail.tsx",
-    "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts"
+    "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts",
+    "mobile/src/features/models/useFamiliarModel.ts": "mobile/src/features/models/use-familiar-model.ts",
+    "mobile/src/features/workspace/familiarAccent.ts": "mobile/src/features/workspace/familiar-accent.ts",
+    "mobile/src/features/workspace/familiarProfile.ts": "mobile/src/features/workspace/familiar-profile.ts",
+    "mobile/src/features/workspace/familiarSeen.ts": "mobile/src/features/workspace/familiar-seen.ts",
+    "mobile/src/features/workspace/lastPlace.ts": "mobile/src/features/workspace/last-place.ts",
+    "mobile/src/ui/AnimationsPaused.ts": "mobile/src/ui/animations-paused.ts",
+    "src/features/mobile/model/mobileWorkspace.test.ts": "src/features/mobile/model/mobile-question.test.ts",
+    "mobile/modules/monocode-link/android/build.gradle": "mobile/modules/molfar-link/android/build.gradle",
+    "mobile/modules/monocode-link/android/src/main/AndroidManifest.xml": "mobile/modules/molfar-link/android/src/main/AndroidManifest.xml",
+    "mobile/modules/monocode-link/android/src/main/java/expo/modules/monocodelink/MonocodeLinkModule.kt": "mobile/modules/molfar-link/android/src/main/java/expo/modules/molfarlink/MolfarLinkModule.kt",
+    "mobile/modules/monocode-link/expo-module.config.json": "mobile/modules/molfar-link/expo-module.config.json",
+    "mobile/modules/monocode-link/ios/MonocodeLink.h": "mobile/modules/molfar-link/ios/MolfarLink.h",
+    "mobile/modules/monocode-link/ios/MonocodeLink.podspec": "mobile/modules/molfar-link/ios/MolfarLink.podspec",
+    "mobile/modules/monocode-link/ios/MonocodeLinkModule.swift": "mobile/modules/molfar-link/ios/MolfarLinkModule.swift",
+    "mobile/modules/monocode-link/ios/NativeTranscriptView.swift": "mobile/modules/molfar-link/ios/NativeTranscriptView.swift",
+    "mobile/modules/monocode-link/ios/Resources/transcript-artwork.json": "mobile/modules/molfar-link/ios/Resources/transcript-artwork.json",
+    "mobile/modules/monocode-link/ios/TranscriptArtwork.swift": "mobile/modules/molfar-link/ios/TranscriptArtwork.swift",
+    "mobile/modules/monocode-link/ios/TranscriptLayout.swift": "mobile/modules/molfar-link/ios/TranscriptLayout.swift",
+    "mobile/modules/monocode-link/ios/TranscriptPresentation.swift": "mobile/modules/molfar-link/ios/TranscriptPresentation.swift",
+    "mobile/modules/monocode-link/ios/TranscriptRowView.swift": "mobile/modules/molfar-link/ios/TranscriptRowView.swift",
+    "mobile/modules/monocode-link/ios/TranscriptSession.swift": "mobile/modules/molfar-link/ios/TranscriptSession.swift",
+    "mobile/modules/monocode-link/ios/TranscriptVisual.swift": "mobile/modules/molfar-link/ios/TranscriptVisual.swift"
   },
   "splits": {
     "src-tauri/src/fs.rs": {
@@ -2215,7 +2237,9 @@
           "MobilePhase",
           "MobileFoldEntry",
           "MobileTurnItem",
-          "MobileTurn"
+          "MobileTurn",
+          "Options (MobileTranscriptOptions)",
+          "MobileLaunchedSession"
         ],
         "target": "src/features/mobile/types/transcript.ts"
       },
@@ -2229,7 +2253,9 @@
           "MAX_STEPS",
           "fold entries (foldEntries)",
           "Familiar live label (familiarLiveLabel)",
-          "activityBlocks"
+          "activityBlocks",
+          "mobileWaitingLabel",
+          "mobileLaunchItems"
         ],
         "target": "src/features/mobile/model/mobile-transcript-blocks.ts"
       }
@@ -2592,6 +2618,7 @@
     "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
     ".github/workflows/native-release.yml": "MOLFAR-owned release: MonoCode native preview publishing (R2 feed, signing secrets) stays out; MOLFAR releases ship only through release.yml.",
     "docs/agent-access.md": "MOLFAR does not carry this upstream doc; agent API behavior is documented in MOLFAR's own docs.",
-    "docs/building.md": "MOLFAR does not carry this upstream doc; build steps live in README.md (Development, MOLFAR Native preview) and docs/native/README.md."
+    "docs/building.md": "MOLFAR does not carry this upstream doc; build steps live in README.md (Development, MOLFAR Native preview) and docs/native/README.md.",
+    "crates/mobile-link/tests/fixtures/legacy-identity.json": "Public legacy p256 identity and proof data is inlined in the cfg(test) legacy_identity_keys_and_proofs_remain_compatible test in crates/mobile-link/src/lib.rs; standalone test fixtures are excluded by the sync job."
   }
 }

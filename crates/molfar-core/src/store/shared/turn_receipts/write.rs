@@ -1,7 +1,7 @@
 use crate::{
     agent::TurnInfo,
     store::{
-        shared::{blocks, sql, HistoryRevision},
+        shared::{blocks, sql, HistoryRevision, START_SLACK_MS},
         Store,
     },
     transcript::Row,
@@ -103,6 +103,9 @@ pub(in crate::store::shared) fn save(
                 .as_str()
                 .is_some_and(|id| id.starts_with("gpui-"))
                 && block["startedAt"].is_null()
+                && block["sentAt"]
+                    .as_u64()
+                    .is_none_or(|sent| at.saturating_add(START_SLACK_MS) >= sent)
             {
                 block["startedAt"] = json!(at);
                 if block["sentAt"].as_u64() == Some(at) {

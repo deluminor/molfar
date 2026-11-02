@@ -84,6 +84,7 @@ import { PixelMascot } from "@/features/projects/ui/PixelMascot";
 import type { FamiliarLook } from "@/features/familiars/model/familiar";
 import {
   familiarSpawnedSessions as spawnedSessionsFromReceipts,
+  launchAnchors,
   sanitizeFamiliarSpawnedSessions,
   type LaunchedSessionView,
 } from "@/features/familiars/model/familiar-spawned-sessions";
@@ -3026,49 +3027,6 @@ function TurnRow({
 }
 
 /** A turn item's identity, stable as the group it names grows. */
-/**
- * Where a turn's launched sessions go: each after the first reply that came
- * after its launch, so a Familiar reporting back later in the same turn writes
- * below them, as it happened. A launch no reply has followed goes at the end.
- */
-function launchAnchors(
-  items: readonly TurnItem[],
-  launches: readonly FamiliarSpawnedSession[],
-): {
-  afterItem: Map<number, FamiliarSpawnedSession[]>;
-  atEnd: FamiliarSpawnedSession[];
-} {
-  const afterItem = new Map<number, FamiliarSpawnedSession[]>();
-  const atEnd: FamiliarSpawnedSession[] = [];
-  if (launches.length === 0) return { afterItem, atEnd };
-  const launched = items.map((item) =>
-    spawnedSessionsFromReceipts(
-      item.type === "block" ? [item.block] : item.blocks,
-      launches,
-    ).map((entry) => entry.sessionId),
-  );
-  for (const launch of launches) {
-    // The tool call that started it; the prompt also lists it, as a fallback.
-    const isPrompt = (index: number) => {
-      const item = items[index];
-      return item.type === "block" && item.block.role === "user";
-    };
-    const has = (index: number) => launched[index].includes(launch.sessionId);
-    let at = items.findIndex((_, index) => has(index) && !isPrompt(index));
-    if (at < 0) at = items.findIndex((_, index) => has(index));
-    const reply =
-      at < 0
-        ? -1
-        : items.findIndex(
-            (item, index) =>
-              index > at && item.type === "block" && isProseBlock(item.block),
-          );
-    if (reply < 0) atEnd.push(launch);
-    else afterItem.set(reply, [...(afterItem.get(reply) ?? []), launch]);
-  }
-  return { afterItem, atEnd };
-}
-
 function turnItemKey(item: TurnItem): string {
   return item.type === "block" ? item.block.id : item.blocks[0].id;
 }

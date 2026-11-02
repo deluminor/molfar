@@ -32,12 +32,14 @@ mod git_cache;
 mod git_graph;
 mod git_picker;
 mod git_status;
+mod gpu_trim;
 #[cfg(target_os = "macos")]
 mod hang_watchdog;
 mod history;
 mod image_lightbox;
 mod image_memory;
 mod inbox;
+mod ink_field;
 mod input;
 mod markdown;
 mod markdown_model;
@@ -87,6 +89,8 @@ mod traffic_lights;
 mod transcript;
 mod usage_footer;
 mod visuals;
+#[cfg(test)]
+mod wheel_glide_tests;
 mod window_state;
 mod workspace;
 mod worktree_switcher;
@@ -403,6 +407,7 @@ fn main() {
             image_memory::init(cx);
             #[cfg(target_os = "macos")]
             memory_log::start(cx);
+            gpu_trim::start(cx);
             #[cfg(target_os = "macos")]
             hang_watchdog::start(database.with_file_name("gpui-hangs"), cx);
             input::bind(cx);
@@ -476,6 +481,27 @@ fn main() {
                     ..Default::default()
                 },
                 |window, cx| {
+                    // Install the menu one frame later, after the first frame presents.
+                    window.on_next_frame(|window, _| {
+                        window.on_next_frame(|_, cx| app_menu::ready(cx));
+                    });
+                    // Off the launch path: it lists every conversation folder.
+                    let cleanup = db.clone();
+                    window.on_next_frame(move |_, cx| {
+                        cx.background_executor()
+                            .spawn(async move {
+                                let result = cleanup
+                                    .lock()
+                                    .map_err(|error| error.to_string())
+                                    .and_then(|store| store.sweep_thread_dirs());
+                                if let Err(error) = result {
+                                    eprintln!(
+                                        "Cannot clean up deleted conversations' files: {error}"
+                                    );
+                                }
+                            })
+                            .detach();
+                    });
                     let shell = cx.new(|cx| {
                         shell::Shell::new_with_metadata(
                             db,

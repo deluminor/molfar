@@ -357,7 +357,7 @@ fn original_app_surfaces_familiar_overview_and_rail_back_use_original_controls(
     assert_eq!(header.top(), px(0.));
     assert_eq!(header.size.height, px(40.));
     assert!(visual.debug_bounds("familiar-overview-tabs").is_some());
-    let first_tab = visual.debug_bounds("familiar-overview-Sessions").unwrap();
+    let first_tab = visual.debug_bounds("familiar-overview-Overview").unwrap();
     assert_eq!(first_tab.left() - header.left(), px(8.));
     assert!((first_tab.center().y - header.center().y).abs() <= px(0.5));
     assert!(visual.debug_bounds("sidebar-content").is_none());

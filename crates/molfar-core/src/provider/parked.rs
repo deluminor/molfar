@@ -264,7 +264,8 @@ pub(super) fn key(request: &Request) -> String {
             .familiar
             .as_ref()
             .map(|familiar| (&familiar.root, &familiar.familiar.id)),
-        request.settings.disable_claude_hooks
+        request.settings.disable_claude_hooks,
+        crate::accounts::claude_entrypoint()
     ])
     .to_string()
 }

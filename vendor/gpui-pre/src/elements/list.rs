@@ -1,3 +1,4 @@
+// MOLFAR patch: explicit positioning must supersede queued wheel work.
 //! A list element that can be used to render a large number of differently sized elements
 //! efficiently. Clients of this API need to ensure that elements outside of the scrolled
 //! area do not change their height for this element to function correctly. If your elements
@@ -15,7 +16,7 @@ use crate::{
 };
 use collections::VecDeque;
 use refineable::Refineable as _;
-use std::{cell::RefCell, ops::Range, rc::Rc};
+use std::{cell::RefCell, ops::Range, rc::Rc, time::Instant};
 use sum_tree::{Bias, Dimensions, SumTree};
 
 type RenderItemFn = dyn FnMut(usize, &mut Window, &mut App) -> AnyElement + 'static;
@@ -73,7 +74,22 @@ struct StateInner {
     measuring_behavior: ListMeasuringBehavior,
     pending_scroll: Option<PendingScroll>,
     follow_state: FollowState,
+    wheel_glide: Option<WheelGlide>,
+    wheel_glide_generation: u64,
 }
+
+/// A mouse wheel moves in notches, each a jump of several lines. Rather
+/// than teleporting, the list glides through a notch's distance, and further
+/// notches add to the distance still to go. Trackpads report exact pixels
+/// with their own momentum and are applied as they arrive.
+struct WheelGlide {
+    remaining: Pixels,
+    last: Instant,
+    height: Pixels,
+    view: EntityId,
+}
+/// Time constant of the glide: about 95% of a notch lands within 3τ.
+const WHEEL_GLIDE_TAU: f32 = 0.07;
 
 /// Deferred scroll adjustment applied after the scroll-top item has been remeasured.
 ///
@@ -325,6 +341,8 @@ impl ListState {
             measuring_behavior: ListMeasuringBehavior::default(),
             pending_scroll: None,
             follow_state: FollowState::default(),
+            wheel_glide: None,
+            wheel_glide_generation: 0,
         })));
         this.splice(0..0, item_count);
         this
@@ -355,6 +373,7 @@ impl ListState {
     pub fn reset(&self, element_count: usize) {
         let old_count = {
             let state = &mut *self.0.borrow_mut();
+            state.wheel_glide = None;
             state.reset = true;
             state.measuring_behavior.reset();
             state.logical_scroll_top = None;
@@ -569,6 +588,7 @@ impl ListState {
 
         let current_offset = self.logical_scroll_top();
         let state = &mut *self.0.borrow_mut();
+        state.wheel_glide = None;
 
         if distance < px(0.) {
             state.follow_state.stop_following();
@@ -602,6 +622,7 @@ impl ListState {
     /// growing (e.g. during streaming).
     pub fn scroll_to_end(&self) {
         let state = &mut *self.0.borrow_mut();
+        state.wheel_glide = None;
         let item_count = state.items.summary().count;
         state.pending_scroll = None;
         state.logical_scroll_top = Some(ListOffset {
@@ -622,6 +643,7 @@ impl ListState {
                 state.follow_state = FollowState::Normal;
             }
             FollowMode::Tail => {
+                state.wheel_glide = None;
                 state.follow_state = FollowState::Tail { is_following: true };
                 if matches!(mode, FollowMode::Tail) {
                     let item_count = state.items.summary().count;
@@ -659,6 +681,7 @@ impl ListState {
     /// Scroll the list to the given offset
     pub fn scroll_to(&self, mut scroll_top: ListOffset) {
         let state = &mut *self.0.borrow_mut();
+        state.wheel_glide = None;
         let item_count = state.items.summary().count;
         if scroll_top.item_ix >= item_count {
             scroll_top.item_ix = item_count;
@@ -676,6 +699,7 @@ impl ListState {
     /// Scroll the list to the given item, such that the item is fully visible.
     pub fn scroll_to_reveal_item(&self, ix: usize) {
         let state = &mut *self.0.borrow_mut();
+        state.wheel_glide = None;
 
         let mut scroll_top = state.logical_scroll_top();
         let height = state
@@ -742,6 +766,7 @@ impl ListState {
     /// as items in the overdraw get measured, and help offset scroll position changes accordingly.
     pub fn scrollbar_drag_started(&self) {
         let mut state = self.0.borrow_mut();
+        state.wheel_glide = None;
         state.scrollbar_drag_start_height = Some(state.items.summary().height);
     }
 
@@ -1369,6 +1394,7 @@ impl StateInner {
     // Scrollbar support
 
     fn set_offset_from_scrollbar(&mut self, point: Point<Pixels>) {
+        self.wheel_glide = None;
         let Some(bounds) = self.last_layout_bounds else {
             return;
         };
@@ -1600,6 +1626,36 @@ impl Element for List {
         let mut accumulated_scroll_delta = ScrollDelta::default();
         window.on_mouse_event(move |event: &ScrollWheelEvent, phase, window, cx| {
             if phase == DispatchPhase::Bubble && hitbox_id.should_handle_scroll(window) {
+                if let ScrollDelta::Lines(lines) = event.delta
+                    && lines.x == 0.
+                    && !cx.reduce_motion()
+                {
+                    let distance = px(20.) * lines.y;
+                    let mut state = list_state.0.borrow_mut();
+                    let start = state
+                        .wheel_glide
+                        .as_ref()
+                        .is_none_or(|glide| glide.remaining.signum() != distance.signum());
+                    if start {
+                        state.wheel_glide = None;
+                        state.wheel_glide_generation = state.wheel_glide_generation.wrapping_add(1);
+                    }
+                    let generation = state.wheel_glide_generation;
+                    let glide = state.wheel_glide.get_or_insert(WheelGlide {
+                        remaining: px(0.),
+                        last: Instant::now(),
+                        height,
+                        view: current_view,
+                    });
+                    glide.remaining += distance;
+                    glide.height = height;
+                    drop(state);
+                    if start {
+                        wheel_glide_frame(list_state.clone(), scroll_top, generation, window);
+                    }
+                    return;
+                }
+                list_state.0.borrow_mut().wheel_glide = None;
                 accumulated_scroll_delta = accumulated_scroll_delta.coalesce(event.delta);
                 let pixel_delta = accumulated_scroll_delta.pixel_delta(px(20.));
                 list_state.0.borrow_mut().scroll(
@@ -1619,6 +1675,56 @@ impl Element for List {
             }
         });
     }
+}
+
+/// Advances a wheel glide by one display frame.
+fn wheel_glide_frame(
+    state: ListState,
+    scroll_top: ListOffset,
+    generation: u64,
+    window: &mut Window,
+) {
+    window.on_next_frame(move |window, cx| {
+        let mut inner = state.0.borrow_mut();
+        if inner.wheel_glide_generation != generation {
+            return;
+        }
+
+        let Some(glide) = inner.wheel_glide.as_mut() else {
+            return;
+        };
+        let now = Instant::now();
+        let dt = now
+            .saturating_duration_since(glide.last)
+            .as_secs_f32()
+            .min(0.05);
+        glide.last = now;
+        let mut step = glide.remaining * (1. - (-dt / WHEEL_GLIDE_TAU).exp());
+        if (glide.remaining - step).abs() < px(0.5) {
+            step = glide.remaining;
+        }
+        glide.remaining -= step;
+        let (height, view, done) = (glide.height, glide.view, glide.remaining == px(0.));
+        if done {
+            inner.wheel_glide = None;
+        }
+        // After the first step the list's own logical position is current.
+        // A bottom-aligned list at its end has none, and the glide is over.
+        let base = inner.logical_scroll_top.unwrap_or(scroll_top);
+        let at_end = inner.alignment == ListAlignment::Bottom
+            && inner.logical_scroll_top.is_none()
+            && step < px(0.);
+        if at_end {
+            inner.wheel_glide = None;
+        } else if step != px(0.) {
+            inner.scroll(&base, height, point(px(0.), step), view, window, cx);
+        }
+        let running = inner.wheel_glide.is_some();
+        drop(inner);
+        if running {
+            wheel_glide_frame(state, scroll_top, generation, window);
+        }
+    });
 }
 
 impl IntoElement for List {

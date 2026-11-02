@@ -18,6 +18,40 @@ runtime testing. See [preview limitations](parity.md).
 
 Fenced `mermaid` blocks render as native diagrams in Markdown previews and
 conversations. See [Mermaid diagrams](mermaid.md) for examples and limitations.
+For interactive visuals, use `/visualize` in an idle local desktop conversation
+or ask a Familiar directly. See [session visuals](visuals.md) and the
+[preview release notes](preview-release-notes.md).
+
+## Familiars
+
+A Familiar's **Overview** tab brings together its current activity, a contribution
+calendar, today's work, upcoming habits and new documents. **Sub-agents** lists
+the sessions it launched, with their model, provider, checkout and state. Familiars
+are prompted to delegate longer tasks to background sessions, whose final
+reports return to the Familiar chat.
+
+Contribution counts come from the Familiar's sessions, including saved history:
+commits and pull requests opened, merged or reviewed through supported agent
+tools. Opened pull requests are checked for later merges through the GitHub CLI.
+Records are stored in `molfar.db.gpui.sqlite3` alongside native preferences
+when using the installed desktop database.
+
+In the Familiar's **Settings → General → Heartbeat** section, **Check in on its own**
+controls inactivity checks. They are enabled by default with a 30-minute quiet
+interval; choose 15 minutes, 30 minutes, 1 hour or 2 hours, or turn them off.
+While the native app is running, an idle Familiar with an existing conversation can
+review sessions, notes and inbox changes in its assigned projects and suggest
+up to two follow-ups. It can also perform recurring checks already described
+in its soul's standing instructions. New work is proposed for the user to accept.
+
+Heartbeats keep the Familiar's selected permission mode and use its provider account,
+with a smaller model when its catalog offers one. Quiet checks leave no report
+or retained side session, and repeated quiet results extend the interval up to
+four hours. Recent suggestions and the last check time are saved in the Familiar's
+`heartbeat.json` file to avoid repeating
+the same follow-ups after a restart. Scheduled habits take priority over
+heartbeats. Live scheduler and provider behavior still need broader testing;
+see [verification](verification.md).
 
 ## Develop
 

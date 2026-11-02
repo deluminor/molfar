@@ -5,7 +5,7 @@ export type MobileSelection = { projectIds: string[]; familiarIds: string[] };
  * phone has no good way to talk to them yet; familiars picked before are kept in
  * the selection, so they come back when this is turned on.
  */
-export const FAMILIARS_ENABLED = false;
+export const FAMILIARS_ENABLED = true;
 export function normalizeSelection(value: unknown): MobileSelection | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;

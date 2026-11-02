@@ -152,6 +152,8 @@ export function useRunningFlows(
     rename: historyFlows.historyActions.rename,
     remove: historyFlows.historyActions.remove,
     stop: turnActions.stop,
+    answer: turnActions.answer,
+    keepQuestionOpen: turnActions.keepQuestionOpen,
     changeModel: composerActions.changeModel,
     changeModelSettings: composerActions.changeModelSettings,
     changeRuntimeMode: composerActions.changeRuntimeMode,

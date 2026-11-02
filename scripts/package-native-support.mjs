@@ -82,6 +82,10 @@ export async function notices(directory) {
     await cp(join(root, file), join(directory, file.split("/").at(-1)));
   }
   await cp(
+    join(root, "vendor/gpui-pre-macos/LICENSE-APACHE"),
+    join(directory, "gpui-pre-macos.LICENSE-APACHE"),
+  );
+  await cp(
     join(root, "crates/molfar-gpui/assets/material/LICENSE"),
     join(directory, "material-icons.LICENSE"),
   );
