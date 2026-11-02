@@ -36,11 +36,20 @@ desktop fields and do not rewrite composer preferences or migrate tables.
 `Store::app_turn_result` uses the existing durable app request identity to read
 the complete persisted assistant output for that root, including explicitly
 joined steers. It bypasses UI paging and control-output limits, rejects ambiguous
-provenance, and treats missing terminal data as unknown. The native Board first
-Grill lifecycle consumes this boundary for durable settlement and recovery through
-the existing native session runner. Later stage execution remains pending; the
-transition policy alone does not implement Plan approval, Implement, Code review,
-Rework or delivery. See [migration status](parity.md#application-work).
+provenance, and treats missing terminal data as unknown. The native Board Grill
+lifecycle consumes this boundary for durable settlement and recovery through the
+existing native session runner. Owner answers and change requests create immutable
+user artifacts before queueing the next round; plan
+edits create new versions without replacing prior output. Decisions check the
+card revision before writing. Later rounds receive versioned task/spec/plan/answers
+handoff files and questions from the newest successful Grill run. Legacy cards
+missing required artifact metadata retain the task-only fallback; unreadable
+registered artifacts remain explicit errors. Native artifact reads reject
+symlinks/nonregular files, empty bodies and oversized content.
+
+Approval-to-Implement and later stage execution remain pending; the transition
+policy alone does not implement Implement, Code review, Rework or delivery. See
+[migration status](parity.md#application-work).
 
 ## Rendering and responsiveness
 

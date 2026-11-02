@@ -365,3 +365,37 @@ Retry overrides, Back, frozen run provenance and the native Stage settings
 dialog, including real keystrokes. Two independent review rounds were addressed.
 No actual app, browser, device, live provider or production data was used.
 
+## MOLFAR Board owner review and repeated Grill — November 2, 2026
+
+M01a implementation: `eab8b0bbe4ec1eb8beddf1a05e94b1b5ccc415f0` (base `018c78e9`).
+The checked source was committed unchanged after verification. Its source
+fingerprint is `cfa186221d00cd1aaf5cc57b6a03e4cbaf2ac9a52951398ed94ce17298e6b867`.
+The results below are local checks, not remote CI or runtime certification.
+
+| Check | Result and scope |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, native formatting and strict all-target Clippy, 763 core passed / 2 ignored, 835 GPUI passed / 11 ignored, 6 wheel regressions passed |
+| `npm run check:web` | Exit 0; 7,145 passed / 13 skipped, TypeScript, lint, size, boundaries, moves and branding; no web/Tauri source changes followed this run |
+| Final structural checks | Size, boundaries, moves, branding and diff checks passed after the final test paths were added |
+| `npm run native:build` | Exit 0; optimized macOS app built and locally signed without launch; `codesign --verify --deep --strict` exit 0 (release compilation 14m 38s) |
+
+Core fixtures cover current-run questions, desktop answer formatting, versioned
+plan edits, stale/concurrent/read-only actions, filesystem limits and immutable
+artifact recovery after partial saves. Native synthetic fixtures cover draft
+preservation, conflict reload, focus, keyboard, IME and reduced motion. A fake
+provider drives two native Grill rounds through separate sessions with versioned
+handoff files; earlier plan versions and the original checkout are retained.
+Restart cases cover accepted/prepared round 2 and durable submitted receipts.
+
+The first-round prompt fixture remains exact; a second fixture pins the complete
+later-round prompt. Both use LF checkout attributes. A new accepted-state test
+initially timed out because test mode disables automatic polling; explicit poll,
+as in the existing prepared-state fixture, produced red/green without a
+production-code change. The complete native gate was then rerun successfully.
+Independent source review findings were addressed and rechecked.
+
+These checks use temporary databases/projects and test contexts. No actual
+application, browser, device or live provider QA, production-data writes, job
+activation, publishing or merge occurred. The thirteen ignored native tests
+remain manual/platform checks. Approval-to-Implement and subsequent execution
+and delivery remain pending; M01a does not close full Board or GPUI parity.

@@ -4,9 +4,11 @@ The native app is still experimental. A feature being present in source does not
 establish runtime or platform parity with the production React/Tauri app. See
 [verification](verification.md) for recorded checks.
 
-Migration status reviewed on November 2, 2026, at `60bbd2c6`. PR #127 is
-ready for review; its automated checks pass, but the runtime gaps below remain
-open. Merging native source does not authorize replacing the production Tauri app.
+Migration baseline reviewed on November 2, 2026, at `60bbd2c6`; the M01a owner-review
+follow-up (`eab8b0bb`) is recorded in verification.md. PR #127 is
+ready for review; baseline automated checks are recorded in verification.md,
+while the runtime gaps below remain open. Merging native source does not authorize
+replacing the production Tauri app.
 
 ## Providers
 
@@ -38,7 +40,7 @@ approval for every edit. Native Supervised mode does not add that guarantee.
 
 | Area | Remaining verification or work |
 | --- | --- |
-| MOLFAR Board | Implemented: grouped list/detail, Backlog creation with initial task snapshot, first Grill round in a visible native session, durable settlement, cancel/retry/restart recovery, spec/plan artifacts and transition into Plan approval; stage transition policy, per-stage model/skill/access settings, Retry with another model and Back. The transition table includes later-stage policy, but native Plan approval actions, later Grill rounds, Implement/Code review/Rework execution and delivery remain pending. Actual application interaction and platform verification remain outstanding. |
+| MOLFAR Board | Implemented: grouped list/detail, Backlog creation with initial task snapshot, Grill rounds in visible native sessions, owner answers/change requests and versioned plan editing, durable settlement, cancel/retry/restart recovery, spec/plan artifacts and transition into Plan approval; stage transition policy, per-stage model/skill/access settings, Retry with another model and Back. The transition table includes later-stage policy, but native approval-to-Implement, Implement/Code review/Rework execution and delivery remain pending. Task-field editing and drag/reorder parity are not established. Actual application interaction and platform verification remain outstanding. |
 | Chat | Live attachment/steering/rewind checks, complete keyboard selection and screen-reader navigation, richer nested task artifacts and provider-specific task controls |
 | History and workspace | Transcript/database paging, cache runtime checks, remaining desktop layout consumers, explicit import/export |
 | Files and Git | Platform visual/IME checks, Linux/Windows media hosting, non-Git checkpoints, per-file checkpoint Undo/Keep and orchestration checkpoint integration |
