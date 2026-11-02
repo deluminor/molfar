@@ -399,3 +399,31 @@ application, browser, device or live provider QA, production-data writes, job
 activation, publishing or merge occurred. The thirteen ignored native tests
 remain manual/platform checks. Approval-to-Implement and subsequent execution
 and delivery remain pending; M01a does not close full Board or GPUI parity.
+
+## Migration branch reconciliation — November 2, 2026
+
+The main checkout on `migration/gpui-into-main` fast-forward integrated M01a
+`eab8b0bb` / `6b08aa29`, then reconciled main through `5ee67cce` (v1.0.23).
+The only merge conflict was CHANGELOG.md; both connector Unreleased content
+and the released v1.0.23 notes are retained. All 41 M01a source/fixture/attribute
+files remain byte-identical to `6b08aa29`. Imported Familiar source and tests
+match `5ee67cce` exactly. See [working location and status](status.md).
+
+Fresh local checks for this reconciliation:
+
+| Check | Result |
+| --- | --- |
+| `npm run check:web` | Exit 0; 7,145 passed / 13 skipped, both TypeScript checks, lint, size, boundaries, moves and branding |
+| Release changelog/version/open-PR tests via project Vitest | Exit 0; 31 passed |
+| `cargo test --locked -p molfar --lib codex_familiar_store::tests -- --test-threads=1` | Exit 0; 7 passed, 749 filtered |
+| Source preservation, current documentation links and status JSON | Passed; secondary tracked worktree remains clean |
+
+The initial release test invocation used Node's test runner on Vitest files
+and failed; the corrected Vitest run above passed. No source change was made
+for that invocation error.
+
+Full native/Tauri suites, optimized native build, dependency/security audit,
+application/provider/device QA and current remote CI were not rerun for this
+reconciliation. Prior native gate/build evidence remains pinned to M01a.
+The reconciliation is local until published; it does not change the remote PR
+status, installed automation or production application.

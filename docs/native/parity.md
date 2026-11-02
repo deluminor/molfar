@@ -10,6 +10,8 @@ ready for review; baseline automated checks are recorded in verification.md,
 while the runtime gaps below remain open. Merging native source does not authorize
 replacing the production Tauri app.
 
+Working branch, checkout and publication boundaries: [migration status](status.md).
+
 ## Providers
 
 All eleven providers have discovery, model selection and native transports.

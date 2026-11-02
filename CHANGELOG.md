@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **molfar-connectors** MCP write tools for agent sessions: `jira_issue_get`, `jira_issue_edit`, `jira_issue_create`, `jira_issue_transitions`, `jira_issue_transition`, `jira_search`, `confluence_page_create`, and `confluence_page_update` (vault Atlassian token; no `cloudId`).
 
+## [1.0.23] - 2026-11-02
+
+### Fixed
+
+- Familiar Codex chats no longer fail to start when Codex leaves lock files (such as `memories.lock`) in Familiar storage.
+
 ## [1.0.22] - 2026-11-02
 
 ### Added
@@ -511,7 +517,8 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.22...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.23...HEAD
+[1.0.23]: https://github.com/deluminor/molfar/compare/v1.0.22...v1.0.23
 [1.0.22]: https://github.com/deluminor/molfar/compare/v1.0.21...v1.0.22
 [1.0.21]: https://github.com/deluminor/molfar/compare/v1.0.20...v1.0.21
 [1.0.20]: https://github.com/deluminor/molfar/compare/v1.0.19...v1.0.20
