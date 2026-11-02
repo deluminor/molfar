@@ -47,8 +47,20 @@ missing required artifact metadata retain the task-only fallback; unreadable
 registered artifacts remain explicit errors. Native artifact reads reject
 symlinks/nonregular files, empty bodies and oversized content.
 
-Approval-to-Implement and later stage execution remain pending; the transition
-policy alone does not implement Implement, Code review, Rework or delivery. See
+Readiness M02 extends the same lifecycle to Implement, Code review and Rework.
+Plan approval queues Implement only from the idle, unarchived Plan gate at the
+expected revision. Each agent stage freezes its model, access and skills at
+acceptance and receives immutable versioned handoff files. Implement and Rework
+must start on a clean retained worktree and finish clean on a new HEAD; Grill
+and Code review must leave the checkout snapshot unchanged. Output is validated
+against the run's own stage contract before publication, so wrong-stage or
+prior-run receipts cannot settle a newer run. Code review always ends at Final
+review. Owner-selected findings and a note form a rework brief bound to the
+current review version and increment `rework_cycle`. Back from a failed Code
+review or Rework to Final review requires a readable completed review; otherwise
+Retry remains the available path.
+
+Delivery, archive and remote push/merge actions remain pending. See
 [migration status](parity.md#application-work).
 
 ## Rendering and responsiveness

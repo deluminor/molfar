@@ -427,3 +427,41 @@ application/provider/device QA and current remote CI were not rerun for this
 reconciliation. Prior native gate/build evidence remains pinned to M01a.
 The reconciliation is local until published; it does not change the remote PR
 status, installed automation or production application.
+
+## MOLFAR Board execution (readiness M02) — November 2, 2026
+
+Commits `ff780975` (stage contracts), `16233522` (lifecycle and native
+coordinator), `bf984b8f` (native controls) and `2369ba98` (review fixes and
+coverage), base `f98187b8`. The checks below ran on `2369ba98` unchanged. They
+are local checks, not remote CI or runtime certification.
+
+| Check | Result and scope |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, native formatting and strict all-target Clippy, 777 core passed / 2 ignored, 847 GPUI passed / 11 ignored, 6 wheel regressions passed |
+| `npm run check:web` | Exit 0; 7,145 passed / 13 skipped, TypeScript, lint, size, boundaries, moves and branding; no web/Tauri source changes |
+| `npm run native:build` | Exit 0; optimized macOS app built and locally signed without launch; `codesign --verify --deep --strict` exit 0 (release compilation 6m 59s) |
+
+Core fixtures cover the full approval → Implement → Code review → Final review →
+Rework → Code review chain with per-stage attempts and immutable review versions,
+exact desktop prompts and output contracts, stale/duplicate/archived actions,
+per-stage Retry overrides, models frozen at acceptance, prior-cycle review
+receipts, oversized and forged output, partial artifact saves, writing-stage
+commit/clean policy, read-only review mutation and the Back-to-Final-review
+guard. A fake provider drives the native pipeline in a temporary retained
+checkout, including dirty starts with no provider submission, failed writing
+stages that keep their changes, and accepted/prepared/submitted restarts without
+replay. Native synthetic fixtures cover legal actions, single-emit approval,
+finding preselection, focus order, keyboard selection and draft preservation
+after failed submit and conflict.
+
+The first full gate run hit one failure in the unchanged
+`checkpoint::tests::commits_after_the_turn_clear_modified_created_and_deleted_files`
+(`git commit` in a temporary repository returned an empty error under parallel
+load with global hooks). It passed three isolated reruns and the complete rerun
+recorded above. An independent source review found no blocking or major defects;
+its minor findings were fixed or recorded. Writing stages compare HEAD equality
+only, matching desktop; ancestry and branch checks are possible hardening.
+
+No actual application, browser, device or live provider QA, production-data
+writes, job activation, push or merge occurred. Delivery and archive actions
+remain pending; M02 does not close full Board or GPUI parity.
