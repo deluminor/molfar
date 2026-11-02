@@ -32,7 +32,13 @@ impl Board {
             };
             window.focus(&handles[next], cx);
         } else if key == "enter" || key == "space" {
-            if panel.cancel_focus.is_focused(window) {
+            if let Some(index) = panel
+                .finding_focus
+                .iter()
+                .position(|focus| focus.is_focused(window))
+            {
+                self.toggle_rework_finding(index, cx);
+            } else if panel.cancel_focus.is_focused(window) {
                 self.close_owner_review(window, cx);
             } else if panel.reload_required && panel.reload_focus.is_focused(window) {
                 self.load_owner_review(cx);

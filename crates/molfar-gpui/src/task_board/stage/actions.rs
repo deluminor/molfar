@@ -2,16 +2,41 @@ use super::super::settings::PickTarget;
 use super::super::{Board, Event};
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Role, div, prelude::*};
-use molfar_core::task_board::constants::{BACKLOG, COLUMNS, GRILL, IDLE, PLAN_APPROVAL};
-use molfar_core::task_board::stage::lifecycle::constants::{FAILED, QUEUED, RUNNING};
+use molfar_core::task_board::constants::{
+    BACKLOG, CODE_REVIEW, COLUMNS, FINAL_REVIEW, GRILL, IDLE, IMPLEMENT, PLAN_APPROVAL, REWORK,
+};
+use molfar_core::task_board::stage::contracts::constants::REVIEW;
+use molfar_core::task_board::stage::lifecycle::constants::{FAILED, QUEUED, RUNNING, SUCCEEDED};
 use molfar_core::task_board::stage::{agent::AgentStage, transitions::back_target};
+use molfar_core::task_board::types::Snapshot;
 use molfar_core::task_board::{stage::lifecycle::types::StageAction, types::Card};
 
-fn back_label(card: &Card) -> Option<String> {
+fn has_completed_review(card: &Card, snapshot: &Snapshot) -> bool {
+    let review =
+        snapshot.runs.iter().rev().find(|run| {
+            run.card_id == card.id && run.stage == CODE_REVIEW && run.status == SUCCEEDED
+        });
+
+    review.is_some_and(|run| {
+        snapshot.artifacts.iter().any(|artifact| {
+            artifact.card_id == card.id
+                && artifact.kind == REVIEW
+                && artifact.stage_run_id.as_deref() == Some(&run.id)
+        })
+    })
+}
+
+fn back_label(card: &Card, snapshot: Option<&Snapshot>) -> Option<String> {
     let stage = AgentStage::parse(&card.column_id)?;
     if card.archived || card.run_state != FAILED {
         return None;
     }
+
+    let needs_review = matches!(stage, AgentStage::CodeReview | AgentStage::Rework);
+    if needs_review && !snapshot.is_some_and(|snapshot| has_completed_review(card, snapshot)) {
+        return None;
+    }
+
     let target = back_target(stage);
     let label = COLUMNS
         .iter()
@@ -27,7 +52,11 @@ pub(super) fn stage_action(card: &Card) -> Option<(&'static str, StageAction)> {
     match (card.column_id.as_str(), card.run_state.as_str()) {
         (BACKLOG, IDLE) => Some(("Start Grill", StageAction::Start)),
         (GRILL, FAILED) => Some(("Retry Grill", StageAction::Retry(None))),
-        (GRILL, QUEUED | RUNNING) => Some(("Cancel run", StageAction::Cancel)),
+        (IMPLEMENT | CODE_REVIEW | REWORK, FAILED) => Some(("Retry run", StageAction::Retry(None))),
+        (PLAN_APPROVAL, IDLE) => Some(("Approve plan & implement", StageAction::ApprovePlan)),
+        (GRILL | IMPLEMENT | CODE_REVIEW | REWORK, QUEUED | RUNNING) => {
+            Some(("Cancel run", StageAction::Cancel))
+        }
         _ => None,
     }
 }
@@ -87,7 +116,7 @@ impl Board {
                 })),
             );
         }
-        if let Some(target) = back_label(card) {
+        if let Some(target) = back_label(card, self.snapshot.as_ref()) {
             let card_id = card.id.clone();
             let updated_at = card.updated_at;
             row = row.child(
@@ -158,6 +187,27 @@ impl Board {
                         )
                     })),
                 );
+        }
+        if card.column_id == FINAL_REVIEW
+            && matches!(card.run_state.as_str(), IDLE | FAILED)
+            && !card.archived
+        {
+            let card_id = card.id.clone();
+            row = row.child(
+                modal::disabled(
+                    modal::primary_button("board-owner-rework", "Review findings & rework"),
+                    pending,
+                )
+                .debug_selector(|| "board-owner-rework".into())
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.open_owner_review(
+                        card_id.clone(),
+                        super::super::review::Mode::Rework,
+                        window,
+                        cx,
+                    )
+                })),
+            );
         }
         if card.column_id == PLAN_APPROVAL {
             row = row.child(

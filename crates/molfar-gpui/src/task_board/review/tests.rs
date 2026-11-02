@@ -4,7 +4,10 @@ use crate::task_board::{
     tests::{card, window},
 };
 use gpui::{EntityInputHandler, Focusable, TestAppContext, VisualTestContext};
-use molfar_core::task_board::stage::{lifecycle::types::StageAction, owner::types::Question};
+use molfar_core::task_board::stage::{
+    lifecycle::types::StageAction,
+    owner::types::{Question, Review},
+};
 use std::{cell::RefCell, rc::Rc};
 
 pub(super) fn data() -> Review {
@@ -40,7 +43,7 @@ pub(super) fn ready(cx: &mut TestAppContext, mode: Mode) -> gpui::WindowHandle<B
     }
     window
         .update(cx, |board, window, cx| {
-            board.finish_owner_load(board.review_revision, Ok(data()), window, cx);
+            board.finish_owner_load(board.review_revision, Ok(data().into()), window, cx);
         })
         .unwrap();
     window
@@ -65,7 +68,7 @@ fn owner_review_load_error_can_retry_and_closed_load_cannot_replace_new_review(
             let old = board.review_revision;
             board.close_owner_review(window, cx);
             board.open_owner_review("new-card".into(), Mode::Plan, window, cx);
-            board.finish_owner_load(old, Ok(data()), window, cx);
+            board.finish_owner_load(old, Ok(data().into()), window, cx);
             assert_eq!(board.review.as_ref().unwrap().card_id, "new-card");
             assert!(board.review.as_ref().unwrap().data.is_none());
         })
@@ -172,7 +175,7 @@ fn owner_plan_editor_preserves_versions_and_text_input_does_not_toggle_board(
         .update(visual, |board, _, cx| {
             let panel = board.review.as_ref().unwrap();
             assert!(panel.can_submit(false, cx));
-            assert_eq!(panel.data.as_ref().unwrap().plan, "# Original plan");
+            assert_eq!(panel.data.as_ref().unwrap().plan(), "# Original plan");
             assert!(!board.project_only && !board.archived && !board.create_open);
             board.submit_owner_review(false, cx);
             assert!(board.review.as_ref().unwrap().busy);
@@ -227,7 +230,7 @@ fn owner_note_only_review_requires_text_and_submits_request_changes(cx: &mut Tes
         .update(cx, |board, window, cx| {
             let mut review = data();
             review.questions.clear();
-            board.finish_owner_load(board.review_revision, Ok(review), window, cx);
+            board.finish_owner_load(board.review_revision, Ok(review.into()), window, cx);
             assert!(!board.review.as_ref().unwrap().can_submit(false, cx));
             board.review.as_ref().unwrap().note.update(cx, |input, cx| {
                 input.set_text("Please expand tests".into(), cx)

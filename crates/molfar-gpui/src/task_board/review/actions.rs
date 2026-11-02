@@ -20,12 +20,27 @@ impl Board {
         let note = panel.note.read(cx).content.to_string();
         let action = if panel.mode == Mode::Plan {
             StageAction::EditPlan(panel.plan.read(cx).content.to_string())
+        } else if panel.mode == Mode::Rework {
+            let Some(review) = data.final_review() else {
+                return;
+            };
+            StageAction::Rework {
+                findings: review
+                    .review
+                    .findings
+                    .iter()
+                    .filter(|finding| panel.selected.contains(&finding.id))
+                    .map(|finding| finding.id.clone())
+                    .collect(),
+                note,
+                review_version: review.version,
+            }
         } else if changes || panel.answers.is_empty() {
             StageAction::RequestChanges(note)
         } else {
             StageAction::Answer {
                 answers: data
-                    .questions
+                    .questions()
                     .iter()
                     .zip(&panel.answers)
                     .map(|(question, answer)| Answer {
@@ -36,8 +51,8 @@ impl Board {
                 note,
             }
         };
-        let card_id = data.card.id.clone();
-        let updated_at = data.card.updated_at;
+        let card_id = data.card().id.clone();
+        let updated_at = data.card().updated_at;
         panel.busy = true;
         panel.error = None;
         for field in panel.fields() {

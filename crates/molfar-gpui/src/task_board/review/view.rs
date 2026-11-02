@@ -12,10 +12,10 @@ impl Board {
         cx: &mut Context<Self>,
     ) -> Option<AnyElement> {
         let panel = self.review.as_ref()?;
-        let title = if panel.mode == Mode::Plan {
-            "Edit plan"
-        } else {
-            "Review questions"
+        let title = match panel.mode {
+            Mode::Plan => "Edit plan",
+            Mode::Questions => "Review questions",
+            Mode::Rework => "Select findings for rework",
         };
         let mut body = modal::card_body()
             .id("board-owner-body")
@@ -39,8 +39,12 @@ impl Board {
                         "Saving creates a new plan version. Previous versions stay available.",
                     ))
                     .child(input::form_field("Plan", panel.plan.clone(), 310.));
+            } else if panel.mode == Mode::Rework {
+                body = body
+                    .child(self.rework_findings(cx))
+                    .child(input::form_field("Rework note", panel.note.clone(), 100.));
             } else {
-                for (question, answer) in data.questions.iter().zip(&panel.answers) {
+                for (question, answer) in data.questions().iter().zip(&panel.answers) {
                     body = body.child(
                         div()
                             .flex()
@@ -61,7 +65,7 @@ impl Board {
                             )),
                     );
                 }
-                if data.questions.is_empty() {
+                if data.questions().is_empty() {
                     body = body.child(modal::body(
                         "No open questions. Add a note to request another Grill round.",
                     ));
@@ -139,6 +143,8 @@ impl Board {
                 "Saving…"
             } else if panel.mode == Mode::Plan {
                 "Save as new version"
+            } else if panel.mode == Mode::Rework {
+                "Start rework"
             } else if has_questions {
                 "Answer & re-grill"
             } else {

@@ -189,9 +189,34 @@ fn failed_stage_offers_back_to_its_source_column(cx: &mut TestAppContext) {
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
 
-    assert!(visual.debug_bounds("board-stage-action").is_none());
-    assert!(visual.debug_bounds("board-retry-model").is_none());
+    assert!(visual.debug_bounds("board-stage-action").is_some());
+    assert!(visual.debug_bounds("board-retry-model").is_some());
     click(visual, "board-stage-back");
 
     assert_eq!(*events.borrow(), ["Back"]);
+}
+
+#[gpui::test]
+fn first_failed_review_keeps_retry_and_hides_unusable_final_review_back(cx: &mut TestAppContext) {
+    let window = window(cx);
+    let mut failed = card("card", "code_review");
+    failed.run_state = "failed".into();
+    window
+        .update(cx, |board, _, cx| {
+            board.finish(
+                board.revision,
+                Ok(Snapshot {
+                    cards: vec![failed],
+                    selected: Some("card".into()),
+                    ..Default::default()
+                }),
+                cx,
+            );
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("board-stage-action").is_some());
+    assert!(visual.debug_bounds("board-retry-model").is_some());
+    assert!(visual.debug_bounds("board-stage-back").is_none());
 }

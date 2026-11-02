@@ -45,12 +45,12 @@ fn conflicting_owner_draft_survives_reload_failure_and_is_discarded_only_on_succ
             let mut latest = data();
             latest.card.updated_at = 100;
             latest.plan = "Other writer's plan".into();
-            board.finish_owner_load(board.review_revision, Ok(latest), window, cx);
+            board.finish_owner_load(board.review_revision, Ok(latest.into()), window, cx);
             let panel = board.review.as_ref().unwrap();
             assert!(!panel.reload_required);
             assert!(panel.error.is_none());
             assert_eq!(panel.plan.read(cx).content.as_ref(), "Other writer's plan");
-            assert_eq!(panel.data.as_ref().unwrap().card.updated_at, 100);
+            assert_eq!(panel.data.as_ref().unwrap().card().updated_at, 100);
             assert!(!panel.can_submit(false, cx));
         })
         .unwrap();

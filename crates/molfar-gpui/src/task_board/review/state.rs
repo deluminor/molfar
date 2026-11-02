@@ -1,11 +1,54 @@
 use crate::input::Input;
 use gpui::{App, Entity, FocusHandle, Focusable, Subscription, Window};
-use molfar_core::task_board::stage::owner::types::Review;
+use molfar_core::task_board::{
+    stage::owner::types::{FinalReview, Question, Review},
+    types::Card,
+};
+use std::collections::HashSet;
+
+pub(in crate::task_board) enum Content {
+    Plan(Review),
+    Final(FinalReview),
+}
+
+impl From<Review> for Content {
+    fn from(value: Review) -> Self {
+        Self::Plan(value)
+    }
+}
+
+impl Content {
+    pub(super) fn card(&self) -> &Card {
+        match self {
+            Self::Plan(data) => &data.card,
+            Self::Final(data) => &data.card,
+        }
+    }
+    pub(super) fn questions(&self) -> &[Question] {
+        match self {
+            Self::Plan(data) => &data.questions,
+            Self::Final(_) => &[],
+        }
+    }
+    pub(super) fn plan(&self) -> &str {
+        match self {
+            Self::Plan(data) => &data.plan,
+            Self::Final(_) => "",
+        }
+    }
+    pub(super) fn final_review(&self) -> Option<&FinalReview> {
+        match self {
+            Self::Final(data) => Some(data),
+            Self::Plan(_) => None,
+        }
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(in crate::task_board) enum Mode {
     Questions,
     Plan,
+    Rework,
 }
 
 pub(in crate::task_board) struct Panel {
@@ -16,7 +59,9 @@ pub(in crate::task_board) struct Panel {
     pub submit_focus: FocusHandle,
     pub changes_focus: FocusHandle,
     pub reload_focus: FocusHandle,
-    pub data: Option<Review>,
+    pub data: Option<Content>,
+    pub selected: HashSet<String>,
+    pub finding_focus: Vec<FocusHandle>,
     pub answers: Vec<Entity<Input>>,
     pub note: Entity<Input>,
     pub plan: Entity<Input>,
@@ -67,6 +112,7 @@ impl Panel {
             .iter()
             .map(|input| input.read(cx).focus_handle(cx))
             .collect();
+        handles.extend(self.finding_focus.iter().cloned());
         handles.push(self.cancel_focus.clone());
         if self.reload_required {
             handles.push(self.reload_focus.clone());
@@ -100,7 +146,10 @@ impl Panel {
         }
         if self.mode == Mode::Plan {
             let body = self.plan.read(cx).content.as_ref();
-            return !body.trim().is_empty() && body != data.plan;
+            return !body.trim().is_empty() && body != data.plan();
+        }
+        if self.mode == Mode::Rework {
+            return !self.selected.is_empty() || !self.note.read(cx).content.trim().is_empty();
         }
         if changes || self.answers.is_empty() {
             return !self.note.read(cx).content.trim().is_empty();

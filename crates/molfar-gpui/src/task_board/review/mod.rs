@@ -2,6 +2,7 @@ mod actions;
 #[cfg(test)]
 mod conflict_tests;
 mod keyboard;
+mod rework;
 mod state;
 #[cfg(test)]
 mod tests;
@@ -15,7 +16,7 @@ use crate::{
     runtime::locked,
 };
 use gpui::{AppContext, Context, Window};
-use molfar_core::task_board::stage::owner::types::Review;
+use state::Content;
 
 impl Board {
     pub(in crate::task_board) fn open_owner_review(
@@ -31,7 +32,11 @@ impl Board {
         self.review_revision += 1;
         let note = cx.new(|cx| {
             Input::multiline_field(
-                "Note for the next Grill round",
+                if mode == Mode::Rework {
+                    "Rework note"
+                } else {
+                    "Note for the next Grill round"
+                },
                 "What should change in the spec or plan?",
                 cx,
             )
@@ -62,6 +67,8 @@ impl Board {
             changes_focus: cx.focus_handle(),
             reload_focus: cx.focus_handle(),
             data: None,
+            selected: Default::default(),
+            finding_focus: Vec::new(),
             answers: Vec::new(),
             note,
             plan,
@@ -88,11 +95,17 @@ impl Board {
             field.update(cx, |input, _| input.set_read_only(true));
         }
         let card_id = panel.card_id.clone();
+        let mode = panel.mode;
         let revision = self.review_revision;
         let store = self.store.clone();
-        let work = cx
-            .background_executor()
-            .spawn(async move { locked(&store)?.board_owner_review(&card_id) });
+        let work = cx.background_executor().spawn(async move {
+            let store = locked(&store)?;
+            if mode == Mode::Rework {
+                store.board_final_review(&card_id).map(Content::Final)
+            } else {
+                store.board_owner_review(&card_id).map(Content::Plan)
+            }
+        });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update_in(cx, |this, window, cx| {
@@ -106,7 +119,7 @@ impl Board {
     fn finish_owner_load(
         &mut self,
         revision: u64,
-        result: Result<Review, String>,
+        result: Result<Content, String>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -127,7 +140,7 @@ impl Board {
                     .update(cx, |input, cx| input.set_text(String::new(), cx));
                 panel.answer_subscriptions.clear();
                 panel.answers = data
-                    .questions
+                    .questions()
                     .iter()
                     .map(|question| {
                         let field = cx.new(|cx| {
@@ -155,7 +168,17 @@ impl Board {
                     .collect();
                 panel
                     .plan
-                    .update(cx, |input, cx| input.set_text(data.plan.clone(), cx));
+                    .update(cx, |input, cx| input.set_text(data.plan().to_owned(), cx));
+                panel.selected.clear();
+                panel.finding_focus.clear();
+                if let Some(review) = data.final_review() {
+                    for finding in &review.review.findings {
+                        panel.finding_focus.push(cx.focus_handle());
+                        if finding.severity.selected_by_default() {
+                            panel.selected.insert(finding.id.clone());
+                        }
+                    }
+                }
                 panel.data = Some(data);
                 for field in panel.fields() {
                     field.update(cx, |input, _| input.set_read_only(false));
