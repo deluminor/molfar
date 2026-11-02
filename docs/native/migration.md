@@ -36,8 +36,11 @@ desktop fields and do not rewrite composer preferences or migrate tables.
 `Store::app_turn_result` uses the existing durable app request identity to read
 the complete persisted assistant output for that root, including explicitly
 joined steers. It bypasses UI paging and control-output limits, rejects ambiguous
-provenance, and treats missing terminal data as unknown. The Board stage lifecycle
-consumes this boundary in a later slice; it does not add another provider runner.
+provenance, and treats missing terminal data as unknown. The native Board first
+Grill lifecycle consumes this boundary for durable settlement and recovery through
+the existing native session runner. Later stage execution remains pending; the
+transition policy alone does not implement Plan approval, Implement, Code review,
+Rework or delivery. See [migration status](parity.md#application-work).
 
 ## Rendering and responsiveness
 

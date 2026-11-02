@@ -5,6 +5,41 @@ results, not a release certification. Later dated sections supplement this
 snapshot. See [preview limitations](parity.md) for
 remaining runtime and platform work.
 
+## MOLFAR sync and merge follow-up — November 2, 2026
+
+Verified revision: [`60bbd2c6`](https://github.com/deluminor/molfar/commit/60bbd2c6b8b7e5e72914829f73b99fe209a39ac4).
+The migration line includes upstream main through `12552dc8b919` and MOLFAR
+main through the v1.0.22 release (`96b2f64c`). Desktop sync #131 was merged;
+#127 remains an open migration PR, ready for review by the user's decision.
+
+| Evidence | Result and scope |
+| --- | --- |
+| Local `npm run check:web` and final pre-push web gate | Exit 0; 7,145 passed, 13 skipped; types, lint, size, boundaries, move map and native branding passed |
+| Local `npm run native:check` before the version-only release merge | Exit 0; 31 Node tests, formatting and strict Clippy, 746 core passed / 2 ignored, 827 GPUI passed / 11 ignored, 6 wheel regression tests passed |
+| Release checks after the v1.0.22 merge | `npx vitest run scripts/release/`: exit 0, 31 passed; only release metadata changed after the native gate |
+| Exact-head GitHub CI | All 21 reported checks succeeded, including core on Linux/macOS/Windows, native macOS tests/build and production CI |
+| Windows prompt regression | CRLF fixture reproduced the original assertion failure; a narrow LF checkout rule fixes it without changing the prompt builder, assertion or fixture content; both Windows Core jobs succeeded |
+| Preservation | Native, Board and connector source blobs were unchanged by the main-merge follow-up; independent source review found no blocker in those merge resolutions |
+
+Exact-head runs: [production CI](https://github.com/deluminor/molfar/actions/runs/41410792691),
+[native push CI](https://github.com/deluminor/molfar/actions/runs/41410784771),
+[native PR CI](https://github.com/deluminor/molfar/actions/runs/41410792694).
+The first sandboxed native attempt failed 14 local socket/process fixtures with
+`Operation not permitted`; the complete permitted rerun passed. This was an
+environment restriction, not a waived test failure.
+
+The sync also added six wheel regressions for reset, programmatic positioning,
+input distance and reversed/replaced glides. Phone and Familiar changes are
+summarized in the [sync notes](https://github.com/deluminor/molfar/pull/127#issuecomment-6566938149).
+New or missing native Familiar settings default to a 30-minute inactivity
+heartbeat; disable Heartbeat in Familiar settings to retain no periodic wake-up.
+No running configuration was activated by the sync.
+
+No application, browser, device, live provider or real user-data QA was performed
+for this sync/follow-up. Green CI does not close [feature/runtime gaps](parity.md).
+Historical results below retain their dates; upstream reference results do not
+certify the MOLFAR branch.
+
 ## Recorded results
 
 | Check | Result |
