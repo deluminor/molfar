@@ -1,6 +1,6 @@
 use super::super::*;
 use crate::task_board::{Event, tests::card};
-use gpui::{TestAppContext, VisualTestContext};
+use gpui::{Focusable, TestAppContext, VisualTestContext};
 use molfar_core::task_board::stage::{
     contracts::review, lifecycle::types::StageAction, owner::types::FinalReview,
 };
@@ -103,6 +103,23 @@ fn rework_keyboard_selection_and_failed_submit_preserve_draft(cx: &mut TestAppCo
             board.submit_owner_review(false, cx);
             board.finish_update(Some("conflict: changed".into()), cx);
             assert!(!board.review.as_ref().unwrap().can_submit(false, cx));
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn rework_focus_follows_visual_order_findings_then_note(cx: &mut TestAppContext) {
+    let window = ready(cx);
+
+    window
+        .update(cx, |board, _, cx| {
+            let panel = board.review.as_ref().unwrap();
+            let handles = panel.handles(cx);
+            let note = panel.note.read(cx).focus_handle(cx);
+
+            assert_eq!(panel.initial_focus(cx), panel.finding_focus[0]);
+            assert_eq!(handles[..2], panel.finding_focus[..]);
+            assert_eq!(handles[2], note);
         })
         .unwrap();
 }

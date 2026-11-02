@@ -1,4 +1,9 @@
-use super::{constants, read_grill_output};
+use super::{build_stage_prompt, constants, read_stage_output};
+use crate::task_board::stage::agent::AgentStage;
+
+fn read_grill_output(text: &str) -> Result<Vec<super::types::ParsedArtifact>, String> {
+    read_stage_output(AgentStage::Grill, text)
+}
 
 #[test]
 fn first_grill_prompt_matches_executed_source_template_without_inlining_bodies() {
@@ -32,7 +37,8 @@ fn first_grill_prompt_matches_executed_source_template_without_inlining_bodies()
         path: ".molfar/board/task-v2.md".into(),
     }];
     let skills = ["d-plan".into(), "d-grill-me".into(), "d-analyze".into()];
-    let prompt = super::build_grill_prompt(&card, &references, &skills).unwrap();
+    let prompt =
+        build_stage_prompt(AgentStage::Grill, &card, &references, &skills, "HEAD").unwrap();
     assert_eq!(prompt, include_str!("fixtures/first-grill.md"));
     assert!(!prompt.contains(&card.description));
     let mut later = card;
@@ -49,7 +55,8 @@ fn first_grill_prompt_matches_executed_source_template_without_inlining_bodies()
         version,
         path: format!(".molfar/board/{kind}-v{version}.md"),
     });
-    let prompt = super::build_grill_prompt(&later, &references, &skills).unwrap();
+    let prompt =
+        build_stage_prompt(AgentStage::Grill, &later, &references, &skills, "HEAD").unwrap();
     assert_eq!(prompt, include_str!("fixtures/later-grill.md"));
     assert!(!prompt.contains(&later.description));
 }

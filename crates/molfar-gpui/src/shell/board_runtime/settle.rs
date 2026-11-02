@@ -49,25 +49,7 @@ fn verify(context: &StageContext, text: &str) -> Result<VerifiedStageOutput, Str
         .as_deref()
         .ok_or("Stage worktree is missing")?;
     let after = checkout::snapshot(std::path::Path::new(path))?;
-    let run = &context.run;
-    let stage = molfar_core::task_board::stage::agent::AgentStage::parse(&run.stage)
-        .ok_or("Unsupported Board stage.")?;
-    let before = molfar_core::task_board::stage::checkout::types::CheckoutSnapshot {
-        head: run
-            .head_before
-            .clone()
-            .ok_or("Stage has no starting HEAD.")?,
-        porcelain: run
-            .porcelain_before
-            .clone()
-            .ok_or("Stage has no starting checkout state.")?,
-        fingerprint: run
-            .fingerprint_before
-            .clone()
-            .ok_or("Stage has no starting fingerprint.")?,
-    };
-    checkout::policy::before(stage, &before)?;
-    checkout::policy::after(stage, &before, &after)?;
+    let stage = checkout::policy::verify_run(&context.run, &after)?;
     let artifacts = contracts::read_stage_output(stage, text)?;
     Ok(VerifiedStageOutput { artifacts, after })
 }

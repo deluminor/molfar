@@ -1,5 +1,6 @@
 mod boundaries;
 mod fixtures;
+mod guards;
 use super::owner::gate;
 use crate::task_board::stage::{agent::AgentStage, lifecycle::types::StageAction};
 use fixtures::*;

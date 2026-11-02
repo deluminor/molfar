@@ -46,7 +46,11 @@ impl Board {
                 .debug_selector(move || format!("board-rework-finding-{index}"))
                 .role(Role::CheckBox)
                 .aria_label(label.clone())
-                .aria_selected(selected)
+                .aria_toggled(if selected {
+                    gpui::Toggled::True
+                } else {
+                    gpui::Toggled::False
+                })
                 .track_focus(&panel.finding_focus[index])
                 .border_1()
                 .border_color(content(0.12))

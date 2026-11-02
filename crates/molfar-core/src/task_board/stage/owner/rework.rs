@@ -50,7 +50,9 @@ pub(super) fn brief(
 ) -> Result<String, String> {
     if selected.len() > constants::MAX_ANSWERS
         || note.len() > MAX_ARTIFACT
-        || selected.iter().any(|id| id.len() > 200)
+        || selected
+            .iter()
+            .any(|id| id.len() > constants::MAX_FINDING_ID)
     {
         return Err("Rework selection exceeds the artifact limit.".into());
     }

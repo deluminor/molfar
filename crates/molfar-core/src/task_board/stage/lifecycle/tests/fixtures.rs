@@ -112,7 +112,11 @@ pub(super) fn complete_with_text(store: &mut Store, run: &str, text: &str) -> Ve
         .unwrap();
     assert!(store.board_record_stage_submitted(run).unwrap());
     VerifiedStageOutput {
-        artifacts: crate::task_board::stage::contracts::read_grill_output(text).unwrap(),
+        artifacts: crate::task_board::stage::contracts::read_stage_output(
+            crate::task_board::stage::agent::AgentStage::Grill,
+            text,
+        )
+        .unwrap(),
         after: before(),
     }
 }

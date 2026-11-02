@@ -135,6 +135,46 @@ fn every_agent_stage_supports_retry_and_queued_cancellation() {
 }
 
 #[test]
+fn every_execution_stage_retry_override_applies_only_to_that_stage() {
+    for stage in [
+        AgentStage::Implement,
+        AgentStage::CodeReview,
+        AgentStage::Rework,
+    ] {
+        let (directory, mut store) = fixture();
+        place(
+            &directory,
+            stage.id(),
+            "failed",
+            r#"{"grill":{"effort":"low"}}"#,
+        );
+        let revision = card(&store).updated_at;
+
+        store
+            .board_stage_action(
+                "card",
+                revision,
+                StageAction::Retry(Some(model("codex:gpt-5"))),
+            )
+            .unwrap();
+        let retried = card(&store);
+        let own = choice::select(stage, None, &retried.overrides_json, Kind::Codex).unwrap();
+        let grill = choice::select(
+            AgentStage::Grill,
+            None,
+            &retried.overrides_json,
+            Kind::Codex,
+        )
+        .unwrap();
+
+        assert_eq!(retried.run_state, "queued", "{}", stage.id());
+        assert_eq!(own.input["model"], "codex:gpt-5", "{}", stage.id());
+        assert_ne!(grill.input["model"], "codex:gpt-5", "{}", stage.id());
+        assert_eq!(grill.input["effort"], "low", "{}", stage.id());
+    }
+}
+
+#[test]
 fn stale_revision_refuses_every_decision_without_side_effects() {
     let (directory, mut store) = fixture();
     place(&directory, "grill", "failed", "{}");

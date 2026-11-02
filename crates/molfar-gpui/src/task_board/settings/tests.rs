@@ -12,7 +12,10 @@ use std::{cell::RefCell, rc::Rc};
 
 type Events = Rc<RefCell<Vec<String>>>;
 
-pub(super) fn record(window: &WindowHandle<Board>, cx: &mut TestAppContext) -> Events {
+pub(in crate::task_board) fn record(
+    window: &WindowHandle<Board>,
+    cx: &mut TestAppContext,
+) -> Events {
     let events: Events = Rc::default();
     let board = window.update(cx, |_, _, cx| cx.entity()).unwrap();
     let recorded = events.clone();

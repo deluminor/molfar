@@ -66,6 +66,70 @@ fn stage_controls_follow_card_state() {
     assert_eq!(stage_action(&card("approval", "plan_approval")), None);
 }
 
+#[test]
+fn approval_and_execution_controls_follow_card_state() {
+    let mut gate = card("gate", "plan_approval");
+    gate.run_state = "idle".into();
+    let mut archived_gate = gate.clone();
+    archived_gate.archived = true;
+    let mut final_review = card("final", "final_review");
+    final_review.run_state = "idle".into();
+
+    assert_eq!(
+        stage_action(&gate),
+        Some(("Approve plan & implement", StageAction::ApprovePlan))
+    );
+    assert_eq!(stage_action(&archived_gate), None);
+    assert_eq!(stage_action(&final_review), None);
+    for column in ["implement", "code_review", "rework"] {
+        let mut failed = card(column, column);
+        failed.run_state = "failed".into();
+        let mut queued = card(column, column);
+        queued.run_state = "queued".into();
+
+        assert_eq!(
+            stage_action(&failed),
+            Some(("Retry run", StageAction::Retry(None))),
+            "{column}"
+        );
+        assert_eq!(
+            stage_action(&queued),
+            Some(("Cancel run", StageAction::Cancel)),
+            "{column}"
+        );
+    }
+}
+
+#[gpui::test]
+fn approve_plan_emits_once_while_pending(cx: &mut TestAppContext) {
+    let window = window(cx);
+    let events = super::super::settings::tests::record(&window, cx);
+    let mut gate = card("card", "plan_approval");
+    gate.run_state = "idle".into();
+    window
+        .update(cx, |board, _, cx| {
+            let snapshot = Snapshot {
+                cards: vec![gate],
+                selected: Some("card".into()),
+                ..Default::default()
+            };
+            board.finish(board.revision, Ok(snapshot), cx);
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    let action = visual
+        .debug_bounds("board-stage-action")
+        .expect("approve action");
+    visual.simulate_click(action.center(), Default::default());
+    visual.run_until_parked();
+    visual.simulate_click(action.center(), Default::default());
+    visual.run_until_parked();
+
+    assert_eq!(*events.borrow(), ["ApprovePlan"]);
+}
+
 #[gpui::test]
 fn stage_action_emits_once_until_finished_and_opens_saved_session(cx: &mut TestAppContext) {
     let window = window(cx);

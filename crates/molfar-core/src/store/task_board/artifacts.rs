@@ -68,7 +68,7 @@ impl Store {
             tx.commit().map_err(|e| e.to_string())?;
             return Ok(inputs);
         }
-        let mut inputs = vec![self.board_stage_input(card)?];
+        let mut inputs = vec![self.board_task_input(card)?];
         if current.grill_round > 1 {
             let mut loaded = Vec::new();
             let mut complete = true;
@@ -96,7 +96,7 @@ impl Store {
         Ok(inputs)
     }
 
-    pub fn board_stage_input(&self, card: &str) -> Result<HandoffInput, String> {
+    fn board_task_input(&self, card: &str) -> Result<HandoffInput, String> {
         let version:i64=self.conn.query_row("SELECT version FROM task_board_artifacts WHERE card_id=?1 AND kind=?2 ORDER BY version DESC LIMIT 1",params![card,TASK],|r|r.get(0)).optional().map_err(|e|e.to_string())?.ok_or("Board card has no initial task artifact.")?;
         Ok(HandoffInput {
             kind: TASK.into(),

@@ -62,3 +62,33 @@ fn read_only_review_mutation_fails_without_erasing_changes(cx: &mut TestAppConte
         .contains("Code review changed")
     );
 }
+
+#[gpui::test]
+fn dirty_retained_checkout_refuses_implement_before_any_provider_submission(
+    cx: &mut TestAppContext,
+) {
+    let fixture = Fixture::new();
+    let window = start(&fixture, cx);
+    let worktree = std::path::PathBuf::from(fixture.card().worktree_path.unwrap());
+    std::fs::write(worktree.join("tracked.txt"), "owner edit\n").unwrap();
+    let submitted = std::fs::read_to_string(fixture.root.join("submissions"))
+        .unwrap()
+        .lines()
+        .count();
+
+    action(&fixture, window, StageAction::ApprovePlan, cx);
+    wait_until(cx, || fixture.card().run_state == "failed");
+
+    let card = fixture.card();
+    assert_eq!(card.column_id, "implement");
+    assert!(card.last_error.as_deref().unwrap().contains("uncommitted"));
+    let after = std::fs::read_to_string(fixture.root.join("submissions"))
+        .unwrap()
+        .lines()
+        .count();
+    assert_eq!(after, submitted);
+    assert_eq!(
+        std::fs::read_to_string(worktree.join("tracked.txt")).unwrap(),
+        "owner edit\n"
+    );
+}

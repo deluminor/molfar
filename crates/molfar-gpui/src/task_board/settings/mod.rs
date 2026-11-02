@@ -5,7 +5,7 @@ mod picker;
 mod routing_tests;
 mod row;
 #[cfg(test)]
-mod tests;
+pub(in crate::task_board) mod tests;
 mod view;
 
 use crate::{input::Input, pickers::ModelList, popover::AnchorSlot};

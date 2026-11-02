@@ -30,17 +30,18 @@ impl Board {
             return;
         }
         self.review_revision += 1;
-        let note = cx.new(|cx| {
-            Input::multiline_field(
-                if mode == Mode::Rework {
-                    "Rework note"
-                } else {
-                    "Note for the next Grill round"
-                },
-                "What should change in the spec or plan?",
-                cx,
+        let (label, placeholder) = if mode == Mode::Rework {
+            (
+                "Rework note",
+                "Anything else the rework should do (optional)",
             )
-        });
+        } else {
+            (
+                "Note for the next Grill round",
+                "What should change in the spec or plan?",
+            )
+        };
+        let note = cx.new(|cx| Input::multiline_field(label, placeholder, cx));
         let plan = cx.new(|cx| Input::multiline_field("Plan", "The implementation plan", cx));
         for (field, height) in [(&note, 90.), (&plan, 300.)] {
             field.update(cx, |field, _| {

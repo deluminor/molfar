@@ -8,7 +8,7 @@ use crate::task_board::{
     constants::{FINAL_REVIEW, IDLE, PLAN_APPROVAL},
     stage::{
         agent::AgentStage,
-        checkout::{policy, types::CheckoutSnapshot},
+        checkout::policy,
         transitions::{
             self,
             types::{BoardAction, Position},
@@ -58,28 +58,9 @@ pub(crate) fn finish(
     if !query::current(&tx, &ctx)? {
         return Ok(StageEffect::default());
     }
-    let stage = AgentStage::parse(&ctx.run.stage).ok_or("Unsupported Board stage.")?;
-    let before = CheckoutSnapshot {
-        head: ctx
-            .run
-            .head_before
-            .clone()
-            .ok_or("Stage has no starting HEAD.")?,
-        porcelain: ctx
-            .run
-            .porcelain_before
-            .clone()
-            .ok_or("Stage has no starting checkout state.")?,
-        fingerprint: ctx
-            .run
-            .fingerprint_before
-            .clone()
-            .ok_or("Stage has no starting fingerprint.")?,
-    };
-    policy::before(stage, &before)?;
-    policy::after(stage, &before, &output.after)?;
+    policy::verify_run(&ctx.run, &output.after)?;
     if ![PREPARED, SUBMITTED].contains(&ctx.run.dispatch.as_str()) {
-        return Err("Grill has no prepared submitted session.".into());
+        return Err("Board stage has no prepared submitted session.".into());
     }
     let now = query::now()?;
     let next = transitions::transition(

@@ -81,6 +81,9 @@ impl Panel {
         if self.mode == Mode::Plan {
             return self.plan.read(cx).focus_handle(cx);
         }
+        if let Some(finding) = self.finding_focus.first() {
+            return finding.clone();
+        }
         self.answers
             .first()
             .unwrap_or(&self.note)
@@ -107,12 +110,12 @@ impl Panel {
             }
             return handles;
         }
-        let mut handles: Vec<_> = self
-            .fields()
-            .iter()
-            .map(|input| input.read(cx).focus_handle(cx))
-            .collect();
-        handles.extend(self.finding_focus.iter().cloned());
+        let mut handles = self.finding_focus.clone();
+        handles.extend(
+            self.fields()
+                .iter()
+                .map(|input| input.read(cx).focus_handle(cx)),
+        );
         handles.push(self.cancel_focus.clone());
         if self.reload_required {
             handles.push(self.reload_focus.clone());
