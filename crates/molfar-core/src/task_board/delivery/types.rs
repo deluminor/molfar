@@ -39,3 +39,19 @@ pub struct ExistingPullRequest {
     pub url: String,
     pub merged: bool,
 }
+
+/// Published and recorded; `worktree` is `None` when an earlier attempt already removed it.
+#[derive(Clone, Debug)]
+pub struct Published {
+    pub card: crate::task_board::types::Card,
+    pub delivery: Delivery,
+    pub worktree: Option<String>,
+}
+
+pub type Detached = Vec<(crate::store::Session, crate::agent::Settings)>;
+
+#[derive(Debug)]
+pub struct Finished {
+    pub card: crate::task_board::types::Card,
+    pub detached: Detached,
+}

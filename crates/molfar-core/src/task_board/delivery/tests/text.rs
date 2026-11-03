@@ -1,4 +1,4 @@
-use super::{
+use super::super::{
     record,
     text::{
         base_branch, pull_request_body, pull_request_number, pull_request_title, spec_pr_title,

@@ -4,3 +4,7 @@ pub const KEEP: &str = "keep";
 
 pub(super) const MAX_BODY: usize = 60_000;
 pub(super) const MAX_TITLE: usize = 120;
+
+pub(super) const ENGINE_SOURCE: &str = "engine";
+pub const INTERRUPTED: &str =
+    "Delivery was interrupted. Deliver again to finish it; finished steps are skipped.";

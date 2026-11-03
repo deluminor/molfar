@@ -1,5 +1,6 @@
 use super::Store;
 mod artifacts;
+mod delivery;
 mod notices;
 mod session;
 mod settings;

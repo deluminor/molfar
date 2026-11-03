@@ -1,13 +1,22 @@
 use super::types::CheckoutSnapshot;
 use crate::task_board::{stage::agent::AgentStage, types::StageRun};
 
-pub fn before(stage: AgentStage, snapshot: &CheckoutSnapshot) -> Result<(), String> {
-    if !stage.is_read_only() && !snapshot.porcelain.trim().is_empty() {
-        return Err(
-            "The card's worktree has uncommitted changes. Commit or discard them first.".into(),
-        );
+pub const DIRTY_CHECKOUT: &str =
+    "The card's worktree has uncommitted changes. Commit or discard them first.";
+
+pub fn clean(snapshot: &CheckoutSnapshot) -> Result<(), String> {
+    if snapshot.porcelain.trim().is_empty() {
+        Ok(())
+    } else {
+        Err(DIRTY_CHECKOUT.into())
     }
-    Ok(())
+}
+
+pub fn before(stage: AgentStage, snapshot: &CheckoutSnapshot) -> Result<(), String> {
+    if stage.is_read_only() {
+        return Ok(());
+    }
+    clean(snapshot)
 }
 
 pub fn after(
