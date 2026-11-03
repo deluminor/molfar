@@ -30,6 +30,7 @@ impl Render for Board {
                     || this.artifact.is_some()
                     || this.review.is_some()
                     || this.editor.is_some()
+                    || this.move_menu.is_some()
                 {
                     return;
                 }

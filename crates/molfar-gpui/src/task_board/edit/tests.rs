@@ -153,3 +153,33 @@ fn edit_is_hidden_outside_idle_backlog_and_plan_approval(cx: &mut TestAppContext
         assert!(visual.debug_bounds("board-edit-task").is_none());
     }
 }
+
+#[gpui::test]
+fn background_results_do_not_complete_a_busy_edit_and_focus_returns_after_save(
+    cx: &mut TestAppContext,
+) {
+    let (window, _) = show(cx, idle("backlog"));
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    click(visual, "board-edit-task");
+    click(visual, "board-edit-submit");
+
+    window
+        .update(visual, |board, _, cx| {
+            board.finish_background(Some("Delivery of another card failed".into()), cx);
+            let editor = board.editor.as_ref().unwrap();
+            assert!(editor.busy);
+            assert_eq!(editor.error, None);
+            assert_eq!(board.stage_pending.as_deref(), Some("card"));
+            board.finish_update(None, cx);
+        })
+        .unwrap();
+    visual.run_until_parked();
+
+    window
+        .update(visual, |board, window, _| {
+            assert!(board.editor.is_none());
+            assert!(board.focus.is_focused(window));
+        })
+        .unwrap();
+}

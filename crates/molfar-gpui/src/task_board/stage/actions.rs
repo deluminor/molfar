@@ -206,6 +206,14 @@ impl Board {
         cx.notify();
     }
 
+    pub(crate) fn finish_background(&mut self, error: Option<String>, cx: &mut Context<Self>) {
+        if error.is_some() {
+            self.error = error;
+        }
+        self.refresh(cx);
+        cx.notify();
+    }
+
     pub(crate) fn reveal_card(&mut self, id: String, cx: &mut Context<Self>) {
         self.project_only = false;
         self.archived = false;

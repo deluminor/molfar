@@ -81,7 +81,9 @@ impl Board {
         panel.busy = false;
         match error {
             Some(error) => {
-                panel.reload_required = error.starts_with("conflict:");
+                panel.reload_required = error.starts_with(
+                    molfar_core::task_board::stage::lifecycle::constants::CONFLICT_PREFIX,
+                );
                 panel.error = Some(error);
                 for field in panel.fields() {
                     field.update(cx, |input, _| input.set_read_only(false));

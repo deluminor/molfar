@@ -10,6 +10,8 @@ pub(crate) const MAX_ERROR: usize = 19_000;
 pub(crate) const MAX_ARTIFACT: usize = 2_000_000;
 
 pub const CANCELLED: &str = "cancelled";
+/// Every stale-revision refusal starts with this, so owner panels can offer a reload.
+pub const CONFLICT_PREFIX: &str = "conflict:";
 pub const INTERRUPTED: &str = "interrupted";
 pub const DEFAULT_CONCURRENCY: i64 = 3;
 pub(crate) const MIN_CONCURRENCY: i64 = 1;

@@ -80,6 +80,8 @@ fn plan_approval_edit_keeps_base_and_refuses_base_changes() {
         "The base branch is fixed once the card has started."
     );
     assert_eq!(card(&store).updated_at, revision);
+    let task_before = store.board_latest_artifact("card", "task").unwrap();
+    let base = card(&store).base_ref;
 
     store
         .board_stage_action("card", revision, edit("Plan", None))
@@ -89,6 +91,16 @@ fn plan_approval_edit_keeps_base_and_refuses_base_changes() {
         (edited.title.as_str(), edited.column_id.as_str()),
         ("Plan", "plan_approval")
     );
+    assert_eq!(edited.base_ref, base);
+    assert_ne!(
+        store.board_latest_artifact("card", "task").unwrap(),
+        task_before
+    );
+    store
+        .board_stage_action("card", edited.updated_at, StageAction::ApprovePlan)
+        .unwrap();
+    let inputs = store.board_stage_inputs("card").unwrap();
+    assert!(inputs[0].body.starts_with("# #1 Plan"));
 }
 
 #[test]

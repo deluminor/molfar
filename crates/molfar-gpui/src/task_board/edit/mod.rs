@@ -145,7 +145,9 @@ impl Board {
         editor.busy = false;
         match error {
             Some(error) => {
-                editor.reload_required = error.starts_with("conflict:");
+                editor.reload_required = error.starts_with(
+                    molfar_core::task_board::stage::lifecycle::constants::CONFLICT_PREFIX,
+                );
                 editor.error = Some(error);
                 editor.fields.set_read_only(false, cx);
                 let base_editable = editor.base_editable;
@@ -155,8 +157,26 @@ impl Board {
                     .update(cx, |input, _| input.set_read_only(!base_editable));
             }
             None => {
+                let mut handles: Vec<FocusHandle> = editor
+                    .fields
+                    .all()
+                    .iter()
+                    .map(|field| field.read(cx).focus_handle(cx))
+                    .collect();
+                handles.extend([editor.cancel_focus.clone(), editor.submit_focus.clone()]);
                 self.editor = None;
                 self.refresh(cx);
+                cx.spawn(async move |this, cx| {
+                    let _ = this.update_in(cx, |this, window, cx| {
+                        let inside = window
+                            .focused(cx)
+                            .is_none_or(|focus| handles.contains(&focus));
+                        if this.editor.is_none() && inside {
+                            window.focus(&this.focus, cx);
+                        }
+                    });
+                })
+                .detach();
             }
         }
         true

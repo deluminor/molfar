@@ -99,6 +99,13 @@ impl Board {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        let current = self
+            .snapshot
+            .as_ref()
+            .and_then(|snapshot| snapshot.cards.iter().find(|entry| entry.id == card.id))
+            .cloned()
+            .unwrap_or_else(|| card.clone());
+        let card = &current;
         let Some(target) = self
             .card_moves(card)
             .into_iter()
