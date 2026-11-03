@@ -1,7 +1,7 @@
 mod create;
 mod detail;
 mod edit;
-mod list;
+mod kanban;
 #[cfg(test)]
 mod loading_tests;
 mod review;
@@ -65,6 +65,12 @@ pub(crate) struct Board {
     move_menu: Option<gpui::Entity<crate::popover::Menu>>,
     move_anchor: crate::popover::AnchorSlot,
     move_subscription: Option<gpui::Subscription>,
+    column_anchors: Vec<(
+        molfar_core::task_board::stage::agent::AgentStage,
+        crate::popover::AnchorSlot,
+    )>,
+    column_scrolls: std::cell::RefCell<std::collections::HashMap<String, ScrollHandle>>,
+    drawer_opens: u64,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -123,6 +129,12 @@ impl Board {
             move_menu: None,
             move_anchor: Default::default(),
             move_subscription: None,
+            column_anchors: molfar_core::task_board::stage::agent::AgentStage::ALL
+                .into_iter()
+                .map(|stage| (stage, Default::default()))
+                .collect(),
+            column_scrolls: Default::default(),
+            drawer_opens: 0,
         }
     }
 
@@ -188,52 +200,5 @@ impl Board {
             }
         }
         cx.notify();
-    }
-
-    fn select(&mut self, id: String, cx: &mut Context<Self>) {
-        if self.selected.as_ref() == Some(&id) {
-            return;
-        }
-        self.selected = Some(id);
-        self.refresh(cx);
-    }
-
-    fn reveal_selection(&self) {
-        let Some(snapshot) = &self.snapshot else {
-            return;
-        };
-        let Some(index) = snapshot
-            .cards
-            .iter()
-            .position(|card| Some(&card.id) == self.selected.as_ref())
-        else {
-            return;
-        };
-        let column_headers = molfar_core::task_board::constants::COLUMNS
-            .iter()
-            .position(|(id, _)| *id == snapshot.cards[index].column_id)
-            .unwrap_or(molfar_core::task_board::constants::COLUMNS.len())
-            + 1;
-        self.scroll.scroll_to_item(index + column_headers);
-    }
-
-    fn move_selection(&mut self, down: bool, cx: &mut Context<Self>) {
-        let Some(snapshot) = &self.snapshot else {
-            return;
-        };
-        let Some(index) = snapshot
-            .cards
-            .iter()
-            .position(|card| Some(&card.id) == self.selected.as_ref())
-        else {
-            return;
-        };
-        let next = if down {
-            (index + 1).min(snapshot.cards.len() - 1)
-        } else {
-            index.saturating_sub(1)
-        };
-        let id = snapshot.cards[next].id.clone();
-        self.select(id, cx);
     }
 }

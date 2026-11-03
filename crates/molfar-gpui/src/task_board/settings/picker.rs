@@ -32,7 +32,8 @@ impl Board {
                 .settings
                 .as_ref()
                 .and_then(|panel| panel.column(*stage))
-                .cloned(),
+                .cloned()
+                .or_else(|| self.saved_column(*stage)),
             PickTarget::Retry { card_id, .. } => self.card_override(card_id),
         };
         let default = cx

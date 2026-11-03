@@ -38,6 +38,7 @@ impl Render for Board {
                     return;
                 }
                 match event.keystroke.key.as_str() {
+                    "escape" if this.selected.is_some() => this.close_detail(cx),
                     "escape" => cx.emit(Event::Close),
                     "n" => this.open_create(window, cx),
                     "p" => {
@@ -53,6 +54,8 @@ impl Render for Board {
                     "r" => this.refresh(cx),
                     "up" => this.move_selection(false, cx),
                     "down" => this.move_selection(true, cx),
+                    "left" => this.move_column(false, cx),
+                    "right" => this.move_column(true, cx),
                     _ => return,
                 }
                 cx.stop_propagation();
@@ -161,16 +164,7 @@ impl Render for Board {
             })
             .when(
                 self.snapshot.is_some() || (!self.loading && self.error.is_none()),
-                |d| {
-                    d.child(
-                        div()
-                            .flex_1()
-                            .min_h_0()
-                            .flex()
-                            .child(self.list(cx))
-                            .child(self.detail(cx)),
-                    )
-                },
+                |d| d.child(self.kanban(cx)),
             )
             .when_some(overlay, |board, overlay| board.child(overlay))
     }

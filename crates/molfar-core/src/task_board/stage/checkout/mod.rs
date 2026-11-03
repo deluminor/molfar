@@ -1,5 +1,5 @@
 mod branch;
-pub(crate) mod constants;
+pub mod constants;
 mod materialize;
 pub mod policy;
 mod snapshot;

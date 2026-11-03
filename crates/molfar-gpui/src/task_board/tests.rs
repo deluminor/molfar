@@ -40,6 +40,7 @@ fn database() -> Database {
 }
 
 pub(super) fn window(cx: &mut TestAppContext) -> gpui::WindowHandle<Board> {
+    cx.update(|cx| cx.set_reduce_motion(true));
     cx.update(|cx| {
         cx.open_window(
             WindowOptions {
