@@ -113,6 +113,7 @@ fn approve_plan_emits_once_while_pending(cx: &mut TestAppContext) {
                 selected: Some("card".into()),
                 ..Default::default()
             };
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot), cx);
         })
         .unwrap();
@@ -164,6 +165,7 @@ fn stage_action_emits_once_until_finished_and_opens_saved_session(cx: &mut TestA
                 selected: Some("card".into()),
                 ..Default::default()
             };
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot), cx);
         })
         .unwrap();

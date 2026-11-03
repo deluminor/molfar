@@ -23,6 +23,7 @@ fn show(cx: &mut TestAppContext, cards: Vec<Card>, selected: Option<&str>) -> Wi
     window
         .update(cx, |board, window, cx| {
             board.selected = selected.map(str::to_owned);
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot(cards, selected)), cx);
             window.focus(&board.focus, cx);
         })
@@ -43,28 +44,64 @@ fn selected(window: WindowHandle<Board>, visual: &mut VisualTestContext) -> Opti
 }
 
 #[gpui::test]
-fn drawer_shows_the_selection_and_closes_by_button_or_escape(cx: &mut TestAppContext) {
+fn drawer_stays_closed_across_refreshes_and_escape_then_closes_the_board(cx: &mut TestAppContext) {
     let cards = vec![at("a", "backlog", "idle")];
     let window = show(cx, cards.clone(), Some("a"));
+    let closed = std::rc::Rc::new(std::cell::Cell::new(false));
+    let seen = closed.clone();
+    let board = window.update(cx, |_, _, cx| cx.entity()).unwrap();
+    cx.update(|cx| {
+        cx.subscribe(&board, move |_, event: &crate::task_board::Event, _| {
+            if matches!(event, crate::task_board::Event::Close) {
+                seen.set(true);
+            }
+        })
+        .detach()
+    });
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
     assert!(visual.debug_bounds("board-detail-drawer").is_some());
 
     click(visual, "board-detail-close");
-    assert_eq!(selected(window, visual), None);
-    assert!(visual.debug_bounds("board-detail-drawer").is_none());
-
     window
-        .update(visual, |board, window, cx| {
-            board.selected = Some("a".into());
-            board.finish(board.revision, Ok(snapshot(cards, Some("a"))), cx);
-            window.focus(&board.focus, cx);
+        .update(visual, |board, _, cx| {
+            board.finish(board.revision, Ok(snapshot(cards.clone(), Some("a"))), cx)
         })
         .unwrap();
     visual.run_until_parked();
+    assert!(visual.debug_bounds("board-detail-drawer").is_none());
+    assert_eq!(selected(window, visual).as_deref(), Some("a"));
+
+    visual.simulate_keystrokes("enter");
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("board-detail-drawer").is_some());
     visual.simulate_keystrokes("escape");
     visual.run_until_parked();
-    assert_eq!(selected(window, visual), None);
+    assert!(visual.debug_bounds("board-detail-drawer").is_none());
+    assert!(!closed.get());
+    visual.simulate_keystrokes("escape");
+    assert!(closed.get());
+}
+
+#[gpui::test]
+fn the_open_drawer_blocks_clicks_to_cards_underneath(cx: &mut TestAppContext) {
+    let mut cards = Vec::new();
+    for index in 0..4 {
+        cards.push(at(&format!("c{index}"), "plan_approval", "idle"));
+    }
+    cards.push(at("left", "backlog", "idle"));
+    let window = show(cx, cards, Some("left"));
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let drawer = visual.debug_bounds("board-detail-drawer").unwrap();
+    let hidden = visual.debug_bounds("board-column-plan_approval").unwrap();
+    assert!(drawer.intersects(&hidden));
+
+    let inside = gpui::point(drawer.left() + gpui::px(40.), hidden.top() + gpui::px(140.));
+    visual.simulate_click(inside, Default::default());
+    visual.run_until_parked();
+
+    assert_eq!(selected(window, visual).as_deref(), Some("left"));
 }
 
 #[gpui::test]
@@ -157,4 +194,28 @@ fn card_status_matches_desktop_labels() {
             card.run_state
         );
     }
+}
+
+#[gpui::test]
+fn unselected_failed_reviews_keep_back_for_the_core_guard(cx: &mut TestAppContext) {
+    let failed = at("r", "code_review", "failed");
+    let window = show(
+        cx,
+        vec![failed.clone(), at("b", "backlog", "idle")],
+        Some("b"),
+    );
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    let targets = window
+        .update(visual, |board, _, _| {
+            board
+                .card_moves(&failed)
+                .into_iter()
+                .map(|target| target.column)
+                .collect::<Vec<_>>()
+        })
+        .unwrap();
+
+    assert_eq!(targets, ["final_review"]);
 }

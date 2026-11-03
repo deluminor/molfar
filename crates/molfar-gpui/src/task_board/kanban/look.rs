@@ -6,6 +6,9 @@ use molfar_core::task_board::constants::{
 pub(super) const COLUMN_WIDTH: f32 = 288.;
 pub(super) const COLUMN_RADIUS: f32 = 16.;
 pub(super) const CARD_RADIUS: f32 = 12.;
+pub(super) const CARD_PAD_Y: f32 = 10.;
+pub(super) const CARD_PAD_LEFT: f32 = 14.;
+pub(super) const CARD_PAD_RIGHT: f32 = 12.;
 
 /// Queue waits to start, agent runs a session, gate waits on the owner, terminal is finished.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -92,6 +95,7 @@ pub(super) const DIMMED: f32 = 0.45;
 pub(super) const SOURCE_FADE: f32 = 0.4;
 pub(super) const EDGE_ZONE: f32 = 56.;
 pub(super) const MAX_SCROLL_STEP: f32 = 18.;
+pub(super) const EDGE_FRAME: std::time::Duration = std::time::Duration::from_millis(16);
 pub(super) const DRAG_FADE: std::time::Duration = std::time::Duration::from_millis(200);
 
 /// What a drop on a column does, shown while dragging.

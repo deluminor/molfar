@@ -1,6 +1,9 @@
 use super::{
     drag::CardDrag,
-    look::{CARD_RADIUS, REWORK_WARNING_CYCLE, SOURCE_FADE, amber},
+    look::{
+        CARD_PAD_LEFT, CARD_PAD_RIGHT, CARD_PAD_Y, CARD_RADIUS, REWORK_WARNING_CYCLE, SOURCE_FADE,
+        amber,
+    },
     status::{chip, status, stripe},
 };
 use crate::task_board::Board;
@@ -93,7 +96,8 @@ impl Board {
             );
         }
 
-        let draggable = !card.archived && !self.card_moves(card).is_empty();
+        let draggable =
+            !card.archived && self.stage_pending.is_none() && !self.card_moves(card).is_empty();
         let lifted = self.dragging.as_deref() == Some(card.id.as_str()) && cx.has_active_drag();
         let drag = CardDrag {
             card_id: card.id.clone(),
@@ -117,9 +121,9 @@ impl Board {
             .overflow_hidden()
             .rounded(px(CARD_RADIUS))
             .border_1()
-            .py(px(10.))
-            .pl(px(14.))
-            .pr(px(12.))
+            .py(px(CARD_PAD_Y))
+            .pl(px(CARD_PAD_LEFT))
+            .pr(px(CARD_PAD_RIGHT))
             .cursor_pointer()
             .map(|card| {
                 if selected {
@@ -193,9 +197,13 @@ impl Board {
                     cx.new(|_| drag.clone())
                 })
             })
+            .on_mouse_down(
+                gpui::MouseButton::Left,
+                cx.listener(|this, _, window, cx| window.focus(&this.focus, cx)),
+            )
             .on_click(cx.listener(move |this, _, window, cx| {
                 window.focus(&this.focus, cx);
-                this.select(id.clone(), cx);
+                this.open_detail(id.clone(), cx);
             }))
             .into_any_element()
     }

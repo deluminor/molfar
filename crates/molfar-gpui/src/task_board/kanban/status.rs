@@ -2,7 +2,7 @@ use super::look::{emerald, rose};
 use crate::theme::{accent_color, content};
 use gpui::Hsla;
 use molfar_core::task_board::{
-    constants::{DONE, FINAL_REVIEW, IDLE, PLAN_APPROVAL},
+    constants::{DONE, FINAL_REVIEW, PLAN_APPROVAL},
     stage::lifecycle::constants::{FAILED, QUEUED, RUNNING},
     types::Card,
 };
@@ -23,7 +23,7 @@ pub(super) fn status(card: &Card) -> Option<(StatusKind, &'static str)> {
         (_, QUEUED) => Some((StatusKind::Queued, "Queued")),
         (FINAL_REVIEW, RUNNING) => Some((StatusKind::Running, "Delivering")),
         (_, RUNNING) => Some((StatusKind::Running, "Running")),
-        (PLAN_APPROVAL | FINAL_REVIEW, IDLE) => Some((StatusKind::NeedsYou, "Needs you")),
+        (PLAN_APPROVAL | FINAL_REVIEW, _) => Some((StatusKind::NeedsYou, "Needs you")),
         (DONE, _) => Some((StatusKind::Delivered, "Delivered")),
         _ => None,
     }

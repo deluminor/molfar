@@ -10,6 +10,9 @@ fn ease_out(t: f32) -> f32 {
 impl Board {
     /// Card details slide over the columns from the right; the board keeps its width.
     pub(super) fn detail_drawer(&self, cx: &mut Context<Self>) -> Option<AnyElement> {
+        if !self.drawer_open {
+            return None;
+        }
         let selected = self.selected.clone()?;
         let snapshot = self.snapshot.as_ref()?;
         snapshot.cards.iter().find(|card| card.id == selected)?;
@@ -19,6 +22,7 @@ impl Board {
             .debug_selector(|| "board-detail-drawer".into())
             .role(Role::Dialog)
             .aria_label("Card details")
+            .occlude()
             .absolute()
             .top_0()
             .bottom_0()

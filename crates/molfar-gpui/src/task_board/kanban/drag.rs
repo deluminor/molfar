@@ -1,4 +1,7 @@
-use super::look::{CARD_RADIUS, COLUMN_WIDTH, DIMMED, DRAG_FADE, drop_label, edge_scroll_step};
+use super::look::{
+    CARD_PAD_LEFT, CARD_PAD_RIGHT, CARD_PAD_Y, CARD_RADIUS, COLUMN_WIDTH, DIMMED, DRAG_FADE,
+    EDGE_FRAME, drop_label, edge_scroll_step,
+};
 use crate::task_board::Board;
 use crate::theme::*;
 use gpui::{
@@ -22,9 +25,9 @@ impl Render for CardDrag {
             .flex()
             .flex_col()
             .gap_1()
-            .py(px(10.))
-            .pl(px(14.))
-            .pr(px(12.))
+            .py(px(CARD_PAD_Y))
+            .pl(px(CARD_PAD_LEFT))
+            .pr(px(CARD_PAD_RIGHT))
             .rounded(px(CARD_RADIUS))
             .border_1()
             .border_color(accent_color().opacity(0.5))
@@ -62,7 +65,20 @@ impl Board {
     pub(super) fn begin_drag(&mut self, card_id: String, cx: &mut Context<Self>) {
         self.dragging = Some(card_id);
         self.drag_over = None;
+        self.edge_pointer = None;
         self.drag_sessions += 1;
+        cx.spawn(async move |this, cx| {
+            loop {
+                cx.background_executor().timer(EDGE_FRAME).await;
+                let running = this
+                    .update(cx, |this, cx| this.edge_tick(cx))
+                    .unwrap_or(false);
+                if !running {
+                    break;
+                }
+            }
+        })
+        .detach();
         cx.notify();
     }
 
@@ -90,21 +106,37 @@ impl Board {
         }
     }
 
-    pub(super) fn edge_scroll(&mut self, event: &DragMoveEvent<CardDrag>, cx: &mut Context<Self>) {
+    /// Remembers an edge-zone pointer inside the board; a timer keeps scrolling while it rests.
+    pub(super) fn edge_scroll(&mut self, event: &DragMoveEvent<CardDrag>, _: &mut Context<Self>) {
         let bounds = event.bounds;
-        let step = edge_scroll_step(
-            f32::from(event.event.position.x),
+        let position = event.event.position;
+        let (x, left, right) = (
+            f32::from(position.x),
             f32::from(bounds.left()),
             f32::from(bounds.right()),
         );
-        if step == 0. {
-            return;
+        let inside = bounds.contains(&position);
+        self.edge_pointer =
+            (inside && edge_scroll_step(x, left, right) != 0.).then_some((x, left, right));
+    }
+
+    /// One auto-scroll frame; returns whether the drag is still running.
+    fn edge_tick(&mut self, cx: &mut Context<Self>) -> bool {
+        if self.dragging.is_none() || !cx.has_active_drag() {
+            self.edge_pointer = None;
+            return false;
         }
+        let Some((x, left, right)) = self.edge_pointer else {
+            return true;
+        };
         let offset = self.scroll.offset();
         let max = f32::from(self.scroll.max_offset().x);
-        let next = (f32::from(offset.x) - step).clamp(-max, 0.);
-        self.scroll.set_offset(point(px(next), offset.y));
-        cx.notify();
+        let next = (f32::from(offset.x) - edge_scroll_step(x, left, right)).clamp(-max, 0.);
+        if next != f32::from(offset.x) {
+            self.scroll.set_offset(point(px(next), offset.y));
+            cx.notify();
+        }
+        true
     }
 
     pub(super) fn drop_card(

@@ -14,6 +14,7 @@ fn metadata_refresh_keeps_board_content_mounted(cx: &mut TestAppContext) {
                 selected: Some("first".into()),
                 ..Default::default()
             };
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot), cx);
             board.selected = Some("next".into());
             board.loading = true;
@@ -42,6 +43,7 @@ fn changing_current_project_discards_previous_project_results(cx: &mut TestAppCo
         .update(cx, |board, _, cx| {
             board.set_context("/first".into(), vec!["/first".into(), "/next".into()]);
             board.project_only = true;
+            board.drawer_open = true;
             board.finish(
                 board.revision,
                 Ok(Snapshot {
@@ -66,6 +68,7 @@ fn successful_creation_invalidates_old_archived_filter_before_refresh(cx: &mut T
     window
         .update(cx, |board, window, cx| {
             board.archived = true;
+            board.drawer_open = true;
             board.finish(
                 board.revision,
                 Ok(Snapshot {

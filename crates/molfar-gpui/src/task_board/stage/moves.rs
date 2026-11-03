@@ -25,7 +25,13 @@ impl Board {
             run_state: &card.run_state,
             archived: card.archived,
         };
-        let back = back_label(card, self.snapshot.as_ref()).is_some();
+        // Runs and artifacts are loaded only for the selected card; elsewhere the core
+        // guard decides, as desktop offers Back whenever the transition allows it.
+        let loaded = self
+            .snapshot
+            .as_ref()
+            .is_some_and(|snapshot| snapshot.selected.as_deref() == Some(card.id.as_str()));
+        let back = !loaded || back_label(card, self.snapshot.as_ref()).is_some();
         legal_moves(position)
             .into_iter()
             .filter(|target| target.action != BoardAction::Back || back)

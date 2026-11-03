@@ -96,8 +96,11 @@ fn stale_success_and_failure_cannot_replace_current_filter_or_selection(cx: &mut
             selected: Some("current".into()),
             ..Default::default()
         };
+        board.drawer_open = true;
         board.finish(2, Ok(current), cx);
+        board.drawer_open = true;
         board.finish(1, Ok(Snapshot::default()), cx);
+        board.drawer_open = true;
         board.finish(1, Err("Old account error".into()), cx);
         assert_eq!(board.selected.as_deref(), Some("current"));
         assert_eq!(board.snapshot.as_ref().unwrap().cards[0].id, "current");
@@ -116,6 +119,7 @@ fn native_browser_keeps_non_backlog_and_future_cards_visible(cx: &mut TestAppCon
                 selected: Some("review".into()),
                 ..Default::default()
             };
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot), cx);
         })
         .unwrap();

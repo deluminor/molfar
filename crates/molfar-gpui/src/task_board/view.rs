@@ -46,7 +46,12 @@ impl Render for Board {
                     return;
                 }
                 match event.keystroke.key.as_str() {
-                    "escape" if this.selected.is_some() => this.close_detail(cx),
+                    "escape" if this.drawer_open => this.close_detail(cx),
+                    "enter" => {
+                        if let Some(id) = this.selected.clone() {
+                            this.open_detail(id, cx);
+                        }
+                    }
                     "escape" => cx.emit(Event::Close),
                     "n" => this.open_create(window, cx),
                     "p" => {

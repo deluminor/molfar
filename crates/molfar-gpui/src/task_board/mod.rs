@@ -74,6 +74,8 @@ pub(crate) struct Board {
     dragging: Option<String>,
     drag_over: Option<String>,
     drag_sessions: u64,
+    drawer_open: bool,
+    edge_pointer: Option<(f32, f32, f32)>,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -141,6 +143,8 @@ impl Board {
             dragging: None,
             drag_over: None,
             drag_sessions: 0,
+            drawer_open: false,
+            edge_pointer: None,
         }
     }
 
@@ -191,7 +195,6 @@ impl Board {
             Ok(snapshot) => {
                 self.selected = snapshot.selected.clone();
                 self.snapshot = Some(snapshot);
-                self.reveal_selection();
                 self.error = None;
             }
             Err(error) => {

@@ -19,6 +19,7 @@ fn show(cx: &mut TestAppContext, card: Card, github: Option<bool>) -> WindowHand
                 selected: Some("card".into()),
                 ..Default::default()
             };
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot), cx);
         })
         .unwrap();

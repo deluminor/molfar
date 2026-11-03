@@ -188,6 +188,7 @@ fn failed_stage_offers_back_to_its_source_column(cx: &mut TestAppContext) {
                 selected: Some("card".into()),
                 ..Default::default()
             };
+            board.drawer_open = true;
             board.finish(board.revision, Ok(snapshot), cx);
         })
         .unwrap();
@@ -208,6 +209,7 @@ fn first_failed_review_keeps_retry_and_hides_unusable_final_review_back(cx: &mut
     failed.run_state = "failed".into();
     window
         .update(cx, |board, _, cx| {
+            board.drawer_open = true;
             board.finish(
                 board.revision,
                 Ok(Snapshot {

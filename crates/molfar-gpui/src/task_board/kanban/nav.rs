@@ -2,21 +2,27 @@ use super::super::Board;
 use gpui::Context;
 
 impl Board {
+    /// Moves the selection; the drawer keeps its open or closed state.
     pub(in crate::task_board) fn select(&mut self, id: String, cx: &mut Context<Self>) {
         if self.selected.as_ref() == Some(&id) {
             return;
         }
-        if self.selected.is_none() {
-            self.drawer_opens += 1;
-        }
         self.selected = Some(id);
+        self.reveal_selection();
         self.refresh(cx);
     }
 
-    pub(in crate::task_board) fn close_detail(&mut self, cx: &mut Context<Self>) {
-        if self.selected.take().is_some() {
-            self.refresh(cx);
+    pub(in crate::task_board) fn open_detail(&mut self, id: String, cx: &mut Context<Self>) {
+        if !self.drawer_open {
+            self.drawer_open = true;
+            self.drawer_opens += 1;
         }
+        self.select(id, cx);
+        cx.notify();
+    }
+
+    pub(in crate::task_board) fn close_detail(&mut self, cx: &mut Context<Self>) {
+        self.drawer_open = false;
         cx.notify();
     }
 
