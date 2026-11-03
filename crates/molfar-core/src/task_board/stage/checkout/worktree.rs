@@ -17,6 +17,22 @@ fn valid_tree(project: &Path, path: &str, branch: &str) -> Result<String, String
     Ok(tree.path)
 }
 
+/// The card's existing worktree, never recreated: delivery must not resurrect a removed tree.
+pub(super) fn retained(card: &Card) -> Result<String, String> {
+    let project = Path::new(&card.project_cwd);
+    if crate::files::remote::is_remote(project) {
+        return Err("Task Board supports local projects only.".into());
+    }
+    let (Some(path), Some(branch)) = (&card.worktree_path, &card.branch) else {
+        return Err("The card has no worktree to deliver.".into());
+    };
+    if crate::files::remote::is_remote(Path::new(path)) {
+        return Err("Task Board supports local projects only.".into());
+    }
+
+    valid_tree(project, path, branch)
+}
+
 pub(super) fn ensure(card: &Card) -> Result<RetainedCheckout, String> {
     let project = Path::new(&card.project_cwd);
     if crate::files::remote::is_remote(project) {

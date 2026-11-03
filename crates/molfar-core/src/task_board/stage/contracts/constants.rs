@@ -8,7 +8,8 @@ pub const IMPL_REPORT: &str = "impl_report";
 pub const REVIEW: &str = "review";
 pub const REWORK_BRIEF: &str = "rework_brief";
 pub const PR_DESCRIPTION: &str = "pr_description";
-pub(crate) const SAVED_KINDS: [&str; 9] = [
+pub const DELIVERY: &str = "delivery";
+pub(crate) const SAVED_KINDS: [&str; 10] = [
     crate::task_board::constants::TASK,
     SPEC,
     PLAN,
@@ -18,4 +19,5 @@ pub(crate) const SAVED_KINDS: [&str; 9] = [
     REVIEW,
     REWORK_BRIEF,
     PR_DESCRIPTION,
+    DELIVERY,
 ];

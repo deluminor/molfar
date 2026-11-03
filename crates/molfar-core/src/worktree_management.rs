@@ -56,6 +56,16 @@ pub fn check(cwd: &Path, path: &Path) -> Result<crate::git::Worktree, String> {
     }
     Ok(tree)
 }
+/// Refuses dirty trees before touching pooled provider processes, so a refusal loses nothing.
+pub fn remove_clean(cwd: &Path, path: &Path) -> Result<(), String> {
+    let tree = check(cwd, path)?;
+    if status(cwd, &tree).1 != Some(false) {
+        return Err("The worktree has uncommitted changes, so it was kept.".into());
+    }
+
+    crate::provider::discard_worktree(Path::new(&tree.path));
+    crate::git::git(cwd, &["worktree", "remove", "--", &tree.path]).map(|_| ())
+}
 pub fn remove(cwd: &Path, path: &Path) -> Result<(), String> {
     let tree = check(cwd, path)?;
     crate::provider::discard_worktree(Path::new(&tree.path));

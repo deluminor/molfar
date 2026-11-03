@@ -259,6 +259,14 @@ fn github_pr_action_args(repo: &str, number: i64, action: &str) -> Result<Vec<St
     Ok(args.into_iter().map(str::to_string).collect())
 }
 
+/// Merge only; unlike the Inbox action it skips the follow-up view, so a merge that
+/// succeeded is never reported as failed because GitHub was slow to reflect it.
+pub(crate) fn squash_merge(root: &Path, repo: &str, number: i64) -> Result<(), String> {
+    let args = github_pr_action_args(repo, number, "squash")?;
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    gh_run(root, &refs, true).map(|_| ())
+}
+
 pub(super) fn git_github_pr_action_for(
     root: &Path,
     repo: &str,

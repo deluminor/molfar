@@ -70,7 +70,7 @@ fn source_branch_normalization_and_default_policy_do_not_fall_back_to_head() {
     assert!(branch::default_base(directory.path()).is_err());
 }
 
-fn card(root: &Path) -> crate::task_board::types::Card {
+pub(super) fn card(root: &Path) -> crate::task_board::types::Card {
     use crate::{store::Store, task_board::types::CardCreate};
     let mut store = Store::open_desktop(&root.join(".git/board-fixture.db")).unwrap();
     let cwd = root.to_str().unwrap().to_owned();

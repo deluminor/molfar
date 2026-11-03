@@ -1,3 +1,4 @@
+use super::constants::TASK_BRANCH_PREFIX;
 use crate::git::git;
 use std::path::Path;
 use unicode_normalization::UnicodeNormalization;
@@ -22,9 +23,9 @@ pub(super) fn name(card_id: &str, title: &str) -> String {
     let slug: String = slug.chars().take(40).collect();
     let slug = slug.trim_end_matches('-');
     if slug.is_empty() {
-        format!("molfar/task-{token}")
+        format!("{TASK_BRANCH_PREFIX}{token}")
     } else {
-        format!("molfar/task-{token}-{slug}")
+        format!("{TASK_BRANCH_PREFIX}{token}-{slug}")
     }
 }
 
@@ -32,16 +33,20 @@ fn exists(root: &Path, reference: &str) -> bool {
     git(root, &["show-ref", "--verify", "--quiet", reference]).is_ok()
 }
 
-pub(super) fn default_base(root: &Path) -> Result<String, String> {
-    let names = git(root, &["remote"])?;
-    let names: Vec<_> = names
+pub(super) fn remotes(root: &Path) -> Result<Vec<String>, String> {
+    Ok(git(root, &["remote"])?
         .lines()
         .map(str::trim)
         .filter(|name| !name.is_empty())
-        .collect();
+        .map(str::to_owned)
+        .collect())
+}
+
+pub(super) fn default_base(root: &Path) -> Result<String, String> {
+    let names = remotes(root)?;
     let remote = names
         .iter()
-        .find(|name| **name == "origin")
+        .find(|name| *name == "origin")
         .or_else(|| names.first());
     if let Some(remote) = remote {
         if let Ok(head) = git(
@@ -69,4 +74,38 @@ pub(super) fn default_base(root: &Path) -> Result<String, String> {
         }
     }
     Err("Could not resolve the project's default branch.".into())
+}
+
+/// Deletes a Board branch once its worktree is gone unless it was pushed: a pushed
+/// branch may back an open pull request. Returns whether the branch is gone.
+pub(super) fn remove_task(root: &Path, branch: &str) -> Result<bool, String> {
+    let branch = branch.trim();
+    if !branch.starts_with(TASK_BRANCH_PREFIX) {
+        return Err("Only Task Board branches can be removed here".into());
+    }
+    git(root, &["check-ref-format", "--branch", branch])?;
+    if !exists(root, &format!("refs/heads/{branch}")) {
+        return Ok(true);
+    }
+
+    let attached = crate::git::worktrees(root)?
+        .iter()
+        .any(|tree| tree.branch.as_deref() == Some(branch));
+    if attached {
+        return Err("The task branch still has a worktree".into());
+    }
+    if git(
+        root,
+        &[
+            "rev-parse",
+            "--abbrev-ref",
+            &format!("{branch}@{{upstream}}"),
+        ],
+    )
+    .is_ok()
+    {
+        return Ok(false);
+    }
+
+    git(root, &["branch", "-D", branch]).map(|_| true)
 }
