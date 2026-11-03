@@ -184,7 +184,8 @@ Apply S3a and S3b to every `pending` and `added` entry. Before resolving a confl
 - `npm ci && npm run check:web`.
 - If the range touched `scripts/native-editor/**`, `scripts/native-settings/**` or the React modules they import, rebuild and commit the bundles: `(cd scripts/native-editor && npm ci) && node scripts/native-editor/build.mjs` and `node scripts/native-settings/build-arcade.mjs`.
 - `cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all` when the rename map touched Rust, then `npm run native:check` (~15–20 min) and `npm run check:native-branding`.
-- Touched `src-tauri/` or root `Cargo.*`: `cargo check --quiet` in `src-tauri/`; touched `host/`: `npm run test:host`.
+- Touched `src-tauri/` or root `Cargo.*`: `cargo check --quiet` in `src-tauri/` and `cargo clippy --workspace --all-targets -- -D warnings` at the repository root. The native workspace Clippy gate does not cover the Tauri test targets. Touched `host/`: `npm run test:host`.
+- Touched `mobile/`: in `mobile/`, run `npm ci`, `npm run lint`, `./node_modules/.bin/tsc --noEmit` and `../node_modules/.bin/vitest run --config vitest.config.ts`. Root web checks do not replace mobile ESLint.
 - Fix sync-caused failures in follow-up commits; failures that also happen on `origin/migration/gpui-into-main` alone do not block the push, list them with output.
 
 ### 6. Commit, push, report on #127
@@ -201,6 +202,7 @@ Apply S3a and S3b to every `pending` and `added` entry. Before resolving a confl
 - Update only the `Upstream sync` line of #127's body: `**Upstream sync:** main @ <short head>, last synced YYYY-MM-DD (<comment link>)` (add it under the first heading if missing; change nothing else).
 - Native-only changes do **not** go into `CHANGELOG.md` (the GPUI app is an unreleased preview); desktop-visible changes go under `## [Unreleased]` using Keep a Changelog sections, MOLFAR branding and `MonoCode #NNN` references. No contributor handles or upstream version sections. Run `npx vitest run scripts/release/`.
 - Blocked case: reset to the stage 1 merge (or the branch tip), push the stage 1 merge if any, open `Sync blocked: MonoCode GPUI → #127 needs human (YYYY-MM-DD)` with **Needs human** + notes, comment a link on #127. Close an older open `Sync blocked` Issue for the same range when the sync succeeds.
+- Read back exact-head CI after pushing. Report pending checks as pending and failed checks with their job links; local passes do not certify remote CI.
 - `gh pr view 127 -R deluminor/molfar --json mergeable,isDraft`: its draft/ready status must match the value read at the start of this run. If `CONFLICTING` with `main`, re-run stage 1 on a fresh branch and push. Never rebase.
 
 ## Shared notes format

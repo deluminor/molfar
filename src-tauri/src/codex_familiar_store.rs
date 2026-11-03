@@ -2,7 +2,7 @@
 //! Configuration and credentials remain shared with the selected provider account.
 
 mod file_preparation;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 use file_preparation::link_entry;
 use file_preparation::prepare_files;
 

@@ -4,6 +4,10 @@ The GPUI app is an experimental preview alongside the production React/Tauri
 app. The existing implementation in `src/` and `src-tauri/` is the behavior
 reference. Production builds, CI, releases and updater feeds continue to use Tauri.
 
+Feature ownership and transfer scope: [M01–M22 register](feature-transfer.md).
+The register distinguishes upstream reuse, MOLFAR adaptations/ports and remaining
+runtime acceptance; roadmap and readiness milestone numbers are separate.
+
 ## Code layout
 
 | Location | Responsibility |

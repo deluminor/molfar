@@ -4,11 +4,15 @@ The native app is still experimental. A feature being present in source does not
 establish runtime or platform parity with the production React/Tauri app. See
 [verification](verification.md) for recorded checks.
 
-Migration baseline reviewed on November 2, 2026, at `60bbd2c6`; the M01a owner-review
-follow-up (`eab8b0bb`) readiness M02 Board execution (`2369ba98`) M03 delivery (`238aa1fe`) M08a task editing and moves (`db9ac988`) and M08b kanban and drag (`1ae5270f`) are recorded in verification.md. PR #127 is
-ready for review; baseline automated checks are recorded in verification.md,
-while the runtime gaps below remain open. Merging native source does not authorize
-replacing the production Tauri app.
+The historical baseline was reviewed at `60bbd2c6` on November 2. Current
+upstream integration is `8ef99c49` (upstream `main` through `00c69307`), retaining
+owner review/repeated Grill, readiness M02 execution, M03 delivery, M08a editing
+and moves, and M08b kanban/drag. The [feature transfer register](feature-transfer.md)
+accounts for roadmap M01–M22 without treating source presence as runtime parity.
+[Verification](verification.md) records historical checks, current sync evidence
+and the later CI-repair scope separately. PR #127 remains ready for review by
+the human's decision. Production stays React/Tauri; source integration does not
+authorize a release or cutover.
 
 Working branch, checkout and publication boundaries: [migration status](status.md).
 
@@ -42,6 +46,8 @@ approval for every edit. Native Supervised mode does not add that guarantee.
 
 | Area | Remaining verification or work |
 | --- | --- |
+| MOLFAR Jira/Confluence | Native Jira/Inbox source exists, but full MOLFAR hierarchy/context/actions and native Confluence browser remain open (readiness M04/M05). Tauri connector functionality is not native acceptance. |
+| MOLFAR Home/Usage/Knowledge | Full custom dashboards and Knowledge/Obsidian vault/graph/revision surfaces remain open. Native usage metadata/footer and file editing do not close these ports. |
 | MOLFAR Board | Implemented: grouped list/detail, Backlog creation with initial task snapshot, Grill rounds in visible native sessions, owner answers/change requests and versioned plan editing, durable settlement, cancel/retry/restart recovery, spec/plan artifacts and transition into Plan approval; stage transition policy, per-stage model/skill/access settings, Retry with another model and Back; explicit plan approval, Implement, Code review and owner-selected Rework → Code review cycles in the retained worktree, ending at Final review; delivery by pull request, squash-merge or kept branch, reject and archive with resumable steps and desktop cleanup rules (archiving a Done card keeps its branch). Real push/PR/merge has not been exercised. Task editing (idle Backlog/Plan approval, base branch only in Backlog, new task version) and Move to… with the desktop legal targets are implemented; the Board shows desktop-style kanban columns with a sliding detail drawer, column model chips and drag-and-drop between legal columns. GPUI cannot rotate the drag ghost, the live stalled/elapsed status is not shown, and a drag is not cancelled when the window loses focus. Actual application interaction and platform verification remain outstanding. |
 | Chat | Live attachment/steering/rewind checks, complete keyboard selection and screen-reader navigation, richer nested task artifacts and provider-specific task controls |
 | History and workspace | Transcript/database paging, cache runtime checks, remaining desktop layout consumers, explicit import/export |

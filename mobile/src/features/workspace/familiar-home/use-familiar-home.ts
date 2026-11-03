@@ -27,7 +27,7 @@ export function useFamiliarHome() {
   useEffect(() => {
     if (!listReady) return;
     hideScrollEdgeEffects(LIST_ID);
-      const timer = setTimeout(() => hideScrollEdgeEffects(LIST_ID), 500);
+    const timer = setTimeout(() => hideScrollEdgeEffects(LIST_ID), 500);
     return () => clearTimeout(timer);
   }, [listReady]);
   const created = useRef<string | null>(null);
@@ -44,7 +44,7 @@ export function useFamiliarHome() {
   const [coveredByChat, setCovered] = useState(false);
   useEffect(
     () =>
-              navigation.addListener("transitionStart" as never, (event: { data?: { closing?: boolean } }) => {
+      navigation.addListener("transitionStart" as never, (event: { data?: { closing?: boolean } }) => {
         if (event.data?.closing) setCovered(true);
       }),
     [navigation],
@@ -52,22 +52,21 @@ export function useFamiliarHome() {
   const covered = coveredByChat && !focused;
   if (coveredByChat && focused) setCovered(false);
 
-  const [gone, setGone] = useState<ReadonlySet<string>>(() => new Set());
-  const setGoneId = (id: string, isGone: boolean) =>
-    setGone((previous) => {
-      const next = new Set(previous);
-      if (isGone) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-
-  useEffect(() => {
+  const [hidden, setHidden] = useState(() => ({ roster, ids: new Set<string>() }));
+  let gone = hidden.ids;
+  if (hidden.roster !== roster) {
     const present = new Set(roster.map((familiar) => familiar.id));
-    setGone((previous) => {
-      const remaining = new Set([...previous].filter((id) => present.has(id)));
-      return remaining.size === previous.size ? previous : remaining;
+    gone = new Set([...hidden.ids].filter((id) => present.has(id)));
+    setHidden({ roster, ids: gone });
+  }
+
+  const setGoneId = (id: string, isGone: boolean) =>
+    setHidden((previous) => {
+      const ids = new Set(previous.ids);
+      if (isGone) ids.add(id);
+      else ids.delete(id);
+      return { ...previous, ids };
     });
-  }, [roster]);
 
   const needle = query.trim().toLowerCase();
   const familiars = useMemo(
@@ -129,7 +128,7 @@ export function useFamiliarHome() {
             ],
           )
       : undefined,
-      hide: selection
+    hide: selection
       ? (familiar) =>
           removeNow(familiar, () =>
             select({ ...selection, familiarIds: selection.familiarIds.filter((id) => id !== familiar.id) }),

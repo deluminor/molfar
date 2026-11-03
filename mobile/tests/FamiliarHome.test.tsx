@@ -41,6 +41,9 @@ it("shows a hidden Familiar again when it is reselected after authoritative remo
     expect(container.textContent).toBe("first");
     await act(async () => result?.actions.hide?.(familiar));
     expect(container.textContent).toBe("");
+    state.roster = [...state.roster];
+    await act(async () => root.render(<Host />));
+    expect(container.textContent).toBe("");
     state.roster = [];
     await act(async () => root.render(<Host />));
     state.roster = [familiar];

@@ -626,3 +626,41 @@ removed without dropping either event. A later run was interrupted before GPUI
 completion; the resumed complete gate above supplies the native result.
 No app, live provider, real user database, browser QA, mobile native build or
 platform runtime acceptance was used. These results do not close migration parity.
+
+## CI and migration-documentation reconciliation — November 3, 2026
+
+Follow-up to upstream integration `8ef99c49`. Its remote run
+[41720371669](https://github.com/deluminor/molfar/actions/runs/41720371669)
+passed Windows production checks, both native macOS jobs, all six native core
+matrix jobs and the other reported jobs, but failed three production jobs:
+
+- Mobile ESLint rejected synchronous `setGone` in a roster effect. Reproduced
+  locally with exit 1. Guarded render reconciliation now updates `{ roster, ids }`
+  atomically, keeping optimistic hiding until the authoritative roster removes
+  the ID. The regression covers unchanged roster copies, removal and reselect.
+- macOS/Linux Tauri `cargo clippy --workspace --all-targets -- -D warnings`
+  rejected `link_entry` imported under `cfg(test)` while all callers are
+  Windows-only. Reproduced locally with exit 101. The import now uses
+  `cfg(all(test, windows))`; the Windows test callers remain unchanged.
+
+Repair verification:
+
+| Command | Result |
+| --- | --- |
+| Root `cargo clippy --workspace --all-targets -- -D warnings` | Exit 0 |
+| Root `cargo test --lib codex_familiar_store::tests -- --test-threads=1` | Exit 0; 10 passed |
+| Mobile `npm run lint` | Exit 0; two existing dictation warnings remain, no errors |
+| Mobile full Vitest suite | Exit 0; 184 passed in 33 files |
+| Mobile `tsc --noEmit` | Exit 0 |
+
+The pre-push web hook checks the complete committed follow-up. Native runtime
+code is unchanged by these two CI fixes; the full native gate above remains
+explicitly scoped to `8ef99c49`, not a newly claimed native run. The final remote
+CI must be read at the actual follow-up head; earlier green native jobs do not
+turn the failed production jobs green. No app/browser/device/provider QA or
+real-user-data checks were added.
+
+The tracked [feature transfer register](feature-transfer.md), status, limitations,
+architecture and canonical automation checks are aligned with this evidence.
+Jira/Confluence, Home/Usage, Knowledge and remaining runtime acceptance are open;
+review readiness does not close them. Installed automation settings are unchanged.

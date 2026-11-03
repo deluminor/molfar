@@ -10,6 +10,12 @@ The secondary `sync/gpui-20261101` worktree preserves M01a checkpoint `6b08aa29`
 
 The line includes M01a (`eab8b0bb`, `6b08aa29`), main through `5ee67cce` (already released v1.0.23, reconciled in `f98187b8`) and readiness M02, M03, M08a and M08b. The changelog preserves connector additions under Unreleased and the v1.0.23 notes. This integration does not publish a release.
 
+The [M01–M22 feature transfer register](feature-transfer.md) separates implemented
+code, automated evidence and remaining native/runtime work. It is the concise
+tracked status index; it supersedes dated status summaries in ignored local
+plans, which retain the detailed execution history. Old local checkboxes do not
+override the current register or establish runtime parity.
+
 ## Delivered and remaining
 
 M01a adds owner answers/change requests, versioned plan editing and repeated Grill. Readiness M02 (`ff780975`..`2369ba98`) adds plan approval and native Implement/Code review/Rework execution through Final review. Readiness M03 (`4fe5dc0c`..`238aa1fe`) adds delivery, reject and archive. Readiness M08a (`f0899eb6`..`db9ac988`) adds task editing and Move to…; M08b (`e8b98c67`..`1ae5270f`) adds kanban columns and drag-and-drop. [Verification](verification.md) records tests/builds for those checkpoints, not certification of later revisions or runtime parity.
@@ -24,6 +30,11 @@ Local continuation entrypoint: `docs/specs/gpui-merge-readiness/handoff.md`. Rem
 
 ## Publication and sync
 
-On November 3, 2026, PR #127 was pushed to `785dc7e3` (readiness M08b and its documentation) and remains ready for review; its description reflects the native Board through delivery, editing, kanban and drag. Remote CI for that head has not been recorded here. Re-read remote head/CI before further publication and preserve ready-for-review status.
+The latest upstream integration checkpoint is `8ef99c49`, bringing upstream
+`main` through `00c69307` onto the existing MOLFAR line, including product `main`
+through `5ee67cce` (v1.0.23). PR #127 remains open and ready for review by the
+human's decision. The subsequent CI-repair follow-up does not add feature ports.
+See [verification](verification.md) for revision-scoped local and remote results;
+re-read the current PR head/CI before publication.
 
 Upstream sync now takes all code from the upstream `main` into `migration/gpui-into-main` only, as approved on November 3. There is no separate desktop sync into MOLFAR `main`. The human completes migration and merges #127; the automation then stops for an explicit target-policy update. The [canonical prompt](../automations/upstream-sync.md) is ready for the user to install; installed automation configuration was not changed in this run.
