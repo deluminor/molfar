@@ -87,3 +87,37 @@ pub(super) const REWORK_WARNING_CYCLE: i64 = 3;
 pub(super) const DRAWER_WIDTH: f32 = 460.;
 pub(super) const DRAWER_SLIDE: std::time::Duration = std::time::Duration::from_millis(200);
 pub(super) const DRAWER_SHIFT: f32 = 32.;
+
+pub(super) const DIMMED: f32 = 0.45;
+pub(super) const SOURCE_FADE: f32 = 0.4;
+pub(super) const EDGE_ZONE: f32 = 56.;
+pub(super) const MAX_SCROLL_STEP: f32 = 18.;
+pub(super) const DRAG_FADE: std::time::Duration = std::time::Duration::from_millis(200);
+
+/// What a drop on a column does, shown while dragging.
+pub(super) fn drop_label(
+    action: molfar_core::task_board::stage::transitions::types::BoardAction,
+) -> &'static str {
+    use molfar_core::task_board::stage::transitions::types::BoardAction::*;
+    match action {
+        Start => "Drop to start grill",
+        ApprovePlan => "Drop to approve the plan",
+        RequestChanges => "Drop to request plan changes",
+        Rework => "Drop to pick findings for rework",
+        Deliver => "Drop to choose a delivery",
+        _ => "Drop to move back",
+    }
+}
+
+/// Horizontal scroll speed while the pointer rests near a board edge; faster closer in.
+pub(super) fn edge_scroll_step(x: f32, left: f32, right: f32) -> f32 {
+    let from_left = x - left;
+    let from_right = right - x;
+    if from_left < EDGE_ZONE {
+        return -(MAX_SCROLL_STEP * (1. - from_left.max(0.) / EDGE_ZONE)).ceil();
+    }
+    if from_right < EDGE_ZONE {
+        return (MAX_SCROLL_STEP * (1. - from_right.max(0.) / EDGE_ZONE)).ceil();
+    }
+    0.
+}

@@ -1,10 +1,11 @@
 use super::{
-    look::{CARD_RADIUS, REWORK_WARNING_CYCLE, amber},
+    drag::CardDrag,
+    look::{CARD_RADIUS, REWORK_WARNING_CYCLE, SOURCE_FADE, amber},
     status::{chip, status, stripe},
 };
 use crate::task_board::Board;
 use crate::theme::*;
-use gpui::{AnyElement, Context, FontWeight, Role, SharedString, div, prelude::*, px};
+use gpui::{AnyElement, AppContext, Context, FontWeight, Role, SharedString, div, prelude::*, px};
 use molfar_core::task_board::{
     stage::{checkout::constants::TASK_BRANCH_PREFIX, lifecycle::constants::FAILED},
     types::Card,
@@ -92,6 +93,15 @@ impl Board {
             );
         }
 
+        let draggable = !card.archived && !self.card_moves(card).is_empty();
+        let lifted = self.dragging.as_deref() == Some(card.id.as_str()) && cx.has_active_drag();
+        let drag = CardDrag {
+            card_id: card.id.clone(),
+            number: card.number,
+            title: card.title.clone(),
+        };
+        let weak = cx.weak_entity();
+
         div()
             .id(SharedString::from(selector.clone()))
             .debug_selector(move || selector.clone())
@@ -172,6 +182,17 @@ impl Board {
                     )
                 },
             )
+            .when(lifted, |card| {
+                card.opacity(SOURCE_FADE)
+                    .border_color(accent_color().opacity(0.4))
+            })
+            .when(draggable, |card| {
+                card.on_drag(drag, move |drag, _, _, cx| {
+                    let card_id = drag.card_id.clone();
+                    let _ = weak.update(cx, |board, cx| board.begin_drag(card_id, cx));
+                    cx.new(|_| drag.clone())
+                })
+            })
             .on_click(cx.listener(move |this, _, window, cx| {
                 window.focus(&this.focus, cx);
                 this.select(id.clone(), cx);

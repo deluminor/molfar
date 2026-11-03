@@ -1,5 +1,8 @@
 mod card;
 mod column;
+mod drag;
+#[cfg(test)]
+mod drag_tests;
 mod drawer;
 mod look;
 mod nav;
@@ -77,9 +80,14 @@ impl Board {
             .as_ref()
             .is_some_and(|snapshot| snapshot.cards.is_empty());
 
+        let targets = self.drag_targets(cx);
+        row = row.on_drag_move::<drag::CardDrag>(
+            cx.listener(|this, event, _, cx| this.edge_scroll(event, cx)),
+        );
         for (column, label, cards) in self.board_columns() {
             let scroll = self.column_scroll(&column);
-            row = row.child(self.kanban_column(&column, &label, &cards, &scroll, cx));
+            let element = self.kanban_column(&column, &label, &cards, &scroll, cx);
+            row = row.child(self.drop_zone(element, &column, targets.as_ref(), cx));
         }
         div()
             .relative()

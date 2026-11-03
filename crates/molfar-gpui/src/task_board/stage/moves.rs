@@ -19,7 +19,7 @@ use molfar_core::task_board::{
 
 impl Board {
     /// Desktop drop targets, minus Back when the readable-review guard would refuse it.
-    fn card_moves(&self, card: &Card) -> Vec<Move> {
+    pub(in crate::task_board) fn card_moves(&self, card: &Card) -> Vec<Move> {
         let position = Position {
             column: &card.column_id,
             run_state: &card.run_state,
@@ -92,7 +92,7 @@ impl Board {
     }
 
     /// Moves that need owner input open the same panel desktop opens after a drop.
-    fn apply_move(
+    pub(in crate::task_board) fn apply_move(
         &mut self,
         card: &Card,
         column: &str,

@@ -71,6 +71,9 @@ pub(crate) struct Board {
     )>,
     column_scrolls: std::cell::RefCell<std::collections::HashMap<String, ScrollHandle>>,
     drawer_opens: u64,
+    dragging: Option<String>,
+    drag_over: Option<String>,
+    drag_sessions: u64,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -135,6 +138,9 @@ impl Board {
                 .collect(),
             column_scrolls: Default::default(),
             drawer_opens: 0,
+            dragging: None,
+            drag_over: None,
+            drag_sessions: 0,
         }
     }
 

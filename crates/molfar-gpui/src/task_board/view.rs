@@ -4,6 +4,10 @@ use gpui::{Context, FontWeight, Render, Role, Window, div, prelude::*, px};
 
 impl Render for Board {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.dragging.is_some() && !cx.has_active_drag() {
+            self.dragging = None;
+            self.drag_over = None;
+        }
         let project_only = self.project_only;
         let archived = self.archived;
         let overlay = self
@@ -35,6 +39,10 @@ impl Render for Board {
                     return;
                 }
                 if event.keystroke.modifiers.platform || event.keystroke.modifiers.control {
+                    return;
+                }
+                if event.keystroke.key == "escape" && this.cancel_drag(window, cx) {
+                    cx.stop_propagation();
                     return;
                 }
                 match event.keystroke.key.as_str() {
