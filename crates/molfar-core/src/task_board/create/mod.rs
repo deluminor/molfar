@@ -1,5 +1,5 @@
 pub(crate) mod artifact_file;
-mod artifacts;
+pub(crate) mod artifacts;
 #[cfg(test)]
 mod recovery_tests;
 #[cfg(test)]

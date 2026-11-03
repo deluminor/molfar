@@ -28,6 +28,7 @@ pub enum StageAction {
     },
     RequestChanges(String),
     EditPlan(String),
+    EditTask(super::super::owner::types::TaskEdit),
 }
 
 #[derive(Clone, Debug)]

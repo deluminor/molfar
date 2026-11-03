@@ -1,4 +1,5 @@
 mod constants;
+mod edit;
 mod questions;
 mod rework;
 pub(crate) use rework::{current_review, load_final};
@@ -21,7 +22,7 @@ use super::{
     },
 };
 use crate::task_board::{
-    constants::{GRILL, USER},
+    constants::{GRILL, TASK, USER},
     types::Card,
 };
 use rusqlite::{params, Connection, OptionalExtension};
@@ -116,6 +117,7 @@ pub(crate) fn save(
             }
             (PLAN, body.clone())
         }
+        StageAction::EditTask(change) => (TASK, edit::apply(conn, card, change)?),
         _ => return Ok(()),
     };
     if body.trim().is_empty() {

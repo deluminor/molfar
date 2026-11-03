@@ -1,3 +1,6 @@
+pub mod moves;
+#[cfg(test)]
+mod moves_tests;
 #[cfg(test)]
 mod tests;
 pub mod types;

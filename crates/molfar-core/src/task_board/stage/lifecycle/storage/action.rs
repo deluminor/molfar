@@ -39,6 +39,7 @@ pub(crate) fn apply(
         StageAction::Answer { .. } => BoardAction::Answer,
         StageAction::RequestChanges(_) => BoardAction::RequestChanges,
         StageAction::EditPlan(_) => BoardAction::EditPlan,
+        StageAction::EditTask(_) => BoardAction::EditTask,
     };
     let position = Position {
         column: &card.column_id,

@@ -66,3 +66,12 @@ pub struct Transition {
     pub archived: bool,
     pub effects: Vec<TransitionEffect>,
 }
+
+/// A column the card can move to now; `needs_input` moves open the owner panel
+/// for that action instead of running it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Move {
+    pub column: String,
+    pub action: BoardAction,
+    pub needs_input: bool,
+}

@@ -17,6 +17,30 @@ pub(crate) fn id(value: &str) -> Result<(), String> {
 }
 
 pub(super) fn normalize(input: &CardCreate, projects: &[String]) -> Result<CardCreate, String> {
+    let input = fields(input)?;
+    let cwd = &input.project_cwd;
+    if cwd.trim().is_empty() || cwd.len() > MAX_PATH || cwd.contains('\0') {
+        return Err("Invalid project.".into());
+    }
+    if crate::files::remote::is_remote(Path::new(cwd)) {
+        return Err("Task Board supports local projects only.".into());
+    }
+    if !projects
+        .iter()
+        .any(|path| crate::files::path_key(path) == crate::files::path_key(cwd))
+    {
+        return Err("Choose one of the projects on the rail.".into());
+    }
+
+    crate::git::snapshot(Path::new(cwd))
+        .map_err(|error| format!("Choose a git project with at least one commit ({error})."))?;
+    crate::git::git(Path::new(cwd), &["rev-parse", "--verify", "HEAD^{commit}"])
+        .map_err(|error| format!("Choose a git project with at least one commit ({error})."))?;
+    Ok(input)
+}
+
+/// Trims and bounds the owner-written fields shared by create and edit.
+pub(crate) fn fields(input: &CardCreate) -> Result<CardCreate, String> {
     let input = CardCreate {
         id: input.id.clone(),
         project_cwd: input.project_cwd.clone(),
@@ -55,23 +79,5 @@ pub(super) fn normalize(input: &CardCreate, projects: &[String]) -> Result<CardC
         }
     }
 
-    let cwd = &input.project_cwd;
-    if cwd.trim().is_empty() || cwd.len() > MAX_PATH || cwd.contains('\0') {
-        return Err("Invalid project.".into());
-    }
-    if crate::files::remote::is_remote(Path::new(cwd)) {
-        return Err("Task Board supports local projects only.".into());
-    }
-    if !projects
-        .iter()
-        .any(|path| crate::files::path_key(path) == crate::files::path_key(cwd))
-    {
-        return Err("Choose one of the projects on the rail.".into());
-    }
-
-    crate::git::snapshot(Path::new(cwd))
-        .map_err(|error| format!("Choose a git project with at least one commit ({error})."))?;
-    crate::git::git(Path::new(cwd), &["rev-parse", "--verify", "HEAD^{commit}"])
-        .map_err(|error| format!("Choose a git project with at least one commit ({error})."))?;
     Ok(input)
 }

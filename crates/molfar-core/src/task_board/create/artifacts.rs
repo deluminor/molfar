@@ -8,7 +8,7 @@ use rusqlite::{params, Connection, TransactionBehavior};
 use std::path::Path;
 use uuid::Uuid;
 
-fn task_body(card: &Card) -> String {
+pub(crate) fn task_body(card: &Card) -> String {
     let criteria = card.acceptance_criteria.trim();
     let criteria = if criteria.is_empty() {
         "(none given; derive them in the spec)"

@@ -27,3 +27,13 @@ pub struct FinalReview {
     pub version: i64,
     pub review: super::super::contracts::types::CodeReview,
 }
+
+/// `base_ref: Some(..)` changes the base branch, which only Backlog allows;
+/// `Some(None)` resets it to the project default.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TaskEdit {
+    pub title: String,
+    pub description: String,
+    pub acceptance_criteria: String,
+    pub base_ref: Option<Option<String>>,
+}

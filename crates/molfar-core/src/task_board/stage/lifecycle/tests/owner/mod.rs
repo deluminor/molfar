@@ -1,4 +1,5 @@
 mod boundaries;
+mod edit;
 mod questions;
 mod recovery;
 
