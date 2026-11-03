@@ -465,3 +465,45 @@ only, matching desktop; ancestry and branch checks are possible hardening.
 No actual application, browser, device or live provider QA, production-data
 writes, job activation, push or merge occurred. Delivery and archive actions
 remain pending; M02 does not close full Board or GPUI parity.
+
+## MOLFAR Board delivery (readiness M03) — November 3, 2026
+
+Commits `4fe5dc0c` (delivery text and cleanup primitives), `9f344cf3` (Store and
+service orchestration), `8aa75b57` (native runtime and controls) and `238aa1fe`
+(review fixes), base `a2fb10c8`. Checks ran on `238aa1fe` unchanged; they are
+local checks, not remote CI or runtime certification.
+
+| Check | Result and scope |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, native formatting and strict all-target Clippy, 806 core passed / 2 ignored, 854 GPUI passed / 11 ignored, 6 wheel regressions passed |
+| `npm run check:web` | Exit 0; 7,145 passed / 13 skipped, TypeScript, lint, size, boundaries, moves and branding; no web/Tauri source changes |
+| `npm run native:build` | Exit 0; optimized macOS app built and locally signed without launch; `codesign --verify --deep --strict` exit 0 (release compilation 5m 50s) |
+
+Core fake-port fixtures cover pull request, squash-merge and keep delivery;
+failure after push, PR and merge with resume (one PR, one merge); a crash after a
+saved merge; PR adoption and externally merged PRs; GitHub unavailable; dirty or
+missing worktrees after the lock; a worktree still in use; finishing after an
+earlier cleanup; concurrent start and stale progress; reject from each state with
+worktree and branch failure notes; Done archive keeping its branch; base-ref
+fallback; and stage reconcile leaving delivering cards alone. Real temporary
+repositories cover non-force removal keeping dirty trees, forced reject removal,
+and task-branch rules for pushed, attached and foreign branches. Native runtime
+fixtures drive the fake provider to Final review, then keep-branch delivery with
+session detach, an unreachable GitHub failure followed by reject, and startup
+reconcile. Synthetic UI fixtures cover the method picker, Keep-only without
+GitHub, merge and reject confirmation, single emission, Done archive and hidden
+actions while delivering.
+
+An independent source review found no blocking defects; its two major findings
+were fixed: a busy worktree no longer fails a published delivery, and existing
+PR lookup no longer passes `owner:branch` to `gh pr list --head`, which current
+gh rejects. The same lookup in the desktop Tauri app is unchanged. A first full
+gate run failed 19 unrelated GPUI layout tests because startup reconcile surfaced
+an error for native-only test stores; native-only stores now report no stuck
+deliveries, with a regression test, and the full gate passed.
+
+No actual application, browser, device or live provider QA, real push, pull
+request or merge, production-data writes, job activation or publishing occurred.
+Task editing and reordering remain open; M03 does not close full Board or GPUI
+parity.
+

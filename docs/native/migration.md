@@ -60,8 +60,28 @@ current review version and increment `rework_cycle`. Back from a failed Code
 review or Rework to Final review requires a readable completed review; otherwise
 Retry remains the available path.
 
-Delivery, archive and remote push/merge actions remain pending. See
-[migration status](parity.md#application-work).
+Readiness M03 adds delivery, reject and archive through
+`task_board/delivery` over a `DeliveryPort` that reuses the existing scm, GitHub
+and worktree helpers. Final review locks the card in running, refuses
+`remote://`, missing or foreign worktrees and dirty checkouts, then pushes,
+opens or adopts a pull request and squash-merges, persisting each step in
+`delivery_json` so a retry never opens a second PR or merges twice. Pull request
+text follows desktop (spec `pr_title`, PR description or task/report fallback,
+review footer, 60 000-character cap); stored full base refs are normalized to a
+branch name. Done writes an immutable `delivery` artifact, removes the worktree
+only when clean, keeps the branch and detaches stage sessions. A worktree still
+in use, or a failed removal, still reaches Done with a warning. The Store lock is
+released around every git and gh call. Startup fails a delivery interrupted by
+quit; retry finishes a delivery whose cleanup already ran.
+
+Reject archives first, then force-removes the worktree and deletes the task
+branch only when it is a `molfar/task-` branch with no upstream and no attached
+worktree. Archiving a Done card deliberately differs from desktop: it never
+deletes the branch and only removes a leftover clean worktree. Known limits:
+git push and gh have no timeout, so a hung credential prompt keeps the card
+Delivering until restart; clean-worktree removal ignores gitignored files, as on
+desktop; and a desktop and native app delivering from one database at once is
+unsupported. See [migration status](parity.md#application-work).
 
 ## Rendering and responsiveness
 
