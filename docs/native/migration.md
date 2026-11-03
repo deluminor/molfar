@@ -81,7 +81,19 @@ deletes the branch and only removes a leftover clean worktree. Known limits:
 git push and gh have no timeout, so a hung credential prompt keeps the card
 Delivering until restart; clean-worktree removal ignores gitignored files, as on
 desktop; and a desktop and native app delivering from one database at once is
-unsupported. See [migration status](parity.md#application-work).
+unsupported.
+
+Readiness M08a adds an EditTask owner action and `transitions::moves::legal_moves`.
+Editing is legal only for idle, unarchived Backlog and Plan approval cards at the
+expected revision; the base branch can change only in Backlog. Create and edit
+share field validation and the task snapshot format, and the edit writes the
+card fields and a new task artifact version in one transaction, so later stages
+read the newest task. Move to… offers the desktop drop targets: Start, Approve
+plan and Back run directly (Back only when the readable-review guard allows
+it), while Request changes, Rework and Deliver open the owner panel they need.
+Background delivery results use a separate path from owner action results, so a
+long delivery cannot complete an unrelated edit or review. See
+[migration status](parity.md#application-work).
 
 ## Rendering and responsiveness
 

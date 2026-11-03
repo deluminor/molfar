@@ -507,3 +507,32 @@ request or merge, production-data writes, job activation or publishing occurred.
 Task editing and reordering remain open; M03 does not close full Board or GPUI
 parity.
 
+## MOLFAR Board task editing and moves (readiness M08a) — November 3, 2026
+
+Commits `f0899eb6` (core EditTask and legal moves), `c4e96309` (native editor and
+Move to…) and `db9ac988` (review fixes), base `4b900cd4`. Checks ran on
+`db9ac988` unchanged; they are local checks, not remote CI or runtime
+certification.
+
+| Check | Result and scope |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, native formatting and strict all-target Clippy, 810 core passed / 2 ignored, 861 GPUI passed / 11 ignored, 6 wheel regressions passed |
+| `npm run check:web` | Exit 0; 7,145 passed / 13 skipped; no web/Tauri source changes |
+| `npm run native:build` | Exit 0; optimized macOS app built and locally signed without launch; `codesign --verify --deep --strict` exit 0 (release compilation 5m 47s) |
+
+Core fixtures cover Backlog and Plan approval edits, trimming and required
+fields, the Backlog-only base branch and its reset, new task versions with prior
+versions retained, the newest task reaching the Implement handoff, and refusals
+for stale, invalid, running and archived cards without writes. A table test pins
+legal moves to the desktop drop targets. Synthetic UI fixtures cover the
+prefilled editor, single submission, base lock, draft preservation on conflict,
+focus return after save, background results not completing a busy edit, hidden
+editing outside legal states, immediate moves, input moves opening their panels
+and Back following the readable-review guard.
+
+An independent source review found no blocking defects. Its two major findings
+were fixed: background delivery completions could complete or unlock a busy
+edit, and focus was not returned after a successful save. Kanban columns and
+drag-and-drop remain for M08b. No actual application, browser, device or live
+provider QA occurred.
+
