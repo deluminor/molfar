@@ -143,6 +143,15 @@ impl Fixture {
     }
 }
 
+impl Fixture {
+    pub fn card_archived(&self) -> bool {
+        locked(&self.store)
+            .unwrap()
+            .board_card("card")
+            .is_ok_and(|card| card.archived)
+    }
+}
+
 pub(super) fn wait_until(cx: &mut TestAppContext, predicate: impl Fn() -> bool) {
     let deadline = std::time::Instant::now() + Duration::from_secs(15);
     loop {

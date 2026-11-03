@@ -229,6 +229,15 @@ impl Shell {
                         updated_at,
                         action,
                     } => this.board_action(card_id.clone(), *updated_at, action.clone(), cx),
+                    crate::task_board::Event::Deliver {
+                        card_id,
+                        updated_at,
+                        method,
+                    } => this.board_deliver(card_id.clone(), *updated_at, *method, cx),
+                    crate::task_board::Event::Reject {
+                        card_id,
+                        updated_at,
+                    } => this.board_reject(card_id.clone(), *updated_at, cx),
                     crate::task_board::Event::OpenSession(id) => {
                         this.open_board_session(id.clone(), cx)
                     }

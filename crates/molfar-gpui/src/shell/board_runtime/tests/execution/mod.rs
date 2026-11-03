@@ -1,3 +1,4 @@
+mod delivery;
 mod failures;
 mod fixtures;
 mod recovery;

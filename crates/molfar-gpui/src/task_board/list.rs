@@ -38,7 +38,7 @@ impl Board {
             .child(
                 div()
                     .text_size(px(11.))
-                    .child(format!("{} · {}", card.column_id, card.run_state)),
+                    .child(super::stage::delivery::status_text(card)),
             )
             .when_some(card.last_error.clone(), |d, error| {
                 d.child(div().mt_1().text_size(px(11.)).child(error))

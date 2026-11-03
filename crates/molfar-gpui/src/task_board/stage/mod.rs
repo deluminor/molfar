@@ -1,5 +1,8 @@
 mod actions;
 mod artifact;
+pub(super) mod delivery;
+#[cfg(test)]
+mod delivery_tests;
 #[cfg(test)]
 mod tests;
 mod view;

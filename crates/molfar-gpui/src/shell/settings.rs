@@ -443,16 +443,8 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         use molfar_core::files::is_equal_or_inside;
-        if self
-            .terminals
-            .values()
-            .flatten()
-            .any(|t| is_equal_or_inside(&t.read(cx).cwd, &path))
-        {
-            self.finish_worktree_action(
-                Err("Close the terminals using this worktree first.".into()),
-                cx,
-            );
+        if let Some(reason) = self.worktree_in_use(&path, cx) {
+            self.finish_worktree_action(Err(reason.into()), cx);
             return;
         }
         let ids = self
@@ -461,16 +453,6 @@ impl Shell {
             .filter(|id| is_equal_or_inside(self.session_working_copy(**id, cx), &path))
             .copied()
             .collect::<Vec<_>>();
-        if ids
-            .iter()
-            .any(|id| self.sessions.get(id).is_some_and(|v| v.read(cx).busy))
-        {
-            self.finish_worktree_action(
-                Err("Stop the running sessions using this worktree first.".into()),
-                cx,
-            );
-            return;
-        }
         let check_cwd = cwd.clone();
         let check_path = path.clone();
         let work = cx.background_executor().spawn(async move {
@@ -481,7 +463,7 @@ impl Shell {
             if let Err(e)=result {let _=this.update(cx,|this,cx|this.finish_worktree_action(Err(e),cx));return;}
             let pending=match this.update_in(cx,|this,window,cx| {
                 // Recheck before deleting any conversations after the preflight worker.
-                if this.terminals.values().flatten().any(|t|is_equal_or_inside(&t.read(cx).cwd,&path))||ids.iter().any(|id|this.sessions.get(id).is_some_and(|s|s.read(cx).busy)) {return Err("This worktree is now in use. Close its terminals and stop its sessions first.".to_owned());}
+                if this.worktree_in_use(&path,cx).is_some() {return Err("This worktree is now in use. Close its terminals and stop its sessions first.".to_owned());}
                 if delete_sessions {for id in &ids{this.delete_session(*id,window,cx);}}
                 Ok((this.group_writes.take(),this.store.clone()))
             }) {Ok(Ok(v))=>v,Ok(Err(e))=>{let _=this.update(cx,|this,cx|this.finish_worktree_action(Err(e),cx));return;},Err(_)=>return};
@@ -494,7 +476,7 @@ impl Shell {
                 molfar_core::worktree_management::remove(Path::new(&main.path),Path::new(&worker_path))?;
                 locked(&store)?.detach_worktree(&worker_path,&main.path)
             });let result=work.await;
-            let _=this.update(cx,|this,cx|{let result=result.map(|detached|{for(summary,settings)in detached{this.session_summaries.insert(summary.id, summary.clone());this.session_worktrees.insert(summary.id,settings.worktree_cwd.clone());if let Some(view)=this.sessions.get(&summary.id){view.update(cx,|v,cx|v.worktree_deleted(summary,settings,cx));}}this.worktree_focus.retain(|_,focus|!is_equal_or_inside(&focus.path,&path));});this.finish_worktree_action(result,cx);});
+            let _=this.update(cx,|this,cx|{let result=result.map(|detached|this.apply_detached_worktree(&path,detached,cx));this.finish_worktree_action(result,cx);});
         }).detach();
         let _ = window;
     }

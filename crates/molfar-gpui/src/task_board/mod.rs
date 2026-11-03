@@ -21,6 +21,15 @@ pub(crate) enum Event {
         updated_at: i64,
         action: molfar_core::task_board::stage::lifecycle::types::StageAction,
     },
+    Deliver {
+        card_id: String,
+        updated_at: i64,
+        method: molfar_core::task_board::delivery::types::DeliveryMethod,
+    },
+    Reject {
+        card_id: String,
+        updated_at: i64,
+    },
     OpenSession(String),
     Settings(molfar_core::task_board::stage::choice::settings::SettingsPatch),
 }
@@ -48,6 +57,8 @@ pub(crate) struct Board {
     settings: Option<settings::Panel>,
     picker: Option<settings::Picker>,
     retry_anchor: crate::popover::AnchorSlot,
+    delivery_open: Option<String>,
+    github: std::collections::HashMap<String, bool>,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -96,6 +107,8 @@ impl Board {
             settings: None,
             picker: None,
             retry_anchor: Default::default(),
+            delivery_open: None,
+            github: Default::default(),
         }
     }
 

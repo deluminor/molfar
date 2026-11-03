@@ -45,10 +45,10 @@ impl Board {
                     .child(format!("#{} {}", card.number, card.title)),
             )
             .child(field("Project", card.project_cwd.clone()))
-            .child(field(
-                "State",
-                format!("{} · {}", card.column_id, card.run_state),
-            ))
+            .child(field("State", super::stage::delivery::status_text(card)))
+            .when_some(super::stage::delivery::pull_request_url(card), |d, url| {
+                d.child(field("Pull request", url))
+            })
             .child(field("Description", card.description.clone()))
             .child(field(
                 "Acceptance criteria",

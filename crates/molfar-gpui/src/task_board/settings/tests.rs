@@ -24,6 +24,8 @@ pub(in crate::task_board) fn record(
             let text = match event {
                 Event::Settings(patch) => format!("{patch:?}"),
                 Event::Stage { action, .. } => format!("{action:?}"),
+                Event::Deliver { method, .. } => format!("Deliver({method:?})"),
+                Event::Reject { .. } => "Reject".into(),
                 Event::OpenSession(_) | Event::Close => return,
             };
             recorded.borrow_mut().push(text);
@@ -58,7 +60,7 @@ pub(super) fn seed(window: &WindowHandle<Board>, cx: &mut TestAppContext) {
         .unwrap();
 }
 
-pub(super) fn click(visual: &mut VisualTestContext, selector: &'static str) {
+pub(in crate::task_board) fn click(visual: &mut VisualTestContext, selector: &'static str) {
     let bounds = visual
         .debug_bounds(selector)
         .unwrap_or_else(|| panic!("{selector}"));

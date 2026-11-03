@@ -209,6 +209,7 @@ impl Board {
                 })),
             );
         }
+        row = row.child(self.delivery_actions(card, cx));
         if card.column_id == PLAN_APPROVAL {
             row = row.child(
                 div()

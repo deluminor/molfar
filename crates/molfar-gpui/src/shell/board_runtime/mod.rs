@@ -1,4 +1,5 @@
 mod actions;
+mod deliver;
 mod launch;
 mod notices;
 mod poll;
@@ -27,6 +28,7 @@ pub(super) struct State {
 
 impl Shell {
     pub(super) fn initialize_board_runtime(&mut self, cx: &mut Context<Self>) {
+        self.reconcile_board_deliveries(cx);
         self.poll_board(!cx.is_test(), cx);
         if cx.is_test() {
             return;
