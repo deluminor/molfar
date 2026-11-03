@@ -160,18 +160,13 @@ impl Board {
             if self.delivery_open.as_deref() == Some(&card.id) {
                 row = row.child(self.method_picker(card, pending, cx));
             } else {
-                let card_id = card.id.clone();
-                let worktree = card.worktree_path.clone();
+                let opened = card.clone();
                 row = row.child(
                     modal::disabled(modal::primary_button("board-deliver", "Deliver…"), pending)
                         .debug_selector(|| "board-deliver".into())
-                        .on_click(cx.listener(move |this, _, _, cx| {
-                            this.delivery_open = Some(card_id.clone());
-                            if let Some(path) = &worktree {
-                                this.probe_github(path.clone(), cx);
-                            }
-                            cx.notify();
-                        })),
+                        .on_click(
+                            cx.listener(move |this, _, _, cx| this.open_delivery(&opened, cx)),
+                        ),
                 );
             }
         }
@@ -216,6 +211,14 @@ impl Board {
             );
         }
         row
+    }
+
+    pub(in crate::task_board) fn open_delivery(&mut self, card: &Card, cx: &mut Context<Self>) {
+        self.delivery_open = Some(card.id.clone());
+        if let Some(path) = &card.worktree_path {
+            self.probe_github(path.clone(), cx);
+        }
+        cx.notify();
     }
 
     /// `gh repo view` is a network call: probe off-thread, keep a success, and retry a

@@ -8,6 +8,8 @@ impl Render for Board {
         let archived = self.archived;
         let overlay = self
             .review_overlay(window, cx)
+            .or_else(|| self.editor_overlay(window, cx))
+            .or_else(|| self.moves_overlay(window, cx))
             .or_else(|| self.creation_overlay(window, cx))
             .or_else(|| self.artifact_overlay(window, cx))
             .or_else(|| self.settings_overlay(window, cx));
@@ -24,7 +26,11 @@ impl Render for Board {
             .flex_col()
             .text_color(content(1.))
             .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, window, cx| {
-                if this.create_open || this.artifact.is_some() || this.review.is_some() {
+                if this.create_open
+                    || this.artifact.is_some()
+                    || this.review.is_some()
+                    || this.editor.is_some()
+                {
                     return;
                 }
                 if event.keystroke.modifiers.platform || event.keystroke.modifiers.control {

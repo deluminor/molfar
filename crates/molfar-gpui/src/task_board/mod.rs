@@ -1,5 +1,6 @@
 mod create;
 mod detail;
+mod edit;
 mod list;
 #[cfg(test)]
 mod loading_tests;
@@ -60,6 +61,10 @@ pub(crate) struct Board {
     delivery_open: Option<String>,
     github: std::collections::HashMap<String, bool>,
     github_probing: std::collections::HashSet<String>,
+    editor: Option<edit::TaskEditor>,
+    move_menu: Option<gpui::Entity<crate::popover::Menu>>,
+    move_anchor: crate::popover::AnchorSlot,
+    move_subscription: Option<gpui::Subscription>,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -67,6 +72,9 @@ impl Focusable for Board {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         if let Some(panel) = &self.review {
             return panel.initial_focus(cx);
+        }
+        if let Some(editor) = &self.editor {
+            return editor.initial_focus(cx);
         }
         if let Some(artifact) = &self.artifact {
             return artifact.focus.clone();
@@ -111,6 +119,10 @@ impl Board {
             delivery_open: None,
             github: Default::default(),
             github_probing: Default::default(),
+            editor: None,
+            move_menu: None,
+            move_anchor: Default::default(),
+            move_subscription: None,
         }
     }
 

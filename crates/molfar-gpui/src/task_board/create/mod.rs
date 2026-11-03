@@ -1,3 +1,4 @@
+pub(super) mod fields;
 mod project;
 pub(super) mod state;
 #[cfg(test)]
@@ -7,10 +8,10 @@ mod tests;
 mod view;
 
 use super::Board;
-use crate::input::{self, Input};
+use crate::input;
 use crate::popover::AnchorSlot;
-use crate::theme::content;
-use gpui::{AppContext, Context, Focusable, KeyDownEvent, Window};
+use fields::TaskFields;
+use gpui::{Context, Focusable, KeyDownEvent, Window};
 use molfar_core::task_board::types::{Card, CardCreate};
 use state::Creation;
 
@@ -28,34 +29,12 @@ impl Board {
                 })
                 .cloned()
                 .unwrap_or_default();
-            let title =
-                cx.new(|cx| Input::field("Title", "What needs to be done?", content(0.35), cx));
-            let description = cx.new(|cx| {
-                Input::multiline_field("Description", "Describe the task and its context", cx)
-            });
-            let criteria = cx.new(|cx| {
-                Input::multiline_field(
-                    "Acceptance criteria",
-                    "How will you know it is complete?",
-                    cx,
-                )
-            });
-            let base = cx.new(|cx| {
-                Input::field(
-                    "Base branch (optional)",
-                    "Project default",
-                    content(0.35),
-                    cx,
-                )
-            });
-            description.update(cx, |input, _| {
-                input.set_min_height(82.);
-                input.set_max_height(82.);
-            });
-            criteria.update(cx, |input, _| {
-                input.set_min_height(60.);
-                input.set_max_height(60.);
-            });
+            let TaskFields {
+                title,
+                description,
+                criteria,
+                base,
+            } = TaskFields::new(cx);
             let fields = [&title, &description, &criteria, &base];
             let mut subscriptions = Vec::new();
             for field in fields {

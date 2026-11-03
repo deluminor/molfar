@@ -1,8 +1,10 @@
 mod actions;
 mod artifact;
+pub(super) mod back;
 pub(super) mod delivery;
 #[cfg(test)]
 mod delivery_tests;
+mod moves;
 #[cfg(test)]
 mod tests;
 mod view;

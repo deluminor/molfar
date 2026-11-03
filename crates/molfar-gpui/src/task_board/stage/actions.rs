@@ -1,49 +1,13 @@
 use super::super::settings::PickTarget;
 use super::super::{Board, Event};
+use super::back::back_label;
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Role, div, prelude::*};
 use molfar_core::task_board::constants::{
-    BACKLOG, CODE_REVIEW, COLUMNS, FINAL_REVIEW, GRILL, IDLE, IMPLEMENT, PLAN_APPROVAL, REWORK,
+    BACKLOG, CODE_REVIEW, FINAL_REVIEW, GRILL, IDLE, IMPLEMENT, PLAN_APPROVAL, REWORK,
 };
-use molfar_core::task_board::stage::contracts::constants::REVIEW;
-use molfar_core::task_board::stage::lifecycle::constants::{FAILED, QUEUED, RUNNING, SUCCEEDED};
-use molfar_core::task_board::stage::{agent::AgentStage, transitions::back_target};
-use molfar_core::task_board::types::Snapshot;
+use molfar_core::task_board::stage::lifecycle::constants::{FAILED, QUEUED, RUNNING};
 use molfar_core::task_board::{stage::lifecycle::types::StageAction, types::Card};
-
-fn has_completed_review(card: &Card, snapshot: &Snapshot) -> bool {
-    let review =
-        snapshot.runs.iter().rev().find(|run| {
-            run.card_id == card.id && run.stage == CODE_REVIEW && run.status == SUCCEEDED
-        });
-
-    review.is_some_and(|run| {
-        snapshot.artifacts.iter().any(|artifact| {
-            artifact.card_id == card.id
-                && artifact.kind == REVIEW
-                && artifact.stage_run_id.as_deref() == Some(&run.id)
-        })
-    })
-}
-
-fn back_label(card: &Card, snapshot: Option<&Snapshot>) -> Option<String> {
-    let stage = AgentStage::parse(&card.column_id)?;
-    if card.archived || card.run_state != FAILED {
-        return None;
-    }
-
-    let needs_review = matches!(stage, AgentStage::CodeReview | AgentStage::Rework);
-    if needs_review && !snapshot.is_some_and(|snapshot| has_completed_review(card, snapshot)) {
-        return None;
-    }
-
-    let target = back_target(stage);
-    let label = COLUMNS
-        .iter()
-        .find(|(id, _)| *id == target)
-        .map_or(target, |(_, label)| label);
-    Some(format!("Back to {label}"))
-}
 
 pub(super) fn stage_action(card: &Card) -> Option<(&'static str, StageAction)> {
     if card.archived {
@@ -210,6 +174,8 @@ impl Board {
             );
         }
         row = row.child(self.delivery_actions(card, cx));
+        row = row.children(self.edit_action(card, pending, cx));
+        row = row.children(self.move_action(card, pending, cx));
         if card.column_id == PLAN_APPROVAL {
             row = row.child(
                 div()
@@ -222,6 +188,10 @@ impl Board {
 
     pub(crate) fn finish_update(&mut self, error: Option<String>, cx: &mut Context<Self>) {
         self.stage_pending = None;
+        if self.finish_edit_update(error.clone(), cx) {
+            cx.notify();
+            return;
+        }
         if self.finish_owner_update(error.clone(), cx) {
             if error.is_none() {
                 self.refresh(cx);
