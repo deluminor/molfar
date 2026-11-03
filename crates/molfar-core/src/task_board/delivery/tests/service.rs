@@ -11,7 +11,7 @@ use crate::task_board::stage::checkout::policy::DIRTY_CHECKOUT;
 fn deliver(board: &Board, port: &Fake, method: DeliveryMethod) -> Result<(), String> {
     board.start();
     match publish(&board.store, port, "card", method) {
-        Ok(published) => finish(&board.store, port, published).map(|_| ()),
+        Ok(published) => finish(&board.store, port, published, None).map(|_| ()),
         Err(error) => {
             service::fail(&board.store, "card", &error)?;
             Err(error)

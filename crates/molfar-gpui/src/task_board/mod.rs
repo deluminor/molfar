@@ -59,6 +59,7 @@ pub(crate) struct Board {
     retry_anchor: crate::popover::AnchorSlot,
     delivery_open: Option<String>,
     github: std::collections::HashMap<String, bool>,
+    github_probing: std::collections::HashSet<String>,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -109,6 +110,7 @@ impl Board {
             retry_anchor: Default::default(),
             delivery_open: None,
             github: Default::default(),
+            github_probing: Default::default(),
         }
     }
 

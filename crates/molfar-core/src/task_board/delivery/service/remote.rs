@@ -33,10 +33,11 @@ fn request(
     let parsed = review_text
         .as_deref()
         .and_then(|text| review::parse(text).ok());
-    let base = card
-        .base_ref
-        .as_deref()
-        .ok_or("The card has no base branch to open a pull request against.")?;
+    let project = Path::new(&card.project_cwd);
+    let base = match &card.base_ref {
+        Some(base) => base.clone(),
+        None => port.default_base(project)?,
+    };
     let head = card.branch.clone().ok_or("The card has no task branch.")?;
 
     Ok(PullRequest {
@@ -50,7 +51,7 @@ fn request(
                 review: parsed.as_ref(),
             },
         ),
-        base: base_branch(base, &port.remotes(Path::new(&card.project_cwd))?),
+        base: base_branch(&base, &port.remotes(project)?),
         head,
     })
 }

@@ -12,6 +12,7 @@ const MERGED: &str = "merged";
 pub trait DeliveryPort {
     fn retained_worktree(&self, card: &Card) -> Result<String, String>;
     fn snapshot(&self, worktree: &Path) -> Result<CheckoutSnapshot, String>;
+    fn default_base(&self, project: &Path) -> Result<String, String>;
     fn remotes(&self, project: &Path) -> Result<Vec<String>, String>;
     fn github_repo(&self, worktree: &Path) -> Result<String, String>;
     fn push(&self, worktree: &Path) -> Result<(), String>;
@@ -32,6 +33,10 @@ impl DeliveryPort for GitDelivery {
 
     fn snapshot(&self, worktree: &Path) -> Result<CheckoutSnapshot, String> {
         checkout::snapshot(worktree)
+    }
+
+    fn default_base(&self, project: &Path) -> Result<String, String> {
+        checkout::default_base(project)
     }
 
     fn remotes(&self, project: &Path) -> Result<Vec<String>, String> {

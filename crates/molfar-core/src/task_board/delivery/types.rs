@@ -50,8 +50,12 @@ pub struct Published {
 
 pub type Detached = Vec<(crate::store::Session, crate::agent::Settings)>;
 
+/// `removed` reports whether the worktree is gone; `notice` reports a problem
+/// found after the card state was already committed.
 #[derive(Debug)]
 pub struct Finished {
     pub card: crate::task_board::types::Card,
+    pub removed: bool,
     pub detached: Detached,
+    pub notice: Option<String>,
 }

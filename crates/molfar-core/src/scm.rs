@@ -1006,16 +1006,17 @@ fn push_for(root: &Path) -> Result<(), String> {
 fn pr_status_for(root: &Path) -> Option<Pr> {
     let branch = git_branch(root)?;
     let repo = github_repo_for(root).ok()?;
-    let head = github_pr_head_filter(&repo, &branch)?;
+    let (owner, _) = split_github_repo(&repo).ok()?;
+    // gh rejects `owner:branch` for --head, so fork PRs are excluded by owner afterwards.
     let json = gh_run(
         root,
         &[
             "pr",
             "list",
             "--head",
-            &head,
+            &branch,
             "--json",
-            "number,title,url,state",
+            "number,title,url,state,headRepositoryOwner",
             "--limit",
             "20",
             "--state",
@@ -1023,12 +1024,7 @@ fn pr_status_for(root: &Path) -> Option<Pr> {
         ],
     )
     .ok()?;
-    parse_gh_pr_list(&json)
-}
-
-fn github_pr_head_filter(repo: &str, branch: &str) -> Option<String> {
-    let (owner, _) = split_github_repo(repo).ok()?;
-    Some(format!("{owner}:{branch}"))
+    parse_gh_pr_list(&json, &owner)
 }
 
 fn github_repo_for(root: &Path) -> Result<String, String> {
@@ -1064,17 +1060,28 @@ fn split_github_repo(slug: &str) -> Result<(String, String), String> {
     Ok((owner.to_string(), name.to_string()))
 }
 
-fn parse_gh_pr_list(json: &str) -> Option<Pr> {
+fn parse_gh_pr_list(json: &str, owner: &str) -> Option<Pr> {
     #[derive(Deserialize)]
+    struct Owner {
+        login: String,
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
     struct Row {
         number: i64,
         title: String,
         url: String,
         state: String,
+        head_repository_owner: Option<Owner>,
     }
     let rows: Vec<Row> = serde_json::from_str(json).ok()?;
     let mut best: Option<Pr> = None;
-    for row in rows {
+    let own = |row: &Row| {
+        row.head_repository_owner
+            .as_ref()
+            .is_none_or(|head| head.login.eq_ignore_ascii_case(owner))
+    };
+    for row in rows.into_iter().filter(own) {
         let pr = Pr {
             number: row.number,
             title: row.title,

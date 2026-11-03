@@ -3,7 +3,7 @@ use molfar_core::task_board::delivery::{
     constants::INTERRUPTED,
     port::GitDelivery,
     service::{self, reject::reject_cleanup},
-    types::{DeliveryMethod, Published},
+    types::{DeliveryMethod, Finished, Published},
 };
 
 impl Shell {
@@ -63,31 +63,36 @@ impl Shell {
             .and_then(|path| self.worktree_in_use(path, cx));
         let store = self.store.clone();
         let work = cx.background_executor().spawn(async move {
-            let finished = match blocked {
-                Some(reason) => Err(reason.to_owned()),
-                None => service::finish(&store, &GitDelivery, published).map(|done| done.detached),
-            };
-            finished.or_else(|error| {
-                service::fail(&store, &id, &error)?;
-                Ok::<_, String>(Vec::new())
+            service::finish(&store, &GitDelivery, published, blocked).map_err(|error| {
+                match service::fail(&store, &id, &error) {
+                    Ok(_) => error,
+                    Err(recorded) => format!("{error} {recorded}"),
+                }
             })
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| {
                 let error = match result {
-                    Ok(detached) => {
-                        if let Some(path) = &path {
-                            this.apply_detached_worktree(path, detached, cx);
-                        }
-                        None
-                    }
+                    Ok(finished) => this.apply_cleanup(path.as_deref(), finished, cx),
                     Err(error) => Some(error),
                 };
                 this.finish_board_update(error, cx);
             });
         })
         .detach();
+    }
+
+    fn apply_cleanup(
+        &mut self,
+        path: Option<&str>,
+        finished: Finished,
+        cx: &mut Context<Self>,
+    ) -> Option<String> {
+        if let Some(path) = path.filter(|_| finished.removed) {
+            self.apply_detached_worktree(path, finished.detached, cx);
+        }
+        finished.notice
     }
 
     pub(in crate::shell) fn board_reject(
@@ -124,18 +129,13 @@ impl Shell {
         let work = cx.background_executor().spawn(async move {
             let (before, archived) = locked(&store)?.board_reject(&card_id, updated_at)?;
             let finished = reject_cleanup(&store, &GitDelivery, &before, archived)?;
-            Ok::<_, String>((before.worktree_path, finished.detached))
+            Ok::<_, String>((before.worktree_path, finished))
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| {
                 let error = match result {
-                    Ok((path, detached)) => {
-                        if let Some(path) = path {
-                            this.apply_detached_worktree(&path, detached, cx);
-                        }
-                        None
-                    }
+                    Ok((path, finished)) => this.apply_cleanup(path.as_deref(), finished, cx),
                     Err(error) => Some(error),
                 };
                 this.finish_board_update(error, cx);
@@ -149,14 +149,28 @@ impl Shell {
         let store = self.store.clone();
         let work = cx.background_executor().spawn(async move {
             let stuck = locked(&store)?.board_stuck_deliveries()?;
-            for id in stuck {
-                service::fail(&store, &id, INTERRUPTED)?;
+            let errors: Vec<String> = stuck
+                .iter()
+                .filter_map(|id| service::fail(&store, id, INTERRUPTED).err())
+                .collect();
+            if errors.is_empty() {
+                Ok(())
+            } else {
+                Err(format!(
+                    "Interrupted Board deliveries could not be reset: {}",
+                    errors.join("; ")
+                ))
             }
-            Ok::<_, String>(())
         });
         cx.spawn(async move |this, cx| {
             let error = work.await.err();
-            let _ = this.update(cx, |this, cx| this.finish_board_update(error, cx));
+            let _ = this.update(cx, |this, cx| {
+                if this.board.is_none() && error.is_some() {
+                    this.error = error.clone();
+                    cx.notify();
+                }
+                this.finish_board_update(error, cx);
+            });
         })
         .detach();
     }

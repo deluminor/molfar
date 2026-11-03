@@ -845,24 +845,32 @@ fn sync_pulls_then_pushes() {
 #[test]
 fn parse_gh_pr_list_prefers_open() {
     let json = r#"[{"number":2,"title":"Old","url":"https://example.com/2","state":"MERGED"},{"number":3,"title":"Now","url":"https://example.com/3","state":"OPEN"}]"#;
-    let pr = parse_gh_pr_list(json).unwrap();
+    let pr = parse_gh_pr_list(json, "acme").unwrap();
     assert_eq!(pr.number, 3);
     assert_eq!(pr.state, "open");
     let pr = parse_gh_pr_list(
         r#"[{"number":2,"title":"Old","url":"u","state":"MERGED"},{"number":1,"title":"Older","url":"u","state":"CLOSED"}]"#,
+        "acme",
     )
     .unwrap();
     assert_eq!((pr.number, pr.state.as_str()), (2, "merged"));
-    assert_eq!(parse_gh_pr_list("[]"), None);
+    assert_eq!(parse_gh_pr_list("[]", "acme"), None);
 }
 
 #[test]
-fn pr_head_filter_qualifies_branch_with_repo_owner() {
+fn parse_gh_pr_list_ignores_same_named_fork_branches() {
+    let json = r#"[{"number":9,"title":"Fork","url":"f","state":"OPEN","headRepositoryOwner":{"login":"stranger"}},{"number":4,"title":"Own","url":"o","state":"MERGED","headRepositoryOwner":{"login":"Acme"}}]"#;
+
+    let pr = parse_gh_pr_list(json, "acme").unwrap();
+
+    assert_eq!((pr.number, pr.state.as_str()), (4, "merged"));
     assert_eq!(
-        github_pr_head_filter("acme/widget", "feature/x").as_deref(),
-        Some("acme:feature/x")
+        parse_gh_pr_list(
+            r#"[{"number":9,"title":"Fork","url":"f","state":"OPEN","headRepositoryOwner":{"login":"stranger"}}]"#,
+            "acme"
+        ),
+        None
     );
-    assert_eq!(github_pr_head_filter("bad", "feature"), None);
 }
 
 #[test]

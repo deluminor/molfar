@@ -66,7 +66,11 @@ impl Store {
         storage::note_archived(&mut self.conn, id, worktree, error)
     }
 
+    /// Native-only databases have no Board, so nothing can be stuck there.
     pub fn board_stuck_deliveries(&self) -> Result<Vec<String>, String> {
+        if self.shared.is_none() {
+            return Ok(Vec::new());
+        }
         storage::stuck(&self.conn)
     }
 }

@@ -218,11 +218,13 @@ impl Board {
         row
     }
 
-    /// `gh repo view` is a network call: probe off-thread once per worktree.
+    /// `gh repo view` is a network call: probe off-thread, keep a success, and retry a
+    /// failure on the next open so a transient outage does not stick for the session.
     fn probe_github(&mut self, path: String, cx: &mut Context<Self>) {
-        if self.github.contains_key(&path) {
+        if self.github_probing.contains(&path) || self.github.get(&path) == Some(&true) {
             return;
         }
+        self.github_probing.insert(path.clone());
         let probe = path.clone();
         let work = cx.background_executor().spawn(async move {
             molfar_core::scm::github_repo(std::path::Path::new(&probe)).is_ok()
@@ -230,6 +232,7 @@ impl Board {
         cx.spawn(async move |this, cx| {
             let available = work.await;
             let _ = this.update(cx, |this, cx| {
+                this.github_probing.remove(&path);
                 this.github.insert(path, available);
                 cx.notify();
             });

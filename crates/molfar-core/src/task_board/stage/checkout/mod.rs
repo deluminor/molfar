@@ -15,6 +15,10 @@ pub fn ensure_worktree(
     worktree::ensure(card)
 }
 
+pub fn default_base(root: &std::path::Path) -> Result<String, String> {
+    branch::default_base(root)
+}
+
 pub fn remotes(root: &std::path::Path) -> Result<Vec<String>, String> {
     branch::remotes(root)
 }

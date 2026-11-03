@@ -76,6 +76,10 @@ impl DeliveryPort for Fake {
         })
     }
 
+    fn default_base(&self, _project: &Path) -> Result<String, String> {
+        Ok("refs/remotes/origin/develop".into())
+    }
+
     fn remotes(&self, _project: &Path) -> Result<Vec<String>, String> {
         Ok(vec!["origin".into()])
     }

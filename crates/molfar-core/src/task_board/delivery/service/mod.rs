@@ -4,7 +4,7 @@ mod remote;
 use super::{
     port::DeliveryPort,
     record,
-    types::{Delivery, DeliveryMethod, Finished, Published},
+    types::{Delivery, DeliveryMethod, Detached, Finished, Published},
 };
 use crate::{
     store::Store,
@@ -80,10 +80,25 @@ pub fn publish(
     })
 }
 
+pub(super) fn detach(store: &Store, path: &str, project: &str) -> (Detached, Option<String>) {
+    match store.detach_worktree(path, project) {
+        Ok(detached) => (detached, None),
+        Err(error) => (
+            Vec::new(),
+            Some(format!(
+                "The worktree was removed, but its sessions could not be detached: {error}"
+            )),
+        ),
+    }
+}
+
+/// `blocked` keeps the worktree when something still uses it: the delivery is
+/// already published, so the card still reaches Done with a warning.
 pub fn finish(
     store: &Mutex<Store>,
     port: &impl DeliveryPort,
     published: Published,
+    blocked: Option<&str>,
 ) -> Result<Finished, String> {
     let Published {
         card,
@@ -96,24 +111,29 @@ pub fn finish(
         ..delivery
     };
 
-    let cleanup = worktree
-        .as_deref()
-        .map(|path| port.remove_worktree(project, Path::new(path), false));
-    let warning = match &cleanup {
-        Some(Err(error)) => Some(format!(
-            "Delivered, but the worktree could not be removed: {error}"
-        )),
-        _ => None,
+    let cleanup = match (worktree.as_deref(), blocked) {
+        (None, _) => Ok(()),
+        (Some(_), Some(reason)) => Err(reason.to_owned()),
+        (Some(path), None) => port.remove_worktree(project, Path::new(path), false),
     };
+    let warning = cleanup
+        .as_ref()
+        .err()
+        .map(|error| format!("Delivered, but the worktree could not be removed: {error}"));
 
     let mut store = lock(store)?;
     let card =
         store.board_finish_delivery(&card.id, &delivered, warning.is_none(), warning.as_deref())?;
-    let detached = match (worktree, cleanup) {
-        (Some(path), Some(Ok(()))) => store.detach_worktree(&path, &card.project_cwd)?,
-        _ => Vec::new(),
+    let (detached, notice) = match worktree.filter(|_| cleanup.is_ok()) {
+        Some(path) => detach(&store, &path, &card.project_cwd),
+        None => (Vec::new(), None),
     };
-    Ok(Finished { card, detached })
+    Ok(Finished {
+        removed: cleanup.is_ok(),
+        card,
+        detached,
+        notice,
+    })
 }
 
 pub fn fail(store: &Mutex<Store>, id: &str, error: &str) -> Result<Card, String> {
