@@ -536,3 +536,33 @@ edit, and focus was not returned after a successful save. Kanban columns and
 drag-and-drop remain for M08b. No actual application, browser, device or live
 provider QA occurred.
 
+## MOLFAR Board kanban and drag (readiness M08b) — November 3, 2026
+
+Commits `e8b98c67` (kanban columns and detail drawer), `9e1d66e8`
+(drag-and-drop) and `1ae5270f` (review fixes), base `acd1d3f5`. Checks ran on
+`1ae5270f` unchanged; they are local checks, not remote CI or runtime
+certification.
+
+| Check | Result and scope |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, native formatting and strict all-target Clippy, 810 core passed / 2 ignored, 871 GPUI passed / 11 ignored, 6 wheel regressions passed |
+| `npm run check:web` | Exit 0; 7,145 passed / 13 skipped; no web/Tauri source changes |
+| `npm run native:build` | Exit 0; optimized macOS app built and locally signed without launch; `codesign --verify --deep --strict` exit 0 (release compilation 5m 17s) |
+
+Synthetic fixtures cover all columns including newer unknown ones, the drawer
+staying closed across fallback refreshes, Enter and Escape handling, the drawer
+over cards, arrow navigation within and across columns, column model chips and
+the picker, desktop status labels, dragging a card to start it, illegal drops,
+input drops opening their panel, Escape cancelling a drag, edge-scroll speed and
+Back for unselected failed reviews. Board test windows run with reduced motion so
+animated layout is deterministic.
+
+An independent source review found two blocking defects, both fixed: closing the
+drawer was undone by the next refresh because the core falls back to the first
+card, and the drawer did not occlude the columns beneath. Its major findings
+(Back for unselected cards, edge scroll only while moving and outside the board,
+refreshes moving the board scroll) were fixed. The drawer-occlusion test also
+passed before `occlude` was added, so it is a regression check rather than proof
+of the defect. No actual application, browser, device or live provider QA
+occurred.
+

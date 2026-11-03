@@ -92,8 +92,17 @@ read the newest task. Move to… offers the desktop drop targets: Start, Approve
 plan and Back run directly (Back only when the readable-review guard allows
 it), while Request changes, Rework and Deliver open the owner panel they need.
 Background delivery results use a separate path from owner action results, so a
-long delivery cannot complete an unrelated edit or review. See
-[migration status](parity.md#application-work).
+long delivery cannot complete an unrelated edit or review.
+
+Readiness M08b renders the Board as horizontally scrolling kanban columns in
+`task_board/kanban`, with desktop column looks, notes, model chips that open the
+column model picker, and status-striped cards. Details open in a drawer that
+slides over the board and occludes it; its open state is separate from the
+selection, so refreshes that fall back to the first card never reopen it. Cards
+with a legal move drag with GPUI's drag API: legal columns are framed and show a
+Drop to… slot, others fade, and a drop runs the same move as Move to…. Escape
+cancels a drag, edge auto-scroll runs on a timer inside the board, and motion is
+static under reduced motion. See [migration status](parity.md#application-work).
 
 ## Rendering and responsiveness
 

@@ -12,9 +12,9 @@ Local reconciliation includes M01a implementation `eab8b0bb`, documentation `6b0
 
 ## Delivered and remaining
 
-M01a adds owner answers/change requests, versioned plan editing and repeated Grill. Readiness M02 (`ff780975`..`2369ba98`) adds plan approval and native Implement/Code review/Rework execution through Final review. Readiness M03 (`4fe5dc0c`..`238aa1fe`) adds delivery, reject and archive. Readiness M08a (`f0899eb6`..`db9ac988`) adds task editing and Move to…. [Verification](verification.md) records tests/builds for those checkpoints, not certification of later revisions or runtime parity.
+M01a adds owner answers/change requests, versioned plan editing and repeated Grill. Readiness M02 (`ff780975`..`2369ba98`) adds plan approval and native Implement/Code review/Rework execution through Final review. Readiness M03 (`4fe5dc0c`..`238aa1fe`) adds delivery, reject and archive. Readiness M08a (`f0899eb6`..`db9ac988`) adds task editing and Move to…; M08b (`e8b98c67`..`1ae5270f`) adds kanban columns and drag-and-drop. [Verification](verification.md) records tests/builds for those checkpoints, not certification of later revisions or runtime parity.
 
-Next: Board kanban columns with desktop-quality drag-and-drop (readiness M08b). Full native Jira/Confluence, Home/Usage and Knowledge remain open. Scheduler, Familiar heartbeat/delegation, shared data, provider and platform acceptance need runtime evidence. See [parity](parity.md) and [architecture](migration.md).
+Next: native Jira and Confluence (readiness M04/M05). Full native Jira/Confluence, Home/Usage and Knowledge remain open. Scheduler, Familiar heartbeat/delegation, shared data, provider and platform acceptance need runtime evidence. See [parity](parity.md) and [architecture](migration.md).
 
 ## Planning
 
