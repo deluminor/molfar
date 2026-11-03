@@ -378,6 +378,7 @@ impl ListState {
             state.measuring_behavior.reset();
             state.logical_scroll_top = None;
             state.pending_scroll = None;
+            state.wheel_glide = None;
             state.scrollbar_drag_start_height = None;
             state.items.summary().count
         };
@@ -625,6 +626,7 @@ impl ListState {
         state.wheel_glide = None;
         let item_count = state.items.summary().count;
         state.pending_scroll = None;
+        state.wheel_glide = None;
         state.logical_scroll_top = Some(ListOffset {
             item_ix: item_count,
             offset_in_item: px(0.),
@@ -1647,6 +1649,10 @@ impl Element for List {
                         height,
                         view: current_view,
                     });
+                    // Reversing direction drops what was left of the old notch.
+                    if glide.remaining.signum() != distance.signum() {
+                        glide.remaining = px(0.);
+                    }
                     glide.remaining += distance;
                     glide.height = height;
                     drop(state);

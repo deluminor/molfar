@@ -943,7 +943,13 @@
     "mobile/modules/monocode-link/ios/TranscriptPresentation.swift": "mobile/modules/molfar-link/ios/TranscriptPresentation.swift",
     "mobile/modules/monocode-link/ios/TranscriptRowView.swift": "mobile/modules/molfar-link/ios/TranscriptRowView.swift",
     "mobile/modules/monocode-link/ios/TranscriptSession.swift": "mobile/modules/molfar-link/ios/TranscriptSession.swift",
-    "mobile/modules/monocode-link/ios/TranscriptVisual.swift": "mobile/modules/molfar-link/ios/TranscriptVisual.swift"
+    "mobile/modules/monocode-link/ios/TranscriptVisual.swift": "mobile/modules/molfar-link/ios/TranscriptVisual.swift",
+    "mobile/src/features/models/useFamiliarSubsessions.ts": "mobile/src/features/models/use-familiar-subsessions.ts",
+    "mobile/src/features/settings/familiarOnly.ts": "mobile/src/features/settings/familiar-only.ts",
+    "mobile/src/features/workspace/familiarLook.ts": "mobile/src/features/workspace/familiar-look.ts",
+    "mobile/src/features/workspace/newFamiliar.ts": "mobile/src/features/workspace/new-familiar.ts",
+    "src/features/mobile/model/mobileUsageLimit.test.ts": "src/features/mobile/model/mobile-usage-limit.test.ts",
+    "src/features/mobile/model/mobileUsageLimit.ts": "src/features/mobile/model/mobile-usage-limit.ts"
   },
   "splits": {
     "src-tauri/src/fs.rs": {
@@ -1125,6 +1131,32 @@
         "src/domain/session/familiar-session.ts"
       ],
       "notes": "Session factories that read provider settings (newSession, newDefaultSession, newSessionForProject, retargetSessionToProject, newSessionLike) stay in features/sessions/model/session.ts. Everything else moved to src/domain: HarnessId, HARNESSES, HARNESS_LABEL, HARNESS_TITLE, harnessSupportsAttachments -> domain/harness/harness.ts; RuntimeMode + RUNTIME_MODE* -> domain/session/runtime-mode.ts; TaskList* types -> domain/session/task-list.ts; TurnIntent, EditedResendRejection, ComposerTurnOptions, ModelTarget, PlanBuildTarget, TurnModel, TurnMetrics -> turn.ts; Plan/Handoff/Btw/SecondOpinion/Interjection meta types -> block-meta.ts; ToolPreview*, AgentStep*, AgentRunMeta -> agent-run.ts; Attachment, AttachmentKind, GeneratedImageMeta -> attachment.ts; QueuedMessage, MessageQueueStatus, UsageLimit -> message-queue.ts; BlockRole, Block -> block.ts; Session, LinkedWorkItem, WorkspaceMode, PendingHarnessSwitch -> domain/session/session.ts; hasPendingApproval, sessionNeedsInput, sessionDraftBlock, removeSessionDraft, sessionWorkCwd -> session-state.ts; titleFromPrompt, formatSessionTitle, canReplaceSessionTitle, sessionDisplayTitle -> title.ts. FamiliarSpawnedSession, MonoSpawnedSession, FamiliarSessionCompletion -> domain/session/familiar-session.ts."
+    },
+    "mobile/src/features/workspace/FamiliarHome.tsx": {
+      "targets": [
+        "mobile/src/features/workspace/familiar-home/FamiliarHome.tsx",
+        "mobile/src/features/workspace/familiar-home/FamiliarRow.tsx",
+        "mobile/src/features/workspace/familiar-home/constants.ts",
+        "mobile/src/features/workspace/familiar-home/styles.ts",
+        "mobile/src/features/workspace/familiar-home/use-familiar-home.ts"
+      ],
+      "notes": "Familiar-only home screen: state and actions in hook; list rows and preview in FamiliarRow; shared layout constants and styles."
+    },
+    "mobile/src/app/familiar-new.tsx": {
+      "targets": [
+        "mobile/src/app/familiar-new.tsx",
+        "mobile/src/features/workspace/familiar-new/constants.ts",
+        "mobile/src/features/workspace/familiar-new/styles.ts"
+      ],
+      "notes": "Expo route retains creation behavior; layout constants and styling live in the familiar-new concern."
+    },
+    "src-tauri/src/codex_familiar_store.rs": {
+      "targets": [
+        "src-tauri/src/codex_familiar_store.rs",
+        "src-tauri/src/codex_familiar_store/file_preparation.rs",
+        "src-tauri/src/codex_familiar_store/tests.rs"
+      ],
+      "notes": "Store orchestration remains in parent, configuration sharing and private lock preparation in file_preparation, regression tests in tests.rs."
     }
   },
   "extractions": {

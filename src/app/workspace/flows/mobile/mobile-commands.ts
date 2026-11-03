@@ -1,3 +1,4 @@
+import { recoverMobileUsage } from "@/features/mobile/model/mobile-usage-limit";
 import { mobileProjectId } from "@/features/mobile/model/mobile-project-id";
 import type { MobileCommandDeps } from "./mobile-command-types";
 import { answerMobileQuestion } from "./mobile-question-command";
@@ -186,6 +187,20 @@ export async function runMobileCommand(
     : undefined;
   const session = familiarSession ?? (await deps.ensureOpen(conversationId));
   if (!session) throw new Error("Session is no longer available");
+
+  if (method === "session.resumeUsage" || method === "session.resumeUsageAtReset") {
+    if (!deps.usagePending) throw new Error("Mobile usage recovery is unavailable");
+    await recoverMobileUsage({
+      session: deps.sessionsRef.current.find((entry) => entry.id === session.id),
+      token: params.token,
+      automatic: method === "session.resumeUsageAtReset",
+      enabled: params.enabled,
+      pending: deps.usagePending,
+      resume: deps.resumeUsage,
+      setAutomatic: deps.setResumeAtReset,
+    });
+    return { sessionId: session.id };
+  }
 
   if (method === "session.cancel") {
     await deps.stop(session.id);

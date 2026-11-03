@@ -296,6 +296,40 @@ still need runtime checks. The executable was built without launching it or
 opening the installed database. Cross-platform CI and signed installers remain
 release-pipeline checks.
 
+## Upstream preview 13 reference — November 3, 2026
+
+The following records upstream evidence. It does not establish MOLFAR verification or runtime parity.
+
+Source revision `4550fded` passed the complete native check locally on macOS
+Apple Silicon with Rust 1.97.1:
+
+```sh
+npm run native:check
+```
+
+- Native development, dependency-guard, packaging, and release script tests: 29 passed.
+- Native workspace formatting: passed.
+- Strict Clippy for core and GPUI, all targets, `native-dev` profile: passed.
+- Native core tests: 666 passed, 2 ignored.
+- GPUI tests, run serially: 829 passed, 11 ignored.
+- Wheel-scroll integration tests: 3 passed.
+
+The first preflight reproduced the latest macOS CI failure: the changes-shelf
+fixture assigned `open` after constructing `ChangesShelf::default()`, triggering
+`clippy::field_reassign_with_default`. Revision `4550fded` initializes that field
+in the struct literal. This changes test setup only. The full successful check
+above includes that correction.
+
+The [candidate native workflow](https://github.com/hardbeat920/monocode/actions/runs/41643529160)
+checks the same source with Rust 1.99.1. Its core checks passed on macOS, Linux,
+and Windows, and the macOS desktop formatting and strict Clippy checks passed.
+
+These local results cover automated fixtures. Signed installers, notarization,
+package signatures, and update-feed publication are checked by the native
+release workflow. No live-provider requests, companion device tests, or manual
+packaged upgrade checks were performed in this preflight. Existing platform
+runtime limitations remain as recorded above and in [preview limitations](parity.md).
+
 ## Local checks
 
 Run the complete native check from the repository root:
@@ -566,3 +600,29 @@ passed before `occlude` was added, so it is a regression check rather than proof
 of the defect. No actual application, browser, device or live provider QA
 occurred.
 
+
+## Upstream integration sync — November 3, 2026
+
+The isolated sync worktree integrates upstream `main` range `12552dc8..00c69307`
+onto MOLFAR integration base `dc511ff3`, preserving the human migration ports.
+All upstream desktop, mobile, native and shared code follows this one line;
+MOLFAR `main` is unchanged. Installed automation configuration is unchanged.
+
+- `npm ci`: exit 0. `npm run check:web`: exit 0, 7,158 tests passed and 13 skipped;
+  the additional idle reset-watch regression passed separately with the existing
+  hook tests (5 passed). The pre-push hook reruns the complete committed tree.
+- Mobile locked install, full Vitest suite and `tsc --noEmit`: exit 0;
+  184 tests passed across 33 files, including hide and reselect coverage.
+- `npm run native:check`: exit 0 after resuming an interrupted run;
+  31 Node tests, 823 core tests (2 ignored), 913 GPUI tests (11 ignored)
+  and 6 wheel integration tests passed. Formatting and strict Clippy passed.
+- `cargo check --quiet` in `src-tauri`: exit 0. This is compile evidence;
+  the Tauri Rust test suite was not run separately.
+- Branding, move-map, staged secret and whitespace checks passed.
+  License notices are unchanged; no dependencies or publishing workflows changed.
+
+The first native attempt failed on duplicate Familiar event exports; those were
+removed without dropping either event. A later run was interrupted before GPUI
+completion; the resumed complete gate above supplies the native result.
+No app, live provider, real user database, browser QA, mobile native build or
+platform runtime acceptance was used. These results do not close migration parity.

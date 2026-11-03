@@ -144,6 +144,8 @@ export function useRunningFlows(
   });
 
   useWorkspaceMobile(sessions, {
+    resumeUsage: usageLimits.resume,
+    setResumeAtReset: usageLimits.setResumeAtReset,
     sessionsRef,
     setSessions,
     defaultRuntimeMode: sessionDefaults?.runtimeMode,

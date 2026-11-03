@@ -11,7 +11,7 @@ impl Fixture {
         self.0.join("account")
     }
     fn home(&self) -> PathBuf {
-        self.0.join("mono")
+        self.0.join("familiar")
     }
     fn rollout(&self, id: &str, base: Option<&str>) -> PathBuf {
         let dir = self.source().join("archived_sessions");
@@ -70,28 +70,142 @@ fn shares_settings_and_login_but_not_codex_state() {
 }
 
 #[test]
-fn keeps_ephemeral_lock_files_private() {
+fn does_not_fight_the_codex_subprocess_over_the_session_index_lock() {
     let fixture = Fixture::new();
     let source = fixture.source();
     let home = fixture.home();
-    std::fs::create_dir_all(&source).unwrap();
+    std::fs::create_dir_all(source.join("sessions")).unwrap();
+    // The real codex CLI writes its own lock locally in each home it's
+    // pointed at, independently of this sync.
+    std::fs::write(source.join("session_index.jsonl.lock"), "account").unwrap();
     std::fs::create_dir_all(&home).unwrap();
-    std::fs::write(source.join("config.toml"), "config").unwrap();
-    std::fs::write(source.join("memories.lock"), "").unwrap();
-    std::fs::write(source.join(".sqlite-maintenance.lock"), "").unwrap();
-    // Familiar Codex previously created its own lock in the private home.
-    std::fs::write(home.join("memories.lock"), "").unwrap();
+    std::fs::write(home.join("session_index.jsonl.lock"), "familiar").unwrap();
     prepare_files(&source, &home).unwrap();
-    prepare_files(&source, &home).unwrap();
-    assert!(home.join("memories.lock").is_file());
-    assert!(std::fs::symlink_metadata(home.join("memories.lock"))
-        .unwrap()
-        .file_type()
-        .is_file());
-    assert!(!home.join(".sqlite-maintenance.lock").exists());
+    assert!(
+        std::fs::symlink_metadata(home.join("session_index.jsonl.lock"))
+            .unwrap()
+            .file_type()
+            .is_file(),
+        "the familiar's own lock must stay a private local file, not get linked to the account home's"
+    );
+    // A hard link would also report is_file(), so prove independence by
+    // content: writing to the account's lock must not reach the familiar's.
+    std::fs::write(source.join("session_index.jsonl.lock"), "account changed").unwrap();
     assert_eq!(
-        std::fs::read_to_string(home.join("config.toml")).unwrap(),
-        "config"
+        std::fs::read_to_string(home.join("session_index.jsonl.lock")).unwrap(),
+        "familiar"
+    );
+}
+
+// Windows file sharing uses hard links, not symlinks (see link_entry),
+// so the two platforms need separate reproductions of the stale state.
+#[cfg(unix)]
+#[test]
+fn drops_a_stale_lock_link_from_before_the_lock_became_private() {
+    let fixture = Fixture::new();
+    let source = fixture.source();
+    let home = fixture.home();
+    std::fs::create_dir_all(source.join("sessions")).unwrap();
+    std::fs::write(source.join("session_index.jsonl.lock"), "account").unwrap();
+    std::fs::create_dir_all(&home).unwrap();
+    // A familiar provisioned before the lock became private can still have
+    // this symlink left over from an earlier sync.
+    std::os::unix::fs::symlink(
+        source.join("session_index.jsonl.lock"),
+        home.join("session_index.jsonl.lock"),
+    )
+    .unwrap();
+    prepare_files(&source, &home).unwrap();
+    assert!(
+        !home.join("session_index.jsonl.lock").exists(),
+        "the stale link must be removed, leaving the familiar's own writer to recreate a private lock"
+    );
+    assert_eq!(
+        std::fs::read_to_string(source.join("session_index.jsonl.lock")).unwrap(),
+        "account",
+        "removing the link must not touch its target"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn concurrent_preparations_all_survive_a_stale_lock_link() {
+    for _ in 0..50 {
+        let fixture = Fixture::new();
+        let source = fixture.source();
+        let home = fixture.home();
+        std::fs::create_dir_all(source.join("sessions")).unwrap();
+        std::fs::write(source.join("session_index.jsonl.lock"), "account").unwrap();
+        std::fs::create_dir_all(&home).unwrap();
+        std::os::unix::fs::symlink(
+            source.join("session_index.jsonl.lock"),
+            home.join("session_index.jsonl.lock"),
+        )
+        .unwrap();
+        let start = std::sync::Barrier::new(8);
+        std::thread::scope(|scope| {
+            let workers: Vec<_> = (0..8)
+                .map(|_| {
+                    scope.spawn(|| {
+                        start.wait();
+                        prepare_files(&source, &home)
+                    })
+                })
+                .collect();
+            for worker in workers {
+                worker.join().unwrap().unwrap();
+            }
+        });
+        assert!(!home.join("session_index.jsonl.lock").exists());
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn drops_a_stale_lock_hard_link_from_before_the_lock_became_private() {
+    let fixture = Fixture::new();
+    let source = fixture.source();
+    let home = fixture.home();
+    std::fs::create_dir_all(source.join("sessions")).unwrap();
+    std::fs::write(source.join("session_index.jsonl.lock"), "account").unwrap();
+    std::fs::create_dir_all(&home).unwrap();
+    // A familiar provisioned before the lock became private can still have
+    // this hard link left over from an earlier sync (link_entry shares
+    // files via hard_link on Windows, not a symlink).
+    std::fs::hard_link(
+        source.join("session_index.jsonl.lock"),
+        home.join("session_index.jsonl.lock"),
+    )
+    .unwrap();
+    prepare_files(&source, &home).unwrap();
+    assert!(
+        !home.join("session_index.jsonl.lock").exists(),
+        "the stale hard link must be removed, leaving the familiar's own writer to recreate a private lock"
+    );
+    assert_eq!(
+        std::fs::read_to_string(source.join("session_index.jsonl.lock")).unwrap(),
+        "account",
+        "removing the hard link must not touch its target"
+    );
+}
+
+#[cfg(windows)]
+#[test]
+fn does_not_remove_an_unrelated_lock_with_the_same_name() {
+    let fixture = Fixture::new();
+    let source = fixture.source();
+    let home = fixture.home();
+    std::fs::create_dir_all(source.join("sessions")).unwrap();
+    std::fs::write(source.join("session_index.jsonl.lock"), "account").unwrap();
+    std::fs::create_dir_all(&home).unwrap();
+    // Not a link to the account's lock, just a file that happens to
+    // share its name and content — must be left alone.
+    std::fs::write(home.join("session_index.jsonl.lock"), "account").unwrap();
+    prepare_files(&source, &home).unwrap();
+    assert_eq!(
+        std::fs::read_to_string(home.join("session_index.jsonl.lock")).unwrap(),
+        "account",
+        "an unrelated file must survive, only a genuine link to the source should be removed"
     );
 }
 
@@ -284,4 +398,30 @@ fn migration_keeps_closed_agents_closed_and_leaves_other_threads_out() {
         })
         .unwrap();
     assert_eq!(status, "open");
+}
+
+#[test]
+fn keeps_ephemeral_lock_files_private() {
+    let fixture = Fixture::new();
+    let source = fixture.source();
+    let home = fixture.home();
+    std::fs::create_dir_all(&source).unwrap();
+    std::fs::create_dir_all(&home).unwrap();
+    std::fs::write(source.join("config.toml"), "config").unwrap();
+    std::fs::write(source.join("memories.lock"), "").unwrap();
+    std::fs::write(source.join(".sqlite-maintenance.lock"), "").unwrap();
+    // Familiar Codex previously created its own lock in the private home.
+    std::fs::write(home.join("memories.lock"), "").unwrap();
+    prepare_files(&source, &home).unwrap();
+    prepare_files(&source, &home).unwrap();
+    assert!(home.join("memories.lock").is_file());
+    assert!(std::fs::symlink_metadata(home.join("memories.lock"))
+        .unwrap()
+        .file_type()
+        .is_file());
+    assert!(!home.join(".sqlite-maintenance.lock").exists());
+    assert_eq!(
+        std::fs::read_to_string(home.join("config.toml")).unwrap(),
+        "config"
+    );
 }

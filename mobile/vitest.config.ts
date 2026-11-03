@@ -5,6 +5,8 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root,
+  // Metro supplies this React Native global when bundling the app.
+  define: { __DEV__: false },
   resolve: {
     alias: {
       "@": `${root}src`,
@@ -12,6 +14,7 @@ export default defineConfig({
       "react-dom": `${root}node_modules/react-dom`,
     },
   },
+  server: { fs: { allow: [fileURLToPath(new URL("..", import.meta.url))] } },
   esbuild: { jsx: "automatic" },
   test: {
     environment: "happy-dom",

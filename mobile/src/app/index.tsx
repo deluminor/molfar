@@ -5,7 +5,17 @@ import { Pressable, Text, View } from "react-native";
 import { useWorkspace } from "@/features/workspace/WorkspaceProvider";
 import { SessionScreen } from "@/features/sessions/SessionScreen";
 import { useConnectionStyles } from "@/features/connection/ConnectScreen";
+import { useFamiliarOnlyLayout } from "../features/settings/familiar-only";
+import { FamiliarHome } from "@/features/workspace/familiar-home/FamiliarHome";
 export default function Index() {
+  const [familiarOnly] = useFamiliarOnlyLayout();
+  // Familiars only: the list of them, each chat pushed over it.
+  if (familiarOnly)
+    return <FamiliarHome />;
+  return <WorkspaceIndex />;
+}
+
+function WorkspaceIndex() {
   const styles = useConnectionStyles();
   const { projects, familiars } = useWorkspace();
   // Back where the user last was, while it is still on the phone.

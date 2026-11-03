@@ -197,7 +197,7 @@ function VideoView({
   useEffect(() => {
     const video = videoRef.current;
     const pauseWhenHidden = () => {
-      if (!visible || document.hidden) video?.pause();
+      if (video && !video.paused && (!visible || document.hidden)) video.pause();
     };
     pauseWhenHidden();
     document.addEventListener("visibilitychange", pauseWhenHidden);
@@ -226,12 +226,12 @@ function VideoView({
         video.load();
       }
     } else {
-      video.pause();
+      if (!video.paused) video.pause();
       releaseSource.current = window.setTimeout(release);
     }
 
     return () => {
-      video.pause();
+      if (!video.paused) video.pause();
       window.clearTimeout(releaseSource.current);
       releaseSource.current = window.setTimeout(release);
     };

@@ -72,4 +72,34 @@ describe("usage limits", () => {
     expect(session().providerAccountId).toBe("home");
     expect(deps.submit).toHaveBeenCalled();
   });
+  it("waits for continuation acceptance and reports the result", async () => {
+    const { deps } = setupTurnQueue({ usageLimit: {} });
+    const submit = vi.fn(async () => true);
+    await expect(createUsageLimits({ ...deps, submit }).resume("s")).resolves.toBe(true);
+    expect(submit).toHaveBeenCalledWith("s", CONTINUE_PROMPT);
+  });
+
+  it.each(["declined", "rejected"])("keeps a manual retry after %s continuation", async (outcome) => {
+    const { deps, session } = setupTurnQueue({ usageLimit: { resumeAtReset: true, resetsAt: 5 } });
+    const submit = vi.fn(async () => {
+      if (outcome === "rejected") throw new Error("submission failed");
+      return false;
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(createUsageLimits({ ...deps, submit }).resume("s")).resolves.toBe(false);
+    expect(session().usageLimit).toEqual({ resumeAtReset: false, resetsAt: 5 });
+  });
+
+  it("preserves a newer usage limit when continuation is declined", async () => {
+    const { deps, session } = setupTurnQueue({ usageLimit: { resetsAt: 5 } });
+    const submit = vi.fn(async () => {
+      deps.updateSessionsNow((sessions) => sessions.map((entry) => ({ ...entry, usageLimit: { resetsAt: 10 } })));
+      return false;
+    });
+
+    await expect(createUsageLimits({ ...deps, submit }).resume("s")).resolves.toBe(false);
+    expect(session().usageLimit).toEqual({ resetsAt: 10 });
+  });
+
 });

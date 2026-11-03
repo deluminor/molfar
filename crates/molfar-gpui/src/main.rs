@@ -54,6 +54,7 @@ mod notifications;
 mod pane_layout;
 mod pane_motion;
 mod particle_text;
+mod phase_tile;
 mod pickers;
 mod popover;
 mod project_background;
@@ -73,6 +74,7 @@ mod review;
 mod right_panel;
 mod runtime;
 mod search;
+mod send_morph;
 mod session_mark;
 mod session_review;
 mod settings;
@@ -81,6 +83,7 @@ mod sound;
 mod syntax;
 mod tab_label;
 mod tab_motion;
+mod tab_tile;
 mod task_board;
 mod terminal;
 mod theme;
@@ -187,6 +190,13 @@ fn main() {
     }
     if cli_args.first().is_some_and(|a| a == "visual-mcp") {
         if let Err(error) = molfar_core::visual_bridge::mcp_stdio() {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+        return;
+    }
+    if cli_args.first().is_some_and(|a| a == "app-mcp") {
+        if let Err(error) = molfar_core::familiar::bridge::mcp_stdio() {
             eprintln!("{error}");
             std::process::exit(1);
         }

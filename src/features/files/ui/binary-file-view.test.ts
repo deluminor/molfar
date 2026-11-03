@@ -140,6 +140,7 @@ describe("BinaryFileView video playback", () => {
     const video = container.querySelector("video")!;
     const pause = vi.spyOn(video, "pause");
     const play = vi.spyOn(video, "play");
+    vi.spyOn(video, "paused", "get").mockReturnValue(false);
 
     await renderViewer("/repo/clip.mp4", false);
     expect(pause).toHaveBeenCalled();
@@ -199,6 +200,7 @@ describe("BinaryFileView video playback", () => {
     const video = container.querySelector("video")!;
     const pause = vi.spyOn(video, "pause");
     const load = vi.spyOn(video, "load");
+    vi.spyOn(video, "paused", "get").mockReturnValue(false);
     vi.useFakeTimers();
     act(() => root.render(null));
     expect(pause).toHaveBeenCalledOnce();
@@ -213,6 +215,7 @@ describe("BinaryFileView video playback", () => {
     const load = vi
       .spyOn(HTMLMediaElement.prototype, "load")
       .mockImplementation(() => {});
+    const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
     await renderViewer("/repo/clip.mp4", true, true);
     const loadsAfterMount = load.mock.calls.length;
     expect(loadsAfterMount).toBeGreaterThan(0);
@@ -220,6 +223,14 @@ describe("BinaryFileView video playback", () => {
     expect(container.querySelector("video")?.src).toBe("blob:image-preview");
     // Deferred release must not fire after StrictMode remount.
     expect(load.mock.calls.length).toBe(loadsAfterMount);
+    expect(pause).not.toHaveBeenCalled();
+  });
+
+  it("does not pause an initially hidden player", async () => {
+    const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
+    await renderViewer("/repo/clip.mp4", false, true);
+    expect(container.querySelector("video")?.paused).toBe(true);
+    expect(pause).not.toHaveBeenCalled();
   });
 
   it("shows file read errors and allows retry", async () => {

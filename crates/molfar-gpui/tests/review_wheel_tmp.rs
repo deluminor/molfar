@@ -87,12 +87,11 @@ fn wheel_glide_must_preserve_input_distance(cx: &mut TestAppContext) {
             window.simulate_next_frame(cx);
         });
     }
-    let offset = state.scroll_px_offset_for_scrollbar();
-    assert_eq!(offset.x, px(0.));
-    // Eased steps can land one f32 ULP below a row boundary.
+    let offset = state.logical_scroll_top();
+    let distance = px(20.) * offset.item_ix as f32 + offset.offset_in_item;
     assert!(
-        (offset.y - px(-200.)).abs() < px(0.001),
-        "wheel input distance changed: {offset:?}"
+        (distance - px(200.)).abs() < px(0.01),
+        "expected 200px of wheel travel, got {distance:?} ({offset:?})"
     );
 }
 

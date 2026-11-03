@@ -26,4 +26,4 @@ Local continuation entrypoint: `docs/specs/gpui-merge-readiness/handoff.md`. Rem
 
 On November 3, 2026, PR #127 was pushed to `785dc7e3` (readiness M08b and its documentation) and remains ready for review; its description reflects the native Board through delivery, editing, kanban and drag. Remote CI for that head has not been recorded here. Re-read remote head/CI before further publication and preserve ready-for-review status.
 
-Upstream sync remains Phase 1 while #127 is open; Phase 2 starts after merge and native exists on main. The [combined prompt](../automations/upstream-sync.md) is tracked guidance. Installed automation configuration still needs a separate live comparison.
+Upstream sync now takes all code from the upstream `main` into `migration/gpui-into-main` only, as approved on November 3. There is no separate desktop sync into MOLFAR `main`. The human completes migration and merges #127; the automation then stops for an explicit target-policy update. The [canonical prompt](../automations/upstream-sync.md) is ready for the user to install; installed automation configuration was not changed in this run.

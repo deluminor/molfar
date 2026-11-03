@@ -124,6 +124,8 @@ pub(super) async fn handle(
             "conversation.send",
             "session.answerQuestion",
             "session.keepQuestionOpen",
+            "session.resumeUsage",
+            "session.resumeUsageAtReset",
             "session.cancel",
             "session.rename",
             "session.delete",

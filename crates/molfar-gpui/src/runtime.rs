@@ -482,18 +482,35 @@ fn run_turn_using(
             prompt
         } else if let Some(familiar) = &settings.familiar {
             let files = molfar_core::familiar::load_files(&familiar.root, &familiar.familiar)?;
-            let added =
-                molfar_core::familiar::context(&familiar.familiar, &files, &familiar.executable);
-            let fingerprint = molfar_core::familiar::files::content_hash(&added);
-            familiar_fingerprint = Some(fingerprint.clone());
             let rotated = provider_id.is_some() && context.ratio().is_some_and(|r| r >= 0.8);
             if rotated {
                 provider_id = None;
                 locked(&store)?.reset_provider_id(summary.id)?;
             }
             let receipt = locked(&store)?.setting(&format!("familiar-context:{}", summary.id))?;
+            let rules = molfar_core::familiar::files::content_hash(
+                &molfar_core::familiar::instructions(&familiar.familiar, &familiar.executable),
+            );
+            let held_rules = receipt
+                .as_deref()
+                .and_then(|r| serde_json::from_str::<serde_json::Value>(r).ok())
+                .and_then(|r| r["rules"].as_str().map(str::to_owned));
+            let added = molfar_core::familiar::context(
+                &familiar.familiar,
+                &files,
+                &familiar.executable,
+                molfar_core::familiar::rules_in_system(
+                    kind,
+                    provider_id.is_some(),
+                    held_rules.as_deref(),
+                    &rules,
+                ),
+            );
+            let fingerprint = molfar_core::familiar::files::content_hash(&added);
+            familiar_fingerprint = Some((fingerprint.clone(), rules.clone()));
             let expected =
-                serde_json::json!({"provider":provider_id,"hash":fingerprint}).to_string();
+                serde_json::json!({"provider":provider_id,"hash":fingerprint,"rules":rules})
+                    .to_string();
             let intro = if provider_id.is_none() || receipt.as_deref() != Some(&expected) {
                 added
             } else {
@@ -935,11 +952,12 @@ fn run_turn_using(
             })
         });
         if result.is_ok()
-            && let Some(fingerprint) = &familiar_fingerprint
+            && let Some((fingerprint, rules)) = &familiar_fingerprint
         {
             locked(&store)?.save_setting(
                 &format!("familiar-context:{}", summary.id),
-                &serde_json::json!({"provider":provider_id,"hash":fingerprint}).to_string(),
+                &serde_json::json!({"provider":provider_id,"hash":fingerprint,"rules":rules})
+                    .to_string(),
             )?;
         }
         if result.is_ok()

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { turnsBefore, watchUpdate, watchWindow } from "./mobile-watch";
 import type { MobileTurn } from "../types/transcript";
 import { required } from "@/shared/testing/required";
@@ -149,4 +149,21 @@ describe("mobile watch frames", () => {
     });
     expect(() => turnsBefore(ids, "gone", 2)).toThrow();
   });
+});
+
+it("propagates reset metadata, automatic preference changes and clearing with unchanged turns", () => {
+  const conversation = { busy: false, older: false, turns: [] };
+  const usageLimit = { token: "a", resetsAt: 123456, resumeAtReset: false, canResume: false,
+    canAutoResume: true, resetLabel: "Resets tomorrow", limitation: "Keep desktop open" };
+  const initial = watchUpdate(null, { ...conversation, usageLimit });
+  assert(initial);
+  expect(initial.update).toMatchObject({ usageLimit });
+  expect(watchUpdate(initial.baseline, { ...conversation, usageLimit })).toBeNull();
+  const armed = { ...usageLimit, token: "b", resumeAtReset: true };
+  const next = watchUpdate(initial.baseline, { ...conversation, usageLimit: armed });
+  assert(next);
+  expect(next.update).toMatchObject({ usageLimit: armed, turns: [] });
+  const cleared = watchUpdate(next.baseline, conversation);
+  assert(cleared);
+  expect(cleared.update).toMatchObject({ usageLimit: null });
 });
