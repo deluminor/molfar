@@ -17,6 +17,7 @@ impl Board {
             .max_w_full()
             .max_h(window.viewport_size().height - px(40.))
             .id("board-artifact-dialog")
+            .debug_selector(|| "board-artifact-dialog".into())
             .role(Role::Dialog)
             .aria_label(artifact.title.clone())
             .track_focus(&artifact.focus)

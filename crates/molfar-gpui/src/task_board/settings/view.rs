@@ -9,9 +9,14 @@ impl Board {
     fn picker_popover(&self, cx: &mut Context<Self>) -> Option<AnyElement> {
         let picker = self.picker.as_ref()?;
         let weak = cx.weak_entity();
+        let surface = self
+            .settings
+            .as_ref()
+            .map(|panel| panel.picker_surface.clone());
         Some(
             popover("board-model-picker", Anchor::Slot(picker.anchor.clone()))
                 .width(340.)
+                .when_some(surface, |picker, surface| picker.track(surface))
                 .on_dismiss(move |window, cx| {
                     let _ = weak.update(cx, |this, cx| {
                         this.picker = None;
@@ -23,7 +28,24 @@ impl Board {
                         cx.notify();
                     });
                 })
-                .child(div().h(px(440.)).child(picker.list.clone()))
+                .child(
+                    div()
+                        .id("board-picker-content")
+                        .h(px(440.))
+                        .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, window, cx| {
+                            if event.keystroke.key == "escape" {
+                                this.picker = None;
+                                let focus = this
+                                    .settings
+                                    .as_ref()
+                                    .map_or(this.focus.clone(), |panel| panel.focus.clone());
+                                window.focus(&focus, cx);
+                                cx.notify();
+                                cx.stop_propagation();
+                            }
+                        }))
+                        .child(picker.list.clone()),
+                )
                 .into_any_element(),
         )
     }
@@ -38,6 +60,10 @@ impl Board {
             let overlay = div().absolute().inset_0().child(picker?);
             return Some(modal::window_overlay(window, overlay).into_any_element());
         };
+
+        if let Some(stage) = panel.column {
+            return Some(self.column_settings_overlay(stage, picker, window, cx));
+        }
 
         let mut body = modal::card_body()
             .id("board-settings-body")

@@ -151,11 +151,13 @@ impl Board {
             Ok(card) => {
                 self.creation = None;
                 self.create_open = false;
-                if self.archived || self.project_only {
+                if self.archived || self.project_only || self.project_filter.is_some() {
                     self.snapshot = None;
                 }
                 self.archived = false;
                 self.project_only = false;
+                self.project_filter = None;
+                self.reset_detail_artifact();
                 self.selected = Some(card.id);
                 self.refresh(cx);
                 if restore_focus {

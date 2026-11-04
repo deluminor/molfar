@@ -11754,7 +11754,7 @@ mod tests {
         })
         .unwrap();
         cx.run_until_parked();
-        assert_eq!(root.read_with(cx, |s, _| s.sidebar_hover), Some("Notes"));
+        assert_eq!(root.read_with(cx, |s, _| s.sidebar_hover), Some("Board"));
         assert_eq!(transcript.read_with(cx, |t, _| t.render_passes), before);
     }
     #[gpui::test]

@@ -8,25 +8,33 @@ use serde_json::Value;
 
 impl Board {
     pub(in crate::task_board) fn load_settings(&mut self, cx: &mut Context<Self>) {
+        let Some(panel) = &self.settings else {
+            return;
+        };
+        let focus = panel.focus.clone();
         let store = self.store.clone();
         let work = cx
             .background_executor()
             .spawn(async move { crate::runtime::locked(&store)?.board_settings_json() });
         cx.spawn(async move |this, cx| {
             let result = work.await;
-            let _ = this.update(cx, |this, cx| this.finish_settings_load(result, cx));
+            let _ = this.update(cx, |this, cx| this.finish_settings_load(&focus, result, cx));
         })
         .detach();
     }
 
     fn finish_settings_load(
         &mut self,
+        focus: &gpui::FocusHandle,
         result: Result<Option<String>, String>,
         cx: &mut Context<Self>,
     ) {
         let Some(panel) = &mut self.settings else {
             return;
         };
+        if panel.focus != *focus {
+            return;
+        }
         let parsed = result.and_then(|raw| {
             raw.map_or(Ok(Value::Object(Default::default())), |raw| {
                 serde_json::from_str(&raw).map_err(|_| "Board settings are unreadable.".to_owned())
@@ -42,6 +50,7 @@ impl Board {
         };
 
         panel.error = None;
+        panel.pending = None;
         // Later reloads keep what the user is typing in fields they have not saved yet.
         if panel.saved.is_some() {
             panel.saved = Some(saved);
@@ -87,8 +96,9 @@ impl Board {
             cx.notify();
             return;
         };
-        let saved = panel.pending.take();
+        let saved = panel.pending.clone();
         if let Some(error) = error {
+            panel.pending = None;
             panel.error = Some(error);
             cx.notify();
             return;

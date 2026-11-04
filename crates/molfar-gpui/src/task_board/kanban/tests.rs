@@ -84,23 +84,38 @@ fn drawer_stays_closed_across_refreshes_and_escape_then_closes_the_board(cx: &mu
 }
 
 #[gpui::test]
-fn the_open_drawer_blocks_clicks_to_cards_underneath(cx: &mut TestAppContext) {
-    let mut cards = Vec::new();
-    for index in 0..4 {
-        cards.push(at(&format!("c{index}"), "plan_approval", "idle"));
-    }
-    cards.push(at("left", "backlog", "idle"));
-    let window = show(cx, cards, Some("left"));
+fn drawer_reserves_width_and_last_column_remains_reachable(cx: &mut TestAppContext) {
+    let window = show(cx, vec![at("left", "backlog", "idle")], Some("left"));
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    for width in [1440., 1000., 768., 420.] {
+        visual.simulate_window_resize(window.into(), gpui::size(gpui::px(width), gpui::px(700.)));
+        visual.run_until_parked();
+        let drawer = visual.debug_bounds("board-detail-drawer").unwrap();
+        let columns = visual.debug_bounds("board-list").unwrap();
+        assert!(columns.size.width > gpui::px(0.));
+        assert!(
+            columns.right() <= drawer.left() + gpui::px(1.),
+            "overlapping at {width}"
+        );
+        window
+            .update(visual, |board, _, cx| {
+                let max = board.scroll.max_offset();
+                board.scroll.set_offset(gpui::point(-max.x, gpui::px(0.)));
+                cx.notify();
+            })
+            .unwrap();
+        visual.run_until_parked();
+        let last = visual.debug_bounds("board-column-done").unwrap();
+        assert!(
+            last.right() <= columns.right() + gpui::px(1.),
+            "last column unreachable at {width}"
+        );
+        assert!(last.right() > columns.left());
+        assert_eq!(drawer, visual.debug_bounds("board-detail-drawer").unwrap());
+    }
+    click(visual, "board-detail-close");
     visual.run_until_parked();
-    let drawer = visual.debug_bounds("board-detail-drawer").unwrap();
-    let hidden = visual.debug_bounds("board-column-plan_approval").unwrap();
-    assert!(drawer.intersects(&hidden));
-
-    let inside = gpui::point(drawer.left() + gpui::px(40.), hidden.top() + gpui::px(140.));
-    visual.simulate_click(inside, Default::default());
-    visual.run_until_parked();
-
+    assert!(visual.debug_bounds("board-detail-drawer").is_none());
     assert_eq!(selected(window, visual).as_deref(), Some("left"));
 }
 
@@ -134,7 +149,7 @@ fn arrows_move_within_and_across_non_empty_columns(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn agent_columns_show_the_saved_model_and_open_the_column_picker(cx: &mut TestAppContext) {
+fn agent_columns_show_the_saved_model_and_open_column_settings(cx: &mut TestAppContext) {
     let window = show(cx, vec![], None);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
@@ -146,13 +161,19 @@ fn agent_columns_show_the_saved_model_and_open_the_column_picker(cx: &mut TestAp
         .update(visual, |board, _, _| {
             assert_eq!(
                 board.column_model(molfar_core::task_board::stage::agent::AgentStage::Implement),
-                "codex · gpt-5"
+                "GPT-5"
             );
         })
         .unwrap();
     click(visual, "board-column-model-grill");
     window
-        .update(visual, |board, _, _| assert!(board.picker.is_some()))
+        .update(visual, |board, _, _| {
+            assert!(board.picker.is_none());
+            assert_eq!(
+                board.settings.as_ref().unwrap().column,
+                Some(molfar_core::task_board::stage::agent::AgentStage::Grill)
+            );
+        })
         .unwrap();
 }
 

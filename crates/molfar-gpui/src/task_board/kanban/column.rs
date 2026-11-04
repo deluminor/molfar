@@ -1,7 +1,7 @@
 use super::look::{
     COLUMN_RADIUS, COLUMN_WIDTH, Kind, amber, emerald, empty_hint, kind_tone, look, note,
 };
-use crate::task_board::{Board, settings::PickTarget};
+use crate::task_board::Board;
 use crate::theme::*;
 use gpui::{
     AnyElement, Context, Div, FontWeight, Role, ScrollHandle, SharedString, Stateful, div,
@@ -37,9 +37,11 @@ impl Board {
     pub(super) fn column_model(&self, stage: AgentStage) -> String {
         self.saved_column(stage)
             .map_or("Project default model".to_owned(), |config| {
-                let model = config[MODEL].as_str().unwrap_or_default();
-                let model = model.split_once(':').map_or(model, |(_, name)| name);
-                format!("{} · {model}", config[HARNESS].as_str().unwrap_or_default())
+                crate::task_board::controls::model_label(
+                    config[HARNESS].as_str().unwrap_or_default(),
+                    config[MODEL].as_str().unwrap_or_default(),
+                )
+                .to_string()
             })
     }
 
@@ -71,12 +73,7 @@ impl Board {
                         .child(div().flex_1().min_w_0().truncate().child(label))
                         .child(icon("chevron-down", 12.))
                         .on_click(cx.listener(move |this, _, window, cx| {
-                            this.open_model_picker(
-                                PickTarget::Column(stage),
-                                anchor.clone(),
-                                window,
-                                cx,
-                            )
+                            this.open_column_settings(stage, window, cx)
                         })),
                 )
                 .into_any_element();

@@ -30,6 +30,10 @@ impl Board {
             .collect();
         let panel = Panel {
             focus: cx.focus_handle(),
+            column: None,
+            picker_surface: Default::default(),
+            catalog: Vec::new(),
+            catalog_error: None,
             saved: None,
             anchors: AgentStage::ALL
                 .into_iter()
@@ -60,6 +64,9 @@ impl Board {
 
     pub(super) fn emit_settings(&mut self, patch: SettingsPatch, cx: &mut Context<Self>) {
         if let Some(panel) = &mut self.settings {
+            if panel.column.is_some() && (panel.pending.is_some() || panel.saved.is_none()) {
+                return;
+            }
             panel.error = None;
             panel.pending = Some(patch.clone());
         }

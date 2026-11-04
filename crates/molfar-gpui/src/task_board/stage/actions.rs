@@ -217,6 +217,8 @@ impl Board {
 
     pub(crate) fn reveal_card(&mut self, id: String, cx: &mut Context<Self>) {
         self.project_only = false;
+        self.project_filter = None;
+        self.reset_detail_artifact();
         self.archived = false;
         self.snapshot = None;
         self.selected = Some(id);

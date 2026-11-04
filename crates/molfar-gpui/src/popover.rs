@@ -798,6 +798,7 @@ pub(crate) struct MenuAction {
     pub shortcut: Option<SharedString>,
     pub icon: Option<&'static str>,
     pub icon_artwork: Option<&'static str>,
+    pub project: Option<(molfar_core::project_appearance::ProjectAppearance, String)>,
     pub image: Option<&'static str>,
     pub icon_color: Option<Hsla>,
     /// A provider logo shown with `value`, as the model row's harness icon.
@@ -1336,6 +1337,11 @@ impl Menu {
                         .text_color(icon_ink)
                         .when(rich, |i| i.mt(px(2.))),
                 )
+            })
+            .when_some(action.project.as_ref(), |d, (appearance, path)| {
+                d.child(crate::project_settings::project_icon(
+                    appearance, path, icon_size,
+                ))
             })
             .when_some(action.icon_artwork, |d, path| {
                 d.child(

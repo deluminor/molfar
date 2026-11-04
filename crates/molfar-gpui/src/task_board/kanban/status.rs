@@ -8,7 +8,7 @@ use molfar_core::task_board::{
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum StatusKind {
+pub(in crate::task_board) enum StatusKind {
     Queued,
     Running,
     NeedsYou,
@@ -17,7 +17,7 @@ pub(super) enum StatusKind {
 }
 
 /// Desktop card status without the live elapsed timer.
-pub(super) fn status(card: &Card) -> Option<(StatusKind, &'static str)> {
+pub(in crate::task_board) fn status(card: &Card) -> Option<(StatusKind, &'static str)> {
     match (card.column_id.as_str(), card.run_state.as_str()) {
         (_, FAILED) => Some((StatusKind::Failed, "Failed")),
         (_, QUEUED) => Some((StatusKind::Queued, "Queued")),
@@ -29,7 +29,7 @@ pub(super) fn status(card: &Card) -> Option<(StatusKind, &'static str)> {
     }
 }
 
-pub(super) fn stripe(kind: StatusKind) -> Hsla {
+pub(in crate::task_board) fn stripe(kind: StatusKind) -> Hsla {
     match kind {
         StatusKind::Queued => content(0.25),
         StatusKind::Running | StatusKind::NeedsYou => {
@@ -42,7 +42,7 @@ pub(super) fn stripe(kind: StatusKind) -> Hsla {
     }
 }
 
-pub(super) fn chip(kind: StatusKind) -> (Hsla, Hsla) {
+pub(in crate::task_board) fn chip(kind: StatusKind) -> (Hsla, Hsla) {
     match kind {
         StatusKind::Queued => (content(0.07), content(0.6)),
         StatusKind::Running | StatusKind::NeedsYou => {

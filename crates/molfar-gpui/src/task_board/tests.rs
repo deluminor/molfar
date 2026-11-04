@@ -33,7 +33,7 @@ pub(super) fn card(id: &str, column: &str) -> Card {
     }
 }
 
-fn database() -> Database {
+pub(super) fn database() -> Database {
     Arc::new(Mutex::new(
         Store::open_desktop(std::path::Path::new(":memory:")).unwrap(),
     ))

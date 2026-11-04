@@ -4,9 +4,12 @@ mod drag;
 #[cfg(test)]
 mod drag_tests;
 mod drawer;
-mod look;
+pub(super) mod look;
 mod nav;
-mod status;
+pub(super) mod scroll;
+#[cfg(test)]
+mod scroll_tests;
+pub(super) mod status;
 #[cfg(test)]
 mod tests;
 
@@ -69,7 +72,9 @@ impl Board {
             .debug_selector(|| "board-list".into())
             .role(gpui::Role::Group)
             .aria_label("Task Board columns")
-            .size_full()
+            .h_full()
+            .flex_1()
+            .min_w_0()
             .flex()
             .gap_3()
             .p_3()
@@ -90,10 +95,24 @@ impl Board {
             row = row.child(self.drop_zone(element, &column, targets.as_ref(), cx));
         }
         div()
+            .id("board-workspace")
+            .debug_selector(|| "board-workspace".into())
             .relative()
+            .flex()
             .flex_1()
+            .min_w_0()
             .min_h_0()
-            .child(row)
+            .overflow_hidden()
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .h_full()
+                    .flex()
+                    .flex_col()
+                    .child(row)
+                    .child(self.board_scrollbar(cx)),
+            )
             .when(empty, |board| {
                 board.child(
                     div()

@@ -3,8 +3,12 @@ mod create;
 mod detail;
 mod edit;
 mod kanban;
+mod load;
 #[cfg(test)]
 mod loading_tests;
+mod project;
+#[cfg(test)]
+mod project_tests;
 mod review;
 mod settings;
 mod stage;
@@ -12,7 +16,7 @@ mod stage;
 mod tests;
 mod view;
 
-use crate::runtime::{Database, locked};
+use crate::runtime::Database;
 use gpui::{App, Context, EventEmitter, FocusHandle, Focusable, ScrollHandle};
 use molfar_core::task_board::types::Snapshot;
 
@@ -40,11 +44,20 @@ pub(crate) struct Board {
     store: Database,
     focus: FocusHandle,
     scroll: ScrollHandle,
+    board_bar: kanban::scroll::Bar,
     cwd: String,
     projects: Vec<String>,
+    appearances:
+        std::collections::HashMap<String, molfar_core::project_appearance::ProjectAppearance>,
     creation: Option<create::state::Creation>,
     create_open: bool,
     project_only: bool,
+    project_filter: Option<String>,
+    project_menu: Option<gpui::Entity<crate::popover::Menu>>,
+    project_anchor: crate::popover::AnchorSlot,
+    project_subscription: Option<gpui::Subscription>,
+    detail_tab: Option<String>,
+    detail_version: Option<i64>,
     archived: bool,
     selected: Option<String>,
     snapshot: Option<Snapshot>,
@@ -110,11 +123,19 @@ impl Board {
             store,
             focus: cx.focus_handle(),
             scroll: ScrollHandle::new(),
+            board_bar: Default::default(),
             cwd: String::new(),
             projects: Vec::new(),
+            appearances: Default::default(),
             creation: None,
             create_open: false,
             project_only: false,
+            project_filter: None,
+            project_menu: None,
+            project_anchor: Default::default(),
+            project_subscription: None,
+            detail_tab: None,
+            detail_version: None,
             archived: false,
             selected: None,
             snapshot: None,
@@ -164,53 +185,20 @@ impl Board {
     pub(crate) fn set_context(&mut self, cwd: String, projects: Vec<String>) {
         if self.project_only && self.cwd != cwd {
             self.snapshot = None;
+            self.project_filter = Some(cwd.clone());
+            self.revision += 1;
+        }
+        if self
+            .project_filter
+            .as_ref()
+            .is_some_and(|selected| selected != &cwd && !projects.contains(selected))
+        {
+            self.project_filter = None;
+            self.project_only = false;
+            self.snapshot = None;
+            self.revision += 1;
         }
         self.cwd = cwd;
         self.projects = projects;
-    }
-
-    pub(crate) fn refresh(&mut self, cx: &mut Context<Self>) {
-        self.revision += 1;
-        let revision = self.revision;
-        self.loading = true;
-        self.error = None;
-        let store = self.store.clone();
-        let project = self.project_only.then(|| self.cwd.clone());
-        let archived = self.archived;
-        let selected = self.selected.clone();
-        let work = cx.background_executor().spawn(async move {
-            locked(&store)?.board_snapshot(project.as_deref(), archived, selected.as_deref())
-        });
-        cx.spawn(async move |this, cx| {
-            let result = work.await;
-            let _ = this.update(cx, |this, cx| this.finish(revision, result, cx));
-        })
-        .detach();
-        cx.notify();
-    }
-
-    fn finish(&mut self, revision: u64, result: Result<Snapshot, String>, cx: &mut Context<Self>) {
-        if revision != self.revision {
-            return;
-        }
-        self.loading = false;
-        match result {
-            Ok(snapshot) => {
-                self.selected = snapshot.selected.clone();
-                self.snapshot = Some(snapshot);
-                self.error = None;
-            }
-            Err(error) => {
-                if self
-                    .snapshot
-                    .as_ref()
-                    .is_some_and(|snapshot| snapshot.cards.is_empty())
-                {
-                    self.snapshot = None;
-                }
-                self.error = Some(error);
-            }
-        }
-        cx.notify();
     }
 }

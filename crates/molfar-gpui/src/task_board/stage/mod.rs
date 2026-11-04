@@ -15,7 +15,7 @@ use gpui::{Entity, FocusHandle};
 pub(super) struct Artifact {
     title: String,
     pub(super) focus: FocusHandle,
-    preview: Option<Entity<Preview>>,
+    pub(super) preview: Option<Entity<Preview>>,
     text: Option<String>,
-    error: Option<String>,
+    pub(super) error: Option<String>,
 }

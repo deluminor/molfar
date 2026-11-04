@@ -7,6 +7,7 @@ impl Board {
         if self.selected.as_ref() == Some(&id) {
             return;
         }
+        self.reset_detail_artifact();
         self.selected = Some(id);
         self.reveal_selection();
         self.refresh(cx);
@@ -23,7 +24,15 @@ impl Board {
 
     pub(in crate::task_board) fn close_detail(&mut self, cx: &mut Context<Self>) {
         self.drawer_open = false;
+        self.reset_detail_artifact();
         cx.notify();
+    }
+
+    pub(in crate::task_board) fn reset_detail_artifact(&mut self) {
+        self.detail_tab = None;
+        self.detail_version = None;
+        self.artifact_revision += 1;
+        self.artifact = None;
     }
 
     /// `(column index, card index)` of the selection in board order.

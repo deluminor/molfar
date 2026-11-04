@@ -258,6 +258,7 @@ impl Shell {
             let cwd = self.workspace.project.clone();
             let projects = self.workspace.projects.clone();
             view.update(cx, |view, cx| {
+                view.set_appearances(self.workspace.project_appearance.clone());
                 view.set_context(cwd, projects);
                 view.refresh(cx);
             });

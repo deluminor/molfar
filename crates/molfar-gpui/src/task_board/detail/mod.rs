@@ -1,7 +1,14 @@
 mod fold;
+mod header;
 mod metadata;
 #[cfg(test)]
+mod navigation_tests;
+mod tabs;
+#[cfg(test)]
 mod tests;
+mod timeline;
+#[cfg(test)]
+mod timeline_tests;
 
 use super::Board;
 use crate::notes::preview::Preview;

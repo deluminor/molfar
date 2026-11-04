@@ -1,4 +1,8 @@
 mod actions;
+mod column;
+mod column_skills;
+#[cfg(test)]
+mod column_tests;
 mod load;
 mod picker;
 #[cfg(test)]
@@ -43,6 +47,10 @@ pub(super) struct Picker {
 
 pub(super) struct Panel {
     pub focus: FocusHandle,
+    pub column: Option<AgentStage>,
+    pub picker_surface: AnchorSlot,
+    pub catalog: Vec<String>,
+    pub catalog_error: Option<String>,
     pub saved: Option<Value>,
     pub skills: Vec<(AgentStage, Entity<Input>)>,
     pub anchors: Vec<(AgentStage, AnchorSlot)>,

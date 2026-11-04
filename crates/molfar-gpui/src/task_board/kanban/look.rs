@@ -3,35 +3,35 @@ use molfar_core::task_board::constants::{
     BACKLOG, CODE_REVIEW, DONE, FINAL_REVIEW, GRILL, IMPLEMENT, PLAN_APPROVAL, REWORK,
 };
 
-pub(super) const COLUMN_WIDTH: f32 = 288.;
-pub(super) const COLUMN_RADIUS: f32 = 16.;
-pub(super) const CARD_RADIUS: f32 = 12.;
-pub(super) const CARD_PAD_Y: f32 = 10.;
-pub(super) const CARD_PAD_LEFT: f32 = 14.;
-pub(super) const CARD_PAD_RIGHT: f32 = 12.;
+pub(in crate::task_board) const COLUMN_WIDTH: f32 = 288.;
+pub(in crate::task_board) const COLUMN_RADIUS: f32 = 16.;
+pub(in crate::task_board) const CARD_RADIUS: f32 = 12.;
+pub(in crate::task_board) const CARD_PAD_Y: f32 = 10.;
+pub(in crate::task_board) const CARD_PAD_LEFT: f32 = 14.;
+pub(in crate::task_board) const CARD_PAD_RIGHT: f32 = 12.;
 
 /// Queue waits to start, agent runs a session, gate waits on the owner, terminal is finished.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(super) enum Kind {
+pub(in crate::task_board) enum Kind {
     Queue,
     Agent,
     Gate,
     Terminal,
 }
 
-pub(super) fn amber(alpha: f32) -> Hsla {
+pub(in crate::task_board) fn amber(alpha: f32) -> Hsla {
     hsla(46. / 360., 0.97, 0.65, alpha)
 }
 
-pub(super) fn emerald(alpha: f32) -> Hsla {
+pub(in crate::task_board) fn emerald(alpha: f32) -> Hsla {
     hsla(158. / 360., 0.64, 0.52, alpha)
 }
 
-pub(super) fn rose(alpha: f32) -> Hsla {
+pub(in crate::task_board) fn rose(alpha: f32) -> Hsla {
     hsla(351. / 360., 0.95, 0.71, alpha)
 }
 
-pub(super) fn look(column: &str) -> (&'static str, Kind) {
+pub(in crate::task_board) fn look(column: &str) -> (&'static str, Kind) {
     match column {
         BACKLOG => ("inbox", Kind::Queue),
         GRILL => ("sparkles", Kind::Agent),
@@ -46,7 +46,7 @@ pub(super) fn look(column: &str) -> (&'static str, Kind) {
 }
 
 /// Icon chip fill and ink per kind; colour always pairs with an icon and a word.
-pub(super) fn kind_tone(kind: Kind) -> (Hsla, Hsla) {
+pub(in crate::task_board) fn kind_tone(kind: Kind) -> (Hsla, Hsla) {
     match kind {
         Kind::Queue => (crate::theme::content(0.07), crate::theme::content(0.6)),
         Kind::Agent => {
@@ -59,7 +59,7 @@ pub(super) fn kind_tone(kind: Kind) -> (Hsla, Hsla) {
     }
 }
 
-pub(super) fn empty_hint(column: &str) -> &'static str {
+pub(in crate::task_board) fn empty_hint(column: &str) -> &'static str {
     match column {
         BACKLOG => "New tasks land here",
         GRILL => "Specs and plans get drafted here",
@@ -74,7 +74,9 @@ pub(super) fn empty_hint(column: &str) -> &'static str {
 }
 
 /// Who acts in columns no agent works: `(icon, lead, rest)`.
-pub(super) fn note(column: &str) -> Option<(&'static str, &'static str, &'static str)> {
+pub(in crate::task_board) fn note(
+    column: &str,
+) -> Option<(&'static str, &'static str, &'static str)> {
     match column {
         BACKLOG => Some(("queue-pause", "Not started", "drag to Grill to begin")),
         PLAN_APPROVAL => Some(("clock", "Your turn", "approve or request changes")),
@@ -85,21 +87,23 @@ pub(super) fn note(column: &str) -> Option<(&'static str, &'static str, &'static
 }
 
 /// Rework cycles at or above this are flagged, as on desktop.
-pub(super) const REWORK_WARNING_CYCLE: i64 = 3;
+pub(in crate::task_board) const REWORK_WARNING_CYCLE: i64 = 3;
 
-pub(super) const DRAWER_WIDTH: f32 = 520.;
-pub(super) const DRAWER_SLIDE: std::time::Duration = std::time::Duration::from_millis(200);
-pub(super) const DRAWER_SHIFT: f32 = 32.;
+pub(in crate::task_board) const DRAWER_WIDTH: f32 = 600.;
+pub(in crate::task_board) const DRAWER_SLIDE: std::time::Duration =
+    std::time::Duration::from_millis(200);
 
-pub(super) const DIMMED: f32 = 0.45;
-pub(super) const SOURCE_FADE: f32 = 0.4;
-pub(super) const EDGE_ZONE: f32 = 56.;
-pub(super) const MAX_SCROLL_STEP: f32 = 18.;
-pub(super) const EDGE_FRAME: std::time::Duration = std::time::Duration::from_millis(16);
-pub(super) const DRAG_FADE: std::time::Duration = std::time::Duration::from_millis(200);
+pub(in crate::task_board) const DIMMED: f32 = 0.45;
+pub(in crate::task_board) const SOURCE_FADE: f32 = 0.4;
+pub(in crate::task_board) const EDGE_ZONE: f32 = 56.;
+pub(in crate::task_board) const MAX_SCROLL_STEP: f32 = 18.;
+pub(in crate::task_board) const EDGE_FRAME: std::time::Duration =
+    std::time::Duration::from_millis(16);
+pub(in crate::task_board) const DRAG_FADE: std::time::Duration =
+    std::time::Duration::from_millis(200);
 
 /// What a drop on a column does, shown while dragging.
-pub(super) fn drop_label(
+pub(in crate::task_board) fn drop_label(
     action: molfar_core::task_board::stage::transitions::types::BoardAction,
 ) -> &'static str {
     use molfar_core::task_board::stage::transitions::types::BoardAction::*;
@@ -114,7 +118,7 @@ pub(super) fn drop_label(
 }
 
 /// Horizontal scroll speed while the pointer rests near a board edge; faster closer in.
-pub(super) fn edge_scroll_step(x: f32, left: f32, right: f32) -> f32 {
+pub(in crate::task_board) fn edge_scroll_step(x: f32, left: f32, right: f32) -> f32 {
     let from_left = x - left;
     let from_right = right - x;
     if from_left < EDGE_ZONE {

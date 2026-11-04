@@ -45,6 +45,7 @@ fn create_and_settle(cx: &mut TestAppContext, focus_elsewhere: bool) {
             board.set_context(project.clone(), vec![project]);
             board.archived = true;
             board.project_only = true;
+            board.project_filter = Some("/another-project".into());
             board.open_create(window, cx);
             let draft = board.creation.as_mut().unwrap();
             draft
@@ -66,6 +67,7 @@ fn create_and_settle(cx: &mut TestAppContext, focus_elsewhere: bool) {
             assert!(!board.create_open);
             assert!(board.creation.is_none());
             assert!(!board.archived);
+            assert!(board.project_filter.is_none());
             assert_eq!(board.focus.is_focused(window), !focus_elsewhere);
             if focus_elsewhere {
                 assert!(external.is_focused(window));
