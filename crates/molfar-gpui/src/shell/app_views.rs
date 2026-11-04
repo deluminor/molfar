@@ -137,6 +137,11 @@ impl Shell {
         {
             notes.update(cx, |notes, cx| notes.flush(cx));
         }
+        if self.active_app_view == Some(AppView::Home)
+            && let Some(home) = &self.home
+        {
+            home.update(cx, |home, _| home.conceal());
+        }
         self.active_app_view = None;
         self.invalidate_chrome(cx);
     }

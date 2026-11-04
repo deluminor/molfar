@@ -83,6 +83,7 @@ impl Shell {
                     Ok((service, retries, sessions)) => {
                         this.automation_state.session_automations = sessions;
                         this.automation_state.service = Some(service);
+                        this.sync_home_sources(cx);
                         for item in retries {
                             this.automation_state.event_retries.insert(item.key(), item);
                         }

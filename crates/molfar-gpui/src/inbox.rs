@@ -3,6 +3,7 @@
 mod avatar;
 mod diff;
 mod document;
+pub(crate) mod pulse;
 mod ui;
 pub(crate) use avatar::image as avatar_image;
 pub(crate) use ui::relative_time;

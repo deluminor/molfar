@@ -27,6 +27,8 @@ use std::{
 
 mod editor;
 mod gallery;
+#[cfg(test)]
+mod open_tests;
 mod trigger_menu;
 
 /// Event providers and schedules are separate from agent harness branding.
@@ -115,6 +117,8 @@ pub(crate) struct Automations {
     automations: Vec<Automation>,
     runs: Vec<AutomationRun>,
     selected: Option<String>,
+    /// An automation asked for before the list loaded, selected once it does.
+    pending_select: Option<String>,
     editor: Option<Editor>,
     loading: bool,
     error: Option<String>,
@@ -168,6 +172,7 @@ impl Automations {
             automations: Vec::new(),
             runs: Vec::new(),
             selected: None,
+            pending_select: None,
             editor: None,
             loading: true,
             error: None,
@@ -276,6 +281,9 @@ impl Automations {
                         if this.selected == selected {
                             this.runs = runs;
                         }
+                        if let Some(id) = this.pending_select.take() {
+                            this.select(id, cx);
+                        }
                         if this
                             .selected
                             .as_ref()
@@ -361,6 +369,19 @@ impl Automations {
         self.runs.clear();
         self.set_editor(draft, false, cx);
     }
+    pub(crate) fn open_automation(&mut self, id: String, cx: &mut Context<Self>) {
+        if self
+            .automations
+            .iter()
+            .any(|automation| automation.id == id)
+        {
+            self.select(id, cx);
+        } else {
+            self.pending_select = Some(id);
+            self.refresh(cx);
+        }
+    }
+
     fn select(&mut self, id: String, cx: &mut Context<Self>) {
         let Some(automation) = self.automations.iter().find(|a| a.id == id) else {
             return;
@@ -658,7 +679,8 @@ impl Automations {
         self.model_controls.clear();
         self.request_generation += 1;
         let generation = self.request_generation;
-        let Some(editor) = &self.editor else {
+        // Tests must not launch provider CLIs; their catalogs fill a process-wide cache.
+        let Some(editor) = self.editor.as_ref().filter(|_| !cfg!(test)) else {
             return;
         };
         let kind = Kind::from_id(&editor.draft.harness);

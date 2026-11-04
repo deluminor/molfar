@@ -4,12 +4,21 @@ use gpui::{AnyElement, Div, FontWeight, Role, SharedString, Stateful, div, prelu
 
 pub(crate) const CARD_PADDING: f32 = 12.;
 pub(crate) const CAPTION_HEIGHT: f32 = 20.;
+const CAPTION_GAP: f32 = 8.;
+
+/// The widget's content size inside a card of `width` × `height`.
+pub(crate) fn body(width: f32, height: f32) -> crate::home::widgets::Body {
+    crate::home::widgets::Body {
+        w: (width - CARD_PADDING * 2.).max(0.),
+        h: (height - CARD_PADDING * 2. - CAPTION_HEIGHT - CAPTION_GAP).max(0.),
+    }
+}
 
 /// Framed tile with the dashed accent caption shared by every Home widget.
 pub(crate) fn card(
     id: WidgetId,
     editing: bool,
-    actions: Option<AnyElement>,
+    actions: Vec<AnyElement>,
     body: AnyElement,
 ) -> Stateful<Div> {
     div()
@@ -44,7 +53,7 @@ pub(crate) fn card(
         )
 }
 
-fn caption(id: WidgetId, editing: bool, actions: Option<AnyElement>) -> Div {
+fn caption(id: WidgetId, editing: bool, actions: Vec<AnyElement>) -> Div {
     let accent = accent_color();
     div()
         .h(px(CAPTION_HEIGHT))

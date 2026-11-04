@@ -55,8 +55,14 @@ impl Home {
         let mut moving = false;
         let mut floating = None;
         for (index, item) in shown.iter().enumerate() {
-            let body = self.widget(item.id, window, cx);
-            let framed = card::card(item.id, self.editing, self.card_actions(item.id, cx), body);
+            let target = grid.rect(item);
+            let body = self.widget(item.id, card::body(target.w, target.h), window, cx);
+            let actions = self
+                .widget_actions(item.id, cx)
+                .into_iter()
+                .chain(self.card_actions(item.id, cx))
+                .collect();
+            let framed = card::card(item.id, self.editing, actions, body);
             let handles = if self.editing {
                 self.handles(item.id, cx)
             } else {

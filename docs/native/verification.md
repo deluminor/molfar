@@ -725,3 +725,26 @@ The first full gate failed one test, `sidebar_hover_updates_labels_without_rebui
 because `d5a77e52` placed Board above Notes. The expectation now names Board for
 the row below Inbox; the full gate above passed afterward. The existing
 `block v0.1.6` future-incompatibility warning remains.
+
+## Native Home — November 4, 2026
+
+Scope: Home grid `1954e48d` plus the widget follow-up committed with this entry.
+
+| Check | Result |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, formatting, strict all-target Clippy; 825 core passed / 2 ignored, 973 GPUI passed / 11 ignored, 6 wheel tests passed |
+| `npm run native:build` | Exit 0; optimized macOS bundle, compilation 3m 41s |
+| `codesign --verify --deep --strict` | Exit 0 |
+| Actual native UI QA | BLOCKED: Computer Use is not approved for MOLFAR Native; no screenshots or real-window interaction |
+
+Two earlier full runs failed `conversation::menu_tests::recent_models_open_on_right_click_and_pick_by_keyboard`
+(`GPT-6-luna` instead of `GPT-6-Luna`). Root cause: the new Automations open test selected
+an automation, whose editor fetched the real Codex catalog into the process-wide catalog
+cache. The editor now skips provider catalog fetches under test, matching the model
+picker; the full gate above passed afterward.
+
+Synthetic GPUI checks cover navigation order, grid placement, narrow stacking, hide/show/Reset
+persistence, drag with push-down, resize minimums, Escape order, widget rows and open events,
+failed loads, Brand selection, Activity days, hidden Host not sampling and visibility-gated
+polling. Host sampling is checked against the real macOS host. Usage reads the shared accounts
+cache; real provider usage and Inbox connectors were not exercised.

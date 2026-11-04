@@ -63,3 +63,13 @@ project-filter resets, nested-picker Escape and acknowledged settings reloads.
 Native UI access was refused by Computer Use, so screenshot comparison and real
 window visual acceptance remain blocked. Automated verification is recorded in
 verification.md. This follow-up does not publish, merge or release the branch.
+
+## Native Home — November 4, 2026
+
+The owner approved a native Home with all ten desktop widgets, full layout editing and
+Usage as a Home widget only. Home is first in sidebar and project-rail navigation; the
+launch view is unchanged. Widgets adapt to their cell size and animate on the shared
+pulse clock (Brand, Matrix) or their own one-second tick (Clock), pausing when hidden
+and drawing still frames under reduced motion. Records poll only while Home is shown.
+Native UI access is still unavailable, so visual acceptance remains open; automated
+verification is recorded in verification.md. Nothing was published.
