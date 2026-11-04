@@ -48,7 +48,7 @@ approval for every edit. Native Supervised mode does not add that guarantee.
 | --- | --- |
 | MOLFAR Jira/Confluence | Native Jira/Inbox source exists, but full MOLFAR hierarchy/context/actions and native Confluence browser remain open (readiness M04/M05). Tauri connector functionality is not native acceptance. |
 | MOLFAR Home/Usage/Knowledge | Full custom dashboards and Knowledge/Obsidian vault/graph/revision surfaces remain open. Native usage metadata/footer and file editing do not close these ports. |
-| MOLFAR Board | Implemented: grouped list/detail, Backlog creation with initial task snapshot, Grill rounds in visible native sessions, owner answers/change requests and versioned plan editing, durable settlement, cancel/retry/restart recovery, spec/plan artifacts and transition into Plan approval; stage transition policy, per-stage model/skill/access settings, Retry with another model and Back; explicit plan approval, Implement, Code review and owner-selected Rework → Code review cycles in the retained worktree, ending at Final review; delivery by pull request, squash-merge or kept branch, reject and archive with resumable steps and desktop cleanup rules (archiving a Done card keeps its branch). Real push/PR/merge has not been exercised. Task editing (idle Backlog/Plan approval, base branch only in Backlog, new task version) and Move to… with the desktop legal targets are implemented; the Board shows desktop-style kanban columns with a sliding detail drawer, column model chips and drag-and-drop between legal columns. GPUI cannot rotate the drag ghost, the live stalled/elapsed status is not shown, and a drag is not cancelled when the window loses focus. Actual application interaction and platform verification remain outstanding. |
+| MOLFAR Board | Implemented: grouped list/detail, Backlog creation with initial task snapshot, Grill rounds in visible native sessions, owner answers/change requests and versioned plan editing, durable settlement, cancel/retry/restart recovery, spec/plan artifacts and transition into Plan approval; stage transition policy, per-stage model/skill/access settings, Retry with another model and Back; explicit plan approval, Implement, Code review and owner-selected Rework → Code review cycles in the retained worktree, ending at Final review; delivery by pull request, squash-merge or kept branch, reject and archive with resumable steps and desktop cleanup rules (archiving a Done card keeps its branch). Real push/PR/merge has not been exercised. Task editing (idle Backlog/Plan approval, base branch only in Backlog, new task version) and Move to… with the desktop legal targets are implemented; the Board shows desktop-style kanban columns with a reserved-width detail panel, column model chips and drag-and-drop between legal columns. GPUI cannot rotate the drag ghost, the live stalled/elapsed status is not shown, and a drag is not cancelled when the window loses focus. Actual application interaction and platform verification remain outstanding. |
 | Chat | Live attachment/steering/rewind checks, complete keyboard selection and screen-reader navigation, richer nested task artifacts and provider-specific task controls |
 | History and workspace | Transcript/database paging, cache runtime checks, remaining desktop layout consumers, explicit import/export |
 | Files and Git | Platform visual/IME checks, Linux/Windows media hosting, non-Git checkpoints, per-file checkpoint Undo/Keep and orchestration checkpoint integration |
@@ -97,3 +97,13 @@ header Edit using the existing guards. Automated interaction checks and an
 optimized macOS build passed; actual native UI QA was blocked by Computer Use
 access refusal. This does not close provider, remote delivery or platform runtime
 acceptance. Jira work is deferred by the owner. See [verification](verification.md).
+
+## Board desktop presentation follow-up — November 4, 2026
+
+The local follow-up uses compact 28px header buttons, an Overview and artifact
+version tabs, compact metadata and a stage timeline with per-run session links.
+A bounded flex layout reserves detail-panel width; the Board owns the horizontal
+scrollbar, including with the application sidebar open. Project filtering and
+anchored column model/access/skills configuration reuse existing native services.
+Manual dark/light and window-size screenshot comparison is blocked by Computer
+Use access refusal; source and synthetic checks do not establish visual parity.

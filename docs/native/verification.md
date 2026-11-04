@@ -705,3 +705,23 @@ a synthetic Backlog card, and was terminated after UI access was refused. No
 production-data, live-provider, push/PR/merge or installed-app changes were made.
 Runtime visual quality, narrow-window/light-theme interaction and real workflow
 acceptance remain open. The existing dependency warning for `block v0.1.6` remains.
+
+## Native Board desktop presentation — November 4, 2026
+
+Scope: uncommitted desktop-presentation follow-up over `d5a77e52` (detail panel
+reserves width, visible horizontal Board scrollbar, Overview/artifact tabs,
+compact metadata, stage timeline, workspace project filter, anchored column
+settings, 28px header controls).
+
+| Check | Result |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, formatting, strict all-target Clippy; 823 core passed / 2 ignored, 930 GPUI passed / 11 ignored, 6 wheel tests passed |
+| `npm run native:build` | Exit 0; optimized macOS bundle, compilation 6m 14s |
+| `codesign --verify --deep --strict` | Exit 0 |
+| Diff checks | No debug output, untracked TODOs or new dependencies; `popover.rs` (+6) and `shell/app_views.rs` (+1) are pre-existing oversized files |
+| Actual native UI QA | BLOCKED: Computer Use was not approved for MOLFAR Native; no screenshot comparison or real-window interaction |
+
+The first full gate failed one test, `sidebar_hover_updates_labels_without_rebuilding_the_chat`,
+because `d5a77e52` placed Board above Notes. The expectation now names Board for
+the row below Inbox; the full gate above passed afterward. The existing
+`block v0.1.6` future-incompatibility warning remains.

@@ -100,9 +100,11 @@ long delivery cannot complete an unrelated edit or review.
 
 Readiness M08b renders the Board as horizontally scrolling kanban columns in
 `task_board/kanban`, with desktop column looks, notes, model chips that open the
-column model picker, and status-striped cards. Details open in a drawer that
-slides over the board and occludes it; its open state is separate from the
-selection, so refreshes that fall back to the first card never reopen it. Cards
+column model picker, and status-striped cards. Details open in a right-hand panel that reserves layout width. The Board keeps
+its own bounded horizontal viewport and visible draggable scrollbar, so every
+column remains reachable with both the application sidebar and details open.
+Its open state is separate from the selection, so refreshes that fall back to
+the first card never reopen it. Cards
 with a legal move drag with GPUI's drag API: legal columns are framed and show a
 Drop to… slot, others fade, and a drop runs the same move as Move to…. Escape
 cancels a drag, edge auto-scroll runs on a timer inside the board, and motion is
@@ -132,3 +134,19 @@ feature remains disabled. Preserve these guards and the licenses in [NOTICE](../
 
 See [preview limitations](parity.md) for current release work. Tauri remains the
 production app until an explicit cutover.
+
+## Board desktop presentation follow-up — November 4, 2026
+
+The local desktop-parity presentation replaces flat detail fields with a compact
+header, status/project/branch summary, Overview and versioned artifact tabs.
+Overview contains the warning callout, independently folded Markdown task and
+criteria, compact metadata and a stage timeline with per-attempt session links.
+Artifact reads retain validation and revision invalidation; closing details,
+changing cards, creating or revealing a card clears the previous reader state.
+
+Toolbar buttons are 28px tall. The project menu selects an actual project and
+reuses workspace project names, mascots and logos. Column model chips open
+anchored settings with friendly model labels, access choices, project defaults,
+skill checkboxes and automatic reset. Settings saves stay locked until the saved
+snapshot reloads; nested model-picker Escape restores column-settings focus.
+See verification.md for the checks and the manual UI access limitation.

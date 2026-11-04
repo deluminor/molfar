@@ -49,3 +49,17 @@ readable drag previews. Full native checks and optimized macOS build passed; see
 so visual/runtime acceptance remains open. Publication to the existing PR #127
 was authorized separately by the owner; no merge, release or cutover is included.
 Remote CI for this follow-up must be read at its published head.
+
+## Native Board desktop presentation — November 4, 2026
+
+The owner approved the TSX-reference presentation plan and 28px header controls.
+The local follow-up reserves width for the detail panel, adds a visible horizontal
+scrollbar within the remaining Board viewport, and replaces flat details with
+Overview, artifact/version tabs, compact metadata and a stage timeline. The project
+filter uses real workspace projects and appearance; column settings use anchored
+model/access/skills controls. Independent review fixes cover reader invalidation,
+project-filter resets, nested-picker Escape and acknowledged settings reloads.
+
+Native UI access was refused by Computer Use, so screenshot comparison and real
+window visual acceptance remain blocked. Automated verification is recorded in
+verification.md. This follow-up does not publish, merge or release the branch.
