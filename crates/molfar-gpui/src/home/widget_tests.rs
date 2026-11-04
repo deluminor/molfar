@@ -13,7 +13,7 @@ use std::{cell::RefCell, rc::Rc};
 
 type Events = Rc<RefCell<Vec<String>>>;
 
-fn open(cx: &mut TestAppContext) -> (WindowHandle<Home>, Events) {
+pub(super) fn open(cx: &mut TestAppContext) -> (WindowHandle<Home>, Events) {
     cx.update(|cx| cx.set_reduce_motion(true));
     let window = cx.update(|cx| {
         cx.open_window(
@@ -73,7 +73,7 @@ fn automation(id: &str, enabled: bool) -> Automation {
     .unwrap()
 }
 
-fn click(visual: &mut VisualTestContext, selector: &str) {
+pub(super) fn click(visual: &mut VisualTestContext, selector: &str) {
     let selector: &'static str = Box::leak(selector.to_owned().into_boxed_str());
     let bounds = visual
         .debug_bounds(selector)
@@ -126,21 +126,19 @@ fn failed_records_show_no_rows(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn brand_picker_switches_the_visual_and_saves_it(cx: &mut TestAppContext) {
+fn brand_is_sphere_only_without_selector(cx: &mut TestAppContext) {
     let (window, events) = open(cx);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
-    assert!(visual.debug_bounds("home-brand-orb").is_some());
-
-    click(visual, "home-brand-pick-sphere");
-
     assert!(visual.debug_bounds("home-brand-sphere").is_some());
+    assert!(visual.debug_bounds("home-brand-pick-sphere").is_none());
+    assert!(visual.debug_bounds("home-brand-orb").is_none());
     window
         .update(visual, |home, _, _| {
-            assert_eq!(home.state.brand, BrandVisual::Sphere)
+            assert_eq!(home.state.brand, BrandVisual::Sphere);
         })
         .unwrap();
-    assert_eq!(*events.borrow(), ["layout \"sphere\""]);
+    assert!(events.borrow().is_empty());
 }
 
 #[gpui::test]
@@ -164,7 +162,7 @@ fn host_shows_samples_and_is_not_sampled_while_hidden(cx: &mut TestAppContext) {
 
     window
         .update(visual, |home, _, _| {
-            assert_eq!(home.feeds.host.cpu.len(), 1);
+            assert_eq!(home.feeds.host.history.len(), 1);
             assert_eq!(home.feeds.host.latest.unwrap().cpu_count, 10);
         })
         .unwrap();
@@ -187,7 +185,7 @@ fn polling_runs_only_while_home_is_shown(cx: &mut TestAppContext) {
     cx.run_until_parked();
     let samples = |cx: &mut TestAppContext| {
         window
-            .update(cx, |home, _, _| home.feeds.host.memory.len())
+            .update(cx, |home, _, _| home.feeds.host.history.len())
             .unwrap()
     };
     let shown = samples(cx);
@@ -201,4 +199,23 @@ fn polling_runs_only_while_home_is_shown(cx: &mut TestAppContext) {
     cx.executor().advance_clock(HOST_INTERVAL * 3);
     cx.run_until_parked();
     assert_eq!(samples(cx), hidden);
+}
+
+#[gpui::test]
+fn hiding_home_or_host_invalidates_cpu_baseline(cx: &mut TestAppContext) {
+    let (window, _) = open(cx);
+    window
+        .update(cx, |home, _, cx| {
+            home.feeds.host.reset_baseline = false;
+            home.conceal();
+            assert!(home.feeds.host.reset_baseline);
+            home.reveal(cx);
+            home.feeds.host.reset_baseline = false;
+            home.hide_widget(WidgetId::Host, cx);
+            assert!(home.feeds.host.reset_baseline);
+            home.feeds.host.reset_baseline = false;
+            home.show_widget(WidgetId::Host, cx);
+            assert!(home.feeds.host.reset_baseline);
+        })
+        .unwrap();
 }

@@ -13,6 +13,8 @@ impl Render for Home {
         let wide = width >= EDIT_MIN_WIDTH;
         if !wide && self.editing {
             self.editing = false;
+            self.views.sphere_motion.borrow_mut().set_editing(false);
+            self.views.brand.update(cx, |_, cx| cx.notify());
             self.drag = None;
         }
         let items = if wide {

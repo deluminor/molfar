@@ -11,27 +11,10 @@ use chrono::{Datelike, Local};
 use gpui::{Animation, AnimationExt, AnyElement, Context, Hsla, SharedString, div, prelude::*, px};
 use std::time::Duration;
 
-const GAP: f32 = 3.;
-const MIN_CELL: f32 = 6.;
-const MAX_CELL: f32 = 18.;
-const FOOTER: f32 = 18.;
+mod geometry;
+mod presentation;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct Fit {
-    pub weeks: usize,
-    pub cell: f32,
-}
-
-/// The most recent weeks that fit, with square cells as large as the card allows.
-pub(crate) fn fit(total_weeks: usize, width: f32, height: f32) -> Fit {
-    let rows_cell = ((height - GAP * 6.) / 7.).clamp(MIN_CELL, MAX_CELL);
-    let weeks = (((width + GAP) / (MIN_CELL + GAP)).floor() as usize).clamp(1, total_weeks.max(1));
-    let width_cell = (width - GAP * (weeks as f32 - 1.)) / weeks as f32;
-    Fit {
-        weeks,
-        cell: width_cell.min(rows_cell).max(MIN_CELL.min(width_cell)),
-    }
-}
+use geometry::{GAP, observed_range};
 
 fn shade(level: u8) -> Hsla {
     match level {
@@ -57,18 +40,21 @@ impl Home {
             .map(|session| session.updated_at)
             .collect();
         let year = activity::year(&stamps, today.year(), today);
-        let footer = body.h >= 7. * MIN_CELL + 6. * GAP + FOOTER;
-        let grid_height = if footer { body.h - FOOTER } else { body.h };
-        let fit = fit(year.weeks.len(), body.w, grid_height);
-        let current_week = year
-            .weeks
-            .iter()
-            .position(|week| week.iter().any(|cell| cell.date == today))
-            .unwrap_or(year.weeks.len() - 1);
-        let last = (current_week + 1).max(fit.weeks).min(year.weeks.len());
-        let shown = &year.weeks[last - fit.weeks..last];
+        let observed = observed_range(&year.weeks, today, year.weeks.len());
+        let layout = geometry::layout(observed.len(), body.w, body.h);
+        let range = observed_range(&year.weeks, today, layout.fit.weeks);
+        let shown = &year.weeks[range];
+        let fit = layout.fit;
         let animate = !cx.reduce_motion();
+        let annual = format!(
+            "{} · {} updated sessions · {} active days; grouped by latest session update",
+            year.year, year.sessions, year.active_days
+        );
 
+        let (updates, active_days) = activity::totals(shown);
+        let (today_updates, seven_days) = activity::recent_totals(&stamps, today);
+        let summary =
+            presentation::summary(today_updates, seven_days, updates, active_days, layout.rail);
         let mut columns = div().flex().gap(px(GAP));
         for (index, week) in shown.iter().enumerate() {
             let mut column = div().flex().flex_col().gap(px(GAP));
@@ -80,7 +66,13 @@ impl Home {
                     .id(SharedString::from(format!("home-day-{date}")))
                     .debug_selector(move || format!("home-day-{date}"))
                     .size(px(fit.cell))
-                    .rounded(px((fit.cell / 4.).min(3.)))
+                    .rounded(px((fit.cell / 6.).min(2.)))
+                    .border_1()
+                    .border_color(if date == today {
+                        content(0.8)
+                    } else {
+                        gpui::transparent_black()
+                    })
                     .bg(if visible {
                         shade(cell.level)
                     } else {
@@ -88,7 +80,11 @@ impl Home {
                     })
                     .when(visible, |square| {
                         square.tooltip(move |_, cx| {
-                            let sessions = if count == 1 { "session" } else { "sessions" };
+                            let sessions = if count == 1 {
+                                "updated session"
+                            } else {
+                                "updated sessions"
+                            };
                             controls::hint(
                                 format!("{} · {count} {sessions}", date.format("%b %-d")),
                                 cx,
@@ -111,43 +107,58 @@ impl Home {
             });
         }
 
-        div()
-            .size_full()
+        let start = shown
+            .iter()
+            .flatten()
+            .find(|cell| cell.in_year)
+            .map_or(today, |cell| cell.date);
+        let grid = div()
+            .flex_shrink_0()
+            .w(px(fit.width()))
             .flex()
             .flex_col()
-            .justify_between()
             .gap_1()
-            .child(div().flex().justify_end().child(columns))
-            .when(footer, |widget| {
-                widget.child(
-                    div()
-                        .h(px(FOOTER))
-                        .flex()
-                        .items_center()
-                        .justify_between()
-                        .font_family(mono())
-                        .text_size(px(10.))
-                        .text_color(content(0.45))
-                        .child(format!("{} · {} active days", year.year, year.active_days))
-                        .child(format!("{} sessions", year.sessions)),
-                )
+            .when(layout.labels, |grid| {
+                grid.child(presentation::month_header(shown, fit))
             })
+            .child(columns)
+            .when(layout.date, |grid| {
+                grid.child(
+                    div()
+                        .id("home-activity-date-range")
+                        .h(px(geometry::DATE_LINE))
+                        .flex_shrink_0()
+                        .flex()
+                        .justify_between()
+                        .gap_2()
+                        .text_size(px(9.))
+                        .text_color(content(0.6))
+                        .tooltip(move |_, cx| controls::hint(annual.clone(), cx))
+                        .child(div().truncate().child(format!(
+                            "{} – {} · latest updates",
+                            start.format("%d %b"),
+                            today.format("%d %b %Y")
+                        )))
+                        .when(fit.width() >= 350., |row| row.child(presentation::legend())),
+                )
+            });
+
+        div()
+            .size_full()
+            .overflow_hidden()
+            .font_family(mono())
+            .flex()
+            .gap_3()
+            .when(layout.rail, |widget| widget.flex_row().items_start())
+            .when(!layout.rail, |widget| {
+                widget.flex_col().justify_between().gap_1()
+            })
+            .child(grid)
+            .when(layout.summary, |widget| widget.child(summary))
             .into_any_element()
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{GAP, MAX_CELL, MIN_CELL, fit};
-
-    #[test]
-    fn heatmap_shows_more_weeks_as_it_widens_and_caps_cell_size() {
-        let narrow = fit(53, 200., 120.);
-        let wide = fit(53, 1200., 120.);
-        assert!(narrow.weeks < wide.weeks);
-        assert_eq!(wide.weeks, 53);
-        assert!(narrow.weeks as f32 * (narrow.cell + GAP) - GAP <= 200. + 0.01);
-        assert!(wide.cell <= MAX_CELL);
-        assert!(fit(53, 60., 30.).cell >= MIN_CELL.min(60.));
-    }
-}
+#[path = "activity/regression_tests.rs"]
+mod regression_tests;

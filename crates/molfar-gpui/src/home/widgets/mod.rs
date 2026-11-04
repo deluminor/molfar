@@ -1,6 +1,5 @@
 mod activity;
 mod automations;
-mod brand;
 mod host;
 mod inbox;
 pub(crate) mod parts;
@@ -48,7 +47,6 @@ impl Home {
     ) -> Option<AnyElement> {
         match id {
             WidgetId::Inbox => self.inbox_badge(cx),
-            WidgetId::Brand => Some(self.brand_picker(cx)),
             _ => None,
         }
     }

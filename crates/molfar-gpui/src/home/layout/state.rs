@@ -9,27 +9,12 @@ const MAX_ROWS: u16 = 48;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum BrandVisual {
     #[default]
-    Orb,
-    Fire,
     Sphere,
 }
 
 impl BrandVisual {
-    pub(crate) const ALL: [BrandVisual; 3] =
-        [BrandVisual::Orb, BrandVisual::Fire, BrandVisual::Sphere];
-
     pub(crate) fn key(self) -> &'static str {
-        match self {
-            BrandVisual::Orb => "orb",
-            BrandVisual::Fire => "fire",
-            BrandVisual::Sphere => "sphere",
-        }
-    }
-
-    fn parse(key: &str) -> Option<BrandVisual> {
-        BrandVisual::ALL
-            .into_iter()
-            .find(|visual| visual.key() == key)
+        "sphere"
     }
 }
 
@@ -83,10 +68,7 @@ impl LayoutState {
             hidden.clear();
         }
 
-        let brand = value["brand"]
-            .as_str()
-            .and_then(BrandVisual::parse)
-            .unwrap_or_default();
+        let brand = BrandVisual::Sphere;
 
         LayoutState {
             items,

@@ -1,10 +1,17 @@
+mod chart;
+
 use super::{
     super::{Home, card},
     Body,
     parts::{self, mono},
 };
-use crate::theme::*;
-use gpui::{AnyElement, Context, Div, div, prelude::*, px};
+use crate::{
+    home::data::feeds::history::{GAP_MS, HostFeed},
+    theme::*,
+};
+use chart::Metric;
+use gpui::{Animation, AnimationExt, AnyElement, Context, Div, div, prelude::*, px};
+use std::time::Duration;
 
 impl Home {
     pub(super) fn host_widget(&self, body: Body, cx: &mut Context<Self>) -> AnyElement {
@@ -13,97 +20,141 @@ impl Home {
             return card::note(host.error.clone().unwrap_or_else(|| "Sampling…".into()))
                 .into_any_element();
         };
-        let animate = !cx.reduce_motion();
-        let entrance = self.entrance as usize;
-        let size = (body.h / 4.).clamp(16., 30.);
-        let side_by_side = body.w >= 360.;
-        let cpu = stats
-            .cpu_percent
-            .map_or("—".into(), |cpu| format!("{cpu:.0}%"));
-
-        let gauges = div()
-            .flex_1()
-            .min_h_0()
-            .flex()
-            .when(side_by_side, |gauges| gauges.flex_row().gap_4())
-            .when(!side_by_side, |gauges| gauges.flex_col().gap_2())
-            .child(gauge(
+        let now = molfar_core::time::now_ms();
+        let stale = host.error.is_some()
+            || host
+                .updated_at
+                .is_none_or(|at| now.saturating_sub(at) > GAP_MS);
+        let wide = body.w >= 620.;
+        let detailed = body.h >= 155.;
+        let footer = body.h >= 115.;
+        let rows = if wide { 1. } else { 2. };
+        let reserved = 22. + if footer { 22. } else { 0. };
+        let graph_height = ((body.h - reserved) / rows - 43.).max(3.);
+        let size = (body.h / (rows * 5.)).clamp(14., 28.);
+        let readings = [
+            (
                 "CPU",
-                cpu,
-                stats.cpu_percent.unwrap_or(0.),
-                host.cpu.iter().copied().collect(),
-                size,
-                ("home-host-cpu", entrance),
-                animate,
-            ))
-            .child(gauge(
+                stats.cpu_percent.map_or("—".into(), |v| format!("{v:.0}%")),
+                Metric::Cpu,
+            ),
+            (
                 "Memory",
                 format!("{:.0}%", stats.memory_percent),
-                stats.memory_percent,
-                host.memory.iter().copied().collect(),
-                size,
-                ("home-host-memory", entrance),
-                animate,
-            ));
-
-        let mut facts = div().flex().flex_wrap().gap_x_4().gap_y_1();
-        for (caption, value) in [
-            ("Swap", format!("{:.0}%", stats.swap_percent)),
+                Metric::Memory,
+            ),
+            ("Swap", format!("{:.0}%", stats.swap_percent), Metric::Swap),
             (
                 "Load",
-                stats
-                    .load_average
-                    .map_or("—".into(), |load| format!("{load:.2}")),
+                stats.load_average.map_or("—".into(), |v| format!("{v:.2}")),
+                Metric::Load,
             ),
-            ("Cores", stats.cpu_count.to_string()),
-            (
-                "Processes",
-                stats
-                    .process_count
-                    .map_or("—".into(), |count| count.to_string()),
-            ),
-        ] {
-            facts = facts.child(
-                div()
-                    .flex()
-                    .items_baseline()
-                    .gap_1p5()
-                    .child(parts::label(caption))
-                    .child(
-                        div()
-                            .font_family(mono())
-                            .text_size(px(12.))
-                            .text_color(content(0.85))
-                            .child(value),
-                    ),
-            );
+        ];
+        let mut gauges = div().flex().flex_col().flex_1().min_h_0().gap_2();
+        for chunk in readings.chunks(if wide { 4 } else { 2 }) {
+            let mut row = div().flex().flex_1().min_h_0().gap_3();
+            for (caption, value, metric) in chunk {
+                row = row.child(gauge(
+                    caption,
+                    value,
+                    *metric,
+                    host,
+                    now,
+                    (size, graph_height),
+                    cx,
+                ));
+            }
+            gauges = gauges.child(row);
         }
-
-        div()
+        let coverage = host.coverage_ms(now) / 60_000;
+        let state = if stale {
+            "STALE · last reading".to_string()
+        } else if coverage < 30 {
+            format!("LIVE · window {coverage}m / 30m")
+        } else {
+            "LIVE · last 30 minutes".to_string()
+        };
+        let content = div()
             .size_full()
+            .min_w_0()
+            .min_h_0()
+            .overflow_hidden()
             .flex()
             .flex_col()
-            .gap_2()
+            .gap_1()
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_2()
+                    .child(parts::dot(!stale))
+                    .child(parts::label(state.clone())),
+            )
             .child(gauges)
-            .when(body.h >= 110., |widget| widget.child(facts))
-            .into_any_element()
+            .when(footer, |widget| {
+                widget.child(
+                    div()
+                        .flex()
+                        .justify_between()
+                        .items_center()
+                        .gap_2()
+                        .font_family(mono())
+                        .text_size(px(10.))
+                        .text_color(content(0.65))
+                        .child(format!(
+                            "{} cores · {} processes",
+                            stats.cpu_count,
+                            stats
+                                .process_count
+                                .map_or("—".into(), |count| count.to_string())
+                        ))
+                        .child(if detailed {
+                            "gaps = no sample".into()
+                        } else {
+                            state
+                        }),
+                )
+            });
+        if cx.reduce_motion() {
+            content.into_any_element()
+        } else {
+            content
+                .with_animation(
+                    ("home-host-reveal", self.entrance as usize),
+                    Animation::new(Duration::from_millis(400)),
+                    |view, progress| view.opacity(crate::home::motion::ease_out(progress)),
+                )
+                .into_any_element()
+        }
     }
 }
 
 fn gauge(
     caption: &'static str,
-    value: String,
-    percent: f32,
-    history: Vec<f32>,
-    size: f32,
-    id: (&'static str, usize),
-    animate: bool,
+    value: &str,
+    metric: Metric,
+    host: &HostFeed,
+    now: u64,
+    dimensions: (f32, f32),
+    cx: &mut Context<Home>,
 ) -> Div {
-    let hot = percent >= 85.;
+    let (size, graph_height) = dimensions;
+    let hot = match metric {
+        Metric::Cpu => host
+            .latest
+            .and_then(|stats| stats.cpu_percent)
+            .is_some_and(|cpu| cpu >= 85.),
+        Metric::Memory => host.latest.is_some_and(|stats| stats.memory_percent >= 85.),
+        _ => false,
+    };
     let color = if hot {
         crate::modal::danger(1.)
     } else {
         accent_color()
+    };
+    let caption = match metric {
+        Metric::Load => format!("{caption} · 0–{:.0}", metric.scale(&host.history)),
+        _ => caption.to_string(),
     };
     div()
         .flex_1()
@@ -111,21 +162,41 @@ fn gauge(
         .min_h_0()
         .flex()
         .flex_col()
-        .gap_1p5()
+        .gap(px(2.))
         .child(
             div()
                 .flex()
-                .items_end()
+                .items_baseline()
                 .justify_between()
-                .gap_3()
-                .child(parts::metric(value, caption, size))
+                .gap_1()
+                .child(parts::label(caption))
                 .child(
                     div()
-                        .flex_1()
-                        .h(px(size))
-                        .min_w(px(40.))
-                        .child(parts::sparkline(history, color)),
+                        .font_family(mono())
+                        .text_size(px(size))
+                        .line_height(px(size))
+                        .text_color(color)
+                        .truncate()
+                        .child(value.to_string()),
                 ),
         )
-        .child(parts::bar(id, percent / 100., color.opacity(0.7), animate))
+        .child(
+            div()
+                .h(px(graph_height))
+                .min_h_0()
+                .w_full()
+                .child(chart::chart(&host.history, metric, now, color, cx)),
+        )
+        .child(
+            div()
+                .h(px(10.))
+                .flex_shrink_0()
+                .flex()
+                .justify_between()
+                .font_family(mono())
+                .text_size(px(8.))
+                .text_color(content(0.5))
+                .child("−30m")
+                .child("now"),
+        )
 }

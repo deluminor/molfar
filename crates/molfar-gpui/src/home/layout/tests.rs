@@ -155,7 +155,7 @@ fn broken_storage_falls_back_per_widget() {
         Some(&default_item(WidgetId::Host))
     );
     assert_eq!(parsed.hidden, [WidgetId::Clock]);
-    assert_eq!(parsed.brand, BrandVisual::Orb);
+    assert_eq!(parsed.brand, BrandVisual::Sphere);
     assert_eq!(
         LayoutState::parse(&json!("corrupt")),
         LayoutState::default()
@@ -188,5 +188,17 @@ fn grid_geometry_maps_cells_to_pixels_and_back() {
     assert_eq!(rect.w, 4. * 60. + 3. * GAP);
     assert_eq!(grid.cell(rect.x + 10., rect.y - 10.), (8, 8));
     assert_eq!(grid.span(rect.w, rect.h), (4, 4));
-    assert_eq!(grid.height(&DEFAULT_LAYOUT), 19. * ROW_HEIGHT + 18. * GAP);
+    assert_eq!(grid.height(&DEFAULT_LAYOUT), 21. * ROW_HEIGHT + 20. * GAP);
+}
+
+#[test]
+fn legacy_brand_choices_migrate_to_sphere_without_changing_layout() {
+    for brand in ["orb", "fire", "sphere", "unknown"] {
+        let mut stored = LayoutState::default().to_value();
+        stored["brand"] = json!(brand);
+        let parsed = LayoutState::parse(&stored);
+        assert_eq!(parsed.brand, BrandVisual::Sphere);
+        assert_eq!(parsed.to_value()["brand"], "sphere");
+        assert_eq!(parsed.items, LayoutState::default().items);
+    }
 }

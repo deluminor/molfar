@@ -748,3 +748,34 @@ persistence, drag with push-down, resize minimums, Escape order, widget rows and
 failed loads, Brand selection, Activity days, hidden Host not sampling and visibility-gated
 polling. Host sampling is checked against the real macOS host. Usage reads the shared accounts
 cache; real provider usage and Inbox connectors were not exercised.
+
+## Native Home polish — November 4, 2026
+
+Scope: adaptive Clock and Status, Sphere-only Brand, smooth Matrix, four Host
+charts with timestamped 30-minute retention, and responsive Activity context.
+Orb/Fire rendering and selector are removed; legacy preferences normalize to
+Sphere while preserving owner geometry. Default Host is taller; custom layouts
+are retained.
+
+| Check | Result |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, format, strict all-target Clippy; 825 core passed / 2 ignored, 986 GPUI passed / 11 ignored, 6 wheel tests passed. All 50 Home tests passed. Local log: `/private/tmp/molfar-home-polish-verified.log` |
+| `npm run native:build` | Exit 0; optimized macOS app, release compilation 6m 58s |
+| `codesign --verify --deep --strict` | Exit 0 for release `MOLFAR Native.app` |
+| Independent review | No remaining blockers after fixes |
+| Diff/source scan | `git diff --check` exit 0; changed/new Home source scan found no secrets, debug output or untracked TODOs; no new dependencies |
+| Coverage | Not collected; no configured coverage command invoked |
+| Actual native UI QA | Unverified: previous Computer Use access for MOLFAR Native was denied; no native screenshots, real-window interaction or runtime performance measurement |
+
+Review fixes preserve compact Status metrics, show Host stale state at minimum
+height, use the shared pulse for recurring animation, bound Matrix trail alpha,
+repeat the time axis within each Host chart, and invalidate CPU baselines on
+Home/Host visibility changes. Host charts scroll using real time without
+interpolating measured spikes; paused sampling appears as gaps. Activity counts
+use latest session-update dates, not a complete historical event stream.
+
+An initial sandboxed core run failed process-management access with
+`Operation not permitted`; the permitted rerun passed core tests. Intermediate
+GPUI runs found legacy test expectations for `fire` and the old grid height;
+those expectations now reflect Sphere migration and the taller default Host.
+The existing `block v0.1.6` future-incompatibility warning remains.

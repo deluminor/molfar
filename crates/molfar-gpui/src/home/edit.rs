@@ -8,11 +8,15 @@ use gpui::{AnyElement, Context, Role, SharedString, div, prelude::*, px};
 impl Home {
     pub(super) fn start_editing(&mut self, cx: &mut Context<Self>) {
         self.editing = true;
+        self.views.sphere_motion.borrow_mut().set_editing(true);
+        self.views.brand.update(cx, |_, cx| cx.notify());
         cx.notify();
     }
 
     pub(super) fn finish_editing(&mut self, cx: &mut Context<Self>) {
         self.editing = false;
+        self.views.sphere_motion.borrow_mut().set_editing(false);
+        self.views.brand.update(cx, |_, cx| cx.notify());
         cx.notify();
     }
 
@@ -22,17 +26,30 @@ impl Home {
             brand,
             ..LayoutState::default()
         };
+        self.views.sphere_motion.borrow_mut().resume();
         self.save(cx);
     }
 
     pub(super) fn hide_widget(&mut self, id: WidgetId, cx: &mut Context<Self>) {
         if self.state.hide(id) {
+            if id == WidgetId::Brand {
+                self.views.sphere_motion.borrow_mut().pause();
+            }
+            if id == WidgetId::Host {
+                self.feeds.host.reset_baseline = true;
+            }
             self.save(cx);
         }
     }
 
     pub(super) fn show_widget(&mut self, id: WidgetId, cx: &mut Context<Self>) {
         self.state.show(id);
+        if id == WidgetId::Brand {
+            self.views.sphere_motion.borrow_mut().resume();
+        }
+        if id == WidgetId::Host {
+            self.feeds.host.reset_baseline = true;
+        }
         self.save(cx);
     }
 

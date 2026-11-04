@@ -113,7 +113,7 @@ fn hidden_widgets_are_saved_restored_and_reset(cx: &mut TestAppContext) {
     let reset = state(&window, visual);
     assert!(reset.hidden.is_empty());
     assert_eq!(reset.items, DEFAULT_LAYOUT.to_vec());
-    assert_eq!(saved.borrow().last().unwrap()["brand"], json!("fire"));
+    assert_eq!(saved.borrow().last().unwrap()["brand"], json!("sphere"));
 }
 
 #[gpui::test]

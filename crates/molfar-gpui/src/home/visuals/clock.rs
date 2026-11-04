@@ -1,5 +1,6 @@
+use super::clock_seconds;
 use crate::{popover::AnchorSlot, theme::*};
-use chrono::{Local, Timelike};
+use chrono::Local;
 use gpui::{Context, Render, Task, Window, div, prelude::*, px};
 use std::time::{Duration, Instant};
 
@@ -55,18 +56,20 @@ impl Render for ClockView {
         });
         let size = time_size(width, height);
         let now = Local::now();
-        let colon = if now.second().is_multiple_of(2) || cx.reduce_motion() {
-            1.
-        } else {
-            0.35
-        };
+        let expanded = width >= 220. && height >= 115.;
         let mono = crate::fonts::familiar();
+        let colon_view = div()
+            .text_size(px(size))
+            .line_height(px(size))
+            .text_color(accent_color().opacity(0.85))
+            .child(":");
 
         div()
             .id("home-clock")
             .debug_selector(|| "home-clock".into())
             .relative()
             .size_full()
+            .overflow_hidden()
             .flex()
             .flex_col()
             .justify_center()
@@ -84,13 +87,7 @@ impl Render for ClockView {
                             .line_height(px(size))
                             .child(now.format("%H").to_string()),
                     )
-                    .child(
-                        div()
-                            .text_size(px(size))
-                            .line_height(px(size))
-                            .text_color(accent_color().opacity(colon))
-                            .child(":"),
-                    )
+                    .child(colon_view)
                     .child(
                         div()
                             .text_size(px(size))
@@ -111,8 +108,29 @@ impl Render for ClockView {
                     .text_size(px((size * 0.2).clamp(10., 14.)))
                     .text_color(content(0.5))
                     .truncate()
-                    .child(now.format("%A, %-d %B").to_string().to_uppercase()),
+                    .child(if width < 210. {
+                        now.format("%a, %-d %b").to_string().to_uppercase()
+                    } else {
+                        now.format("%A, %-d %B").to_string().to_uppercase()
+                    }),
             )
+            .when(expanded, |clock| {
+                clock.child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .justify_between()
+                        .gap_2()
+                        .font_family(mono)
+                        .text_size(px(10.))
+                        .text_color(content(0.55))
+                        .child("LOCAL TIME")
+                        .child(now.format("UTC %:z").to_string()),
+                )
+            })
+            .when(height >= 90., |clock| {
+                clock.child(div().mt(px(4.)).child(clock_seconds::rail()))
+            })
     }
 }
 
@@ -126,5 +144,10 @@ mod tests {
         assert_eq!(time_size(10., 10.), 18.);
         assert_eq!(time_size(5000., 5000.), 120.);
         assert_eq!(time_size(200., 1000.), 200. / 4.4);
+        for (width, height) in [(112., 92.), (220., 115.), (375., 160.), (900., 400.)] {
+            let size = time_size(width, height);
+            assert!(size * 4.4 <= width + 0.01);
+            assert!(size + 14. + size * 0.36 + 26. <= height);
+        }
     }
 }

@@ -8,6 +8,8 @@ pub(crate) mod layout;
 mod motion;
 mod reflow;
 #[cfg(test)]
+mod sphere_tests;
+#[cfg(test)]
 mod tests;
 mod view;
 mod visuals;
@@ -19,6 +21,7 @@ use crate::popover::AnchorSlot;
 use gpui::{AppContext, Context, EventEmitter, FocusHandle, Focusable};
 use layout::state::LayoutState;
 use serde_json::Value;
+use std::{cell::RefCell, rc::Rc};
 
 pub(crate) enum Event {
     Close,
@@ -46,6 +49,7 @@ pub(crate) struct Home {
 }
 
 struct Views {
+    sphere_motion: Rc<RefCell<visuals::sphere_motion::Motion>>,
     clock: gpui::Entity<visuals::clock::ClockView>,
     brand: gpui::Entity<visuals::brand::BrandView>,
     matrix: gpui::Entity<visuals::matrix::MatrixView>,
@@ -63,9 +67,11 @@ impl Home {
     pub(crate) fn new(stored: &Value, cx: &mut Context<Self>) -> Home {
         let state = LayoutState::parse(stored);
         let brand = state.brand;
+        let sphere_motion = Rc::new(RefCell::new(visuals::sphere_motion::Motion::default()));
         let views = Views {
             clock: cx.new(visuals::clock::ClockView::new),
-            brand: cx.new(|_| visuals::brand::BrandView { visual: brand }),
+            brand: cx.new(|_| visuals::brand::BrandView::new(brand, sphere_motion.clone())),
+            sphere_motion,
             matrix: cx.new(|_| visuals::matrix::MatrixView),
         };
         Home {
@@ -89,6 +95,7 @@ impl Home {
     /// Replays the staggered entrance each time Home is brought forward.
     pub(crate) fn reveal(&mut self, cx: &mut Context<Self>) {
         self.visible = true;
+        self.views.sphere_motion.borrow_mut().resume();
         self.entrance = self.entrance.wrapping_add(1);
         self.refresh_records(cx);
         cx.notify();
@@ -97,6 +104,8 @@ impl Home {
     /// Stops polling while another page covers Home.
     pub(crate) fn conceal(&mut self) {
         self.visible = false;
+        self.views.sphere_motion.borrow_mut().pause();
+        self.feeds.host.reset_baseline = true;
         self.drag = None;
     }
 

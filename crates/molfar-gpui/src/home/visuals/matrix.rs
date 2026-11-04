@@ -44,8 +44,8 @@ impl Render for MatrixView {
 
 /// Where each column's falling head is, in rows from the top, plus its trail.
 pub(crate) fn head(column: u32, rows: f32, time: f32) -> (f32, f32) {
-    let speed = 5. + noise(column) * 9.;
-    let trail = 6. + noise(column + 401) * 14.;
+    let speed = 2.5 + noise(column) * 3.5;
+    let trail = 7. + noise(column + 401) * 9.;
     let travel = rows + trail;
     ((time * speed + noise(column + 77) * travel) % travel, trail)
 }
@@ -62,20 +62,20 @@ fn rain(bounds: Bounds<Pixels>, time: f32, window: &mut Window, cx: &mut App) {
 
     for column in 0..columns as u32 {
         let (head, trail) = head(column, rows, time);
-        let first = (head - trail).max(0.).floor() as i32;
-        for row in first..=head.floor() as i32 {
-            if row as f32 >= rows {
-                break;
+        for tail in 0..=trail.ceil() as u32 {
+            let row = head - tail as f32;
+            if row < 0. || row >= rows {
+                continue;
             }
-            let age = (head - row as f32) / trail;
+            let age = tail as f32 / trail;
             let color: Hsla = if age < 0.06 {
-                white(0.95)
+                white(0.75)
             } else {
-                accent.opacity(quantize((1. - age).powf(1.6) * 0.85))
+                accent.opacity(tail_alpha(age))
             };
-            let flicker = (time * 8.) as u32 / (3 + column % 4);
-            let glyph = GLYPHS
-                [(noise(column * 131 + row as u32 * 17 + flicker) * GLYPHS.len() as f32) as usize];
+            let flicker = (time * 2.) as u32 / (3 + column % 4);
+            let glyph =
+                GLYPHS[(noise(column * 131 + tail * 17 + flicker) * GLYPHS.len() as f32) as usize];
             let text = SharedString::from((glyph as char).to_string());
             let run = TextRun {
                 len: text.len(),
@@ -88,10 +88,14 @@ fn rain(bounds: Bounds<Pixels>, time: f32, window: &mut Window, cx: &mut App) {
             let line = window
                 .text_system()
                 .shape_line(text, px(FONT), &[run], None);
-            let at = bounds.origin + point(px(column as f32 * gap), px(row as f32 * ROW));
+            let at = bounds.origin + point(px(column as f32 * gap), px(row * ROW));
             let _ = line.paint(at, px(ROW), TextAlign::Left, None, window, cx);
         }
     }
+}
+
+fn tail_alpha(age: f32) -> f32 {
+    quantize((1. - age).max(0.).powf(1.6) * 0.85)
 }
 
 fn quantize(alpha: f32) -> f32 {
@@ -100,7 +104,20 @@ fn quantize(alpha: f32) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{head, quantize};
+    use super::{head, quantize, tail_alpha};
+
+    #[test]
+    fn all_tail_opacities_are_finite_including_fractional_trail_end() {
+        for column in 0..80 {
+            let (_, trail) = head(column, 30., 1.);
+            for tail in 0..=trail.ceil() as u32 {
+                let age = tail as f32 / trail;
+                let opacity = tail_alpha(age);
+                assert!(opacity.is_finite());
+                assert!((0. ..=1.).contains(&opacity));
+            }
+        }
+    }
 
     #[test]
     fn trail_alpha_has_few_distinct_steps() {
@@ -108,6 +125,16 @@ mod tests {
             .map(|i| (quantize(i as f32 / 100.) * 1000.) as u32)
             .collect();
         assert!(steps.len() <= 7);
+    }
+
+    #[test]
+    fn head_movement_is_continuous_between_frames() {
+        for column in 0..80 {
+            let (a, trail) = head(column, 30., 1.);
+            let (b, _) = head(column, 30., 1. + 1. / 30.);
+            let distance = (b - a).rem_euclid(30. + trail);
+            assert!(distance > 0. && distance < 0.21);
+        }
     }
 
     #[test]

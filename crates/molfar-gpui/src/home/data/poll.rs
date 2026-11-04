@@ -38,16 +38,21 @@ impl Home {
     }
 
     pub(in crate::home) fn sample_host(&mut self, cx: &mut Context<Self>) {
-        if self.state.is_hidden(WidgetId::Host) {
+        if self.state.is_hidden(WidgetId::Host) || self.feeds.loading_host {
             return;
         }
+        self.feeds.loading_host = true;
+        let now = molfar_core::time::now_ms();
+        let reset = self.feeds.host.needs_baseline(now);
+        self.feeds.host.reset_baseline = false;
         let sampler = self.feeds.sampler.clone();
         let work = cx
             .background_executor()
-            .spawn(async move { feeds::sample_host(&sampler) });
+            .spawn(async move { feeds::sample_host(&sampler, reset) });
         cx.spawn(async move |this, cx| {
             let sample = work.await;
             let _ = this.update(cx, |this, cx| {
+                this.feeds.loading_host = false;
                 this.feeds.host.push(sample);
                 cx.notify();
             });
@@ -76,6 +81,7 @@ impl Home {
             let (sessions, automations) = (sessions.await, automations.await);
             let _ = this.update(cx, |this, cx| {
                 this.feeds.loading_records = false;
+                this.feeds.records_updated_at = Some(molfar_core::time::now_ms());
                 this.feeds.sessions = loaded("sessions", sessions);
                 if let Some(automations) = automations {
                     this.feeds.automations = loaded("automations", automations);

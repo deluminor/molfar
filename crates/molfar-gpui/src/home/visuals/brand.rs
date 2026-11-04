@@ -1,111 +1,120 @@
-use super::paint::{disc, extent, glow, noise};
-use crate::{home::layout::state::BrandVisual, pulse, theme::*};
+use super::{paint::extent, sphere, sphere_motion::Motion};
+use crate::{home::layout::state::BrandVisual, pulse};
 use gpui::{
-    Bounds, Context, Hsla, Pixels, Render, Window, canvas, div, hsla, point, prelude::*, px,
+    Context, MouseButton, MouseDownEvent, MouseMoveEvent, Render, Subscription, Window, canvas,
+    div, prelude::*,
 };
-use std::f32::consts::TAU;
+use std::{cell::RefCell, rc::Rc};
 
-/// Its own view: the animation clock repaints only this card.
 pub(crate) struct BrandView {
     pub visual: BrandVisual,
+    pub motion: Rc<RefCell<Motion>>,
+    activation: Option<Subscription>,
+}
+
+impl BrandView {
+    pub(crate) fn new(visual: BrandVisual, motion: Rc<RefCell<Motion>>) -> Self {
+        Self {
+            visual,
+            motion,
+            activation: None,
+        }
+    }
 }
 
 impl Render for BrandView {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.activation.is_none() {
+            self.activation = Some(cx.observe_window_activation(window, |this, window, cx| {
+                if !window.is_window_active() {
+                    this.motion.borrow_mut().cancel();
+                    cx.notify();
+                }
+            }));
+        }
         let visual = self.visual;
+        let motion = self.motion.clone();
+        let entity = cx.entity().downgrade();
         div()
             .id("home-brand-visual")
             .debug_selector(move || format!("home-brand-{}", visual.key()))
             .size_full()
+            .overflow_hidden()
+            .when(!self.motion.borrow().editing, |view| {
+                if self.motion.borrow().dragging() {
+                    view.cursor_grabbing()
+                } else {
+                    view.cursor_grab()
+                }
+            })
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, event: &MouseDownEvent, _, cx| {
+                    let now = pulse::elapsed(cx).as_secs_f32();
+                    let position = (event.position.x.as_f32(), event.position.y.as_f32());
+                    if this.motion.borrow_mut().press(position, now) {
+                        cx.stop_propagation();
+                        cx.notify();
+                    }
+                }),
+            )
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(|this, _, _, cx| {
+                    let now = pulse::elapsed(cx).as_secs_f32();
+                    let reduced = cx.reduce_motion();
+                    if this.motion.borrow_mut().release(now, reduced) {
+                        cx.stop_propagation();
+                        cx.notify();
+                    }
+                }),
+            )
+            .on_mouse_up_out(
+                MouseButton::Left,
+                cx.listener(|this, _, _, cx| {
+                    let now = pulse::elapsed(cx).as_secs_f32();
+                    let reduced = cx.reduce_motion();
+                    if this.motion.borrow_mut().release(now, reduced) {
+                        cx.notify();
+                    }
+                }),
+            )
             .child(
                 canvas(
                     |_, _, _| (),
                     move |bounds, _, window, cx| {
-                        let time = if pulse::request(pulse::Rate::Smooth, window, cx) {
-                            pulse::elapsed(cx).as_secs_f32()
-                        } else {
-                            1.
-                        };
-                        match visual {
-                            BrandVisual::Orb => orb(bounds, time, window),
-                            BrandVisual::Fire => fire(bounds, time, window),
-                            BrandVisual::Sphere => sphere(bounds, time, window),
+                        if motion.borrow().dragging() {
+                            let motion = motion.clone();
+                            let entity = entity.clone();
+                            window.on_mouse_event(move |event: &MouseMoveEvent, phase, _, cx| {
+                                if !phase.capture() || !motion.borrow().dragging() {
+                                    return;
+                                }
+                                let now = pulse::elapsed(cx).as_secs_f32();
+                                if event.pressed_button == Some(MouseButton::Left) {
+                                    motion.borrow_mut().moved(
+                                        (event.position.x.as_f32(), event.position.y.as_f32()),
+                                        now,
+                                    );
+                                } else {
+                                    motion.borrow_mut().cancel();
+                                }
+                                let _ = entity.update(cx, |_, cx| cx.notify());
+                                cx.stop_propagation();
+                            });
                         }
+                        let animated = motion.borrow().animate()
+                            && pulse::request(pulse::Rate::Smooth, window, cx);
+                        let elapsed = pulse::elapsed(cx).as_secs_f32();
+                        let orientation = motion.borrow_mut().frame(elapsed, !animated);
+                        let time = motion.borrow().particle_time;
+                        let (width, height) = extent(bounds);
+                        window.with_content_mask(Some(gpui::ContentMask { bounds }), |window| {
+                            sphere::paint(bounds.origin, width, height, time, orientation, window);
+                        });
                     },
                 )
                 .size_full(),
             )
-    }
-}
-
-fn orb(bounds: Bounds<Pixels>, time: f32, window: &mut Window) {
-    let (width, height) = extent(bounds);
-    let center = bounds.center();
-    let accent = accent_color();
-    let breath = 1. + 0.05 * (time * TAU / 4.).sin();
-    let radius = width.min(height) * 0.28 * breath;
-
-    glow(window, center, radius * 1.9, accent.opacity(0.35), 14);
-    glow(window, center, radius, accent.opacity(0.9), 10);
-    disc(window, center, radius * 0.35, white(0.55));
-
-    for ring in 0..3 {
-        let tilt = 0.35 + ring as f32 * 0.22;
-        let orbit = radius * (1.35 + ring as f32 * 0.28);
-        let speed = 0.35 + ring as f32 * 0.17;
-        for trail in 0..14 {
-            let angle = time * speed * TAU - trail as f32 * 0.07 + ring as f32 * 2.1;
-            let at = center + point(px(orbit * angle.cos()), px(orbit * tilt * angle.sin()));
-            let fade = 1. - trail as f32 / 14.;
-            disc(window, at, 2.4 * fade + 0.4, accent.opacity(0.85 * fade));
-        }
-    }
-}
-
-fn fire(bounds: Bounds<Pixels>, time: f32, window: &mut Window) {
-    let (width, height) = extent(bounds);
-    let base = bounds.origin + point(px(width / 2.), px(height * 0.92));
-    let scale = width.min(height);
-    glow(window, base, scale * 0.45, hsla(0.05, 0.95, 0.5, 0.35), 10);
-
-    let embers = (scale / 2.).clamp(40., 140.) as u32;
-    for index in 0..embers {
-        let period = 1.1 + noise(index) * 1.4;
-        let progress = (time / period + noise(index + 997)).fract();
-        let spread = (noise(index + 31) - 0.5) * scale * 0.55 * (1. - progress * 0.7);
-        let sway = (progress * 7. + index as f32).sin() * scale * 0.025;
-        let at = base + point(px(spread + sway), px(-progress * height * 0.85));
-        let heat = 1. - progress;
-        let color: Hsla = hsla(0.02 + 0.11 * heat, 0.95, 0.45 + 0.25 * heat, 0.9 * heat);
-        disc(window, at, (scale * 0.05 * heat).max(0.8), color);
-    }
-}
-
-fn sphere(bounds: Bounds<Pixels>, time: f32, window: &mut Window) {
-    let (width, height) = extent(bounds);
-    let center = bounds.center();
-    let radius = width.min(height) * 0.38;
-    let accent = accent_color();
-    let spin = time * 0.45;
-    let (tilt_sin, tilt_cos) = 0.42f32.sin_cos();
-    glow(window, center, radius * 1.25, accent.opacity(0.18), 8);
-
-    for lat in 0..13 {
-        let latitude = (lat as f32 / 12. - 0.5) * std::f32::consts::PI;
-        let ring = (latitude.cos() * 26.).max(1.) as u32;
-        for lon in 0..ring {
-            let longitude = lon as f32 / ring as f32 * TAU + spin;
-            let x = radius * latitude.cos() * longitude.sin();
-            let y = radius * latitude.sin();
-            let z = radius * latitude.cos() * longitude.cos();
-            let (y, z) = (y * tilt_cos - z * tilt_sin, y * tilt_sin + z * tilt_cos);
-            let depth = (z / radius + 1.) / 2.;
-            disc(
-                window,
-                center + point(px(x), px(y)),
-                0.6 + 1.6 * depth,
-                accent.opacity(0.12 + 0.85 * depth * depth),
-            );
-        }
     }
 }

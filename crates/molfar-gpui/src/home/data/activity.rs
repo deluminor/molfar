@@ -89,9 +89,32 @@ pub(crate) fn year(timestamps: &[u64], year: i32, today: NaiveDate) -> Year {
     }
 }
 
+pub(crate) fn totals(weeks: &[[Cell; 7]]) -> (u32, usize) {
+    weeks
+        .iter()
+        .flatten()
+        .filter(|cell| cell.in_year && !cell.future)
+        .fold((0, 0), |(updates, days), cell| {
+            (updates + cell.count, days + usize::from(cell.count > 0))
+        })
+}
+
+pub(crate) fn recent_totals(timestamps: &[u64], today: NaiveDate) -> (u32, u32) {
+    let start = today - Duration::days(6);
+    timestamps
+        .iter()
+        .filter_map(|stamp| local_day(*stamp))
+        .fold((0, 0), |(daily, weekly), day| {
+            (
+                daily + u32::from(day == today),
+                weekly + u32::from(day >= start && day <= today),
+            )
+        })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{level, year};
+    use super::{level, recent_totals, totals, year};
     use chrono::{Local, NaiveDate, TimeZone};
 
     fn at(y: i32, m: u32, d: u32) -> u64 {
@@ -100,6 +123,19 @@ mod tests {
             .single()
             .unwrap()
             .timestamp_millis() as u64
+    }
+
+    #[test]
+    fn recent_totals_cross_year_boundary_and_exclude_future() {
+        let today = NaiveDate::from_ymd_opt(2026, 1, 2).unwrap();
+        let stamps = [
+            at(2025, 12, 26),
+            at(2025, 12, 27),
+            at(2026, 1, 2),
+            at(2026, 1, 3),
+        ];
+        assert_eq!(recent_totals(&stamps, today), (1, 2));
+        assert_eq!(recent_totals(&[], today), (0, 0));
     }
 
     #[test]
@@ -125,6 +161,14 @@ mod tests {
 
         assert_eq!(grid.active_days, 2);
         assert_eq!(grid.sessions, 3);
+        assert_eq!(totals(&grid.weeks), (3, 2));
+        assert_eq!(totals(&[]), (0, 0));
+        let current = grid
+            .weeks
+            .iter()
+            .find(|week| week.iter().any(|cell| cell.date == today))
+            .unwrap();
+        assert_eq!(totals(&[*current]), (1, 1));
         assert!(grid.weeks.iter().all(|week| week.len() == 7));
         assert!(grid.weeks.len() >= 53);
         let first = grid.weeks[0].iter().find(|cell| cell.in_year).unwrap();

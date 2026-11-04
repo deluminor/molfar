@@ -107,13 +107,13 @@ pub(crate) const DEFAULT_LAYOUT: [Item; 10] = [
     Item::at(WidgetId::Clock, 0, 0, 2, 4),
     Item::at(WidgetId::Status, 2, 0, 2, 4),
     Item::at(WidgetId::Brand, 10, 0, 2, 4),
-    Item::at(WidgetId::Host, 0, 8, 8, 4),
+    Item::at(WidgetId::Host, 0, 8, 8, 6),
     Item::at(WidgetId::Usage, 8, 8, 4, 4),
     Item::at(WidgetId::Inbox, 0, 4, 4, 4),
     Item::at(WidgetId::Activity, 4, 0, 6, 4),
     Item::at(WidgetId::Sessions, 4, 4, 4, 4),
     Item::at(WidgetId::Automations, 8, 4, 4, 4),
-    Item::at(WidgetId::Matrix, 0, 12, 12, 7),
+    Item::at(WidgetId::Matrix, 0, 14, 12, 7),
 ];
 
 /// Narrow windows stack full-width cards in this order and these heights.
@@ -123,7 +123,7 @@ pub(crate) const NARROW_ORDER: [(WidgetId, u16); 10] = [
     (WidgetId::Automations, 4),
     (WidgetId::Inbox, 4),
     (WidgetId::Brand, 8),
-    (WidgetId::Host, 4),
+    (WidgetId::Host, 7),
     (WidgetId::Sessions, 4),
     (WidgetId::Activity, 4),
     (WidgetId::Usage, 4),
