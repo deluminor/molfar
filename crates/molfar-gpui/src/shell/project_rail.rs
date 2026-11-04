@@ -617,9 +617,9 @@ impl Shell {
             .children(
                 [
                     ("Inbox", "inbox"),
+                    ("Board", "dashboard"),
                     ("Notes", "file"),
                     ("Automations", "zap"),
-                    ("Board", "dashboard"),
                 ]
                 .into_iter()
                 .filter(|(label, _)| match *label {
