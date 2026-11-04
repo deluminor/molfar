@@ -31,7 +31,8 @@ impl Render for CardDrag {
             .rounded(px(CARD_RADIUS))
             .border_1()
             .border_color(accent_color().opacity(0.5))
-            .bg(background_base())
+            .bg(floating_fill())
+            .text_color(content(1.))
             .shadow_xl()
             .child(
                 div()

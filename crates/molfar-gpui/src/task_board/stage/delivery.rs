@@ -1,4 +1,5 @@
 use super::super::{Board, Event};
+use crate::task_board::controls;
 use crate::{modal, theme::*};
 use gpui::{Context, Div, Window, div, prelude::*, px};
 use molfar_core::task_board::{
@@ -117,7 +118,7 @@ impl Board {
             let card_id = card.id.clone();
             let updated_at = card.updated_at;
             picker = picker.child(
-                modal::disabled(modal::ghost_button(id, label), pending)
+                modal::disabled(controls::ghost_button(id, label), pending)
                     .debug_selector(move || id.into())
                     .aria_label(format!("{label}. {hint}"))
                     .on_click(cx.listener(move |this, _, window, cx| {
@@ -162,11 +163,12 @@ impl Board {
             } else {
                 let opened = card.clone();
                 row = row.child(
-                    modal::disabled(modal::primary_button("board-deliver", "Deliver…"), pending)
-                        .debug_selector(|| "board-deliver".into())
-                        .on_click(
-                            cx.listener(move |this, _, _, cx| this.open_delivery(&opened, cx)),
-                        ),
+                    modal::disabled(
+                        controls::primary_button("board-deliver", "Deliver…"),
+                        pending,
+                    )
+                    .debug_selector(|| "board-deliver".into())
+                    .on_click(cx.listener(move |this, _, _, cx| this.open_delivery(&opened, cx))),
                 );
             }
         }
@@ -191,7 +193,7 @@ impl Board {
             let card_id = card.id.clone();
             let updated_at = card.updated_at;
             row = row.child(
-                modal::disabled(modal::danger_ghost_button(id, label), pending)
+                modal::disabled(controls::danger_ghost_button(id, label), pending)
                     .debug_selector(move || id.into())
                     .on_click(cx.listener(move |this, _, window, cx| {
                         let card_id = card_id.clone();

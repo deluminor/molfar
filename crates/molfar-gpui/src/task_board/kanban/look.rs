@@ -87,7 +87,7 @@ pub(super) fn note(column: &str) -> Option<(&'static str, &'static str, &'static
 /// Rework cycles at or above this are flagged, as on desktop.
 pub(super) const REWORK_WARNING_CYCLE: i64 = 3;
 
-pub(super) const DRAWER_WIDTH: f32 = 460.;
+pub(super) const DRAWER_WIDTH: f32 = 520.;
 pub(super) const DRAWER_SLIDE: std::time::Duration = std::time::Duration::from_millis(200);
 pub(super) const DRAWER_SHIFT: f32 = 32.;
 

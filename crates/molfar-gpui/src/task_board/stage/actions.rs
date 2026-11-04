@@ -1,6 +1,7 @@
 use super::super::settings::PickTarget;
 use super::super::{Board, Event};
 use super::back::back_label;
+use crate::task_board::controls;
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Role, div, prelude::*};
 use molfar_core::task_board::constants::{
@@ -38,7 +39,7 @@ impl Board {
             let updated_at = card.updated_at;
             row = row.child(
                 modal::disabled(
-                    modal::primary_button(
+                    controls::primary_button(
                         "board-stage-action",
                         if pending { "Working…" } else { label },
                     ),
@@ -67,7 +68,7 @@ impl Board {
             let anchor = self.retry_anchor.clone();
             row = row.child(anchor.probe()).child(
                 modal::disabled(
-                    modal::ghost_button("board-retry-model", "Retry with model…"),
+                    controls::ghost_button("board-retry-model", "Retry with model…"),
                     pending,
                 )
                 .debug_selector(|| "board-retry-model".into())
@@ -84,7 +85,7 @@ impl Board {
             let card_id = card.id.clone();
             let updated_at = card.updated_at;
             row = row.child(
-                modal::disabled(modal::ghost_button("board-stage-back", target), pending)
+                modal::disabled(controls::ghost_button("board-stage-back", target), pending)
                     .debug_selector(|| "board-stage-back".into())
                     .on_click(cx.listener(move |this, _, _, cx| {
                         if this.stage_pending.is_some() {
@@ -110,7 +111,7 @@ impl Board {
         }) {
             row =
                 row.child(
-                    modal::ghost_button("board-open-stage-session", "Open session")
+                    controls::ghost_button("board-open-stage-session", "Open session")
                         .debug_selector(|| "board-open-stage-session".into())
                         .on_click(cx.listener(move |_, _, _, cx| {
                             cx.emit(Event::OpenSession(session.clone()))
@@ -123,7 +124,7 @@ impl Board {
             row = row
                 .child(
                     modal::disabled(
-                        modal::primary_button("board-owner-review", "Review questions"),
+                        controls::primary_button("board-owner-review", "Review questions"),
                         pending,
                     )
                     .debug_selector(|| "board-owner-review".into())
@@ -138,7 +139,7 @@ impl Board {
                 )
                 .child(
                     modal::disabled(
-                        modal::ghost_button("board-owner-edit-plan", "Edit plan"),
+                        controls::ghost_button("board-owner-edit-plan", "Edit plan"),
                         pending,
                     )
                     .debug_selector(|| "board-owner-edit-plan".into())
@@ -159,7 +160,7 @@ impl Board {
             let card_id = card.id.clone();
             row = row.child(
                 modal::disabled(
-                    modal::primary_button("board-owner-rework", "Review findings & rework"),
+                    controls::primary_button("board-owner-rework", "Review findings & rework"),
                     pending,
                 )
                 .debug_selector(|| "board-owner-rework".into())
@@ -174,7 +175,7 @@ impl Board {
             );
         }
         row = row.child(self.delivery_actions(card, cx));
-        row = row.children(self.edit_action(card, pending, cx));
+
         row = row.children(self.move_action(card, pending, cx));
         if card.column_id == PLAN_APPROVAL {
             row = row.child(

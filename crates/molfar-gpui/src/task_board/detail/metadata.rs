@@ -1,10 +1,12 @@
-use super::Board;
+use super::super::Board;
+use crate::task_board::controls;
+use crate::task_board::stage;
 use crate::theme::*;
 use gpui::{AnyElement, Context, FontWeight, div, prelude::*, px};
 
 fn field(label: &'static str, value: impl Into<String>) -> AnyElement {
     div()
-        .mb_4()
+        .mb_3()
         .child(
             div()
                 .mb_1()
@@ -17,7 +19,7 @@ fn field(label: &'static str, value: impl Into<String>) -> AnyElement {
 }
 
 impl Board {
-    pub(super) fn detail(&self, cx: &mut Context<Self>) -> AnyElement {
+    pub(in crate::task_board) fn detail(&self, cx: &mut Context<Self>) -> AnyElement {
         let mut detail = div()
             .id("board-detail")
             .debug_selector(|| "board-detail".into())
@@ -36,24 +38,74 @@ impl Board {
         else {
             return detail.child("Select a card").into_any_element();
         };
+        let project_path = card.project_cwd.clone();
         detail = detail
             .child(
                 div()
-                    .mb_4()
-                    .text_size(px(20.))
+                    .mb_3()
+                    .text_size(px(16.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(format!("#{} {}", card.number, card.title)),
             )
-            .child(field("Project", card.project_cwd.clone()))
-            .child(field("State", super::stage::delivery::status_text(card)))
-            .when_some(super::stage::delivery::pull_request_url(card), |d, url| {
+            .child(
+                div()
+                    .id("board-detail-project")
+                    .aria_description(card.project_cwd.clone())
+                    .tooltip(move |_, cx| controls::hint(project_path.clone(), cx))
+                    .child(field(
+                        "Project",
+                        std::path::Path::new(&card.project_cwd)
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or(&card.project_cwd)
+                            .to_owned(),
+                    )),
+            )
+            .child(field("State", stage::delivery::status_text(card)))
+            .when_some(stage::delivery::pull_request_url(card), |d, url| {
                 d.child(field("Pull request", url))
             })
-            .child(field("Description", card.description.clone()))
-            .child(field(
-                "Acceptance criteria",
-                card.acceptance_criteria.clone(),
-            ))
+            .when_some(
+                self.detail_content
+                    .as_ref()
+                    .filter(|c| c.card_id == card.id),
+                |d, content| {
+                    d.child(
+                        div()
+                            .mb_4()
+                            .p_3()
+                            .rounded_lg()
+                            .border_1()
+                            .border_color(crate::theme::content(0.08))
+                            .bg(crate::theme::content(0.025))
+                            .child(
+                                div()
+                                    .mb_2()
+                                    .text_size(px(12.))
+                                    .text_color(crate::theme::content(0.6))
+                                    .child("Task"),
+                            )
+                            .child(content.description_view.clone())
+                            .when(!card.acceptance_criteria.trim().is_empty(), |d| {
+                                d.child(
+                                    div()
+                                        .mt_3()
+                                        .pt_3()
+                                        .border_t_1()
+                                        .border_color(crate::theme::content(0.08))
+                                        .child(
+                                            div()
+                                                .mb_2()
+                                                .text_size(px(12.))
+                                                .text_color(crate::theme::content(0.6))
+                                                .child("Acceptance criteria"),
+                                        )
+                                        .child(content.criteria_view.clone()),
+                                )
+                            }),
+                    )
+                },
+            )
             .when_some(card.last_error.clone(), |d, error| {
                 d.child(field("Error", error))
             })
@@ -78,9 +130,7 @@ impl Board {
                 )
                 .into_any_element();
         }
-        detail = detail
-            .child(self.stage_actions(card, cx))
-            .child(field("Stage runs", snapshot.runs.len().to_string()));
+        detail = detail.child(field("Stage runs", snapshot.runs.len().to_string()));
         for run in &snapshot.runs {
             detail = detail
                 .child(field(
@@ -98,7 +148,7 @@ impl Board {
         for artifact in &snapshot.artifacts {
             let selected = artifact.clone();
             detail = detail.child(
-                crate::modal::ghost_button(
+                controls::ghost_button(
                     gpui::SharedString::from(format!("board-artifact-{}", artifact.id)),
                     format!("Read {} v{}", artifact.kind, artifact.version),
                 )

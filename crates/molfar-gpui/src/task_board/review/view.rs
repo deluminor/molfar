@@ -1,4 +1,5 @@
 use super::{super::Board, Mode};
+use crate::task_board::controls;
 use crate::{
     input, modal,
     theme::{accent_color, content},
@@ -89,7 +90,7 @@ impl Board {
         }
         let mut actions = modal::actions().child(
             modal::disabled(
-                modal::ghost_button("board-owner-cancel", "Cancel"),
+                controls::ghost_button("board-owner-cancel", "Cancel"),
                 panel.busy,
             )
             .track_focus(&panel.cancel_focus)
@@ -100,7 +101,7 @@ impl Board {
         );
         if panel.data.is_none() && !panel.loading {
             actions = actions.child(
-                modal::primary_button("board-owner-retry-load", "Retry loading")
+                controls::primary_button("board-owner-retry-load", "Retry loading")
                     .cursor_pointer()
                     .debug_selector(|| "board-owner-retry-load".into())
                     .track_focus(&panel.submit_focus)
@@ -113,7 +114,7 @@ impl Board {
         if panel.reload_required {
             actions = actions.child(
                 modal::disabled(
-                    modal::ghost_button("board-owner-reload", "Reload (discard draft)"),
+                    controls::ghost_button("board-owner-reload", "Reload (discard draft)"),
                     panel.loading,
                 )
                 .debug_selector(|| "board-owner-reload".into())
@@ -129,7 +130,7 @@ impl Board {
             if has_questions {
                 actions = actions.child(
                     modal::disabled(
-                        modal::ghost_button("board-owner-changes", "Request changes"),
+                        controls::ghost_button("board-owner-changes", "Request changes"),
                         !panel.can_submit(true, cx),
                     )
                     .track_focus(&panel.changes_focus)
@@ -152,7 +153,7 @@ impl Board {
             };
             actions = actions.child(
                 modal::disabled(
-                    modal::primary_button("board-owner-submit", label),
+                    controls::primary_button("board-owner-submit", label),
                     !panel.can_submit(false, cx),
                 )
                 .debug_selector(|| "board-owner-submit".into())
@@ -165,6 +166,7 @@ impl Board {
         }
         body = body.child(actions);
         let card = modal::card()
+            .bg(crate::theme::floating_fill())
             .w(px(720.))
             .max_w_full()
             .max_h_full()

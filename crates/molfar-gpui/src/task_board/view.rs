@@ -1,4 +1,5 @@
 use super::{Board, Event};
+use crate::task_board::controls;
 use crate::theme::*;
 use gpui::{Context, FontWeight, Render, Role, Window, div, prelude::*, px};
 
@@ -8,6 +9,7 @@ impl Render for Board {
             self.dragging = None;
             self.drag_over = None;
         }
+        self.sync_detail_content(cx);
         let project_only = self.project_only;
         let archived = self.archived;
         let overlay = self
@@ -35,6 +37,8 @@ impl Render for Board {
                     || this.review.is_some()
                     || this.editor.is_some()
                     || this.move_menu.is_some()
+                    || this.settings.is_some()
+                    || this.picker.is_some()
                 {
                     return;
                 }
@@ -75,7 +79,10 @@ impl Render for Board {
             }))
             .child(
                 div()
-                    .h(px(44.))
+                    .min_h(px(48.))
+                    .flex_wrap()
+                    .py_2()
+                    .text_size(px(12.))
                     .flex_shrink_0()
                     .px_3()
                     .flex()
@@ -98,16 +105,23 @@ impl Render for Board {
                             .id("board-project-filter")
                             .role(Role::Button)
                             .aria_label("Current project only")
+                            .aria_keyshortcuts("P")
+                            .tooltip(|_, cx| controls::hint("Toggle current project (P)", cx))
                             .aria_selected(project_only)
                             .cursor_pointer()
                             .px_2()
-                            .py_1()
-                            .rounded_md()
+                            .h(px(32.))
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .border_1()
+                            .border_color(content(0.08))
+                            .rounded(px(6.))
                             .hover(|s| s.bg(content(0.08)))
                             .child(if project_only {
-                                "Current project (P)"
+                                "Current project"
                             } else {
-                                "All projects (P)"
+                                "All projects"
                             })
                             .on_click(cx.listener(|this, _, _, cx| {
                                 this.project_only = !this.project_only;
@@ -120,17 +134,21 @@ impl Render for Board {
                             .id("board-archive-filter")
                             .role(Role::Button)
                             .aria_label("Archived cards")
+                            .aria_keyshortcuts("A")
+                            .tooltip(|_, cx| controls::hint("Toggle archived cards (A)", cx))
                             .aria_selected(archived)
+                            .when(archived, |d| d.bg(content(0.08)))
                             .cursor_pointer()
                             .px_2()
-                            .py_1()
-                            .rounded_md()
+                            .h(px(32.))
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .border_1()
+                            .border_color(content(0.08))
+                            .rounded(px(6.))
                             .hover(|s| s.bg(content(0.08)))
-                            .child(if archived {
-                                "Archived (A)"
-                            } else {
-                                "Active (A)"
-                            })
+                            .child(if archived { "Archived" } else { "Active" })
                             .on_click(cx.listener(|this, _, _, cx| {
                                 this.archived = !this.archived;
                                 this.snapshot = None;
@@ -139,14 +157,17 @@ impl Render for Board {
                     )
                     .child(div().flex_1())
                     .child(
-                        crate::modal::ghost_button("board-stage-settings", "Stage settings")
+                        controls::ghost_button("board-stage-settings", "Settings")
                             .debug_selector(|| "board-stage-settings".into())
                             .on_click(
                                 cx.listener(|this, _, window, cx| this.open_settings(window, cx)),
                             ),
                     )
                     .child(
-                        crate::modal::primary_button("board-new-task", "New task")
+                        controls::primary_button("board-new-task", "New task")
+                            .flex_row_reverse()
+                            .gap_2()
+                            .child(icon("plus", 14.).text_color(background_base()))
                             .aria_label("New task (N)")
                             .on_click(
                                 cx.listener(|this, _, window, cx| this.open_create(window, cx)),

@@ -1,5 +1,6 @@
 use super::Board;
 use crate::popover::{Anchor, menu_popover};
+use crate::task_board::controls;
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Role, Window, div, prelude::*, px};
 
@@ -31,6 +32,7 @@ impl Board {
         });
         let card =
             modal::card()
+                .bg(crate::theme::floating_fill())
                 .w(px(520.))
                 .max_w_full()
                 .max_h_full()
@@ -111,7 +113,7 @@ impl Board {
                                 .mt_1()
                                 .child(
                                     modal::disabled(
-                                        modal::ghost_button("board-create-cancel", "Cancel"),
+                                        controls::ghost_button("board-create-cancel", "Cancel"),
                                         busy,
                                     )
                                     .track_focus(&draft.cancel_focus)
@@ -124,7 +126,7 @@ impl Board {
                                 )
                                 .child(
                                     modal::disabled(
-                                        modal::primary_button("board-create-submit", submit),
+                                        controls::primary_button("board-create-submit", submit),
                                         busy,
                                     )
                                     .track_focus(&draft.submit_focus)

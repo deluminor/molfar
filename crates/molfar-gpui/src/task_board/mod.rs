@@ -1,3 +1,4 @@
+mod controls;
 mod create;
 mod detail;
 mod edit;
@@ -70,6 +71,7 @@ pub(crate) struct Board {
         crate::popover::AnchorSlot,
     )>,
     column_scrolls: std::cell::RefCell<std::collections::HashMap<String, ScrollHandle>>,
+    detail_content: Option<detail::Content>,
     drawer_opens: u64,
     dragging: Option<String>,
     drag_over: Option<String>,
@@ -139,6 +141,7 @@ impl Board {
                 .map(|stage| (stage, Default::default()))
                 .collect(),
             column_scrolls: Default::default(),
+            detail_content: None,
             drawer_opens: 0,
             dragging: None,
             drag_over: None,

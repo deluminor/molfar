@@ -1,4 +1,5 @@
 use super::super::Board;
+use crate::task_board::controls;
 use crate::{input::form_field, modal, theme::*};
 use gpui::{AnyElement, Context, Role, Window, div, prelude::*, px};
 use molfar_core::task_board::{
@@ -24,12 +25,13 @@ impl Board {
         }
         let edited = card.clone();
         Some(
-            modal::disabled(modal::ghost_button("board-edit-task", "Edit task"), pending)
-                .debug_selector(|| "board-edit-task".into())
-                .on_click(
-                    cx.listener(move |this, _, window, cx| this.open_editor(&edited, window, cx)),
-                )
-                .into_any_element(),
+            modal::disabled(
+                controls::ghost_button("board-edit-task", "Edit task"),
+                pending,
+            )
+            .debug_selector(|| "board-edit-task".into())
+            .on_click(cx.listener(move |this, _, window, cx| this.open_editor(&edited, window, cx)))
+            .into_any_element(),
         )
     }
 
@@ -54,6 +56,7 @@ impl Board {
 
         let card =
             modal::card()
+                .bg(crate::theme::floating_fill())
                 .w(px(520.))
                 .max_w_full()
                 .max_h_full()
@@ -99,7 +102,7 @@ impl Board {
                                 .mt_1()
                                 .child(
                                     modal::disabled(
-                                        modal::ghost_button("board-edit-cancel", cancel),
+                                        controls::ghost_button("board-edit-cancel", cancel),
                                         busy,
                                     )
                                     .debug_selector(|| "board-edit-cancel".into())
@@ -113,7 +116,7 @@ impl Board {
                                 )
                                 .child(
                                     modal::disabled(
-                                        modal::primary_button("board-edit-submit", submit),
+                                        controls::primary_button("board-edit-submit", submit),
                                         !editor.can_submit(cx),
                                     )
                                     .debug_selector(|| "board-edit-submit".into())

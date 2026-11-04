@@ -1,5 +1,6 @@
 use super::super::{Board, Event, review::Mode};
 use super::back::{back_label, column_label};
+use crate::task_board::controls;
 #[cfg(test)]
 #[path = "moves_tests.rs"]
 mod tests;
@@ -53,7 +54,7 @@ impl Board {
             div()
                 .child(anchor.probe())
                 .child(
-                    modal::disabled(modal::ghost_button("board-move-to", "Move to…"), pending)
+                    modal::disabled(controls::ghost_button("board-move-to", "Move to…"), pending)
                         .debug_selector(|| "board-move-to".into())
                         .on_click(cx.listener(move |this, _, window, cx| {
                             this.open_moves(&picked, window, cx)

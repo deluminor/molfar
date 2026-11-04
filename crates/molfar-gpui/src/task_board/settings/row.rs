@@ -1,6 +1,7 @@
 use super::{super::Board, Panel, PickTarget, modes, stage_label};
+use crate::task_board::controls;
 use crate::{modal, theme::*};
-use gpui::{Context, Div, SharedString, div, prelude::*};
+use gpui::{Context, Div, SharedString, div, prelude::*, px};
 use molfar_core::task_board::stage::{
     agent::AgentStage,
     choice::settings::{HARNESS, MODEL, RUNTIME_MODE},
@@ -30,6 +31,7 @@ impl Board {
                 config[MODEL].as_str().unwrap_or_default()
             )
         });
+        let model_hint = summary.clone();
         let anchor = panel.anchor(stage);
         let name = stage_label(stage);
         let skills = panel
@@ -38,13 +40,21 @@ impl Board {
             .find(|(entry, _)| *entry == stage)
             .map(|(_, input)| input.clone());
 
-        let mut modes_row = div().flex().flex_wrap().gap_1();
+        let mut modes_row = div()
+            .flex()
+            .flex_wrap()
+            .gap_1()
+            .p_1()
+            .rounded_md()
+            .bg(content(0.025));
         for (value, label) in modes() {
-            let button = if value == mode {
-                modal::primary_button(id(&[stage.id(), "mode", value]), label)
-            } else {
-                modal::ghost_button(id(&[stage.id(), "mode", value]), label)
-            };
+            let button = controls::ghost_button(id(&[stage.id(), "mode", value]), label)
+                .h(px(28.))
+                .px_2()
+                .text_size(px(11.))
+                .when(value == mode, |b| {
+                    b.bg(content(0.1)).text_color(content(1.))
+                });
             modes_row = modes_row.child(
                 modal::disabled(
                     button
@@ -63,8 +73,9 @@ impl Board {
             .flex()
             .flex_col()
             .gap_2()
-            .py_2()
-            .border_b_1()
+            .p_3()
+            .rounded_lg()
+            .border_1()
             .border_color(content(0.08))
             .child(
                 div()
@@ -76,17 +87,15 @@ impl Board {
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child(stage_label(stage)),
                     )
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .truncate()
-                            .text_color(content(0.65))
-                            .child(summary),
-                    )
                     .child(anchor.probe())
                     .child(
-                        modal::ghost_button(id(&[stage.id(), "model"]), "Change model")
+                        controls::ghost_button(id(&[stage.id(), "model"]), summary.clone())
+                            .flex_1()
+                            .min_w_0()
+                            .flex_shrink(1.)
+                            .truncate()
+                            .aria_description(summary)
+                            .tooltip(move |_, cx| controls::hint(model_hint.clone(), cx))
                             .aria_label(format!("Change model for {name}"))
                             .debug_selector(move || format!("board-settings-{}-model", stage.id()))
                             .on_click(cx.listener(move |this, _, window, cx| {
@@ -100,7 +109,7 @@ impl Board {
                     )
                     .child(
                         modal::disabled(
-                            modal::ghost_button(id(&[stage.id(), "default"]), "Use default")
+                            controls::ghost_button(id(&[stage.id(), "default"]), "Use default")
                                 .aria_label(format!("Use default for {name}")),
                             !configured,
                         )
@@ -122,7 +131,7 @@ impl Board {
                             32.,
                         )))
                         .child(
-                            modal::ghost_button(id(&[stage.id(), "skills", "save"]), "Save skills")
+                            controls::ghost_button(id(&[stage.id(), "skills", "save"]), "Save")
                                 .aria_label(format!("Save skills for {name}"))
                                 .debug_selector(move || {
                                     format!("board-settings-{}-skills-save", stage.id())
@@ -132,7 +141,7 @@ impl Board {
                                 })),
                         )
                         .child(
-                            modal::ghost_button(id(&[stage.id(), "skills", "auto"]), "Auto")
+                            controls::ghost_button(id(&[stage.id(), "skills", "auto"]), "Auto")
                                 .aria_label(format!("Use automatic skills for {name}"))
                                 .debug_selector(move || {
                                     format!("board-settings-{}-skills-auto", stage.id())

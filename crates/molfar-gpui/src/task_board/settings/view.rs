@@ -1,6 +1,7 @@
 use super::super::Board;
 use crate::modal;
 use crate::popover::{Anchor, popover};
+use crate::task_board::controls;
 use gpui::{AnyElement, Context, Role, Window, div, prelude::*, px};
 use molfar_core::task_board::stage::agent::AgentStage;
 
@@ -40,11 +41,11 @@ impl Board {
 
         let mut body = modal::card_body()
             .id("board-settings-body")
-            .gap_2()
+            .gap_3()
+            .min_h_0()
+            .flex_1()
             .max_h_full()
-            .overflow_y_scroll()
-            .child(modal::title("Stage settings"))
-            .child(modal::body("Each stage uses its saved model, access and skills. Running stages keep the choice they started with."));
+            .overflow_y_scroll();
         if let Some(error) = panel.error.clone() {
             body = body.child(
                 div()
@@ -67,7 +68,10 @@ impl Board {
                     .flex()
                     .items_end()
                     .gap_2()
-                    .pt_2()
+                    .p_3()
+                    .rounded_lg()
+                    .border_1()
+                    .border_color(crate::theme::content(0.08))
                     .child(div().flex_1().child(crate::input::form_field(
                         "Concurrent stages (1–10)",
                         panel.concurrency.clone(),
@@ -79,23 +83,30 @@ impl Board {
                         32.,
                     )))
                     .child(
-                        modal::ghost_button("board-settings-limits-save", "Save limits")
+                        controls::ghost_button("board-settings-limits-save", "Save limits")
                             .debug_selector(|| "board-settings-limits-save".into())
                             .on_click(cx.listener(|this, _, _, cx| this.save_limits(cx))),
                     ),
             );
         }
-        let body = body.child(
-            modal::actions().child(
-                modal::primary_button("board-settings-close", "Close")
+        let footer = div()
+            .flex_shrink_0()
+            .px_4()
+            .py_3()
+            .border_t_1()
+            .border_color(crate::theme::content(0.08))
+            .flex()
+            .justify_end()
+            .child(
+                controls::ghost_button("board-settings-close", "Done")
                     .on_click(cx.listener(|this, _, window, cx| this.close_settings(window, cx))),
-            ),
-        );
+            );
 
-        let card = modal::card()
+        let card = modal::card().bg(crate::theme::floating_fill())
             .w(px(720.))
             .max_w_full()
-            .max_h_full()
+            .max_h((window.viewport_size().height - px(40.)).max(px(120.)))
+            .flex().flex_col()
             .id("board-settings-dialog")
             .debug_selector(|| "board-settings-dialog".into())
             .role(Role::Dialog)
@@ -103,11 +114,18 @@ impl Board {
             .track_focus(&panel.focus)
             .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, window, cx| {
                 if event.keystroke.key == "escape" {
-                    this.close_settings(window, cx);
+                    if this.picker.is_some() {
+                        this.picker = None;
+                        if let Some(panel) = &this.settings { window.focus(&panel.focus, cx); }
+                        cx.notify();
+                    } else { this.close_settings(window, cx); }
                     cx.stop_propagation();
                 }
             }))
-            .child(body);
+            .child(div().flex_shrink_0().p_4().border_b_1().border_color(crate::theme::content(0.08))
+                .child(modal::title("Stage settings"))
+                .child(div().mt_1().child(modal::body("Models, access and skills save per stage. Running stages keep their original settings."))))
+            .child(body).child(footer);
         let weak = cx.weak_entity();
         let overlay = div()
             .absolute()

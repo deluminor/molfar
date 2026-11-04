@@ -1,5 +1,6 @@
 use super::super::Board;
 use crate::modal;
+use crate::task_board::controls;
 use gpui::{AnyElement, ClipboardItem, Context, Role, Window, div, prelude::*, px};
 
 impl Board {
@@ -11,6 +12,7 @@ impl Board {
         let artifact = self.artifact.as_ref()?;
         let body = artifact.text.clone();
         let card = modal::card()
+            .bg(crate::theme::floating_fill())
             .w(px(760.))
             .max_w_full()
             .max_h(window.viewport_size().height - px(40.))
@@ -51,7 +53,7 @@ impl Board {
                         modal::actions()
                             .when_some(body, |d, body| {
                                 d.child(
-                                    modal::ghost_button("board-artifact-copy", "Copy Markdown")
+                                    controls::ghost_button("board-artifact-copy", "Copy Markdown")
                                         .on_click(move |_, _, cx| {
                                             cx.write_to_clipboard(ClipboardItem::new_string(
                                                 body.clone(),
@@ -60,7 +62,7 @@ impl Board {
                                 )
                             })
                             .child(
-                                modal::primary_button("board-artifact-close", "Close").on_click(
+                                controls::primary_button("board-artifact-close", "Close").on_click(
                                     cx.listener(|this, _, window, cx| {
                                         this.close_artifact(window, cx)
                                     }),

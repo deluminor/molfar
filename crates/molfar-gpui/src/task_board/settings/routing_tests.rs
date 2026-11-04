@@ -66,3 +66,21 @@ fn settings_results_never_unlock_a_running_stage_action(cx: &mut TestAppContext)
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn settings_do_not_route_board_shortcuts(cx: &mut TestAppContext) {
+    let window = window(cx);
+    seed(&window, cx);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    visual.simulate_keystrokes("n p a r");
+    visual.run_until_parked();
+    window
+        .update(visual, |board, _, _| {
+            assert!(board.settings.is_some());
+            assert!(!board.create_open);
+            assert!(!board.project_only);
+            assert!(!board.archived);
+        })
+        .unwrap();
+}
