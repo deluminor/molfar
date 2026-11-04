@@ -8,6 +8,10 @@ mod picker;
 #[cfg(test)]
 mod routing_tests;
 mod row;
+mod skill_list;
+#[cfg(test)]
+mod skill_list_tests;
+mod skill_rows;
 #[cfg(test)]
 pub(in crate::task_board) mod tests;
 mod view;
@@ -51,6 +55,8 @@ pub(super) struct Panel {
     pub picker_surface: AnchorSlot,
     pub catalog: Vec<String>,
     pub catalog_error: Option<String>,
+    pub skill_search: Entity<Input>,
+    pub adding_skills: bool,
     pub saved: Option<Value>,
     pub skills: Vec<(AgentStage, Entity<Input>)>,
     pub anchors: Vec<(AgentStage, AnchorSlot)>,

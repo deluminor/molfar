@@ -31,6 +31,7 @@ impl Board {
                 .child(
                     div()
                         .id("board-picker-content")
+                        .debug_selector(|| "board-picker-content".into())
                         .h(px(440.))
                         .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, window, cx| {
                             if event.keystroke.key == "escape" {

@@ -22,10 +22,12 @@ impl Board {
             .collect();
         let concurrency = field("Concurrent stages", cx);
         let stall = field("Stall minutes", cx);
+        let skill_search =
+            cx.new(|cx| Input::field("Search skills", "Search skills", content(0.35), cx));
         let subscriptions = skills
             .iter()
             .map(|(_, input)| input)
-            .chain([&concurrency, &stall])
+            .chain([&concurrency, &stall, &skill_search])
             .map(|input| cx.subscribe(input, |_, _, _: &input::Changed, cx| cx.notify()))
             .collect();
         let panel = Panel {
@@ -34,6 +36,8 @@ impl Board {
             picker_surface: Default::default(),
             catalog: Vec::new(),
             catalog_error: None,
+            skill_search,
+            adding_skills: false,
             saved: None,
             anchors: AgentStage::ALL
                 .into_iter()
