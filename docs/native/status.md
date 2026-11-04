@@ -38,3 +38,14 @@ See [verification](verification.md) for revision-scoped local and remote results
 re-read the current PR head/CI before publication.
 
 Upstream sync now takes all code from the upstream `main` into `migration/gpui-into-main` only, as approved on November 3. There is no separate desktop sync into MOLFAR `main`. The human completes migration and merges #127; the automation then stops for an explicit target-policy update. The [canonical prompt](../automations/upstream-sync.md) is ready for the user to install; installed automation configuration was not changed in this run.
+
+## Board polish follow-up — November 4, 2026
+
+Jira readiness M04 is deferred by the owner. The approved Board polish is
+implemented in `32aeae48` over `9e9974fd`: compact controls, opaque drawer, accessible
+Edit placement, independently folded Markdown task/criteria, grouped settings and
+readable drag previews. Full native checks and optimized macOS build passed; see
+[verification](verification.md). Actual native UI QA was refused by Computer Use,
+so visual/runtime acceptance remains open. Publication to the existing PR #127
+was authorized separately by the owner; no merge, release or cutover is included.
+Remote CI for this follow-up must be read at its published head.

@@ -664,3 +664,44 @@ The tracked [feature transfer register](feature-transfer.md), status, limitation
 architecture and canonical automation checks are aligned with this evidence.
 Jira/Confluence, Home/Usage, Knowledge and remaining runtime acceptance are open;
 review readiness does not close them. Installed automation settings are unchanged.
+
+## Native Board presentation and interaction checks — November 4, 2026
+
+Scope: Board polish `32aeae48` over `9e9974fd`; the code tree tested below
+is unchanged in that commit. Publication was authorized separately afterward;
+no merge, release or cutover is included.
+Board controls now share compact styling, detached drag previews have explicit
+foreground/background, and the drawer uses an opaque theme surface with slide-only
+entry. Edit stays in its header behind the existing eligibility/metadata guards;
+stage actions have a separate bounded footer. Description and criteria reuse
+native Markdown previews prepared off the UI thread, with independent measured
+240px folds (content through 304px stays whole). Preview generations and entity
+identity reject stale completions, including A → B → A selection races.
+Settings use grouped stage controls, a bounded scrolling body, fixed header/footer
+and shrinking model labels with full-value tooltips. Existing save semantics stay.
+
+| Check | Result |
+| --- | --- |
+| `npm run native:check` | Exit 0; 31 Node tests, formatting, strict all-target Clippy; 823 core passed / 2 ignored, 918 GPUI passed / 11 ignored, 6 wheel tests passed |
+| `npm run native:build` | Exit 0; optimized macOS bundle, compilation 4m 41s |
+| `codesign --verify --deep --strict` | Exit 0 |
+| Diff/changed-line checks | Whitespace and targeted secret/debug/dead-code review completed; no new dependencies |
+| Independent source review | No remaining blocking findings after stale-preview and long-model-label fixes |
+| Actual native UI QA | BLOCKED: Computer Use returned `Computer Use was not approved to use MOLFAR Native`; no successful screenshots or interactions |
+| Web gate | Not rerun: native-only presentation/interaction change; no web/Tauri changes |
+
+New synthetic GPUI checks cover short/long Markdown, independent disclosure,
+keyboard expansion/collapse, refresh preservation/card-switch reset, stale preview
+rejection, visible header Edit/footer actions, pending metadata guards and settings
+shortcut isolation. Existing Board tests cover create/edit/conflict, legal and
+illegal drag/drop, stage gates, single submission, review and delivery controls.
+These tests do not establish real provider or remote delivery acceptance.
+
+The first sandbox gate stopped on 15 local fixture socket/process permission
+failures; the complete gate passed with the required local fixture access.
+A new keyboard test initially had a Rust borrow error; after correction the full
+gate above passed. The isolated app used only `/tmp/molfar-board-polish-qa`, with
+a synthetic Backlog card, and was terminated after UI access was refused. No
+production-data, live-provider, push/PR/merge or installed-app changes were made.
+Runtime visual quality, narrow-window/light-theme interaction and real workflow
+acceptance remain open. The existing dependency warning for `block v0.1.6` remains.

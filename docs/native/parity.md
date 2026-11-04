@@ -88,3 +88,12 @@ copying an actively written profile is best-effort.
 
 The preview workflow checks core on macOS, Linux and Windows, but checks/builds
 the GUI only on macOS.
+
+## Board presentation follow-up — November 4, 2026
+
+Board polish `32aeae48` adds opaque drawer surfaces, compact controls, grouped
+settings, cached Markdown with independent description/criteria disclosure and
+header Edit using the existing guards. Automated interaction checks and an
+optimized macOS build passed; actual native UI QA was blocked by Computer Use
+access refusal. This does not close provider, remote delivery or platform runtime
+acceptance. Jira work is deferred by the owner. See [verification](verification.md).
