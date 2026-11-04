@@ -8,6 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub(crate) enum AppView {
+    Home,
     Inbox,
     Notes,
     Automations,
@@ -16,6 +17,7 @@ pub(crate) enum AppView {
 impl AppView {
     pub fn label(self) -> &'static str {
         match self {
+            Self::Home => "Home",
             Self::Inbox => "Inbox",
             Self::Notes => "Notes",
             Self::Automations => "Automations",
@@ -24,6 +26,7 @@ impl AppView {
     }
     pub fn icon(self) -> &'static str {
         match self {
+            Self::Home => "home",
             Self::Inbox => "inbox",
             Self::Notes => "note",
             Self::Automations => "zap",
@@ -150,6 +153,8 @@ pub(crate) struct Workspace {
     pub preferences: crate::settings::Preferences,
     pub session_filters: molfar_core::session_filters::Filters,
     pub project_appearance: HashMap<String, molfar_core::project_appearance::ProjectAppearance>,
+    /// Home grid arrangement, parsed leniently so a bad entry cannot reset the workspace.
+    pub home_layout: serde_json::Value,
     /// Last desktop source values, used to reconcile subsequent desktop changes
     /// while retaining deliberate native project and preference edits.
     pub desktop_project_preferences: Option<serde_json::Value>,
@@ -364,6 +369,7 @@ impl Default for Workspace {
             preferences: crate::settings::Preferences::default(),
             session_filters: Default::default(),
             project_appearance: Default::default(),
+            home_layout: serde_json::Value::Null,
             desktop_project_preferences: None,
             desktop_workspace_snapshot: None,
             desktop_preferences_metadata: None,

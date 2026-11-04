@@ -1,4 +1,4 @@
-mod controls;
+pub(crate) mod controls;
 mod create;
 mod detail;
 mod edit;

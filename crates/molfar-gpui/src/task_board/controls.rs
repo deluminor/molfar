@@ -20,7 +20,7 @@ pub(super) fn primary_button(
     compact(modal::primary_button(id, label))
 }
 
-pub(super) fn ghost_button(
+pub(crate) fn ghost_button(
     id: impl Into<ElementId>,
     label: impl Into<SharedString>,
 ) -> Stateful<Div> {
@@ -52,7 +52,7 @@ impl gpui::Render for Hint {
     }
 }
 
-pub(super) fn hint(text: impl Into<SharedString>, cx: &mut gpui::App) -> gpui::AnyView {
+pub(crate) fn hint(text: impl Into<SharedString>, cx: &mut gpui::App) -> gpui::AnyView {
     use gpui::AppContext;
     let text = text.into();
     cx.new(|_| Hint(text)).into()

@@ -193,6 +193,7 @@ impl Shell {
         match tab {
             TitleTab::Search => self.open_app_search(window, cx),
             TitleTab::App(view) => match view {
+                app_views::AppView::Home => self.open_home(window, cx),
                 app_views::AppView::Inbox => self.open_inbox(window, cx),
                 app_views::AppView::Notes => self.open_notes(window, cx),
                 app_views::AppView::Automations => self.open_automations(window, cx),

@@ -28,6 +28,7 @@ impl AssetSource for Assets {
    "window-maximize"=>include_bytes!("../assets/hugeicons/window-maximize.svg"),
    "window-restore"=>include_bytes!("../assets/hugeicons/window-restore.svg"),
    "dashboard"=>include_bytes!("../assets/hugeicons/dashboard.svg"),
+   "home"=>include_bytes!("../assets/home.svg"),
    "file"=>include_bytes!("../assets/hugeicons/file.svg"),
    "familiar-send"=>include_bytes!("../assets/hugeicons/familiar-send.svg"),
    "familiar-arrow-up"=>include_bytes!("../assets/hugeicons/familiar-arrow-up.svg"),

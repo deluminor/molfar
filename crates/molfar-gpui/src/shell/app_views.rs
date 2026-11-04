@@ -11,6 +11,7 @@ impl Shell {
 
     pub(super) fn app_view_label(&self) -> Option<&'static str> {
         self.active_app_view.map(|view| match view {
+            AppView::Home => "Home",
             AppView::Inbox => "Inbox",
             AppView::Notes => "Notes",
             AppView::Automations => "Automations",
@@ -164,7 +165,7 @@ impl Shell {
         cx.notify();
     }
 
-    fn prepare_app_view(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn prepare_app_view(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.leave_app_search(cx);
         self.close_preview(cx);
         self.close_menu(cx);
@@ -179,7 +180,12 @@ impl Shell {
         self.pending_composer_focus = None;
     }
 
-    fn show_app_view(&mut self, view: AppView, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn show_app_view(
+        &mut self,
+        view: AppView,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.active_app_view != Some(view) {
             self.leave_app_views(cx);
         }
@@ -198,6 +204,7 @@ impl Shell {
 
     pub(super) fn app_view_body(&self) -> Option<AnyElement> {
         match self.active_app_view? {
+            AppView::Home => self.home.clone().map(IntoElement::into_any_element),
             AppView::Notes => self.notes.clone().map(IntoElement::into_any_element),
             AppView::Inbox => self.inbox.clone().map(IntoElement::into_any_element),
             AppView::Automations => self.automations.clone().map(IntoElement::into_any_element),
@@ -207,6 +214,7 @@ impl Shell {
 
     pub(super) fn focus_app_view(&self, window: &mut Window, cx: &mut Context<Self>) -> bool {
         let focus = match self.active_app_view {
+            Some(AppView::Home) => self.home.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Notes) => self.notes.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Inbox) => self.inbox.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Automations) => {

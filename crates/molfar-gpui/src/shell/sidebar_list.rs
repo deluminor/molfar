@@ -703,6 +703,7 @@ impl Shell {
             })
             .children(
                 [
+                    ("Home", "home"),
                     ("Inbox", "inbox"),
                     ("Board", "dashboard"),
                     ("Notes", "note"),
@@ -771,6 +772,7 @@ impl Shell {
                             )
                         })
                         .on_click(cx.listener(move |this, _, window, cx| match label {
+                            "Home" => this.open_home(window, cx),
                             "Inbox" => this.open_inbox(window, cx),
                             "Notes" => this.open_notes(window, cx),
                             "Automations" => this.open_automations(window, cx),

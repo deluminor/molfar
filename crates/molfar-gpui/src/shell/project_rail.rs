@@ -616,6 +616,7 @@ impl Shell {
             })
             .children(
                 [
+                    ("Home", "home"),
                     ("Inbox", "inbox"),
                     ("Board", "dashboard"),
                     ("Notes", "file"),
@@ -665,6 +666,7 @@ impl Shell {
                             d.child(div().size(px(8.)).rounded_full().bg(accent_color()))
                         })
                         .on_click(cx.listener(move |this, _, w, cx| match label {
+                            "Home" => this.open_home(w, cx),
                             "Inbox" => this.open_inbox(w, cx),
                             "Notes" => this.open_notes(w, cx),
                             "Automations" => this.open_automations(w, cx),
@@ -843,6 +845,7 @@ impl Shell {
             )
             .children(
                 [
+                    (workspace::AppView::Home, true),
                     (workspace::AppView::Board, true),
                     (
                         workspace::AppView::Inbox,
@@ -868,6 +871,7 @@ impl Shell {
                     };
                     icon_button(
                         match view {
+                            workspace::AppView::Home => "rail-home",
                             workspace::AppView::Board => "rail-board",
                             workspace::AppView::Inbox => "rail-inbox",
                             workspace::AppView::Notes => "rail-notes",
@@ -895,6 +899,7 @@ impl Shell {
                             this.close_app_view(w, cx);
                         } else {
                             match view {
+                                workspace::AppView::Home => this.open_home(w, cx),
                                 workspace::AppView::Board => this.open_board(w, cx),
                                 workspace::AppView::Inbox => this.open_inbox(w, cx),
                                 workspace::AppView::Notes => this.open_notes(w, cx),

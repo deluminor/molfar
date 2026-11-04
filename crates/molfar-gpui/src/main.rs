@@ -36,6 +36,7 @@ mod gpu_trim;
 #[cfg(target_os = "macos")]
 mod hang_watchdog;
 mod history;
+mod home;
 mod image_lightbox;
 mod image_memory;
 mod inbox;

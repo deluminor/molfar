@@ -14,6 +14,9 @@ mod familiar_panes;
 pub(crate) mod familiars;
 mod file_panes;
 mod github_star;
+#[cfg(test)]
+mod home_tests;
+mod home_view;
 mod idle_agents;
 #[cfg(test)]
 mod image_lightbox_tests;
@@ -709,6 +712,7 @@ pub(crate) struct Shell {
     inbox: Option<Entity<crate::inbox::Inbox>>,
     automations: Option<Entity<crate::automations::Automations>>,
     board: Option<Entity<crate::task_board::Board>>,
+    home: Option<Entity<crate::home::Home>>,
     board_state: board_runtime::State,
     active_app_view: Option<app_views::AppView>,
     app_view_events: Vec<Subscription>,
@@ -1094,6 +1098,7 @@ impl Shell {
             inbox: None,
             automations: None,
             board: None,
+            home: None,
             board_state: Default::default(),
             active_app_view: None,
             app_view_events: Vec::new(),
@@ -11748,13 +11753,13 @@ mod tests {
         })
         .unwrap();
         cx.run_until_parked();
-        assert_eq!(root.read_with(cx, |s, _| s.sidebar_hover), Some("Inbox"));
+        assert_eq!(root.read_with(cx, |s, _| s.sidebar_hover), Some("Home"));
         cx.update_window(window.into(), |_, w, cx| {
             w.simulate_mouse_move(gpui::point(px(40.), px(169.)), cx)
         })
         .unwrap();
         cx.run_until_parked();
-        assert_eq!(root.read_with(cx, |s, _| s.sidebar_hover), Some("Board"));
+        assert_eq!(root.read_with(cx, |s, _| s.sidebar_hover), Some("Inbox"));
         assert_eq!(transcript.read_with(cx, |t, _| t.render_passes), before);
     }
     #[gpui::test]
