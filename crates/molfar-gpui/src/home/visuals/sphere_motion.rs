@@ -5,6 +5,10 @@ const MAX_SPEED: f32 = 8.;
 const DAMPING: f32 = 3.8;
 const MAX_FRAME: f32 = 0.15;
 const PITCH_LIMIT: f32 = 1.25;
+const HEAT_IN: f32 = 12.;
+const HEAT_OUT: f32 = 1.15;
+const HEAT_SPEED_MIN: f32 = 0.55;
+const HEAT_SPEED_MAX: f32 = 3.2;
 
 #[derive(Clone, Copy, Debug)]
 struct Drag {
@@ -19,6 +23,8 @@ pub(crate) struct Motion {
     pub editing: bool,
     pub particle_time: f32,
     velocity: (f32, f32),
+    heat: f32,
+    spin: (f32, f32),
     drag: Option<Drag>,
     frame_at: Option<f32>,
     paused: bool,
@@ -32,6 +38,8 @@ impl Default for Motion {
             editing: false,
             particle_time: 1.,
             velocity: (0., 0.),
+            heat: 0.,
+            spin: (0., 0.),
             drag: None,
             frame_at: None,
             paused: false,
@@ -46,6 +54,14 @@ impl Motion {
 
     pub(crate) fn dragging(&self) -> bool {
         self.drag.is_some()
+    }
+
+    pub(crate) fn heat(&self) -> f32 {
+        self.heat
+    }
+
+    pub(crate) fn spin(&self) -> (f32, f32) {
+        self.spin
     }
 
     pub(crate) fn set_editing(&mut self, editing: bool) {
@@ -66,6 +82,8 @@ impl Motion {
     pub(crate) fn cancel(&mut self) {
         self.drag = None;
         self.velocity = (0., 0.);
+        self.heat = 0.;
+        self.spin = (0., 0.);
         self.frame_at = None;
     }
 
@@ -136,7 +154,30 @@ impl Motion {
             self.velocity.0 *= decay;
             self.velocity.1 *= decay;
         }
+        self.settle_heat(dt, reduced);
         (self.yaw, self.pitch)
+    }
+
+    fn settle_heat(&mut self, dt: f32, reduced: bool) {
+        if reduced || self.paused || self.editing || !(0. ..=MAX_FRAME).contains(&dt) {
+            self.heat = 0.;
+            self.spin = (0., 0.);
+            return;
+        }
+
+        let speed = self.velocity.0.hypot(self.velocity.1);
+        let target = heat_target(speed);
+        let rate = if target > self.heat {
+            HEAT_IN
+        } else {
+            HEAT_OUT
+        };
+        self.heat = approach(self.heat, target, rate, dt);
+        if speed > HEAT_SPEED_MIN {
+            let dir = (self.velocity.0 / speed, self.velocity.1 / speed);
+            self.spin.0 = approach(self.spin.0, dir.0, 14., dt);
+            self.spin.1 = approach(self.spin.1, dir.1, 14., dt);
+        }
     }
 
     fn rotate(&mut self, yaw: f32, pitch: f32) {
@@ -148,77 +189,16 @@ impl Motion {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn thrown() -> Motion {
-        let mut motion = Motion::default();
-        motion.press((0., 0.), 0.);
-        motion.moved((20., 10.), 0.05);
-        motion.release(0.05, false);
-        motion
-    }
-
-    #[test]
-    fn drag_rotates_immediately_with_bounded_angles_and_speed() {
-        let mut motion = Motion::default();
-        motion.press((0., 0.), 0.);
-        motion.moved((1000., 1000.), 0.001);
-        assert!((0. ..TAU).contains(&motion.yaw));
-        assert_eq!(motion.pitch, -PITCH_LIMIT);
-        assert!(motion.velocity.0.abs() <= MAX_SPEED);
-        motion.release(0.01, false);
-        assert!(!motion.dragging());
-    }
-
-    #[test]
-    fn inertia_is_frame_rate_independent_and_damps() {
-        let mut a = thrown();
-        let mut b = thrown();
-        for step in 1..=30 {
-            a.frame(0.05 + step as f32 / 30., false);
-        }
-        for step in 1..=60 {
-            b.frame(0.05 + step as f32 / 60., false);
-        }
-        assert!((a.yaw - b.yaw).abs() < 0.0001);
-        assert!((a.pitch - b.pitch).abs() < 0.0001);
-        assert!(a.velocity.0.abs() < 0.1);
-    }
-
-    #[test]
-    fn reduced_motion_allows_direct_drag_but_no_idle_or_inertia() {
-        let mut motion = thrown();
-        motion.release(0.06, true);
-        let before = motion.frame(0.06, true);
-        assert_eq!(motion.frame(0.1, true), before);
-        assert!(motion.press((0., 0.), 0.1));
-        motion.moved((10., 0.), 0.12);
-        assert_ne!(motion.yaw, before.0);
-        motion.release(0.12, true);
-        let before = motion.frame(0.12, true);
-        assert_eq!(motion.frame(0.14, true), before);
-    }
-
-    #[test]
-    fn editing_hidden_gaps_and_stationary_release_do_not_spin() {
-        let mut motion = thrown();
-        motion.set_editing(true);
-        assert!(!motion.animate());
-        assert!(!motion.press((0., 0.), 0.1));
-        motion.set_editing(false);
-        motion.pause();
-        assert!(!motion.press((0., 0.), 0.1));
-        motion.resume();
-        assert!(motion.animate());
-        let particle_time = motion.particle_time;
-        let before = (motion.yaw, motion.pitch);
-        assert_eq!(motion.frame(500., false), before);
-        assert_eq!(motion.particle_time, particle_time);
-        motion.press((0., 0.), 500.);
-        motion.moved((20., 0.), 500.05);
-        motion.release(501., false);
-        assert_eq!(motion.velocity, (0., 0.));
-    }
+fn approach(current: f32, target: f32, rate: f32, dt: f32) -> f32 {
+    let alpha = 1. - (-rate * dt).exp();
+    current + (target - current) * alpha
 }
+
+fn heat_target(speed: f32) -> f32 {
+    let t = ((speed - HEAT_SPEED_MIN) / (HEAT_SPEED_MAX - HEAT_SPEED_MIN)).clamp(0., 1.);
+    t * t * (3. - 2. * t)
+}
+
+#[cfg(test)]
+#[path = "sphere_motion_tests.rs"]
+mod tests;

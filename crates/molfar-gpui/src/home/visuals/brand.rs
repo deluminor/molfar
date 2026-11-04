@@ -106,11 +106,28 @@ impl Render for BrandView {
                         let animated = motion.borrow().animate()
                             && pulse::request(pulse::Rate::Smooth, window, cx);
                         let elapsed = pulse::elapsed(cx).as_secs_f32();
-                        let orientation = motion.borrow_mut().frame(elapsed, !animated);
-                        let time = motion.borrow().particle_time;
+                        let (orientation, time, heat, spin) = {
+                            let mut motion = motion.borrow_mut();
+                            let orientation = motion.frame(elapsed, !animated);
+                            (
+                                orientation,
+                                motion.particle_time,
+                                motion.heat(),
+                                motion.spin(),
+                            )
+                        };
                         let (width, height) = extent(bounds);
                         window.with_content_mask(Some(gpui::ContentMask { bounds }), |window| {
-                            sphere::paint(bounds.origin, width, height, time, orientation, window);
+                            sphere::paint(
+                                bounds.origin,
+                                width,
+                                height,
+                                time,
+                                orientation,
+                                heat,
+                                spin,
+                                window,
+                            );
                         });
                     },
                 )

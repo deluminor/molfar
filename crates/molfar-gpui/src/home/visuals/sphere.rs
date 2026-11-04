@@ -1,4 +1,4 @@
-use super::paint::noise;
+use super::{paint::noise, sphere_heat};
 use crate::theme::*;
 use gpui::{Bounds, Hsla, Pixels, Point, Window, fill, point, px, size};
 
@@ -38,36 +38,64 @@ pub(super) fn paint(
     height: f32,
     time: f32,
     orientation: (f32, f32),
+    heat: f32,
+    spin: (f32, f32),
     window: &mut Window,
 ) {
     let radius = width.min(height) * 0.34;
     let center = origin + point(px(width * 0.5), px(height * 0.44));
     let accent = accent_color();
     let edge = (radius / 65.).clamp(1., 2.);
+    let glow = sphere_heat::glow(heat);
+    let (yaw, pitch) = orientation;
 
     for front in [false, true] {
         for index in 0..POINTS {
-            let (x, y, z) = surface(index, orientation.0, orientation.1);
+            let (x, y, z) = sphere_heat::displace(surface(index, yaw, pitch), index, heat, spin);
             if (z >= 0.) != front {
                 continue;
             }
-            let depth = (z + 1.) * 0.5;
+            let depth = ((z + 1.) * 0.5).clamp(0., 1.);
+            let mut color = sphere_heat::tint(accent, heat, depth);
+            color.a = 0.13 + depth * depth * 0.77;
             pixel(
                 window,
                 center + point(px(x * radius), px(y * radius)),
-                edge,
-                accent.opacity(0.13 + depth * depth * 0.77),
+                edge * (1. + glow * (0.12 + depth * 0.28)),
+                color,
             );
         }
     }
 
-    for index in 0..FALLING {
-        let (x, y, opacity) = falling(index, time);
+    let rain = 1. - glow;
+    if rain > 0.02 {
+        for index in 0..FALLING {
+            let (x, y, opacity) = falling(index, time);
+            let mut color = sphere_heat::tint(accent, heat, 0.3);
+            color.a = opacity * 0.32 * rain;
+            pixel(
+                window,
+                center + point(px(x * radius), px(y * radius)),
+                edge * 0.7,
+                color,
+            );
+        }
+    }
+
+    for index in 0..sphere_heat::SPARKS {
+        let seed = index * 7 % POINTS;
+        let origin = sphere_heat::displace(surface(seed, yaw, pitch), seed, heat, spin);
+        let spark = sphere_heat::spark(index, (origin.0, origin.1), time, heat, spin);
+        if spark.opacity < 0.015 {
+            continue;
+        }
+        let mut color = sphere_heat::tint(accent, 1., spark.warmth);
+        color.a = spark.opacity;
         pixel(
             window,
-            center + point(px(x * radius), px(y * radius)),
-            edge * 0.7,
-            accent.opacity(opacity * 0.32),
+            center + point(px(spark.x * radius), px(spark.y * radius)),
+            edge * (0.45 + spark.warmth * 0.85),
+            color,
         );
     }
 }
