@@ -4,8 +4,8 @@ Updated November 5, 2026.
 
 ## Authoritative line
 
-The sole upstream integration target is `migration/gpui-into-main`, with
-[#127](https://github.com/deluminor/molfar/pull/127) targeting `main`.
+[#127](https://github.com/deluminor/molfar/pull/127) brings the native app into `main`.
+Later upstream changes reach `main` through sync pull requests.
 React/Tauri remains production; GPUI remains a preview. The human controls
 review status, merge and release decisions. This update does not refresh the
 remote PR state or CI.
@@ -62,8 +62,8 @@ are recorded in verification.md. No PR merge or release publication is included.
 5. Finish or explicitly defer Jira, Confluence and Knowledge scope before
    claiming desktop feature parity. Decide preview-merge acceptance separately
    from full product cutover.
-6. After the human merges #127, stop the existing sync job until an explicit
-   target policy is approved. Tracked instructions do not verify an installed
+6. After the human merges #127, copy the canonical sync prompt into the installed
+   automation and enable it. Tracked instructions do not verify an installed
    automation's configuration.
 
 ## Planning
@@ -74,12 +74,12 @@ Local continuation entrypoint: `docs/specs/gpui-merge-readiness/handoff.md`. Rem
 
 ## Publication and sync
 
-The current recorded source is upstream `main` through `a25b5b89`; only
-`migration/gpui-into-main` receives upstream patches. See the latest
+The current recorded source is upstream `main` through `a25b5b89`; upstream patches
+reach `main` through sync pull requests. See the latest
 [verification](verification.md) entry for local results and unresolved gates.
 Do not infer current remote CI or PR readiness from historical green runs.
 
-Upstream sync now takes all code from the upstream `main` into `migration/gpui-into-main` only, as approved on November 3. There is no separate desktop sync into MOLFAR `main`. The human completes migration and merges #127; the automation then stops for an explicit target-policy update. The [canonical prompt](../automations/upstream-sync.md) is ready for the user to install; installed automation configuration was not changed in this run.
+After #127 merges, upstream sync takes all code from upstream `main` into one sync pull request targeting MOLFAR `main`; the human merges it. The [canonical prompt](../automations/upstream-sync.md) must be copied into the installed automation before it is enabled.
 
 ## Board polish follow-up — November 4, 2026
 

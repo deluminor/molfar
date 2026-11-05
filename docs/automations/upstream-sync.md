@@ -1,16 +1,16 @@
-# Automation prompt — Sync MonoCode main into GPUI integration
+# Automation prompt — Sync MonoCode main through a pull request
 
-Updated November 3, 2026. Canonical integration-only prompt, approved by the user.
-All upstream code flows from MonoCode `main` into MOLFAR `migration/gpui-into-main`.
-MOLFAR `main` receives the completed migration only when the human merges it.
+Updated November 5, 2026. Canonical prompt for the period after PR #127 merged.
+All upstream code flows from MonoCode `main` into a `sync/upstream-YYYYMMDD` branch
+and reaches MOLFAR `main` only when the human merges the pull request.
 
-Copy the prompt below into the existing automation through supported operator controls.
-Tracked documentation does not itself update the installed automation. Preserve its
-schedule, enabled state and model. Do not run legacy split jobs against these refs.
+Copy the prompt below into the existing **Sync MonoCode upstream** automation in
+MOLFAR. Tracked documentation does not itself update the installed automation.
+Preserve its schedule and model. Enable it only after #127 has merged.
 
 ---
 
-You are running the weekly MonoCode upstream sync for MOLFAR (`deluminor/molfar`), a standalone repository derived from MonoCode (`hardbeat920/monocode`). This automation takes **all** upstream code from `upstream/main` into **only** `migration/gpui-into-main`, until the human finishes migration and merges PR #127: every upstream change arrives, adapted to MOLFAR's names, structure, branding and license notices. Nothing upstream is silently dropped; nothing MOLFAR-specific is lost.
+You are running the weekly MonoCode upstream sync for MOLFAR (`deluminor/molfar`), a standalone repository derived from MonoCode (`hardbeat920/monocode`). This automation takes **all** upstream code from `upstream/main` into a pull request targeting `main`: every upstream change arrives, adapted to MOLFAR's names, structure, branding and license notices. Nothing upstream is silently dropped; nothing MOLFAR-specific is lost.
 
 Follow `~/.agents/AGENTS.md` and the repository `AGENTS.md`. Use `d-investigate` for failures and `d-verify` before any pass claim.
 
@@ -20,30 +20,32 @@ Follow `~/.agents/AGENTS.md` and the repository `AGENTS.md`. Use `d-investigate`
 
 ## Target guard (do this first)
 ```bash
-gh pr view 127 -R deluminor/molfar --json state,isDraft,headRefName,baseRefName,mergedAt
-git fetch origin main migration/gpui-into-main
+gh pr view 127 -R deluminor/molfar --json state,mergedAt
+git fetch origin main
 git fetch upstream main
+gh pr list -R deluminor/molfar --base main --state open --json number,headRefName,url,isDraft
 ```
-Require PR #127 OPEN, head `migration/gpui-into-main`, base `main`. Record and preserve its current draft/ready status. Stop and report if the PR is merged/closed, refs are missing, or head/base differs. Never switch to syncing `main` automatically; a human decides the next workflow after migration.
+Require PR #127 MERGED. Stop and report if it is not, or if a ref is missing. Among the open PRs, a head named `sync/upstream-*` is the open sync PR; there must be at most one. If there are several, stop and report them.
 
 ## Branch model
-- `origin/main`: read-only product/release history for this job. Merge new MOLFAR commits inward when needed; never create a separate upstream sync branch or PR targeting it. Never advance its sync checkpoint.
-- `origin/migration/gpui-into-main`: MOLFAR's GPUI integration branch, head of PR #127. Not protected, fast-forward pushes only. A human also commits parity work to it. Its own `.github/upstream-sync.json` records the last upstream commit whose changes are in that branch. Only the integration branch checkpoint controls this job; never replace it with main's checkpoint.
+- `origin/main`: protected product and release history. It changes only through pull requests that the human merges. Its `.github/upstream-sync.json` records the last upstream commit whose changes reached `main`.
+- `sync/upstream-YYYYMMDD`: this job's branch and the head of its pull request. Fast-forward pushes only.
+- At most one sync PR is open. If one exists, continue on its branch and update that PR. Its own state file then controls the range. Otherwise branch from `origin/main`.
 - MOLFAR shares **no commits** with MonoCode. Upstream content arrives only as patches through `node scripts/upstream/apply.mjs <ref>`, which translates paths through `scripts/upstream/rename-map.mjs` (Monos → Familiars, `monocode_*` → `desktop_*`, crate names) and `.github/upstream-moves.json` (MOLFAR's moves, splits, extractions, removals).
 - Native identity to preserve: crates `molfar-core` / `molfar-gpui`, binary `molfar-native`, app id `com.molfar.native` (`.dev` for development). Cargo manifests apply verbatim: fix crate names and path dependencies by hand after applying.
 
 ## Hard rules
 1. Work only in `deluminor/molfar`. All `gh` commands pass `-R deluminor/molfar`. Never push, comment or open PRs/Issues in `hardbeat920/monocode`.
-2. Never force-push. Never push to `main`. The only remote branch you push to is `migration/gpui-into-main`, and only as a fast-forward. Never push MonoCode refs to our repo.
-3. Never `git merge`, `cherry-pick` or `rebase` MonoCode commits (anything reachable from `upstream/*`) into a MOLFAR branch, with or without `--allow-unrelated-histories`. It would put every MonoCode author back into MOLFAR's contributors, and CI rejects such branches. Merging `origin/main` into the GPUI branch is allowed: both are MOLFAR history.
+2. Never force-push. Never push to `main`. The only remote branches you push to are `sync/upstream-*`, and only as a fast-forward. Never push MonoCode refs to our repo.
+3. Never `git merge`, `cherry-pick` or `rebase` MonoCode commits (anything reachable from `upstream/*`) into a MOLFAR branch, with or without `--allow-unrelated-histories`. It would put every MonoCode author back into MOLFAR's contributors, and CI rejects such branches. Merging `origin/main` into the sync branch is allowed: both are MOLFAR history.
 4. Never bypass git hooks (`--no-verify`, `-c core.hooksPath=...`, hook-disabling env vars). If a hook fails, fix the cause.
 5. Never commit conflict markers, `.upstream-pending/`, `docs/specs/`, scratch files or test fixtures.
 6. No authorship or tool attribution anywhere you publish (commit messages, PR/Issue titles, bodies, comments): no `Co-authored-by`, `Generated by`, `Made with …`, AI/agent mentions, badges or footers. Technical descriptions of MOLFAR's agent features are fine.
-7. Never drop functionality from either side to make a conflict go away. Losing a MOLFAR feature, a parity port on the GPUI branch, or an upstream change is a defect. "Pull everything in" is the default; a skip is allowed only where this prompt names it (MOLFAR-owned paths, publishing workflows, router port mapping, license blocks) and must be listed in the notes.
-8. Preserve #127's human-selected draft/ready status; never change it, merge any PR or edit #127's parity checklist. Only the `Upstream sync` line of #127's body is yours.
+7. Never drop functionality from either side to make a conflict go away. Losing a MOLFAR feature, a parity port, or an upstream change is a defect. "Pull everything in" is the default; a skip is allowed only where this prompt names it (MOLFAR-owned paths, publishing workflows, router port mapping, license blocks) and must be listed in the notes.
+8. Never merge a PR, approve one, enable auto-merge, or edit a PR you did not open. Only the human merges into `main`.
 9. Never import `.github/workflows/native-release.yml` or any upstream workflow that publishes, signs, uploads or reads `secrets.*`.
 10. Do not launch the app, a browser or live providers, or access real user data (`com.molfar.desktop`). Never work in the user's main checkout; use this automation's own worktree.
-11. If no upstream or main integration changes are new, exit silently: no commit, PR, comment or Issue.
+11. If no upstream changes are new, exit silently: no commit, PR, comment or Issue.
 12. Notes are written by you after reading the actual diff, in English, never a raw `git log` dump.
 
 ## Shared preconditions
@@ -54,7 +56,7 @@ Require PR #127 OPEN, head `migration/gpui-into-main`, base `main`. Record and p
 
 ## Shared adaptation rules (mandatory, also on a clean patch)
 
-In these rules, `$SYNCED` is the integration branch's recorded `syncedCommit`, the range is `$SYNCED..upstream/main`, and the base is `origin/migration/gpui-into-main`. All native and desktop rules apply together. There is no native exclusion.
+In these rules, `$SYNCED` is the sync base's recorded `syncedCommit`, the range is `$SYNCED..upstream/main`, and the base is `origin/main`, or the open sync PR's branch when one exists. All native and desktop rules apply together. There is no native exclusion.
 
 ### S1. MOLFAR-owned paths — keep MOLFAR's side
 - Version numbers in `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `crates/molfar-gpui/Cargo.lock`, `src-tauri/tauri.conf.json`: keep MOLFAR's versions and identity, but take MonoCode's other changes (new or bumped dependencies, new scripts, config). For lockfiles, run `git checkout --ours <lockfile>` and regenerate:
@@ -64,7 +66,7 @@ In these rules, `$SYNCED` is the integration branch's recorded `syncedCommit`, t
 
   Check that each lockfile diff touches only the changed dependencies.
 - `CHANGELOG.md`: keep MOLFAR's history. Never take upstream's version sections or `hardbeat920/monocode` compare links. See stage 6 for `Unreleased` entries.
-- `.github/workflows/`: keep MOLFAR's `release.yml`, `ci.yml` and its own `native-release.yml` (manual GitHub prereleases; never import MonoCode's workflow at that path). For `native.yml`, take upstream's job and step changes, but keep MOLFAR's transition triggers (`push: branches: [main, migration/gpui-into-main]`; the sync target remains only `migration/gpui-into-main`) and keep `native-release.yml` out of its `paths`. Never replace the MOLFAR-owned `native-release.yml` with upstream content or add any new upstream workflow that publishes artifacts, signs, uploads, or reads `secrets.*`. List skipped workflows under **Breaking / attention**. If a workflow is CI-only (read-only permissions, no secrets), you may take it, and you must say so in the notes.
+- `.github/workflows/`: keep MOLFAR's `release.yml`, `ci.yml` and its own `native-release.yml` (manual GitHub prereleases; never import MonoCode's workflow at that path). For `native.yml`, take upstream's job and step changes, but keep MOLFAR's triggers (`push: branches: [main]`) and keep `native-release.yml` out of its `paths`. Never replace the MOLFAR-owned `native-release.yml` with upstream content or add any new upstream workflow that publishes artifacts, signs, uploads, or reads `secrets.*`. List skipped workflows under **Breaking / attention**. If a workflow is CI-only (read-only permissions, no secrets), you may take it, and you must say so in the notes.
 - `scripts/release/`, `src/app/model/fork-policy.ts`, `plugins.updater` in `src-tauri/tauri.conf.json`, `RELEASE_DOWNLOAD_BASE` in `src-tauri/src/remote_ssh.rs`, `src-tauri/src/remote_bootstrap.{sh,ps1}`.
 - Host names in `host/` (`~/.molfar-host`, `molfar-host`, `com.molfar.host`, `MOLFAR Host-<SID>`, the `host.molfar` capability).
 - Product name and branding (`MOLFAR` must not regress to `MonoCode` in the React app or in native user-facing text), `README.md`, `NOTICE`, `LICENSE`. Upstream README sections that promote MonoCode are not taken. Upstream native docs content goes into MOLFAR's README "MOLFAR Native preview" section or `docs/native/`, with MOLFAR naming.
@@ -81,9 +83,9 @@ In these rules, `$SYNCED` is the integration branch's recorded `syncedCommit`, t
   - kebab-case import paths in `scripts/native-editor/` and `scripts/native-settings/`;
   - the vitest exclusion of `scripts/*native*.test.mjs`;
   - native user-facing copy that mirrors MOLFAR's React strings;
-  - every parity port a human has committed to the branch.
+  - every parity port a human has committed.
 
-  Before resolving a conflict in a native file, read `git log --oneline origin/migration/gpui-into-main -- <path>` so you know which MOLFAR commits touched it.
+  Before resolving a conflict in a native file, read `git log --oneline origin/main -- <path>` so you know which MOLFAR commits touched it.
 
 ### S2. License notices — always port upstream changes (mandatory, also on a clean patch)
 MIT and Apache-2.0 require every copy to carry the notices, so an upstream notice change is never dropped.
@@ -144,7 +146,7 @@ After resolving, check every resolved file:
 ```bash
 git diff <base> -U0 | grep -E '^\+' | grep -v '^+++' | grep -iE 'monocode|usemono|\bmono\b'
 ```
-Any added `monocode` or `usemono` outside the legal/upstream-link allowlist is a defect. Run `node scripts/checks/native-branding.mjs` wherever it exists in the tree (the GPUI branch today; `main` after #127 merges). Fix product identifiers and user-facing text:
+Any added `monocode` or `usemono` outside the legal/upstream-link allowlist is a defect. Run `node scripts/checks/native-branding.mjs`. Fix product identifiers and user-facing text:
 - React app: `monocode.*` storage keys → `molfar.*`, `monocode:*` events → `molfar:*`, `MonoCode` UI text and component names → MOLFAR.
 - Native user-facing text (window titles, menus, notifications, settings copy, error hints): MonoCode → MOLFAR wherever the branch already shows MOLFAR for the same surface. Check how the same string appears on the base, and in the React source when a native test compares them (for example `hints_match_the_react_source`).
 - Mono → Familiar renames that upstream code brought in unrenamed. The opposite also happens: check that the rename map did not change a fixed-size or wire value. Byte literals like `*b"…"` (Carbon FourCharCodes are exactly 4 bytes), protocol ids, persisted keys, and serialized enum tags must keep their length and meaning. Check with `cargo check`, and grep the added lines for `b"` literals.
@@ -157,53 +159,45 @@ Leave these alone:
 
 Update tests that assert on renamed keys or names in the same way.
 
-## Integration sync
+## Sync
 
-### 1. Bring `main` into the branch
-Work on `sync/gpui-YYYYMMDD` from `origin/migration/gpui-into-main`. If `git rev-list --count HEAD..origin/main` is not `0`, `git merge --no-edit origin/main` (MOLFAR history, allowed). Merge rules: `.github/upstream-sync.json` always **ours** (the GPUI branch's); `.github/upstream-moves.json` union per section, then `node scripts/upstream/moves.mjs --check`; `CHANGELOG.md` take `main`'s released sections and merge `Unreleased`; versions from `main`, lockfiles regenerated; everything else combine both sides.
+### 1. Prepare the branch
+If an open sync PR exists, switch to its branch and merge `origin/main` into it when `git rev-list --count HEAD..origin/main` is not `0` (MOLFAR history, allowed). Merge rules: `.github/upstream-sync.json` keeps the sync branch's value; `.github/upstream-moves.json` union per section, then `node scripts/upstream/moves.mjs --check`; `CHANGELOG.md` take `main`'s released sections and merge `Unreleased`; versions from `main`, lockfiles regenerated; everything else combine both sides.
 
-### 2. Move the state file to the source (once)
-Read the GPUI branch's `.github/upstream-sync.json`. If `branch` is `mc/migrate-monocode-to-gpui` and that ref is an ancestor of `upstream/main`, set `branch` to `main` (keep `syncedCommit`) in this sync and say so in the notes. From then on the source is `upstream/main`.
+Otherwise create `sync/upstream-YYYYMMDD` from `origin/main`.
 
-### 3. Range and apply
+### 2. Range and apply
 ```bash
-SYNCED_GPUI=$(node -e 'console.log(require("./.github/upstream-sync.json").syncedCommit)')
-git merge-base --is-ancestor "$SYNCED_GPUI" upstream/main   # must succeed
-git rev-list --count "$SYNCED_GPUI"..upstream/main
+SYNCED=$(node -e 'console.log(require("./.github/upstream-sync.json").syncedCommit)')
+git merge-base --is-ancestor "$SYNCED" upstream/main   # must succeed
+git rev-list --count "$SYNCED"..upstream/main
 node scripts/upstream/apply.mjs upstream/main
 ```
-- Not an ancestor: open `Sync blocked: MonoCode GPUI history rewritten (YYYY-MM-DD)` with both commits, merge-base, counts and a recommendation (`git range-diff`); still push the stage 1 merge if there is one; skip the remaining sync stages.
-- Count `0`: push the stage 1 merge if any, no comment, done.
-- Apply the complete range: desktop, mobile, native, vendor and shared changes together. Deduplicate behavior already integrated through MOLFAR main; record it as **Already in main / integration** with paths. Do not skip desktop changes or create a separate main PR.
+- Not an ancestor: open `Sync blocked: MonoCode history rewritten (YYYY-MM-DD)` with both commits, merge-base, counts and a recommendation (`git range-diff`), and stop.
+- Count `0`: push a merge from stage 1 if there is one, no comment, done.
+- Apply the complete range: desktop, mobile, native, vendor and shared changes together.
 - `apply.mjs` prints `status`, `commits`, `conflicts`, `pending`, `remapped`, `retargeted`, `added`, `extracted`. Check afterwards that the state file says `"branch": "main"`.
 
-### 4. Pending ports and new files
-Apply S3a and S3b to every `pending` and `added` entry. Before resolving a conflict in a native file, read `git log --oneline origin/migration/gpui-into-main -- <path>` to see which MOLFAR commits touched it.
+### 3. Pending ports and new files
+Apply S3a and S3b to every `pending` and `added` entry.
 
-### 5. Verify
+### 4. Verify
 - `npm ci && npm run check:web`.
 - If the range touched `scripts/native-editor/**`, `scripts/native-settings/**` or the React modules they import, rebuild and commit the bundles: `(cd scripts/native-editor && npm ci) && node scripts/native-editor/build.mjs` and `node scripts/native-settings/build-arcade.mjs`.
 - `cargo fmt --manifest-path crates/molfar-gpui/Cargo.toml --all` when the rename map touched Rust, then `npm run native:check` (~15–20 min) and `npm run check:native-branding`.
 - Touched `src-tauri/` or root `Cargo.*`: `cargo check --quiet` in `src-tauri/` and `cargo clippy --workspace --all-targets -- -D warnings` at the repository root. The native workspace Clippy gate does not cover the Tauri test targets. Touched `host/`: `npm run test:host`.
 - Touched `mobile/`: in `mobile/`, run `npm ci`, `npm run lint`, `./node_modules/.bin/tsc --noEmit` and `../node_modules/.bin/vitest run --config vitest.config.ts`. Root web checks do not replace mobile ESLint.
-- Fix sync-caused failures in follow-up commits; failures that also happen on `origin/migration/gpui-into-main` alone do not block the push, list them with output.
+- Fix sync-caused failures in follow-up commits. Failures that also happen on `origin/main` alone do not block the PR; list them with output.
 
-### 6. Commit, push, report on #127
-- One sync commit `chore(sync): apply MonoCode GPUI <short old>..<short new> (YYYY-MM-DD)` (+ subjects, + one line on resolutions and scan fixes); fixes as separate commits, e.g. `fix(gpui): restore 4-byte hotkey signature after rename`.
+### 5. Commit, push, open or update the PR
+- One sync commit `chore(sync): apply MonoCode <short old>..<short new> (YYYY-MM-DD)` (+ subjects, + one line on resolutions and scan fixes); fixes as separate commits.
 - `git merge-base HEAD upstream/main` must **fail**; every new commit has the owner as author and committer.
-- Push as a fast-forward:
-  ```bash
-  git fetch origin migration/gpui-into-main
-  git merge-base --is-ancestor origin/migration/gpui-into-main HEAD || git merge --no-edit origin/migration/gpui-into-main
-  git push origin HEAD:migration/gpui-into-main
-  ```
-  If a human pushed meanwhile, merge it in, re-run stage 5 for the touched areas, push. Never force. Re-check identity, `core.bare` and `git log -5` afterwards.
-- Post the notes (shared format, heading `## GPUI sync <old>..<new> (YYYY-MM-DD)`, plus a **Parity impact** section naming the M01–M22 groups touched and whether MOLFAR ports were kept, adapted or need follow-up) with `gh pr comment 127 -R deluminor/molfar --body-file <file>`.
-- Update only the `Upstream sync` line of #127's body: `**Upstream sync:** main @ <short head>, last synced YYYY-MM-DD (<comment link>)` (add it under the first heading if missing; change nothing else).
-- Native-only changes do **not** go into `CHANGELOG.md` (the GPUI app is an unreleased preview); desktop-visible changes go under `## [Unreleased]` using Keep a Changelog sections, MOLFAR branding and `MonoCode #NNN` references. No contributor handles or upstream version sections. Run `npx vitest run scripts/release/`.
-- Blocked case: reset to the stage 1 merge (or the branch tip), push the stage 1 merge if any, open `Sync blocked: MonoCode GPUI → #127 needs human (YYYY-MM-DD)` with **Needs human** + notes, comment a link on #127. Close an older open `Sync blocked` Issue for the same range when the sync succeeds.
+- Push as a fast-forward: `git push origin HEAD:<sync branch>`. If the remote branch moved, merge it in, re-run stage 4 for the touched areas, push. Never force. Re-check identity, `core.bare` and `git log -5` afterwards.
+- No open sync PR: `gh pr create -R deluminor/molfar --base main --head <sync branch> --title "chore(sync): apply MonoCode <short old>..<short new>" --body-file <notes>`. Open sync PR: post the notes with `gh pr comment <number> -R deluminor/molfar --body-file <notes>` and update its title to the full range.
+- Native-only changes do **not** go into `CHANGELOG.md` while the native app stays a preview; desktop-visible changes go under `## [Unreleased]` using Keep a Changelog sections, MOLFAR branding and `MonoCode #NNN` references. No contributor handles or upstream version sections. Run `npx vitest run scripts/release/`.
+- Blocked case: push nothing from the failed attempt, open `Sync blocked: MonoCode → main needs human (YYYY-MM-DD)` with **Needs human** + notes. Close an older open `Sync blocked` Issue for the same range when the sync succeeds.
 - Read back exact-head CI after pushing. Report pending checks as pending and failed checks with their job links; local passes do not certify remote CI.
-- `gh pr view 127 -R deluminor/molfar --json mergeable,isDraft`: its draft/ready status must match the value read at the start of this run. If `CONFLICTING` with `main`, re-run stage 1 on a fresh branch and push. Never rebase.
+- `gh pr view <number> -R deluminor/molfar --json mergeable`: if `CONFLICTING` with `main`, repeat stage 1 and push. Never rebase.
 
 ## Shared notes format
 ```markdown
@@ -227,6 +221,6 @@ Be specific and honest. Prefer outcomes over hashes. Do not invent changes.
 Write every body to a UTF-8 file and pass `--body-file`. Read back what you published (`gh pr view -R deluminor/molfar --json title,body,comments`, `gh issue view -R deluminor/molfar --json title,body`). If any attribution, generated-by notice, tool footer or badge was appended, remove only that (`gh pr edit -R deluminor/molfar --body-file`, `gh issue edit -R deluminor/molfar --body-file`, `gh api -X PATCH repos/deluminor/molfar/issues/comments/<id> -F body=@<file>`) and read back again. Do not report success before everything is clean.
 
 ## Finish
-Report source `upstream/main` and sole target `migration/gpui-into-main`; range or current state; main merge range if any; pushed commits or blocked Issue; #127 comment URL; conflicts and port dispositions; branding and notice changes; exact checks, exit codes and test counts; outstanding human decisions; one-line highlights. Distinguish tracked instruction changes from verified installed automation changes.
+Report source `upstream/main`; the sync PR URL and range, or the current state; pushed commits or blocked Issue; conflicts and port dispositions; branding and notice changes; exact checks, exit codes and test counts; outstanding human decisions; one-line highlights. Distinguish tracked instruction changes from verified installed automation changes.
 
-Never merge a PR or change #127's draft/ready status. The human finishes migration, controls review status and merges. After merge this job stops pending an explicit new target policy.
+Never merge a PR. The human reviews and merges into `main`.
