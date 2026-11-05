@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Keep Claude usage refresh read-only and avoid showing renewable credentials as signed out; recognize cleared Keychain logins.
 - Continue usage-limited sessions from a paired phone, with desktop-owned reset information, stale-action protection and a manual retry when continuation fails (MonoCode #1208).
 - Keep Codex session index locks private to each Familiar, remove stale shared links safely and serialize concurrent storage preparation (MonoCode #1297).
 - Preserve video metadata loading when previews are hidden or React replays effects.

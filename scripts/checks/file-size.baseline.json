@@ -135,7 +135,7 @@
     "lines": 417
   },
   "src-tauri/src/rate_limits.rs": {
-    "lines": 830
+    "lines": 710
   },
   "src-tauri/src/reminders.rs": {
     "lines": 564

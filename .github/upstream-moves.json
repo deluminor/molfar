@@ -1157,6 +1157,13 @@
         "src-tauri/src/codex_familiar_store/tests.rs"
       ],
       "notes": "Store orchestration remains in parent, configuration sharing and private lock preparation in file_preparation, regression tests in tests.rs."
+    },
+    "src-tauri/src/rate_limits.rs": {
+      "targets": [
+        "src-tauri/src/rate_limits.rs",
+        "src-tauri/src/rate_limits/tests.rs"
+      ],
+      "notes": "Provider usage and credential parsing remain in rate_limits.rs; regression tests live in rate_limits/tests.rs. Port source and test changes into these locations."
     }
   },
   "extractions": {
