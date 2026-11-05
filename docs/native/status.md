@@ -10,13 +10,13 @@ React/Tauri remains production; GPUI remains a preview. The human controls
 review status, merge and release decisions. This update does not refresh the
 remote PR state or CI.
 
-Retained Companion checkpoint: `8840e63c` on `sync/gpui-20261105`, in the isolated
-`molfar-ad3f861b` worktree. The Companion commit was local at the start of preparation; check PR #127
-for the published integration head.
+Current local checkpoint: `0eaa7ea0` on `sync/gpui-20261105`, in the isolated
+`molfar-ad3f861b` worktree. It contains the Companion, release preparation, upstream
+merge and review fixes. Check PR #127 for the published integration head.
 Do not overwrite the main checkout's independent uncommitted work.
 
-The upstream checkpoint file records `main` at `9ee7b3dd1e408a76229d60fc2db29d1ec45728ea`.
-Sync commits `9da9e6d5` and `61bb6048` were published to the integration branch.
+The upstream checkpoint file records `main` at `a25b5b899efbe244cc01d62e8d07269984fb7912`.
+Sync commit `1cbf81da` is the latest one published to the integration branch.
 The [feature transfer register](feature-transfer.md) and [limitations](parity.md)
 separate code delivery from runtime acceptance; [verification](verification.md)
 records revision-scoped results.
@@ -49,8 +49,8 @@ are recorded in verification.md. No PR merge or release publication is included.
 1. Verify the native gate fixes: the sphere painter now accepts existing bounds,
    and the `Sampler` test import uses the same platform gate as its test. Run the
    complete native gate and platform CI on the intended integration head.
-2. Reconcile the local Companion commit with the human's integration work and
-   publish only with authorization. Recheck PR #127 and exact-head CI.
+2. The local Companion commit is reconciled with the integration branch. Publish
+   only with authorization, then recheck PR #127 and exact-head CI.
 3. Define and implement two release channels: retain the Tauri release and add
    a separate MOLFAR Native preview, with distinct artifacts, identifiers,
    update policy and packaging checks. The local preparation now implements this
@@ -74,7 +74,7 @@ Local continuation entrypoint: `docs/specs/gpui-merge-readiness/handoff.md`. Rem
 
 ## Publication and sync
 
-The current recorded source is upstream `main` through `9ee7b3dd`; only
+The current recorded source is upstream `main` through `a25b5b89`; only
 `migration/gpui-into-main` receives upstream patches. See the latest
 [verification](verification.md) entry for local results and unresolved gates.
 Do not infer current remote CI or PR readiness from historical green runs.

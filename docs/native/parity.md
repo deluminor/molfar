@@ -4,9 +4,9 @@ The native app is still experimental. A feature being present in source does not
 establish runtime or platform parity with the production React/Tauri app. See
 [verification](verification.md) for recorded checks.
 
-Current local implementation checkpoint: `8840e63c`, including the retained
+Current local implementation checkpoint: `0eaa7ea0`, including the
 Companion gateway. The source checkpoint records upstream `main` through
-`9ee7b3dd`. Board execution/delivery and Home/Usage are implemented, with
+`a25b5b89`. Board execution/delivery and Home/Usage are implemented, with
 runtime gaps below. The [feature register](feature-transfer.md) accounts for
 M01–M22; [verification](verification.md) separates local evidence from historical
 remote/upstream checks. Production stays React/Tauri. Native releases and full

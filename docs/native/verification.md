@@ -5,6 +5,47 @@ results, not a release certification. Later dated sections supplement this
 snapshot. See [preview limitations](parity.md) for
 remaining runtime and platform work.
 
+## Merged head and review fixes: November 5, 2026
+
+Scope: `0eaa7ea0` on local `sync/gpui-20261105`, on top of merge `2e72e27e`. That
+merge combines the Companion and release preparation with upstream sync commit
+`1cbf81da` (`main` through `a25b5b89`). The red Windows and macOS Clippy jobs on
+PR head `1cbf81da` are the `Sampler` and sphere errors already fixed by
+`b9b768c4`. This revision was not published when these results were recorded,
+so no hosted CI covers it yet.
+
+An independent review of the merged range found these defects, all fixed in
+`0eaa7ea0`:
+
+- `libc::gethostname` is absent from libc on Windows, so the native app could
+  not build there. Existing Windows CI builds only `molfar-core`. The gateway now
+  uses a shared core helper based on the `hostname` crate.
+- A device revoked by the desktop app kept authenticating on Native, and Native's
+  next write restored it. Native now reloads the shared file when it changes.
+  There is no cross-process lock, so simultaneous writes can still lose one update.
+- tiny_http drains unread bodies when a request drops, without socket timeouts.
+  Eight stalled clients could pin every worker, even after a 413 or 401. Streamed
+  requests now get their reply off the worker pool and `/v1/pair` refuses them.
+  A paired device can still pin a worker with a stalled RPC body.
+- Failed pairing and revoke actions were silent, and stale offers stayed visible.
+- The phone overview showed `supervised` and no model for unloaded sessions.
+- A failed AppImage tool download could fall through to an unverified tool on PATH.
+
+| Evidence | Current result |
+| --- | --- |
+| `npm run native:check` | Exit 0; 43 Node tests, format and strict Clippy passed; core 832 passed / 2 ignored, GPUI 1,039 passed / 11 ignored, wheel 6 passed |
+| `npm run check:rust` | Exit 0 before a test-only Clippy cleanup covered by `native:check` |
+| `npm run check:size`, `check:boundaries`, `check:moves`, `check:native-branding` | Exit 0 |
+| `npm run check:web` | Exit 0 on `2e72e27e`; 7,159 tests passed / 13 skipped. No web source changed afterwards |
+| Mobile lint, `tsc`, Vitest | Exit 0 on `2e72e27e`; 187 tests passed. No mobile source changed afterwards |
+| Stalled-client regression | Fails with `WouldBlock` when the off-pool reply is removed; passes with the fix |
+| `actionlint` | Not run; not installed in this session. The edited workflow parses as YAML |
+
+Windows and Linux Native builds and packages, Intel builds, public signing,
+environment protections and runtime acceptance remain unverified. The Windows
+fix is checked only against libc sources; no Windows build ran locally. Discovery
+still spawns the Tailscale CLI every 30 seconds while Companion is off.
+
 ## Merge and release preparation: November 5, 2026
 
 Scope: local changes after `8840e63c`, with the retained Companion commit.

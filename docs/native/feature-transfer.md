@@ -1,7 +1,7 @@
 # MOLFAR feature transfer register
 
-Updated November 5, 2026. Local implementation checkpoint: `8840e63c`;
-recorded upstream source: `main` through `9ee7b3dd`. The Companion commit was local at the start of preparation. Source presence and automated tests do not establish runtime
+Updated November 5, 2026. Local implementation checkpoint: `0eaa7ea0`;
+recorded upstream source: `main` through `a25b5b89`. Source presence and automated tests do not establish runtime
 parity. Current publication boundaries and next work: [status](status.md).
 
 Roadmap IDs M01–M22 retain their original meanings. Readiness M01–M08 are
