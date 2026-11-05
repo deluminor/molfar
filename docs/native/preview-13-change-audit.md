@@ -3,7 +3,7 @@
 This retained upstream audit describes upstream releases and verification, not a MOLFAR release or a local verification claim. MOLFAR migration parity is tracked separately in [parity](parity.md).
 
 Prepared on 2026-11-03 for the next native preview. The release-facing summary is
-in [preview release notes](preview-release-notes.md).
+in the [preview 13 release notes](https://github.com/hardbeat920/monocode/blob/native-v0.16.0-preview.13/docs/native/preview-release-notes.md).
 
 ## Scope and baseline
 
