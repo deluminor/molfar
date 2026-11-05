@@ -42,18 +42,8 @@ impl Shell {
             }
         };
         let view = self.companion_existing_view(id, cx);
-        let saved = locked(&self.store)?.agent_settings(id)?.unwrap_or_default();
         let busy = view.as_ref().is_some_and(|view| view.read(cx).busy);
-        let mode = view
-            .as_ref()
-            .map(|view| view.read(cx).settings.access)
-            .unwrap_or(saved.access)
-            .id();
-        let model = view
-            .as_ref()
-            .and_then(|view| view.read(cx).mobile_model().map(str::to_owned))
-            .or(saved.model)
-            .unwrap_or_default();
+        let (mode, model) = self.companion_mode_model(id, view.as_ref(), cx)?;
         let mut blocks = match view.as_ref().filter(|view| view.read(cx).history_loaded()) {
             Some(view) => locked(&self.store)?.conversation_blocks_with_rows(
                 id,

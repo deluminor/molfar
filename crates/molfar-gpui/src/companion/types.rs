@@ -5,6 +5,7 @@ use std::{
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex, Weak, atomic::AtomicBool},
+    time::SystemTime,
 };
 
 pub(crate) const PROTOCOL_VERSION: u32 = 2;
@@ -81,6 +82,7 @@ pub(super) struct Running {
 pub(super) struct Inner {
     pub(super) path: PathBuf,
     pub(super) stored: Stored,
+    pub(super) store_stamp: Option<SystemTime>,
     pub(super) pairing: Option<Pairing>,
     pub(super) running: Option<Running>,
     pub(super) draining: Option<(SocketAddr, Weak<tiny_http::Server>)>,

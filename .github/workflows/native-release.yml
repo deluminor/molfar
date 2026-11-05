@@ -101,7 +101,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y build-essential clang cmake pkg-config libasound2-dev libfontconfig1-dev libfreetype6-dev libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev libx11-xcb-dev libxcb1-dev libxcb-shape0-dev libxcb-xfixes0-dev libxcb-randr0-dev libegl1-mesa-dev libvulkan-dev libdbus-1-dev libssl-dev libzstd-dev squashfs-tools rpm
-          echo "APPIMAGETOOL=$(bash scripts/build-tools/appimagetool.sh)" >> "$GITHUB_ENV"
+          appimagetool="$(bash scripts/build-tools/appimagetool.sh)"
+          echo "APPIMAGETOOL=$appimagetool" >> "$GITHUB_ENV"
       - name: Install Windows packager
         if: runner.os == 'Windows'
         run: |

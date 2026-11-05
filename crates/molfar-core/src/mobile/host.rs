@@ -866,10 +866,7 @@ fn addresses(inner: &Inner) -> Vec<Address> {
 }
 
 fn name() -> String {
-    hostname::get()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .into_owned()
+    crate::host::machine_name().unwrap_or_default()
 }
 
 #[cfg(test)]

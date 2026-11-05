@@ -1,6 +1,25 @@
 use super::*;
 
 impl Shell {
+    pub(super) fn companion_mode_model(
+        &self,
+        id: i64,
+        view: Option<&Entity<Conversation>>,
+        cx: &App,
+    ) -> Result<(&'static str, String), String> {
+        let saved = locked(&self.store)?.agent_settings(id)?.unwrap_or_default();
+        let mode = view
+            .map(|view| view.read(cx).settings.access)
+            .unwrap_or(saved.access)
+            .id();
+        let model = view
+            .and_then(|view| view.read(cx).mobile_model().map(str::to_owned))
+            .or(saved.model)
+            .unwrap_or_default();
+
+        Ok((mode, model))
+    }
+
     pub(super) fn companion_overview(&self, cx: &App) -> Result<Value, String> {
         let hidden = self
             .familiars
@@ -69,17 +88,7 @@ impl Shell {
             if needs {
                 counts.1 += 1;
             }
-            let mode = self
-                .sessions
-                .get(id)
-                .map(|view| view.read(cx).settings.access.id())
-                .unwrap_or("supervised");
-            let model = self
-                .sessions
-                .get(id)
-                .and_then(|view| view.read(cx).mobile_model())
-                .unwrap_or("")
-                .to_string();
+            let (mode, model) = self.companion_mode_model(*id, self.sessions.get(id), cx)?;
             sessions.push(json!({
                 "id": id.to_string(),
                 "title": title,

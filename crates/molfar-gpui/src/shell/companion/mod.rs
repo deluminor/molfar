@@ -65,17 +65,31 @@ impl Shell {
         if let Err(error) = host.set_enabled(enabled, port) {
             self.error = Some(error);
         }
+        if !enabled {
+            self.companion_offer = None;
+        }
         self.sync_settings(cx);
+    }
+
+    pub(super) fn companion_live_offer(&self) -> Option<crate::companion::Offer> {
+        self.companion_offer
+            .clone()
+            .filter(|offer| offer.expires_at > now_ms())
     }
 
     pub(super) fn companion_pair(
         &mut self,
         cx: &mut Context<Self>,
     ) -> Option<crate::companion::Offer> {
-        let offer = self
-            .companion
-            .as_ref()
-            .and_then(|host| host.pair_start().ok());
+        let started = self.companion.as_ref().map(|host| host.pair_start());
+        let offer = match started {
+            Some(Ok(offer)) => Some(offer),
+            Some(Err(error)) => {
+                self.error = Some(error);
+                None
+            }
+            None => None,
+        };
         self.companion_offer = offer.clone();
         self.sync_settings(cx);
         offer
@@ -90,8 +104,8 @@ impl Shell {
     }
 
     pub(super) fn companion_revoke(&mut self, id: &str, cx: &mut Context<Self>) {
-        if let Some(host) = &self.companion {
-            let _ = host.revoke(id);
+        if let Some(Err(error)) = self.companion.as_ref().map(|host| host.revoke(id)) {
+            self.error = Some(error);
         }
         self.sync_settings(cx);
     }

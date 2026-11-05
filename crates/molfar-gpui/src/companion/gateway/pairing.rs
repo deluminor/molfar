@@ -3,6 +3,7 @@ use super::*;
 pub(in crate::companion) fn touch_seen(host: &Host, token: &str) -> Option<String> {
     let digest = sha256_hex(token);
     let mut inner = host.inner.lock().ok()?;
+    sync_store(&mut inner);
     let now = now_ms();
     let device = inner
         .stored
@@ -13,7 +14,9 @@ pub(in crate::companion) fn touch_seen(host: &Host, token: &str) -> Option<Strin
     let id = device.id.clone();
     if now.saturating_sub(inner.seen_persisted_at) > SEEN_PERSIST_MS {
         inner.seen_persisted_at = now;
-        let _ = write_store(&inner.path, &inner.stored);
+        if let Err(error) = persist(&mut inner) {
+            eprintln!("molfar: could not save Companion last-seen time: {error}");
+        }
     }
     Some(id)
 }
@@ -31,6 +34,7 @@ pub(in crate::companion) fn pair(host: &Host, body: &Value) -> http::Reply {
     let Ok(mut inner) = host.inner.lock() else {
         return http::Reply::error(500, "Companion unavailable");
     };
+    sync_store(&mut inner);
     let now = now_ms();
     let Some(pairing) = inner.pairing.as_mut() else {
         return http::Reply::error(403, "No pairing is open. Show a new code in MOLFAR.");
@@ -65,7 +69,7 @@ pub(in crate::companion) fn pair(host: &Host, body: &Value) -> http::Reply {
     };
     let device_id = device.id.clone();
     inner.stored.devices.push(device);
-    if let Err(error) = write_store(&inner.path, &inner.stored) {
+    if let Err(error) = persist(&mut inner) {
         inner.stored.devices.retain(|device| device.id != device_id);
         return http::Reply::error(500, &error);
     }

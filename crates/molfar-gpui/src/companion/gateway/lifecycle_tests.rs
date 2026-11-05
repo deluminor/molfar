@@ -5,6 +5,76 @@ use std::{
     time::{Duration, Instant},
 };
 
+fn first_reply(port: u16, request: &str) -> String {
+    let mut client = TcpStream::connect((Ipv4Addr::LOCALHOST, port)).unwrap();
+    client
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    client.write_all(request.as_bytes()).unwrap();
+    let mut buffer = [0; 64];
+    let read = client.read(&mut buffer).unwrap();
+    String::from_utf8_lossy(&buffer[..read]).into_owned()
+}
+
+#[test]
+fn stalled_unauthenticated_bodies_never_pin_the_workers() {
+    let port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    let root = std::env::temp_dir().join(format!("companion-stall-{}", uuid::Uuid::new_v4()));
+    let (host, _jobs) = Host::open(root.join("companion.json")).unwrap();
+    assert!(
+        host.configure(true, BindMode::Serve, port, None)
+            .unwrap()
+            .running
+    );
+
+    let stalled = [
+        ("/v1/pair", "Content-Length: 4096"),
+        ("/v1/pair", "Transfer-Encoding: chunked"),
+        ("/v1/pair", "Content-Length: 16\r\nExpect: 100-continue"),
+        ("/v1/rpc", "Content-Length: 4096"),
+    ];
+    let mut held = Vec::new();
+    for round in 0..3 * http::WORKERS {
+        let (route, body_header) = stalled[round % stalled.len()];
+        let mut client = TcpStream::connect((Ipv4Addr::LOCALHOST, port)).unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        write!(
+            client,
+            "POST {route} HTTP/1.1\r\nHost: localhost\r\n{body_header}\r\n\r\n"
+        )
+        .unwrap();
+        let mut buffer = [0; 64];
+        let read = client.read(&mut buffer).unwrap();
+        let reply = String::from_utf8_lossy(&buffer[..read]).into_owned();
+        let expected = if route == "/v1/pair" {
+            "HTTP/1.1 413"
+        } else {
+            "HTTP/1.1 401"
+        };
+        assert!(
+            reply.starts_with(expected),
+            "{route} {body_header}: {reply}"
+        );
+        held.push(client);
+    }
+
+    let hello = first_reply(
+        port,
+        "GET /v1/hello HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+    );
+    assert!(hello.starts_with("HTTP/1.1 200"), "{hello}");
+
+    drop(held);
+    host.shutdown();
+    std::fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn companion_restarts_while_an_old_request_is_pending() {
     let port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))

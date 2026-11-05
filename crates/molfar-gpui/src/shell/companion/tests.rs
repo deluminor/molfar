@@ -106,3 +106,73 @@ fn companion_uses_familiar_session_id_and_live_owner(cx: &mut gpui::TestAppConte
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn companion_overview_reports_saved_settings_for_unloaded_sessions(cx: &mut gpui::TestAppContext) {
+    let (window, _, id) = crate::shell::tests::window(cx);
+    window
+        .update(cx, |shell, _, cx| {
+            let settings = molfar_core::agent::Settings {
+                access: AccessMode::FullAccess,
+                model: Some("saved-model".into()),
+                ..Default::default()
+            };
+            locked(&shell.store)
+                .unwrap()
+                .save_agent_settings(id, &settings)
+                .unwrap();
+            shell.sessions.remove(&id);
+
+            let overview = shell.companion_overview(cx).unwrap();
+            let session = overview["sessions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|session| session["id"].as_str() == Some(id.to_string().as_str()))
+                .unwrap();
+
+            assert_eq!(session["runtimeMode"], AccessMode::FullAccess.id());
+            assert_eq!(session["model"], "saved-model");
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn companion_pairing_failures_reach_the_user_and_stale_offers_clear(cx: &mut gpui::TestAppContext) {
+    let (window, _, _) = crate::shell::tests::window(cx);
+    let root = std::env::temp_dir().join(format!("companion-shell-{}", uuid::Uuid::new_v4()));
+    let (host, _jobs) = Host::open(root.join("companion.json")).unwrap();
+    let offer = crate::companion::Offer {
+        code: "CODE".into(),
+        url: "https://fixture.ts.net".into(),
+        link: "bitchain://molfar/pair".into(),
+        expires_at: u64::MAX,
+    };
+    window
+        .update(cx, |shell, _, cx| {
+            shell.companion = Some(host.clone());
+
+            assert!(shell.companion_pair(cx).is_none());
+            assert!(
+                shell
+                    .error
+                    .as_deref()
+                    .is_some_and(|error| error.contains("Turn on"))
+            );
+
+            shell.companion_offer = Some(offer.clone());
+            assert_eq!(shell.companion_live_offer(), Some(offer.clone()));
+            shell.companion_offer = Some(crate::companion::Offer {
+                expires_at: 1,
+                ..offer.clone()
+            });
+            assert_eq!(shell.companion_live_offer(), None);
+
+            shell.companion_offer = Some(offer.clone());
+            shell.companion_configure(false, 3775, cx);
+            assert_eq!(shell.companion_offer, None);
+        })
+        .unwrap();
+    host.shutdown();
+    std::fs::remove_dir_all(root).ok();
+}

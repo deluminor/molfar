@@ -14,7 +14,7 @@ use std::{
 };
 
 pub(super) const WORKERS: usize = 8;
-const SMALL_BODY: u64 = 8 * 1024;
+const SMALL_BODY: u64 = 1024;
 const RPC_BODY: u64 = 64 * 1024 * 1024;
 const RPC_TIMEOUT: Duration = Duration::from_secs(30);
 const PENDING_MAX: usize = 32;
@@ -62,7 +62,19 @@ pub(super) fn worker(server: Arc<tiny_http::Server>, stopped: Arc<AtomicBool>, h
 }
 
 fn serve(host: &Host, mut request: tiny_http::Request, stopped: &Arc<AtomicBool>) {
+    let streamed = body_is_streamed(&request);
     let reply = route(host, &mut request, stopped);
+
+    // tiny_http drains an unread body when the request drops and sets no socket
+    // timeout, so a stalled client would pin this worker even after the reply.
+    if streamed {
+        std::thread::spawn(move || respond(request, reply));
+    } else {
+        respond(request, reply);
+    }
+}
+
+fn respond(request: tiny_http::Request, reply: Reply) {
     let body = serde_json::to_vec(&reply.body).unwrap_or_default();
     let mut response = tiny_http::Response::from_data(body).with_status_code(reply.status);
     for (name, value) in [
@@ -91,10 +103,15 @@ fn route(host: &Host, request: &mut tiny_http::Request, stopped: &Arc<AtomicBool
                 "name": device.as_ref().map(|_| gateway::machine_name()),
             }))
         }
-        (tiny_http::Method::Post, "/v1/pair") => match read_json(request, SMALL_BODY) {
-            Ok(body) => gateway::pair(host, &body),
-            Err(reply) => reply,
-        },
+        (tiny_http::Method::Post, "/v1/pair") => {
+            if body_is_streamed(request) {
+                return Reply::error(413, "Request is too large");
+            }
+            match read_json(request, SMALL_BODY) {
+                Ok(body) => gateway::pair(host, &body),
+                Err(reply) => reply,
+            }
+        }
         (method, route) => {
             let Some(token) = bearer(request) else {
                 return Reply::error(401, "This device is not paired. Pair it again from MOLFAR.");
@@ -204,6 +221,16 @@ fn header<'a>(request: &'a tiny_http::Request, name: &str) -> Option<&'a str> {
         .iter()
         .find(|item| item.field.as_str().as_str().eq_ignore_ascii_case(name))
         .map(|item| item.value.as_str())
+}
+
+/// tiny_http buffers only plain bodies up to `SMALL_BODY` before queueing the
+/// request; anything else is read from the socket by whichever thread touches it.
+fn body_is_streamed(request: &tiny_http::Request) -> bool {
+    header(request, "Expect").is_some()
+        || header(request, "Transfer-Encoding").is_some()
+        || request
+            .body_length()
+            .is_some_and(|len| len as u64 > SMALL_BODY)
 }
 
 fn read_json(request: &mut tiny_http::Request, limit: u64) -> Result<Value, Reply> {

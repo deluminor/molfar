@@ -69,7 +69,7 @@ impl Shell {
             mobile: self.mobile_status(),
             mobile_invite: self.mobile.invite.clone(),
             companion: self.companion_status(),
-            companion_offer: self.companion_offer.clone(),
+            companion_offer: self.companion_live_offer(),
             quick_error: self.quick.error.clone(),
             inbox_connections: self
                 .inbox

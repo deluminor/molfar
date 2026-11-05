@@ -1,6 +1,13 @@
 //! Machine load for the Home Host widget, ported from src-tauri/home_host.rs
 //! without its sysinfo dependency.
 
+pub fn machine_name() -> Option<String> {
+    hostname::get()
+        .ok()
+        .map(|name| name.to_string_lossy().into_owned())
+        .filter(|name| !name.is_empty())
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct HostStats {
     pub cpu_percent: Option<f32>,

@@ -56,6 +56,77 @@ fn pairing_stores_only_the_token_hash() {
 }
 
 #[test]
+fn a_device_revoked_by_the_desktop_app_stops_authenticating() {
+    let dir = std::env::temp_dir().join(format!("molfar-companion-sync-{}", uuid::Uuid::new_v4()));
+    fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("companion.json");
+    let (host, _) = Host::open(path.clone()).unwrap();
+    let device = |id: &str, token: &str, last_seen_at: Option<u64>| Device {
+        id: id.into(),
+        name: id.into(),
+        token_sha256: sha256_hex(token),
+        created_at: 0,
+        last_seen_at,
+    };
+    let (revoked, kept, added) = ("a".repeat(64), "b".repeat(64), "c".repeat(64));
+    {
+        let mut inner = host.inner.lock().unwrap();
+        inner.stored.devices = vec![
+            device("revoked", &revoked, None),
+            device("kept", &kept, Some(50)),
+        ];
+        persist(&mut inner).unwrap();
+    }
+
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    let desktop = Stored {
+        devices: vec![
+            device("kept", &kept, Some(10)),
+            device("added", &added, None),
+        ],
+        ..Stored::default()
+    };
+    fs::write(&path, serde_json::to_vec(&desktop).unwrap()).unwrap();
+
+    assert_eq!(pairing::touch_seen(&host, &revoked), None);
+    assert_eq!(pairing::touch_seen(&host, &added).as_deref(), Some("added"));
+    {
+        let inner = host.inner.lock().unwrap();
+        let kept = inner
+            .stored
+            .devices
+            .iter()
+            .find(|device| device.id == "kept")
+            .unwrap();
+        assert_eq!(
+            kept.last_seen_at,
+            Some(50),
+            "the newer local time must survive a reload"
+        );
+    }
+
+    host.revoke("kept").unwrap();
+    let saved: Stored = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    let ids: Vec<_> = saved
+        .devices
+        .iter()
+        .map(|device| device.id.as_str())
+        .collect();
+    assert_eq!(
+        ids,
+        ["added"],
+        "a local write must not restore revoked devices"
+    );
+
+    fs::write(&path, b"not json").unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    assert_eq!(pairing::touch_seen(&host, &added).as_deref(), Some("added"));
+
+    host.shutdown();
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn toggling_preserves_custom_connection_and_cached_discovery() {
     let dir =
         std::env::temp_dir().join(format!("molfar-companion-config-{}", uuid::Uuid::new_v4()));

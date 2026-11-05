@@ -36,6 +36,7 @@ impl Host {
         let host = Self {
             inner: Arc::new(Mutex::new(Inner {
                 stored: read_store(&path),
+                store_stamp: store_stamp(&path),
                 path,
                 pairing: None,
                 running: None,
@@ -56,7 +57,8 @@ impl Host {
     }
 
     pub(crate) fn status(&self) -> Result<Status, String> {
-        let inner = lock(&self.inner)?;
+        let mut inner = lock(&self.inner)?;
+        sync_store(&mut inner);
         Ok(status_of(&inner))
     }
 
@@ -83,12 +85,13 @@ impl Host {
         if inner.closed {
             return Err("Companion is closed".into());
         }
+        sync_store(&mut inner);
         let previous = inner.stored.clone();
         inner.stored.enabled = enabled;
         inner.stored.mode = mode;
         inner.stored.port = port;
         inner.stored.public_url = public_url;
-        if let Err(error) = write_store(&inner.path, &inner.stored) {
+        if let Err(error) = persist(&mut inner) {
             inner.stored = previous;
             return Err(error);
         }
@@ -107,7 +110,7 @@ impl Host {
             .map(|running| running.addr)
             .ok_or("Turn on the Companion gateway first")?;
         let url = effective_url(&inner.stored, Some(addr), &inner.discovery)
-            .ok_or("MOLFAR could not find this computer's Tailscale name. Enter the public URL.")?;
+            .ok_or("MOLFAR could not find this computer's Tailscale name. Check that Tailscale is running and signed in, then try again.")?;
         let code = new_pair_code();
         let expires_at = now_ms() + PAIR_TTL_MS;
         let mut link = url::Url::parse("bitchain://molfar/pair").map_err(|e| e.to_string())?;
@@ -134,9 +137,10 @@ impl Host {
 
     pub(crate) fn revoke(&self, device_id: &str) -> Result<Status, String> {
         let mut inner = lock(&self.inner)?;
+        sync_store(&mut inner);
         let previous = inner.stored.devices.clone();
         inner.stored.devices.retain(|device| device.id != device_id);
-        if let Err(error) = write_store(&inner.path, &inner.stored) {
+        if let Err(error) = persist(&mut inner) {
             inner.stored.devices = previous;
             return Err(error);
         }
@@ -214,17 +218,7 @@ pub(super) fn jobs(host: &Host) -> Option<Sender<Job>> {
 }
 
 pub(super) fn machine_name() -> String {
-    let mut buf = [0u8; 256];
-    let ok = unsafe { libc::gethostname(buf.as_mut_ptr().cast(), buf.len()) == 0 };
-    if ok {
-        let end = buf.iter().position(|byte| *byte == 0).unwrap_or(buf.len());
-        if let Ok(name) = std::str::from_utf8(&buf[..end])
-            && !name.is_empty()
-        {
-            return name.to_string();
-        }
-    }
-    "MOLFAR".into()
+    molfar_core::host::machine_name().unwrap_or_else(|| "MOLFAR".into())
 }
 
 fn lock(inner: &Mutex<Inner>) -> Result<std::sync::MutexGuard<'_, Inner>, String> {
