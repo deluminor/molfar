@@ -1,3 +1,4 @@
+import type { Submit } from "../submission/submit-types";
 import { sameProviderAccountId, supportsProviderAccounts } from "@/domain/harness/provider-account";
 import type { Session } from "@/domain/session/session";
 import { sessionWorkCwd } from "@/domain/session/session-state";
@@ -13,12 +14,12 @@ import { transferHarnessSessionAccount } from "@/integrations/harness";
 import { mapSession, type TurnQueueDeps } from "./turn-queue-deps";
 
 /** Actions on a session stopped by its provider's usage limit. */
-export function createUsageLimits(deps: TurnQueueDeps) {
+export function createUsageLimits(deps: Omit<TurnQueueDeps, "submit"> & { submit: Submit }) {
   const switching = new Set<string>();
   const find = (sessionId: string) => deps.sessions().find((entry) => entry.id === sessionId);
 
   const dismiss = (sessionId: string): void => {
-    deps.updateSessions((prev) =>
+    deps.updateSessionsNow((prev) =>
       prev.map((session) =>
         session.id === sessionId && session.usageLimit
           ? { ...session, usageLimit: undefined }
@@ -28,7 +29,7 @@ export function createUsageLimits(deps: TurnQueueDeps) {
   };
 
   const setResumeAtReset = (sessionId: string, enabled: boolean): void => {
-    deps.updateSessions((prev) =>
+    deps.updateSessionsNow((prev) =>
       prev.map((session) =>
         session.id === sessionId && session.usageLimit
           ? { ...session, usageLimit: { ...session.usageLimit, resumeAtReset: enabled } }
@@ -37,16 +38,29 @@ export function createUsageLimits(deps: TurnQueueDeps) {
     );
   };
 
-  const resume = (sessionId: string): void => {
+  const resume = async (sessionId: string): Promise<boolean> => {
     const session = find(sessionId);
-    if (!session?.usageLimit || session.busy) return;
+    const limit = session?.usageLimit;
+    if (!session || !limit || session.busy) return false;
 
     if (isFamiliarSession(sessionId)) {
-      deps.updateSessions(mapSession(sessionId, resumeFamiliarUsageLimit));
-      return;
+      deps.updateSessionsNow(mapSession(sessionId, resumeFamiliarUsageLimit));
+      return true;
     }
+
     dismiss(sessionId);
-    deps.submit(sessionId, CONTINUE_PROMPT);
+    try {
+      if (await deps.submit(sessionId, CONTINUE_PROMPT)) return true;
+    } catch (error) {
+      console.warn("Could not continue usage-limited session", { sessionId, error });
+    }
+
+    deps.updateSessionsNow(mapSession(sessionId, (entry) =>
+      !entry.busy && !entry.usageLimit
+        ? { ...entry, usageLimit: { ...limit, resumeAtReset: false } }
+        : entry,
+    ));
+    return false;
   };
 
   /**
@@ -121,7 +135,7 @@ export function createUsageLimits(deps: TurnQueueDeps) {
     deps.updateSessionsNow(
       mapSession(sessionId, (entry) => withUsageLimitAccount(entry, accountId, carried)),
     );
-    resume(sessionId);
+    await resume(sessionId);
   };
 
   return { dismiss, setResumeAtReset, resume, changeAccount };

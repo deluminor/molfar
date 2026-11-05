@@ -57,7 +57,9 @@ export function translateRange(cwd, map, from, to) {
       const [modeBefore, modeAfter, blobBefore, blobAfter] = raw[i].slice(1).split(" ");
       const path = raw[i + 1];
       const verbatim = VERBATIM_PATHS.some((pattern) => pattern.test(path));
-      const target = verbatim ? path : renamer.mapPath(path);
+      const guarded = map.splits[path] || map.removed[path];
+      const renamed = guarded ? path : renamer.mapPath(path);
+      const target = renamed === path ? path : (map.renames[path] ?? renamed);
       const context = { fromFile: path, toFile: target, fileText: molfarText(cwd, map, target) };
       if (target !== path) remapped.push(`${path} -> ${target}`);
 

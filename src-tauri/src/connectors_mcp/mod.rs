@@ -1,13 +1,15 @@
 //! Stdio MCP server exposing MOLFAR Jira + Confluence tools.
 //! Launch: `{molfar_exe} connectors-mcp`
 
+mod definitions;
 mod tools;
 
 use std::io::{self, BufRead, Write};
 
 use serde_json::{json, Value};
 
-use tools::{call_tool, tool_definitions};
+use definitions::tool_definitions;
+use tools::call_tool;
 
 /// Run the MCP JSON-RPC loop on stdin/stdout until EOF.
 pub fn run() -> i32 {
@@ -127,8 +129,14 @@ mod tests {
             .filter_map(|tool| tool.get("name").and_then(Value::as_str))
             .collect();
         assert!(names.contains(&"jira_list_projects"));
+        assert!(names.contains(&"jira_issue_edit"));
+        assert!(names.contains(&"jira_issue_create"));
+        assert!(names.contains(&"jira_issue_transition"));
+        assert!(names.contains(&"jira_search"));
         assert!(names.contains(&"confluence_search"));
         assert!(names.contains(&"confluence_read"));
+        assert!(names.contains(&"confluence_page_create"));
+        assert!(names.contains(&"confluence_page_update"));
     }
 
     #[test]

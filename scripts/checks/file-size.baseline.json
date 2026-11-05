@@ -45,13 +45,10 @@
     "lines": 902
   },
   "src-tauri/src/codex_familiar_store.rs": {
-    "lines": 736
+    "lines": 631
   },
   "src-tauri/src/companion.rs": {
     "lines": 962
-  },
-  "src-tauri/src/confluence/mod.rs": {
-    "lines": 271
   },
   "src-tauri/src/control_cli.rs": {
     "lines": 781
@@ -90,7 +87,7 @@
     "lines": 350
   },
   "src-tauri/src/jira.rs": {
-    "lines": 1082
+    "lines": 779
   },
   "src-tauri/src/lib.rs": {
     "lines": 779
@@ -138,7 +135,7 @@
     "lines": 417
   },
   "src-tauri/src/rate_limits.rs": {
-    "lines": 830
+    "lines": 710
   },
   "src-tauri/src/reminders.rs": {
     "lines": 564

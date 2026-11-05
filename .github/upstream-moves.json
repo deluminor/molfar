@@ -1,13 +1,8 @@
 {
   "refactorBase": "4995f498d49a8e38d4dc2b1430cd3d21f9ddf1ef",
   "renames": {
-    "mobile/src/features/models/useFamiliarModel.ts": "mobile/src/features/models/use-familiar-model.ts",
-    "mobile/src/features/workspace/familiarAccent.ts": "mobile/src/features/workspace/familiar-accent.ts",
-    "mobile/src/features/workspace/familiarProfile.ts": "mobile/src/features/workspace/familiar-profile.ts",
-    "mobile/src/features/workspace/familiarSeen.ts": "mobile/src/features/workspace/familiar-seen.ts",
-    "mobile/src/features/workspace/lastPlace.ts": "mobile/src/features/workspace/last-place.ts",
-    "mobile/src/ui/AnimationsPaused.ts": "mobile/src/ui/animations-paused.ts",
-    "src/features/mobile/model/mobileWorkspace.test.ts": "src/features/mobile/model/mobile-question.test.ts",
+    "crates/monocode-core/src/store/monocode_import.rs": "crates/molfar-core/src/store/desktop_import.rs",
+    "crates/monocode-gpui/assets/monocode.png": "crates/molfar-gpui/assets/molfar.png",
     "docs/architecture/vatra-system.archify.html": "docs/architecture/molfar-system.archify.html",
     "docs/architecture/vatra-system.architecture.json": "docs/architecture/molfar-system.architecture.json",
     "docs/architecture/vatra-system.html": "docs/architecture/molfar-system.html",
@@ -927,6 +922,13 @@
     "src/shared/ui/PrivateEmail.test.ts": "src/features/settings/ui/private-email.test.ts",
     "src/shared/ui/PrivateEmail.tsx": "src/features/settings/ui/PrivateEmail.tsx",
     "src/shared/ui/SearchableSelect.test.ts": "src/shared/ui/searchable-select.test.ts",
+    "mobile/src/features/models/useFamiliarModel.ts": "mobile/src/features/models/use-familiar-model.ts",
+    "mobile/src/features/workspace/familiarAccent.ts": "mobile/src/features/workspace/familiar-accent.ts",
+    "mobile/src/features/workspace/familiarProfile.ts": "mobile/src/features/workspace/familiar-profile.ts",
+    "mobile/src/features/workspace/familiarSeen.ts": "mobile/src/features/workspace/familiar-seen.ts",
+    "mobile/src/features/workspace/lastPlace.ts": "mobile/src/features/workspace/last-place.ts",
+    "mobile/src/ui/AnimationsPaused.ts": "mobile/src/ui/animations-paused.ts",
+    "src/features/mobile/model/mobileWorkspace.test.ts": "src/features/mobile/model/mobile-question.test.ts",
     "mobile/modules/monocode-link/android/build.gradle": "mobile/modules/molfar-link/android/build.gradle",
     "mobile/modules/monocode-link/android/src/main/AndroidManifest.xml": "mobile/modules/molfar-link/android/src/main/AndroidManifest.xml",
     "mobile/modules/monocode-link/android/src/main/java/expo/modules/monocodelink/MonocodeLinkModule.kt": "mobile/modules/molfar-link/android/src/main/java/expo/modules/molfarlink/MolfarLinkModule.kt",
@@ -941,7 +943,13 @@
     "mobile/modules/monocode-link/ios/TranscriptPresentation.swift": "mobile/modules/molfar-link/ios/TranscriptPresentation.swift",
     "mobile/modules/monocode-link/ios/TranscriptRowView.swift": "mobile/modules/molfar-link/ios/TranscriptRowView.swift",
     "mobile/modules/monocode-link/ios/TranscriptSession.swift": "mobile/modules/molfar-link/ios/TranscriptSession.swift",
-    "mobile/modules/monocode-link/ios/TranscriptVisual.swift": "mobile/modules/molfar-link/ios/TranscriptVisual.swift"
+    "mobile/modules/monocode-link/ios/TranscriptVisual.swift": "mobile/modules/molfar-link/ios/TranscriptVisual.swift",
+    "mobile/src/features/models/useFamiliarSubsessions.ts": "mobile/src/features/models/use-familiar-subsessions.ts",
+    "mobile/src/features/settings/familiarOnly.ts": "mobile/src/features/settings/familiar-only.ts",
+    "mobile/src/features/workspace/familiarLook.ts": "mobile/src/features/workspace/familiar-look.ts",
+    "mobile/src/features/workspace/newFamiliar.ts": "mobile/src/features/workspace/new-familiar.ts",
+    "src/features/mobile/model/mobileUsageLimit.test.ts": "src/features/mobile/model/mobile-usage-limit.test.ts",
+    "src/features/mobile/model/mobileUsageLimit.ts": "src/features/mobile/model/mobile-usage-limit.ts"
   },
   "splits": {
     "src-tauri/src/fs.rs": {
@@ -1123,6 +1131,39 @@
         "src/domain/session/familiar-session.ts"
       ],
       "notes": "Session factories that read provider settings (newSession, newDefaultSession, newSessionForProject, retargetSessionToProject, newSessionLike) stay in features/sessions/model/session.ts. Everything else moved to src/domain: HarnessId, HARNESSES, HARNESS_LABEL, HARNESS_TITLE, harnessSupportsAttachments -> domain/harness/harness.ts; RuntimeMode + RUNTIME_MODE* -> domain/session/runtime-mode.ts; TaskList* types -> domain/session/task-list.ts; TurnIntent, EditedResendRejection, ComposerTurnOptions, ModelTarget, PlanBuildTarget, TurnModel, TurnMetrics -> turn.ts; Plan/Handoff/Btw/SecondOpinion/Interjection meta types -> block-meta.ts; ToolPreview*, AgentStep*, AgentRunMeta -> agent-run.ts; Attachment, AttachmentKind, GeneratedImageMeta -> attachment.ts; QueuedMessage, MessageQueueStatus, UsageLimit -> message-queue.ts; BlockRole, Block -> block.ts; Session, LinkedWorkItem, WorkspaceMode, PendingHarnessSwitch -> domain/session/session.ts; hasPendingApproval, sessionNeedsInput, sessionDraftBlock, removeSessionDraft, sessionWorkCwd -> session-state.ts; titleFromPrompt, formatSessionTitle, canReplaceSessionTitle, sessionDisplayTitle -> title.ts. FamiliarSpawnedSession, MonoSpawnedSession, FamiliarSessionCompletion -> domain/session/familiar-session.ts."
+    },
+    "mobile/src/features/workspace/FamiliarHome.tsx": {
+      "targets": [
+        "mobile/src/features/workspace/familiar-home/FamiliarHome.tsx",
+        "mobile/src/features/workspace/familiar-home/FamiliarRow.tsx",
+        "mobile/src/features/workspace/familiar-home/constants.ts",
+        "mobile/src/features/workspace/familiar-home/styles.ts",
+        "mobile/src/features/workspace/familiar-home/use-familiar-home.ts"
+      ],
+      "notes": "Familiar-only home screen: state and actions in hook; list rows and preview in FamiliarRow; shared layout constants and styles."
+    },
+    "mobile/src/app/familiar-new.tsx": {
+      "targets": [
+        "mobile/src/app/familiar-new.tsx",
+        "mobile/src/features/workspace/familiar-new/constants.ts",
+        "mobile/src/features/workspace/familiar-new/styles.ts"
+      ],
+      "notes": "Expo route retains creation behavior; layout constants and styling live in the familiar-new concern."
+    },
+    "src-tauri/src/codex_familiar_store.rs": {
+      "targets": [
+        "src-tauri/src/codex_familiar_store.rs",
+        "src-tauri/src/codex_familiar_store/file_preparation.rs",
+        "src-tauri/src/codex_familiar_store/tests.rs"
+      ],
+      "notes": "Store orchestration remains in parent, configuration sharing and private lock preparation in file_preparation, regression tests in tests.rs."
+    },
+    "src-tauri/src/rate_limits.rs": {
+      "targets": [
+        "src-tauri/src/rate_limits.rs",
+        "src-tauri/src/rate_limits/tests.rs"
+      ],
+      "notes": "Provider usage and credential parsing remain in rate_limits.rs; regression tests live in rate_limits/tests.rs. Port source and test changes into these locations."
     }
   },
   "extractions": {
@@ -2452,6 +2493,12 @@
           "Connections section body (ConnectionsSettings + MobileSettings)"
         ],
         "target": "src/features/settings/ui/ConnectionsPage.tsx"
+      },
+      {
+        "names": [
+          "Segmented"
+        ],
+        "target": "src/features/settings/ui/Segmented.tsx"
       }
     ],
     "src/features/source-control/model/worktrees.ts": [
@@ -2552,10 +2599,39 @@
         ],
         "target": "src/styles/composer-frost.css"
       }
+    ],
+    "scripts/package-native.mjs": [
+      {
+        "names": [
+          "root",
+          "previewVersion",
+          "run",
+          "runStapler",
+          "logicalBytes",
+          "notices",
+          "linuxTree"
+        ],
+        "target": "scripts/package-native-support.mjs"
+      },
+      {
+        "names": [
+          "macOS branch of packageNative (bundle, sign, notarize, DMG) as packageMacos"
+        ],
+        "target": "scripts/package-native-macos.mjs"
+      }
+    ],
+    "scripts/repack-appimage.sh": [
+      {
+        "names": [
+          "APPIMAGETOOL_VERSION",
+          "APPIMAGETOOL_SHA256",
+          "verified appimagetool download/cache block"
+        ],
+        "target": "scripts/build-tools/appimagetool.sh"
+      }
     ]
   },
   "removed": {
-    "crates/mobile-link/tests/fixtures/legacy-identity.json": "Public legacy p256 identity and proof data is inlined in the cfg(test) legacy_identity_keys_and_proofs_remain_compatible test in crates/mobile-link/src/lib.rs; standalone test fixtures are excluded by the sync job.",
     "docs/architecture/images/vatra-system.png": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/architecture/images/molfar-system.png.",
     "docs/brand/vatra-app.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-app.svg.",
     "docs/brand/vatra-glyph.svg": "Vatra brand asset replaced by the MOLFAR one (a347fe20/6f487437): docs/brand/molfar-glyph.svg.",
@@ -2588,6 +2664,10 @@
     "src/features/usage/model/usageFetch.ts": "Hardening B4: renamed toward src/features/usage/model/usage-fetch.ts then deleted.",
     "src/features/notes/ui/index.ts": "Hardening B4: knip-confirmed unused barrel (874e7aa5).",
     "src/features/sessions/ui/ModelSettings.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
-    "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5)."
+    "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
+    ".github/workflows/native-release.yml": "MOLFAR-owned replacement at the same path: keep MOLFAR Native Packages manual GitHub prerelease workflow. MonoCode R2/feed/signing workflow changes stay pending and are not imported; Tauri releases remain in release.yml.",
+    "docs/agent-access.md": "MOLFAR does not carry this upstream doc; agent API behavior is documented in MOLFAR's own docs.",
+    "docs/building.md": "MOLFAR does not carry this upstream doc; build steps live in README.md (Development, MOLFAR Native preview) and docs/native/README.md.",
+    "crates/mobile-link/tests/fixtures/legacy-identity.json": "Public legacy p256 identity and proof data is inlined in the cfg(test) legacy_identity_keys_and_proofs_remain_compatible test in crates/mobile-link/src/lib.rs; standalone test fixtures are excluded by the sync job."
   }
 }

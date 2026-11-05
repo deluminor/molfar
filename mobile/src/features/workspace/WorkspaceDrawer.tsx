@@ -8,8 +8,8 @@ import {
   tag,
 } from "@expo/ui/swift-ui/modifiers";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
-import { memo, useMemo, useState } from "react";
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -19,10 +19,11 @@ import { ProjectMascot } from "@/features/mascots/ProjectMascot";
 import { plainText } from "@/features/sessions/markdownParser";
 import { HEADER_GAP, HEADER_HEIGHT, useKeyboardLift } from "@/features/sessions/SessionScreen";
 import { MOLFAR_MARK } from "@/ui/brand";
+import { ChoiceMenu } from "@/ui/ChoiceMenu";
 import { CircleButton } from "@/ui/CircleButton";
 import { useWarmDitherLoading } from "@/ui/DitherLoading";
 import { GradualBlur } from "@/ui/GradualBlur";
-import { Icon } from "@/ui/Icon";
+import { Icon, type IconName } from "@/ui/Icon";
 import { LiquidView } from "@/ui/LiquidView";
 import { isModalRoute } from "@/ui/SceneFade";
 import { AnimationsPaused } from "@/ui/animations-paused";
@@ -31,6 +32,7 @@ import { Shimmer } from "@/ui/Shimmer";
 import { radii, themedStyles, useColors, useScheme } from "@/ui/theme";
 
 import { useUnreadFamiliars } from "./familiar-seen";
+import { onFamiliarCreated } from "./new-familiar";
 import { pickProject } from "./projectPick";
 import { projectForRoute } from "./routing";
 import type { Familiar, Project } from "./types";
@@ -71,12 +73,11 @@ export function WorkspaceDrawer() {
   const colors = useColors();
   const styles = useStyles();
   const { projects, familiars: roster } = useWorkspace();
-  const { command, refresh, selection, select, pairing } = useConnection();
+  const { pairing } = useConnection();
   const tools = useFamiliarTools();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [show, setShow] = useState<Show>("both");
-  const [creating, setCreating] = useState(false);
   const unread = useUnreadFamiliars(pairing?.desktop.fingerprint, roster);
   const pathname = usePathname();
   const params = useGlobalSearchParams<{ projectId?: string; familiarId?: string }>();
@@ -136,25 +137,16 @@ export function WorkspaceDrawer() {
   const openSettings = () => {
     if (!isModalRoute(pathname)) router.push("/settings");
   };
-  // A new Familiar on the desktop, shown on this phone at once, then its chat with
-  // its look open to name it.
-  const createFamiliar = async () => {
-    if (creating) return;
-    setCreating(true);
-    try {
-      const { familiarId } = await command<{ familiarId: string }>("familiar.create");
-      if (selection) await select({ ...selection, familiarIds: [...selection.familiarIds, familiarId] });
-      await refresh();
-      drawer.closeThen(() => {
-        router.replace({ pathname: "/familiar/[familiarId]", params: { familiarId } });
-        router.push({ pathname: "/familiar-profile/[familiarId]/edit", params: { familiarId } });
-      });
-    } catch (reason) {
-      Alert.alert("Couldn’t create a Familiar", reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setCreating(false);
-    }
+  // A new Familiar from its own sheet, which rises over the open drawer as
+  // settings does; once made, the drawer shuts onto its chat.
+  const createFamiliar = () => {
+    if (!isModalRoute(pathname)) router.push("/familiar-new");
   };
+  const openCreated = useRef(openFamiliar);
+  useEffect(() => {
+    openCreated.current = openFamiliar;
+  });
+  useEffect(() => onFamiliarCreated((familiarId) => openCreated.current(familiarId)), []);
 
   // Each kind under its label, as the filter lets it show.
   const listedFamiliars = show === "projects" ? [] : familiars;
@@ -227,7 +219,7 @@ export function WorkspaceDrawer() {
           <View style={styles.headerActions}>
             <FilterMenu filter={filter} onFilter={setFilter} show={show} onShow={setShow} />
             {/* The older desktop app can't make a Familiar from the phone. */}
-            {tools ? <CircleButton icon="add" label="New Familiar" onPress={() => void createFamiliar()} /> : null}
+            {tools ? <CircleButton icon="add" label="New Familiar" onPress={createFamiliar} /> : null}
           </View>
         </View>
 
@@ -255,16 +247,27 @@ export function WorkspaceDrawer() {
   );
 }
 
-const FILTERS: { value: Filter; label: string; symbol: "tray.full" | "circlebadge" | "bolt" }[] = [
-  { value: "all", label: "All", symbol: "tray.full" },
-  { value: "unread", label: "Unread", symbol: "circlebadge" },
-  { value: "working", label: "Working now", symbol: "bolt" },
+// Each with its SF Symbol for the iOS menu and its icon for Android's sheet.
+const FILTERS: {
+  value: Filter;
+  label: string;
+  symbol: "tray.full" | "circlebadge" | "bolt";
+  icon: IconName;
+}[] = [
+  { value: "all", label: "All", symbol: "tray.full", icon: "inbox" },
+  { value: "unread", label: "Unread", symbol: "circlebadge", icon: "circle" },
+  { value: "working", label: "Working now", symbol: "bolt", icon: "automation" },
 ];
 
-const SHOWS: { value: Show; label: string; symbol: "square.stack" | "person.2" | "folder" }[] = [
-  { value: "both", label: "Familiars and projects", symbol: "square.stack" },
-  { value: "familiars", label: "Familiars", symbol: "person.2" },
-  { value: "projects", label: "Projects", symbol: "folder" },
+const SHOWS: {
+  value: Show;
+  label: string;
+  symbol: "square.stack" | "person.2" | "folder";
+  icon: IconName;
+}[] = [
+  { value: "both", label: "Familiars and projects", symbol: "square.stack", icon: "layers" },
+  { value: "familiars", label: "Familiars", symbol: "person.2", icon: "people" },
+  { value: "projects", label: "Projects", symbol: "folder", icon: "folder" },
 ];
 
 /** The round button beside a new Familiar: a native menu of which kinds to show
@@ -282,6 +285,27 @@ function FilterMenu({
 }) {
   const colors = useColors();
   const on = filter !== "all" || show !== "both";
+  // The SwiftUI menu has no Android view, so Android groups the same choices in a sheet.
+  if (Platform.OS === "android") return (
+    <ChoiceMenu label={on ? "Filter, on" : "Filter"} title="Filter" sections={[
+      SHOWS.map((option) => ({
+        label: option.label,
+        icon: option.icon,
+        selected: show === option.value,
+        onPress: () => onShow(option.value),
+      })),
+      FILTERS.map((option) => ({
+        label: option.label,
+        icon: option.icon,
+        selected: filter === option.value,
+        onPress: () => onFilter(option.value),
+      })),
+    ]}>
+      <LiquidView borderRadius={HEADER_HEIGHT / 2} innerStyle={filterStyles.round}>
+        <Icon name="filter" size={20} color={on ? colors.accent : colors.content} />
+      </LiquidView>
+    </ChoiceMenu>
+  );
   return (
     <View>
       <LiquidView borderRadius={HEADER_HEIGHT / 2} innerStyle={filterStyles.round}>
@@ -390,7 +414,7 @@ const FamiliarRow = memo(function FamiliarRow({
 
 /** When a Familiar was last active, as a chat list dates its rows: the time
  *  today, Yesterday, else the day. */
-function when(at: number) {
+export function when(at: number) {
   const date = new Date(at);
   const today = new Date();
   if (date.toDateString() === today.toDateString())
@@ -404,7 +428,7 @@ function when(at: number) {
 /** The start of a message as one plain line: its markdown read for its
  *  words, so **bold** shows as bold rather than its asterisks. Only as much
  *  as one line can show is read. */
-function oneLine(text: string) {
+export function oneLine(text: string) {
   // A reply that is only a reaction, as the chat shows it, by its emoji.
   const reaction = text.trim().match(/^<reaction>\s*(.{1,16}?)\s*<\/reaction>$/su);
   if (reaction) return `Reacted ${reaction[1]}`;

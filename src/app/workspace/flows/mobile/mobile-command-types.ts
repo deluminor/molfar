@@ -6,6 +6,9 @@ import type { UserQuestionReply } from "@/domain/session/user-question";
 import type { Submit } from "../submission/submit-types";
 
 export type MobileCommandDeps = {
+  resumeUsage: (sessionId: string) => Promise<boolean>;
+  setResumeAtReset: (sessionId: string, enabled: boolean) => void;
+  usagePending?: Set<string>;
   sessionsRef: RefObject<Session[]>;
   setSessions: Dispatch<SetStateAction<Session[]>>;
   defaultRuntimeMode?: RuntimeMode;

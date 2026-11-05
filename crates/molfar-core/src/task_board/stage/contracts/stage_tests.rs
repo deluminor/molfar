@@ -1,0 +1,134 @@
+use super::*;
+use crate::task_board::stage::{
+    agent::AgentStage,
+    checkout::{policy, types::CheckoutSnapshot},
+};
+
+fn card() -> crate::task_board::types::Card {
+    crate::task_board::types::Card {
+        id: "abc123-card".into(),
+        number: 7,
+        project_cwd: "/code/app".into(),
+        title: "Add board".into(),
+        description: "This body must not be embedded".into(),
+        acceptance_criteria: String::new(),
+        column_id: "grill".into(),
+        run_state: "running".into(),
+        position: 1.,
+        base_ref: Some("main".into()),
+        base_sha: Some("a".repeat(40)),
+        branch: Some("molfar/task-abc123-add-board".into()),
+        worktree_path: Some("/code/app-worktrees/task-7".into()),
+        grill_round: 1,
+        rework_cycle: 0,
+        overrides_json: "{}".into(),
+        last_error: None,
+        delivery_json: None,
+        archived: false,
+        queued_at: None,
+        created_at: 1,
+        updated_at: 1,
+    }
+}
+
+#[test]
+fn every_execution_prompt_matches_the_executed_desktop_template() {
+    for (stage, expected) in [
+        (AgentStage::Implement, include_str!("fixtures/implement.md")),
+        (
+            AgentStage::CodeReview,
+            include_str!("fixtures/code_review.md"),
+        ),
+        (AgentStage::Rework, include_str!("fixtures/rework.md")),
+    ] {
+        let contract = input_contract(stage, 1);
+        let files = contract
+            .required
+            .iter()
+            .chain(contract.optional)
+            .map(|kind| types::ManifestReference {
+                kind: (*kind).into(),
+                version: 2,
+                path: format!(".molfar/board/{kind}-v2.md"),
+            })
+            .collect::<Vec<_>>();
+        let prompt = build_stage_prompt(stage, &card(), &files, &[], &"b".repeat(40)).unwrap();
+        assert_eq!(prompt, expected, "{}", stage.id());
+        assert!(!prompt.contains("This body must not be embedded"));
+    }
+}
+
+#[test]
+fn output_contracts_refuse_missing_and_malformed_stage_results() {
+    for stage in [AgentStage::Implement, AgentStage::Rework] {
+        assert!(read_stage_output(stage, "<<<MOLFAR:spec>>>wrong<<<END:spec>>>").is_err());
+        assert!(
+            read_stage_output(stage, "<<<MOLFAR:impl_report>>>  <<<END:impl_report>>>").is_err()
+        );
+        let output =
+            read_stage_output(stage, "<<<MOLFAR:impl_report>>>report<<<END:impl_report>>>")
+                .unwrap();
+        assert_eq!(output[0].kind, constants::IMPL_REPORT);
+    }
+    assert!(read_stage_output(
+        AgentStage::CodeReview,
+        "<<<MOLFAR:review>>>no verdict<<<END:review>>>"
+    )
+    .is_err());
+    let output = read_stage_output(
+        AgentStage::CodeReview,
+        "<<<MOLFAR:review>>>Verdict: APPROVE<<<END:review>>>",
+    )
+    .unwrap();
+    assert_eq!(output.len(), 1);
+    let output = read_stage_output(AgentStage::CodeReview, "<<<MOLFAR:review>>>Verdict: CHANGES_REQUESTED<<<END:review>>>\n<<<MOLFAR:pr_description>>>description<<<END:pr_description>>>").unwrap();
+    assert_eq!(output.len(), 2);
+}
+
+#[test]
+fn review_findings_and_rework_brief_preserve_desktop_selection_and_format() {
+    let parsed = review::parse("\nVerdict: changes_requested\r\n\r\n## f1 [MAJOR] Fix race\r\nFile: src/task.rs:12\r\nDetail.\r\n\r\n## F2 [nit] Rename\r\nSmall.").unwrap();
+    assert_eq!(parsed.verdict, types::ReviewVerdict::ChangesRequested);
+    assert_eq!(parsed.findings[0].id, "F1");
+    assert!(parsed.findings[0].severity.selected_by_default());
+    assert!(!parsed.findings[1].severity.selected_by_default());
+    assert_eq!(
+        review::rework_brief(&parsed.findings, &["F1".into()], " Keep scope ").unwrap(),
+        "## F1 [major] Fix race\nFile: src/task.rs:12\n\nDetail.\n\n## Note\n\nKeep scope"
+    );
+    assert!(review::rework_brief(&parsed.findings, &["F9".into()], "").is_err());
+    assert_eq!(
+        review::rework_brief(&[], &[], "note").unwrap(),
+        "## Note\n\nnote"
+    );
+    assert!(review::parse("Summary\nVerdict: APPROVE").is_err());
+}
+
+#[test]
+fn stage_checkout_policy_keeps_read_only_strict_and_writing_committed() {
+    let clean = CheckoutSnapshot {
+        head: "a".repeat(40),
+        porcelain: String::new(),
+        fingerprint: "before".into(),
+    };
+    let mut dirty = clean.clone();
+    dirty.porcelain = " M file".into();
+    dirty.fingerprint = "changed".into();
+    let mut committed = clean.clone();
+    committed.head = "b".repeat(40);
+    committed.fingerprint = "committed".into();
+    for stage in AgentStage::ALL {
+        assert!(policy::before(stage, &clean).is_ok());
+        if stage.is_read_only() {
+            assert!(policy::before(stage, &dirty).is_ok());
+            assert!(policy::after(stage, &clean, &clean).is_ok());
+            assert!(policy::after(stage, &clean, &dirty).is_err());
+            assert!(policy::after(stage, &clean, &committed).is_err());
+        } else {
+            assert!(policy::before(stage, &dirty).is_err());
+            assert!(policy::after(stage, &clean, &clean).is_err());
+            assert!(policy::after(stage, &clean, &dirty).is_err());
+            assert!(policy::after(stage, &clean, &committed).is_ok());
+        }
+    }
+}

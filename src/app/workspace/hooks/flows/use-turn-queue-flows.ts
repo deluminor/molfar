@@ -14,7 +14,7 @@ import type { WorkspaceFlowCore } from "./workspace-flow-core";
 export type TurnQueueFlowsInput = Pick<TurnQueueDeps, "enqueueHarnessEvent" | "flushHarnessEvents"> & {
   tabFlows: TabFlows;
   place: SessionOpenerFlows["place"];
-  submission: Pick<SubmissionFlows["submission"], "send">;
+  submission: Pick<SubmissionFlows["submission"], "send" | "submit">;
   /** The session the composer is on, as last rendered. */
   activeSessionId(): string | undefined;
 };
@@ -34,7 +34,7 @@ export function createTurnQueueFlows(core: WorkspaceFlowCore, input: TurnQueueFl
     flushHarnessEvents: input.flushHarnessEvents,
   };
   const queueActions = createTurnQueueActions(turnQueue);
-  const usageLimits = createUsageLimits(turnQueue);
+  const usageLimits = createUsageLimits({ ...turnQueue, submit: input.submission.submit });
 
   const providerAccounts = createProviderAccountActions({
     activeSessionId: () => input.activeSessionId(),

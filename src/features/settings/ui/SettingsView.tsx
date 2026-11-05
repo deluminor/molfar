@@ -1,4 +1,3 @@
-import { Segmented } from "./Segmented";
 import { defaultModelId, getModelSnapshot, hasLiveCatalog, modelsFor, subscribeModels } from "@/integrations/harness/core/models/catalog-store";
 import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import { HARNESSES, HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
@@ -8,6 +7,7 @@ import { loadClaudeHooks, saveClaudeHooks } from "@/integrations/harness/provide
 import { type Session } from "@/domain/session/session";
 import { invoke } from "@tauri-apps/api/core";
 import { createPortal } from "react-dom";
+import { Segmented } from "./Segmented";
 import { Toggle } from "./Toggle";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ConnectionsPage } from "./ConnectionsPage";

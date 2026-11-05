@@ -18,6 +18,47 @@ afterEach(() => {
 });
 
 describe("applyUpstreamPatch", () => {
+  it("honors a basename move before translating native directory and function names", () => {
+    const source = "pub fn monocode_database() {}\n";
+    repo.setUp({ "crates/monocode-core/src/store/profile.rs": source });
+    repo.git("mv", "crates/monocode-core", "crates/molfar-core");
+    repo.git("mv", "crates/molfar-core/src/store/profile.rs", "crates/molfar-core/src/store/desktop_profile.rs");
+    repo.write("crates/molfar-core/src/store/desktop_profile.rs", "pub fn desktop_database() {}\n");
+    repo.write(".github/upstream-moves.json", JSON.stringify({renames: {
+      "crates/monocode-core/src/store/profile.rs": "crates/molfar-core/src/store/desktop_profile.rs",
+    }}));
+    repo.commitAll("rename desktop import");
+    repo.upstreamCommit("extend desktop source", {
+      "crates/monocode-core/src/store/profile.rs": `${source}pub fn open_monocode() {}\n`,
+    });
+
+    const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
+
+    expect(result.status).toBe(SYNC_STATUS.APPLIED);
+    expect(repo.read("crates/molfar-core/src/store/desktop_profile.rs")).toBe("pub fn desktop_database() {}\npub fn open_desktop() {}\n");
+    expect(repo.exists("crates/monocode-core/src/store/profile.rs")).toBe(false);
+  });
+  it("routes verbatim manifests and asset licenses into renamed native crate folders", () => {
+    const manifest = '[package]\nname = "monocode-core"\nversion = "1.0.0"\n';
+    const license = "MonoCode dependency notice\n";
+    repo.setUp({
+      "crates/monocode-core/Cargo.toml": manifest,
+      "crates/monocode-core/assets/editor.LICENSE.txt": license,
+    });
+    repo.git("mv", "crates/monocode-core", "crates/molfar-core");
+    repo.commitAll("rename native crate directory");
+    repo.upstreamCommit("update manifest and license", {
+      "crates/monocode-core/Cargo.toml": manifest.replace("1.0.0", "1.0.1"),
+      "crates/monocode-core/assets/editor.LICENSE.txt": `${license}MonoCode extra notice\n`,
+    });
+
+    const result = applyUpstreamPatch({ cwd: repo.root, target: "upstream" });
+
+    expect(result.status).toBe(SYNC_STATUS.APPLIED);
+    expect(repo.exists("crates/monocode-core/Cargo.toml")).toBe(false);
+    expect(repo.read("crates/molfar-core/Cargo.toml")).toBe(manifest.replace("1.0.0", "1.0.1"));
+    expect(repo.read("crates/molfar-core/assets/editor.LICENSE.txt")).toBe(`${license}MonoCode extra notice\n`);
+  });
   it("applies upstream changes and records the synced commit", () => {
     repo.setUp();
     const head = repo.upstreamCommit("add four", {

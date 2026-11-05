@@ -1,3 +1,4 @@
+import { mobileUsageLimit } from "@/features/sessions/model/usage-limit";
 import { mobileProjectId } from "./mobile-project-id";
 import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
 import { sessionDisplayTitle } from "@/domain/session/title";
@@ -80,6 +81,7 @@ export async function mobileConversation(
         })
       : [],
     busy: !!session?.busy,
+    usageLimit: session ? mobileUsageLimit(session) : null,
     question: session?.pendingQuestion
       ? {
           requestId: session.pendingQuestion.requestId,

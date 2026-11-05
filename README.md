@@ -174,7 +174,7 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 ### Orchestration and `/operator`
 
 - **Orchestration** lets a lead agent decompose a larger task into coordinated worker sessions, each in its own checkout.
-- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), worktrees, and read-only Confluence tools. Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
+- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), and worktrees. Jira/Confluence writes go through **molfar-connectors** MCP (not `/operator`). Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
 
 ### Home and Usage
 
@@ -184,7 +184,7 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 
 ### Also inside
 
-Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence tools when Atlassian is connected; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence read/write tools when Atlassian is connected — edit/create/transition/search issues and create/update pages; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Security and execution model
 
@@ -351,6 +351,32 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 ## Direction
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
+
+## MOLFAR Native preview
+
+The Rust + GPUI app is an experimental preview. React/Tauri remains the
+production app.
+
+To try GPUI from this checkout with Node.js 22+, Rust and Xcode on macOS:
+
+```sh
+npm run native:dev     # launch with a separate development database
+npm run native:build   # create an optimized app using installed MOLFAR data
+```
+
+Native uses app ID `com.molfar.native` and binary `molfar-native`. Development
+builds display `MOLFAR Native (Development)` and keep data under
+`com.molfar.native`; release builds share `com.molfar.desktop/molfar.db` with Tauri.
+
+Type `r` then Enter in the development terminal to rebuild and restart; there is
+no hot reload. The release app saves changes to your installed MOLFAR data.
+See the [native guide](docs/native/README.md) for prerequisites, build output,
+checks and preview limitations.
+
+The release preparation keeps Tauri `vX.Y.Z` releases separate from Native
+`native-vX.Y.Z-preview.N` GitHub prereleases. Native automatic updates remain
+unconfigured. See [release instructions](docs/releasing.md#two-release-paths)
+and [migration status](docs/native/status.md) for validation and publication gates.
 
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 

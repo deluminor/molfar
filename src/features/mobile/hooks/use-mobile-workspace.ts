@@ -77,6 +77,7 @@ export function useMobileWorkspace(options: MobileWorkspaceOptions) {
               older,
               turns: conversation.turns,
               question: conversation.question,
+              usageLimit: conversation.usageLimit,
             },
             watch.incremental,
           );
@@ -168,7 +169,10 @@ export function useMobileWorkspace(options: MobileWorkspaceOptions) {
     const publish = async () => {
       try {
         const status = await invoke<{ enabled: boolean }>("mobile_status");
-        if (status.enabled && !disposed) await publishCatalog();
+        if (status.enabled && !disposed) {
+          await publishCatalog();
+          wake.current?.();
+        }
       } catch (error) {
         if (!disposed) console.error("Mobile workspace publish failed", error);
       }
