@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for key in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_API_KEY APPLE_API_KEY_P8 APPLE_API_ISSUER; do
+keys=(APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_API_KEY APPLE_API_KEY_P8 APPLE_API_ISSUER)
+missing=()
+for key in "${keys[@]}"; do
   if [[ -z "${!key:-}" ]]; then
-    echo "Missing public native signing configuration: $key" >&2
-    exit 1
+    missing+=("$key")
   fi
 done
+
+if [[ ${#missing[@]} -eq ${#keys[@]} ]]; then
+  echo "::notice::No Apple credentials are configured; macOS packages are ad-hoc signed and not notarized."
+  echo "MOLFAR_NATIVE_MAC_SIGNING=adhoc" >> "$GITHUB_ENV"
+  exit 0
+fi
+
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "Incomplete public native signing configuration: ${missing[*]}" >&2
+  exit 1
+fi
 
 python3 - <<'PY'
 import base64

@@ -25,23 +25,19 @@ shared desktop database; distinct installers do not establish data isolation.
    Validation packages carry validation provenance; macOS uses ad-hoc signing.
 4. Inspect the eight packages and `SHA256SUMS.txt` in the verified CI artifact.
    Actual installation, launch and upgrades need separate platform acceptance.
-5. Before public distribution, verify the existing `APPLE_*` credentials and
-   configure the `native-release` environment's reviewers and main-only branch
-   policy in GitHub. YAML naming an environment does not install protections.
-   Store signing secrets in the scope used by the package job; environment-only
-   secrets on the publish job are unavailable to the package job.
-6. A later manual run from `main` with `publish=true` rebuilds public packages.
-   Both Mac builds require Developer ID and notarization. The publish job waits
-   for the configured environment and all package jobs, then creates a draft,
-   uploads the verified package set/checksums and publishes a prerelease with
-   `latest=false`. The workflow creates its own native tag at the run's SHA.
-   Windows/Linux distribution currently has no platform code signature.
+5. Before the first public run, configure the `native-release` environment's
+   reviewers and main-only branch policy in GitHub. YAML naming an environment does
+   not install protections; GitHub creates it unprotected on first use.
+6. A later manual run from `main` with `publish=true` rebuilds public packages. The
+   publish job waits for the configured environment and all package jobs, then
+   creates a draft, uploads the verified package set/checksums and publishes a
+   prerelease with `latest=false`. The workflow creates its own native tag at the
+   run's SHA. Windows/Linux distribution currently has no platform code signature.
 
-Configuration check on November 5, 2026: repository secret names did not include
-any of the six required `APPLE_*` keys. Reading the `native-release` environment
-secrets returned HTTP 404; environment protection remains unverified. This
-blocks public Mac distribution until configured, while validation builds need
-no signing secrets. No secret values were read or changed.
+MOLFAR has no Apple Developer ID. With no `APPLE_*` secret set, public Mac packages
+are ad-hoc signed and not notarized, as in the Tauri release, so the first launch
+needs **Open Anyway**. Setting all six secrets switches to Developer ID signing and
+notarization with no workflow change. Setting only some of them fails the run.
 
 An existing release causes creation to fail; the workflow does not overwrite it.
 An existing tag pointing elsewhere also blocks publication. Upload failures

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -108,4 +109,23 @@ test("an upload failure keeps the draft; a conflicting tag blocks creation", asy
     assert.equal(command, "git");
     return `${"b".repeat(40)}\trefs/tags/native-v${version}\n`;
   }), /different commit/);
+});
+
+test("Mac signing falls back to ad-hoc only when every Apple credential is absent", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "native-signing-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const githubEnv = join(directory, "github-env");
+  await writeFile(githubEnv, "");
+  const sign = (extra) => spawnSync("bash", ["scripts/native-release/apple-signing.sh"], {
+    encoding: "utf8",
+    env: { PATH: process.env.PATH, GITHUB_ENV: githubEnv, RUNNER_TEMP: directory, ...extra },
+  });
+
+  const partial = sign({ APPLE_CERTIFICATE: "partial" });
+  assert.equal(partial.status, 1);
+  assert.match(partial.stderr, /Incomplete public native signing configuration: APPLE_CERTIFICATE_PASSWORD/);
+  assert.equal(await readFile(githubEnv, "utf8"), "");
+
+  assert.equal(sign({}).status, 0);
+  assert.equal(await readFile(githubEnv, "utf8"), "MOLFAR_NATIVE_MAC_SIGNING=adhoc\n");
 });
