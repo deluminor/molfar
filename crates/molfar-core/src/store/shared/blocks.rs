@@ -433,7 +433,11 @@ fn update(old: Option<&Value>, rows: &[Row]) -> Result<Value, String> {
     }
     Ok(block)
 }
-pub(super) fn merge(blocks: &[Value], start: usize, delta: &[Row]) -> Result<Vec<Value>, String> {
+pub(in crate::store) fn merge(
+    blocks: &[Value],
+    start: usize,
+    delta: &[Row],
+) -> Result<Vec<Value>, String> {
     let mut rows = project(blocks)?;
     let original_len = rows.len();
     if start > rows.len() {

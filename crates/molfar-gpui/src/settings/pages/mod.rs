@@ -2,6 +2,7 @@
 mod appearance;
 mod archive;
 mod chat;
+mod companion;
 mod connections;
 mod familiars;
 mod general;
@@ -31,6 +32,7 @@ impl SettingsView {
                 // Settings → Connections holds both machines and phones.
                 let mut page = self.connections_page(cx);
                 page.extend(self.mobile_page(cx));
+                page.extend(self.companion_page(cx));
                 page
             }
             Section::Appearance => self.appearance_page(window, cx),

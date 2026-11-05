@@ -10,6 +10,7 @@ mod classic_sidebar;
 #[cfg(test)]
 mod classic_surface_tests;
 mod classic_surfaces;
+mod companion;
 mod familiar_panes;
 pub(crate) mod familiars;
 mod file_panes;
@@ -614,6 +615,8 @@ pub(crate) struct Shell {
     image_lightbox: Option<(Entity<crate::image_lightbox::ImageLightbox>, Subscription)>,
     app_bridge: Option<molfar_core::familiar::bridge::Server>,
     mobile: mobile_host::Mobile,
+    companion: Option<crate::companion::Host>,
+    companion_offer: Option<crate::companion::Offer>,
     app_results: HashMap<(i64, String), (String, Result<serde_json::Value, String>)>,
     app_pending: HashSet<(i64, String)>,
     orchestrations: HashMap<i64, orchestration::Run>,
@@ -1021,6 +1024,8 @@ impl Shell {
             image_lightbox: None,
             app_bridge: None,
             mobile: mobile_host::Mobile::default(),
+            companion: None,
+            companion_offer: None,
             app_results: HashMap::new(),
             app_pending: HashSet::new(),
             orchestrations: HashMap::new(),
@@ -1311,6 +1316,7 @@ impl Shell {
             this.session_summaries.insert(summary.id, summary);
         }
         this.init_mobile_host(cx);
+        this.init_companion(cx);
         if let Some(id) = this.workspace.active {
             this.ensure_session(this.workspace.session_for_pane(id), cx);
             this.record_worktree_session(id, cx);

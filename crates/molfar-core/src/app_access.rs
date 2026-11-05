@@ -131,7 +131,7 @@ fn is_effort(key: &str) -> bool {
     )
 }
 pub fn model_description(kind: Kind, model: &Model) -> Value {
-    json!({"id":model.id,"name":model.name,"settings":model_controls(kind,model).iter().map(|c| json!({"id":c.id,"label":c.name,"defaultValue":c.current,"options":c.choices.iter().map(|(value,label)|json!({"value":value,"label":label})).collect::<Vec<_>>()})).collect::<Vec<_>>()})
+    json!({"id":model.id,"name":model.name,"isDefault":model.default,"settings":model_controls(kind,model).iter().map(|c| json!({"id":c.id,"label":c.name,"defaultValue":c.current,"options":c.choices.iter().map(|(value,label)|json!({"value":value,"label":label})).collect::<Vec<_>>()})).collect::<Vec<_>>()})
 }
 
 /// Discovery runs on workers, independently of which provider views are open.

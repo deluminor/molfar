@@ -72,6 +72,24 @@ pub fn remove(cwd: &Path, path: &Path) -> Result<(), String> {
     crate::git::git(cwd, &["worktree", "remove", "--force", "--", &tree.path]).map(|_| ())
 }
 
+/// Roll back only a new checkout that has not diverged from the main checkout.
+pub fn remove_unstarted(cwd: &Path, path: &Path) -> Result<(), String> {
+    let tree = check(cwd, path)?;
+    let head = crate::git::git(cwd, &["rev-parse", "HEAD"])?;
+    if tree.head != head.trim() {
+        return Err(format!(
+            "The new checkout changed and was kept: {}",
+            tree.path
+        ));
+    }
+    let branch = tree
+        .branch
+        .as_deref()
+        .ok_or("The new checkout has no branch")?;
+    remove_clean(cwd, path)?;
+    crate::git::git(cwd, &["branch", "--delete", "--", branch]).map(|_| ())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

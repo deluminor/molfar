@@ -11,6 +11,7 @@ mod arcade;
 mod assets;
 mod automations;
 mod changes;
+mod companion;
 mod composer_completion;
 mod composer_motion;
 mod composer_runner;

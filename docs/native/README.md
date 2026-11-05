@@ -172,3 +172,26 @@ See [architecture](migration.md) for the crate boundaries and renderer patches,
 and [preview limitations](parity.md) for remaining work. The
 [session visuals guide](visuals.md) documents the agent-facing visual API and
 examples.
+
+## BitChain Companion gateway
+
+Settings → Connections → Companion controls the HTTP/Tailscale gateway used by
+BitChain. The default listener is port 3775. Existing bind mode, public URL, port
+and paired devices are retained when toggling it. Pairing uses the selected
+store directory's `companion.json`; a native development store has its own file.
+The shared desktop-data mode uses Tauri's pairing file; an isolated development
+store does not.
+
+One process can own the configured listener at a time. Stop the other gateway
+before enabling this one. The bridge exposes overview, text transcripts, text
+send/stop, access modes, approvals/questions, notes and session launch choices.
+Launch choices validate model, effort and workspace mode before creating a
+session; worktree mode creates an isolated checkout. Familiars keep their own
+live conversation owner while exposing the underlying session ID to the phone.
+Photo/file attachments, Knowledge and phone Board actions remain unsupported.
+
+Gateway, RPC and temporary-checkout regression tests do not establish live
+BitChain/Tailscale/provider acceptance. Those checks remain unrun. Tailscale
+discovery runs on a bounded background worker; status reads cached results.
+Host resource polls retain a CPU sampler and report a warming-up response until
+a CPU delta is available.

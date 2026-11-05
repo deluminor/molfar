@@ -65,6 +65,9 @@ pub(crate) struct SettingsContext {
     pub mobile: Option<molfar_core::mobile::Status>,
     /// The pairing code on show.
     pub mobile_invite: Option<molfar_core::mobile::Invite>,
+    /// BitChain Companion, when this desktop opened `companion.json`.
+    pub companion: Option<crate::companion::Status>,
+    pub companion_offer: Option<crate::companion::Offer>,
 }
 impl PartialEq for SettingsContext {
     fn eq(&self, other: &Self) -> bool {
@@ -87,6 +90,8 @@ impl PartialEq for SettingsContext {
             && self.inbox_connections == other.inbox_connections
             && self.mobile == other.mobile
             && self.mobile_invite == other.mobile_invite
+            && self.companion == other.companion
+            && self.companion_offer == other.companion_offer
     }
 }
 #[derive(Clone, Debug, PartialEq)]
@@ -134,6 +139,13 @@ pub(crate) enum SettingsEvent {
     MobilePair,
     MobileCancelInvite,
     MobileRevoke(String),
+    CompanionConfigure {
+        enabled: bool,
+        port: u16,
+    },
+    CompanionPair,
+    CompanionCancelPair,
+    CompanionRevoke(String),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

@@ -68,6 +68,8 @@ impl Shell {
             remote: Some(self.remote.clone()),
             mobile: self.mobile_status(),
             mobile_invite: self.mobile.invite.clone(),
+            companion: self.companion_status(),
+            companion_offer: self.companion_offer.clone(),
             quick_error: self.quick.error.clone(),
             inbox_connections: self
                 .inbox
@@ -250,6 +252,14 @@ impl Shell {
                 SettingsEvent::MobilePair => this.pair_mobile(cx),
                 SettingsEvent::MobileCancelInvite => this.mobile_cancel_invite(cx),
                 SettingsEvent::MobileRevoke(id) => this.mobile_revoke(id, cx),
+                SettingsEvent::CompanionConfigure { enabled, port } => {
+                    this.companion_configure(*enabled, *port, cx);
+                }
+                SettingsEvent::CompanionPair => {
+                    this.companion_pair(cx);
+                }
+                SettingsEvent::CompanionCancelPair => this.companion_cancel_pair(cx),
+                SettingsEvent::CompanionRevoke(id) => this.companion_revoke(id, cx),
             },
         ));
         // This dialog is painted at the window root, like React's portal.

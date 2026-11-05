@@ -77,6 +77,32 @@ impl Store {
         Ok((session, true))
     }
 
+    /// Uses the same persisted window as `load`; `history_before` reports older data.
+    pub fn conversation_blocks(&self, id: i64) -> Result<Vec<Value>, String> {
+        if self.shared.is_some() {
+            return self.shared_blocks(id);
+        }
+        self.conversation_blocks_with_rows(id, &self.load(id)?.rows)
+    }
+
+    /// Rows must use `load`'s current window. The overlay preserves source metadata without writing it.
+    pub fn conversation_blocks_with_rows(
+        &self,
+        id: i64,
+        rows: &[crate::transcript::Row],
+    ) -> Result<Vec<Value>, String> {
+        let source = if self.shared.is_some() {
+            self.shared_blocks(id)?
+        } else {
+            Vec::new()
+        };
+        let mut blocks = super::shared::blocks::merge(&source, 0, rows)?;
+        for (index, block) in blocks.iter_mut().enumerate().skip(source.len()) {
+            block["id"] = json!(format!("native-{id}-{index}"));
+        }
+        Ok(blocks)
+    }
+
     pub fn app_conversation(
         &self,
         id: i64,
@@ -116,3 +142,7 @@ pub(super) fn prompt_message_id(request: &str) -> String {
         crate::familiar::files::content_hash(request)
     )
 }
+
+#[cfg(test)]
+#[path = "app_access/companion_tests.rs"]
+mod companion_tests;

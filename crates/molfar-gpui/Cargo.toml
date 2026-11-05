@@ -50,6 +50,12 @@ tree-sitter-ruby = "0.23"
 tree-sitter-zig = "1.1"
 # Settings → Mobile draws the pairing code from the module matrix.
 qrcode = { version = "0.14", default-features = false }
+# BitChain Companion: loopback HTTP behind `tailscale serve`, same store as Tauri.
+tiny_http = "0.12"
+sha2 = "0.10"
+url = "2.5"
+if-addrs = "0.15"
+uuid = { version = "1", features = ["v4"] }
 
 [build-dependencies]
 embed-resource = "3"
