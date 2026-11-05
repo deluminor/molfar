@@ -1,26 +1,70 @@
 # Migration status and working location
 
-Updated November 3, 2026.
+Updated November 5, 2026.
 
 ## Authoritative line
 
-Continue manual migration in `/Users/deluminor/Documents/personal/developing/personal/projects/AI/molfar` on `migration/gpui-into-main`. The single integration PR is [#127](https://github.com/deluminor/molfar/pull/127), targeting `main`. React/Tauri remains production; GPUI is an experimental preview.
+The sole upstream integration target is `migration/gpui-into-main`, with
+[#127](https://github.com/deluminor/molfar/pull/127) targeting `main`.
+React/Tauri remains production; GPUI remains a preview. The human controls
+review status, merge and release decisions. This update does not refresh the
+remote PR state or CI.
 
-The secondary `sync/gpui-20261101` worktree preserves M01a checkpoint `6b08aa29`. Both commits have been fast-forward integrated into the authoritative line. Retain that worktree and its evidence; continue manual feature work in the main checkout. Sync automation may use an isolated worktree under its own documented rules.
+Retained Companion checkpoint: `8840e63c` on `sync/gpui-20261105`, in the isolated
+`molfar-ad3f861b` worktree. The Companion commit was local at the start of preparation; check PR #127
+for the published integration head.
+Do not overwrite the main checkout's independent uncommitted work.
 
-The line includes M01a (`eab8b0bb`, `6b08aa29`), main through `5ee67cce` (already released v1.0.23, reconciled in `f98187b8`) and readiness M02, M03, M08a and M08b. The changelog preserves connector additions under Unreleased and the v1.0.23 notes. This integration does not publish a release.
-
-The [M01–M22 feature transfer register](feature-transfer.md) separates implemented
-code, automated evidence and remaining native/runtime work. It is the concise
-tracked status index; it supersedes dated status summaries in ignored local
-plans, which retain the detailed execution history. Old local checkboxes do not
-override the current register or establish runtime parity.
+The upstream checkpoint file records `main` at `9ee7b3dd1e408a76229d60fc2db29d1ec45728ea`.
+Sync commits `9da9e6d5` and `61bb6048` were published to the integration branch.
+The [feature transfer register](feature-transfer.md) and [limitations](parity.md)
+separate code delivery from runtime acceptance; [verification](verification.md)
+records revision-scoped results.
 
 ## Delivered and remaining
 
-M01a adds owner answers/change requests, versioned plan editing and repeated Grill. Readiness M02 (`ff780975`..`2369ba98`) adds plan approval and native Implement/Code review/Rework execution through Final review. Readiness M03 (`4fe5dc0c`..`238aa1fe`) adds delivery, reject and archive. Readiness M08a (`f0899eb6`..`db9ac988`) adds task editing and Move to…; M08b (`e8b98c67`..`1ae5270f`) adds kanban columns and drag-and-drop. [Verification](verification.md) records tests/builds for those checkpoints, not certification of later revisions or runtime parity.
+- Board: owner review/repeated Grill, plan approval, Implement/Code review/Rework,
+  Final review, delivery/reject/archive, editing, kanban and legal drag/moves.
+  Real provider execution and GitHub delivery acceptance remain open.
+- Home: ten widgets, editable persisted layout, Usage widget and sphere motion.
+  Native-window interaction/visual acceptance remains open.
+- Companion: HTTP/Tailscale gateway, phone RPCs, Familiar live ownership,
+  validated launch choices, cancellation and checkout rollback in `8840e63c`.
+  Real BitChain/Tailscale/provider acceptance remains unrun.
+- Full Jira hierarchy/actions, native Confluence and Knowledge/vault/graph/revisions
+  remain unfinished. The owner deferred Jira while polishing Board.
+- Scheduler, Familiar heartbeat/delegation, restart recovery, shared data and
+  provider/platform acceptance remain open.
 
-Next: native Jira and Confluence (readiness M04/M05). Full native Jira/Confluence, Home/Usage and Knowledge remain open. Scheduler, Familiar heartbeat/delegation, shared data, provider and platform acceptance need runtime evidence. See [parity](parity.md) and [architecture](migration.md).
+## Merge preparation: November 5, 2026
+
+The owner approved steps 1–3 below. Local changes fix the sphere geometry/import
+lints, add main native validation, and prepare the separate Native package/release
+workflow. The Companion commit is a direct descendant of the fetched integration
+head; no additional main merge was needed. Final checks and publication status
+are recorded in verification.md. No PR merge or release publication is included.
+
+## Acceptance order
+
+1. Verify the native gate fixes: the sphere painter now accepts existing bounds,
+   and the `Sampler` test import uses the same platform gate as its test. Run the
+   complete native gate and platform CI on the intended integration head.
+2. Reconcile the local Companion commit with the human's integration work and
+   publish only with authorization. Recheck PR #127 and exact-head CI.
+3. Define and implement two release channels: retain the Tauri release and add
+   a separate MOLFAR Native preview, with distinct artifacts, identifiers,
+   update policy and packaging checks. The local preparation now implements this
+   path; hosted builds, signing and publication acceptance remain open.
+4. With runtime QA authorization, test isolated data first: phone pairing and
+   reconnect, provider send/stop/approvals, restart persistence, terminal/Git/
+   worktrees, Board delivery and Familiar scheduling. Shared production-data
+   concurrency needs a separate acceptance run.
+5. Finish or explicitly defer Jira, Confluence and Knowledge scope before
+   claiming desktop feature parity. Decide preview-merge acceptance separately
+   from full product cutover.
+6. After the human merges #127, stop the existing sync job until an explicit
+   target policy is approved. Tracked instructions do not verify an installed
+   automation's configuration.
 
 ## Planning
 
@@ -30,12 +74,10 @@ Local continuation entrypoint: `docs/specs/gpui-merge-readiness/handoff.md`. Rem
 
 ## Publication and sync
 
-The latest upstream integration checkpoint is `8ef99c49`, bringing upstream
-`main` through `00c69307` onto the existing MOLFAR line, including product `main`
-through `5ee67cce` (v1.0.23). PR #127 remains open and ready for review by the
-human's decision. The subsequent CI-repair follow-up does not add feature ports.
-See [verification](verification.md) for revision-scoped local and remote results;
-re-read the current PR head/CI before publication.
+The current recorded source is upstream `main` through `9ee7b3dd`; only
+`migration/gpui-into-main` receives upstream patches. See the latest
+[verification](verification.md) entry for local results and unresolved gates.
+Do not infer current remote CI or PR readiness from historical green runs.
 
 Upstream sync now takes all code from the upstream `main` into `migration/gpui-into-main` only, as approved on November 3. There is no separate desktop sync into MOLFAR `main`. The human completes migration and merges #127; the automation then stops for an explicit target-policy update. The [canonical prompt](../automations/upstream-sync.md) is ready for the user to install; installed automation configuration was not changed in this run.
 

@@ -2619,6 +2619,16 @@
         ],
         "target": "scripts/package-native-macos.mjs"
       }
+    ],
+    "scripts/repack-appimage.sh": [
+      {
+        "names": [
+          "APPIMAGETOOL_VERSION",
+          "APPIMAGETOOL_SHA256",
+          "verified appimagetool download/cache block"
+        ],
+        "target": "scripts/build-tools/appimagetool.sh"
+      }
     ]
   },
   "removed": {
@@ -2655,7 +2665,7 @@
     "src/features/notes/ui/index.ts": "Hardening B4: knip-confirmed unused barrel (874e7aa5).",
     "src/features/sessions/ui/ModelSettings.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
     "src/features/usage/ui/UsageProviderSection.tsx": "Hardening B4: knip-confirmed unused (874e7aa5).",
-    ".github/workflows/native-release.yml": "MOLFAR-owned release: MonoCode native preview publishing (R2 feed, signing secrets) stays out; MOLFAR releases ship only through release.yml.",
+    ".github/workflows/native-release.yml": "MOLFAR-owned replacement at the same path: keep MOLFAR Native Packages manual GitHub prerelease workflow. MonoCode R2/feed/signing workflow changes stay pending and are not imported; Tauri releases remain in release.yml.",
     "docs/agent-access.md": "MOLFAR does not carry this upstream doc; agent API behavior is documented in MOLFAR's own docs.",
     "docs/building.md": "MOLFAR does not carry this upstream doc; build steps live in README.md (Development, MOLFAR Native preview) and docs/native/README.md.",
     "crates/mobile-link/tests/fixtures/legacy-identity.json": "Public legacy p256 identity and proof data is inlined in the cfg(test) legacy_identity_keys_and_proofs_remain_compatible test in crates/mobile-link/src/lib.rs; standalone test fixtures are excluded by the sync job."

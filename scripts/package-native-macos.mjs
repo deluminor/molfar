@@ -3,7 +3,10 @@ import { mkdir } from "node:fs/promises";
 import { join, dirname, basename } from "node:path";
 import { run, runStapler, logicalBytes } from "./package-native-support.mjs";
 
-export async function packageMacos({ binary, version, arch, work, add }) {
+export async function packageMacos({ binary, version, arch, work, add, distribution = "public" }) {
+  const publicPreview = distribution !== "validation";
+  if (publicPreview && (!process.env.APPLE_SIGNING_IDENTITY || process.env.APPLE_SIGNING_IDENTITY === "-"))
+    throw new Error("Public previews require a Developer ID signing identity");
   const expectedArch = arch === "aarch64" ? "arm64" : "x86_64";
   const actualArch = run("lipo", ["-archs", binary], {
     encoding: "utf8",
@@ -24,16 +27,11 @@ export async function packageMacos({ binary, version, arch, work, add }) {
       env: {
         ...process.env,
         MOLFAR_NATIVE_SIGNING_IDENTITY:
-          process.env.APPLE_SIGNING_IDENTITY || "",
+          publicPreview ? process.env.APPLE_SIGNING_IDENTITY : "-",
       },
     },
   );
   const app = join(dirname(binary), "MOLFAR Native.app");
-  if (
-    !process.env.APPLE_SIGNING_IDENTITY ||
-    process.env.APPLE_SIGNING_IDENTITY === "-"
-  )
-    throw new Error("Public previews require a Developer ID signing identity");
   const submit = async (file, staple) => {
     const result = run(
       "xcrun",
@@ -64,9 +62,9 @@ export async function packageMacos({ binary, version, arch, work, add }) {
   };
   const zip = join(work, "notarize.zip");
   run("ditto", ["-c", "-k", "--keepParent", app, zip]);
-  await submit(zip, app);
+  if (publicPreview) await submit(zip, app);
   run("codesign", ["--verify", "--deep", "--strict", app]);
-  run("spctl", ["--assess", "--type", "execute", app]);
+  if (publicPreview) run("spctl", ["--assess", "--type", "execute", app]);
   const name = arch === "aarch64" ? "aarch64" : "x64";
   const archive = add(
     `MolfarNative_${version}_${name}.app.tar.gz`,
@@ -97,6 +95,7 @@ export async function packageMacos({ binary, version, arch, work, add }) {
     `${imageSizeMiB}m`,
     dmg,
   ]);
+  if (!publicPreview) return;
   run("codesign", [
     "--sign",
     process.env.APPLE_SIGNING_IDENTITY,

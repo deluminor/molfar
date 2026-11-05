@@ -18,8 +18,11 @@ export async function packageNative({
   out,
   version,
   arch = "x86_64",
+  distribution = "public",
 }) {
   const parsed = previewVersion(version);
+  if (!["public", "validation"].includes(distribution))
+    throw new Error("Unknown native distribution mode");
   binary = resolve(binary);
   out = resolve(out);
   const embedded = run(binary, ["--version"], {
@@ -33,11 +36,11 @@ export async function packageNative({
   await mkdir(work, { recursive: true });
   const artifacts = [];
   const add = (filename, target = null) => {
-    artifacts.push({ filename, target });
+    artifacts.push({ filename, target, distribution });
     return join(out, filename);
   };
   if (kind === "macos") {
-    await packageMacos({ binary, version, arch, work, add });
+    await packageMacos({ binary, version, arch, work, add, distribution });
   } else if (kind === "linux") {
     const debRoot = join(work, "deb");
     await linuxTree(debRoot, binary, "deb");
@@ -108,7 +111,7 @@ export async function packageNative({
     if (rpms.length !== 1) throw new Error("Expected exactly one native rpm");
     await cp(
       join(top, "RPMS/x86_64", rpms[0]),
-      add(rpms[0], "linux-x86_64-rpm"),
+      add(`molfar-native-${parsed.base}-0.preview.${parsed.sequence}.x86_64.rpm`, "linux-x86_64-rpm"),
     );
   } else if (kind === "windows") {
     const stage = join(work, "windows");
@@ -150,12 +153,13 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
-  const [kind, binary, out, arch] = process.argv.slice(2);
+  const [kind, binary, out, arch, distribution] = process.argv.slice(2);
   await packageNative({
     kind,
     binary,
     out,
     arch,
+    distribution,
     version: process.env.MOLFAR_NATIVE_VERSION,
   });
 }

@@ -234,5 +234,16 @@ if (name === 'xcrun' && args[0] === 'stapler' && process.env.NATIVE_TEST_STAPLER
         }),
       /Apple did not accept/,
     );
+    process.env.APPLE_SIGNING_IDENTITY = "";
+    await assert.rejects(
+      () => packageNative({ kind: "macos", binary, out: join(directory, "unsigned-public"), version: "0.16.0-preview.3", arch: "aarch64" }),
+      /Developer ID/,
+    );
+    const validation = await packageNative({
+      kind: "macos", binary, out: join(directory, "validation"),
+      version: "0.16.0-preview.3", arch: "aarch64", distribution: "validation",
+    });
+    assert.ok(validation.every((artifact) => artifact.distribution === "validation"));
+
   },
 );

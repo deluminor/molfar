@@ -2,7 +2,7 @@ name: MOLFAR Native Preview
 
 on:
   push:
-    branches: [migration/gpui-into-main]
+    branches: [main, migration/gpui-into-main]
   workflow_dispatch:
   pull_request:
     paths:
@@ -13,6 +13,7 @@ on:
       - 'scripts/*native*'
       - 'scripts/native-editor/**'
       - 'scripts/native-settings/**'
+      - 'scripts/native-release/**'
       - 'package.json'
       - '.github/workflows/native.yml'
 

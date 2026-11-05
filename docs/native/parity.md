@@ -4,15 +4,13 @@ The native app is still experimental. A feature being present in source does not
 establish runtime or platform parity with the production React/Tauri app. See
 [verification](verification.md) for recorded checks.
 
-The historical baseline was reviewed at `60bbd2c6` on November 2. Current
-upstream integration is `8ef99c49` (upstream `main` through `00c69307`), retaining
-owner review/repeated Grill, readiness M02 execution, M03 delivery, M08a editing
-and moves, and M08b kanban/drag. The [feature transfer register](feature-transfer.md)
-accounts for roadmap M01–M22 without treating source presence as runtime parity.
-[Verification](verification.md) records historical checks, current sync evidence
-and the later CI-repair scope separately. PR #127 remains ready for review by
-the human's decision. Production stays React/Tauri; source integration does not
-authorize a release or cutover.
+Current local implementation checkpoint: `8840e63c`, including the retained
+Companion gateway. The source checkpoint records upstream `main` through
+`9ee7b3dd`. Board execution/delivery and Home/Usage are implemented, with
+runtime gaps below. The [feature register](feature-transfer.md) accounts for
+M01–M22; [verification](verification.md) separates local evidence from historical
+remote/upstream checks. Production stays React/Tauri. Native releases and full
+cutover remain pending.
 
 Working branch, checkout and publication boundaries: [migration status](status.md).
 
@@ -60,9 +58,20 @@ approval for every edit. Native Supervised mode does not add that guarantee.
 | Familiars | Existing-data checks, live heartbeat and background delegation checks, native visual/document accessibility, floating-document interactions and durable orchestration recovery |
 | Remote connections | Real-machine installation/update, existing-data restoration and cross-platform checks; the existing host's feature limits still apply |
 | Integrations | Completion/approval notifications, sounds and Dock badges; Quick Composer attachments/shortcut checks, MCP/skills checks and remaining app-control endpoints. macOS reminder delivery and click routing passed on Oct 22 |
+| Companion / BitChain | Native gateway and phone RPCs have isolated tests at local `8840e63c`; actual phone/Tailscale pairing, reconnect and provider use remain unrun. Photo/file attachments, Knowledge and phone Board actions remain unsupported. |
 | Shared data | Concurrent Tauri/native use with active scheduled tasks or phone connections remains unverified and deferred |
 
 ## Platform and distribution
+
+The local release preparation adds an independent Native Packages workflow with
+validation builds and manual GitHub prerelease publication. Tauri release logic
+and its feed remain unchanged; Native has no configured updater. Mac public
+packages require signing/notarization; validation packages cannot enter public
+collection. Hosted matrix builds, signing configuration, environment protections
+and package installation/upgrade acceptance remain unverified. See
+[release instructions](../releasing.md#two-release-paths) and the latest verification
+entry for the native gate result.
+
 
 The manual platform checks below describe upstream source builds; they do not establish runtime verification of the MOLFAR migration branch.
 

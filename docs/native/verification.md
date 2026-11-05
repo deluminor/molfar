@@ -5,6 +5,80 @@ results, not a release certification. Later dated sections supplement this
 snapshot. See [preview limitations](parity.md) for
 remaining runtime and platform work.
 
+## Merge and release preparation: November 5, 2026
+
+Scope: local changes after `8840e63c`, with the retained Companion commit.
+The fetched integration tip was `61bb6048`; it is an ancestor, and no main
+merge was needed. The owner assigned the six newer upstream commits after
+`9ee7b3dd` to another session; this preparation does not port that range.
+
+The lint fixes gate the Windows-inapplicable `Sampler` test import and pass
+existing sphere bounds into the painter. No lint was disabled. The Native
+Packages workflow adds four-architecture validation and manual GitHub native
+prereleases; Tauri workflow/manifests/feed remain unchanged. Validation metadata
+cannot enter public collection. Native updater endpoint/key remain unset.
+
+| Evidence | Current result |
+| --- | --- |
+| Native script tests | Exit 0; 43 passed |
+| Strict native Clippy | Exit 0 after the fixes |
+| `npm run native:check` | Exit 0; 43 Node tests, format and strict Clippy passed; core 832 passed / 2 ignored, GPUI 1,029 passed / 11 ignored, wheel 6 passed |
+| `npm run check:web` | Exit 0; 7,159 tests passed / 13 skipped; types, lint, size, boundaries, move map and native branding passed |
+| Optimized Native build | Exit 0; `MOLFAR_NATIVE_VERSION=0.16.0-preview.1 cargo build --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --release` |
+| Real macOS ARM64 validation packaging | Exit 0; app archive and DMG created, `codesign --verify --deep --strict` exit 0; plist identity `com.molfar.native`, version `0.16.0-preview.1`. No UI launch or installation. |
+| Tauri release-tool tests | Exit 0; 31 passed |
+| Workflow syntax | actionlint 1.7.12: exit 0 for both native workflows |
+| Shell syntax | `bash -n`: exit 0 for signing, AppImage fetch and repack helpers |
+| Independent source review | No blocking findings; publication guards and failure paths reviewed |
+| Signing configuration read | Repository secret-name listing succeeded; all six required `APPLE_*` names absent. Environment secret listing for `native-release` returned HTTP 404. No values were read and no configuration changed. |
+
+The initial native sandbox run failed 15 socket/process fixtures with
+`Operation not permitted`; it is not counted as a pass. The permitted complete
+rerun passed and is the acceptance gate. The first complete web run reached all tests but
+failed a new regex lint; the assertion now expresses the required two checksum
+separator spaces as `{2}`, without suppressing lint, and the full gate rerun passed.
+
+License notices are unchanged in this preparation; no new dependencies were introduced.
+Cargo reports the existing `block v0.1.6` future-compatibility warning.
+
+Hosted Windows/Linux/Intel packages, public signing/notarization, installed
+environment protections, package upgrades and live phone/provider/data
+acceptance remain unverified. No app/browser launch, real user-data access,
+workflow dispatch, release publication or PR merge is included. The canonical
+sync instructions were edited; installed automation state was not changed.
+
+## Companion checkpoint: November 5, 2026
+
+Implementation revision: `8840e63c` on local `sync/gpui-20261105`. This includes
+Companion and its fixes; the commit has not been pushed. The sync checkpoint
+records upstream `main` through `9ee7b3dd`. Results below come from the final
+Companion run, before this documentation-only update. They do not certify a
+release or current remote CI. Older dated sections retain their original scope.
+
+| Command / review | Result |
+| --- | --- |
+| `npm run check:web` | Exit 0; 802 test files passed / 2 skipped; 7,159 tests passed / 13 skipped; web type/lint/structure checks passed |
+| `cargo check --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --tests --profile native-dev` | Exit 0 |
+| `cargo build --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --profile native-dev` | Exit 0; development binary build only |
+| `npm run native:test` | Exit 0; core 832 passed / 2 ignored; GPUI 1,029 passed / 11 ignored; wheel 6 passed; 0 failed |
+| Focused GPUI Companion tests | Exit 0; 17 passed |
+| `npm run native:check` | Exit 101; Node tests 31 passed and format passed, then strict Clippy failed at `crates/molfar-gpui/src/home/visuals/sphere.rs:35`: `too_many_arguments` (8/7). The same error was reproduced on the pre-Companion baseline. Full Rust tests were run separately above. |
+| `npm run check:native-branding` | Exit 0 |
+| `node scripts/upstream/moves.mjs --check` after commit | Exit 0 |
+| Staged secrets scanner and `git diff --cached --check` | Exit 0 |
+| Independent source review | No remaining blocking findings in the final Companion changes |
+
+The transcript regression first reproduced an empty result where ten blocks
+were expected. The final tests cover native/shared history, stable IDs and
+metadata overlays, Familiar ownership, launch choices, cancellation/rollback,
+configuration retention, discovery isolation and listener restart requests.
+All fixtures used isolated temporary or in-memory data.
+
+No application/browser launch, real phone, live provider, real user data,
+production packaging/signing, upgrade or fresh remote CI run formed part of
+this acceptance. Runtime and release acceptance remain open. Coverage was not
+measured in these runs. No installed automation configuration was changed.
+
 ## MOLFAR sync and merge follow-up — November 2, 2026
 
 Verified revision: [`60bbd2c6`](https://github.com/deluminor/molfar/commit/60bbd2c6b8b7e5e72914829f73b99fe209a39ac4).

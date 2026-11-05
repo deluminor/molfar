@@ -29,6 +29,26 @@ Provider transports use Codex app-server, Claude stream-json, OpenCode HTTP/SSE,
 ACP for Cursor/Grok/Antigravity/fx/Hermes/Devin, and Pi/omp RPC. They reuse the
 providers' CLI authentication and conversation IDs.
 
+## Companion gateway
+
+The native gateway in `src/companion/` owns pairing persistence, authenticated
+HTTP workers, a retained host sampler and cached background Tailscale discovery.
+The shell adapter in `src/shell/companion/` routes UI work and launches through
+existing native services. Requests carry cancellation, deadline, device and
+listener-generation checks before side effects.
+
+Store conversation block APIs overlay native rows through the existing shared
+block converter, retaining source metadata without writing during phone reads.
+The phone projection filters internal metadata. Familiar routes resolve the
+underlying numeric session ID and use the Familiar's live chat owner. Launch
+validation precedes session/worktree creation; cancelled unstarted launches
+attempt guarded cleanup of their new checkout and branch.
+
+The selected store directory owns `companion.json`. Shared desktop-data mode
+uses Tauri's pairing file; isolated development uses its own file. One process
+can bind a port at a time. See [gateway capabilities and limitations](README.md#bitchain-companion-gateway)
+and [verification](verification.md) for scope and evidence.
+
 ## Durable turn results
 
 The existing native worker saves optional terminal provenance on the original

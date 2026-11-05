@@ -373,6 +373,11 @@ no hot reload. The release app saves changes to your installed MOLFAR data.
 See the [native guide](docs/native/README.md) for prerequisites, build output,
 checks and preview limitations.
 
+The release preparation keeps Tauri `vX.Y.Z` releases separate from Native
+`native-vX.Y.Z-preview.N` GitHub prereleases. Native automatic updates remain
+unconfigured. See [release instructions](docs/releasing.md#two-release-paths)
+and [migration status](docs/native/status.md) for validation and publication gates.
+
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 
 ## License and attribution
