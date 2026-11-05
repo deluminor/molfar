@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Continue usage-limited sessions from a paired phone, with desktop-owned reset information, stale-action protection and a manual retry when continuation fails (MonoCode #1208).
 - Keep Codex session index locks private to each Familiar, remove stale shared links safely and serialize concurrent storage preparation (MonoCode #1297).
 - Preserve video metadata loading when previews are hidden or React replays effects.
+- Keep the paired phone composer editable while the desktop reconnects; Send and Stop wait for the connection, and a session error waits until it is back (MonoCode #1319).
 
 
 ## [1.0.23] - 2026-11-02
