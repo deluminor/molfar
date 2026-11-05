@@ -98,7 +98,9 @@ mod platform {
 
 #[cfg(test)]
 mod tests {
-    use super::{percent, Sampler};
+    use super::percent;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    use super::Sampler;
 
     #[test]
     fn percentages_clamp_and_survive_empty_totals() {

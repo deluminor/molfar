@@ -1,4 +1,7 @@
-use super::{paint::noise, sphere_heat};
+use super::{
+    paint::{extent, noise},
+    sphere_heat,
+};
 use crate::theme::*;
 use gpui::{Bounds, Hsla, Pixels, Point, Window, fill, point, px, size};
 
@@ -33,17 +36,16 @@ fn pixel(window: &mut Window, at: Point<Pixels>, edge: f32, color: Hsla) {
 }
 
 pub(super) fn paint(
-    origin: Point<Pixels>,
-    width: f32,
-    height: f32,
+    bounds: Bounds<Pixels>,
     time: f32,
     orientation: (f32, f32),
     heat: f32,
     spin: (f32, f32),
     window: &mut Window,
 ) {
+    let (width, height) = extent(bounds);
     let radius = width.min(height) * 0.34;
-    let center = origin + point(px(width * 0.5), px(height * 0.44));
+    let center = bounds.origin + point(px(width * 0.5), px(height * 0.44));
     let accent = accent_color();
     let edge = (radius / 65.).clamp(1., 2.);
     let glow = sphere_heat::glow(heat);

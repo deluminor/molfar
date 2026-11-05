@@ -1,4 +1,4 @@
-use super::{paint::extent, sphere, sphere_motion::Motion};
+use super::{sphere, sphere_motion::Motion};
 use crate::{home::layout::state::BrandVisual, pulse};
 use gpui::{
     Context, MouseButton, MouseDownEvent, MouseMoveEvent, Render, Subscription, Window, canvas,
@@ -116,18 +116,8 @@ impl Render for BrandView {
                                 motion.spin(),
                             )
                         };
-                        let (width, height) = extent(bounds);
                         window.with_content_mask(Some(gpui::ContentMask { bounds }), |window| {
-                            sphere::paint(
-                                bounds.origin,
-                                width,
-                                height,
-                                time,
-                                orientation,
-                                heat,
-                                spin,
-                                window,
-                            );
+                            sphere::paint(bounds, time, orientation, heat, spin, window);
                         });
                     },
                 )
