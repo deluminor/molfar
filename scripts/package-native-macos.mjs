@@ -4,8 +4,10 @@ import { join, dirname, basename } from "node:path";
 import { run, runStapler, logicalBytes } from "./package-native-support.mjs";
 
 export async function packageMacos({ binary, version, arch, work, add, distribution = "public" }) {
-  const publicPreview = distribution !== "validation";
-  if (publicPreview && (!process.env.APPLE_SIGNING_IDENTITY || process.env.APPLE_SIGNING_IDENTITY === "-"))
+  const notarized =
+    distribution !== "validation" &&
+    process.env.MOLFAR_NATIVE_MAC_SIGNING !== "adhoc";
+  if (notarized && (!process.env.APPLE_SIGNING_IDENTITY || process.env.APPLE_SIGNING_IDENTITY === "-"))
     throw new Error("Public previews require a Developer ID signing identity");
   const expectedArch = arch === "aarch64" ? "arm64" : "x86_64";
   const actualArch = run("lipo", ["-archs", binary], {
@@ -27,7 +29,7 @@ export async function packageMacos({ binary, version, arch, work, add, distribut
       env: {
         ...process.env,
         MOLFAR_NATIVE_SIGNING_IDENTITY:
-          publicPreview ? process.env.APPLE_SIGNING_IDENTITY : "-",
+          notarized ? process.env.APPLE_SIGNING_IDENTITY : "-",
       },
     },
   );
@@ -62,9 +64,9 @@ export async function packageMacos({ binary, version, arch, work, add, distribut
   };
   const zip = join(work, "notarize.zip");
   run("ditto", ["-c", "-k", "--keepParent", app, zip]);
-  if (publicPreview) await submit(zip, app);
+  if (notarized) await submit(zip, app);
   run("codesign", ["--verify", "--deep", "--strict", app]);
-  if (publicPreview) run("spctl", ["--assess", "--type", "execute", app]);
+  if (notarized) run("spctl", ["--assess", "--type", "execute", app]);
   const name = arch === "aarch64" ? "aarch64" : "x64";
   const archive = add(
     `MolfarNative_${version}_${name}.app.tar.gz`,
@@ -95,7 +97,7 @@ export async function packageMacos({ binary, version, arch, work, add, distribut
     `${imageSizeMiB}m`,
     dmg,
   ]);
-  if (!publicPreview) return;
+  if (!notarized) return;
   run("codesign", [
     "--sign",
     process.env.APPLE_SIGNING_IDENTITY,

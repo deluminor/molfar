@@ -19,8 +19,9 @@ React/Tauri application remains the production release.
   Avoid simultaneous Tauri/native use with active scheduling or phone gateways
   until coexistence acceptance is complete. Only one gateway can bind a port.
 - Native automatic updates are unconfigured. Install previews manually.
-- Windows and Linux packages are unsigned; macOS public packages require
-  Developer ID signing and notarization. Validation artifacts are for CI only.
+- Windows and Linux packages are unsigned. macOS packages are ad-hoc signed and
+  not notarized, so the first launch needs **Open Anyway** in System Settings.
+  Validation artifacts are for CI only.
 
 See the migration status and preview limitations shipped in the source tree.
 Release preparation and automated tests do not establish full runtime parity.

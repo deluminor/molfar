@@ -2,7 +2,7 @@ name: MOLFAR Native Preview
 
 on:
   push:
-    branches: [main, migration/gpui-into-main]
+    branches: [main]
   workflow_dispatch:
   pull_request:
     paths:

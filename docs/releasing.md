@@ -25,23 +25,19 @@ shared desktop database; distinct installers do not establish data isolation.
    Validation packages carry validation provenance; macOS uses ad-hoc signing.
 4. Inspect the eight packages and `SHA256SUMS.txt` in the verified CI artifact.
    Actual installation, launch and upgrades need separate platform acceptance.
-5. Before public distribution, verify the existing `APPLE_*` credentials and
-   configure the `native-release` environment's reviewers and main-only branch
-   policy in GitHub. YAML naming an environment does not install protections.
-   Store signing secrets in the scope used by the package job; environment-only
-   secrets on the publish job are unavailable to the package job.
-6. A later manual run from `main` with `publish=true` rebuilds public packages.
-   Both Mac builds require Developer ID and notarization. The publish job waits
-   for the configured environment and all package jobs, then creates a draft,
-   uploads the verified package set/checksums and publishes a prerelease with
-   `latest=false`. The workflow creates its own native tag at the run's SHA.
-   Windows/Linux distribution currently has no platform code signature.
+5. Before the first public run, configure the `native-release` environment's
+   reviewers and main-only branch policy in GitHub. YAML naming an environment does
+   not install protections; GitHub creates it unprotected on first use.
+6. A later manual run from `main` with `publish=true` rebuilds public packages. The
+   publish job waits for the configured environment and all package jobs, then
+   creates a draft, uploads the verified package set/checksums and publishes a
+   prerelease with `latest=false`. The workflow creates its own native tag at the
+   run's SHA. Windows/Linux distribution currently has no platform code signature.
 
-Configuration check on November 5, 2026: repository secret names did not include
-any of the six required `APPLE_*` keys. Reading the `native-release` environment
-secrets returned HTTP 404; environment protection remains unverified. This
-blocks public Mac distribution until configured, while validation builds need
-no signing secrets. No secret values were read or changed.
+MOLFAR has no Apple Developer ID. With no `APPLE_*` secret set, public Mac packages
+are ad-hoc signed and not notarized, as in the Tauri release, so the first launch
+needs **Open Anyway**. Setting all six secrets switches to Developer ID signing and
+notarization with no workflow change. Setting only some of them fails the run.
 
 An existing release causes creation to fail; the workflow does not overwrite it.
 An existing tag pointing elsewhere also blocks publication. Upload failures
@@ -94,12 +90,12 @@ MOLFAR is a standalone repository, not a GitHub fork, so GitHub's **Sync fork** 
 | Ref | Role |
 | --- | --- |
 | `upstream/main` | Sole MonoCode source; fetch and apply patches only |
-| `main` | Read-only product/release history for the sync job; merge inward when needed |
-| `migration/gpui-into-main` | Sole upstream integration target until the human merges #127 |
+| `sync/upstream-YYYYMMDD` | Sync branch and head of the single open pull request |
+| `main` | Product and release history; receives upstream changes only through a merged sync PR |
 
 `main` shares **no commits** with MonoCode. Its history starts from a single commit containing the MonoCode-derived codebase as of the reset, so the repository's contributors are MOLFAR's own. MonoCode's authors and full history live in the MonoCode repository; MOLFAR's history before the reset is kept in the private [`molfar-archive`](https://github.com/deluminor/molfar-archive) repository (not mirrored here — a branch with that history would inflate GitHub's contributors list). Because the histories are unrelated, upstream changes are applied as **patches**, never merged: `git merge upstream/main` (with or without `--allow-unrelated-histories`) would bring every MonoCode author back into `main`. CI rejects any change whose history reaches MonoCode's `main`.
 
-`.github/upstream-sync.json` records the last MonoCode commit whose changes are in the integration branch. `node scripts/upstream/apply.mjs` applies the diff from that commit to `upstream/main` to the working tree and index one path at a time, as three-way patches, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, `3` if MonoCode rewrote its history, or `4` if some changes became pending ports (below).
+`.github/upstream-sync.json` records the last MonoCode commit whose changes are in that branch. `node scripts/upstream/apply.mjs` applies the diff from that commit to `upstream/main` to the working tree and index one path at a time, as three-way patches, and advances the recorded commit. It does not commit, and exits with `2` if conflicts are left in the working tree, `3` if MonoCode rewrote its history, or `4` if some changes became pending ports (below).
 
 Before applying, the changes are translated through MOLFAR's renames (`scripts/upstream/rename-map.mjs`, currently Monos → Familiars): upstream paths follow MOLFAR's renamed files and directories, relative imports are rewritten to match, and each identifier or word containing a renamed term takes the spelling MOLFAR uses — first in the target file, then across the tree — so names MOLFAR deliberately kept (persisted keys such as `mono_id`, `font-mono`) stay as they are. Identifiers MOLFAR has never seen take the renamed spelling. MOLFAR-owned and license files apply verbatim. `apply.mjs` lists every remapped path under `remapped`. When MOLFAR renames another upstream concept, add a rule to `RENAMES`.
 
@@ -116,10 +112,8 @@ MOLFAR restructures code that came from MonoCode (split modules, kebab-case file
 Pending ports land in `.upstream-pending/<from>..<to>/` (ignored by git) with a `manifest.json`; the sync agent ports each into the new modules, or lists it under **Needs human** in the sync PR. Any change that moves or removes a MonoCode-derived path updates the map in the same commit: run `node scripts/upstream/moves.mjs` to add detected renames, describe splits and removals by hand, and `node scripts/upstream/moves.mjs --check` (part of `check:web`) verifies that the map covers the tree.
 
 The canonical [upstream sync instructions](automations/upstream-sync.md) govern
-this job. All desktop, mobile and native patches flow into the integration branch
-and PR #127; no separate sync PR targets `main`. The integration checkpoint
-controls the job. After the human merges #127, the job stops pending an explicit
-new target policy. Tracked instructions do not verify installed automation state.
+this job. All desktop, mobile and native patches flow through one open sync pull
+request into `main`. The human reviews and merges it.
 
 Every sync, including one that applies cleanly, also:
 
@@ -133,10 +127,10 @@ By hand:
 git remote add upstream https://github.com/hardbeat920/monocode.git   # once per clone
 gh repo set-default deluminor/molfar                                    # once per clone
 git fetch upstream main
-git fetch origin main migration/gpui-into-main
-git switch -c sync/gpui-$(date +%Y%m%d) origin/migration/gpui-into-main
+git fetch origin main
+git switch -c sync/upstream-$(date +%Y%m%d) origin/main
 node scripts/upstream/apply.mjs                                        # applies the patch, updates .github/upstream-sync.json
-# follow the PR #127 guard and canonical sync instructions; never create a separate main sync PR
+# follow the canonical sync instructions, then open a pull request into main
 ```
 
 These parts are MOLFAR-owned; keep ours when porting upstream changes:

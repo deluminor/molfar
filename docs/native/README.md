@@ -90,8 +90,9 @@ open "crates/molfar-gpui/target/release/MOLFAR Native.app"
 ```
 
 The app has a separate name and application ID (`com.molfar.native`) so it can be
-installed alongside MOLFAR. Local source builds are signed locally, without
-Apple notarization or configured automatic updates. Linux and Windows builds
+installed alongside MOLFAR. Local source builds and published previews are not
+notarized and have no configured automatic updates. After installing a preview on
+macOS, open it once and choose **System Settings → Privacy & Security → Open Anyway**. Linux and Windows builds
 produce a standalone executable
 under `crates/molfar-gpui/target/release/`. `CARGO_TARGET_DIR` and
 `CARGO_BUILD_TARGET` can change these output paths.

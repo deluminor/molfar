@@ -245,5 +245,15 @@ if (name === 'xcrun' && args[0] === 'stapler' && process.env.NATIVE_TEST_STAPLER
     });
     assert.ok(validation.every((artifact) => artifact.distribution === "validation"));
 
+    process.env.MOLFAR_NATIVE_MAC_SIGNING = "adhoc";
+    try {
+      const adhoc = await packageNative({
+        kind: "macos", binary, out: join(directory, "adhoc-public"),
+        version: "0.16.0-preview.3", arch: "aarch64",
+      });
+      assert.ok(adhoc.every((artifact) => artifact.distribution === "public"));
+    } finally {
+      delete process.env.MOLFAR_NATIVE_MAC_SIGNING;
+    }
   },
 );
