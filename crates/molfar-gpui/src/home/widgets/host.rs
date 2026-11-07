@@ -26,13 +26,11 @@ impl Home {
             || host
                 .updated_at
                 .is_none_or(|at| now.saturating_sub(at) > GAP_MS);
-        let wide = body.w >= 620.;
+        let wide = body.w >= 640.;
         let detailed = body.h >= 155.;
         let footer = body.h >= 115.;
         let rows = if wide { 1. } else { 2. };
-        let reserved = 22. + if footer { 22. } else { 0. };
-        let graph_height = ((body.h - reserved) / rows - 43.).max(3.);
-        let size = (body.h / (rows * 5.)).clamp(14., 28.);
+        let size = (body.h / (rows * 8.)).clamp(15., 20.);
         let readings = [
             (
                 "CPU",
@@ -53,17 +51,9 @@ impl Home {
         ];
         let mut gauges = div().flex().flex_col().flex_1().min_h_0().gap_2();
         for chunk in readings.chunks(if wide { 4 } else { 2 }) {
-            let mut row = div().flex().flex_1().min_h_0().gap_3();
+            let mut row = div().flex().flex_1().min_h_0().gap_2();
             for (caption, value, metric) in chunk {
-                row = row.child(gauge(
-                    caption,
-                    value,
-                    *metric,
-                    host,
-                    now,
-                    (size, graph_height),
-                    cx,
-                ));
+                row = row.child(gauge(caption, value, *metric, host, now, size, cx));
             }
             gauges = gauges.child(row);
         }
@@ -141,10 +131,9 @@ fn gauge(
     metric: Metric,
     host: &HostFeed,
     now: u64,
-    dimensions: (f32, f32),
+    size: f32,
     cx: &mut Context<Home>,
 ) -> Div {
-    let (size, graph_height) = dimensions;
     let stats = host.latest.unwrap_or_default();
     let fraction = metric
         .value(stats)
@@ -158,66 +147,56 @@ fn gauge(
         .min_h_0()
         .flex()
         .flex_col()
-        .gap(px(2.))
+        .overflow_hidden()
+        .rounded_md()
+        .bg(content(0.035))
+        .border_1()
+        .border_color(content(0.08))
+        .child(div().h(px(2.)).w_full().flex_shrink_0().bg(color))
         .child(
             div()
+                .flex_1()
+                .min_h_0()
                 .flex()
-                .items_baseline()
-                .justify_between()
-                .gap_2()
-                .min_w_0()
+                .flex_col()
+                .gap(px(4.))
+                .px(px(10.))
+                .pt(px(6.))
+                .pb(px(8.))
                 .child(
                     div()
                         .flex()
                         .items_baseline()
-                        .gap(px(6.))
+                        .justify_between()
+                        .gap_2()
                         .min_w_0()
-                        .flex_1()
                         .child(parts::label(caption).flex_shrink_0())
                         .child(
                             div()
-                                .min_w_0()
-                                .truncate()
+                                .flex_shrink_0()
                                 .font_family(mono())
-                                .text_size(px(9.))
-                                .line_height(px(11.))
-                                .text_color(content(0.42))
-                                .child(note.to_uppercase()),
+                                .text_size(px(size))
+                                .line_height(px(size))
+                                .text_color(color)
+                                .child(value.to_string()),
                         ),
                 )
                 .child(
                     div()
-                        .flex_shrink_0()
+                        .min_w_0()
+                        .truncate()
                         .font_family(mono())
-                        .text_size(px(size))
-                        .line_height(px(size))
-                        .text_color(color)
-                        .child(value.to_string()),
-                ),
-        )
-        .child(
-            div()
-                .h(px(graph_height))
-                .min_h_0()
-                .w_full()
-                .child(chart::chart(
+                        .text_size(px(10.))
+                        .line_height(px(12.))
+                        .text_color(content(0.5))
+                        .child(note),
+                )
+                .child(div().flex_1().min_h_0().w_full().child(chart::chart(
                     &host.history,
                     metric,
                     now,
                     stats.cpu_count,
                     cx,
-                )),
-        )
-        .child(
-            div()
-                .h(px(10.))
-                .flex_shrink_0()
-                .flex()
-                .justify_between()
-                .font_family(mono())
-                .text_size(px(8.))
-                .text_color(content(0.5))
-                .child("−30m")
-                .child("now"),
+                ))),
         )
 }
