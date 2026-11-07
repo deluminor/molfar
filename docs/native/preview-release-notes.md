@@ -1,72 +1,71 @@
-# MOLFAR Native 0.16.0-preview.14
+# MOLFAR Native
 
-This experimental MOLFAR Native preview is built with Rust + GPUI. React/Tauri remains the production app.
+MOLFAR Native is an experimental Rust and GPUI application. The React/Tauri app remains the production release. Native previews use their own version line, `0.16.0-preview.N`. They do not bump the desktop `1.0.x` changelog.
 
-## Changes since preview 13
+## Since 0.16.0-preview.1
 
-### Terminals, tabs, and split sessions
+### Explorer and panes
 
-- **Settings → General → Terminal** offers **Bottom, Side panel, or Title bar** placement. Your previous side-panel preference is preserved. Side-panel placement uses the Focused layout; title-bar terminals are available for local projects. With Title bar selected, **Cmd/Ctrl+J** opens a fresh terminal tab, and the title-strip plus button offers New Session or New Terminal.
-- **Split Terminal Right**, available from the app menu and **Cmd/Ctrl+Shift+J**, opens a shell beside the focused pane when using Title bar placement. In Bottom or Side panel placement, it adds a terminal there instead.
+- The file tree keeps its scroll position when you expand, collapse, or refresh a folder.
+- Each pane header has **Split right** and **Split down**. A terminal pane opens a fresh shell in that direction. A chat or Familiar opens a new session with its provider.
+- Dragging a pane divider snaps it within 12 pixels of the midpoint between its two panes, or of an even split of the whole group, and draws an accent line while it is snapped. Double-click the divider to place it at the midpoint of those two panes. A drag more than 12 pixels from a snap spot follows the pointer.
+
+## 0.16.0-preview.1
+
+Published on 2026-11-06. This is the first MOLFAR Native package (`native-v0.16.0-preview.1`).
+
+### Workspace
+
+- Native provider sessions, transcript, file editor, terminal, and Git and worktree surfaces.
+- **Settings → General → Terminal** offers **Bottom**, **Side panel**, or **Title bar**. A previous side-panel choice is kept. Side-panel placement uses the Focused layout. Title-bar terminals are for local projects. With Title bar selected, **Cmd/Ctrl+J** opens a fresh terminal tab, and the title-strip plus button offers New Session or New Terminal.
+- **Split Terminal Right** (app menu and **Cmd/Ctrl+Shift+J**) opens a shell beside the focused pane in Title bar placement. In Bottom or Side panel placement it adds a terminal there.
 - Dragging the last terminal out of the side panel into a split or title tab keeps the panel open with a fresh shell. The original shell moves with its running commands.
-- Closing a terminal pane or title tab **asks for confirmation when a foreground process is running**. Bulk tab closes list the affected running terminals together; Cancel keeps the tabs open. Idle shells close without a prompt.
-- **Close All and Close Others shortcuts preserve pinned tabs**, matching the tab menu.
-- Title tabs containing a chat with a **saved draft** show a dashed border, including chats inside split tabs.
-- New split chats use the selected provider's model choice, account, preferred effort, and default access mode, just like new chat tabs. Their working-copy scope is preserved.
+- Closing a terminal pane or title tab asks for confirmation when a foreground process is running. Bulk closes list those terminals together. Cancel leaves the tabs open. Idle shells close without a prompt.
+- **Close All** and **Close Others** keep pinned tabs, matching the tab menu.
+- A title tab that contains a chat with a saved draft shows a dashed border, including chats inside split tabs.
+- A new split chat uses the selected provider's model, account, preferred effort, and default access mode, and keeps its working-copy scope.
 
 ### Composers, sidebar, and settings
 
-- Session composers start **one line tall** and grow with the message. Transcript text lines up with the composer, and clicking its toolbar keeps the input focused.
-- Familiar chats use the same composer layout and action button as sessions. Model, model settings, and access controls sit inside the toolbar; attachment and emoji controls remain beneath it, with the context meter aligned below the action button.
-- An **amber bolt** on model controls shows when a supported model's fast mode is active, including Familiar chats and Quick Composer.
-- The Focused sidebar has a **New** navigation row, a live **Notes count**, and a compact **Search** button beside Sidebar options. New is highlighted while an empty chat is open, and hints, counts, unread dots, and section controls have consistent alignment.
-- A collapsed sidebar now **peeks in the boxy Focused layout** as well as the rounded layout when hovering at the left edge or sidebar toggle. Glass blur eases with the slide animation.
-- Settings keeps **Search at the top** of its navigation and **Back to app at the bottom**, with the pages scrolling between them.
-- Familiar transcript signatures use mascot tiles. Menu text has more line height to prevent clipped letter descenders on Windows.
+- Session composers start one line tall and grow with the message. Transcript text lines up with the composer. Clicking the toolbar keeps the input focused.
+- Familiar chats use the same composer layout and action button as sessions. Model, model settings, and access controls sit in the toolbar. Attachment and emoji controls stay beneath it, with the context meter under the action button.
+- An amber bolt on model controls shows when a supported model's fast mode is on, including Familiar chats and Quick Composer.
+- The Focused sidebar has a **New** row, a live **Notes** count, and a compact **Search** button beside Sidebar options. New is highlighted while an empty chat is open.
+- A collapsed sidebar peeks in the boxy Focused layout and the rounded layout when you hover the left edge or the sidebar toggle. Glass blur eases with the slide.
+- Settings keeps **Search** at the top of its navigation and **Back to app** at the bottom.
 
 ### Claude sign-in and resumed replies
 
-- On Unix, provider cleanup and app quit give processes time to finish credential writes before forceful termination. This addresses Claude Code being signed out when a rotating refresh token was saved to macOS Keychain.
-- Claude model catalogs are cached for **six hours**, reducing cold CLI starts. CLI updates invalidate every account's catalog, and Claude reloads it for the account in use.
-- An expired Claude access token with a refresh token keeps the last usage reading instead of asking you to sign in again; usage updates after the CLI renews it on its next run. A cleared macOS Keychain login correctly shows Sign in, even if an old credentials file remains.
-- A browser sign-in that is still waiting can be **cancelled** from the usage footer or the add-account editor. Returning to the app gives an unfinished login a short grace period, then resets it so you can try again.
-- Resuming a Claude session no longer lets a replayed background-task notification end the real turn early or leave behind a stale usage-limit error. The actual reply or error can arrive normally.
+- On Unix, quitting the app and cleaning up a provider give the process time to finish credential writes before a forceful stop. This covers Claude Code signing out when a rotating refresh token was saved to the macOS Keychain.
+- Claude model catalogs are cached for six hours. A CLI update clears every account's catalog, and Claude reloads the catalog for the account in use.
+- An expired Claude access token that has a refresh token keeps the last usage reading instead of asking you to sign in again. Usage updates after the CLI renews the token on its next run. A cleared macOS Keychain login shows Sign in, even when an old credentials file remains.
+- A browser sign-in that is waiting can be cancelled from the usage footer or the add-account editor. Returning to the app gives an unfinished login a short grace period, then resets it.
+- Resuming a Claude session no longer lets a replayed background-task notification end the real turn early or leave a stale usage-limit error.
 
-### Rendering and macOS reliability
+### Rendering
 
-- Streaming reply updates share the animation clock's redraws while it is running. Sized CoreText fonts are cached, and per-frame notification checks avoid copying preferences, reducing repeated rendering work.
-- macOS windows keep retrying outstanding frame requests after a display-link stall, including when recovery was temporarily blocked by occlusion or a missing screen. Hidden windows remain stopped.
-- Screenshot-thumbnail drops no longer rely on a two-buffer Metal layer that could block the main thread waiting for a drawable. The renderer also tracks whether drawn frames reached the screen and attempts recovery when an active window's frames go unshown.
-- GPUI warnings and macOS repaint diagnostics are saved to **`~/Library/Logs/MOLFAR Native/gpui.log`**, including slow renderer waits and frame summaries after file drops. The log rotates and suppresses repeated messages.
+- Streaming reply updates share the animation clock's redraws while it is running.
+- macOS windows keep retrying an outstanding frame request after a display-link stall. Hidden windows stay stopped.
+- Screenshot-thumbnail drops no longer use a two-buffer Metal layer that could block the main thread.
+- GPUI warnings and macOS repaint diagnostics go to `~/Library/Logs/MOLFAR Native/gpui.log`.
+- `MOLFAR_FRAME_LOG` records opt-in frame counts, draw times, main-thread CPU on macOS, view reuse, redraw origins, transcript measurement time, and text-shaping counts. See the [performance guide](../../scripts/perf/README.md).
 
-### Phone companion
+### Board, Home, and phone
 
-This change requires a separately distributed phone companion update; installing the native desktop preview alone does not update the phone UI.
+- **Board** can browse cards, edit tasks, run Grill through delivery, and move cards on a kanban board, including drag between columns. Live provider runs and GitHub delivery acceptance are open.
+- **Home** has ten widgets, an editable layout, Usage, and the sphere.
+- The desktop companion gateway accepts validated phone calls. The phone composer stays editable while the desktop reconnects: Send and Stop wait for the connection, and a session error waits until the desktop is back. The phone app itself ships separately. Installing this desktop preview does not update the phone.
 
-- You can **keep writing while the desktop reconnects**. The composer shows a reconnecting placeholder, keeps the draft editable, and leaves dictation available. Send and Stop wait for reconnection; Send shows a pulsing status dot and an accessibility hint when a draft is ready. Session errors wait until the desktop is back before replacing the field.
+### Limits
 
-### Development and coverage
+- Jira, Confluence, and Knowledge do not have full native parity.
+- Companion attachments, Knowledge, and phone Board actions are unsupported.
+- Phone, provider, restart, and platform acceptance remain open.
+- Native and Tauri can select the same desktop database. Do not run both against that database with an active schedule or phone gateway. One gateway can bind a port.
+- Native automatic updates are unconfigured. Install previews by hand.
+- Windows and Linux packages are unsigned. macOS packages are ad-hoc signed and not notarized, so the first launch needs **Open Anyway** in System Settings.
+- Automated tests do not establish full runtime parity. Read [preview limitations](parity.md).
 
-- **`MOLFAR_FRAME_LOG`** provides opt-in frame counts, draw times, main-thread CPU on macOS, view reuse, redraw origins, transcript measurement time, and text-shaping counts. **`scripts/perf/frame-run.sh`** runs repeatable scripted streaming or scrolling captures with isolated development data and optional stack profiling. See the [performance guide](https://github.com/hardbeat920/monocode/blob/native-v0.16.0-preview.14/scripts/perf/README.md).
-- Regression coverage was added or updated for Claude replay and credential handling, graceful provider shutdown, sign-in cancellation, terminal placement/splitting/drag-out/close confirmation, new-session defaults, pinned tabs, composer focus and layout, sidebar navigation and peeking, frame-demand recovery, and offline phone composition. Process-escalation fixtures tolerate delayed group exit, and logger setup is included in test builds for strict Clippy.
-- The root README now separates Native and Tauri downloads and refreshes its screenshot and image links. The [complete change audit](https://github.com/hardbeat920/monocode/blob/native-v0.16.0-preview.14/docs/native/preview-14-change-audit.md) records every commit since preview 13, merged contributions, and the parallel React/Tauri Claude usage fixes.
+**Data.** A release build uses your existing MOLFAR database and writes changes there. Back up that data with the app closed before you try a preview. Native preferences are stored separately.
 
-Thanks to @keyCat and @Kaloyanes for their contributions since preview 13.
-
-## Installation and testing
-
-Choose the download for your platform: macOS Apple Silicon or Intel, Windows x64, or Linux x64 (AppImage, Debian/Ubuntu `.deb`, or Fedora/Enterprise Linux `.rpm`). Install it alongside your existing MOLFAR application.
-
-**Testing status:** macOS is the primary tested platform. A Linux ARM64 source build was exercised in an Ubuntu VM with a graphics workaround, and a Windows 10 source build passed manual title-bar checks. The downloadable Linux x64 and Windows packages still need broader runtime testing. Native system notifications currently support macOS only. HTML panels and media support remain limited on Linux and Windows.
-
-Local automated checks, the native dependency audit, and the long-history CPU comparison are recorded in [verification](https://github.com/hardbeat920/monocode/blob/native-v0.16.0-preview.14/docs/native/verification.md).
-
-**Data:** this preview uses your existing MOLFAR database and saves changes there. Back up your MOLFAR data with the app closed before testing. Native preferences are stored separately. Avoid editing the same conversations in both apps at once.
-
-**Updates:** use Settings → General → About to check for updates and install the next native preview. Packaged upgrades still need runtime testing; if updating fails, download the new installer manually. Linux `.deb`/`.rpm` installs use the system authentication prompt (`pkexec`) to install the downloaded package. Cancelling authentication leaves the current version installed. Native previews receive native preview updates; production Tauri releases use their own feed.
-
-The initial installation requires a download. macOS completion/approval notifications, sounds, and Dock badges still need testing in the distributed app.
-
-Feature and platform parity are still being tested. Read [preview limitations](https://github.com/hardbeat920/monocode/blob/native-v0.16.0-preview.14/docs/native/parity.md) at this release's tag for known limitations. A successfully built package does not establish that every feature works on that platform.
-
-Please report the preview version, operating system/architecture, installation format, provider, and reproduction steps with any issue. Remove credentials and private conversation content from logs and screenshots.
+**Updates.** Settings → General → About checks for a native preview. Production Tauri releases use their own feed. If an install fails, download the new package by hand.
