@@ -12,7 +12,11 @@ pub fn machine_name() -> Option<String> {
 pub struct HostStats {
     pub cpu_percent: Option<f32>,
     pub memory_percent: f32,
+    pub memory_used: u64,
+    pub memory_total: u64,
     pub swap_percent: f32,
+    pub swap_used: u64,
+    pub swap_total: u64,
     pub load_average: Option<f64>,
     pub cpu_count: usize,
     pub process_count: Option<usize>,
@@ -45,7 +49,11 @@ impl Sampler {
         Ok(HostStats {
             cpu_percent: cpu_percent.map(|value| value.clamp(0., 100.)),
             memory_percent: percent(raw.used_memory, raw.total_memory),
+            memory_used: raw.used_memory,
+            memory_total: raw.total_memory,
             swap_percent: percent(raw.used_swap, raw.total_swap),
+            swap_used: raw.used_swap,
+            swap_total: raw.total_swap,
             load_average: load_average(),
             cpu_count: std::thread::available_parallelism().map_or(1, usize::from),
             process_count: platform::process_count(),

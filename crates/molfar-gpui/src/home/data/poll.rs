@@ -25,26 +25,22 @@ impl Home {
         self.sample_host(cx);
     }
 
-    /// Polls only while Home is on screen; a hidden page costs nothing.
+    /// Host samples for the whole process. Session records reload only while Home is visible.
     fn tick(&mut self, cx: &mut Context<Self>) {
-        if !self.visible {
-            return;
-        }
         self.feeds.ticks = self.feeds.ticks.wrapping_add(1);
         self.sample_host(cx);
-        if self.feeds.ticks.is_multiple_of(RECORDS_EVERY) {
+        if self.visible && self.feeds.ticks.is_multiple_of(RECORDS_EVERY) {
             self.refresh_records(cx);
         }
     }
 
     pub(in crate::home) fn sample_host(&mut self, cx: &mut Context<Self>) {
-        if self.state.is_hidden(WidgetId::Host) || self.feeds.loading_host {
+        if self.feeds.loading_host {
             return;
         }
         self.feeds.loading_host = true;
         let now = molfar_core::time::now_ms();
         let reset = self.feeds.host.needs_baseline(now);
-        self.feeds.host.reset_baseline = false;
         let sampler = self.feeds.sampler.clone();
         let work = cx
             .background_executor()
@@ -54,7 +50,9 @@ impl Home {
             let _ = this.update(cx, |this, cx| {
                 this.feeds.loading_host = false;
                 this.feeds.host.push(sample);
-                cx.notify();
+                if this.visible {
+                    cx.notify();
+                }
             });
         })
         .detach();

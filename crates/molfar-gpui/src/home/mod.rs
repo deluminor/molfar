@@ -101,11 +101,10 @@ impl Home {
         cx.notify();
     }
 
-    /// Stops polling while another page covers Home.
+    /// Pauses the sphere while another page covers Home. Host sampling keeps running.
     pub(crate) fn conceal(&mut self) {
         self.visible = false;
         self.views.sphere_motion.borrow_mut().pause();
-        self.feeds.host.reset_baseline = true;
         self.drag = None;
     }
 

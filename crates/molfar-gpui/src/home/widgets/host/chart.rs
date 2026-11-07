@@ -1,5 +1,6 @@
+use super::readout::{self, pressure_color};
 use crate::home::data::feeds::history::{GAP_MS, Sample, WINDOW_MS};
-use gpui::{Context, Entity, Hsla, PathBuilder, Render, Window, canvas, point, prelude::*, px};
+use gpui::{Context, Entity, PathBuilder, Render, Window, canvas, point, prelude::*, px};
 use molfar_core::host::HostStats;
 use std::{collections::VecDeque, sync::Arc};
 
@@ -12,7 +13,7 @@ pub(super) enum Metric {
 }
 
 impl Metric {
-    fn value(self, stats: HostStats) -> Option<f32> {
+    pub(super) fn value(self, stats: HostStats) -> Option<f32> {
         match self {
             Self::Cpu => stats.cpu_percent,
             Self::Memory => Some(stats.memory_percent),
@@ -62,6 +63,10 @@ pub(super) fn segments(
     result
 }
 
+fn lerp(from: f32, to: f32, t: f32) -> f32 {
+    from + (to - from) * t
+}
+
 fn reduce(points: &[(f32, f32)], width: f32) -> Vec<(f32, f32)> {
     let mut output = Vec::new();
     let mut index = 0;
@@ -90,14 +95,14 @@ pub(super) fn chart(
     history: &VecDeque<Sample>,
     metric: Metric,
     now: u64,
-    color: Hsla,
+    cores: usize,
     cx: &mut Context<crate::home::Home>,
 ) -> Entity<ChartView> {
     cx.new(|_| ChartView {
         history: Arc::new(history.clone()),
         metric,
         now,
-        color,
+        cores,
     })
 }
 
@@ -105,7 +110,7 @@ pub(super) struct ChartView {
     history: Arc<VecDeque<Sample>>,
     metric: Metric,
     now: u64,
-    color: Hsla,
+    cores: usize,
 }
 
 impl Render for ChartView {
@@ -113,7 +118,7 @@ impl Render for ChartView {
         let history = self.history.clone();
         let metric = self.metric;
         let now = self.now;
-        let color = self.color;
+        let cores = self.cores;
         let scale = metric.scale(&history);
         canvas(
             |_, _, _| (),
@@ -141,22 +146,29 @@ impl Render for ChartView {
                 if let Ok(grid) = grid.build() {
                     window.paint_path(grid, crate::theme::content(0.06));
                 }
+                let accent = crate::theme::accent_color();
                 for segment in &segments {
                     let points = reduce(segment, width.max(1.));
-                    let mut line = PathBuilder::stroke(px(1.5));
-                    for (index, (x, value)) in points.iter().enumerate() {
-                        if index == 0 {
-                            line.move_to(at(*x, *value));
-                        } else {
-                            line.line_to(at(*x, *value));
+                    for pair in points.windows(2) {
+                        let (x0, v0) = pair[0];
+                        let (x1, v1) = pair[1];
+                        let p0 = readout::fraction(metric, v0, cores);
+                        let p1 = readout::fraction(metric, v1, cores);
+                        let marks = readout::span_marks(p0, p1);
+                        for mark in marks.windows(2) {
+                            let (t0, t1) = (mark[0], mark[1]);
+                            let mut line = PathBuilder::stroke(px(1.5));
+                            line.move_to(at(lerp(x0, x1, t0), lerp(v0, v1, t0)));
+                            line.line_to(at(lerp(x0, x1, t1), lerp(v0, v1, t1)));
+                            let mid = lerp(p0, p1, (t0 + t1) / 2.);
+                            if let Ok(line) = line.build() {
+                                window.paint_path(line, pressure_color(accent, mid).opacity(0.9));
+                            }
                         }
                     }
-                    if points.len() > 1
-                        && let Ok(line) = line.build()
-                    {
-                        window.paint_path(line, color.opacity(0.85));
-                    }
                     if let Some((x, value)) = points.last() {
+                        let color =
+                            pressure_color(accent, readout::fraction(metric, *value, cores));
                         window.paint_quad(gpui::fill(
                             gpui::Bounds::new(
                                 at(*x, *value) - point(px(1.5), px(1.5)),

@@ -142,7 +142,7 @@ fn brand_is_sphere_only_without_selector(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn host_shows_samples_and_is_not_sampled_while_hidden(cx: &mut TestAppContext) {
+fn host_keeps_sampling_while_its_card_is_hidden(cx: &mut TestAppContext) {
     let (window, _) = open(cx);
     window
         .update(cx, |home, _, cx| {
@@ -153,6 +153,7 @@ fn host_shows_samples_and_is_not_sampled_while_hidden(cx: &mut TestAppContext) {
                 ..Default::default()
             }));
             home.state.hide(WidgetId::Host);
+            home.reveal(cx);
             home.sample_host(cx);
             cx.notify();
         })
@@ -162,8 +163,8 @@ fn host_shows_samples_and_is_not_sampled_while_hidden(cx: &mut TestAppContext) {
 
     window
         .update(visual, |home, _, _| {
-            assert_eq!(home.feeds.host.history.len(), 1);
-            assert_eq!(home.feeds.host.latest.unwrap().cpu_count, 10);
+            assert!(home.feeds.host.history.len() > 1);
+            assert!(home.feeds.host.latest.is_some());
         })
         .unwrap();
     assert!(visual.debug_bounds("home-card-host").is_none());
@@ -172,7 +173,7 @@ fn host_shows_samples_and_is_not_sampled_while_hidden(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn polling_runs_only_while_home_is_shown(cx: &mut TestAppContext) {
+fn host_keeps_sampling_while_home_is_hidden(cx: &mut TestAppContext) {
     use super::data::feeds::{HOST_INTERVAL, Sources};
 
     let (window, _) = open(cx);
@@ -198,24 +199,24 @@ fn polling_runs_only_while_home_is_shown(cx: &mut TestAppContext) {
     let hidden = samples(cx);
     cx.executor().advance_clock(HOST_INTERVAL * 3);
     cx.run_until_parked();
-    assert_eq!(samples(cx), hidden);
+    assert!(samples(cx) > hidden);
 }
 
 #[gpui::test]
-fn hiding_home_or_host_invalidates_cpu_baseline(cx: &mut TestAppContext) {
+fn hiding_home_or_the_host_card_keeps_samples(cx: &mut TestAppContext) {
     let (window, _) = open(cx);
     window
         .update(cx, |home, _, cx| {
-            home.feeds.host.reset_baseline = false;
+            home.feeds.host.push(Ok(HostStats {
+                cpu_percent: Some(10.),
+                ..Default::default()
+            }));
             home.conceal();
-            assert!(home.feeds.host.reset_baseline);
             home.reveal(cx);
-            home.feeds.host.reset_baseline = false;
             home.hide_widget(WidgetId::Host, cx);
-            assert!(home.feeds.host.reset_baseline);
-            home.feeds.host.reset_baseline = false;
             home.show_widget(WidgetId::Host, cx);
-            assert!(home.feeds.host.reset_baseline);
+            assert_eq!(home.feeds.host.history.len(), 1);
+            assert_eq!(home.feeds.host.latest.unwrap().cpu_percent, Some(10.));
         })
         .unwrap();
 }
