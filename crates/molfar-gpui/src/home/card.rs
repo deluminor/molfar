@@ -14,7 +14,7 @@ pub(crate) fn body(width: f32, height: f32) -> crate::home::widgets::Body {
     }
 }
 
-/// Framed tile with the dashed accent caption shared by every Home widget.
+/// Framed tile. The caption sits flush with the card padding, then a hairline.
 pub(crate) fn card(
     id: WidgetId,
     editing: bool,
@@ -60,24 +60,20 @@ fn caption(id: WidgetId, editing: bool, actions: Vec<AnyElement>) -> Div {
         .flex_shrink_0()
         .flex()
         .items_center()
-        .gap_2()
+        .gap(px(8.))
         .font_family(crate::fonts::familiar())
         .text_size(px(10.))
         .font_weight(FontWeight::MEDIUM)
-        .text_color(accent.opacity(0.75))
+        .text_color(accent.opacity(0.9))
         .when(editing, |caption| caption.cursor_grab())
-        .child(dash(accent.opacity(0.4)).w(px(16.)))
-        .child(div().flex_shrink_0().child(id.label().to_uppercase()))
-        .child(dash(accent.opacity(0.2)).flex_1())
+        .child(
+            div()
+                .flex_shrink_0()
+                .line_height(px(CAPTION_HEIGHT))
+                .child(id.label().to_uppercase()),
+        )
+        .child(div().flex_1().h(px(1.)).bg(accent.opacity(0.16)))
         .children(actions)
-}
-
-fn dash(color: gpui::Hsla) -> Div {
-    div()
-        .h(px(1.))
-        .border_t_1()
-        .border_dashed()
-        .border_color(color)
 }
 
 /// Quiet one-line message for loading, empty and error states.

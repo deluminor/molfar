@@ -6,6 +6,15 @@ impl Shell {
         self.prepare_app_view(window, cx);
         self.ensure_background_inbox(window, cx);
         self.initialize_automations(cx);
+        self.warm_host(window, cx);
+        if let Some(view) = &self.home {
+            view.update(cx, |view, cx| view.reveal(cx));
+        }
+        self.show_app_view(app_views::AppView::Home, window, cx);
+    }
+
+    /// Starts host sampling at launch, before Home is opened, and keeps the view alive.
+    pub(crate) fn warm_host(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.home.is_none() {
             let stored = self.workspace.home_layout.clone();
             let view = cx.new(|cx| home::Home::new(&stored, cx));
@@ -17,10 +26,6 @@ impl Shell {
             self.home = Some(view);
         }
         self.sync_home_sources(cx);
-        if let Some(view) = &self.home {
-            view.update(cx, |view, cx| view.reveal(cx));
-        }
-        self.show_app_view(app_views::AppView::Home, window, cx);
     }
 
     /// Hands Home what the shell already owns, once more of it becomes ready.

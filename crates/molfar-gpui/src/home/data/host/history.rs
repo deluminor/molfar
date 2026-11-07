@@ -17,15 +17,13 @@ pub(crate) struct HostFeed {
     pub history: VecDeque<Sample>,
     pub error: Option<String>,
     pub updated_at: Option<u64>,
-    pub reset_baseline: bool,
 }
 
 impl HostFeed {
     pub(crate) fn needs_baseline(&self, now: u64) -> bool {
-        self.reset_baseline
-            || self.history.back().is_none_or(|last| {
-                last.stats.is_none() || now < last.at || now.saturating_sub(last.at) > GAP_MS
-            })
+        self.history.back().is_none_or(|last| {
+            last.stats.is_none() || now < last.at || now.saturating_sub(last.at) > GAP_MS
+        })
     }
 
     pub(crate) fn push(&mut self, sample: Result<HostStats, String>) {
@@ -98,15 +96,6 @@ mod tests {
         assert!(feed.history.back().unwrap().stats.is_none());
         assert!(feed.needs_baseline(5000));
         assert_eq!(feed.updated_at, Some(1000));
-    }
-
-    #[test]
-    fn visibility_change_resets_even_within_one_sampling_interval() {
-        let mut feed = HostFeed::default();
-        feed.push_at(Ok(HostStats::default()), 1000);
-        assert!(!feed.needs_baseline(2000));
-        feed.reset_baseline = true;
-        assert!(feed.needs_baseline(2000));
     }
 
     #[test]

@@ -528,7 +528,10 @@ fn main() {
                             cx,
                         )
                     });
-                    shell.update(cx, |shell, cx| shell.focus_active(window, cx));
+                    shell.update(cx, |shell, cx| {
+                        shell.focus_active(window, cx);
+                        shell.warm_host(window, cx);
+                    });
                     #[cfg(target_os = "macos")]
                     {
                         traffic_lights::pin(window, theme::TITLE_BAR_HEIGHT);

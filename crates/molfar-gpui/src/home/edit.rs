@@ -35,9 +35,6 @@ impl Home {
             if id == WidgetId::Brand {
                 self.views.sphere_motion.borrow_mut().pause();
             }
-            if id == WidgetId::Host {
-                self.feeds.host.reset_baseline = true;
-            }
             self.save(cx);
         }
     }
@@ -46,9 +43,6 @@ impl Home {
         self.state.show(id);
         if id == WidgetId::Brand {
             self.views.sphere_motion.borrow_mut().resume();
-        }
-        if id == WidgetId::Host {
-            self.feeds.host.reset_baseline = true;
         }
         self.save(cx);
     }

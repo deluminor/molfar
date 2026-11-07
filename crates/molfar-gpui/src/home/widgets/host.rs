@@ -1,4 +1,5 @@
 mod chart;
+mod readout;
 
 use super::{
     super::{Home, card},
@@ -74,6 +75,11 @@ impl Home {
         } else {
             "LIVE · last 30 minutes".to_string()
         };
+        let aside = if readout::window_has_gap(&host.history, now) {
+            "gap in samples".to_string()
+        } else {
+            molfar_core::host::machine_name().unwrap_or_else(|| "this machine".into())
+        };
         let content = div()
             .size_full()
             .min_w_0()
@@ -108,11 +114,11 @@ impl Home {
                                 .process_count
                                 .map_or("—".into(), |count| count.to_string())
                         ))
-                        .child(if detailed {
-                            "gaps = no sample".into()
+                        .child(div().min_w_0().truncate().child(if detailed {
+                            aside
                         } else {
                             state
-                        }),
+                        })),
                 )
             });
         if cx.reduce_motion() {
@@ -139,23 +145,13 @@ fn gauge(
     cx: &mut Context<Home>,
 ) -> Div {
     let (size, graph_height) = dimensions;
-    let hot = match metric {
-        Metric::Cpu => host
-            .latest
-            .and_then(|stats| stats.cpu_percent)
-            .is_some_and(|cpu| cpu >= 85.),
-        Metric::Memory => host.latest.is_some_and(|stats| stats.memory_percent >= 85.),
-        _ => false,
-    };
-    let color = if hot {
-        crate::modal::danger(1.)
-    } else {
-        accent_color()
-    };
-    let caption = match metric {
-        Metric::Load => format!("{caption} · 0–{:.0}", metric.scale(&host.history)),
-        _ => caption.to_string(),
-    };
+    let stats = host.latest.unwrap_or_default();
+    let fraction = metric
+        .value(stats)
+        .map(|value| readout::fraction(metric, value, stats.cpu_count))
+        .unwrap_or(0.);
+    let color = readout::pressure_color(accent_color(), fraction);
+    let note = readout::detail(metric, stats, &host.history, now);
     div()
         .flex_1()
         .min_w_0()
@@ -168,15 +164,34 @@ fn gauge(
                 .flex()
                 .items_baseline()
                 .justify_between()
-                .gap_1()
-                .child(parts::label(caption))
+                .gap_2()
+                .min_w_0()
                 .child(
                     div()
+                        .flex()
+                        .items_baseline()
+                        .gap(px(6.))
+                        .min_w_0()
+                        .flex_1()
+                        .child(parts::label(caption).flex_shrink_0())
+                        .child(
+                            div()
+                                .min_w_0()
+                                .truncate()
+                                .font_family(mono())
+                                .text_size(px(9.))
+                                .line_height(px(11.))
+                                .text_color(content(0.42))
+                                .child(note.to_uppercase()),
+                        ),
+                )
+                .child(
+                    div()
+                        .flex_shrink_0()
                         .font_family(mono())
                         .text_size(px(size))
                         .line_height(px(size))
                         .text_color(color)
-                        .truncate()
                         .child(value.to_string()),
                 ),
         )
@@ -185,7 +200,13 @@ fn gauge(
                 .h(px(graph_height))
                 .min_h_0()
                 .w_full()
-                .child(chart::chart(&host.history, metric, now, color, cx)),
+                .child(chart::chart(
+                    &host.history,
+                    metric,
+                    now,
+                    stats.cpu_count,
+                    cx,
+                )),
         )
         .child(
             div()
