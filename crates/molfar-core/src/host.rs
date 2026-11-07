@@ -113,9 +113,9 @@ mod platform {
 
 #[cfg(test)]
 mod tests {
+    use super::percent;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     use super::Sampler;
-    use super::percent;
 
     #[test]
     fn percentages_clamp_and_survive_empty_totals() {
@@ -134,11 +134,9 @@ mod tests {
 
         let second = sampler.sample().unwrap();
 
-        assert!(
-            second
-                .cpu_percent
-                .is_some_and(|cpu| (0. ..=100.).contains(&cpu))
-        );
+        assert!(second
+            .cpu_percent
+            .is_some_and(|cpu| (0. ..=100.).contains(&cpu)));
         assert!((0. ..=100.).contains(&second.memory_percent));
         assert!(second.memory_percent > 0.);
         assert!(second.cpu_count >= 1);
