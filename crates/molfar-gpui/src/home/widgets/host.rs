@@ -152,51 +152,42 @@ fn gauge(
         .bg(content(0.035))
         .border_1()
         .border_color(content(0.08))
-        .child(div().h(px(2.)).w_full().flex_shrink_0().bg(color))
+        .px(px(10.))
+        .py(px(8.))
+        .gap(px(4.))
         .child(
             div()
-                .flex_1()
-                .min_h_0()
                 .flex()
-                .flex_col()
-                .gap(px(4.))
-                .px(px(10.))
-                .pt(px(6.))
-                .pb(px(8.))
+                .items_baseline()
+                .justify_between()
+                .gap_2()
+                .min_w_0()
+                .child(parts::label(caption).flex_shrink_0())
                 .child(
                     div()
-                        .flex()
-                        .items_baseline()
-                        .justify_between()
-                        .gap_2()
-                        .min_w_0()
-                        .child(parts::label(caption).flex_shrink_0())
-                        .child(
-                            div()
-                                .flex_shrink_0()
-                                .font_family(mono())
-                                .text_size(px(size))
-                                .line_height(px(size))
-                                .text_color(color)
-                                .child(value.to_string()),
-                        ),
-                )
-                .child(
-                    div()
-                        .min_w_0()
-                        .truncate()
+                        .flex_shrink_0()
                         .font_family(mono())
-                        .text_size(px(10.))
-                        .line_height(px(12.))
-                        .text_color(content(0.5))
-                        .child(note),
-                )
-                .child(div().flex_1().min_h_0().w_full().child(chart::chart(
-                    &host.history,
-                    metric,
-                    now,
-                    stats.cpu_count,
-                    cx,
-                ))),
+                        .text_size(px(size))
+                        .line_height(px(size))
+                        .text_color(color)
+                        .child(value.to_string()),
+                ),
         )
+        .child(
+            div()
+                .min_w_0()
+                .truncate()
+                .font_family(mono())
+                .text_size(px(10.))
+                .line_height(px(12.))
+                .text_color(content(0.5))
+                .child(note),
+        )
+        .child(div().flex_1().min_h_0().w_full().child(chart::chart(
+            &host.history,
+            metric,
+            now,
+            stats.cpu_count,
+            cx,
+        )))
 }
