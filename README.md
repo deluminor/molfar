@@ -5,29 +5,25 @@
 </div>
 
 <p align="center">
-  <strong>Native preview</strong><br/>
-  Rust and GPUI
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust stable" />
-  <img src="https://img.shields.io/badge/GPUI-native-0F766E" alt="GPUI" />
-  <a href="https://github.com/deluminor/molfar/releases/tag/native-v0.16.0-preview.2"><img src="https://img.shields.io/badge/preview-0.16.0--preview.2-7c3aed" alt="Native preview 0.16.0-preview.2" /></a>
-</p>
-<p align="center">
-  <strong>Stable</strong><br/>
-  Tauri, React, TypeScript, and Rust
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black" alt="Tauri 2" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript strict" />
-  <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust stable" />
-  <a href="https://github.com/deluminor/molfar/releases/latest"><img src="https://img.shields.io/github/v/release/deluminor/molfar?color=8b5cf6&label=version" alt="Latest stable release" /></a>
-</p>
-<p align="center">
   <img src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-555" alt="macOS, Windows, Linux" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
+
+> [!NOTE]
+> **Native preview.** Rust and GPUI.
+>
+> Download [0.16.0-preview.2](https://github.com/deluminor/molfar/releases/tag/native-v0.16.0-preview.2).
+>
+> macOS DMG for Apple Silicon and Intel, Windows x64 installer, Linux x64 `.deb`, AppImage, and `.rpm`.
+> Read the [native guide](docs/native/README.md) before installing.
+
+> [!TIP]
+> **Stable.** Tauri, React, TypeScript, and Rust.
+>
+> Download the [latest release](https://github.com/deluminor/molfar/releases/latest).
+>
+> macOS DMG for Apple Silicon and Intel, Windows x64 installer, Linux x64 `.deb`, AppImage, and `.rpm`.
+> macOS and Windows update from this release.
 
 https://github.com/user-attachments/assets/16659ebc-0ee1-41d7-a70b-e2407bafa97b
 
