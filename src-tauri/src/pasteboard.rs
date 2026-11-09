@@ -46,18 +46,11 @@ fn file_paths_from(pb: &objc2_app_kit::NSPasteboard) -> Vec<String> {
                 host.is_empty() || host.eq_ignore_ascii_case("localhost")
             })
         })
-        // macOS 26 filePathURL is nil for file://localhost/...; path() is still local.
-        // File reference URLs (file:///.file/id=...) still have to resolve.
-        .filter_map(|url| {
-            url.filePathURL()
-                .and_then(|resolved| resolved.path())
-                .or_else(|| {
-                    if url.isFileReferenceURL() {
-                        None
-                    } else {
-                        url.path()
-                    }
-                })
+        // macOS 26 filePathURL is nil for file://localhost; path() stays local.
+        .filter_map(|url| match (url.filePathURL(), url.isFileReferenceURL()) {
+            (Some(resolved), _) => resolved.path(),
+            (None, false) => url.path(),
+            (None, true) => None,
         })
         .map(|path| path.to_string())
         .collect()
