@@ -50,10 +50,24 @@ fn file_paths_from(pb: &objc2_app_kit::NSPasteboard) -> Vec<String> {
         })
         // Finder can publish file reference URLs (file:///.file/id=...),
         // which must be resolved by Foundation before using a filesystem path.
-        .filter_map(|url| url.filePathURL())
-        .filter_map(|url| url.path())
+        // macOS 26 returns nil from filePathURL for file://localhost/... even
+        // though the host check above already proved the file is local.
+        .filter_map(|url| filesystem_path(&url))
         .map(|path| path.to_string())
         .collect()
+}
+
+#[cfg(target_os = "macos")]
+fn filesystem_path(
+    url: &objc2_foundation::NSURL,
+) -> Option<objc2::rc::Retained<objc2_foundation::NSString>> {
+    if let Some(path) = url.filePathURL().and_then(|url| url.path()) {
+        return Some(path);
+    }
+    if url.isFileReferenceURL() {
+        return None;
+    }
+    url.path()
 }
 
 /// A Wayland clipboard read through the normal data-device offer.
