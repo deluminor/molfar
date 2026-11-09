@@ -35,39 +35,32 @@ fn file_paths_from(pb: &objc2_app_kit::NSPasteboard) -> Vec<String> {
     items
         .iter()
         .filter_map(|item| item.stringForType(file_url))
-        // Foundation drops remote hosts when resolving file URLs. Preserve
-        // the old parser's empty/localhost host restriction first.
+        // Reject remote hosts before Foundation drops them and resolves a local path.
         .filter(|s| url::Url::parse(&s.to_string()).is_ok_and(|url| url.to_file_path().is_ok()))
         .filter_map(|s| NSURL::URLWithString(&s))
         .filter(|url| url.isFileURL())
-        // The parsers disagree on some URLs, so check Foundation's host too
-        // before filePathURL can discard it.
+        // Foundation's host can disagree with the url crate; reject a remote one.
         .filter(|url| {
             url.host().is_none_or(|host| {
                 let host = host.to_string();
                 host.is_empty() || host.eq_ignore_ascii_case("localhost")
             })
         })
-        // Finder can publish file reference URLs (file:///.file/id=...),
-        // which must be resolved by Foundation before using a filesystem path.
-        // macOS 26 returns nil from filePathURL for file://localhost/... even
-        // though the host check above already proved the file is local.
-        .filter_map(|url| filesystem_path(&url))
+        // macOS 26 filePathURL is nil for file://localhost/...; path() is still local.
+        // File reference URLs (file:///.file/id=...) still have to resolve.
+        .filter_map(|url| {
+            url.filePathURL()
+                .and_then(|resolved| resolved.path())
+                .or_else(|| {
+                    if url.isFileReferenceURL() {
+                        None
+                    } else {
+                        url.path()
+                    }
+                })
+        })
         .map(|path| path.to_string())
         .collect()
-}
-
-#[cfg(target_os = "macos")]
-fn filesystem_path(
-    url: &objc2_foundation::NSURL,
-) -> Option<objc2::rc::Retained<objc2_foundation::NSString>> {
-    if let Some(path) = url.filePathURL().and_then(|url| url.path()) {
-        return Some(path);
-    }
-    if url.isFileReferenceURL() {
-        return None;
-    }
-    url.path()
 }
 
 /// A Wayland clipboard read through the normal data-device offer.
