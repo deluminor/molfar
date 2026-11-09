@@ -283,6 +283,7 @@ impl Familiars {
             run.view.update(cx, |v, cx| v.familiar_stop(cx));
         }
         self.roster.familiars.retain(|m| m.id != id);
+        self.panel_views.remove(id);
         if self.active.as_deref() == Some(id) {
             self.active = None;
         }

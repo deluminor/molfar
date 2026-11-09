@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **molfar-connectors** MCP write tools for agent sessions: `jira_issue_get`, `jira_issue_edit`, `jira_issue_create`, `jira_issue_transitions`, `jira_issue_transition`, `jira_search`, `confluence_page_create`, and `confluence_page_update` (vault Atlassian token; no `cloudId`).
+- Phone code blocks show the language and a copy control (MonoCode #1305).
+- The phone composer offers **Paste Image** when the clipboard holds an image (MonoCode #1343).
 
 ### Fixed
 

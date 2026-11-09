@@ -9,19 +9,46 @@ pub(super) struct Cache {
     pub(super) documents: HashMap<String, familiar::Document>,
     pub(super) loading_documents: HashSet<String>,
 }
+/// Whether `id` is a document `familiar`'s chat projection carries whole, rather
+/// than one read from the shared store.
+pub(super) fn inline_document(familiar: &Familiar, id: &str) -> bool {
+    familiar.documents.iter().any(|d| {
+        d.id == id
+            && (d.kind == "visual"
+                || !familiar
+                    .desktop_document_ids
+                    .iter()
+                    .any(|source| source == id))
+    })
+}
 impl Familiars {
+    /// The shared store no longer has `id`: drop its cached body and readers,
+    /// and send any page or remembered view showing it back to the Documents
+    /// list. The chat's reference to it can outlive the record.
+    pub(super) fn forget_document(&mut self, id: &str, cx: &mut Context<Self>) {
+        self.work.documents.remove(id);
+        self.documents.remove(id);
+        self.html_documents.remove(id);
+        self.visual_documents.remove(id);
+        let route = Some(Route::Document(id.into()));
+        if self.route == route {
+            self.route = None;
+            self.overview_tab = OverviewTab::Documents;
+        }
+        for view in self.panel_views.values_mut() {
+            if view.route == route {
+                view.route = None;
+                view.tab = OverviewTab::Documents;
+            }
+        }
+        cx.notify();
+    }
     pub(super) fn open_document(&mut self, id: &str, cx: &mut Context<Self>) {
         // Visual documents carry their whole body from the chat projection.
-        if self.current().is_some_and(|familiar| {
-            familiar.documents.iter().any(|d| {
-                d.id == id
-                    && (d.kind == "visual"
-                        || !familiar
-                            .desktop_document_ids
-                            .iter()
-                            .any(|source| source == id))
-            })
-        }) {
+        if self
+            .current()
+            .is_some_and(|familiar| inline_document(familiar, id))
+        {
             return;
         }
         if !self.work.loading_documents.insert(id.into()) {
@@ -44,7 +71,7 @@ impl Familiars {
                         this.html_documents.remove(&id);
                     }
                     Ok(None) => {
-                        this.work.documents.remove(&id);
+                        this.forget_document(&id, cx);
                         this.error = Some("Document unavailable. It may have been deleted.".into());
                     }
                     Err(error) => {
