@@ -35,23 +35,23 @@ fn file_paths_from(pb: &objc2_app_kit::NSPasteboard) -> Vec<String> {
     items
         .iter()
         .filter_map(|item| item.stringForType(file_url))
-        // Foundation drops remote hosts when resolving file URLs. Preserve
-        // the old parser's empty/localhost host restriction first.
+        // Reject remote hosts before Foundation drops them and resolves a local path.
         .filter(|s| url::Url::parse(&s.to_string()).is_ok_and(|url| url.to_file_path().is_ok()))
         .filter_map(|s| NSURL::URLWithString(&s))
         .filter(|url| url.isFileURL())
-        // The parsers disagree on some URLs, so check Foundation's host too
-        // before filePathURL can discard it.
+        // Foundation's host can disagree with the url crate; reject a remote one.
         .filter(|url| {
             url.host().is_none_or(|host| {
                 let host = host.to_string();
                 host.is_empty() || host.eq_ignore_ascii_case("localhost")
             })
         })
-        // Finder can publish file reference URLs (file:///.file/id=...),
-        // which must be resolved by Foundation before using a filesystem path.
-        .filter_map(|url| url.filePathURL())
-        .filter_map(|url| url.path())
+        // macOS 26 filePathURL is nil for file://localhost; path() stays local.
+        .filter_map(|url| match (url.filePathURL(), url.isFileReferenceURL()) {
+            (Some(resolved), _) => resolved.path(),
+            (None, false) => url.path(),
+            (None, true) => None,
+        })
         .map(|path| path.to_string())
         .collect()
 }

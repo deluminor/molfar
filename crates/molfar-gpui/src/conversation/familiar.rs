@@ -6,6 +6,11 @@ use std::path::PathBuf;
 pub(super) struct ChatState {
     pub(super) app_launch_generation: u64,
     pub(super) pending: Vec<Message>,
+    queue_scroll: gpui::ScrollHandle,
+    queue_ids: Vec<String>,
+    queue_list_focus: Option<gpui::FocusHandle>,
+    queue_window: Option<gpui::AnyWindowHandle>,
+    queue_focus: std::collections::HashMap<String, ([gpui::FocusHandle; 2], [Subscription; 2])>,
     pub(super) emoji: bool,
     pub(super) delivered: std::collections::HashSet<String>,
     pub(super) sending: Option<String>,
@@ -27,6 +32,16 @@ pub(crate) struct QueueChanged {
 impl EventEmitter<QueueChanged> for Conversation {}
 impl EventEmitter<Submitted> for Conversation {}
 impl Conversation {
+    #[cfg(test)]
+    pub(crate) fn queue_test_focus(&self, id: &str, index: usize) -> gpui::FocusHandle {
+        self.familiar_ui.queue_focus[id].0[index].clone()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn queue_test_list_focus(&self) -> gpui::FocusHandle {
+        self.familiar_ui.queue_list_focus.as_ref().unwrap().clone()
+    }
+
     /// App launches are saved before installing a view. Reuse the normal durable
     /// draft/queue path instead of submitting an unrecorded seed prompt.
     pub(crate) fn install_app_launch(
@@ -567,6 +582,74 @@ impl Conversation {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        let failed_ids: Vec<_> = self
+            .familiar_ui
+            .pending
+            .iter()
+            .filter(|m| m.internal && m.error.is_some())
+            .map(|m| m.id.clone())
+            .collect();
+        let list_focus = self
+            .familiar_ui
+            .queue_list_focus
+            .get_or_insert_with(|| cx.focus_handle().tab_stop(true))
+            .clone();
+        if self.familiar_ui.queue_ids != failed_ids {
+            let queue_focused = list_focus.is_focused(window)
+                || self
+                    .familiar_ui
+                    .queue_focus
+                    .values()
+                    .any(|(handles, _)| handles.iter().any(|handle| handle.is_focused(window)));
+            if queue_focused {
+                let focus = if failed_ids.is_empty() {
+                    self.input.focus_handle(cx)
+                } else {
+                    list_focus.clone()
+                };
+                window.focus(&focus, cx);
+            }
+            self.familiar_ui.queue_scroll = gpui::ScrollHandle::new();
+            self.familiar_ui.queue_ids.clone_from(&failed_ids);
+        }
+        if self.familiar_ui.queue_window != Some(window.window_handle()) {
+            self.familiar_ui.queue_focus.clear();
+            self.familiar_ui.queue_window = Some(window.window_handle());
+        }
+        self.familiar_ui
+            .queue_focus
+            .retain(|id, _| failed_ids.contains(id));
+        for id in &failed_ids {
+            if !self.familiar_ui.queue_focus.contains_key(id) {
+                let handles = [
+                    cx.focus_handle().tab_stop(true),
+                    cx.focus_handle().tab_stop(true),
+                ];
+                let subscribe =
+                    |handle: &gpui::FocusHandle, cx: &mut Context<Self>, window: &mut Window| {
+                        let id = id.clone();
+                        cx.on_focus(handle, window, move |this, _, cx| {
+                            if let Some(index) = this
+                                .familiar_ui
+                                .pending
+                                .iter()
+                                .filter(|m| m.internal && m.error.is_some())
+                                .position(|m| m.id == id)
+                            {
+                                this.familiar_ui.queue_scroll.scroll_to_top_of_item(index);
+                                cx.notify();
+                            }
+                        })
+                    };
+                let subscriptions = [
+                    subscribe(&handles[0], cx, window),
+                    subscribe(&handles[1], cx, window),
+                ];
+                self.familiar_ui
+                    .queue_focus
+                    .insert(id.clone(), (handles, subscriptions));
+            }
+        }
         let familiar = self.settings.familiar.as_ref().unwrap().familiar.clone();
         let status = self.familiar_status();
         let name = familiar.label();
@@ -625,90 +708,127 @@ impl Conversation {
                     .pb_1p5()
                     .flex()
                     .flex_col()
-                    .children(
-                        self.familiar_ui
-                            .pending
-                            .iter()
-                            .filter(|m| m.internal && m.error.is_some())
-                            .map(|message| {
-                                let retry = message.id.clone();
-                                let remove = retry.clone();
-                                div()
-                                    .id(SharedString::from(format!(
-                                        "familiar-queued-{}",
-                                        message.id
-                                    )))
-                                    .debug_selector(|| "familiar-internal-queue".into())
-                                    .mb_1()
-                                    .flex()
-                                    .justify_end()
-                                    .child(
+                    .when(!failed_ids.is_empty(), |d| d.child(
+                        div()
+                            .id("familiar-internal-queue-list")
+                            .debug_selector(|| "familiar-internal-queue-list".into())
+                            .focus_visible(|s| s.border_2().border_color(content(0.8)))
+                            .track_focus(&list_focus)
+                            .tab_index(0)
+                            .track_scroll(&self.familiar_ui.queue_scroll)
+                            .on_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, _, cx| {
+                                let scroll = &this.familiar_ui.queue_scroll;
+                                let delta = match event.keystroke.key.as_str() {
+                                    "up" => px(40.),
+                                    "down" => px(-40.),
+                                    "pageup" => px(160.),
+                                    "pagedown" => px(-160.),
+                                    _ => return,
+                                };
+                                let y = (scroll.offset().y + delta).max(-scroll.max_offset().y).min(px(0.));
+                                scroll.set_offset(gpui::point(scroll.offset().x, y));
+                                cx.stop_propagation();
+                                cx.notify();
+                            }))
+                            .max_h(px(180.))
+                            .overflow_y_scroll()
+                            .children(
+                                self.familiar_ui
+                                    .pending
+                                    .iter()
+                                    .filter(|m| m.internal && m.error.is_some())
+                                    .map(|message| {
+                                        let retry = message.id.clone();
+                                        let remove = retry.clone();
+                                        let focus = &self.familiar_ui.queue_focus[&message.id].0;
                                         div()
-                                            .max_w(px(440.))
-                                            .px_3()
-                                            .py_2()
-                                            .rounded_xl()
-                                            .border_1()
-                                            .border_color(content(0.15))
-                                            .bg(content(0.04))
-                                            .text_size(px(13.))
-                                            .text_color(content(0.6))
-                                            .child(if message.internal {
-                                                "Completion update".into()
-                                            } else {
-                                                message.text.clone()
-                                            })
+                                            .id(SharedString::from(format!(
+                                                "familiar-queued-{}",
+                                                message.id
+                                            )))
+                                            .debug_selector(|| "familiar-internal-queue".into())
+                                            .mb_1()
+                                            .flex()
+                                            .justify_end()
                                             .child(
                                                 div()
-                                                    .text_size(px(11.))
-                                                    .text_color(content(0.4))
+                                                    .max_w(px(440.))
+                                                    .px_3()
+                                                    .py_2()
+                                                    .rounded_xl()
+                                                    .border_1()
+                                                    .border_color(content(0.15))
+                                                    .bg(content(0.04))
+                                                    .text_size(px(13.))
+                                                    .text_color(content(0.6))
+                                                    .child(if message.internal {
+                                                        "Completion update".into()
+                                                    } else {
+                                                        message.text.clone()
+                                                    })
+                                                    .when(message.error.is_some(), |d| {
+                                                        d.child(
+                                                            div()
+                                                                .flex()
+                                                                .gap_2()
+                                                                .child(
+                                                                    icon_button(
+                                                                        "familiar-queue-retry",
+                                                                        "Retry queued message",
+                                                                        "refresh-cw",
+                                                                    )
+                                                                    .track_focus(&focus[0]).tab_index(0)
+                                                                    .focus_visible(|s| s.border_2().border_color(content(0.8)))
+                                                                    .debug_selector({ let id = message.id.clone(); move || format!("familiar-queue-retry-{id}") })
+                                                                    .on_click(cx.listener(
+                                                                        move |_, _, _, cx| {
+                                                                            cx.emit(QueueChanged {
+                                                                                id: retry.clone(),
+                                                                                remove: false,
+                                                                            })
+                                                                        },
+                                                                    )),
+                                                                )
+                                                                .child(
+                                                                    icon_button(
+                                                                        "familiar-queue-discard",
+                                                                        "Discard queued message",
+                                                                        "close",
+                                                                    )
+                                                                    .track_focus(&focus[1]).tab_index(0)
+                                                                    .focus_visible(|s| s.border_2().border_color(content(0.8)))
+                                                                    .debug_selector({ let id = message.id.clone(); move || format!("familiar-queue-discard-{id}") })
+                                                                    .on_click(cx.listener(
+                                                                        move |_, _, _, cx| {
+                                                                            cx.emit(QueueChanged {
+                                                                                id: remove.clone(),
+                                                                                remove: true,
+                                                                            })
+                                                                        },
+                                                                    )),
+                                                                ),
+                                                        )
+                                                    })
                                                     .child(
-                                                        message
-                                                            .error
-                                                            .clone()
-                                                            .unwrap_or_else(|| "Pending".into()),
+                                                        div()
+                                                            .text_size(px(11.))
+                                                            .text_color(content(0.4))
+                                                            .child(
+                                                                message
+                                                                    .error
+                                                                    .clone()
+                                                                    .unwrap_or_else(|| {
+                                                                        "Pending".into()
+                                                                    }),
+                                                            ),
                                                     ),
                                             )
-                                            .when(message.error.is_some(), |d| {
-                                                d.child(
-                                                    div()
-                                                        .flex()
-                                                        .gap_2()
-                                                        .child(
-                                                            icon_button(
-                                                                "familiar-queue-retry",
-                                                                "Retry queued message",
-                                                                "refresh-cw",
-                                                            )
-                                                            .on_click(cx.listener(
-                                                                move |_, _, _, cx| {
-                                                                    cx.emit(QueueChanged {
-                                                                        id: retry.clone(),
-                                                                        remove: false,
-                                                                    })
-                                                                },
-                                                            )),
-                                                        )
-                                                        .child(
-                                                            icon_button(
-                                                                "familiar-queue-discard",
-                                                                "Discard queued message",
-                                                                "close",
-                                                            )
-                                                            .on_click(cx.listener(
-                                                                move |_, _, _, cx| {
-                                                                    cx.emit(QueueChanged {
-                                                                        id: remove.clone(),
-                                                                        remove: true,
-                                                                    })
-                                                                },
-                                                            )),
-                                                        ),
-                                                )
-                                            }),
-                                    )
-                            }),
-                    )
+                                    }),
+                            ),
+                    ))
+                    .when(!failed_ids.is_empty(), |d| {
+                        d.child(div().text_size(px(11.)).text_color(content(0.5)).child("Scroll for completion updates"))
+                    })
                     .children(self.usage_notice(true, cx))
                     .children(self.auth_notice(cx))
                     .child(self.approval_shelf(window, cx))
