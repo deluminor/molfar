@@ -165,3 +165,33 @@ fn switching_vaults_drops_the_previous_vaults_notes(cx: &mut TestAppContext) {
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn the_tree_and_note_panel_resize_by_drag_and_keep_their_width(cx: &mut TestAppContext) {
+    let vault = vault();
+    let window = open(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let before = window.update(visual, |view, _, _| view.widths).unwrap();
+
+    for (handle, shift) in [
+        ("knowledge-resize-tree", 60.),
+        ("knowledge-resize-panel", -40.),
+    ] {
+        let start = visual.debug_bounds(handle).unwrap().center();
+        let end = start + point(px(shift), px(0.));
+        visual.simulate_mouse_down(start, gpui::MouseButton::Left, Default::default());
+        visual.simulate_mouse_move(end, Some(gpui::MouseButton::Left), Default::default());
+        visual.simulate_mouse_up(end, gpui::MouseButton::Left, Default::default());
+        visual.run_until_parked();
+    }
+
+    let after = window.update(visual, |view, _, _| view.widths).unwrap();
+    assert_eq!(after.tree, before.tree + 60.);
+    assert_eq!(after.panel, before.panel + 40.);
+    assert_eq!(
+        super::super::panes::load(&vault.data),
+        after,
+        "widths persist"
+    );
+}

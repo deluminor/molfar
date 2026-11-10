@@ -102,22 +102,3 @@ pub(super) fn skeleton_rows(id: impl Into<ElementId>) -> AnyElement {
     })
     .into_any_element()
 }
-
-/// A thin indeterminate bar for refreshes that keep the content visible.
-pub(super) fn progress_bar(id: impl Into<ElementId>) -> AnyElement {
-    pulse::looping(id, SHIMMER, pulse::Rate::Smooth, |phase| {
-        let mut accent = accent_color();
-        accent.a = 0.85;
-        div().relative().w_full().h(px(2.)).overflow_hidden().child(
-            div()
-                .absolute()
-                .top_0()
-                .left(gpui::relative(phase * 1.4 - 0.4))
-                .w(gpui::relative(0.4))
-                .h_full()
-                .rounded_full()
-                .bg(accent),
-        )
-    })
-    .into_any_element()
-}

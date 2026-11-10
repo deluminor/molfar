@@ -75,6 +75,27 @@ impl Camera {
     }
 }
 
+impl Camera {
+    /// The world point under screen `(x, y)` at `depth` from the eye: the
+    /// inverse of [`Camera::project`], used to drag a node in its plane.
+    pub fn unproject(&self, x: f32, y: f32, depth: f32, width: f32, height: f32) -> Point3 {
+        let focal = height / 2. / (FIELD_OF_VIEW / 2.).tan();
+        let scale = focal / depth.max(1.);
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
+        let (sin_pitch, cos_pitch) = self.pitch.sin_cos();
+        let view_x = (x - width / 2.) / scale;
+        let view_y = (height / 2. - y) / scale;
+        let view_z = self.distance - depth;
+        let world_y = view_y * cos_pitch + view_z * sin_pitch;
+        let turned_z = -view_y * sin_pitch + view_z * cos_pitch;
+        [
+            view_x * cos_yaw + turned_z * sin_yaw,
+            world_y,
+            -view_x * sin_yaw + turned_z * cos_yaw,
+        ]
+    }
+}
+
 /// The nearest-to-eye node whose disc contains the point.
 pub fn pick(projected: &[Option<Projected>], radii: &[f32], x: f32, y: f32) -> Option<usize> {
     projected

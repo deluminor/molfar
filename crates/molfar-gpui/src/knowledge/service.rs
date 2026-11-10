@@ -69,6 +69,10 @@ impl VaultService {
         &self.state
     }
 
+    pub(crate) fn data_dir(&self) -> &std::path::Path {
+        &self.data_dir
+    }
+
     pub(crate) fn connecting(&self) -> bool {
         self.connecting
     }

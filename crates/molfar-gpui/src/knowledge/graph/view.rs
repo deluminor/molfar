@@ -1,5 +1,5 @@
 use super::{GraphView, SPIN, TRANSITION, frame::Scene, paint::graph_canvas};
-use crate::{pulse, theme::is_light};
+use crate::pulse;
 use gpui::{Context, Render, Role, Window, div, prelude::*};
 use molfar_core::knowledge::Camera;
 use std::time::Instant;
@@ -34,10 +34,15 @@ impl GraphView {
         let idle = self.hovered.is_none() && self.drag.is_none();
         let spin = self.spinning && idle && !self.positions.is_empty();
         let zooming = (self.camera.distance - self.target_distance).abs() > 0.5;
-        let busy = spin || zooming || self.transition.is_some() || self.pending.is_some();
+        let simulating = self.simulating();
+        let busy =
+            spin || zooming || simulating || self.transition.is_some() || self.pending.is_some();
         if !busy {
             self.last_frame = None;
             return;
+        }
+        if simulating {
+            self.step_simulation();
         }
 
         if pulse::request(pulse::Rate::Smooth, window, cx) {
@@ -70,8 +75,6 @@ impl Render for GraphView {
             size,
             hovered: self.hovered,
             selected,
-            palette: &self.palette,
-            light: is_light(),
         }
         .frame();
         self.projected = frame.projected.clone();
@@ -96,7 +99,6 @@ impl Render for GraphView {
             .size_full()
             .overflow_hidden()
             .child(self.listen(surface, cx))
-            .child(self.legend())
             .child(self.controls(cx))
             .child(self.hint())
             .children(self.loader())

@@ -2,9 +2,8 @@
 //! only ease positions, orbit the camera and project.
 use gpui::{Bounds, Context, EventEmitter, Pixels, Task};
 use molfar_core::knowledge::{
-    Camera, GraphProjection, Point3, Projected, SETTLE_TICKS, WARM_TICKS, settle,
+    Camera, GraphProjection, Point3, Projected, SETTLE_TICKS, Simulation, WARM_TICKS, settle,
 };
-use palette::Palette;
 use std::{
     cell::Cell,
     collections::HashMap,
@@ -20,7 +19,6 @@ mod frame;
 mod input;
 mod overlay;
 mod paint;
-mod palette;
 mod view;
 
 /// How long nodes glide to a new layout.
@@ -33,15 +31,34 @@ pub(crate) enum GraphEvent {
     ToggleNeighborhood,
 }
 
-struct Drag {
-    last: gpui::Point<Pixels>,
-    travel: f32,
+enum Drag {
+    /// Empty space: orbit the camera.
+    Orbit {
+        last: gpui::Point<Pixels>,
+        travel: f32,
+    },
+    /// A note: pin it under the cursor at its depth; its links follow.
+    Node {
+        index: usize,
+        depth: f32,
+        origin: gpui::Point<Pixels>,
+        target: Option<Point3>,
+        travel: f32,
+    },
+}
+
+impl Drag {
+    fn travel(&self) -> f32 {
+        match self {
+            Self::Orbit { travel, .. } | Self::Node { travel, .. } => *travel,
+        }
+    }
 }
 
 pub(crate) struct GraphView {
     shown: Arc<GraphProjection>,
     pending: Option<Arc<GraphProjection>>,
-    palette: Palette,
+    simulation: Option<Simulation>,
     positions: Vec<Point3>,
     from: Vec<Point3>,
     transition: Option<Instant>,
@@ -73,7 +90,7 @@ impl GraphView {
         Self {
             shown: Arc::default(),
             pending: None,
-            palette: Palette::default(),
+            simulation: None,
             positions: Vec::new(),
             from: Vec::new(),
             transition: None,
@@ -182,7 +199,11 @@ impl GraphView {
             .collect();
         self.positions = positions;
         self.transition = Some(Instant::now());
-        self.palette = Palette::new(&projection);
+        self.simulation = Some(Simulation::new(
+            self.positions.len(),
+            &projection.edges,
+            &self.positions.iter().copied().map(Some).collect::<Vec<_>>(),
+        ));
         self.shown = projection;
         self.pending = None;
         self.hovered = None;
@@ -206,6 +227,50 @@ impl GraphView {
                 ]
             })
             .collect()
+    }
+
+    /// Ends a layout glide where it is, so a drag starts from what is shown.
+    fn settle_transition(&mut self) {
+        if self.transition.is_none() {
+            return;
+        }
+        self.positions = self.current_positions(Instant::now());
+        self.transition = None;
+        let placed: Vec<Option<Point3>> = self.positions.iter().copied().map(Some).collect();
+        self.simulation = Some(Simulation::new(placed.len(), &self.shown.edges, &placed));
+    }
+
+    /// Ticks the live simulation, pinning a dragged note under the cursor.
+    fn step_simulation(&mut self) {
+        let pinned = match &self.drag {
+            Some(Drag::Node {
+                index,
+                target: Some(target),
+                ..
+            }) => Some((*index, *target)),
+            _ => None,
+        };
+        let Some(simulation) = self.simulation.as_mut() else {
+            return;
+        };
+        if pinned.is_none() && simulation.settled() {
+            return;
+        }
+        simulation.tick(pinned);
+        self.positions = simulation.positions().to_vec();
+    }
+
+    fn simulating(&self) -> bool {
+        matches!(
+            self.drag,
+            Some(Drag::Node {
+                target: Some(_),
+                ..
+            })
+        ) || self
+            .simulation
+            .as_ref()
+            .is_some_and(|simulation| !simulation.settled())
     }
 
     pub(crate) fn fit(&mut self, cx: &mut Context<Self>) {

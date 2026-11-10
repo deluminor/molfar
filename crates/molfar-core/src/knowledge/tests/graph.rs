@@ -164,3 +164,46 @@ fn pick_prefers_the_node_nearest_the_eye() {
     );
     assert_eq!(pick(&[Some(near)], &[8.], 100., 100.), None);
 }
+
+#[test]
+fn unproject_inverts_project() {
+    let camera = Camera {
+        yaw: 0.7,
+        pitch: -0.4,
+        distance: 500.,
+    };
+    let point = [35., -20., 60.];
+    let projected = camera.project(point, 900., 600.).unwrap();
+    let back = camera.unproject(projected.x, projected.y, projected.depth, 900., 600.);
+    for axis in 0..3 {
+        assert!((back[axis] - point[axis]).abs() < 0.01, "{back:?}");
+    }
+}
+
+#[test]
+fn a_pinned_node_pulls_its_links_along_and_the_simulation_cools() {
+    let edges = [GraphEdge {
+        source: 0,
+        target: 1,
+    }];
+    let start = [
+        Some([0., 0., 0.]),
+        Some([30., 0., 0.]),
+        Some([-200., 0., 0.]),
+    ];
+    let mut simulation = Simulation::new(3, &edges, &start);
+    simulation.reheat(DRAG_ALPHA);
+    for _ in 0..60 {
+        simulation.tick(Some((0, [300., 0., 0.])));
+    }
+    let positions = simulation.positions();
+    assert_eq!(positions[0], [300., 0., 0.]);
+    assert!(
+        positions[1][0] > 150.,
+        "the linked note follows: {positions:?}"
+    );
+    for _ in 0..400 {
+        simulation.tick(None);
+    }
+    assert!(simulation.settled());
+}

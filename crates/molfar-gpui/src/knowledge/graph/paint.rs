@@ -1,11 +1,9 @@
-//! Paints a [`Frame`]: depth-faded edges, glowing nodes with a soft
-//! highlight that reads as a sphere, and a ring around the selection.
+//! Paints a [`Frame`]: edge groups faintest first, then nodes far to near
+//! with a soft highlight that reads as a sphere and a ring on the selection.
 use super::frame::{Frame, Segment};
-use crate::theme::{accent_color, background_base, content, white};
+use crate::theme::{accent_color, background_base, white};
 use gpui::{Bounds, Hsla, PathBuilder, Pixels, Window, canvas, fill, point, prelude::*, px, size};
 use std::{cell::Cell, rc::Rc};
-
-const EDGE_ALPHA: [f32; 3] = [0.06, 0.1, 0.16];
 
 fn disc(
     center: (f32, f32),
@@ -54,18 +52,17 @@ pub(super) fn graph_canvas(frame: Frame, bounds: Rc<Cell<Bounds<Pixels>>>) -> im
         move |area, _, window, _| {
             let origin = area.origin;
             window.with_content_mask(Some(gpui::ContentMask { bounds: area }), |window| {
-                for (bucket, alpha) in EDGE_ALPHA.iter().enumerate() {
-                    stroke(&frame.edges[bucket], 1., content(*alpha), origin, window);
+                for group in &frame.edges {
+                    stroke(&group.segments, group.width, group.color, origin, window);
                 }
-                let mut lit = accent_color();
-                lit.a = 0.8;
-                stroke(&frame.edges[3], 1.6, lit, origin, window);
 
                 for node in &frame.nodes {
                     let center = (node.x, node.y);
-                    let mut glow = node.color;
-                    glow.a *= 0.16;
-                    disc(center, node.radius * 2.3, glow, origin, window);
+                    if node.glow {
+                        let mut glow = node.color;
+                        glow.a *= 0.18;
+                        disc(center, node.radius * 2.4, glow, origin, window);
+                    }
                     if node.ring {
                         disc(center, node.radius + 3.5, accent_color(), origin, window);
                         disc(center, node.radius + 1.8, background_base(), origin, window);
@@ -74,8 +71,8 @@ pub(super) fn graph_canvas(frame: Frame, bounds: Rc<Cell<Bounds<Pixels>>>) -> im
                     let shine = (node.x - node.radius * 0.3, node.y - node.radius * 0.35);
                     disc(
                         shine,
-                        node.radius * 0.38,
-                        white(0.32 * node.color.a),
+                        node.radius * 0.36,
+                        white(0.28 * node.color.a),
                         origin,
                         window,
                     );

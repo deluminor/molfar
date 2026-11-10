@@ -1,11 +1,10 @@
-//! Chrome floating over the graph: note labels, folder legend, controls,
+//! Chrome floating over the graph: note labels, controls,
 //! interaction hint and the layout loader.
 use super::{GraphEvent, GraphView, frame::Frame};
 use crate::{knowledge::loading::orbit_loader, theme::*};
 use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
 
 const LABEL_LIMIT: usize = 24;
-const LEGEND_LIMIT: usize = 6;
 
 fn chip(
     id: &'static str,
@@ -85,48 +84,10 @@ impl GraphView {
             .collect()
     }
 
-    pub(super) fn legend(&self) -> impl IntoElement {
-        let light = is_light();
-        let groups = &self.palette.ranked;
-        let more = groups.len().saturating_sub(LEGEND_LIMIT);
-        div()
-            .absolute()
-            .top_3()
-            .left_3()
-            .flex()
-            .flex_col()
-            .gap_1()
-            .text_size(px(11.))
-            .text_color(content(0.55))
-            .children(groups.iter().take(LEGEND_LIMIT).map(|(group, count)| {
-                div()
-                    .flex()
-                    .items_center()
-                    .gap_1p5()
-                    .child(
-                        div()
-                            .size(px(7.))
-                            .rounded_full()
-                            .bg(self.palette.color(group, light)),
-                    )
-                    .child(if group.is_empty() {
-                        "Vault root".to_string()
-                    } else {
-                        group.clone()
-                    })
-                    .child(div().text_color(content(0.3)).child(count.to_string()))
-            }))
-            .when(more > 0, |legend| {
-                legend.child(
-                    div()
-                        .text_color(content(0.3))
-                        .child(format!("+{more} more folders")),
-                )
-            })
-    }
-
     pub(super) fn controls(&self, cx: &mut Context<Self>) -> impl IntoElement {
         div()
+            .id("knowledge-graph-controls")
+            .occlude()
             .absolute()
             .top_3()
             .right_3()

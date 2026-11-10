@@ -1,6 +1,5 @@
 //! A 3D force layout: Barnes–Hut many-body repulsion, springs along edges and
-//! a centring pull. It runs off the UI thread; the view only interpolates and
-//! rotates the result.
+//! a centring pull.
 use super::octree::Octree;
 use super::projection::GraphEdge;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -14,6 +13,10 @@ const REPULSION: f32 = 900.;
 const CENTER_PULL: f32 = 0.012;
 const DAMPING: f32 = 0.6;
 const MAX_STEP: f32 = 24.;
+/// Live heat a drag adds, and how fast it fades once released.
+pub const DRAG_ALPHA: f32 = 0.3;
+const LIVE_ALPHA_DECAY: f32 = 0.028;
+const LIVE_ALPHA_MIN: f32 = 0.004;
 
 /// Deterministic start: a Fibonacci sphere sized to the node count, so the
 /// same vault always opens in the same shape.
@@ -59,6 +62,91 @@ fn spring(
     }
 }
 
+/// A live force simulation. Batch layouts run it on a fixed cooling
+/// schedule off the UI thread; the view also ticks it per frame while a note
+/// is dragged, so its neighbours follow and the graph springs back.
+#[derive(Clone, Debug)]
+pub struct Simulation {
+    positions: Vec<Point3>,
+    velocities: Vec<Point3>,
+    edges: Vec<GraphEdge>,
+    degree: Vec<usize>,
+    alpha: f32,
+}
+
+impl Simulation {
+    pub fn new(count: usize, edges: &[GraphEdge], previous: &[Option<Point3>]) -> Self {
+        let positions = (0..count)
+            .map(|index| {
+                previous
+                    .get(index)
+                    .copied()
+                    .flatten()
+                    .unwrap_or_else(|| seed(index, count))
+            })
+            .collect();
+        let mut degree = vec![0usize; count];
+        for edge in edges {
+            degree[edge.source] += 1;
+            degree[edge.target] += 1;
+        }
+        Self {
+            positions,
+            velocities: vec![[0.; 3]; count],
+            edges: edges.to_vec(),
+            degree,
+            alpha: 0.,
+        }
+    }
+
+    pub fn positions(&self) -> &[Point3] {
+        &self.positions
+    }
+
+    /// Whether the simulation has cooled enough to stop ticking.
+    pub fn settled(&self) -> bool {
+        self.alpha < LIVE_ALPHA_MIN
+    }
+
+    /// Warms the simulation to at least `alpha`.
+    pub fn reheat(&mut self, alpha: f32) {
+        self.alpha = self.alpha.max(alpha);
+    }
+
+    /// One live tick that cools as it goes. A pinned node sits at its point
+    /// and drags its links along.
+    pub fn tick(&mut self, pinned: Option<(usize, Point3)>) {
+        self.step(self.alpha, pinned);
+        self.alpha *= 1. - LIVE_ALPHA_DECAY;
+    }
+
+    fn step(&mut self, alpha: f32, pinned: Option<(usize, Point3)>) {
+        let count = self.positions.len();
+        let mut forces = vec![[0f32; 3]; count];
+        repel(&self.positions, &mut forces, alpha);
+        spring(
+            &self.positions,
+            &self.edges,
+            &self.degree,
+            &mut forces,
+            alpha,
+        );
+        for (index, point) in self.positions.iter_mut().enumerate() {
+            for axis in 0..3 {
+                forces[index][axis] -= point[axis] * CENTER_PULL * alpha;
+                let velocity = ((self.velocities[index][axis] + forces[index][axis]) * DAMPING)
+                    .clamp(-MAX_STEP, MAX_STEP);
+                self.velocities[index][axis] = velocity;
+                point[axis] += velocity;
+            }
+        }
+        if let Some((index, target)) = pinned.filter(|(index, _)| *index < count) {
+            self.positions[index] = target;
+            self.velocities[index] = [0.; 3];
+        }
+    }
+}
+
 /// Settles `count` nodes. `previous` warm-starts nodes already placed, so a
 /// filter change moves the graph instead of rebuilding it. Returns `None`
 /// once `cancel` is set, so a superseded layout stops between ticks.
@@ -69,43 +157,16 @@ pub fn settle(
     ticks: usize,
     cancel: &AtomicBool,
 ) -> Option<Vec<Point3>> {
-    let mut positions: Vec<Point3> = (0..count)
-        .map(|index| {
-            previous
-                .get(index)
-                .copied()
-                .flatten()
-                .unwrap_or_else(|| seed(index, count))
-        })
-        .collect();
-    let mut velocities = vec![[0f32; 3]; count];
-    let mut degree = vec![0usize; count];
-    for edge in edges {
-        degree[edge.source] += 1;
-        degree[edge.target] += 1;
-    }
-
+    let mut simulation = Simulation::new(count, edges, previous);
     for tick in 0..ticks {
         if cancel.load(Ordering::Relaxed) {
             return None;
         }
-        let alpha = 1. - tick as f32 / ticks.max(1) as f32;
-        let mut forces = vec![[0f32; 3]; count];
-        repel(&positions, &mut forces, alpha);
-        spring(&positions, edges, &degree, &mut forces, alpha);
-        for (index, point) in positions.iter_mut().enumerate() {
-            for axis in 0..3 {
-                forces[index][axis] -= point[axis] * CENTER_PULL * alpha;
-                let velocity = ((velocities[index][axis] + forces[index][axis]) * DAMPING)
-                    .clamp(-MAX_STEP, MAX_STEP);
-                velocities[index][axis] = velocity;
-                point[axis] += velocity;
-            }
-        }
+        simulation.step(1. - tick as f32 / ticks.max(1) as f32, None);
     }
 
-    recenter(&mut positions);
-    Some(positions)
+    recenter(&mut simulation.positions);
+    Some(simulation.positions)
 }
 
 fn recenter(positions: &mut [Point3]) {

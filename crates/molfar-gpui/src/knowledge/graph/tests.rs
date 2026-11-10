@@ -83,7 +83,7 @@ fn a_projection_lays_out_off_thread_and_identical_scans_keep_the_layout(cx: &mut
 }
 
 #[gpui::test]
-fn clicking_a_node_selects_it_and_dragging_orbits(cx: &mut TestAppContext) {
+fn clicking_selects_dragging_a_note_pulls_it_and_dragging_space_orbits(cx: &mut TestAppContext) {
     let window = open(cx);
     let events = Rc::new(RefCell::new(Vec::new()));
     let sink = events.clone();
@@ -117,21 +117,48 @@ fn clicking_a_node_selects_it_and_dragging_orbits(cx: &mut TestAppContext) {
     visual.run_until_parked();
     assert_eq!(events.borrow().as_slice(), ["b"]);
 
+    let pulled = target + point(px(80.), px(0.));
     visual.simulate_mouse_down(target, gpui::MouseButton::Left, Default::default());
+    visual.simulate_mouse_move(pulled, Some(gpui::MouseButton::Left), Default::default());
+    visual.run_until_parked();
+    window
+        .update(visual, |graph, _, _| {
+            let node = graph.projected[1].unwrap();
+            let under = graph.bounds.get().origin + point(px(node.x), px(node.y));
+            assert!(
+                (under.x - pulled.x).abs() < px(1.),
+                "the note stays under the cursor"
+            );
+            assert_eq!(graph.camera.yaw, yaw, "dragging a note does not orbit");
+            assert!(graph.simulating());
+        })
+        .unwrap();
+    visual.simulate_mouse_up(pulled, gpui::MouseButton::Left, Default::default());
+    visual.run_until_parked();
+
+    let corner = window
+        .update(visual, |graph, _, _| {
+            graph.bounds.get().origin + point(px(6.), px(6.))
+        })
+        .unwrap();
+    visual.simulate_mouse_down(corner, gpui::MouseButton::Left, Default::default());
     visual.simulate_mouse_move(
-        target + point(px(80.), px(0.)),
+        corner + point(px(80.), px(0.)),
         Some(gpui::MouseButton::Left),
         Default::default(),
     );
     visual.simulate_mouse_up(
-        target + point(px(80.), px(0.)),
+        corner + point(px(80.), px(0.)),
         gpui::MouseButton::Left,
         Default::default(),
     );
     visual.run_until_parked();
     window
         .update(visual, |graph, _, _| {
-            assert!(graph.camera.yaw != yaw, "a drag orbits the camera");
+            assert!(
+                graph.camera.yaw != yaw,
+                "dragging empty space orbits the camera"
+            );
             assert_eq!(graph.selected.as_deref(), Some("b"));
         })
         .unwrap();

@@ -1,6 +1,6 @@
 //! The vault toolbar: tree toggle, vault, search, count and vault actions.
 use super::super::Knowledge;
-use crate::{knowledge::loading::progress_bar, right_panel::spinner, theme::*};
+use crate::{right_panel::spinner, theme::*};
 use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
 
 impl Knowledge {
@@ -117,9 +117,6 @@ impl Knowledge {
                             ),
                     ),
             )
-            .child(div().h(px(2.)).when(refreshing, |slot| {
-                slot.child(progress_bar("knowledge-progress"))
-            }))
             .into_any_element()
     }
 }

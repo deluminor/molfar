@@ -158,7 +158,7 @@ impl Knowledge {
                     .when(self.tree_open && skeleton, |body| {
                         body.child(
                             div()
-                                .w(px(264.))
+                                .w(px(self.widths.tree))
                                 .h_full()
                                 .border_r_1()
                                 .border_color(content(0.08))

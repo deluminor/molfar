@@ -17,6 +17,7 @@ mod edit;
 mod graph;
 mod loading;
 mod page;
+mod panes;
 mod service;
 mod service_companion;
 mod sync;
@@ -70,6 +71,8 @@ pub(crate) struct Knowledge {
     collapsed: HashSet<String>,
     tree_open: bool,
     panel_open: bool,
+    widths: panes::PaneWidths,
+    resize: Option<panes::Resize>,
     neighbors_only: bool,
     selected: Option<String>,
     preview: bool,
@@ -159,6 +162,8 @@ impl Knowledge {
             collapsed: HashSet::new(),
             tree_open: true,
             panel_open: true,
+            widths: panes::PaneWidths::default(),
+            resize: None,
             neighbors_only: false,
             selected: None,
             preview: true,
@@ -173,6 +178,7 @@ impl Knowledge {
             _subscriptions: subscriptions,
         };
         this.sync(cx);
+        this.restore_widths(cx);
         if matches!(this.state, ConnectionState::Ready(_)) {
             this.reload(cx);
         }
@@ -197,6 +203,19 @@ impl gpui::Render for Knowledge {
                     cx.stop_propagation();
                 }
             }))
+            .on_mouse_move(
+                cx.listener(|this, event: &gpui::MouseMoveEvent, window, cx| {
+                    this.drag_resize(event, window, cx);
+                }),
+            )
+            .on_mouse_up(
+                gpui::MouseButton::Left,
+                cx.listener(|this, _, _, cx| this.end_resize(cx)),
+            )
+            .on_mouse_up_out(
+                gpui::MouseButton::Left,
+                cx.listener(|this, _, _, cx| this.end_resize(cx)),
+            )
             .on_action(cx.listener(|this, _: &SaveNote, _, cx| this.save(cx)))
             .on_action(cx.listener(|this, _: &ReloadNote, _, cx| this.reload_note(cx)))
             .on_action(cx.listener(|this, action: &OpenVaultNote, _, cx| {

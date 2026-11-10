@@ -4,7 +4,6 @@ use super::model::{TreeRow, rows};
 use crate::theme::*;
 use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px, uniform_list};
 
-const TREE_WIDTH: f32 = 264.;
 const INDENT: f32 = 14.;
 
 impl Knowledge {
@@ -127,7 +126,8 @@ impl Knowledge {
         div()
             .id("knowledge-list")
             .debug_selector(|| "knowledge-list".into())
-            .w(px(TREE_WIDTH))
+            .relative()
+            .w(px(self.widths.tree))
             .h_full()
             .flex_shrink_0()
             .flex()
@@ -177,6 +177,7 @@ impl Knowledge {
                 .px_1p5()
                 .into_any_element()
             })
+            .child(self.resize_handle(super::super::panes::Side::Tree, cx))
             .into_any_element()
     }
 

@@ -13,8 +13,6 @@ pub(super) use preview::{PreviewBlock, parse as parse_preview};
 pub(super) use relations::Relations;
 mod toolbar;
 
-const PANEL_WIDTH: f32 = 460.;
-
 fn banner(
     id: &'static str,
     hue: f32,
@@ -59,7 +57,8 @@ impl Knowledge {
         div()
             .id("knowledge-panel")
             .debug_selector(|| "knowledge-panel".into())
-            .w(px(PANEL_WIDTH))
+            .relative()
+            .w(px(self.widths.panel))
             .h_full()
             .flex_shrink_0()
             .min_w_0()
@@ -126,6 +125,7 @@ impl Knowledge {
                     .when(!preview, |body| body.child(self.source.clone())),
             )
             .child(self.relations(cx))
+            .child(self.resize_handle(super::panes::Side::Panel, cx))
             .into_any_element()
     }
 }
