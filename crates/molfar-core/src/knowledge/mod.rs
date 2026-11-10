@@ -8,17 +8,24 @@ mod companion;
 mod connection;
 mod constants;
 mod documents;
+mod graph;
 mod links;
 mod parse;
 mod paths;
 mod preview;
+mod properties;
 mod scan;
 mod types;
 
 pub use companion::{disconnected, shape_index, shape_note};
 pub use constants::{BODY_MAX, NOTES_MAX, NOT_IN_VAULT, NO_VAULT};
+pub use graph::{
+    pick, project_graph, settle, Camera, GraphEdge, GraphNode, GraphProjection, Point3, Projected,
+    FIELD_OF_VIEW, MAX_GRAPH_NODES, SETTLE_TICKS, WARM_TICKS,
+};
 pub use links::{backlinks, decode_component, note_index, resolve_vault_link, LinkResolution};
 pub use preview::{prepare_preview, vault_target};
+pub use properties::{note_properties, NoteProperty};
 pub use types::{
     ConnectionState, VaultConnection, VaultDocument, VaultEntry, VaultLink, VaultNote,
     VaultSnapshot,
@@ -28,6 +35,7 @@ pub use types::{
 pub struct VaultHost {
     inner: Arc<Mutex<Inner>>,
     scans: Arc<AtomicU64>,
+    progress: Arc<AtomicU64>,
 }
 
 struct Inner {
@@ -51,11 +59,17 @@ impl VaultHost {
                 cancel: Arc::new(AtomicBool::new(false)),
             })),
             scans: Arc::new(AtomicU64::new(0)),
+            progress: Arc::new(AtomicU64::new(0)),
         }
     }
 
     pub fn scans_started(&self) -> u64 {
         self.scans.load(Ordering::Relaxed)
+    }
+
+    /// Notes indexed so far by the running scan.
+    pub fn scan_progress(&self) -> u64 {
+        self.progress.load(Ordering::Relaxed)
     }
 
     pub fn state(&self) -> Result<ConnectionState, String> {
@@ -130,8 +144,9 @@ impl VaultHost {
             (connection, cache, cancel)
         };
         self.scans.fetch_add(1, Ordering::Relaxed);
+        self.progress.store(0, Ordering::Relaxed);
         let id = connection.id.clone();
-        let result = scan::scan(connection, &mut cache, &cancel);
+        let result = scan::scan(connection, &mut cache, &cancel, &self.progress);
         let mut inner = self.lock()?;
         if matches!(&inner.state, ConnectionState::Ready(current) if current.id == id) {
             inner.cache = cache;

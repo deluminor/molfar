@@ -45,8 +45,10 @@ impl Drop for Fixture {
 mod companion;
 mod connection;
 mod documents;
+mod graph;
 mod links;
 mod parse;
 mod paths;
 mod preview;
+mod properties;
 mod scan;

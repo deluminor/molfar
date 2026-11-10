@@ -7,7 +7,7 @@ use super::paths;
 use super::types::{CachedNote, VaultConnection, VaultEntry, VaultSnapshot};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 fn warn(snapshot: &mut VaultSnapshot, message: String) {
@@ -20,6 +20,7 @@ pub fn scan(
     connection: VaultConnection,
     cache: &mut HashMap<String, CachedNote>,
     cancel: &AtomicBool,
+    progress: &AtomicU64,
 ) -> Result<VaultSnapshot, String> {
     let root = paths::validate_root(Path::new(&connection.root))?;
     let mut snapshot = VaultSnapshot {
@@ -165,6 +166,7 @@ pub fn scan(
                 warn(&mut snapshot, format!("{relative}: {warning}"));
             }
             snapshot.notes.push(cached.note.clone());
+            progress.fetch_add(1, Ordering::Relaxed);
             next_cache.insert(relative, cached);
         }
     }

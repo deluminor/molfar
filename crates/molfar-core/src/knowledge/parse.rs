@@ -16,7 +16,7 @@ fn property_values(value: Option<&Value>) -> Vec<String> {
     }
 }
 
-fn frontmatter(body: &str) -> (Option<Value>, &str, Option<String>) {
+pub(super) fn frontmatter(body: &str) -> (Option<Value>, &str, Option<String>) {
     let body = body.strip_prefix('\u{feff}').unwrap_or(body);
     let mut lines = body.split_inclusive('\n');
     if lines.next().is_none_or(|line| line.trim_end() != "---") {
