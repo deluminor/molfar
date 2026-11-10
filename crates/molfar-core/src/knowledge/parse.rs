@@ -66,7 +66,13 @@ fn wiki_links(text: &str, links: &mut Vec<VaultLink>) {
             break;
         };
         if !escaped {
-            let target = remainder[..end].split('|').next().unwrap_or("").trim();
+            // Tables escape the alias pipe as `\|`; the backslash is not part of the name.
+            let target = remainder[..end]
+                .split('|')
+                .next()
+                .unwrap_or("")
+                .trim_end_matches('\\')
+                .trim();
             if !target.is_empty() {
                 links.push(VaultLink {
                     target: target.into(),

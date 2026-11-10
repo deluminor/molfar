@@ -5,13 +5,13 @@ use crate::theme::*;
 use gpui::{AnyElement, Context, FontWeight, Hsla, Role, div, hsla, prelude::*, px};
 
 mod callout;
-mod preview;
+mod note;
 mod properties;
 mod relations;
-
-pub(super) use preview::{PreviewBlock, parse as parse_preview};
-pub(super) use relations::Relations;
 mod toolbar;
+
+pub(super) use note::{PreviewBlock, parse as parse_preview};
+pub(super) use relations::Relations;
 
 fn banner(
     id: &'static str,
@@ -116,11 +116,12 @@ impl Knowledge {
                     .flex_1()
                     .min_h_0()
                     .overflow_y_scroll()
-                    .px_5()
-                    .py_4()
+                    .px_6()
+                    .pt_5()
+                    .pb_8()
                     .when(preview, |body| {
                         body.children(properties::card(&self.properties))
-                            .children(preview::rows(&self.preview_blocks))
+                            .children(self.note_blocks(cx))
                     })
                     .when(!preview, |body| body.child(self.source.clone())),
             )

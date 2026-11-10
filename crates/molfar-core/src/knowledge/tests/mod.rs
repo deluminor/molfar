@@ -52,3 +52,4 @@ mod paths;
 mod preview;
 mod properties;
 mod scan;
+mod tasks;

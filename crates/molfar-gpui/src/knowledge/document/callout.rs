@@ -8,6 +8,9 @@ pub(crate) enum Segment {
         kind: String,
         title: String,
         body: String,
+        /// `Some(true)` folds by default (`-`), `Some(false)` folds open (`+`);
+        /// `None` cannot fold.
+        fold: Option<bool>,
     },
 }
 
@@ -18,7 +21,7 @@ fn fence(line: &str) -> Option<(char, usize)> {
     (count >= 3).then_some((marker, count))
 }
 
-fn callout_head(line: &str) -> Option<(String, String)> {
+fn callout_head(line: &str) -> Option<(String, String, Option<bool>)> {
     let rest = line
         .trim_start()
         .strip_prefix('>')?
@@ -32,8 +35,13 @@ fn callout_head(line: &str) -> Option<(String, String)> {
     {
         return None;
     }
+    let fold = match after.chars().next() {
+        Some('-') => Some(true),
+        Some('+') => Some(false),
+        _ => None,
+    };
     let title = after.trim_start_matches(['+', '-']).trim();
-    Some((kind.to_lowercase(), title.to_string()))
+    Some((kind.to_lowercase(), title.to_string(), fold))
 }
 
 fn unquote(line: &str) -> Option<&str> {
@@ -56,7 +64,7 @@ pub(crate) fn segments(text: &str) -> Vec<Segment> {
             };
         }
         let head = open_fence.is_none().then(|| callout_head(line)).flatten();
-        let Some((kind, title)) = head else {
+        let Some((kind, title, fold)) = head else {
             markdown.push_str(line);
             continue;
         };
@@ -90,7 +98,12 @@ pub(crate) fn segments(text: &str) -> Vec<Segment> {
         } else {
             title
         };
-        out.push(Segment::Callout { kind, title, body });
+        out.push(Segment::Callout {
+            kind,
+            title,
+            body,
+            fold,
+        });
     }
 
     if !markdown.is_empty() {
@@ -114,6 +127,7 @@ mod tests {
                     kind: "note".into(),
                     title: "👤 Життя".into(),
                     body: "```dataview\nlist\n```\n".into(),
+                    fold: None,
                 },
                 Segment::Markdown("After\n".into()),
             ]
@@ -126,10 +140,10 @@ mod tests {
         let segments = segments(text);
         assert_eq!(segments.len(), 2);
         assert!(
-            matches!(&segments[0], Segment::Callout { kind, title, .. } if kind == "tip" && title == "Tip")
+            matches!(&segments[0], Segment::Callout { kind, title, fold: Some(true), .. } if kind == "tip" && title == "Tip")
         );
         assert!(
-            matches!(&segments[1], Segment::Callout { title, body, .. } if title == "Careful" && body == "two\n")
+            matches!(&segments[1], Segment::Callout { title, body, fold: Some(false), .. } if title == "Careful" && body == "two\n")
         );
     }
 

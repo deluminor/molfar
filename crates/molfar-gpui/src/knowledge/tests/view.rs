@@ -127,7 +127,7 @@ fn folders_collapse_and_search_filters_tree_and_graph(cx: &mut TestAppContext) {
     );
     window
         .update(visual, |view, _, cx| {
-            assert!(view.collapsed.contains("notes"));
+            assert!(!view.expanded.contains("notes"));
             view.filter
                 .update(cx, |input, cx| input.set_text("beta".into(), cx));
         })
@@ -160,7 +160,7 @@ fn switching_vaults_drops_the_previous_vaults_notes(cx: &mut TestAppContext) {
         .update(visual, |view, _, cx| {
             let paths: Vec<_> = view.notes.iter().map(|note| note.path.as_str()).collect();
             assert_eq!(paths, ["other.md"]);
-            assert_eq!(view.selected.as_deref(), Some("other.md"));
+            assert!(view.selected.is_none(), "the previous vault's note is gone");
             assert_eq!(view.graph.read(cx).shown_paths(), ["other.md"]);
         })
         .unwrap();
@@ -194,4 +194,94 @@ fn the_tree_and_note_panel_resize_by_drag_and_keep_their_width(cx: &mut TestAppC
         after,
         "widths persist"
     );
+}
+
+#[gpui::test]
+fn knowledge_opens_graph_first_with_the_tree_and_folders_folded(cx: &mut TestAppContext) {
+    let vault = vault();
+    let window = open_fresh(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("knowledge-graph").is_some());
+    assert!(
+        visual.debug_bounds("knowledge-list").is_none(),
+        "the tree starts hidden"
+    );
+    assert!(
+        visual.debug_bounds("knowledge-panel").is_none(),
+        "no note opens by itself"
+    );
+
+    let toggle = visual.debug_bounds("knowledge-tree-toggle").unwrap();
+    visual.simulate_click(toggle.center(), Default::default());
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("knowledge-folder-0").is_some());
+    assert!(
+        visual.debug_bounds("knowledge-note-1").is_none(),
+        "folders start folded"
+    );
+
+    window
+        .update(visual, |view, _, cx| {
+            assert!(view.graph.read(cx).selected_path().is_none());
+            view.on_graph(&GraphEvent::Select("notes/deep/beta.md".into()), cx);
+            assert!(view.expanded.contains("notes") && view.expanded.contains("notes/deep"));
+            assert_eq!(
+                view.graph.read(cx).selected_path(),
+                Some("notes/deep/beta.md")
+            );
+        })
+        .unwrap();
+    visual.run_until_parked();
+    let close = visual.debug_bounds("knowledge-close-note").unwrap();
+    visual.simulate_click(close.center(), Default::default());
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            assert!(
+                view.graph.read(cx).selected_path().is_none(),
+                "a closed note is not a focus"
+            );
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn checkboxes_toggle_the_note_on_disk_and_footer_and_callouts_fold(cx: &mut TestAppContext) {
+    let vault = fixture(&[(
+        "wants.md",
+        "# Wants\n- [ ] Camera\n- [x] Lens ✅ 2026-03-15\n> [!tip]- Hidden\n> - [ ] folded task\n",
+    )]);
+    let window = open(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    let first = visual.debug_bounds("knowledge-task-0").unwrap();
+    visual.simulate_click(first.center(), Default::default());
+    visual.run_until_parked();
+    let disk = std::fs::read_to_string(vault.root.join("wants.md")).unwrap();
+    assert!(disk.contains("- [x] Camera"), "{disk}");
+    let second = visual.debug_bounds("knowledge-task-1").unwrap();
+    visual.simulate_click(second.center(), Default::default());
+    visual.run_until_parked();
+    let disk = std::fs::read_to_string(vault.root.join("wants.md")).unwrap();
+    assert!(disk.contains("- [ ] Lens"), "{disk}");
+
+    assert!(
+        visual.debug_bounds("knowledge-task-2").is_none(),
+        "the callout starts folded"
+    );
+    let title = visual.debug_bounds("knowledge-callout-title-1").unwrap();
+    visual.simulate_click(title.center(), Default::default());
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("knowledge-task-2").is_some());
+
+    assert!(
+        visual.debug_bounds("knowledge-relations").is_none(),
+        "links start folded"
+    );
+    let footer = visual.debug_bounds("knowledge-relations-toggle").unwrap();
+    visual.simulate_click(footer.center(), Default::default());
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("knowledge-relations").is_some());
 }

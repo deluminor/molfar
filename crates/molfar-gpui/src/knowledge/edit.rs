@@ -58,14 +58,14 @@ impl Knowledge {
         self.rebuild_tree(cx);
         self.refresh_graph(cx);
         let visible = self.visible(cx);
-        let next = self
+        let kept = self
             .selected
             .clone()
-            .filter(|path| visible.iter().any(|note| &note.path == path))
-            .or_else(|| visible.first().map(|note| note.path.clone()));
-        if let Some(path) = next {
-            self.open_note(path, cx);
+            .filter(|path| visible.iter().any(|note| &note.path == path));
+        if let Some(path) = kept {
+            self.load_note(path, cx);
         } else {
+            self.panel_open = false;
             self.selected = None;
             self.prepared.clear();
             self.preview_blocks.clear();
@@ -82,19 +82,28 @@ impl Knowledge {
             .collect()
     }
 
+    /// Opens a note in the panel and reveals it in the tree.
     pub(super) fn open_note(&mut self, path: String, cx: &mut Context<Self>) {
         self.panel_open = true;
+        let hidden: Vec<String> = super::tree::ancestors(&path)
+            .into_iter()
+            .filter(|folder| !self.expanded.contains(folder))
+            .collect();
+        if !hidden.is_empty() {
+            self.expanded.extend(hidden);
+            self.rebuild_tree(cx);
+        }
+        self.load_note(path, cx);
+    }
+
+    /// Reads a note into the panel state without opening or closing the panel.
+    pub(super) fn load_note(&mut self, path: String, cx: &mut Context<Self>) {
         if self.selected.as_deref() != Some(path.as_str()) {
             self.stash(cx);
             self.selected = Some(path.clone());
-            if self.neighbors_only {
-                self.refresh_graph(cx);
-            } else {
-                let selected = self.selected.clone();
-                self.graph
-                    .update(cx, |graph, cx| graph.set_selected(selected, cx));
-            }
+            self.callouts_toggled.clear();
         }
+        self.sync_graph_focus(cx);
         let service = self.service.clone();
         let task = service.update(cx, |service, cx| service.read_note(path.clone(), cx));
         cx.spawn(async move |this, cx| {

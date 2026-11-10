@@ -30,9 +30,9 @@ impl Folder<'_> {
     }
 }
 
-/// Rows for the visible tree. `collapsed` holds closed folder paths; a query
-/// opens every folder that holds a match and hides the rest.
-pub(crate) fn rows(notes: &[VaultNote], query: &str, collapsed: &HashSet<String>) -> Vec<TreeRow> {
+/// Rows for the visible tree. Folders start closed; `expanded` holds the
+/// open ones. A query opens every folder that holds a match and hides the rest.
+pub(crate) fn rows(notes: &[VaultNote], query: &str, expanded: &HashSet<String>) -> Vec<TreeRow> {
     let needle = query.trim().to_lowercase();
     let mut root = Folder::default();
     for note in notes.iter().filter(|note| note_matches(note, &needle)) {
@@ -46,7 +46,7 @@ pub(crate) fn rows(notes: &[VaultNote], query: &str, collapsed: &HashSet<String>
     }
 
     let mut out = Vec::new();
-    flatten(&root, "", 0, !needle.is_empty(), collapsed, &mut out);
+    flatten(&root, "", 0, !needle.is_empty(), expanded, &mut out);
     out
 }
 
@@ -55,7 +55,7 @@ fn flatten(
     prefix: &str,
     depth: usize,
     searching: bool,
-    collapsed: &HashSet<String>,
+    expanded: &HashSet<String>,
     out: &mut Vec<TreeRow>,
 ) {
     let mut folders: Vec<_> = folder.folders.iter().collect();
@@ -66,7 +66,7 @@ fn flatten(
         } else {
             format!("{prefix}/{name}")
         };
-        let open = searching || !collapsed.contains(&path);
+        let open = searching || expanded.contains(&path);
         out.push(TreeRow::Folder {
             path: path.clone(),
             name: name.clone(),
@@ -75,7 +75,7 @@ fn flatten(
             open,
         });
         if open {
-            flatten(child, &path, depth + 1, searching, collapsed, out);
+            flatten(child, &path, depth + 1, searching, expanded, out);
         }
     }
 
@@ -86,6 +86,20 @@ fn flatten(
         title: note.title.clone(),
         depth,
     }));
+}
+
+/// The folders above a note, outermost first, to reveal it in the tree.
+pub(crate) fn ancestors(path: &str) -> Vec<String> {
+    let parts: Vec<&str> = path.split('/').collect();
+    (1..parts.len()).map(|end| parts[..end].join("/")).collect()
+}
+
+/// Every folder that holds a note, for expanding the whole tree.
+pub(crate) fn folders(notes: &[VaultNote]) -> HashSet<String> {
+    notes
+        .iter()
+        .flat_map(|note| ancestors(&note.path))
+        .collect()
 }
 
 #[cfg(test)]
@@ -123,8 +137,12 @@ mod tests {
     }
 
     #[test]
-    fn folders_come_first_sorted_with_nested_counts() {
-        let rows = rows(&vault(), "", &HashSet::new());
+    fn folders_start_closed_and_expanded_ones_list_children_sorted() {
+        assert_eq!(
+            labels(&rows(&vault(), "", &HashSet::new())),
+            ["0:Areas/(1)", "0:Work/(2)", "0:Home"]
+        );
+        let rows = rows(&vault(), "", &folders(&vault()));
         assert_eq!(
             labels(&rows),
             [
@@ -140,20 +158,26 @@ mod tests {
     }
 
     #[test]
-    fn collapsed_folders_hide_their_children() {
-        let collapsed = HashSet::from(["Work".to_string()]);
-        let rows = rows(&vault(), "", &collapsed);
+    fn expanding_a_folder_keeps_its_subfolders_closed() {
+        let expanded = HashSet::from(["Work".to_string()]);
+        let rows = rows(&vault(), "", &expanded);
         assert_eq!(
             labels(&rows),
-            ["0:Areas/(1)", "1:Health", "0:Work/(2)", "0:Home"]
+            [
+                "0:Areas/(1)",
+                "0:Work/(2)",
+                "1:Deep/(1)",
+                "1:Plan",
+                "0:Home"
+            ]
         );
         assert!(matches!(&rows[2], TreeRow::Folder { open: false, .. }));
     }
 
     #[test]
     fn a_query_opens_matching_folders_and_drops_the_rest() {
-        let collapsed = HashSet::from(["Work".to_string()]);
-        let rows = rows(&vault(), "IDE", &collapsed);
+        let rows = rows(&vault(), "IDE", &HashSet::new());
         assert_eq!(labels(&rows), ["0:Work/(1)", "1:Deep/(1)", "2:Idea"]);
+        assert_eq!(ancestors("Work/Deep/idea.md"), ["Work", "Work/Deep"]);
     }
 }

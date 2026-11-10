@@ -15,6 +15,7 @@ mod paths;
 mod preview;
 mod properties;
 mod scan;
+mod tasks;
 mod types;
 
 pub use companion::{disconnected, shape_index, shape_note};
@@ -27,6 +28,7 @@ pub use graph::{
 pub use links::{backlinks, decode_component, note_index, resolve_vault_link, LinkResolution};
 pub use preview::{prepare_preview, vault_target};
 pub use properties::{note_properties, NoteProperty};
+pub use tasks::toggle_task;
 pub use types::{
     ConnectionState, VaultConnection, VaultDocument, VaultEntry, VaultLink, VaultNote,
     VaultSnapshot,

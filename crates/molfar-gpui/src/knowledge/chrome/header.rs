@@ -23,6 +23,7 @@ impl Knowledge {
                     .gap_2()
                     .child(
                         icon_button("knowledge-tree-toggle", "Toggle file tree", "panel-left")
+                            .debug_selector(|| "knowledge-tree-toggle".into())
                             .when(self.tree_open, |button| button.bg(content(0.08)))
                             .on_click(cx.listener(|this, _, _, cx| {
                                 this.tree_open = !this.tree_open;

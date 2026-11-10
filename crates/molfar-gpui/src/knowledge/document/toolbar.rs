@@ -95,6 +95,7 @@ impl Knowledge {
                     .debug_selector(|| "knowledge-close-note".into())
                     .on_click(cx.listener(|this, _, _, cx| {
                         this.panel_open = false;
+                        this.sync_graph_focus(cx);
                         cx.notify();
                     })),
             )

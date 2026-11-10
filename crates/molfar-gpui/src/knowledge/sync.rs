@@ -13,6 +13,22 @@ impl Knowledge {
         }
     }
 
+    /// The graph's focus: the selected note, only while its panel is open.
+    pub(super) fn focus(&self) -> Option<String> {
+        self.selected.clone().filter(|_| self.panel_open)
+    }
+
+    /// Pushes the focus to the graph; Neighborhood mode re-projects.
+    pub(super) fn sync_graph_focus(&mut self, cx: &mut Context<Self>) {
+        if self.neighbors_only {
+            self.refresh_graph(cx);
+        } else {
+            let focus = self.focus();
+            self.graph
+                .update(cx, |graph, cx| graph.set_selected(focus, cx));
+        }
+    }
+
     pub(super) fn indexing(&self, cx: &App) -> bool {
         self.busy || self.service.read(cx).scanning()
     }
@@ -21,7 +37,8 @@ impl Knowledge {
     /// Neighborhood mode, so plain selection changes never re-layout.
     pub(super) fn refresh_graph(&mut self, cx: &mut Context<Self>) {
         let query = self.filter.read(cx).content.to_string();
-        let focus = self.selected.as_deref().filter(|_| self.neighbors_only);
+        let focus = self.focus();
+        let focus = focus.as_deref().filter(|_| self.neighbors_only);
         let projection = project_graph(&self.notes, focus, &query, self.neighbors_only);
         self.stats = GraphStats {
             links: projection.links,
@@ -29,7 +46,7 @@ impl Knowledge {
             missing: projection.missing,
             ambiguous: projection.ambiguous,
         };
-        let selected = self.selected.clone();
+        let selected = self.focus();
         let neighbors_only = self.neighbors_only;
         self.graph.update(cx, |graph, cx| {
             graph.set_neighbors_only(neighbors_only, cx);

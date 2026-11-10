@@ -94,15 +94,66 @@ impl Knowledge {
         let links = &self.relations.links;
         let incoming = self.relations.backlinks.clone();
 
-        div()
-            .id("knowledge-relations")
-            .flex_shrink_0()
-            .max_h(px(200.))
-            .overflow_y_scroll()
+        let open = self.relations_open;
+        let summary = div()
+            .id("knowledge-relations-toggle")
+            .debug_selector(|| "knowledge-relations-toggle".into())
+            .role(Role::Button)
+            .aria_expanded(open)
+            .aria_label("Links and backlinks")
+            .cursor_pointer()
+            .h(px(34.))
             .px_4()
-            .py_3()
+            .flex()
+            .items_center()
+            .gap_3()
+            .text_size(px(11.))
+            .text_color(content(0.5))
+            .hover(|style| style.bg(content(0.03)).text_color(content(0.8)))
+            .child(icon("share", 12.).text_color(content(0.4)))
+            .child(format!("{} links", links.len()))
+            .child(div().text_color(content(0.25)).child("·"))
+            .child(format!("{} backlinks", incoming.len()))
+            .child(div().flex_1())
+            .child(
+                icon(if open { "chevron-down" } else { "chevron-up" }, 13.)
+                    .text_color(content(0.4)),
+            )
+            .on_click(cx.listener(|this, _, _, cx| {
+                this.relations_open = !this.relations_open;
+                cx.notify();
+            }));
+        if !open {
+            return div()
+                .flex_shrink_0()
+                .border_t_1()
+                .border_color(content(0.08))
+                .child(summary)
+                .into_any_element();
+        }
+
+        div()
+            .flex_shrink_0()
             .border_t_1()
             .border_color(content(0.08))
+            .child(summary)
+            .child(self.relation_chips(links, incoming, cx))
+            .into_any_element()
+    }
+
+    fn relation_chips(
+        &self,
+        links: &[(VaultLink, bool)],
+        incoming: Vec<(String, String)>,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        div()
+            .id("knowledge-relations")
+            .debug_selector(|| "knowledge-relations".into())
+            .max_h(px(220.))
+            .overflow_y_scroll()
+            .px_4()
+            .pb_3()
             .flex()
             .flex_col()
             .gap_2()

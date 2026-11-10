@@ -1,4 +1,4 @@
 mod model;
 mod view;
 
-pub(super) use model::TreeRow;
+pub(super) use model::{TreeRow, ancestors, folders};

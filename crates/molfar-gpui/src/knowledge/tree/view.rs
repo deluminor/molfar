@@ -11,7 +11,7 @@ impl Knowledge {
     pub(in crate::knowledge) fn rebuild_tree(&mut self, cx: &gpui::App) {
         let query = self.filter.read(cx).content.to_string();
         let mut ordinal = 0;
-        self.tree_rows = rows(&self.notes, &query, &self.collapsed)
+        self.tree_rows = rows(&self.notes, &query, &self.expanded)
             .into_iter()
             .map(|row| {
                 let number = matches!(row, TreeRow::Note { .. }).then(|| {
@@ -74,8 +74,8 @@ impl Knowledge {
                         .child(notes.to_string()),
                 )
                 .on_click(cx.listener(move |this, _, _, cx| {
-                    if !this.collapsed.remove(&path) {
-                        this.collapsed.insert(path.clone());
+                    if !this.expanded.remove(&path) {
+                        this.expanded.insert(path.clone());
                     }
                     this.rebuild_tree(cx);
                     cx.notify();
@@ -182,20 +182,10 @@ impl Knowledge {
     }
 
     fn collapse_all(&mut self, cx: &mut Context<Self>) {
-        let open: Vec<String> = self
-            .tree_rows
-            .iter()
-            .filter_map(|(row, _)| match row {
-                TreeRow::Folder {
-                    path, open: true, ..
-                } => Some(path.clone()),
-                _ => None,
-            })
-            .collect();
-        if open.is_empty() {
-            self.collapsed.clear();
+        if self.expanded.is_empty() {
+            self.expanded = super::folders(&self.notes);
         } else {
-            self.collapsed.extend(open);
+            self.expanded.clear();
         }
         self.rebuild_tree(cx);
         cx.notify();

@@ -1,6 +1,6 @@
-//! One frame of the graph in screen space. Nodes are one neutral tone; a
-//! focus (selection or hover) lights its note, its direct links and, more
-//! faintly, their links, and sinks the rest of the vault.
+//! One frame of the graph in screen space. Nodes are one neutral tone; the
+//! note open in the panel lights itself, its direct links and, more faintly,
+//! their links, and sinks the rest of the vault. Hover only lifts one node.
 use crate::theme::{accent_color, content};
 use gpui::Hsla;
 use molfar_core::knowledge::{Camera, GraphProjection, Point3, Projected};
@@ -50,8 +50,8 @@ pub(super) enum Tier {
     Focus,
 }
 
-const NODE_BASE: f32 = 2.4;
-const NODE_DEGREE: f32 = 1.3;
+const NODE_BASE: f32 = 1.8;
+const NODE_DEGREE: f32 = 0.85;
 
 impl Scene<'_> {
     /// Each node's distance from the focus, capped at two links.
@@ -86,11 +86,11 @@ impl Scene<'_> {
 
     fn node_color(tier: Option<Tier>, fade: f32) -> Hsla {
         match tier {
-            None => content(0.42 + 0.4 * fade),
+            None => content(0.32 + 0.38 * fade),
             Some(Tier::Focus) => accent_color(),
-            Some(Tier::Neighbor) => content(0.95),
-            Some(Tier::Second) => content(0.3 + 0.15 * fade),
-            Some(Tier::Rest) => content(0.05 + 0.05 * fade),
+            Some(Tier::Neighbor) => content(0.92),
+            Some(Tier::Second) => content(0.22 + 0.12 * fade),
+            Some(Tier::Rest) => content(0.04 + 0.04 * fade),
         }
     }
 
@@ -128,7 +128,7 @@ impl Scene<'_> {
         }
 
         let mut accent = accent_color();
-        accent.a = 0.9;
+        accent.a = 0.75;
         let base_alpha: [f32; 3] = if tiers.is_some() {
             [0.025, 0., 0.]
         } else {
@@ -181,7 +181,9 @@ impl Scene<'_> {
             let tier = tiers.as_ref().map(|tiers| tiers[index]);
             let ring = Some(index) == self.selected;
             let size = NODE_BASE + (node.degree as f32).sqrt() * NODE_DEGREE;
-            let radius = (size * item.scale).clamp(2., 22.) + if ring { 2. } else { 0. };
+            let hovered = Some(index) == self.hovered;
+            let radius =
+                (size * item.scale).clamp(1.6, 14.) + if ring || hovered { 1.5 } else { 0. };
             radii[index] = radius;
             let fade = 1. - (item.depth - near) / span;
             nodes.push((
@@ -190,8 +192,12 @@ impl Scene<'_> {
                     x: item.x,
                     y: item.y,
                     radius,
-                    color: Self::node_color(tier, fade),
-                    glow: matches!(tier, Some(Tier::Focus | Tier::Neighbor)),
+                    color: if hovered && tier != Some(Tier::Focus) {
+                        content(1.)
+                    } else {
+                        Self::node_color(tier, fade)
+                    },
+                    glow: tier == Some(Tier::Focus),
                     ring,
                 },
             ));

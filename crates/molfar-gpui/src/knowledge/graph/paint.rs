@@ -60,8 +60,8 @@ pub(super) fn graph_canvas(frame: Frame, bounds: Rc<Cell<Bounds<Pixels>>>) -> im
                     let center = (node.x, node.y);
                     if node.glow {
                         let mut glow = node.color;
-                        glow.a *= 0.18;
-                        disc(center, node.radius * 2.4, glow, origin, window);
+                        glow.a *= 0.16;
+                        disc(center, node.radius * 2.6, glow, origin, window);
                     }
                     if node.ring {
                         disc(center, node.radius + 3.5, accent_color(), origin, window);

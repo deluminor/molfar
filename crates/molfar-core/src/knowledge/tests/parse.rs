@@ -39,3 +39,9 @@ fn escaped_wiki_links_are_not_indexed() {
     assert_eq!(note.links.len(), 1);
     assert_eq!(note.links[0].target, "Kept");
 }
+
+#[test]
+fn table_escaped_wiki_aliases_drop_the_backslash() {
+    let (note, _) = parse::parse_note("Home.md", "| [[Dashboard\\|Board]] |\n");
+    assert_eq!(note.links[0].target, "Dashboard");
+}

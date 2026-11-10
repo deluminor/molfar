@@ -21,6 +21,7 @@ mod panes;
 mod service;
 mod service_companion;
 mod sync;
+mod tasks;
 #[cfg(test)]
 mod tests;
 mod tree;
@@ -68,7 +69,9 @@ pub(crate) struct Knowledge {
     stats: GraphStats,
     graph: Entity<GraphView>,
     tree_rows: Vec<(TreeRow, Option<usize>)>,
-    collapsed: HashSet<String>,
+    expanded: HashSet<String>,
+    callouts_toggled: HashSet<usize>,
+    relations_open: bool,
     tree_open: bool,
     panel_open: bool,
     widths: panes::PaneWidths,
@@ -159,9 +162,11 @@ impl Knowledge {
             stats: GraphStats::default(),
             graph,
             tree_rows: Vec::new(),
-            collapsed: HashSet::new(),
-            tree_open: true,
-            panel_open: true,
+            expanded: HashSet::new(),
+            callouts_toggled: HashSet::new(),
+            relations_open: false,
+            tree_open: false,
+            panel_open: false,
             widths: panes::PaneWidths::default(),
             resize: None,
             neighbors_only: false,

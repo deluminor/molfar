@@ -8,8 +8,8 @@ pub type Point3 = [f32; 3];
 
 pub const SETTLE_TICKS: usize = 300;
 pub const WARM_TICKS: usize = 120;
-const LINK_DISTANCE: f32 = 34.;
-const REPULSION: f32 = 900.;
+const LINK_DISTANCE: f32 = 60.;
+const REPULSION: f32 = 2_800.;
 const CENTER_PULL: f32 = 0.012;
 const DAMPING: f32 = 0.6;
 const MAX_STEP: f32 = 24.;
@@ -22,7 +22,7 @@ const LIVE_ALPHA_MIN: f32 = 0.004;
 /// same vault always opens in the same shape.
 fn seed(index: usize, count: usize) -> Point3 {
     let golden = std::f32::consts::PI * (3. - 5f32.sqrt());
-    let radius = 12. * (count as f32).cbrt().max(1.) * 3.;
+    let radius = 60. * (count as f32).cbrt().max(1.);
     let y = 1. - (index as f32 + 0.5) / count.max(1) as f32 * 2.;
     let ring = (1. - y * y).max(0.).sqrt();
     let theta = golden * index as f32;

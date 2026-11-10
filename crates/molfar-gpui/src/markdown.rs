@@ -81,7 +81,7 @@ pub(crate) struct Fence {
     pub key: u64,
 }
 impl Fence {
-    fn new(info: &str, code: &str) -> Self {
+    pub(crate) fn new(info: &str, code: &str) -> Self {
         let mut words = info.split_whitespace();
         let first = words.next().unwrap_or("");
         let mut language = first.to_owned();
@@ -375,6 +375,21 @@ pub(crate) fn word_count(row: &MarkdownRow) -> usize {
         _ => 0,
     }
 }
+/// Styled inline runs on their own, for views that lay out blocks themselves.
+pub(crate) fn inline(runs: &[InlineRun], id: SharedString, font_size: f32) -> AnyElement {
+    inline_selected(
+        runs,
+        id,
+        Tone::Normal,
+        None,
+        Instant::now(),
+        0,
+        font_size,
+        None,
+        None,
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 fn inline_selected(
     runs: &[InlineRun],

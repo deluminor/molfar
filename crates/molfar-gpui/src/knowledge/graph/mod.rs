@@ -17,6 +17,7 @@ use std::{
 
 mod frame;
 mod input;
+mod labels;
 mod overlay;
 mod paint;
 mod view;

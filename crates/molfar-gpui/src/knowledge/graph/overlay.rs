@@ -1,10 +1,16 @@
 //! Chrome floating over the graph: note labels, controls,
 //! interaction hint and the layout loader.
-use super::{GraphEvent, GraphView, frame::Frame};
+use super::{
+    GraphEvent, GraphView,
+    frame::Frame,
+    labels::{Rect, label_rect, place},
+};
 use crate::{knowledge::loading::orbit_loader, theme::*};
 use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
 
-const LABEL_LIMIT: usize = 24;
+const LABEL_LIMIT: usize = 28;
+/// Hub names shown when nothing is open.
+const HUB_LABELS: usize = 10;
 
 fn chip(
     id: &'static str,
@@ -43,43 +49,81 @@ fn chip(
 }
 
 impl GraphView {
-    pub(super) fn labels(&self, frame: &Frame, selected: Option<usize>) -> Vec<AnyElement> {
-        let mut wanted: Vec<usize> = self.hovered.into_iter().chain(selected).collect();
-        if let Some(index) = selected.or(self.hovered) {
+    /// Names worth showing, most important first: the open note, the hovered
+    /// note, the open note's links by weight, then the vault's hubs.
+    fn label_order(&self, selected: Option<usize>) -> Vec<usize> {
+        let by_weight = |indices: &mut Vec<usize>| {
+            indices.sort_by_key(|index| std::cmp::Reverse(self.shown.nodes[*index].degree));
+        };
+        let mut wanted: Vec<usize> = selected.into_iter().chain(self.hovered).collect();
+        if let Some(index) = selected {
             let mut neighbors: Vec<usize> = self.shown.neighbors(index).into_iter().collect();
-            neighbors.sort_by_key(|index| std::cmp::Reverse(self.shown.nodes[*index].degree));
+            by_weight(&mut neighbors);
             wanted.extend(neighbors);
-        } else if self.shown.nodes.len() <= 400 {
-            wanted.extend(0..self.shown.nodes.len().min(8));
+        } else {
+            let mut hubs: Vec<usize> = (0..self.shown.nodes.len()).collect();
+            by_weight(&mut hubs);
+            wanted.extend(hubs.into_iter().take(HUB_LABELS));
         }
         let mut seen = std::collections::HashSet::new();
         wanted.retain(|index| seen.insert(*index));
-
+        wanted.truncate(LABEL_LIMIT);
         wanted
+    }
+
+    pub(super) fn labels(&self, frame: &Frame, selected: Option<usize>) -> Vec<AnyElement> {
+        let candidates: Vec<(usize, f32, f32, bool)> = self
+            .label_order(selected)
             .into_iter()
-            .take(LABEL_LIMIT)
             .filter_map(|index| {
                 let item = frame.projected.get(index).copied().flatten()?;
-                let node = self.shown.nodes.get(index)?;
-                let focused = Some(index) == self.hovered || Some(index) == selected;
                 let radius = frame.radii.get(index).copied().unwrap_or(4.);
-                Some(
-                    div()
-                        .absolute()
-                        .left(px(item.x + radius + 6.))
-                        .top(px(item.y - 10.))
-                        .max_w(px(220.))
-                        .truncate()
-                        .px_1p5()
-                        .py(px(2.))
-                        .rounded_sm()
-                        .bg(floating_fill().opacity(if focused { 0.92 } else { 0.6 }))
-                        .text_size(px(if focused { 12. } else { 11. }))
-                        .when(focused, |label| label.font_weight(FontWeight::MEDIUM))
-                        .text_color(content(if focused { 0.95 } else { 0.6 }))
-                        .child(node.title.clone())
-                        .into_any_element(),
+                let focused = Some(index) == self.hovered || Some(index) == selected;
+                Some((index, item.x + radius + 6., item.y, focused))
+            })
+            .collect();
+        let rects: Vec<Rect> = candidates
+            .iter()
+            .map(|(index, x, y, focused)| {
+                let size = if *focused { 12. } else { 11. };
+                label_rect(
+                    *x,
+                    *y,
+                    &self.shown.nodes[*index].title,
+                    size,
+                    if *focused { 6. } else { 0. },
                 )
+            })
+            .collect();
+        let shown = place(&rects);
+
+        candidates
+            .into_iter()
+            .zip(rects)
+            .zip(shown)
+            .filter(|(_, keep)| *keep)
+            .map(|(((index, _, _, focused), rect), _)| {
+                div()
+                    .absolute()
+                    .left(px(rect.x))
+                    .top(px(rect.y))
+                    .h(px(rect.height))
+                    .max_w(px(232.))
+                    .flex()
+                    .items_center()
+                    .truncate()
+                    .text_size(px(if focused { 12. } else { 11. }))
+                    .when(focused, |label| {
+                        label
+                            .px_1p5()
+                            .rounded_md()
+                            .bg(floating_fill().opacity(0.88))
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_color(content(0.95))
+                    })
+                    .when(!focused, |label| label.text_color(content(0.5)))
+                    .child(self.shown.nodes[index].title.clone())
+                    .into_any_element()
             })
             .collect()
     }
