@@ -96,6 +96,24 @@ impl Knowledge {
                             .cursor_pointer()
                             .child(icon("refresh-cw", 14.))
                             .on_click(cx.listener(|this, _, _, cx| this.reload(cx))),
+                    )
+                    .child(
+                        div()
+                            .id("knowledge-disconnect")
+                            .debug_selector(|| "knowledge-disconnect".into())
+                            .role(Role::Button)
+                            .aria_label("Disconnect")
+                            .cursor_pointer()
+                            .px_2()
+                            .h(px(28.))
+                            .rounded_md()
+                            .flex()
+                            .items_center()
+                            .text_size(px(12.))
+                            .child("Disconnect")
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.disconnect(window, cx);
+                            })),
                     ),
             )
             .child(

@@ -8,8 +8,8 @@ impl Knowledge {
         let service = self.service.read(cx);
         self.loaded = service.loaded();
         self.state = service.state().clone();
-        if self.error.is_none() {
-            self.error = service.error().map(str::to_string);
+        if let Some(error) = service.error() {
+            self.error = Some(error.to_string());
         }
         cx.notify();
     }
@@ -212,26 +212,5 @@ impl Knowledge {
         };
         self.drafts.remove(&path);
         self.open_note(path, cx);
-    }
-
-    pub(super) fn choose(&mut self, cx: &mut Context<Self>) {
-        let prompt = cx.prompt_for_paths(gpui::PathPromptOptions {
-            files: false,
-            directories: true,
-            multiple: false,
-            prompt: Some("Choose vault folder".into()),
-        });
-        cx.spawn(async move |this, cx| {
-            if let Ok(Ok(Some(paths))) = prompt.await
-                && let Some(path) = paths.into_iter().next()
-            {
-                let path = path.to_string_lossy().into_owned();
-                let _ = this.update(cx, |this, cx| {
-                    this.service
-                        .update(cx, |service, cx| service.connect(path, cx));
-                });
-            }
-        })
-        .detach();
     }
 }

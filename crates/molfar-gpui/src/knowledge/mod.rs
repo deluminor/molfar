@@ -9,11 +9,14 @@ use gpui::{
 use molfar_core::knowledge::{ConnectionState, VaultNote};
 use std::collections::HashMap;
 
+mod connect;
 mod document;
 mod drafts;
 mod edit;
 mod page;
+mod preview;
 mod service;
+mod service_companion;
 #[cfg(test)]
 mod tests;
 
@@ -86,10 +89,21 @@ impl Knowledge {
                     this.remember_edit(cx);
                 }
             }),
-            cx.subscribe(&service, |this, _, _: &service::Event, cx| {
+            cx.subscribe(&service, |this, service, _: &service::Event, cx| {
+                let failed = service.read(cx).error().is_some();
                 this.sync(cx);
                 if matches!(this.state, ConnectionState::Ready(_)) {
+                    if !failed {
+                        this.error = None;
+                    }
                     this.reload(cx);
+                } else if !failed {
+                    this.notes.clear();
+                    this.selected = None;
+                    this.prepared.clear();
+                    this.drafts.clear();
+                    this.error = None;
+                    cx.notify();
                 }
             }),
         ];
@@ -147,7 +161,7 @@ impl gpui::Render for Knowledge {
             } else {
                 let reason = match &self.state {
                     ConnectionState::Broken(reason) => Some(reason.clone()),
-                    _ => None,
+                    _ => self.error.clone(),
                 };
                 self.message("There is no vault.", reason, cx)
             })

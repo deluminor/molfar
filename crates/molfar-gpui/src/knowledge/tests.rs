@@ -4,6 +4,8 @@ use gpui::{
     px, size,
 };
 use molfar_core::knowledge::ConnectionState;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 struct Fixture {
@@ -247,4 +249,76 @@ fn concurrent_snapshots_share_one_scan(cx: &mut TestAppContext) {
     cx.run_until_parked();
     service.read_with(cx, |service, _| assert_eq!(service.scans_started(), 1));
     drop((tasks, again));
+}
+
+#[gpui::test]
+fn disconnect_removes_the_vault_and_shows_the_empty_state(cx: &mut TestAppContext) {
+    let vault = fixture(&[("beta.md", "Beta body\n")]);
+    let window = open(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let button = visual.debug_bounds("knowledge-disconnect").unwrap();
+    visual.simulate_click(button.center(), Default::default());
+    visual.run_until_parked();
+    assert!(!vault.data.join("knowledge-vault.json").exists());
+    assert!(visual.debug_bounds("knowledge-empty").is_some());
+    assert!(visual.debug_bounds("knowledge-choose").is_some());
+}
+
+#[gpui::test]
+fn disconnect_asks_before_discarding_a_dirty_draft(cx: &mut TestAppContext) {
+    let vault = fixture(&[("beta.md", "Beta body\n")]);
+    let window = open(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            view.source
+                .update(cx, |input, cx| input.set_text("Dirty\n".into(), cx));
+        })
+        .unwrap();
+    let button = visual.debug_bounds("knowledge-disconnect").unwrap();
+    visual.simulate_click(button.center(), Default::default());
+    visual.run_until_parked();
+    assert!(visual.has_pending_prompt());
+    assert!(vault.data.join("knowledge-vault.json").exists());
+    visual.simulate_prompt_answer("Cancel");
+    visual.run_until_parked();
+    assert!(vault.data.join("knowledge-vault.json").exists());
+    let button = visual.debug_bounds("knowledge-disconnect").unwrap();
+    visual.simulate_click(button.center(), Default::default());
+    visual.run_until_parked();
+    visual.simulate_prompt_answer("Disconnect");
+    visual.run_until_parked();
+    assert!(!vault.data.join("knowledge-vault.json").exists());
+    assert!(visual.debug_bounds("knowledge-empty").is_some());
+}
+
+#[cfg(unix)]
+#[gpui::test]
+fn a_failed_save_is_shown_and_leaves_the_file_unchanged(cx: &mut TestAppContext) {
+    let vault = fixture(&[("beta.md", "Beta body\n")]);
+    let window = open(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let _restore = Restore(vault.root.clone());
+    std::fs::set_permissions(&vault.root, std::fs::Permissions::from_mode(0o555)).unwrap();
+    let save = visual.debug_bounds("knowledge-save").unwrap();
+    visual.simulate_click(save.center(), Default::default());
+    visual.run_until_parked();
+    assert_eq!(
+        std::fs::read_to_string(vault.root.join("beta.md")).unwrap(),
+        "Beta body\n"
+    );
+    assert!(visual.debug_bounds("knowledge-error").is_some());
+}
+
+#[cfg(unix)]
+struct Restore(PathBuf);
+
+#[cfg(unix)]
+impl Drop for Restore {
+    fn drop(&mut self) {
+        let _ = std::fs::set_permissions(&self.0, std::fs::Permissions::from_mode(0o755));
+    }
 }

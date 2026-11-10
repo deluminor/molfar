@@ -1,8 +1,5 @@
 use super::Knowledge;
-use crate::{
-    markdown::{self, Tone},
-    theme::*,
-};
+use crate::theme::*;
 use gpui::{Context, Role, div, prelude::*, px};
 
 impl Knowledge {
@@ -32,6 +29,10 @@ impl Knowledge {
         let backlinks = molfar_core::knowledge::backlinks(&self.notes, path);
         let prepared = self.prepared.clone();
         let preview = self.preview;
+        let failure = self
+            .error
+            .clone()
+            .filter(|error| !error.starts_with("CONFLICT:"));
         div()
             .flex_1()
             .h_full()
@@ -67,6 +68,17 @@ impl Knowledge {
                             .on_click(cx.listener(|this, _, _, cx| this.save(cx))),
                     ),
             )
+            .when(failure.is_some(), |pane| {
+                pane.child(
+                    div()
+                        .id("knowledge-error")
+                        .debug_selector(|| "knowledge-error".into())
+                        .px_4()
+                        .py_2()
+                        .text_size(px(12.))
+                        .child(failure.clone().unwrap_or_default()),
+                )
+            })
             .when(conflict, |pane| {
                 pane.child(
                     div()
@@ -112,7 +124,9 @@ impl Knowledge {
                     .overflow_y_scroll()
                     .px_4()
                     .py_3()
-                    .when(preview, |body| body.children(preview_rows(&prepared)))
+                    .when(preview, |body| {
+                        body.children(super::preview::rows(&prepared))
+                    })
                     .when(!preview, |body| body.child(self.source.clone())),
             )
             .child(self.relations(&links, &backlinks, cx))
@@ -220,21 +234,4 @@ impl Knowledge {
             self.open_note(path, cx);
         }
     }
-}
-
-fn preview_rows(prepared: &str) -> Vec<gpui::AnyElement> {
-    let mut rows = Vec::new();
-    for block in &crate::markdown_model::parse_full_hard_breaks(prepared).blocks {
-        for (index, row) in markdown::rows(&block.block).into_iter().enumerate() {
-            let id = gpui::SharedString::from(format!("knowledge-markdown-{index}-{}", rows.len()));
-            rows.push(markdown::body(
-                &row,
-                id,
-                Tone::Normal,
-                None,
-                std::time::Instant::now(),
-            ));
-        }
-    }
-    rows
 }
