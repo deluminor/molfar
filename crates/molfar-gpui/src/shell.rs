@@ -26,6 +26,9 @@ mod knowledge_tests;
 mod layout;
 mod live_agents;
 mod mobile_host;
+mod nav_visibility;
+#[cfg(test)]
+mod nav_visibility_tests;
 mod new_chat_choice;
 #[cfg(test)]
 mod new_chat_choice_tests;

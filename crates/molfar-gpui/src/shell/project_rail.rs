@@ -624,14 +624,7 @@ impl Shell {
                     ("Automations", "zap"),
                 ]
                 .into_iter()
-                .filter(|(label, _)| match *label {
-                    "Inbox" => self.workspace.sidebar_inbox_visible,
-                    "Notes" => {
-                        self.workspace.preferences.notes && self.workspace.sidebar_notes_visible
-                    }
-                    "Automations" => self.workspace.sidebar_automations_visible,
-                    _ => true,
-                })
+                .filter(|(label, _)| self.nav_visible(label))
                 .map(|(label, glyph)| {
                     let selected = self.app_view_label() == Some(label);
                     let unread = label == "Inbox"
@@ -847,25 +840,16 @@ impl Shell {
             )
             .children(
                 [
-                    (workspace::AppView::Home, true),
-                    (workspace::AppView::Board, true),
-                    (
-                        workspace::AppView::Inbox,
-                        self.workspace.sidebar_inbox_visible,
-                    ),
-                    (
-                        workspace::AppView::Notes,
-                        self.workspace.preferences.notes && self.workspace.sidebar_notes_visible,
-                    ),
-                    (workspace::AppView::Knowledge, true),
-                    (
-                        workspace::AppView::Automations,
-                        self.workspace.sidebar_automations_visible,
-                    ),
+                    workspace::AppView::Home,
+                    workspace::AppView::Board,
+                    workspace::AppView::Inbox,
+                    workspace::AppView::Notes,
+                    workspace::AppView::Knowledge,
+                    workspace::AppView::Automations,
                 ]
                 .into_iter()
-                .filter(|(_, v)| *v)
-                .map(|(view, _)| {
+                .filter(|view| self.nav_visible(view.label()))
+                .map(|view| {
                     let selected = self.app_view_label() == Some(view.label());
                     let glyph = if view == workspace::AppView::Notes {
                         "sticky-note"

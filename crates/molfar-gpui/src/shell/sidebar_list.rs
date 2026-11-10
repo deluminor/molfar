@@ -561,64 +561,6 @@ impl Shell {
 const TRAILING_SLOT: f32 = 14.;
 
 impl Shell {
-    pub(super) fn sidebar_options_menu_items(&self) -> Vec<MenuItem> {
-        vec![
-            MenuAction::new("sidebar-search", "Search")
-                .icon("search")
-                .toggle(self.workspace.sidebar_search_visible)
-                .into(),
-            MenuAction::new("sidebar-notes", "Notes")
-                .icon("note")
-                .toggle(self.workspace.sidebar_notes_visible)
-                .disabled(!self.workspace.preferences.notes)
-                .into(),
-            MenuAction::new("sidebar-automations", "Automations")
-                .icon("zap")
-                .toggle(self.workspace.sidebar_automations_visible)
-                .into(),
-            MenuAction::new("sidebar-inbox", "Inbox")
-                .icon("inbox")
-                .toggle(self.workspace.sidebar_inbox_visible)
-                .into(),
-            MenuAction::new("sidebar-familiars", "Familiars")
-                .icon("ghost")
-                .toggle(self.workspace.preferences.familiars)
-                .into(),
-            MenuAction::new("sidebar-activity", "Activity")
-                .icon("response-activity")
-                .toggle(self.workspace.sidebar_activity_visible)
-                .disabled(!self.workspace.preferences.working_agents)
-                .into(),
-            MenuItem::Separator,
-            MenuAction::new("compact-session-cards", "Compact view")
-                .icon("list-bullet")
-                .toggle(self.workspace.compact_session_cards)
-                .into(),
-        ]
-    }
-
-    pub(super) fn change_sidebar_option(&mut self, action: &str, cx: &mut Context<Self>) {
-        let value = match action {
-            "sidebar-search" => &mut self.workspace.sidebar_search_visible,
-            "sidebar-notes" => &mut self.workspace.sidebar_notes_visible,
-            "sidebar-automations" => &mut self.workspace.sidebar_automations_visible,
-            "sidebar-inbox" => &mut self.workspace.sidebar_inbox_visible,
-            "sidebar-familiars" => &mut self.workspace.preferences.familiars,
-            "sidebar-activity" => &mut self.workspace.sidebar_activity_visible,
-            "compact-session-cards" => &mut self.workspace.compact_session_cards,
-            _ => return,
-        };
-        *value = !*value;
-        if action == "sidebar-familiars" {
-            self.apply_preferences(cx);
-            self.sync_settings(cx);
-        }
-        self.close_preview(cx);
-        self.sidebar_list.remeasure();
-        self.persist(cx);
-        cx.notify();
-    }
-
     pub(super) fn sidebar_navigation(&mut self, cx: &mut Context<Self>) -> AnyElement {
         // The Focused layout shows Search as an icon beside Sidebar options.
         let search_field = self.workspace.sidebar_search_visible && self.workspace.classic_layout;
@@ -720,16 +662,8 @@ impl Shell {
                     ("Automations", "zap"),
                 ]
                 .into_iter()
-                .filter(|(label, _)| match *label {
-                    // Only the Focused layout lists New here.
-                    "New" => focused,
-                    "Notes" => {
-                        self.workspace.preferences.notes && self.workspace.sidebar_notes_visible
-                    }
-                    "Automations" => self.workspace.sidebar_automations_visible,
-                    "Inbox" => self.workspace.sidebar_inbox_visible,
-                    _ => true,
-                })
+                // Only the Focused layout lists New here.
+                .filter(|(label, _)| (*label != "New" || focused) && self.nav_visible(label))
                 .map(|(label, glyph)| {
                     let glyph = if self.workspace.classic_layout && label == "Notes" {
                         "file"
@@ -1125,8 +1059,8 @@ mod tests {
         let compact = visual
             .debug_bounds("menu-action-compact-session-cards")
             .unwrap();
-        assert!(notes.bottom() <= automations.top() && automations.bottom() <= inbox.top());
-        assert!(inbox.bottom() <= familiars.top() && familiars.bottom() <= activity.top());
+        assert!(inbox.bottom() <= notes.top() && notes.bottom() <= automations.top());
+        assert!(automations.bottom() <= familiars.top() && familiars.bottom() <= activity.top());
         assert!(
             activity.bottom() < compact.top(),
             "a divider separates Compact view"
