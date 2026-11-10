@@ -1,7 +1,7 @@
 //! Paints a [`Frame`]: edge groups faintest first, then nodes far to near
 //! with a soft highlight that reads as a sphere and a ring on the selection.
 use super::frame::{Frame, Segment};
-use crate::theme::{accent_color, background_base, white};
+use crate::theme::{background_base, content, white};
 use gpui::{Bounds, Hsla, PathBuilder, Pixels, Window, canvas, fill, point, prelude::*, px, size};
 use std::{cell::Cell, rc::Rc};
 
@@ -58,24 +58,36 @@ pub(super) fn graph_canvas(frame: Frame, bounds: Rc<Cell<Bounds<Pixels>>>) -> im
 
                 for node in &frame.nodes {
                     let center = (node.x, node.y);
-                    if node.glow {
-                        let mut glow = node.color;
-                        glow.a *= 0.16;
-                        disc(center, node.radius * 2.6, glow, origin, window);
-                    }
-                    if node.ring {
-                        disc(center, node.radius + 3.5, accent_color(), origin, window);
-                        disc(center, node.radius + 1.8, background_base(), origin, window);
+                    if node.glow > 0.01 {
+                        disc(
+                            center,
+                            node.radius * (2. + node.glow),
+                            content(0.09 * node.glow),
+                            origin,
+                            window,
+                        );
+                        disc(
+                            center,
+                            node.radius + 3.2,
+                            content(0.85 * node.glow),
+                            origin,
+                            window,
+                        );
+                        let mut gap = background_base();
+                        gap.a = node.glow;
+                        disc(center, node.radius + 1.7, gap, origin, window);
                     }
                     disc(center, node.radius, node.color, origin, window);
-                    let shine = (node.x - node.radius * 0.3, node.y - node.radius * 0.35);
-                    disc(
-                        shine,
-                        node.radius * 0.36,
-                        white(0.28 * node.color.a),
-                        origin,
-                        window,
-                    );
+                    if node.radius > 4. {
+                        let shine = (node.x - node.radius * 0.3, node.y - node.radius * 0.35);
+                        disc(
+                            shine,
+                            node.radius * 0.34,
+                            white(0.2 * node.color.a),
+                            origin,
+                            window,
+                        );
+                    }
                 }
             });
         },

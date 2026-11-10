@@ -121,7 +121,10 @@ impl GraphView {
                             .font_weight(FontWeight::MEDIUM)
                             .text_color(content(0.95))
                     })
-                    .when(!focused, |label| label.text_color(content(0.5)))
+                    .when(!focused, |label| {
+                        let level = self.levels.nodes.get(index).copied().unwrap_or(0.6);
+                        label.text_color(content(0.15 + 0.5 * level))
+                    })
                     .child(self.shown.nodes[index].title.clone())
                     .into_any_element()
             })

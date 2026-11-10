@@ -31,12 +31,19 @@ impl GraphView {
             self.transition = None;
         }
 
+        let target = super::emphasis::targets(&self.shown, self.selected_index(), self.hovered);
+        let fading = self.levels != target;
+
         let idle = self.hovered.is_none() && self.drag.is_none();
         let spin = self.spinning && idle && !self.positions.is_empty();
         let zooming = (self.camera.distance - self.target_distance).abs() > 0.5;
         let simulating = self.simulating();
-        let busy =
-            spin || zooming || simulating || self.transition.is_some() || self.pending.is_some();
+        let busy = spin
+            || zooming
+            || simulating
+            || fading
+            || self.transition.is_some()
+            || self.pending.is_some();
         if !busy {
             self.last_frame = None;
             return;
@@ -45,7 +52,15 @@ impl GraphView {
             self.step_simulation();
         }
 
-        if pulse::request(pulse::Rate::Smooth, window, cx) {
+        let animate = pulse::request(pulse::Rate::Smooth, window, cx);
+        if fading {
+            if animate {
+                self.levels.ease(&target, 1. - (-elapsed * 10.).exp());
+            } else {
+                self.levels = target;
+            }
+        }
+        if animate {
             if spin {
                 self.camera.orbit(elapsed * SPIN, 0.);
             }
@@ -73,8 +88,7 @@ impl Render for GraphView {
             positions: &positions,
             camera: self.camera,
             size,
-            hovered: self.hovered,
-            selected,
+            levels: &self.levels,
         }
         .frame();
         self.projected = frame.projected.clone();

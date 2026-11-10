@@ -15,6 +15,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod emphasis;
 mod frame;
 mod input;
 mod labels;
@@ -60,6 +61,8 @@ pub(crate) struct GraphView {
     shown: Arc<GraphProjection>,
     pending: Option<Arc<GraphProjection>>,
     simulation: Option<Simulation>,
+    /// Brightness actually drawn, eased toward the selection's targets.
+    levels: emphasis::Levels,
     positions: Vec<Point3>,
     from: Vec<Point3>,
     transition: Option<Instant>,
@@ -92,6 +95,7 @@ impl GraphView {
             shown: Arc::default(),
             pending: None,
             simulation: None,
+            levels: emphasis::Levels::default(),
             positions: Vec::new(),
             from: Vec::new(),
             transition: None,

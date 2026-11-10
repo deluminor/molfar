@@ -1,10 +1,11 @@
-//! One frame of the graph in screen space. Nodes are one neutral tone; the
-//! note open in the panel lights itself, its direct links and, more faintly,
-//! their links, and sinks the rest of the vault. Hover only lifts one node.
-use crate::theme::{accent_color, content};
+//! One frame of the graph in screen space, drawn from eased brightness
+//! levels: one light tone throughout, bright where the open note is,
+//! receding everywhere else.
+use super::emphasis::Levels;
+use crate::theme::content;
 use gpui::Hsla;
 use molfar_core::knowledge::{Camera, GraphProjection, Point3, Projected};
-use std::collections::HashSet;
+use std::collections::BTreeMap;
 
 pub(super) type Segment = ((f32, f32), (f32, f32));
 
@@ -14,8 +15,8 @@ pub(super) struct NodeDraw {
     pub y: f32,
     pub radius: f32,
     pub color: Hsla,
-    pub glow: bool,
-    pub ring: bool,
+    /// Halo and ring strength, 0 to 1.
+    pub glow: f32,
 }
 
 pub(super) struct EdgeGroup {
@@ -38,122 +39,49 @@ pub(super) struct Scene<'a> {
     pub positions: &'a [Point3],
     pub camera: Camera,
     pub size: (f32, f32),
-    pub hovered: Option<usize>,
-    pub selected: Option<usize>,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub(super) enum Tier {
-    Rest,
-    Second,
-    Neighbor,
-    Focus,
+    pub levels: &'a Levels,
 }
 
 const NODE_BASE: f32 = 1.8;
 const NODE_DEGREE: f32 = 0.85;
+/// Edge alpha steps; each step is one path.
+const EDGE_STEPS: f32 = 24.;
+/// Links brighter than this draw a little thicker.
+const WIDE_EDGE: f32 = 0.3;
 
 impl Scene<'_> {
-    /// Each node's distance from the focus, capped at two links.
-    pub(super) fn tiers(&self) -> Option<Vec<Tier>> {
-        let focus: Vec<usize> = [self.selected, self.hovered]
-            .into_iter()
-            .flatten()
-            .collect();
-        if focus.is_empty() {
-            return None;
-        }
-        let mut tiers = vec![Tier::Rest; self.projection.nodes.len()];
-        let mut first = HashSet::new();
-        for index in &focus {
-            first.extend(self.projection.neighbors(*index));
-        }
-        for edge in &self.projection.edges {
-            for (from, to) in [(edge.source, edge.target), (edge.target, edge.source)] {
-                if first.contains(&from) {
-                    tiers[to] = tiers[to].max(Tier::Second);
-                }
-            }
-        }
-        for index in first {
-            tiers[index] = Tier::Neighbor;
-        }
-        for index in focus {
-            tiers[index] = Tier::Focus;
-        }
-        Some(tiers)
+    fn level(values: &[f32], index: usize) -> f32 {
+        values.get(index).copied().unwrap_or(0.)
     }
 
-    fn node_color(tier: Option<Tier>, fade: f32) -> Hsla {
-        match tier {
-            None => content(0.32 + 0.38 * fade),
-            Some(Tier::Focus) => accent_color(),
-            Some(Tier::Neighbor) => content(0.92),
-            Some(Tier::Second) => content(0.22 + 0.12 * fade),
-            Some(Tier::Rest) => content(0.04 + 0.04 * fade),
-        }
-    }
-
-    fn edge_groups(
-        &self,
-        projected: &[Option<Projected>],
-        tiers: Option<&[Tier]>,
-        near: f32,
-        span: f32,
-    ) -> Vec<EdgeGroup> {
-        let mut base: [Vec<Segment>; 3] = Default::default();
-        let mut second = Vec::new();
-        let mut lit = Vec::new();
-        for edge in &self.projection.edges {
+    fn edge_groups(&self, projected: &[Option<Projected>], near: f32, span: f32) -> Vec<EdgeGroup> {
+        let mut groups: BTreeMap<(u16, bool), Vec<Segment>> = BTreeMap::new();
+        for (position, edge) in self.projection.edges.iter().enumerate() {
             let (Some(Some(from)), Some(Some(to))) =
                 (projected.get(edge.source), projected.get(edge.target))
             else {
                 continue;
             };
-            let segment = ((from.x, from.y), (to.x, to.y));
-            let Some(tiers) = tiers else {
-                let depth = ((from.depth + to.depth) / 2. - near) / span;
-                base[2usize.saturating_sub((depth * 3.).floor() as usize)].push(segment);
+            let level = Self::level(&self.levels.edges, position);
+            let depth = ((from.depth + to.depth) / 2. - near) / span;
+            let alpha = level * (1. - 0.45 * depth);
+            let step = (alpha * EDGE_STEPS).round() as u16;
+            if step == 0 {
                 continue;
-            };
-            let pair = (
-                tiers[edge.source].min(tiers[edge.target]),
-                tiers[edge.source].max(tiers[edge.target]),
-            );
-            match pair {
-                (Tier::Neighbor | Tier::Focus, Tier::Focus) => lit.push(segment),
-                (Tier::Second | Tier::Neighbor, _) => second.push(segment),
-                _ => base[0].push(segment),
             }
+            groups
+                .entry((step, level > WIDE_EDGE))
+                .or_default()
+                .push(((from.x, from.y), (to.x, to.y)));
         }
-
-        let mut accent = accent_color();
-        accent.a = 0.75;
-        let base_alpha: [f32; 3] = if tiers.is_some() {
-            [0.025, 0., 0.]
-        } else {
-            [0.05, 0.08, 0.13]
-        };
-        let mut groups: Vec<EdgeGroup> = base
+        groups
             .into_iter()
-            .zip(base_alpha)
-            .map(|(segments, alpha)| EdgeGroup {
-                color: content(alpha),
-                width: 1.,
+            .map(|((step, wide), segments)| EdgeGroup {
+                color: content(step as f32 / EDGE_STEPS),
+                width: if wide { 1.3 } else { 1. },
                 segments,
             })
-            .collect();
-        groups.push(EdgeGroup {
-            color: content(0.22),
-            width: 1.,
-            segments: second,
-        });
-        groups.push(EdgeGroup {
-            color: accent,
-            width: 1.6,
-            segments: lit,
-        });
-        groups
+            .collect()
     }
 
     pub(super) fn frame(&self) -> Frame {
@@ -170,7 +98,6 @@ impl Scene<'_> {
                 (near.min(item.depth), far.max(item.depth))
             });
         let span = (far - near).max(1.);
-        let tiers = self.tiers();
 
         let mut radii = vec![0.; projected.len()];
         let mut nodes: Vec<(f32, NodeDraw)> = Vec::with_capacity(projected.len());
@@ -178,12 +105,10 @@ impl Scene<'_> {
             let (Some(item), Some(node)) = (item, self.projection.nodes.get(index)) else {
                 continue;
             };
-            let tier = tiers.as_ref().map(|tiers| tiers[index]);
-            let ring = Some(index) == self.selected;
+            let level = Self::level(&self.levels.nodes, index);
+            let glow = Self::level(&self.levels.glow, index);
             let size = NODE_BASE + (node.degree as f32).sqrt() * NODE_DEGREE;
-            let hovered = Some(index) == self.hovered;
-            let radius =
-                (size * item.scale).clamp(1.6, 14.) + if ring || hovered { 1.5 } else { 0. };
+            let radius = (size * item.scale).clamp(1.6, 14.) + glow * 1.5;
             radii[index] = radius;
             let fade = 1. - (item.depth - near) / span;
             nodes.push((
@@ -192,13 +117,8 @@ impl Scene<'_> {
                     x: item.x,
                     y: item.y,
                     radius,
-                    color: if hovered && tier != Some(Tier::Focus) {
-                        content(1.)
-                    } else {
-                        Self::node_color(tier, fade)
-                    },
-                    glow: tier == Some(Tier::Focus),
-                    ring,
+                    color: content(level * (0.62 + 0.38 * fade.max(glow))),
+                    glow,
                 },
             ));
         }
@@ -206,7 +126,7 @@ impl Scene<'_> {
 
         Frame {
             nodes: nodes.into_iter().map(|(_, node)| node).collect(),
-            edges: self.edge_groups(&projected, tiers.as_deref(), near, span),
+            edges: self.edge_groups(&projected, near, span),
             projected,
             radii,
         }
@@ -215,6 +135,7 @@ impl Scene<'_> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::emphasis::targets;
     use super::*;
     use molfar_core::knowledge::{GraphEdge, GraphNode};
 
@@ -228,28 +149,18 @@ mod tests {
     }
 
     #[test]
-    fn the_focus_lights_its_relatives_by_distance_and_sinks_the_rest() {
+    fn nodes_paint_far_to_near_and_brightness_follows_the_levels() {
         let projection = GraphProjection {
-            nodes: vec![node("a"), node("b"), node("c"), node("d")],
-            edges: vec![
-                GraphEdge {
-                    source: 0,
-                    target: 1,
-                },
-                GraphEdge {
-                    source: 1,
-                    target: 2,
-                },
-            ],
+            nodes: vec![node("a"), node("b"), node("c")],
+            edges: vec![GraphEdge {
+                source: 0,
+                target: 1,
+            }],
             ..Default::default()
         };
-        let positions = [
-            [-50., 0., 100.],
-            [0., 0., -100.],
-            [50., 0., 0.],
-            [80., 0., 0.],
-        ];
-        let scene = Scene {
+        let levels = targets(&projection, Some(0), None);
+        let positions = [[-50., 0., 100.], [0., 0., -100.], [50., 0., 0.]];
+        let frame = Scene {
             projection: &projection,
             positions: &positions,
             camera: Camera {
@@ -258,50 +169,27 @@ mod tests {
                 distance: 600.,
             },
             size: (800., 600.),
-            hovered: None,
-            selected: Some(0),
-        };
+            levels: &levels,
+        }
+        .frame();
+        let last = frame.nodes.last().unwrap();
         assert_eq!(
-            scene.tiers().unwrap(),
-            [Tier::Focus, Tier::Neighbor, Tier::Second, Tier::Rest]
+            last.glow, 1.,
+            "the nearest, open note paints last and glows"
         );
-        let frame = scene.frame();
+        let tone = last.color;
         assert!(
-            frame.nodes.last().unwrap().ring,
-            "the nearest, selected note paints last"
-        );
-        let lit = frame.edges.last().unwrap();
-        assert_eq!(lit.segments.len(), 1);
-        assert_eq!(
-            frame.edges[frame.edges.len() - 2].segments.len(),
-            1,
-            "b–c is second tier"
+            frame
+                .nodes
+                .iter()
+                .all(|node| (node.color.h, node.color.s, node.color.l) == (tone.h, tone.s, tone.l))
         );
         assert!(
-            frame.nodes.iter().any(|node| node.color.a < 0.11),
-            "unrelated notes sink"
+            frame.nodes.iter().any(|node| node.color.a < 0.1),
+            "unrelated notes recede"
         );
-    }
-
-    #[test]
-    fn without_a_focus_every_note_shares_one_tone() {
-        let projection = GraphProjection {
-            nodes: vec![node("a"), node("b")],
-            ..Default::default()
-        };
-        let positions = [[0., 0., 0.], [40., 0., 0.]];
-        let scene = Scene {
-            projection: &projection,
-            positions: &positions,
-            camera: Camera::default(),
-            size: (800., 600.),
-            hovered: None,
-            selected: None,
-        };
-        let frame = scene.frame();
-        let tone = frame.nodes[0].color;
-        assert!(frame.nodes.iter().all(|node| {
-            (node.color.h, node.color.s, node.color.l) == (tone.h, tone.s, tone.l) && !node.glow
-        }));
+        let brightest = frame.edges.last().unwrap();
+        assert_eq!(brightest.segments.len(), 1);
+        assert!(brightest.width > 1.);
     }
 }
