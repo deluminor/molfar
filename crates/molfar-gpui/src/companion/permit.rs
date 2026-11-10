@@ -60,6 +60,34 @@ impl Permit {
 }
 
 #[cfg(test)]
+impl Permit {
+    pub(crate) fn fixture() -> (Host, Permit) {
+        use super::types::Device;
+        let directory =
+            std::env::temp_dir().join(format!("companion-permit-{}", uuid::Uuid::new_v4()));
+        let (host, _) = Host::open(directory.join("companion.json")).unwrap();
+        {
+            let mut inner = host.inner.lock().unwrap();
+            inner.stored.enabled = true;
+            inner.stored.devices.push(Device {
+                id: "device".into(),
+                name: "Fixture".into(),
+                token_sha256: "hash".into(),
+                created_at: 0,
+                last_seen_at: None,
+            });
+        }
+        let permit = Permit::new(
+            &host,
+            "device",
+            Duration::from_secs(60),
+            Arc::new(AtomicBool::new(false)),
+        );
+        (host, permit)
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::companion::types::Device;

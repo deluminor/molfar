@@ -83,6 +83,10 @@ impl Board {
                     ),
             )
             .child(self.column_model_section(stage, cx))
+            .when_some(
+                self.effort_options(panel, stage, "board-column", cx),
+                |body, options| body.child(section("Effort").child(options)),
+            )
             .child(self.column_access_section(stage, cx))
             .when(panel.saved.is_none(), |body| {
                 body.child(div().text_color(content(0.5)).child("Loading settings…"))

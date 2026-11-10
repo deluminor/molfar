@@ -51,9 +51,7 @@ impl Board {
             .and_then(|config| config[MODEL].as_str())
             .and_then(|model| native_model(model, kind.id()));
         let project = self.cwd.clone();
-        let profile = crate::accounts::get(cx)
-            .map(|accounts| accounts.read(cx).selected(kind, &project))
-            .unwrap_or_default();
+        let profile = self.account(kind, cx);
         let list = cx.new(|cx| ModelList::new_for(kind, current, &project, profile, cx));
         let subscription = cx.subscribe_in(
             &list,

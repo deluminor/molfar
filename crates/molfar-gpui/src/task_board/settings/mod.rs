@@ -3,6 +3,9 @@ mod column;
 mod column_skills;
 #[cfg(test)]
 mod column_tests;
+mod effort;
+#[cfg(test)]
+mod effort_tests;
 mod load;
 mod picker;
 #[cfg(test)]
@@ -55,6 +58,10 @@ pub(super) struct Panel {
     pub picker_surface: AnchorSlot,
     pub catalog: Vec<String>,
     pub catalog_error: Option<String>,
+    pub models: Vec<(
+        molfar_core::provider::Kind,
+        Vec<molfar_core::catalog::Model>,
+    )>,
     pub skill_search: Entity<Input>,
     pub adding_skills: bool,
     pub saved: Option<Value>,

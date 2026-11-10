@@ -7,6 +7,8 @@ mod skills;
 pub mod types;
 
 #[cfg(test)]
+mod effort_tests;
+#[cfg(test)]
 mod settings_tests;
 #[cfg(test)]
 mod stage_tests;

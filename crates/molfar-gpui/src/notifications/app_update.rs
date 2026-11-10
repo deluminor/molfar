@@ -3,6 +3,7 @@
 use crate::{
     markdown::{self, MarkdownRow, Tone},
     markdown_model,
+    modal::sheet,
     theme::*,
 };
 use gpui::{Context, EventEmitter, FontWeight, Render, Role, Window, div, img, prelude::*, px};
@@ -256,13 +257,7 @@ impl Render for WhatsNew {
                 .map(|d| format!(" · {d}"))
                 .unwrap_or_default()
         );
-        let mut body = div()
-            .id("whats-new-scroll")
-            .flex_1()
-            .min_h_0()
-            .overflow_y_scroll()
-            .px(px(20.))
-            .py(px(16.));
+        let mut body = sheet::body("whats-new-scroll");
         if self.rows.is_empty() {
             body = body.child(
                 div()
@@ -282,65 +277,18 @@ impl Render for WhatsNew {
                 ),
             ));
         }
-        div()
+        sheet::sheet(512.)
             .id("whats-new-dialog")
             .role(Role::Dialog)
             .aria_label("What's new")
-            .relative()
-            .w(px(512.))
-            .max_w_full()
             .h((window.viewport_size().height * 0.72).min(px(640.)))
-            .flex()
-            .flex_col()
-            .overflow_hidden()
-            .rounded(px(12.))
-            .border_1()
-            .border_color(content(0.1))
-            .text_color(content(1.))
-            .shadow_lg()
-            .child(super::surface::backdrop(12.))
             .child(
-                div()
-                    .relative()
-                    .px(px(20.))
-                    .py(px(16.))
-                    .border_b_1()
-                    .border_color(content(0.1))
-                    .flex()
-                    .items_start()
-                    .gap(px(12.))
-                    .child(
-                        div()
-                            .flex_1()
-                            .child(
-                                div()
-                                    .text_size(px(16.))
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .child("What's new"),
-                            )
-                            .child(
-                                div()
-                                    .mt(px(4.))
-                                    .text_size(px(12.))
-                                    .text_color(content(0.6))
-                                    .child(description),
-                            ),
-                    )
-                    .child(
-                        div()
-                            .id("close-whats-new")
-                            .role(Role::Button)
-                            .aria_label("Close")
-                            .cursor_pointer()
-                            .size(px(24.))
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .on_click(cx.listener(|_, _, _, cx| cx.emit(WhatsNewEvent::Close)))
-                            .child(icon("x", 14.)),
-                    ),
+                sheet::header("What's new", Some(description.into())).child(
+                    sheet::close_button("close-whats-new")
+                        .on_click(cx.listener(|_, _, _, cx| cx.emit(WhatsNewEvent::Close))),
+                ),
             )
-            .child(body.relative())
+            .child(body)
             .into_any_element()
     }
 }

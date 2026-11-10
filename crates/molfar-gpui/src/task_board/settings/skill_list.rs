@@ -147,9 +147,7 @@ impl Board {
 
         section("Add skills")
             .p_2()
-            .rounded_lg()
-            .border_1()
-            .border_color(content(0.1))
+            .rounded(px(12.))
             .bg(content(0.03))
             .child(
                 div()

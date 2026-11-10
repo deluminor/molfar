@@ -3,8 +3,9 @@ use crate::task_board::{
     tests::{card, database},
 };
 use gpui::{
-    AppContext, Bounds, Context, Entity, Render, TestAppContext, VisualTestContext, Window,
-    WindowBounds, WindowOptions, div, point, prelude::*, px, size,
+    AppContext, Bounds, Context, Entity, Render, ScrollDelta, ScrollWheelEvent, TestAppContext,
+    TouchPhase, VisualTestContext, Window, WindowBounds, WindowHandle, WindowOptions, div, point,
+    prelude::*, px, size,
 };
 use molfar_core::task_board::{constants::BACKLOG, types::Snapshot};
 
@@ -25,8 +26,7 @@ impl Render for Host {
     }
 }
 
-#[gpui::test]
-fn scrollbar_reaches_last_column_with_sidebar_and_drawer_open(cx: &mut TestAppContext) {
+fn open_board(cx: &mut TestAppContext) -> (Entity<Board>, WindowHandle<Host>) {
     cx.update(|cx| cx.set_reduce_motion(true));
     let board = cx.new(|cx| Board::new(database(), cx));
     board.update(cx, |board, cx| {
@@ -61,6 +61,12 @@ fn scrollbar_reaches_last_column_with_sidebar_and_drawer_open(cx: &mut TestAppCo
         )
         .unwrap()
     });
+    (board, window)
+}
+
+#[gpui::test]
+fn scrollbar_reaches_last_column_with_sidebar_and_drawer_open(cx: &mut TestAppContext) {
+    let (board, window) = open_board(cx);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     for sidebar in [true, false] {
         window
@@ -89,4 +95,29 @@ fn scrollbar_reaches_last_column_with_sidebar_and_drawer_open(cx: &mut TestAppCo
             cx.notify();
         });
     }
+}
+
+#[gpui::test]
+fn vertical_wheel_never_scrolls_board_sideways(cx: &mut TestAppContext) {
+    let (board, window) = open_board(cx);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let position = visual.debug_bounds("board-list").unwrap().center();
+    let wheel = |delta| ScrollWheelEvent {
+        position,
+        delta: ScrollDelta::Lines(delta),
+        modifiers: Default::default(),
+        touch_phase: TouchPhase::Moved,
+    };
+
+    visual.simulate_event(wheel(point(0., -3.)));
+    visual.run_until_parked();
+    board.update(visual, |board, _| {
+        assert!(board.scroll.max_offset().x > px(0.));
+        assert_eq!(board.scroll.offset().x, px(0.));
+    });
+
+    visual.simulate_event(wheel(point(-3., 0.)));
+    visual.run_until_parked();
+    board.update(visual, |board, _| assert!(board.scroll.offset().x < px(0.)));
 }

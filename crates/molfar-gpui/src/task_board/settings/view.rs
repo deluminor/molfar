@@ -1,5 +1,5 @@
 use super::super::Board;
-use crate::modal;
+use crate::modal::{self, sheet};
 use crate::popover::{Anchor, popover};
 use crate::task_board::controls;
 use gpui::{AnyElement, Context, Role, Window, div, prelude::*, px};
@@ -66,13 +66,7 @@ impl Board {
             return Some(self.column_settings_overlay(stage, picker, window, cx));
         }
 
-        let mut body = modal::card_body()
-            .id("board-settings-body")
-            .gap_3()
-            .min_h_0()
-            .flex_1()
-            .max_h_full()
-            .overflow_y_scroll();
+        let mut body = sheet::body("board-settings-body").gap(px(4.));
         if let Some(error) = panel.error.clone() {
             body = body.child(
                 div()
@@ -91,14 +85,11 @@ impl Board {
                 body = body.child(self.stage_row(panel, stage, cx));
             }
             body = body.child(
-                div()
+                sheet::group()
+                    .mt(px(8.))
                     .flex()
                     .items_end()
                     .gap_2()
-                    .p_3()
-                    .rounded_lg()
-                    .border_1()
-                    .border_color(crate::theme::content(0.08))
                     .child(div().flex_1().child(crate::input::form_field(
                         "Concurrent stages (1–10)",
                         panel.concurrency.clone(),
@@ -116,24 +107,14 @@ impl Board {
                     ),
             );
         }
-        let footer = div()
-            .flex_shrink_0()
-            .px_4()
-            .py_3()
-            .border_t_1()
-            .border_color(crate::theme::content(0.08))
-            .flex()
-            .justify_end()
-            .child(
-                controls::ghost_button("board-settings-close", "Done")
-                    .on_click(cx.listener(|this, _, window, cx| this.close_settings(window, cx))),
-            );
+        let footer = sheet::footer().child(
+            controls::ghost_button("board-settings-close", "Done")
+                .on_click(cx.listener(|this, _, window, cx| this.close_settings(window, cx))),
+        );
 
-        let card = modal::card().bg(crate::theme::floating_fill())
-            .w(px(720.))
-            .max_w_full()
+        let card = sheet::sheet(720.)
+            .bg(crate::theme::floating_fill())
             .max_h((window.viewport_size().height - px(40.)).max(px(120.)))
-            .flex().flex_col()
             .id("board-settings-dialog")
             .debug_selector(|| "board-settings-dialog".into())
             .role(Role::Dialog)
@@ -149,9 +130,10 @@ impl Board {
                     cx.stop_propagation();
                 }
             }))
-            .child(div().flex_shrink_0().p_4().border_b_1().border_color(crate::theme::content(0.08))
-                .child(modal::title("Stage settings"))
-                .child(div().mt_1().child(modal::body("Models, access and skills save per stage. Running stages keep their original settings."))))
+            .child(sheet::header(
+                "Stage settings",
+                Some("Models, access and skills save per stage. Running stages keep their original settings.".into()),
+            ))
             .child(body).child(footer);
         let weak = cx.weak_entity();
         let overlay = div()

@@ -6,6 +6,9 @@ mod drag_tests;
 mod drawer;
 pub(super) mod look;
 mod nav;
+mod running;
+#[cfg(test)]
+mod running_tests;
 pub(super) mod scroll;
 #[cfg(test)]
 mod scroll_tests;
@@ -79,6 +82,7 @@ impl Board {
             .gap_3()
             .p_3()
             .overflow_x_scroll()
+            .restrict_scroll_to_axis()
             .track_scroll(&self.scroll);
         let empty = self
             .snapshot

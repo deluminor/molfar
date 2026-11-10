@@ -4,7 +4,8 @@ use super::{
         CARD_PAD_LEFT, CARD_PAD_RIGHT, CARD_PAD_Y, CARD_RADIUS, REWORK_WARNING_CYCLE, SOURCE_FADE,
         amber,
     },
-    status::{chip, status, stripe},
+    running::{running_border, running_spinner},
+    status::{StatusKind, chip, status, stripe},
 };
 use crate::task_board::Board;
 use crate::theme::*;
@@ -49,6 +50,7 @@ impl Board {
         let selector = format!("board-card-{id}");
         let selected = self.selected.as_ref() == Some(&id);
         let state = status(card);
+        let running = matches!(state, Some((StatusKind::Running, _)));
         let label = match state {
             Some((_, text)) => format!("#{} {}, {text}", card.number, card.title),
             None => format!("#{} {}", card.number, card.title),
@@ -62,7 +64,11 @@ impl Board {
             .gap_1p5();
         if let Some((kind, text)) = state {
             let (fill, ink) = chip(kind);
-            footer = footer.child(pill(fill, ink).child(text));
+            footer = footer.child(
+                pill(fill, ink)
+                    .when(running, |pill| pill.child(running_spinner(&id)))
+                    .child(text),
+            );
         }
         if card.rework_cycle > 0 {
             let warning = card.rework_cycle >= REWORK_WARNING_CYCLE;
@@ -134,7 +140,11 @@ impl Board {
                         .hover(|s| s.border_color(content(0.2)).bg(content(0.065)))
                 }
             })
-            .when_some(state, |card, (kind, _)| {
+            .when(running, |card| card.child(running_border(&id)))
+            .when(running && !selected, |card| {
+                card.border_color(accent_color().opacity(0.22))
+            })
+            .when_some(state.filter(|_| !running), |card, (kind, _)| {
                 card.child(
                     div()
                         .absolute()

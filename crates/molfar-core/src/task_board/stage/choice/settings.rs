@@ -17,7 +17,7 @@ pub const MAX_CONCURRENT: &str = "maxConcurrentStages";
 pub const STALL_MINUTES: &str = "stallMinutes";
 pub const HARNESS: &str = "harness";
 pub const MODEL: &str = "model";
-const EFFORT: &str = "effort";
+pub const EFFORT: &str = "effort";
 pub const RUNTIME_MODE: &str = "runtimeMode";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,6 +39,7 @@ pub enum SettingsPatch {
         model: String,
     },
     ColumnMode(AgentStage, String),
+    ColumnEffort(AgentStage, Option<String>),
     ColumnSkills(AgentStage, Option<Vec<String>>),
     Limits {
         max_concurrent: i64,
@@ -206,6 +207,18 @@ pub fn apply(raw: Option<&str>, patch: &SettingsPatch) -> Result<String, String>
             let mut column = stage_entry(&settings, *stage)
                 .ok_or("Pick a model for this stage before changing its access.")?;
             column[RUNTIME_MODE] = json!(mode);
+            set_stage_entry(&mut settings, COLUMNS, *stage, Some(column));
+        }
+        SettingsPatch::ColumnEffort(stage, effort) => {
+            let mut column = stage_entry(&settings, *stage)
+                .ok_or("Pick a model for this stage before changing its effort.")?;
+            let Some(fields) = column.as_object_mut() else {
+                return Err("Board settings are unreadable.".into());
+            };
+            match effort {
+                Some(effort) => fields.insert(EFFORT.into(), json!(effort)),
+                None => fields.remove(EFFORT),
+            };
             set_stage_entry(&mut settings, COLUMNS, *stage, Some(column));
         }
         SettingsPatch::ColumnSkills(stage, skills) => {

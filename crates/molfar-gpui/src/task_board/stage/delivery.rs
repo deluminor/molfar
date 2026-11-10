@@ -1,7 +1,8 @@
 use super::super::{Board, Event};
+use super::footer::lead_button;
 use crate::task_board::controls;
 use crate::{modal, theme::*};
-use gpui::{Context, Div, Window, div, prelude::*, px};
+use gpui::{AnyElement, Context, Div, Window, div, prelude::*, px};
 use molfar_core::task_board::{
     constants::{DONE, FINAL_REVIEW, IDLE},
     delivery::{record, types::DeliveryMethod},
@@ -50,7 +51,7 @@ fn deliverable(card: &Card) -> bool {
         && matches!(card.run_state.as_str(), IDLE | FAILED)
 }
 
-fn rejectable(card: &Card) -> bool {
+pub(super) fn rejectable(card: &Card) -> bool {
     !card.archived && card.run_state != RUNNING
 }
 
@@ -75,7 +76,7 @@ impl Board {
         cx.notify();
     }
 
-    fn confirm(
+    pub(super) fn confirm(
         &mut self,
         message: &'static str,
         detail: &'static str,
@@ -149,70 +150,25 @@ impl Board {
         picker
     }
 
-    pub(in crate::task_board) fn delivery_actions(
+    pub(super) fn deliver_action(
         &self,
         card: &Card,
+        pending: bool,
         cx: &mut Context<Self>,
-    ) -> Div {
-        let pending = self.stage_pending.as_deref() == Some(&card.id);
-        let mut row = div().flex().flex_wrap().gap_2();
-
-        if deliverable(card) {
-            if self.delivery_open.as_deref() == Some(&card.id) {
-                row = row.child(self.method_picker(card, pending, cx));
-            } else {
-                let opened = card.clone();
-                row = row.child(
-                    modal::disabled(
-                        controls::primary_button("board-deliver", "Deliver…"),
-                        pending,
-                    )
-                    .debug_selector(|| "board-deliver".into())
-                    .on_click(cx.listener(move |this, _, _, cx| this.open_delivery(&opened, cx))),
-                );
-            }
+    ) -> Option<AnyElement> {
+        if !deliverable(card) {
+            return None;
         }
-
-        if rejectable(card) {
-            let delivered = card.column_id == DONE;
-            let (id, label, message, detail) = if delivered {
-                (
-                    "board-archive",
-                    "Archive",
-                    "Archive card",
-                    "Archive this card? It leaves the board and stays available under Archived.",
-                )
-            } else {
-                (
-                    "board-reject",
-                    "Reject",
-                    "Reject card",
-                    "Archive this card? Its worktree is deleted, and its branch too unless it was pushed.",
-                )
-            };
-            let card_id = card.id.clone();
-            let updated_at = card.updated_at;
-            row = row.child(
-                modal::disabled(controls::danger_ghost_button(id, label), pending)
-                    .debug_selector(move || id.into())
-                    .on_click(cx.listener(move |this, _, window, cx| {
-                        let card_id = card_id.clone();
-                        let then = move |this: &mut Self, cx: &mut Context<Self>| {
-                            if this.stage_pending.is_some() {
-                                return;
-                            }
-                            this.stage_pending = Some(card_id.clone());
-                            cx.emit(Event::Reject {
-                                card_id,
-                                updated_at,
-                            });
-                            cx.notify();
-                        };
-                        this.confirm(message, detail, label, window, cx, then);
-                    })),
-            );
+        if self.delivery_open.as_deref() == Some(&card.id) {
+            return Some(self.method_picker(card, pending, cx).into_any_element());
         }
-        row
+        let opened = card.clone();
+        Some(
+            modal::disabled(lead_button("board-deliver", "Deliver…"), pending)
+                .debug_selector(|| "board-deliver".into())
+                .on_click(cx.listener(move |this, _, _, cx| this.open_delivery(&opened, cx)))
+                .into_any_element(),
+        )
     }
 
     pub(in crate::task_board) fn open_delivery(&mut self, card: &Card, cx: &mut Context<Self>) {

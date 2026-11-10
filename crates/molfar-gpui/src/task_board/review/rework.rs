@@ -1,5 +1,5 @@
 use super::super::Board;
-use crate::{modal, theme::*};
+use crate::modal::{self, sheet};
 use gpui::{AnyElement, Context, Role, div, prelude::*, px};
 
 impl Board {
@@ -23,16 +23,19 @@ impl Board {
     }
 
     pub(super) fn rework_findings(&self, cx: &mut Context<Self>) -> AnyElement {
-        let mut list = div().flex().flex_col().gap_2();
+        let mut list = sheet::list();
         let Some(panel) = &self.review else {
             return list.into_any_element();
         };
         let Some(review) = panel.data.as_ref().and_then(|data| data.final_review()) else {
             return list.into_any_element();
         };
+
         if review.review.findings.is_empty() {
-            list = list.child(modal::body("No findings. Add a note to request rework."));
+            return modal::body("No findings. Add a note to request rework.").into_any_element();
         }
+
+        let enabled = !panel.busy && !panel.loading && !panel.reload_required;
         for (index, finding) in review.review.findings.iter().enumerate() {
             let selected = panel.selected.contains(&finding.id);
             let label = format!(
@@ -41,47 +44,37 @@ impl Board {
                 finding.severity.id(),
                 finding.title
             );
-            let mut row = div()
-                .id(("board-rework-finding", index))
+            let meta = match &finding.file {
+                Some(file) => format!("{} · {}", finding.severity.id(), file),
+                None => finding.severity.id().to_string(),
+            };
+
+            let text = div()
+                .flex_1()
+                .min_w_0()
+                .child(sheet::row_title(format!(
+                    "{} · {}",
+                    finding.id, finding.title
+                )))
+                .child(sheet::row_meta(meta))
+                .when(!finding.body.is_empty(), |d| {
+                    d.child(modal::body(finding.body.clone()).mt(px(6.)))
+                });
+            let row = sheet::row(("board-rework-finding", index), selected)
                 .debug_selector(move || format!("board-rework-finding-{index}"))
                 .role(Role::CheckBox)
-                .aria_label(label.clone())
+                .aria_label(label)
                 .aria_toggled(if selected {
                     gpui::Toggled::True
                 } else {
                     gpui::Toggled::False
                 })
                 .track_focus(&panel.finding_focus[index])
-                .border_1()
-                .border_color(content(0.12))
-                .rounded(px(8.))
-                .p_3()
-                .focus_visible(|style| style.border_color(accent_color()))
-                .flex()
-                .flex_col()
-                .gap_2()
-                .child(
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap_2()
-                        .child(
-                            div()
-                                .w(px(14.))
-                                .when(selected, |d| d.child(icon("check", 14.))),
-                        )
-                        .child(label),
-                );
-            if let Some(file) = &finding.file {
-                row = row.child(modal::body(file.clone()));
-            }
-            if !finding.body.is_empty() {
-                row = row.child(modal::body(finding.body.clone()));
-            }
-            let enabled = !panel.busy && !panel.loading && !panel.reload_required;
-            row = modal::disabled(row, !enabled)
-                .on_click(cx.listener(move |this, _, _, cx| this.toggle_rework_finding(index, cx)));
-            list = list.child(row);
+                .child(sheet::check(selected))
+                .child(text);
+            list = list.child(modal::disabled(row, !enabled).on_click(
+                cx.listener(move |this, _, _, cx| this.toggle_rework_finding(index, cx)),
+            ));
         }
         list.into_any_element()
     }

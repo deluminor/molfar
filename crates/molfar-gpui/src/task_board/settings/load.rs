@@ -54,6 +54,7 @@ impl Board {
         // Later reloads keep what the user is typing in fields they have not saved yet.
         if panel.saved.is_some() {
             panel.saved = Some(saved);
+            self.load_column_catalogs(cx);
             cx.notify();
             return;
         }
@@ -87,6 +88,7 @@ impl Board {
             .stall
             .update(cx, |input, cx| input.set_text(stall, cx));
         panel.saved = Some(saved);
+        self.load_column_catalogs(cx);
         cx.notify();
     }
 

@@ -1,8 +1,11 @@
-use super::readout::{self, pressure_color};
+use super::{
+    curve,
+    readout::{self, pressure_color},
+};
 use crate::home::data::feeds::history::{GAP_MS, Sample, WINDOW_MS};
-use gpui::{Context, Entity, PathBuilder, Render, Window, canvas, point, prelude::*, px};
+use gpui::{PathBuilder, canvas, point, prelude::*, px};
 use molfar_core::host::HostStats;
-use std::{collections::VecDeque, sync::Arc};
+use std::collections::VecDeque;
 
 #[derive(Clone, Copy)]
 pub(super) enum Metric {
@@ -63,10 +66,6 @@ pub(super) fn segments(
     result
 }
 
-fn lerp(from: f32, to: f32, t: f32) -> f32 {
-    from + (to - from) * t
-}
-
 fn reduce(points: &[(f32, f32)], width: f32) -> Vec<(f32, f32)> {
     let mut output = Vec::new();
     let mut index = 0;
@@ -91,97 +90,100 @@ fn reduce(points: &[(f32, f32)], width: f32) -> Vec<(f32, f32)> {
     output
 }
 
+/// A metric's line over the 30-minute window. It repaints only when Home
+/// re-renders on a new sample: one pixel spans several seconds of the window,
+/// so a per-frame scroll would cost frames without visible movement.
 pub(super) fn chart(
     history: &VecDeque<Sample>,
     metric: Metric,
     now: u64,
     cores: usize,
-    cx: &mut Context<crate::home::Home>,
-) -> Entity<ChartView> {
-    cx.new(|_| ChartView {
-        history: Arc::new(history.clone()),
-        metric,
-        now,
-        cores,
-    })
-}
+) -> impl IntoElement {
+    let scale = metric.scale(history);
+    let segments = segments(history, metric, now);
 
-pub(super) struct ChartView {
-    history: Arc<VecDeque<Sample>>,
-    metric: Metric,
-    now: u64,
-    cores: usize,
-}
+    canvas(
+        |_, _, _| (),
+        move |bounds, _, window, _| {
+            let width = f32::from(bounds.size.width);
+            let height = f32::from(bounds.size.height);
+            let y = |value: f32| height * (1. - (value / scale).clamp(0., 1.));
+            let at = |(x, y): (f32, f32)| bounds.origin + point(px(x), px(y));
 
-impl Render for ChartView {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let history = self.history.clone();
-        let metric = self.metric;
-        let now = self.now;
-        let cores = self.cores;
-        let scale = metric.scale(&history);
-        canvas(
-            |_, _, _| (),
-            move |bounds, _, window, cx| {
-                let now = if crate::pulse::request(crate::pulse::Rate::Smooth, window, cx) {
-                    molfar_core::time::now_ms()
-                } else {
-                    now
+            let mut grid = PathBuilder::stroke(px(1.));
+            for fraction in [0., 0.5, 1.] {
+                grid.move_to(at((0., y(fraction * scale))));
+                grid.line_to(at((width, y(fraction * scale))));
+            }
+            if let Ok(grid) = grid.build() {
+                window.paint_path(grid, crate::theme::content(0.06));
+            }
+
+            let accent = crate::theme::accent_color();
+            for segment in &segments {
+                let pixels: Vec<(f32, f32)> = reduce(segment, width.max(1.))
+                    .into_iter()
+                    .map(|(x, value)| (x * width, value))
+                    .collect();
+                let curve = curve::smooth(&pixels);
+                let pressure = |(_, value): (f32, f32)| readout::fraction(metric, value, cores);
+                let Some(&last) = curve.last() else {
+                    continue;
                 };
-                let segments = segments(&history, metric, now);
-                let width = bounds.size.width.to_f64() as f32;
-                let height = bounds.size.height.to_f64() as f32;
-                let at = |x: f32, value: f32| {
-                    bounds.origin
-                        + point(
-                            px(x * width),
-                            px(height * (1. - (value / scale).clamp(0., 1.))),
-                        )
-                };
-                let mut grid = PathBuilder::stroke(px(1.));
-                for fraction in [0., 0.5, 1.] {
-                    grid.move_to(at(0., fraction * scale));
-                    grid.line_to(at(1., fraction * scale));
+                let tone = pressure_color(accent, pressure(last));
+
+                if curve.len() > 1 {
+                    let mut area = PathBuilder::fill();
+                    area.move_to(at((curve[0].0, height)));
+                    for &(x, value) in &curve {
+                        area.line_to(at((x, y(value))));
+                    }
+                    area.line_to(at((last.0, height)));
+                    area.close();
+                    if let Ok(area) = area.build() {
+                        window.paint_path(
+                            area,
+                            gpui::linear_gradient(
+                                180.,
+                                gpui::linear_color_stop(tone.opacity(0.18), 0.),
+                                gpui::linear_color_stop(tone.opacity(0.), 1.),
+                            ),
+                        );
+                    }
                 }
-                if let Ok(grid) = grid.build() {
-                    window.paint_path(grid, crate::theme::content(0.06));
-                }
-                let accent = crate::theme::accent_color();
-                for segment in &segments {
-                    let points = reduce(segment, width.max(1.));
-                    for pair in points.windows(2) {
-                        let (x0, v0) = pair[0];
-                        let (x1, v1) = pair[1];
-                        let p0 = readout::fraction(metric, v0, cores);
-                        let p1 = readout::fraction(metric, v1, cores);
-                        let marks = readout::span_marks(p0, p1);
-                        for mark in marks.windows(2) {
-                            let (t0, t1) = (mark[0], mark[1]);
-                            let mut line = PathBuilder::stroke(px(1.5));
-                            line.move_to(at(lerp(x0, x1, t0), lerp(v0, v1, t0)));
-                            line.line_to(at(lerp(x0, x1, t1), lerp(v0, v1, t1)));
-                            let mid = lerp(p0, p1, (t0 + t1) / 2.);
-                            if let Ok(line) = line.build() {
-                                window.paint_path(line, pressure_color(accent, mid).opacity(0.9));
-                            }
+
+                for (band, run) in curve::color_runs(&curve, pressure) {
+                    let mut line = PathBuilder::stroke(px(1.5));
+                    for (index, &(x, value)) in run.iter().enumerate() {
+                        let p = at((x, y(value)));
+                        if index == 0 {
+                            line.move_to(p);
+                        } else {
+                            line.line_to(p);
                         }
                     }
-                    if let Some((x, value)) = points.last() {
-                        let color =
-                            pressure_color(accent, readout::fraction(metric, *value, cores));
-                        window.paint_quad(gpui::fill(
-                            gpui::Bounds::new(
-                                at(*x, *value) - point(px(1.5), px(1.5)),
-                                gpui::size(px(3.), px(3.)),
-                            ),
-                            color,
-                        ));
+                    if let Ok(line) = line.build() {
+                        window.paint_path(line, pressure_color(accent, band));
                     }
                 }
-            },
-        )
-        .size_full()
-    }
+
+                let head = at((last.0, y(last.1)));
+                for (radius, alpha) in [(4., 0.2), (2., 1.)] {
+                    window.paint_quad(
+                        gpui::fill(
+                            gpui::Bounds::new(
+                                head - point(px(radius), px(radius)),
+                                gpui::size(px(radius * 2.), px(radius * 2.)),
+                            ),
+                            tone.opacity(alpha),
+                        )
+                        .corner_radii(px(radius)),
+                    );
+                }
+            }
+        },
+    )
+    .size_full()
 }
 
 #[cfg(test)]

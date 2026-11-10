@@ -703,6 +703,10 @@ pub(crate) fn resolve_file_links(row: &mut MarkdownRow, base: &str) {
 }
 
 fn open_link(url: &str, window: &mut Window, cx: &mut App) {
+    if let Some(path) = molfar_core::knowledge::vault_target(url) {
+        window.dispatch_action(Box::new(crate::knowledge::OpenVaultNote(path)), cx);
+        return;
+    }
     if url.starts_with("https://") || url.starts_with("http://") || url.starts_with("mailto:") {
         cx.open_url(url);
     } else if !url.starts_with('#') && (!url.contains("://") || url.starts_with("file://")) {

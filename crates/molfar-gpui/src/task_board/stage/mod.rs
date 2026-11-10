@@ -4,7 +4,11 @@ pub(super) mod back;
 pub(super) mod delivery;
 #[cfg(test)]
 mod delivery_tests;
+mod footer;
+#[cfg(test)]
+mod footer_tests;
 mod moves;
+mod reject;
 #[cfg(test)]
 mod tests;
 mod view;

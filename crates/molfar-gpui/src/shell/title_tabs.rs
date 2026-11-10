@@ -196,6 +196,7 @@ impl Shell {
                 app_views::AppView::Home => self.open_home(window, cx),
                 app_views::AppView::Inbox => self.open_inbox(window, cx),
                 app_views::AppView::Notes => self.open_notes(window, cx),
+                app_views::AppView::Knowledge => self.open_knowledge(window, cx),
                 app_views::AppView::Automations => self.open_automations(window, cx),
                 app_views::AppView::Board => self.open_board(window, cx),
             },

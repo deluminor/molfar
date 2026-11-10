@@ -10,7 +10,7 @@ use molfar_core::task_board::{
 };
 use std::{cell::RefCell, rc::Rc};
 
-fn run(card_id: &str, session_id: &str) -> StageRun {
+pub(super) fn run(card_id: &str, session_id: &str) -> StageRun {
     StageRun {
         id: "run".into(),
         card_id: card_id.into(),

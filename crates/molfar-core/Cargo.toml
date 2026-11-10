@@ -16,6 +16,8 @@ url = "2"
 base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 sha2 = "0.10"
+pulldown-cmark = { version = "0.13", default-features = false }
+serde-saphyr = { version = "1", default-features = false, features = ["deserialize"] }
 rand = "0.9"
 regex = "1"
 zstd = "0.14.3"

@@ -35,12 +35,6 @@ pub(super) fn fraction(metric: Metric, value: f32, cores: usize) -> f32 {
     }
 }
 
-/// Cuts a stroke into short pieces so its color can follow the value instead of jumping.
-pub(super) fn span_marks(start: f32, end: f32) -> Vec<f32> {
-    let steps = ((start - end).abs() / 0.05).ceil().max(1.) as usize;
-    (0..=steps).map(|step| step as f32 / steps as f32).collect()
-}
-
 pub(super) fn detail(
     metric: Metric,
     stats: HostStats,
@@ -143,15 +137,6 @@ mod tests {
         assert_eq!(full, red);
         assert!(distance(warm, red) > distance(hot, red));
         assert!(distance(hot, red) > distance(full, red));
-    }
-
-    #[test]
-    fn span_stays_one_piece_until_the_value_moves() {
-        assert_eq!(span_marks(0.2, 0.22), vec![0., 1.]);
-        let climbed = span_marks(0.5, 1.);
-        assert!(climbed.len() > 2);
-        assert_eq!(climbed.first().copied(), Some(0.));
-        assert_eq!(climbed.last().copied(), Some(1.));
     }
 
     #[test]

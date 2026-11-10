@@ -27,13 +27,6 @@ pub(crate) fn ghost_button(
     compact(modal::ghost_button(id, label))
 }
 
-pub(super) fn danger_ghost_button(
-    id: impl Into<ElementId>,
-    label: impl Into<SharedString>,
-) -> Stateful<Div> {
-    compact(modal::danger_ghost_button(id, label))
-}
-
 struct Hint(SharedString);
 
 impl gpui::Render for Hint {
@@ -56,6 +49,19 @@ pub(crate) fn hint(text: impl Into<SharedString>, cx: &mut gpui::App) -> gpui::A
     use gpui::AppContext;
     let text = text.into();
     cx.new(|_| Hint(text)).into()
+}
+
+/// A saved column config as people read it: model name, then its effort if set.
+pub(super) fn column_label(config: &serde_json::Value) -> String {
+    use molfar_core::task_board::stage::choice::settings::{EFFORT, HARNESS, MODEL};
+    let model = model_label(
+        config[HARNESS].as_str().unwrap_or_default(),
+        config[MODEL].as_str().unwrap_or_default(),
+    );
+    match config[EFFORT].as_str() {
+        Some(effort) => format!("{model} · {effort}"),
+        None => model.to_string(),
+    }
 }
 
 pub(super) fn model_label(harness: &str, model: &str) -> gpui::SharedString {
