@@ -57,11 +57,15 @@ pub(super) fn selection(
     };
     let overrides: Value = serde_json::from_str(overrides).unwrap_or(Value::Null);
     let card = override_fields(&overrides[stage.id()]);
-    if card
-        .get("harness")
-        .is_some_and(|harness| Some(harness) != input.get("harness"))
-    {
+    let differs = |key: &str| {
+        card.get(key)
+            .is_some_and(|value| Some(value) != input.get(key))
+    };
+    if differs("harness") {
         input.remove("model");
+        input.remove("effort");
+    } else if differs("model") {
+        // An effort belongs to the column's model and may not exist on another one.
         input.remove("effort");
     }
     input.extend(card);

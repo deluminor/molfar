@@ -156,3 +156,21 @@ fn explicit_empty_skills_and_unavailable_choices_hold_for_every_stage() {
         );
     }
 }
+
+#[test]
+fn card_model_override_drops_the_column_effort_unless_it_sets_its_own() {
+    let board = json!({"columns":{"grill":{"harness":"claude","model":"claude:old","effort":"max","runtimeMode":"auto"}}}).to_string();
+
+    let other = json!({"grill":{"model":"claude:new"}}).to_string();
+    let selected = select(AgentStage::Grill, Some(&board), &other, Kind::Claude).unwrap();
+    assert_eq!(selected.input["model"], "claude:new");
+    assert!(selected.input.get("effort").is_none());
+
+    let same = json!({"grill":{"model":"claude:old","runtimeMode":"supervised"}}).to_string();
+    let selected = select(AgentStage::Grill, Some(&board), &same, Kind::Claude).unwrap();
+    assert_eq!(selected.input["effort"], "max");
+
+    let own = json!({"grill":{"model":"claude:new","effort":"low"}}).to_string();
+    let selected = select(AgentStage::Grill, Some(&board), &own, Kind::Claude).unwrap();
+    assert_eq!(selected.input["effort"], "low");
+}
