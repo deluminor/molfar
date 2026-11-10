@@ -198,7 +198,7 @@ send/stop, access modes, approvals/questions, notes and session launch choices.
 Launch choices validate model, effort and workspace mode before creating a
 session; worktree mode creates an isolated checkout. Familiars keep their own
 live conversation owner while exposing the underlying session ID to the phone.
-Photo/file attachments, Knowledge and phone Board actions remain unsupported.
+Knowledge vault index, read and revisioned write are supported. Photo/file attachments and phone Board actions remain unsupported.
 
 Gateway, RPC and temporary-checkout regression tests do not establish live
 BitChain/Tailscale/provider acceptance. Those checks remain unrun. Tailscale
