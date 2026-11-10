@@ -18,10 +18,12 @@ use state::Creation;
 impl Board {
     pub(super) fn open_create(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.creation.is_none() {
+            // The filtered project first, then the current one, then any local one.
+            let preferred = self.project_filter.as_deref().unwrap_or(&self.cwd);
             let project = self
                 .projects
                 .iter()
-                .find(|path| **path == self.cwd && !path.starts_with("remote://"))
+                .find(|path| path.as_str() == preferred && !path.starts_with("remote://"))
                 .or_else(|| {
                     self.projects
                         .iter()

@@ -37,6 +37,8 @@ pub(crate) enum Event {
         updated_at: i64,
     },
     OpenSession(String),
+    /// The project filter the user picked, to remember across launches.
+    ProjectFilter(Option<String>),
     Settings(molfar_core::task_board::stage::choice::settings::SettingsPatch),
 }
 
@@ -180,6 +182,15 @@ impl Board {
     #[cfg(test)]
     pub(crate) fn archived_for_test(&self) -> bool {
         self.archived
+    }
+
+    /// Restores a remembered project filter on a board that has none yet.
+    pub(crate) fn restore_project_filter(&mut self, project: Option<String>) {
+        if self.project_filter.is_none() && project.is_some() {
+            self.project_filter = project;
+            self.snapshot = None;
+            self.revision += 1;
+        }
     }
 
     pub(crate) fn set_context(&mut self, cwd: String, projects: Vec<String>) {

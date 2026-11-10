@@ -14,12 +14,17 @@ impl Board {
             .projects
             .iter()
             .filter(|path| !path.starts_with("remote://"))
-            .map(|path| MenuAction::new(path.clone(), path.clone()).into())
+            .map(|path| {
+                let appearance = self.project_appearance(path);
+                let mut action = MenuAction::new(path.clone(), appearance.label(path));
+                action.project = Some((appearance, path.clone()));
+                action.into()
+            })
             .collect();
         let selected = draft.project.clone();
         let menu = cx.new(|cx| {
             Menu::new("Board project", items, window, cx)
-                .width(440.)
+                .width(320.)
                 .select_value(&selected)
         });
         let subscription =

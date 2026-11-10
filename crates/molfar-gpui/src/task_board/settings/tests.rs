@@ -26,7 +26,7 @@ pub(in crate::task_board) fn record(
                 Event::Stage { action, .. } => format!("{action:?}"),
                 Event::Deliver { method, .. } => format!("Deliver({method:?})"),
                 Event::Reject { .. } => "Reject".into(),
-                Event::OpenSession(_) | Event::Close => return,
+                Event::OpenSession(_) | Event::Close | Event::ProjectFilter(_) => return,
             };
             recorded.borrow_mut().push(text);
         })

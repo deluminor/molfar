@@ -160,6 +160,8 @@ pub(crate) struct Workspace {
     pub preferences: crate::settings::Preferences,
     pub session_filters: molfar_core::session_filters::Filters,
     pub project_appearance: HashMap<String, molfar_core::project_appearance::ProjectAppearance>,
+    /// The Board's project filter; `None` shows every project.
+    pub board_project_filter: Option<String>,
     /// Home grid arrangement, parsed leniently so a bad entry cannot reset the workspace.
     pub home_layout: serde_json::Value,
     /// Last desktop source values, used to reconcile subsequent desktop changes
@@ -380,6 +382,7 @@ impl Default for Workspace {
             preferences: crate::settings::Preferences::default(),
             session_filters: Default::default(),
             project_appearance: Default::default(),
+            board_project_filter: None,
             home_layout: serde_json::Value::Null,
             desktop_project_preferences: None,
             desktop_workspace_snapshot: None,

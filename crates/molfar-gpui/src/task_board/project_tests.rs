@@ -117,3 +117,40 @@ fn external_reveal_clears_project_filter_and_inline_reader(cx: &mut TestAppConte
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn a_picked_project_filter_is_announced_and_restored(cx: &mut TestAppContext) {
+    let window = window(cx);
+    let picked = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let sink = picked.clone();
+    window
+        .update(cx, |board, _, cx| {
+            board.set_context("/alpha".into(), vec!["/alpha".into(), "/beta".into()]);
+            cx.subscribe_self(move |_, event: &super::Event, _| {
+                if let super::Event::ProjectFilter(project) = event {
+                    sink.borrow_mut().push(project.clone());
+                }
+            })
+            .detach();
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    click(visual, "board-project-filter");
+    window
+        .update(visual, |board, window, cx| {
+            let menu = board.project_menu.clone().unwrap();
+            menu.update(cx, |menu, cx| {
+                menu.finish(MenuEvent::Picked("/beta".into(), None), window, cx)
+            });
+        })
+        .unwrap();
+    visual.run_until_parked();
+    assert_eq!(picked.borrow().as_slice(), [Some("/beta".to_string())]);
+
+    let fresh = cx.new(|cx| Board::new(super::tests::database(), cx));
+    fresh.update(cx, |board, _| {
+        board.restore_project_filter(Some("/beta".into()));
+        board.set_context("/alpha".into(), vec!["/alpha".into(), "/beta".into()]);
+        assert_eq!(board.project_filter.as_deref(), Some("/beta"));
+    });
+}
