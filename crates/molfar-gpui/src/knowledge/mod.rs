@@ -6,22 +6,30 @@ use gpui::{
     App, Context, Entity, EventEmitter, FocusHandle, Focusable, KeyBinding, Subscription, Window,
     div, prelude::*,
 };
-use molfar_core::knowledge::{ConnectionState, VaultNote};
-use std::collections::HashMap;
+use molfar_core::knowledge::{ConnectionState, NoteProperty, VaultNote};
+use std::collections::{HashMap, HashSet};
 
+mod chrome;
 mod connect;
 mod document;
 mod drafts;
 mod edit;
+mod graph;
+mod loading;
 mod page;
-mod preview;
 mod service;
 mod service_companion;
+mod sync;
 #[cfg(test)]
 mod tests;
+mod tree;
+mod types;
 
 use drafts::Draft;
+use graph::GraphView;
 pub(crate) use service::VaultService;
+use tree::TreeRow;
+use types::{GraphStats, ScanMeta};
 
 pub(crate) enum Event {
     Close,
@@ -52,12 +60,24 @@ pub(crate) struct Knowledge {
     filter: Entity<Input>,
     source: Entity<Input>,
     loaded: bool,
+    connecting: bool,
     state: ConnectionState,
     notes: Vec<VaultNote>,
+    meta: ScanMeta,
+    stats: GraphStats,
+    graph: Entity<GraphView>,
+    tree_rows: Vec<(TreeRow, Option<usize>)>,
+    collapsed: HashSet<String>,
+    tree_open: bool,
+    panel_open: bool,
+    neighbors_only: bool,
     selected: Option<String>,
     preview: bool,
     drafts: HashMap<String, Draft>,
     prepared: String,
+    preview_blocks: Vec<document::PreviewBlock>,
+    relations: document::Relations,
+    properties: Vec<NoteProperty>,
     applying: bool,
     busy: bool,
     error: Option<String>,
@@ -74,7 +94,15 @@ impl Focusable for Knowledge {
 
 impl Knowledge {
     pub(crate) fn new(service: Entity<VaultService>, cx: &mut Context<Self>) -> Self {
-        let filter = cx.new(|cx| Input::field("Filter notes", "Filter notes", content(0.4), cx));
+        let filter = cx.new(|cx| {
+            Input::field(
+                "Search vault",
+                "Find notes, tags, aliases…",
+                content(0.4),
+                cx,
+            )
+        });
+        let graph = cx.new(|_| GraphView::new());
         filter.update(cx, |input, _| input.set_font_size(12.));
         let source = cx.new(|cx| {
             let mut input = Input::editor(cx);
@@ -83,7 +111,12 @@ impl Knowledge {
             input
         });
         let subscriptions = vec![
-            cx.subscribe(&filter, |_, _, _: &input::Changed, cx| cx.notify()),
+            Self::subscribe_graph(&graph, cx),
+            cx.subscribe(&filter, |this, _, _: &input::Changed, cx| {
+                this.rebuild_tree(cx);
+                this.refresh_graph(cx);
+                cx.notify();
+            }),
             cx.subscribe(&source, |this, _, _: &input::Changed, cx| {
                 if !this.applying {
                     this.remember_edit(cx);
@@ -91,18 +124,21 @@ impl Knowledge {
             }),
             cx.subscribe(&service, |this, service, _: &service::Event, cx| {
                 let failed = service.read(cx).error().is_some();
+                let before = this.vault_id();
                 this.sync(cx);
-                if matches!(this.state, ConnectionState::Ready(_)) {
+                if this.connecting {
+                    cx.notify();
+                } else if matches!(this.state, ConnectionState::Ready(_)) {
+                    if before.is_some() && before != this.vault_id() {
+                        this.clear_vault(cx);
+                    }
                     if !failed {
                         this.error = None;
                     }
                     this.reload(cx);
                 } else if !failed {
-                    this.notes.clear();
-                    this.selected = None;
-                    this.prepared.clear();
-                    this.drafts.clear();
-                    this.error = None;
+                    this.clear_vault(cx);
+                } else {
                     cx.notify();
                 }
             }),
@@ -113,12 +149,24 @@ impl Knowledge {
             filter,
             source,
             loaded: false,
+            connecting: false,
             state: ConnectionState::Empty,
             notes: Vec::new(),
+            meta: ScanMeta::default(),
+            stats: GraphStats::default(),
+            graph,
+            tree_rows: Vec::new(),
+            collapsed: HashSet::new(),
+            tree_open: true,
+            panel_open: true,
+            neighbors_only: false,
             selected: None,
             preview: true,
             drafts: HashMap::new(),
             prepared: String::new(),
+            preview_blocks: Vec::new(),
+            relations: document::Relations::default(),
+            properties: Vec::new(),
             applying: false,
             busy: false,
             error: None,
@@ -155,7 +203,12 @@ impl gpui::Render for Knowledge {
                 this.open_note(action.0.clone(), cx);
             }))
             .child(if !self.loaded {
-                self.message("Loading vault…", None, cx)
+                self.loading_screen("Opening Knowledge…", None)
+            } else if self.connecting {
+                self.loading_screen(
+                    "Connecting to your vault…",
+                    Some("Checking the folder before the first scan".into()),
+                )
             } else if matches!(self.state, ConnectionState::Ready(_)) {
                 self.workspace(cx)
             } else {
@@ -163,7 +216,7 @@ impl gpui::Render for Knowledge {
                     ConnectionState::Broken(reason) => Some(reason.clone()),
                     _ => self.error.clone(),
                 };
-                self.message("There is no vault.", reason, cx)
+                self.hero(reason, cx)
             })
     }
 }

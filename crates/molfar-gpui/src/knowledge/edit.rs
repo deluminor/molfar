@@ -1,12 +1,15 @@
 use super::Knowledge;
 use super::drafts;
 use gpui::{App, Context};
-use molfar_core::knowledge::{ConnectionState, VaultNote, VaultSnapshot, prepare_preview};
+use molfar_core::knowledge::{
+    ConnectionState, VaultNote, VaultSnapshot, note_matches, note_properties, prepare_preview,
+};
 
 impl Knowledge {
     pub(super) fn sync(&mut self, cx: &mut Context<Self>) {
         let service = self.service.read(cx);
         self.loaded = service.loaded();
+        self.connecting = service.connecting();
         self.state = service.state().clone();
         if let Some(error) = service.error() {
             self.error = Some(error.to_string());
@@ -46,7 +49,14 @@ impl Knowledge {
             return;
         }
         self.notes = snapshot.notes;
+        self.meta = super::types::ScanMeta {
+            warnings: snapshot.warnings,
+            truncated: snapshot.truncated,
+            scanned_at: Some(chrono::Local::now()),
+        };
         self.error = None;
+        self.rebuild_tree(cx);
+        self.refresh_graph(cx);
         let visible = self.visible(cx);
         let next = self
             .selected
@@ -58,27 +68,32 @@ impl Knowledge {
         } else {
             self.selected = None;
             self.prepared.clear();
+            self.preview_blocks.clear();
             cx.notify();
         }
     }
 
     pub(super) fn visible(&self, cx: &App) -> Vec<VaultNote> {
-        let query = self.filter.read(cx).content.to_lowercase();
+        let query = self.filter.read(cx).content.trim().to_lowercase();
         self.notes
             .iter()
-            .filter(|note| {
-                query.is_empty()
-                    || note.title.to_lowercase().contains(&query)
-                    || note.path.to_lowercase().contains(&query)
-            })
+            .filter(|note| note_matches(note, &query))
             .cloned()
             .collect()
     }
 
     pub(super) fn open_note(&mut self, path: String, cx: &mut Context<Self>) {
+        self.panel_open = true;
         if self.selected.as_deref() != Some(path.as_str()) {
             self.stash(cx);
             self.selected = Some(path.clone());
+            if self.neighbors_only {
+                self.refresh_graph(cx);
+            } else {
+                let selected = self.selected.clone();
+                self.graph
+                    .update(cx, |graph, cx| graph.set_selected(selected, cx));
+            }
         }
         let service = self.service.clone();
         let task = service.update(cx, |service, cx| service.read_note(path.clone(), cx));
@@ -139,7 +154,11 @@ impl Knowledge {
             .get(path)
             .map(|draft| draft.text.clone())
             .unwrap_or_default();
-        self.prepared = prepare_preview(&text, &self.notes, path);
+        let (properties, body) = note_properties(&text);
+        self.prepared = prepare_preview(body, &self.notes, path);
+        self.preview_blocks = super::document::parse_preview(&self.prepared);
+        self.relations = super::document::Relations::of(&self.notes, path);
+        self.properties = properties;
     }
 
     pub(super) fn stash(&mut self, cx: &App) {

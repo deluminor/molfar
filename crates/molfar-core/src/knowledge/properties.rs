@@ -17,6 +17,18 @@ fn scalar(value: &Value) -> String {
     }
 }
 
+/// Top-level frontmatter keys in authored order; the parsed map is sorted.
+fn authored_keys(body: &str) -> Vec<String> {
+    body.trim_start_matches('\u{feff}')
+        .lines()
+        .skip(1)
+        .take_while(|line| !matches!(line.trim_end(), "---" | "..."))
+        .filter(|line| !line.starts_with([' ', '\t', '-', '#']))
+        .filter_map(|line| line.split_once(':'))
+        .map(|(key, _)| key.trim().trim_matches(['"', '\'']).to_string())
+        .collect()
+}
+
 /// Splits a note into its frontmatter properties and the Markdown after it.
 /// Invalid or unclosed frontmatter keeps the whole body, so nothing is hidden.
 pub fn note_properties(body: &str) -> (Vec<NoteProperty>, &str) {
@@ -28,7 +40,14 @@ pub fn note_properties(body: &str) -> (Vec<NoteProperty>, &str) {
         return (Vec::new(), rest);
     };
 
-    let properties = map
+    let order = authored_keys(body);
+    let rank = |key: &str| {
+        order
+            .iter()
+            .position(|known| known == key)
+            .unwrap_or(usize::MAX)
+    };
+    let mut properties: Vec<NoteProperty> = map
         .iter()
         .map(|(key, value)| match value {
             Value::Array(items) => NoteProperty {
@@ -50,5 +69,6 @@ pub fn note_properties(body: &str) -> (Vec<NoteProperty>, &str) {
             },
         })
         .collect();
+    properties.sort_by_key(|property| rank(&property.key));
     (properties, rest)
 }

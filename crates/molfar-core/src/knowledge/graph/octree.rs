@@ -128,7 +128,9 @@ impl<'a> Octree<'a> {
             let squared = dot(delta, delta).max(1.);
             let size = node.half * 2.;
             let leaf = node.children.iter().all(|child| *child == NONE);
-            if leaf || size * size / squared < THETA_SQUARED {
+            let holds_point =
+                (0..3).all(|axis| (point[axis] - node.center[axis]).abs() <= node.half);
+            if leaf || !holds_point && size * size / squared < THETA_SQUARED {
                 let mass = if node.point == Some(index) {
                     node.mass - 1.
                 } else {
@@ -171,7 +173,13 @@ mod tests {
 
     #[test]
     fn octree_force_matches_the_exact_sum_for_nearby_points() {
-        let positions = [[0., 0., 0.], [10., 0., 0.], [0., 12., 0.], [0., 0., -9.], [10., 0., 0.]];
+        let positions = [
+            [0., 0., 0.],
+            [10., 0., 0.],
+            [0., 12., 0.],
+            [0., 0., -9.],
+            [10., 0., 0.],
+        ];
         let tree = Octree::build(&positions);
         for index in 0..positions.len() {
             let mut exact = [0f32; 3];
@@ -189,6 +197,29 @@ mod tests {
             for axis in 0..3 {
                 assert!((exact[axis] - approximate[axis]).abs() < 0.05 * exact[axis].abs().max(1.));
             }
+        }
+    }
+
+    #[test]
+    fn a_node_never_repels_itself_through_a_distant_cluster() {
+        let positions = [
+            [-99., -99., -99.],
+            [99., 99., 99.],
+            [98., 99., 99.],
+            [99., 98., 99.],
+        ];
+        let tree = Octree::build(&positions);
+        let mut exact = [0f32; 3];
+        for point in &positions[1..] {
+            let delta = sub(positions[0], *point);
+            let squared = dot(delta, delta).max(1.);
+            for axis in 0..3 {
+                exact[axis] += delta[axis] / squared.sqrt() * 100. / squared;
+            }
+        }
+        let approximate = tree.force(0, 100.);
+        for axis in 0..3 {
+            assert!((exact[axis] - approximate[axis]).abs() <= 0.05 * exact[axis].abs());
         }
     }
 }

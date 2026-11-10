@@ -2,7 +2,7 @@ use super::super::links::{note_index, resolve_vault_link, LinkResolution};
 use super::super::types::VaultNote;
 use std::collections::{HashMap, HashSet};
 
-pub const MAX_GRAPH_NODES: usize = 1_500;
+const MAX_GRAPH_NODES: usize = 1_500;
 const MAX_GRAPH_EDGES: usize = 12_000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -98,7 +98,9 @@ fn resolve_links(notes: &[VaultNote]) -> Links {
     links
 }
 
-fn matches(note: &VaultNote, needle: &str) -> bool {
+/// Whether a note matches a search. `needle` must already be trimmed and
+/// lowercased; titles, paths, aliases and tags all count.
+pub fn note_matches(note: &VaultNote, needle: &str) -> bool {
     needle.is_empty()
         || [&note.path, &note.title]
             .into_iter()
@@ -137,7 +139,7 @@ pub fn project_graph(
         .filter(|note| {
             !neighbors_only || selected.is_none() || neighborhood.contains(note.path.as_str())
         })
-        .filter(|note| matches(note, &needle))
+        .filter(|note| note_matches(note, &needle))
         .collect();
     candidates.sort_by(|left, right| {
         let rank = |note: &VaultNote| {

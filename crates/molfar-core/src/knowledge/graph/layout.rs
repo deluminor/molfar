@@ -3,6 +3,7 @@
 //! rotates the result.
 use super::octree::Octree;
 use super::projection::GraphEdge;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub type Point3 = [f32; 3];
 
@@ -59,13 +60,15 @@ fn spring(
 }
 
 /// Settles `count` nodes. `previous` warm-starts nodes already placed, so a
-/// filter change moves the graph instead of rebuilding it.
+/// filter change moves the graph instead of rebuilding it. Returns `None`
+/// once `cancel` is set, so a superseded layout stops between ticks.
 pub fn settle(
     count: usize,
     edges: &[GraphEdge],
     previous: &[Option<Point3>],
     ticks: usize,
-) -> Vec<Point3> {
+    cancel: &AtomicBool,
+) -> Option<Vec<Point3>> {
     let mut positions: Vec<Point3> = (0..count)
         .map(|index| {
             previous
@@ -83,6 +86,9 @@ pub fn settle(
     }
 
     for tick in 0..ticks {
+        if cancel.load(Ordering::Relaxed) {
+            return None;
+        }
         let alpha = 1. - tick as f32 / ticks.max(1) as f32;
         let mut forces = vec![[0f32; 3]; count];
         repel(&positions, &mut forces, alpha);
@@ -99,7 +105,7 @@ pub fn settle(
     }
 
     recenter(&mut positions);
-    positions
+    Some(positions)
 }
 
 fn recenter(positions: &mut [Point3]) {

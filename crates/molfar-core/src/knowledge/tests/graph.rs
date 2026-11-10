@@ -1,4 +1,5 @@
 use super::super::*;
+use std::sync::atomic::AtomicBool;
 
 fn note(path: &str, links: &[&str]) -> VaultNote {
     VaultNote {
@@ -68,8 +69,22 @@ fn query_filters_by_title_path_alias_and_tag() {
 #[test]
 fn layout_is_deterministic_finite_and_keeps_linked_nodes_closer() {
     let graph = project_graph(&vault(), None, "", false);
-    let first = settle(graph.nodes.len(), &graph.edges, &[], SETTLE_TICKS);
-    let second = settle(graph.nodes.len(), &graph.edges, &[], SETTLE_TICKS);
+    let first = settle(
+        graph.nodes.len(),
+        &graph.edges,
+        &[],
+        SETTLE_TICKS,
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let second = settle(
+        graph.nodes.len(),
+        &graph.edges,
+        &[],
+        SETTLE_TICKS,
+        &AtomicBool::new(false),
+    )
+    .unwrap();
     assert_eq!(first, second);
     assert!(first.iter().flatten().all(|value| value.is_finite()));
     let distance = |a: usize, b: usize| {
@@ -87,7 +102,7 @@ fn layout_is_deterministic_finite_and_keeps_linked_nodes_closer() {
 #[test]
 fn layout_warm_starts_from_previous_positions() {
     let previous = vec![Some([100., 10., 0.]), Some([-100., 10., 0.]), None];
-    let positions = settle(3, &[], &previous, 0);
+    let positions = settle(3, &[], &previous, 0, &AtomicBool::new(false)).unwrap();
     assert_eq!(positions.len(), 3);
     assert!((positions[0][0] - positions[1][0] - 200.).abs() < 0.01);
     assert_eq!(positions[0][1], positions[1][1]);
@@ -119,12 +134,14 @@ fn camera_projects_the_origin_to_the_centre_and_fits_points() {
 }
 
 #[test]
-fn camera_clamps_pitch_and_zoom() {
+fn camera_clamps_pitch_and_cancelled_layouts_stop() {
     let mut camera = Camera::default();
     camera.orbit(0., 10.);
     assert!(camera.pitch < 1.5);
-    camera.zoom(0.0001);
-    assert!(camera.distance >= 40.);
+    assert!(
+        settle(2, &[], &[], 10, &AtomicBool::new(true)).is_none(),
+        "a cancelled layout stops"
+    );
 }
 
 #[test]

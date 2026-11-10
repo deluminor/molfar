@@ -2,8 +2,8 @@ use super::layout::{dot, Point3};
 
 /// Vertical field of view in radians.
 pub const FIELD_OF_VIEW: f32 = 0.9;
-const MIN_DISTANCE: f32 = 40.;
-const MAX_DISTANCE: f32 = 6_000.;
+pub const MIN_DISTANCE: f32 = 40.;
+pub const MAX_DISTANCE: f32 = 6_000.;
 const PITCH_LIMIT: f32 = 1.45;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -37,10 +37,6 @@ impl Camera {
     pub fn orbit(&mut self, yaw: f32, pitch: f32) {
         self.yaw += yaw;
         self.pitch = (self.pitch + pitch).clamp(-PITCH_LIMIT, PITCH_LIMIT);
-    }
-
-    pub fn zoom(&mut self, factor: f32) {
-        self.distance = (self.distance * factor).clamp(MIN_DISTANCE, MAX_DISTANCE);
     }
 
     /// The distance that frames every point in a `height`-tall viewport.

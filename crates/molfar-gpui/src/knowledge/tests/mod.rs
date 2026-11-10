@@ -8,6 +8,8 @@ use molfar_core::knowledge::ConnectionState;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
+mod view;
+
 struct Fixture {
     data: PathBuf,
     root: PathBuf,

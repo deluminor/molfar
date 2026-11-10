@@ -20,8 +20,8 @@ mod types;
 pub use companion::{disconnected, shape_index, shape_note};
 pub use constants::{BODY_MAX, NOTES_MAX, NOT_IN_VAULT, NO_VAULT};
 pub use graph::{
-    pick, project_graph, settle, Camera, GraphEdge, GraphNode, GraphProjection, Point3, Projected,
-    FIELD_OF_VIEW, MAX_GRAPH_NODES, SETTLE_TICKS, WARM_TICKS,
+    note_matches, pick, project_graph, settle, Camera, GraphEdge, GraphNode, GraphProjection,
+    Point3, Projected, MAX_DISTANCE, MIN_DISTANCE, SETTLE_TICKS, WARM_TICKS,
 };
 pub use links::{backlinks, decode_component, note_index, resolve_vault_link, LinkResolution};
 pub use preview::{prepare_preview, vault_target};
