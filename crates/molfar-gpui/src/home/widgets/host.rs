@@ -1,4 +1,5 @@
 mod chart;
+mod curve;
 mod readout;
 
 use super::{
@@ -6,10 +7,7 @@ use super::{
     Body,
     parts::{self, mono},
 };
-use crate::{
-    home::data::feeds::history::{GAP_MS, HostFeed},
-    theme::*,
-};
+use crate::{home::data::feeds::history::HostFeed, theme::*};
 use chart::Metric;
 use gpui::{Animation, AnimationExt, AnyElement, Context, Div, div, prelude::*, px};
 use std::time::Duration;
@@ -22,10 +20,7 @@ impl Home {
                 .into_any_element();
         };
         let now = molfar_core::time::now_ms();
-        let stale = host.error.is_some()
-            || host
-                .updated_at
-                .is_none_or(|at| now.saturating_sub(at) > GAP_MS);
+        let stale = host.stale(now);
         let wide = body.w >= 640.;
         let detailed = body.h >= 155.;
         let footer = body.h >= 115.;
@@ -53,7 +48,7 @@ impl Home {
         for chunk in readings.chunks(if wide { 4 } else { 2 }) {
             let mut row = div().flex().flex_1().min_h_0().gap_2();
             for (caption, value, metric) in chunk {
-                row = row.child(gauge(caption, value, *metric, host, now, size, cx));
+                row = row.child(gauge(caption, value, *metric, host, now, size));
             }
             gauges = gauges.child(row);
         }
@@ -83,7 +78,7 @@ impl Home {
                     .flex()
                     .items_center()
                     .gap_2()
-                    .child(parts::dot(!stale))
+                    .child(live_mark(!stale))
                     .child(parts::label(state.clone())),
             )
             .child(gauges)
@@ -125,6 +120,20 @@ impl Home {
     }
 }
 
+/// A steady dot inside a soft ring: it marks live data without blinking.
+fn live_mark(live: bool) -> Div {
+    let tone = if live { accent_color() } else { content(0.3) };
+    div()
+        .size(px(10.))
+        .flex_shrink_0()
+        .flex()
+        .items_center()
+        .justify_center()
+        .rounded_full()
+        .bg(tone.opacity(if live { 0.16 } else { 0. }))
+        .child(div().size(px(5.)).rounded_full().bg(tone))
+}
+
 fn gauge(
     caption: &'static str,
     value: &str,
@@ -132,7 +141,6 @@ fn gauge(
     host: &HostFeed,
     now: u64,
     size: f32,
-    cx: &mut Context<Home>,
 ) -> Div {
     let stats = host.latest.unwrap_or_default();
     let fraction = metric
@@ -188,6 +196,5 @@ fn gauge(
             metric,
             now,
             stats.cpu_count,
-            cx,
         )))
 }

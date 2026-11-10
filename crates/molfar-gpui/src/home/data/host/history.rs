@@ -61,6 +61,13 @@ impl HostFeed {
         self.history.push_back(Sample { at: now, stats });
     }
 
+    /// A single failed read is not an outage: only a reading older than a gap
+    /// marks the feed stale, so the Host mark cannot flicker on one error.
+    pub(crate) fn stale(&self, now: u64) -> bool {
+        self.updated_at
+            .is_none_or(|at| now.saturating_sub(at) > GAP_MS)
+    }
+
     pub(crate) fn coverage_ms(&self, now: u64) -> u64 {
         self.history
             .iter()
@@ -72,6 +79,19 @@ impl HostFeed {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn one_failed_read_stays_live_until_readings_stop() {
+        let mut feed = HostFeed::default();
+        assert!(feed.stale(0));
+
+        feed.push_at(Ok(HostStats::default()), 10_000);
+        feed.push_at(Err("busy".into()), 12_000);
+        assert!(!feed.stale(12_000));
+        assert!(feed.error.is_some());
+
+        assert!(feed.stale(10_000 + GAP_MS + 1));
+    }
 
     #[test]
     fn retains_only_last_thirty_minutes_and_bounds_capacity() {
