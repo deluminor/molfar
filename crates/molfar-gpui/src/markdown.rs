@@ -427,7 +427,7 @@ fn inline_selected(
         opaque_color.a = 1.;
         let highlight = HighlightStyle {
             color: Some(opaque_color),
-            background_color: style.search.map(search::search_background),
+            background_color: search::run_background(style),
             fade_out: Some(1. - base_opacity),
             font_weight: style.bold.then_some(FontWeight::SEMIBOLD),
             font_style: style.italic.then_some(FontStyle::Italic),
@@ -601,7 +601,7 @@ fn rich_inline(
                 opaque_color.a = 1.;
                 let highlight = HighlightStyle {
                     color: Some(opaque_color),
-                    background_color: style.search.map(search::search_background),
+                    background_color: search::run_background(style),
                     fade_out: Some(1. - base_opacity),
                     font_weight: style.bold.then_some(FontWeight::SEMIBOLD),
                     font_style: style.italic.then_some(FontStyle::Italic),
@@ -720,6 +720,10 @@ pub(crate) fn resolve_file_links(row: &mut MarkdownRow, base: &str) {
 fn open_link(url: &str, window: &mut Window, cx: &mut App) {
     if let Some(path) = molfar_core::knowledge::vault_target(url) {
         window.dispatch_action(Box::new(crate::knowledge::OpenVaultNote(path)), cx);
+        return;
+    }
+    if let Some(tag) = url.strip_prefix(crate::knowledge::TAG_SCHEME) {
+        window.dispatch_action(Box::new(crate::knowledge::SearchVaultTag(tag.into())), cx);
         return;
     }
     if url.starts_with("https://") || url.starts_with("http://") || url.starts_with("mailto:") {

@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use types::CachedNote;
 
+mod assets;
 mod companion;
 mod connection;
 mod constants;
@@ -18,6 +19,7 @@ mod scan;
 mod tasks;
 mod types;
 
+pub use assets::{asset_path, asset_target, embed_images, find_asset, is_image, ASSET_SCHEME};
 pub use companion::{disconnected, shape_index, shape_note};
 pub use constants::{BODY_MAX, NOTES_MAX, NOT_IN_VAULT, NO_VAULT};
 pub use graph::{

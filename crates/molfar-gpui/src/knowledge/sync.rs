@@ -29,6 +29,15 @@ impl Knowledge {
         }
     }
 
+    pub(super) fn vault_root(&self) -> Option<std::path::PathBuf> {
+        match &self.state {
+            molfar_core::knowledge::ConnectionState::Ready(connection) => {
+                Some(std::path::PathBuf::from(&connection.root))
+            }
+            _ => None,
+        }
+    }
+
     pub(super) fn indexing(&self, cx: &App) -> bool {
         self.busy || self.service.read(cx).scanning()
     }
@@ -68,6 +77,7 @@ impl Knowledge {
 
     pub(super) fn clear_vault(&mut self, cx: &mut Context<Self>) {
         self.notes.clear();
+        self.entries.clear();
         self.tree_rows.clear();
         self.selected = None;
         self.prepared.clear();

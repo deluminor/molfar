@@ -41,6 +41,14 @@ pub(crate) enum Event {
 #[action(namespace = knowledge, no_json)]
 pub(crate) struct OpenVaultNote(pub String);
 
+/// Shows every note carrying a tag clicked in the preview.
+#[derive(Clone, Debug, PartialEq, gpui::Action)]
+#[action(namespace = knowledge, no_json)]
+pub(crate) struct SearchVaultTag(pub String);
+
+/// Link scheme for inline `#tags` in the preview.
+pub(crate) const TAG_SCHEME: &str = "molfar-tag:";
+
 gpui::actions!(knowledge, [SaveNote, ReloadNote]);
 
 pub(crate) fn bind(cx: &mut App) {
@@ -65,6 +73,7 @@ pub(crate) struct Knowledge {
     connecting: bool,
     state: ConnectionState,
     notes: Vec<VaultNote>,
+    entries: Vec<molfar_core::knowledge::VaultEntry>,
     meta: ScanMeta,
     stats: GraphStats,
     graph: Entity<GraphView>,
@@ -158,6 +167,7 @@ impl Knowledge {
             connecting: false,
             state: ConnectionState::Empty,
             notes: Vec::new(),
+            entries: Vec::new(),
             meta: ScanMeta::default(),
             stats: GraphStats::default(),
             graph,
@@ -223,6 +233,9 @@ impl gpui::Render for Knowledge {
             )
             .on_action(cx.listener(|this, _: &SaveNote, _, cx| this.save(cx)))
             .on_action(cx.listener(|this, _: &ReloadNote, _, cx| this.reload_note(cx)))
+            .on_action(cx.listener(|this, action: &SearchVaultTag, _, cx| {
+                this.search_tag(&action.0, cx);
+            }))
             .on_action(cx.listener(|this, action: &OpenVaultNote, _, cx| {
                 this.open_note(action.0.clone(), cx);
             }))

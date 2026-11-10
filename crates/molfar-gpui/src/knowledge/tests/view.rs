@@ -285,3 +285,76 @@ fn checkboxes_toggle_the_note_on_disk_and_footer_and_callouts_fold(cx: &mut Test
     visual.run_until_parked();
     assert!(visual.debug_bounds("knowledge-relations").is_some());
 }
+
+#[gpui::test]
+fn vault_images_highlights_and_tags_render_and_tags_search(cx: &mut TestAppContext) {
+    let vault = fixture(&[
+        (
+            "Trips/madeira.md",
+            "# Madeira\n![[cliff.png|320]]\n![[nowhere.png]]\nRemember ==sunscreen== #travel/portugal\n> [!note] Album\n> ![](cliff.png)\n",
+        ),
+        ("Trips/attachments/cliff.png", "not really a png"),
+        ("other.md", "Tagged #travel\n"),
+    ]);
+    let window = open(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            view.open_note("Trips/madeira.md".into(), cx);
+        })
+        .unwrap();
+    visual.run_until_parked();
+
+    window
+        .update(visual, |view, _, cx| {
+            let images: Vec<(Option<std::path::PathBuf>, Option<f32>)> = view
+                .preview_blocks
+                .iter()
+                .flat_map(|block| match block {
+                    super::super::document::PreviewBlock::Image { path, width, .. } => {
+                        vec![(path.clone(), *width)]
+                    }
+                    super::super::document::PreviewBlock::Callout { body, .. } => body
+                        .iter()
+                        .filter_map(|inner| match inner {
+                            super::super::document::PreviewBlock::Image { path, width, .. } => {
+                                Some((path.clone(), *width))
+                            }
+                            _ => None,
+                        })
+                        .collect(),
+                    _ => Vec::new(),
+                })
+                .collect();
+            assert_eq!(
+                images.len(),
+                2,
+                "the missing embed stays text; the callout image counts"
+            );
+            assert!(
+                images[0]
+                    .0
+                    .as_ref()
+                    .unwrap()
+                    .ends_with("Trips/attachments/cliff.png")
+            );
+            assert_eq!(images[0].1, Some(320.));
+            assert!(
+                view.prepared.contains("![[nowhere.png]]") || view.prepared.contains("nowhere.png")
+            );
+
+            view.search_tag("travel", cx);
+            assert!(view.tree_open);
+            assert_eq!(view.filter.read(cx).content.as_ref(), "travel");
+        })
+        .unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            let mut paths = view.graph.read(cx).shown_paths();
+            paths.sort();
+            assert_eq!(paths, ["Trips/madeira.md", "other.md"]);
+        })
+        .unwrap();
+}

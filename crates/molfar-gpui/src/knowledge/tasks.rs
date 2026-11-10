@@ -1,4 +1,5 @@
-//! Checkbox clicks in the preview write the note at once, like Obsidian.
+//! Preview interactions that act on the vault: checkboxes write the note at
+//! once, like Obsidian, and tags search the vault.
 use super::Knowledge;
 use gpui::Context;
 use molfar_core::knowledge::toggle_task;
@@ -22,6 +23,14 @@ impl Knowledge {
         self.show_text(&toggled, cx);
         self.prepare(&path, cx);
         self.save(cx);
+        cx.notify();
+    }
+
+    pub(super) fn search_tag(&mut self, tag: &str, cx: &mut Context<Self>) {
+        let query = tag.to_string();
+        self.filter
+            .update(cx, |input, cx| input.set_text(query, cx));
+        self.tree_open = true;
         cx.notify();
     }
 }

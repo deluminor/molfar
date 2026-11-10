@@ -12,6 +12,8 @@ pub(crate) struct InlineStyle {
     pub task: Option<TaskMarker>,
     pub math: bool,
     pub search: Option<bool>,
+    /// Obsidian `==highlight==`, marked by the Knowledge preview.
+    pub highlight: bool,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct TaskMarker {

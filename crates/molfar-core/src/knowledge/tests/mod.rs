@@ -42,6 +42,7 @@ impl Drop for Fixture {
     }
 }
 
+mod assets;
 mod companion;
 mod connection;
 mod documents;

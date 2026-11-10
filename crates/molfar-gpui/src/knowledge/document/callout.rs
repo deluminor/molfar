@@ -12,6 +12,20 @@ pub(crate) enum Segment {
         /// `None` cannot fold.
         fold: Option<bool>,
     },
+    /// A line that is only an image embed already resolved to the vault.
+    Image {
+        url: String,
+        alt: String,
+    },
+}
+
+/// `![alt](molfar-asset:…)` standing alone on its line.
+fn image_line(line: &str) -> Option<(String, String)> {
+    let rest = line.trim().strip_prefix("![")?;
+    let (alt, rest) = rest.split_once("](")?;
+    let url = rest.strip_suffix(')')?;
+    (url.starts_with(molfar_core::knowledge::ASSET_SCHEME) && !url.contains(char::is_whitespace))
+        .then(|| (alt.to_string(), url.to_string()))
 }
 
 fn fence(line: &str) -> Option<(char, usize)> {
@@ -62,6 +76,15 @@ pub(crate) fn segments(text: &str) -> Vec<Segment> {
                 Some((open, length)) if open == marker && count >= length => None,
                 other => other,
             };
+        }
+        if open_fence.is_none()
+            && let Some((alt, url)) = image_line(line)
+        {
+            if !markdown.is_empty() {
+                out.push(Segment::Markdown(std::mem::take(&mut markdown)));
+            }
+            out.push(Segment::Image { url, alt });
+            continue;
         }
         let head = open_fence.is_none().then(|| callout_head(line)).flatten();
         let Some((kind, title, fold)) = head else {
@@ -154,6 +177,22 @@ mod tests {
         assert_eq!(segments.len(), 1);
         assert!(
             matches!(&segments[0], Segment::Callout { body, .. } if body.contains("[!note] sample"))
+        );
+    }
+
+    #[test]
+    fn standalone_vault_images_split_out_and_inline_ones_stay() {
+        let text = "Intro\n![cat](molfar-asset:a.png#w=200)\nSee ![x](molfar-asset:b.png) here\n";
+        assert_eq!(
+            segments(text),
+            [
+                Segment::Markdown("Intro\n".into()),
+                Segment::Image {
+                    url: "molfar-asset:a.png#w=200".into(),
+                    alt: "cat".into()
+                },
+                Segment::Markdown("See ![x](molfar-asset:b.png) here\n".into()),
+            ]
         );
     }
 

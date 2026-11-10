@@ -9,6 +9,21 @@ pub(crate) fn search_background(current: bool) -> gpui::Hsla {
     color.a = if current { 0.62 } else { 0.46 };
     color
 }
+/// The marker wash behind `==highlighted==` note text.
+pub(crate) fn marker_background() -> gpui::Hsla {
+    let mut color: gpui::Hsla = rgb(0xe2c08d).into();
+    color.a = 0.28;
+    color
+}
+
+/// A run's background: search matches first, then a note highlight.
+pub(crate) fn run_background(style: &crate::markdown_model::InlineStyle) -> Option<gpui::Hsla> {
+    style
+        .search
+        .map(search_background)
+        .or_else(|| style.highlight.then(marker_background))
+}
+
 pub(crate) fn row_text(row: &MarkdownRow) -> String {
     match &row.part {
         Part::Text { runs, .. } => runs.iter().map(|r| r.text.as_str()).collect(),

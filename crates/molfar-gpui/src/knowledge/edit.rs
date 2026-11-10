@@ -2,7 +2,8 @@ use super::Knowledge;
 use super::drafts;
 use gpui::{App, Context};
 use molfar_core::knowledge::{
-    ConnectionState, VaultNote, VaultSnapshot, note_matches, note_properties, prepare_preview,
+    ConnectionState, VaultNote, VaultSnapshot, embed_images, note_matches, note_properties,
+    prepare_preview,
 };
 
 impl Knowledge {
@@ -49,6 +50,7 @@ impl Knowledge {
             return;
         }
         self.notes = snapshot.notes;
+        self.entries = snapshot.entries;
         self.meta = super::types::ScanMeta {
             warnings: snapshot.warnings,
             truncated: snapshot.truncated,
@@ -164,8 +166,10 @@ impl Knowledge {
             .map(|draft| draft.text.clone())
             .unwrap_or_default();
         let (properties, body) = note_properties(&text);
-        self.prepared = prepare_preview(body, &self.notes, path);
-        self.preview_blocks = super::document::parse_preview(&self.prepared);
+        let embedded = embed_images(body, &self.entries, path);
+        self.prepared = prepare_preview(&embedded, &self.notes, path);
+        let root = self.vault_root();
+        self.preview_blocks = super::document::parse_preview(&self.prepared, root.as_deref());
         self.relations = super::document::Relations::of(&self.notes, path);
         self.properties = properties;
     }
