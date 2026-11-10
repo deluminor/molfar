@@ -42,10 +42,11 @@ impl Board {
                     div()
                         .id("board-detail-actions")
                         .debug_selector(|| "board-detail-actions".into())
-                        .max_h(px(180.))
+                        .max_h(px(220.))
                         .overflow_y_scroll()
                         .flex_shrink_0()
-                        .p_3()
+                        .px_4()
+                        .py_3()
                         .border_t_1()
                         .border_color(content(0.08))
                         .child(self.stage_actions(card, cx)),

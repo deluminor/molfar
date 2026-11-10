@@ -8,10 +8,7 @@ use gpui::{
     prelude::*, px,
 };
 use molfar_core::task_board::{
-    stage::{
-        agent::AgentStage,
-        choice::settings::{COLUMNS as SETTINGS_COLUMNS, HARNESS, MODEL},
-    },
+    stage::{agent::AgentStage, choice::settings::COLUMNS as SETTINGS_COLUMNS},
     types::Card,
 };
 
@@ -37,11 +34,7 @@ impl Board {
     pub(super) fn column_model(&self, stage: AgentStage) -> String {
         self.saved_column(stage)
             .map_or("Project default model".to_owned(), |config| {
-                crate::task_board::controls::model_label(
-                    config[HARNESS].as_str().unwrap_or_default(),
-                    config[MODEL].as_str().unwrap_or_default(),
-                )
-                .to_string()
+                crate::task_board::controls::column_label(&config)
             })
     }
 

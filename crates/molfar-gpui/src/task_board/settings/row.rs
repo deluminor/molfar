@@ -4,7 +4,7 @@ use crate::{modal, theme::*};
 use gpui::{Context, Div, SharedString, div, prelude::*, px};
 use molfar_core::task_board::stage::{
     agent::AgentStage,
-    choice::settings::{HARNESS, MODEL, RUNTIME_MODE},
+    choice::settings::{HARNESS, RUNTIME_MODE},
 };
 
 fn id(parts: &[&str]) -> SharedString {
@@ -28,7 +28,7 @@ impl Board {
             format!(
                 "{} · {}",
                 config[HARNESS].as_str().unwrap_or_default(),
-                config[MODEL].as_str().unwrap_or_default()
+                controls::column_label(config)
             )
         });
         let model_hint = summary.clone();
@@ -119,6 +119,10 @@ impl Board {
                     ),
             )
             .child(modes_row)
+            .when_some(
+                self.effort_options(panel, stage, "board-settings", cx),
+                |row, options| row.child(options),
+            )
             .when_some(skills, |row, input| {
                 row.child(
                     div()

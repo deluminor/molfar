@@ -36,6 +36,7 @@ impl Board {
             picker_surface: Default::default(),
             catalog: Vec::new(),
             catalog_error: None,
+            models: Vec::new(),
             skill_search,
             adding_skills: false,
             saved: None,
