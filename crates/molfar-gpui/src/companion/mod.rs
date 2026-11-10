@@ -7,4 +7,6 @@ mod permit;
 mod types;
 
 pub(crate) use http::Job;
+#[cfg(test)]
+pub(crate) use permit::Permit;
 pub(crate) use types::{Host, Offer, Status};

@@ -620,6 +620,7 @@ impl Shell {
                     ("Inbox", "inbox"),
                     ("Board", "dashboard"),
                     ("Notes", "file"),
+                    ("Knowledge", "folder-tree"),
                     ("Automations", "zap"),
                 ]
                 .into_iter()
@@ -669,6 +670,7 @@ impl Shell {
                             "Home" => this.open_home(w, cx),
                             "Inbox" => this.open_inbox(w, cx),
                             "Notes" => this.open_notes(w, cx),
+                            "Knowledge" => this.open_knowledge(w, cx),
                             "Automations" => this.open_automations(w, cx),
                             "Board" => this.open_board(w, cx),
                             _ => (),
@@ -855,6 +857,7 @@ impl Shell {
                         workspace::AppView::Notes,
                         self.workspace.preferences.notes && self.workspace.sidebar_notes_visible,
                     ),
+                    (workspace::AppView::Knowledge, true),
                     (
                         workspace::AppView::Automations,
                         self.workspace.sidebar_automations_visible,
@@ -875,6 +878,7 @@ impl Shell {
                             workspace::AppView::Board => "rail-board",
                             workspace::AppView::Inbox => "rail-inbox",
                             workspace::AppView::Notes => "rail-notes",
+                            workspace::AppView::Knowledge => "rail-knowledge",
                             workspace::AppView::Automations => "rail-automations",
                         },
                         view.label(),
@@ -903,6 +907,7 @@ impl Shell {
                                 workspace::AppView::Board => this.open_board(w, cx),
                                 workspace::AppView::Inbox => this.open_inbox(w, cx),
                                 workspace::AppView::Notes => this.open_notes(w, cx),
+                                workspace::AppView::Knowledge => this.open_knowledge(w, cx),
                                 workspace::AppView::Automations => this.open_automations(w, cx),
                             }
                         }

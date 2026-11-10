@@ -21,6 +21,8 @@ mod home_view;
 mod idle_agents;
 #[cfg(test)]
 mod image_lightbox_tests;
+#[cfg(test)]
+mod knowledge_tests;
 mod layout;
 mod live_agents;
 mod mobile_host;
@@ -145,6 +147,7 @@ actions!(
         OpenCommandPalette,
         OpenInbox,
         OpenNotes,
+        OpenKnowledge,
         CheckForUpdates,
         MinimizeWindow,
         ZoomWindow,
@@ -204,6 +207,7 @@ pub(crate) struct ActivateTab(pub isize);
 pub(crate) fn bind_keys(cx: &mut App) {
     session_groups::bind(cx);
     session_folders::bind(cx);
+    crate::knowledge::bind(cx);
     let modifier = if cfg!(target_os = "macos") {
         "cmd"
     } else {
@@ -721,6 +725,8 @@ pub(crate) struct Shell {
     pending_folder: Option<(i64, AnchorSlot)>,
     _session_clock: gpui::Task<()>,
     notes: Option<Entity<Notes>>,
+    knowledge: Option<Entity<crate::knowledge::Knowledge>>,
+    vault: Option<Entity<crate::knowledge::VaultService>>,
     /// The sidebar's Notes count; `None` until the store has answered.
     note_count: Option<usize>,
     inbox: Option<Entity<crate::inbox::Inbox>>,
@@ -1112,6 +1118,8 @@ impl Shell {
             pending_folder: None,
             _session_clock: session_clock,
             notes: None,
+            knowledge: None,
+            vault: None,
             note_count: None,
             inbox: None,
             automations: None,
@@ -8901,6 +8909,9 @@ impl Render for Shell {
             }))
             .on_action(cx.listener(|this, _: &OpenInbox, window, cx| this.open_inbox(window, cx)))
             .on_action(cx.listener(|this, _: &OpenNotes, window, cx| this.open_notes(window, cx)))
+            .on_action(
+                cx.listener(|this, _: &OpenKnowledge, window, cx| this.open_knowledge(window, cx)),
+            )
             .on_action(cx.listener(|this, _: &CheckForUpdates, _, cx| {
                 this.notification_state
                     .updater

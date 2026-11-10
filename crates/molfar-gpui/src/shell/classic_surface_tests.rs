@@ -7,6 +7,7 @@ use gpui::{TestAppContext, VisualTestContext, WindowHandle};
 enum Surface {
     Inbox,
     Notes,
+    Knowledge,
     Automations,
     Search,
     Familiar,
@@ -17,6 +18,7 @@ impl Surface {
         match self {
             Self::Inbox => shell.open_inbox(window, cx),
             Self::Notes => shell.open_notes(window, cx),
+            Self::Knowledge => shell.open_knowledge(window, cx),
             Self::Automations => {
                 // An empty in-memory service keeps this navigation test
                 // independent of asynchronous service initialization.
@@ -43,7 +45,9 @@ impl Surface {
 
     fn close(self, shell: &mut Shell, session: i64, window: &mut Window, cx: &mut Context<Shell>) {
         match self {
-            Self::Inbox | Self::Notes | Self::Automations => shell.close_app_view(window, cx),
+            Self::Inbox | Self::Notes | Self::Knowledge | Self::Automations => {
+                shell.close_app_view(window, cx)
+            }
             Self::Search => shell.close_app_search(window, cx),
             // Returning to a conversation is the same route used by the
             // original project rail and by opening a Familiar's launched session.
@@ -310,6 +314,11 @@ fn original_app_surfaces_inbox_uses_own_header_and_restores_sessions(cx: &mut Te
 #[gpui::test]
 fn original_app_surfaces_notes_uses_own_header_and_restores_sessions(cx: &mut TestAppContext) {
     assert_original_surface(Surface::Notes, cx);
+}
+
+#[gpui::test]
+fn original_app_surfaces_knowledge_uses_own_header_and_restores_sessions(cx: &mut TestAppContext) {
+    assert_original_surface(Surface::Knowledge, cx);
 }
 
 #[gpui::test]
@@ -713,6 +722,7 @@ fn original_app_surfaces_keep_icon_rail_and_remember_closed_sessions(cx: &mut Te
     for surface in [
         Surface::Inbox,
         Surface::Notes,
+        Surface::Knowledge,
         Surface::Automations,
         Surface::Search,
         Surface::Familiar,
@@ -837,6 +847,7 @@ fn original_app_surfaces_leave_both_new_layout_styles_tabbed(cx: &mut TestAppCon
         for surface in [
             Surface::Inbox,
             Surface::Notes,
+            Surface::Knowledge,
             Surface::Automations,
             Surface::Search,
             Surface::Familiar,
@@ -857,6 +868,7 @@ fn original_app_surfaces_leave_both_new_layout_styles_tabbed(cx: &mut TestAppCon
             let app = match surface {
                 Surface::Inbox => Some(app_views::AppView::Inbox),
                 Surface::Notes => Some(app_views::AppView::Notes),
+                Surface::Knowledge => Some(app_views::AppView::Knowledge),
                 Surface::Automations => Some(app_views::AppView::Automations),
                 _ => None,
             };
@@ -899,7 +911,12 @@ fn new_layout_app_tabs_survive_frame_changes_and_close_like_session_tabs(cx: &mu
     for boxy in [false, true] {
         let (window, session) = setup(cx, false, boxy);
         let visual = &mut VisualTestContext::from_window(window.into(), cx);
-        for surface in [Surface::Inbox, Surface::Notes, Surface::Automations] {
+        for surface in [
+            Surface::Inbox,
+            Surface::Notes,
+            Surface::Knowledge,
+            Surface::Automations,
+        ] {
             window
                 .update(visual, |shell, window, cx| surface.open(shell, window, cx))
                 .unwrap();
@@ -910,6 +927,7 @@ fn new_layout_app_tabs_survive_frame_changes_and_close_like_session_tabs(cx: &mu
                 for app in [
                     app_views::AppView::Inbox,
                     app_views::AppView::Notes,
+                    app_views::AppView::Knowledge,
                     app_views::AppView::Automations,
                 ] {
                     assert_eq!(
@@ -933,6 +951,7 @@ fn new_layout_app_tabs_survive_frame_changes_and_close_like_session_tabs(cx: &mu
         for app in [
             app_views::AppView::Inbox,
             app_views::AppView::Notes,
+            app_views::AppView::Knowledge,
             app_views::AppView::Automations,
         ] {
             let selector = Box::leak(format!("app-title-tab-{}", app.label()).into_boxed_str());
@@ -952,7 +971,7 @@ fn new_layout_app_tabs_survive_frame_changes_and_close_like_session_tabs(cx: &mu
         let close = visual.debug_bounds("close-app-tab-Inbox").unwrap();
         visual.simulate_click(close.center(), Default::default());
         visual.run_until_parked();
-        for _ in 0..2 {
+        for _ in 0..3 {
             visual.simulate_keystrokes("cmd-w");
             visual.run_until_parked();
         }

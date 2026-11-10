@@ -14,6 +14,7 @@ impl Shell {
             AppView::Home => "Home",
             AppView::Inbox => "Inbox",
             AppView::Notes => "Notes",
+            AppView::Knowledge => "Knowledge",
             AppView::Automations => "Automations",
             AppView::Board => "Board",
         })
@@ -231,6 +232,7 @@ impl Shell {
         match self.active_app_view? {
             AppView::Home => self.home.clone().map(IntoElement::into_any_element),
             AppView::Notes => self.notes.clone().map(IntoElement::into_any_element),
+            AppView::Knowledge => self.knowledge.clone().map(IntoElement::into_any_element),
             AppView::Inbox => self.inbox.clone().map(IntoElement::into_any_element),
             AppView::Automations => self.automations.clone().map(IntoElement::into_any_element),
             AppView::Board => self.board.clone().map(IntoElement::into_any_element),
@@ -241,6 +243,7 @@ impl Shell {
         let focus = match self.active_app_view {
             Some(AppView::Home) => self.home.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Notes) => self.notes.as_ref().map(|view| view.focus_handle(cx)),
+            Some(AppView::Knowledge) => self.knowledge.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Inbox) => self.inbox.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Automations) => {
                 self.automations.as_ref().map(|view| view.focus_handle(cx))
@@ -333,6 +336,42 @@ impl Shell {
             });
         }
         self.show_app_view(AppView::Notes, window, cx);
+    }
+
+    pub(super) fn ensure_vault(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> Entity<crate::knowledge::VaultService> {
+        if let Some(vault) = &self.vault {
+            return vault.clone();
+        }
+        let directory = locked(&self.store)
+            .ok()
+            .and_then(|store| store.data_dir().map(|path| path.to_path_buf()))
+            .unwrap_or_else(|| {
+                std::env::temp_dir()
+                    .join(format!("molfar-native-knowledge-{}", uuid::Uuid::new_v4()))
+            });
+        let vault = cx.new(|cx| crate::knowledge::VaultService::new(directory, cx));
+        self.vault = Some(vault.clone());
+        vault
+    }
+
+    pub(super) fn open_knowledge(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.prepare_app_view(window, cx);
+        if self.knowledge.is_none() {
+            let service = self.ensure_vault(cx);
+            let view = cx.new(|cx| crate::knowledge::Knowledge::new(service, cx));
+            self.app_view_events.push(cx.subscribe_in(
+                &view,
+                window,
+                |this, _, event: &crate::knowledge::Event, window, cx| match event {
+                    crate::knowledge::Event::Close => this.close_app_view(window, cx),
+                },
+            ));
+            self.knowledge = Some(view);
+        }
+        self.show_app_view(AppView::Knowledge, window, cx);
     }
 
     pub(super) fn open_inbox(&mut self, window: &mut Window, cx: &mut Context<Self>) {

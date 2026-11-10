@@ -17,6 +17,7 @@ mod notes;
 mod overview;
 mod transcript;
 mod types;
+mod vault;
 use types::*;
 
 impl Shell {
@@ -129,6 +130,11 @@ impl Shell {
         }
         if matches!(job.action.as_str(), "session.options" | "session.start") {
             self.companion_launch_job(job, cx);
+        } else if matches!(
+            job.action.as_str(),
+            "vault.index" | "vault.read" | "vault.write"
+        ) {
+            self.companion_vault_job(job, cx);
         } else {
             let response = self.companion_rpc(&job.action, &job.input, cx);
             let _ = job.reply.send(response);
@@ -141,9 +147,6 @@ impl Shell {
         input: &Value,
         cx: &mut Context<Self>,
     ) -> Result<Value, String> {
-        if action == "vault.index" || action == "vault.read" || action == "vault.write" {
-            return Err("Knowledge vault is not on MOLFAR Native yet".into());
-        }
         if action == "board.session" || action.starts_with("board.") {
             return Err("Task Board is not available from the phone on MOLFAR Native yet".into());
         }

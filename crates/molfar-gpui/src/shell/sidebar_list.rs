@@ -716,6 +716,7 @@ impl Shell {
                     ("Inbox", "inbox"),
                     ("Board", "dashboard"),
                     ("Notes", "note"),
+                    ("Knowledge", "folder-tree"),
                     ("Automations", "zap"),
                 ]
                 .into_iter()
@@ -818,6 +819,7 @@ impl Shell {
                             "New" => this.new_chat(cx),
                             "Inbox" => this.open_inbox(window, cx),
                             "Notes" => this.open_notes(window, cx),
+                            "Knowledge" => this.open_knowledge(window, cx),
                             "Automations" => this.open_automations(window, cx),
                             "Board" => this.open_board(window, cx),
                             _ => (),

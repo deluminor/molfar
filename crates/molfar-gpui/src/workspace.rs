@@ -11,6 +11,7 @@ pub(crate) enum AppView {
     Home,
     Inbox,
     Notes,
+    Knowledge,
     Automations,
     Board,
 }
@@ -20,6 +21,7 @@ impl AppView {
             Self::Home => "Home",
             Self::Inbox => "Inbox",
             Self::Notes => "Notes",
+            Self::Knowledge => "Knowledge",
             Self::Automations => "Automations",
             Self::Board => "Board",
         }
@@ -29,6 +31,7 @@ impl AppView {
             Self::Home => "home",
             Self::Inbox => "inbox",
             Self::Notes => "note",
+            Self::Knowledge => "folder-tree",
             Self::Automations => "zap",
             Self::Board => "dashboard",
         }

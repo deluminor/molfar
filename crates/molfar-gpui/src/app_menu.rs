@@ -115,6 +115,7 @@ pub(crate) fn install(prefs: &crate::settings::Preferences, cx: &mut App) {
             MenuItem::action("Toggle Workspace Style", ToggleWorkspaceStyle),
             MenuItem::action("Inbox", OpenInbox),
             MenuItem::action("Notes", OpenNotes),
+            MenuItem::action("Knowledge", OpenKnowledge),
             MenuItem::action("Toggle Terminal", ToggleTerminal),
             MenuItem::action("Switch Model…", SwitchModel),
             MenuItem::separator(),
