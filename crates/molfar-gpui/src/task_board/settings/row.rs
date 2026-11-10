@@ -69,14 +69,10 @@ impl Board {
             );
         }
 
-        div()
+        crate::modal::sheet::group()
             .flex()
             .flex_col()
             .gap_2()
-            .p_3()
-            .rounded_lg()
-            .border_1()
-            .border_color(content(0.08))
             .child(
                 div()
                     .flex()

@@ -123,3 +123,19 @@ fn rework_focus_follows_visual_order_findings_then_note(cx: &mut TestAppContext)
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn rework_findings_render_as_one_soft_list_inside_the_sheet(cx: &mut TestAppContext) {
+    let window = ready(cx);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    let dialog = visual.debug_bounds("board-owner-dialog").unwrap();
+    let first = visual.debug_bounds("board-rework-finding-0").unwrap();
+    let second = visual.debug_bounds("board-rework-finding-1").unwrap();
+
+    assert_eq!(first.size.width, second.size.width);
+    assert!(second.top() - first.bottom() <= gpui::px(1.5));
+    assert!(dialog.left() < first.left() && first.right() < dialog.right());
+    assert!(dialog.size.width - first.size.width < gpui::px(40.));
+}

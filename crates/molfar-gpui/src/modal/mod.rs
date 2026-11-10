@@ -11,6 +11,8 @@ use gpui::{
 };
 use std::time::Duration;
 
+pub(crate) mod sheet;
+
 pub(crate) const RADIUS: f32 = 16.;
 /// Backdrop blur behind the card, in points.
 const BLUR: f32 = 24.;
@@ -102,6 +104,15 @@ pub(crate) fn surface(radius: f32) -> impl IntoElement {
     .size_full()
 }
 
+/// The soft drop shadow every dialog panel floats on.
+fn lift() -> Vec<gpui::BoxShadow> {
+    vec![
+        gpui::BoxShadow::new(px(0.), px(24.), black(if is_light() { 0.12 } else { 0.3 }))
+            .blur_radius(px(48.))
+            .spread_radius(px(-12.)),
+    ]
+}
+
 /// A dialog card: frosted surface, hairline rule, soft shadow and `p-5`.
 pub(crate) fn card() -> Div {
     div()
@@ -110,11 +121,7 @@ pub(crate) fn card() -> Div {
         .rounded(px(RADIUS))
         .border_1()
         .border_color(content(BORDER))
-        .shadow(vec![
-            gpui::BoxShadow::new(px(0.), px(24.), black(if is_light() { 0.12 } else { 0.3 }))
-                .blur_radius(px(48.))
-                .spread_radius(px(-12.)),
-        ])
+        .shadow(lift())
         .child(surface(RADIUS - 1.))
         .text_color(content(1.))
 }

@@ -1,7 +1,8 @@
 use super::{super::Board, Mode};
 use crate::task_board::controls;
 use crate::{
-    input, modal,
+    input,
+    modal::{self, sheet},
     theme::{accent_color, content},
 };
 use gpui::{AnyElement, Context, Role, Window, div, prelude::*, px};
@@ -18,12 +19,15 @@ impl Board {
             Mode::Questions => "Review questions",
             Mode::Rework => "Select findings for rework",
         };
-        let mut body = modal::card_body()
-            .id("board-owner-body")
-            .gap_3()
-            .max_h_full()
-            .overflow_y_scroll()
-            .child(modal::title(title));
+        let description = match panel.mode {
+            Mode::Plan => {
+                Some("Saving creates a new plan version. Previous versions stay available.".into())
+            }
+            Mode::Questions => None,
+            Mode::Rework => Some("Pick what the next run should fix, then add a note.".into()),
+        };
+        let mut body = sheet::body("board-owner-body").gap_3();
+
         if panel.loading {
             body = body.child(
                 div()
@@ -35,11 +39,7 @@ impl Board {
         }
         if let Some(data) = &panel.data {
             if panel.mode == Mode::Plan {
-                body = body
-                    .child(modal::body(
-                        "Saving creates a new plan version. Previous versions stay available.",
-                    ))
-                    .child(input::form_field("Plan", panel.plan.clone(), 310.));
+                body = body.child(input::form_field("Plan", panel.plan.clone(), 310.));
             } else if panel.mode == Mode::Rework {
                 body = body
                     .child(self.rework_findings(cx))
@@ -88,7 +88,7 @@ impl Board {
                     .child(error.clone()),
             );
         }
-        let mut actions = modal::actions().child(
+        let mut actions = sheet::footer().child(
             modal::disabled(
                 controls::ghost_button("board-owner-cancel", "Cancel"),
                 panel.busy,
@@ -164,19 +164,19 @@ impl Board {
                 .on_click(cx.listener(|this, _, _, cx| this.submit_owner_review(false, cx))),
             );
         }
-        body = body.child(actions);
-        let card = modal::card()
+        let card = sheet::sheet(720.)
             .bg(crate::theme::floating_fill())
-            .w(px(720.))
-            .max_w_full()
-            .max_h_full()
+            .max_h((window.viewport_size().height - px(40.)).max(px(160.)))
             .id("board-owner-dialog")
             .debug_selector(|| "board-owner-dialog".into())
             .role(Role::Dialog)
             .aria_label(title)
             .track_focus(&panel.focus)
             .on_key_down(cx.listener(Self::owner_review_key))
-            .child(body);
+            .child(sheet::header(title, description))
+            .child(body)
+            .child(actions);
+
         let weak = cx.weak_entity();
         Some(
             modal::window_overlay(
