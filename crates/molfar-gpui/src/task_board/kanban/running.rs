@@ -11,10 +11,10 @@ const BORDER_PERIOD: Duration = Duration::from_millis(2_400);
 const SPINNER_PERIOD: Duration = Duration::from_millis(900);
 const TRAIL: f32 = 0.42;
 const TRAIL_STEPS: usize = 28;
-const STROKE: f32 = 2.;
+const STROKE: f32 = 1.;
 /// The soft halo under the comet's front half.
-const GLOW: f32 = 5.;
-const HEAD: f32 = 2.6;
+const GLOW: f32 = 3.;
+const HEAD: f32 = 1.6;
 /// The card's own border width; the comet sits on it, not inside it.
 const BORDER: f32 = 1.;
 const SPINNER_SIDE: f32 = 10.;
@@ -78,7 +78,7 @@ fn paint_comet(bounds: Bounds<Pixels>, phase: f32, window: &mut Window) {
         bounds.origin + point(px(x + inset), px(y + inset))
     };
 
-    for (width, peak, from) in [(GLOW, 0.22, TRAIL_STEPS / 2), (STROKE, 1., 0)] {
+    for (width, peak, from) in [(GLOW, 0.18, TRAIL_STEPS / 2), (STROKE, 1., 0)] {
         for index in from..TRAIL_STEPS {
             let start = head - TRAIL * length + index as f32 * step;
             let strength = (index + 1) as f32 / TRAIL_STEPS as f32;
