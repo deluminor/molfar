@@ -11,6 +11,7 @@ use crate::task_board::Board;
 use crate::theme::*;
 use gpui::{AnyElement, AppContext, Context, FontWeight, Role, SharedString, div, prelude::*, px};
 use molfar_core::task_board::{
+    constants::BACKLOG,
     stage::{checkout::constants::TASK_BRANCH_PREFIX, lifecycle::constants::FAILED},
     types::Card,
 };
@@ -67,6 +68,18 @@ impl Board {
             footer = footer.child(
                 pill(fill, ink)
                     .when(running, |pill| pill.child(running_spinner(&id)))
+                    .child(text),
+            );
+        } else {
+            // Idle cards still show where they stand, so no card ends in a blank band.
+            let text = if card.column_id == BACKLOG {
+                "Not started"
+            } else {
+                "Idle"
+            };
+            footer = footer.child(
+                pill(content(0.05), content(0.5))
+                    .child(icon("circle-dashed-hi", 11.).text_color(content(0.4)))
                     .child(text),
             );
         }
@@ -181,6 +194,7 @@ impl Board {
                     .text_size(px(13.))
                     .font_weight(FontWeight::MEDIUM)
                     .line_clamp(2)
+                    .text_ellipsis()
                     .child(card.title.clone()),
             )
             .child(footer)
@@ -192,6 +206,7 @@ impl Board {
                             .text_size(px(11.))
                             .text_color(content(0.55))
                             .line_clamp(2)
+                            .text_ellipsis()
                             .child(error),
                     )
                 },

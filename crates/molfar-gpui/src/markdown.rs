@@ -81,7 +81,7 @@ pub(crate) struct Fence {
     pub key: u64,
 }
 impl Fence {
-    fn new(info: &str, code: &str) -> Self {
+    pub(crate) fn new(info: &str, code: &str) -> Self {
         let mut words = info.split_whitespace();
         let first = words.next().unwrap_or("");
         let mut language = first.to_owned();
@@ -375,6 +375,21 @@ pub(crate) fn word_count(row: &MarkdownRow) -> usize {
         _ => 0,
     }
 }
+/// Styled inline runs on their own, for views that lay out blocks themselves.
+pub(crate) fn inline(runs: &[InlineRun], id: SharedString, font_size: f32) -> AnyElement {
+    inline_selected(
+        runs,
+        id,
+        Tone::Normal,
+        None,
+        Instant::now(),
+        0,
+        font_size,
+        None,
+        None,
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 fn inline_selected(
     runs: &[InlineRun],
@@ -412,7 +427,7 @@ fn inline_selected(
         opaque_color.a = 1.;
         let highlight = HighlightStyle {
             color: Some(opaque_color),
-            background_color: style.search.map(search::search_background),
+            background_color: search::run_background(style),
             fade_out: Some(1. - base_opacity),
             font_weight: style.bold.then_some(FontWeight::SEMIBOLD),
             font_style: style.italic.then_some(FontStyle::Italic),
@@ -586,7 +601,7 @@ fn rich_inline(
                 opaque_color.a = 1.;
                 let highlight = HighlightStyle {
                     color: Some(opaque_color),
-                    background_color: style.search.map(search::search_background),
+                    background_color: search::run_background(style),
                     fade_out: Some(1. - base_opacity),
                     font_weight: style.bold.then_some(FontWeight::SEMIBOLD),
                     font_style: style.italic.then_some(FontStyle::Italic),
@@ -705,6 +720,10 @@ pub(crate) fn resolve_file_links(row: &mut MarkdownRow, base: &str) {
 fn open_link(url: &str, window: &mut Window, cx: &mut App) {
     if let Some(path) = molfar_core::knowledge::vault_target(url) {
         window.dispatch_action(Box::new(crate::knowledge::OpenVaultNote(path)), cx);
+        return;
+    }
+    if let Some(tag) = url.strip_prefix(crate::knowledge::TAG_SCHEME) {
+        window.dispatch_action(Box::new(crate::knowledge::SearchVaultTag(tag.into())), cx);
         return;
     }
     if url.starts_with("https://") || url.starts_with("http://") || url.starts_with("mailto:") {

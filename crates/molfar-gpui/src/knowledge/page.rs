@@ -1,15 +1,12 @@
-use super::Knowledge;
+//! Knowledge's screens: connect hero, full-page loaders and the workspace
+//! (tree, note panel, then graph between header and footer).
+use super::{Knowledge, loading};
 use crate::theme::*;
-use gpui::{Context, Role, div, prelude::*, px};
-use molfar_core::knowledge::VaultNote;
+use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
+use molfar_core::knowledge::ConnectionState;
 
 impl Knowledge {
-    pub(super) fn message(
-        &self,
-        text: &str,
-        reason: Option<String>,
-        cx: &mut Context<Self>,
-    ) -> gpui::AnyElement {
+    pub(super) fn hero(&self, reason: Option<String>, cx: &mut Context<Self>) -> AnyElement {
         div()
             .id("knowledge-empty")
             .debug_selector(|| "knowledge-empty".into())
@@ -18,21 +15,43 @@ impl Knowledge {
             .flex_col()
             .items_center()
             .justify_center()
-            .gap_3()
-            .child(icon("folder-tree", 28.).text_color(content(0.45)))
+            .gap_4()
             .child(
                 div()
-                    .text_size(px(16.))
-                    .text_color(content(0.8))
-                    .child(text.to_string()),
+                    .size(px(64.))
+                    .rounded_2xl()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .bg(accent_color().opacity(0.12))
+                    .child(icon("folder-tree", 28.).text_color(accent_color())),
+            )
+            .child(
+                div()
+                    .text_size(px(20.))
+                    .font_weight(FontWeight::SEMIBOLD)
+                    .text_color(content(0.95))
+                    .child("Connect your knowledge vault"),
+            )
+            .child(
+                div()
+                    .max_w(px(420.))
+                    .text_center()
+                    .text_size(px(13.))
+                    .text_color(content(0.55))
+                    .child("Choose an Obsidian or Markdown folder. MOLFAR indexes its notes and links locally and maps them as a 3D graph."),
             )
             .children(reason.map(|reason| {
                 div()
                     .id("knowledge-reason")
                     .debug_selector(|| "knowledge-reason".into())
                     .max_w(px(420.))
+                    .px_3()
+                    .py_2()
+                    .rounded_md()
+                    .bg(gpui::hsla(0., 0.7, 0.6, 0.1))
                     .text_size(px(12.))
-                    .text_color(content(0.55))
+                    .text_color(gpui::hsla(0., 0.7, 0.65, 1.))
                     .child(reason)
             }))
             .child(
@@ -42,120 +61,147 @@ impl Knowledge {
                     .role(Role::Button)
                     .aria_label("Choose vault folder")
                     .cursor_pointer()
-                    .h(px(32.))
-                    .px_3()
-                    .rounded_md()
+                    .h(px(34.))
+                    .px_4()
+                    .rounded_lg()
                     .flex()
                     .items_center()
-                    .bg(content(0.1))
-                    .hover(|style| style.bg(content(0.16)))
+                    .gap_2()
+                    .bg(accent_color())
+                    .text_color(white(1.))
                     .text_size(px(13.))
+                    .font_weight(FontWeight::MEDIUM)
+                    .hover(|style| style.opacity(0.9))
+                    .child(icon("folder-open", 14.).text_color(white(1.)))
                     .child("Choose vault folder")
                     .on_click(cx.listener(|this, _, _, cx| this.choose(cx))),
             )
             .into_any_element()
     }
 
-    pub(super) fn workspace(&mut self, cx: &mut Context<Self>) -> gpui::AnyElement {
-        let notes = self.visible(cx);
-        let selected = self.selected.clone();
+    pub(super) fn loading_screen(&self, caption: &str, detail: Option<String>) -> AnyElement {
         div()
+            .id("knowledge-loading")
+            .debug_selector(|| "knowledge-loading".into())
             .size_full()
             .flex()
-            .child(self.list(&notes, cx))
-            .child(self.document(selected.as_deref(), cx))
+            .items_center()
+            .justify_center()
+            .child(loading::orbit_loader(
+                "knowledge-loading-orbit",
+                caption.into(),
+                detail,
+            ))
             .into_any_element()
     }
 
-    pub(super) fn list(&self, notes: &[VaultNote], cx: &mut Context<Self>) -> gpui::AnyElement {
-        let selected = self.selected.clone();
+    fn scene(&self, cx: &Context<Self>) -> AnyElement {
+        let indexing = self.notes.is_empty() && self.indexing(cx);
+        let centered = |selector: &'static str, child: AnyElement| {
+            div()
+                .debug_selector(move || selector.into())
+                .flex_1()
+                .min_w_0()
+                .h_full()
+                .flex()
+                .items_center()
+                .justify_center()
+                .child(child)
+                .into_any_element()
+        };
+        if indexing {
+            let progress = self.service.read(cx).progress();
+            return centered(
+                "knowledge-scanning",
+                loading::orbit_loader(
+                    "knowledge-scan",
+                    "Scanning your vault…".into(),
+                    Some(format!("{progress} notes indexed")),
+                ),
+            );
+        }
+        if self.notes.is_empty() {
+            return centered(
+                "knowledge-no-notes",
+                div()
+                    .text_size(px(13.))
+                    .text_color(content(0.45))
+                    .child("This vault has no Markdown notes yet.")
+                    .into_any_element(),
+            );
+        }
         div()
-            .id("knowledge-list")
-            .debug_selector(|| "knowledge-list".into())
-            .w(px(280.))
+            .flex_1()
+            .min_w_0()
             .h_full()
-            .flex_shrink_0()
-            .border_r_1()
-            .border_color(content(0.08))
+            .child(self.graph.clone())
+            .into_any_element()
+    }
+
+    pub(super) fn workspace(
+        &mut self,
+        window: &mut gpui::Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let ConnectionState::Ready(connection) = self.state.clone() else {
+            return div().into_any_element();
+        };
+        let skeleton = self.notes.is_empty() && self.indexing(cx);
+        let animate = !cx.reduce_motion();
+        let reveal = self.tree_slide.step(self.tree_open, animate, window);
+        let opened = self.panel_open && self.selected.is_some();
+        let panel_reveal = self.panel_slide.step(opened, animate, window);
+        // A closing panel keeps drawing its note until it has slid away.
+        let panel = self.selected.clone().filter(|_| panel_reveal > 0.);
+
+        div()
+            .size_full()
             .flex()
             .flex_col()
+            .child(self.header(&connection.name, cx))
             .child(
                 div()
-                    .px_2()
-                    .py_2()
-                    .flex()
-                    .items_center()
-                    .gap_2()
-                    .child(self.filter.clone())
-                    .child(
-                        div()
-                            .id("knowledge-refresh")
-                            .debug_selector(|| "knowledge-refresh".into())
-                            .role(Role::Button)
-                            .aria_label("Refresh")
-                            .cursor_pointer()
-                            .child(icon("refresh-cw", 14.))
-                            .on_click(cx.listener(|this, _, _, cx| this.reload(cx))),
-                    )
-                    .child(
-                        div()
-                            .id("knowledge-disconnect")
-                            .debug_selector(|| "knowledge-disconnect".into())
-                            .role(Role::Button)
-                            .aria_label("Disconnect")
-                            .cursor_pointer()
-                            .px_2()
-                            .h(px(28.))
-                            .rounded_md()
-                            .flex()
-                            .items_center()
-                            .text_size(px(12.))
-                            .child("Disconnect")
-                            .on_click(cx.listener(|this, _, window, cx| {
-                                this.disconnect(window, cx);
-                            })),
-                    ),
-            )
-            .child(
-                div()
-                    .id("knowledge-notes")
                     .flex_1()
-                    .overflow_y_scroll()
-                    .px_1()
-                    .children(notes.iter().enumerate().map(|(index, note)| {
-                        let path = note.path.clone();
-                        let active = selected.as_deref() == Some(path.as_str());
-                        let folder = note.path.rsplit_once('/').map(|(dir, _)| dir).unwrap_or("");
-                        div()
-                            .id(("knowledge-note", index))
-                            .debug_selector(move || format!("knowledge-note-{index}"))
-                            .role(Role::Button)
-                            .aria_label(note.path.clone())
-                            .cursor_pointer()
-                            .w_full()
-                            .px_2()
-                            .py_1()
-                            .rounded_md()
-                            .when(active, |row| row.bg(content(0.08)))
-                            .hover(|row| row.bg(content(0.06)))
-                            .on_click(
-                                cx.listener(move |this, _, _, cx| this.open_note(path.clone(), cx)),
-                            )
-                            .child(
-                                div()
-                                    .text_size(px(13.))
-                                    .text_color(content(0.9))
-                                    .child(note.title.clone()),
-                            )
-                            .child(div().text_size(px(11.)).text_color(content(0.4)).child(
-                                if folder.is_empty() {
-                                    note.path.clone()
-                                } else {
-                                    folder.to_string()
-                                },
-                            ))
-                    })),
+                    .min_h_0()
+                    .flex()
+                    .when(reveal > 0., |body| {
+                        let tree = if skeleton {
+                            div()
+                                .w(px(self.widths.tree))
+                                .h_full()
+                                .border_r_1()
+                                .border_color(content(0.08))
+                                .debug_selector(|| "knowledge-skeleton".into())
+                                .child(loading::skeleton_rows("knowledge-skeleton"))
+                                .into_any_element()
+                        } else {
+                            self.tree(cx)
+                        };
+                        // The clip narrows while the tree keeps its width, so it
+                        // slides rather than squeezing.
+                        body.child(
+                            div()
+                                .w(px(self.widths.tree * reveal))
+                                .h_full()
+                                .flex_shrink_0()
+                                .when(reveal < 1., |clip| clip.overflow_hidden())
+                                .child(tree),
+                        )
+                    })
+                    .when_some(panel, |body, path| {
+                        let note = self.document(&path, cx);
+                        body.child(
+                            div()
+                                .w(px(self.widths.panel * panel_reveal))
+                                .h_full()
+                                .flex_shrink_0()
+                                .when(panel_reveal < 1., |clip| clip.overflow_hidden())
+                                .child(note),
+                        )
+                    })
+                    .child(self.scene(cx)),
             )
+            .child(self.footer(&connection.root, cx))
             .into_any_element()
     }
 }

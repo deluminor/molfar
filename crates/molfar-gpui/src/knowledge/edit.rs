@@ -1,12 +1,16 @@
 use super::Knowledge;
 use super::drafts;
 use gpui::{App, Context};
-use molfar_core::knowledge::{ConnectionState, VaultNote, VaultSnapshot, prepare_preview};
+use molfar_core::knowledge::{
+    ConnectionState, VaultNote, VaultSnapshot, embed_images, note_matches, note_properties,
+    prepare_preview,
+};
 
 impl Knowledge {
     pub(super) fn sync(&mut self, cx: &mut Context<Self>) {
         let service = self.service.read(cx);
         self.loaded = service.loaded();
+        self.connecting = service.connecting();
         self.state = service.state().clone();
         if let Some(error) = service.error() {
             self.error = Some(error.to_string());
@@ -46,40 +50,62 @@ impl Knowledge {
             return;
         }
         self.notes = snapshot.notes;
+        self.entries = snapshot.entries;
+        self.meta = super::types::ScanMeta {
+            warnings: snapshot.warnings,
+            truncated: snapshot.truncated,
+            scanned_at: Some(chrono::Local::now()),
+        };
         self.error = None;
+        self.rebuild_tree(cx);
+        self.refresh_graph(cx);
         let visible = self.visible(cx);
-        let next = self
+        let kept = self
             .selected
             .clone()
-            .filter(|path| visible.iter().any(|note| &note.path == path))
-            .or_else(|| visible.first().map(|note| note.path.clone()));
-        if let Some(path) = next {
-            self.open_note(path, cx);
+            .filter(|path| visible.iter().any(|note| &note.path == path));
+        if let Some(path) = kept {
+            self.load_note(path, cx);
         } else {
+            self.panel_open = false;
             self.selected = None;
             self.prepared.clear();
+            self.preview_blocks.clear();
             cx.notify();
         }
     }
 
     pub(super) fn visible(&self, cx: &App) -> Vec<VaultNote> {
-        let query = self.filter.read(cx).content.to_lowercase();
+        let query = self.filter.read(cx).content.trim().to_lowercase();
         self.notes
             .iter()
-            .filter(|note| {
-                query.is_empty()
-                    || note.title.to_lowercase().contains(&query)
-                    || note.path.to_lowercase().contains(&query)
-            })
+            .filter(|note| note_matches(note, &query))
             .cloned()
             .collect()
     }
 
+    /// Opens a note in the panel and reveals it in the tree.
     pub(super) fn open_note(&mut self, path: String, cx: &mut Context<Self>) {
+        self.panel_open = true;
+        let hidden: Vec<String> = super::tree::ancestors(&path)
+            .into_iter()
+            .filter(|folder| !self.expanded.contains(folder))
+            .collect();
+        if !hidden.is_empty() {
+            self.expanded.extend(hidden);
+            self.rebuild_tree(cx);
+        }
+        self.load_note(path, cx);
+    }
+
+    /// Reads a note into the panel state without opening or closing the panel.
+    pub(super) fn load_note(&mut self, path: String, cx: &mut Context<Self>) {
         if self.selected.as_deref() != Some(path.as_str()) {
             self.stash(cx);
             self.selected = Some(path.clone());
+            self.callouts_toggled.clear();
         }
+        self.sync_graph_focus(cx);
         let service = self.service.clone();
         let task = service.update(cx, |service, cx| service.read_note(path.clone(), cx));
         cx.spawn(async move |this, cx| {
@@ -139,7 +165,13 @@ impl Knowledge {
             .get(path)
             .map(|draft| draft.text.clone())
             .unwrap_or_default();
-        self.prepared = prepare_preview(&text, &self.notes, path);
+        let (properties, body) = note_properties(&text);
+        let embedded = embed_images(body, &self.entries, path);
+        self.prepared = prepare_preview(&embedded, &self.notes, path);
+        let root = self.vault_root();
+        self.preview_blocks = super::document::parse_preview(&self.prepared, root.as_deref());
+        self.relations = super::document::Relations::of(&self.notes, path);
+        self.properties = properties;
     }
 
     pub(super) fn stash(&mut self, cx: &App) {

@@ -19,6 +19,7 @@ pub(crate) struct VaultService {
     waiters: Vec<async_channel::Sender<Result<VaultSnapshot, String>>>,
     error: Option<String>,
     loaded: bool,
+    connecting: bool,
 }
 
 impl EventEmitter<Event> for VaultService {}
@@ -56,6 +57,7 @@ impl VaultService {
             waiters: Vec::new(),
             error: None,
             loaded: false,
+            connecting: false,
         }
     }
 
@@ -65,6 +67,23 @@ impl VaultService {
 
     pub(crate) fn state(&self) -> &ConnectionState {
         &self.state
+    }
+
+    pub(crate) fn data_dir(&self) -> &std::path::Path {
+        &self.data_dir
+    }
+
+    pub(crate) fn connecting(&self) -> bool {
+        self.connecting
+    }
+
+    pub(crate) fn scanning(&self) -> bool {
+        self.scanning
+    }
+
+    /// Notes indexed so far by the running scan.
+    pub(crate) fn progress(&self) -> u64 {
+        self.host.scan_progress()
     }
 
     pub(crate) fn error(&self) -> Option<&str> {
@@ -141,6 +160,8 @@ impl VaultService {
 
     pub(crate) fn connect(&mut self, path: String, cx: &mut Context<Self>) {
         self.invalidate();
+        self.connecting = true;
+        cx.emit(Event::Changed);
         let host = self.host.clone();
         let directory = self.data_dir.clone();
         let work = cx
@@ -149,6 +170,9 @@ impl VaultService {
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| {
+                this.connecting = false;
+                // A scan started while connecting read the previous vault.
+                this.invalidate();
                 match result {
                     Ok(connection) => {
                         this.state = ConnectionState::Ready(connection);
@@ -188,6 +212,7 @@ impl VaultService {
 
     fn start_scan(&mut self, cx: &mut Context<Self>) {
         self.scanning = true;
+        cx.notify();
         let generation = self.generation;
         let host = self.host.clone();
         let work = cx.background_executor().spawn(async move { host.scan() });

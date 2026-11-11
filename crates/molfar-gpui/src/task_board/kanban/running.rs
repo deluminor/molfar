@@ -7,12 +7,15 @@ use gpui::{
 use std::f32::consts::{FRAC_PI_2, TAU};
 use std::time::Duration;
 
-const BORDER_PERIOD: Duration = Duration::from_millis(2_800);
+const BORDER_PERIOD: Duration = Duration::from_millis(4_200);
 const SPINNER_PERIOD: Duration = Duration::from_millis(900);
-const TRAIL: f32 = 0.32;
-const TRAIL_STEPS: usize = 28;
-const STROKE: f32 = 1.5;
-/// The card's own border width; the comet sits on it, not inside it.
+/// The wave's share of the outline and how finely its fade is drawn.
+const WAVE: f32 = 0.38;
+const WAVE_STEPS: usize = 36;
+const STROKE: f32 = 1.;
+/// The soft halo under the wave.
+const GLOW: f32 = 3.;
+/// The card's own border width; the wave sits on it, not inside it.
 const BORDER: f32 = 1.;
 const SPINNER_SIDE: f32 = 10.;
 const SPINNER_ARC: f32 = 0.28;
@@ -57,8 +60,9 @@ pub(super) fn outline_length(width: f32, height: f32, radius: f32) -> f32 {
     2. * (width - 2. * radius) + 2. * (height - 2. * radius) + TAU * radius
 }
 
-/// A comet circling the card's border, its tail fading out behind it.
-fn paint_comet(bounds: Bounds<Pixels>, phase: f32, window: &mut Window) {
+/// A soft wave gliding around the card's border: brightest in the middle,
+/// fading out at both ends, with a faint halo under it.
+fn paint_wave(bounds: Bounds<Pixels>, phase: f32, window: &mut Window) {
     let inset = STROKE / 2.;
     let width = f32::from(bounds.size.width) - STROKE;
     let height = f32::from(bounds.size.height) - STROKE;
@@ -68,24 +72,27 @@ fn paint_comet(bounds: Bounds<Pixels>, phase: f32, window: &mut Window) {
     let radius = CARD_RADIUS - inset;
     let length = outline_length(width, height, radius);
     let head = phase * length;
-    let step = TRAIL * length / TRAIL_STEPS as f32;
+    let step = WAVE * length / WAVE_STEPS as f32;
     let at = |distance: f32| -> Point<Pixels> {
         let (x, y) = outline_point(width, height, radius, distance);
         bounds.origin + point(px(x + inset), px(y + inset))
     };
 
-    for index in 0..TRAIL_STEPS {
-        let start = head - TRAIL * length + index as f32 * step;
-        let strength = (index + 1) as f32 / TRAIL_STEPS as f32;
-        let mut path = PathBuilder::stroke(px(STROKE));
-        path.move_to(at(start));
-        for sample in 1..=3 {
-            path.line_to(at(start + step * sample as f32 / 3.));
-        }
-        let mut color = accent_color();
-        color.a = strength * strength * 0.95;
-        if let Ok(path) = path.build() {
-            window.paint_path(path, color);
+    for (stroke, peak) in [(GLOW, 0.12), (STROKE, 0.85)] {
+        for index in 0..WAVE_STEPS {
+            let start = head - WAVE * length + index as f32 * step;
+            let along = (index as f32 + 0.5) / WAVE_STEPS as f32;
+            let strength = (along * std::f32::consts::PI).sin().powf(1.6);
+            let mut path = PathBuilder::stroke(px(stroke));
+            path.move_to(at(start));
+            for sample in 1..=3 {
+                path.line_to(at(start + step * sample as f32 / 3.));
+            }
+            let mut color = accent_color();
+            color.a = strength * peak;
+            if let Ok(path) = path.build() {
+                window.paint_path(path, color);
+            }
         }
     }
 }
@@ -107,7 +114,7 @@ pub(super) fn running_border(card_id: &str) -> impl IntoElement {
             |phase| {
                 canvas(
                     |_, _, _| (),
-                    move |bounds, _, window, _| paint_comet(bounds, phase, window),
+                    move |bounds, _, window, _| paint_wave(bounds, phase, window),
                 )
                 .size_full()
             },

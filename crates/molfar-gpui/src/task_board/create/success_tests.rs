@@ -38,6 +38,7 @@ fn create_and_settle(cx: &mut TestAppContext, focus_elsewhere: bool) {
     let path = directory.join("molfar.db");
     let store = Arc::new(Mutex::new(Store::open_desktop(&path).unwrap()));
     let project = directory.to_string_lossy().to_string();
+    let created_in = project.clone();
     let window = window(cx);
     window
         .update(cx, |board, window, cx| {
@@ -67,7 +68,11 @@ fn create_and_settle(cx: &mut TestAppContext, focus_elsewhere: bool) {
             assert!(!board.create_open);
             assert!(board.creation.is_none());
             assert!(!board.archived);
-            assert!(board.project_filter.is_none());
+            assert_eq!(
+                board.project_filter.as_deref(),
+                Some(created_in.as_str()),
+                "the filter follows the new card instead of resetting"
+            );
             assert_eq!(board.focus.is_focused(window), !focus_elsewhere);
             if focus_elsewhere {
                 assert!(external.is_focused(window));

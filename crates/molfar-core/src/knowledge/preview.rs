@@ -59,7 +59,7 @@ fn split_ending(line: &str) -> (&str, &str) {
     }
 }
 
-fn fence_marker(line: &str) -> Option<(char, usize)> {
+pub(super) fn fence_marker(line: &str) -> Option<(char, usize)> {
     let rest = line.trim_start_matches(' ');
     if line.len() - rest.len() > 3 {
         return None;
@@ -75,7 +75,7 @@ fn fence_marker(line: &str) -> Option<(char, usize)> {
     (length >= 3).then_some((marker, length))
 }
 
-fn split_inline_code(line: &str) -> Vec<(bool, &str)> {
+pub(super) fn split_inline_code(line: &str) -> Vec<(bool, &str)> {
     let mut parts = Vec::new();
     let mut rest = line;
     while let Some(start) = rest.find('`') {
@@ -268,6 +268,7 @@ fn is_external(target: &str) -> bool {
     target.starts_with("http://")
         || target.starts_with("https://")
         || target.starts_with(SCHEME)
+        || target.starts_with(super::assets::ASSET_SCHEME)
         || target.starts_with("mailto:")
 }
 

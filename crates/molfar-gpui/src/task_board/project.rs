@@ -88,6 +88,7 @@ impl Board {
                     if let MenuEvent::Picked(value, _) = event {
                         this.project_filter = (!value.is_empty()).then(|| value.to_string());
                         this.project_only = false;
+                        cx.emit(super::Event::ProjectFilter(this.project_filter.clone()));
                         this.reset_detail_artifact();
                         this.snapshot = None;
                         this.refresh(cx);

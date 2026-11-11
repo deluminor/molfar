@@ -18,10 +18,12 @@ use state::Creation;
 impl Board {
     pub(super) fn open_create(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.creation.is_none() {
+            // The filtered project first, then the current one, then any local one.
+            let preferred = self.project_filter.as_deref().unwrap_or(&self.cwd);
             let project = self
                 .projects
                 .iter()
-                .find(|path| **path == self.cwd && !path.starts_with("remote://"))
+                .find(|path| path.as_str() == preferred && !path.starts_with("remote://"))
                 .or_else(|| {
                     self.projects
                         .iter()
@@ -151,12 +153,21 @@ impl Board {
             Ok(card) => {
                 self.creation = None;
                 self.create_open = false;
-                if self.archived || self.project_only || self.project_filter.is_some() {
+                // Keep the user's project filter: a card made under a filter
+                // follows into its own project instead of resetting to all.
+                let refilter = self
+                    .project_filter
+                    .as_ref()
+                    .is_some_and(|project| *project != card.project_cwd);
+                if self.archived || self.project_only || refilter {
                     self.snapshot = None;
                 }
                 self.archived = false;
                 self.project_only = false;
-                self.project_filter = None;
+                if refilter {
+                    self.project_filter = Some(card.project_cwd.clone());
+                    cx.emit(super::Event::ProjectFilter(self.project_filter.clone()));
+                }
                 self.reset_detail_artifact();
                 self.selected = Some(card.id);
                 self.refresh(cx);

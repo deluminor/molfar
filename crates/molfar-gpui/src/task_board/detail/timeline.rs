@@ -9,7 +9,7 @@ use molfar_core::task_board::{
 
 impl Board {
     pub(super) fn stage_timeline(&self, runs: &[StageRun], cx: &mut Context<Self>) -> AnyElement {
-        let mut timeline = div().flex().flex_col().gap_1();
+        let mut timeline = div().flex().flex_col();
         if runs.is_empty() {
             return timeline
                 .child(
@@ -20,7 +20,9 @@ impl Board {
                 )
                 .into_any_element();
         }
-        for run in runs {
+        for (position, run) in runs.iter().enumerate() {
+            // The rail joins each stage to the next; the last stage ends it.
+            let last = position + 1 == runs.len();
             let name = COLUMNS
                 .iter()
                 .find(|(id, _)| *id == run.stage)
@@ -41,7 +43,6 @@ impl Board {
                     .id(gpui::SharedString::from(format!("board-run-{}", run.id)))
                     .flex()
                     .gap_3()
-                    .py_1()
                     .child(
                         div()
                             .w(px(26.))
@@ -60,7 +61,11 @@ impl Board {
                                     .justify_center()
                                     .child(icon(glyph, 12.).text_color(tone)),
                             )
-                            .child(div().w(px(1.)).flex_1().min_h(px(16.)).bg(content(0.08))),
+                            .when(!last, |rail| {
+                                rail.child(
+                                    div().w(px(1.)).flex_1().min_h(px(12.)).bg(content(0.12)),
+                                )
+                            }),
                     )
                     .child(
                         div()
@@ -69,7 +74,8 @@ impl Board {
                             .flex()
                             .flex_col()
                             .gap_1()
-                            .py_1()
+                            .pt(px(3.))
+                            .when(!last, |text| text.pb_4())
                             .child(
                                 div()
                                     .flex()

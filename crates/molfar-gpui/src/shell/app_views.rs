@@ -283,11 +283,17 @@ impl Shell {
                     crate::task_board::Event::OpenSession(id) => {
                         this.open_board_session(id.clone(), cx)
                     }
+                    crate::task_board::Event::ProjectFilter(project) => {
+                        this.workspace.board_project_filter = project.clone();
+                        this.persist(cx);
+                    }
                     crate::task_board::Event::Settings(patch) => {
                         this.board_update_settings(patch.clone(), cx)
                     }
                 },
             ));
+            let remembered = self.workspace.board_project_filter.clone();
+            view.update(cx, |view, _| view.restore_project_filter(remembered));
             self.board = Some(view);
         }
         if let Some(view) = &self.board {

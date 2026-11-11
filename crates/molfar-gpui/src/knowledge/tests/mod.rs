@@ -8,6 +8,8 @@ use molfar_core::knowledge::ConnectionState;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
+mod view;
+
 struct Fixture {
     data: PathBuf,
     root: PathBuf,
@@ -54,7 +56,8 @@ fn empty_data() -> Fixture {
     }
 }
 
-fn open(cx: &mut TestAppContext, data: PathBuf) -> WindowHandle<Knowledge> {
+/// Knowledge as it first appears: tree folded, no note open.
+fn open_fresh(cx: &mut TestAppContext, data: PathBuf) -> WindowHandle<Knowledge> {
     cx.update(|cx| cx.set_reduce_motion(true));
     let window = cx.update(|cx| {
         cx.open_window(
@@ -72,6 +75,23 @@ fn open(cx: &mut TestAppContext, data: PathBuf) -> WindowHandle<Knowledge> {
         )
         .unwrap()
     });
+    cx.run_until_parked();
+    window
+}
+
+/// Knowledge with the tree shown and the first note open, as most flows start.
+fn open(cx: &mut TestAppContext, data: PathBuf) -> WindowHandle<Knowledge> {
+    let window = open_fresh(cx, data);
+    window
+        .update(cx, |view, _, cx| {
+            view.tree_open = true;
+            view.expanded = super::tree::folders(&view.notes);
+            view.rebuild_tree(cx);
+            if let Some(first) = view.visible(cx).first() {
+                view.open_note(first.path.clone(), cx);
+            }
+        })
+        .unwrap();
     cx.run_until_parked();
     window
 }
@@ -222,6 +242,9 @@ fn a_resolved_link_opens_the_other_note(cx: &mut TestAppContext) {
     let vault = fixture(&[("A.md", "See [[B]]\n"), ("B.md", "Bee\n")]);
     let window = open(cx, vault.data.clone());
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let footer = visual.debug_bounds("knowledge-relations-toggle").unwrap();
+    visual.simulate_click(footer.center(), Default::default());
     visual.run_until_parked();
     let link = visual.debug_bounds("knowledge-link-0").unwrap();
     visual.simulate_click(link.center(), Default::default());

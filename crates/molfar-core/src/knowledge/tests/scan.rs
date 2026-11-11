@@ -1,7 +1,7 @@
 use super::super::*;
 use super::Fixture;
 use std::collections::HashMap;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 #[test]
 fn scans_tree_notes_frontmatter_attachments_and_cache_changes() {
@@ -11,7 +11,13 @@ fn scans_tree_notes_frontmatter_attachments_and_cache_changes() {
     fixture.write("image.png", "image");
     fixture.write(".obsidian/secret.md", "Hidden");
     let mut cache = HashMap::new();
-    let snapshot = scan::scan(fixture.connection(), &mut cache, &AtomicBool::new(false)).unwrap();
+    let snapshot = scan::scan(
+        fixture.connection(),
+        &mut cache,
+        &AtomicBool::new(false),
+        &AtomicU64::new(0),
+    )
+    .unwrap();
     assert_eq!(snapshot.entries.len(), 4);
     assert_eq!(snapshot.notes.len(), 2);
     assert!(!snapshot.truncated);
@@ -24,7 +30,13 @@ fn scans_tree_notes_frontmatter_attachments_and_cache_changes() {
     assert!(note.tags.contains(&"nested/tag".into()));
     assert_eq!(note.links.len(), 3);
     fixture.write("beta.md", "[[Changed link]] and a longer document");
-    let updated = scan::scan(fixture.connection(), &mut cache, &AtomicBool::new(false)).unwrap();
+    let updated = scan::scan(
+        fixture.connection(),
+        &mut cache,
+        &AtomicBool::new(false),
+        &AtomicU64::new(0),
+    )
+    .unwrap();
     assert_eq!(
         updated
             .notes
@@ -36,7 +48,13 @@ fn scans_tree_notes_frontmatter_attachments_and_cache_changes() {
         "Changed link"
     );
     std::fs::remove_file(fixture.0.join("beta.md")).unwrap();
-    scan::scan(fixture.connection(), &mut cache, &AtomicBool::new(false)).unwrap();
+    scan::scan(
+        fixture.connection(),
+        &mut cache,
+        &AtomicBool::new(false),
+        &AtomicU64::new(0),
+    )
+    .unwrap();
     assert!(!cache.contains_key("beta.md"));
 }
 
@@ -51,6 +69,7 @@ fn oversized_notes_make_the_scan_explicitly_incomplete() {
         fixture.connection(),
         &mut HashMap::new(),
         &AtomicBool::new(false),
+        &AtomicU64::new(0),
     )
     .unwrap();
     assert!(snapshot.truncated);
@@ -65,7 +84,8 @@ fn cancelled_scans_are_rejected() {
     assert!(scan::scan(
         fixture.connection(),
         &mut HashMap::new(),
-        &AtomicBool::new(true)
+        &AtomicBool::new(true),
+        &AtomicU64::new(0),
     )
     .unwrap_err()
     .contains("cancelled"));
@@ -82,6 +102,7 @@ fn scans_skip_symbolic_links() {
         fixture.connection(),
         &mut HashMap::new(),
         &AtomicBool::new(false),
+        &AtomicU64::new(0),
     )
     .unwrap();
     assert!(snapshot.entries.is_empty());
@@ -89,4 +110,21 @@ fn scans_skip_symbolic_links() {
         .warnings
         .iter()
         .any(|warning| warning.contains("symbolic link")));
+}
+
+#[test]
+fn scans_count_indexed_notes_as_they_go() {
+    let fixture = Fixture::new();
+    fixture.write("a.md", "A");
+    fixture.write("dir/b.md", "B");
+    fixture.write("image.png", "x");
+    let progress = AtomicU64::new(0);
+    scan::scan(
+        fixture.connection(),
+        &mut HashMap::new(),
+        &AtomicBool::new(false),
+        &progress,
+    )
+    .unwrap();
+    assert_eq!(progress.load(Ordering::Relaxed), 2);
 }

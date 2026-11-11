@@ -16,7 +16,7 @@ fn property_values(value: Option<&Value>) -> Vec<String> {
     }
 }
 
-fn frontmatter(body: &str) -> (Option<Value>, &str, Option<String>) {
+pub(super) fn frontmatter(body: &str) -> (Option<Value>, &str, Option<String>) {
     let body = body.strip_prefix('\u{feff}').unwrap_or(body);
     let mut lines = body.split_inclusive('\n');
     if lines.next().is_none_or(|line| line.trim_end() != "---") {
@@ -66,7 +66,13 @@ fn wiki_links(text: &str, links: &mut Vec<VaultLink>) {
             break;
         };
         if !escaped {
-            let target = remainder[..end].split('|').next().unwrap_or("").trim();
+            // Tables escape the alias pipe as `\|`; the backslash is not part of the name.
+            let target = remainder[..end]
+                .split('|')
+                .next()
+                .unwrap_or("")
+                .trim_end_matches('\\')
+                .trim();
             if !target.is_empty() {
                 links.push(VaultLink {
                     target: target.into(),

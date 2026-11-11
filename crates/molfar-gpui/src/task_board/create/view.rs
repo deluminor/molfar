@@ -25,8 +25,16 @@ impl Board {
         let project = if draft.project.is_empty() {
             "Choose a local project".to_owned()
         } else {
-            draft.project.clone()
+            self.project_appearance(&draft.project)
+                .label(&draft.project)
         };
+        let project_icon = (!draft.project.is_empty()).then(|| {
+            crate::project_settings::project_icon(
+                &self.project_appearance(&draft.project),
+                &draft.project,
+                14.,
+            )
+        });
         let project_menu = draft.project_menu.as_ref().map(|menu| {
             menu_popover(menu, Anchor::Slot(draft.project_anchor.clone()), cx).into_any_element()
         });
@@ -75,6 +83,7 @@ impl Board {
                                         .gap_2()
                                         .cursor_pointer()
                                         .child(draft.project_anchor.probe())
+                                        .children(project_icon)
                                         .child(div().flex_1().min_w_0().truncate().child(project))
                                         .child(icon("chevron-down-hi", 14.))
                                         .on_click(cx.listener(|this, _, window, cx| {

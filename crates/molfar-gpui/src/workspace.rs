@@ -110,6 +110,10 @@ pub(crate) struct Workspace {
     pub sidebar_automations_visible: bool,
     pub sidebar_inbox_visible: bool,
     pub sidebar_activity_visible: bool,
+    pub sidebar_home_visible: bool,
+    pub sidebar_new_visible: bool,
+    pub sidebar_board_visible: bool,
+    pub sidebar_knowledge_visible: bool,
     /// The inset right panel: open state, tab, width and tab order.
     pub right_panel_open: bool,
     pub right_panel_tab: crate::right_panel::RightTab,
@@ -156,6 +160,8 @@ pub(crate) struct Workspace {
     pub preferences: crate::settings::Preferences,
     pub session_filters: molfar_core::session_filters::Filters,
     pub project_appearance: HashMap<String, molfar_core::project_appearance::ProjectAppearance>,
+    /// The Board's project filter; `None` shows every project.
+    pub board_project_filter: Option<String>,
     /// Home grid arrangement, parsed leniently so a bad entry cannot reset the workspace.
     pub home_layout: serde_json::Value,
     /// Last desktop source values, used to reconcile subsequent desktop changes
@@ -342,6 +348,10 @@ impl Default for Workspace {
             sidebar_automations_visible: true,
             sidebar_inbox_visible: true,
             sidebar_activity_visible: true,
+            sidebar_home_visible: true,
+            sidebar_new_visible: true,
+            sidebar_board_visible: true,
+            sidebar_knowledge_visible: true,
             right_panel_open: false,
             right_panel_tab: Default::default(),
             right_panel_width: crate::right_panel::WIDTH_DEFAULT,
@@ -372,6 +382,7 @@ impl Default for Workspace {
             preferences: crate::settings::Preferences::default(),
             session_filters: Default::default(),
             project_appearance: Default::default(),
+            board_project_filter: None,
             home_layout: serde_json::Value::Null,
             desktop_project_preferences: None,
             desktop_workspace_snapshot: None,

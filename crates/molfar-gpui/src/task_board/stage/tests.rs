@@ -148,6 +148,9 @@ fn stage_action_emits_once_until_finished_and_opens_saved_session(cx: &mut TestA
                 .push(format!("stage:{card_id}:{updated_at}:{action:?}")),
             Event::OpenSession(id) => recorded.borrow_mut().push(format!("open:{id}")),
             Event::Close => recorded.borrow_mut().push("close".into()),
+            Event::ProjectFilter(project) => {
+                recorded.borrow_mut().push(format!("filter:{project:?}"))
+            }
             Event::Settings(patch) => recorded.borrow_mut().push(format!("settings:{patch:?}")),
             Event::Deliver { .. } | Event::Reject { .. } => {
                 recorded.borrow_mut().push("delivery".into())
