@@ -31,7 +31,8 @@ impl Render for WideBlockInColumn {
 fn draw(cx: &mut gpui::VisualTestContext, column: &ScrollHandle, wide: &ScrollHandle) {
     let (column, wide) = (column.clone(), wide.clone());
     cx.draw(point(px(0.), px(0.)), size(px(100.), px(100.)), |_, cx| {
-        cx.new(|_| WideBlockInColumn { column, wide }).into_any_element()
+        cx.new(|_| WideBlockInColumn { column, wide })
+            .into_any_element()
     });
 }
 
