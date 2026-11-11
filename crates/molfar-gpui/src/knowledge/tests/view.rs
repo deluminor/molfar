@@ -62,6 +62,13 @@ fn the_workspace_shows_header_tree_graph_panel_and_footer(cx: &mut TestAppContex
             "{selector} is shown"
         );
     }
+    let tree = visual.debug_bounds("knowledge-list").unwrap();
+    let panel = visual.debug_bounds("knowledge-panel").unwrap();
+    let graph = visual.debug_bounds("knowledge-graph").unwrap();
+    assert!(
+        tree.right() <= panel.left() && panel.right() <= graph.left(),
+        "the note sits between the tree and the graph"
+    );
     window
         .update(visual, |view, _, cx| {
             assert_eq!(view.selected.as_deref(), Some("Dashboard.md"));
@@ -176,7 +183,7 @@ fn the_tree_and_note_panel_resize_by_drag_and_keep_their_width(cx: &mut TestAppC
 
     for (handle, shift) in [
         ("knowledge-resize-tree", 60.),
-        ("knowledge-resize-panel", -40.),
+        ("knowledge-resize-panel", 40.),
     ] {
         let start = visual.debug_bounds(handle).unwrap().center();
         let end = start + point(px(shift), px(0.));
@@ -197,24 +204,21 @@ fn the_tree_and_note_panel_resize_by_drag_and_keep_their_width(cx: &mut TestAppC
 }
 
 #[gpui::test]
-fn knowledge_opens_graph_first_with_the_tree_and_folders_folded(cx: &mut TestAppContext) {
+fn knowledge_opens_with_the_tree_open_folders_folded_and_no_note(cx: &mut TestAppContext) {
     let vault = vault();
     let window = open_fresh(cx, vault.data.clone());
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
     assert!(visual.debug_bounds("knowledge-graph").is_some());
     assert!(
-        visual.debug_bounds("knowledge-list").is_none(),
-        "the tree starts hidden"
+        visual.debug_bounds("knowledge-list").is_some(),
+        "the tree starts open"
     );
     assert!(
         visual.debug_bounds("knowledge-panel").is_none(),
         "no note opens by itself"
     );
 
-    let toggle = visual.debug_bounds("knowledge-tree-toggle").unwrap();
-    visual.simulate_click(toggle.center(), Default::default());
-    visual.run_until_parked();
     assert!(visual.debug_bounds("knowledge-folder-0").is_some());
     assert!(
         visual.debug_bounds("knowledge-note-1").is_none(),

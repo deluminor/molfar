@@ -175,7 +175,7 @@ impl Knowledge {
             expanded: HashSet::new(),
             callouts_toggled: HashSet::new(),
             relations_open: false,
-            tree_open: false,
+            tree_open: true,
             panel_open: false,
             widths: panes::PaneWidths::default(),
             resize: None,

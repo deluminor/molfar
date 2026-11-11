@@ -26,7 +26,7 @@ mod view;
 /// How long nodes glide to a new layout.
 const TRANSITION: Duration = Duration::from_millis(900);
 /// Radians per second of idle rotation.
-const SPIN: f32 = 0.09;
+const SPIN: f32 = 0.06;
 
 pub(crate) enum GraphEvent {
     Select(String),
@@ -78,6 +78,8 @@ pub(crate) struct GraphView {
     projected: Vec<Option<Projected>>,
     radii: Vec<f32>,
     last_frame: Option<Instant>,
+    /// The canvas size last frame; a resize refits the graph.
+    last_size: (f32, f32),
     generation: u64,
     cancel: Arc<AtomicBool>,
     _layout: Option<Task<()>>,
@@ -111,6 +113,7 @@ impl GraphView {
             projected: Vec::new(),
             radii: Vec::new(),
             last_frame: None,
+            last_size: (0., 0.),
             generation: 0,
             cancel: Arc::default(),
             _layout: None,

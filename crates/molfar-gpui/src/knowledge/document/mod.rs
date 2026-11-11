@@ -64,7 +64,7 @@ impl Knowledge {
             .min_w_0()
             .flex()
             .flex_col()
-            .border_l_1()
+            .border_r_1()
             .border_color(content(0.08))
             .bg(content(0.015))
             .child(self.toolbar(path, cx))

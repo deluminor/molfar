@@ -113,8 +113,7 @@ impl Knowledge {
             .absolute()
             .top_0()
             .bottom_0()
-            .when(side == Side::Tree, |handle| handle.right(px(-3.)))
-            .when(side == Side::Panel, |handle| handle.left(px(-3.)))
+            .right(px(-3.))
             .w(px(6.))
             .cursor(CursorStyle::ResizeLeftRight)
             .when(active, |handle| handle.bg(accent_color().opacity(0.5)))
@@ -162,7 +161,7 @@ impl Knowledge {
         let moved = f32::from(event.position.x) - resize.start_x;
         let width = match resize.side {
             Side::Tree => resize.start_width + moved,
-            Side::Panel => resize.start_width - moved,
+            Side::Panel => resize.start_width + moved,
         };
         let viewport = f32::from(window.viewport_size().width);
         self.widths = self.widths.resized(resize.side, width, viewport);

@@ -20,6 +20,10 @@ impl GraphView {
             .unwrap_or(0.);
         self.last_frame = Some(now);
 
+        if size.1 > 0. && self.last_size.1 > 0. && size != self.last_size {
+            self.fit_pending = true;
+        }
+        self.last_size = size;
         if self.fit_pending && !self.positions.is_empty() && size.1 > 0. {
             self.target_distance = Camera::fit_distance(&self.positions, size.0, size.1);
             self.fit_pending = false;
@@ -53,6 +57,11 @@ impl GraphView {
         }
 
         let animate = pulse::request(pulse::Rate::Smooth, window, cx);
+        // The shared 30Hz clock steps visibly on a slow spin; while the app is
+        // in front, follow the display's own frame rate instead.
+        if animate && pulse::app_active(cx) {
+            window.request_animation_frame();
+        }
         if fading {
             if animate {
                 self.levels.ease(&target, 1. - (-elapsed * 10.).exp());

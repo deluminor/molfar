@@ -1,5 +1,5 @@
 //! Knowledge's screens: connect hero, full-page loaders and the workspace
-//! (tree, graph, note panel between header and footer).
+//! (tree, note panel, then graph between header and footer).
 use super::{Knowledge, loading};
 use crate::theme::*;
 use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
@@ -169,8 +169,8 @@ impl Knowledge {
                     .when(self.tree_open && !skeleton, |body| {
                         body.child(self.tree(cx))
                     })
-                    .child(self.scene(cx))
-                    .when_some(panel, |body, path| body.child(self.document(&path, cx))),
+                    .when_some(panel, |body, path| body.child(self.document(&path, cx)))
+                    .child(self.scene(cx)),
             )
             .child(self.footer(&connection.root, cx))
             .into_any_element()
