@@ -20,6 +20,7 @@ mod page;
 mod panes;
 mod service;
 mod service_companion;
+mod slide;
 mod sync;
 mod tasks;
 #[cfg(test)]
@@ -82,6 +83,7 @@ pub(crate) struct Knowledge {
     callouts_toggled: HashSet<usize>,
     relations_open: bool,
     tree_open: bool,
+    tree_slide: Option<slide::Slide>,
     panel_open: bool,
     widths: panes::PaneWidths,
     resize: Option<panes::Resize>,
@@ -176,6 +178,7 @@ impl Knowledge {
             callouts_toggled: HashSet::new(),
             relations_open: false,
             tree_open: true,
+            tree_slide: None,
             panel_open: false,
             widths: panes::PaneWidths::default(),
             resize: None,
@@ -202,7 +205,7 @@ impl Knowledge {
 }
 
 impl gpui::Render for Knowledge {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .id("knowledge")
             .debug_selector(|| "knowledge".into())
@@ -247,7 +250,7 @@ impl gpui::Render for Knowledge {
                     Some("Checking the folder before the first scan".into()),
                 )
             } else if matches!(self.state, ConnectionState::Ready(_)) {
-                self.workspace(cx)
+                self.workspace(window, cx)
             } else {
                 let reason = match &self.state {
                     ConnectionState::Broken(reason) => Some(reason.clone()),

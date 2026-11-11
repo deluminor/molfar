@@ -138,12 +138,17 @@ impl Knowledge {
             .into_any_element()
     }
 
-    pub(super) fn workspace(&mut self, cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn workspace(
+        &mut self,
+        window: &mut gpui::Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let ConnectionState::Ready(connection) = self.state.clone() else {
             return div().into_any_element();
         };
         let skeleton = self.notes.is_empty() && self.indexing(cx);
         let panel = self.selected.clone().filter(|_| self.panel_open);
+        let reveal = self.step_slide(window);
 
         div()
             .size_full()
@@ -155,19 +160,29 @@ impl Knowledge {
                     .flex_1()
                     .min_h_0()
                     .flex()
-                    .when(self.tree_open && skeleton, |body| {
-                        body.child(
+                    .when(reveal > 0., |body| {
+                        let tree = if skeleton {
                             div()
                                 .w(px(self.widths.tree))
                                 .h_full()
                                 .border_r_1()
                                 .border_color(content(0.08))
                                 .debug_selector(|| "knowledge-skeleton".into())
-                                .child(loading::skeleton_rows("knowledge-skeleton")),
+                                .child(loading::skeleton_rows("knowledge-skeleton"))
+                                .into_any_element()
+                        } else {
+                            self.tree(cx)
+                        };
+                        // The clip narrows while the tree keeps its width, so it
+                        // slides rather than squeezing.
+                        body.child(
+                            div()
+                                .w(px(self.widths.tree * reveal))
+                                .h_full()
+                                .flex_shrink_0()
+                                .when(reveal < 1., |clip| clip.overflow_hidden())
+                                .child(tree),
                         )
-                    })
-                    .when(self.tree_open && !skeleton, |body| {
-                        body.child(self.tree(cx))
                     })
                     .when_some(panel, |body, path| body.child(self.document(&path, cx)))
                     .child(self.scene(cx)),

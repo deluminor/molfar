@@ -46,10 +46,12 @@ impl GraphView {
             || zooming
             || simulating
             || fading
+            || self.labels_fading
             || self.transition.is_some()
             || self.pending.is_some();
         if !busy {
             self.last_frame = None;
+            self.animating = false;
             return;
         }
         if simulating {
@@ -57,6 +59,7 @@ impl GraphView {
         }
 
         let animate = pulse::request(pulse::Rate::Smooth, window, cx);
+        self.animating = animate;
         // The shared 30Hz clock steps visibly on a slow spin; while the app is
         // in front, follow the display's own frame rate instead.
         if animate && pulse::app_active(cx) {

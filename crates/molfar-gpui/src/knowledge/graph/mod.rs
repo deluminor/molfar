@@ -63,6 +63,11 @@ pub(crate) struct GraphView {
     simulation: Option<Simulation>,
     /// Brightness actually drawn, eased toward the selection's targets.
     levels: emphasis::Levels,
+    /// Each visible label's opacity, eased so labels never blink.
+    label_alpha: HashMap<usize, f32>,
+    labels_fading: bool,
+    /// Whether this frame animates (false under reduced motion).
+    animating: bool,
     positions: Vec<Point3>,
     from: Vec<Point3>,
     transition: Option<Instant>,
@@ -98,6 +103,9 @@ impl GraphView {
             pending: None,
             simulation: None,
             levels: emphasis::Levels::default(),
+            label_alpha: HashMap::new(),
+            labels_fading: false,
+            animating: false,
             positions: Vec::new(),
             from: Vec::new(),
             transition: None,
@@ -215,6 +223,7 @@ impl GraphView {
         self.shown = projection;
         self.pending = None;
         self.hovered = None;
+        self.label_alpha.clear();
         self.fit_pending |= first;
         cx.notify();
     }

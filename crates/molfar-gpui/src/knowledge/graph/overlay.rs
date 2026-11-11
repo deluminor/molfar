@@ -11,6 +11,8 @@ use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
 const LABEL_LIMIT: usize = 28;
 /// Hub names shown when nothing is open.
 const HUB_LABELS: usize = 10;
+/// Share of the way a label fades toward shown or hidden per frame.
+const LABEL_FADE: f32 = 0.2;
 
 fn chip(
     id: &'static str,
@@ -71,8 +73,10 @@ impl GraphView {
         wanted
     }
 
-    pub(super) fn labels(&self, frame: &Frame, selected: Option<usize>) -> Vec<AnyElement> {
-        let candidates: Vec<(usize, f32, f32, bool)> = self
+    /// Labels for this frame. Shown labels keep their place against newcomers
+    /// and every label fades in and out, so names never blink while zooming.
+    pub(super) fn labels(&mut self, frame: &Frame, selected: Option<usize>) -> Vec<AnyElement> {
+        let mut candidates: Vec<(usize, f32, f32, bool)> = self
             .label_order(selected)
             .into_iter()
             .filter_map(|index| {
@@ -82,6 +86,12 @@ impl GraphView {
                 Some((index, item.x + radius + 6., item.y, focused))
             })
             .collect();
+        let showing = |index: usize| {
+            self.label_alpha
+                .get(&index)
+                .is_some_and(|alpha| *alpha > 0.5)
+        };
+        candidates.sort_by_key(|(index, _, _, focused)| (!*focused, !showing(*index)));
         let rects: Vec<Rect> = candidates
             .iter()
             .map(|(index, x, y, focused)| {
@@ -95,38 +105,62 @@ impl GraphView {
                 )
             })
             .collect();
-        let shown = place(&rects);
+        let kept = place(&rects);
+
+        let blend = if self.animating { LABEL_FADE } else { 1. };
+        let mut alphas = std::collections::HashMap::new();
+        let mut fading = false;
+        for ((index, ..), keep) in candidates.iter().zip(&kept) {
+            let target = if *keep { 1. } else { 0. };
+            let current = self.label_alpha.get(index).copied().unwrap_or(0.);
+            let next = current + (target - current) * blend;
+            fading |= (target - next).abs() > 0.02;
+            if next > 0.02 || *keep {
+                alphas.insert(
+                    *index,
+                    if (target - next).abs() <= 0.02 {
+                        target
+                    } else {
+                        next
+                    },
+                );
+            }
+        }
+        self.label_alpha = alphas;
+        self.labels_fading = fading;
 
         candidates
             .into_iter()
             .zip(rects)
-            .zip(shown)
-            .filter(|(_, keep)| *keep)
-            .map(|(((index, _, _, focused), rect), _)| {
-                div()
-                    .absolute()
-                    .left(px(rect.x))
-                    .top(px(rect.y))
-                    .h(px(rect.height))
-                    .max_w(px(232.))
-                    .flex()
-                    .items_center()
-                    .truncate()
-                    .text_size(px(if focused { 12. } else { 11. }))
-                    .when(focused, |label| {
-                        label
-                            .px_1p5()
-                            .rounded_md()
-                            .bg(floating_fill().opacity(0.88))
-                            .font_weight(FontWeight::MEDIUM)
-                            .text_color(content(0.95))
-                    })
-                    .when(!focused, |label| {
-                        let level = self.levels.nodes.get(index).copied().unwrap_or(0.6);
-                        label.text_color(content(0.15 + 0.5 * level))
-                    })
-                    .child(self.shown.nodes[index].title.clone())
-                    .into_any_element()
+            .filter_map(|((index, _, _, focused), rect)| {
+                let alpha = self.label_alpha.get(&index).copied()?;
+                Some(
+                    div()
+                        .absolute()
+                        .left(px(rect.x))
+                        .top(px(rect.y))
+                        .h(px(rect.height))
+                        .max_w(px(232.))
+                        .flex()
+                        .items_center()
+                        .truncate()
+                        .opacity(alpha)
+                        .text_size(px(if focused { 12. } else { 11. }))
+                        .when(focused, |label| {
+                            label
+                                .px_1p5()
+                                .rounded_md()
+                                .bg(floating_fill().opacity(0.88))
+                                .font_weight(FontWeight::MEDIUM)
+                                .text_color(content(0.95))
+                        })
+                        .when(!focused, |label| {
+                            let level = self.levels.nodes.get(index).copied().unwrap_or(0.6);
+                            label.text_color(content(0.15 + 0.5 * level))
+                        })
+                        .child(self.shown.nodes[index].title.clone())
+                        .into_any_element(),
+                )
             })
             .collect()
     }

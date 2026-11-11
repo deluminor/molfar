@@ -362,3 +362,20 @@ fn vault_images_highlights_and_tags_render_and_tags_search(cx: &mut TestAppConte
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn the_tree_toggle_hides_and_shows_the_tree(cx: &mut TestAppContext) {
+    let vault = vault();
+    let window = open_fresh(cx, vault.data.clone());
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    for open in [false, true] {
+        let toggle = visual.debug_bounds("knowledge-tree-toggle").unwrap();
+        visual.simulate_click(toggle.center(), Default::default());
+        visual.run_until_parked();
+        assert_eq!(visual.debug_bounds("knowledge-list").is_some(), open);
+        window
+            .update(visual, |view, _, _| assert_eq!(view.tree_open, open))
+            .unwrap();
+    }
+}
