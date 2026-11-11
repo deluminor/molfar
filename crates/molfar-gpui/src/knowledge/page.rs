@@ -147,8 +147,12 @@ impl Knowledge {
             return div().into_any_element();
         };
         let skeleton = self.notes.is_empty() && self.indexing(cx);
-        let panel = self.selected.clone().filter(|_| self.panel_open);
-        let reveal = self.step_slide(window);
+        let animate = !cx.reduce_motion();
+        let reveal = self.tree_slide.step(self.tree_open, animate, window);
+        let opened = self.panel_open && self.selected.is_some();
+        let panel_reveal = self.panel_slide.step(opened, animate, window);
+        // A closing panel keeps drawing its note until it has slid away.
+        let panel = self.selected.clone().filter(|_| panel_reveal > 0.);
 
         div()
             .size_full()
@@ -184,7 +188,17 @@ impl Knowledge {
                                 .child(tree),
                         )
                     })
-                    .when_some(panel, |body, path| body.child(self.document(&path, cx)))
+                    .when_some(panel, |body, path| {
+                        let note = self.document(&path, cx);
+                        body.child(
+                            div()
+                                .w(px(self.widths.panel * panel_reveal))
+                                .h_full()
+                                .flex_shrink_0()
+                                .when(panel_reveal < 1., |clip| clip.overflow_hidden())
+                                .child(note),
+                        )
+                    })
                     .child(self.scene(cx)),
             )
             .child(self.footer(&connection.root, cx))

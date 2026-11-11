@@ -26,7 +26,8 @@ impl Knowledge {
                             .debug_selector(|| "knowledge-tree-toggle".into())
                             .when(self.tree_open, |button| button.bg(content(0.08)))
                             .on_click(cx.listener(|this, _, _, cx| {
-                                this.toggle_tree(cx);
+                                this.tree_open = !this.tree_open;
+                                cx.notify();
                             })),
                     )
                     .child(
