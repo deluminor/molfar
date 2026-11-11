@@ -3375,22 +3375,14 @@ impl Interactivity {
                             .filter(&mut delta, event.touch_phase);
                     }
 
+                    // Each axis takes only its own delta: a wheel never pans sideways. Shift+wheel
+                    // and tilt/trackpad input already arrive as horizontal deltas from the platform.
                     let mut delta_x = match overflow.x {
-                        Overflow::Scroll if !delta.x.is_zero() => delta.x,
-                        Overflow::Scroll
-                            if !restrict_scroll_to_axis && overflow.y != Overflow::Scroll =>
-                        {
-                            delta.y
-                        }
+                        Overflow::Scroll => delta.x,
                         _ => Pixels::ZERO,
                     };
                     let mut delta_y = match overflow.y {
-                        Overflow::Scroll if !delta.y.is_zero() => delta.y,
-                        Overflow::Scroll
-                            if !restrict_scroll_to_axis && overflow.x != Overflow::Scroll =>
-                        {
-                            delta.x
-                        }
+                        Overflow::Scroll => delta.y,
                         _ => Pixels::ZERO,
                     };
                     if !allow_concurrent_scroll && !delta_x.is_zero() && !delta_y.is_zero() {

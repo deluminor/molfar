@@ -98,6 +98,8 @@ mod transcript;
 mod usage_footer;
 mod visuals;
 #[cfg(test)]
+mod wheel_axis_tests;
+#[cfg(test)]
 mod wheel_glide_tests;
 mod window_state;
 mod workspace;
