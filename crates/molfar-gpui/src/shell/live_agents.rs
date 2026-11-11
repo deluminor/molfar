@@ -2,7 +2,10 @@
 //! sessions, across every project.
 use super::*;
 
-const LIVE_AGENT_MIN: usize = 2;
+/// Owner decision (2026-11-11): the card shows from ONE working session, not
+/// two, so running work is always visible in the sidebar. Upstream syncs that
+/// restore `2` (LiveAgentsPreview.tsx) must keep this at 1.
+const LIVE_AGENT_MIN: usize = 1;
 const LIVE_AGENT_CAP: usize = 4;
 // Tailwind amber-400 and emerald-400.
 const AMBER: u32 = 0xfbbf24;
@@ -386,5 +389,14 @@ impl Shell {
                 cx.notify();
             }))
             .into_any()
+    }
+}
+
+#[cfg(test)]
+mod threshold_tests {
+    /// Guards the owner decision above against upstream syncs.
+    #[test]
+    fn the_running_work_card_shows_from_one_session() {
+        assert_eq!(super::LIVE_AGENT_MIN, 1);
     }
 }

@@ -7,11 +7,14 @@ use gpui::{
 use std::f32::consts::{FRAC_PI_2, TAU};
 use std::time::Duration;
 
-const BORDER_PERIOD: Duration = Duration::from_millis(2_800);
+const BORDER_PERIOD: Duration = Duration::from_millis(2_400);
 const SPINNER_PERIOD: Duration = Duration::from_millis(900);
-const TRAIL: f32 = 0.32;
+const TRAIL: f32 = 0.42;
 const TRAIL_STEPS: usize = 28;
-const STROKE: f32 = 1.5;
+const STROKE: f32 = 2.;
+/// The soft halo under the comet's front half.
+const GLOW: f32 = 5.;
+const HEAD: f32 = 2.6;
 /// The card's own border width; the comet sits on it, not inside it.
 const BORDER: f32 = 1.;
 const SPINNER_SIDE: f32 = 10.;
@@ -57,7 +60,8 @@ pub(super) fn outline_length(width: f32, height: f32, radius: f32) -> f32 {
     2. * (width - 2. * radius) + 2. * (height - 2. * radius) + TAU * radius
 }
 
-/// A comet circling the card's border, its tail fading out behind it.
+/// A comet circling the card's border: a bright head with a soft halo and a
+/// tail fading out behind it.
 fn paint_comet(bounds: Bounds<Pixels>, phase: f32, window: &mut Window) {
     let inset = STROKE / 2.;
     let width = f32::from(bounds.size.width) - STROKE;
@@ -74,20 +78,46 @@ fn paint_comet(bounds: Bounds<Pixels>, phase: f32, window: &mut Window) {
         bounds.origin + point(px(x + inset), px(y + inset))
     };
 
-    for index in 0..TRAIL_STEPS {
-        let start = head - TRAIL * length + index as f32 * step;
-        let strength = (index + 1) as f32 / TRAIL_STEPS as f32;
-        let mut path = PathBuilder::stroke(px(STROKE));
-        path.move_to(at(start));
-        for sample in 1..=3 {
-            path.line_to(at(start + step * sample as f32 / 3.));
-        }
-        let mut color = accent_color();
-        color.a = strength * strength * 0.95;
-        if let Ok(path) = path.build() {
-            window.paint_path(path, color);
+    for (width, peak, from) in [(GLOW, 0.22, TRAIL_STEPS / 2), (STROKE, 1., 0)] {
+        for index in from..TRAIL_STEPS {
+            let start = head - TRAIL * length + index as f32 * step;
+            let strength = (index + 1) as f32 / TRAIL_STEPS as f32;
+            let mut path = PathBuilder::stroke(px(width));
+            path.move_to(at(start));
+            for sample in 1..=3 {
+                path.line_to(at(start + step * sample as f32 / 3.));
+            }
+            let mut color = accent_color();
+            color.a = strength * strength * peak;
+            if let Ok(path) = path.build() {
+                window.paint_path(path, color);
+            }
         }
     }
+
+    let tip = at(head);
+    let mut glow = accent_color();
+    glow.a = 0.35;
+    window.paint_quad(
+        gpui::fill(
+            Bounds::new(
+                tip - point(px(HEAD * 1.8), px(HEAD * 1.8)),
+                gpui::size(px(HEAD * 3.6), px(HEAD * 3.6)),
+            ),
+            glow,
+        )
+        .corner_radii(px(HEAD * 1.8)),
+    );
+    window.paint_quad(
+        gpui::fill(
+            Bounds::new(
+                tip - point(px(HEAD), px(HEAD)),
+                gpui::size(px(HEAD * 2.), px(HEAD * 2.)),
+            ),
+            accent_color(),
+        )
+        .corner_radii(px(HEAD)),
+    );
 }
 
 pub(super) fn running_border(card_id: &str) -> impl IntoElement {
