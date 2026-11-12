@@ -3,7 +3,7 @@ use crate::theme::*;
 use gpui::{AnyElement, Context, FontWeight, div, prelude::*, px};
 use molfar_core::task_board::{
     constants::COLUMNS,
-    stage::lifecycle::constants::{FAILED, RUNNING, SUCCEEDED},
+    stage::lifecycle::constants::{FAILED, PARTIAL, RUNNING, SUCCEEDED},
     types::StageRun,
 };
 
@@ -30,6 +30,7 @@ impl Board {
             let (glyph, _) = look::look(&run.stage);
             let (status, tone) = match run.status.as_str() {
                 SUCCEEDED => ("Succeeded", look::emerald(1.)),
+                PARTIAL => ("Continued", look::amber(1.)),
                 FAILED => ("Failed", look::rose(1.)),
                 RUNNING => ("Running", accent_color()),
                 _ => (run.status.as_str(), content(0.5)),
