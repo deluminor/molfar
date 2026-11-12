@@ -856,6 +856,7 @@ fn run_turn_using(
                             pending.changed(at);
                             boundary = true;
                         }
+                        Event::Consumption(usage) => pending.consumption(usage),
                         Event::Metrics(reading) => {
                             if let Some((_, info)) = &mut turn_receipt {
                                 info.metrics = Some(reading);

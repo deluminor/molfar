@@ -11,7 +11,7 @@ This change is a partial foundation. Card #15 is not complete.
 - Read-only queries return empty data without creating schema on old databases.
 - Five tests cover duplicate snapshots, mutable snapshots, explicit zero, absent fields, reopen, shared session identity, rejected counts, database failure and retry.
 
-Schema creation occurs transactionally on first ledger write. Existing databases are untouched until a caller explicitly writes consumption. This API accepts authoritative snapshots only; no adapter has yet been certified or connected.
+Schema creation occurs transactionally on first ledger write. Existing databases are untouched until a caller explicitly writes consumption. This API accepts authoritative snapshots only; Claude terminal result snapshots with stable UUIDs are connected; live-provider certification remains outstanding.
 
 ## Outstanding approved scope
 
@@ -36,3 +36,19 @@ No browser or interactive runtime QA was performed. No prices were introduced, s
 ### Final permitted gate
 
 `npm run native:check` exited 101. Native development scripts passed (44 tests), format and Clippy passed, core passed (892 tests, 2 ignored). GPUI reported 1122 passed, 1 failed, 11 ignored. The failing test was `shell::tests::explorer_files_share_the_review_pane_and_dirty_close_can_cancel_or_save`, at `src/shell.rs:12441:49`, with `StorageFull: No space left on device`. The full gate is not green. No unrelated files were deleted to reclaim space. No end-to-end acceptance criterion is marked complete.
+
+## Rework status
+
+F1 remains unresolved. Production Claude terminal capture and bounded runtime persistence now call the ledger. Pending snapshots survive failed flushes for cleanup retry, and replay replaces the same persisted key. Missing fields remain unknown and ambiguous multi-model totals remain unpriced. No default-zero TurnMetrics are imported.
+
+Remaining required work: other authoritative provider contracts, interrupted usage capture, transactional receipt integration, durable retry beyond runtime cleanup, legacy import, immutable verified pricing, session/card/day aggregation queries and all native presentation surfaces. S1-S5 and the card are not complete. No end-to-end acceptance criterion is claimed complete.
+
+### Rework verification
+
+- Claude tracer test: RED with missing Consumption event, then GREEN (1 passed).
+- Extended core suite: 894 passed, 2 ignored under permitted execution.
+- Native development scripts: 44 passed. Format and native Clippy/type checks passed.
+- Size, boundary and branding checks passed. Staged secret and diff checks passed.
+- Initial sandbox gate failed in 15 existing local socket/process fixtures with Operation not permitted; the permitted retry passed core.
+- No coverage or dependency audit configured for this scoped run. No interactive or live-provider QA performed.
+- Final permitted `npm run native:check`: exit 0. GPUI persistence retry fixture passed; full suite counts recorded in the stage report. This proves automated gates only, not completed feature scope.

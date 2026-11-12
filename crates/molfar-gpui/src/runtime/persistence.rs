@@ -8,6 +8,7 @@ use std::time::Instant;
 const SHARED_SAVE_INTERVAL: Duration = Duration::from_millis(650);
 
 pub(super) struct PendingSave {
+    usage: Vec<molfar_core::consumption::UsageSnapshot>,
     from: Option<usize>,
     context_dirty: bool,
     last_flush: Instant,
@@ -18,6 +19,7 @@ pub(super) struct PendingSave {
 impl PendingSave {
     pub(super) fn new(shared: bool, now: Instant) -> Self {
         Self {
+            usage: Vec::new(),
             from: None,
             context_dirty: false,
             last_flush: now,
@@ -27,6 +29,16 @@ impl PendingSave {
                 Duration::ZERO
             },
             context_owner: None,
+        }
+    }
+
+    pub(super) fn consumption(&mut self, usage: molfar_core::consumption::UsageSnapshot) {
+        if let Some(previous) = self.usage.iter_mut().find(|previous| {
+            previous.provider == usage.provider && previous.source_key == usage.source_key
+        }) {
+            *previous = usage;
+        } else {
+            self.usage.push(usage);
         }
     }
 
@@ -43,7 +55,7 @@ impl PendingSave {
     }
 
     pub(super) fn due(&self, boundary: bool, now: Instant) -> bool {
-        (self.from.is_some() || self.context_dirty)
+        (self.from.is_some() || self.context_dirty || !self.usage.is_empty())
             && (boundary || now.saturating_duration_since(self.last_flush) >= self.interval)
     }
 
@@ -55,7 +67,7 @@ impl PendingSave {
         context: &molfar_core::context::Usage,
         now: Instant,
     ) -> Result<(), String> {
-        if self.from.is_none() && !self.context_dirty {
+        if self.from.is_none() && !self.context_dirty && self.usage.is_empty() {
             return Ok(());
         }
         let mut store = locked(store)?;
@@ -78,6 +90,10 @@ impl PendingSave {
                 store.save_context_usage(session, context)?;
             }
         }
+        for usage in &self.usage {
+            store.save_consumption(session, usage)?;
+        }
+        self.usage.clear();
         // Keep pending changes after a failed write so final cleanup retries.
         self.from = None;
         self.context_dirty = false;
@@ -124,3 +140,6 @@ mod tests;
 mod turn_tests;
 #[cfg(test)]
 mod worktree_tests;
+
+#[cfg(test)]
+mod consumption_tests;

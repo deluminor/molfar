@@ -17,6 +17,9 @@ use std::time::{Duration, Instant};
 
 mod acp;
 mod commands;
+mod consumption;
+#[cfg(test)]
+mod consumption_tests;
 pub use commands::{
     compact, discover_commands, native_invocation, native_prompt, prepare_prompt, supports_compact,
     NativeCommand, NativeSubcommand,
@@ -88,6 +91,7 @@ pub enum Event {
         window: Option<u64>,
     },
     Metrics(TurnMetrics),
+    Consumption(crate::consumption::UsageSnapshot),
     Approval(Approval),
     ApprovalResolved(String),
     Question(crate::agent::Question),
@@ -917,6 +921,9 @@ impl Protocol {
                     "result" if claude_turn_result(&v) => {
                         if self.compact && !self.compact_confirmed && v["is_error"] != true {
                             return Err("Claude Code did not confirm context compaction".into());
+                        }
+                        if let Some(snapshot) = consumption::claude_result(&v)? {
+                            events.push(Event::Consumption(snapshot));
                         }
                         let usage = &v["usage"];
                         let input = usage["input_tokens"].as_u64().unwrap_or(0);
