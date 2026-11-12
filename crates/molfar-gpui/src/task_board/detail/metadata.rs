@@ -79,6 +79,7 @@ impl Board {
                         .child(div().flex_1().min_w_0().child(error)),
                 )
             })
+            .children(self.waiting_banner(card, cx))
             .child(section("Task"))
             .when_some(
                 self.detail_content

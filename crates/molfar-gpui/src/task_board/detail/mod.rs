@@ -1,4 +1,7 @@
 mod fold;
+pub(super) mod groups;
+#[cfg(test)]
+mod groups_tests;
 mod header;
 mod metadata;
 #[cfg(test)]
@@ -9,6 +12,8 @@ mod tests;
 mod timeline;
 #[cfg(test)]
 mod timeline_tests;
+mod versions;
+mod waiting;
 
 use super::Board;
 use crate::notes::preview::Preview;
