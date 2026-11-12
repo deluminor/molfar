@@ -18,7 +18,7 @@ pub fn input_contract(stage: AgentStage, round: i64) -> ArtifactContract {
         },
         AgentStage::Implement => ArtifactContract {
             required: &[TASK, SPEC, PLAN],
-            optional: &[],
+            optional: &[IMPL_REPORT],
         },
         AgentStage::CodeReview => ArtifactContract {
             required: &[TASK, SPEC, PLAN, IMPL_REPORT],

@@ -3,15 +3,16 @@ use super::super::{
     constants::*,
     types::{FailureStatus, NoticeKind, StageEffect, StageNotice, VerifiedStageOutput},
 };
+use super::outcome::{self, Outcome};
 use super::query;
 use crate::task_board::{
-    constants::{FINAL_REVIEW, IDLE, PLAN_APPROVAL},
+    constants::{ENGINE, FINAL_REVIEW, IDLE, PLAN_APPROVAL},
     stage::{
         agent::AgentStage,
         checkout::policy,
         transitions::{
             self,
-            types::{BoardAction, Position},
+            types::{BoardAction, Position, TransitionEffect},
         },
     },
     types::Card,
@@ -63,34 +64,70 @@ pub(crate) fn finish(
         return Err("Board stage has no prepared submitted session.".into());
     }
     let now = query::now()?;
+    artifacts::write(&tx, base, &ctx.card.id, id, &output.artifacts, now)?;
+    let stage = AgentStage::parse(&ctx.run.stage).ok_or("Unsupported Board stage.")?;
+    let outcome = outcome::decide(&tx, &ctx.card.id, id, stage, &output.artifacts)?;
+    let (action, status, error) = match &outcome {
+        Outcome::Advance => (BoardAction::StageSucceeded, SUCCEEDED, None),
+        Outcome::Continue => (BoardAction::StageContinued, PARTIAL, None),
+        Outcome::Stop(error) => (BoardAction::StageFailed, FAILED, Some(error.as_str())),
+        Outcome::AutoRework(_) => (BoardAction::AutoRework, SUCCEEDED, None),
+    };
     let next = transitions::transition(
         Position {
             column: &ctx.card.column_id,
             run_state: &ctx.card.run_state,
             archived: ctx.card.archived,
         },
-        BoardAction::StageSucceeded,
+        action,
     )?;
-    let position = query::next_position(&tx, &next.column)?;
-    artifacts::write(&tx, base, &ctx.card.id, id, &output.artifacts, now)?;
-    tx.execute("UPDATE task_board_stage_runs SET status=?2,dispatch=?3,head_after=?4,completed_at=?5 WHERE id=?1",params![id,SUCCEEDED,SETTLED,output.after.head,now]).map_err(|e|e.to_string())?;
-    tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,last_error=NULL,updated_at=?4,position=?5,queued_at=?6 WHERE id=?1",params![ctx.card.id,next.column,next.run_state,now.max(ctx.card.updated_at.saturating_add(1)),position,(next.run_state==QUEUED).then_some(now)]).map_err(|e|e.to_string())?;
+    let position = if next.column == ctx.card.column_id {
+        ctx.card.position
+    } else {
+        query::next_position(&tx, &next.column)?
+    };
+    let cycle = if next.effects.contains(&TransitionEffect::NextReworkCycle) {
+        ctx.card
+            .rework_cycle
+            .checked_add(1)
+            .ok_or("Rework cycle overflow")?
+    } else {
+        ctx.card.rework_cycle
+    };
+
+    if let Outcome::AutoRework(body) = &outcome {
+        artifacts::publish(
+            &tx,
+            base,
+            &ctx.card.id,
+            &outcome::brief(body.clone()),
+            ENGINE,
+            None,
+            now,
+        )?;
+    }
+    tx.execute("UPDATE task_board_stage_runs SET status=?2,dispatch=?3,head_after=?4,completed_at=?5,error=?6 WHERE id=?1",params![id,status,SETTLED,output.after.head,now,error]).map_err(|e|e.to_string())?;
+    tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,last_error=?4,updated_at=?5,position=?6,queued_at=?7,rework_cycle=?8 WHERE id=?1",params![ctx.card.id,next.column,next.run_state,error,now.max(ctx.card.updated_at.saturating_add(1)),position,(next.run_state==QUEUED).then_some(now),cycle]).map_err(|e|e.to_string())?;
     let card = query::card(&tx, &ctx.card.id)?;
     tx.commit().map_err(|e| e.to_string())?;
+
+    let notice = if let Some(error) = error {
+        Some(notice(&card, NoticeKind::Failed, error.into()))
+    } else if card.run_state == IDLE
+        && [PLAN_APPROVAL, FINAL_REVIEW].contains(&card.column_id.as_str())
+    {
+        let body = if card.column_id == PLAN_APPROVAL {
+            "Plan ready for approval."
+        } else {
+            "Ready for final review."
+        };
+        Some(notice(&card, NoticeKind::Gate, body.into()))
+    } else {
+        None
+    };
     Ok(StageEffect {
         changed: true,
-        notice: if card.run_state == IDLE
-            && [PLAN_APPROVAL, FINAL_REVIEW].contains(&card.column_id.as_str())
-        {
-            let body = if card.column_id == PLAN_APPROVAL {
-                "Plan ready for approval."
-            } else {
-                "Ready for final review."
-            };
-            Some(notice(&card, NoticeKind::Gate, body.into()))
-        } else {
-            None
-        },
+        notice,
         card: Some(card),
     })
 }

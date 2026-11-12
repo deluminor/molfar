@@ -34,7 +34,7 @@ fn writing_stage_requires_commit_and_exact_output_and_partial_save_is_retryable(
         .board_finish_stage("implement", &output)
         .unwrap_err()
         .contains("differ"));
-    output.artifacts[0].body = "Implementation report".into();
+    output.artifacts[0].body = "Status: complete\nImplementation report".into();
     let conn = Connection::open(store.database_path()).unwrap();
     conn.execute_batch("CREATE TRIGGER fail_report BEFORE INSERT ON task_board_artifacts WHEN NEW.kind='impl_report' BEGIN SELECT RAISE(ABORT,'injected report failure'); END;").unwrap();
     assert!(store

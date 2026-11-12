@@ -2,6 +2,7 @@ use super::*;
 use molfar_core::{
     agent::turn::TurnCompletion,
     task_board::stage::{
+        agent::AgentStage,
         checkout, contracts,
         lifecycle::types::{FailureStatus, StageContext, StageEffect, VerifiedStageOutput},
     },
@@ -49,7 +50,14 @@ fn verify(context: &StageContext, text: &str) -> Result<VerifiedStageOutput, Str
         .as_deref()
         .ok_or("Stage worktree is missing")?;
     let after = checkout::snapshot(std::path::Path::new(path))?;
-    let stage = checkout::policy::verify_run(&context.run, &after)?;
+    let stage = checkout::policy::verify_run(&context.run, &after).map_err(|error| {
+        let blocked = AgentStage::parse(&context.run.stage)
+            .is_some_and(|stage| contracts::reported_blocked(stage, text));
+        if !blocked {
+            return error;
+        }
+        format!("The agent reported it is blocked. Open the session to read the blocker, resolve it, then Retry. ({error})")
+    })?;
     let artifacts = contracts::read_stage_output(stage, text)?;
     Ok(VerifiedStageOutput { artifacts, after })
 }

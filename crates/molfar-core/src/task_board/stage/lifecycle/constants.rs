@@ -2,6 +2,10 @@ pub const QUEUED: &str = "queued";
 pub const RUNNING: &str = "running";
 pub const FAILED: &str = "failed";
 pub const SUCCEEDED: &str = "succeeded";
+/// A writing run that reported unfinished work; the engine queued a continuation.
+pub const PARTIAL: &str = "partial";
+pub(crate) const MAX_CONTINUATIONS: usize = 3;
+pub(crate) const MAX_AUTO_REWORK: usize = 2;
 pub const ACCEPTED: &str = "accepted";
 pub const PREPARED: &str = "session_prepared";
 pub const SUBMITTED: &str = "turn_submitted";

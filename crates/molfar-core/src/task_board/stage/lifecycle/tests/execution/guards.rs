@@ -102,7 +102,7 @@ fn oversized_implementation_report_fails_settlement_without_advancing() {
     approve(&mut store);
     let session = prepare(&mut store, "implement", AgentStage::Implement, "abc123");
     let body = "x".repeat(crate::task_board::stage::lifecycle::constants::MAX_ARTIFACT + 1);
-    let text = format!("<<<MOLFAR:impl_report>>>{body}<<<END:impl_report>>>");
+    let text = format!("<<<MOLFAR:impl_report>>>Status: complete\n{body}<<<END:impl_report>>>");
     let output = receipt(
         &mut store,
         "implement",

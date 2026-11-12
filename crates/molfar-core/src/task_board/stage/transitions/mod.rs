@@ -53,6 +53,12 @@ fn agent_transition(card: Position<'_>, action: BoardAction) -> Option<Transitio
             let (column, state) = after_success(stage);
             move_to(column, state, &[ClearError])
         }
+        (StageContinued, RUNNING) if !stage.is_read_only() => {
+            move_to(card.column, QUEUED, &[ClearError])
+        }
+        (AutoRework, RUNNING) if stage == AgentStage::CodeReview => {
+            move_to(REWORK, QUEUED, &[NextReworkCycle, ClearError])
+        }
         (StageFailed, RUNNING) => move_to(card.column, FAILED, &[]),
         (Retry, FAILED) => move_to(card.column, QUEUED, &[ClearError]),
         (Back, FAILED) => move_to(back_target(stage), IDLE, &[ClearError]),

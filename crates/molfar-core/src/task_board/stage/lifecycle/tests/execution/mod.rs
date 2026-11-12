@@ -1,3 +1,4 @@
+mod automation;
 mod boundaries;
 mod fixtures;
 mod guards;

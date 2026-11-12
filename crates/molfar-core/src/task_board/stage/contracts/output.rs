@@ -1,5 +1,5 @@
 use super::{
-    constants::{QUESTIONS, REVIEW},
+    constants::{IMPL_REPORT, QUESTIONS, REVIEW},
     types::ParsedArtifact,
 };
 use regex::Regex;
@@ -47,6 +47,9 @@ pub(super) fn read(
             if !value.lines().any(|line| heading.is_match(line.trim())) {
                 return Err("questions: Questions must use `## Q<n> — <title>` headings.".into());
             }
+        }
+        if kind == IMPL_REPORT {
+            super::status::parse(value).map_err(|error| format!("impl_report: {error}"))?;
         }
         if kind == REVIEW {
             super::review::parse(value).map_err(|error| format!("review: {error}"))?;

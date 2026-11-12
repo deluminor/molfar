@@ -2,6 +2,8 @@
 pub enum BoardAction {
     Start,
     StageSucceeded,
+    StageContinued,
+    AutoRework,
     StageFailed,
     Answer,
     RequestChanges,
@@ -23,6 +25,8 @@ impl BoardAction {
         match self {
             Self::Start => "start",
             Self::StageSucceeded => "stageSucceeded",
+            Self::StageContinued => "stageContinued",
+            Self::AutoRework => "autoRework",
             Self::StageFailed => "stageFailed",
             Self::Answer => "answer",
             Self::RequestChanges => "requestChanges",

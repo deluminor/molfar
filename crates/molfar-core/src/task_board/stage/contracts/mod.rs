@@ -4,6 +4,7 @@ mod prompt;
 mod prompt_bodies;
 pub mod review;
 mod sets;
+pub mod status;
 
 pub use sets::{input_contract, output_contract};
 pub mod types;
@@ -18,14 +19,29 @@ pub fn read_stage_output(
     output::read(stage, text)
 }
 
+/// True when a writing stage's final message reports `Status: blocked`; such a run may
+/// legitimately end without a commit, so callers explain the blocker instead.
+pub fn reported_blocked(stage: super::agent::AgentStage, text: &str) -> bool {
+    output::read(stage, text)
+        .ok()
+        .and_then(|artifacts| {
+            artifacts
+                .into_iter()
+                .find(|artifact| artifact.kind == constants::IMPL_REPORT)
+        })
+        .and_then(|report| status::parse(&report.body).ok())
+        == Some(status::ImplStatus::Blocked)
+}
+
 pub fn build_stage_prompt(
     stage: super::agent::AgentStage,
     card: &crate::task_board::types::Card,
     files: &[types::ManifestReference],
     skills: &[String],
     head: &str,
+    continuation: i64,
 ) -> Result<String, String> {
-    prompt::build(stage, card, files, skills, head)
+    prompt::build(stage, card, files, skills, head, continuation)
 }
 
 #[cfg(test)]

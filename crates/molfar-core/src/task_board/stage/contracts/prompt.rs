@@ -42,6 +42,7 @@ pub(super) fn build(
     files: &[ManifestReference],
     skills: &[String],
     head: &str,
+    continuation: i64,
 ) -> Result<String, String> {
     if stage == crate::task_board::stage::agent::AgentStage::Grill && card.grill_round < 1 {
         return Err("Grill round must be positive.".into());
@@ -72,7 +73,7 @@ pub(super) fn build(
     sections.push(rules);
     sections.push(inputs(files)?);
     if stage != crate::task_board::stage::agent::AgentStage::Grill {
-        sections.extend(super::prompt_bodies::build(stage, card, head));
+        sections.extend(super::prompt_bodies::build(stage, card, head, continuation));
         return Ok(sections.join("\n\n"));
     }
     let goal = if card.grill_round > 1 {
@@ -86,6 +87,7 @@ pub(super) fn build(
         "Work the open decisions as a design tree: settle everything the code can answer yourself, and ask only what".into(),
         "the user must decide. Always produce a complete draft spec and plan, even when questions remain: the user may".into(),
         "approve the plan without answering. Emit the questions block only when a decision is genuinely open.".into(),
+        "Size the plan so one Implement session can finish all of it, usually three or four execution stages, and map\nevery acceptance criterion to a stage and a test. When the task is clearly bigger than one card, ask about it\nin the questions block and propose a split into separate cards.".into(),
         "## Output\nEnd your final message with these blocks, exactly as delimited. MOLFAR saves them as files; anything outside\nthe blocks is ignored. Each block must be complete Markdown on its own.\n\n<<<MOLFAR:spec>>>\n---\npr_title: \"<conventional commit title for the eventual pull request>\"\n---\n# Spec — problem, done / acceptance criteria, scope and out of scope, constraints, risks\n<<<END:spec>>>\n<<<MOLFAR:plan>>>\n# Plan — Goal, Technical Approach, Architecture Overview, Risks & Mitigations, Execution Stages, Testing Strategy\n<<<END:plan>>>\n<<<MOLFAR:questions>>>\n## Q1 — <decision title>\n<the question, with concrete options>\n**Recommended:** <your recommended answer>\n(omit this whole block when nothing is open)\n<<<END:questions>>>".into(),
     ]);
     Ok(sections.join("\n\n"))

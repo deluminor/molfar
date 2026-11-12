@@ -8,7 +8,7 @@ use crate::{
             choice::types::ResolvedStageChoice,
             lifecycle::{
                 constants::RUNNING,
-                storage::{claim, progress, query, settlement},
+                storage::{claim, outcome, progress, query, settlement},
                 types::{FailureStatus, StageContext, StageEffect, VerifiedStageOutput},
             },
         },
@@ -42,6 +42,15 @@ impl Store {
             .map_err(|e| e.to_string())?;
         run.map(|run| query::card(&self.conn, &run.card_id).map(|card| StageContext { card, run }))
             .transpose()
+    }
+
+    /// The continuation number for a run's prompt: 0 for a fresh start.
+    pub fn board_stage_continuation(&self, id: &str) -> Result<i64, String> {
+        let Some(ctx) = self.board_stage_context(id)? else {
+            return Ok(0);
+        };
+        let streak = outcome::continuation(&self.conn, &ctx.card.id, id)?;
+        i64::try_from(streak).map_err(|e| e.to_string())
     }
 
     pub fn board_stage_is_current(&self, id: &str) -> Result<bool, String> {

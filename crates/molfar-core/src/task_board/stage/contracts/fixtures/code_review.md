@@ -26,17 +26,18 @@ the card into your checkout. They are git-ignored, not part of the repository: n
 | `.molfar/board/impl_report-v2.md` | impl_report | v2 | The latest implementation report |
 
 ## Goal
-
-Review the change `git diff aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb` against the spec, its acceptance
-
-criteria and the plan. Inspect the diff and any surrounding code yourself. Look for correctness bugs, missing
-
-tests, security issues, broken contracts and deviations from the plan. Anchor every finding to file:line.
-
-Use APPROVE only when nothing blocking or major remains.
-
+Review the change `git diff aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb` against the spec, its acceptance criteria and the plan.
+Read the whole diff and the surrounding code before you write anything, and report every finding in this
+one pass: a rework fixes all of them at once, so never stop at the first blocking issue. Check each acceptance
+criterion explicitly; an unmet criterion is a blocking finding. Look for correctness bugs, missing or weak
+tests, unhandled errors, security issues, broken contracts, performance problems and deviations from the plan.
+Run the repository's lint, typecheck and test commands when they do not modify tracked files, and report the
+results. Anchor every finding to file:line.
+Severity: blocking = a criterion is unmet or the change is broken; major = a real defect or risk to fix before
+merge; minor = worth fixing, not dangerous; nit = style. When blocking or major findings remain, MOLFAR sends
+them back to rework automatically together with the minor ones. Use APPROVE only when every criterion is met
+and nothing blocking or major remains.
 Also write the pull request description for this change, grounded in the diff, the spec and the
-
 implementation report: English, no emojis, no filler, no attribution.
 
 ## Output
@@ -45,6 +46,9 @@ the blocks is ignored. Each block must be complete Markdown on its own.
 
 <<<MOLFAR:review>>>
 Verdict: APPROVE | CHANGES_REQUESTED
+
+## Acceptance criteria
+- <criterion>: met | not met — <evidence: file, test or check>
 
 ## F1 [blocking|major|minor|nit] <finding title>
 File: <path>:<line>

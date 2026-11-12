@@ -1,4 +1,5 @@
-use super::{constants::ENGINE_SOURCE, record, types::Delivery};
+use super::{record, types::Delivery};
+use crate::task_board::constants::ENGINE;
 use crate::task_board::{
     constants::FINAL_REVIEW,
     stage::{
@@ -99,7 +100,7 @@ pub(crate) fn finish(
         kind: DELIVERY.into(),
         body: record::to_artifact(delivery)?,
     };
-    artifacts::publish(&tx, base, id, &artifact, ENGINE_SOURCE, None, now)?;
+    artifacts::publish(&tx, base, id, &artifact, ENGINE, None, now)?;
 
     let position = query::next_position(&tx, &next.column)?;
     let worktree = if worktree_removed {

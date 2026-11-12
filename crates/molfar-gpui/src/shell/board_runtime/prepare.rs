@@ -115,12 +115,14 @@ fn prepare_inner(
     if stage == molfar_core::task_board::stage::agent::AgentStage::Grill && inputs.len() == 1 {
         prompt_card.grill_round = 1;
     }
+    let continuation = locked(store)?.board_stage_continuation(run_id)?;
     let prompt = contracts::build_stage_prompt(
         stage,
         &prompt_card,
         &manifest,
         &resolved.skills,
         &before.head,
+        continuation,
     )?;
     let mut settings = resolved.settings;
     settings.worktree_cwd = Some(retained.path);

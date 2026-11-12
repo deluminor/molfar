@@ -36,11 +36,11 @@ def response(value):
         return 'Missing output blocks'
     if stage == 'Code review':
         return ('<<<MOLFAR:review>>>Verdict: CHANGES_REQUESTED\n\n'
-                '## F1 [major] Fixture race\nFile: tracked.txt:1\nFix this race.\n\n'
+                '## F1 [minor] Fixture race\nFile: tracked.txt:1\nFix this race.\n\n'
                 '## F2 [nit] Optional rename\nOptional.<<<END:review>>>\n'
                 '<<<MOLFAR:pr_description>>>Fixture PR description<<<END:pr_description>>>')
     if stage in ('Implement', 'Rework'):
-        return f'<<<MOLFAR:impl_report>>>{stage} fixture report<<<END:impl_report>>>'
+        return f'<<<MOLFAR:impl_report>>>Status: complete\n{stage} fixture report<<<END:impl_report>>>'
     return ('<<<MOLFAR:spec>>>\nFixture specification\n<<<END:spec>>>\n'
             '<<<MOLFAR:plan>>>\nFixture plan\n<<<END:plan>>>')
 
