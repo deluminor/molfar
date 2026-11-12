@@ -57,7 +57,8 @@ fn method_option(id: &'static str, label: &'static str, hint: &'static str) -> S
         .aria_label(format!("{label}. {hint}"))
         .focusable()
         .tab_index(0)
-        .w_full()
+        .flex_1()
+        .min_w_0()
         .flex()
         .flex_col()
         .gap(px(2.))
@@ -145,13 +146,14 @@ impl Board {
             ));
         }
 
+        let mut options = div().w_full().flex().items_stretch().gap(px(6.));
         for (method, id, label, hint) in METHODS {
             if github == Some(false) && method != DeliveryMethod::Keep {
                 continue;
             }
             let card_id = card.id.clone();
             let updated_at = card.updated_at;
-            picker = picker.child(
+            options = options.child(
                 modal::disabled(method_option(id, label, hint), pending)
                     .debug_selector(move || id.into())
                     .on_click(cx.listener(move |this, _, window, cx| {
@@ -173,7 +175,7 @@ impl Board {
                     })),
             );
         }
-        picker
+        picker.child(options)
     }
 
     pub(super) fn deliver_action(
