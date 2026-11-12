@@ -52,7 +52,15 @@ fn every_execution_prompt_matches_the_executed_desktop_template() {
                 path: format!(".molfar/board/{kind}-v2.md"),
             })
             .collect::<Vec<_>>();
-        let prompt = build_stage_prompt(stage, &card(), &files, &[], &"b".repeat(40), 0).unwrap();
+        let prompt = build_stage_prompt(
+            stage,
+            &card(),
+            &files,
+            &[],
+            &"b".repeat(40),
+            &Default::default(),
+        )
+        .unwrap();
         assert_eq!(prompt, expected, "{}", stage.id());
         assert!(!prompt.contains("This body must not be embedded"));
     }
@@ -61,8 +69,13 @@ fn every_execution_prompt_matches_the_executed_desktop_template() {
 #[test]
 fn continuation_runs_point_the_agent_at_the_previous_report_and_commits() {
     for stage in [AgentStage::Implement, AgentStage::Rework] {
-        let fresh = build_stage_prompt(stage, &card(), &[], &[], "HEAD", 0).unwrap();
-        let continued = build_stage_prompt(stage, &card(), &[], &[], "HEAD", 2).unwrap();
+        let fresh =
+            build_stage_prompt(stage, &card(), &[], &[], "HEAD", &Default::default()).unwrap();
+        let extras = types::PromptExtras {
+            continuation: 2,
+            checks: None,
+        };
+        let continued = build_stage_prompt(stage, &card(), &[], &[], "HEAD", &extras).unwrap();
 
         assert!(!fresh.contains("## Continuation"));
         assert!(continued.contains("continuation run 2"));
@@ -150,4 +163,27 @@ fn stage_checkout_policy_keeps_read_only_strict_and_writing_committed() {
             assert!(policy::after(stage, &clean, &committed).is_ok());
         }
     }
+}
+
+#[test]
+fn review_prompt_states_engine_checks_only_when_they_ran() {
+    let plain = build_stage_prompt(
+        AgentStage::CodeReview,
+        &card(),
+        &[],
+        &[],
+        "HEAD",
+        &Default::default(),
+    )
+    .unwrap();
+    let extras = types::PromptExtras {
+        continuation: 0,
+        checks: Some("`npm run check:web` failed with exit code 1.".into()),
+    };
+    let checked =
+        build_stage_prompt(AgentStage::CodeReview, &card(), &[], &[], "HEAD", &extras).unwrap();
+
+    assert!(!plain.contains("## Checks"));
+    assert!(checked.contains("## Checks\nMOLFAR ran the project's verify command before this review: `npm run check:web` failed"));
+    assert!(checked.find("## Checks").unwrap() < checked.find("## Output").unwrap());
 }

@@ -12,7 +12,9 @@ fn inputs(files: &[ManifestReference]) -> Result<String, String> {
             "answers" => "The user's answers and notes",
             "impl_report" => "The latest implementation report",
             "review" => "The latest code review and its findings",
-            "rework_brief" => "The findings selected for rework, with the user's note",
+            "rework_brief" => {
+                "What this rework must fix: selected findings, failing checks or the user's note"
+            }
             "delivery" => "Delivery record",
             "pr_description" => "Pull request description",
             _ => return Err("Unknown handoff artifact kind.".into()),
@@ -42,7 +44,7 @@ pub(super) fn build(
     files: &[ManifestReference],
     skills: &[String],
     head: &str,
-    continuation: i64,
+    extras: &super::types::PromptExtras,
 ) -> Result<String, String> {
     if stage == crate::task_board::stage::agent::AgentStage::Grill && card.grill_round < 1 {
         return Err("Grill round must be positive.".into());
@@ -73,7 +75,7 @@ pub(super) fn build(
     sections.push(rules);
     sections.push(inputs(files)?);
     if stage != crate::task_board::stage::agent::AgentStage::Grill {
-        sections.extend(super::prompt_bodies::build(stage, card, head, continuation));
+        sections.extend(super::prompt_bodies::build(stage, card, head, extras));
         return Ok(sections.join("\n\n"));
     }
     let goal = if card.grill_round > 1 {

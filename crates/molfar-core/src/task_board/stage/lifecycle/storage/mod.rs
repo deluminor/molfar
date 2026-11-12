@@ -1,4 +1,5 @@
 pub(crate) mod action;
+pub(crate) mod checks;
 pub(crate) mod claim;
 pub(crate) mod outcome;
 pub(crate) mod progress;

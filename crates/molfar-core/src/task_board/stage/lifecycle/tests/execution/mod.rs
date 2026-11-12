@@ -1,5 +1,6 @@
 mod automation;
 mod boundaries;
+mod checks;
 mod fixtures;
 mod guards;
 use super::owner::gate;

@@ -2,7 +2,7 @@
 //! run, stop for the user, or send review findings straight back to rework.
 use super::super::constants::{MAX_AUTO_REWORK, MAX_CONTINUATIONS, PARTIAL};
 use crate::task_board::{
-    constants::ENGINE,
+    constants::{ENGINE, USER},
     stage::{
         agent::AgentStage,
         contracts::{
@@ -79,7 +79,7 @@ fn rework_or_advance(conn: &Connection, card: &str, markdown: &str) -> Result<Ou
             .findings
             .iter()
             .any(|finding| serious(finding.severity));
-    if !needs_rework || auto_streak(conn, card)? >= MAX_AUTO_REWORK {
+    if !needs_rework || brief_streak(conn, card, ENGINE)? >= MAX_AUTO_REWORK {
         return Ok(Outcome::Advance);
     }
 
@@ -112,8 +112,9 @@ fn partial_streak(conn: &Connection, card: &str, run: &str) -> Result<usize, Str
     Ok(streak)
 }
 
-/// Consecutive engine-written rework briefs; a brief the user wrote resets the count.
-fn auto_streak(conn: &Connection, card: &str) -> Result<usize, String> {
+/// Engine briefs from `source` since the user last wrote one; each automatic loop
+/// (review findings, failing checks) keeps its own budget.
+pub(crate) fn brief_streak(conn: &Connection, card: &str, source: &str) -> Result<usize, String> {
     let mut statement = conn
         .prepare("SELECT source FROM task_board_artifacts WHERE card_id=?1 AND kind=?2 ORDER BY version DESC")
         .map_err(|e| e.to_string())?;
@@ -122,11 +123,14 @@ fn auto_streak(conn: &Connection, card: &str) -> Result<usize, String> {
         .map_err(|e| e.to_string())?;
 
     let mut streak = 0;
-    for source in sources {
-        if source.map_err(|e| e.to_string())? != ENGINE {
+    for entry in sources {
+        let entry = entry.map_err(|e| e.to_string())?;
+        if entry == USER {
             break;
         }
-        streak += 1;
+        if entry == source {
+            streak += 1;
+        }
     }
     Ok(streak)
 }
@@ -136,7 +140,7 @@ pub(crate) fn continuation(conn: &Connection, card: &str, run: &str) -> Result<u
     partial_streak(conn, card, run)
 }
 
-pub(super) fn brief(body: String) -> ParsedArtifact {
+pub(crate) fn brief(body: String) -> ParsedArtifact {
     ParsedArtifact {
         kind: REWORK_BRIEF.into(),
         body,

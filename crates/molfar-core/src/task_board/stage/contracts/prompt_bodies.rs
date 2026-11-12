@@ -1,4 +1,5 @@
 use super::constants::{IMPL_REPORT, PR_DESCRIPTION, REVIEW};
+use super::types::PromptExtras;
 use crate::task_board::{stage::agent::AgentStage, types::Card};
 
 const REPORT: &str = "# Implementation report\nStatus: complete | partial | blocked\n## Summary\n## Acceptance criteria (each one: done | not done — evidence)\n## Commits (sha — subject)\n## Checks run and results (lint, typecheck, tests)\n## Deviations from the plan\n## Remaining work (only when partial or blocked: exact stages and criteria left)";
@@ -39,7 +40,19 @@ fn writing(goal: &[&str], card: &Card, run: i64, report: &str) -> Vec<String> {
     sections
 }
 
-pub(super) fn build(stage: AgentStage, card: &Card, head: &str, run: i64) -> Vec<String> {
+fn checks(summary: &Option<String>) -> Option<String> {
+    summary.as_ref().map(|summary| {
+        format!("## Checks\nMOLFAR ran the project's verify command before this review: {summary}\nA failing check is a blocking finding. Passing checks need no re-run.")
+    })
+}
+
+pub(super) fn build(
+    stage: AgentStage,
+    card: &Card,
+    head: &str,
+    extras: &PromptExtras,
+) -> Vec<String> {
+    let run = extras.continuation;
     match stage {
         AgentStage::Implement => writing(
             &[
@@ -84,10 +97,10 @@ pub(super) fn build(stage: AgentStage, card: &Card, head: &str, run: i64) -> Vec
                 "implementation report: English, no emojis, no filler, no attribution.",
             ]
             .join("\n");
-            vec![
-                format!("## Goal\n{goal}"),
-                output(&[(REVIEW, REVIEW_TEMPLATE), (PR_DESCRIPTION, PR_TEMPLATE)]),
-            ]
+            let mut sections = vec![format!("## Goal\n{goal}")];
+            sections.extend(checks(&extras.checks));
+            sections.push(output(&[(REVIEW, REVIEW_TEMPLATE), (PR_DESCRIPTION, PR_TEMPLATE)]));
+            sections
         }
         AgentStage::Grill => Vec::new(),
     }

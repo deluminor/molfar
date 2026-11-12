@@ -8,6 +8,7 @@ use crate::task_board::stage::{
         MIN_CONCURRENCY,
     },
 };
+use crate::task_board::{constants::MAX_PATH, stage::verify::constants::MAX_COMMAND};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
@@ -19,6 +20,7 @@ pub const HARNESS: &str = "harness";
 pub const MODEL: &str = "model";
 pub const EFFORT: &str = "effort";
 pub const RUNTIME_MODE: &str = "runtimeMode";
+pub const VERIFY_COMMANDS: &str = "verifyCommands";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +46,10 @@ pub enum SettingsPatch {
     Limits {
         max_concurrent: i64,
         stall_minutes: i64,
+    },
+    VerifyCommand {
+        project: String,
+        command: Option<String>,
     },
 }
 
@@ -145,7 +151,38 @@ fn validate(settings: &Map<String, Value>) -> Result<(), String> {
         "Stall time must be between 1 and 1440 minutes.",
     )?;
     validate_stage_map(settings, COLUMNS, validate_config)?;
-    validate_stage_map(settings, COLUMN_SKILLS, validate_skills)
+    validate_stage_map(settings, COLUMN_SKILLS, validate_skills)?;
+    validate_verify_commands(settings)
+}
+
+fn validate_verify_commands(settings: &Map<String, Value>) -> Result<(), String> {
+    let Some(value) = settings.get(VERIFY_COMMANDS) else {
+        return Ok(());
+    };
+    let entries = value
+        .as_object()
+        .ok_or("Verify commands must be an object.")?;
+    for (project, command) in entries {
+        let command = command.as_str().unwrap_or_default();
+        if project.is_empty() || project.len() > MAX_PATH {
+            return Err("Invalid verify command project.".into());
+        }
+        if command.trim().is_empty() || command.len() > MAX_COMMAND {
+            return Err("Verify command must be 1–2000 characters.".into());
+        }
+    }
+    Ok(())
+}
+
+/// The project's verify command, if the user set one; unreadable settings mean none.
+pub fn verify_command(raw: Option<&str>, project: &str) -> Option<String> {
+    let settings: Value = serde_json::from_str(raw?).ok()?;
+    let command = settings
+        .get(VERIFY_COMMANDS)?
+        .get(project)?
+        .as_str()?
+        .trim();
+    (!command.is_empty()).then(|| command.to_owned())
 }
 
 fn stage_entry(settings: &Map<String, Value>, stage: AgentStage) -> Option<Value> {
@@ -235,6 +272,16 @@ pub fn apply(raw: Option<&str>, patch: &SettingsPatch) -> Result<String, String>
         } => {
             settings.insert(MAX_CONCURRENT.into(), json!(max_concurrent));
             settings.insert(STALL_MINUTES.into(), json!(stall_minutes));
+        }
+        SettingsPatch::VerifyCommand { project, command } => {
+            let entries = settings.entry(VERIFY_COMMANDS).or_insert_with(|| json!({}));
+            let Some(entries) = entries.as_object_mut() else {
+                return Err("Board settings are unreadable.".into());
+            };
+            match command.as_deref().map(str::trim).filter(|c| !c.is_empty()) {
+                Some(command) => entries.insert(project.clone(), json!(command)),
+                None => entries.remove(project),
+            };
         }
     }
 

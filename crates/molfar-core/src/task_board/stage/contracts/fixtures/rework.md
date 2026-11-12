@@ -23,8 +23,8 @@ the card into your checkout. They are git-ignored, not part of the repository: n
 | `.molfar/board/task-v2.md` | task | v2 | The task as the user wrote it, with acceptance criteria |
 | `.molfar/board/spec-v2.md` | spec | v2 | Spec: problem, acceptance criteria, scope, constraints, risks |
 | `.molfar/board/plan-v2.md` | plan | v2 | The implementation plan |
+| `.molfar/board/rework_brief-v2.md` | rework_brief | v2 | What this rework must fix: selected findings, failing checks or the user's note |
 | `.molfar/board/review-v2.md` | review | v2 | The latest code review and its findings |
-| `.molfar/board/rework_brief-v2.md` | rework_brief | v2 | The findings selected for rework, with the user's note |
 | `.molfar/board/impl_report-v2.md` | impl_report | v2 | The latest implementation report |
 
 ## Goal

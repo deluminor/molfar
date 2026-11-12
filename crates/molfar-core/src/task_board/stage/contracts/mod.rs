@@ -39,9 +39,9 @@ pub fn build_stage_prompt(
     files: &[types::ManifestReference],
     skills: &[String],
     head: &str,
-    continuation: i64,
+    extras: &types::PromptExtras,
 ) -> Result<String, String> {
-    prompt::build(stage, card, files, skills, head, continuation)
+    prompt::build(stage, card, files, skills, head, extras)
 }
 
 #[cfg(test)]

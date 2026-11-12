@@ -23,7 +23,7 @@ def response(value):
         common = subprocess.check_output(['git', 'rev-parse', '--git-common-dir'], text=True).strip()
         assert (cwd / common).resolve() == (root / 'project' / '.git').resolve()
         if behavior != 'no-commit':
-            (cwd / 'tracked.txt').write_text(f'{stage} changed the fixture\n')
+            (cwd / 'tracked.txt').write_text(f'{stage} changed the fixture {time.time_ns()}\n')
         if stage != 'Code review' and behavior not in ('dirty', 'no-commit'):
             subprocess.run(['git', 'add', 'tracked.txt'], check=True, stdout=subprocess.DEVNULL)
             subprocess.run(['git', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test',

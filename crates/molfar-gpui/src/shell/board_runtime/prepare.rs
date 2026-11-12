@@ -4,10 +4,12 @@ use molfar_core::{
     agent::Settings,
     task_board::{
         stage::{
+            agent::AgentStage,
             checkout,
             choice::{self, types::StageSelection},
-            contracts,
+            contracts::{self, types::PromptExtras},
             lifecycle::types::{FailureStatus, StageEffect},
+            verify,
         },
         types::Card,
     },
@@ -45,8 +47,7 @@ pub(super) fn prepare(
 ) -> Result<Prepared, String> {
     let card = defaults.card.clone();
     match prepare_inner(store, run_id, defaults) {
-        Ok(Some(launch)) => Ok(Prepared::Launch(Box::new(launch))),
-        Ok(None) => Ok(Prepared::Stopped),
+        Ok(prepared) => Ok(prepared),
         Err(error) => {
             let mut store = locked(store)?;
             let effect = if store.board_stage_context(run_id)?.is_some() {
@@ -59,11 +60,36 @@ pub(super) fn prepare(
     }
 }
 
-fn prepare_inner(
-    store: &Database,
-    run_id: &str,
-    defaults: Defaults,
-) -> Result<Option<Launch>, String> {
+enum Checks {
+    Skipped,
+    Ran(String),
+    Redirected(Box<StageEffect>),
+}
+
+/// Runs the project's verify command before a code review. Red checks send the card back
+/// to Rework while the automatic budget lasts; otherwise the review prompt states the result.
+fn verify(store: &Database, run_id: &str, card: &Card, checkout: &str) -> Result<Checks, String> {
+    let settings = locked(store)?.board_settings_json()?;
+    let Some(command) = choice::settings::verify_command(settings.as_deref(), &card.project_cwd)
+    else {
+        return Ok(Checks::Skipped);
+    };
+
+    let run = verify::run(
+        std::path::Path::new(checkout),
+        &command,
+        verify::constants::TIMEOUT,
+    );
+    let summary = verify::summary(&run);
+    if !run.passed
+        && let Some(effect) = locked(store)?.board_stage_checks_failed(run_id, &summary)?
+    {
+        return Ok(Checks::Redirected(Box::new(effect)));
+    }
+    Ok(Checks::Ran(summary))
+}
+
+fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<Prepared, String> {
     let stage = defaults.selection.stage;
     let kind = defaults.selection.kind;
     let source = locked(store)?
@@ -105,24 +131,36 @@ fn prepare_inner(
     )?;
     let retained = checkout::ensure_worktree(&context.card)?;
     let Some(context) = locked(store)?.board_record_stage_worktree(run_id, &retained)? else {
-        return Ok(None);
+        return Ok(Prepared::Stopped);
+    };
+    let checks = if stage == AgentStage::CodeReview {
+        match verify(store, run_id, &context.card, &retained.path)? {
+            Checks::Skipped => None,
+            Checks::Ran(summary) => Some(summary),
+            Checks::Redirected(effect) => return Ok(Prepared::Failed(effect)),
+        }
+    } else {
+        None
     };
     let inputs = locked(store)?.board_stage_inputs(&context.card.id)?;
     let manifest = checkout::materialize(std::path::Path::new(&retained.path), &inputs)?;
     let before = checkout::snapshot(std::path::Path::new(&retained.path))?;
     let mut prompt_card = context.card.clone();
     checkout::policy::before(stage, &before)?;
-    if stage == molfar_core::task_board::stage::agent::AgentStage::Grill && inputs.len() == 1 {
+    if stage == AgentStage::Grill && inputs.len() == 1 {
         prompt_card.grill_round = 1;
     }
-    let continuation = locked(store)?.board_stage_continuation(run_id)?;
+    let extras = PromptExtras {
+        continuation: locked(store)?.board_stage_continuation(run_id)?,
+        checks,
+    };
     let prompt = contracts::build_stage_prompt(
         stage,
         &prompt_card,
         &manifest,
         &resolved.skills,
         &before.head,
-        continuation,
+        &extras,
     )?;
     let mut settings = resolved.settings;
     settings.worktree_cwd = Some(retained.path);
@@ -133,21 +171,21 @@ fn prepare_inner(
         .board_record_stage_prepared(run_id, &before, &persisted)?
         .is_none()
     {
-        return Ok(None);
+        return Ok(Prepared::Stopped);
     }
     if !locked(store)?.board_stage_is_current(run_id)? {
-        return Ok(None);
+        return Ok(Prepared::Stopped);
     }
     #[cfg(test)]
     let registration = defaults.fixture.map(|fixture| {
         crate::runtime::test_provider::Registration::new(store, reserved.session.id, fixture.binary)
     });
-    Ok(Some(Launch {
+    Ok(Prepared::Launch(Box::new(Launch {
         #[cfg(test)]
         registration,
         run_id: run_id.to_owned(),
         summary: reserved.session,
         settings,
         warnings: resolved.warnings,
-    }))
+    })))
 }

@@ -8,7 +8,7 @@ use crate::{
             choice::types::ResolvedStageChoice,
             lifecycle::{
                 constants::RUNNING,
-                storage::{claim, outcome, progress, query, settlement},
+                storage::{checks, claim, outcome, progress, query, settlement},
                 types::{FailureStatus, StageContext, StageEffect, VerifiedStageOutput},
             },
         },
@@ -42,6 +42,18 @@ impl Store {
             .map_err(|e| e.to_string())?;
         run.map(|run| query::card(&self.conn, &run.card_id).map(|card| StageContext { card, run }))
             .transpose()
+    }
+
+    /// Red checks before a code review: send the card back to Rework, or `None` when the
+    /// automatic budget is spent and the review should run with the failure in its prompt.
+    pub fn board_stage_checks_failed(
+        &mut self,
+        id: &str,
+        summary: &str,
+    ) -> Result<Option<StageEffect>, String> {
+        self.board_writable()?;
+        let base = self.board_artifact_base()?;
+        checks::redirect(&mut self.conn, &base, id, summary)
     }
 
     /// The continuation number for a run's prompt: 0 for a fresh start.
