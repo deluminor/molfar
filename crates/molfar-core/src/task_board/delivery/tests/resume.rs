@@ -1,7 +1,7 @@
 use super::{
     super::{
         service::{self, finish, publish},
-        types::DeliveryMethod,
+        types::{DeliveryMethod, DeliveryStep},
     },
     fake::{Board, Fake},
 };
@@ -11,11 +11,27 @@ fn crash_after_a_saved_merge_resumes_without_merging_again() {
     let board = Board::at("final_review", "idle");
     let port = Fake::default();
     board.start();
-    drop(publish(&board.store, &port, "card", DeliveryMethod::Merge).unwrap());
+    drop(
+        publish(
+            &board.store,
+            &port,
+            "card",
+            DeliveryMethod::Merge,
+            DeliveryStep::Complete,
+        )
+        .unwrap(),
+    );
     service::fail(&board.store, "card", "crashed before Done").unwrap();
 
     board.start();
-    let published = publish(&board.store, &port, "card", DeliveryMethod::Merge).unwrap();
+    let published = publish(
+        &board.store,
+        &port,
+        "card",
+        DeliveryMethod::Merge,
+        DeliveryStep::Complete,
+    )
+    .unwrap();
     finish(&board.store, &port, published, None).unwrap();
 
     assert_eq!(
@@ -53,7 +69,14 @@ fn worktree_in_use_still_reaches_done_and_keeps_the_tree() {
     let board = Board::at("final_review", "idle");
     let port = Fake::default();
     board.start();
-    let published = publish(&board.store, &port, "card", DeliveryMethod::Keep).unwrap();
+    let published = publish(
+        &board.store,
+        &port,
+        "card",
+        DeliveryMethod::Keep,
+        DeliveryStep::Complete,
+    )
+    .unwrap();
 
     let finished = finish(
         &board.store,
@@ -89,7 +112,14 @@ fn missing_base_ref_falls_back_to_the_default_branch() {
     let port = Fake::default();
     board.start();
 
-    publish(&board.store, &port, "card", DeliveryMethod::Pr).unwrap();
+    publish(
+        &board.store,
+        &port,
+        "card",
+        DeliveryMethod::Pr,
+        DeliveryStep::Complete,
+    )
+    .unwrap();
 
     assert_eq!(port.requests.borrow()[0].base, "develop");
 }

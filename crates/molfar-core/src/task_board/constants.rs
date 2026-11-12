@@ -18,6 +18,8 @@ pub const FINAL_REVIEW: &str = "final_review";
 pub const REWORK: &str = "rework";
 pub const DONE: &str = "done";
 pub const IDLE: &str = "idle";
+/// A delivered pull request whose CI the board is waiting on before Done.
+pub const WAITING_CI: &str = "ci";
 pub(crate) const TASK: &str = "task";
 pub const USER: &str = "user";
 pub const ENGINE: &str = "engine";

@@ -5,7 +5,7 @@ use crate::{
         delivery::{
             port::DeliveryPort,
             text::{base_branch, pull_request_body, pull_request_number, pull_request_title},
-            types::{Delivery, DeliveryMethod, PullRequest, PullRequestDocs},
+            types::{Delivery, DeliveryMethod, DeliveryStep, PullRequest, PullRequestDocs},
         },
         stage::contracts::{
             constants::{IMPL_REPORT, PR_DESCRIPTION, REVIEW, SPEC},
@@ -112,6 +112,7 @@ pub(super) fn publish(
     card: &Card,
     worktree: &Path,
     method: DeliveryMethod,
+    step: DeliveryStep,
     previous: Option<Delivery>,
 ) -> Result<Delivery, String> {
     let repo = port.github_repo(worktree).map_err(|error| {
@@ -131,7 +132,7 @@ pub(super) fn publish(
     if record.pr_url.is_none() {
         open_or_adopt(store, port, card, worktree, &mut record)?;
     }
-    if method == DeliveryMethod::Merge && !record.merged {
+    if method == DeliveryMethod::Merge && step == DeliveryStep::Complete && !record.merged {
         merge(store, port, card, worktree, &repo, &mut record)?;
     }
     Ok(record)

@@ -3,7 +3,7 @@ use super::footer::lead_button;
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Div, Role, Stateful, Window, div, prelude::*, px};
 use molfar_core::task_board::{
-    constants::{DONE, FINAL_REVIEW, IDLE},
+    constants::{DONE, FINAL_REVIEW, IDLE, WAITING_CI},
     delivery::{record, types::DeliveryMethod},
     stage::lifecycle::constants::{FAILED, RUNNING},
     types::Card,
@@ -33,6 +33,9 @@ const METHODS: [(DeliveryMethod, &str, &str, &str); 3] = [
 pub(in crate::task_board) fn status_text(card: &Card) -> String {
     if card.column_id == FINAL_REVIEW && card.run_state == RUNNING {
         return "Delivering".into();
+    }
+    if card.column_id == FINAL_REVIEW && card.run_state == WAITING_CI {
+        return "Waiting for CI".into();
     }
     if card.column_id == DONE {
         return "Delivered".into();

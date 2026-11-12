@@ -1,4 +1,5 @@
 mod actions;
+mod ci;
 mod deliver;
 mod launch;
 mod notices;
@@ -21,6 +22,9 @@ pub(super) struct State {
     again: bool,
     preparing: HashMap<String, String>,
     running: HashMap<i64, String>,
+    ci_polling: bool,
+    ci_error: Option<String>,
+    redelivering: HashSet<String>,
     pub owned: HashSet<i64>,
     pub ownership_ready: bool,
     pub attention: usize,
@@ -39,7 +43,10 @@ impl Shell {
                     .timer(Duration::from_secs(60))
                     .await;
                 if this
-                    .update(cx, |this, cx| this.poll_board(true, cx))
+                    .update(cx, |this, cx| {
+                        this.poll_board(true, cx);
+                        this.poll_board_ci(cx);
+                    })
                     .is_err()
                 {
                     break;

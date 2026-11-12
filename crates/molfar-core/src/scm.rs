@@ -362,6 +362,28 @@ pub fn pr_status(cwd: &Path) -> Result<Option<Pr>, String> {
     Ok(pr_status_for(&expand_home(cwd)))
 }
 
+/// A pull request's check rollup for its current head, as `gh` JSON.
+pub fn pr_check_rollup(cwd: &Path, url: &str) -> Result<String, String> {
+    if remote_workspace::is_remote(cwd) {
+        return Err("CI status is local only".into());
+    }
+    gh_run(
+        &expand_home(cwd),
+        &["pr", "view", url, "--json", "statusCheckRollup"],
+    )
+}
+
+/// The failed steps' log of one GitHub Actions job.
+pub fn job_failed_log(cwd: &Path, job: &str) -> Result<String, String> {
+    if remote_workspace::is_remote(cwd) {
+        return Err("CI logs are local only".into());
+    }
+    gh_run(
+        &expand_home(cwd),
+        &["run", "view", "--job", job, "--log-failed"],
+    )
+}
+
 /// The working copy's GitHub `owner/name`, via `gh` (Tauri's git_github_repo).
 pub fn github_repo(cwd: &Path) -> Result<String, String> {
     if remote_workspace::is_remote(cwd) {
