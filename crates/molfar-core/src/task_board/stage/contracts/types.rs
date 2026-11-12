@@ -69,4 +69,6 @@ pub struct PromptExtras {
     pub continuation: i64,
     /// What the project's verify command did in this checkout, when it ran.
     pub checks: Option<String>,
+    /// The commit an earlier successful review covered, so this review reads only what changed.
+    pub reviewed_head: Option<String>,
 }

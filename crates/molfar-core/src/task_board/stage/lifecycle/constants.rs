@@ -7,6 +7,9 @@ pub const PARTIAL: &str = "partial";
 pub(crate) const MAX_CONTINUATIONS: usize = 3;
 pub(crate) const MAX_AUTO_REWORK: usize = 2;
 pub(crate) const MAX_CHECK_REWORK: usize = 2;
+/// Implement, Rework and Code review runs the engine may start since the user last decided.
+pub(crate) const MAX_AUTOMATIC_RUNS: i64 = 10;
+pub(crate) const BUDGET_SPENT: &str = "Automatic budget used: 10 agent runs since your last decision. Review the card, then Retry or Rework to continue.";
 pub const ACCEPTED: &str = "accepted";
 pub const PREPARED: &str = "session_prepared";
 pub const SUBMITTED: &str = "turn_submitted";

@@ -96,7 +96,9 @@ pub(crate) fn ci_failed(
     let card = waiting_card(&tx, id, expected)?;
     let now = stamp(&card)?;
 
-    if outcome::brief_streak(&tx, id, CHECKS)? >= MAX_CHECK_REWORK {
+    if outcome::brief_streak(&tx, id, CHECKS)? >= MAX_CHECK_REWORK
+        || outcome::budget_spent(&tx, id)?
+    {
         let failed = next(&card, BoardAction::DeliveryFailed)?;
         let url = record::parse(card.delivery_json.as_deref())
             .and_then(|d| d.pr_url)

@@ -37,7 +37,9 @@ pub(crate) fn redirect(
     if AgentStage::parse(&ctx.run.stage) != Some(AgentStage::CodeReview) {
         return Err("Checks run only before a code review.".into());
     }
-    if outcome::brief_streak(&tx, &ctx.card.id, CHECKS)? >= MAX_CHECK_REWORK {
+    if outcome::brief_streak(&tx, &ctx.card.id, CHECKS)? >= MAX_CHECK_REWORK
+        || outcome::budget_spent(&tx, &ctx.card.id)?
+    {
         return Ok(None);
     }
 

@@ -23,8 +23,9 @@ own output format.
   any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.
 
 ## Handoff files
-Read every file below before you start; together they are the card's current state. MOLFAR copied them from
-the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.
+Read every file below before you start; together they are the card's current state.
+MOLFAR copied these files from the card into your checkout. They are git-ignored, not part of the repository:
+never edit, stage or commit them.
 
 | File | Kind | Version | What it is |
 | --- | --- | --- | --- |

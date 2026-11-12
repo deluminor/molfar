@@ -15,8 +15,9 @@ the repository.
   any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.
 
 ## Handoff files
-Read every file below before you start; together they are the card's current state. MOLFAR copied them from
-the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.
+Read every file below before you start; together they are the card's current state.
+MOLFAR copied these files from the card into your checkout. They are git-ignored, not part of the repository:
+never edit, stage or commit them.
 
 | File | Kind | Version | What it is |
 | --- | --- | --- | --- |
@@ -24,6 +25,7 @@ the card into your checkout. They are git-ignored, not part of the repository: n
 | `.molfar/board/spec-v2.md` | spec | v2 | Spec: problem, acceptance criteria, scope, constraints, risks |
 | `.molfar/board/plan-v2.md` | plan | v2 | The implementation plan |
 | `.molfar/board/impl_report-v2.md` | impl_report | v2 | The latest implementation report |
+| `.molfar/board/review-v2.md` | review | v2 | The latest code review and its findings |
 
 ## Goal
 Review the change `git diff aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb` against the spec, its acceptance criteria and the plan.

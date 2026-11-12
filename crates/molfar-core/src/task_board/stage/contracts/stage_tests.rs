@@ -73,7 +73,7 @@ fn continuation_runs_point_the_agent_at_the_previous_report_and_commits() {
             build_stage_prompt(stage, &card(), &[], &[], "HEAD", &Default::default()).unwrap();
         let extras = types::PromptExtras {
             continuation: 2,
-            checks: None,
+            ..Default::default()
         };
         let continued = build_stage_prompt(stage, &card(), &[], &[], "HEAD", &extras).unwrap();
 
@@ -177,8 +177,8 @@ fn review_prompt_states_engine_checks_only_when_they_ran() {
     )
     .unwrap();
     let extras = types::PromptExtras {
-        continuation: 0,
         checks: Some("`npm run check:web` failed with exit code 1.".into()),
+        ..Default::default()
     };
     let checked =
         build_stage_prompt(AgentStage::CodeReview, &card(), &[], &[], "HEAD", &extras).unwrap();
@@ -186,4 +186,35 @@ fn review_prompt_states_engine_checks_only_when_they_ran() {
     assert!(!plain.contains("## Checks"));
     assert!(checked.contains("## Checks\nMOLFAR ran the project's verify command before this review: `npm run check:web` failed"));
     assert!(checked.find("## Checks").unwrap() < checked.find("## Output").unwrap());
+}
+
+#[test]
+fn later_runs_read_the_newest_handoff_first() {
+    let prompt = |stage, extras: types::PromptExtras| {
+        build_stage_prompt(stage, &card(), &[], &[], "HEAD", &extras).unwrap()
+    };
+    let everything = "Read every file below before you start";
+
+    assert!(prompt(AgentStage::Implement, Default::default()).contains(everything));
+    let continued = prompt(
+        AgentStage::Implement,
+        types::PromptExtras {
+            continuation: 1,
+            ..Default::default()
+        },
+    );
+    assert!(continued.contains("Start with the latest implementation report"));
+    assert!(prompt(AgentStage::Rework, Default::default()).contains("Start with the rework brief"));
+
+    let first = prompt(AgentStage::CodeReview, Default::default());
+    assert!(first.contains(everything) && !first.contains("follow-up review"));
+    let follow_up = prompt(
+        AgentStage::CodeReview,
+        types::PromptExtras {
+            reviewed_head: Some("c0ffee".into()),
+            ..Default::default()
+        },
+    );
+    assert!(follow_up.contains("Start with the previous review"));
+    assert!(follow_up.contains("Review `git diff c0ffee..HEAD` closely"));
 }

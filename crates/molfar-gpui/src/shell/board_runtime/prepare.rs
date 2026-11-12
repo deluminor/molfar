@@ -150,9 +150,17 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
     if stage == AgentStage::Grill && inputs.len() == 1 {
         prompt_card.grill_round = 1;
     }
+    let reviewed_head = if stage == AgentStage::CodeReview {
+        locked(store)?
+            .board_reviewed_head(&context.card.id)?
+            .filter(|reviewed| *reviewed != before.head)
+    } else {
+        None
+    };
     let extras = PromptExtras {
         continuation: locked(store)?.board_stage_continuation(run_id)?,
         checks,
+        reviewed_head,
     };
     let prompt = contracts::build_stage_prompt(
         stage,

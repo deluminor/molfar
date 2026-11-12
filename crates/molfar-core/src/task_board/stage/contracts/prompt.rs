@@ -1,7 +1,19 @@
-use super::types::ManifestReference;
+use super::types::{ManifestReference, PromptExtras};
+use crate::task_board::stage::agent::AgentStage;
 use crate::task_board::types::Card;
 
-fn inputs(files: &[ManifestReference]) -> Result<String, String> {
+/// What to read first. Later runs of a card start from the newest handoff instead of
+/// re-reading everything, which is where most repeat tokens go.
+fn reading(stage: AgentStage, extras: &PromptExtras) -> &'static str {
+    match stage {
+        AgentStage::Implement if extras.continuation > 0 => "Start with the latest implementation report: it says what is done and what remains. Open the spec and plan for\nthe remaining stages; skip what is already finished.",
+        AgentStage::Rework => "Start with the rework brief: it lists exactly what to fix. Open the spec, plan, review and report only where a\nfix needs them.",
+        AgentStage::CodeReview if extras.reviewed_head.is_some() => "Start with the previous review and the latest implementation report. Open the spec and plan to check the\nacceptance criteria.",
+        _ => "Read every file below before you start; together they are the card's current state.",
+    }
+}
+
+fn inputs(files: &[ManifestReference], reading: &str) -> Result<String, String> {
     let mut rows = Vec::new();
     for file in files {
         let title = match file.kind.as_str() {
@@ -29,8 +41,9 @@ fn inputs(files: &[ManifestReference]) -> Result<String, String> {
     }
     Ok([
         "## Handoff files".to_owned(),
-        "Read every file below before you start; together they are the card's current state. MOLFAR copied them from".into(),
-        "the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.".into(),
+        reading.into(),
+        "MOLFAR copied these files from the card into your checkout. They are git-ignored, not part of the repository:".into(),
+        "never edit, stage or commit them.".into(),
         String::new(),
         "| File | Kind | Version | What it is |".into(),
         "| --- | --- | --- | --- |".into(),
@@ -73,7 +86,7 @@ pub(super) fn build(
         rules.push_str("- Commit your work yourself with small, atomic Conventional Commits (`type(scope): subject`).\n- Finish with a clean working tree and at least one new commit, or this stage fails.");
     }
     sections.push(rules);
-    sections.push(inputs(files)?);
+    sections.push(inputs(files, reading(stage, extras))?);
     if stage != crate::task_board::stage::agent::AgentStage::Grill {
         sections.extend(super::prompt_bodies::build(stage, card, head, extras));
         return Ok(sections.join("\n\n"));

@@ -81,6 +81,9 @@ pub(super) fn build(
         ),
         AgentStage::CodeReview => {
             let base = card.base_sha.as_deref().unwrap_or("<base>");
+            let follow_up = extras.reviewed_head.as_deref().map(|previous| {
+                format!("This is a follow-up review. The previous review in the handoff files covered the change up to `{previous}`.\nReview `git diff {previous}..{head}` closely, confirm whether each previous finding is resolved, and read older\ncode only where the new changes touch it or an acceptance criterion depends on it.")
+            });
             let goal = [
                 &format!("Review the change `git diff {base}...{head}` against the spec, its acceptance criteria and the plan."),
                 "Read the whole diff and the surrounding code before you write anything, and report every finding in this",
@@ -98,6 +101,7 @@ pub(super) fn build(
             ]
             .join("\n");
             let mut sections = vec![format!("## Goal\n{goal}")];
+            sections.extend(follow_up);
             sections.extend(checks(&extras.checks));
             sections.push(output(&[(REVIEW, REVIEW_TEMPLATE), (PR_DESCRIPTION, PR_TEMPLATE)]));
             sections

@@ -56,6 +56,19 @@ impl Store {
         checks::redirect(&mut self.conn, &base, id, summary)
     }
 
+    /// The commit the latest successful code review of this card looked at.
+    pub fn board_reviewed_head(&self, card: &str) -> Result<Option<String>, String> {
+        self.conn
+            .query_row(
+                "SELECT head_before FROM task_board_stage_runs WHERE card_id=?1 AND stage=?2 AND status=?3 ORDER BY rowid DESC LIMIT 1",
+                rusqlite::params![card, crate::task_board::constants::CODE_REVIEW, crate::task_board::stage::lifecycle::constants::SUCCEEDED],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .optional()
+            .map(Option::flatten)
+            .map_err(|e| e.to_string())
+    }
+
     /// The continuation number for a run's prompt: 0 for a fresh start.
     pub fn board_stage_continuation(&self, id: &str) -> Result<i64, String> {
         let Some(ctx) = self.board_stage_context(id)? else {

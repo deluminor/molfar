@@ -15,8 +15,9 @@ the repository.
 - Finish with a clean working tree and at least one new commit, or this stage fails.
 
 ## Handoff files
-Read every file below before you start; together they are the card's current state. MOLFAR copied them from
-the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.
+Read every file below before you start; together they are the card's current state.
+MOLFAR copied these files from the card into your checkout. They are git-ignored, not part of the repository:
+never edit, stage or commit them.
 
 | File | Kind | Version | What it is |
 | --- | --- | --- | --- |

@@ -1,8 +1,10 @@
 //! What the engine does with a verified stage output: advance, continue an unfinished
 //! run, stop for the user, or send review findings straight back to rework.
-use super::super::constants::{MAX_AUTO_REWORK, MAX_CONTINUATIONS, PARTIAL};
+use super::super::constants::{
+    BUDGET_SPENT, MAX_AUTOMATIC_RUNS, MAX_AUTO_REWORK, MAX_CONTINUATIONS, PARTIAL,
+};
 use crate::task_board::{
-    constants::{ENGINE, USER},
+    constants::{CODE_REVIEW, ENGINE, GRILL, IMPLEMENT, REWORK, USER},
     stage::{
         agent::AgentStage,
         contracts::{
@@ -58,6 +60,9 @@ pub(super) fn decide(
 }
 
 fn continue_or_stop(conn: &Connection, card: &str, run: &str) -> Result<Outcome, String> {
+    if budget_spent(conn, card)? {
+        return Ok(Outcome::Stop(BUDGET_SPENT.into()));
+    }
     let streak = partial_streak(conn, card, run)?;
     if streak < MAX_CONTINUATIONS {
         return Ok(Outcome::Continue);
@@ -79,7 +84,10 @@ fn rework_or_advance(conn: &Connection, card: &str, markdown: &str) -> Result<Ou
             .findings
             .iter()
             .any(|finding| serious(finding.severity));
-    if !needs_rework || brief_streak(conn, card, ENGINE)? >= MAX_AUTO_REWORK {
+    if !needs_rework
+        || brief_streak(conn, card, ENGINE)? >= MAX_AUTO_REWORK
+        || budget_spent(conn, card)?
+    {
         return Ok(Outcome::Advance);
     }
 
@@ -133,6 +141,21 @@ pub(crate) fn brief_streak(conn: &Connection, card: &str, source: &str) -> Resul
         }
     }
     Ok(streak)
+}
+
+/// Agent runs after Grill and after the user's latest written decision (answers, plan
+/// edit, rework request) count against one shared budget for automatic follow-ups.
+pub(crate) fn budget_spent(conn: &Connection, card: &str) -> Result<bool, String> {
+    let runs: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM task_board_stage_runs WHERE card_id=?1 AND stage IN (?2,?3,?4) \
+             AND rowid > COALESCE((SELECT MAX(rowid) FROM task_board_stage_runs WHERE card_id=?1 AND stage=?5),0) \
+             AND started_at > COALESCE((SELECT MAX(created_at) FROM task_board_artifacts WHERE card_id=?1 AND source=?6),0)",
+            params![card, IMPLEMENT, REWORK, CODE_REVIEW, GRILL, USER],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(runs >= MAX_AUTOMATIC_RUNS)
 }
 
 /// How many unfinished runs of this streak came before `run`; zero for a fresh start.
