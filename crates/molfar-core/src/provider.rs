@@ -220,21 +220,19 @@ pub fn resolve_auto(kind: Kind) -> Option<PathBuf> {
     })
 }
 fn executable(path: &Path) -> bool {
-    let Ok(meta) = path.metadata() else {
-        return false;
-    };
-    if !meta.is_file() {
-        return false;
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        meta.permissions().mode() & 0o111 != 0
-    }
-    #[cfg(not(unix))]
-    {
-        true
-    }
+    path.metadata()
+        .is_ok_and(|meta| meta.is_file() && runnable(&meta))
+}
+
+#[cfg(unix)]
+fn runnable(meta: &std::fs::Metadata) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    meta.permissions().mode() & 0o111 != 0
+}
+
+#[cfg(not(unix))]
+fn runnable(_: &std::fs::Metadata) -> bool {
+    true
 }
 
 /// On resume, Claude Code replays a background-task notification from the
