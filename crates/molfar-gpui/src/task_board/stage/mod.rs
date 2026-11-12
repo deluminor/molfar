@@ -11,15 +11,18 @@ mod moves;
 mod reject;
 #[cfg(test)]
 mod tests;
-mod view;
 
 use crate::notes::preview::Preview;
 use gpui::{Entity, FocusHandle};
 
+pub(super) struct Section {
+    pub(super) heading: &'static str,
+    pub(super) preview: Entity<Preview>,
+}
+
+/// One group version opened inline in the card detail.
 pub(super) struct Artifact {
-    title: String,
     pub(super) focus: FocusHandle,
-    pub(super) preview: Option<Entity<Preview>>,
-    text: Option<String>,
+    pub(super) sections: Option<Vec<Section>>,
     pub(super) error: Option<String>,
 }

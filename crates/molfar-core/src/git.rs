@@ -1,5 +1,6 @@
 //! Working-copy operations used by the native composer. Git protects dirty files;
 //! these operations never force a checkout, stash, or discard changes.
+mod include;
 pub mod naming;
 mod remote;
 pub mod report;
@@ -338,6 +339,7 @@ pub fn create_worktree(cwd: &Path, base: &str, session: i64) -> Result<PathBuf, 
             commit.trim(),
         ],
     )?;
+    include::seed(main, &path);
     Ok(path)
 }
 
@@ -429,6 +431,8 @@ pub fn create_project_worktree(
             ],
         )?;
     }
+    include::seed(main, &path);
+
     snapshot(cwd)?
         .worktrees
         .into_iter()
