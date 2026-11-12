@@ -47,6 +47,10 @@ pub(super) fn ensure(card: &Card) -> Result<RetainedCheckout, String> {
         None => branch::default_base(project)?,
     };
     if let (Some(path), Some(sha)) = (&card.worktree_path, &card.base_sha) {
+        if !Path::new(path).exists() {
+            return super::restore::missing(card, path, &branch, &base_ref, sha);
+        }
+
         let path = valid_tree(project, path, &branch)?;
         git::git(
             project,
