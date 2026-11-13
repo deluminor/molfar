@@ -10,13 +10,13 @@ use super::{
     parts::{self, mono},
 };
 use crate::theme::*;
-use chart::{amount, bars, figure};
+use chart::{amount, bars, figure, range_selector};
 use chrono::Local;
 use gpui::{AnyElement, Context, SharedString, div, prelude::*, px};
 use molfar_core::consumption::summary::{Reporting, UsageSummary};
 
 const WIDE: f32 = 560.;
-const TOP: usize = 3;
+const TOP: usize = 10;
 
 impl Home {
     pub(super) fn consumption_widget(&self, body: Body, cx: &mut Context<Self>) -> AnyElement {
@@ -36,7 +36,8 @@ impl Home {
             };
             return card::note(format!("No usage recorded {scope}")).into_any_element();
         }
-        let recent = match recent(&usage.days, Local::now().date_naive()) {
+        let range = feed.range;
+        let recent = match recent(&usage.days, Local::now().date_naive(), range) {
             Ok(recent) => recent,
             Err(error) => return card::note(error).into_any_element(),
         };
@@ -54,9 +55,10 @@ impl Home {
                     .flex()
                     .gap_3()
                     .child(figure("Today", &recent.today))
-                    .child(figure("7 days", &recent.week)),
+                    .child(figure(range.label(), &recent.total)),
             )
-            .child(bars(&recent, self.entrance, !cx.reduce_motion()));
+            .child(range_selector(range, cx))
+            .child(bars(&recent, range, self.entrance, !cx.reduce_motion()));
         let sessions: Vec<_> = usage
             .sessions
             .iter()
@@ -97,24 +99,37 @@ impl Home {
             let empty = rows.is_empty();
             div()
                 .flex_1()
+                .min_h_0()
                 .min_w_0()
                 .flex()
                 .flex_col()
                 .gap_0p5()
-                .child(parts::label(label).mb_1())
-                .children(rows)
+                .child(parts::label(label).mb_1().flex_shrink_0())
+                .child(
+                    div()
+                        .id(SharedString::from(format!("home-consumption-list-{label}")))
+                        .min_h_0()
+                        .flex_1()
+                        .overflow_y_scroll()
+                        .flex()
+                        .flex_col()
+                        .gap_0p5()
+                        .children(rows),
+                )
                 .when(empty, |d| d.child(card::note("None yet")))
         };
         div()
             .id("home-consumption")
             .debug_selector(|| "home-consumption".into())
             .size_full()
+            .min_h_0()
+            .overflow_y_scroll()
             .flex()
             .when(wide, |d| d.flex_row().gap_5())
             .when(!wide, |d| d.flex_col().gap_3())
             .child(totals)
-            .child(list("Top sessions", sessions))
-            .when(wide, |d| d.child(list("Top cards", cards)))
+            .child(list("Top sessions", sessions).when(!wide, |d| d.flex_none().h(px(310.))))
+            .child(list("Top cards", cards).when(!wide, |d| d.flex_none().h(px(310.))))
             .into_any_element()
     }
 

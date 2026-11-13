@@ -197,6 +197,7 @@ impl Board {
         div()
             .id("board-usage")
             .debug_selector(|| "board-usage".into())
+            .pb_4()
             .flex()
             .flex_col()
             .gap_3()

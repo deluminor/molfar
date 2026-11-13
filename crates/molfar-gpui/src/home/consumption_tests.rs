@@ -89,3 +89,83 @@ fn consumption_states_and_sheet_open_and_close(cx: &mut TestAppContext) {
     assert!(visual.debug_bounds("home-consumption-sheet").is_none());
     assert_eq!(*events.borrow(), ["session 7"]);
 }
+
+#[gpui::test]
+fn consumption_range_switches_without_reloading(cx: &mut TestAppContext) {
+    use super::data::consumption::Range;
+    let (window, _) = open(cx);
+    window
+        .update(cx, |home, _, cx| {
+            home.feeds.consumption.shown = Some(usage());
+            assert_eq!(home.feeds.consumption.range, Range::Month);
+            cx.notify();
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    click(visual, "home-consumption-year");
+    window
+        .update(visual, |home, _, _| {
+            assert_eq!(home.feeds.consumption.range, Range::Year);
+            assert!(home.feeds.consumption.shown.is_some());
+        })
+        .unwrap();
+    click(visual, "home-consumption-month");
+    window
+        .update(visual, |home, _, _| {
+            assert_eq!(home.feeds.consumption.range, Range::Month);
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn consumption_rankings_show_ten_rows_each(cx: &mut TestAppContext) {
+    let (window, _) = open(cx);
+    window
+        .update(cx, |home, _, cx| {
+            let mut data = usage();
+            let session = data.sessions[0].clone();
+            let card = data.cards[0].clone();
+            data.sessions = (1..=11)
+                .map(|id| {
+                    let mut row = session.clone();
+                    row.session = id;
+                    row
+                })
+                .collect();
+            data.cards = (1..=11)
+                .map(|id| {
+                    let mut row = card.clone();
+                    row.card_id = format!("rank-{id}");
+                    row
+                })
+                .collect();
+            home.feeds.consumption.shown = Some(data);
+            cx.notify();
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    for id in 1..=10 {
+        assert!(
+            visual
+                .debug_bounds(Box::leak(
+                    format!("home-consumption-session-{id}").into_boxed_str()
+                ))
+                .is_some()
+        );
+        assert!(
+            visual
+                .debug_bounds(Box::leak(
+                    format!("home-consumption-card-rank-{id}").into_boxed_str()
+                ))
+                .is_some()
+        );
+    }
+    assert!(visual.debug_bounds("home-consumption-session-11").is_none());
+    assert!(
+        visual
+            .debug_bounds("home-consumption-card-rank-11")
+            .is_none()
+    );
+}

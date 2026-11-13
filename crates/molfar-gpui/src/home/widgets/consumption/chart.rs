@@ -1,16 +1,18 @@
 use super::super::{
-    super::data::consumption::{Recent, bar_heights},
+    super::data::consumption::{Range, Recent, bar_heights},
     parts::{self, mono},
 };
-use crate::{consumption::format, task_board::controls, theme::*};
-use chrono::Datelike;
-use gpui::{Animation, AnimationExt, Div, SharedString, div, prelude::*, px};
+use crate::{
+    consumption::{format, tooltip},
+    home::Home,
+    theme::*,
+};
+use gpui::{Animation, AnimationExt, Context, Div, SharedString, div, prelude::*, px};
 use molfar_core::consumption::summary::{Reporting, UsageSummary};
 use std::time::Duration;
 
 const BAR_HEIGHT: f32 = 34.;
 const BAR_GROW: Duration = Duration::from_millis(600);
-const WEEKDAYS: [&str; 7] = ["M", "T", "W", "T", "F", "S", "S"];
 
 pub(super) fn amount(summary: &UsageSummary) -> String {
     match summary.reporting() {
@@ -47,7 +49,7 @@ pub(super) fn figure(label: &'static str, summary: &UsageSummary) -> Div {
         }))
 }
 
-pub(super) fn bars(recent: &Recent, entrance: u32, animate: bool) -> Div {
+pub(super) fn bars(recent: &Recent, range: Range, entrance: u32, animate: bool) -> Div {
     let heights = bar_heights(&recent.bars);
     let mut row = div().h(px(BAR_HEIGHT + 14.)).flex().items_end().gap_1();
     for (index, ((date, day), height)) in recent.bars.iter().zip(heights).enumerate() {
@@ -60,7 +62,10 @@ pub(super) fn bars(recent: &Recent, entrance: u32, animate: bool) -> Div {
             .bg(if height > 0. { tone } else { content(0.1) });
         let fill = if animate {
             fill.with_animation(
-                ("home-consumption-bar", (entrance as usize) << 3 | index),
+                SharedString::from(format!(
+                    "home-consumption-bar-{entrance}-{}-{index}",
+                    range.label()
+                )),
                 Animation::new(BAR_GROW),
                 move |fill, t| fill.h(px(target * crate::home::motion::ease_out(t))),
             )
@@ -68,7 +73,8 @@ pub(super) fn bars(recent: &Recent, entrance: u32, animate: bool) -> Div {
         } else {
             fill.h(px(target)).into_any_element()
         };
-        let hint = format!("{} · {}", date.format("%a %-d %b"), format::headline(day));
+        let title = range.title(*date);
+        let summary = *day;
         row = row.child(
             div()
                 .id(SharedString::from(format!("home-consumption-day-{index}")))
@@ -79,7 +85,8 @@ pub(super) fn bars(recent: &Recent, entrance: u32, animate: bool) -> Div {
                 .justify_end()
                 .gap_1()
                 .h_full()
-                .tooltip(move |_, cx| controls::hint(hint.clone(), cx))
+                .tooltip(move |_, cx| tooltip::view(title.clone(), summary, cx))
+                .hover(|style| style.bg(accent_color().opacity(0.08)))
                 .child(
                     div()
                         .w_full()
@@ -93,10 +100,45 @@ pub(super) fn bars(recent: &Recent, entrance: u32, animate: bool) -> Div {
                         .font_family(mono())
                         .text_size(px(9.))
                         .text_color(content(if today { 0.7 } else { 0.35 }))
-                        .child(WEEKDAYS[date.weekday().num_days_from_monday() as usize]),
+                        .child(range.axis_label(*date, index, recent.bars.len())),
                 ),
         );
     }
 
     row
+}
+
+pub(super) fn range_selector(range: Range, cx: &mut Context<Home>) -> Div {
+    div()
+        .flex()
+        .gap_1()
+        .children([Range::Month, Range::Year].map(|choice| {
+            let id = match choice {
+                Range::Month => "home-consumption-month",
+                Range::Year => "home-consumption-year",
+            };
+            div()
+                .id(id)
+                .debug_selector(move || id.into())
+                .role(gpui::Role::Button)
+                .aria_label(choice.label())
+                .cursor_pointer()
+                .px_2()
+                .py_0p5()
+                .rounded_md()
+                .font_family(mono())
+                .text_size(px(10.))
+                .text_color(if range == choice {
+                    accent_color()
+                } else {
+                    content(0.5)
+                })
+                .when(range == choice, |d| d.bg(accent_color().opacity(0.1)))
+                .hover(|style| style.bg(content(0.07)))
+                .child(choice.label())
+                .on_click(cx.listener(move |home, _, _, cx| {
+                    home.feeds.consumption.range = choice;
+                    cx.notify();
+                }))
+        }))
 }

@@ -1,19 +1,21 @@
 //! Home's consumption feed: project or global usage, loaded off the render path.
 use super::{super::Home, feeds::Load};
 use crate::runtime::locked;
-use chrono::{Days, Local, NaiveDate};
+use chrono::{Local, NaiveDate};
+
+mod range;
 use gpui::Context;
 use molfar_core::{
     consumption::{aggregate::DayUsage, summary::UsageSummary},
     store::consumption::ProjectUsage,
 };
-
-pub(crate) const WEEK: usize = 7;
+pub(crate) use range::Range;
 
 #[derive(Default)]
 pub(crate) struct Consumption {
     /// All projects instead of the open one.
     pub all: bool,
+    pub range: Range,
     pub load: Option<Load<ProjectUsage>>,
     /// The last good result stays on screen while a refresh runs or fails.
     pub shown: Option<ProjectUsage>,
@@ -21,30 +23,32 @@ pub(crate) struct Consumption {
     generation: u64,
 }
 
-/// Today, the last seven local days, and one bar per day, oldest first.
+/// Today and the selected calendar period, oldest bucket first.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Recent {
     pub today: UsageSummary,
-    pub week: UsageSummary,
+    pub total: UsageSummary,
     pub bars: Vec<(NaiveDate, UsageSummary)>,
 }
 
-pub(crate) fn recent(days: &[DayUsage], today: NaiveDate) -> Result<Recent, String> {
-    let mut recent = Recent::default();
-    for back in (0..WEEK as u64).rev() {
-        let Some(date) = today.checked_sub_days(Days::new(back)) else {
-            continue;
-        };
-        let summary = days
-            .iter()
-            .find(|day| day.date == date)
-            .map(|day| day.summary)
-            .unwrap_or_default();
-        recent.week.merge(&summary)?;
-        if back == 0 {
-            recent.today = summary;
+pub(crate) fn recent(days: &[DayUsage], today: NaiveDate, range: Range) -> Result<Recent, String> {
+    let mut recent = Recent {
+        bars: range
+            .dates(today)
+            .into_iter()
+            .map(|date| (date, UsageSummary::default()))
+            .collect(),
+        ..Default::default()
+    };
+    for day in days.iter().filter(|day| day.date <= today) {
+        if day.date == today {
+            recent.today.merge(&day.summary)?;
         }
-        recent.bars.push((date, summary));
+        let bucket = range.bucket(day.date);
+        if let Some((_, summary)) = recent.bars.iter_mut().find(|(date, _)| *date == bucket) {
+            summary.merge(&day.summary)?;
+            recent.total.merge(&day.summary)?;
+        }
     }
 
     Ok(recent)

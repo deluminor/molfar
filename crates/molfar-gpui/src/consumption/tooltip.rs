@@ -45,3 +45,26 @@ pub(crate) fn summary_card(title: &str, summary: &UsageSummary) -> Div {
             )
         })
 }
+
+struct SummaryTooltip {
+    title: String,
+    summary: UsageSummary,
+}
+
+impl gpui::Render for SummaryTooltip {
+    fn render(&mut self, _: &mut gpui::Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        div()
+            .max_w(px(360.))
+            .p_3()
+            .rounded_lg()
+            .bg(floating_fill())
+            .border_1()
+            .border_color(content(0.12))
+            .child(summary_card(&self.title, &self.summary))
+    }
+}
+
+pub(crate) fn view(title: String, summary: UsageSummary, cx: &mut gpui::App) -> gpui::AnyView {
+    use gpui::AppContext;
+    cx.new(|_| SummaryTooltip { title, summary }).into()
+}
