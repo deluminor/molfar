@@ -26,6 +26,7 @@ impl Render for Home {
         let grid = self.grid(&items, width, window, cx);
         let header = self.header(wide, cx);
         let hidden = (self.editing && !self.state.hidden.is_empty()).then(|| self.hidden_strip(cx));
+        let sheet = self.consumption_sheet(window, cx);
 
         div()
             .id("home")
@@ -59,7 +60,9 @@ impl Render for Home {
                 if event.keystroke.key != "escape" {
                     return;
                 }
-                if !this.cancel_drag(cx) {
+                if this.feeds.consumption.sheet_open {
+                    this.set_consumption_sheet(false, cx);
+                } else if !this.cancel_drag(cx) {
                     if this.editing {
                         this.finish_editing(cx);
                     } else {
@@ -79,6 +82,7 @@ impl Render for Home {
                     .p(px(PAGE_PADDING))
                     .child(grid),
             )
+            .children(sheet)
     }
 }
 

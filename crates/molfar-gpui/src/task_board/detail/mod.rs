@@ -12,6 +12,9 @@ mod tests;
 mod timeline;
 #[cfg(test)]
 mod timeline_tests;
+pub(super) mod usage;
+#[cfg(test)]
+mod usage_tests;
 mod versions;
 mod waiting;
 

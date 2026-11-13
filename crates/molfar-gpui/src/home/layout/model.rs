@@ -13,6 +13,7 @@ pub(crate) enum WidgetId {
     Brand,
     Host,
     Usage,
+    Consumption,
     Inbox,
     Activity,
     Sessions,
@@ -21,12 +22,13 @@ pub(crate) enum WidgetId {
 }
 
 impl WidgetId {
-    pub(crate) const ALL: [WidgetId; 10] = [
+    pub(crate) const ALL: [WidgetId; 11] = [
         WidgetId::Clock,
         WidgetId::Status,
         WidgetId::Brand,
         WidgetId::Host,
         WidgetId::Usage,
+        WidgetId::Consumption,
         WidgetId::Inbox,
         WidgetId::Activity,
         WidgetId::Sessions,
@@ -41,6 +43,7 @@ impl WidgetId {
             WidgetId::Brand => "brand",
             WidgetId::Host => "host",
             WidgetId::Usage => "usage",
+            WidgetId::Consumption => "consumption",
             WidgetId::Inbox => "inbox",
             WidgetId::Activity => "activity",
             WidgetId::Sessions => "sessions",
@@ -56,6 +59,7 @@ impl WidgetId {
             WidgetId::Brand => "Brand",
             WidgetId::Host => "Host",
             WidgetId::Usage => "Usage",
+            WidgetId::Consumption => "Consumption",
             WidgetId::Inbox => "Inbox",
             WidgetId::Activity => "Activity",
             WidgetId::Sessions => "Sessions",
@@ -72,6 +76,7 @@ impl WidgetId {
         match self {
             WidgetId::Clock | WidgetId::Status | WidgetId::Brand => (2, 3),
             WidgetId::Matrix => (4, 3),
+            WidgetId::Consumption => (4, 4),
             _ => (3, 3),
         }
     }
@@ -103,21 +108,22 @@ impl Item {
     }
 }
 
-pub(crate) const DEFAULT_LAYOUT: [Item; 10] = [
+pub(crate) const DEFAULT_LAYOUT: [Item; 11] = [
     Item::at(WidgetId::Clock, 0, 0, 2, 4),
     Item::at(WidgetId::Status, 2, 0, 2, 4),
     Item::at(WidgetId::Brand, 10, 0, 2, 4),
     Item::at(WidgetId::Host, 0, 8, 8, 6),
     Item::at(WidgetId::Usage, 8, 8, 4, 4),
+    Item::at(WidgetId::Consumption, 0, 14, 12, 5),
     Item::at(WidgetId::Inbox, 0, 4, 4, 4),
     Item::at(WidgetId::Activity, 4, 0, 6, 4),
     Item::at(WidgetId::Sessions, 4, 4, 4, 4),
     Item::at(WidgetId::Automations, 8, 4, 4, 4),
-    Item::at(WidgetId::Matrix, 0, 14, 12, 7),
+    Item::at(WidgetId::Matrix, 0, 19, 12, 7),
 ];
 
 /// Narrow windows stack full-width cards in this order and these heights.
-pub(crate) const NARROW_ORDER: [(WidgetId, u16); 10] = [
+pub(crate) const NARROW_ORDER: [(WidgetId, u16); 11] = [
     (WidgetId::Clock, 4),
     (WidgetId::Status, 4),
     (WidgetId::Automations, 4),
@@ -127,6 +133,7 @@ pub(crate) const NARROW_ORDER: [(WidgetId, u16); 10] = [
     (WidgetId::Sessions, 4),
     (WidgetId::Activity, 4),
     (WidgetId::Usage, 4),
+    (WidgetId::Consumption, 7),
     (WidgetId::Matrix, 10),
 ];
 

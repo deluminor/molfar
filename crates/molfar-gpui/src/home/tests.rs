@@ -124,7 +124,7 @@ fn dragging_a_card_moves_it_and_pushes_the_rest_down(cx: &mut TestAppContext) {
     click(visual, "home-layout-edit");
 
     let grid = visual.debug_bounds("home-grid").unwrap();
-    let grip = visual.debug_bounds("home-move-matrix").unwrap();
+    let grip = visual.debug_bounds("home-move-consumption").unwrap();
     let start = grip.center();
     let lift = point(
         grid.left() + (start.x - grip.left()),
@@ -138,18 +138,18 @@ fn dragging_a_card_moves_it_and_pushes_the_rest_down(cx: &mut TestAppContext) {
     visual.run_until_parked();
 
     let moved = state(&window, visual);
-    let matrix = moved
+    let moved_card = moved
         .items
         .iter()
-        .find(|item| item.id == WidgetId::Matrix)
+        .find(|item| item.id == WidgetId::Consumption)
         .unwrap();
-    assert_eq!((matrix.x, matrix.y), (0, 0));
+    assert_eq!((moved_card.x, moved_card.y), (0, 0));
     assert!(
         moved
             .visible()
             .iter()
-            .filter(|item| item.id != WidgetId::Matrix)
-            .all(|item| item.y >= matrix.bottom())
+            .filter(|item| item.id != WidgetId::Consumption)
+            .all(|item| item.y >= moved_card.bottom())
     );
     assert_eq!(saved.borrow().len(), 1);
     assert!(visual.debug_bounds("home-drop-target").is_none());

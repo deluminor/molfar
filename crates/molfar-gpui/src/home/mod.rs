@@ -1,5 +1,7 @@
 //! Home: the personal dashboard opened first from navigation.
 mod card;
+#[cfg(test)]
+mod consumption_tests;
 pub(crate) mod data;
 mod drag;
 mod edit;
@@ -23,10 +25,12 @@ use layout::state::LayoutState;
 use serde_json::Value;
 use std::{cell::RefCell, rc::Rc};
 
+#[derive(Clone)]
 pub(crate) enum Event {
     Close,
     Layout(Value),
     OpenSession(i64),
+    OpenCard(String),
     OpenAutomation(String),
     OpenInbox(Option<String>),
 }

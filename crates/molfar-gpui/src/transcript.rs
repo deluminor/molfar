@@ -689,6 +689,8 @@ pub(crate) struct TranscriptView {
     familiar_groups: std::cell::RefCell<HashMap<usize, usize>>,
     /// The Familiar's mascot, colour and name, which sign its turns.
     familiar_look: Option<(String, u32, SharedString)>,
+    /// `Session · 1.2M tokens · ~$3.40`, shown under each turn's metrics.
+    session_usage: Option<SharedString>,
     /// The turn whose actions show, and since when, as `.turn-actions-hover`.
     hovered_turn: Option<(usize, Instant)>,
     /// The prompt message whose copy action shows.
@@ -2433,6 +2435,11 @@ impl TranscriptView {
                     .map(|(n, label)| format!("{} {label}", molfar_core::context::format_tokens(n)))
                     .collect::<Vec<_>>()
                     .join(" · ");
+                    let detail = match &self.session_usage {
+                        Some(session) if !detail.is_empty() => format!("{detail}\n{session}"),
+                        Some(session) => session.to_string(),
+                        None => detail,
+                    };
                     (headline, Some(detail))
                 }
             };
@@ -2490,6 +2497,7 @@ impl TranscriptView {
             familiar: false,
             familiar_groups: Default::default(),
             familiar_look: None,
+            session_usage: None,
             hovered_turn: None,
             hovered_prompt: None,
             hovered_prompt_actions: None,

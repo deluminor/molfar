@@ -66,6 +66,9 @@ impl Home {
         if !self.state.is_hidden(WidgetId::Usage) {
             super::usage::request(&self.sources.project, cx);
         }
+        if !self.state.is_hidden(WidgetId::Consumption) {
+            self.refresh_consumption(cx);
+        }
 
         let store = self.sources.store.clone();
         let service = self.sources.automations.clone();

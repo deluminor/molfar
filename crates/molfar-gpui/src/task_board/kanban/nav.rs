@@ -18,6 +18,9 @@ impl Board {
             self.drawer_open = true;
             self.drawer_opens += 1;
         }
+        if self.selected.as_ref() == Some(&id) {
+            self.refresh_card_usage(cx);
+        }
         self.select(id, cx);
         cx.notify();
     }

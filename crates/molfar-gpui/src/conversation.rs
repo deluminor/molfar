@@ -22,6 +22,7 @@ mod response_menu;
 #[cfg(test)]
 mod submission_tests;
 mod title;
+mod usage;
 mod worktree_naming;
 use crate::{
     composer_motion::ComposerMotion,
@@ -230,6 +231,7 @@ pub(crate) struct Conversation {
     session_edits_generation: u64,
     branch_anchor: AnchorSlot,
     context_anchor: AnchorSlot,
+    usage: crate::consumption::session::SessionUsage,
     composer_anchor: AnchorSlot,
     composer_motion: ComposerMotion,
     narrow: bool,
@@ -680,6 +682,7 @@ impl Conversation {
             session_edits_generation: 0,
             branch_anchor: AnchorSlot::default(),
             context_anchor: AnchorSlot::default(),
+            usage: Default::default(),
             composer_anchor: AnchorSlot::default(),
             composer_motion: ComposerMotion::default(),
             narrow: false,
@@ -820,6 +823,7 @@ impl Conversation {
                         });
                         this.status = "Ready".into();
                         this.loaded = true;
+                        this.refresh_usage(cx);
                         if let Some((row, query)) = this.pending_search.take() {
                             this.reveal_search(row, query, cx);
                         }
@@ -1455,6 +1459,7 @@ impl Conversation {
                                 this.remote_state.refreshing = false;
                             }
                             this.summary.updated_at = molfar_core::time::now_ms();
+                            this.refresh_usage(cx);
                             this.busy = false;
                             this.stopping = false;
                             this.clear_background();
@@ -3210,6 +3215,7 @@ impl Conversation {
                             )
                         },
                     )
+                    .children(self.usage_chip(cx))
                     .when(show_context, |d| {
                         d.child(
                             div()

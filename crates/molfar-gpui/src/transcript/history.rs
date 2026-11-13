@@ -88,6 +88,13 @@ impl TranscriptView {
         self.window_before
     }
     /// Saved turn receipts, keyed by store row, for the window's turns.
+    pub(crate) fn set_session_usage(&mut self, line: Option<SharedString>, cx: &mut Context<Self>) {
+        if self.session_usage != line {
+            self.session_usage = line;
+            cx.notify();
+        }
+    }
+
     pub(crate) fn set_turns(&mut self, turns: HashMap<usize, molfar_core::agent::TurnInfo>) {
         let base = self.base;
         self.turns.retain(|&turn, _| turn <= base);
