@@ -41,7 +41,7 @@ fn red_checks_send_the_card_back_twice_then_let_the_review_run() {
         );
         assert_eq!(moved.rework_cycle, cycle);
         let run = store.board_stage_context(&review).unwrap().unwrap().run;
-        assert_eq!(run.status, "failed");
+        assert_eq!(run.status, "redirected");
         let brief = store
             .board_stage_inputs("card")
             .unwrap()

@@ -63,8 +63,13 @@ pub(super) fn build(
         return Err("Grill round must be positive.".into());
     }
     let role = stage.label();
+    let session = if extras.resumed {
+        "This run continues your earlier session on this card. This prompt, the handoff files it lists and the\nrepository are the current state; they win over anything you remember."
+    } else {
+        "This is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and\nthe repository."
+    };
     let header = format!(
-        "You are the {role} stage of MOLFAR Task Board card #{}: \"{}\".\nThis is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and\nthe repository.\n\n- Project: {}\n- Working checkout (your cwd): {}\n- Branch: {}\n- Base commit: {}",
+        "You are the {role} stage of MOLFAR Task Board card #{}: \"{}\".\n{session}\n\n- Project: {}\n- Working checkout (your cwd): {}\n- Branch: {}\n- Base commit: {}",
         card.number,
         card.title,
         card.project_cwd,

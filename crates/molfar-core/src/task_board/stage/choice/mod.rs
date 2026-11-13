@@ -5,6 +5,7 @@ mod resolve;
 pub mod settings;
 mod skills;
 pub mod types;
+pub mod verify_commands;
 
 #[cfg(test)]
 mod effort_tests;
@@ -14,6 +15,8 @@ mod settings_tests;
 mod stage_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod verify_commands_tests;
 
 pub fn select(
     stage: crate::task_board::stage::agent::AgentStage,

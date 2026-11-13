@@ -17,6 +17,8 @@ mod skill_list_tests;
 mod skill_rows;
 #[cfg(test)]
 pub(in crate::task_board) mod tests;
+#[cfg(test)]
+mod verify_tests;
 mod view;
 
 use crate::{input::Input, pickers::ModelList, popover::AnchorSlot};

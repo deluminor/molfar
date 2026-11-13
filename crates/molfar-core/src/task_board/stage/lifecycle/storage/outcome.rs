@@ -1,7 +1,8 @@
 //! What the engine does with a verified stage output: advance, continue an unfinished
 //! run, stop for the user, or send review findings straight back to rework.
 use super::super::constants::{
-    BUDGET_SPENT, MAX_AUTOMATIC_RUNS, MAX_AUTO_REWORK, MAX_CONTINUATIONS, PARTIAL,
+    BUDGET_SPENT, CANCELLED, FAILED, INTERRUPTED, MAX_AUTOMATIC_RUNS, MAX_AUTO_REWORK,
+    MAX_CONTINUATIONS, PARTIAL,
 };
 use crate::task_board::{
     constants::{CODE_REVIEW, ENGINE, GRILL, IMPLEMENT, REWORK, USER},
@@ -143,15 +144,16 @@ pub(crate) fn brief_streak(conn: &Connection, card: &str, source: &str) -> Resul
     Ok(streak)
 }
 
-/// Agent runs after Grill and after the user's latest written decision (answers, plan
-/// edit, rework request) count against one shared budget for automatic follow-ups.
+/// Agent runs since the user last decided: after Grill, after a stop that needed them
+/// (failed, cancelled or interrupted run, so Retry starts a new budget) and after their
+/// latest written decision (answers, plan edit, rework request).
 pub(crate) fn budget_spent(conn: &Connection, card: &str) -> Result<bool, String> {
     let runs: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM task_board_stage_runs WHERE card_id=?1 AND stage IN (?2,?3,?4) \
-             AND rowid > COALESCE((SELECT MAX(rowid) FROM task_board_stage_runs WHERE card_id=?1 AND stage=?5),0) \
+             AND rowid > COALESCE((SELECT MAX(rowid) FROM task_board_stage_runs WHERE card_id=?1 AND (stage=?5 OR status IN (?7,?8,?9))),0) \
              AND started_at > COALESCE((SELECT MAX(created_at) FROM task_board_artifacts WHERE card_id=?1 AND source=?6),0)",
-            params![card, IMPLEMENT, REWORK, CODE_REVIEW, GRILL, USER],
+            params![card, IMPLEMENT, REWORK, CODE_REVIEW, GRILL, USER, FAILED, CANCELLED, INTERRUPTED],
             |row| row.get(0),
         )
         .map_err(|e| e.to_string())?;

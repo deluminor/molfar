@@ -32,9 +32,9 @@ fn red_verify_command_reworks_twice_then_the_review_still_reaches_final_review(
         [
             "grill:succeeded",
             "implement:succeeded",
-            "code_review:failed",
+            "code_review:redirected",
             "rework:succeeded",
-            "code_review:failed",
+            "code_review:redirected",
             "rework:succeeded",
             "code_review:succeeded",
         ]

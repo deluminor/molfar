@@ -96,14 +96,20 @@ pub(crate) fn ci_failed(
     let card = waiting_card(&tx, id, expected)?;
     let now = stamp(&card)?;
 
-    if outcome::brief_streak(&tx, id, CHECKS)? >= MAX_CHECK_REWORK
-        || outcome::budget_spent(&tx, id)?
-    {
+    let fixes_spent = outcome::brief_streak(&tx, id, CHECKS)? >= MAX_CHECK_REWORK;
+    if fixes_spent || outcome::budget_spent(&tx, id)? {
         let failed = next(&card, BoardAction::DeliveryFailed)?;
         let url = record::parse(card.delivery_json.as_deref())
             .and_then(|d| d.pr_url)
             .unwrap_or_default();
-        let error = format!("CI still fails after {MAX_CHECK_REWORK} automatic fixes. Open {url} to see why, then Deliver again or Reject.");
+        let reason = if fixes_spent {
+            format!("CI still fails after {MAX_CHECK_REWORK} automatic fixes")
+        } else {
+            "CI fails and the automatic budget is used up".to_owned()
+        };
+        let error = format!(
+            "{reason}. Open {url} to see why, then request a rework, Deliver again or Reject."
+        );
         tx.execute(
             "UPDATE task_board_cards SET run_state=?2,last_error=?3,updated_at=?4 WHERE id=?1",
             params![id, failed.run_state, bounded(&error), now],

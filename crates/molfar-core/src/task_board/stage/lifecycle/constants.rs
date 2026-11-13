@@ -4,6 +4,8 @@ pub const FAILED: &str = "failed";
 pub const SUCCEEDED: &str = "succeeded";
 /// A writing run that reported unfinished work; the engine queued a continuation.
 pub const PARTIAL: &str = "partial";
+/// A code review that never ran because the verify command failed; the card went back to Rework.
+pub const REDIRECTED: &str = "redirected";
 pub(crate) const MAX_CONTINUATIONS: usize = 3;
 pub(crate) const MAX_AUTO_REWORK: usize = 2;
 pub(crate) const MAX_CHECK_REWORK: usize = 2;
@@ -11,7 +13,7 @@ pub(crate) const MAX_CHECK_REWORK: usize = 2;
 pub(crate) const MAX_AUTOMATIC_RUNS: i64 = 10;
 /// Context share at which a reused session is compacted before the next run.
 pub(crate) const COMPACT_AT: f32 = 0.75;
-pub(crate) const BUDGET_SPENT: &str = "Automatic budget used: 10 agent runs since your last decision. Review the card, then Retry or Rework to continue.";
+pub(crate) const BUDGET_SPENT: &str = "Automatic budget used: 10 agent runs since your last decision. Review the card, then Retry, request a rework or edit the plan to continue.";
 pub const ACCEPTED: &str = "accepted";
 pub const PREPARED: &str = "session_prepared";
 pub const SUBMITTED: &str = "turn_submitted";

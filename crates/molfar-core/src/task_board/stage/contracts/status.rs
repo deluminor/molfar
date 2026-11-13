@@ -9,17 +9,21 @@ pub enum ImplStatus {
     Blocked,
 }
 
+/// The first `Status:` line naming exactly one value. The template line itself
+/// (`complete | partial | blocked`) never counts, so an unfilled report cannot pass as done.
 pub fn parse(report: &str) -> Result<ImplStatus, String> {
     static STATUS: OnceLock<Regex> = OnceLock::new();
     let status = STATUS.get_or_init(|| {
-        Regex::new(r"(?im)^\s*\**Status:?\**\s*:?\s*\**\s*(complete|partial|blocked)\b")
+        Regex::new(r"(?im)^\s*\**Status:?\**\s*:?\s*\**\s*(complete|partial|blocked)\b(.*)$")
             .expect("fixed implementation status")
     });
 
-    let captures = status
-        .captures(report)
-        .ok_or("Report must include `Status: complete | partial | blocked`.")?;
-    Ok(match captures[1].to_ascii_lowercase().as_str() {
+    let value = status
+        .captures_iter(report)
+        .find(|captures| !captures[2].contains('|'))
+        .map(|captures| captures[1].to_ascii_lowercase())
+        .ok_or("Report must start with one status line: `Status: complete`, `Status: partial` or `Status: blocked`.")?;
+    Ok(match value.as_str() {
         "complete" => ImplStatus::Complete,
         "partial" => ImplStatus::Partial,
         _ => ImplStatus::Blocked,

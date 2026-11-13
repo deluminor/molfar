@@ -45,4 +45,6 @@ pub fn build_stage_prompt(
 }
 
 #[cfg(test)]
+mod prompt_tests;
+#[cfg(test)]
 mod stage_tests;

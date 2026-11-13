@@ -54,10 +54,13 @@ fn merge_waits_for_green_ci_before_merging_and_reaching_done() {
     assert_eq!(board.card().run_state, "ci");
     assert!(matches!(look(&board, &port, PENDING), CiProgress::Waiting));
 
-    let CiProgress::Passed(card) = look(&board, &port, GREEN) else {
+    let CiProgress::Passed(card, method) = look(&board, &port, GREEN) else {
         panic!("expected green CI");
     };
-    assert_eq!(card.run_state, "running");
+    assert_eq!(
+        (card.run_state.as_str(), method),
+        ("running", DeliveryMethod::Merge)
+    );
     let published = publish(
         &board.store,
         &port,

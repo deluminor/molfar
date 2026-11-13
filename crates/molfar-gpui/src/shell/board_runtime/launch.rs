@@ -77,7 +77,7 @@ impl Shell {
                         this.install_board_launch(card.id.clone(), *launch, cx);
                         return;
                     }
-                    Ok(prepare::Prepared::Failed(effect)) => this.apply_board_effect(*effect, cx),
+                    Ok(prepare::Prepared::Settled(effect)) => this.apply_board_effect(*effect, cx),
                     Ok(prepare::Prepared::Stopped) => (),
                     Err(error) => this.error = Some(format!("Task Board preparation: {error}")),
                 }

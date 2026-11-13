@@ -1,5 +1,6 @@
 mod automation;
 mod boundaries;
+mod budget;
 mod checks;
 mod fixtures;
 mod guards;

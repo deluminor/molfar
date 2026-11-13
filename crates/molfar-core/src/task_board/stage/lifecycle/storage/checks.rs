@@ -1,7 +1,7 @@
 //! A red verify command sends the card back to Rework before its code review starts.
 use super::super::{
     artifacts,
-    constants::{FAILED, MAX_CHECK_REWORK, QUEUED, RUNNING, SETTLED},
+    constants::{MAX_CHECK_REWORK, QUEUED, REDIRECTED, RUNNING, SETTLED},
     types::StageEffect,
 };
 use super::{outcome, query};
@@ -72,7 +72,7 @@ pub(crate) fn redirect(
         None,
         now,
     )?;
-    tx.execute("UPDATE task_board_stage_runs SET status=?2,dispatch=?3,error=?4,completed_at=?5 WHERE id=?1",params![id,FAILED,SETTLED,CHECKS_FAILED,now]).map_err(|e|e.to_string())?;
+    tx.execute("UPDATE task_board_stage_runs SET status=?2,dispatch=?3,error=?4,completed_at=?5 WHERE id=?1",params![id,REDIRECTED,SETTLED,CHECKS_FAILED,now]).map_err(|e|e.to_string())?;
     tx.execute("UPDATE task_board_cards SET column_id=?2,run_state=?3,last_error=NULL,updated_at=?4,position=?5,queued_at=?6,rework_cycle=?7 WHERE id=?1",params![ctx.card.id,next.column,next.run_state,now.max(ctx.card.updated_at.saturating_add(1)),position,(next.run_state==QUEUED).then_some(now),cycle]).map_err(|e|e.to_string())?;
     let card = query::card(&tx, &ctx.card.id)?;
     tx.commit().map_err(|e| e.to_string())?;

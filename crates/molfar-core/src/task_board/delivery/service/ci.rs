@@ -7,6 +7,7 @@ use crate::{
             ci::{self, constants::MAX_LOG_JOBS, types::CiState},
             port::DeliveryPort,
             record,
+            types::DeliveryMethod,
         },
         stage::lifecycle::storage::query,
         types::Card,
@@ -17,8 +18,8 @@ use std::{path::Path, sync::Mutex};
 #[derive(Debug)]
 pub enum CiProgress {
     Waiting,
-    /// Back in delivering: finish the remaining delivery steps.
-    Passed(Card),
+    /// Back in delivering: finish the remaining steps of this delivery method.
+    Passed(Card, DeliveryMethod),
     Reworked(Card),
     Stopped(Card),
 }
@@ -30,8 +31,10 @@ pub fn check(
     port: &impl DeliveryPort,
     card: &Card,
 ) -> Result<CiProgress, String> {
-    let url = record::parse(card.delivery_json.as_deref())
-        .and_then(|delivery| delivery.pr_url)
+    let delivery = record::parse(card.delivery_json.as_deref())
+        .ok_or("The card waits for CI without a delivery record.")?;
+    let url = delivery
+        .pr_url
         .ok_or("The card waits for CI without a pull request.")?;
     let project = Path::new(&card.project_cwd);
     let checks = ci::parse(&port.ci_rollup(project, &url)?)?;
@@ -41,7 +44,7 @@ pub fn check(
         CiState::Pending => Ok(CiProgress::Waiting),
         CiState::Passed => {
             let card = lock(store)?.board_ci_passed(&card.id, card.updated_at)?;
-            Ok(CiProgress::Passed(card))
+            Ok(CiProgress::Passed(card, delivery.method))
         }
         CiState::Failed(failed) => {
             let logs: Vec<(String, String)> = failed

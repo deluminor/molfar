@@ -41,7 +41,8 @@ pub(super) struct Launch {
 pub(super) enum Prepared {
     Launch(Box<Launch>),
     Stopped,
-    Failed(Box<StageEffect>),
+    /// The run ended while preparing (an error, or red checks sending it back): apply its effect.
+    Settled(Box<StageEffect>),
 }
 
 pub(super) fn prepare(
@@ -59,7 +60,7 @@ pub(super) fn prepare(
             } else {
                 store.board_fail_claimed_stage(&card.id, card.updated_at, &error)?
             };
-            Ok(Prepared::Failed(Box::new(effect)))
+            Ok(Prepared::Settled(Box::new(effect)))
         }
     }
 }
@@ -74,7 +75,8 @@ enum Checks {
 /// to Rework while the automatic budget lasts; otherwise the review prompt states the result.
 fn verify(store: &Database, run_id: &str, card: &Card, checkout: &str) -> Result<Checks, String> {
     let settings = locked(store)?.board_settings_json()?;
-    let Some(command) = choice::settings::verify_command(settings.as_deref(), &card.project_cwd)
+    let Some(command) =
+        choice::verify_commands::verify_command(settings.as_deref(), &card.project_cwd)
     else {
         return Ok(Checks::Skipped);
     };
@@ -141,7 +143,7 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
         match verify(store, run_id, &context.card, &retained.path)? {
             Checks::Skipped => None,
             Checks::Ran(summary) => Some(summary),
-            Checks::Redirected(effect) => return Ok(Prepared::Failed(effect)),
+            Checks::Redirected(effect) => return Ok(Prepared::Settled(effect)),
         }
     } else {
         None
@@ -194,8 +196,8 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
     if !locked(store)?.board_stage_is_current(run_id)? {
         return Ok(Prepared::Stopped);
     }
-    #[cfg(test)]
     // A reused session keeps the fake provider its first run registered.
+    #[cfg(test)]
     let registration = defaults.fixture.filter(|_| reuse.is_none()).map(|fixture| {
         crate::runtime::test_provider::Registration::new(store, reserved.session.id, fixture.binary)
     });

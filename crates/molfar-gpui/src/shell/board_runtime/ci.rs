@@ -1,7 +1,6 @@
 use super::*;
 use molfar_core::task_board::delivery::{
     port::GitDelivery,
-    record,
     service::ci::{self, CiProgress},
     types::DeliveryStep,
 };
@@ -21,7 +20,7 @@ impl Shell {
             let mut errors = Vec::new();
             for card in cards {
                 match ci::check(&store, &GitDelivery, &card) {
-                    Ok(CiProgress::Passed(card)) => passed.push(card),
+                    Ok(CiProgress::Passed(card, method)) => passed.push((card.id, method)),
                     Ok(_) => {}
                     Err(error) => errors.push(format!("#{} CI: {error}", card.number)),
                 }
@@ -34,17 +33,8 @@ impl Shell {
                 this.board_state.ci_polling = false;
                 let error = match result {
                     Ok((passed, errors)) => {
-                        for card in passed {
-                            let Some(delivery) = record::parse(card.delivery_json.as_deref())
-                            else {
-                                continue;
-                            };
-                            this.publish_delivery(
-                                card.id,
-                                delivery.method,
-                                DeliveryStep::Complete,
-                                cx,
-                            );
+                        for (card, method) in passed {
+                            this.publish_delivery(card, method, DeliveryStep::Complete, cx);
                         }
                         (!errors.is_empty()).then(|| errors.join(" · "))
                     }
