@@ -1,5 +1,6 @@
 mod activity;
 mod automations;
+mod consumption;
 mod host;
 mod inbox;
 pub(crate) mod parts;
@@ -31,6 +32,7 @@ impl Home {
             WidgetId::Brand => self.views.brand.clone().into_any_element(),
             WidgetId::Host => self.host_widget(body, cx),
             WidgetId::Usage => self.usage_widget(body, cx),
+            WidgetId::Consumption => self.consumption_widget(body, cx),
             WidgetId::Inbox => self.inbox_widget(body, cx),
             WidgetId::Activity => self.activity_widget(body, cx),
             WidgetId::Sessions => self.sessions_widget(body, cx),
@@ -47,6 +49,7 @@ impl Home {
     ) -> Option<AnyElement> {
         match id {
             WidgetId::Inbox => self.inbox_badge(cx),
+            WidgetId::Consumption => Some(self.consumption_actions(cx)),
             _ => None,
         }
     }

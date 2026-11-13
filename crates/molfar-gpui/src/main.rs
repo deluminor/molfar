@@ -15,6 +15,7 @@ mod companion;
 mod composer_completion;
 mod composer_motion;
 mod composer_runner;
+mod consumption;
 mod context_meter;
 mod conversation;
 #[cfg(debug_assertions)]

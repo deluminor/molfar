@@ -36,6 +36,7 @@ pub(crate) struct Sources {
 pub(crate) struct Feeds {
     pub sessions: Load<Vec<Session>>,
     pub automations: Load<Vec<Automation>>,
+    pub consumption: super::consumption::Consumption,
     pub host: HostFeed,
     pub sampler: Arc<Mutex<Sampler>>,
     pub records_updated_at: Option<u64>,
@@ -49,6 +50,7 @@ impl Default for Feeds {
         Feeds {
             sessions: Load::Loading,
             automations: Load::Loading,
+            consumption: Default::default(),
             host: HostFeed::default(),
             sampler: Arc::default(),
             records_updated_at: None,

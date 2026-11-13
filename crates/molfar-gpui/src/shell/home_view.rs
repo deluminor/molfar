@@ -50,6 +50,7 @@ impl Shell {
                 self.persist(cx);
             }
             home::Event::OpenSession(id) => self.open(*id, window, cx),
+            home::Event::OpenCard(id) => self.open_board_card(id.clone(), window, cx),
             home::Event::OpenAutomation(id) => {
                 self.open_automations(window, cx);
                 if !id.is_empty()

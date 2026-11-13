@@ -1497,3 +1497,5 @@ mod tests {
         );
     }
 }
+
+pub mod consumption;

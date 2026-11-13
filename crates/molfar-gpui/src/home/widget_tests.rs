@@ -35,6 +35,7 @@ pub(super) fn open(cx: &mut TestAppContext) -> (WindowHandle<Home>, Events) {
         cx.subscribe(&home, move |_, event: &Event, _| {
             sink.borrow_mut().push(match event {
                 Event::OpenSession(id) => format!("session {id}"),
+                Event::OpenCard(id) => format!("card {id}"),
                 Event::OpenAutomation(id) => format!("automation {id}"),
                 Event::OpenInbox(key) => format!("inbox {key:?}"),
                 Event::Layout(value) => format!("layout {}", value["brand"]),

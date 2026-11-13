@@ -16,6 +16,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 mod acp;
+mod claude_usage;
 mod commands;
 pub use commands::{
     compact, discover_commands, native_invocation, native_prompt, prepare_prompt, supports_compact,
@@ -88,6 +89,11 @@ pub enum Event {
         window: Option<u64>,
     },
     Metrics(TurnMetrics),
+    /// Per-model usage slices and billing speed of the run, when the harness reports them.
+    Usage {
+        slices: Vec<crate::consumption::UsageSlice>,
+        tier: Option<String>,
+    },
     Approval(Approval),
     ApprovalResolved(String),
     Question(crate::agent::Question),
@@ -915,6 +921,9 @@ impl Protocol {
                     "result" if claude_turn_result(&v) => {
                         if self.compact && !self.compact_confirmed && v["is_error"] != true {
                             return Err("Claude Code did not confirm context compaction".into());
+                        }
+                        if let Some((slices, tier)) = claude_usage::report(&v) {
+                            events.push(Event::Usage { slices, tier });
                         }
                         let usage = &v["usage"];
                         let input = usage["input_tokens"].as_u64().unwrap_or(0);

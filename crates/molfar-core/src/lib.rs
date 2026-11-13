@@ -52,3 +52,5 @@ pub mod cli;
 pub mod mcp;
 
 pub mod worktree_management;
+
+pub mod consumption;

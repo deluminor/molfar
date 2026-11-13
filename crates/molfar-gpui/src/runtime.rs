@@ -256,6 +256,9 @@ fn run_turn_using(
                     model_id: settings.model.clone(),
                     ..Default::default()
                 });
+        info.receipt_id = Some(uuid::Uuid::new_v4().to_string());
+        info.usage_slices = Vec::new();
+        info.service_tier = persistence::requested_tier(&settings);
         info.started_at = info.started_at.or(started_at);
         info.completion = None;
         info.joined_turn = None;
@@ -862,6 +865,12 @@ fn run_turn_using(
                             }
                             metrics = Some(reading);
                         }
+                        Event::Usage { slices, tier } => {
+                            if let Some((_, info)) = &mut turn_receipt {
+                                info.usage_slices = slices;
+                                info.service_tier = tier.or(info.service_tier.take());
+                            }
+                        }
                         Event::Context { used, window } => {
                             context.merge(used, window);
                             context_changed = true;
@@ -1107,8 +1116,11 @@ fn run_turn_using(
             flush_error.as_deref(),
             handoff_save.as_ref().err().map(String::as_str),
         ));
-        if let Err(error) = persistence::save_turn_receipt(&store, summary.id, turn, info) {
+        if let Err(error) = persistence::save_turn_receipt(&store, summary.id, turn, info.clone()) {
             status = format!("{status} · Saving turn metadata failed: {error}");
+        }
+        if let Err(error) = persistence::save_turn_consumption(&store, summary.id, &info) {
+            status = format!("{status} · Saving usage failed: {error}");
         }
     }
     if let Err(error) = handoff_save {

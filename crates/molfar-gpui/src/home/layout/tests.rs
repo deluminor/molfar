@@ -188,7 +188,7 @@ fn grid_geometry_maps_cells_to_pixels_and_back() {
     assert_eq!(rect.w, 4. * 60. + 3. * GAP);
     assert_eq!(grid.cell(rect.x + 10., rect.y - 10.), (8, 8));
     assert_eq!(grid.span(rect.w, rect.h), (4, 4));
-    assert_eq!(grid.height(&DEFAULT_LAYOUT), 21. * ROW_HEIGHT + 20. * GAP);
+    assert_eq!(grid.height(&DEFAULT_LAYOUT), 26. * ROW_HEIGHT + 25. * GAP);
 }
 
 #[test]

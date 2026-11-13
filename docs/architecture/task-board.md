@@ -39,6 +39,13 @@ Board action; native decisions go through it under the card revision check.
 settings as field-level patches that the desktop Board can still read. Runs record
 the model in the shared `provider:model` form.
 
+The card Overview ends with a **Usage** block (`detail/usage.rs`): the card's
+token total and estimated cost, then one row per stage attempt. The total counts
+each stage-run session once (Grill and Build share a session per section); a run
+owns the session's ledger records that started inside its run window, and the
+rest show as "Other". Data comes from `Store::card_consumption` in the
+background; see `docs/specs/session-consumption/implementation-status.md`.
+
 ## Stage contract
 
 - The engine copies the stage's input artifacts from app data into the worktree's git-ignored

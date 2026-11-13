@@ -196,6 +196,16 @@ pub(super) fn project_turns(
                 turns.insert(
                     offset + prompt + 1,
                     crate::agent::TurnInfo {
+                        receipt_id: block[turn_receipts::constants::RECEIPT_ID]
+                            .as_str()
+                            .map(str::to_owned),
+                        usage_slices: block
+                            .get(turn_receipts::constants::USAGE_SLICES)
+                            .and_then(|value| serde_json::from_value(value.clone()).ok())
+                            .unwrap_or_default(),
+                        service_tier: block[turn_receipts::constants::SERVICE_TIER]
+                            .as_str()
+                            .map(str::to_owned),
                         joined_turn,
                         completion,
                         provider_turn_id: block["providerTurnId"].as_str().map(str::to_owned),
@@ -774,6 +784,15 @@ impl Store {
             }
             if source.provider_turn_id.is_some() {
                 info.provider_turn_id = source.provider_turn_id;
+            }
+            if source.receipt_id.is_some() {
+                info.receipt_id = source.receipt_id;
+            }
+            if !source.usage_slices.is_empty() {
+                info.usage_slices = source.usage_slices;
+            }
+            if source.service_tier.is_some() {
+                info.service_tier = source.service_tier;
             }
             if source.joined_turn.is_some() {
                 info.joined_turn = source.joined_turn;

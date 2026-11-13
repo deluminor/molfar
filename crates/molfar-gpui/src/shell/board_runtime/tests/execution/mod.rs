@@ -4,6 +4,7 @@ mod failures;
 mod fixtures;
 mod recovery;
 mod reuse;
+mod usage;
 use super::{super::*, fixtures::Fixture};
 use fixtures::*;
 use gpui::TestAppContext;
