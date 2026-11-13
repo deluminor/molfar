@@ -1,5 +1,5 @@
 use molfar_core::consumption::{
-    prices::PRICE_TABLE_VERSION,
+    prices::PRICES_AS_OF,
     pricing::Cost,
     summary::{Pricing, Reporting, UsageSummary},
 };
@@ -105,9 +105,9 @@ pub(crate) fn breakdown(summary: &UsageSummary) -> String {
 
 /// `Estimate · prices as of 13 Nov 2026`.
 pub(crate) fn footnote() -> String {
-    let mut parts = PRICE_TABLE_VERSION.split('-');
+    let mut parts = PRICES_AS_OF.split('-');
     let (Some(year), Some(month), Some(day)) = (parts.next(), parts.next(), parts.next()) else {
-        return format!("Estimate · prices {PRICE_TABLE_VERSION}");
+        return format!("Estimate · prices {PRICES_AS_OF}");
     };
     let month = month
         .parse::<usize>()

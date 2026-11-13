@@ -57,3 +57,19 @@ fn joined_steer_receipts_never_reach_the_ledger() {
             .is_empty()
     );
 }
+
+#[test]
+fn requested_tier_prefers_an_explicit_service_tier_over_the_fast_toggle() {
+    let mut settings = Settings::default();
+    assert_eq!(requested_tier(&settings), None);
+
+    settings.fast = true;
+    assert_eq!(requested_tier(&settings).as_deref(), Some("fast"));
+
+    settings.service_tier = Some("flex".into());
+    assert_eq!(requested_tier(&settings).as_deref(), Some("flex"));
+
+    settings.service_tier = Some("default".into());
+    settings.fast = false;
+    assert_eq!(requested_tier(&settings), None);
+}

@@ -185,6 +185,13 @@ pub struct TurnInfo {
     pub started_at: Option<u64>,
     pub completed_at: Option<u64>,
     pub metrics: Option<TurnMetrics>,
+    /// Per-model usage when the harness reports it (Claude `modelUsage`); replaces `metrics`
+    /// in the usage ledger.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub usage_slices: Vec<crate::consumption::UsageSlice>,
+    /// Billing tier the run used, such as `fast` or `flex`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub service_tier: Option<String>,
 }
 impl TurnInfo {
     pub fn has_duration(&self) -> bool {

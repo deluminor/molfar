@@ -1,5 +1,5 @@
 use super::{
-    prices::{PRICES, PRICE_TABLE_VERSION},
+    prices::{PRICES, PRICES_AS_OF},
     pricing::{cost, model_key, normalized, Cost},
     TokenCounts, UsageRecord,
 };
@@ -14,6 +14,7 @@ fn record(provider: &str, model_id: &str, name: &str, tokens: TokenCounts) -> Us
         model_name: Some(name.into()),
         started_at_ms: None,
         reported_at_ms: None,
+        tier: None,
         tokens: Some(tokens),
     }
 }
@@ -39,11 +40,16 @@ fn claude_prices_every_category_once_and_resolves_aliases_by_display_name() {
         output: MILLION,
         cache_read: MILLION,
         cache_write: MILLION,
+        cache_write_1h: None,
     };
 
     let estimate = usd(cost(&record("claude", "opus", "Opus 5.5", tokens)));
 
-    assert_eq!(estimate, Some(29.2));
+    assert_eq!(
+        estimate,
+        Some(32.2),
+        "unknown cache lifetime is priced at one hour"
+    );
 }
 
 #[test]
@@ -53,6 +59,7 @@ fn codex_cached_input_is_carved_out_of_input_and_never_charged_twice() {
         output: 80_000,
         cache_read: MILLION,
         cache_write: 0,
+        cache_write_1h: None,
     };
     let codex = record("codex", "codex:gpt-6.1-sol", "GPT-6.1-Sol", tokens);
 
@@ -106,11 +113,54 @@ fn unreported_runs_have_no_cost_not_zero() {
 
 #[test]
 fn price_table_is_versioned_and_keys_are_unique_per_vendor() {
-    assert_eq!(PRICE_TABLE_VERSION.len(), "2026-11-13".len());
+    assert_eq!(PRICES_AS_OF.len(), "2026-11-13".len());
     for (index, price) in PRICES.iter().enumerate() {
         assert_eq!(model_key(price.key), price.key);
         assert!(PRICES[index + 1..]
             .iter()
-            .all(|other| other.key != price.key || other.vendor != price.vendor));
+            .all(|other| other.key != price.key
+                || other.vendor != price.vendor
+                || other.tier != price.tier));
     }
+}
+
+#[test]
+fn claude_cache_writes_split_by_lifetime() {
+    let tokens = TokenCounts {
+        cache_write: 3 * MILLION,
+        cache_write_1h: Some(MILLION),
+        ..Default::default()
+    };
+
+    let estimate = usd(cost(&record("claude", "claude-opus-5-5", "", tokens)));
+
+    assert_eq!(estimate, Some(18.0), "2M × $5 + 1M × $8");
+}
+
+#[test]
+fn fast_and_flex_tiers_use_their_own_rates_and_unknown_tiers_stay_unavailable() {
+    let tokens = TokenCounts {
+        input: MILLION,
+        output: MILLION,
+        ..Default::default()
+    };
+    let tiered = |provider: &str, model: &str, tier: Option<&str>| {
+        let mut row = record(provider, model, "", tokens);
+        row.tier = tier.map(str::to_owned);
+        usd(cost(&row))
+    };
+
+    assert_eq!(
+        tiered("claude", "claude-opus-5-5", Some("standard")),
+        Some(24.0)
+    );
+    assert_eq!(
+        tiered("claude", "claude-opus-5-5", Some("fast")),
+        Some(48.0)
+    );
+    assert_eq!(tiered("claude", "claude-sonnet-5-5", Some("fast")), None);
+    assert_eq!(tiered("codex", "gpt-6.1-sol", None), Some(12.0));
+    assert_eq!(tiered("codex", "gpt-6.1-sol", Some("fast")), Some(24.0));
+    assert_eq!(tiered("codex", "gpt-6.1-sol", Some("flex")), Some(6.0));
+    assert_eq!(tiered("codex", "gpt-6.1-sol", Some("ultrafast")), None);
 }

@@ -8,6 +8,7 @@ const FIXTURE_TOKENS: TokenCounts = TokenCounts {
     output: 80,
     cache_read: 1000,
     cache_write: 0,
+    cache_write_1h: None,
 };
 
 #[gpui::test]

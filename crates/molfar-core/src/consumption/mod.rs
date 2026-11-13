@@ -5,7 +5,7 @@ mod record;
 pub mod summary;
 mod types;
 
-pub use types::{TokenCounts, UsageRecord};
+pub use types::{TokenCounts, UsageRecord, UsageSlice};
 
 #[cfg(test)]
 mod aggregate_tests;

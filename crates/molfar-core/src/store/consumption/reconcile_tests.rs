@@ -76,9 +76,9 @@ fn live_receipts_reconcile_under_their_own_key_without_double_counting() {
     store.save_turn_receipt(id, 1, &receipt).unwrap();
 
     assert_eq!(store.session_usage(id).unwrap().reported_runs, 1);
-    store
-        .save_consumption(id, &UsageRecord::from_turn(&receipt).unwrap())
-        .unwrap();
+    for record in UsageRecord::from_turn(&receipt) {
+        store.save_consumption(id, &record).unwrap();
+    }
 
     let records = store.session_consumption(id).unwrap();
     assert_eq!(records.len(), 1);

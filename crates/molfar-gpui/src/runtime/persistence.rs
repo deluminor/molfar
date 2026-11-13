@@ -116,6 +116,15 @@ pub(super) fn save_turn_receipt(
     locked(store)?.save_turn_receipt(session, turn, &info)
 }
 
+/// The billing tier a run asks for: an explicit service tier, else the fast toggle.
+pub(super) fn requested_tier(settings: &molfar_core::agent::Settings) -> Option<String> {
+    settings
+        .service_tier
+        .clone()
+        .filter(|tier| tier != "default")
+        .or_else(|| settings.fast.then(|| "fast".to_owned()))
+}
+
 /// Records the finalized run in the usage ledger. A failed write stays recoverable: the
 /// saved receipt carries the same identity, and ledger reconciliation re-imports it.
 pub(super) fn save_turn_consumption(
@@ -123,11 +132,15 @@ pub(super) fn save_turn_consumption(
     session: i64,
     info: &molfar_core::agent::TurnInfo,
 ) -> Result<(), String> {
-    let Some(record) = molfar_core::consumption::UsageRecord::from_turn(info) else {
+    let records = molfar_core::consumption::UsageRecord::from_turn(info);
+    if records.is_empty() {
         return Ok(());
-    };
+    }
 
-    locked(store)?.save_consumption(session, &record)
+    let store = locked(store)?;
+    records
+        .iter()
+        .try_for_each(|record| store.save_consumption(session, record))
 }
 
 #[cfg(test)]

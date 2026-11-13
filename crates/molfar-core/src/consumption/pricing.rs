@@ -1,5 +1,5 @@
 use super::{
-    prices::{ModelPrice, Vendor, PRICES},
+    prices::{ModelPrice, Tier, Vendor, PRICES},
     types::{TokenCounts, UsageRecord},
 };
 
@@ -58,8 +58,19 @@ pub fn model_key(model: &str) -> String {
     key
 }
 
+/// A run without a recorded tier was billed at the standard tier; unknown tiers have no price.
+fn tier(record: &UsageRecord) -> Option<Tier> {
+    match record.tier.as_deref() {
+        None | Some("standard" | "default") => Some(Tier::Standard),
+        Some("fast" | "priority") => Some(Tier::Fast),
+        Some("flex") => Some(Tier::Flex),
+        Some(_) => None,
+    }
+}
+
 pub fn price_for(record: &UsageRecord) -> Option<&'static ModelPrice> {
     let vendor = vendor(&record.provider)?;
+    let tier = tier(record)?;
     [record.model_id.as_deref(), record.model_name.as_deref()]
         .into_iter()
         .flatten()
@@ -67,7 +78,7 @@ pub fn price_for(record: &UsageRecord) -> Option<&'static ModelPrice> {
         .find_map(|key| {
             PRICES
                 .iter()
-                .find(|price| price.vendor == vendor && price.key == key)
+                .find(|price| price.vendor == vendor && price.tier == tier && price.key == key)
         })
 }
 
@@ -90,15 +101,26 @@ pub fn normalized(record: &UsageRecord) -> Option<TokenCounts> {
 pub fn cost(record: &UsageRecord) -> Option<Cost> {
     let tokens = normalized(record)?;
     let price = price_for(record)?;
-    let cache_write = match (tokens.cache_write, price.cache_write) {
-        (0, _) => 0,
-        (tokens, Some(rate)) => u128::from(tokens) * u128::from(rate),
-        (_, None) => return None,
-    };
+    let cache_write = cache_write_cost(tokens, price)?;
 
     let total = u128::from(tokens.input) * u128::from(price.input)
         + u128::from(tokens.output) * u128::from(price.output)
         + u128::from(tokens.cache_read) * u128::from(price.cache_read)
         + cache_write;
     Some(Cost(total))
+}
+
+/// Writes with an unknown lifetime use the one-hour rate: Claude Code caches for an hour.
+fn cache_write_cost(tokens: TokenCounts, price: &ModelPrice) -> Option<u128> {
+    if tokens.cache_write == 0 {
+        return Some(0);
+    }
+    let long = tokens.cache_write_1h.unwrap_or(tokens.cache_write);
+    let short = tokens.cache_write.checked_sub(long)?;
+    let rate = |tokens: u64, rate: Option<u64>| match tokens {
+        0 => Some(0),
+        tokens => rate.map(|rate| u128::from(tokens) * u128::from(rate)),
+    };
+
+    Some(rate(short, price.cache_write)? + rate(long, price.cache_write_1h)?)
 }

@@ -14,6 +14,7 @@ fn record(key: &str, at: u64, output: u64) -> UsageRecord {
         model_name: None,
         started_at_ms: Some(at),
         reported_at_ms: Some(at),
+        tier: None,
         tokens: Some(TokenCounts {
             output,
             ..Default::default()

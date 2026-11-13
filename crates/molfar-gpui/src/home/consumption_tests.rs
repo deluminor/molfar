@@ -13,6 +13,7 @@ fn summary(output: u64) -> UsageSummary {
         model_name: None,
         started_at_ms: None,
         reported_at_ms: None,
+        tier: None,
         tokens: Some(TokenCounts {
             output,
             ..Default::default()

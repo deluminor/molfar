@@ -12,6 +12,7 @@ fn summary(rows: &[(Option<u64>, &str)]) -> UsageSummary {
             model_name: None,
             started_at_ms: None,
             reported_at_ms: None,
+            tier: None,
             tokens: output.map(|output| TokenCounts {
                 output,
                 ..Default::default()

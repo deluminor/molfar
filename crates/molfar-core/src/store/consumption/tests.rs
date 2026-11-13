@@ -11,11 +11,13 @@ fn record() -> UsageRecord {
         model_name: Some("Opus 5.5".into()),
         started_at_ms: Some(500),
         reported_at_ms: Some(1_000),
+        tier: None,
         tokens: Some(TokenCounts {
             input: 0,
             output: 4,
             cache_read: 0,
             cache_write: 0,
+            cache_write_1h: None,
         }),
     }
 }
@@ -74,7 +76,7 @@ fn empty_store_reads_without_creating_accounting_tables() {
     let tables: i64 = store
         .conn
         .query_row(
-            "SELECT COUNT(*) FROM sqlite_master WHERE name='native_consumption_v1'",
+            "SELECT COUNT(*) FROM sqlite_master WHERE name='native_consumption_v2'",
             [],
             |row| row.get(0),
         )
@@ -89,7 +91,7 @@ fn database_failure_reports_context_and_keeps_previous_report() {
     store
         .conn
         .execute_batch(
-            "CREATE TRIGGER reject_consumption BEFORE UPDATE ON native_consumption_v1
+            "CREATE TRIGGER reject_consumption BEFORE UPDATE ON native_consumption_v2
              BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END;",
         )
         .unwrap();
@@ -120,7 +122,7 @@ fn shared_database_uses_persisted_session_identity() {
 
     let saved_identity: String = store
         .conn
-        .query_row("SELECT session_id FROM native_consumption_v1", [], |row| {
+        .query_row("SELECT session_id FROM native_consumption_v2", [], |row| {
             row.get(0)
         })
         .unwrap();
@@ -138,4 +140,20 @@ fn shared_database_uses_persisted_session_identity() {
         store.session_consumption(session.id).unwrap(),
         vec![record()]
     );
+}
+
+#[test]
+fn tier_and_one_hour_cache_writes_round_trip() {
+    let store = Store::open(std::path::Path::new(":memory:")).unwrap();
+    let mut saved = record();
+    saved.tier = Some("fast".into());
+    saved.tokens = Some(TokenCounts {
+        cache_write: 9,
+        cache_write_1h: Some(6),
+        ..Default::default()
+    });
+
+    store.save_consumption(1, &saved).unwrap();
+
+    assert_eq!(store.session_consumption(1).unwrap(), vec![saved]);
 }

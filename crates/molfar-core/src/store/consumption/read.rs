@@ -6,8 +6,8 @@ use crate::{
 use rusqlite::Row;
 
 pub(in crate::store) const RECORD_COLUMNS: &str =
-    "source_key,provider,model_id,model_name,started_at_ms,reported_at_ms,\
-     input,output,cache_read,cache_write";
+    "source_key,provider,model_id,model_name,tier,started_at_ms,reported_at_ms,\
+     input,output,cache_read,cache_write,cache_write_1h";
 
 impl Store {
     pub fn session_consumption(&self, session: i64) -> Result<Vec<UsageRecord>, String> {
@@ -46,12 +46,13 @@ pub(in crate::store) fn record(row: &Row<'_>) -> rusqlite::Result<UsageRecord> {
 
 /// Reads `RECORD_COLUMNS` starting at column `base`.
 pub(in crate::store) fn record_from(row: &Row<'_>, base: usize) -> rusqlite::Result<UsageRecord> {
-    let tokens = match count(row, base + 6)? {
+    let tokens = match count(row, base + 7)? {
         Some(input) => Some(TokenCounts {
             input,
-            output: count(row, base + 7)?.unwrap_or(0),
-            cache_read: count(row, base + 8)?.unwrap_or(0),
-            cache_write: count(row, base + 9)?.unwrap_or(0),
+            output: count(row, base + 8)?.unwrap_or(0),
+            cache_read: count(row, base + 9)?.unwrap_or(0),
+            cache_write: count(row, base + 10)?.unwrap_or(0),
+            cache_write_1h: count(row, base + 11)?,
         }),
         None => None,
     };
@@ -61,8 +62,9 @@ pub(in crate::store) fn record_from(row: &Row<'_>, base: usize) -> rusqlite::Res
         provider: row.get(base + 1)?,
         model_id: row.get(base + 2)?,
         model_name: row.get(base + 3)?,
-        started_at_ms: count(row, base + 4)?,
-        reported_at_ms: count(row, base + 5)?,
+        tier: row.get(base + 4)?,
+        started_at_ms: count(row, base + 5)?,
+        reported_at_ms: count(row, base + 6)?,
         tokens,
     })
 }

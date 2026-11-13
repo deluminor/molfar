@@ -2,17 +2,19 @@ use super::SCHEMA;
 use crate::{consumption::UsageRecord, store::Store};
 use rusqlite::{params, Transaction};
 
-const UPSERT: &str = "INSERT INTO native_consumption_v1
-    (session_id,source_key,provider,model_id,model_name,started_at_ms,reported_at_ms,
-     input,output,cache_read,cache_write)
-    VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)";
+const UPSERT: &str = "INSERT INTO native_consumption_v2
+    (session_id,source_key,provider,model_id,model_name,tier,started_at_ms,reported_at_ms,
+     input,output,cache_read,cache_write,cache_write_1h)
+    VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)";
 
 const REPLACE: &str = " ON CONFLICT(session_id,source_key) DO UPDATE SET
     provider=excluded.provider,model_id=excluded.model_id,model_name=excluded.model_name,
-    started_at_ms=COALESCE(native_consumption_v1.started_at_ms,excluded.started_at_ms),
-    reported_at_ms=COALESCE(native_consumption_v1.reported_at_ms,excluded.reported_at_ms),
+    tier=excluded.tier,
+    started_at_ms=COALESCE(native_consumption_v2.started_at_ms,excluded.started_at_ms),
+    reported_at_ms=COALESCE(native_consumption_v2.reported_at_ms,excluded.reported_at_ms),
     input=excluded.input,output=excluded.output,
-    cache_read=excluded.cache_read,cache_write=excluded.cache_write";
+    cache_read=excluded.cache_read,cache_write=excluded.cache_write,
+    cache_write_1h=excluded.cache_write_1h";
 
 const KEEP: &str = " ON CONFLICT(session_id,source_key) DO NOTHING";
 
@@ -51,7 +53,7 @@ impl Store {
                 upsert(tx, &statement, &session, record)?;
             }
             tx.execute(
-                "INSERT INTO native_consumption_sync_v1(session_id,source_revision) VALUES (?1,?2)
+                "INSERT INTO native_consumption_sync_v2(session_id,source_revision) VALUES (?1,?2)
                  ON CONFLICT(session_id) DO UPDATE SET source_revision=excluded.source_revision",
                 params![session, revision],
             )?;
@@ -94,12 +96,14 @@ fn upsert(
             record.provider,
             record.model_id,
             record.model_name,
+            record.tier,
             record.started_at_ms.and_then(count),
             record.reported_at_ms.and_then(count),
             tokens.and_then(|t| count(t.input)),
             tokens.and_then(|t| count(t.output)),
             tokens.and_then(|t| count(t.cache_read)),
             tokens.and_then(|t| count(t.cache_write)),
+            tokens.and_then(|t| t.cache_write_1h).and_then(count),
         ],
     )?;
 

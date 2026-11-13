@@ -257,6 +257,8 @@ fn run_turn_using(
                     ..Default::default()
                 });
         info.receipt_id = Some(uuid::Uuid::new_v4().to_string());
+        info.usage_slices = Vec::new();
+        info.service_tier = persistence::requested_tier(&settings);
         info.started_at = info.started_at.or(started_at);
         info.completion = None;
         info.joined_turn = None;
@@ -862,6 +864,12 @@ fn run_turn_using(
                                 info.metrics = Some(reading);
                             }
                             metrics = Some(reading);
+                        }
+                        Event::Usage { slices, tier } => {
+                            if let Some((_, info)) = &mut turn_receipt {
+                                info.usage_slices = slices;
+                                info.service_tier = tier.or(info.service_tier.take());
+                            }
                         }
                         Event::Context { used, window } => {
                             context.merge(used, window);

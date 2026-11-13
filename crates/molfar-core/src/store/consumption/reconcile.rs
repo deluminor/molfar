@@ -39,7 +39,7 @@ impl Store {
             .agent_settings(session.id)?
             .map(|settings| settings.turns)
             .unwrap_or_default();
-        let records: Vec<_> = turns.values().filter_map(UsageRecord::from_saved).collect();
+        let records: Vec<_> = turns.values().flat_map(UsageRecord::from_saved).collect();
 
         self.import_consumption(session.id, &records, session.updated_at)
     }

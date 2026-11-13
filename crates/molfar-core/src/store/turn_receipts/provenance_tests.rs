@@ -125,3 +125,25 @@ fn turn_receipt_identity_survives_the_shared_transcript_round_trip() {
     let saved = store.agent_settings(id).unwrap().unwrap();
     assert_eq!(saved.turns[&1].receipt_id.as_deref(), Some("receipt-1"));
 }
+
+#[test]
+fn turn_receipt_usage_slices_and_tier_survive_the_shared_transcript() {
+    let (store, id) = fixture(vec![root("run")]);
+    let mut receipt = completed();
+    receipt.service_tier = Some("fast".into());
+    receipt.usage_slices = vec![crate::consumption::UsageSlice {
+        model: "claude-opus-5-5".into(),
+        tokens: crate::consumption::TokenCounts {
+            output: 4,
+            cache_write: 10,
+            cache_write_1h: Some(10),
+            ..Default::default()
+        },
+    }];
+
+    store.save_turn_receipt(id, 1, &receipt).unwrap();
+
+    let saved = store.agent_settings(id).unwrap().unwrap();
+    assert_eq!(saved.turns[&1].usage_slices, receipt.usage_slices);
+    assert_eq!(saved.turns[&1].service_tier.as_deref(), Some("fast"));
+}

@@ -11,6 +11,7 @@ fn record(key: &str, model: &str, tokens: Option<TokenCounts>) -> UsageRecord {
         model_name: None,
         started_at_ms: None,
         reported_at_ms: None,
+        tier: None,
         tokens,
     }
 }

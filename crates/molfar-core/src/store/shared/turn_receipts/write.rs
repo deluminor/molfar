@@ -1,4 +1,4 @@
-use super::constants::RECEIPT_ID;
+use super::constants::{RECEIPT_ID, SERVICE_TIER, USAGE_SLICES};
 use crate::{
     agent::TurnInfo,
     store::{
@@ -99,6 +99,12 @@ pub(in crate::store::shared) fn save(
         }
         if let Some(id) = &info.receipt_id {
             fields.push((RECEIPT_ID, json!(id)));
+        }
+        if !info.usage_slices.is_empty() {
+            fields.push((USAGE_SLICES, json!(info.usage_slices)));
+        }
+        if let Some(tier) = &info.service_tier {
+            fields.push((SERVICE_TIER, json!(tier)));
         }
         if let Some(at) = info.started_at {
             // A native root prompt is written with its send time before
