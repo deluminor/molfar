@@ -17,13 +17,6 @@ impl Render for Board {
             .or_else(|| self.moves_overlay(window, cx))
             .or_else(|| self.creation_overlay(window, cx))
             .or_else(|| self.project_overlay(window, cx))
-            .or_else(|| {
-                if self.detail_tab.is_none() {
-                    self.artifact_overlay(window, cx)
-                } else {
-                    None
-                }
-            })
             .or_else(|| self.settings_overlay(window, cx));
         div()
             .id("task-board")

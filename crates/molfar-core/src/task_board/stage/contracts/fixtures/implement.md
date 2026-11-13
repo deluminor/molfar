@@ -15,20 +15,32 @@ the repository.
 - Finish with a clean working tree and at least one new commit, or this stage fails.
 
 ## Handoff files
-Read every file below before you start; together they are the card's current state. MOLFAR copied them from
-the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.
+Read every file below before you start; together they are the card's current state.
+MOLFAR copied these files from the card into your checkout. They are git-ignored, not part of the repository:
+never edit, stage or commit them.
 
 | File | Kind | Version | What it is |
 | --- | --- | --- | --- |
 | `.molfar/board/task-v2.md` | task | v2 | The task as the user wrote it, with acceptance criteria |
 | `.molfar/board/spec-v2.md` | spec | v2 | Spec: problem, acceptance criteria, scope, constraints, risks |
 | `.molfar/board/plan-v2.md` | plan | v2 | The implementation plan |
+| `.molfar/board/impl_report-v2.md` | impl_report | v2 | The latest implementation report |
 
 ## Goal
+Implement the whole approved plan in this session: every execution stage and every acceptance criterion in
+the spec. The card is done only when a reviewer can verify each criterion in the code and its tests. Do not
+stop after a foundation or a first slice, and do not hand planned stages back as follow-ups.
+Work stage by stage: write tests first where practical, keep every stage building and passing, and commit
+each stage once it works. Before you finish, run the lint, typecheck and test commands the plan or the
+repository defines and fix what fails. Stop early only when you are genuinely blocked or your session is
+about to run out; then commit what works and report exactly what remains.
 
-Implement the approved plan, stage by stage. Write tests first where practical, keep each stage working, and run
-
-the lint, typecheck and test commands the plan or the repository defines before you finish.
+## Status
+Start the report with exactly one status line. MOLFAR reads it to decide what happens next:
+- `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.
+- `Status: partial`: work remains. MOLFAR starts another run that continues from your report and commits,
+  so list precisely what remains.
+- `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.
 
 ## Output
 End your final message with these blocks, exactly as delimited. MOLFAR saves them as files; anything outside
@@ -36,9 +48,11 @@ the blocks is ignored. Each block must be complete Markdown on its own.
 
 <<<MOLFAR:impl_report>>>
 # Implementation report
+Status: complete | partial | blocked
 ## Summary
+## Acceptance criteria (each one: done | not done — evidence)
 ## Commits (sha — subject)
 ## Checks run and results (lint, typecheck, tests)
 ## Deviations from the plan
-## Follow-ups
+## Remaining work (only when partial or blocked: exact stages and criteria left)
 <<<END:impl_report>>>

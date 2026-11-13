@@ -1,10 +1,11 @@
+pub mod ci;
 pub mod reject;
 mod remote;
 
 use super::{
     port::DeliveryPort,
     record,
-    types::{Delivery, DeliveryMethod, Detached, Finished, Published},
+    types::{Delivery, DeliveryMethod, DeliveryStep, Detached, Finished, Published},
 };
 use crate::{
     store::Store,
@@ -44,6 +45,7 @@ pub fn publish(
     port: &impl DeliveryPort,
     id: &str,
     method: DeliveryMethod,
+    step: DeliveryStep,
 ) -> Result<Published, String> {
     let card = lock(store)?.board_card(id)?;
     let previous = record::parse(card.delivery_json.as_deref());
@@ -70,7 +72,15 @@ pub fn publish(
             pr_url: None,
             merged: false,
         },
-        _ => remote::publish(store, port, &card, Path::new(&worktree), method, previous)?,
+        _ => remote::publish(
+            store,
+            port,
+            &card,
+            Path::new(&worktree),
+            method,
+            step,
+            previous,
+        )?,
     };
     let card = lock(store)?.board_save_delivery(id, &delivery)?;
     Ok(Published {

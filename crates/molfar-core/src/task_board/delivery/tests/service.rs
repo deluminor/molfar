@@ -2,7 +2,7 @@ use super::{
     super::{
         record,
         service::{self, finish, publish},
-        types::{DeliveryMethod, ExistingPullRequest},
+        types::{DeliveryMethod, DeliveryStep, ExistingPullRequest},
     },
     fake::{Board, Fake, URL},
 };
@@ -10,7 +10,7 @@ use crate::task_board::stage::checkout::policy::DIRTY_CHECKOUT;
 
 fn deliver(board: &Board, port: &Fake, method: DeliveryMethod) -> Result<(), String> {
     board.start();
-    match publish(&board.store, port, "card", method) {
+    match publish(&board.store, port, "card", method, DeliveryStep::Complete) {
         Ok(published) => finish(&board.store, port, published, None).map(|_| ()),
         Err(error) => {
             service::fail(&board.store, "card", &error)?;
@@ -204,7 +204,14 @@ fn completed_record_with_removed_worktree_finishes_without_cleanup() {
     let board = Board::at("final_review", "idle");
     let port = Fake::default();
     board.start();
-    let published = publish(&board.store, &port, "card", DeliveryMethod::Keep).unwrap();
+    let published = publish(
+        &board.store,
+        &port,
+        "card",
+        DeliveryMethod::Keep,
+        DeliveryStep::Complete,
+    )
+    .unwrap();
     std::fs::remove_dir(&board.worktree).unwrap();
     service::fail(&board.store, "card", "crashed before Done").unwrap();
     drop(published);

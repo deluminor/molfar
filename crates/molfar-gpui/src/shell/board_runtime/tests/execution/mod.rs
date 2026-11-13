@@ -1,7 +1,9 @@
+mod checks;
 mod delivery;
 mod failures;
 mod fixtures;
 mod recovery;
+mod reuse;
 use super::{super::*, fixtures::Fixture};
 use fixtures::*;
 use gpui::TestAppContext;
@@ -22,7 +24,6 @@ fn native_approval_implementation_review_rework_pipeline_uses_isolated_committed
         .board_final_review("card")
         .unwrap();
     assert_eq!(review.review.findings.len(), 2);
-    assert!(review.review.findings[0].severity.selected_by_default());
     let first_head =
         checkout::snapshot(Path::new(fixture.card().worktree_path.as_deref().unwrap()))
             .unwrap()

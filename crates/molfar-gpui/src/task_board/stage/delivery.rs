@@ -1,10 +1,9 @@
 use super::super::{Board, Event};
 use super::footer::lead_button;
-use crate::task_board::controls;
 use crate::{modal, theme::*};
-use gpui::{AnyElement, Context, Div, Window, div, prelude::*, px};
+use gpui::{AnyElement, Context, Div, Role, Stateful, Window, div, prelude::*, px};
 use molfar_core::task_board::{
-    constants::{DONE, FINAL_REVIEW, IDLE},
+    constants::{DONE, FINAL_REVIEW, IDLE, WAITING_CI},
     delivery::{record, types::DeliveryMethod},
     stage::lifecycle::constants::{FAILED, RUNNING},
     types::Card,
@@ -35,6 +34,9 @@ pub(in crate::task_board) fn status_text(card: &Card) -> String {
     if card.column_id == FINAL_REVIEW && card.run_state == RUNNING {
         return "Delivering".into();
     }
+    if card.column_id == FINAL_REVIEW && card.run_state == WAITING_CI {
+        return "Waiting for CI".into();
+    }
     if card.column_id == DONE {
         return "Delivered".into();
     }
@@ -49,6 +51,41 @@ fn deliverable(card: &Card) -> bool {
     !card.archived
         && card.column_id == FINAL_REVIEW
         && matches!(card.run_state.as_str(), IDLE | FAILED)
+}
+
+fn method_option(id: &'static str, label: &'static str, hint: &'static str) -> Stateful<Div> {
+    div()
+        .id(id)
+        .role(Role::Button)
+        .aria_label(format!("{label}. {hint}"))
+        .focusable()
+        .tab_index(0)
+        .flex_1()
+        .min_w_0()
+        .flex()
+        .flex_col()
+        .gap(px(2.))
+        .px_3()
+        .py_2()
+        .rounded(px(8.))
+        .border_1()
+        .border_color(content(0.08))
+        .cursor_pointer()
+        .hover(|s| s.bg(content(0.06)).border_color(content(0.14)))
+        .focus_visible(|s| s.bg(content(0.08)).border_color(content(0.2)))
+        .child(
+            div()
+                .text_size(px(12.))
+                .font_weight(gpui::FontWeight::MEDIUM)
+                .text_color(content(0.95))
+                .child(label),
+        )
+        .child(
+            div()
+                .text_size(px(11.))
+                .text_color(content(0.55))
+                .child(hint),
+        )
 }
 
 pub(super) fn rejectable(card: &Card) -> bool {
@@ -105,23 +142,23 @@ impl Board {
             .worktree_path
             .as_ref()
             .and_then(|path| self.github.get(path).copied());
-        let mut picker = div().w_full().flex().flex_col().gap_2();
+        let mut picker = div().w_full().flex().flex_col().gap(px(6.));
         if github == Some(false) {
             picker = picker.child(div().text_size(px(11.)).text_color(content(0.6)).child(
                 "GitHub is not available for this repository, so only Keep branch is offered.",
             ));
         }
 
+        let mut options = div().w_full().flex().items_stretch().gap(px(6.));
         for (method, id, label, hint) in METHODS {
             if github == Some(false) && method != DeliveryMethod::Keep {
                 continue;
             }
             let card_id = card.id.clone();
             let updated_at = card.updated_at;
-            picker = picker.child(
-                modal::disabled(controls::ghost_button(id, label), pending)
+            options = options.child(
+                modal::disabled(method_option(id, label, hint), pending)
                     .debug_selector(move || id.into())
-                    .aria_label(format!("{label}. {hint}"))
                     .on_click(cx.listener(move |this, _, window, cx| {
                         let card_id = card_id.clone();
                         if method != DeliveryMethod::Merge {
@@ -138,16 +175,10 @@ impl Board {
                             cx,
                             then,
                         );
-                    }))
-                    .child(
-                        div()
-                            .text_size(px(11.))
-                            .text_color(content(0.5))
-                            .child(hint),
-                    ),
+                    })),
             );
         }
-        picker
+        picker.child(options)
     }
 
     pub(super) fn deliver_action(

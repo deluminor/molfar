@@ -2,6 +2,7 @@ mod branch;
 pub mod constants;
 mod materialize;
 pub mod policy;
+mod restore;
 mod snapshot;
 pub mod types;
 mod worktree;
@@ -46,5 +47,7 @@ pub fn materialize(
 mod cleanup_tests;
 #[cfg(test)]
 mod remote_tests;
+#[cfg(test)]
+mod restore_tests;
 #[cfg(all(test, unix))]
 mod special_file_tests;

@@ -1,6 +1,10 @@
 use super::Store;
 use crate::task_board::{
-    delivery::{storage, types::Delivery},
+    delivery::{
+        storage,
+        types::{Delivery, DeliveryMethod},
+        waiting,
+    },
     stage::{lifecycle::storage::query, owner},
     types::Card,
 };
@@ -72,5 +76,42 @@ impl Store {
             return Ok(Vec::new());
         }
         storage::stuck(&self.conn)
+    }
+
+    /// The pull request is open: hold the card at Final review until CI decides.
+    pub fn board_await_ci(&mut self, id: &str, delivery: &Delivery) -> Result<Card, String> {
+        self.board_writable()?;
+        waiting::await_ci(&mut self.conn, id, delivery)
+    }
+
+    pub fn board_waiting_ci(&self) -> Result<Vec<Card>, String> {
+        if self.shared.is_none() {
+            return Ok(Vec::new());
+        }
+        waiting::waiting(&self.conn)
+    }
+
+    pub fn board_ci_passed(&mut self, id: &str, expected: i64) -> Result<Card, String> {
+        self.board_writable()?;
+        waiting::ci_passed(&mut self.conn, id, expected)
+    }
+
+    pub fn board_ci_failed(
+        &mut self,
+        id: &str,
+        expected: i64,
+        brief: &str,
+    ) -> Result<Card, String> {
+        self.board_writable()?;
+        let base = self.board_artifact_base()?;
+        waiting::ci_failed(&mut self.conn, &base, id, expected, brief)
+    }
+
+    pub fn board_redeliveries(&self) -> Result<Vec<(String, i64, DeliveryMethod)>, String> {
+        if self.shared.is_none() {
+            return Ok(Vec::new());
+        }
+        let base = self.board_artifact_base()?;
+        waiting::redeliveries(&self.conn, &base)
     }
 }

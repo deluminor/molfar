@@ -1,7 +1,9 @@
 use super::super::Board;
 use gpui::Context;
 use molfar_core::task_board::stage::{
-    choice::settings::{COLUMN_SKILLS, MAX_CONCURRENT, STALL_MINUTES, SettingsPatch},
+    choice::settings::{
+        COLUMN_SKILLS, MAX_CONCURRENT, STALL_MINUTES, SettingsPatch, VERIFY_COMMANDS,
+    },
     lifecycle::constants::{DEFAULT_CONCURRENCY, DEFAULT_STALL_MINUTES},
 };
 use serde_json::Value;
@@ -53,6 +55,13 @@ impl Board {
         panel.pending = None;
         // Later reloads keep what the user is typing in fields they have not saved yet.
         if panel.saved.is_some() {
+            let verify = saved[VERIFY_COMMANDS][panel.project.as_str()]
+                .as_str()
+                .unwrap_or_default()
+                .to_owned();
+            panel
+                .verify
+                .update(cx, |input, cx| input.set_text(verify, cx));
             panel.saved = Some(saved);
             self.load_column_catalogs(cx);
             cx.notify();
@@ -87,6 +96,13 @@ impl Board {
         panel
             .stall
             .update(cx, |input, cx| input.set_text(stall, cx));
+        let verify = saved[VERIFY_COMMANDS][panel.project.as_str()]
+            .as_str()
+            .unwrap_or_default()
+            .to_owned();
+        panel
+            .verify
+            .update(cx, |input, cx| input.set_text(verify, cx));
         panel.saved = Some(saved);
         self.load_column_catalogs(cx);
         cx.notify();

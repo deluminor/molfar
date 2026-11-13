@@ -18,15 +18,15 @@ pub fn input_contract(stage: AgentStage, round: i64) -> ArtifactContract {
         },
         AgentStage::Implement => ArtifactContract {
             required: &[TASK, SPEC, PLAN],
-            optional: &[],
+            optional: &[IMPL_REPORT],
         },
         AgentStage::CodeReview => ArtifactContract {
             required: &[TASK, SPEC, PLAN, IMPL_REPORT],
-            optional: &[],
+            optional: &[REVIEW],
         },
         AgentStage::Rework => ArtifactContract {
-            required: &[TASK, SPEC, PLAN, REVIEW, REWORK_BRIEF],
-            optional: &[IMPL_REPORT],
+            required: &[TASK, SPEC, PLAN, REWORK_BRIEF],
+            optional: &[REVIEW, IMPL_REPORT],
         },
     }
 }

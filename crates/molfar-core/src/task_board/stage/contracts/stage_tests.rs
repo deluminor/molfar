@@ -4,7 +4,7 @@ use crate::task_board::stage::{
     checkout::{policy, types::CheckoutSnapshot},
 };
 
-fn card() -> crate::task_board::types::Card {
+pub(super) fn card() -> crate::task_board::types::Card {
     crate::task_board::types::Card {
         id: "abc123-card".into(),
         number: 7,
@@ -52,7 +52,15 @@ fn every_execution_prompt_matches_the_executed_desktop_template() {
                 path: format!(".molfar/board/{kind}-v2.md"),
             })
             .collect::<Vec<_>>();
-        let prompt = build_stage_prompt(stage, &card(), &files, &[], &"b".repeat(40)).unwrap();
+        let prompt = build_stage_prompt(
+            stage,
+            &card(),
+            &files,
+            &[],
+            &"b".repeat(40),
+            &Default::default(),
+        )
+        .unwrap();
         assert_eq!(prompt, expected, "{}", stage.id());
         assert!(!prompt.contains("This body must not be embedded"));
     }
@@ -65,9 +73,16 @@ fn output_contracts_refuse_missing_and_malformed_stage_results() {
         assert!(
             read_stage_output(stage, "<<<MOLFAR:impl_report>>>  <<<END:impl_report>>>").is_err()
         );
-        let output =
+        assert!(
             read_stage_output(stage, "<<<MOLFAR:impl_report>>>report<<<END:impl_report>>>")
-                .unwrap();
+                .unwrap_err()
+                .contains("Status")
+        );
+        let output = read_stage_output(
+            stage,
+            "<<<MOLFAR:impl_report>>>**Status:** partial\nreport<<<END:impl_report>>>",
+        )
+        .unwrap();
         assert_eq!(output[0].kind, constants::IMPL_REPORT);
     }
     assert!(read_stage_output(

@@ -1,7 +1,7 @@
 # Task Board
 
-A global Kanban board whose agent stages each run in a fresh, hidden session. Spec and plan live in
-`docs/specs/task-board/` (local, git-ignored).
+A global Kanban board whose agent stages run in hidden, Board-owned sessions. Spec and plan live in
+`docs/specs/task-board/` (local, git-ignored); later changes in `docs/specs/board-*`.
 
 ## Split of responsibilities
 
@@ -37,8 +37,7 @@ Familiars and phone access. `task_board/stage/transitions/` ports the shipped tr
 Board action; native decisions go through it under the card revision check.
 `stage/choice/` resolves model, access and skills per stage and saves Board
 settings as field-level patches that the desktop Board can still read. Runs record
-the model in the shared `provider:model` form. Later Grill rounds,
-Implement/Review/Rework runs, plan approval and delivery remain planned.
+the model in the shared `provider:model` form.
 
 ## Stage contract
 
@@ -49,7 +48,10 @@ Implement/Review/Rework runs, plan approval and delivery remain planned.
   `<<<MOLFAR:kind>>>` / `<<<END:kind>>>` markers in its final message. The session port captures the full
   turn text at settlement (the settlement outcome alone is capped at 20 000 characters).
 - Grill and Code review run in `auto` mode; HEAD and `git status --porcelain` must match before and after.
-- Implement and Rework must finish with a clean tree and at least one new commit.
+- Implement and Rework must finish with a clean tree and at least one new commit, and their
+  `impl_report` must carry one `Status: complete | partial | blocked` line (`contracts/status.rs`).
+- Code review starts its review block with an acceptance-criteria checklist and reports every finding in
+  one pass; follow-up reviews read `git diff <last reviewed head>..HEAD` plus the previous review.
 - A run is recorded before each side effect (`accepted → session_prepared → turn_submitted → settled`);
   reconcile turns runs whose session vanished into `interrupted`.
 
@@ -57,5 +59,28 @@ Implement/Review/Rework runs, plan approval and delivery remain planned.
 
 `backlog → grill → plan_approval → implement → code_review → final_review → (rework → code_review)* → done`.
 Plan approval and final review are manual gates; `implement`/`rework` success advances to `code_review`
-automatically. Drag-and-drop, the Move-to menu, the drawer buttons and `board.move` all go through
+automatically. PR and squash-merge deliveries wait in `final_review` with run state `ci` until the pull
+request's checks decide. Drag-and-drop, the Move-to menu, the drawer buttons and `board.move` all go through
 `transition()`.
+
+## Automation (native)
+
+`lifecycle/storage/outcome.rs` decides what a verified run leads to; every loop has a durable budget.
+
+| Trigger | Engine action | Budget |
+| --- | --- | --- |
+| `Status: partial` | Run status `partial`, same stage queued again with the latest report | 5 in a row |
+| `Status: blocked` | Card fails with the blocker message | — |
+| Review with blocking/major findings | Rework brief (source `engine`, findings except nits), card to Rework | 2 since the user's last brief |
+| Project verify command red before Code review (`stage/verify/`) | Run status `redirected`, brief (source `checks`) with the output tail, card to Rework | 2 shared with CI |
+| PR checks red (`delivery/ci/`, polled each minute) | Brief (source `checks`) with failed checks and log tails, card to Rework; a clean review then redelivers to the same PR | 2 shared with checks |
+| Any of the above | Stop at Final review or failed | 10 Implement/Rework/Code review runs since the last user decision or user-needed stop |
+
+The verify command is a per-project Board setting (`verifyCommands`), run with the GUI PATH, `CI=1` and a
+30-minute timeout in the card checkout.
+
+Sessions (`store/task_board/reuse.rs`): Grill rounds share one session and Implement, continuations and
+Rework share another while the agent, model settings, plan and session state are unchanged and the
+previous run ended well; Code review always starts fresh. A reused session at 75% context is compacted
+before the next prompt, which is queued as the session's next message so its turn id still matches the run.
+

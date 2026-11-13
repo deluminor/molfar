@@ -151,7 +151,7 @@ fn completed_execution_receipts_settle_after_restart_once_without_provider_repla
         let text = if stage == AgentStage::CodeReview {
             "<<<MOLFAR:review>>>Verdict: APPROVE<<<END:review>>>"
         } else {
-            "<<<MOLFAR:impl_report>>>Recovered report<<<END:impl_report>>>"
+            "<<<MOLFAR:impl_report>>>Status: complete\nRecovered report<<<END:impl_report>>>"
         };
         let request = format!(
             "app-prompt-{}",

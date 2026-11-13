@@ -39,12 +39,21 @@ impl Board {
         self.loading = false;
         match result {
             Ok(snapshot) => {
-                let artifact_missing = self.detail_tab.as_ref().is_some_and(|kind| {
-                    !snapshot.artifacts.iter().any(|a| {
-                        Some(&a.card_id) == snapshot.selected.as_ref()
-                            && &a.kind == kind
-                            && Some(a.version) == self.detail_version
-                    })
+                let artifact_missing = self.detail_tab.as_deref().is_some_and(|tab| {
+                    let (Some(group), Some(card), Some(version)) = (
+                        crate::task_board::detail::groups::Group::parse(tab),
+                        snapshot.selected.as_ref(),
+                        self.detail_version,
+                    ) else {
+                        return true;
+                    };
+                    crate::task_board::detail::groups::members(
+                        &snapshot.artifacts,
+                        card,
+                        group,
+                        version,
+                    )
+                    .is_empty()
                 });
                 if self.selected != snapshot.selected || artifact_missing {
                     self.reset_detail_artifact();

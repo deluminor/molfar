@@ -51,6 +51,7 @@ impl Store {
         id: &str,
         settings: &Settings,
         prompt: &str,
+        reuse: Option<&str>,
     ) -> Result<ReservedStageSession, String> {
         self.board_writable()?;
         if self.shared.is_none() {
@@ -90,7 +91,7 @@ impl Store {
         settings.turns.clear();
         settings.turn_model = None;
         settings.pending_provider_switch = None;
-        let input=json!({"run":id,"model":context.run.model,"settings":context.run.settings_json,"mode":context.run.runtime_mode,"account":settings.account.id,"worktree":worktree,"prompt":prompt}).to_string();
+        let input=json!({"run":id,"model":context.run.model,"settings":context.run.settings_json,"mode":context.run.runtime_mode,"account":settings.account.id,"worktree":worktree,"prompt":prompt,"session":reuse}).to_string();
         let fingerprint = crate::familiar::files::content_hash(&input);
         let key = format!("board-stage-request:{id}");
         if self
@@ -107,9 +108,24 @@ impl Store {
         if !query::current(&tx, &current)? {
             return Err("Board stage was cancelled during preparation.".into());
         }
-        let original = format!("board-{id}");
-        let (mut session, _) =
-            self.shared_create_named(&context.run.harness, &context.card.project_cwd, &original)?;
+        let original = reuse.map_or_else(|| format!("board-{id}"), str::to_owned);
+        let mut session = match reuse {
+            None => {
+                self.shared_create_named(
+                    &context.run.harness,
+                    &context.card.project_cwd,
+                    &original,
+                )?
+                .0
+            }
+            Some(_) => {
+                let native = self.resolve_session_id(&original)?;
+                self.sessions()?
+                    .into_iter()
+                    .find(|session| session.id == native)
+                    .ok_or("The section's Board session was removed.")?
+            }
+        };
         let owner: Option<String> = tx
             .query_row(
                 "SELECT task_card_id FROM sessions WHERE id=?1",
@@ -148,7 +164,9 @@ impl Store {
         )
         .map_err(|e| e.to_string())?;
         tx.commit().map_err(|e| e.to_string())?;
-        self.configure_agent(session.id, &context.run.harness, &settings)?;
+        if reuse.is_none() {
+            self.configure_agent(session.id, &context.run.harness, &settings)?;
+        }
         self.prepare_app_prompt(session.id, id, prompt)?;
         session.title = title;
         Ok(ReservedStageSession { session })

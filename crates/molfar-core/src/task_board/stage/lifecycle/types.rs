@@ -43,6 +43,17 @@ pub struct StageContext {
     pub run: StageRun,
 }
 
+/// Where a stage run talks to its agent: a new session, or its section's earlier one.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SessionPlan {
+    Fresh,
+    /// `compact` asks for compaction before the run's prompt is sent.
+    Reuse {
+        session: String,
+        compact: bool,
+    },
+}
+
 #[derive(Clone, Debug)]
 pub struct ReservedStageSession {
     pub session: Session,

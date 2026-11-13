@@ -22,6 +22,8 @@ pub trait DeliveryPort {
     fn squash_merge(&self, worktree: &Path, repo: &str, number: i64) -> Result<(), String>;
     fn remove_worktree(&self, project: &Path, worktree: &Path, force: bool) -> Result<(), String>;
     fn remove_task_branch(&self, project: &Path, branch: &str) -> Result<bool, String>;
+    fn ci_rollup(&self, project: &Path, url: &str) -> Result<String, String>;
+    fn ci_failed_log(&self, project: &Path, job: &str) -> Result<String, String>;
 }
 
 pub struct GitDelivery;
@@ -94,5 +96,13 @@ impl DeliveryPort for GitDelivery {
 
     fn remove_task_branch(&self, project: &Path, branch: &str) -> Result<bool, String> {
         checkout::remove_task_branch(project, branch)
+    }
+
+    fn ci_rollup(&self, project: &Path, url: &str) -> Result<String, String> {
+        crate::scm::pr_check_rollup(project, url)
+    }
+
+    fn ci_failed_log(&self, project: &Path, job: &str) -> Result<String, String> {
+        crate::scm::job_failed_log(project, job)
     }
 }

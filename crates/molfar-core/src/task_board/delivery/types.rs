@@ -8,6 +8,13 @@ pub enum DeliveryMethod {
     Keep,
 }
 
+/// `Open` pushes and opens the pull request; `Complete` also merges, after CI passed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DeliveryStep {
+    Open,
+    Complete,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Delivery {
