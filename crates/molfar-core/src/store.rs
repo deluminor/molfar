@@ -1498,4 +1498,4 @@ mod tests {
     }
 }
 
-mod consumption;
+pub mod consumption;

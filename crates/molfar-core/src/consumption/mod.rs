@@ -1,3 +1,4 @@
+pub mod aggregate;
 pub mod prices;
 pub mod pricing;
 mod record;
@@ -6,6 +7,8 @@ mod types;
 
 pub use types::{TokenCounts, UsageRecord};
 
+#[cfg(test)]
+mod aggregate_tests;
 #[cfg(test)]
 mod pricing_tests;
 #[cfg(test)]

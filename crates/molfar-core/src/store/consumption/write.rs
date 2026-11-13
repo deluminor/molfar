@@ -14,6 +14,8 @@ const REPLACE: &str = " ON CONFLICT(session_id,source_key) DO UPDATE SET
     input=excluded.input,output=excluded.output,
     cache_read=excluded.cache_read,cache_write=excluded.cache_write";
 
+const KEEP: &str = " ON CONFLICT(session_id,source_key) DO NOTHING";
+
 impl Store {
     /// The authoritative report of one run replaces its earlier snapshot; the first report
     /// date survives replay, and transcript edits or rewinds never delete ledger rows.
@@ -28,6 +30,34 @@ impl Store {
                     record.source_key
                 )
             })
+    }
+
+    /// Imports receipts read back from a transcript without overriding live reports.
+    pub(super) fn import_consumption(
+        &self,
+        session: i64,
+        records: &[UsageRecord],
+        revision: u64,
+    ) -> Result<(), String> {
+        let session = self.ledger_session(session)?;
+        for record in records {
+            record.validate()?;
+        }
+        let revision = i64::try_from(revision).unwrap_or(i64::MAX);
+
+        self.ledger_transaction(|tx| {
+            let statement = format!("{UPSERT}{KEEP}");
+            for record in records {
+                upsert(tx, &statement, &session, record)?;
+            }
+            tx.execute(
+                "INSERT INTO native_consumption_sync_v1(session_id,source_revision) VALUES (?1,?2)
+                 ON CONFLICT(session_id) DO UPDATE SET source_revision=excluded.source_revision",
+                params![session, revision],
+            )?;
+            Ok(())
+        })
+        .map_err(|error| format!("Import consumption session={session}: {error}"))
     }
 
     fn ledger_session(&self, session: i64) -> Result<String, String> {

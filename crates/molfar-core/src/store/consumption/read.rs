@@ -28,33 +28,41 @@ impl Store {
     }
 
     pub(in crate::store) fn ledger_exists(&self) -> rusqlite::Result<bool> {
+        self.table_exists(LEDGER_TABLE)
+    }
+
+    pub(super) fn table_exists(&self, name: &str) -> rusqlite::Result<bool> {
         self.conn.query_row(
             "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1)",
-            [LEDGER_TABLE],
+            [name],
             |row| row.get(0),
         )
     }
 }
 
 pub(in crate::store) fn record(row: &Row<'_>) -> rusqlite::Result<UsageRecord> {
-    let input = count(row, 6)?;
-    let tokens = match input {
+    record_from(row, 0)
+}
+
+/// Reads `RECORD_COLUMNS` starting at column `base`.
+pub(in crate::store) fn record_from(row: &Row<'_>, base: usize) -> rusqlite::Result<UsageRecord> {
+    let tokens = match count(row, base + 6)? {
         Some(input) => Some(TokenCounts {
             input,
-            output: count(row, 7)?.unwrap_or(0),
-            cache_read: count(row, 8)?.unwrap_or(0),
-            cache_write: count(row, 9)?.unwrap_or(0),
+            output: count(row, base + 7)?.unwrap_or(0),
+            cache_read: count(row, base + 8)?.unwrap_or(0),
+            cache_write: count(row, base + 9)?.unwrap_or(0),
         }),
         None => None,
     };
 
     Ok(UsageRecord {
-        source_key: row.get(0)?,
-        provider: row.get(1)?,
-        model_id: row.get(2)?,
-        model_name: row.get(3)?,
-        started_at_ms: count(row, 4)?,
-        reported_at_ms: count(row, 5)?,
+        source_key: row.get(base)?,
+        provider: row.get(base + 1)?,
+        model_id: row.get(base + 2)?,
+        model_name: row.get(base + 3)?,
+        started_at_ms: count(row, base + 4)?,
+        reported_at_ms: count(row, base + 5)?,
         tokens,
     })
 }

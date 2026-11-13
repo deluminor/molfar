@@ -17,3 +17,7 @@ CREATE TABLE IF NOT EXISTS native_consumption_v1 (
 );
 CREATE INDEX IF NOT EXISTS native_consumption_v1_date
 ON native_consumption_v1(reported_at_ms, session_id);
+CREATE TABLE IF NOT EXISTS native_consumption_sync_v1 (
+    session_id TEXT PRIMARY KEY,
+    source_revision INTEGER NOT NULL
+);
