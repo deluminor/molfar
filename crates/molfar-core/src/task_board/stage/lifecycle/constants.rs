@@ -6,7 +6,7 @@ pub const SUCCEEDED: &str = "succeeded";
 pub const PARTIAL: &str = "partial";
 /// A code review that never ran because the verify command failed; the card went back to Rework.
 pub const REDIRECTED: &str = "redirected";
-pub(crate) const MAX_CONTINUATIONS: usize = 3;
+pub(crate) const MAX_CONTINUATIONS: usize = 5;
 pub(crate) const MAX_AUTO_REWORK: usize = 2;
 pub(crate) const MAX_CHECK_REWORK: usize = 2;
 /// Implement, Rework and Code review runs the engine may start since the user last decided.

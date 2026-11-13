@@ -45,9 +45,9 @@ the user must decide. Always produce a complete draft spec and plan, even when q
 
 approve the plan without answering. Emit the questions block only when a decision is genuinely open.
 
-Size the plan so one Implement session can finish all of it, usually three or four execution stages, and map
-every acceptance criterion to a stage and a test. When the task is clearly bigger than one card, ask about it
-in the questions block and propose a split into separate cards.
+Describe the whole scope completely: every requirement, edge case and acceptance criterion, in as many execution
+stages as the work needs. Do not cut scope to fit one session; Implement continues across runs until the plan
+is done. Map every acceptance criterion to a stage and a test.
 
 ## Output
 End your final message with these blocks, exactly as delimited. MOLFAR saves them as files; anything outside

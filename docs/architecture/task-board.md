@@ -69,7 +69,7 @@ request's checks decide. Drag-and-drop, the Move-to menu, the drawer buttons and
 
 | Trigger | Engine action | Budget |
 | --- | --- | --- |
-| `Status: partial` | Run status `partial`, same stage queued again with the latest report | 3 in a row |
+| `Status: partial` | Run status `partial`, same stage queued again with the latest report | 5 in a row |
 | `Status: blocked` | Card fails with the blocker message | — |
 | Review with blocking/major findings | Rework brief (source `engine`, findings except nits), card to Rework | 2 since the user's last brief |
 | Project verify command red before Code review (`stage/verify/`) | Run status `redirected`, brief (source `checks`) with the output tail, card to Rework | 2 shared with CI |

@@ -25,7 +25,10 @@ fn partial_runs_continue_in_place_until_the_streak_limit_then_fail() {
     let (_dir, mut store) = gate();
     approve(&mut store);
 
-    for (index, run) in ["one", "two", "three"].into_iter().enumerate() {
+    for (index, run) in ["one", "two", "three", "four", "five"]
+        .into_iter()
+        .enumerate()
+    {
         let head = format!("head-{index}");
         let next = format!("head-{}", index + 1);
         let session = prepare(&mut store, run, AgentStage::Implement, &head);
@@ -58,20 +61,20 @@ fn partial_runs_continue_in_place_until_the_streak_limit_then_fail() {
         "impl_report"
     );
 
-    let session = prepare(&mut store, "four", AgentStage::Implement, "head-3");
-    assert_eq!(store.board_stage_continuation("four").unwrap(), 3);
+    let session = prepare(&mut store, "six", AgentStage::Implement, "head-5");
+    assert_eq!(store.board_stage_continuation("six").unwrap(), 5);
     let output = receipt(
         &mut store,
-        "four",
+        "six",
         session,
         AgentStage::Implement,
         PARTIAL,
-        "abc123",
+        "head-6",
     );
-    let effect = store.board_finish_stage("four", &output).unwrap();
+    let effect = store.board_finish_stage("six", &output).unwrap();
 
-    assert!(effect.notice.unwrap().body.contains("4 runs in a row"));
-    assert_eq!(run_status(&store, "four"), "failed");
+    assert!(effect.notice.unwrap().body.contains("6 runs in a row"));
+    assert_eq!(run_status(&store, "six"), "failed");
     let failed = card(&store);
     assert_eq!(
         (failed.column_id.as_str(), failed.run_state.as_str()),
@@ -84,14 +87,14 @@ fn partial_runs_continue_in_place_until_the_streak_limit_then_fail() {
             .iter()
             .filter(|meta| meta.kind == "impl_report")
             .count(),
-        4
+        6
     );
 
     store
         .board_stage_action("card", failed.updated_at, StageAction::Retry(None))
         .unwrap();
-    prepare(&mut store, "five", AgentStage::Implement, "abc123");
-    assert_eq!(store.board_stage_continuation("five").unwrap(), 0);
+    prepare(&mut store, "retry", AgentStage::Implement, "head-6");
+    assert_eq!(store.board_stage_continuation("retry").unwrap(), 0);
 }
 
 #[test]
