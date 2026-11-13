@@ -1,3 +1,4 @@
+use super::constants::RECEIPT_ID;
 use crate::{
     agent::TurnInfo,
     store::{
@@ -95,6 +96,9 @@ pub(in crate::store::shared) fn save(
         }
         if let Some(id) = &info.provider_turn_id {
             fields.push(("providerTurnId", json!(id)));
+        }
+        if let Some(id) = &info.receipt_id {
+            fields.push((RECEIPT_ID, json!(id)));
         }
         if let Some(at) = info.started_at {
             // A native root prompt is written with its send time before

@@ -8,7 +8,6 @@ use std::time::Instant;
 const SHARED_SAVE_INTERVAL: Duration = Duration::from_millis(650);
 
 pub(super) struct PendingSave {
-    usage: Vec<molfar_core::consumption::UsageSnapshot>,
     from: Option<usize>,
     context_dirty: bool,
     last_flush: Instant,
@@ -19,7 +18,6 @@ pub(super) struct PendingSave {
 impl PendingSave {
     pub(super) fn new(shared: bool, now: Instant) -> Self {
         Self {
-            usage: Vec::new(),
             from: None,
             context_dirty: false,
             last_flush: now,
@@ -29,16 +27,6 @@ impl PendingSave {
                 Duration::ZERO
             },
             context_owner: None,
-        }
-    }
-
-    pub(super) fn consumption(&mut self, usage: molfar_core::consumption::UsageSnapshot) {
-        if let Some(previous) = self.usage.iter_mut().find(|previous| {
-            previous.provider == usage.provider && previous.source_key == usage.source_key
-        }) {
-            *previous = usage;
-        } else {
-            self.usage.push(usage);
         }
     }
 
@@ -55,7 +43,7 @@ impl PendingSave {
     }
 
     pub(super) fn due(&self, boundary: bool, now: Instant) -> bool {
-        (self.from.is_some() || self.context_dirty || !self.usage.is_empty())
+        (self.from.is_some() || self.context_dirty)
             && (boundary || now.saturating_duration_since(self.last_flush) >= self.interval)
     }
 
@@ -67,7 +55,7 @@ impl PendingSave {
         context: &molfar_core::context::Usage,
         now: Instant,
     ) -> Result<(), String> {
-        if self.from.is_none() && !self.context_dirty && self.usage.is_empty() {
+        if self.from.is_none() && !self.context_dirty {
             return Ok(());
         }
         let mut store = locked(store)?;
@@ -90,10 +78,6 @@ impl PendingSave {
                 store.save_context_usage(session, context)?;
             }
         }
-        for usage in &self.usage {
-            store.save_consumption(session, usage)?;
-        }
-        self.usage.clear();
         // Keep pending changes after a failed write so final cleanup retries.
         self.from = None;
         self.context_dirty = false;
@@ -132,6 +116,20 @@ pub(super) fn save_turn_receipt(
     locked(store)?.save_turn_receipt(session, turn, &info)
 }
 
+/// Records the finalized run in the usage ledger. A failed write stays recoverable: the
+/// saved receipt carries the same identity, and ledger reconciliation re-imports it.
+pub(super) fn save_turn_consumption(
+    store: &Database,
+    session: i64,
+    info: &molfar_core::agent::TurnInfo,
+) -> Result<(), String> {
+    let Some(record) = molfar_core::consumption::UsageRecord::from_turn(info) else {
+        return Ok(());
+    };
+
+    locked(store)?.save_consumption(session, &record)
+}
+
 #[cfg(test)]
 mod fixtures;
 #[cfg(test)]
@@ -139,7 +137,6 @@ mod tests;
 #[cfg(test)]
 mod turn_tests;
 #[cfg(test)]
-mod worktree_tests;
-
+mod usage_tests;
 #[cfg(test)]
-mod consumption_tests;
+mod worktree_tests;

@@ -167,6 +167,9 @@ pub struct FamiliarContext {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TurnInfo {
+    /// Stable identity of one provider run, assigned when its receipt opens.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub receipt_id: Option<String>,
     /// An accepted steer belongs to the provider run that opened this receipt.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub joined_turn: Option<usize>,

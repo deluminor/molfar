@@ -196,6 +196,9 @@ pub(super) fn project_turns(
                 turns.insert(
                     offset + prompt + 1,
                     crate::agent::TurnInfo {
+                        receipt_id: block[turn_receipts::constants::RECEIPT_ID]
+                            .as_str()
+                            .map(str::to_owned),
                         joined_turn,
                         completion,
                         provider_turn_id: block["providerTurnId"].as_str().map(str::to_owned),
@@ -774,6 +777,9 @@ impl Store {
             }
             if source.provider_turn_id.is_some() {
                 info.provider_turn_id = source.provider_turn_id;
+            }
+            if source.receipt_id.is_some() {
+                info.receipt_id = source.receipt_id;
             }
             if source.joined_turn.is_some() {
                 info.joined_turn = source.joined_turn;

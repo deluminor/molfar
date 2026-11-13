@@ -68,5 +68,7 @@ for line in sys.stdin:
             output.write(json.dumps({'cwd': str(pathlib.Path.cwd()), 'request': value}) + '\n')
         send({'id': value['id'], 'result': {'turn': {'id': 'fixture-turn'}}})
         send({'method': 'item/agentMessage/delta', 'params': {'itemId': 'answer', 'delta': response(value)}})
+        usage = {'inputTokens': 1200, 'cachedInputTokens': 1000, 'outputTokens': 80, 'totalTokens': 1280}
+        send({'method': 'thread/tokenUsage/updated', 'params': {'tokenUsage': {'last': usage, 'total': usage}}})
         send({'method': 'turn/completed', 'params': {'turn': {'status': 'completed'}}})
         break

@@ -109,3 +109,19 @@ fn turn_receipt_invalid_terminal_and_joined_metadata_fail_exact_reads() {
         assert!(store.app_turn_result(id, "run").is_err());
     }
 }
+
+#[test]
+fn turn_receipt_identity_survives_the_shared_transcript_round_trip() {
+    let (store, id) = fixture(vec![root("run")]);
+    let mut receipt = completed();
+    receipt.receipt_id = Some("receipt-1".into());
+
+    store.save_turn_receipt(id, 1, &receipt).unwrap();
+
+    assert_eq!(
+        store.shared_blocks(id).unwrap()[0]["nativeReceiptId"],
+        "receipt-1"
+    );
+    let saved = store.agent_settings(id).unwrap().unwrap();
+    assert_eq!(saved.turns[&1].receipt_id.as_deref(), Some("receipt-1"));
+}
