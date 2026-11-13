@@ -1,11 +1,11 @@
 # Execution tracking
 
-- [ ] S1: Audit native provider contracts and authoritative fixtures.
-- [ ] S2: Establish durable native accounting and runtime capture.
-- [ ] S3: Add verified prices and project/card/day queries.
-- [ ] S4: Deliver GPUI surfaces.
-- [ ] S5: Complete native verification and runtime coverage.
+Stages follow the approved `handoff.md`; one commit each.
 
-## Analyze gate
+- [x] S1: Turn-level capture for every harness, stable `receipt_id`, Claude-only path removed.
+- [x] S2: Provider normalization, versioned official price table, cost with unknown/mixed coverage.
+- [x] S3: Session, card (shared-session dedupe, run windows), daily and project aggregation; legacy import.
+- [x] S4: Session chip and turn hover line, Board card Usage block, Home Consumption widget and sheet.
+- [x] S5: Docs and full verification.
 
-Approved board spec and plan agree on GPUI-only delivery. Each acceptance criterion maps to stages in the plan. No additional approval is required by this implementation stage. Existing default-zero metrics cannot safely supply presence-aware accounting.
+Outstanding: owner smoke test in the running app (no interactive UI QA was performed by the agent).

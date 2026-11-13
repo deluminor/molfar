@@ -62,6 +62,17 @@ React/Tauri and mobile delivery, remote-host consumption collection, invoice rec
 
 Provider snapshot/delta differences, parent/child overlap, joined turns, missing model provenance, unsupported cache tiers, shared-store compatibility and transcript mutation can corrupt totals. The implementation must resolve these through explicit contracts and fixtures before exposing estimates.
 
+## Decisions (2026-11-13)
+
+- **DECISION A — reporting presence is tracked per run, not per category.** A run whose receipt
+  has no reported metrics is "not reported"; otherwise all four counters are trusted. Explicit zero
+  stays distinct from absence at run level. Per-category absence is not tracked, which relaxes
+  AC-5's "missing token categories remain unknown" clause. Partial means some runs of a projection
+  reported nothing.
+- **DECISION B — priced models.** Every model offered in the native Claude and Codex pickers on
+  2026-11-13, from the official Anthropic and OpenAI pricing pages (`prices.md`). Anything else,
+  and runs from other harnesses, shows tokens with "cost unavailable".
+
 ## Open decisions
 
-None. The client-scope answer is settled. Provider semantics remain implementation research, not questions for the user.
+None.

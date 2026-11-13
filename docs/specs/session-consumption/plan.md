@@ -1,5 +1,7 @@
 # Plan — Native session and board card usage
 
+> Superseded by `handoff.md` (approved plan) and `implementation-status.md` (what shipped).
+
 ## Goal
 
 Deliver durable session, board card and daily token accounting with reproducible cost estimates in GPUI.
