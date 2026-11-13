@@ -8,7 +8,7 @@ use molfar_core::{
             checkout,
             choice::{self, types::StageSelection},
             contracts::{self, types::PromptExtras},
-            lifecycle::types::{FailureStatus, StageEffect},
+            lifecycle::types::{FailureStatus, SessionPlan, StageEffect},
             verify,
         },
         types::Card,
@@ -32,6 +32,10 @@ pub(super) struct Launch {
     pub summary: Session,
     pub settings: Settings,
     pub warnings: Vec<String>,
+    /// The run continues its section's earlier session.
+    pub reused: bool,
+    /// The reused session must compact before the run's prompt is sent.
+    pub compact: bool,
 }
 
 pub(super) enum Prepared {
@@ -157,10 +161,16 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
     } else {
         None
     };
+    let plan = locked(store)?.board_stage_session_plan(run_id)?;
+    let (reuse, compact) = match &plan {
+        SessionPlan::Fresh => (None, false),
+        SessionPlan::Reuse { session, compact } => (Some(session.as_str()), *compact),
+    };
     let extras = PromptExtras {
         continuation: locked(store)?.board_stage_continuation(run_id)?,
         checks,
         reviewed_head,
+        resumed: reuse.is_some(),
     };
     let prompt = contracts::build_stage_prompt(
         stage,
@@ -173,7 +183,7 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
     let mut settings = resolved.settings;
     settings.worktree_cwd = Some(retained.path);
     settings.new_worktree = false;
-    let reserved = locked(store)?.board_reserve_stage_session(run_id, &settings, &prompt)?;
+    let reserved = locked(store)?.board_reserve_stage_session(run_id, &settings, &prompt, reuse)?;
     let persisted = locked(store)?.persisted_session_id(reserved.session.id)?;
     if locked(store)?
         .board_record_stage_prepared(run_id, &before, &persisted)?
@@ -185,7 +195,8 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
         return Ok(Prepared::Stopped);
     }
     #[cfg(test)]
-    let registration = defaults.fixture.map(|fixture| {
+    // A reused session keeps the fake provider its first run registered.
+    let registration = defaults.fixture.filter(|_| reuse.is_none()).map(|fixture| {
         crate::runtime::test_provider::Registration::new(store, reserved.session.id, fixture.binary)
     });
     Ok(Prepared::Launch(Box::new(Launch {
@@ -195,5 +206,7 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
         summary: reserved.session,
         settings,
         warnings: resolved.warnings,
+        reused: reuse.is_some(),
+        compact,
     })))
 }

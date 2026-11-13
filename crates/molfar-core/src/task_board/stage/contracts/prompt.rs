@@ -86,6 +86,9 @@ pub(super) fn build(
         rules.push_str("- Commit your work yourself with small, atomic Conventional Commits (`type(scope): subject`).\n- Finish with a clean working tree and at least one new commit, or this stage fails.");
     }
     sections.push(rules);
+    if extras.resumed {
+        sections.push("## Session\nThis run continues this card's earlier session for the same stage group: you already know the repository\nand the handoff files you read before. Re-read a handoff file only when its version below is newer than the one\nyou saw, and re-check code you changed only where this step needs it. The rules and output contract below apply\nas written, even if they differ from earlier steps.".into());
+    }
     sections.push(inputs(files, reading(stage, extras))?);
     if stage != crate::task_board::stage::agent::AgentStage::Grill {
         sections.extend(super::prompt_bodies::build(stage, card, head, extras));

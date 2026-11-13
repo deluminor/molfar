@@ -3,6 +3,7 @@ mod delivery;
 mod failures;
 mod fixtures;
 mod recovery;
+mod reuse;
 use super::{super::*, fixtures::Fixture};
 use fixtures::*;
 use gpui::TestAppContext;

@@ -34,7 +34,7 @@ impl Drop for Registration {
     }
 }
 
-pub(super) fn registered(store: &Database, session: i64) -> Option<PathBuf> {
+pub(crate) fn registered(store: &Database, session: i64) -> Option<PathBuf> {
     let key = (locked(store).unwrap().database_path().to_owned(), session);
     registry().lock().unwrap().get(&key).cloned()
 }

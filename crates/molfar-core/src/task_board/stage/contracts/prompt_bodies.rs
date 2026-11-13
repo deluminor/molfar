@@ -4,7 +4,7 @@ use crate::task_board::{stage::agent::AgentStage, types::Card};
 
 const REPORT: &str = "# Implementation report\nStatus: complete | partial | blocked\n## Summary\n## Acceptance criteria (each one: done | not done — evidence)\n## Commits (sha — subject)\n## Checks run and results (lint, typecheck, tests)\n## Deviations from the plan\n## Remaining work (only when partial or blocked: exact stages and criteria left)";
 
-const STATUS: &str = "## Status\nStart the report with exactly one status line. MOLFAR reads it to decide what happens next:\n- `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.\n- `Status: partial`: work remains. MOLFAR starts a fresh session that continues from your report and commits,\n  so list precisely what remains.\n- `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.";
+const STATUS: &str = "## Status\nStart the report with exactly one status line. MOLFAR reads it to decide what happens next:\n- `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.\n- `Status: partial`: work remains. MOLFAR starts another run that continues from your report and commits,\n  so list precisely what remains.\n- `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.";
 
 const REVIEW_TEMPLATE: &str = "Verdict: APPROVE | CHANGES_REQUESTED\n\n## Acceptance criteria\n- <criterion>: met | not met — <evidence: file, test or check>\n\n## F1 [blocking|major|minor|nit] <finding title>\nFile: <path>:<line>\n<what is wrong, why it matters, how to fix>";
 

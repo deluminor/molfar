@@ -45,7 +45,7 @@ pub(super) fn prepare(store: &mut Store, run: &str, stage: AgentStage, head: &st
         .unwrap()
         .unwrap();
     let session = store
-        .board_reserve_stage_session(run, &choice().settings, "Prompt manifest")
+        .board_reserve_stage_session(run, &choice().settings, "Prompt manifest", None)
         .unwrap()
         .session;
     let original = store.persisted_session_id(session.id).unwrap();

@@ -2,6 +2,7 @@ use super::Store;
 mod artifacts;
 mod delivery;
 mod notices;
+mod reuse;
 mod session;
 mod settings;
 mod stage;

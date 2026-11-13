@@ -71,4 +71,6 @@ pub struct PromptExtras {
     pub checks: Option<String>,
     /// The commit an earlier successful review covered, so this review reads only what changed.
     pub reviewed_head: Option<String>,
+    /// The run continues its section's earlier session instead of starting a new one.
+    pub resumed: bool,
 }

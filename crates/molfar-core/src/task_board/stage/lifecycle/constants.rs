@@ -9,6 +9,8 @@ pub(crate) const MAX_AUTO_REWORK: usize = 2;
 pub(crate) const MAX_CHECK_REWORK: usize = 2;
 /// Implement, Rework and Code review runs the engine may start since the user last decided.
 pub(crate) const MAX_AUTOMATIC_RUNS: i64 = 10;
+/// Context share at which a reused session is compacted before the next run.
+pub(crate) const COMPACT_AT: f32 = 0.75;
 pub(crate) const BUDGET_SPENT: &str = "Automatic budget used: 10 agent runs since your last decision. Review the card, then Retry or Rework to continue.";
 pub const ACCEPTED: &str = "accepted";
 pub const PREPARED: &str = "session_prepared";

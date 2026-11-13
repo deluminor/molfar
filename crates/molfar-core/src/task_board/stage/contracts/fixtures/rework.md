@@ -38,7 +38,7 @@ re-run the lint, typecheck and test commands before you finish.
 ## Status
 Start the report with exactly one status line. MOLFAR reads it to decide what happens next:
 - `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.
-- `Status: partial`: work remains. MOLFAR starts a fresh session that continues from your report and commits,
+- `Status: partial`: work remains. MOLFAR starts another run that continues from your report and commits,
   so list precisely what remains.
 - `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.
 

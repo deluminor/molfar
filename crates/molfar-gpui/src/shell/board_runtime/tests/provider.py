@@ -52,6 +52,17 @@ for line in sys.stdin:
         send({'id': value['id'], 'result': {}})
     elif method == 'thread/start':
         send({'id': value['id'], 'result': {'thread': {'id': 'fixture-thread'}}})
+    elif method == 'thread/resume':
+        with (root / 'resumes').open('a') as output:
+            output.write(json.dumps(value.get('params', {})) + '\n')
+        send({'id': value['id'], 'result': {'thread': {'id': 'fixture-thread'}}})
+    elif method == 'thread/compact/start':
+        with (root / 'compactions').open('a') as output:
+            output.write(json.dumps(value.get('params', {})) + '\n')
+        send({'id': value['id'], 'result': {}})
+        send({'method': 'thread/compacted', 'params': {'threadId': 'fixture-thread'}})
+        send({'method': 'turn/completed', 'params': {'turn': {'status': 'completed', 'items': []}}})
+        break
     elif method == 'turn/start':
         with (root / 'submissions').open('a') as output:
             output.write(json.dumps({'cwd': str(pathlib.Path.cwd()), 'request': value}) + '\n')

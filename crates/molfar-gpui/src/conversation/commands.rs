@@ -69,7 +69,7 @@ impl Conversation {
         self.launch_message(message, cx);
     }
 
-    pub(super) fn compact_context(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn compact_context(&mut self, cx: &mut Context<Self>) {
         if !self.history_ready() {
             self.defer_history_action(|this, cx| this.compact_context(cx), cx);
             return;
@@ -169,7 +169,14 @@ impl Conversation {
             let cancelled = cancel.clone();
             let result = (|| {
                 locked(&store)?.write_rows(session, compact_start, &[compact_row.clone()])?;
-                let binary = provider::resolve(kind).ok_or_else(|| kind.unavailable_hint())?;
+                // Tests route compaction to the session's fake provider, like its turns.
+                #[cfg(test)]
+                let registered = crate::runtime::test_provider::registered(&store, session);
+                #[cfg(not(test))]
+                let registered = None;
+                let binary = registered
+                    .or_else(|| provider::resolve(kind))
+                    .ok_or_else(|| kind.unavailable_hint())?;
                 let request = Request {
                     kind,
                     binary,
