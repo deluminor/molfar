@@ -28,6 +28,8 @@ fn usage() -> ProjectUsage {
         sessions: vec![SessionRow {
             session: 7,
             title: "Ship usage".into(),
+            provider: "codex".into(),
+            cwd: "/work/molfar".into(),
             summary: day,
         }],
         cards: vec![CardRow {

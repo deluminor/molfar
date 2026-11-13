@@ -12,6 +12,8 @@ use chrono::TimeZone;
 pub struct SessionRow {
     pub session: i64,
     pub title: String,
+    pub provider: String,
+    pub cwd: String,
     pub summary: UsageSummary,
 }
 
@@ -100,6 +102,8 @@ impl Store {
             usage.sessions.push(SessionRow {
                 session: session.id,
                 title: session.title.clone(),
+                provider: session.provider.clone(),
+                cwd: session.cwd.clone(),
                 summary,
             });
         }

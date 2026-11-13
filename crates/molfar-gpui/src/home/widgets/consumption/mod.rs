@@ -60,6 +60,7 @@ impl Home {
         let sessions: Vec<_> = usage
             .sessions
             .iter()
+            .filter(|row| reported(&row.summary))
             .take(TOP)
             .map(|row| {
                 let id = row.session;
@@ -79,6 +80,7 @@ impl Home {
         let cards: Vec<_> = usage
             .cards
             .iter()
+            .filter(|row| reported(&row.summary))
             .take(TOP)
             .map(|row| {
                 self.top_row(
@@ -179,4 +181,12 @@ impl Home {
             )
             .into_any_element()
     }
+}
+
+/// Top lists rank what was actually reported; unreported-only rows live in the sheet.
+fn reported(summary: &UsageSummary) -> bool {
+    matches!(
+        summary.reporting(),
+        Reporting::Partial | Reporting::Complete
+    )
 }

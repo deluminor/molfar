@@ -11,6 +11,10 @@ use molfar_core::{consumption::summary::Reporting, store::consumption::ProjectUs
 const WIDTH: f32 = 680.;
 const DAYS_SHOWN: usize = 30;
 
+fn runs_label(runs: usize) -> String {
+    format!("{runs} {}", if runs == 1 { "run" } else { "runs" })
+}
+
 fn section(title: &'static str) -> Div {
     div()
         .mt_5()
@@ -153,12 +157,12 @@ impl Home {
             .flex()
             .flex_col()
             .mx(px(-8.))
-            .child(table::heading("Day", ""));
+            .child(table::heading("Day", "Runs"));
         for day in usage.days.iter().take(DAYS_SHOWN) {
             days = days.child(table::row(
                 SharedString::from(format!("home-consumption-sheet-day-{}", day.date)),
                 day.date.format("%a %-d %b").to_string(),
-                "",
+                runs_label(day.summary.reported_runs + day.summary.unreported_runs),
                 &day.summary,
             ));
         }
@@ -167,7 +171,7 @@ impl Home {
             .flex()
             .flex_col()
             .mx(px(-8.))
-            .child(table::heading("Session", ""));
+            .child(table::heading("Project", "Session"));
         for row in &usage.sessions {
             let id = row.session;
             let title = if row.title.is_empty() {
@@ -178,8 +182,19 @@ impl Home {
             sessions = sessions.child(
                 table::row(
                     SharedString::from(format!("home-consumption-sheet-session-{id}")),
-                    div().w_full().truncate().child(title.clone()),
-                    "",
+                    crate::home::data::summary::project_name(&row.cwd).to_owned(),
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_1p5()
+                        .child(provider_glyph(&row.provider, 12.))
+                        .child(
+                            div()
+                                .min_w_0()
+                                .truncate()
+                                .text_color(content(0.85))
+                                .child(title.clone()),
+                        ),
                     &row.summary,
                 )
                 .cursor_pointer()

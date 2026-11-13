@@ -44,7 +44,7 @@ fn tokens_cell(summary: &UsageSummary) -> Div {
 pub(crate) fn row(
     id: SharedString,
     lead: impl IntoElement,
-    detail: impl Into<SharedString>,
+    detail: impl IntoElement,
     summary: &UsageSummary,
 ) -> Stateful<Div> {
     let caveats = format::caveats(summary).join("\n");
@@ -78,7 +78,7 @@ pub(crate) fn row(
                 .truncate()
                 .text_size(px(11.))
                 .text_color(content(0.5))
-                .child(detail.into()),
+                .child(detail),
         )
         .child(tokens_cell(summary))
         .child(cost_cell(summary))
