@@ -22,7 +22,7 @@ fn summary(output: u64) -> UsageSummary {
     UsageSummary::of([&record]).unwrap()
 }
 
-fn usage() -> ProjectUsage {
+pub(super) fn usage() -> ProjectUsage {
     let day = summary(1_000_000);
     ProjectUsage {
         total: day,

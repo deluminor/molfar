@@ -1,4 +1,5 @@
 mod chart;
+mod layout;
 mod sheet;
 
 use super::{
@@ -10,12 +11,11 @@ use super::{
     parts::{self, mono},
 };
 use crate::theme::*;
-use chart::{amount, bars, figure, range_selector};
+use chart::{amount, bars, figure, figure_with_heading, range_selector};
 use chrono::Local;
 use gpui::{AnyElement, Context, SharedString, div, prelude::*, px};
 use molfar_core::consumption::summary::{Reporting, UsageSummary};
 
-const WIDE: f32 = 560.;
 const TOP: usize = 10;
 
 impl Home {
@@ -42,7 +42,8 @@ impl Home {
             Err(error) => return card::note(error).into_any_element(),
         };
 
-        let wide = body.w >= WIDE;
+        let geometry = layout::Geometry::new(body);
+        let wide = geometry.wide;
         let totals = div()
             .when(wide, |d| d.w(px(body.w * 0.34)))
             .when(!wide, |d| d.w_full())
@@ -55,10 +56,19 @@ impl Home {
                     .flex()
                     .gap_3()
                     .child(figure("Today", &recent.today))
-                    .child(figure(range.label(), &recent.total)),
+                    .child(figure_with_heading(
+                        range_selector(range, cx),
+                        &recent.total,
+                    )),
             )
-            .child(range_selector(range, cx))
-            .child(bars(&recent, range, self.entrance, !cx.reduce_motion()));
+            .child(bars(
+                &recent,
+                range,
+                geometry.chart_height,
+                &feed.hover,
+                self.entrance,
+                cx,
+            ));
         let sessions: Vec<_> = usage
             .sessions
             .iter()
@@ -123,13 +133,18 @@ impl Home {
             .debug_selector(|| "home-consumption".into())
             .size_full()
             .min_h_0()
-            .overflow_y_scroll()
+            .when(!wide || body.h < 140., |d| d.overflow_y_scroll())
             .flex()
             .when(wide, |d| d.flex_row().gap_5())
             .when(!wide, |d| d.flex_col().gap_3())
             .child(totals)
-            .child(list("Top sessions", sessions).when(!wide, |d| d.flex_none().h(px(310.))))
-            .child(list("Top cards", cards).when(!wide, |d| d.flex_none().h(px(310.))))
+            .child(
+                list("Top sessions", sessions)
+                    .when(!wide, |d| d.flex_none().h(px(geometry.list_height))),
+            )
+            .child(
+                list("Top cards", cards).when(!wide, |d| d.flex_none().h(px(geometry.list_height))),
+            )
             .into_any_element()
     }
 

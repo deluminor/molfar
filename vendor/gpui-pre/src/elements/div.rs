@@ -2453,6 +2453,39 @@ impl Interactivity {
             || window.is_inspector_picking(cx)
     }
 
+    fn scroll_limit(
+        &self,
+        bounds: Bounds<Pixels>,
+        style: &Style,
+        window: &Window,
+    ) -> Point<Pixels> {
+        fn round_to_two_decimals(pixels: Pixels) -> Pixels {
+            const ROUNDING_FACTOR: f32 = 100.0;
+            (pixels * ROUNDING_FACTOR).round() / ROUNDING_FACTOR
+        }
+
+        let rem_size = window.rem_size();
+        // Taffy lays the box out with the padding snapped to the device pixel
+        // grid (`to_taffy`); recomputed unsnapped, e.g. py_1 at a fractional
+        // rem size, it exceeds `bounds` and leaves the box scrollable by the
+        // sub-pixel difference.
+        let padding = style
+            .padding
+            .to_pixels(bounds.size.into(), rem_size)
+            .map(|edge| window.pixel_snap(*edge));
+        let padding_size = size(padding.left + padding.right, padding.top + padding.bottom);
+        // The floating point values produced by Taffy and ours often vary
+        // slightly after ~5 decimal places. This can lead to cases where after
+        // subtracting these, the container becomes scrollable for less than
+        // 0.00000x pixels. As we generally don't benefit from a precision that
+        // high for the maximum scroll, we round the scroll max to 2 decimal
+        // places here.
+        let padded_content_size = self.content_size + padding_size;
+        Point::from(padded_content_size - bounds.size)
+            .map(round_to_two_decimals)
+            .max(&Default::default())
+    }
+
     fn clamp_scroll_position(
         &self,
         bounds: Bounds<Pixels>,
@@ -2460,11 +2493,6 @@ impl Interactivity {
         window: &mut Window,
         _cx: &mut App,
     ) -> Point<Pixels> {
-        fn round_to_two_decimals(pixels: Pixels) -> Pixels {
-            const ROUNDING_FACTOR: f32 = 100.0;
-            (pixels * ROUNDING_FACTOR).round() / ROUNDING_FACTOR
-        }
-
         if let Some(scroll_offset) = self.scroll_offset.as_ref() {
             let mut scroll_to_bottom = false;
             let mut tracked_scroll_handle = self
@@ -2476,26 +2504,7 @@ impl Interactivity {
                 scroll_to_bottom = mem::take(&mut scroll_handle_state.scroll_to_bottom);
             }
 
-            let rem_size = window.rem_size();
-            // Taffy lays the box out with the padding snapped to the device pixel
-            // grid (`to_taffy`); recomputed unsnapped, e.g. py_1 at a fractional
-            // rem size, it exceeds `bounds` and leaves the box scrollable by the
-            // sub-pixel difference.
-            let padding = style
-                .padding
-                .to_pixels(bounds.size.into(), rem_size)
-                .map(|edge| window.pixel_snap(*edge));
-            let padding_size = size(padding.left + padding.right, padding.top + padding.bottom);
-            // The floating point values produced by Taffy and ours often vary
-            // slightly after ~5 decimal places. This can lead to cases where after
-            // subtracting these, the container becomes scrollable for less than
-            // 0.00000x pixels. As we generally don't benefit from a precision that
-            // high for the maximum scroll, we round the scroll max to 2 decimal
-            // places here.
-            let padded_content_size = self.content_size + padding_size;
-            let scroll_max = Point::from(padded_content_size - bounds.size)
-                .map(round_to_two_decimals)
-                .max(&Default::default());
+            let scroll_max = self.scroll_limit(bounds, style, window);
             // Clamp scroll offset in case scroll max is smaller now (e.g., if children
             // were removed or the bounds became larger).
             let mut scroll_offset = scroll_offset.borrow_mut();
@@ -2592,8 +2601,9 @@ impl Interactivity {
                                                     window.set_window_cursor_style(mouse_cursor);
                                                 }
                                             } else {
-                                                if let Some(mouse_cursor) =
-                                                    style.mouse_cursor.or_else(|| self.role_cursor())
+                                                if let Some(mouse_cursor) = style
+                                                    .mouse_cursor
+                                                    .or_else(|| self.role_cursor())
                                                 {
                                                     window.set_cursor_style(mouse_cursor, hitbox);
                                                 }
@@ -2610,13 +2620,15 @@ impl Interactivity {
                                                 );
                                             }
 
+                                            self.paint_scroll_listener(
+                                                hitbox, bounds, &style, window, cx,
+                                            );
                                             self.paint_mouse_listeners(
                                                 hitbox,
                                                 element_state.as_mut(),
                                                 window,
                                                 cx,
                                             );
-                                            self.paint_scroll_listener(hitbox, &style, window, cx);
                                         }
 
                                         self.paint_keyboard_listeners(window, cx);
@@ -3348,11 +3360,13 @@ impl Interactivity {
     fn paint_scroll_listener(
         &self,
         hitbox: &Hitbox,
+        bounds: Bounds<Pixels>,
         style: &Style,
         window: &mut Window,
         _cx: &mut App,
     ) {
         if let Some(scroll_offset) = self.scroll_offset.clone() {
+            let scroll_max = self.scroll_limit(bounds, style, window);
             let ongoing_scroll = self.ongoing_scroll.clone();
             let overflow = style.overflow;
             let allow_concurrent_scroll = style.allow_concurrent_scroll;
@@ -3392,9 +3406,10 @@ impl Interactivity {
                             delta_x = Pixels::ZERO;
                         }
                     }
-                    scroll_offset.y += delta_y;
-                    scroll_offset.x += delta_x;
+                    scroll_offset.y = (scroll_offset.y + delta_y).clamp(-scroll_max.y, px(0.));
+                    scroll_offset.x = (scroll_offset.x + delta_x).clamp(-scroll_max.x, px(0.));
                     if *scroll_offset != old_scroll_offset {
+                        cx.stop_propagation();
                         cx.notify(current_view);
                     }
                 }

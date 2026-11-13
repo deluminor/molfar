@@ -3,6 +3,7 @@ use super::{super::Home, feeds::Load};
 use crate::runtime::locked;
 use chrono::{Local, NaiveDate};
 
+pub(crate) mod hover;
 mod range;
 use gpui::Context;
 use molfar_core::{
@@ -16,6 +17,7 @@ pub(crate) struct Consumption {
     /// All projects instead of the open one.
     pub all: bool,
     pub range: Range,
+    pub hover: hover::Hover,
     pub load: Option<Load<ProjectUsage>>,
     /// The last good result stays on screen while a refresh runs or fails.
     pub shown: Option<ProjectUsage>,

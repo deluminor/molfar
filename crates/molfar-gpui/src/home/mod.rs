@@ -117,3 +117,9 @@ impl Home {
         cx.notify();
     }
 }
+
+#[cfg(test)]
+mod nested_scroll_tests;
+
+#[cfg(test)]
+mod responsive_consumption_tests;

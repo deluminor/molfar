@@ -1,6 +1,6 @@
 use super::format;
 use crate::theme::*;
-use gpui::{Div, div, prelude::*, px};
+use gpui::{Animation, AnimationExt, Div, div, prelude::*, px};
 use molfar_core::consumption::summary::UsageSummary;
 
 /// Title, totals, category breakdown, caveats and the price-table date, in one quiet stack.
@@ -52,15 +52,24 @@ struct SummaryTooltip {
 }
 
 impl gpui::Render for SummaryTooltip {
-    fn render(&mut self, _: &mut gpui::Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
-        div()
+    fn render(&mut self, _: &mut gpui::Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+        let card = div()
             .max_w(px(360.))
             .p_3()
             .rounded_lg()
             .bg(floating_fill())
             .border_1()
             .border_color(content(0.12))
-            .child(summary_card(&self.title, &self.summary))
+            .child(summary_card(&self.title, &self.summary));
+        if cx.reduce_motion() {
+            return card.into_any_element();
+        }
+        card.with_animation(
+            "consumption-tooltip-enter",
+            Animation::new(std::time::Duration::from_millis(120)),
+            |card, t| card.opacity(1. - (1. - t).powi(3)),
+        )
+        .into_any_element()
     }
 }
 
