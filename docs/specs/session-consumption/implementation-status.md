@@ -9,10 +9,12 @@ an owner smoke test in the running app is still open.
 1. **Capture** (`runtime.rs`, `runtime/persistence.rs`). Each provider run gets a `receipt_id`
    (UUID) when its receipt opens. At finalization — success, failure or cancel — one ledger record
    is written from the receipt: harness, model id and name, start and report time, raw counters
-   (or none when nothing was reported). Joined steers are skipped; their usage belongs to the root
+   (or none when nothing was reported) and the billing tier. Claude runs carry per-model slices
+   from `modelUsage` (subagent models, 5-minute vs one-hour cache writes), persisted in the
+   receipt as `nativeUsageSlices` and recorded as one row per model (`<receipt>#<model>`). Joined steers are skipped; their usage belongs to the root
    run. The Claude-only `Event::Consumption` path is gone.
-2. **Ledger** (`store/consumption/`). Additive tables `native_consumption_v1` (primary key
-   `session_id, source_key`) and `native_consumption_sync_v1`, created on first write. A replayed
+2. **Ledger** (`store/consumption/`). Additive tables `native_consumption_v2` (primary key
+   `session_id, source_key`) and `native_consumption_sync_v2`, created on first write. A replayed
    report replaces its row and keeps the first report date. Counters are all present or all null
    (CHECK constraint). Invalid counts and overflow fail with the source id in the error; earlier
    rows stay.
@@ -23,8 +25,8 @@ an owner smoke test in the running app is still open.
    Older receipts are keyed `legacy:<startedAt>`; receipts without a start time are skipped (no
    trustworthy date or identity). Nothing is inferred from context size or transcript length.
    Rows are never deleted, so edits and rewinds keep incurred usage. Read-only stores skip import.
-4. **Pricing** (`consumption/prices.rs`, `pricing.rs`, `prices.md`). Versioned table
-   `2026-11-13`; cost is computed on read, never stored. Codex cached input is carved out of
+4. **Pricing** (`consumption/prices.rs`, `pricing.rs`, `prices.md`). Price table v2 as of
+   2026-11-13 (standard, fast and flex tiers; one-hour cache writes); cost is computed on read, never stored. Codex cached input is carved out of
    input. Unknown models, other harnesses, Haiku 5.5 (prompt-length tiers) and Codex cache writes
    are unavailable, never zero. Mixed coverage gives a labelled known subtotal (`~$3.40+`).
 5. **Aggregation** (`consumption/aggregate.rs`, `summary.rs`, `store/consumption/views.rs`).
@@ -53,7 +55,7 @@ an owner smoke test in the running app is still open.
 | AC-7 existing behavior | done | quota/context code untouched; full GPUI suite green |
 | AC-8 idempotency | done | replay tests above, `live_receipts_reconcile_under_their_own_key_without_double_counting` |
 | AC-9 daily grouping | done | `days_follow_the_local_calendar_and_skip_undated_records`, `recent_keeps_seven_days…` |
-| AC-10 model and cache | done with limits | per-run model only; standard tier only (see `prices.md`) |
+| AC-10 model and cache | done | `model_slices_become_one_record_each…`, `claude_cache_writes_split_by_lifetime`, `fast_and_flex_tiers_use_their_own_rates…` |
 | AC-11 legacy data | done | `legacy_receipts_import_once_with_trustworthy_dates_only` |
 | AC-12 failure handling | done | `database_failure_reports_context…`, `overflowing_totals_fail…`, `invalid_counts_are_rejected…` |
 | AC-13 native surfaces | done, no interactive QA | `consumption_widget_opens_top_sessions_and_cards`, `consumption_states_and_sheet_open_and_close`, `overview_shows_card_total_and_every_attempt_including_unreported` |
@@ -61,21 +63,26 @@ an owner smoke test in the running app is still open.
 ## Known limits
 
 - Per-category absence is not tracked (DECISION A).
-- Claude `modelUsage` slices (e.g. subagent models) are not split; a run is priced at its
-  receipt model.
-- Fast/priority tiers, 1-hour Claude cache writes and long-context tiers are not recorded per run.
+- Cache writes with an unknown lifetime (older history) are priced at the one-hour rate.
+- Runs without a recorded tier (older history) are priced as standard; long-context, batch and
+  regional pricing is not applied.
 - Turns run by the desktop (Tauri) app have no receipt id; they are imported as legacy records
   keyed by start time.
 - Remote sessions show no usage chip; remote collection is out of scope.
+
+## Real-history check (DB copy)
+
+On a copy of the owner's desktop database: 1139 reported runs, 1135 priced. One-hour cache
+pricing raised the all-time estimate from $1138 to $1295. First import 1.75 s, later reads ~9 ms.
 
 ## Verification (2026-11-13, final run)
 
 - `cargo +1.100 clippy … -p molfar-core -p molfar-gpui --all-targets --profile native-dev -- -D warnings`: exit 0.
 - `cargo fmt … --all --check`: exit 0.
-- `cargo test … -p molfar-core --profile native-dev`: 956 passed, 2 ignored. One earlier run had
+- `cargo test … -p molfar-core --profile native-dev`: 964 passed, 2 ignored. One earlier run had
   `host::tests::a_second_sample_reports_cpu_and_sane_memory` fail under load; it passed in
   isolation and in the final run (CPU sampler timing, unrelated to this change).
-- `timeout 590 cargo test … -p molfar-gpui --profile native-dev -- --test-threads=1`: 1146 passed,
+- `timeout 590 cargo test … -p molfar-gpui --profile native-dev -- --test-threads=1`: 1147 passed,
   11 ignored; integration target 6 passed.
 - `npm run check:size`: exit 0.
 - No interactive app run, browser or screenshot QA was performed.
