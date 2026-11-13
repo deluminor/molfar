@@ -85,11 +85,9 @@ pub(super) fn bars(
         let highlight = move |fill: Div, t: f32| {
             let strength = from + (to - from) * crate::home::motion::ease_out(t);
             fill.bg(if fraction > 0. {
-                accent_color().opacity(
-                    if today { 0.85 } else { 0.35 } + (if today { 0.15 } else { 0.6 }) * strength,
-                )
+                accent_color().opacity(if today { 0.85 } else { 0.35 } + 0.08 * strength)
             } else {
-                content(0.1 + 0.1 * strength)
+                content(0.1 + 0.03 * strength)
             })
         };
         let fill = if animate {
@@ -102,7 +100,11 @@ pub(super) fn bars(
         } else {
             highlight(fill, 1.).into_any_element()
         };
-        let fill = div().w_full().child(fill);
+        let fill = div()
+            .id(SharedString::from(format!("consumption-fill-{index}")))
+            .debug_selector(move || format!("consumption-fill-{index}"))
+            .w_full()
+            .child(fill);
         let fill = if animate {
             fill.with_animation(
                 SharedString::from(format!(
@@ -155,24 +157,6 @@ pub(super) fn bars(
                     .text_color(content(if today { 0.7 } else { 0.35 }))
                     .child(range.axis_label(*date, index, recent.bars.len())),
             );
-        let backdrop = move |column: gpui::Stateful<Div>, t: f32| {
-            let strength = from + (to - from) * crate::home::motion::ease_out(t);
-            column.bg(accent_color().opacity(0.07 * strength))
-        };
-        let column = if animate {
-            column
-                .with_animation(
-                    SharedString::from(format!(
-                        "consumption-column-{}-{index}",
-                        hover.generation()
-                    )),
-                    Animation::new(super::super::super::data::consumption::hover::DURATION),
-                    backdrop,
-                )
-                .into_any_element()
-        } else {
-            backdrop(column, 1.).into_any_element()
-        };
         row = row.child(column);
     }
 
@@ -214,4 +198,48 @@ pub(super) fn range_selector(range: Range, cx: &mut Context<Home>) -> Div {
                     cx.notify();
                 }))
         }))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::home::{consumption_tests::usage, widget_tests::open};
+    use chrono::Datelike;
+    use gpui::{MouseMoveEvent, TestAppContext, VisualTestContext};
+    use std::time::Duration;
+
+    #[gpui::test]
+    fn hover_preserves_settled_bar_height(cx: &mut TestAppContext) {
+        let (window, _) = open(cx);
+        cx.update(|cx| cx.set_reduce_motion(false));
+        window
+            .update(cx, |home, _, cx| {
+                home.feeds.consumption.shown = Some(usage());
+                cx.notify();
+            })
+            .unwrap();
+        let visual = &mut VisualTestContext::from_window(window.into(), cx);
+        visual.run_until_parked();
+        std::thread::sleep(Duration::from_millis(750));
+        visual.update(|window, cx| {
+            window.simulate_next_frame(cx);
+        });
+        visual.run_until_parked();
+        let index = chrono::Local::now().day() - 1;
+        let selector = Box::leak(format!("consumption-fill-{index}").into_boxed_str());
+        let before = visual.debug_bounds(selector).unwrap();
+        assert!(before.size.height > gpui::px(2.));
+        visual.simulate_event(MouseMoveEvent {
+            position: before.center(),
+            ..Default::default()
+        });
+        visual.run_until_parked();
+        visual.update(|window, cx| {
+            window.simulate_next_frame(cx);
+        });
+        visual.run_until_parked();
+        assert_eq!(
+            visual.debug_bounds(selector).unwrap().size.height,
+            before.size.height
+        );
+    }
 }
