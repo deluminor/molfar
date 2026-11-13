@@ -106,6 +106,7 @@ impl Board {
                             .on_click(cx.listener(|this, _, _, cx| this.save_limits(cx))),
                     ),
             );
+            body = body.child(Self::verify_row(panel, cx));
         }
         let footer = sheet::footer().child(
             controls::ghost_button("board-settings-close", "Done")
@@ -144,5 +145,42 @@ impl Board {
             }))
             .when_some(picker, |overlay, picker| overlay.child(picker));
         Some(modal::window_overlay(window, overlay).into_any_element())
+    }
+
+    fn verify_row(panel: &super::Panel, cx: &mut Context<Self>) -> AnyElement {
+        let name = std::path::Path::new(&panel.project)
+            .file_name()
+            .map_or(panel.project.clone(), |name| {
+                name.to_string_lossy().into_owned()
+            });
+
+        sheet::group()
+            .mt(px(8.))
+            .flex()
+            .flex_col()
+            .gap_1()
+            .child(
+                div()
+                    .flex()
+                    .items_end()
+                    .gap_2()
+                    .child(div().flex_1().child(crate::input::form_field(
+                        &format!("Verify command for {name}"),
+                        panel.verify.clone(),
+                        32.,
+                    )))
+                    .child(
+                        controls::ghost_button("board-settings-verify-save", "Save command")
+                            .debug_selector(|| "board-settings-verify-save".into())
+                            .on_click(cx.listener(|this, _, _, cx| this.save_verify_command(cx))),
+                    ),
+            )
+            .child(
+                div()
+                    .text_size(px(11.))
+                    .text_color(crate::theme::content(0.5))
+                    .child("Runs in the card's checkout before every code review. Red checks go back to rework automatically, twice at most. Leave empty to skip."),
+            )
+            .into_any_element()
     }
 }

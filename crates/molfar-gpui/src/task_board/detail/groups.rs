@@ -47,7 +47,7 @@ impl Group {
             Self::Review => &[
                 (IMPL_REPORT, "Implementation report"),
                 (REVIEW, "Code review"),
-                (REWORK_BRIEF, "Your rework request"),
+                (REWORK_BRIEF, "Rework request"),
             ],
             Self::Delivery => &[(PR_DESCRIPTION, "Pull request"), (DELIVERY, "Delivery")],
         }

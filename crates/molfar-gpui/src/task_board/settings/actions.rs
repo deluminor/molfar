@@ -22,12 +22,13 @@ impl Board {
             .collect();
         let concurrency = field("Concurrent stages", cx);
         let stall = field("Stall minutes", cx);
+        let verify = field("e.g. npm run check", cx);
         let skill_search =
             cx.new(|cx| Input::field("Search skills", "Search skills", content(0.35), cx));
         let subscriptions = skills
             .iter()
             .map(|(_, input)| input)
-            .chain([&concurrency, &stall, &skill_search])
+            .chain([&concurrency, &stall, &verify, &skill_search])
             .map(|input| cx.subscribe(input, |_, _, _: &input::Changed, cx| cx.notify()))
             .collect();
         let panel = Panel {
@@ -47,6 +48,11 @@ impl Board {
             skills,
             concurrency,
             stall,
+            project: self
+                .project_filter
+                .clone()
+                .unwrap_or_else(|| self.cwd.clone()),
+            verify,
             error: None,
             pending: None,
             _subscriptions: subscriptions,
@@ -154,6 +160,18 @@ impl Board {
             },
             cx,
         );
+    }
+
+    pub(in crate::task_board) fn save_verify_command(&mut self, cx: &mut Context<Self>) {
+        let Some(panel) = &self.settings else {
+            return;
+        };
+        let command = panel.verify.read(cx).content.trim().to_owned();
+        let patch = SettingsPatch::VerifyCommand {
+            project: panel.project.clone(),
+            command: (!command.is_empty()).then_some(command),
+        };
+        self.emit_settings(patch, cx);
     }
 
     pub(in crate::task_board) fn settings_focus(

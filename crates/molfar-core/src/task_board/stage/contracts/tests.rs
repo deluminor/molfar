@@ -37,8 +37,15 @@ fn first_grill_prompt_matches_executed_source_template_without_inlining_bodies()
         path: ".molfar/board/task-v2.md".into(),
     }];
     let skills = ["d-plan".into(), "d-grill-me".into(), "d-analyze".into()];
-    let prompt =
-        build_stage_prompt(AgentStage::Grill, &card, &references, &skills, "HEAD").unwrap();
+    let prompt = build_stage_prompt(
+        AgentStage::Grill,
+        &card,
+        &references,
+        &skills,
+        "HEAD",
+        &Default::default(),
+    )
+    .unwrap();
     assert_eq!(prompt, include_str!("fixtures/first-grill.md"));
     assert!(!prompt.contains(&card.description));
     let mut later = card;
@@ -55,8 +62,15 @@ fn first_grill_prompt_matches_executed_source_template_without_inlining_bodies()
         version,
         path: format!(".molfar/board/{kind}-v{version}.md"),
     });
-    let prompt =
-        build_stage_prompt(AgentStage::Grill, &later, &references, &skills, "HEAD").unwrap();
+    let prompt = build_stage_prompt(
+        AgentStage::Grill,
+        &later,
+        &references,
+        &skills,
+        "HEAD",
+        &Default::default(),
+    )
+    .unwrap();
     assert_eq!(prompt, include_str!("fixtures/later-grill.md"));
     assert!(!prompt.contains(&later.description));
 }

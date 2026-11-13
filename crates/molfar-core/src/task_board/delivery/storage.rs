@@ -1,4 +1,5 @@
-use super::{constants::ENGINE_SOURCE, record, types::Delivery};
+use super::{record, types::Delivery};
+use crate::task_board::constants::ENGINE;
 use crate::task_board::{
     constants::FINAL_REVIEW,
     stage::{
@@ -18,12 +19,12 @@ use crate::task_board::{
 use rusqlite::{params, Connection, Transaction, TransactionBehavior};
 use std::path::Path;
 
-fn begin(conn: &mut Connection) -> Result<Transaction<'_>, String> {
+pub(super) fn begin(conn: &mut Connection) -> Result<Transaction<'_>, String> {
     conn.transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(|e| e.to_string())
 }
 
-fn next(card: &Card, action: BoardAction) -> Result<Transition, String> {
+pub(super) fn next(card: &Card, action: BoardAction) -> Result<Transition, String> {
     transitions::transition(
         Position {
             column: &card.column_id,
@@ -34,12 +35,12 @@ fn next(card: &Card, action: BoardAction) -> Result<Transition, String> {
     )
 }
 
-fn stamp(card: &Card) -> Result<i64, String> {
+pub(super) fn stamp(card: &Card) -> Result<i64, String> {
     Ok(query::now()?.max(card.updated_at.saturating_add(1)))
 }
 
 /// Progress after the lock keys on the delivering state, not the start revision it bumped.
-fn delivering(tx: &Transaction<'_>, id: &str) -> Result<Card, String> {
+pub(super) fn delivering(tx: &Transaction<'_>, id: &str) -> Result<Card, String> {
     let card = query::card(tx, id)?;
     if card.archived || card.column_id != FINAL_REVIEW || card.run_state != RUNNING {
         return Err("conflict: the card is no longer delivering; reload and try again".into());
@@ -99,7 +100,7 @@ pub(crate) fn finish(
         kind: DELIVERY.into(),
         body: record::to_artifact(delivery)?,
     };
-    artifacts::publish(&tx, base, id, &artifact, ENGINE_SOURCE, None, now)?;
+    artifacts::publish(&tx, base, id, &artifact, ENGINE, None, now)?;
 
     let position = query::next_position(&tx, &next.column)?;
     let worktree = if worktree_removed {

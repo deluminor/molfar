@@ -14,6 +14,11 @@ pub(super) struct Poll {
     pub active_runs: HashSet<String>,
     pub deferred: Vec<String>,
     pub settings: Option<String>,
+    pub redeliver: Vec<(
+        String,
+        i64,
+        molfar_core::task_board::delivery::types::DeliveryMethod,
+    )>,
 }
 
 impl Shell {
@@ -54,6 +59,7 @@ impl Shell {
                         for notice in result.notices {
                             this.board_notice(notice, cx);
                         }
+                        this.redeliver_board_cards(result.redeliver, cx);
                         if let Some(card) = result.card {
                             this.launch_board_claim(card, result.settings, cx);
                             this.board_state.again = true;
@@ -95,6 +101,7 @@ fn poll(
             active_runs: HashSet::new(),
             deferred: Vec::new(),
             settings: None,
+            redeliver: Vec::new(),
         });
     }
     let active = sessions
@@ -142,6 +149,11 @@ fn poll(
         .map(|context| context.run.id)
         .collect();
     let settings = store.board_settings_json()?;
+    let redeliver = if run {
+        store.board_redeliveries()?
+    } else {
+        Vec::new()
+    };
     let card = if run {
         store.board_claim_next_stage()?
     } else {
@@ -156,5 +168,6 @@ fn poll(
         active_runs,
         deferred,
         settings,
+        redeliver,
     })
 }

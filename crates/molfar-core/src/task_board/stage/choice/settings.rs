@@ -19,6 +19,7 @@ pub const HARNESS: &str = "harness";
 pub const MODEL: &str = "model";
 pub const EFFORT: &str = "effort";
 pub const RUNTIME_MODE: &str = "runtimeMode";
+pub const VERIFY_COMMANDS: &str = "verifyCommands";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +45,10 @@ pub enum SettingsPatch {
     Limits {
         max_concurrent: i64,
         stall_minutes: i64,
+    },
+    VerifyCommand {
+        project: String,
+        command: Option<String>,
     },
 }
 
@@ -145,7 +150,8 @@ fn validate(settings: &Map<String, Value>) -> Result<(), String> {
         "Stall time must be between 1 and 1440 minutes.",
     )?;
     validate_stage_map(settings, COLUMNS, validate_config)?;
-    validate_stage_map(settings, COLUMN_SKILLS, validate_skills)
+    validate_stage_map(settings, COLUMN_SKILLS, validate_skills)?;
+    super::verify_commands::validate(settings)
 }
 
 fn stage_entry(settings: &Map<String, Value>, stage: AgentStage) -> Option<Value> {
@@ -235,6 +241,9 @@ pub fn apply(raw: Option<&str>, patch: &SettingsPatch) -> Result<String, String>
         } => {
             settings.insert(MAX_CONCURRENT.into(), json!(max_concurrent));
             settings.insert(STALL_MINUTES.into(), json!(stall_minutes));
+        }
+        SettingsPatch::VerifyCommand { project, command } => {
+            super::verify_commands::set(&mut settings, project, command.as_deref())?;
         }
     }
 

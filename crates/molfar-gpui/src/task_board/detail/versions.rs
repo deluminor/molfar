@@ -3,7 +3,8 @@ use super::groups::{self, Group};
 use crate::theme::*;
 use gpui::{AnyElement, Context, Role, SharedString, div, prelude::*, px};
 use molfar_core::task_board::{
-    constants::{COLUMNS, USER},
+    constants::{COLUMNS, ENGINE, USER},
+    stage::contracts::constants::REWORK_BRIEF,
     types::{ArtifactMeta, StageRun},
 };
 
@@ -24,6 +25,9 @@ fn origin(meta: &ArtifactMeta, runs: &[StageRun]) -> String {
             }
         }
         None if meta.source == USER => "Written by you".into(),
+        None if meta.source == ENGINE && meta.kind == REWORK_BRIEF => {
+            "Sent back automatically after code review".into()
+        }
         None => "Recorded by MOLFAR".into(),
     };
     let now = molfar_core::time::now_ms();

@@ -45,7 +45,7 @@ pub(super) fn prepare(store: &mut Store, run: &str, stage: AgentStage, head: &st
         .unwrap()
         .unwrap();
     let session = store
-        .board_reserve_stage_session(run, &choice().settings, "Prompt manifest")
+        .board_reserve_stage_session(run, &choice().settings, "Prompt manifest", None)
         .unwrap()
         .session;
     let original = store.persisted_session_id(session.id).unwrap();
@@ -104,5 +104,5 @@ pub(super) fn finish(
 }
 
 pub(super) const REPORT: &str =
-    "<<<MOLFAR:impl_report>>>Implementation report<<<END:impl_report>>>";
-pub(super) const REVIEW: &str = "<<<MOLFAR:review>>>Verdict: CHANGES_REQUESTED\n\n## F1 [major] Race\nFile: src/task.rs:12\nFix race.\n\n## F2 [nit] Rename\nOptional.<<<END:review>>>";
+    "<<<MOLFAR:impl_report>>>Status: complete\nImplementation report<<<END:impl_report>>>";
+pub(super) const REVIEW: &str = "<<<MOLFAR:review>>>Verdict: CHANGES_REQUESTED\n\n## F1 [minor] Race\nFile: src/task.rs:12\nFix race.\n\n## F2 [nit] Rename\nOptional.<<<END:review>>>";

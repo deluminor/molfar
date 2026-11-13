@@ -61,3 +61,16 @@ pub struct CodeReview {
     pub verdict: ReviewVerdict,
     pub findings: Vec<ReviewFinding>,
 }
+
+/// Engine facts a stage prompt states beyond the handoff files.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PromptExtras {
+    /// Unfinished runs of this stage before this one; zero for a fresh start.
+    pub continuation: i64,
+    /// What the project's verify command did in this checkout, when it ran.
+    pub checks: Option<String>,
+    /// The commit an earlier successful review covered, so this review reads only what changed.
+    pub reviewed_head: Option<String>,
+    /// The run continues its section's earlier session instead of starting a new one.
+    pub resumed: bool,
+}

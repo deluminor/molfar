@@ -181,3 +181,31 @@ fn manual_gates_cannot_be_skipped() {
         }
     }
 }
+
+#[test]
+fn engine_continuations_and_automatic_rework_only_apply_to_their_stages() {
+    let rows = [
+        ("implement", "running", StageContinued, "implement/queued"),
+        ("rework", "running", StageContinued, "rework/queued"),
+        ("code_review", "running", AutoRework, "rework/queued"),
+    ];
+    for (column, state, action, expected) in rows {
+        assert_eq!(next(column, state, action), expected, "{column} {action:?}");
+    }
+
+    for (column, state, action) in [
+        ("grill", "running", StageContinued),
+        ("code_review", "running", StageContinued),
+        ("implement", "queued", StageContinued),
+        ("implement", "running", AutoRework),
+        ("code_review", "idle", AutoRework),
+    ] {
+        assert!(
+            transition(at(column, state), action).is_err(),
+            "{column} {action:?}"
+        );
+    }
+
+    let rework = transition(at("code_review", "running"), AutoRework).unwrap();
+    assert!(rework.effects.contains(&NextReworkCycle));
+}

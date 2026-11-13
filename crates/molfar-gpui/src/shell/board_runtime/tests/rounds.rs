@@ -64,7 +64,8 @@ fn owner_review_drives_two_native_grill_rounds_with_versioned_handoff(cx: &mut T
             .iter()
             .all(|run| run.status == "succeeded" && run.dispatch == "settled")
     );
-    assert_ne!(snapshot.runs[0].session_id, snapshot.runs[1].session_id);
+    // Grill rounds continue one session, so round two does not re-read the repository.
+    assert_eq!(snapshot.runs[0].session_id, snapshot.runs[1].session_id);
     assert_eq!(
         store.board_stage_artifact("card", "plan", 2).unwrap(),
         "Owner revised plan"
@@ -81,6 +82,7 @@ fn owner_review_drives_two_native_grill_rounds_with_versioned_handoff(cx: &mut T
     let turns: Vec<_> = submissions.lines().collect();
     assert_eq!(turns.len(), 2);
     assert!(turns[1].contains("Grill round 2."));
+    assert!(turns[1].contains("## Session") && !turns[0].contains("## Session"));
     assert!(turns[1].contains("plan-v2.md"));
     assert!(turns[1].contains("answers-v1.md"));
     assert!(!turns[1].contains("Owner revised plan"));

@@ -77,7 +77,7 @@ impl Shell {
                         this.install_board_launch(card.id.clone(), *launch, cx);
                         return;
                     }
-                    Ok(prepare::Prepared::Failed(effect)) => this.apply_board_effect(*effect, cx),
+                    Ok(prepare::Prepared::Settled(effect)) => this.apply_board_effect(*effect, cx),
                     Ok(prepare::Prepared::Stopped) => (),
                     Err(error) => this.error = Some(format!("Task Board preparation: {error}")),
                 }
@@ -139,19 +139,31 @@ impl Shell {
                 if this.board_state.preparing.get(&card) != Some(&launch.run_id) {
                     return;
                 }
-                match result {
-                    Ok(true) => this.install_current_board_launch(launch, cx),
-                    Ok(false) => (),
-                    Err(error) => this.error = Some(format!("Task Board launch: {error}")),
+                let compacting = match result {
+                    Ok(true) => this.install_current_board_launch(card.clone(), launch, cx),
+                    Ok(false) => false,
+                    Err(error) => {
+                        this.error = Some(format!("Task Board launch: {error}"));
+                        false
+                    }
+                };
+                // A compacting session keeps its claim protected until its prompt is sent.
+                if !compacting {
+                    this.board_state.preparing.remove(&card);
                 }
-                this.board_state.preparing.remove(&card);
                 this.poll_board(true, cx);
             });
         })
         .detach();
     }
 
-    fn install_current_board_launch(&mut self, launch: prepare::Launch, cx: &mut Context<Self>) {
+    /// Returns true while a reused session compacts; its prompt follows in `send_after_compaction`.
+    fn install_current_board_launch(
+        &mut self,
+        card: String,
+        launch: prepare::Launch,
+        cx: &mut Context<Self>,
+    ) -> bool {
         #[cfg(test)]
         if let Some(registration) = launch.registration {
             self.board_state.registrations.push(registration);
@@ -159,7 +171,9 @@ impl Shell {
         let id = launch.summary.id;
         self.board_state.running.insert(id, launch.run_id.clone());
         self.board_state.owned.insert(id);
-        self.draft_sessions.insert(id);
+        if !launch.reused {
+            self.draft_sessions.insert(id);
+        }
         self.sidebar_hidden_sessions.remove(&id);
         self.session_worktrees
             .insert(id, launch.settings.worktree_cwd.clone());
@@ -167,10 +181,24 @@ impl Shell {
         if !launch.warnings.is_empty() {
             self.error = Some(launch.warnings.join(" · "));
         }
-        if let Some(view) = self.sessions.get(&id) {
-            view.update(cx, |view, cx| {
-                view.install_app_launch(launch.settings, true, cx)
-            });
+        let mut compacting = false;
+        if let Some(view) = self.sessions.get(&id).cloned() {
+            if launch.compact {
+                view.update(cx, |view, cx| view.compact_context(cx));
+                compacting = view.read(cx).external_submission_pending();
+            }
+            if compacting {
+                let pending = (card, launch.run_id.clone(), launch.settings);
+                self.board_state.compacting.insert(id, pending);
+            } else if launch.reused {
+                view.update(cx, |view, cx| {
+                    view.install_queued_app_launch(launch.settings, cx)
+                });
+            } else {
+                view.update(cx, |view, cx| {
+                    view.install_app_launch(launch.settings, true, cx)
+                });
+            }
         }
         let store = self.store.clone();
         let work = cx
@@ -181,6 +209,9 @@ impl Shell {
             let _ = this.update(cx, |this, cx| {
                 match result {
                     Ok(false) => {
+                        if let Some((card, run, _)) = this.board_state.compacting.remove(&id) {
+                            this.release_board_claim(&card, &run);
+                        }
                         if let Some(view) = this.sessions.get(&id) {
                             view.update(cx, |view, cx| view.stop_app_session(cx));
                         }
@@ -188,6 +219,9 @@ impl Shell {
                     Ok(true) => (),
                     Err(error) => {
                         this.error = Some(error);
+                        if let Some((card, run, _)) = this.board_state.compacting.remove(&id) {
+                            this.release_board_claim(&card, &run);
+                        }
                         if let Some(view) = this.sessions.get(&id) {
                             view.update(cx, |view, cx| view.stop_app_session(cx));
                         }
@@ -197,5 +231,6 @@ impl Shell {
             });
         })
         .detach();
+        compacting
     }
 }

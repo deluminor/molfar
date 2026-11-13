@@ -26,6 +26,7 @@ pub(super) struct Fake {
     pub requests: RefCell<Vec<PullRequest>>,
     pub existing: RefCell<Option<ExistingPullRequest>>,
     pub dirty: RefCell<bool>,
+    pub rollup: RefCell<String>,
 }
 
 impl Fake {
@@ -128,6 +129,17 @@ impl DeliveryPort for Fake {
     fn remove_task_branch(&self, _project: &Path, branch: &str) -> Result<bool, String> {
         assert_eq!(branch, BRANCH);
         self.step("branch").map(|_| true)
+    }
+
+    fn ci_rollup(&self, _project: &Path, url: &str) -> Result<String, String> {
+        assert_eq!(url, URL);
+        self.step("rollup")?;
+        Ok(self.rollup.borrow().clone())
+    }
+
+    fn ci_failed_log(&self, _project: &Path, job: &str) -> Result<String, String> {
+        self.step("log")
+            .map(|_| format!("job {job} failed: assertion"))
     }
 }
 

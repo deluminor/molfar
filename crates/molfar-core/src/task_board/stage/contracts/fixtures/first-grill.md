@@ -23,8 +23,9 @@ own output format.
   any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.
 
 ## Handoff files
-Read every file below before you start; together they are the card's current state. MOLFAR copied them from
-the card into your checkout. They are git-ignored, not part of the repository: never edit, stage or commit them.
+Read every file below before you start; together they are the card's current state.
+MOLFAR copied these files from the card into your checkout. They are git-ignored, not part of the repository:
+never edit, stage or commit them.
 
 | File | Kind | Version | What it is |
 | --- | --- | --- | --- |
@@ -39,6 +40,10 @@ Work the open decisions as a design tree: settle everything the code can answer 
 the user must decide. Always produce a complete draft spec and plan, even when questions remain: the user may
 
 approve the plan without answering. Emit the questions block only when a decision is genuinely open.
+
+Describe the whole scope completely: every requirement, edge case and acceptance criterion, in as many execution
+stages as the work needs. Do not cut scope to fit one session; Implement continues across runs until the plan
+is done. Map every acceptance criterion to a stage and a test.
 
 ## Output
 End your final message with these blocks, exactly as delimited. MOLFAR saves them as files; anything outside

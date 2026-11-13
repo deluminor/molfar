@@ -53,6 +53,21 @@ impl Conversation {
         self.familiar_ui.app_launch_generation += 1;
         self.install_current_app_launch(settings, send, self.familiar_ui.app_launch_generation, cx);
     }
+    /// A Board run queued its prompt in the store after this view loaded: adopt that draft,
+    /// then send it like any app launch so its request id still matches the run.
+    pub(crate) fn install_queued_app_launch(&mut self, settings: Settings, cx: &mut Context<Self>) {
+        if self.loaded && self.follow_ups.state.draft.is_none() {
+            match locked(&self.store).and_then(|store| store.follow_ups(self.summary.id)) {
+                Ok(saved) => {
+                    let state = &mut self.follow_ups.state;
+                    state.revision = state.revision.max(saved.revision);
+                    state.draft = saved.draft;
+                }
+                Err(error) => self.status = format!("Could not load the queued message: {error}"),
+            }
+        }
+        self.install_app_launch(settings, true, cx);
+    }
     fn install_current_app_launch(
         &mut self,
         settings: Settings,

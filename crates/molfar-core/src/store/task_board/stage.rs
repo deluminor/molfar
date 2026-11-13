@@ -8,7 +8,7 @@ use crate::{
             choice::types::ResolvedStageChoice,
             lifecycle::{
                 constants::RUNNING,
-                storage::{claim, progress, query, settlement},
+                storage::{checks, claim, outcome, progress, query, settlement},
                 types::{FailureStatus, StageContext, StageEffect, VerifiedStageOutput},
             },
         },
@@ -42,6 +42,40 @@ impl Store {
             .map_err(|e| e.to_string())?;
         run.map(|run| query::card(&self.conn, &run.card_id).map(|card| StageContext { card, run }))
             .transpose()
+    }
+
+    /// Red checks before a code review: send the card back to Rework, or `None` when the
+    /// automatic budget is spent and the review should run with the failure in its prompt.
+    pub fn board_stage_checks_failed(
+        &mut self,
+        id: &str,
+        summary: &str,
+    ) -> Result<Option<StageEffect>, String> {
+        self.board_writable()?;
+        let base = self.board_artifact_base()?;
+        checks::redirect(&mut self.conn, &base, id, summary)
+    }
+
+    /// The commit the latest successful code review of this card looked at.
+    pub fn board_reviewed_head(&self, card: &str) -> Result<Option<String>, String> {
+        self.conn
+            .query_row(
+                "SELECT head_before FROM task_board_stage_runs WHERE card_id=?1 AND stage=?2 AND status=?3 ORDER BY rowid DESC LIMIT 1",
+                rusqlite::params![card, crate::task_board::constants::CODE_REVIEW, crate::task_board::stage::lifecycle::constants::SUCCEEDED],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .optional()
+            .map(Option::flatten)
+            .map_err(|e| e.to_string())
+    }
+
+    /// The continuation number for a run's prompt: 0 for a fresh start.
+    pub fn board_stage_continuation(&self, id: &str) -> Result<i64, String> {
+        let Some(ctx) = self.board_stage_context(id)? else {
+            return Ok(0);
+        };
+        let streak = outcome::continuation(&self.conn, &ctx.card.id, id)?;
+        i64::try_from(streak).map_err(|e| e.to_string())
     }
 
     pub fn board_stage_is_current(&self, id: &str) -> Result<bool, String> {

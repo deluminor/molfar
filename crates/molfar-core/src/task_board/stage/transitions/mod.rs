@@ -11,6 +11,7 @@ use super::{
 };
 use crate::task_board::constants::{
     BACKLOG, CODE_REVIEW, DONE, FINAL_REVIEW, GRILL, IDLE, IMPLEMENT, PLAN_APPROVAL, REWORK,
+    WAITING_CI,
 };
 use types::{
     BoardAction, BoardAction::*, Position, Transition, TransitionEffect, TransitionEffect::*,
@@ -53,6 +54,12 @@ fn agent_transition(card: Position<'_>, action: BoardAction) -> Option<Transitio
             let (column, state) = after_success(stage);
             move_to(column, state, &[ClearError])
         }
+        (StageContinued, RUNNING) if !stage.is_read_only() => {
+            move_to(card.column, QUEUED, &[ClearError])
+        }
+        (AutoRework, RUNNING) if stage == AgentStage::CodeReview => {
+            move_to(REWORK, QUEUED, &[NextReworkCycle, ClearError])
+        }
         (StageFailed, RUNNING) => move_to(card.column, FAILED, &[]),
         (Retry, FAILED) => move_to(card.column, QUEUED, &[ClearError]),
         (Back, FAILED) => move_to(back_target(stage), IDLE, &[ClearError]),
@@ -82,8 +89,17 @@ fn gate_transition(card: Position<'_>, action: BoardAction) -> Option<Transition
         (FINAL_REVIEW, Deliver) if card.run_state == RUNNING => {
             move_to(DONE, IDLE, &[CleanupWorktree, ClearError])
         }
-        (FINAL_REVIEW, DeliveryFailed) if card.run_state == RUNNING => {
+        (FINAL_REVIEW, DeliveryFailed) if matches!(card.run_state, RUNNING | WAITING_CI) => {
             move_to(card.column, FAILED, &[])
+        }
+        (FINAL_REVIEW, AwaitCi) if card.run_state == RUNNING => {
+            move_to(card.column, WAITING_CI, &[ClearError])
+        }
+        (FINAL_REVIEW, CiPassed) if card.run_state == WAITING_CI => {
+            move_to(card.column, RUNNING, &[])
+        }
+        (FINAL_REVIEW, CiFailed) if card.run_state == WAITING_CI => {
+            move_to(REWORK, QUEUED, &[NextReworkCycle, ClearError])
         }
         _ => None,
     }

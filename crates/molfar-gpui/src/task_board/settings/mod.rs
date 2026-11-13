@@ -17,6 +17,8 @@ mod skill_list_tests;
 mod skill_rows;
 #[cfg(test)]
 pub(in crate::task_board) mod tests;
+#[cfg(test)]
+mod verify_tests;
 mod view;
 
 use crate::{input::Input, pickers::ModelList, popover::AnchorSlot};
@@ -69,6 +71,9 @@ pub(super) struct Panel {
     pub anchors: Vec<(AgentStage, AnchorSlot)>,
     pub concurrency: Entity<Input>,
     pub stall: Entity<Input>,
+    /// The project whose verify command this panel edits, fixed when the panel opens.
+    pub project: String,
+    pub verify: Entity<Input>,
     pub error: Option<String>,
     pub pending: Option<molfar_core::task_board::stage::choice::settings::SettingsPatch>,
     _subscriptions: Vec<Subscription>,

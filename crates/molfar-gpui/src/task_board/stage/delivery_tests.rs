@@ -130,3 +130,22 @@ fn done_cards_archive_and_running_cards_hide_destructive_actions(cx: &mut TestAp
     assert!(visual.debug_bounds("board-reject").is_none());
     assert!(visual.debug_bounds("board-deliver").is_none());
 }
+
+#[gpui::test]
+fn cards_waiting_for_ci_show_their_state_and_cannot_be_delivered_twice(cx: &mut TestAppContext) {
+    let mut waiting = reviewed("ci");
+    waiting.delivery_json = Some(
+        r#"{"method":"merge","deliveredAt":0,"prUrl":"https://github.com/a/b/pull/3"}"#.into(),
+    );
+    assert_eq!(status_text(&waiting), "Waiting for CI");
+    assert_eq!(
+        crate::task_board::kanban::status::status(&waiting).map(|(_, label)| label),
+        Some("Waiting for CI")
+    );
+
+    let window = show(cx, waiting, None);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    assert!(visual.debug_bounds("board-deliver").is_none());
+    assert!(visual.debug_bounds("board-reject").is_some());
+}

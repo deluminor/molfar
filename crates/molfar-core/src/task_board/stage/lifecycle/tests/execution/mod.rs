@@ -1,6 +1,10 @@
+mod automation;
 mod boundaries;
+mod budget;
+mod checks;
 mod fixtures;
 mod guards;
+mod reuse;
 use super::owner::gate;
 use crate::task_board::stage::{agent::AgentStage, lifecycle::types::StageAction};
 use fixtures::*;

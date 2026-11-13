@@ -32,7 +32,7 @@ fn grill_lifecycle_named_session_visible_owned_and_cancel_prevents_late_launch()
     assert_eq!(effect.stop_session_id.as_deref(), Some("board-run-one"));
     assert!(!store.board_stage_is_current("run-one").unwrap());
     assert!(store
-        .board_reserve_stage_session("run-one", &choice().settings, "Prompt manifest")
+        .board_reserve_stage_session("run-one", &choice().settings, "Prompt manifest", None)
         .is_err());
     assert!(
         !store
@@ -49,11 +49,11 @@ fn grill_lifecycle_prepared_prompt_is_durable_but_not_submission_evidence() {
     assert!(!store.board_record_stage_submitted("run-one").unwrap());
     assert!(store.follow_ups(session).unwrap().draft.is_some());
     let first = store
-        .board_reserve_stage_session("run-one", &choice().settings, "Prompt manifest")
+        .board_reserve_stage_session("run-one", &choice().settings, "Prompt manifest", None)
         .unwrap();
     assert_eq!(first.session.id, session);
     assert!(store
-        .board_reserve_stage_session("run-one", &choice().settings, "Different prompt")
+        .board_reserve_stage_session("run-one", &choice().settings, "Different prompt", None)
         .is_err());
     let state = store.follow_ups(session).unwrap();
     assert_eq!(state.draft.unwrap().text, "Prompt manifest");

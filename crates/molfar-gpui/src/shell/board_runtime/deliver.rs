@@ -3,7 +3,7 @@ use molfar_core::task_board::delivery::{
     constants::INTERRUPTED,
     port::GitDelivery,
     service::{self, reject::reject_cleanup},
-    types::{DeliveryMethod, Finished, Published},
+    types::{DeliveryMethod, DeliveryStep, Finished, Published},
 };
 
 impl Shell {
@@ -25,31 +25,42 @@ impl Shell {
             let _ = this.update(cx, |this, cx| {
                 this.finish_board_update(result.err(), cx);
                 if accepted {
-                    this.publish_delivery(card_id, method, cx);
+                    this.publish_delivery(card_id, method, DeliveryStep::Open, cx);
                 }
             });
         })
         .detach();
     }
 
-    fn publish_delivery(
+    /// `Open` pushes and opens the pull request, then CI decides; `Complete` runs after
+    /// green CI and finishes (merge, cleanup, Done). Keep branch has no CI to wait for.
+    pub(super) fn publish_delivery(
         &mut self,
         card_id: String,
         method: DeliveryMethod,
+        step: DeliveryStep,
         cx: &mut Context<Self>,
     ) {
         let store = self.store.clone();
+        let wait = step == DeliveryStep::Open && method != DeliveryMethod::Keep;
         let work = cx.background_executor().spawn(async move {
-            service::publish(&store, &GitDelivery, &card_id, method).map_err(|error| {
-                let recorded = service::fail(&store, &card_id, &error).map(|_| ());
-                (card_id, recorded)
-            })
+            let published = service::publish(&store, &GitDelivery, &card_id, method, step)
+                .and_then(|published| {
+                    if wait {
+                        locked(&store)?.board_await_ci(&card_id, &published.delivery)?;
+                        return Ok(None);
+                    }
+                    Ok(Some(published))
+                });
+            // The card records the delivery error itself; only a failed record is reported here.
+            published.map_err(|error| service::fail(&store, &card_id, &error).err())
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| match result {
-                Ok(published) => this.finish_delivery(published, cx),
-                Err((_, recorded)) => this.finish_board_background(recorded.err(), cx),
+                Ok(Some(published)) => this.finish_delivery(published, cx),
+                Ok(None) => this.finish_board_background(None, cx),
+                Err(unrecorded) => this.finish_board_background(unrecorded, cx),
             });
         })
         .detach();
@@ -176,11 +187,24 @@ impl Shell {
     }
 
     /// Work that outlives the owner's action: it must not complete whatever the board is waiting for now.
-    fn finish_board_background(&mut self, error: Option<String>, cx: &mut Context<Self>) {
+    pub(super) fn finish_board_background(
+        &mut self,
+        error: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
         if let Some(board) = &self.board {
             board.update(cx, |board, cx| board.finish_background(error, cx));
         }
         self.poll_board(true, cx);
+    }
+
+    /// CI looks repeat every minute, so a lasting outage shows once rather than as a new error each time.
+    pub(super) fn finish_board_ci(&mut self, error: Option<String>, cx: &mut Context<Self>) {
+        if error.is_some() && error == self.board_state.ci_error {
+            return;
+        }
+        self.board_state.ci_error = error.clone();
+        self.finish_board_background(error, cx);
     }
 
     fn finish_board_update(&mut self, error: Option<String>, cx: &mut Context<Self>) {
