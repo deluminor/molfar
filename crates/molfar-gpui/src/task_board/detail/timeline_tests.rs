@@ -146,7 +146,9 @@ fn compact_preview_precedes_preserved_history_and_expands(cx: &mut TestAppContex
     let window = show(cx, false);
     window
         .update(cx, |board, _, cx| {
-            board.snapshot.as_mut().unwrap().runs = vec![run("one", Some("session"), 1)];
+            let mut history = run("one", Some("session"), 1);
+            history.error = Some("First failure\nFull second line".into());
+            board.snapshot.as_mut().unwrap().runs = vec![history];
             cx.notify();
         })
         .unwrap();
@@ -156,11 +158,14 @@ fn compact_preview_precedes_preserved_history_and_expands(cx: &mut TestAppContex
     let preview = visual.debug_bounds("board-timeline-preview").unwrap();
     let history = visual.debug_bounds("board-timeline-history").unwrap();
     assert!(preview.bottom() <= history.top());
+    let error = visual.debug_bounds("board-run-error-one").unwrap();
+    assert!(error.size.height > gpui::px(20.));
     assert!(visual.debug_bounds("board-run-open-one").is_some());
     click(visual, "board-timeline-expand");
     visual.run_until_parked();
     assert!(visual.debug_bounds("board-timeline-dialog").is_some());
     assert!(visual.debug_bounds("board-timeline-history").is_some());
+    assert!(visual.debug_bounds("board-run-error-one").is_some());
     visual.simulate_keystrokes("escape");
     visual.run_until_parked();
     assert!(visual.debug_bounds("board-timeline-dialog").is_none());
