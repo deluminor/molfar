@@ -76,7 +76,7 @@ fn ticks_preserve_board_preview_and_keyboard_session_focus(cx: &mut TestAppConte
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
     let before_width = visual
-        .debug_bounds("board-run-mark-live")
+        .debug_bounds("board-preview-mark-live")
         .unwrap()
         .size
         .width;
@@ -100,7 +100,7 @@ fn ticks_preserve_board_preview_and_keyboard_session_focus(cx: &mut TestAppConte
     visual.run_until_parked();
     assert!(
         visual
-            .debug_bounds("board-run-mark-live")
+            .debug_bounds("board-preview-mark-live")
             .unwrap()
             .size
             .width

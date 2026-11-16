@@ -12,19 +12,25 @@ impl Timeline {
         run: &StageRun,
         lane: &Lane,
         last: bool,
+        modal: bool,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        let prefix = if modal { "modal-run" } else { "board-run" };
         let name = COLUMNS
             .iter()
             .find(|(id, _)| *id == run.stage)
             .map_or(run.stage.as_str(), |(_, name)| *name);
         let (glyph, _) = look::look(&run.stage);
         let (status, tone) = super::status::presentation(&run.status);
-        let elapsed = Some(elapsed::label(lane.elapsed));
+        let elapsed = Some(if lane.available {
+            elapsed::label(lane.elapsed)
+        } else {
+            "Timing unavailable".into()
+        });
         let session = run.session_id.clone();
 
         div()
-            .id(gpui::SharedString::from(format!("board-run-{}", run.id)))
+            .id(gpui::SharedString::from(format!("{prefix}-{}", run.id)))
             .flex()
             .gap_3()
             .child(
@@ -87,44 +93,7 @@ impl Timeline {
                                 controls::model_label(&run.harness, &run.model)
                             )),
                     )
-                    .child(
-                        div()
-                            .id(gpui::SharedString::from(format!(
-                                "board-run-bar-{}",
-                                run.id
-                            )))
-                            .when_some(run.session_id.clone(), |d, session| {
-                                d.cursor_pointer().on_click(cx.listener(move |_, _, _, cx| {
-                                    cx.emit(OpenSession(session.clone()))
-                                }))
-                            })
-                            .debug_selector({
-                                let id = run.id.clone();
-                                move || format!("board-run-bar-{id}")
-                            })
-                            .relative()
-                            .h(px(12.))
-                            .w_full()
-                            .bg(content(0.04))
-                            .child(
-                                div()
-                                    .id(gpui::SharedString::from(format!(
-                                        "board-run-mark-{}",
-                                        run.id
-                                    )))
-                                    .debug_selector({
-                                        let id = run.id.clone();
-                                        move || format!("board-run-mark-{id}")
-                                    })
-                                    .absolute()
-                                    .left(gpui::relative(lane.start))
-                                    .w(gpui::relative(lane.width))
-                                    .min_w(px(2.))
-                                    .h_full()
-                                    .rounded_sm()
-                                    .bg(tone),
-                            ),
-                    )
+                    .when(modal, |d| d.child(self.interval_bar(run, lane, prefix, cx)))
                     .when(run.completed_at.is_none() && run.status != RUNNING, |d| {
                         d.child(
                             div()
@@ -137,12 +106,12 @@ impl Timeline {
                         d.child(
                             div()
                                 .id(gpui::SharedString::from(format!(
-                                    "board-run-error-{}",
+                                    "{prefix}-error-{}",
                                     run.id
                                 )))
                                 .debug_selector({
                                     let id = run.id.clone();
-                                    move || format!("board-run-error-{id}")
+                                    move || format!("{prefix}-error-{id}")
                                 })
                                 .text_size(px(11.))
                                 .text_color(look::rose(1.))
@@ -152,7 +121,7 @@ impl Timeline {
             )
             .child(
                 div()
-                    .w(px(100.))
+                    .w(px(if modal { 170. } else { 100. }))
                     .flex_shrink_0()
                     .flex()
                     .items_start()
@@ -160,21 +129,25 @@ impl Timeline {
                     .py_1()
                     .text_size(px(11.))
                     .text_color(content(0.5))
+                    .when(modal, |d| d.child(self.inspect_button(run, cx)))
                     .when_some(elapsed, |d, elapsed| d.child(elapsed))
                     .when_some(session, |d, session| {
                         d.child(
                             controls::ghost_button(
-                                gpui::SharedString::from(format!("board-run-open-{}", run.id)),
+                                gpui::SharedString::from(format!("{prefix}-open-{}", run.id)),
                                 "",
                             )
                             .child(icon("external-link", 12.))
                             .aria_label(format!("Open {name} attempt {} session", run.attempt))
-                            .track_focus(&self.session_focus[&run.id])
+                            .when(modal || !self.expanded, |d| {
+                                d.track_focus(&self.session_focus[&run.id])
+                            })
                             .tab_index(0)
                             .on_key_down({
                                 let session = session.clone();
-                                cx.listener(move |_, event: &gpui::KeyDownEvent, _, cx| {
+                                cx.listener(move |this, event: &gpui::KeyDownEvent, window, cx| {
                                     if matches!(event.keystroke.key.as_str(), "enter" | "space") {
+                                        this.close_dialog(window, cx);
                                         cx.emit(OpenSession(session.clone()));
                                         cx.stop_propagation();
                                     }
@@ -183,13 +156,14 @@ impl Timeline {
                             .size(px(24.))
                             .debug_selector({
                                 let id = run.id.clone();
-                                move || format!("board-run-open-{id}")
+                                move || format!("{prefix}-open-{id}")
                             })
-                            .on_click(
-                                cx.listener(move |_, _, _, cx| {
+                            .on_click(cx.listener(
+                                move |this, _, window, cx| {
+                                    this.close_dialog(window, cx);
                                     cx.emit(OpenSession(session.clone()))
-                                }),
-                            ),
+                                },
+                            )),
                         )
                     }),
             )

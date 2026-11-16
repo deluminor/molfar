@@ -1,7 +1,11 @@
+mod bar;
 mod clock;
+mod dialog;
 mod elapsed;
+mod inspection;
 mod lane;
 mod layout;
+mod preview;
 mod status;
 mod view;
 
@@ -15,6 +19,14 @@ pub(in crate::task_board) struct Timeline {
     card: Option<Card>,
     runs: Vec<StageRun>,
     visible: bool,
+    expanded: bool,
+    selected_run: Option<String>,
+    hovered_run: Option<String>,
+    inspect_focus: std::collections::HashMap<String, gpui::FocusHandle>,
+    expand_focus: Option<gpui::FocusHandle>,
+    close_focus: Option<gpui::FocusHandle>,
+    details_focus: Option<gpui::FocusHandle>,
+    details_scroll: Option<gpui::ScrollHandle>,
     session_focus: std::collections::HashMap<String, gpui::FocusHandle>,
     now: i64,
     task: Option<gpui::Task<()>>,
@@ -34,9 +46,28 @@ impl Timeline {
             .into_iter()
             .filter(|run| card.as_ref().is_some_and(|card| card.id == run.card_id))
             .collect();
+        if self.expand_focus.is_none() {
+            self.expand_focus = Some(cx.focus_handle());
+            self.close_focus = Some(cx.focus_handle());
+            self.details_focus = Some(cx.focus_handle());
+            self.details_scroll = Some(gpui::ScrollHandle::new());
+        }
+        if !visible || self.card.as_ref().map(|card| &card.id) != card.as_ref().map(|card| &card.id)
+        {
+            self.expanded = false;
+            self.selected_run = None;
+            self.hovered_run = None;
+        }
         let changed = self.card != card || self.runs != runs || self.visible != visible;
         if self.card.as_ref().map(|card| &card.id) != card.as_ref().map(|card| &card.id) {
             self.session_focus.clear();
+        }
+        self.inspect_focus
+            .retain(|id, _| runs.iter().any(|run| &run.id == id));
+        for run in &runs {
+            self.inspect_focus
+                .entry(run.id.clone())
+                .or_insert_with(|| cx.focus_handle());
         }
         self.session_focus.retain(|id, _| {
             runs.iter()
@@ -60,8 +91,14 @@ impl Timeline {
 }
 
 impl Render for Timeline {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        self.view(cx)
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let dialog = self.expanded.then(|| self.dialog(window, cx));
+        gpui::div()
+            .flex()
+            .flex_col()
+            .child(self.preview(cx))
+            .child(self.view(false, cx))
+            .children(dialog)
     }
 }
 
@@ -71,3 +108,7 @@ mod clock_tests;
 #[cfg(test)]
 #[path = "tests/model.rs"]
 mod model_tests;
+
+#[cfg(test)]
+#[path = "tests/inspection.rs"]
+mod inspection_tests;

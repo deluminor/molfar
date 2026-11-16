@@ -68,3 +68,11 @@ fn injected_clock_moves_only_unfinished_intervals() {
     assert!(after.lanes[1].width > before.lanes[1].width);
     assert_eq!(layout::calculate(&[(0, None)], 180_000).domain, 180_000);
 }
+
+#[test]
+fn reversed_intervals_are_unavailable_and_do_not_expand_valid_bounds() {
+    let chart = layout::calculate(&[(0, Some(-100)), (60_000, Some(120_000))], 120_000);
+    assert!(!chart.lanes[0].available);
+    assert!(chart.lanes[1].available);
+    assert_eq!(chart.elapsed, 60_000);
+}
