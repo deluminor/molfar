@@ -22,6 +22,7 @@ export function StageTimelineDialog({
   onOpenSession: (sessionId: string) => void;
 }): ReactNode {
   const content = useRef<HTMLDivElement>(null);
+  const inspectionSurface = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState(layout.rows[0]?.run.id);
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const departure = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -97,14 +98,14 @@ export function StageTimelineDialog({
         ref={content}
         onPointerLeave={leave}
         onBlur={(event) => {
-          if (
-            !event.currentTarget.contains(event.relatedTarget) &&
-            !(
-              event.relatedTarget instanceof Element &&
-              event.relatedTarget.closest("[data-dialog-popover]")
-            )
-          )
-            setInspection(null);
+          const destination = event.relatedTarget;
+          const withinTrigger =
+            destination instanceof Node &&
+            Boolean(inspection?.anchor.contains(destination));
+          const withinDetails =
+            destination instanceof Node &&
+            Boolean(inspectionSurface.current?.contains(destination));
+          if (!withinTrigger && !withinDetails) setInspection(null);
         }}
       >
         <div className="flex flex-wrap items-center gap-3 pb-3 text-[12px] tabular-nums">
@@ -148,6 +149,7 @@ export function StageTimelineDialog({
         </section>
         {inspection && hoveredRow ? (
           <Popover
+            ref={inspectionSurface}
             anchor={inspection.anchor}
             width={360}
             maxHeight={240}
