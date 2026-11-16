@@ -81,6 +81,12 @@ fn large_history_fits_small_modal_and_pending_card_switch_removes_actions(cx: &m
     assert!(visual.debug_bounds("modal-run-open-run-31").is_some());
     visual.simulate_keystrokes("shift-tab");
     visual.run_until_parked();
+    let focused = visual.debug_bounds("modal-run-inspect-run-31").unwrap();
+    assert!(
+        dialog.contains(&focused.center()),
+        "keyboard focus must remain visible inside the modal"
+    );
+
     window
         .update(visual, |board, window, cx| {
             assert!(board.timeline.read(cx).inspect_focus["run-31"].is_focused(window));

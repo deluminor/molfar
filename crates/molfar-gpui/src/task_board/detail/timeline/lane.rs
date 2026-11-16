@@ -32,6 +32,7 @@ impl Timeline {
         div()
             .id(gpui::SharedString::from(format!("{prefix}-{}", run.id)))
             .flex()
+            .flex_shrink_0()
             .gap_3()
             .child(
                 div()

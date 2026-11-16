@@ -21,7 +21,13 @@ impl Timeline {
             })
             .flex()
             .flex_col()
-            .flex_shrink_0();
+            .flex_shrink_0()
+            .when(modal, |d| {
+                d.h_full()
+                    .min_h_0()
+                    .overflow_y_scroll()
+                    .track_scroll(self.chart_scroll.as_ref().expect("chart scroll"))
+            });
         if runs.is_empty() {
             return timeline
                 .child(

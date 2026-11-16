@@ -27,6 +27,7 @@ pub(in crate::task_board) struct Timeline {
     close_focus: Option<gpui::FocusHandle>,
     details_focus: Option<gpui::FocusHandle>,
     details_scroll: Option<gpui::ScrollHandle>,
+    chart_scroll: Option<gpui::ScrollHandle>,
     session_focus: std::collections::HashMap<String, gpui::FocusHandle>,
     now: i64,
     task: Option<gpui::Task<()>>,
@@ -51,6 +52,7 @@ impl Timeline {
             self.close_focus = Some(cx.focus_handle());
             self.details_focus = Some(cx.focus_handle());
             self.details_scroll = Some(gpui::ScrollHandle::new());
+            self.chart_scroll = Some(gpui::ScrollHandle::new());
         }
         if !visible || self.card.as_ref().map(|card| &card.id) != card.as_ref().map(|card| &card.id)
         {

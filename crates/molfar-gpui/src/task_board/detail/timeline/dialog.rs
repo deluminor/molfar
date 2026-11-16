@@ -5,6 +5,9 @@ use gpui::{AnyElement, Context, Role, Window, div, prelude::*, px};
 impl Timeline {
     pub(super) fn open_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.expanded = true;
+        if let Some(scroll) = &self.chart_scroll {
+            scroll.set_offset(gpui::point(px(0.), px(0.)));
+        }
         if let Some(focus) = &self.close_focus {
             window.focus(focus, cx);
         }
@@ -22,6 +25,32 @@ impl Timeline {
             window.focus(focus, cx);
         }
         cx.notify();
+    }
+
+    fn reveal_modal_focus(&self, focus: &gpui::FocusHandle) {
+        let Some(run) = self.runs.iter().find(|run| {
+            self.session_focus.get(&run.id) == Some(focus)
+                || self.inspect_focus.get(&run.id) == Some(focus)
+        }) else {
+            return;
+        };
+        let intervals: Vec<_> = self
+            .runs
+            .iter()
+            .map(|run| (run.started_at, run.completed_at))
+            .collect();
+        let layout = super::layout::calculate(&intervals, self.now);
+        let Some(position) = layout
+            .lanes
+            .iter()
+            .position(|lane| self.runs[lane.index].id == run.id)
+        else {
+            return;
+        };
+        let summary_rows = 2 + usize::from(layout.lanes.iter().any(|lane| lane.available));
+        if let Some(scroll) = &self.chart_scroll {
+            scroll.scroll_to_top_of_item(summary_rows + position);
+        }
     }
 
     pub(super) fn dialog(&self, window: &Window, cx: &mut Context<Self>) -> AnyElement {
@@ -63,6 +92,7 @@ impl Timeline {
                         (current + 1) % handles.len()
                     };
                     window.focus(&handles[next], cx);
+                    this.reveal_modal_focus(&handles[next]);
                     cx.notify();
                     cx.stop_propagation();
                 } else if matches!(event.keystroke.key.as_str(), "pagedown" | "pageup")
