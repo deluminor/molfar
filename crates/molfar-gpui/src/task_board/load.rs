@@ -76,7 +76,6 @@ impl Board {
                 self.error = Some(error);
             }
         }
-        self.sync_stage_timeline(cx);
         cx.notify();
     }
 }

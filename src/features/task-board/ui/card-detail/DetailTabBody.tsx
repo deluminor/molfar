@@ -15,7 +15,6 @@ import { ReviewChecklist } from "./ReviewChecklist";
 
 type Props = {
   tab: DetailTab;
-  stallMinutes: number;
   runtime: TaskBoardRuntime;
   card: Card;
   detail: CardDetail;
@@ -30,9 +29,9 @@ function Scroll({ children }: { children: ReactNode }): ReactNode {
 }
 
 /** One tab of the card panel. Every branch fills the panel and scrolls on its own. */
-export function DetailTabBody({ tab, stallMinutes, runtime, card, detail, intent, onAct, onOpenSession }: Props): ReactNode {
+export function DetailTabBody({ tab, runtime, card, detail, intent, onAct, onOpenSession }: Props): ReactNode {
   if (tab === "overview")
-    return <CardOverview card={card} runs={detail.runs} stallMinutes={stallMinutes} needsInput={detail.runs.some((run) => run.stage === card.columnId && run.status === "running" && Boolean(run.sessionId && runtime.needsInput(run.sessionId)))} onAct={onAct} onOpenSession={onOpenSession} />;
+    return <CardOverview card={card} runs={detail.runs} now={Date.now()} onAct={onAct} onOpenSession={onOpenSession} />;
   if (tab === "diff") return <CardDiff git={runtime.ports.git} worktree={card.worktreePath} baseSha={card.baseSha} />;
 
   const entry = DETAIL_TABS.find((candidate) => candidate.id === tab);

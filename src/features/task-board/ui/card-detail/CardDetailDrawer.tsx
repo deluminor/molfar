@@ -18,7 +18,6 @@ import { GateActions } from "./GateActions";
 
 type Props = {
   runtime: TaskBoardRuntime;
-  stallMinutes: number;
   cardId: string;
   intent: DetailIntent;
   /** Bumps on every intent request, so a repeated drop reopens the drawer fresh. */
@@ -30,7 +29,7 @@ type Props = {
 
 type ContentProps = Omit<Props, "cardId" | "intentSeq"> & { card: Card; detail: CardDetail };
 
-function CardDetailContent({ runtime, stallMinutes, card, detail, intent, onClose, onOpenSession, onMove }: ContentProps): ReactNode {
+function CardDetailContent({ runtime, card, detail, intent, onClose, onOpenSession, onMove }: ContentProps): ReactNode {
   const [tab, setTab] = useState<DetailTab>(() => initialTab(intent));
   const [actionError, setActionError] = useState<string | null>(null);
   const github = useGithubAvailable(runtime.ports.git, card.columnId === "final_review" ? card.worktreePath : null);
@@ -80,7 +79,6 @@ function CardDetailContent({ runtime, stallMinutes, card, detail, intent, onClos
         <DetailTabBody
           key={tab}
           tab={tab}
-          stallMinutes={stallMinutes}
           runtime={runtime}
           card={card}
           detail={detail}

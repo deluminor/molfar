@@ -9,7 +9,7 @@ mod navigation_tests;
 mod tabs;
 #[cfg(test)]
 mod tests;
-pub(super) mod timeline;
+mod timeline;
 #[cfg(test)]
 mod timeline_tests;
 pub(super) mod usage;
@@ -139,36 +139,5 @@ impl Board {
             cx.notify();
         });
         cx.notify();
-    }
-}
-
-impl Board {
-    pub(super) fn sync_stage_timeline(&mut self, cx: &mut Context<Self>) {
-        let snapshot = self
-            .snapshot
-            .as_ref()
-            .filter(|snapshot| snapshot.selected == self.selected);
-        let card = snapshot
-            .and_then(|snapshot| {
-                snapshot
-                    .cards
-                    .iter()
-                    .find(|card| Some(&card.id) == self.selected.as_ref())
-            })
-            .cloned();
-        let runs = snapshot
-            .map(|snapshot| snapshot.runs.clone())
-            .unwrap_or_default();
-        let visible =
-            self.page_visible && self.drawer_open && self.detail_tab.is_none() && card.is_some();
-        self.timeline
-            .update(cx, |timeline, cx| timeline.sync(card, runs, visible, cx));
-    }
-}
-
-impl Board {
-    pub(crate) fn set_page_visible(&mut self, visible: bool, cx: &mut Context<Self>) {
-        self.page_visible = visible;
-        self.sync_stage_timeline(cx);
     }
 }
