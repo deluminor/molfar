@@ -11,3 +11,12 @@
 - [x] Run final native verification gate and review all acceptance criteria.
 
 The board handoff supplies approval and the analyze gate. The previous web specification remains separate. No `todo` executable is installed in this environment; this checklist retains implementation state.
+
+## Task-v2 rework
+
+- [x] Inspect additive composition and preserved history controls.
+- [x] Replace obsolete repository spec/plan wording with task-v2 and all 13 criteria.
+- [x] Extend composition coverage for persistent multiline history errors.
+- [x] Complete fresh Native check and build evidence.
+- [ ] Verify built Native app interactions and reduced motion directly.
+- [ ] Correct board spec/plan artifacts through owner/stage publication; historical files remain untouched.

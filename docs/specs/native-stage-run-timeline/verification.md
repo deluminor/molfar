@@ -1,3 +1,27 @@
+# Task-v2 rework verification
+
+## Current results
+
+- Production composition already renders preview then preserved vertical history; no production change needed.
+- Extended GPUI composition regression verifies multiline history error height and persistence while expanded modal is open. Targeted command: `cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-gpui --profile native-dev compact_preview_precedes_preserved_history_and_expands -- --test-threads=1`, exit 0 (1 passed). No new production behavior or red-green implementation cycle is claimed.
+- `npm run native:check`: exit 0 with permitted execution. 44 script tests, 964 core tests, 1171 GPUI tests and 6 scrollbar tests passed; 13 ignored. Formatting and all-target Clippy/type checking passed.
+- Initial sandbox native check: exit 101, 15 core socket/process fixture failures (`Operation not permitted`); permitted full rerun cleared them.
+- `npm run native:build`: exit 0; release app built and signed in this checkout. Production source unchanged from starting HEAD 022d3d6f; test commit 4b9bcfa4.
+- `git diff --check`: exit 0. Diff reviewed: test and documentation only; no new IO, dependencies, telemetry or web changes.
+- Existing warning: future Rust incompatibility in block v0.1.6.
+
+## Remaining acceptance gaps
+
+Direct runtime verification in the built Native app was not performed: preview/modal appearance, scrolling, keyboard/session behavior and reduced motion remain unverified (AC-1, AC-9, AC-11 and AC-12 runtime portions). Automated tests do not establish runtime acceptance.
+
+Repository spec and plan now follow all 13 task-v2 criteria. Ignored board spec-v4/plan-v4 are historical and were not edited. The stage exposes only implementation-report submission, so the user must correct board artifacts through its publication workflow before acceptance. Return through Code review and Final review; no delivery, merge or release.
+
+---
+
+# Historical verification (superseded criterion numbering)
+
+The evidence below predates task-v2. Current acceptance uses all 13 criteria in spec.md; this historical section does not establish current acceptance.
+
 # Native stage-run timeline verification
 
 ## Acceptance evidence
