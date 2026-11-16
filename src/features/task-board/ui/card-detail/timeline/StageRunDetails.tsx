@@ -12,7 +12,7 @@ export function StageRunDetails({ row }: { row: TimelineRow }): ReactNode {
   else if (run.status === "running") completion = "Running";
 
   return (
-    <div className="timeline-details text-[12px]" aria-label="Run details">
+    <section className="timeline-details text-[12px]" aria-label="Run details">
       <strong>
         {COLUMN_LABEL[run.stage]}
         {run.attempt > 1 ? ` · attempt ${run.attempt}` : ""}
@@ -31,6 +31,6 @@ export function StageRunDetails({ row }: { row: TimelineRow }): ReactNode {
           {run.error}
         </p>
       ) : null}
-    </div>
+    </section>
   );
 }

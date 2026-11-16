@@ -114,9 +114,10 @@ button.timeline-bar {
 @media (prefers-reduced-motion: reduce) {
   .stage-timeline-dialog,
   .stage-timeline-preview *,
-  .stage-timeline-dialog * {
-    animation: none !important;
-    transition: none !important;
+  .stage-timeline-dialog .timeline-bar,
+  .stage-timeline-dialog .timeline-control {
+    animation: none;
+    transition: none;
   }
 }
 .timeline-axis > span:first-child {

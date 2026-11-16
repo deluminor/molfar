@@ -93,6 +93,7 @@ export function StageTimelineDialog({
 
   return (
     <Modal title={title} onClose={onClose} size="lg" fitViewport>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: This container observes descendant focus to dismiss transient inspection. */}
       <div
         className="stage-timeline-dialog p-4"
         ref={content}
@@ -116,7 +117,7 @@ export function StageTimelineDialog({
           </span>
           {summary}
         </div>
-        <div className="timeline-chart" aria-label="Stage run swimlanes">
+        <section className="timeline-chart" aria-label="Stage run swimlanes">
           {layout.origin !== null ? (
             <div className="timeline-axis">
               <span>Stage</span>
@@ -135,10 +136,11 @@ export function StageTimelineDialog({
               <StageRunLane row={row} onInspect={inspect} onOpen={open} />
             </div>
           ))}
-        </div>
+        </section>
         <section
           aria-label="Selected run details"
           className="timeline-selected"
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users need a focus target to scroll persistent run details.
           tabIndex={0}
         >
           {selectedRow ? (

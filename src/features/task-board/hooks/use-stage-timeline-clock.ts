@@ -11,6 +11,7 @@ export function useStageTimelineClock(
     (run) => Number.isFinite(run.startedAt) && run.completedAt === null,
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Card changes must refresh the clock even when live state stays unchanged.
   useEffect(() => {
     refresh();
     if (!live) return;

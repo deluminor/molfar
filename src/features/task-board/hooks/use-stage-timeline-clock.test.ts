@@ -9,7 +9,7 @@ let root: ReturnType<typeof createRoot>;
 let container: HTMLDivElement;
 function Clock({ runs, cardId }: { runs: StageRun[]; cardId: string }) {
   const { now, refresh } = useStageTimelineClock(runs, cardId);
-  return createElement("button", { onClick: refresh }, now);
+  return createElement("button", { type: "button", onClick: refresh }, now);
 }
 beforeEach(() => {
   vi.useFakeTimers();
