@@ -1,3 +1,23 @@
+# Continuation runtime access blocker
+
+The continuation attempted direct verification of the built app through Computer Use, selecting this checkout's `crates/molfar-gpui/target/release/MOLFAR Native.app`. The tool returned: `Computer Use was not approved to use MOLFAR Native`.
+
+No Native window could be inspected or driven. AC-1, AC-9, AC-11 and AC-12 runtime portions remain unverified. The user must enable Computer Use access to MOLFAR Native or provide direct runtime acceptance evidence before this stage can complete. Automated tests cannot clear this blocker. No application data or historical board artifacts were changed.
+
+Repository spec/plan corrections remain committed. This stage supports only implementation-report output; historical board spec-v4/plan-v4 require correction through the board publication workflow. This is reported explicitly as required by the rework brief.
+
+No behavior change was needed in this continuation, so no new TDD cycle applies. Existing behavioral regressions are retained.
+
+Fresh continuation checks on production/test source at f8901f1d:
+
+- `npm run native:check`: exit 0 with permitted execution; formatting and Clippy/type checking passed, 44 script tests, 964 core tests, 1171 GPUI tests and 6 scrollbar tests passed; 13 ignored.
+- `npm run native:build`: exit 0. Existing block v0.1.6 future-incompatibility warning remains.
+- Diff reviewed: verification documentation only; no new IO, secrets or dependencies. `git diff --check`: exit 0.
+- Direct runtime QA: blocked by the Computer Use access rejection above. Coverage and dependency audit not run.
+
+
+---
+
 # Task-v2 rework verification
 
 ## Current results
