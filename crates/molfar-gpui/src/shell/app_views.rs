@@ -163,6 +163,9 @@ impl Shell {
         {
             home.update(cx, |home, _| home.conceal());
         }
+        if let Some(board) = &self.board {
+            board.update(cx, |board, cx| board.set_page_visible(false, cx));
+        }
         self.active_app_view = None;
         self.invalidate_chrome(cx);
     }
@@ -216,6 +219,11 @@ impl Shell {
             self.leave_app_views(cx);
         }
         self.active_app_view = Some(view);
+        if let Some(board) = &self.board {
+            board.update(cx, |board, cx| {
+                board.set_page_visible(view == AppView::Board, cx)
+            });
+        }
         if !self.workspace.classic_layout {
             self.remember_title_tab(TitleTab::App(view));
             self.reveal_active_tab(cx);

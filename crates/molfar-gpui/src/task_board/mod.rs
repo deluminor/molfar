@@ -87,12 +87,14 @@ pub(crate) struct Board {
     )>,
     column_scrolls: std::cell::RefCell<std::collections::HashMap<String, ScrollHandle>>,
     detail_content: Option<detail::Content>,
+    timeline: gpui::Entity<detail::timeline::Timeline>,
     card_usage: detail::usage::State,
     drawer_opens: u64,
     dragging: Option<String>,
     drag_over: Option<String>,
     drag_sessions: u64,
     drawer_open: bool,
+    page_visible: bool,
     edge_pointer: Option<(f32, f32, f32)>,
 }
 
@@ -122,7 +124,17 @@ impl Focusable for Board {
 
 impl Board {
     pub(crate) fn new(store: Database, cx: &mut Context<Self>) -> Self {
+        use gpui::AppContext;
+        let timeline = cx.new(|_| detail::timeline::Timeline::default());
+        cx.subscribe(
+            &timeline,
+            |_, _, event: &detail::timeline::OpenSession, cx| {
+                cx.emit(Event::OpenSession(event.0.clone()));
+            },
+        )
+        .detach();
         Self {
+            timeline,
             store,
             focus: cx.focus_handle(),
             scroll: ScrollHandle::new(),
@@ -172,6 +184,7 @@ impl Board {
             drag_over: None,
             drag_sessions: 0,
             drawer_open: false,
+            page_visible: true,
             edge_pointer: None,
         }
     }

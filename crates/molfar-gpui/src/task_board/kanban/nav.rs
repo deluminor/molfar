@@ -9,6 +9,7 @@ impl Board {
         }
         self.reset_detail_artifact();
         self.selected = Some(id);
+        self.sync_stage_timeline(cx);
         self.reveal_selection();
         self.refresh(cx);
     }
@@ -22,11 +23,13 @@ impl Board {
             self.refresh_card_usage(cx);
         }
         self.select(id, cx);
+        self.sync_stage_timeline(cx);
         cx.notify();
     }
 
     pub(in crate::task_board) fn close_detail(&mut self, cx: &mut Context<Self>) {
         self.drawer_open = false;
+        self.sync_stage_timeline(cx);
         self.reset_detail_artifact();
         cx.notify();
     }

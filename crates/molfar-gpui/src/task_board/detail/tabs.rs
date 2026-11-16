@@ -26,6 +26,7 @@ impl Board {
         let members = groups::members(&snapshot.artifacts, card_id, group, version);
         self.detail_tab = Some(group.id().into());
         self.detail_version = Some(version);
+        self.sync_stage_timeline(cx);
         self.open_artifact(members, window, cx);
     }
 
@@ -63,6 +64,7 @@ impl Board {
                         this.detail_tab = None;
                         this.detail_version = None;
                         this.close_artifact(window, cx);
+                        this.sync_stage_timeline(cx);
                     })),
             );
         let (Some(snapshot), Some(card_id)) = (
@@ -120,6 +122,7 @@ impl Board {
                     this.detail_tab = None;
                     this.detail_version = None;
                     this.close_artifact(window, cx);
+                    this.sync_stage_timeline(cx);
                     cx.stop_propagation();
                 }
             }))
