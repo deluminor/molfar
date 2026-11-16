@@ -113,7 +113,7 @@ export function CardDetailDrawer({ runtime, cardId, intentSeq, ...rest }: Props)
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const card = detail.card;
+  const card = detail.card?.id === cardId ? detail.card : null;
   return (
     <DetailPanelFrame label={card ? `Card #${card.number}` : "Card"}>
       {card ? (
