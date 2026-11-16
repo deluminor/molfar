@@ -1,3 +1,4 @@
+import { RUN_STATUS } from "./timeline/constants";
 import type { ReactNode } from "react";
 import { ExternalLink } from "../../../../shared/ui/icons";
 import { HARNESS_LABEL, HARNESSES } from "../../../sessions/model/session";
@@ -5,18 +6,10 @@ import { HarnessIcon } from "../../../sessions/ui/HarnessIcon";
 import { COLUMN_LABEL } from "../../constants/columns";
 import { COLUMN_LOOK } from "../../constants/column-look";
 import { elapsedLabel } from "../../model/card-status";
-import type { StageRun, StageStatus } from "../../types/stage";
-
-const STATUS: Record<StageStatus, { label: string; dot: string; text: string }> = {
-  running: { label: "Running", dot: "bg-accent task-board-breathe", text: "text-accent" },
-  succeeded: { label: "Succeeded", dot: "bg-emerald-400", text: "text-emerald-300" },
-  failed: { label: "Failed", dot: "bg-rose-400", text: "text-rose-300" },
-  cancelled: { label: "Cancelled", dot: "bg-content/30", text: "text-content/45" },
-  interrupted: { label: "Interrupted", dot: "bg-amber-300", text: "text-amber-300" },
-};
+import type { StageRun } from "../../types/stage";
 
 function Step({ run, now, last, onOpenSession }: { run: StageRun; now: number; last: boolean; onOpenSession: (sessionId: string) => void }): ReactNode {
-  const look = STATUS[run.status];
+  const look = RUN_STATUS[run.status];
   const Icon = COLUMN_LOOK[run.stage].icon;
   const harness = HARNESSES.find((entry) => entry === run.harness);
   const openSession = () => {
@@ -36,7 +29,7 @@ function Step({ run, now, last, onOpenSession }: { run: StageRun; now: number; l
           {run.attempt > 1 ? <span className="text-content/40">attempt {run.attempt}</span> : null}
           <span className={`text-[11.5px] ${look.text}`}>{look.label}</span>
           <span className="flex-1" />
-          <span className="text-[11.5px] tabular-nums text-content/40">{elapsedLabel((run.completedAt ?? now) - run.startedAt)}</span>
+          <span className="text-[11.5px] tabular-nums text-content/40">{Number.isFinite(run.startedAt) && Number.isFinite(run.completedAt ?? now) ? elapsedLabel((run.completedAt ?? now) - run.startedAt) : "Timing unavailable"}</span>
           {run.sessionId ? (
             <button
               type="button"

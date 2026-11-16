@@ -8,13 +8,15 @@ import type { OwnerAction } from "../../services/actions";
 import type { Card } from "../../types/card";
 import type { StageRun } from "../../types/stage";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "../button-styles";
-import { CardTimeline } from "./CardTimeline";
+import { StageTimeline } from "./timeline/StageTimeline";
+import { useStageTimelineClock } from "../../hooks/use-stage-timeline-clock";
 import { FadeFold } from "./FadeFold";
 
 type Props = {
   card: Card;
   runs: readonly StageRun[];
-  now: number;
+  stallMinutes: number;
+  needsInput: boolean;
   onAct: (action: OwnerAction) => Promise<void>;
   onOpenSession: (sessionId: string) => void;
 };
@@ -91,7 +93,8 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
   );
 }
 
-export function CardOverview({ card, runs, now, onAct, onOpenSession }: Props): ReactNode {
+export function CardOverview({ card, runs, stallMinutes, needsInput, onAct, onOpenSession }: Props): ReactNode {
+  const { now, refresh } = useStageTimelineClock(runs, card.id);
   const [editing, setEditing] = useState(false);
   const editable = transition(card, "editTask").ok;
   const delivery = parseDelivery(card.deliveryJson);
@@ -159,7 +162,7 @@ export function CardOverview({ card, runs, now, onAct, onOpenSession }: Props): 
       </Section>
 
       <Section title="Stages">
-        <CardTimeline runs={runs} now={now} onOpenSession={onOpenSession} />
+        <StageTimeline key={card.id} card={card} runs={runs} now={now} refresh={refresh} stallMinutes={stallMinutes} needsInput={needsInput} onOpenSession={onOpenSession} />
       </Section>
     </div>
   );
