@@ -2,7 +2,7 @@
 
 ## Scope and source
 
-Task-v2 is authoritative. Implementation commits are `28a176c9` and `41a89abf`; `9582cdb5` records the corrected requirements. Historical task-v1/spec-v4/plan-v4 and earlier implementation/review artifacts remain preserved.
+The supplied task-v3, spec-v5, plan-v5 and rework brief-v3 govern this continuation. The user owns all manual runtime verification; pending manual checks do not block implementation completion. Implementation commits are `28a176c9` and `41a89abf`; `9582cdb5` records the corrected requirements. Historical task-v1/spec-v4/plan-v4 and earlier implementation/review artifacts remain preserved.
 
 ## Acceptance evidence
 
@@ -32,7 +32,7 @@ The user retained UI verification in the latest instruction. The agent stopped U
 
 ## Board artifact publication
 
-Corrected repository revisions are `spec.md` and `plan.md` in this folder. The rework submission contract supports only the implementation report, so historical board spec-v4/plan-v4 were not overwritten. The user must publish corrected board revisions through the owner workflow before final acceptance.
+The supplied Board spec-v5 and plan-v5 contain the corrected additive composition and manual verification ownership. Earlier publication and Computer Use access blockers are superseded. Historical artifacts remain untouched.
 
 ## Final automated results
 
@@ -46,3 +46,16 @@ Corrected repository revisions are `spec.md` and `plan.md` in this folder. The r
 Built app: `crates/molfar-gpui/target/release/MOLFAR Native.app`.
 
 Executable SHA-256: `277dfc1bb506b1c5ffd5a307a36774a4575cc51a3bf1e59466e25c95edb6a911`.
+
+## Verification ownership continuation (2026-11-16)
+
+Source/build revision: `b7e17246` (this continuation changes documentation only).
+
+- `npm run native:check`: exit 0 on the permitted rerun; formatting, Clippy/type checks, 44 script tests, 964 core tests, 1171 GPUI tests and six scrollbar integration tests passed; 13 ignored. All timeline regressions passed. The initial sandbox run exited 101 because 15 socket/process fixtures encountered `Operation not permitted`; the permitted rerun cleared those failures.
+- `npm run native:build`: exit 0; release app rebuilt and bundled locally.
+- `codesign --verify --deep --strict`: exit 0 for `crates/molfar-gpui/target/release/MOLFAR Native.app`. The executable hash matches the recorded hash above.
+- No behavior changes were needed, so no new TDD cycle was introduced. Existing behavior regressions were rerun through the full Native gate.
+- Manual Native UI/runtime verification remains pending with the user, including AC-1, AC-9, AC-11 and AC-12. No Computer Use or interactive app verification was invoked in this continuation. This is not an implementation blocker under rework brief-v3.
+- Coverage and dependency audit remain unrun; no configured Native coverage/audit gate was found. Existing `block v0.1.6` future-incompatibility warning remains.
+
+Implementation is complete for Code review and Final review. This statement does not mark the card Done, merge, release, or claim manual runtime acceptance.

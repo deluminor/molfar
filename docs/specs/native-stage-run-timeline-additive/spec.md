@@ -7,7 +7,7 @@
 
 ### Required composition
 
-Keep BOTH views visible in the Native Stages section: the new compact swimlane timeline FIRST, then the existing vertical stage list immediately BELOW it. The timeline is additive. Do not replace, remove, hide, or put the vertical history behind a view toggle. Expand timeline opens the detailed Native modal. This requirement supersedes replacement wording in historical task-v1, spec-v4 and plan-v4; those spec/plan artifacts require correction before acceptance.
+Keep BOTH views visible in the Native Stages section: the new compact swimlane timeline FIRST, then the existing vertical stage list immediately BELOW it. The timeline is additive. Do not replace, remove, hide, or put the vertical history behind a view toggle. Expand timeline opens the detailed Native modal. This requirement supersedes replacement wording in historical task-v1, spec-v4 and plan-v4; the supplied Board spec-v5/plan-v5 contain the corrected requirements.
 
 ### Overview
 
@@ -23,7 +23,7 @@ Reuse existing StageRun data and GPUI theme, modal, focus, scrolling, session na
 
 Start with a fresh GPUI-specific Grill and plan against the current main branch. Previous React plans and passing web tests do not establish GPUI implementation or runtime parity. Preserve previous runs and artifacts as history. Do not restart implementation automatically as part of reopening this card.
 
-Delivery requires Native tests/checks, a successful Native app build, and direct runtime verification in that GPUI app that the preview and modal are visible and usable. Record the tested commit/build and any unrun checks explicitly. Do not mark Done based only on React/web gates or source presence.
+Implementation delivery requires Native tests/checks and a successful Native app build. The user owns direct runtime verification that the preview and modal are visible and usable; that pending manual check does not block implementation completion. Record the tested commit/build and any unrun checks explicitly. Do not mark Done based only on React/web gates or source presence.
 
 Cost/token/context metrics, activity waveforms and a board-wide Gantt remain outside this feature; preserve existing Usage UI.
 

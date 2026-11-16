@@ -13,13 +13,13 @@ Reuse the retained Timeline entity, shared Rust interval geometry, native lane m
 1. Add a regression for preview-before-history composition, simultaneous presence and expansion/dismissal. Restore additive composition without removing history metadata, errors or session controls.
 2. Add the detailed native modal, focus containment/restoration, accessible controls and session dismissal. Preserve scrolling and clock identity.
 3. Implement validated/unavailable intervals and pointer/keyboard inspection with persistent selection, full local timestamps/timezone and errors. Synchronize stale selection, pending/failed loads and visibility cleanup.
-4. Cover narrow windows, long content, thirty-plus runs, status/geometry boundaries and lifecycle interactions with GPUI tests. Run native checks and the native app build, then verify the built app directly, including keyboard, sessions, scrolling and reduced motion.
+4. Cover narrow windows, long content, thirty-plus runs, status/geometry boundaries and lifecycle interactions with GPUI tests. Run native checks and the native app build. The user verifies the built app directly, including keyboard, sessions, scrolling and reduced motion; manual verification does not block implementation-stage completion.
 
 ## Risks and verification
 
 At the start of rework, the implementation satisfied the older seven-criterion replacement spec rather than the expanded task-v2 contract. Do not infer completion from earlier green checks. Preserve historical artifacts, do not change React/Tauri or schemas, and report every unimplemented criterion and unrun runtime check explicitly.
 
-The stage output contract currently accepts only an implementation report. The new repository spec/plan record the corrected requirements; the board's historical spec-v4/plan-v4 still require a corrected revision through the owner workflow.
+The supplied Board spec-v5 and plan-v5 now record the corrected additive requirements and verification ownership. Historical spec-v4/plan-v4 remain preserved; no further publication correction is required for this rework.
 
 ## Verification ownership update
 
