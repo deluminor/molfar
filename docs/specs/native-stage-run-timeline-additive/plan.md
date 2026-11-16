@@ -17,6 +17,10 @@ Reuse the retained Timeline entity, shared Rust interval geometry, native lane m
 
 ## Risks and verification
 
-The current implementation satisfies the older seven-criterion replacement spec, not the expanded task-v2 contract. Do not infer completion from earlier green checks. Preserve historical artifacts, do not change React/Tauri or schemas, and report every unimplemented criterion and unrun runtime check explicitly.
+At the start of rework, the implementation satisfied the older seven-criterion replacement spec rather than the expanded task-v2 contract. Do not infer completion from earlier green checks. Preserve historical artifacts, do not change React/Tauri or schemas, and report every unimplemented criterion and unrun runtime check explicitly.
 
 The stage output contract currently accepts only an implementation report. The new repository spec/plan record the corrected requirements; the board's historical spec-v4/plan-v4 still require a corrected revision through the owner workflow.
+
+## Verification ownership update
+
+The user explicitly retained direct UI verification. This rework completes code, automated Native checks and the Native app build. The user performs the manual runtime acceptance checklist; the agent does not claim that manual verification occurred.

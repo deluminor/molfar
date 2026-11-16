@@ -6,5 +6,5 @@
 - [x] Implement unavailable interval presentation.
 - [x] Implement transient inspection and persistent details with local timestamps/timezone.
 - [x] Cover stale-card/load cleanup and large/narrow layouts.
-- [ ] Run native checks and native build.
-- [ ] Verify the built native app directly and record tested build identity.
+- [x] Run native checks and native build.
+- [ ] User: verify the built Native app directly, including preview/history, modal, sessions, scrolling, keyboard and reduced-motion behavior.

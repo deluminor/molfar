@@ -54,3 +54,6 @@ AC-11: Preview fits a narrow detail panel; the expanded modal fits small windows
 AC-12: Pure Rust geometry tests and GPUI behavioral tests cover malformed/empty data, retries, gaps/overlaps, live/completed runs, session navigation, focus/inspection and stale-card cleanup. Run npm run native:check and npm run native:build; record actual results. Verify preview, modal, scrolling, keyboard/session behavior and reduced motion in the built GPUI app before acceptance.
 
 AC-13: Implementation and acceptance target Rust/GPUI Native only. No React/Tauri work, webview fallback, StageRun schema changes, harness telemetry, new dependencies or board-wide Gantt is required. PR #147 and web tests alone cannot satisfy this card.
+## Verification ownership update
+
+The user retained direct UI verification in the latest instruction. The rework stage provides the implementation, automated Native verification and a built app. Manual runtime acceptance remains with the user and must be recorded separately.
