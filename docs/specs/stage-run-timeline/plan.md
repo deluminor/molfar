@@ -46,10 +46,10 @@ Before adding focus or inspection helpers, inspect shared overlay behavior and t
 
 ### Stage 1 — Shared interval model
 
-- [ ] Search existing timing, formatting, status, and overlay helpers.
-- [ ] Add `model/stage-timeline/{layout,types,constants}.ts` as needed.
-- [ ] Implement stable chronological ordering, finite validation, bounds, markers, endpoint rules, and total interval.
-- [ ] Add `model/stage-timeline/layout.test.ts`.
+- [x] Search existing timing, formatting, status, and overlay helpers.
+- [x] Add `model/stage-timeline/{layout,types,constants}.ts` as needed.
+- [x] Implement stable chronological ordering, finite validation, bounds, markers, endpoint rules, and total interval.
+- [x] Add `model/stage-timeline/layout.test.ts`.
 
 **Checkpoint:** Deterministic tests cover empty/all-invalid input, gaps, overlaps, retries, tied starts, zero/negative durations, future starts, long spans, completed endpoints, and null completion on both running and terminal statuses.
 
@@ -57,12 +57,12 @@ Before adding focus or inspection helpers, inspect shared overlay behavior and t
 
 ### Stage 2 — Add compact preview and preserve vertical history
 
-- [ ] Add `timeline/StageTimeline.tsx` and `StageTimelinePreview.tsx`.
-- [ ] Update `CardOverview.tsx` to place preview immediately above existing `CardTimeline`.
-- [ ] Reuse status-chip and elapsed presentation with actual card-status context; thread needed inputs through `DetailTabBody.tsx`.
-- [ ] Extract existing run-status styles into a shared concern-local constant if required; use it from both views rather than duplicating mappings.
-- [ ] Implement bounded preview height, all-run representation, and a named expand action.
-- [ ] Add `timeline/stage-timeline-preview.test.ts` and extend existing card-detail tests.
+- [x] Add `timeline/StageTimeline.tsx` and `StageTimelinePreview.tsx`.
+- [x] Update `CardOverview.tsx` to place preview immediately above existing `CardTimeline`.
+- [x] Reuse status-chip and elapsed presentation with actual card-status context; thread needed inputs through `DetailTabBody.tsx`.
+- [x] Extract existing run-status styles into a shared concern-local constant if required; use it from both views rather than duplicating mappings.
+- [x] Implement bounded preview height, all-run representation, and a named expand action.
+- [x] Add `timeline/stage-timeline-preview.test.ts` and extend existing card-detail tests.
 
 **Checkpoint:** Tests prove vertical list remains below preview; sessions/errors/attempts are preserved; empty state appears once; summary matches model; preview has one expansion action and no tiny interactive marks.
 
@@ -70,12 +70,12 @@ Before adding focus or inspection helpers, inspect shared overlay behavior and t
 
 ### Stage 3 — Expanded modal and session navigation
 
-- [ ] Add `StageTimelineDialog.tsx` and `StageRunLane.tsx`.
-- [ ] Reuse shared `Modal` with large size and viewport fitting.
-- [ ] Add aligned tracks, fixed label area, relative ticks, contained scrolling, and independent short-bar session controls.
-- [ ] Inspect shared focus/overlay utilities, then implement any missing focus containment and restoration.
-- [ ] Close modal before session callback; dismiss on card close, card change, or Overview departure.
-- [ ] Add `timeline/stage-timeline-dialog.test.ts`; extend shared `Modal.test.ts` only if that primitive changes.
+- [x] Add `StageTimelineDialog.tsx` and `StageRunLane.tsx`.
+- [x] Reuse shared `Modal` with large size and viewport fitting.
+- [x] Add aligned tracks, fixed label area, relative ticks, contained scrolling, and independent short-bar session controls.
+- [x] Inspect shared focus/overlay utilities, then implement any missing focus containment and restoration.
+- [x] Close modal before session callback; dismiss on card close, card change, or Overview departure.
+- [x] Add `timeline/stage-timeline-dialog.test.ts`; extend shared `Modal.test.ts` only if that primitive changes.
 
 **Checkpoint:** Tests cover every run/attempt, distinct status text/styles, exact callbacks, missing sessions, short markers, modal opening/closing, Escape/backdrop, focus containment/restoration, and stale-state dismissal.
 
@@ -83,12 +83,12 @@ Before adding focus or inspection helpers, inspect shared overlay behavior and t
 
 ### Stage 4 — Detailed inspection and polished motion
 
-- [ ] Add `StageRunDetails.tsx` using existing modal-aware overlay primitives where suitable.
-- [ ] Implement hover/focus inspection, pointer-safe dismissal, Escape priority, and persistent selected-run details.
-- [ ] Include complete metadata, local timestamps/timezone, duration, missing-completion warning, and multiline errors.
-- [ ] Add focused motion rules under the timeline concern and connect them through existing stylesheet imports.
-- [ ] Implement once-per-opening entrance, bar-only hover feedback, stable live geometry, and reduced-motion overrides.
-- [ ] Add `timeline/stage-run-details.test.ts` and motion-state assertions to dialog tests.
+- [x] Add `StageRunDetails.tsx` using existing modal-aware overlay primitives where suitable.
+- [x] Implement hover/focus inspection, pointer-safe dismissal, Escape priority, and persistent selected-run details.
+- [x] Include complete metadata, local timestamps/timezone, duration, missing-completion warning, and multiline errors.
+- [x] Add focused motion rules under the timeline concern and connect them through existing stylesheet imports.
+- [x] Implement once-per-opening entrance, bar-only hover feedback, stable live geometry, and reduced-motion overrides.
+- [x] Add `timeline/stage-run-details.test.ts` and motion-state assertions to dialog tests.
 
 **Checkpoint:** Keyboard and pointer events expose identical details; no-session runs remain inspectable; long content remains available; Escape dismisses details first; ticks/hover do not retrigger entrance. Reduced-motion styles disable movement and running animations.
 
@@ -96,11 +96,11 @@ Before adding focus or inspection helpers, inspect shared overlay behavior and t
 
 ### Stage 5 — Shared live clock and lifecycle
 
-- [ ] Add `hooks/use-stage-timeline-clock.ts` and its `.test.ts`.
-- [ ] Connect one clock above both visualizations and vertical history.
-- [ ] Adapt obsolete `now` plumbing in `CardOverview.tsx` and `DetailTabBody.tsx`.
-- [ ] Refresh time on card changes and modal opening; retain one interval while valid displayed endpoints depend on `now`.
-- [ ] Extend integration tests for running-to-completed changes, tab/card changes, and unmount cleanup.
+- [x] Add `hooks/use-stage-timeline-clock.ts` and its `.test.ts`.
+- [x] Connect one clock above both visualizations and vertical history.
+- [x] Adapt obsolete `now` plumbing in `CardOverview.tsx` and `DetailTabBody.tsx`.
+- [x] Refresh time on card changes and modal opening; retain one interval while valid displayed endpoints depend on `now`.
+- [x] Extend integration tests for running-to-completed changes, tab/card changes, and unmount cleanup.
 
 **Checkpoint:** Fake timers advance preview, modal, details, and list consistently. Completed geometry remains fixed. DOM identity, focus, inspection state, and scroll survive ticks. No extra store loads or network requests occur.
 
@@ -108,12 +108,12 @@ Before adding focus or inspection helpers, inspect shared overlay behavior and t
 
 ### Stage 6 — Verification and scope review
 
-- [ ] Run targeted geometry, preview, dialog, details, clock, card-status, card-detail, and affected shared-overlay suites through project Vitest.
-- [ ] Run `npm run check:web`.
-- [ ] Run `npm run build`.
-- [ ] Review diff for unchanged schemas, backend telemetry, dependencies, compact board cards, and retained vertical history.
-- [ ] Review module size, direct imports, helper reuse, accessible names, focus behavior, timing rules, overflow constraints, and motion.
-- [ ] Record commands, exit statuses, and any skipped checks.
+- [x] Run targeted geometry, preview, dialog, details, clock, card-status, card-detail, and affected shared-overlay suites through project Vitest.
+- [x] Run `npm run check:web`.
+- [x] Run `npm run build`.
+- [x] Review diff for unchanged schemas, backend telemetry, dependencies, compact board cards, and retained vertical history.
+- [x] Review module size, direct imports, helper reuse, accessible names, focus behavior, timing rules, overflow constraints, and motion.
+- [x] Record commands, exit statuses, and any skipped checks.
 
 **Checkpoint:** Relevant behavioral tests, web gate, and production build pass. No runtime or visual claim is inferred from synthetic tests.
 
