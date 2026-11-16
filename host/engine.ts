@@ -7,28 +7,28 @@ import {
   applyHarnessEvent,
   stopStreaming,
 } from "../src/integrations/harness/core/apply";
-import { resolveModel } from "../src/features/sessions/model/models";
-import { isVisionImage } from "../src/features/sessions/model/attachments";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { isVisionImage } from "@/domain/session/attachment-mime";
 import type {
   HarnessEvent,
   HarnessSessionInput,
 } from "../src/integrations/harness/core/types";
 import {
-  HARNESS_LABEL,
-  RUNTIME_MODES,
   canReplaceSessionTitle,
   formatSessionTitle,
   titleFromPrompt,
-  type Session,
-} from "../src/features/sessions/model/session";
-import { namedWorktreeBranch } from "../src/features/source-control/model/worktrees";
+} from "@/domain/session/title";
+import type { Session } from "@/domain/session/session";
+import { RUNTIME_MODES } from "@/domain/session/runtime-mode";
+import { HARNESS_LABEL } from "@/domain/harness/harness";
+import { namedWorktreeBranch } from "@/domain/git/worktree-branch";
 import {
   isRemoteProvider,
   type HostCommand,
   type HostSession,
   type CommandReceipt,
   type RemoteProvider,
-} from "../src/features/connections/model/protocol";
+} from "../src/domain/remote/protocol";
 import type { HostProvider } from "./providers";
 import { HostStore } from "./store";
 import { parseRemoteAttachments, resolveAttachments } from "./attachments";

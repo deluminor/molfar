@@ -4,9 +4,9 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { prettyCwd } from "../../../shared/lib/paths";
+import { prettyCwd } from "@/shared/lib/paths";
 import { type Worktree } from "../model/worktrees";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 import {
   CircleAlert,
   CloudUpload,
@@ -15,7 +15,7 @@ import {
   GitBranch,
   Loader,
   MessageSquare,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 
 const TONE = {
   danger: "text-red-400",

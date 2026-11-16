@@ -1,0 +1,9 @@
+export const LIST_ID = "familiar-list";
+export const FOOTER_HEIGHT = 50;
+export const FADE = 16;
+export const AVATAR = 44;
+export const MASCOT = 36;
+export const MOVE_MS = 280;
+export const FADE_OUT_MS = 180;
+export const PREVIEW_WIDTH = 340;
+export const PREVIEW_HEIGHT = 260;

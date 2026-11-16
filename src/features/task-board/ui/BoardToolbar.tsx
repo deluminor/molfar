@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Archive, LoaderCircle, Plus, SlidersHorizontal, CircleAlert } from "../../../shared/ui/icons";
+import { Archive, LoaderCircle, Plus, SlidersHorizontal, CircleAlert } from "@/shared/ui/icons";
 import { PRIMARY_BUTTON, QUIET_BUTTON } from "./button-styles";
 import { ProjectFilterMenu } from "./ProjectFilterMenu";
 

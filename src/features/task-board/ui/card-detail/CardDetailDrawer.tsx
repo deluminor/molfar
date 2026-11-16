@@ -1,7 +1,7 @@
+import { IconButton } from "@/shared/ui/IconButton";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { IconButton } from "../../../../app/shell/TitleBar";
-import { FoldingTab } from "../../../../shared/ui/FoldingTab";
-import { X } from "../../../../shared/ui/icons";
+import { FoldingTab } from "@/shared/ui/FoldingTab";
+import { X } from "@/shared/ui/icons";
 import { useCardDetail, type CardDetail } from "../../hooks/use-card-detail";
 import { useGithubAvailable } from "../../hooks/use-github-available";
 import type { TaskBoardRuntime } from "../../hooks/use-task-board-engine";

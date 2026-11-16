@@ -1,4 +1,4 @@
-import { namedWorktreeBranch } from "../../source-control/model/worktrees";
+import { namedWorktreeBranch } from "@/domain/git/worktree-branch";
 
 const MAX_SLUG = 40;
 

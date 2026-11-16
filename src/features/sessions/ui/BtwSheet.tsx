@@ -1,26 +1,23 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Plus, RefreshCw, X } from "../../../shared/ui/icons";
+import { ChevronDown, Plus, RefreshCw, X } from "@/shared/ui/icons";
 
 import { Composer } from "./Composer";
 import { AgentTranscript } from "./AgentTranscript";
-import { GlassBackdrop } from "../../../app/shell/GlassBackdrop";
+import { GlassBackdrop } from "@/shared/ui/GlassBackdrop";
 import { BtwQuestionBurst, type BurstRect } from "./BtwQuestionBurst";
-import { preferredModelSettings, resolveModel } from "../model/models";
+import { preferredModelSettings } from "../model/models";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
 import {
   btwOpenTargetTurnId,
   btwThreadBlocks,
   btwSurfaceHarness,
   sessionBtwThreads,
 } from "../model/btw";
-import { groupTurns } from "../model/transcriptActivity";
-import {
-  DEFAULT_RUNTIME_MODE,
-  HARNESS_TITLE,
-  type Block,
-  type BtwMessage,
-  type BtwThread,
-  type HarnessId,
-} from "../model/session";
+import { groupTurns } from "../model/transcript-activity";
+import type { Block } from "@/domain/session/block";
+import type { BtwMessage, BtwThread } from "@/domain/session/block-meta";
+import { DEFAULT_RUNTIME_MODE } from "@/domain/session/runtime-mode";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 
 type Options = {
   /** False when this session cannot take side questions right now. */

@@ -1,14 +1,16 @@
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 import { invoke } from "@tauri-apps/api/core";
-import { appendReadyHandoff, buildDeterministicHandoff } from "../../sessions/model/handoff";
+import { appendReadyHandoff, buildDeterministicHandoff } from "@/features/sessions/model/handoff";
 import {
   invokeWorkspace,
   notifyGitChanged,
   resolveProjectLocation,
-} from "../../../platform/tauri/fs";
-import { isFilesystemTab, type FilePaneTab } from "../../workspace/model/layout";
-import { isEqualOrInside, parentPath, pathKey } from "../../../shared/lib/paths";
-import { isBlankSession } from "../../projects/model/projectReturn";
-import { newSession, sessionWorkCwd, type Session } from "../../sessions/model/session";
+} from "@/platform/tauri/fs";
+import { isFilesystemTab, type FilePaneTab } from "@/features/workspace/model/layout";
+import { isEqualOrInside, parentPath, pathKey } from "@/shared/lib/paths";
+import { isBlankSession } from "@/features/projects/model/project-return";
+import { newSession } from "@/features/sessions/model/session";
 
 export type Worktree = {
   path: string;
@@ -67,29 +69,6 @@ export async function renameWorktreeBranch(
   });
   notifyGitChanged();
   return tree;
-}
-
-export function temporaryWorktreeBranchName(
-  id: string = crypto.randomUUID(),
-): string {
-  const token = id
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(0, 8)
-    .toLowerCase();
-  return `molfar/${token || Date.now().toString(36)}`;
-}
-
-export function orchestrationWorktreeBranchName(id: string): string {
-  const token = id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12).toLowerCase();
-  return `molfar/orch-${token || Date.now().toString(36)}`;
-}
-
-export function namedWorktreeBranch(fragment: string): string | null {
-  const clean = fragment
-    .trim()
-    .replace(/^(?:molfar|vatra|mc|monocode)\/+/, "")
-    .replace(/^\/+|\/+$/g, "");
-  return clean ? `molfar/${clean}` : null;
 }
 
 export async function removeWorktree(

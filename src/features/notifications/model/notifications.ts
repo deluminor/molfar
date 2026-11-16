@@ -1,12 +1,14 @@
+import { HARNESS_TITLE } from "@/domain/harness/harness";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { Session } from "@/domain/session/session";
 import { invoke } from "@tauri-apps/api/core";
-import { HARNESS_TITLE, sessionDisplayTitle, type Session } from "../../sessions/model/session";
-import { loadSoundsEnabled, playCue } from "../../settings/model/sounds";
+import { loadSoundsEnabled, playCue } from "@/features/settings/model/sounds";
 import {
   allowsProjectNotification,
   type NotificationSubject,
-} from "./notificationPreferences";
-import { familiarReplyText } from "../../familiars/model/familiarReaction";
-import { knownNotificationProject } from "./notificationProjects";
+} from "./notification-preferences";
+import { familiarReplyText } from "@/features/familiars/model/familiar-reaction";
+import { knownNotificationProject } from "./notification-projects";
 
 const KEY = "molfar.notifications";
 

@@ -1,20 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import { Internet, Loader, Plus, Trash2 } from "../../../shared/ui/icons";
+import { Internet, Loader, Plus, Trash2 } from "@/shared/ui/icons";
 import {
   connectMachine,
   disconnectMachine,
   refreshRemoteMachines,
-  remoteRequest,
   useRemoteMachines,
 } from "../model/connections";
+import { remoteRequest } from "@/integrations/remote/remote-request";
 import {
   REMOTE_PROVIDERS,
   type HostDescriptor,
   type RemoteMachine,
   type SshSetup,
-} from "../model/protocol";
-import { hostUpdateReason } from "../model/hostUpdate";
+} from "@/domain/remote/protocol";
+import { hostUpdateReason } from "../model/host-update";
 
 const input =
   "w-full rounded-lg border border-content/15 bg-content/3 px-3 py-2 text-[13px] outline-none focus:border-content/35";
@@ -455,8 +455,10 @@ export function ConnectionsSettings() {
               loginctl enable-linger
             </code>
             ), so the host and your other user services keep running after you
-            log out. The host keeps running until you stop it on that machine;
-            removing it here only disconnects this desktop.
+            log out. Without systemd, as in many containers and microVMs, the
+            host runs as a background process instead and is started again when
+            you reconnect. The host keeps running until you stop it on that
+            machine; removing it here only disconnects this desktop.
           </p>
           <div className="flex justify-end gap-2">
             <button

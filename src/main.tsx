@@ -1,37 +1,38 @@
 import React, { useLayoutEffect } from "react";
 import ReactDOM from "react-dom/client";
-// TEMPORARY: remove with src/debugFamiliarScroll.ts.
-if (import.meta.env.DEV) void import("./debugFamiliarScroll");
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import {
   activateWindowAppearance,
   initAppearance,
-} from "./features/settings/model/appearance";
-import { initSounds } from "./features/settings/model/sounds";
-import { installModalEscape } from "./shared/ui/modalEscape";
+} from "@/features/settings/model/appearance";
+import { initSounds } from "@/features/settings/model/sounds";
+import { installModalEscape } from "@/shared/ui/modal-escape";
+import { ErrorBoundary } from "@/shared/ui/ErrorBoundary";
 import {
   abortQuit,
   askQuitConfirmation,
   commitQuit,
   loadBootWorkspace,
   reportQuitPoll,
-} from "./app/model/appLifecycle";
-import { homeDir } from "./platform/tauri/fs";
-import { setHomeDir } from "./shared/lib/paths";
-import { consumeInstalledUpdate } from "./app/model/updateNotice";
-import { initializeProviderBinaryPaths } from "./features/providers/model/providerBinaryPaths";
+} from "@/app/model/app-lifecycle";
+import { homeDir } from "@/platform/tauri/fs";
+import { setHomeDir } from "@/shared/lib/paths";
+import { consumeInstalledUpdate } from "@/features/updates/model/update-notice";
+import { initializeProviderBinaryPaths } from "@/integrations/harness/core/provider-binary-paths";
+import { installNativeContextMenuGuard } from "@/shared/lib/native-context-menu";
 // Lets file commands reach a connected machine for `remote://` paths.
-import "./features/connections/model/remoteCommands";
-import "./styles/index.css";
+import "@/features/connections/model/remote-commands";
+import "@/styles/index.css";
 
 performance.mark("molfar:bootstrap");
 // Let local boot IPC overlap loading/evaluating the workspace UI.
-const appLoaded = import("./app/App");
+const appLoaded = import("@/app/App");
 
 initAppearance();
 initSounds();
 installModalEscape();
+installNativeContextMenuGuard();
 // Prime the real home directory before the first render so every `~/` file
 // reference resolves consistently. The IPC call is local and failures remain
 // best-effort, falling back to inference from a session's cwd.
@@ -108,13 +109,15 @@ void Promise.all([
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <React.StrictMode>
         <BootGate>
-          <App
-            windowTransfer={windowTransfer}
-            resumed={resumed}
-            installedUpdate={installedUpdate}
-            history={history}
-            historyCwd={historyCwd}
-          />
+          <ErrorBoundary scope="main window" recovery="reload">
+            <App
+              windowTransfer={windowTransfer}
+              resumed={resumed}
+              installedUpdate={installedUpdate}
+              history={history}
+              historyCwd={historyCwd}
+            />
+          </ErrorBoundary>
         </BootGate>
       </React.StrictMode>,
     );

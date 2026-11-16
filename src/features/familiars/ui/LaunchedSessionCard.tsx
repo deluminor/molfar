@@ -1,5 +1,7 @@
+import { sessionDisplayTitle } from "@/domain/session/title";
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
 import type { ReactNode } from "react";
-import { projectName } from "../../../shared/lib/paths";
+import { projectName } from "@/shared/lib/paths";
 import {
   Chatting,
   CheckCircle,
@@ -8,16 +10,12 @@ import {
   CircleX,
   Clock,
   Loader,
-} from "../../../shared/ui/icons";
-import {
-  sessionDisplayTitle,
-  type FamiliarSpawnedSession,
-} from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+} from "@/shared/ui/icons";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import type {
   LaunchedSessionState,
   LaunchedSessionView,
-} from "../model/familiarSpawnedSessions";
+} from "../model/familiar-spawned-sessions";
 
 const STATUS: Record<LaunchedSessionState, { label: string; icon: ReactNode }> =
   {

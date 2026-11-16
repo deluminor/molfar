@@ -1,14 +1,11 @@
+import type { HabitSchedule } from "@/domain/familiars/habit-schedule";
 import { useEffect, useRef, useState } from "react";
-import { isImeComposition } from "../../../shared/lib/keyboard";
-import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import { AUTOMATION_WEEKDAYS } from "../../automations/model/automations";
-import {
-  addHabit,
-  nextHabitRunAt,
-  type HabitSchedule,
-} from "../model/familiarHabits";
+import { isImeComposition } from "@/shared/lib/keyboard";
+import { SearchableSelect } from "@/shared/ui/SearchableSelect";
+import { AUTOMATION_WEEKDAYS } from "@/features/automations/model/automations";
+import { addHabit, nextHabitRunAt } from "../model/familiar-habits";
 import { when } from "./HabitPage";
-import { AutoTextarea, PageHeader, Property, Section } from "./familiarPanelParts";
+import { AutoTextarea, PageHeader, Property, Section } from "./familiar-panel-parts";
 
 const KINDS = [
   { value: "daily", label: "Daily" },

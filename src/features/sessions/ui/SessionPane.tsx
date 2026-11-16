@@ -1,4 +1,23 @@
-import { GripVertical, X } from "../../../shared/ui/icons";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { sessionDraftBlock, sessionWorkCwd } from "@/domain/session/session-state";
+import { type Attachment } from "@/domain/session/attachment";
+import { type Block } from "@/domain/session/block";
+import { type HarnessId } from "@/domain/harness/harness";
+import {
+  type LinkedWorkItem,
+  type Session,
+  type WorkspaceMode,
+} from "@/domain/session/session";
+import {
+  type ComposerTurnOptions,
+  type ModelTarget,
+  type PlanBuildTarget,
+} from "@/domain/session/turn";
+import { type RuntimeMode } from "@/domain/session/runtime-mode";
+import { type RateLimitProvider } from "@/domain/rate-limits/rate-limit";
+import { resolveModel } from "@/integrations/harness/core/models/resolve-model";
+import { GripVertical, X } from "@/shared/ui/icons";
+import { useSessionSnapshot } from "../model/session-state-store";
 import {
   memo,
   useCallback,
@@ -11,41 +30,26 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { Composer } from "./Composer";
-import type { Worktree } from "../../source-control/model/worktrees";
+import type { Worktree } from "@/features/source-control/model/worktrees";
 import {
   orchestrationCheckoutCwd,
   orchestrator,
   sameCheckout,
-} from "../../orchestration/model/orchestration";
+} from "@/features/orchestration/model/orchestration";
 import { DiscussionEmpty } from "./DiscussionEmpty";
-import { LinkedWorkItemUpdateNotice } from "../../inbox/ui/LinkedWorkItemUpdateNotice";
+import { LinkedWorkItemUpdateNotice } from "@/features/inbox/ui/LinkedWorkItemUpdateNotice";
 import { SessionReview } from "./SessionReview";
-import { sessionEditPaths } from "../model/checkpointEdits";
+import { sessionEditPaths } from "../model/checkpoint-edits";
 import { PromptOutline } from "./PromptOutline";
 import {
   canCompactHarnessContext,
   type ApprovalDecision,
   type UserQuestionReply,
-} from "../../../integrations/harness";
+} from "@/integrations/harness";
 import {
   looksLikeProject,
   type RecentProject,
-} from "../../projects/model/recents";
-import {
-  sessionDisplayTitle,
-  sessionDraftBlock,
-  sessionWorkCwd,
-  type Attachment,
-  type Block,
-  type HarnessId,
-  type LinkedWorkItem,
-  type ModelTarget,
-  type PlanBuildTarget,
-  type RuntimeMode,
-  type Session,
-  type WorkspaceMode,
-  type ComposerTurnOptions,
-} from "../model/session";
+} from "@/features/projects/model/recents";
 import { sessionHasBtwThreads, supportsBtwHarness } from "../model/btw";
 import { BtwSheet, useBtwConversation } from "./BtwSheet";
 import { AgentTranscript } from "./AgentTranscript";
@@ -59,71 +63,66 @@ import {
   clearTranscriptJump,
   peekTranscriptJump,
   subscribeTranscriptJump,
-} from "../model/transcriptJump";
+} from "../model/transcript-jump";
 import { EmptySession } from "./EmptySession";
 import {
   familiarForSession,
   familiarLook,
   familiarsSnapshot,
   subscribeFamiliars,
-} from "../../familiars/model/familiar";
-import { FamiliarHeader } from "../../familiars/ui/FamiliarHeader";
-import { FamiliarComposer } from "../../familiars/ui/FamiliarComposer";
-import type { LaunchedSessionView } from "../../familiars/model/familiarSpawnedSessions";
+} from "@/features/familiars/model/familiar";
+import { FamiliarHeader } from "@/features/familiars/ui/FamiliarHeader";
+import { FamiliarComposer } from "@/features/familiars/ui/FamiliarComposer";
+import type { LaunchedSessionView } from "@/features/familiars/model/familiar-spawned-sessions";
 import { ModelControlPills, ModelPicker } from "./ModelPicker";
 import { ContextMeter } from "./ContextMeter";
-import { UsageChips } from "../../../app/shell/UsageFooter";
-import type { RateLimitProvider } from "../../providers/model/rateLimits";
-import { FamiliarUsageLimitNotice } from "../../familiars/ui/FamiliarUsageLimitNotice";
+import { UsageChips } from "@/app/shell/UsageFooter";
+import { FamiliarUsageLimitNotice } from "@/features/familiars/ui/FamiliarUsageLimitNotice";
 import { QuestionForm } from "./QuestionForm";
 import {
   familiarMessageDeliveries,
   familiarPendingTranscriptBlocks,
   visibleFamiliarCompletionMessages,
-} from "../../familiars/model/familiarMessaging";
+} from "@/features/familiars/model/familiar-messaging";
 import { MessageQueue } from "./MessageQueue";
-import { useFamiliarTranscript } from "../../familiars/hooks/useFamiliarTranscript";
-import { FAMILIAR_PAGE_TURNS } from "../data/sessionStore";
-import { useComposerDockMotion } from "./useComposerDockMotion";
-import { MOD } from "../../../platform/tauri/platform";
+import { useFamiliarTranscript } from "@/features/familiars/hooks/use-familiar-transcript";
+import { FAMILIAR_PAGE_TURNS } from "../data/session-store";
+import { useComposerDockMotion } from "./use-composer-dock-motion";
+import { MOD } from "@/shared/lib/platform";
 import {
   acknowledgeQuoteRequest,
   ADD_TO_CHAT_EVENT,
   type AddToChatRequest,
   type QuoteRequest,
-} from "../model/quoteDraft";
-import { createNote, noteTitle } from "../../notes";
-import {
-  loadNotesEnabled,
-  subscribeNotesEnabled,
-} from "../../settings/model/settings";
-import { getComposerDraft, setComposerDraft } from "../model/draftCache";
-import { resolveModel } from "../model/models";
-import { isAstraModel } from "../model/astraWelcome";
-import { isOpus55Model } from "../model/opusWelcome";
+} from "../model/quote-draft";
+import { createNote, noteTitle } from "@/features/notes/notes";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
+import { getComposerDraft, setComposerDraft } from "../model/draft-cache";
+import { isAstraModel } from "../model/astra-welcome";
+import { isOpus55Model } from "../model/opus-welcome";
 import { AstraWelcome } from "./AstraWelcome";
 import { OpusWelcome } from "./OpusWelcome";
-import { projectKey } from "../../../shared/lib/paths";
-import { canEditLastTurn, lastTurnRecall } from "../model/editLastTurn";
+import { projectKey } from "@/shared/lib/paths";
+import { canEditLastTurn, lastTurnRecall } from "../model/edit-last-turn";
 import {
   loadProjectChatBackgroundSettings,
   projectChatBackgroundImageRevision,
   projectChatBackgroundRevision,
   subscribeProjectChatBackground,
-} from "../../projects/model/projectChatBackground";
-import { useProjectBackgroundEffect } from "../../projects/ui/useProjectBackgroundEffect";
-import { familiarChatBackground } from "../../familiars/model/familiarBackground";
-import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
+} from "@/features/projects/model/project-chat-background";
+import { useProjectBackgroundEffect } from "@/features/projects/ui/use-project-background-effect";
+import { familiarChatBackground } from "@/features/familiars/model/familiar-background";
+import { GradientBlurBackground } from "@/features/settings/ui/GradientBlurBackground";
 import {
   loadChatBackgroundPath,
   loadNewThreadBackgroundEffect,
   subscribeChatBackgroundPath,
-} from "../../settings/model/appearance";
-import type { SessionFolderTarget } from "../model/sessionFolders";
-import { markLinkedSessionUpdateSeen } from "../../inbox/model/linkedSessionSeen";
-import { RemoteSession } from "../../connections/ui/RemoteSession";
-import { isRemoteProjectPath } from "../../projects/model/recents";
-import type { HostSession } from "../../connections/model/protocol";
+} from "@/features/settings/model/appearance";
+import type { SessionFolderTarget } from "../model/session-folders";
+import { markLinkedSessionUpdateSeen } from "@/features/inbox/model/linked-session-seen";
+import { RemoteSession } from "@/features/connections/ui/RemoteSession";
+import { isRemoteProjectPath } from "@/features/projects/model/recents";
+import type { HostSession } from "@/domain/remote/protocol";
 
 export type SessionPaneProps = {
   session: Session;
@@ -152,6 +151,8 @@ export type SessionPaneProps = {
   familiarLaunchedSessions?: ReadonlyMap<string, LaunchedSessionView>;
   /** The launched session open in the Familiar's sidebar. */
   openFamiliarSessionId?: string;
+  /** Shows plan usage by a Familiar's composer; off where a footer shows it. */
+  familiarComposerUsage?: boolean;
   recents: RecentProject[];
   hideProjectPicker?: boolean;
   onFocus: (sessionId: string) => void;
@@ -278,7 +279,9 @@ type Props = SessionPaneProps & {
   allowedModelHarnesses?: readonly HarnessId[];
 };
 
-export const SessionPane = memo(function SessionPane(props: SessionPaneProps) {
+export const SessionPane = memo(function SessionPane(input: SessionPaneProps) {
+  const session = useSessionSnapshot(input.session, input.visible);
+  const props = session === input.session ? input : { ...input, session };
   // Sessions in a project on another machine render this same pane, backed by
   // the host instead of this computer's session runtime.
   if (isRemoteProjectPath(props.session.cwd))
@@ -358,6 +361,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onOpenFamiliarSession,
   familiarLaunchedSessions,
   openFamiliarSessionId,
+  familiarComposerUsage = true,
   onOpenPlan,
   onBuildPlan,
   onSecondOpinion,
@@ -588,11 +592,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const acknowledgeQuote = useCallback((handledId: number) => {
     setQuoteRequest((current) => acknowledgeQuoteRequest(current, handledId));
   }, []);
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const saveNote = useCallback(
     async (text: string) => {
       const sessionTitle = sessionDisplayTitle(session.title, session.harness);
@@ -774,6 +774,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
         onUsageLimitResumeAtReset(session.id, enabled)
       }
       onUsageLimitDismiss={() => onUsageLimitDismiss(session.id)}
+      providerAccountId={session.providerAccountId}
+      onUsageLimitAccountChange={
+        onUsageLimitAccountChange
+          ? (accountId) => onUsageLimitAccountChange(session.id, accountId)
+          : undefined
+      }
       onOpenFile={onOpenFile}
       busy={!!session.busy}
       editLastTurnSupported={editLastTurnSupported}
@@ -814,6 +820,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
       ) : null}
       {inSplit ? (
         <div
+          data-split-header=""
           className={`flex h-9 shrink-0 touch-none items-center gap-1.5 border-b border-stroke px-2 select-none ${
             onPaneDragStart ? "cursor-grab active:cursor-grabbing" : ""
           }`}
@@ -863,7 +870,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           <div
             ref={transcriptScope}
-            className={`@container relative min-h-0 flex-1${
+            className={`relative min-h-0 flex-1${
               dockComposer && !agent ? " transcript-composer-fade" : ""
             }`}
           >
@@ -941,6 +948,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                           )
                         : familiarTranscript.blocks
                     }
+                    sessionId={remoteSession ? undefined : session.id}
                     historicalBlockIds={familiarTranscript.historicalBlockIds}
                     initialTurns={agent ? FAMILIAR_PAGE_TURNS : undefined}
                     pageSize={agent ? FAMILIAR_PAGE_TURNS : undefined}
@@ -1197,20 +1205,22 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     // with the usage-limit notice, not here. A narrow chat
                     // drops it first, then shows the model controls as icons.
                     tools={
-                      <div className="flex shrink-0 items-center gap-0.5 text-[11px] text-content/55 @max-md:hidden">
-                        <UsageChips
-                          providers={familiarUsageProviders(session.harness)}
-                          session={{
-                            id: session.id,
-                            harness: session.harness,
-                            model: session.model,
-                            providerAccountId: session.providerAccountId,
-                          }}
-                          project={session.cwd}
-                          accountPicker={false}
-                          variant="composer"
-                        />
-                      </div>
+                      familiarComposerUsage ? (
+                        <div className="flex shrink-0 items-center gap-0.5 text-[11px] text-content/55 @max-md:hidden">
+                          <UsageChips
+                            providers={familiarUsageProviders(session.harness)}
+                            session={{
+                              id: session.id,
+                              harness: session.harness,
+                              model: session.model,
+                              providerAccountId: session.providerAccountId,
+                            }}
+                            project={session.cwd}
+                            accountPicker={false}
+                            variant="composer"
+                          />
+                        </div>
+                      ) : undefined
                     }
                     controls={
                       <>
@@ -1245,7 +1255,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
                             its current thread is. It rotates threads itself,
                             so there is nothing to compact here. */}
                         <div className="grid size-6.5 place-items-center rounded-md transition-colors hover:bg-content/8">
-                          <ContextMeter usage={session.context} empty={isEmpty} />
+                          <ContextMeter
+                            usage={session.context}
+                            empty={isEmpty}
+                          />
                         </div>
                       </>
                     }

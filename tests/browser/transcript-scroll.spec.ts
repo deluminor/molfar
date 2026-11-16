@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-type FamiliarScrollWindow = Window & {
+type FamiliarScrollWindow = typeof window & {
   completeFamiliarReply: (text?: string) => void;
   finishFamiliarSamples: () => {
     at: number;
@@ -10,7 +10,7 @@ type FamiliarScrollWindow = Window & {
   }[];
 };
 
-type FamiliarCompletionWindow = Window & {
+type FamiliarCompletionWindow = typeof window & {
   queueFamiliarCompletion: () => void;
   beginFamiliarCompletion: () => void;
   finishFamiliarCompletion: () => void;

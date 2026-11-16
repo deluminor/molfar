@@ -1,7 +1,7 @@
+import type { Session } from "@/domain/session/session";
 import { describe, expect, it, vi } from "vitest";
-import type { ControlOutcome } from "../../features/orchestration/model/orchestration";
-import type { Session } from "../../features/sessions/model/session";
-import type { StageLaunch } from "../../features/task-board/services/ports";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
+import type { StageLaunch } from "@/features/task-board/services/ports";
 import { createTaskBoardSessionPort, type TaskBoardSessionDeps } from "./task-board-session-port";
 
 const stage: StageLaunch = {

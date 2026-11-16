@@ -1,12 +1,17 @@
 import { expect, it, vi } from "vitest";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { readFileSync, existsSync } from "node:fs";
+import {
+  mkdtempSync,
+  writeFileSync,
+  rmSync,
+  readFileSync,
+  existsSync,
+} from "node:fs";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { HostChildBackend } from "./child-backend";
-import { REMOTE_PROVIDERS } from "../src/features/connections/model/protocol";
+import { REMOTE_PROVIDERS } from "../src/domain/remote/protocol";
 
 it("resolves every provider and runs only allowed catalog commands", async () => {
   const directory = mkdtempSync(join(tmpdir(), "molfar-catalog-test-"));

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { projectName } from "../../../../shared/lib/paths";
-import { GitBranch } from "../../../../shared/ui/icons";
-import { ProjectMark } from "../../../projects/ui/ProjectMark";
+import { projectName } from "@/shared/lib/paths";
+import { GitBranch } from "@/shared/ui/icons";
+import { ProjectMark } from "@/features/projects/ui/ProjectMark";
 import { COLUMN_LABEL } from "../../constants/columns";
 import { COLUMN_LOOK, KIND_TONE } from "../../constants/column-look";
 import { cardStatus } from "../../model/card-status";

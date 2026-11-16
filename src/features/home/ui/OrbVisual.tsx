@@ -9,7 +9,7 @@ import {
   orbitPoints,
   projectOrbPoint,
 } from "../model/orb/geometry";
-import { useOrbAnimation } from "../hooks/useOrbAnimation";
+import { useOrbAnimation } from "../hooks/use-orb-animation";
 
 export const OrbVisual = memo(function OrbVisual(): ReactNode {
   const coreId = useId();

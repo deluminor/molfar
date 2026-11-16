@@ -1,0 +1,39 @@
+use crate::task_board::types::Card;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Question {
+    pub number: i64,
+    pub title: String,
+    pub body: String,
+    pub recommended: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Answer {
+    pub number: i64,
+    pub answer: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct Review {
+    pub card: Card,
+    pub questions: Vec<Question>,
+    pub plan: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct FinalReview {
+    pub card: Card,
+    pub version: i64,
+    pub review: super::super::contracts::types::CodeReview,
+}
+
+/// `base_ref: Some(..)` changes the base branch, which only Backlog allows;
+/// `Some(None)` resets it to the project default.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TaskEdit {
+    pub title: String,
+    pub description: String,
+    pub acceptance_criteria: String,
+    pub base_ref: Option<Option<String>>,
+}

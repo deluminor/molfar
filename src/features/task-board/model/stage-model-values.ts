@@ -1,5 +1,6 @@
-import { modelEffortSetting, modelsFor } from "../../sessions/model/models";
-import type { HarnessId } from "../../sessions/model/session";
+import { modelEffortSetting } from "@/domain/models/model-settings";
+import { modelsFor } from "@/integrations/harness/core/models/catalog-store";
+import type { HarnessId } from "@/domain/harness/harness";
 
 function effortSettingId(harness: HarnessId, model: string): string | undefined {
   const entry = modelsFor(harness).find((candidate) => candidate.id === model);

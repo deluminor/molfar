@@ -8,8 +8,8 @@ import {
   type KeyboardEvent,
   type Ref,
 } from "react";
-import { resizeComposer } from "../../sessions/model/composerResize";
-import type { HarnessId } from "../../sessions/model/session";
+import { resizeComposer } from "@/features/sessions/model/composer-resize";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   hasNativeCommands,
   rankSkills,
@@ -19,10 +19,10 @@ import {
   type Skill,
   type SlashToken,
 } from "../model/skills";
-import { isImeComposition } from "../../../shared/lib/keyboard";
+import { isImeComposition } from "@/shared/lib/keyboard";
 import { SkillPicker } from "./SkillPicker";
-import { Popover } from "../../../shared/ui/Popover";
-import { useComposerSkills } from "../../sessions/ui/useComposerSkills";
+import { Popover } from "@/shared/ui/Popover";
+import { useComposerSkills } from "@/features/sessions/ui/use-composer-skills";
 
 type Props = {
   value: string;

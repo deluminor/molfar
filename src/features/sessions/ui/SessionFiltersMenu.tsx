@@ -1,13 +1,13 @@
-import { Check } from "../../../shared/ui/icons";
-import { type ReactNode } from "react";
-import { Popover } from "../../../shared/ui/Popover";
+import { Check } from "@/shared/ui/icons";
+import type { ReactNode } from "react";
+import { Popover } from "@/shared/ui/Popover";
 import {
   DEFAULT_SESSION_SIDEBAR_FILTERS,
   hasActiveSessionFilters,
   type SessionSidebarFilters,
   type SessionTimeFilter,
-} from "../model/sessionFilters";
-import { HARNESS_TITLE, type HarnessId } from "../model/session";
+} from "../model/session-filters";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { HarnessIcon } from "./HarnessIcon";
 
 const MENU_WIDTH = 228;

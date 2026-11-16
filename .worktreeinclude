@@ -1,0 +1,4 @@
+# Gitignored paths copied into every new MOLFAR worktree (gitignore syntax).
+# Only paths that git also ignores are copied. Never list build output such as target/.
+node_modules/
+.env*

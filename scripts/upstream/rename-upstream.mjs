@@ -8,7 +8,10 @@ const PLACEHOLDER = /\u0000(\d+)\u0000/g;
 const capitalize = (word) => word[0].toUpperCase() + word.slice(1);
 
 function variants({ from, to }) {
+  const mixed = from === "monocode" ? [[/MonoCode/g, "Molfar"], [/monoCode/g, "molfar"]] : [];
+
   return [
+    ...mixed,
     [new RegExp(`(?<![a-z])${from}(?=s(?![a-z])|(?![a-z]))`, "g"), to],
     [new RegExp(`(?<![A-Z])${capitalize(from)}(?=s(?![a-z])|(?![a-z]))`, "g"), capitalize(to)],
     [new RegExp(`(?<![A-Z])${from.toUpperCase()}(?=S(?![A-Z])|(?![A-Z]))`, "g"), to.toUpperCase()],
@@ -110,6 +113,15 @@ export function createRenamer({ renames, keepPhrases, paths, treeCounts }) {
     out = protect(out, keepPhrases, saved);
     out = out.replace(TOKEN, (token) => {
       const renamed = rename(token);
+      if (/^(?:MonoCode|Monocode)$/.test(token) && renamed === "Molfar") {
+        for (const counts of [fileCounts, treeCounts]) {
+          const identifier = counts?.get("Molfar") ?? 0;
+          const brand = counts?.get("MOLFAR") ?? 0;
+          if (identifier || brand) return brand >= identifier ? "MOLFAR" : "Molfar";
+        }
+        return "MOLFAR";
+      }
+      if (/monocode/i.test(token)) return renamed;
       return renamed === token ? token : choose(token, renamed, fileCounts, treeCounts);
     });
 

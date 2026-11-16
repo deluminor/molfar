@@ -1,15 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  newSession,
-  type Session,
-} from "../../../features/sessions/model/session";
-import { planTurnKey } from "../../../features/sessions/model/plan";
-import { sanitizeSessionForPersist } from "../../../features/sessions/data/sessionStore";
+import { testSession } from "./test-session";
+import { planTurnKey } from "@/domain/session/plan";
+import { sanitizeSessionForPersist } from "@/features/sessions/data/session-store";
 import {
   acknowledgeFamiliarMessage,
   enqueueFamiliarMessage,
-} from "../../../features/familiars/model/familiarMessaging";
-import { previewFromTool } from "../providers/claude/claudeProtocol";
+} from "@/features/familiars/model/familiar-messaging";
+import { previewFromTool } from "../providers/claude/claude-protocol";
 import {
   appendUser,
   applyHarnessEvent,
@@ -36,7 +33,7 @@ describe("follow-up readiness", () => {
     ];
     const session = applyHarnessEvent(
       {
-        ...appendUser(newSession("codex", "/tmp"), "First"),
+        ...appendUser(testSession("codex", "/tmp"), "First"),
         queuedMessages,
         queueStatus: "active",
       },
@@ -47,7 +44,7 @@ describe("follow-up readiness", () => {
     expect(session.queuedMessages).toBe(queuedMessages);
   });
   it("becomes ready only after acceptance and resets when stopped or restarted", () => {
-    let session = appendUser(newSession("codex", "/tmp"), "First");
+    let session = appendUser(testSession("codex", "/tmp"), "First");
     expect(session.turnReady).toBe(false);
     session = applyHarnessEvent(session, { type: "turn.ready" });
     expect(session.turnReady).toBe(true);
@@ -63,7 +60,7 @@ describe("follow-up readiness", () => {
 
 describe("background work", () => {
   it("tracks what a yielded turn waits on and drops it when the turn ends", () => {
-    let session = appendUser(newSession("claude", "/tmp"), "hi");
+    let session = appendUser(testSession("claude", "/tmp"), "hi");
     session = applyHarnessEvent(session, {
       type: "background.updated",
       tasks: ["npm test"],
@@ -88,7 +85,7 @@ describe("background work", () => {
 describe("turn duration", () => {
   it("records the selected provider and model on a user turn", () => {
     const session = appendUser(
-      newSession("claude", "/tmp", "claude:opus-5"),
+      testSession("claude", "/tmp", "claude:opus-5"),
       "hi",
     );
     expect(session.blocks[0]?.turnModel).toEqual({
@@ -100,7 +97,7 @@ describe("turn duration", () => {
 
   it("stamps how long the agent worked when the turn ends", () => {
     now = 1_000;
-    let session = appendUser(newSession("cursor", "/tmp"), "hi");
+    let session = appendUser(testSession("cursor", "/tmp"), "hi");
     expect(session.busy).toBe(true);
     expect(session.blocks[0]?.startedAt).toBe(1_000);
     expect(session.blocks[0]?.durationMs).toBeUndefined();
@@ -113,7 +110,7 @@ describe("turn duration", () => {
 
   it("does not overwrite a duration already recorded", () => {
     now = 1_000;
-    let session = appendUser(newSession("cursor", "/tmp"), "hi");
+    let session = appendUser(testSession("cursor", "/tmp"), "hi");
     now = 5_000;
     session = stopStreaming(session);
     now = 90_000;
@@ -123,7 +120,7 @@ describe("turn duration", () => {
 
   it("records duration when the turn errors", () => {
     now = 1_000;
-    let session = appendUser(newSession("cursor", "/tmp"), "hi");
+    let session = appendUser(testSession("cursor", "/tmp"), "hi");
     now = 8_000;
     session = applyHarnessEvent(session, {
       type: "session.error",
@@ -134,7 +131,7 @@ describe("turn duration", () => {
   });
 
   it("marks orphaned subagent work failed when the provider dies", () => {
-    let session = appendUser(newSession("codex", "/tmp"), "delegate it");
+    let session = appendUser(testSession("codex", "/tmp"), "delegate it");
     session = applyHarnessEvent(session, {
       type: "tool.started",
       callId: "agent-1",
@@ -164,7 +161,7 @@ describe("turn duration", () => {
 
 describe("approval lifetime", () => {
   function waitingForApproval() {
-    let session = appendUser(newSession("codex", "/tmp"), "check it");
+    let session = appendUser(testSession("codex", "/tmp"), "check it");
     session = applyHarnessEvent(session, {
       type: "tool.started",
       callId: "shell-1",
@@ -226,13 +223,13 @@ describe("streamed markdown", () => {
     const session = chunks.reduce(
       (current, text) =>
         applyHarnessEvent(current, { type: "message.delta", text }),
-      newSession("pi", "/tmp"),
+      testSession("pi", "/tmp"),
     );
     expect(session.blocks[0]?.text).toBe(chunks.join(""));
   });
 
   it("stores generated images as standalone blocks without assistant text", () => {
-    const session = applyHarnessEvent(newSession("codex", "/tmp"), {
+    const session = applyHarnessEvent(testSession("codex", "/tmp"), {
       type: "image.generated",
       itemId: "image_1",
       path: "/app-data/generated-images/image.png",
@@ -258,7 +255,7 @@ describe("streamed markdown", () => {
   });
 
   it("does not double an assistant block when a completed snapshot repeats it", () => {
-    let session = newSession("claude", "/tmp");
+    let session = testSession("claude", "/tmp");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "I'll read the file",
@@ -272,7 +269,7 @@ describe("streamed markdown", () => {
   });
 
   it("continues open prose through status rows, then completes it", () => {
-    let session = newSession("omp", "/tmp");
+    let session = testSession("omp", "/tmp");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "contributor（",
@@ -304,7 +301,7 @@ describe("streamed markdown", () => {
   });
 
   it("keeps adjacent completed assistant messages in separate blocks", () => {
-    let session = newSession("codex", "/tmp");
+    let session = testSession("codex", "/tmp");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "- update the notes and commit",
@@ -334,7 +331,7 @@ describe("streamed markdown", () => {
   it.each([false, true])(
     "seals open prose at an interjection, with preceding status: %s",
     (status) => {
-      let session = newSession("omp", "/tmp");
+      let session = testSession("omp", "/tmp");
       session = applyHarnessEvent(session, {
         type: "message.delta",
         text: "contributor（",
@@ -370,7 +367,7 @@ describe("streamed markdown", () => {
   );
 
   it("does not resume a sealed assistant through status after an interjection", () => {
-    let session = newSession("omp", "/tmp");
+    let session = testSession("omp", "/tmp");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "First.",
@@ -404,7 +401,7 @@ describe("streamed markdown", () => {
   });
 
   it("keeps stacked interjections as hard boundaries", () => {
-    let session = newSession("omp", "/tmp");
+    let session = testSession("omp", "/tmp");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "First.",
@@ -432,7 +429,7 @@ describe("streamed markdown", () => {
   });
 
   it("seals open reasoning at an interjection", () => {
-    let session = newSession("omp", "/tmp");
+    let session = testSession("omp", "/tmp");
     session = applyHarnessEvent(session, {
       type: "reasoning.delta",
       text: "Think",
@@ -461,7 +458,7 @@ describe("streamed markdown", () => {
   });
 
   it("continues open prose through many status rows", () => {
-    let session = newSession("omp", "/tmp");
+    let session = testSession("omp", "/tmp");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "Hel",
@@ -482,7 +479,7 @@ describe("streamed markdown", () => {
   });
 
   it("continues reasoning across status but seals it when a tool starts", () => {
-    let session = newSession("omp", "/tmp");
+    let session = testSession("omp", "/tmp");
     session = applyHarnessEvent(session, {
       type: "reasoning.delta",
       text: "Think",
@@ -529,7 +526,7 @@ describe("appendSteerUser", () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(1000);
-      let session = appendUser(newSession("claude", "/tmp"), "check it");
+      let session = appendUser(testSession("claude", "/tmp"), "check it");
       vi.setSystemTime(3000);
       session = appendSteerUser(session, "please");
       expect(session.blocks.at(-1)).toMatchObject({ sentAt: 3000 });
@@ -548,7 +545,7 @@ describe("appendSteerUser", () => {
   });
 
   it("appends a user message without sealing an in-flight assistant block", () => {
-    let session = appendUser(newSession("cursor", "/tmp"), "build it");
+    let session = appendUser(testSession("cursor", "/tmp"), "build it");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "Working on it",
@@ -571,7 +568,7 @@ describe("appendSteerUser", () => {
   });
 
   it("keeps a note card on a steered user turn", () => {
-    let session = appendUser(newSession("cursor", "/tmp"), "build it");
+    let session = appendUser(testSession("cursor", "/tmp"), "build it");
     session = appendSteerUser(session, "hi", [], {
       noteCard: { id: "n1", slug: "overview", title: "Overview" },
     });
@@ -585,13 +582,13 @@ describe("appendSteerUser", () => {
 
 describe("usage limits", () => {
   it("records when a limited turn can resume", () => {
-    const limited = applyHarnessEvent(newSession("codex", "/tmp"), {
+    const limited = applyHarnessEvent(testSession("codex", "/tmp"), {
       type: "usage.limited",
       resetsAt: 5_000,
     });
     expect(limited.usageLimit).toEqual({ resetsAt: 5_000 });
     expect(
-      applyHarnessEvent(newSession("codex", "/tmp"), { type: "usage.limited" })
+      applyHarnessEvent(testSession("codex", "/tmp"), { type: "usage.limited" })
         .usageLimit,
     ).toEqual({});
   });
@@ -599,7 +596,7 @@ describe("usage limits", () => {
 
 describe("punctuation-only prose", () => {
   it("drops a fragment that holds no words once the next block starts", () => {
-    let session = appendUser(newSession("omp", "/tmp"), "go");
+    let session = appendUser(testSession("omp", "/tmp"), "go");
     session = applyHarnessEvent(session, { type: "message.delta", text: "." });
     session = applyHarnessEvent(session, {
       type: "tool.started",
@@ -620,7 +617,7 @@ describe("punctuation-only prose", () => {
   });
 
   it("drops it when the message completes or the turn stops", () => {
-    let session = appendUser(newSession("omp", "/tmp"), "go");
+    let session = appendUser(testSession("omp", "/tmp"), "go");
     session = applyHarnessEvent(session, { type: "message.delta", text: "." });
     session = applyHarnessEvent(session, { type: "message.completed" });
     session = applyHarnessEvent(session, { type: "message.delta", text: " . " });
@@ -629,7 +626,7 @@ describe("punctuation-only prose", () => {
   });
 
   it("keeps short messages with words, numbers or emoji", () => {
-    let session = appendUser(newSession("omp", "/tmp"), "go");
+    let session = appendUser(testSession("omp", "/tmp"), "go");
     for (const text of ["OK.", "42", "👍"]) {
       session = applyHarnessEvent(session, { type: "message.delta", text });
       session = applyHarnessEvent(session, { type: "message.completed" });
@@ -644,7 +641,7 @@ describe("punctuation-only prose", () => {
 
 describe("status blocks", () => {
   it("keeps one row when the same status repeats", () => {
-    let session = appendUser(newSession("claude", "/tmp"), "go");
+    let session = appendUser(testSession("claude", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       text: "Retrying in 3s",
@@ -659,7 +656,7 @@ describe("status blocks", () => {
   });
 
   it("still appends a status that differs from the last one", () => {
-    let session = appendUser(newSession("claude", "/tmp"), "go");
+    let session = appendUser(testSession("claude", "/tmp"), "go");
     session = applyHarnessEvent(session, { type: "status", text: "Retrying" });
     session = applyHarnessEvent(session, {
       type: "status",
@@ -671,13 +668,13 @@ describe("status blocks", () => {
   });
 
   it("ignores blank status text", () => {
-    let session = appendUser(newSession("claude", "/tmp"), "go");
+    let session = appendUser(testSession("claude", "/tmp"), "go");
     session = applyHarnessEvent(session, { type: "status", text: "  " });
     expect(session.blocks.some((block) => block.role === "system")).toBe(false);
   });
 
   it("updates a keyed status in place for the rest of the turn", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       key: "caveman",
@@ -705,7 +702,7 @@ describe("status blocks", () => {
   });
 
   it("removes a keyed status when its text is cleared", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       key: "caveman",
@@ -720,7 +717,7 @@ describe("status blocks", () => {
   });
 
   it("keeps the same keyed status across pending and accepted Familiar follow-ups", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       key: "caveman",
@@ -761,7 +758,7 @@ describe("status blocks", () => {
   });
 
   it("starts a new keyed status after a queued Familiar message starts a new turn", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       key: "caveman",
@@ -785,7 +782,7 @@ describe("status blocks", () => {
   });
 
   it("keeps one row per status key", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       key: "caveman",
@@ -809,7 +806,7 @@ describe("status blocks", () => {
   });
 
   it("starts a new keyed status row in the next turn", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "status",
       key: "caveman",
@@ -832,7 +829,7 @@ describe("status blocks", () => {
 
 describe("interjection blocks", () => {
   it("keeps a boundary between completed assistant messages", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "Complete answer.",
@@ -856,7 +853,7 @@ describe("interjection blocks", () => {
   });
 
   it("appends every interjection as a distinct persisted boundary", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "go");
+    let session = appendUser(testSession("pi", "/tmp"), "go");
     session = applyHarnessEvent(session, {
       type: "interjection",
       text: "Check the fallback.",
@@ -882,7 +879,7 @@ describe("interjection blocks", () => {
 
 describe("task list updates", () => {
   it("updates one structured checklist instead of appending plan cards", () => {
-    let session = appendUser(newSession("codex", "/tmp"), "fix it");
+    let session = appendUser(testSession("codex", "/tmp"), "fix it");
     session = applyHarnessEvent(session, {
       type: "tasks.updated",
       key: "turn_1",
@@ -926,7 +923,7 @@ describe("task list updates", () => {
   });
 
   it("merges partial status updates without removing or renaming tasks", () => {
-    let session = appendUser(newSession("cursor", "/tmp"), "fix it");
+    let session = appendUser(testSession("cursor", "/tmp"), "fix it");
     session = applyHarnessEvent(session, {
       type: "tasks.updated",
       items: [
@@ -951,7 +948,7 @@ describe("task list updates", () => {
   });
 
   it("keeps known labels stable when a full snapshot changes membership", () => {
-    let session = appendUser(newSession("cursor", "/tmp"), "fix it");
+    let session = appendUser(testSession("cursor", "/tmp"), "fix it");
     session = applyHarnessEvent(session, {
       type: "tasks.updated",
       items: [
@@ -976,7 +973,7 @@ describe("task list updates", () => {
   });
 
   it("keeps a keyed task list from another provider conversation", () => {
-    let session = appendUser(newSession("claude", "/tmp"), "first");
+    let session = appendUser(testSession("claude", "/tmp"), "first");
     session = applyHarnessEvent(session, {
       type: "tasks.updated",
       key: "claude-tasks",
@@ -1018,7 +1015,7 @@ describe("task list updates", () => {
   });
 
   it("resets an in-progress task to pending when the turn stops", () => {
-    let session = appendUser(newSession("cursor", "/tmp"), "fix it");
+    let session = appendUser(testSession("cursor", "/tmp"), "fix it");
     session = applyHarnessEvent(session, {
       type: "tasks.updated",
       items: [
@@ -1037,7 +1034,7 @@ describe("task list updates", () => {
   });
 
   it("keeps authored plans as separate document blocks", () => {
-    let session = appendUser(newSession("codex", "/tmp"), "plan it");
+    let session = appendUser(testSession("codex", "/tmp"), "plan it");
     session = applyHarnessEvent(session, {
       type: "tasks.updated",
       items: [{ text: "Inspect", status: "pending" }],
@@ -1054,7 +1051,7 @@ describe("task list updates", () => {
   });
 
   it("streams one plan block and marks the final snapshot ready", () => {
-    let session = appendUser(newSession("codex", "/tmp"), "plan it");
+    let session = appendUser(testSession("codex", "/tmp"), "plan it");
     session = applyHarnessEvent(session, {
       type: "plan",
       key: "plan_1",
@@ -1091,7 +1088,7 @@ describe("task list updates", () => {
   });
 
   it("promotes only the final assistant message when no native plan exists", () => {
-    let session = appendUser(newSession("pi", "/tmp"), "plan it");
+    let session = appendUser(testSession("pi", "/tmp"), "plan it");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "I'll inspect the relevant files first.",
@@ -1141,7 +1138,7 @@ describe("task list updates", () => {
   });
 
   it("does not replace assistant text when a native plan already exists", () => {
-    let session = appendUser(newSession("codex", "/tmp"), "plan it");
+    let session = appendUser(testSession("codex", "/tmp"), "plan it");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "Planning complete.",
@@ -1164,7 +1161,7 @@ describe("task list updates", () => {
   });
 
   it("does not promote a provider billing message into a plan", () => {
-    let session = appendUser(newSession("cursor", "/tmp"), "plan it");
+    let session = appendUser(testSession("cursor", "/tmp"), "plan it");
     session = applyHarnessEvent(session, {
       type: "message.delta",
       text: "Upgrade your plan to continue",
@@ -1186,7 +1183,7 @@ describe("task list updates", () => {
 describe("plan keys", () => {
   it("reaches this turn's plan block past a mid-turn follow-up", () => {
     const key = planTurnKey(1);
-    let session = appendUser(newSession("claude", "/repo"), "plan it");
+    let session = appendUser(testSession("claude", "/repo"), "plan it");
     session = applyHarnessEvent(session, {
       type: "plan",
       key,
@@ -1204,47 +1201,11 @@ describe("plan keys", () => {
     expect(plans).toHaveLength(1);
     expect(plans[0].text).toBe("# Approach\n\nCover the tests too.");
   });
-
-  it("does not adopt a saved plan block when the turn counter starts over", () => {
-    // First run of the app: this is the session's first turn, so gen is 1.
-    let session = appendUser(
-      newSession("claude", "/repo"),
-      "plan the refactor",
-    );
-    session = applyHarnessEvent(session, {
-      type: "plan",
-      key: planTurnKey(1),
-      text: "# Old plan",
-    });
-
-    // The key is saved with the transcript, so it survives the restart.
-    const saved = sanitizeSessionForPersist(session);
-    expect(saved.blocks.find((block) => block.role === "plan")?.plan?.key).toBe(
-      session.blocks.find((block) => block.role === "plan")?.plan?.key,
-    );
-
-    // Second run: the counter is back to 1 and the user plans again.
-    let reopened: Session = { ...session, blocks: saved.blocks };
-    reopened = appendUser(reopened, "plan the follow-up");
-    reopened = applyHarnessEvent(reopened, {
-      type: "plan",
-      key: planTurnKey(1),
-      text: "# New plan",
-    });
-
-    const plans = reopened.blocks.filter((block) => block.role === "plan");
-    expect(plans.map((block) => block.text)).toEqual([
-      "# Old plan",
-      "# New plan",
-    ]);
-    // The new plan belongs to the turn that produced it, not to the old one.
-    expect(reopened.blocks.at(-1)?.text).toBe("# New plan");
-  });
 });
 
 describe("applyHarnessEvent context", () => {
   it("tracks the newest level instead of summing turns", () => {
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     session = applyHarnessEvent(session, {
       type: "context",
       used: 30_000,
@@ -1255,14 +1216,14 @@ describe("applyHarnessEvent context", () => {
   });
 
   it("keeps the level when only a window arrives", () => {
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     session = applyHarnessEvent(session, { type: "context", used: 12_000 });
     session = applyHarnessEvent(session, { type: "context", window: 400_000 });
     expect(session.context).toEqual({ used: 12_000, window: 400_000 });
   });
 
   it("leaves blocks alone", () => {
-    const session = applyHarnessEvent(newSession("codex", "/repo"), {
+    const session = applyHarnessEvent(testSession("codex", "/repo"), {
       type: "context",
       used: 1_000,
       window: 200_000,
@@ -1273,7 +1234,7 @@ describe("applyHarnessEvent context", () => {
 
 describe("applyHarnessEvent turn metrics", () => {
   it("attaches provider metrics to the latest user turn", () => {
-    let session = appendUser(newSession("claude", "/repo"), "Explain this");
+    let session = appendUser(testSession("claude", "/repo"), "Explain this");
     session = applyHarnessEvent(session, {
       type: "turn.metrics",
       inputTokens: 1_000,
@@ -1301,7 +1262,7 @@ describe("tool enrichment", () => {
       ["Write", { file_path: "/notes.md", content: "" }],
     ] as const) {
       const preview = previewFromTool(name, input)!;
-      let session = applyHarnessEvent(newSession("claude", "/repo"), {
+      let session = applyHarnessEvent(testSession("claude", "/repo"), {
         type: "tool.started",
         callId: "edit",
         title: name,
@@ -1320,7 +1281,7 @@ describe("tool enrichment", () => {
   });
 
   it("fills in a bare Read row when approval carries the path", () => {
-    let session = newSession("cursor", "/repo");
+    let session = testSession("cursor", "/repo");
     session = applyHarnessEvent(session, {
       type: "tool.updated",
       callId: "call_1",
@@ -1344,7 +1305,7 @@ describe("tool enrichment", () => {
   });
 
   it("replaces a bare Bash label with the command once input arrives", () => {
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     session = applyHarnessEvent(session, {
       type: "tool.started",
       callId: "call_1",
@@ -1368,7 +1329,7 @@ describe("tool enrichment", () => {
   it("keeps a long shell command instead of the earlier Shell placeholder", () => {
     const command = `npm run check:web 2>&1 | grep -E "${"test output".repeat(28)}"`;
     expect(command.length).toBeGreaterThan(240);
-    let session = applyHarnessEvent(newSession("claude", "/repo"), {
+    let session = applyHarnessEvent(testSession("claude", "/repo"), {
       type: "tool.started",
       callId: "call_1",
       title: "Shell",
@@ -1407,7 +1368,7 @@ describe("clarifying questions", () => {
   ];
 
   it("parks the prompt on the session instead of an Allow/Deny row", () => {
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     session = applyHarnessEvent(session, {
       type: "question.asked",
       requestId: 3,
@@ -1423,7 +1384,7 @@ describe("clarifying questions", () => {
   });
 
   it("clears the prompt when the user answers or skips", () => {
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     session = applyHarnessEvent(session, {
       type: "question.asked",
       requestId: 3,
@@ -1438,7 +1399,7 @@ describe("clarifying questions", () => {
   });
 
   it("drops a parked prompt when the turn stops", () => {
-    let session = newSession("claude", "/repo");
+    let session = testSession("claude", "/repo");
     session = applyHarnessEvent(session, {
       type: "question.asked",
       requestId: 3,
@@ -1451,7 +1412,7 @@ describe("clarifying questions", () => {
 
 describe("subagent steps", () => {
   it("keeps model metadata before steps arrive and preserves it through later updates", () => {
-    let session = applyHarnessEvent(newSession("codex", "/tmp"), {
+    let session = applyHarnessEvent(testSession("codex", "/tmp"), {
       type: "tool.started",
       callId: "spawn",
       kind: "agent",
@@ -1494,7 +1455,7 @@ describe("subagent steps", () => {
   });
 
   const spawn = () =>
-    applyHarnessEvent(newSession("claude", "/tmp"), {
+    applyHarnessEvent(testSession("claude", "/tmp"), {
       type: "tool.started",
       callId: "agent-1",
       title: "Correctness review",

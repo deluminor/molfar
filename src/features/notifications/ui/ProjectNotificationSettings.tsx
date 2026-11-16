@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronRight, Folder, Minus } from "../../../shared/ui/icons";
+import { Check, ChevronRight, Folder, Minus } from "@/shared/ui/icons";
 import { NotificationMuteControl } from "./NotificationMuteControl";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
-import { useProjectNotificationPreferences } from "../hooks/useProjectNotificationPreferences";
-import { useNotificationProjects } from "../hooks/useNotificationProjects";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { useTabGroupLogos } from "@/features/projects/hooks/use-tab-group-logos";
+import { useProjectNotificationPreferences } from "../hooks/use-project-notification-preferences";
+import { useNotificationProjects } from "../hooks/use-notification-projects";
 import {
   NOTIFICATION_CATEGORIES,
   isProjectMuted,
   loadNotificationPreferences,
   updateNotificationPreferences,
   type NotificationCategory,
-} from "../model/notificationPreferences";
-import { pathKey, projectKey, projectName } from "../../../shared/lib/paths";
+} from "../model/notification-preferences";
+import { pathKey, projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -22,8 +22,8 @@ import {
   resolveTabGroupColor,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import type { RecentProject } from "../../projects/model/recents";
+} from "@/features/workspace/model/tab-groups";
+import type { RecentProject } from "@/features/projects/model/recents";
 
 type Props = {
   cwd: string;

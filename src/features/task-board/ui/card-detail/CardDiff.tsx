@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import type { GitRangeContext } from "../../../../platform/tauri/fs";
-import { InboxPrDiff } from "../../../inbox/ui/InboxPrDiff";
-import type { GithubPrDiff } from "../../../inbox/model/githubTasks";
-import { parsePrPatch } from "../../../source-control/model/prDiff";
+import type { GitRangeContext } from "@/platform/tauri/fs";
+import { InboxPrDiff } from "@/features/inbox/ui/InboxPrDiff";
+import type { GithubPrDiff } from "@/features/inbox/model/github-tasks";
+import { parsePrPatch } from "@/features/source-control/model/pr-diff";
 import type { GitPort } from "../../services/ports";
 
 type Props = { git: GitPort; worktree: string | null; baseSha: string | null };

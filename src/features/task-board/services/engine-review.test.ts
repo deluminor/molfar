@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../sessions/model/launch-choice", () => ({
+vi.mock("@/features/sessions/model/launch-choice", () => ({
   resolveLaunchChoice: (_cwd: string, input: Record<string, unknown>) => ({
     harness: input.harness ?? "claude",
     model: input.model ?? "claude:opus",

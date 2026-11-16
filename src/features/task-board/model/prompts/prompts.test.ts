@@ -3,7 +3,7 @@ import type { ArtifactDoc, ArtifactKind } from "../../types/artifact";
 import type { AgentStage } from "../../types/stage";
 import { resolveGrillInputs, stageInputs } from "./inputs";
 import type { PromptCard, StagePromptContext } from "./shared";
-import { skillNamesInText } from "../../../skills/model/skills";
+import { skillNamesInText } from "@/features/skills/model/skills";
 import { STAGE_SKILLS } from "../../constants/skills";
 import { buildStagePrompt } from "./stages";
 

@@ -1,3 +1,5 @@
+import { normalizePath } from "@/shared/lib/paths";
+import type { HarnessId } from "@/domain/harness/harness";
 import {
   createPath,
   homeDir,
@@ -5,31 +7,30 @@ import {
   readTextFile,
   writeTextFile,
   type DiscoveredSkill,
-} from "../../../platform/tauri/fs";
-import { invalidateProjectFiles } from "../../files/model/fileIndex";
-import { joinPath } from "../../../shared/lib/paths";
-import { isLocalProject, normalizeProjectPath } from "../../projects/model/recents";
-import { isMarkdownBlockquotePosition } from "../../sessions/model/quoteDraft";
-import type { HarnessId } from "../../sessions/model/session";
-import { getHarness } from "../../../integrations/harness/core/registry";
-import type { NativeCommand } from "../../../integrations/harness/core/nativeCommands";
+} from "@/platform/tauri/fs";
+import { invalidateProjectFiles } from "@/features/files/model/file-index";
+import { joinPath } from "@/shared/lib/paths";
+import { isLocalProject } from "@/features/projects/model/recents";
+import { isMarkdownBlockquotePosition } from "@/features/sessions/model/quote-draft";
+import { getHarness } from "@/integrations/harness/core/registry";
+import type { NativeCommand } from "@/integrations/harness/core/native-commands";
 import {
   CREATE_SKILL_BODY,
   CREATE_SKILL_DESCRIPTION,
   CREATE_SKILL_NAME,
-} from "./createSkill";
+} from "./create-skill";
 import {
   CREATE_BOARD_TASK_SKILL_BODY,
   CREATE_BOARD_TASK_SKILL_DESCRIPTION,
   CREATE_BOARD_TASK_SKILL_NAME,
-} from "./createBoardTask";
+} from "./create-board-task";
 
 export {
   rankSkills,
   replaceSlashToken,
   slashTokenAt,
   type SlashToken,
-} from "./slashCommands";
+} from "./slash-commands";
 
 const DISABLED_SKILL_PATHS_KEY = "molfar.disabledSkillPaths";
 
@@ -166,7 +167,7 @@ const catalogEntries = new Map<string, CatalogEntry>();
 
 export function skillCatalogKey(context: SkillCatalogContext): string {
   const sessionScoped = !!getHarness(context.harness)?.commands?.subscribe;
-  return `${context.harness}\0${normalizeProjectPath(context.cwd)}${sessionScoped && context.sessionId ? `\0${context.sessionId}` : ""}`;
+  return `${context.harness}\0${normalizePath(context.cwd)}${sessionScoped && context.sessionId ? `\0${context.sessionId}` : ""}`;
 }
 
 export function hasNativeCommands(harness: HarnessId): boolean {
@@ -197,7 +198,7 @@ export function subscribeSkills(
         kind: "native",
       }));
       catalogEntries.set(key, {
-        cwd: normalizeProjectPath(context.cwd),
+        cwd: normalizePath(context.cwd),
         skills,
         loadedAt: Date.now(),
         retryAt: 0,
@@ -218,7 +219,7 @@ export function invalidateSkills(context?: { cwd: string }) {
     catalogEntries.clear();
     return;
   }
-  const cwd = normalizeProjectPath(context.cwd);
+  const cwd = normalizePath(context.cwd);
   for (const entry of catalogEntries.values()) {
     if (entry.cwd !== cwd) continue;
     entry.generation += 1;
@@ -234,7 +235,7 @@ export function loadSkills(
 ): Promise<Skill[]> {
   const normalized = {
     harness: context.harness,
-    cwd: normalizeProjectPath(context.cwd),
+    cwd: normalizePath(context.cwd),
     ...(context.sessionId ? { sessionId: context.sessionId } : {}),
   } satisfies SkillCatalogContext;
   const key = skillCatalogKey(normalized);

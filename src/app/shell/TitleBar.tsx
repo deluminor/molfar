@@ -2,14 +2,19 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
+  Code,
   DashboardSquare,
   Inbox,
   PanelLeft,
+  GitBranch,
+  Plus,
+  Search,
   Settings,
   StickyNote,
   Terminal,
   X,
-} from "../../shared/ui/icons";
+  Zap,
+} from "@/shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -21,70 +26,53 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { basename } from "../../platform/tauri/fs";
-import { looksLikeProject } from "../../features/projects/model/recents";
-import type { HarnessId } from "../../features/sessions/model/session";
-import { CwdPicker } from "../../features/projects/ui/CwdPicker";
-import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
+import { basename } from "@/shared/lib/paths";
+import { looksLikeProject, type RecentProject } from "@/features/projects/model/recents";
+import type { HarnessId } from "@/domain/harness/harness";
+import { CwdPicker } from "@/features/projects/ui/CwdPicker";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   useAnimatedReorder,
   type ReorderExternalDrop,
-} from "../../shared/hooks/useAnimatedReorder";
-import { useTabCloseMotion } from "../../features/workspace/hooks/useTabCloseMotion";
-import { TabWidthMotion } from "./ClosingTab";
-import { FileTypeIcon } from "../../features/files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+} from "@/shared/hooks/use-animated-reorder";
+import { useTabCloseMotion } from "@/features/workspace/hooks/use-tab-close-motion";
+import { TabWidthMotion } from "@/shared/ui/ClosingTab";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
-import { TabLabel } from "../../shared/ui/TabLabel";
-import { WindowControls } from "./WindowControls";
-import { PixelMascot } from "../../features/projects/ui/PixelMascot";
+import { logWindowChromeError } from "@/platform/tauri/log-window-chrome-error";
+import { TerminalSpinner } from "@/features/sessions/ui/TerminalSpinner";
+import { TabLabel } from "@/shared/ui/TabLabel";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
+import { FamiliarRailMascot } from "@/features/familiars/ui/FamiliarRailMascot";
 import {
   FAMILIAR_STATUS_LABEL,
   type FamiliarLook,
   type FamiliarState,
-} from "../../features/familiars/model/familiar";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../platform/tauri/platform";
-import type { RecentProject } from "../../features/projects/model/recents";
+} from "@/features/familiars/model/familiar";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
+import { useTrafficLightsVisible } from "@/platform/tauri/use-traffic-lights-visible";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../features/files/ui/ExplorerMenu";
+} from "@/features/files/ui/ExplorerMenu";
 import {
   paneDropFromPoint,
   setExternalPaneDrop,
   useExternalTitleTabDrop,
-} from "../../features/workspace/model/paneDrop";
-import type { PaneEdge } from "../../features/workspace/model/layout";
+} from "@/features/workspace/model/pane-drop";
+import type { PaneEdge } from "@/features/workspace/model/layout";
+import { IconButton } from "@/shared/ui/IconButton";
+import { TabVisitNav } from "@/features/window-chrome/ui/OverlayNav";
+import type { Tab } from "@/features/workspace/model/title-tab";
+import { APP_VIEW_LABELS } from "@/features/workspace/model/app-view-tabs";
 
-export type Tab = {
-  id: string;
-  /** Project folder name, e.g. `agent-terminal`. */
-  project: string;
-  /** Focused conversation title; empty for a fresh session. */
-  title: string;
-  /** Other conversation titles in this tab, focused session omitted. */
-  more: string[];
-  sessionCount: number;
-  harnesses: HarnessId[];
-  /** Harnesses with an in-flight turn in this tab. */
-  busyHarnesses: HarnessId[];
-  /** Harnesses with a finished response that has not been focused yet. */
-  doneHarnesses?: HarnessId[];
-  /** Open file basenames, active files first. */
-  files: string[];
-  /** Split layout with more than one pane in this tab. */
-  multiPane?: boolean;
-  /** Focus is on a file/terminal pane rather than a conversation pane. */
-  fileFocused?: boolean;
-  /** The sole pane is a fresh conversation with no user turn or open file. */
-  blank?: boolean;
-  /** Explicit tab group; absent means ungrouped. */
-  groupId?: string;
-  dirty?: boolean;
-  terminal?: boolean;
-  /** File id when the whole tab is one preview file; double-click pins it. */
-  previewFileId?: string;
+const APP_VIEW_ICONS = {
+  search: Search,
+  inbox: Inbox,
+  notes: StickyNote,
+  automations: Zap,
 };
 
 /** How far below the tab bar a dragged tab must go before it targets a pane. */
@@ -99,6 +87,11 @@ type Props = {
    * project-scoped belongs beside it.
    */
   familiar?: { look: FamiliarLook; state: FamiliarState };
+  /**
+   * Takes the tabs' place, as the inset layout's Settings does with its
+   * breadcrumb and actions.
+   */
+  content?: ReactNode;
   /** Shows or hides the Familiar's overview panel beside its chat. */
   onToggleFamiliarOverview?: () => void;
   familiarOverviewOpen?: boolean;
@@ -108,6 +101,19 @@ type Props = {
   projectRailOpen?: boolean;
   sessionSidebarOpen?: boolean;
   compactRail?: boolean;
+  /**
+   * Spans the inset layout's outer glass, above the rail and the card, and
+   * owns the rail toggle and history navigation in both rail states.
+   */
+  inset?: boolean;
+  /** Inset layout: the right sidebar holding the project tools. */
+  rightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
+  /** The working tree has changes; dots the right panel toggle. */
+  rightPanelDot?: boolean;
+  /** An app view (Search, Inbox, Notes, Automations) is shown, which has no
+   * project files beside it. */
+  rightPanelUnavailable?: boolean;
   canGoBack?: boolean;
   canGoForward?: boolean;
   onGoBack?: () => void;
@@ -116,11 +122,15 @@ type Props = {
   onToggleSessionSidebar?: () => void;
   onSelect: (id: string) => void;
   onNewTerminal?: () => void;
+  /** Inset layout: a new session, from the end of the tabs. */
+  onNewSession?: () => void;
   onOpenSettings?: () => void;
   onOpenInbox?: () => void;
   onOpenNotes?: () => void;
   onClose: (id: string) => void;
   onCloseMany: (ids: string[], fallbackId: string) => void;
+  /** Closes the given tabs, keeping the active one as a blank session. */
+  onCloseAll?: (ids: string[]) => void;
   onArchiveTab?: (id: string) => void;
   onDeleteTab?: (id: string) => void;
   onReorder: (ids: string[], movedId?: string) => void;
@@ -141,6 +151,11 @@ export function tabCopy(tab: Tab): {
   meta: string;
   tooltip: string;
 } {
+  if (tab.appView) {
+    const headline = APP_VIEW_LABELS[tab.appView];
+    return { headline, meta: "", tooltip: headline };
+  }
+  if (tab.familiar) return { headline: tab.title, meta: "", tooltip: tab.title };
   const project = tab.project.trim() || "~";
   const conversation = tab.title.trim();
   const file = tab.files[0] ?? "";
@@ -198,6 +213,11 @@ export function tabStripOverflow(
 
 export function titleTabClosable(tab: Tab, tabCount: number): boolean {
   return tabCount > 1 || !tab.blank;
+}
+
+/** Close All has work unless the only tab left is already blank. */
+export function titleTabsCanCloseAll(tabs: readonly Tab[]): boolean {
+  return tabs.some((tab) => titleTabClosable(tab, tabs.length));
 }
 
 export type TitleTabContextAction = "others" | "right" | "left";
@@ -303,6 +323,7 @@ function TitleTabItem({
 }) {
   const { headline, meta, tooltip } = tabCopy(tab);
   const fileIcon = tab.files[0];
+  const AppViewIcon = tab.appView ? APP_VIEW_ICONS[tab.appView] : null;
   const accessibleTooltip =
     (tab.doneHarnesses?.length ?? 0) > 0
       ? `${tooltip} · Response complete`
@@ -343,6 +364,8 @@ function TitleTabItem({
         title={accessibleTooltip}
         aria-label={accessibleTooltip}
         data-tauri-drag-region="false"
+        data-title-tab
+        data-title-tab-active={active || undefined}
         onClick={() => {
           if (sortable.consumeClick()) return;
           onSelect(tab.id);
@@ -358,7 +381,16 @@ function TitleTabItem({
             : "text-content/50 hover:bg-content/5 hover:text-content"
         }`}
       >
-        {tab.harnesses.length > 0 ? (
+        {AppViewIcon ? (
+          <AppViewIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+        ) : tab.familiar ? (
+          <FamiliarRailMascot
+            name={tab.familiar.mascot}
+            color={tab.familiar.color}
+            status={tab.familiar.status}
+            className="size-3.5 shrink-0"
+          />
+        ) : tab.harnesses.length > 0 ? (
           <TabHarnesses
             harnesses={tab.harnesses}
             busyHarnesses={tab.busyHarnesses}
@@ -451,167 +483,57 @@ function TabStripChevron({
   );
 }
 
-export function IconButton({
-  label,
-  active,
-  accent,
-  disabled,
-  onClick,
-  onOpenContextMenu,
-  children,
-}: {
-  label: string;
-  active?: boolean;
-  accent?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
-  onOpenContextMenu?: (x: number, y: number) => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      aria-pressed={active || accent}
-      aria-disabled={disabled}
-      data-tauri-drag-region="false"
-      onClick={() => {
-        if (disabled) return;
-        onClick?.();
-      }}
-      onContextMenu={
-        onOpenContextMenu
-          ? (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              if (disabled) return;
-              event.currentTarget.focus();
-              onOpenContextMenu(event.clientX, event.clientY);
-            }
-          : undefined
-      }
-      onKeyDown={
-        onOpenContextMenu
-          ? (event) => {
-              if (
-                event.key !== "ContextMenu" &&
-                !(event.shiftKey && event.key === "F10")
-              )
-                return;
-              event.preventDefault();
-              event.stopPropagation();
-              if (disabled) return;
-              event.currentTarget.focus();
-              const rect = event.currentTarget.getBoundingClientRect();
-              onOpenContextMenu(rect.left, rect.bottom);
-            }
-          : undefined
-      }
-      className={`grid size-6 place-items-center rounded-md ${
-        disabled
-          ? "text-content/25"
-          : accent
-            ? "text-accent hover:bg-content/10"
-            : active
-              ? "text-content hover:bg-content/10"
-              : "text-content/50 hover:bg-content/10 hover:text-content"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function DevModeLabel() {
+/** The Development badge as an icon, for the inset title bar. */
+export function DevModeIcon() {
   if (!import.meta.env.DEV) return null;
   return (
     <span
       title="Development build"
-      className="mr-1 min-w-0 truncate rounded-md bg-skill/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-skill"
+      aria-label="Development build"
+      role="img"
+      className="grid size-6 shrink-0 place-items-center text-skill"
     >
-      Development
+      <Code className="size-3.5" strokeWidth={1.75} />
     </span>
   );
 }
 
-/** Flex spacer that keeps the Development badge next to the visit arrows. */
-export function DevModeSlot() {
-  return (
-    <div className="flex min-w-0 flex-1 items-center justify-end">
-      <DevModeLabel />
-    </div>
-  );
-}
-
-export function TabVisitNav({
-  canGoBack = false,
-  canGoForward = false,
-  onGoBack,
-  onGoForward,
-  onTogglePanel,
-  panelActive = false,
-  panelLabel = "Toggle Projects",
+/** A Familiar's overview toggle and settings, beside its conversation. */
+export function FamiliarViewActions({
+  name,
+  overviewOpen,
+  onToggleOverview,
+  onOpenSettings,
+  className = "",
 }: {
-  canGoBack?: boolean;
-  canGoForward?: boolean;
-  onGoBack?: () => void;
-  onGoForward?: () => void;
-  onTogglePanel?: () => void;
-  panelActive?: boolean;
-  panelLabel?: string;
+  name: string;
+  overviewOpen: boolean;
+  onToggleOverview?: () => void;
+  onOpenSettings?: () => void;
+  className?: string;
 }) {
   return (
-    <div className="flex shrink-0 items-center">
-      <IconButton
-        label={`Back (${MOD}[)`}
-        disabled={!canGoBack}
-        onClick={onGoBack}
-      >
-        <ChevronLeft className="size-3.5" strokeWidth={1.75} />
-      </IconButton>
-      <IconButton
-        label={`Forward (${MOD}])`}
-        disabled={!canGoForward}
-        onClick={onGoForward}
-      >
-        <ChevronRight className="size-3.5" strokeWidth={1.75} />
-      </IconButton>
-      {onTogglePanel ? (
-        <IconButton
-          label={panelLabel}
-          active={panelActive}
-          onClick={onTogglePanel}
+    <div className={`flex items-center gap-1 ${className}`}>
+      {onToggleOverview ? (
+        <button
+          type="button"
+          aria-pressed={overviewOpen}
+          title={overviewOpen ? "Hide overview" : "Show overview"}
+          data-tauri-drag-region="false"
+          onClick={onToggleOverview}
+          className={`flex h-6 items-center gap-1.5 rounded-md px-2 text-[12px] ${
+            overviewOpen
+              ? "bg-content/10 text-content"
+              : "bg-content/5 text-content/70 hover:bg-content/8 hover:text-content"
+          }`}
         >
-          <PanelLeft className="size-3.5" strokeWidth={1.75} />
-        </IconButton>
+          <DashboardSquare className="size-3.5" strokeWidth={1.75} />
+          Overview
+        </button>
       ) : null}
-    </div>
-  );
-}
-
-/** Back + rail toggle for overlay surfaces when the project rail is closed. */
-export function OverlayNav({
-  onBack,
-  onToggleSidebar,
-}: {
-  onBack?: () => void;
-  onToggleSidebar?: () => void;
-}) {
-  if (!onBack && !onToggleSidebar) return null;
-  return (
-    <div className="flex shrink-0 items-center px-1.5">
-      {onBack ? (
-        <IconButton label={`Back (${MOD}[)`} onClick={onBack}>
-          <ChevronLeft className="size-3.5" strokeWidth={1.75} />
-        </IconButton>
-      ) : null}
-      {onToggleSidebar ? (
-        <IconButton
-          label={`Toggle Sidebar (${MOD}B)`}
-          onClick={onToggleSidebar}
-        >
-          <PanelLeft className="size-3.5" strokeWidth={1.75} />
+      {onOpenSettings ? (
+        <IconButton label={`${name} settings`} onClick={onOpenSettings}>
+          <Settings className="size-3.5" strokeWidth={1.75} />
         </IconButton>
       ) : null}
     </div>
@@ -623,6 +545,7 @@ function TitleBarComponent({
   activeId,
   cwd,
   familiar,
+  content,
   onToggleFamiliarOverview,
   familiarOverviewOpen = false,
   onOpenFamiliarSettings,
@@ -630,6 +553,11 @@ function TitleBarComponent({
   projectRailOpen = true,
   sessionSidebarOpen = true,
   compactRail = false,
+  inset = false,
+  rightPanelOpen = false,
+  onToggleRightPanel,
+  rightPanelDot = false,
+  rightPanelUnavailable = false,
   canGoBack = false,
   canGoForward = false,
   onGoBack,
@@ -638,11 +566,13 @@ function TitleBarComponent({
   onToggleSessionSidebar,
   onSelect,
   onNewTerminal,
+  onNewSession,
   onOpenSettings,
   onOpenInbox,
   onOpenNotes,
   onClose,
   onCloseMany,
+  onCloseAll,
   onArchiveTab,
   onDeleteTab,
   onReorder,
@@ -651,53 +581,59 @@ function TitleBarComponent({
   recents = [],
   onSelectProject,
 }: Props) {
+  const trafficLightsVisible = useTrafficLightsVisible();
   const tabIds = tabs.map((tab) => tab.id);
-  const { displayed, setTabNode, finishMotion } = useTabCloseMotion(tabs);
+  const { displayed, tabNodeRef, finishMotion } = useTabCloseMotion(tabs);
   const tabStripRef = useRef<HTMLDivElement | null>(null);
   const paneDropArmed = useRef(false);
-  const externalTabDrop = useMemo<ReorderExternalDrop<string> | undefined>(
-    () => {
-      // A sideways drag sags, so only a deliberate pull below the tab bar
-      // targets a pane. Once armed it stays armed until the pointer is back
-      // over the tabs.
-      const pulledBelowTabs = (event: PointerEvent) => {
-        const bottom = tabStripRef.current?.getBoundingClientRect().bottom ?? 0;
-        if (event.clientY <= bottom) paneDropArmed.current = false;
-        else if (event.clientY >= bottom + PANE_DROP_PULL)
-          paneDropArmed.current = true;
-        return paneDropArmed.current;
-      };
-      return onPlaceOnPane
-        ? {
-            onMove: (tabId, event) => {
-              if (tabId === activeId || !pulledBelowTabs(event)) {
-                setExternalPaneDrop(null);
-                return false;
-              }
-              const over = paneDropFromPoint(event.clientX, event.clientY);
-              setExternalPaneDrop({
-                fromId: tabId,
-                overId: over?.id ?? null,
-                edge: over?.edge ?? "left",
-              });
-              return over != null;
-            },
-            onDrop: (tabId, event) => {
-              if (tabId === activeId || !pulledBelowTabs(event)) return false;
-              const over = paneDropFromPoint(event.clientX, event.clientY);
-              if (!over) return false;
-              onPlaceOnPane(tabId, over.id, over.edge);
-              return true;
-            },
-            onEnd: () => {
-              paneDropArmed.current = false;
-              setExternalPaneDrop(null);
-            },
-          }
-        : undefined;
-    },
-    [activeId, onPlaceOnPane],
+  const appTabIds = useRef(new Set<string>());
+  appTabIds.current = new Set(
+    tabs.filter((tab) => tab.appView || tab.familiar).map((tab) => tab.id),
   );
+  const externalTabDrop = useMemo<
+    ReorderExternalDrop<string> | undefined
+  >(() => {
+    // A sideways drag sags, so only a deliberate pull below the tab bar
+    // targets a pane. Once armed it stays armed until the pointer is back
+    // over the tabs.
+    const pulledBelowTabs = (event: PointerEvent) => {
+      const bottom = tabStripRef.current?.getBoundingClientRect().bottom ?? 0;
+      if (event.clientY <= bottom) paneDropArmed.current = false;
+      else if (event.clientY >= bottom + PANE_DROP_PULL)
+        paneDropArmed.current = true;
+      return paneDropArmed.current;
+    };
+    return onPlaceOnPane
+      ? {
+          onMove: (tabId, event) => {
+            if (appTabIds.current.has(tabId)) return false;
+            if (tabId === activeId || !pulledBelowTabs(event)) {
+              setExternalPaneDrop(null);
+              return false;
+            }
+            const over = paneDropFromPoint(event.clientX, event.clientY);
+            setExternalPaneDrop({
+              fromId: tabId,
+              overId: over?.id ?? null,
+              edge: over?.edge ?? "left",
+            });
+            return over != null;
+          },
+          onDrop: (tabId, event) => {
+            if (appTabIds.current.has(tabId)) return false;
+            if (tabId === activeId || !pulledBelowTabs(event)) return false;
+            const over = paneDropFromPoint(event.clientX, event.clientY);
+            if (!over) return false;
+            onPlaceOnPane(tabId, over.id, over.edge);
+            return true;
+          },
+          onEnd: () => {
+            paneDropArmed.current = false;
+            setExternalPaneDrop(null);
+          },
+        }
+      : undefined;
+  }, [activeId, onPlaceOnPane]);
   const sortable = useAnimatedReorder(tabIds, onReorder, "x", externalTabDrop);
   const paneToTabDrop = useExternalTitleTabDrop();
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
@@ -763,9 +699,13 @@ function TitleBarComponent({
   );
   const systemTitle = useMemo(() => {
     const activeName = activeTab
-      ? activeTab.files[0]
-        ? basename(activeTab.files[0])
-        : activeTab.project
+      ? activeTab.appView
+        ? APP_VIEW_LABELS[activeTab.appView]
+        : activeTab.familiar
+          ? activeTab.title
+          : activeTab.files[0]
+            ? basename(activeTab.files[0])
+            : activeTab.project
       : "";
     const project = cwd ? basename(cwd) : "";
     if (activeName && project && activeName !== project) {
@@ -779,9 +719,8 @@ function TitleBarComponent({
 
   useEffect(() => {
     document.title = systemTitle;
-    try {
-      void getCurrentWindow().setTitle(systemTitle);
-    } catch {}
+    try { void getCurrentWindow().setTitle(systemTitle).catch((e) => logWindowChromeError("set title", e)); }
+    catch (e) { logWindowChromeError("set title", e); }
   }, [systemTitle]);
 
   const contextTab = tabMenu
@@ -822,6 +761,17 @@ function TitleBarComponent({
           label: "Close Tabs to the Left",
           disabled: contextCloseIds?.left.length === 0,
         },
+        ...(onCloseAll
+          ? [
+              {
+                kind: "item" as const,
+                id: "all",
+                label: "Close All Tabs",
+                shortcut: `${MOD}${SHIFT}W`,
+                disabled: !titleTabsCanCloseAll(tabs),
+              },
+            ]
+          : []),
         ...(contextTab.sessionCount > 0 && (onArchiveTab || onDeleteTab)
           ? [
               { kind: "sep" as const },
@@ -872,6 +822,10 @@ function TitleBarComponent({
       onDeleteTab?.(contextTab.id);
       return;
     }
+    if (id === "all") {
+      onCloseAll?.(tabIds);
+      return;
+    }
     if (id === "others" || id === "right" || id === "left") {
       onCloseMany(contextCloseIds[id], contextTab.id);
     }
@@ -884,46 +838,62 @@ function TitleBarComponent({
   const projectless = !showCurrentProject;
   // An open project is labeled in the sidebar, above Sessions / Explorer /
   // Changes. Without a project that sidebar is gone, so the picker stays here.
+  // The inset sidebar's header menu switches projects.
   const showProjectButton =
-    railClosed && Boolean(onSelectProject) && !showCurrentProject;
+    !inset && railClosed && Boolean(onSelectProject) && !showCurrentProject;
   const showTrailingActions =
+    !inset &&
     !familiar &&
     projectless &&
     railClosed &&
     Boolean(onOpenInbox || onOpenNotes || onOpenSettings);
+  const showRightPanelToggle = inset && Boolean(onToggleRightPanel);
+  // A Familiar's own overview holds its changes; app views have none beside them.
+  const rightPanelOff = !!familiar || rightPanelUnavailable;
+  const changesDot = rightPanelDot && !rightPanelOff;
   const trailingControls =
     showTrailingActions ||
+    showRightPanelToggle ||
     (familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings)) ||
     (!IS_MAC && !hideWindowControls) ? (
       <div className="flex h-full shrink-0 items-stretch">
-        {familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings) ? (
-          <div className="flex items-center gap-1 px-3">
-            {onToggleFamiliarOverview ? (
-              <button
-                type="button"
-                aria-pressed={familiarOverviewOpen}
-                title={familiarOverviewOpen ? "Hide overview" : "Show overview"}
-                data-tauri-drag-region="false"
-                onClick={onToggleFamiliarOverview}
-                className={`flex h-6 items-center gap-1.5 rounded-md px-2 text-[12px] ${
-                  familiarOverviewOpen
-                    ? "bg-content/10 text-content"
-                    : "bg-content/5 text-content/70 hover:bg-content/8 hover:text-content"
-                }`}
-              >
-                <DashboardSquare className="size-3.5" strokeWidth={1.75} />
-                Overview
-              </button>
-            ) : null}
-            {onOpenFamiliarSettings ? (
-              <IconButton
-                label={`${familiar.look.name} settings`}
-                onClick={onOpenFamiliarSettings}
-              >
-                <Settings className="size-3.5" strokeWidth={1.75} />
-              </IconButton>
-            ) : null}
+        {showRightPanelToggle ? (
+          // Clear of the window's right edge, like the traffic lights' inset
+          // on the left.
+          <div className="flex items-center pl-1.5 pr-3">
+            <IconButton
+              label={
+                changesDot
+                  ? `Toggle right sidebar (${MOD}${SHIFT}B, uncommitted changes)`
+                  : `Toggle right sidebar (${MOD}${SHIFT}B)`
+              }
+              active={rightPanelOpen && !rightPanelOff}
+              disabled={rightPanelOff}
+              onClick={onToggleRightPanel}
+            >
+              <span className="relative grid">
+                <GitBranch
+                  className={`size-3.5 ${changesDot ? "overview-tab-icon-with-dot" : ""}`}
+                  strokeWidth={1.75}
+                />
+                {changesDot ? (
+                  <span
+                    aria-hidden
+                    className="absolute -top-[2px] -right-[2px] size-1.5 rounded-full bg-accent"
+                  />
+                ) : null}
+              </span>
+            </IconButton>
           </div>
+        ) : null}
+        {familiar && (onToggleFamiliarOverview || onOpenFamiliarSettings) ? (
+          <FamiliarViewActions
+            name={familiar.look.name}
+            overviewOpen={familiarOverviewOpen}
+            onToggleOverview={onToggleFamiliarOverview}
+            onOpenSettings={onOpenFamiliarSettings}
+            className="px-3"
+          />
         ) : null}
         {showTrailingActions ? (
           <div className="flex items-center gap-0.5 px-2">
@@ -953,16 +923,53 @@ function TitleBarComponent({
   // exempts buttons, links and inputs on its own.
   return (
     <header
-      className={`flex h-10 shrink-0 select-none items-stretch border-b border-stroke${
-        compactRail && !familiar ? " body-glass" : ""
-      }`}
+      data-inset-title-bar={inset || undefined}
+      className={`flex h-10 shrink-0 select-none items-stretch${
+        inset ? "" : " border-b border-stroke"
+      }${compactRail && !familiar && !inset ? " body-glass" : ""}`}
       data-tauri-drag-region="deep"
     >
-      {compactRail ? (
+      {inset ? (
+        <div
+          data-inset-title-nav
+          // As wide as the open rail, so the tabs start over the card.
+          // Closed, the tab strip's own inset is gap enough after the arrows.
+          className={`flex shrink-0 items-center${sessionSidebarOpen ? " pr-1.5" : ""}`}
+          style={{ minWidth: "var(--inset-rail-width, 0px)" }}
+        >
+          <div
+            // Center the toggle over the sidebar's project icon.
+            className={`shrink-0 ${trafficLightsVisible ? "w-[78px]" : "w-2.5"}`}
+          />
+          {onToggleSessionSidebar ? (
+            // Hovering the toggle peeks a collapsed sidebar out.
+            <span data-sidebar-peek-trigger className="flex">
+              <IconButton
+                label={`Toggle Sidebar (${MOD}B)`}
+                onClick={onToggleSessionSidebar}
+              >
+                <PanelLeft className="size-3.5" strokeWidth={1.75} />
+              </IconButton>
+            </span>
+          ) : null}
+          <DevModeIcon />
+          {/* History sits at the rail's far edge and follows it as the
+              sidebar resizes. */}
+          <div className="flex-1" />
+          <TabVisitNav
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onGoBack={onGoBack}
+            onGoForward={onGoForward}
+          />
+        </div>
+      ) : compactRail ? (
         <div
           data-compact-title-nav
           // A full Familiar's title bar starts beside the 48px compact rail.
-          className={`flex shrink-0 items-center ${familiar ? "pl-[22px]" : "pl-[70px]"}`}
+          className={`flex shrink-0 items-center ${
+            trafficLightsVisible ? (familiar ? "pl-[22px]" : "pl-[70px]") : "pl-1.5"
+          }`}
         >
           <TabVisitNav
             canGoBack={canGoBack}
@@ -974,9 +981,9 @@ function TitleBarComponent({
       ) : null}
       {/* Both the rail and the sidebar step aside without a project, so the
           title bar takes over the traffic lights and the rail toggle. */}
-      {projectless && railClosed && !compactRail ? (
+      {projectless && railClosed && !compactRail && !inset ? (
         <>
-          <div className="w-[78px] shrink-0" />
+          {trafficLightsVisible ? <div className="w-[78px] shrink-0" /> : null}
           <div className="flex shrink-0 items-center px-1.5">
             <IconButton
               label={`Toggle Sidebar (${MOD}B)`}
@@ -987,9 +994,12 @@ function TitleBarComponent({
           </div>
         </>
       ) : null}
-      {!sessionSidebarOpen && !projectless && onToggleSessionSidebar ? (
+      {!inset &&
+      !sessionSidebarOpen &&
+      !projectless &&
+      onToggleSessionSidebar ? (
         <div className="flex shrink-0 items-center px-1.5">
-          {IS_MAC && railClosed && !compactRail ? (
+          {trafficLightsVisible && railClosed && !compactRail && !inset ? (
             <div className="w-[70px] shrink-0" />
           ) : null}
           <IconButton
@@ -1015,10 +1025,12 @@ function TitleBarComponent({
 
       <div
         className={`flex min-w-0 flex-1 items-stretch${
-          showProjectButton ? " border-l border-stroke" : ""
+          showProjectButton && !inset ? " border-l border-stroke" : ""
         }`}
       >
-        {familiar ? (
+        {content ? (
+          content
+        ) : familiar && !inset ? (
           <FamiliarTitle look={familiar.look} state={familiar.state} />
         ) : (
           <div
@@ -1046,9 +1058,7 @@ function TitleBarComponent({
                 const tab = entry.item;
                 const shell = (
                   <div
-                    ref={(el) => {
-                      if (!entry.closing) setTabNode(tab.id, el);
-                    }}
+                    ref={entry.closing ? undefined : tabNodeRef(tab.id)}
                     className={
                       entry.closing || entry.opening
                         ? "relative flex h-full w-full min-w-0 overflow-hidden items-center"
@@ -1114,11 +1124,24 @@ function TitleBarComponent({
                   </div>
                 );
               })}
+              {onNewSession ? (
+                // Sized and plated like an inactive tab beside it.
+                <button
+                  type="button"
+                  title={`New session (${MOD}T)`}
+                  aria-label={`New session (${MOD}T)`}
+                  data-tauri-drag-region="false"
+                  onClick={onNewSession}
+                  className="ml-0.5 grid size-7.5 shrink-0 cursor-default place-items-center rounded-md bg-content/4 text-content/50 opacity-65 hover:bg-content/7 hover:text-content hover:opacity-100 focus-visible:opacity-100"
+                >
+                  <Plus className="size-3.5" strokeWidth={1.75} />
+                </button>
+              ) : null}
             </div>
           </div>
         )}
 
-        {!IS_MAC && !IS_WIN ? (
+        {!IS_MAC && !IS_WIN && !content ? (
           <div className="flex min-w-0 flex-1 items-center justify-center px-4">
             <span className="pointer-events-none truncate text-[11.5px] font-medium text-content/40 select-none">
               {systemTitle}

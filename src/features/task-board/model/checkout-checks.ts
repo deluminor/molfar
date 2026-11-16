@@ -1,4 +1,4 @@
-import type { GitSnapshot } from "../../../platform/tauri/fs";
+import type { GitSnapshot } from "@/platform/tauri/fs";
 
 /** A read-only stage must leave HEAD and every file exactly as it found them. */
 export function readOnlyViolation(before: GitSnapshot, after: GitSnapshot): string | null {

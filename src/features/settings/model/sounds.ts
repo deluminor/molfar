@@ -1,10 +1,10 @@
 import { play, setEnabled, setVolume, type SoundName } from "cuelume";
-import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linkedWorkItemActivity";
+import type { LinkedWorkItemUpdateCard } from "@/domain/work-items/linked-activity";
 import {
   allowsProjectNotification,
   type NotificationSubject,
-} from "../../notifications/model/notificationPreferences";
-import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
+} from "@/features/notifications/model/notification-preferences";
+import { inboxNotificationProject } from "@/features/notifications/model/notification-projects";
 
 const KEY = "molfar.sounds";
 const ENABLED_AT_KEY = "molfar.soundsEnabledAt";
@@ -94,8 +94,49 @@ export function playCue(cue: SoundCue, subject?: NotificationSubject): boolean {
     }
   }
   applySoundEngine();
-  play(CUES[cue]);
+  if (audioContext) play(CUES[cue]);
+  else captureAudioContext(() => play(CUES[cue]));
+  scheduleSuspend();
   return true;
+}
+
+/** Past the longest cue's tail (arrival, ~1.75 s), with room to spare. */
+export const SOUNDS_SUSPEND_MS = 4_000;
+
+let audioContext: AudioContext | undefined;
+let suspendTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * cuelume creates its shared AudioContext inside the first `play` and never
+ * suspends it, so a running context holds a CoreAudio stream open for the
+ * life of the app (a steady ~6% in coreaudiod). Swap the constructor for that
+ * one call to keep a handle; cuelume resumes a suspended context on its own.
+ */
+function captureAudioContext(run: () => void) {
+  const Native =
+    typeof window === "undefined" ? undefined : window.AudioContext;
+  if (!Native) return run();
+  window.AudioContext = class extends Native {
+    constructor(options?: AudioContextOptions) {
+      super(options);
+      audioContext = this;
+    }
+  };
+  try {
+    run();
+  } finally {
+    window.AudioContext = Native;
+  }
+}
+
+function scheduleSuspend() {
+  if (!audioContext) return;
+  clearTimeout(suspendTimer);
+  suspendTimer = setTimeout(() => {
+    if (audioContext?.state === "running") {
+      void audioContext.suspend().catch(() => undefined);
+    }
+  }, SOUNDS_SUSPEND_MS);
 }
 
 let announcedUpdate: string | undefined;
@@ -134,8 +175,10 @@ export function announceUpdateAvailable(version: string | null) {
   playCue("updateAvailable");
 }
 
-/** Test helper: forget which notification cues already fired. */
+/** Test helper: forget which notification cues already fired and the audio context. */
 export function resetSoundCues() {
   announcedUpdate = undefined;
   announcedLinkedActivities.clear();
+  clearTimeout(suspendTimer);
+  audioContext = undefined;
 }

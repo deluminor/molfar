@@ -6,6 +6,7 @@ mod artifacts;
 mod atlassian_adf;
 mod automations;
 mod azure_devops;
+mod background_work;
 mod chat_background;
 mod checkpoint;
 mod codex_familiar_store;
@@ -23,10 +24,13 @@ mod familiar;
 mod familiar_chat;
 mod familiar_transcript;
 mod fs;
+mod git;
+mod github;
 mod gitlab;
 mod harness;
 mod harness_updates;
 mod home_host;
+mod http_client;
 mod inbox_media;
 mod jira;
 mod jsonc;
@@ -39,11 +43,14 @@ mod macos_background;
 mod mcp;
 mod mcp_session;
 mod menu;
+mod mobile_access;
+mod mobile_fs;
 mod notes;
 mod notifications;
 mod pasteboard;
 mod pi_usage;
 mod project_logo;
+mod provider_session_transfer;
 mod pty;
 #[cfg(target_os = "macos")]
 mod quick_composer;
@@ -51,18 +58,24 @@ mod rate_limits;
 mod reminders;
 mod remote;
 mod remote_ssh;
+mod resources;
 mod search;
 mod session_store;
 mod skills;
 pub mod ssh_askpass;
 mod task_board;
+#[cfg(test)]
+mod test_support;
+mod tool_detail;
 #[cfg(target_os = "macos")]
 mod trackpad_zoom;
+mod transcripts;
 #[cfg(target_os = "windows")]
 mod tray;
 mod usage_limits;
 mod vault;
 mod window;
+mod window_chrome;
 mod window_transfer;
 #[cfg(windows)]
 mod windows;
@@ -192,42 +205,6 @@ pub(crate) fn passwd_identity() -> Option<PasswdIdentity> {
     }
 }
 
-#[tauri::command]
-fn set_traffic_lights_visible(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] visible: bool,
-) {
-    #[cfg(target_os = "macos")]
-    macos::set_visible(&window, visible);
-}
-
-#[tauri::command]
-fn set_window_background_blur(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] radius: u8,
-) {
-    #[cfg(target_os = "macos")]
-    macos::set_background_blur_radius(&window, radius);
-}
-
-#[tauri::command]
-fn set_dock_badge(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] count: u32,
-) {
-    #[cfg(target_os = "macos")]
-    macos::set_window_badge(&window, count);
-}
-
-#[tauri::command]
-fn set_trackpad_zoom_enabled(
-    #[allow(unused_variables)] window: tauri::WebviewWindow,
-    #[allow(unused_variables)] enabled: bool,
-) {
-    #[cfg(target_os = "macos")]
-    trackpad_zoom::set_enabled(&window, enabled);
-}
-
 // Async so the window is built off the main thread. Building it from a sync
 // command deadlocks WebView2 on Windows and leaves the new window blank.
 #[tauri::command]
@@ -247,6 +224,19 @@ fn app_context() -> tauri::Context {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let context = app_context();
+    #[cfg(all(debug_assertions, target_os = "macos"))]
+    {
+        let version = context.package_info().version.to_string();
+        let bundle_version = context
+            .config()
+            .bundle
+            .macos
+            .bundle_version
+            .as_deref()
+            .unwrap_or(&version);
+        macos::ensure_dev_bundle(&version, bundle_version);
+    }
     #[cfg(target_os = "macos")]
     macos::register_spellcheck_default();
     #[cfg(windows)]
@@ -284,6 +274,7 @@ pub fn run() {
             if let Err(error) = companion::init(app.handle()) {
                 eprintln!("[companion] {error}");
             }
+            mobile_access::init(app.handle())?;
             reminders::init(app.handle());
             checkpoint::init(app.handle())?;
             menu::install(app.handle())?;
@@ -311,6 +302,14 @@ pub fn run() {
             menu::dispatch(app, event.id().as_ref());
         })
         .invoke_handler(tauri::generate_handler![
+            mobile_access::commands::mobile_status,
+            mobile_access::commands::mobile_configure,
+            mobile_access::commands::mobile_invite,
+            mobile_access::commands::mobile_cancel_invite,
+            mobile_access::commands::mobile_revoke,
+            mobile_access::commands::mobile_publish,
+            mobile_access::commands::mobile_reply,
+            mobile_access::commands::mobile_push,
             remote::remote_machines,
             remote::remote_connect,
             remote::remote_disconnect,
@@ -377,51 +376,51 @@ pub fn run() {
             automations::automation_run_update,
             external_editor::list_external_editors,
             external_editor::open_in_external_editor,
-            fs::resolve_project_location,
-            fs::open_path_with_default_app,
-            fs::list_dir,
-            fs::list_project_files,
-            fs::git_diff_stats,
-            fs::git_diff_index,
-            fs::git_diff_files,
-            fs::git_file_diff,
-            fs::git_history,
-            fs::git_commit_files,
-            fs::git_commit_file_diff,
-            fs::git_stage_file,
-            fs::git_stage_contents,
-            fs::git_unstage_file,
-            fs::git_discard_file,
-            fs::git_discard_all,
-            fs::git_stage_all,
-            fs::git_unstage_all,
-            fs::git_commit,
-            fs::git_locate_files,
-            fs::git_head_message,
-            fs::git_staged_context,
-            fs::git_push,
-            fs::git_pull,
-            fs::git_sync,
-            fs::git_range_context,
-            fs::git_range_diff,
-            fs::git_snapshot,
-            fs::git_default_branch_name,
-            fs::git_pr_status,
-            fs::git_pr_create,
-            fs::git_github_status,
-            fs::github_molfar_star_status,
-            fs::github_star_molfar,
-            fs::git_github_repo,
-            fs::git_github_repositories,
-            fs::git_github_work_item,
-            fs::git_github_work_items,
-            fs::git_github_work_item_details,
-            fs::git_github_work_item_thread,
-            fs::git_github_work_item_comment,
-            fs::git_github_pr_action,
-            fs::git_github_pr_diff,
-            fs::git_github_pr_checks,
-            fs::git_github_check_details,
+            fs::project::resolve_project_location,
+            fs::reveal::open_path_with_default_app,
+            fs::list::list_dir,
+            fs::project_files::list_project_files,
+            git::stats::git_diff_stats,
+            git::index::git_diff_index,
+            git::index::git_diff_files,
+            git::file_diff::git_file_diff,
+            git::history::git_history,
+            git::commit_files::git_commit_files,
+            git::commit_files::git_commit_file_diff,
+            git::stage::git_stage_file,
+            git::stage::git_stage_contents,
+            git::stage::git_unstage_file,
+            git::stage::git_discard_file,
+            git::stage::git_discard_all,
+            git::stage::git_stage_all,
+            git::stage::git_unstage_all,
+            git::commit::git_commit,
+            git::commit::git_locate_files,
+            git::commit::git_head_message,
+            git::commit::git_staged_context,
+            git::remote::git_push,
+            git::remote::git_pull,
+            git::remote::git_sync,
+            git::range::git_range_context,
+            git::range::git_range_diff,
+            git::snapshot::git_snapshot,
+            git::remote::git_default_branch_name,
+            github::pr::git_pr_status,
+            github::pr::git_pr_create,
+            github::status::git_github_status,
+            github::status::github_molfar_star_status,
+            github::status::github_star_molfar,
+            github::repo::git_github_repo,
+            github::repo::git_github_repositories,
+            github::work_items::git_github_work_item,
+            github::work_items::git_github_work_items,
+            github::details::git_github_work_item_details,
+            github::thread::git_github_work_item_thread,
+            github::comment_post::git_github_work_item_comment,
+            github::pr::git_github_pr_action,
+            github::pr_diff::git_github_pr_diff,
+            github::checks::git_github_pr_checks,
+            github::check_details::git_github_check_details,
             inbox_media::fetch_inbox_media,
             gitlab::gitlab_status,
             gitlab::gitlab_set_config,
@@ -461,10 +460,10 @@ pub fn run() {
             confluence::confluence_search,
             confluence::confluence_page,
             link_preview::fetch_link_preview,
-            fs::git_branches,
-            fs::git_checkout,
-            fs::git_create_branch,
-            fs::git_stash,
+            git::branch::git_branches,
+            git::branch::git_checkout,
+            git::branch::git_create_branch,
+            git::stash::git_stash,
             worktrees::git_worktrees,
             worktrees::git_worktree_create,
             worktrees::git_orchestration_worktree_create,
@@ -474,30 +473,33 @@ pub fn run() {
             worktrees::git_orchestration_worktree_remove,
             worktrees::git_orchestration_branch_remove,
             worktrees::git_task_branch_remove,
-            fs::create_path,
-            fs::rename_path,
-            fs::delete_path,
-            fs::copy_path,
-            fs::move_path,
-            fs::reveal_path,
+            fs::write::create_path,
+            fs::ops::rename_path,
+            fs::ops::delete_path,
+            fs::ops::copy_path,
+            fs::ops::move_path,
+            fs::reveal::reveal_path,
             pasteboard::clipboard_file_paths,
             pasteboard::clipboard_image,
             pasteboard::copy_file_to_clipboard,
-            fs::clone_repo,
-            fs::read_file_preview,
-            fs::stat_files,
-            fs::inspect_paths,
-            fs::read_file_base64,
-            fs::read_binary_file,
-            fs::allow_video_stream,
-            fs::write_attachment,
-            fs::save_generated_image,
-            fs::delete_generated_images,
-            fs::read_text_file,
-            fs::omp_session_interjections,
-            fs::omp_active_assistant_texts,
-            fs::claude_shell_commands,
-            fs::write_text_file,
+            git::clone::clone_repo,
+            fs::read::read_file_preview,
+            fs::read::stat_files,
+            fs::read::inspect_paths,
+            fs::read::read_file_base64,
+            fs::media::read_binary_file,
+            fs::media::read_project_image,
+            fs::media::allow_video_stream,
+            fs::attachments::write_attachment,
+            fs::attachments::save_generated_image,
+            fs::attachments::delete_generated_images,
+            fs::read::read_text_file,
+            mobile_fs::mobile_list_dir,
+            mobile_fs::mobile_read_text_file,
+            transcripts::omp::omp_session_interjections,
+            transcripts::omp::omp_active_assistant_texts,
+            transcripts::claude::claude_shell_commands,
+            fs::write::write_text_file,
             skills::list_skills,
             search::search_project,
             search::cancel_project_search,
@@ -528,6 +530,7 @@ pub fn run() {
             codex_familiar_store::codex_familiar_store_prepare,
             codex_familiar_store::codex_familiar_store_copy,
             codex_familiar_store::codex_familiar_store_restore_agent_state,
+            provider_session_transfer::provider_session_transfer,
             harness::harness_write,
             harness::harness_kill,
             harness::harness_kill_all,
@@ -560,6 +563,7 @@ pub fn run() {
             session_store::session_search,
             session_store::cancel_session_search,
             session_store::session_get,
+            session_store::session_tool_detail,
             familiar_transcript::familiar_session_get,
             familiar_transcript::familiar_session_page,
             familiar_transcript::familiar_session_upsert,
@@ -606,10 +610,10 @@ pub fn run() {
             checkpoint::session_checkpoint_file_diff,
             checkpoint::session_checkpoint_undo,
             checkpoint::session_checkpoint_keep,
-            set_traffic_lights_visible,
-            set_window_background_blur,
-            set_dock_badge,
-            set_trackpad_zoom_enabled,
+            window_chrome::set_traffic_lights_visible,
+            window_chrome::set_window_background_blur,
+            window_chrome::set_dock_badge,
+            window_chrome::set_trackpad_zoom_enabled,
             #[cfg(target_os = "macos")]
             menu::keybindings_set_overrides,
             #[cfg(target_os = "macos")]
@@ -669,9 +673,11 @@ pub fn run() {
             familiar_chat::familiar_chat_switch,
             #[cfg(target_os = "macos")]
             familiar_chat::mono_menu_bar_set_visible,
-            window_transfer::stage_window_transfer,
             window_transfer::take_window_transfer,
             chat_background::save_chat_background,
+            resources::resource_usage,
+            resources::resource_processes,
+            resources::resource_stop_tool,
             chat_background::remove_chat_background,
             chat_background::save_project_chat_background,
             chat_background::remove_project_chat_background,
@@ -679,7 +685,7 @@ pub fn run() {
             project_logo::remove_project_logo,
             project_logo::forget_logo_file,
         ])
-        .build(app_context())
+        .build(context)
         .expect("error while building MOLFAR");
 
     app.run(|handle, event| match event {
@@ -748,11 +754,6 @@ fn reap_harness_children(handle: &tauri::AppHandle) {
     if let Some(host) = handle.try_state::<pty::PtyHost>() {
         host.kill_all();
     }
-}
-
-#[cfg(all(debug_assertions, target_os = "macos"))]
-pub fn ensure_macos_dev_bundle() {
-    macos::ensure_dev_bundle();
 }
 
 #[cfg(test)]

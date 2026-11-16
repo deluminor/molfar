@@ -1,9 +1,9 @@
-import type { ControlOutcome } from "../../features/orchestration/model/orchestration";
-import { pendingApprovalForSession } from "../../features/notifications/model/approvalToast";
-import type { QuickLaunch } from "../../features/quick-composer/model/quickComposer";
-import type { Session } from "../../features/sessions/model/session";
-import { lastTurnAssistantText } from "../../features/sessions/model/turn-text";
-import type { SessionPort, StageLaunch } from "../../features/task-board/services/ports";
+import type { Session } from "@/domain/session/session";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
+import { pendingApprovalForSession } from "@/features/notifications/model/approval-toast";
+import type { QuickLaunch } from "@/features/quick-composer/model/quick-composer";
+import { lastTurnAssistantText } from "@/features/sessions/model/turn-text";
+import type { SessionPort, StageLaunch } from "@/features/task-board/services/ports";
 
 const SETTLE_POLL_MS = 50;
 const SETTLE_POLL_LIMIT = 40;

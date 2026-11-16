@@ -1,4 +1,4 @@
-import type { ControlOutcome } from "../../orchestration/model/orchestration";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
 import { MANUAL_GATES, READ_ONLY_STAGES } from "../constants/columns";
 import { readStageOutput } from "../model/artifacts/stage-outputs";
 import { commitViolation, readOnlyViolation } from "../model/checkout-checks";

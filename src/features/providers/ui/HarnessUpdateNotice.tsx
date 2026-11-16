@@ -1,28 +1,28 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { GlassBackdrop } from "../../../app/shell/GlassBackdrop";
+import { GlassBackdrop } from "@/shared/ui/GlassBackdrop";
 import {
   isHarnessAvailable,
   probeHarnessAvailability,
-} from "../../../integrations/harness/core/availability";
+} from "@/integrations/harness/core/availability";
 import {
   inspectHarnessBinary,
   updateHarnessCli,
-} from "../../../integrations/harness/core/child";
+} from "@/integrations/harness/core/child";
 import {
   compareSemver,
   parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { LAYER } from "../../../shared/lib/layers";
-import { Check, Loader, X } from "../../../shared/ui/icons";
-import { isPickerProviderVisible } from "../../sessions/model/models";
+} from "@/integrations/harness/providers/opencode/opencode-protocol";
+import { refreshHarnessCatalogs } from "@/integrations/harness/core/registry";
+import { LAYER } from "@/shared/lib/layers";
+import { Check, Loader, X } from "@/shared/ui/icons";
+import { isPickerProviderVisible } from "@/features/sessions/model/models";
 import {
   HARNESS_TITLE,
   HARNESSES,
   type HarnessId,
-} from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+} from "@/domain/harness/harness";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   announceHarnessUpdated,
   claimLaunchHarnessUpdateCheck,
@@ -31,7 +31,7 @@ import {
   onHarnessUpdated,
   UPDATABLE_HARNESSES,
   type HarnessUpdate,
-} from "../model/harnessUpdates";
+} from "../model/harness-updates";
 
 /**
  * Shared by every mount in this window: a StrictMode remount must reuse the

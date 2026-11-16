@@ -1,17 +1,12 @@
+import { basename, prettyParent, projectKey, projectName } from "@/shared/lib/paths";
 import {
   useEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useTabGroupLogos } from "../hooks/useTabGroupLogos";
-import { useProjectAppearance } from "../hooks/useProjectAppearance";
-import { basename } from "../../../platform/tauri/fs";
-import {
-  prettyParent,
-  projectKey,
-  projectName,
-} from "../../../shared/lib/paths";
+import { useTabGroupLogos } from "../hooks/use-tab-group-logos";
+import { useProjectAppearance } from "../hooks/use-project-appearance";
 import {
   looksLikeProject,
   projectRailItems,
@@ -23,14 +18,14 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupLogo,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { Check, ChevronDown, Plus, Search } from "../../../shared/ui/icons";
-import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
+} from "@/features/workspace/model/tab-groups";
+import { Check, ChevronDown, Plus, Search } from "@/shared/ui/icons";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 import { ProjectLogoIcon } from "./ProjectLogoIcon";
 import { ProjectMascot } from "./ProjectMascot";
 import { PixelMascot } from "./PixelMascot";
-import { FamiliarRailMascot } from "../../familiars/ui/FamiliarRailMascot";
-import { FAMILIAR_STATUS_LABEL, type FamiliarStatus } from "../../familiars/model/familiar";
+import { FamiliarRailMascot } from "@/features/familiars/ui/FamiliarRailMascot";
+import { FAMILIAR_STATUS_LABEL, type FamiliarStatus } from "@/features/familiars/model/familiar";
 
 /** A Familiar the picker offers beside the projects. */
 export type PickerFamiliar = {
@@ -105,15 +100,7 @@ export function SearchableProjectPicker({
     : "Choose project";
   const logoPath = resolveTabGroupLogo(key, groupLogos);
   const color = resolveTabGroupColor(key, groupColors, groupCustomColors, seed);
-  const railProjects = projectRailItems(recents, railCwd ?? cwd);
-  const projects =
-    inProject && !railProjects.some((item) => sameProjectPath(item.path, cwd))
-      ? [{ path: cwd, openedAt: 0 }, ...railProjects]
-      : railProjects;
-  const orderedProjects = [
-    ...projects.filter((item) => sameProjectPath(item.path, cwd)),
-    ...projects.filter((item) => !sameProjectPath(item.path, cwd)),
-  ];
+  const orderedProjects = pickerProjects(recents, cwd, railCwd);
   const activeFamiliar = familiars?.items.find((familiar) => familiar.id === familiars.activeId);
   const closePicker = () => setOpen(false);
   const openPicker = () => setOpen(true);
@@ -229,6 +216,24 @@ export function SearchableProjectPicker({
   );
 }
 
+/** The rail's projects with the current one first, even when it is unlisted. */
+export function pickerProjects(
+  recents: RecentProject[],
+  cwd: string,
+  railCwd?: string,
+): RecentProject[] {
+  const railProjects = projectRailItems(recents, railCwd ?? cwd);
+  const projects =
+    looksLikeProject(cwd) &&
+    !railProjects.some((item) => sameProjectPath(item.path, cwd))
+      ? [{ path: cwd, openedAt: 0 }, ...railProjects]
+      : railProjects;
+  return [
+    ...projects.filter((item) => sameProjectPath(item.path, cwd)),
+    ...projects.filter((item) => !sameProjectPath(item.path, cwd)),
+  ];
+}
+
 type ProjectPickerPopoverProps = Pick<
   Props,
   | "onSelectProject"
@@ -243,6 +248,9 @@ type ProjectPickerPopoverProps = Pick<
   onDismiss: () => void;
   label?: string;
   emptyMessage?: string;
+  /** A flyout off another menu opens beside it, and that menu owns outside
+   * clicks for both. */
+  flyout?: { layer: number; attributes?: Record<`data-${string}`, boolean> };
 };
 
 /** Shared searchable project menu for switching projects or adding them to a Familiar. */
@@ -258,6 +266,7 @@ export function ProjectPickerPopover({
   familiars,
   label = "Project picker",
   emptyMessage = "No projects found",
+  flyout,
 }: ProjectPickerPopoverProps) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -366,14 +375,16 @@ export function ProjectPickerPopover({
   return (
     <Popover
       anchor={anchor}
-      side="bottom"
+      side={flyout ? "right" : "bottom"}
       align="start"
-      gap={4}
+      gap={flyout ? -4 : 4}
       width={286}
       maxHeight={380}
+      layer={flyout?.layer}
+      {...flyout?.attributes}
       role="dialog"
       aria-label={label}
-      onDismiss={projectMenuActive ? undefined : onDismiss}
+      onDismiss={projectMenuActive || flyout ? undefined : onDismiss}
       onKeyDown={onPickerKeyDown}
       className="flex flex-col overflow-hidden"
     >

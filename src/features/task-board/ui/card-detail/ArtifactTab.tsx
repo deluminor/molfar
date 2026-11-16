@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { MarkdownDocumentPreview } from "../../../sessions/ui/MarkdownDocumentPreview";
+import { MarkdownDocumentPreview } from "@/features/sessions/ui/MarkdownDocumentPreview";
 import { useArtifactBody } from "../../hooks/use-card-detail";
 import type { BoardStorePort } from "../../services/ports";
 import type { ArtifactKind } from "../../types/artifact";

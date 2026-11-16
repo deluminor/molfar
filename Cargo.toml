@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["src-tauri"]
-exclude = ["vendor/portable-pty"]
+members = ["src-tauri", "crates/mobile-link"]
+exclude = ["vendor/portable-pty", "vendor/gpui-pre", "vendor/gpui-pre-apple", "vendor/gpui-pre-linux", "vendor/gpui-pre-macos", "vendor/gpui-pre-windows", "crates/molfar-core", "crates/molfar-gpui"]
 
 [workspace.package]
-version = "1.0.17"
+version = "1.0.23"
 edition = "2021"
 license = "MIT"
 

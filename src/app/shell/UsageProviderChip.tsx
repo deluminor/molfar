@@ -1,79 +1,71 @@
+import { clampUsedPercent } from "@/domain/rate-limits/rate-limit-window";
+import { DAILY_WINDOW_MINUTES, type ProviderRateLimits, type RateLimitResetCredit, type RateLimitWindow } from "@/domain/rate-limits/rate-limit";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
+import { supportsProviderAccounts, type ProviderAccount } from "@/domain/harness/provider-account";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import {
-  clampUsedPercent,
-  DAILY_WINDOW_MINUTES,
-  formatExtraUsageBalance,
-  formatRateLimitWindowChipLabel,
-  formatResetCountdown,
-  formatResetDuration,
-  formatUsagePercent,
-  formatWindowLabel,
-  rateLimitWindowTooltip,
-  type ProviderRateLimits,
-  type RateLimitResetCredit,
-  type RateLimitWindow,
-} from "../../features/providers/model/rateLimits";
-import type { CodexRateLimitResetOutcome } from "../../features/providers/model/rateLimitsFetch";
-import { mascotPath, projectMascot } from "../../features/projects/model/projectMascots";
-import { projectKey, projectName } from "../../shared/lib/paths";
-import { HARNESS_TITLE, type HarnessId } from "../../features/sessions/model/session";
+import { formatExtraUsageBalance, formatRateLimitWindowChipLabel, formatResetCountdown, formatResetDuration, formatUsagePercent, formatWindowLabel, rateLimitWindowTooltip } from "@/features/providers/model/rate-limits";
+import type { CodexRateLimitResetOutcome } from "@/features/providers/model/rate-limits-fetch";
+import { mascotPath, projectMascot } from "@/features/projects/model/project-mascots";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../features/workspace/model/tabGroups";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { ArrowLeft, Check, ChevronRight, Plus, RefreshCw } from "../../shared/ui/icons";
-import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
+} from "@/features/workspace/model/tab-groups";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { ArrowLeft, Check, ChevronRight, Plus, RefreshCw } from "@/shared/ui/icons";
+import { Popover, type PopoverDismissReason } from "@/shared/ui/Popover";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,
-} from "../../features/sessions/ui/ProviderSignInPanel";
-import {
-  supportsProviderAccounts,
-  type ProviderAccount,
-} from "../../features/providers/model/providerAccounts";
+} from "@/features/sessions/ui/ProviderSignInPanel";
 import {
   accountStatus,
   accountUsageKey,
   bestAlternativeAccount,
   useProviderAccountUsage,
-} from "../../features/providers/model/accountUsage";
+} from "@/features/providers/model/account-usage";
 import {
   AccountStatusLabel,
   barClass,
   meterWindows,
   UsageMeter,
-} from "../../features/providers/ui/ProviderAccountUsage";
+} from "@/features/providers/ui/ProviderAccountUsage";
 import {
   identityKey,
   identityOrganizationTag,
   useProviderAccountIdentities,
   type ProviderAccountIdentity,
-} from "../../features/providers/model/providerAccountIdentity";
-import { ProviderAccountSubtitle } from "../../features/providers/ui/ProviderAccountSubtitle";
-import { useShowRemainingUsage } from "../../features/settings/model/displayPrefs";
+} from "@/features/providers/model/provider-account-identity";
+import { ProviderAccountSubtitle } from "@/features/providers/ui/ProviderAccountSubtitle";
+import { useShowRemainingUsage } from "@/features/settings/model/display-prefs";
 
 type UsageWindowEntry = {
   key: "session" | "weekly" | "monthly";
   window: RateLimitWindow;
 };
 
-export type UsageChipVariant = "footer" | "composer";
+/** `inset` is the footer on the inset layout's outer glass: pill-shaped chips. */
+export type UsageChipVariant = "footer" | "inset" | "composer";
 
-const USAGE_CHIP_CLASSES: Record<UsageChipVariant, string> = {
+export const USAGE_CHIP_CLASSES: Record<UsageChipVariant, string> = {
   footer:
-    "-mx-1 inline-flex h-5 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded px-1 text-content/55 transition-[background-color,color,transform] duration-150 ease-out hover:bg-content/10 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:scale-[0.97]",
+    "-mx-1 inline-flex h-5 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1 text-content/55 transition-[background-color,color,transform] duration-150 ease-out hover:bg-content/10 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:scale-[0.97]",
+  inset:
+    "inline-flex h-5 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-content/55 transition-[background-color,color,transform] duration-150 ease-out hover:bg-content/10 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:scale-[0.97]",
   composer:
     "inline-flex h-6.5 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 text-content/55 transition-colors hover:bg-content/8 hover:text-content focus-visible:outline-2 focus-visible:outline-accent",
 };
 
 /** The refresh button beside the usage chips, per variant. */
+
 export const USAGE_REFRESH_CLASSES: Record<UsageChipVariant, string> = {
   footer:
-    "grid size-4.5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/10 hover:text-content disabled:opacity-50",
+    "grid size-4.5 shrink-0 place-items-center rounded-md text-content/40 hover:bg-content/10 hover:text-content disabled:opacity-50",
+  inset:
+    "-ml-1 grid size-5 shrink-0 place-items-center rounded-full text-content/40 hover:bg-content/10 hover:text-content disabled:opacity-50",
   composer:
     "grid size-6.5 shrink-0 place-items-center rounded-md text-content/40 transition-colors hover:bg-content/8 hover:text-content disabled:opacity-50",
 };

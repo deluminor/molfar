@@ -3,8 +3,8 @@ import {
   contextRatio,
   contextTooltip,
   type ContextUsage,
-} from "../model/contextUsage";
-import { Popover } from "../../../shared/ui/Popover";
+} from "@/domain/session/context-usage";
+import { Popover } from "@/shared/ui/Popover";
 
 const SIZE = 14;
 const STROKE = 2;

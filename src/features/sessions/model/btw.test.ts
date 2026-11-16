@@ -20,7 +20,8 @@ import {
   sessionBtwThreads,
   supportsBtwHarness,
 } from "./btw";
-import type { Block, BtwThread } from "./session";
+import type { Block } from "@/domain/session/block";
+import type { BtwThread } from "@/domain/session/block-meta";
 
 function block(id: string, role: Block["role"], text = id): Block {
   return { id, role, text };

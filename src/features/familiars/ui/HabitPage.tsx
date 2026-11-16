@@ -1,3 +1,4 @@
+import { IconButton } from "@/shared/ui/IconButton";
 import {
   useEffect,
   useState,
@@ -5,10 +6,9 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { Pause, Play, Trash2, Zap } from "../../../shared/ui/icons";
-import { IconButton } from "../../../app/shell/TitleBar";
-import { PageHeader } from "./familiarPanelParts";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { Pause, Play, Trash2, Zap } from "@/shared/ui/icons";
+import { PageHeader } from "./familiar-panel-parts";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import {
   habitRunningSince,
   habitScheduleLabel,
@@ -16,7 +16,7 @@ import {
   subscribeHabitsRunning,
   type Habit,
   type HabitRun,
-} from "../model/familiarHabits";
+} from "../model/familiar-habits";
 
 const dayTime = new Intl.DateTimeFormat(undefined, {
   weekday: "short",

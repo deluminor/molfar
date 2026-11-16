@@ -1,6 +1,11 @@
 //! Familiar threads retain native Codex rollouts, but outside the Codex app's home.
 //! Configuration and credentials remain shared with the selected provider account.
 
+mod file_preparation;
+#[cfg(all(test, windows))]
+use file_preparation::link_entry;
+use file_preparation::prepare_files;
+
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -170,115 +175,6 @@ pub(crate) fn prepare(
     })
 }
 
-fn private_entry(name: &str) -> bool {
-    STATE_NAMES.contains(&name)
-        || name.contains(".sqlite")
-        || name.ends_with(".db")
-        || name.ends_with(".db-wal")
-        || name.ends_with(".db-shm")
-        || name.starts_with(".molfar-")
-}
-
-fn prepare_files(source: &Path, home: &Path) -> Result<(), String> {
-    std::fs::create_dir_all(source)
-        .map_err(|e| format!("Could not open the Codex account directory: {e}"))?;
-    std::fs::create_dir_all(home)
-        .map_err(|e| format!("Could not create Familiar Codex storage: {e}"))?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(home, std::fs::Permissions::from_mode(0o700))
-            .map_err(|e| e.to_string())?;
-    }
-    let source = source.canonicalize().map_err(|e| e.to_string())?;
-    let canonical_home = home.canonicalize().map_err(|e| e.to_string())?;
-    if canonical_home.starts_with(&source) || source.starts_with(&canonical_home) {
-        return Err("Familiar Codex storage must be separate from the normal Codex home".into());
-    }
-    for name in STATE_NAMES {
-        if std::fs::symlink_metadata(home.join(name)).is_ok_and(|m| m.file_type().is_symlink()) {
-            return Err("Familiar Codex state must remain in its private storage directory".into());
-        }
-    }
-    for entry in std::fs::read_dir(&source).map_err(|e| e.to_string())? {
-        let entry = entry.map_err(|e| e.to_string())?;
-        let name = entry.file_name();
-        if private_entry(&name.to_string_lossy()) {
-            continue;
-        }
-        link_entry(&entry.path(), &home.join(name))?;
-    }
-    // Keep the auth link valid even if login creates/replaces the original later.
-    #[cfg(unix)]
-    for name in ["auth.json", ".credentials.json"] {
-        link_entry(&source.join(name), &home.join(name))?;
-    }
-    #[cfg(windows)]
-    if !source.join("auth.json").exists() && home.join("auth.json").exists() {
-        std::fs::remove_file(home.join("auth.json")).map_err(|e| e.to_string())?;
-    }
-    // Encrypted auth/MCP files are replaced atomically. Sharing their directory,
-    // rather than individual files, preserves those writes in both homes.
-    std::fs::create_dir_all(source.join("secrets")).map_err(|e| e.to_string())?;
-    link_entry(&source.join("secrets"), &home.join("secrets"))?;
-    std::fs::create_dir_all(home.join("sessions")).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-fn link_entry(source: &Path, target: &Path) -> Result<(), String> {
-    if let Ok(link) = std::fs::read_link(target) {
-        if link == source {
-            return Ok(());
-        }
-        // Windows junctions can return a different path spelling than the
-        // canonical source (for example, without the verbatim path prefix).
-        #[cfg(windows)]
-        if link.canonicalize().is_ok_and(|resolved| resolved == source) {
-            return Ok(());
-        }
-        return Err(format!(
-            "Unexpected link in Familiar Codex storage: {}",
-            target.display()
-        ));
-    }
-    if target.exists() {
-        #[cfg(windows)]
-        if target.is_file() && source.is_file() {
-            std::fs::remove_file(target).map_err(|e| e.to_string())?;
-        } else {
-            return Err(format!(
-                "Unexpected entry in Familiar Codex storage: {}",
-                target.display()
-            ));
-        }
-        #[cfg(not(windows))]
-        return Err(format!(
-            "Unexpected entry in Familiar Codex storage: {}",
-            target.display()
-        ));
-    }
-    #[cfg(unix)]
-    if let Err(error) = std::os::unix::fs::symlink(source, target) {
-        if std::fs::read_link(target).ok().as_deref() != Some(source) {
-            return Err(format!("Could not share Codex configuration: {error}"));
-        }
-    }
-    #[cfg(windows)]
-    {
-        if source.is_dir() {
-            // Junctions work without Administrator privileges or Developer Mode.
-            // Windows PowerShell adds an NT prefix to an already verbatim
-            // canonical path, producing a junction with an unreadable target.
-            junction::create(source, target)
-                .map_err(|e| format!("Could not share the Codex configuration directory: {e}"))?;
-        } else if source.is_file() {
-            std::fs::hard_link(source, target)
-                .map_err(|e| format!("Could not share Codex configuration: {e}"))?;
-        }
-    }
-    Ok(())
-}
-
 fn home_key(home: &Path) -> Result<String, String> {
     let canonical = home.canonicalize().map_err(|e| e.to_string())?;
     let digest = format!(
@@ -395,7 +291,7 @@ fn newer_same_account(private: &Option<String>, source: &Option<String>) -> bool
         .is_some_and(|(private, source)| private > source)
 }
 
-fn validate_thread_id(id: &str) -> Result<(), String> {
+pub(crate) fn validate_thread_id(id: &str) -> Result<(), String> {
     if id.is_empty()
         || id.len() > 128
         || !id
@@ -495,35 +391,7 @@ fn copy_rollouts_with_edges(
         if !allowed_roots.iter().any(|root| path.starts_with(root)) {
             return Err("The saved thread is outside the selected Codex account".into());
         }
-        let name = path
-            .file_name()
-            .ok_or("Missing Codex rollout filename")?
-            .to_string_lossy();
-        if !path.is_file()
-            || !name.starts_with("rollout-")
-            || !(name.ends_with(".jsonl") || name.ends_with(".jsonl.zst"))
-        {
-            return Err("Not a saved Codex rollout file".into());
-        }
-        let date = name
-            .get(8..18)
-            .filter(|date| {
-                date.bytes().enumerate().all(|(i, b)| {
-                    if i == 4 || i == 7 {
-                        b == b'-'
-                    } else {
-                        b.is_ascii_digit()
-                    }
-                })
-            })
-            .ok_or("Missing Codex rollout date")?;
-        let dir = home
-            .join("sessions")
-            .join(&date[..4])
-            .join(&date[5..7])
-            .join(&date[8..10]);
-        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        let dest = dir.join(path.file_name().unwrap());
+        let dest = rollout_dest(home, &path)?;
         // Retrying a partial migration can replace already copied descendants.
         // The provider checks for the root before invoking this operation.
         staged.push((path, dest));
@@ -541,16 +409,8 @@ fn copy_rollouts_with_edges(
     // Copy descendants first and the root last, so a partial migration is not
     // mistaken for a successfully migrated root on the next connection.
     for (path, dest) in staged.iter().rev() {
-        let temp = dest.with_extension(format!("{}.tmp", uuid::Uuid::new_v4()));
-        std::fs::copy(path, &temp)
+        copy_durable(path, dest)
             .map_err(|e| format!("Could not retain the full Codex thread: {e}"))?;
-        // Windows requires write access when flushing a file to disk.
-        std::fs::File::options()
-            .write(true)
-            .open(&temp)
-            .and_then(|f| f.sync_all())
-            .map_err(|e| e.to_string())?;
-        std::fs::rename(&temp, dest).map_err(|e| e.to_string())?;
     }
     let edge_snapshot = edge_snapshot_path(home, thread_id);
     if !edges.is_empty() {
@@ -571,11 +431,64 @@ fn copy_rollouts_with_edges(
     Ok(())
 }
 
+/// Where a rollout lives in another home: `sessions/YYYY/MM/DD/<same name>`.
+pub(crate) fn rollout_dest(home: &Path, path: &Path) -> Result<PathBuf, String> {
+    let name = path
+        .file_name()
+        .ok_or("Missing Codex rollout filename")?
+        .to_string_lossy();
+    if !path.is_file()
+        || !name.starts_with("rollout-")
+        || !(name.ends_with(".jsonl") || name.ends_with(".jsonl.zst"))
+    {
+        return Err("Not a saved Codex rollout file".into());
+    }
+    let date = name
+        .get(8..18)
+        .filter(|date| {
+            date.bytes().enumerate().all(|(i, b)| {
+                if i == 4 || i == 7 {
+                    b == b'-'
+                } else {
+                    b.is_ascii_digit()
+                }
+            })
+        })
+        .ok_or("Missing Codex rollout date")?;
+    let dir = home
+        .join("sessions")
+        .join(&date[..4])
+        .join(&date[5..7])
+        .join(&date[8..10]);
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join(path.file_name().unwrap()))
+}
+
+/// Copy through a flushed temporary file, so a reader never sees a partial copy.
+pub(crate) fn copy_durable(path: &Path, dest: &Path) -> std::io::Result<()> {
+    let mut temp = dest.as_os_str().to_os_string();
+    temp.push(format!(".{}.tmp", uuid::Uuid::new_v4()));
+    let temp = PathBuf::from(temp);
+    let result = std::fs::copy(path, &temp)
+        .and_then(|_| {
+            // Windows requires write access when flushing a file to disk.
+            std::fs::File::options()
+                .write(true)
+                .open(&temp)
+                .and_then(|f| f.sync_all())
+        })
+        .and_then(|()| std::fs::rename(&temp, dest));
+    if result.is_err() {
+        let _ = std::fs::remove_file(&temp);
+    }
+    result
+}
+
 // Rollouts reconstruct the graph, but explicit agent closure lives only in
 // SQLite. Apply that small snapshot after private app-server initialization
 // and before it restores agent identities while resuming the root.
 #[derive(Serialize, Deserialize)]
-struct AgentEdge {
+pub(crate) struct AgentEdge {
     parent: String,
     child: String,
     status: String,
@@ -586,7 +499,7 @@ fn edge_snapshot_path(home: &Path, thread_id: &str) -> PathBuf {
         .join(format!("{thread_id}.json"))
 }
 
-fn state_db(home: &Path) -> Result<Option<PathBuf>, String> {
+pub(crate) fn state_db(home: &Path) -> Result<Option<PathBuf>, String> {
     let entries = match std::fs::read_dir(home) {
         Ok(entries) => entries,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -612,7 +525,7 @@ fn state_db(home: &Path) -> Result<Option<PathBuf>, String> {
         .map(|(_, path)| path))
 }
 
-fn closed_agent_edges(home: &Path, thread_id: &str) -> Result<Vec<AgentEdge>, String> {
+pub(crate) fn closed_agent_edges(home: &Path, thread_id: &str) -> Result<Vec<AgentEdge>, String> {
     validate_thread_id(thread_id)?;
     let Some(path) = state_db(home)? else {
         return Ok(Vec::new());
@@ -649,6 +562,12 @@ fn restore_agent_edges(home: &Path, thread_id: &str) -> Result<(), String> {
     };
     let edges: Vec<AgentEdge> = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     let path = state_db(home)?.ok_or("Codex has not initialized the private Familiar index")?;
+    apply_agent_edges(&path, edges)?;
+    std::fs::remove_file(snapshot).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub(crate) fn apply_agent_edges(path: &Path, edges: Vec<AgentEdge>) -> Result<(), String> {
     let mut db =
         rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE)
             .map_err(|e| e.to_string())?;
@@ -660,19 +579,17 @@ fn restore_agent_edges(home: &Path, thread_id: &str) -> Result<(), String> {
         validate_thread_id(&edge.child)?;
         tx.execute("INSERT INTO thread_spawn_edges(parent_thread_id, child_thread_id, status) VALUES (?1, ?2, ?3) ON CONFLICT(child_thread_id) DO UPDATE SET status=excluded.status WHERE parent_thread_id=excluded.parent_thread_id", rusqlite::params![edge.parent, edge.child, edge.status]).map_err(|e| e.to_string())?;
     }
-    tx.commit().map_err(|e| e.to_string())?;
-    std::fs::remove_file(snapshot).map_err(|e| e.to_string())?;
-    Ok(())
+    tx.commit().map_err(|e| e.to_string())
 }
 
-fn rollout_matches(path: &Path, id: &str) -> bool {
+pub(crate) fn rollout_matches(path: &Path, id: &str) -> bool {
     path.file_name().is_some_and(|name| {
         let name = name.to_string_lossy();
         name.ends_with(&format!("-{id}.jsonl")) || name.ends_with(&format!("-{id}.jsonl.zst"))
     })
 }
 
-fn find_thread(dir: &Path, id: &str) -> Result<Option<PathBuf>, String> {
+pub(crate) fn find_thread(dir: &Path, id: &str) -> Result<Option<PathBuf>, String> {
     for entry in std::fs::read_dir(dir).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         let kind = entry.file_type().map_err(|e| e.to_string())?;
@@ -688,7 +605,7 @@ fn find_thread(dir: &Path, id: &str) -> Result<Option<PathBuf>, String> {
     Ok(None)
 }
 
-fn history_base(path: &Path) -> Result<Option<String>, String> {
+pub(crate) fn history_base(path: &Path) -> Result<Option<String>, String> {
     use std::io::BufRead;
     let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
     let reader: Box<dyn std::io::Read> = if path.extension().is_some_and(|ext| ext == "zst") {
@@ -711,269 +628,4 @@ fn history_base(path: &Path) -> Result<Option<String>, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct Fixture(PathBuf);
-    impl Fixture {
-        fn new() -> Self {
-            let dir =
-                std::env::temp_dir().join(format!("molfar-codex-store-{}", uuid::Uuid::new_v4()));
-            std::fs::create_dir_all(&dir).unwrap();
-            Self(dir)
-        }
-        fn source(&self) -> PathBuf {
-            self.0.join("account")
-        }
-        fn home(&self) -> PathBuf {
-            self.0.join("mono")
-        }
-        fn rollout(&self, id: &str, base: Option<&str>) -> PathBuf {
-            let dir = self.source().join("archived_sessions");
-            std::fs::create_dir_all(&dir).unwrap();
-            let path = dir.join(format!("rollout-2026-10-08T10-00-00-{id}.jsonl"));
-            let meta = serde_json::json!({"type":"session_meta", "payload": {"id":id, "history_base":base.map(|id| serde_json::json!({"thread_id":id}))}});
-            std::fs::write(&path, format!("{meta}\n{{\"type\":\"response_item\",\"payload\":{{\"tool_history\":\"retained\"}}}}\n")).unwrap();
-            path
-        }
-    }
-    impl Drop for Fixture {
-        fn drop(&mut self) {
-            let _ = std::fs::remove_dir_all(&self.0);
-        }
-    }
-
-    #[test]
-    fn shares_settings_and_login_but_not_codex_state() {
-        let fixture = Fixture::new();
-        let source = fixture.source();
-        let home = fixture.home();
-        std::fs::create_dir_all(source.join("sessions")).unwrap();
-        for name in [
-            "config.toml",
-            "auth.json",
-            "history.jsonl",
-            "state_5.sqlite",
-            "session_index.jsonl",
-        ] {
-            std::fs::write(source.join(name), name).unwrap();
-        }
-        std::fs::create_dir_all(source.join("skills")).unwrap();
-        prepare_files(&source, &home).unwrap();
-        prepare_files(&source, &home).unwrap();
-        assert_eq!(
-            std::fs::read_to_string(home.join("config.toml")).unwrap(),
-            "config.toml"
-        );
-        std::fs::write(home.join("auth.json"), "refreshed login").unwrap();
-        assert_eq!(
-            std::fs::read_to_string(source.join("auth.json")).unwrap(),
-            "refreshed login"
-        );
-        assert!(home.join("skills").is_dir());
-        assert!(home.join("sessions").is_dir());
-        for name in ["history.jsonl", "state_5.sqlite", "session_index.jsonl"] {
-            assert!(!home.join(name).exists());
-        }
-        std::fs::write(home.join("sessions/private"), "private").unwrap();
-        assert!(!source.join("sessions/private").exists());
-        std::fs::write(home.join("secrets/shared"), "encrypted").unwrap();
-        assert_eq!(
-            std::fs::read_to_string(source.join("secrets/shared")).unwrap(),
-            "encrypted"
-        );
-    }
-
-    #[test]
-    fn rejects_a_private_state_link_to_the_original_home() {
-        let fixture = Fixture::new();
-        std::fs::create_dir_all(fixture.source().join("sessions")).unwrap();
-        std::fs::create_dir_all(fixture.home()).unwrap();
-        #[cfg(unix)]
-        std::os::unix::fs::symlink(
-            fixture.source().join("sessions"),
-            fixture.home().join("sessions"),
-        )
-        .unwrap();
-        #[cfg(windows)]
-        junction::create(
-            fixture.source().join("sessions"),
-            fixture.home().join("sessions"),
-        )
-        .unwrap();
-        assert!(prepare_files(&fixture.source(), &fixture.home()).is_err());
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn shares_readable_directory_junctions_with_verbatim_paths() {
-        let fixture = Fixture::new();
-        let source = fixture.source().join("skills [shared]");
-        std::fs::create_dir_all(&source).unwrap();
-        std::fs::create_dir_all(fixture.home()).unwrap();
-        std::fs::write(source.join("skill.txt"), "shared skill").unwrap();
-        // canonicalize supplies the verbatim prefix that broke PowerShell.
-        let source = source.canonicalize().unwrap();
-        let target = fixture.home().canonicalize().unwrap().join("skills");
-        link_entry(&source, &target).unwrap();
-        assert_eq!(
-            std::fs::read_to_string(target.join("skill.txt")).unwrap(),
-            "shared skill"
-        );
-        link_entry(&source, &target).unwrap();
-        assert_eq!(target.canonicalize().unwrap(), source);
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn rejects_an_unrelated_configuration_junction() {
-        let fixture = Fixture::new();
-        let source = fixture.source();
-        let other = fixture.0.join("other-account");
-        let target = fixture.home().join("skills");
-        std::fs::create_dir_all(&source).unwrap();
-        std::fs::create_dir_all(&other).unwrap();
-        std::fs::create_dir_all(fixture.home()).unwrap();
-        junction::create(&other, &target).unwrap();
-        assert!(link_entry(&source.canonicalize().unwrap(), &target).is_err());
-        assert_eq!(
-            target.canonicalize().unwrap(),
-            other.canonicalize().unwrap()
-        );
-    }
-
-    #[test]
-    fn retains_native_bytes_descendants_compressed_tails_and_inherited_history() {
-        let fixture = Fixture::new();
-        let base = fixture.rollout("base-id", None);
-        let root = fixture.rollout("root-id", Some("base-id"));
-        let child = fixture.rollout("child-id", Some("root-id"));
-        let child_bytes = std::fs::read(&child).unwrap();
-        let compressed = child.with_extension("jsonl.zst");
-        std::fs::write(
-            &compressed,
-            zstd::stream::encode_all(child_bytes.as_slice(), 0).unwrap(),
-        )
-        .unwrap();
-        std::fs::write(
-            &child,
-            "{\"type\":\"event_msg\",\"payload\":{\"after_compression\":true}}\n",
-        )
-        .unwrap();
-        prepare_files(&fixture.source(), &fixture.home()).unwrap();
-        copy_rollouts(
-            &fixture.source(),
-            &fixture.home(),
-            "root-id",
-            &[root.clone(), compressed.clone()],
-        )
-        .unwrap();
-        for path in [&root, &base, &child, &compressed] {
-            let target = fixture
-                .home()
-                .join("sessions/2026/10/08")
-                .join(path.file_name().unwrap());
-            assert_eq!(std::fs::read(path).unwrap(), std::fs::read(target).unwrap());
-        }
-        assert!(contains_thread(&fixture.home().join("sessions"), "root-id").unwrap());
-        assert!(!fixture.home().join(".molfar-migrations/root-id").exists());
-        // A retry is safe and leaves source files intact.
-        copy_rollouts(
-            &fixture.source(),
-            &fixture.home(),
-            "root-id",
-            &[root, child],
-        )
-        .unwrap();
-    }
-
-    #[test]
-    fn rejects_unrelated_files_and_missing_inherited_context() {
-        let fixture = Fixture::new();
-        let root = fixture.rollout("root-id", Some("missing-id"));
-        prepare_files(&fixture.source(), &fixture.home()).unwrap();
-        assert!(copy_rollouts(&fixture.source(), &fixture.home(), "root-id", &[root]).is_err());
-        assert!(!contains_thread(&fixture.home().join("sessions"), "root-id").unwrap());
-        let outside = fixture.0.join("rollout-2026-10-08T10-00-00-root-id.jsonl");
-        std::fs::write(&outside, "{}\n").unwrap();
-        assert!(copy_rollouts(&fixture.source(), &fixture.home(), "root-id", &[outside]).is_err());
-        assert!(validate_thread_id("../other").is_err());
-    }
-
-    #[test]
-    fn refreshed_keyring_credentials_only_recover_the_same_account() {
-        let auth = |account: &str, at: &str| {
-            Some(
-                serde_json::json!({"tokens":{"account_id":account}, "last_refresh":at}).to_string(),
-            )
-        };
-        assert!(newer_same_account(
-            &auth("one", "2026-10-08T12:00:00Z"),
-            &auth("one", "2026-10-08T11:00:00Z")
-        ));
-        assert!(!newer_same_account(
-            &auth("one", "2026-10-08T11:00:00Z"),
-            &auth("one", "2026-10-08T12:00:00Z")
-        ));
-        assert!(!newer_same_account(
-            &auth("two", "2026-10-08T12:00:00Z"),
-            &auth("one", "2026-10-08T11:00:00Z")
-        ));
-        assert!(!newer_same_account(
-            &auth("one", "2026-10-08T12:00:00Z"),
-            &None
-        ));
-    }
-
-    #[test]
-    fn migration_keeps_closed_agents_closed_and_leaves_other_threads_out() {
-        let fixture = Fixture::new();
-        let root = fixture.rollout("root", None);
-        let child = fixture.rollout("closed-child", Some("root"));
-        let db = rusqlite::Connection::open(fixture.source().join("state_5.sqlite")).unwrap();
-        db.execute_batch("CREATE TABLE thread_spawn_edges(parent_thread_id TEXT NOT NULL, child_thread_id TEXT PRIMARY KEY, status TEXT NOT NULL); INSERT INTO thread_spawn_edges VALUES ('root','open-child','open'), ('root','closed-child','closed'), ('other','unrelated','closed');").unwrap();
-        let edges = closed_agent_edges(&fixture.source(), "root").unwrap();
-        assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].child, "closed-child");
-        prepare_files(&fixture.source(), &fixture.home()).unwrap();
-        copy_rollouts_with_edges(
-            &fixture.source(),
-            &fixture.home(),
-            "root",
-            &[root, child],
-            &edges,
-        )
-        .unwrap();
-        // app-server creates this schema during initialization. It can backfill
-        // an open edge before or after the saved closure is restored.
-        let private = rusqlite::Connection::open(fixture.home().join("state_5.sqlite")).unwrap();
-        private.execute_batch("CREATE TABLE thread_spawn_edges(parent_thread_id TEXT NOT NULL, child_thread_id TEXT PRIMARY KEY, status TEXT NOT NULL); INSERT INTO thread_spawn_edges VALUES ('root','closed-child','open');").unwrap();
-        restore_agent_edges(&fixture.home(), "root").unwrap();
-        let status: String = private
-            .query_row(
-                "SELECT status FROM thread_spawn_edges WHERE child_thread_id='closed-child'",
-                [],
-                |row| row.get(0),
-            )
-            .unwrap();
-        assert_eq!(status, "closed");
-        let count: i64 = private
-            .query_row("SELECT count(*) FROM thread_spawn_edges", [], |row| {
-                row.get(0)
-            })
-            .unwrap();
-        assert_eq!(count, 1);
-        assert!(!edge_snapshot_path(&fixture.home(), "root").exists());
-        // Later changes in the private graph must not be overwritten on resume.
-        private
-            .execute("UPDATE thread_spawn_edges SET status='open'", [])
-            .unwrap();
-        restore_agent_edges(&fixture.home(), "root").unwrap();
-        let status: String = private
-            .query_row("SELECT status FROM thread_spawn_edges", [], |row| {
-                row.get(0)
-            })
-            .unwrap();
-        assert_eq!(status, "open");
-    }
-}
+mod tests;

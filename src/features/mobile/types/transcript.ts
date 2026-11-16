@@ -1,0 +1,91 @@
+import type { FamiliarSpawnedSession } from "@/domain/session/familiar-session";
+import type { HarnessId } from "@/domain/harness/harness";
+import type { TurnMetrics } from "@/domain/session/turn";
+import type { LaunchedSessionState } from "@/features/familiars/model/familiar-spawned-sessions";
+import type { ActivityPhaseKind } from "@/features/sessions/model/transcript-activity";
+
+export type MobileStep = { id: string; label: string; failed?: boolean };
+export type MobilePhase = {
+  id: string;
+  kind: ActivityPhaseKind;
+  title: string;
+  steps: MobileStep[];
+};
+/** A session a Familiar started, as its card in the Familiar's chat. */
+export type MobileLaunchedSession = {
+  id: string;
+  /** The phone's ID for the project it runs in. */
+  projectId: string;
+  /** The project's name, for the card's pill. */
+  project: string;
+  title: string;
+  harness: HarnessId;
+  state: LaunchedSessionState;
+};
+/** What an opened fold holds, in order: the agent's notes between its work. */
+export type MobileFoldEntry =
+  | { type: "prose"; id: string; text: string }
+  | ({ type: "phase" } & MobilePhase);
+export type MobileTurnItem =
+  | {
+      type: "user";
+      id: string;
+      text: string;
+      at?: number;
+      reaction?: string;
+      emojiOnly?: boolean;
+      attachments?: number;
+      /** Another message follows straight on, so this one drops its time. */
+      compact?: boolean;
+    }
+  | { type: "text"; id: string; text: string; streaming?: boolean }
+  /** The turn's status line: the fold line, or a Familiar's signature. */
+  | {
+      type: "header";
+      id: string;
+      live: boolean;
+      /** Shown as is. Without one the phone formats the clock itself. */
+      label?: string;
+      waiting?: string;
+      startedAt?: number;
+      durationMs?: number;
+      model?: string;
+      harness?: HarnessId;
+      /** The work the line folds away; empty when there is none to open. */
+      entries: MobileFoldEntry[];
+    }
+  /** Work left open in the turn: live, or after the last answer. */
+  | { type: "work"; id: string; live: boolean; phases: MobilePhase[] }
+  | { type: "notice"; id: string; text: string; error?: boolean }
+  /** Sessions the Familiar started, as cards under the reply after the launch. */
+  | { type: "sessions"; id: string; sessions: MobileLaunchedSession[] };
+
+export type MobileTurn = {
+  id: string;
+  /** A day stamp above the turn, for a Familiar's conversation kept over days. */
+  stampAt?: number;
+  items: MobileTurnItem[];
+  /** When the answer landed, for the line under a settled turn. */
+  completedAt?: number;
+  footer?: boolean;
+  /** What the footer's copy button copies: the turn's replies, as on desktop. */
+  copyText?: string;
+  /** Token accounting for the footer's metrics button; Familiars leave it out. */
+  metrics?: TurnMetrics;
+  durationMs?: number;
+};
+
+export type MobileTranscriptOptions = {
+  busy: boolean;
+  familiar?: { name: string };
+  pendingQuestion?: boolean;
+  backgroundTasks?: string[];
+  /** A Familiar's launched session as its card shows it: where it runs, and how it stands. */
+  launch?: (launch: FamiliarSpawnedSession) => MobileLaunchedSession;
+  /**
+   * Which turns to build, as [start, end) over every turn's ID; the latest
+   * MAX_TURNS without one. Grouping covers the whole session, but building a
+   * turn's items is the costly part, so only the ones sent are built.
+   */
+  range?: (turnIds: string[]) => [number, number];
+};

@@ -1,11 +1,12 @@
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { Kanban } from "../../../shared/ui/icons";
-import { SurfaceHeader } from "../../home/ui/SurfaceHeader";
+import { Kanban } from "@/shared/ui/icons";
+import { SurfaceHeader } from "@/features/home/ui/SurfaceHeader";
 import { BOARD_COLUMNS, isAgentStage } from "../constants/columns";
 import { useBoardDrag, type BoardDrag } from "../hooks/use-board-drag";
+import { useBoardProject } from "../hooks/use-board-project";
 import { DROP_LABEL } from "../constants/column-look";
 import { needsYou } from "../model/attention";
-import { HARNESSES, type HarnessId } from "../../sessions/model/session";
 import "./task-board.css";
 import { useTaskBoard } from "../hooks/use-task-board";
 import type { TaskBoardRuntime } from "../hooks/use-task-board-engine";
@@ -48,7 +49,7 @@ type Props = {
 
 /** The global Task Board surface opened from the project rail. */
 export function BoardView({ runtime, projects, besideRail, compactRail, onClose, onToggleSidebar, onOpenSession }: Props): ReactNode {
-  const [project, setProject] = useState<string | null>(null);
+  const [project, setProject] = useBoardProject(projects);
   const [archived, setArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);

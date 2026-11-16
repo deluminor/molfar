@@ -6,7 +6,7 @@ import {
   Clock,
   LoaderCircle,
   type IconComponent,
-} from "../../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import type { CardStatus, CardStatusKind } from "../../model/card-status";
 
 const LOOK: Record<CardStatusKind, { icon: IconComponent; className: string }> = {

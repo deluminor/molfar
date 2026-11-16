@@ -1,4 +1,4 @@
-import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
+import { NativePopupHost } from "@/shared/ui/NativePopupHost";
 import {
   useCallback,
   useContext,
@@ -7,12 +7,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import { useProjectWorktrees } from "../../source-control/hooks/useProjectWorktrees";
-import type { Worktree } from "../../source-control/model/worktrees";
-import { MOD, SHIFT } from "../../../platform/tauri/platform";
-import { prettyCwd } from "../../../shared/lib/paths";
-import type { WorkspaceMode } from "../../sessions/model/session";
+import { useProjectBranchesState } from "@/features/source-control/hooks/use-project-branches";
+import { useProjectWorktrees } from "@/features/source-control/hooks/use-project-worktrees";
+import type { Worktree } from "@/features/source-control/model/worktrees";
+import { MOD, SHIFT } from "@/shared/lib/platform";
+import { prettyCwd } from "@/shared/lib/paths";
+import type { WorkspaceMode } from "@/domain/session/session";
 import {
   Check,
   ChevronRight,
@@ -22,15 +22,15 @@ import {
   Loader,
   Search,
   Settings,
-} from "../../../shared/ui/icons";
-import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
-import { Popover } from "../../../shared/ui/Popover";
-import { LAYER } from "../../../shared/lib/layers";
+} from "@/shared/ui/icons";
+import { GitPickerTrigger } from "@/features/source-control/ui/GitPickerTrigger";
+import { Popover } from "@/shared/ui/Popover";
+import { LAYER } from "@/shared/lib/layers";
 import {
   keybindingPressed,
   keybindingShortcutLabel,
   keybindingShortcutTokens,
-} from "../../settings/model/settings";
+} from "@/features/settings/model/settings";
 
 export const WORKSPACE_MODE_SHORTCUT = `${MOD}${SHIFT}G`;
 const WORKSPACE_SURFACES =
@@ -139,7 +139,7 @@ export function WorkspaceIdentity({ worktree }: { worktree: boolean }) {
     <div
       title={`Workspace: ${label}`}
       aria-label={`Workspace ${label}`}
-      className="-ml-1.5 flex h-6 min-w-0 shrink-0 items-center gap-1.5 px-1.5 text-[12px] text-content/45"
+      className="-ml-1.5 flex h-6 min-w-0 shrink-0 items-center gap-1.5 px-1.5 text-[12px] text-content/55 opacity-40"
     >
       <Icon className="size-3.5 shrink-0" />
       <span className="truncate">{label}</span>

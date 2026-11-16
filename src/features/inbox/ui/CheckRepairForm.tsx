@@ -2,8 +2,8 @@ import {
   buildCiRepairRequest,
   type CiRepairEvidence,
   type CiRepairRequest,
-} from "../model/ciRepair";
-import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
+} from "../model/ci-repair";
+import { Popover, type PopoverAnchor } from "@/shared/ui/Popover";
 import {
   Check,
   ChevronRight,
@@ -13,13 +13,13 @@ import {
   Search,
   Sparkles,
   X,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   fetchGithubCheckDetails,
   githubActionsJobId,
   type GithubPrCheck,
-} from "../model/githubPrChecks";
+} from "../model/github-pr-checks";
 
 export type CheckRepair = {
   onOpenSession?: (sessionId: string) => void | Promise<void>;

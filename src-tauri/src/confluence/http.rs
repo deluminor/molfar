@@ -1,7 +1,8 @@
 use base64::Engine as _;
 use serde_json::Value;
 
-use super::constants::HTTP_TIMEOUT;
+use crate::http_client::{self, HttpFailure, Redirects};
+
 use super::types::{AtlassianConfig, HttpError};
 
 pub(super) fn authorization(config: &AtlassianConfig) -> String {
@@ -21,10 +22,9 @@ pub(super) fn confluence_get_checked(
     config: &AtlassianConfig,
     path: &str,
 ) -> Result<Value, HttpError> {
-    let agent = ureq::AgentBuilder::new().timeout(HTTP_TIMEOUT).build();
     let url = format!("{}{path}", config.site.trim_end_matches('/'));
 
-    let result = agent
+    let result = http_client::agent(Redirects::Follow)
         .get(&url)
         .set("Authorization", &authorization(config))
         .set("Accept", "application/json")
@@ -33,25 +33,56 @@ pub(super) fn confluence_get_checked(
     read_response(result)
 }
 
+pub(super) fn confluence_post(
+    config: &AtlassianConfig,
+    path: &str,
+    body: &Value,
+) -> Result<Value, String> {
+    let url = format!("{}{path}", config.site.trim_end_matches('/'));
+    let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
+    let result = http_client::agent(Redirects::Follow)
+        .post(&url)
+        .set("Authorization", &authorization(config))
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .send_string(&payload);
+    read_response(result).map_err(|error| error.message)
+}
+
+pub(super) fn confluence_put(
+    config: &AtlassianConfig,
+    path: &str,
+    body: &Value,
+) -> Result<Value, String> {
+    let url = format!("{}{path}", config.site.trim_end_matches('/'));
+    let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
+    let result = http_client::agent(Redirects::Follow)
+        .put(&url)
+        .set("Authorization", &authorization(config))
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .send_string(&payload);
+    read_response(result).map_err(|error| error.message)
+}
+
 pub(super) fn read_response(
     result: Result<ureq::Response, ureq::Error>,
 ) -> Result<Value, HttpError> {
-    let response = match result {
+    let response = match http_client::response(result) {
         Ok(response) => response,
-        Err(ureq::Error::Status(401, _)) => {
+        Err(HttpFailure::Status { status: 401, .. }) => {
             return Err(HttpError {
                 status: Some(401),
                 message: "Jira/Confluence email or API token is invalid".into(),
             });
         }
-        Err(ureq::Error::Status(status, response)) => {
-            let body = response.into_string().unwrap_or_default();
+        Err(HttpFailure::Status { status, body }) => {
             return Err(HttpError {
                 status: Some(status),
                 message: http_error(status, &body),
             });
         }
-        Err(_) => {
+        Err(HttpFailure::Unreachable) => {
             return Err(HttpError {
                 status: None,
                 message: "Could not reach Confluence".into(),
@@ -65,11 +96,15 @@ pub(super) fn read_response(
         message: "Confluence returned an unreadable response".into(),
     })?;
 
-    if !(200..300).contains(&status) {
+    if !http_client::is_success(status) {
         return Err(HttpError {
             status: Some(status),
             message: http_error(status, &body),
         });
+    }
+
+    if body.trim().is_empty() {
+        return Ok(serde_json::json!({}));
     }
 
     serde_json::from_str(&body).map_err(|_| HttpError {

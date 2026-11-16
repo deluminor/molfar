@@ -1,4 +1,4 @@
-import { Folder, LoaderCircle, MessageSquare, Search } from "../../../shared/ui/icons";
+import { Folder, LoaderCircle, MessageSquare, Search } from "@/shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -8,13 +8,13 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { MatchText } from "../../../shared/ui/MatchText";
-import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
-import { OverlayNav } from "../../../app/shell/TitleBar";
-import { WindowControls } from "../../../app/shell/WindowControls";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { MatchText } from "@/shared/ui/MatchText";
+import { ProjectLogoIcon } from "@/features/projects/ui/ProjectLogoIcon";
+import { OverlayNav } from "@/features/window-chrome/ui/OverlayNav";
+import { WindowControls } from "@/features/window-chrome/ui/WindowControls";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   conversationRowsFrom,
   flattenGrouped,
@@ -28,27 +28,27 @@ import {
   searchSessionMessages,
   type AppSearchHit,
   type SearchScope,
-} from "../model/appSearch";
+} from "../model/app-search";
 import {
   loadProjectFiles,
   peekProjectFiles,
   rankProjectFiles,
   recentOpenedFiles,
-} from "../../files/model/fileIndex";
-import { prettyCwd, projectName } from "../../../shared/lib/paths";
-import { IS_MAC } from "../../../platform/tauri/platform";
-import { isLocalProject, type RecentProject } from "../../projects/model/recents";
+} from "@/features/files/model/file-index";
+import { prettyCwd, projectName } from "@/shared/lib/paths";
+import { IS_MAC } from "@/shared/lib/platform";
+import { isLocalProject, type RecentProject } from "@/features/projects/model/recents";
 import {
   cancelProjectSearch,
   searchProject,
   type OpenFileFn,
 } from "../model/search";
-import { type Session } from "../../sessions/model/session";
+import type { Session } from "@/domain/session/session";
 import {
   cancelSessionSearch,
   searchSessions,
   type SessionSummary,
-} from "../../sessions/data/sessionStore";
+} from "@/features/sessions/data/session-store";
 
 const SCOPES: { id: SearchScope; label: string }[] = [
   { id: "all", label: "All" },
@@ -58,6 +58,7 @@ const SCOPES: { id: SearchScope; label: string }[] = [
 ];
 
 type Props = {
+  tabbed?: boolean;
   open: boolean;
   cwd: string;
   recents: RecentProject[];
@@ -74,6 +75,7 @@ type Props = {
 };
 
 export function SearchView({
+  tabbed = false,
   open,
   cwd,
   recents,
@@ -109,7 +111,7 @@ export function SearchView({
   const truncated = contentTruncated || sessionTruncated;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || tabbed) return;
     setQuery("");
     setScope("all");
     setActive(0);
@@ -118,7 +120,7 @@ export function SearchView({
     setContentTruncated(false);
     setSessionTruncated(false);
     setError(null);
-  }, [open]);
+  }, [open, tabbed]);
 
   useEffect(() => {
     if (!open) return;
@@ -388,9 +390,9 @@ export function SearchView({
         className="flex h-10 shrink-0 select-none items-center border-b border-stroke"
         data-tauri-drag-region="deep"
       >
-        {IS_MAC && compactRail ? <div className="w-4 shrink-0" /> : null}
-        {IS_MAC && !besideRail ? <div className="w-[78px] shrink-0" /> : null}
-        {besideRail ? null : (
+        {!tabbed && IS_MAC && compactRail ? <div className="w-4 shrink-0" /> : null}
+        {!tabbed && IS_MAC && !besideRail ? <div className="w-[78px] shrink-0" /> : null}
+        {tabbed || besideRail ? null : (
           <OverlayNav onBack={onClose} onToggleSidebar={onToggleSidebar} />
         )}
         <label className="flex min-w-0 flex-1 items-center gap-2 px-3 text-content/50">
@@ -416,7 +418,7 @@ export function SearchView({
             />
           ) : null}
         </label>
-        {!IS_MAC ? <WindowControls /> : null}
+        {!tabbed && !IS_MAC ? <WindowControls /> : null}
       </div>
 
       <div className="flex h-9 shrink-0 items-center gap-px border-b border-stroke px-3">

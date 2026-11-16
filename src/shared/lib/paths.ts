@@ -1,4 +1,4 @@
-import { IS_WIN } from "../../platform/tauri/platform";
+import { IS_WIN } from "./platform";
 
 function windowsPath(path: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(path) || path.startsWith("\\\\") || path.startsWith("//");
@@ -9,8 +9,21 @@ export function slash(path: string): string {
     ? path.replace(/\\/g, "/") : path;
 }
 
+/** Strip Windows `\\?\` extended-length prefixes before comparison. */
+export function stripWindowsExtendedPrefix(path: string): string {
+  const slashed = path.replace(/\\/g, "/");
+  if (/^\/\/\?\/unc\//i.test(slashed)) return `//${slashed.slice(8)}`;
+  if (/^\/\/\?\/[a-z]:\//i.test(slashed)) return slashed.slice(4);
+  return path;
+}
+
 function trimSlash(path: string): string {
-  return slash(path).replace(/\/+$/, "") || "/";
+  return slash(stripWindowsExtendedPrefix(path)).replace(/\/+$/, "") || "/";
+}
+
+/** Canonical stored path: forward slashes, no trailing slash, extended prefix stripped. */
+export function normalizePath(path: string): string {
+  return trimSlash(path);
 }
 
 /** Stable comparison key for Windows paths without changing their display case. */
@@ -87,6 +100,54 @@ export function joinPath(parent: string, relative: string): string {
     out = out === "/" ? `/${part}` : `${out}/${part}`;
   }
   return out;
+}
+
+const DOCUMENT_IMAGE_EXTENSION = /\.(?:png|jpe?g|gif|webp|avif|bmp|ico|svg)$/i;
+
+/** True for references that never name a file in the project. */
+function isForeignImageReference(value: string): boolean {
+  return (
+    /^[a-z][a-z0-9+.-]*:/i.test(value) ||
+    value.startsWith("//") ||
+    value.startsWith("~") ||
+    value.includes("\\") ||
+    value.includes("\0")
+  );
+}
+
+/**
+ * The project file an image in a Markdown document refers to, as GitHub reads
+ * it: relative to the document's folder, or to the project root when it starts
+ * with `/`. The document is untrusted, so anything that is not a plain image
+ * path inside `root` is refused: URLs of any scheme, `//host` and `~` paths,
+ * backslashes, and `..` that climbs out of the project. `relative` is the
+ * same file relative to `root`.
+ */
+export function resolveDocumentImage(
+  src: string,
+  documentPath: string,
+  root: string,
+): { path: string; relative: string } | undefined {
+  let value = src.trim();
+  if (!value || !documentPath || !root || root.trim() === "~") return undefined;
+  if (isForeignImageReference(value)) return undefined;
+  value = value.replace(/[?#][\s\S]*$/, "");
+  try {
+    value = decodeURIComponent(value);
+  } catch {
+    return undefined;
+  }
+  if (!value || isForeignImageReference(value)) return undefined;
+
+  const base = trimSlash(root);
+  const path = value.startsWith("/")
+    ? joinPath(base, value)
+    : joinPath(parentPath(documentPath), value);
+  if (!isEqualOrInside(path, base) || pathKey(path) === pathKey(base))
+    return undefined;
+  if (!DOCUMENT_IMAGE_EXTENSION.test(path)) return undefined;
+  const relative = path.slice(base.length).replace(/^\/+/, "");
+  return relative ? { path, relative } : undefined;
 }
 
 /**
@@ -282,4 +343,12 @@ export function projectName(cwd: string): string {
  */
 export function projectKey(cwd: string): string {
   return pathKey(cwd);
+}
+/** Last path segment, or `/` for the filesystem root. */
+
+export function basename(path: string): string {
+  const trimmed = slash(path).replace(/\/+$/, "") || "/";
+  if (/^[A-Za-z]:$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split("/").filter(Boolean);
+  return parts[parts.length - 1] ?? trimmed;
 }

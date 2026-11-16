@@ -1,5 +1,6 @@
-import { ChartBreakoutSquare, File } from "../../../shared/ui/icons";
-import { artifactLabel, type ArtifactCard as Card } from "../artifacts";
+import type { ArtifactCard as Card } from "@/domain/artifacts/artifact";
+import { ChartBreakoutSquare, File } from "@/shared/ui/icons";
+import { artifactLabel } from "../artifacts";
 
 export function ArtifactIcon({
   kind,

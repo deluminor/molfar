@@ -1,17 +1,14 @@
+import { idleRateLimits } from "@/domain/rate-limits/rate-limit-state";
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw } from "../../shared/ui/icons";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+import { RefreshCw } from "@/shared/ui/icons";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import {
   fetchPiUsage,
   piBillingProvider,
   piUsageProvider,
   type PiUsageProvider,
-} from "../../features/providers/model/piUsage";
-import {
-  idleRateLimits,
-  RATE_LIMIT_MIN_REFETCH_MS,
-  RATE_LIMIT_POLL_MS,
-} from "../../features/providers/model/rateLimits";
+} from "@/features/providers/model/pi-usage";
+import { RATE_LIMIT_MIN_REFETCH_MS, RATE_LIMIT_POLL_MS } from "@/features/providers/model/rate-limits";
 import { UsageProviderChip, type UsageChipVariant } from "./UsageProviderChip";
 
 export function PiUsage({
@@ -121,7 +118,7 @@ function PiProviderUsage({
         title="Refresh Pi usage"
         disabled={fetching}
         onClick={() => refreshRef.current(true)}
-        className="grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/10 hover:text-content disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent"
+        className={`grid size-6 shrink-0 place-items-center ${variant === "inset" ? "rounded-full" : "rounded-md"} text-content/40 hover:bg-content/10 hover:text-content disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent`}
       >
         <RefreshCw
           className={`size-2.5 ${fetching ? "motion-safe:animate-spin" : ""}`}

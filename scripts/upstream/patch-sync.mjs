@@ -1,9 +1,15 @@
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { KEEP_PHRASES, RENAMES, VERBATIM_PATHS } from "./rename-map.mjs";
-import { countTokens, createRenamer } from "./rename-upstream.mjs";
+import { git, isAncestor, lines, unmergedPaths } from "./git.mjs";
+import {
+  extractionsFor,
+  PATH_ACTION,
+  readMoveMap,
+  resolvePath,
+} from "./move-map.mjs";
+import { changedPaths, filePatch, retargetPatch } from "./patch-paths.mjs";
+import { writePendingPorts } from "./pending-ports.mjs";
+import { translateRange } from "./translate-range.mjs";
 
 export const STATE_FILE = ".github/upstream-sync.json";
 
@@ -11,34 +17,17 @@ export const SYNC_STATUS = {
   UP_TO_DATE: "up-to-date",
   APPLIED: "applied",
   CONFLICTS: "conflicts",
+  PENDING: "pending-ports",
   DIVERGED: "diverged",
 };
 
-const EMPTY_BLOB = /^0+$/;
+export const PENDING_REASON = {
+  ...PATH_ACTION,
+  APPLY_FAILED: "apply-failed",
+  MOVED_AND_RENAMED: "moved-and-renamed-upstream",
+};
 
-function git(cwd, args, input, { encoding = "utf8", env } = {}) {
-  return execFileSync("git", args, {
-    cwd,
-    input,
-    encoding,
-    env: env ? { ...process.env, ...env } : undefined,
-    maxBuffer: 1024 * 1024 * 1024,
-    stdio: ["pipe", "pipe", "pipe"],
-  });
-}
-
-function isAncestor(cwd, ancestor, descendant) {
-  try {
-    git(cwd, ["merge-base", "--is-ancestor", ancestor, descendant]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function lines(output) {
-  return output.split("\n").filter(Boolean);
-}
+const RETARGETABLE_STATUSES = new Set(["M", "D", "T"]);
 
 export function readSyncState(cwd) {
   return JSON.parse(readFileSync(join(cwd, STATE_FILE), "utf8"));
@@ -48,142 +37,154 @@ function writeSyncState(cwd, state) {
   writeFileSync(join(cwd, STATE_FILE), `${JSON.stringify(state, null, 2)}\n`);
 }
 
-function createTreeRenamer(cwd) {
-  const words = RENAMES.flatMap(({ from, to }) => [from, to]).join("|");
-  let matches = "";
-  try {
-    matches = git(cwd, ["grep", "-I", "-h", "-o", "-i", "-E", `[A-Za-z0-9_$-]*(${words})[A-Za-z0-9_$-]*`, "HEAD"]);
-  } catch (error) {
-    if (error.status !== 1) throw error;
-  }
-
-  return createRenamer({
-    renames: RENAMES,
-    keepPhrases: KEEP_PHRASES,
-    paths: lines(git(cwd, ["ls-tree", "-r", "--name-only", "HEAD"])),
-    treeCounts: countTokens(matches, RENAMES),
-  });
-}
-
-function readBlob(cwd, rev) {
-  return git(cwd, ["cat-file", "-p", rev], undefined, { encoding: "buffer" });
-}
-
-function headBlob(cwd, path) {
-  try {
-    return git(cwd, ["rev-parse", `HEAD:${path}`]).trim();
-  } catch {
-    return undefined;
-  }
-}
-
-function headText(cwd, path) {
-  try {
-    return git(cwd, ["show", `HEAD:${path}`]);
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Rewrites upstream's `from..to` diff into MOLFAR's names: both sides of every
- * changed file are translated, stored as blobs, and diffed as two trees, so
- * the result still carries real preimage blobs for a three-way apply. Files
- * a three-way apply cannot handle (deleted on one side, changed on the other)
- * are left out of the patch and reported in `unapplied`.
- */
-function renamedPatch(cwd, from, to) {
-  const renamer = createTreeRenamer(cwd);
-  const scratch = mkdtempSync(join(tmpdir(), "molfar-upstream-"));
-  const sides = { before: [], after: [] };
-  const remapped = [];
-  const unapplied = [];
-
-  try {
-    const raw = git(cwd, ["diff", "--raw", "--no-abbrev", "--no-renames", "-z", from, to]).split("\0").filter(Boolean);
-
-    for (let i = 0; i < raw.length; i += 2) {
-      const [modeBefore, modeAfter, blobBefore, blobAfter] = raw[i].slice(1).split(" ");
-      const path = raw[i + 1];
-      const verbatim = VERBATIM_PATHS.some((pattern) => pattern.test(path));
-      const target = verbatim ? path : renamer.mapPath(path);
-      const context = { fromFile: path, toFile: target, fileText: headText(cwd, target) };
-      if (target !== path) remapped.push(`${path} -> ${target}`);
-
-      const store = (blob) => {
-        if (verbatim) return blob;
-        const content = readBlob(cwd, blob);
-        if (content.includes(0)) return blob;
-        const translated = renamer.translate(content.toString("utf8"), context);
-        return git(cwd, ["hash-object", "-w", "--stdin"], translated).trim();
-      };
-
-      const ours = headBlob(cwd, target);
-      const preimage = EMPTY_BLOB.test(blobBefore) ? undefined : store(blobBefore);
-      const deleted = EMPTY_BLOB.test(blobAfter);
-
-      if (preimage && !ours) {
-        if (!deleted) unapplied.push({ path: target, reason: "changed upstream, deleted in MOLFAR" });
-        continue;
-      }
-      if (deleted && ours !== preimage) {
-        unapplied.push({ path: target, reason: "deleted upstream, changed in MOLFAR" });
-        continue;
-      }
-
-      if (preimage) sides.before.push(`${modeBefore} ${preimage}\t${target}`);
-      if (!deleted) sides.after.push(`${modeAfter} ${store(blobAfter)}\t${target}`);
-    }
-
-    const [before, after] = ["before", "after"].map((side) => {
-      const env = { GIT_INDEX_FILE: join(scratch, side) };
-      git(cwd, ["update-index", "--add", "--index-info"], sides[side].map((entry) => `${entry}\n`).join(""), { env });
-      return git(cwd, ["write-tree"], undefined, { env }).trim();
-    });
-
-    return { patch: git(cwd, ["diff", "--binary", "--find-renames", before, after]), remapped, unapplied };
-  } finally {
-    rmSync(scratch, { recursive: true, force: true });
-  }
-}
-
-function applyPatch(cwd, patch) {
+function tryApply(cwd, patch) {
   try {
     git(cwd, ["apply", "--3way", "--index", "--whitespace=nowarn", "-"], patch);
+    return null;
   } catch (error) {
-    const conflicts = lines(git(cwd, ["diff", "--name-only", "--diff-filter=U"]));
-    if (conflicts.length === 0) {
-      throw new Error(`git apply failed without leaving conflicts: ${error.stderr ?? error.message}`);
-    }
+    return String(error.stderr ?? error.message).trim();
+  }
+}
+
+function resolveChange(cwd, map, change) {
+  if (change.status === "A")
+    return { action: PATH_ACTION.APPLY, path: change.destination };
+
+  const resolved = resolvePath(cwd, map, change.source);
+  if (
+    resolved.action !== PATH_ACTION.RETARGET ||
+    RETARGETABLE_STATUSES.has(change.status)
+  )
+    return resolved;
+
+  return { action: PENDING_REASON.MOVED_AND_RENAMED, path: resolved.path };
+}
+
+function pendingEntry(change, reason, patch, details = {}) {
+  const upstreamPath =
+    change.destination === change.source ? undefined : change.destination;
+  return {
+    path: change.source,
+    upstreamPath,
+    status: change.status,
+    reason,
+    ...details,
+    patch,
+  };
+}
+
+function applyChange(cwd, range, map, change) {
+  const patch = filePatch(cwd, range.from, range.to, change);
+  if (!patch) return { kind: "skipped" };
+
+  const resolved = resolveChange(cwd, map, change);
+  const retarget = resolved.action === PATH_ACTION.RETARGET;
+  if (resolved.action !== PATH_ACTION.APPLY && !retarget) {
+    const details = {
+      molfarPath: resolved.path,
+      targets: resolved.targets,
+      notes: resolved.notes,
+    };
+    return {
+      kind: "pending",
+      entry: pendingEntry(change, resolved.action, patch, details),
+    };
   }
 
-  return lines(git(cwd, ["diff", "--name-only", "--diff-filter=U"]));
+  const target = retarget ? resolved.path : change.destination;
+  const error = tryApply(
+    cwd,
+    retarget ? retargetPatch(patch, change.source, target) : patch,
+  );
+  if (!error) return { kind: "applied", target, retargeted: retarget };
+  if (unmergedPaths(cwd).includes(target)) return { kind: "conflict", target };
+
+  return {
+    kind: "pending",
+    entry: pendingEntry(change, PENDING_REASON.APPLY_FAILED, patch, { error }),
+  };
+}
+
+function overallStatus(conflicts, pending) {
+  if (pending.length > 0) return SYNC_STATUS.PENDING;
+  if (conflicts.length > 0) return SYNC_STATUS.CONFLICTS;
+  return SYNC_STATUS.APPLIED;
 }
 
 /**
- * Applies upstream's changes since the last synced commit to the index and
- * working tree as a three-way patch, and records `target` as synced. Paths and
- * identifiers MOLFAR renamed (see rename-map.mjs) are translated first.
- * MOLFAR's `main` shares no commits with upstream, so a merge would pull every
- * upstream author into its history; a patch keeps the content and leaves
- * authorship to the sync commit.
+ * Applies upstream's changes since the last synced commit to the index and working tree, one path at
+ * a time, and records `target` as synced. MOLFAR's `main` shares no commits with upstream, so a merge
+ * would pull every upstream author into its history; a patch keeps the content and leaves authorship
+ * to the sync commit. Paths and identifiers MOLFAR renamed (rename-map.mjs) are translated first;
+ * paths MOLFAR moved are retargeted through the move map; paths it split or removed become pending
+ * ports instead of aborting the sync.
  */
 export function applyUpstreamPatch({ cwd, target }) {
   const state = readSyncState(cwd);
   const from = state.syncedCommit;
   const to = git(cwd, ["rev-parse", `${target}^{commit}`]).trim();
+  const empty = {
+    commits: [],
+    conflicts: [],
+    pending: [],
+    remapped: [],
+    retargeted: [],
+    added: [],
+    extracted: [],
+  };
 
-  const none = { commits: [], remapped: [], unapplied: [], conflicts: [] };
-  if (from === to) return { status: SYNC_STATUS.UP_TO_DATE, from, to, ...none };
-  if (!isAncestor(cwd, from, to)) return { status: SYNC_STATUS.DIVERGED, from, to, ...none };
+  if (from === to)
+    return { status: SYNC_STATUS.UP_TO_DATE, from, to, ...empty };
+  if (!isAncestor(cwd, from, to))
+    return { status: SYNC_STATUS.DIVERGED, from, to, ...empty };
 
-  const commits = lines(git(cwd, ["log", "--reverse", "--no-merges", "--format=%h %s", `${from}..${to}`]));
-  const { patch, remapped, unapplied } = renamedPatch(cwd, from, to);
-  const conflicts = patch ? applyPatch(cwd, patch) : [];
+  const map = readMoveMap(cwd);
+  const commits = lines(
+    git(cwd, [
+      "log",
+      "--reverse",
+      "--no-merges",
+      "--format=%h %s",
+      `${from}..${to}`,
+    ]),
+  );
+  const conflicts = [];
+  const pending = [];
+  const retargeted = [];
+  const added = [];
+  const extracted = [];
+  const translated = translateRange(cwd, map, from, to);
+  const range = { from: translated.before, to: translated.after };
 
+  for (const change of changedPaths(cwd, range.from, range.to)) {
+    const outcome = applyChange(cwd, range, map, change);
+    if (outcome.kind === "pending") pending.push(outcome.entry);
+    if (outcome.kind === "conflict") conflicts.push(outcome.target);
+    if (outcome.retargeted)
+      retargeted.push({ upstream: change.source, molfar: outcome.target });
+    if (outcome.kind === "applied" && change.status === "A")
+      added.push(outcome.target);
+    const moved = extractionsFor(map, change.source);
+    if (moved.length > 0 && outcome.kind !== "pending") {
+      extracted.push({ upstream: change.source, molfar: outcome.target, moved });
+    }
+  }
+
+  const pendingPorts = writePendingPorts(cwd, from, to, pending);
   writeSyncState(cwd, { ...state, syncedCommit: to });
   git(cwd, ["add", "--", STATE_FILE]);
 
-  const status = conflicts.length + unapplied.length > 0 ? SYNC_STATUS.CONFLICTS : SYNC_STATUS.APPLIED;
-  return { status, from, to, commits, remapped, unapplied, conflicts };
+  const status = overallStatus(conflicts, pendingPorts);
+  return {
+    status,
+    from,
+    to,
+    commits,
+    conflicts,
+    pending: pendingPorts,
+    remapped: translated.remapped,
+    retargeted,
+    added,
+    extracted,
+  };
 }

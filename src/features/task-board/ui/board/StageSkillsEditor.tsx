@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { listSkills, type DiscoveredSkill } from "../../../../platform/tauri/fs";
-import { loadDisabledSkillPaths } from "../../../skills/model/skills";
+import { listSkills, type DiscoveredSkill } from "@/platform/tauri/fs";
+import { loadDisabledSkillPaths } from "@/features/skills/model/skills";
 import { STAGE_SKILLS } from "../../constants/skills";
 import { resolveStageSkills, skillCandidates } from "../../model/resolve-stage-skills";
 import type { AgentStage } from "../../types/stage";

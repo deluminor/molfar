@@ -1,5 +1,5 @@
-import type { ControlOutcome } from "../../orchestration/model/orchestration";
-import type { LaunchChoice } from "../../sessions/model/launch-choice";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
+import type { LaunchChoice } from "@/features/sessions/model/launch-choice";
 import type { TaskGitClient } from "../api/git-client";
 import type { TaskBoardClient } from "../api/task-board-client";
 import type { AgentStage } from "../types/stage";

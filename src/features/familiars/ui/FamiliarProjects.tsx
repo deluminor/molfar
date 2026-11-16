@@ -1,16 +1,16 @@
 import { useRef, useState } from "react";
-import { Plus, X } from "../../../shared/ui/icons";
-import { prettyCwd, projectKey, projectName } from "../../../shared/lib/paths";
-import { loadRecents, projectRailItems } from "../../projects/model/recents";
+import { Plus, X } from "@/shared/ui/icons";
+import { prettyCwd, projectKey, projectName } from "@/shared/lib/paths";
+import { loadRecents, projectRailItems } from "@/features/projects/model/recents";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../workspace/model/tabGroups";
-import { ProjectMascot } from "../../projects/ui/ProjectMascot";
-import { ProjectPickerPopover } from "../../projects/ui/SearchableProjectPicker";
+} from "@/features/workspace/model/tab-groups";
+import { ProjectMascot } from "@/features/projects/ui/ProjectMascot";
+import { ProjectPickerPopover } from "@/features/projects/ui/SearchableProjectPicker";
 import {
   addFamiliarProject,
   removeFamiliarProject,

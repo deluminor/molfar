@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Loader } from "../../../shared/ui/icons";
-import { Modal } from "../../../shared/ui/Modal";
+import { Loader } from "@/shared/ui/icons";
+import { Modal } from "@/shared/ui/Modal";
 
 type Props = {
   busy: boolean;

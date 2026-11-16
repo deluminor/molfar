@@ -1,3 +1,6 @@
+import { basename } from "@/shared/lib/paths";
+import type { GitChangedFile, GitDiffIndex } from "@/domain/git/working-tree";
+import type { HarnessId } from "@/domain/harness/harness";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -9,42 +12,25 @@ import {
   Plus,
   WandSparkles,
   X,
-} from "../../../shared/ui/icons";
-import {
-  basename,
-  gitCommit,
-  gitDiffIndex,
-  gitDiscardFile,
-  gitPrCreate,
-  gitPush,
-  gitStageAll,
-  gitStageFile,
-  gitSync,
-  gitUnstageAll,
-  gitUnstageFile,
-  notifyGitChanged,
-  subscribeGitChanged,
-  type GitChangedFile,
-  type GitDiffIndex,
-} from "../../../platform/tauri/fs";
+} from "@/shared/ui/icons";
+import { gitCommit, gitDiffIndex, gitDiscardFile, gitPrCreate, gitPush, gitStageAll, gitStageFile, gitSync, gitUnstageAll, gitUnstageFile, notifyGitChanged, subscribeGitChanged } from "@/platform/tauri/fs";
 import {
   generateCommitMessage,
   generatePrContent,
-} from "../../../integrations/harness";
-import { MOD } from "../../../platform/tauri/platform";
-import { invalidateWatchedFiles } from "../../files/model/fileWatch";
-import { recordInboxSelfActivity } from "../../inbox/model/inboxSelfActivity";
+} from "@/integrations/harness";
+import { MOD } from "@/shared/lib/platform";
+import { invalidateWatchedFiles } from "@/features/files/model/file-watch";
+import { recordInboxSelfActivity } from "@/features/inbox/model/inbox-self-activity";
 import {
   keepSessionChanges,
   notifyReviewChanged,
   type CheckpointFile,
-} from "../../sessions/model/checkpoint";
-import type { HarnessId } from "../../sessions/model/session";
+} from "@/features/sessions/model/checkpoint";
 import {
   loadChangesView,
   saveChangesView,
   type ChangesView,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   cachedIndex,
   ChangeList,
@@ -53,7 +39,7 @@ import {
   rememberIndex,
   sameIndex,
   usePrStatus,
-} from "../../source-control/ui/GitChangesPanel";
+} from "@/features/source-control/ui/GitChangesPanel";
 
 /** One session file, with its path inside the repository that holds it. */
 export type MonoProjectFile = { file: CheckpointFile; relative: string };

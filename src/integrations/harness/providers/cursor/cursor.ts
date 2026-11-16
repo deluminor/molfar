@@ -1,12 +1,13 @@
-import { TurnNotReadyError } from "../../core/types";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
-import { promptBlocks } from "../../../../features/sessions/model/attachments";
+import { nativeModelId } from "../../core/models/resolve-model";
+import { asRecord, nonBlankString as stringField } from "@/shared/lib/json-text";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { promptBlocks } from "@/domain/session/attachment-prompt";
+import { TurnNotReadyError, type ApprovalDecision, type HarnessEvent, type SendTurnInput, type SteerTurnInput } from "../../core/types";
+import { AcpSubagents } from "../../core/acp-subagents";
 import {
   isTaskListToolName,
   taskListFromToolInput,
-} from "../../../../features/sessions/model/taskList";
+} from "@/domain/session/task-list";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -15,32 +16,26 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/sessionMcpServers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   readStoredCursorToolCalls,
   readStoredCursorSubagentRuns,
   type StoredCursorToolCall,
   type StoredCursorSubagentRun,
-} from "./cursorStore";
+} from "./cursor-store";
 import {
   cursorAgentLabel,
   cursorSubagentEvents,
   kindFromCursorToolName,
-} from "./cursorSubagents";
-import { stopCursorTitleGeneration } from "./cursorTitle";
-import type {
-  ApprovalDecision,
-  HarnessEvent,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+} from "./cursor-subagents";
+import { stopCursorTitleGeneration } from "./cursor-title";
 import {
   CUSTOM_OPTION_ID,
   questionPromptTitle,
   questionsFromUnknown,
   type UserQuestion,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "@/domain/session/user-question";
 import {
   agentToolTitle,
   composeToolTitle,
@@ -325,7 +320,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     let setup: SessionSetupResult | undefined;
     let acpSessionId: string | undefined;
     let didLoad = false;
-    const mcpServers = await loadSessionMcpServers("cursor", input.cwd);
+    const mcpServers = await loadSessionMcpServersForSession(
+      "cursor",
+      input.cwd,
+      input.onEvent,
+    );
 
     if (canLoad && resume) {
       muteGate.current = true;
@@ -1330,13 +1329,6 @@ function resolveSettingConfigId(
   return undefined;
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
-
 function toolLabel(
   update: Record<string, unknown>,
   tool: Record<string, unknown>,
@@ -1588,14 +1580,6 @@ function coerceMaybeString(
   key: string,
 ): string | undefined {
   return stringField(rec, key);
-}
-
-function stringField(
-  rec: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = rec[key];
-  return typeof value === "string" && value.trim() ? value : undefined;
 }
 
 function numberField(

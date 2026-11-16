@@ -1,3 +1,5 @@
+import type { HarnessId } from "@/domain/harness/harness";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import {
   useEffect,
   useRef,
@@ -6,15 +8,14 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { isImeComposition } from "../../../shared/lib/keyboard";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { Modal } from "../../../shared/ui/Modal";
-import { Popover } from "../../../shared/ui/Popover";
-import { Settings, Sparkles, StickyNote } from "../../../shared/ui/icons";
-import type { HarnessId, RuntimeMode } from "../../sessions/model/session";
-import { AccessPicker } from "../../sessions/ui/AccessPicker";
-import { ModelPicker, ModelSettingRows } from "../../sessions/ui/ModelPicker";
-import { PixelMascot } from "../../projects/ui/PixelMascot";
+import { isImeComposition } from "@/shared/lib/keyboard";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { Modal } from "@/shared/ui/Modal";
+import { Popover } from "@/shared/ui/Popover";
+import { Settings, Sparkles, StickyNote } from "@/shared/ui/icons";
+import { AccessPicker } from "@/features/sessions/ui/AccessPicker";
+import { ModelPicker, ModelSettingRows } from "@/features/sessions/ui/ModelPicker";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
 import {
   defaultFamiliarName,
   findFamiliar,
@@ -28,7 +29,7 @@ import {
 import { ConfirmReset } from "./ConfirmReset";
 import { MemoryPage, SoulPage, useFamiliarFiles } from "./FamiliarFilePages";
 import { FamiliarProjects } from "./FamiliarProjects";
-import { ColorPicker, MascotPicker, SwitchRow } from "./familiarPanelParts";
+import { ColorPicker, MascotPicker, SwitchRow } from "./familiar-panel-parts";
 
 export type FamiliarSettingsSection = "general" | "soul" | "memory";
 

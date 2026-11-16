@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal } from "@/shared/ui/Modal";
 import type { BoardSettings } from "../types/settings";
 import { FIELD, FIELD_LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "./button-styles";
 import { NotificationsRow } from "./NotificationsRow";

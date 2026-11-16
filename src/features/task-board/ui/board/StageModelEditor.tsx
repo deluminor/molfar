@@ -1,8 +1,8 @@
+import type { HarnessId } from "@/domain/harness/harness";
 import type { ReactNode } from "react";
-import { defaultSessionChoice } from "../../../sessions/model/models";
-import type { HarnessId } from "../../../sessions/model/session";
-import { AccessPicker } from "../../../sessions/ui/AccessPicker";
-import { ModelPicker } from "../../../sessions/ui/ModelPicker";
+import { defaultSessionChoice } from "@/features/sessions/model/models";
+import { AccessPicker } from "@/features/sessions/ui/AccessPicker";
+import { ModelPicker } from "@/features/sessions/ui/ModelPicker";
 import { effortFromValues, effortValues } from "../../model/stage-model-values";
 import type { StageModelConfig } from "../../types/stage";
 

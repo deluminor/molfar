@@ -15,10 +15,36 @@ iPhone / iPad (BitChain) ──Tailscale──▶ https://<mac>.<tailnet>.ts.net
                                                      main window: useCompanionBridge → executor
 ```
 
-- **No LAN or internet listener.** The gateway binds loopback (`serve` mode) or the machine's Tailscale `100.x` address (`tailnet` mode). It never binds a wildcard address.
+- **No LAN or internet listener.** The Companion gateway binds loopback (`serve` mode) or the machine's Tailscale `100.x` address (`tailnet` mode). It never binds a wildcard address.
 - **Tailscale Serve (recommended).** Run `tailscale serve --bg 3775` once. Tailscale terminates HTTPS with a real certificate for the machine's `.ts.net` name and forwards only tailnet traffic to the loopback port. HTTPS certificates must be enabled for the tailnet (Tailscale admin console → DNS → HTTPS Certificates).
 - **Tailnet address.** Plain HTTP inside the WireGuard tunnel, for tailnets without HTTPS certificates.
 - The phone talks to the laptop directly. The BitChain API is not involved and no conversation leaves the tailnet.
+
+## Phone pairing vs. Companion
+
+MOLFAR has two separate ways to reach the desktop from a phone. They share no code, settings or pairings, and both are **off by default**.
+
+|  | Companion | Phone pairing |
+| --- | --- | --- |
+| Settings | **Settings → Companion** | **Settings → Connections → Your phones** |
+| Client | Molfar module of the BitChain iOS app | MOLFAR mobile app in `mobile/` (Expo; not published yet, build it yourself) |
+| Origin | MOLFAR | MonoCode upstream (0.16.0) |
+| Listens on | TCP `127.0.0.1:3775` (`serve` mode, behind `tailscale serve`) or the Tailscale `100.x` address (`tailnet` mode). Never a wildcard address | UDP `[::]:38416` (QUIC), every interface including the LAN, IPv4 and IPv6 |
+| Reachable from | Your tailnet only | Your LAN and any VPN the desktop is on (Tailscale included). MOLFAR never opens it on the router; a global IPv6 address is reachable only if the router lets inbound IPv6 through |
+| Listening starts | **Turn on** | The first **Pair phone** |
+| Transport security | HTTPS from Tailscale Serve, or WireGuard inside the tailnet; bearer token per device | QUIC with mutually authenticated TLS 1.3. The QR code pins the desktop's certificate; the desktop admits only certificates of paired phones and of the open invitation |
+| Pairing secret | 8-character code, five minutes, one use; 256-bit token, stored hashed in `companion.json` | QR code, 15 minutes, one use, carrying a one-time invitation identity; the phone proves its own key against it. Desktop identity in the OS keyring (`com.molfar.mobile`), paired fingerprints in `mobile-access.json` |
+| Revoke a device | **Remove** next to the device | **Remove** next to the phone; its requests and watches are refused at once |
+| Turn it off | **Turn off** | Remove every paired phone (closing an unused code also stops the listener) |
+| What the phone can do | The RPC actions below | Browse projects and conversations, start, steer, stop, rename, archive and delete sessions, switch model and permission mode, browse files, view diffs, run git actions (stage, commit, push, create PR) |
+
+### Phone pairing security model
+
+- **No listener until you pair.** The UDP socket opens when you press **Pair phone** and closes when the code is closed with no phone paired, or when the last phone is removed. While a phone stays paired, it reopens each time MOLFAR starts. If MOLFAR quits while a code is on screen, the listener also reopens at the next start, but admits no one until you pair (the code is gone).
+- **The LAN can reach the port, not the workspace.** Anyone on the same network or VPN can send packets to `38416`, but the TLS handshake fails unless the client presents a paired phone's certificate or the open invitation's (TLS 1.3 only, ALPN `molfar-mobile/1`). A paired phone has workspace access, so treat the QR code like a password while it is on screen.
+- **No router port mapping.** Upstream MonoCode can open the port on the router with UPnP/NAT-PMP ("Open the router port automatically", on by default there), which exposes the listener to the internet. MOLFAR removed that option, its code and its crates (`igd-next`, `natpmp`, `attohttpc`), and a test fails if they return. To use a paired phone away from home, put the phone and the desktop on Tailscale (or another VPN) and enter the desktop's `100.x` or MagicDNS name under **Connect away from home → Remote address** before making the code. Forwarding UDP `38416` on the router yourself is possible, but not recommended.
+- **IPv6.** The pairing code lists every non-loopback address of the desktop, including global IPv6 addresses. Most home routers drop unsolicited inbound IPv6; if yours does not, the port is reachable from the internet, still behind the TLS gate above. Block inbound UDP `38416` in the router or the desktop firewall if that matters to you.
+- **Compared with Companion.** Companion never binds a LAN address. Phone pairing does once a phone is paired, because the phone connects directly over Wi-Fi. If the desktop must not be reachable from the LAN, use Companion and leave phone pairing unpaired, or block UDP `38416` in the firewall.
 
 ## Pairing
 

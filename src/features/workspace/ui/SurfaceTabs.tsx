@@ -1,17 +1,13 @@
+import { basename, displayPath } from "@/shared/lib/paths";
 import {
   GitCompare,
   GripVertical,
   Terminal,
   X,
-} from "../../../shared/ui/icons";
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { useLayoutEffect, useRef, useState } from "react";
-import { copyText } from "../../../platform/tauri/clipboard";
-import {
-  basename,
-  openPathWithDefaultApp,
-  revealPath,
-} from "../../../platform/tauri/fs";
+} from "@/shared/ui/icons";
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { copyText } from "@/platform/tauri/clipboard";
+import { openPathWithDefaultApp, revealPath } from "@/platform/tauri/fs";
 import {
   isAgentTab,
   isChangesTab,
@@ -24,22 +20,21 @@ import {
   isTerminalTab,
   type FilePaneTab,
 } from "../model/layout";
-import { displayPath } from "../../../shared/lib/paths";
-import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
-import { releaseNotesTitle } from "../../../app/model/releaseNotes";
-import { terminalTabLabel } from "../../terminal/model/terminalTab";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { useTabCloseMotion } from "../hooks/useTabCloseMotion";
-import { TabWidthMotion } from "../../../app/shell/ClosingTab";
+import { IS_MAC, IS_WIN } from "@/shared/lib/platform";
+import { releaseNotesTitle } from "@/features/updates/model/release-notes";
+import { terminalTabLabel } from "@/features/terminal/model/terminal-tab";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
+import { useAnimatedReorder } from "@/shared/hooks/use-animated-reorder";
+import { useTabCloseMotion } from "../hooks/use-tab-close-motion";
+import { TabWidthMotion } from "@/shared/ui/ClosingTab";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
-} from "../../files/ui/ExplorerMenu";
-import { FileActionError } from "../../files/ui/FileActionError";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { TabLabel } from "../../../shared/ui/TabLabel";
+} from "@/features/files/ui/ExplorerMenu";
+import { FileActionError } from "@/features/files/ui/FileActionError";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
+import { TabLabel } from "@/shared/ui/TabLabel";
 
 type Props = {
   files: FilePaneTab[];

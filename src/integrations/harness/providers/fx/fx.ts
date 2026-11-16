@@ -1,6 +1,6 @@
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { AcpSubagents } from "../../core/acpSubagents";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import { nativeModelId } from "../../core/models/resolve-model";
+import { AcpSubagents } from "../../core/acp-subagents";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
 import { AcpClient, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
@@ -9,7 +9,7 @@ import {
   unwatchChild,
   watchChild,
 } from "../../core/child";
-import { loadSessionMcpServers } from "../../core/sessionMcpServers";
+import { loadSessionMcpServersForSession } from "../../core/session-mcp-servers";
 import {
   autoPermissionOption,
   eventsFromAcpUpdate,
@@ -22,7 +22,7 @@ import {
   resolveSettingConfigId,
   sessionIdFromResult,
   type SessionConfigOption,
-} from "./fxProtocol";
+} from "./fx-protocol";
 import type {
   ApprovalDecision,
   HarnessEvent,
@@ -301,7 +301,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
       } catch {
         muteGate.current = true;
         try {
-          const mcpServers = await loadSessionMcpServers("fx", input.cwd);
+          const mcpServers = await loadSessionMcpServersForSession(
+            "fx",
+            input.cwd,
+            input.onEvent,
+          );
           setup = await acp.request<SessionSetupResult>(
             "session/load",
             {
@@ -324,7 +328,11 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     }
 
     if (!acpSessionId) {
-      const mcpServers = await loadSessionMcpServers("fx", input.cwd);
+      const mcpServers = await loadSessionMcpServersForSession(
+        "fx",
+        input.cwd,
+        input.onEvent,
+      );
       setup = await acp.request<SessionSetupResult>(
         "session/new",
         { cwd: input.cwd, mcpServers },

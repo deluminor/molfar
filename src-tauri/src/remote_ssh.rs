@@ -1,3 +1,4 @@
+use crate::jsonc::mutex_lock as pl;
 use crate::ssh_askpass::Askpass;
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,7 @@ use std::net::{TcpListener, TcpStream};
 use std::process::{Child, Command, Stdio};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Mutex, PoisonError,
+    Arc, Mutex,
 };
 use std::time::{Duration, Instant};
 
@@ -82,13 +83,13 @@ impl Job {
         })
     }
     pub fn view(&self) -> JobView {
-        self.inner.lock().unwrap().view.clone()
+        pl(&self.inner).view.clone()
     }
     pub fn message(&self, text: &str) {
-        self.inner.lock().unwrap().view.message = text.into();
+        pl(&self.inner).view.message = text.into();
     }
     pub fn complete(&self, action: impl FnOnce() -> Result<crate::remote::Machine, String>) {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = pl(&self.inner);
         let result = if self.cancelled.load(Ordering::Relaxed) {
             Err("Connection cancelled".into())
         } else {
@@ -106,7 +107,7 @@ impl Job {
         }
     }
     pub fn cancel(&self) {
-        let inner = self.inner.lock().unwrap();
+        let inner = pl(&self.inner);
         if !inner.view.done {
             self.cancelled.store(true, Ordering::Relaxed);
         }
@@ -131,7 +132,7 @@ impl Job {
     fn prompt(&self, message: String, confirm: bool) -> Option<String> {
         let deadline = Instant::now() + Duration::from_secs(120);
         {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = pl(&self.inner);
             inner.answer = None;
             inner.view.prompt = Some(Prompt {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -140,7 +141,7 @@ impl Job {
             });
         }
         loop {
-            let mut inner = self.inner.lock().unwrap();
+            let mut inner = pl(&self.inner);
             if self.cancelled.load(Ordering::Relaxed)
                 || Instant::now() >= deadline
                 || inner.view.done
@@ -488,7 +489,7 @@ impl Tunnel {
                 if count == 0 {
                     break;
                 }
-                let mut errors = errors.lock().unwrap();
+                let mut errors = pl(&errors);
                 if errors.len() < 8192 {
                     errors.push_str(&String::from_utf8_lossy(&buffer[..count]));
                 }
@@ -507,7 +508,7 @@ impl Tunnel {
             if !tunnel.alive() {
                 return Err(format!(
                     "SSH connection failed: {}. Open Settings → Connections and reconnect to check access.",
-                    tunnel.stderr.lock().unwrap().trim()
+                    pl(&tunnel.stderr).trim()
                 ));
             }
             if TcpStream::connect_timeout(
@@ -550,7 +551,7 @@ pub struct Tunnels {
 }
 impl Tunnels {
     fn slots(&self) -> std::sync::MutexGuard<'_, HashMap<String, Arc<Mutex<Slot>>>> {
-        self.slots.lock().unwrap_or_else(PoisonError::into_inner)
+        pl(&self.slots)
     }
     pub fn insert(&self, id: String, tunnel: Tunnel) {
         // A fresh slot never waits for a reconnect in progress; that attempt's
@@ -569,7 +570,7 @@ impl Tunnels {
     }
     pub fn endpoint(&self, id: &str, target: &SshTarget) -> Result<TunnelLease, String> {
         let slot = self.slots().entry(id.into()).or_default().clone();
-        let mut current = slot.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut current = pl(&slot);
         if let Some(tunnel) = current.tunnel.as_mut() {
             if tunnel.alive() {
                 return Ok(TunnelLease {
@@ -610,7 +611,7 @@ impl Tunnels {
         if !Arc::ptr_eq(&slot, &lease.slot) {
             return;
         }
-        let mut current = slot.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut current = pl(&slot);
         if current.generation == lease.generation {
             current.tunnel = None;
             current.failure = None;
@@ -681,14 +682,14 @@ mod tests {
         let newer = slot(2);
         tunnels.slots().insert("host".into(), newer.clone());
         tunnels.invalidate("host", &old_lease);
-        assert!(newer.lock().unwrap().failure.is_some());
+        assert!(pl(&newer).failure.is_some());
         let stale_lease = TunnelLease {
             endpoint: String::new(),
             slot: newer.clone(),
             generation: 1,
         };
         tunnels.invalidate("host", &stale_lease);
-        assert!(newer.lock().unwrap().failure.is_some());
+        assert!(pl(&newer).failure.is_some());
         tunnels.invalidate(
             "host",
             &TunnelLease {
@@ -696,7 +697,7 @@ mod tests {
                 ..stale_lease
             },
         );
-        assert!(newer.lock().unwrap().failure.is_none());
+        assert!(pl(&newer).failure.is_none());
     }
     // scripts/test-remote-ssh.py creates an isolated sshd, host and keypair.
     // This test uses the production tunnel lifecycle and shell transport.

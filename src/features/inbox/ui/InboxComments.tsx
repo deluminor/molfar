@@ -1,3 +1,4 @@
+import type { InboxProvider } from "@/domain/work-items/work-item";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   useEffect,
@@ -13,15 +14,10 @@ import {
   LoaderCircle,
   MessageSquare,
   X,
-} from "../../../shared/ui/icons";
-import {
-  formatRelativeTime,
-  githubReviewStateLabel,
-  inboxPersonAvatarUrl,
-  type InboxProvider,
-} from "../model/githubTasks";
-import { MOD } from "../../../platform/tauri/platform";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+} from "@/shared/ui/icons";
+import { formatRelativeTime, githubReviewStateLabel, inboxPersonAvatarUrl } from "../model/github-tasks";
+import { MOD } from "@/shared/lib/platform";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 
 export type InboxReplyTarget = {
   id: string;

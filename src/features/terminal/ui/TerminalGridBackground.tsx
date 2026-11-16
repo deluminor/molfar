@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HARNESS_ICONS, MONOCHROME_HARNESSES } from "../../sessions/ui/HarnessIcon";
-import { MASCOT_GRID, PROJECT_MASCOTS } from "../../projects/model/projectMascots";
-import { HARNESSES, type HarnessId } from "../../sessions/model/session";
+import { HARNESS_ICONS, MONOCHROME_HARNESSES } from "@/features/sessions/ui/HarnessIcon";
+import { MASCOT_GRID, PROJECT_MASCOTS } from "@/features/projects/model/project-mascots";
+import { HARNESSES, type HarnessId } from "@/domain/harness/harness";
 import {
   ARCADE_MODES,
   type ArcadeMode,
   type ArcadeSprite,
   type GridArcade,
-} from "../arcade/gridArcade";
+} from "../arcade/grid-arcade";
 import {
   GRID_GAMES,
   SLIDE_HOLD_MS,
   stepSlider,
   type GridGame,
-} from "../arcade/gridGames";
-import { drawSpeechBubble } from "../../sessions/model/speechBubble";
+} from "../arcade/grid-games";
+import { drawSpeechBubble } from "@/features/sessions/model/speech-bubble";
 
 const CELL = 6;
 const GAP = 1;

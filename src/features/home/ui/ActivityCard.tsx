@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { SessionActivityState } from "../hooks/useSessionActivity";
+import type { SessionActivityState } from "../hooks/use-session-activity";
 import { HomeCard } from "./HomeCard";
 import { YearHeatmap } from "./YearHeatmap";
 

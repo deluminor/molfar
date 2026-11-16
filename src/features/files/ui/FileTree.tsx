@@ -1,3 +1,5 @@
+import { basename } from "@/shared/lib/paths";
+import { type FsEntry } from "@/domain/files/file-entry";
 import {
   ChevronDown,
   ChevronRight,
@@ -5,7 +7,7 @@ import {
   FolderPlus,
   FoldVertical,
   Search,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   createContext,
   memo,
@@ -24,12 +26,12 @@ import {
   validateFileName,
   wellFormedFileName,
   type NameIssue,
-} from "../model/fileName";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+} from "../model/file-name";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 import {
   loadShowExcludedFiles,
   subscribeShowExcludedFiles,
-} from "../../settings/model/appearance";
+} from "@/features/settings/model/appearance";
 import {
   createParentOf,
   dirsTouchedByCreate,
@@ -44,12 +46,11 @@ import {
   saveExpanded,
   saveSelected,
   subscribeDirsChanged,
-} from "../model/fileTree";
+} from "../model/file-tree";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
-import { dragPointToClient } from "../../../shared/lib/dragPoint";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
+import { dragPointToClient } from "@/shared/lib/drag-point";
 import {
-  basename,
   clipboardFilePaths,
   copyPath,
   createPath,
@@ -57,20 +58,20 @@ import {
   movePath,
   renamePath,
   revealPath,
-  type FsEntry,
-} from "../../../platform/tauri/fs";
-import { displayPath, parentPath, rebasePath } from "../../../shared/lib/paths";
-import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../../platform/tauri/platform";
-import type { OpenFileFn } from "../../search/model/search";
-import type { GitStatusMap } from "../../source-control/hooks/useGitFileStatuses";
+} from "@/platform/tauri/fs";
+import { displayPath, parentPath, rebasePath } from "@/shared/lib/paths";
+import { IS_MAC, IS_WIN, MOD, SHIFT } from "@/shared/lib/platform";
+import type { OpenFileFn } from "@/features/search/model/search";
+import type { GitStatusMap } from "@/features/source-control/hooks/use-git-file-statuses";
 import {
   emitExplorerFilePointerDrag,
   setGrabbing,
   suppressTextSelection,
-} from "../../../shared/lib/drag";
+} from "@/shared/lib/drag";
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { confirmApp } from "../../../app/model/appDialog";
+import { confirmApp } from "@/shared/lib/app-dialog";
+import { PaneHeader } from "@/shared/ui/PaneHeader";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
   modified: "text-amber-400",
@@ -81,6 +82,7 @@ const GIT_STATUS_COLOR: Record<string, string> = {
 
 type Props = {
   cwd: string;
+  compactHeader?: boolean;
   /** Display identity for the root when it differs from the physical folder. */
   rootLabel?: string;
   onOpenFile: OpenFileFn;
@@ -250,6 +252,7 @@ function explorerItems(
 // intact unless file-tree props, local state, or subscriptions actually change.
 export const FileTree = memo(function FileTree({
   cwd,
+  compactHeader = false,
   rootLabel,
   onOpenFile,
   onOpenTerminal,
@@ -1012,9 +1015,14 @@ export const FileTree = memo(function FileTree({
         onKeyDown={onKeyDown}
         onContextMenu={onBackgroundMenu}
       >
-        <div
-          className="flex h-9 shrink-0 items-center gap-px overflow-visible border-b border-stroke px-2"
-          onContextMenu={(e) => e.stopPropagation()}
+        <PaneHeader
+          compact={compactHeader}
+          role="toolbar"
+          aria-label="Explorer"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           <HeaderIcon label="New File" onClick={() => startCreate(false)}>
             <FilePlus className="size-3.5" strokeWidth={1.75} />
@@ -1042,7 +1050,7 @@ export const FileTree = memo(function FileTree({
               <Search className="size-3.5" strokeWidth={1.75} />
             </HeaderIcon>
           ) : null}
-        </div>
+        </PaneHeader>
         <div className="flex h-8 shrink-0 items-center">
           <button
             type="button"

@@ -6,10 +6,10 @@ import {
   type ChangeEvent,
   type MouseEvent,
 } from "react";
-import { splitMarkdownFrontmatter } from "../../../../shared/lib/markdownFrontmatter";
-import { ChevronDown, ChevronRight, X } from "../../../../shared/ui/icons";
-import { SecondaryButton } from "../../../../shared/ui/SecondaryButton";
-import { AgentMarkdown } from "../../../sessions/ui/AgentMarkdown";
+import { splitMarkdownFrontmatter } from "@/shared/lib/markdown-frontmatter";
+import { ChevronDown, ChevronRight, X } from "@/shared/ui/icons";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
 import { prepareVaultPreview } from "../../model/document/prepare-vault-preview";
 import { toggleMarkdownTask } from "../../model/document/toggle-markdown-task";
 import { useVaultAssets } from "../../hooks/documents/use-vault-assets";

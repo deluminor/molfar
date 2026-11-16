@@ -1,11 +1,16 @@
-import type { ToolPreview, ToolPreviewKind, ToolPreviewLine } from "../../../features/sessions/model/session";
-import { displayPath } from "../../../shared/lib/paths";
+import type {
+  ToolPreview,
+  ToolPreviewKind,
+  ToolPreviewLine,
+} from "@/domain/session/agent-run";
+import { basename, displayPath } from "@/shared/lib/paths";
+import { asRecord } from "@/shared/lib/json-text";
 import {
   formatShellIntent,
   inferShellIntent,
   rewriteReadableTitle,
   unwrapShellCommand,
-} from "./shellIntent";
+} from "./shell-intent";
 
 export const MAX_PREVIEW_LINES = 6;
 export const MAX_LINE_CHARS = 120;
@@ -965,12 +970,6 @@ function normalizePath(path: string): string {
   return path;
 }
 
-function basename(path: string): string {
-  const trimmed = path.replace(/[/\\]+$/, "") || path;
-  const parts = trimmed.split(/[/\\]/).filter(Boolean);
-  return parts[parts.length - 1] ?? trimmed;
-}
-
 function parseRecord(value: unknown): Record<string, unknown> {
   if (typeof value === "string") {
     const text = value.trim();
@@ -1006,13 +1005,6 @@ function inputRecords(...values: unknown[]): Record<string, unknown>[] {
   };
   for (const value of values) add(value);
   return out;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
 }
 
 function commandField(value: unknown): string | undefined {

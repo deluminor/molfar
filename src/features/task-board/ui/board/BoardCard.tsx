@@ -1,9 +1,9 @@
+import type { HarnessId } from "@/domain/harness/harness";
 import { memo, type DragEvent, type PointerEvent, type ReactNode } from "react";
-import { projectName } from "../../../../shared/lib/paths";
-import { GitBranch, RotateCcw } from "../../../../shared/ui/icons";
-import { ProjectMark } from "../../../projects/ui/ProjectMark";
-import { HarnessIcon } from "../../../sessions/ui/HarnessIcon";
-import type { HarnessId } from "../../../sessions/model/session";
+import { projectName } from "@/shared/lib/paths";
+import { GitBranch, RotateCcw } from "@/shared/ui/icons";
+import { ProjectMark } from "@/features/projects/ui/ProjectMark";
+import { HarnessIcon } from "@/features/sessions/ui/HarnessIcon";
 import { REWORK_WARNING_CYCLE } from "../../constants/limits";
 import type { CardStatus, CardStatusKind } from "../../model/card-status";
 import type { Card } from "../../types/card";

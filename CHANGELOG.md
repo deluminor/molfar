@@ -7,6 +7,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **molfar-connectors** MCP write tools for agent sessions: `jira_issue_get`, `jira_issue_edit`, `jira_issue_create`, `jira_issue_transitions`, `jira_issue_transition`, `jira_search`, `confluence_page_create`, and `confluence_page_update` (vault Atlassian token; no `cloudId`).
+- Phone code blocks show the language and a copy control (MonoCode #1305).
+- The phone composer offers **Paste Image** when the clipboard holds an image (MonoCode #1343).
+
+### Fixed
+
+- Keep Claude usage refresh read-only and avoid showing renewable credentials as signed out; recognize cleared Keychain logins.
+- Continue usage-limited sessions from a paired phone, with desktop-owned reset information, stale-action protection and a manual retry when continuation fails (MonoCode #1208).
+- Keep Codex session index locks private to each Familiar, remove stale shared links safely and serialize concurrent storage preparation (MonoCode #1297).
+- Preserve video metadata loading when previews are hidden or React replays effects.
+- Keep the paired phone composer editable while the desktop reconnects; Send and Stop wait for the connection, and a session error waits until it is back (MonoCode #1319).
+
+
+## [1.0.23] - 2026-11-02
+
+### Fixed
+
+- Familiar Codex chats no longer fail to start when Codex leaves lock files (such as `memories.lock`) in Familiar storage.
+
+## [1.0.22] - 2026-11-02
+
+### Added
+
+- Answer agent questions from a paired phone, including custom answers and keeping a question open while deciding. Approval requests still require the desktop.
+- Open sessions launched by Familiars from cards in mobile conversations, and view generated visuals and documents in mobile transcripts.
+- Edit Familiar profiles, models, projects, soul and memory from the mobile app, and use the searchable drawer to switch between Familiars and projects.
+- Receive session alerts on paired phones and open habit-run alerts in the session view.
+
+### Changed
+
+- Appearance settings name the two layouts **Classic** and **Focused** and offer an explicit choice; the stored layout preference is retained.
+- The mobile app reopens the last selected project or Familiar and tracks unread Familiar replies.
+
+### Fixed
+
+- Remote-host runtime downloads retry transient failures, reuse verified cached downloads, and recover Windows fetch failures through a bounded HTTPS fallback.
+- Prose code fences use the intended syntax highlighting in web conversations. From MonoCode #1263.
+- Mobile transcript scrolling, question transitions, and notification registration handle session changes more reliably.
+
+## [1.0.21] - 2026-10-28
+
+### Added
+
+- **Phone pairing** in **Settings → Connections → Your phones** lets you browse projects and conversations, start and continue sessions, follow replies as they arrive, stop responses, browse files, and view code changes from the MOLFAR mobile app. The app is a preview you must build separately; it is not yet available in app stores. Approvals and agent questions still require the desktop.
+- Swipe between projects in the new sidebar. From MonoCode #1061.
+- Open project and Inbox context menus with right-click, the Menu key, or **Shift+F10** in the new sidebar.
+
+### Changed
+
+- Mobile dependency updates retain **Expo SDK 57** compatibility and update networking and iOS project-generation tools. Some dependency advisories remain unresolved.
+
+### Fixed
+
+- An optional MCP server lookup failure now shows a notice without marking a successful agent reply as failed. Provider errors still fail the session.
+- A saved workspace layout that cannot be read at startup stays on disk until you change the layout, rather than being overwritten by an empty workspace.
+- Views that fail to load offer **Try again**; an unexpected app error offers **Reload**.
+- Companion question replies reject unknown questions, invalid choices, and empty answers before submitting them to the agent.
+- The new sidebar keeps **Open project** and **Settings** available before you select a project.
+- Empty conversations no longer scroll a few pixels around the message input.
+- On Windows, the message input’s blurred background stays within its rounded corners, and phone connections accept both IPv4 and IPv6.
+
+### Before pairing a phone
+
+- Keep the desktop awake with MOLFAR running. Connect over the same Wi-Fi, or use Tailscale or another VPN when away from home. MOLFAR does not configure router port forwarding automatically.
+- Phone pairing is separate from the existing **Settings → Companion** gateway. Pairing enables a listener reachable from the LAN and connected VPNs; removing every paired phone turns it off. See the [connection guide](https://github.com/deluminor/molfar/blob/main/docs/companion.md#phone-pairing-vs-companion) for setup, access, and network limits.
+
+## [1.0.20] - 2026-10-19
+
+### Changed
+
+- **New layout** is opt-in: classic chrome stays the default. Try the redesigned sidebar, project switcher, and workspace from the invitation, or enable it in Settings → Appearance → Layout.
+- In the new layout, sidebar Views are ordered **Home → Board → Inbox → Notes → Usage → Knowledge → Automations**.
+
+## [1.0.19] - 2026-10-19
+
+### Added
+
+- An optional **New layout** brings a redesigned sidebar, project switcher, workspace tabs and right panel. Try it from the invitation or Settings → Appearance → Layout, where it can also be turned off to return to the classic layout. Glass remains a separate setting.
+- In the new layout, the sidebar's view links include **Home**, **Usage**, **Board**, and **Knowledge** alongside Inbox, Notes, and Automations.
+- The new layout has **workspace themes** (Default, Harbor, Moss, Ember, Orchid, Tidepool, Dune, Rosewood, Glacier) in Settings → Appearance → Theme.
+- A **Resource pressure** indicator in the usage footer opens a process view with CPU and memory usage, controls to stop agents and sessions, and controls to stop individual running tools. From MonoCode #1045.
+- **Smooth text reveal** in Settings → Chat controls whether incoming reply bursts appear gradually or immediately. It is enabled by default, so replies now reveal gradually; turn it off to show bursts as they arrive. From MonoCode #1045.
+- The new layout's right panel has a **History** tab with a searchable, refreshable Git history graph. Its tabs can be dragged to reorder.
+- A session that hits a usage limit can **continue on another provider account**. Claude and Codex conversations are copied to the chosen account so the same session resumes there; if the copy fails, it continues from a handoff summary.
+- Sessions started by an operator appear in the sidebar under the session that started them instead of opening as tabs, unless the user asks to see them.
+- Remote hosts can run on **Linux without systemd**, including containers and Firecracker microVMs. Setup uses a detached background process there and reconnecting starts it again if needed; machines with systemd keep their user service and lingering. From MonoCode #990.
+- The workspace tab context menu has **Close All Tabs**, with the same unsaved-file and terminal confirmations as the File menu. From MonoCode #1005.
+
+### Changed
+
+- **Main pane glass** is off by default on Linux. Turn it on in Settings → Appearance → Translucency.
+- The footer's **High usage** warning opens a compact view of running sessions, with one Stop button per session. Process details expand when needed, and long lists scroll inside the dialog.
+- Large conversations and busy workspaces stay more responsive: recent transcripts retain their rendered state across tab switches, code highlighting and large diffs run in workers, and navigation avoids unnecessary layout measurements. Large tool output loads when expanded. From MonoCode #1045.
+- Background Git work and agent tool processes receive lower scheduling priority where supported. Resource pressure reduces retained transcript memory while preserving session history. From MonoCode #1045.
+- In the new layout, the **terminal panel and split panes slide** open and closed, pushing the workspace aside. A file pane slides in with its tabs and fades its contents in once loaded.
+- Code in the editor, diffs, and replies uses the **VS Code Dark+ and Light+** colors, with a shared code font size for the editor and diffs.
+- Review tabs stay open across editor navigation, keeping their folds and scroll position. Unified diffs render faster, with syntax highlighting in the background, and commit diffs are not refetched when shown again.
+- In the new layout, the session sidebar shortcut (⌘⇧B) toggles the right panel, and Inbox, Notes, and Automations show the active project's items.
+- Glass in the new layout uses native macOS blur.
+- Session review cards and the message queue have lighter, more consistent styling.
+
+### Fixed
+
+- Turning off **Transparent window** keeps the new layout opaque when themes change, including native appearance updates before the layout has mounted.
+- Completing a reply, changing a file pane's width, or returning to a cached conversation preserves the reader's position and keeps a following conversation at its reply. Completed provider bursts continue their text reveal without jumping the transcript. From MonoCode #1045.
+- Session streaming avoids unnecessary background rerenders and repeated history work. Composer resizing and decorative transcript measurements no longer force repeated workspace layout during navigation. From MonoCode #1045.
+- Notification sounds suspend their audio context after playback finishes, reducing idle resource use. From MonoCode #1045.
+- Moving focus no longer rechecks the whole page's styles, which took about 45 ms with a long transcript open. From MonoCode #1038.
+- Agent tool calls no longer rebuild every open composer's @-mention index when nothing on disk changed. From MonoCode #1029.
+- Keystrokes no longer search the whole page for an active shortcut recorder. From MonoCode #1028.
+- Typing in a composer on macOS no longer rechecks the whole page's styles for each keystroke. From MonoCode #985.
+- The composer runner stops its animation loop while its tab is in the background. From MonoCode #975.
+- A blank session keeps the provider account selected for its own project. From MonoCode #967.
+- Skills remain discoverable when their 16 KiB preview ends partway through a UTF-8 character. From MonoCode #978.
+- Replayed Claude background-task notifications no longer end a resumed turn early. From MonoCode #532.
+- Refused fast mode is not reported as a session usage limit. From MonoCode #958.
+- Sending a message during a running turn preserves its existing clock. From MonoCode #1021.
+- Git LFS works when MOLFAR is launched from Finder: Git commands include Homebrew and other common install locations on their PATH, plus the terminal's PATH once available. From MonoCode #1004.
+- Selecting the **whole last paragraph** of a reply opens the Add to chat and Add to notes menu. From MonoCode #1001.
+- Wrapped diff lines place scrollbar change markers at their rendered positions. From MonoCode #1002.
+- **Markdown file previews** display local Markdown and HTML images, including centered headers, tables, and picture elements, while preserving dimensions and alignment. Paths resolve within the project; missing, invalid, remote, or out-of-project images fall back to their alt text. From MonoCode #1027.
+- Right-clicking empty window space no longer opens a native menu offering only **Reload**. Reload remains in the View menu, and controls keep their applicable native menus. From MonoCode #1003.
+- HTML artifacts render their surface, muted, and border theme colors opaquely. From MonoCode #1020.
+- macOS development bundles carry the app's real version metadata. From MonoCode #983.
+- Revisiting a tab no longer replays its transcript animations.
+- Closing tabs around Familiar and app view tabs keeps the right workspace visible, and switching between them no longer flickers.
+- Title bars and the project rail leave room for the window controls in macOS full screen.
+- Model pickers and popovers fit short or zoomed windows without clipping rows.
+- Empty sessions lay out correctly in narrow or short panes.
+- Translucent cards render without flicker on macOS.
+
+## [1.0.18] - 2026-10-18
+
 ### Changed
 
 - **Knowledge** notes open in **Preview** by default. Frontmatter sits in a collapsible **Properties** block; headings, task lists, and links render cleanly, and long bare URLs shorten to a readable host + path.
@@ -393,7 +528,13 @@ First release under the MOLFAR name (Multi-Agent Orchestration Layer for Autonom
 
 - New name, logo and app identity (`com.molfar.desktop`). MOLFAR keeps its own settings, sessions and host directory (`~/.molfar-host`); earlier Vatra and MonoCode profiles are not imported.
 
-[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.17...HEAD
+[Unreleased]: https://github.com/deluminor/molfar/compare/v1.0.23...HEAD
+[1.0.23]: https://github.com/deluminor/molfar/compare/v1.0.22...v1.0.23
+[1.0.22]: https://github.com/deluminor/molfar/compare/v1.0.21...v1.0.22
+[1.0.21]: https://github.com/deluminor/molfar/compare/v1.0.20...v1.0.21
+[1.0.20]: https://github.com/deluminor/molfar/compare/v1.0.19...v1.0.20
+[1.0.19]: https://github.com/deluminor/molfar/compare/v1.0.18...v1.0.19
+[1.0.18]: https://github.com/deluminor/molfar/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/deluminor/molfar/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/deluminor/molfar/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/deluminor/molfar/compare/v1.0.14...v1.0.15

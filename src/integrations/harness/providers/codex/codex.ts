@@ -1,15 +1,13 @@
-import { TurnNotReadyError } from "../../core/types";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
-import {
-  exhaustedWindowResetAt,
-  parseCodexRateLimits,
-} from "../../../../features/providers/model/rateLimits";
-import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import { nativeModelId } from "../../core/models/resolve-model";
+import { sameProviderAccountId } from "@/domain/harness/provider-account";
+import { exhaustedWindowResetAt } from "@/domain/rate-limits/rate-limit-window";
+import { parseCodexRateLimits } from "./codex-rate-limits";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import { TurnNotReadyError, type ApprovalDecision, type CompactContextInput, type HarnessEvent, type HarnessSessionInput, type RewindLastTurnInput, type RewindLastTurnResult, type SendTurnInput, type SteerTurnInput } from "../../core/types";
 import {
   questionPromptTitle,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
+} from "@/domain/session/user-question";
 import {
   killChild,
   resolveCodexBinary,
@@ -34,31 +32,21 @@ import {
   toCodexApprovalDecision,
   type CodexApprovalKind,
   type CodexTurnUsage,
-} from "./codexProtocol";
-import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
+} from "./codex-protocol";
+import { JsonRpcClient, type JsonRpcId } from "../../core/json-rpc";
 import {
   deleteGeneratedImages,
   saveGeneratedImage,
-} from "../../../../platform/tauri/fs";
+} from "@/platform/tauri/fs";
 import {
   codexAsyncQuestions,
   codexAsyncQuestionResponse,
   codexQuestions,
   codexQuestionResponse,
-} from "./codexQuestions";
-import { codexMcpConfirmation } from "./codexElicitation";
-import { snapshotRemainder } from "../../core/streamText";
-import { prepareCodexFamiliarContext } from "./codexStore";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  RewindLastTurnInput,
-  RewindLastTurnResult,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+} from "./codex-questions";
+import { codexMcpConfirmation } from "./codex-elicitation";
+import { snapshotRemainder } from "../../core/stream-text";
+import { prepareCodexFamiliarContext } from "./codex-store";
 
 type ApprovalOutcome = ApprovalDecision | "cancelled";
 

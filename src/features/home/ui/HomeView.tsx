@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
-import { SecondaryButton } from "../../../shared/ui/SecondaryButton";
-import { Home } from "../../../shared/ui/icons";
-import { useHomeDashboard } from "../hooks/useHomeDashboard";
+import { SecondaryButton } from "@/shared/ui/SecondaryButton";
+import { Home } from "@/shared/ui/icons";
+import { useHomeDashboard } from "../hooks/use-home-dashboard";
 import {
   useHomeLayoutEditing,
   type HomeLayoutEditing,
-} from "../hooks/useHomeLayoutEditing";
-import { useHostStats } from "../hooks/useHostStats";
-import { useInboxPulse } from "../hooks/useInboxPulse";
-import { useSessionActivity } from "../hooks/useSessionActivity";
-import { useUsagePulse } from "../hooks/useUsagePulse";
+} from "../hooks/use-home-layout-editing";
+import { useHostStats } from "../hooks/use-host-stats";
+import { useInboxPulse } from "../hooks/use-inbox-pulse";
+import { useSessionActivity } from "../hooks/use-session-activity";
+import { useUsagePulse } from "../hooks/use-usage-pulse";
 import { ActivityCard } from "./ActivityCard";
 import { AutomationsCard } from "./AutomationsCard";
 import { ClockCard } from "./ClockCard";

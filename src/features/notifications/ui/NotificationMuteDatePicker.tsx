@@ -2,12 +2,12 @@ import { useState } from "react";
 import {
   loadNotificationPreferences,
   updateNotificationPreferences,
-} from "../model/notificationPreferences";
+} from "../model/notification-preferences";
 import {
   DateTimePicker,
   parseLocalDateTime,
   toLocalDateTime,
-} from "../../../shared/ui/DateTimePicker";
+} from "@/shared/ui/DateTimePicker";
 
 type Props = {
   projectIds: readonly string[];

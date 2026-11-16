@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 // Node 25+ ships a global `localStorage` that shadows the DOM environment's
@@ -13,17 +14,24 @@ const execArgv = process.allowedNodeEnvironmentFlags.has(
 const windows = process.platform === "win32";
 
 export default defineConfig({
+  resolve: {
+    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+  },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
-    setupFiles: ["scripts/test/isolate-git-env.mjs"],
+    // Native GPUI script tests use node:test and run through `npm run native:test:dev`.
+    exclude: ["**/node_modules/**", "scripts/*native*.test.mjs", "scripts/native-release/**/*.test.mjs"],
+    setupFiles: [
+      "scripts/test/isolate-git-env.mjs",
+      "scripts/test/prefer-dom-localstorage.mjs",
+    ],
+    restoreMocks: true,
     // Git fixture suites (scripts/upstream, FileEditorCrlfGit, …) spawn real
     // git processes. On Windows runners under parallel load they exceed the
     // default 5s budget — same pattern as host/vitest.config.ts.
     testTimeout: windows ? 30_000 : 5_000,
     hookTimeout: windows ? 30_000 : 10_000,
-    poolOptions: {
-      forks: { execArgv },
-    },
+    execArgv,
   },
 });

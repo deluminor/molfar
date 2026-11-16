@@ -5,7 +5,7 @@ import {
   pixelLayers,
   type PixelLayers,
   type PixelRect,
-} from "../model/pixelMascots";
+} from "../model/pixel-mascots";
 
 /** What a mascot's agent is doing: idle bobs, working hops, waiting gets an idea. */
 export type PixelMascotStatus = "idle" | "working" | "needs-you";

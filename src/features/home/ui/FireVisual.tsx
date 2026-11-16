@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { useFireAnimation } from "../hooks/useFireAnimation";
+import { useFireAnimation } from "../hooks/use-fire-animation";
 
 export const FireVisual = memo(function FireVisual(): ReactNode {
   const { canvasRef, status } = useFireAnimation();

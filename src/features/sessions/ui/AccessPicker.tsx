@@ -4,7 +4,7 @@ import {
   Pencil,
   Shield,
   Sparkles,
-} from "../../../shared/ui/icons";
+} from "@/shared/ui/icons";
 import {
   useEffect,
   useRef,
@@ -16,8 +16,8 @@ import {
   RUNTIME_MODE_LABEL,
   RUNTIME_MODES,
   type RuntimeMode,
-} from "../model/session";
-import { Popover } from "../../../shared/ui/Popover";
+} from "@/domain/session/runtime-mode";
+import { Popover } from "@/shared/ui/Popover";
 
 type Props = {
   value: RuntimeMode;

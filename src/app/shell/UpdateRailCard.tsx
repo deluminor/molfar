@@ -1,5 +1,5 @@
-import { X } from "../../shared/ui/icons";
-import type { InstalledUpdate } from "../model/updateNotice";
+import { X } from "@/shared/ui/icons";
+import type { InstalledUpdate } from "@/features/updates/model/update-notice";
 
 type Props = {
   update: InstalledUpdate | null;

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { UsageProvidersSkeleton } from "../../usage/ui/UsageProvidersSkeleton";
-import type { UsagePulseRow } from "../model/usagePulse";
+import { UsageProvidersSkeleton } from "@/features/usage/ui/UsageProvidersSkeleton";
+import type { UsagePulseRow } from "../model/usage-pulse";
 import { HomeCard } from "./HomeCard";
 
 type Props = {

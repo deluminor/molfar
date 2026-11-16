@@ -4,7 +4,7 @@ import {
   fetchInboxMedia,
   sniffInboxMedia,
   type InboxMediaType,
-} from "../model/inboxMedia";
+} from "../model/inbox-media";
 
 type Props = {
   src: string;

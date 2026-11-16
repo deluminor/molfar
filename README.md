@@ -5,16 +5,27 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black" alt="Tauri 2" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript strict" />
-  <img src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black" alt="Rust stable" />
   <img src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-supported-555" alt="macOS, Windows, Linux" />
-  <img src="https://img.shields.io/github/v/release/deluminor/molfar?color=8b5cf6&label=version" alt="Latest release" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
 </p>
 
-https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
+> [!NOTE]
+> **Native preview.** Rust and GPUI.
+>
+> Download [0.16.0-preview.11](https://github.com/deluminor/molfar/releases/tag/native-v0.16.0-preview.11).
+>
+> macOS DMG for Apple Silicon and Intel, Windows x64 installer, Linux x64 `.deb`, AppImage, and `.rpm`.
+> Read the [native guide](docs/native/README.md) before installing.
+
+> [!TIP]
+> **Stable.** Tauri, React, TypeScript, and Rust.
+>
+> Download the [latest release](https://github.com/deluminor/molfar/releases/latest).
+>
+> macOS DMG for Apple Silicon and Intel, Windows x64 installer, Linux x64 `.deb`, AppImage, and `.rpm`.
+> macOS and Windows update from this release.
+
+https://github.com/user-attachments/assets/16659ebc-0ee1-41d7-a70b-e2407bafa97b
 
 ## Architecture
 
@@ -22,12 +33,12 @@ https://github.com/user-attachments/assets/e95b4b78-b784-4bde-a8ad-151d95dd3a92
 
 Interactive diagrams: [system overview](docs/architecture/molfar-system.html) · [Confluence Docs read path](docs/architecture/confluence-read.html)
 
-| Layer                 | Responsibility                                                                                     |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
+| Layer                 | Responsibility                                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
 | **React UI**          | Board, Sessions, Familiars, Inbox, Notes, Knowledge, Home, Usage, Settings, and the workspace around them |
-| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model       |
-| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI |
-| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine    |
+| **Harness layer**     | Normalizes heterogeneous provider CLIs and ACP/stdio transports into one session event model              |
+| **Tauri core (Rust)** | Filesystem, PTY, Git, session and Familiar persistence, host metrics, Atlassian, local control CLI        |
+| **Connectors**        | GitHub, GitLab, Linear, Jira, Azure DevOps, Confluence, using credentials stored on the machine           |
 
 The important boundary is the **harness layer**: provider CLIs stay native to their ecosystems, while the rest of the application sees one consistent session model.
 
@@ -106,9 +117,7 @@ A global **Task Board** on the project rail turns a task into a staged pipeline 
 - Waiting and failed cards surface as a **count badge** on the Board rail action and on the macOS Dock; delivered cards can be **Archived** so Done stays lean.
 - Paired Companion phones can drive the same board actions while you are away from the desk.
 
-![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board1.png)
-
-![Delivered Board card with stage timeline, acceptance criteria, and pull request link](docs/architecture/images/board2.png)
+![Task Board Kanban with Grill, Plan approval, Implement, and Code review columns](docs/architecture/images/board.png)
 
 ### Sessions: every agent, one workspace
 
@@ -173,14 +182,10 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 
 ![Molfar companion on iPhone — overview with Familiars and host stats beside a session transcript with photo and dictation composer](docs/architecture/images/phone.jpg)
 
-![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred.png)
-
-![Molfar companion on iPad — laptop online, host metrics, Familiars, open sessions, and project rail](docs/architecture/images/ipad-blurred2.png)
-
 ### Orchestration and `/operator`
 
 - **Orchestration** lets a lead agent decompose a larger task into coordinated worker sessions, each in its own checkout.
-- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), worktrees, and read-only Confluence tools. Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
+- **`/operator`** exposes a scoped local control surface to the active agent: models, sessions, folders, notes (read and write), and worktrees. Jira/Confluence writes go through **molfar-connectors** MCP (not `/operator`). Access is limited to the thread that enabled it — see [Agent access to MOLFAR](#agent-access-to-molfar-operator).
 
 ### Home and Usage
 
@@ -190,7 +195,7 @@ Pair a phone or tablet through the **Molfar** module in BitChain and steer the d
 
 ### Also inside
 
-Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence tools when Atlassian is connected; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
+Global quick composer (`Cmd+Shift+Space` by default) · MCP server management for supported providers · **molfar-connectors** MCP (Jira + Confluence read/write tools when Atlassian is connected — edit/create/transition/search issues and create/update pages; merged with each provider’s local MCP, never wiping it) · skills and slash-command authoring · notifications with approval toasts and dock badges · Default, colorblind, and high-contrast diff palettes with `+`/`-` line markers · rail visibility for local surfaces · experimental [remote sessions over SSH](docs/remote-access.md).
 
 ## Security and execution model
 
@@ -235,6 +240,8 @@ MOLFAR probes for each CLI at startup and disables the ones it cannot find. One 
 ### Build from source
 
 Prerequisites: **Node.js** ≥ 20 (CI runs 20 and 24), a current stable **Rust** toolchain, and at least one provider CLI. On Linux, install the Tauri native dependencies (`npm run setup:linux:deb` on Debian/Ubuntu); on Windows, WebView2 (the installer bootstraps it).
+
+The mobile app is a separate Expo project in [`mobile/`](mobile/README.md). Run it with `cd mobile && npm install && npm start`.
 
 ```bash
 git clone https://github.com/deluminor/molfar.git
@@ -295,14 +302,18 @@ The `.rpm` declares its runtime dependencies, so `dnf` pulls the WebKitGTK stack
 
 Type `/operator` at the start of a composer message to enable MOLFAR access in that thread. The transcript shows the request without the command, and MOLFAR injects the local `app` CLI path for that turn. Later turns in the same thread keep access; other threads do not. The CLI acts only during an active agent turn — run `app --help` for exact JSON fields.
 
+Sessions started by an ordinary `/operator` thread stay visible in project history. Familiars use the same actions, and their **Show sessions in sidebar** setting decides whether their launches appear there. This is independent of navigation: `reveal` defaults to `false`, so a background launch can appear in history without switching the current conversation.
+
 - `models.list` shows available providers, models, settings, and permission modes.
-- `sessions.start` opens a tab in the current project with a prompt. `placement: "right"` or `"down"` splits the calling session's pane; `besideSessionId` targets another visible pane, and the returned session ID can be reused to build nested layouts. `draft: true` saves the prompt unsent. It accepts a provider, model, effort and other model settings, permission mode, and a checkout: the current one, a new worktree, or an existing `worktreeCwd` from `worktrees.list`. Omit `runtimeMode` to inherit the caller's permission mode.
+- `sessions.start` creates a session in the current project with a prompt. `reveal: true` opens its tab; `placement: "right"` or `"down"` splits the calling session's pane; `besideSessionId` targets another visible pane, and the returned session ID can be reused to build nested layouts. `draft: true` saves the prompt unsent. It accepts a provider, model, effort and other model settings, permission mode, and a checkout: the current one, a new worktree, or an existing `worktreeCwd` from `worktrees.list`. Omit `runtimeMode` to inherit the caller's permission mode.
 - `sessions.list` shows project sessions. `sessions.read` returns up to three recent user/assistant exchanges, with a cursor for older ones and a per-message character cap. `sessions.send` submits a follow-up to an idle session; `sessions.draft` saves an unsent message for review.
 - `folders.list` / `folders.move` organize sessions in sidebar folders, including a new folder.
-- `notes.list` returns titles and short previews; `notes.read` returns one full note by ID. `notes.write` creates a note linked to the calling session or edits an existing one's title, body, and tags; reuse `--request-id` on retries to avoid duplicates.
+- `notes.list` returns titles and short previews and accepts `limit` and `offset`; `notes.read` returns one full note by ID. `notes.write` creates a note linked to the calling session or edits an existing one's title, body, and tags; reuse `--request-id` on retries to avoid duplicates.
 - `worktrees.list` / `worktrees.create` list project worktrees and create a checkout on a new or existing local branch.
 - `confluence.search` / `confluence.list` / `confluence.read` read Confluence through the connected Atlassian account.
 - `board.list` shows the project's Task Board cards; `board.create` adds a Backlog card with a title, Markdown description and acceptance criteria. A session files cards only in its own project, a Familiar only in its projects. Reuse `--request-id` on retries; it returns the same card instead of a second one.
+
+Retry an uncertain mutation with the same request ID and identical input. Unknown fields and invalid options return errors instead of being ignored.
 
 Asking an agent with app access to "add this to the board" is enough: the app-access instructions and the Familiar rules tell it to write the card from the conversation and follow the template in the `board.create` entry of `app --help` (Overview, Goals, Scope, Out of scope, Technical notes, `AC-n` criteria, all in English). It creates the card at once when the user says to create it now, and otherwise confirms the title and scope first; that rule lives in the instructions, not in the CLI. The built-in `/create-board-task` skill does the same on demand and skips the confirmation. Providers with their own command catalog (Pi, omp, Devin) do not list the skill, but still get the instructions and the help.
 
@@ -351,6 +362,32 @@ Small, focused pull requests are welcome; larger changes are worth an issue firs
 ## Direction
 
 The direction is to tighten the feedback loop between **agents, code, knowledge, tickets, and operational signals** while continuously hardening the runtime.
+
+## MOLFAR Native preview
+
+The Rust + GPUI app is an experimental preview. React/Tauri remains the
+production app.
+
+To try GPUI from this checkout with Node.js 22+, Rust and Xcode on macOS:
+
+```sh
+npm run native:dev     # launch with a separate development database
+npm run native:build   # create an optimized app using installed MOLFAR data
+```
+
+Native uses app ID `com.molfar.native` and binary `molfar-native`. Development
+builds display `MOLFAR Native (Development)` and keep data under
+`com.molfar.native`; release builds share `com.molfar.desktop/molfar.db` with Tauri.
+
+Type `r` then Enter in the development terminal to rebuild and restart; there is
+no hot reload. The release app saves changes to your installed MOLFAR data.
+See the [native guide](docs/native/README.md) for prerequisites, build output,
+checks and preview limitations.
+
+The release preparation keeps Tauri `vX.Y.Z` releases separate from Native
+`native-vX.Y.Z-preview.N` GitHub prereleases. Native automatic updates remain
+unconfigured. See [release instructions](docs/releasing.md#two-release-paths)
+and [migration status](docs/native/status.md) for validation and publication gates.
 
 > **One engineering workspace instead of a collection of disconnected CLIs, agent windows, dashboards, and tabs.**
 

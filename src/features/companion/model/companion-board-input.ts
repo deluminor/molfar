@@ -1,8 +1,9 @@
-import { HARNESSES, RUNTIME_MODES } from "../../sessions/model/session";
-import { BOARD_COLUMNS } from "../../task-board/constants/columns";
-import type { OwnerAction } from "../../task-board/services/actions";
-import type { BoardColumn, DeliveryMethod } from "../../task-board/types/card";
-import type { StageModelConfig } from "../../task-board/types/stage";
+import { HARNESSES } from "@/domain/harness/harness";
+import { RUNTIME_MODES } from "@/domain/session/runtime-mode";
+import { BOARD_COLUMNS } from "@/features/task-board/constants/columns";
+import type { OwnerAction } from "@/features/task-board/services/actions";
+import type { BoardColumn, DeliveryMethod } from "@/features/task-board/types/card";
+import type { StageModelConfig } from "@/features/task-board/types/stage";
 
 /** Errors a phone can branch on: the message starts with `<code>:`. */
 export class BoardInputError extends Error {

@@ -1,36 +1,37 @@
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import type { Session } from "@/domain/session/session";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { Copy, ExternalLink, Plus, Square, X } from "../../../shared/ui/icons";
-import { copyMessage } from "../../../platform/tauri/clipboard";
+import { Copy, ExternalLink, Plus, Square, X } from "@/shared/ui/icons";
+import { copyMessage } from "@/platform/tauri/clipboard";
 import {
   ArtifactContent,
   useArtifact,
-} from "../../artifacts/ui/ArtifactContent";
-import { artifactLabel } from "../../artifacts/artifacts";
-import { PixelMascot } from "../../projects/ui/PixelMascot";
-import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
-import { QuestionForm } from "../../sessions/ui/QuestionForm";
-import { revokeAttachment } from "../../sessions/model/attachments";
-import { useFamiliarTranscript } from "../hooks/useFamiliarTranscript";
+} from "@/features/artifacts/ui/ArtifactContent";
+import { artifactLabel } from "@/features/artifacts/artifacts";
+import { PixelMascot } from "@/features/projects/ui/PixelMascot";
+import { AgentTranscript } from "@/features/sessions/ui/AgentTranscript";
+import { QuestionForm } from "@/features/sessions/ui/QuestionForm";
+import { revokeAttachment } from "@/features/sessions/model/attachments";
+import { useFamiliarTranscript } from "../hooks/use-familiar-transcript";
 import { familiarState } from "../model/familiar";
 import {
   familiarMessageDeliveries,
   familiarPendingTranscriptBlocks,
-} from "../model/familiarMessaging";
-import { sessionWorkCwd, type Session } from "../../sessions/model/session";
+} from "../model/familiar-messaging";
 import {
   FLOATING_FAMILIAR_CHANGED,
   floatingFamiliarAttachments,
   type FloatingFamiliarAction,
   type FloatingFamiliarEntry,
   type FloatingFamiliarView,
-} from "../model/floatingFamiliar";
+} from "../model/floating-familiar";
 import { FamiliarComposer } from "./FamiliarComposer";
 import { FamiliarStatusDot } from "./FamiliarRailMascot";
 import { FamiliarStatus } from "./FamiliarStatus";
-import { FAMILIAR_PAGE_TURNS } from "../../sessions/data/sessionStore";
+import { FAMILIAR_PAGE_TURNS } from "@/features/sessions/data/session-store";
 
 const EMPTY: FloatingFamiliarView = {
   monos: [],
@@ -305,7 +306,7 @@ function MonoRail({
   const [creating, setCreating] = useState(false);
   return (
     <nav
-      aria-label="Monos"
+      aria-label="Familiars"
       data-floating-mono-rail
       data-tauri-drag-region
       // 17px puts the first mascot's center level with the header's: the
@@ -354,8 +355,8 @@ function MonoRail({
       })}
       <button
         type="button"
-        title="New mono"
-        aria-label="New mono"
+        title="New familiar"
+        aria-label="New familiar"
         disabled={creating || !currentId}
         onClick={() => {
           setCreating(true);

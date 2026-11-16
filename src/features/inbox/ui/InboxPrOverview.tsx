@@ -3,11 +3,11 @@ import {
   ChevronDown,
   ChevronRight,
   LoaderCircle,
-} from "../../../shared/ui/icons";
-import { FileTypeIcon } from "../../files/ui/FileTypeIcon";
-import { formatInteger } from "../../../shared/lib/numbers";
-import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
-import type { GithubPrDiff } from "../model/githubTasks";
+} from "@/shared/ui/icons";
+import { FileTypeIcon } from "@/features/files/ui/FileTypeIcon";
+import { formatInteger } from "@/shared/lib/numbers";
+import { AgentMarkdown } from "@/features/sessions/ui/AgentMarkdown";
+import type { GithubPrDiff } from "../model/github-tasks";
 
 const EXCERPT_LINES = 4;
 const EXCERPT_CHARS = 360;

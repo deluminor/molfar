@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
-import { workSummaryLine } from "../../sessions/model/transcriptActivity";
-import { FamiliarActivityTrail } from "../../sessions/ui/AgentTranscript";
+import { workSummaryLine } from "@/features/sessions/model/transcript-activity";
+import { FamiliarActivityTrail } from "@/features/sessions/ui/AgentTranscript";
 
 /** A selected turn's trail, in the order it happened. */
 export function FamiliarActivityView(

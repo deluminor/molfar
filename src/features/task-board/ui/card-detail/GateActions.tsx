@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { confirmApp } from "../../../../app/model/appDialog";
-import { Archive, GitMerge, GitPullRequest, GitBranch, Play, RotateCcw, Square, Trash2, Undo2, Check } from "../../../../shared/ui/icons";
+import { confirmApp } from "@/shared/lib/app-dialog";
+import { Archive, GitMerge, GitPullRequest, GitBranch, Play, RotateCcw, Square, Trash2, Undo2, Check } from "@/shared/ui/icons";
 import { isAgentStage } from "../../constants/columns";
 import { transition } from "../../model/transitions";
 import type { OwnerAction } from "../../services/actions";

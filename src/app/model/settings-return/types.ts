@@ -1,4 +1,4 @@
-import type { LocalSurfaceId } from "../../../features/home/ui/LocalSurfaceRailActions";
+import type { LocalSurfaceId } from "@/features/home/ui/LocalSurfaceRailActions";
 
 export interface SettingsReturnView {
   search: boolean;

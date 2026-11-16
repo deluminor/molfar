@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { LAST_WIDGET_HIDE_REASON } from "../model/homeWidgetRegistry";
+import { LAST_WIDGET_HIDE_REASON } from "../model/home-widget-registry";
 
 export type HomeCardEdit = {
   label: string;

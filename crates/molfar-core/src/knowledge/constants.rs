@@ -1,0 +1,10 @@
+pub const MAX_ENTRIES: usize = 50_000;
+pub const MAX_DOCUMENT_BYTES: u64 = 2 * 1024 * 1024;
+pub const MAX_SCAN_BYTES: u64 = 128 * 1024 * 1024;
+pub const MAX_WARNINGS: usize = 100;
+pub const MAX_SCAN_SECONDS: u64 = 30;
+pub const CONNECTION_FILE: &str = "knowledge-vault.json";
+pub const NO_VAULT: &str = "No Knowledge vault is connected in MOLFAR";
+pub const NOT_IN_VAULT: &str = "That note is not in the vault";
+pub const BODY_MAX: usize = 128 * 1024;
+pub const NOTES_MAX: usize = 5_000;

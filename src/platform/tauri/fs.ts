@@ -1,10 +1,23 @@
 import { invoke as invokeLocal } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { slash } from "../../shared/lib/paths";
-import { REMOTE_PATH_PREFIX } from "../../shared/lib/remotePaths";
-import type { InterjectionMeta } from "../../features/sessions/model/session";
+import { joinPath, slash } from "@/shared/lib/paths";
+import { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
+import type { InterjectionMeta } from "@/domain/session/block-meta";
+import type {
+  FileMtime,
+  FsEntry,
+  ProjectFile,
+} from "@/domain/files/file-entry";
+import type {
+  GitDiffIndex,
+  GitChangedFile,
+  GitDiffStats,
+  GitFileDiffKind,
+  GitFileDiff,
+} from "@/domain/git/working-tree";
+import type { GitPr } from "@/domain/git/pull-request";
 
-export { REMOTE_PATH_PREFIX } from "../../shared/lib/remotePaths";
+export { REMOTE_PATH_PREFIX } from "@/shared/lib/remote-paths";
 
 type RemoteCommandRunner = (
   command: string,
@@ -89,13 +102,6 @@ export function claudeShellCommands(
   });
 }
 
-export type FsEntry = {
-  name: string;
-  path: string;
-  isDir: boolean;
-  ignored: boolean;
-};
-
 export type ProjectLocation = {
   path: string;
   identity: string;
@@ -126,13 +132,6 @@ export function openInExternalEditor(
 ): Promise<void> {
   return invoke<void>("open_in_external_editor", { editorId, cwd });
 }
-
-export type ProjectFile = {
-  name: string;
-  path: string;
-  relative: string;
-  isDir?: boolean;
-};
 
 export function listDir(path: string): Promise<FsEntry[]> {
   return invoke<FsEntry[]>("list_dir", { path });
@@ -173,61 +172,42 @@ export function listProjectFiles(cwd: string): Promise<ProjectFile[]> {
   return invoke<ProjectFile[]>("list_project_files", { cwd });
 }
 
-export type GitDiffStats = {
-  files: number;
-  additions: number;
-  deletions: number;
-};
-
 export function gitDiffStats(cwd: string): Promise<GitDiffStats> {
-  return invoke<GitDiffStats>("git_diff_stats", { cwd });
+  return readGit<GitDiffStats>("git_diff_stats", cwd);
 }
 
-export type GitChangedFile = {
-  path: string;
-  relative: string;
-  status: "modified" | "added" | "deleted" | "untracked" | string;
-  additions: number;
-  deletions: number;
-  staged: boolean;
-  unstaged: boolean;
-};
+const pendingGitReads = new Map<string, Promise<unknown>>();
+let gitReadEpoch = 0;
 
-export type GitDiffIndex = {
-  branch: string | null;
-  head: string | null;
-  files: GitChangedFile[];
-  additions: number;
-  deletions: number;
-  remote: string | null;
-  upstream: string | null;
-  defaultBranch: string | null;
-  ahead: number;
-  behind: number;
-  aheadOfDefault: number;
-  headPushed: boolean;
-};
+/** Share concurrent reads, and never resolve with a pre-mutation snapshot. */
+function readGit<T>(command: string, cwd: string): Promise<T> {
+  const key = `${command}\0${cwd}`;
+  const pending = pendingGitReads.get(key);
+  if (pending) return pending as Promise<T>;
+  const epoch = gitReadEpoch;
+  const request = invoke<T>(command, { cwd })
+    .then(
+      (result) => (epoch === gitReadEpoch ? result : readGit<T>(command, cwd)),
+      (error) => {
+        if (epoch !== gitReadEpoch) return readGit<T>(command, cwd);
+        throw error;
+      },
+    )
+    .finally(() => {
+      if (pendingGitReads.get(key) === request) pendingGitReads.delete(key);
+    });
+  pendingGitReads.set(key, request);
+  return request;
+}
 
 export function gitDiffIndex(cwd: string): Promise<GitDiffIndex> {
-  return invoke<GitDiffIndex>("git_diff_index", { cwd });
+  return readGit<GitDiffIndex>("git_diff_index", cwd);
 }
 
 /** File list and counts only, for diff content views that do not need sync data. */
 export function gitDiffFiles(cwd: string): Promise<GitDiffIndex> {
-  return invoke<GitDiffIndex>("git_diff_files", { cwd });
+  return readGit<GitDiffIndex>("git_diff_files", cwd);
 }
-
-export type GitFileDiff = {
-  path: string;
-  relative: string;
-  status: string;
-  original: string;
-  current: string;
-  binary: boolean;
-  tooLarge: boolean;
-};
-
-export type GitFileDiffKind = "staged" | "unstaged";
 
 export function gitFileDiff(
   cwd: string,
@@ -385,13 +365,6 @@ export function gitSnapshot(cwd: string): Promise<GitSnapshot> {
   return invokeLocal<GitSnapshot>("git_snapshot", { cwd });
 }
 
-export type GitPr = {
-  number: number;
-  title: string;
-  url: string;
-  state: string;
-};
-
 export function gitPrStatus(cwd: string): Promise<GitPr | null> {
   return invoke<GitPr | null>("git_pr_status", { cwd });
 }
@@ -451,7 +424,13 @@ export function isCheckoutBlockedByChanges(message: string): boolean {
 const GIT_CHANGED = "molfar-git-changed";
 
 /** Tell git UIs (diff pane, branch picker) to reload after a local git mutation. */
-export function notifyGitChanged() {
+export function notifyGitChanged({ invalidatePending = true } = {}) {
+  // Publishing an already-read index is not a mutation. All actual mutations
+  // invalidate both new readers and original callers still awaiting old data.
+  if (invalidatePending) {
+    gitReadEpoch++;
+    pendingGitReads.clear();
+  }
   window.dispatchEvent(new Event(GIT_CHANGED));
 }
 
@@ -561,11 +540,6 @@ export function readFilePreview(
   });
 }
 
-export type FileMtime = {
-  path: string;
-  mtimeMs: number | null;
-};
-
 export function statFiles(paths: string[]): Promise<FileMtime[]> {
   if (paths.length === 0) return Promise.resolve([]);
   const groups = new Map<string, string[]>();
@@ -600,6 +574,19 @@ export async function readBinaryFile(path: string): Promise<Uint8Array> {
     : new Uint8Array(buffer);
 }
 
+/**
+ * Bytes of an image a project's Markdown document shows. `path` is relative to
+ * `root`, and the file is read only if it resolves inside `root`, symlinks
+ * included. A connected machine already keeps every read inside its projects.
+ */
+export function readProjectImage(root: string, path: string): Promise<Uint8Array> {
+  if (root.startsWith(REMOTE_PATH_PREFIX))
+    return readBinaryFile(joinPath(root, path));
+  return invokeLocal<ArrayBuffer>("read_project_image", { root, path }).then(
+    (buffer) => new Uint8Array(buffer),
+  );
+}
+
 export type GeneratedImageAsset = {
   path: string;
   mimeType: string;
@@ -621,10 +608,3 @@ export function writeTextFile(path: string, content: string): Promise<void> {
   return invoke<void>("write_text_file", { path, content });
 }
 
-/** Last path segment, or `/` for the filesystem root. */
-export function basename(path: string): string {
-  const trimmed = slash(path).replace(/\/+$/, "") || "/";
-  if (/^[A-Za-z]:$/.test(trimmed)) return trimmed;
-  const parts = trimmed.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? trimmed;
-}

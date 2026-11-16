@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type SessionFolderTarget,
   type SessionFolder,
-} from "../model/sessionFolders";
-import { Folder, Plus, X } from "../../../shared/ui/icons";
-import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+} from "../model/session-folders";
+import { Folder, Plus, X } from "@/shared/ui/icons";
+import { useLockOverscroll } from "@/shared/hooks/use-lock-overscroll";
 
 type Props = {
   folders: SessionFolder[];

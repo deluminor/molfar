@@ -1,5 +1,5 @@
+import type { Block } from "@/domain/session/block";
 import { describe, expect, it } from "vitest";
-import type { Block } from "./session";
 import { lastTurnAssistantText } from "./turn-text";
 
 const block = (id: string, role: Block["role"], text: string, extra: Partial<Block> = {}): Block => ({

@@ -1,4 +1,7 @@
-import { projectKey, projectName } from "../../../shared/lib/paths";
+import { hasPendingApproval } from "@/domain/session/session-state";
+import type { Block } from "@/domain/session/block";
+import type { Session } from "@/domain/session/session";
+import { projectKey, projectName } from "@/shared/lib/paths";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
@@ -8,17 +11,13 @@ import {
   resolveTabGroupLabel,
   resolveTabGroupMascot,
   TAB_GROUP_COLORS,
-} from "../../workspace/model/tabGroups";
-import {
-  hasPendingApproval,
-  type Block,
-  type Session,
-} from "../../sessions/model/session";
+} from "@/features/workspace/model/tab-groups";
 import {
   PROJECT_MASCOTS,
   projectMascot,
-} from "../../projects/model/projectMascots";
-import { removeFamiliarBackground } from "./familiarBackground";
+} from "@/features/projects/model/project-mascots";
+import { readJson, parseStoredJson } from "@/shared/lib/storage";
+import { removeFamiliarBackground } from "./familiar-background";
 
 /** The project palette's colors, plus indigo for a Familiar's ninth preset. */
 export const FAMILIAR_COLORS = [
@@ -80,13 +79,8 @@ const LEGACY_KEYS: [string, string][] = [
   ["molfar:project-agent-handed", HANDED_KEY],
 ];
 
-function readJson(key: string): unknown {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as unknown) : undefined;
-  } catch {
-    return undefined;
-  }
+function readStoredJson(key: string): unknown {
+  return readJson(key, (value) => value, undefined);
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -113,12 +107,7 @@ function migrateMonoBackgroundKeys(): void {
   const key = "molfar:project-chat-backgrounds";
   const raw = localStorage.getItem(key);
   if (!raw) return;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw) as unknown;
-  } catch {
-    return;
-  }
+  const parsed = parseStoredJson(raw, (value) => value, undefined);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
   const store = parsed as Record<string, unknown>;
   let changed = false;
@@ -140,8 +129,8 @@ export function migrateLegacyFamiliarStorage(): void {
     migrateMonoBackgroundKeys();
     for (const [legacy, key] of LEGACY_KEYS) moveLocalStorageKey(legacy, key);
     if (localStorage.getItem(ROSTER_KEY) != null) return;
-    const agents = record(readJson(LEGACY_AGENTS_KEY));
-    const profiles = record(readJson(LEGACY_PROFILES_KEY));
+    const agents = record(readStoredJson(LEGACY_AGENTS_KEY));
+    const profiles = record(readStoredJson(LEGACY_PROFILES_KEY));
     const mascots = loadTabGroupMascots();
     const colors = loadTabGroupColors();
     const customColors = loadTabGroupCustomColors();
@@ -219,7 +208,7 @@ function parseFamiliar(value: unknown): Familiar | undefined {
 /** Every Familiar, in the order the rail shows them. */
 export function listFamiliars(): Familiar[] {
   migrateLegacyFamiliarStorage();
-  const parsed = readJson(ROSTER_KEY);
+  const parsed = readStoredJson(ROSTER_KEY);
   if (!Array.isArray(parsed)) return [];
   return parsed.flatMap((entry) => parseFamiliar(entry) ?? []);
 }
@@ -331,15 +320,18 @@ export function removeFamiliar(id: string): void {
   saveRoster(listFamiliars().filter((familiar) => familiar.id !== id));
 }
 
+/**
+ * Puts the given Familiars in this order. Given only some, as a project's list
+ * is, they swap among their own places and the rest stay where they are.
+ */
 export function reorderFamiliars(ids: readonly string[]): void {
   const roster = listFamiliars();
-  const order = new Map(ids.map((id, index) => [id, index]));
+  const byId = new Map(roster.map((familiar) => [familiar.id, familiar]));
+  const ordered = ids.flatMap((id) => byId.get(id) ?? []);
+  const moved = new Set(ordered.map((familiar) => familiar.id));
+  let next = 0;
   saveRoster(
-    [...roster].sort(
-      (a, b) =>
-        (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-        (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-    ),
+    roster.map((familiar) => (moved.has(familiar.id) ? ordered[next++]! : familiar)),
   );
 }
 

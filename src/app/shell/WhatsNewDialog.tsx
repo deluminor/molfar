@@ -4,8 +4,8 @@ import {
   listWhatsNewReleases,
   releaseNotesTitle,
   type ReleaseNotesEntry,
-} from "../model/releaseNotes";
-import { ChevronDown } from "../../shared/ui/icons";
+} from "@/features/updates/model/release-notes";
+import { ChevronDown } from "@/shared/ui/icons";
 import { ReleaseNotesBody, ReleaseNotesDialog } from "./ReleaseNotesDialog";
 
 type Props = {

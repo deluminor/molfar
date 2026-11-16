@@ -7,8 +7,8 @@ import {
   requestNotificationPermission,
   saveNotificationsEnabled,
   type NotificationPermission,
-} from "../../notifications/model/notifications";
-import { Toggle } from "../../settings/ui/Toggle";
+} from "@/features/notifications/model/notifications";
+import { Toggle } from "@/features/settings/ui/Toggle";
 
 function hint(enabled: boolean, permission: NotificationPermission): string {
   if (!enabled) return "Off: gates, failures and stalls only show on the board.";

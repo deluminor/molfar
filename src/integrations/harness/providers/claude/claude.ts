@@ -1,12 +1,9 @@
-import { TurnNotReadyError } from "../../core/types";
-import { nativeModelId } from "../../../../features/sessions/model/models";
-import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
-import type {
-  RuntimeMode,
-  TaskListItem,
-  TaskListMeta,
-} from "../../../../features/sessions/model/session";
-import { loadClaudeHooks } from "../../../../features/settings/model/settings";
+import { nativeModelId } from "../../core/models/resolve-model";
+import { sameProviderAccountId } from "@/domain/harness/provider-account";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { TaskListItem, TaskListMeta } from "@/domain/session/task-list";
+import { loadClaudeHooks } from "./claude-hooks-setting";
+import { TurnNotReadyError, type ApprovalDecision, type CompactContextInput, type HarnessEvent, type HarnessSessionInput, type SendTurnInput, type SteerTurnInput } from "../../core/types";
 import {
   killChild,
   resolveClaudeBinary,
@@ -16,10 +13,10 @@ import {
   writeChild,
 } from "../../core/child";
 import {
-  loadSessionMcpServers,
+  loadSessionMcpServersForSession,
   MOLFAR_CONNECTORS_SERVER_NAME,
   toClaudeMcpConfig,
-} from "../../core/sessionMcpServers";
+} from "../../core/session-mcp-servers";
 import {
   askUserQuestionAllowInput,
   asRecord,
@@ -40,6 +37,7 @@ import {
   inputJsonDeltaFromEvent,
   isAgentTaskType,
   isClaudeUltracodeEffort,
+  isReplayedTaskNotificationResult,
   isSubagentMessage,
   isTerminalAgentTaskStatus,
   isTodoTool,
@@ -75,22 +73,14 @@ import {
   type ClaudeAgentTaskNotification,
   type ClaudeCliSettings,
   type ClaudeControlRequest,
-} from "./claudeProtocol";
+} from "./claude-protocol";
 import { isAgentToolName } from "../../core/preview";
-import { joinStreamText, snapshotRemainder } from "../../core/streamText";
+import { joinStreamText, snapshotRemainder } from "../../core/stream-text";
 import {
   questionPromptTitle,
   questionsFromUnknown,
   type UserQuestionReply,
-} from "../../../../features/sessions/model/userQuestion";
-import type {
-  ApprovalDecision,
-  CompactContextInput,
-  HarnessEvent,
-  HarnessSessionInput,
-  SendTurnInput,
-  SteerTurnInput,
-} from "../../core/types";
+} from "@/domain/session/user-question";
 
 /**
  * A PermissionRequest hook can decide before the user touches the prompt; Claude
@@ -473,7 +463,11 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     providerSessionId: claudeSessionId,
     tasks: claudeTasks,
   });
-  const sessionMcp = await loadSessionMcpServers("claude", input.cwd);
+  const sessionMcp = await loadSessionMcpServersForSession(
+    "claude",
+    input.cwd,
+    input.onEvent,
+  );
   const connectorsOnly = sessionMcp.filter(
     (server) => server.name === MOLFAR_CONNECTORS_SERVER_NAME,
   );
@@ -983,6 +977,11 @@ function settleInlineAgentTask(live: Live, toolUseId: string): void {
 
 function handleResult(live: Live, rec: Record<string, unknown>): void {
   if (isSubagentMessage(rec)) return;
+  if (isReplayedTaskNotificationResult(rec)) {
+    // A limit reported for the replay must not carry over to the real turn.
+    live.usageLimit = null;
+    return;
+  }
   // A /compact result reports the summarizer call's usage, not the rebuilt
   // conversation level. The next real turn will provide the fresh reading.
   if (!live.manualCompaction) {

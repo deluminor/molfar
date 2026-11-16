@@ -97,7 +97,14 @@ it(
           expect(existsSync(join(directory, "running.json"))).toBe(false),
         );
       }
-      rmSync(directory, { recursive: true, force: true });
+      // Windows can keep the stopped host's handles briefly after
+      // running.json is gone.
+      rmSync(directory, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 200,
+      });
     }
   },
   process.platform === "win32" ? 60_000 : 20_000,

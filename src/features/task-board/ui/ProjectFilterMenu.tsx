@@ -1,8 +1,8 @@
 import { useRef, useState, type ReactNode } from "react";
-import { projectName } from "../../../shared/lib/paths";
-import { Check, ChevronsUpDown, Kanban } from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
-import { ProjectMark } from "../../projects/ui/ProjectMark";
+import { projectName } from "@/shared/lib/paths";
+import { Check, ChevronsUpDown, Kanban } from "@/shared/ui/icons";
+import { Popover } from "@/shared/ui/Popover";
+import { ProjectMark } from "@/features/projects/ui/ProjectMark";
 
 type Props = {
   projects: readonly string[];

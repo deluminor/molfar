@@ -1,5 +1,5 @@
-import type { ControlOutcome } from "../../../orchestration/model/orchestration";
-import type { GitSnapshot } from "../../../../platform/tauri/fs";
+import type { ControlOutcome } from "@/features/orchestration/model/orchestration";
+import type { GitSnapshot } from "@/platform/tauri/fs";
 import type { BoardNotice, EnginePorts, GitPort, SessionPort, StageLaunch, StageSessionState } from "../ports";
 import { createFakeStore } from "./fake-store";
 

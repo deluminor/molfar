@@ -1,16 +1,16 @@
+import { supportsAccountProfiles } from "@/domain/harness/provider-account";
+import { HARNESS_TITLE, type HarnessId } from "@/domain/harness/harness";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { homeDir } from "../../../platform/tauri/fs";
-import { supportsAccountProfiles } from "../../../features/providers/model/providerAccounts";
-import { HARNESS_TITLE, type HarnessId } from "../../../features/sessions/model/session";
+import { homeDir } from "@/platform/tauri/fs";
 import * as child from "./child";
-import { harnessLoginArgs } from "./authSupport";
+import { harnessLoginArgs } from "./auth-support";
 
 export {
   harnessLoginArgs,
   isHarnessAuthError,
   latestTurnNeedsHarnessLogin,
   supportsHarnessLogin,
-} from "./authSupport";
+} from "./auth-support";
 
 const LOGIN_TIMEOUT_MS = 10 * 60_000;
 const LOGIN_CHILD_PREFIX = "molfar-provider-login-";

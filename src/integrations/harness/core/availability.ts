@@ -1,5 +1,4 @@
-import type { HarnessId } from "../../../features/sessions/model/session";
-import { HARNESSES } from "../../../features/sessions/model/session";
+import { type HarnessId, HARNESSES } from "@/domain/harness/harness";
 import {
   resolveAntigravityBinary,
   resolveClaudeBinary,
@@ -14,22 +13,22 @@ import {
   resolvePiBinary,
 } from "./child";
 import { isLiveHarness } from "./registry";
-import { IS_WIN } from "../../../platform/tauri/platform";
+import { IS_WIN } from "@/shared/lib/platform";
 import {
   emitHarnessAvailability,
   harnessAvailabilityProbedAt,
   markHarnessAvailabilityProbed,
   setHarnessAvailability,
   type HarnessAvailability,
-} from "./availabilityState";
+} from "./availability-state";
 
-export type { HarnessAvailability } from "./availabilityState";
+export type { HarnessAvailability } from "./availability-state";
 export {
   getHarnessAvailabilitySnapshot,
   hasProbedHarnessAvailability,
   isHarnessAvailable,
   subscribeHarnessAvailability,
-} from "./availabilityState";
+} from "./availability-state";
 
 /**
  * We only ever check whether the binary exists, never whether it is

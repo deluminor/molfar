@@ -1,4 +1,4 @@
-import { LAYER } from "../../../shared/lib/layers";
+import { LAYER } from "@/shared/lib/layers";
 
 export function FileActionError({
   message,

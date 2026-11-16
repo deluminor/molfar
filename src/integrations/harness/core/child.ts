@@ -3,7 +3,7 @@ import { listen as tauriListen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
   runtimeProviderBinaryPath,
   type ConfigurableBinaryProvider,
-} from "../../../features/providers/model/providerBinaryPaths";
+} from "./provider-binary-paths";
 
 /** Process I/O is supplied by the desktop or a headless host. Provider
  * protocols never need to know which process owns their children. */
@@ -52,6 +52,22 @@ export function copyFamiliarCodexThreads(
     threadId,
     paths,
     sqliteHome,
+  });
+}
+
+/** Copy a native Claude or Codex conversation into another account's home,
+ * so that account resumes the same provider session id. */
+export function transferProviderSession(
+  provider: "claude" | "codex",
+  fromAccountId: string | undefined,
+  toAccountId: string | undefined,
+  providerSessionId: string,
+): Promise<void> {
+  return invoke("provider_session_transfer", {
+    provider,
+    fromAccountId,
+    toAccountId,
+    providerSessionId,
   });
 }
 

@@ -1,14 +1,12 @@
-import type { FamiliarCard } from "../../familiars/model/familiarCards";
-import type { FamiliarStatus } from "../../familiars/model/familiar";
-import type {
-  BlockRole,
-  RuntimeMode,
-} from "../../sessions/model/session";
-import type { LaunchOptions } from "../../sessions/model/launch-choice";
+import type { FamiliarCard } from "@/domain/familiars/familiar-card";
+import type { BlockRole } from "@/domain/session/block";
+import type { RuntimeMode } from "@/domain/session/runtime-mode";
+import type { FamiliarStatus } from "@/features/familiars/model/familiar";
+import type { LaunchOptions } from "@/features/sessions/model/launch-choice";
 import type {
   UserQuestion,
   UserQuestionReply,
-} from "../../sessions/model/userQuestion";
+} from "@/domain/session/user-question";
 
 /**
  * The Companion protocol: what a paired phone or tablet sees of this desktop.

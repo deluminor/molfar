@@ -3,12 +3,10 @@ import { createRoot } from "react-dom/client";
 import { AgentTranscript } from "../../src/features/sessions/ui/AgentTranscript";
 import { FamiliarComposer } from "../../src/features/familiars/ui/FamiliarComposer";
 import { MessageQueue } from "../../src/features/sessions/ui/MessageQueue";
-import { visibleFamiliarCompletionMessages } from "../../src/features/familiars/model/familiarMessaging";
-import {
-  newSession,
-  type Block,
-  type QueuedMessage,
-} from "../../src/features/sessions/model/session";
+import { visibleFamiliarCompletionMessages } from "../../src/features/familiars/model/familiar-messaging";
+import { newSession } from "../../src/features/sessions/model/session";
+import type { Block } from "../../src/domain/session/block";
+import type { QueuedMessage } from "../../src/domain/session/message-queue";
 import {
   saveTranscriptAnchor,
   saveTranscriptLayout,

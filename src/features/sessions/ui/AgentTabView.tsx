@@ -1,21 +1,26 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { findModel } from "@/integrations/harness/core/models/catalog-store";
+import { HARNESS_TITLE } from "@/domain/harness/harness";
+import { sessionDisplayTitle } from "@/domain/session/title";
+import { sessionWorkCwd } from "@/domain/session/session-state";
+import { type Session } from "@/domain/session/session";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { AgentTranscript } from "./AgentTranscript";
+import { useSessionSnapshot } from "../model/session-state-store";
 import { TranscriptFind } from "./TranscriptFind";
 import {
   clearTranscriptJump,
   peekTranscriptJump,
   subscribeTranscriptJump,
-} from "../model/transcriptJump";
+} from "../model/transcript-jump";
 import { HarnessIcon } from "./HarnessIcon";
-import { findModel } from "../model/models";
-import {
-  HARNESS_TITLE,
-  sessionDisplayTitle,
-  sessionWorkCwd,
-  type Session,
-} from "../model/session";
-import { createNote, noteTitle } from "../../notes";
-import { loadNotesEnabled, subscribeNotesEnabled } from "../../settings/model/settings";
+import { createNote, noteTitle } from "@/features/notes/notes";
+import { useNotesEnabled } from "@/features/settings/hooks/use-notes-enabled";
 
 /**
  * One orchestration worker, watched from its lead's workspace.
@@ -27,7 +32,7 @@ import { loadNotesEnabled, subscribeNotesEnabled } from "../../settings/model/se
  */
 export function AgentTabView({
   title,
-  session,
+  session: initialSession,
   visible,
   focused = visible,
   onOpenFile,
@@ -38,6 +43,7 @@ export function AgentTabView({
   focused?: boolean;
   onOpenFile?: (path: string) => void;
 }) {
+  const session = useSessionSnapshot(initialSession, visible);
   const navigateBlockRef = useRef<
     ((blockId: string | null, query?: string) => boolean) | null
   >(null);
@@ -68,11 +74,7 @@ export function AgentTabView({
     });
     return () => cancelAnimationFrame(frame);
   }, [visible, navigatorReady, jumpRequest, navigateBlock, session?.id]);
-  const notesEnabled = useSyncExternalStore(
-    subscribeNotesEnabled,
-    loadNotesEnabled,
-    () => true,
-  );
+  const notesEnabled = useNotesEnabled();
   const saveNote = useCallback(
     async (text: string) => {
       if (!session) return;
@@ -114,7 +116,7 @@ export function AgentTabView({
   const model = findModel(session.model)?.name ?? session.model;
   return (
     <div data-agent-tab className="flex h-full min-h-0 flex-col">
-      <div className="@container relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         <AgentTranscript
           blocks={session.blocks}
           busy={session.busy}
