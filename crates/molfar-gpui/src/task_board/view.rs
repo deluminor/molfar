@@ -10,6 +10,7 @@ impl Render for Board {
             self.drag_over = None;
         }
         self.sync_detail_content(cx);
+        self.sync_stage_timeline(cx);
         let archived = self.archived;
         let overlay = self
             .review_overlay(window, cx)

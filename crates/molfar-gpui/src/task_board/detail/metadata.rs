@@ -213,7 +213,7 @@ impl Board {
         }
         detail
             .child(section("Stages"))
-            .child(self.stage_timeline(&snapshot.runs, cx))
+            .child(self.timeline.clone())
             .child(section("Usage"))
             .child(self.usage_block(&card.id))
             .into_any_element()
