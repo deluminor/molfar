@@ -40,3 +40,14 @@ An initial run copied incompatible installed tools from the project checkout. Th
 ## Plan notes
 
 The plan's read-only constitution text describes the earlier planning stage. The current Implement instruction authorizes code and commits. Existing Modal/Popover primitives were reused without modifying shared overlay behavior; focus containment is scoped to this dialog. Clock integration was delivered with the UI to keep all consumers synchronized from first use.
+
+## Review rework verification
+
+Both selected blocking findings are resolved.
+
+- F1: The drawer excludes loaded details whose card ID differs from the requested ID. `card-detail-switch.test.ts` first failed because the previous modal remained visible after changing the requested card. It now verifies immediate removal of modal, inspection and session actions while the replacement is pending, and confirms they stay absent after rejection.
+- F2: Inspection blur checks only the active anchor and the specific Popover surface ref. `stage-timeline-blur.test.ts` first failed because floating details survived focus moving to persistent details. It now verifies dismissal, preserved selected metadata, and the next Escape reaching the modal close callback. Existing pointer-transfer and Escape-priority tests also pass.
+
+Fresh verification: targeted UI suites pass 16 tests; `npm run check:web` exits 0 with 579 suites passed, 2 skipped, 5957 tests passed and 13 skipped, followed by successful TypeScript checking. `npm run build` exits 0 with existing CSS highlight and bundle-size warnings. Prettier on changed/new formatted modules, staged secret scans and diff whitespace checks exit 0. No dedicated lint or coverage gate is configured. Browser/native QA remains unrun; no runtime layout, animation or native-navigation claim is added.
+
+Changes are limited to selected F1/F2 behavior, their regression tests and plan/evidence records. Existing AC-1 through AC-10 and AC-13 remain covered by the prior implementation; the new regressions close the review gaps in AC-11 and AC-12.

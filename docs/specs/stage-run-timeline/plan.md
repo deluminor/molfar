@@ -160,3 +160,10 @@ Later implementation uses small concern modules, existing contracts/helpers, str
 ## Current Verification
 
 All four handoff files and relevant repository components were inspected. HEAD matches the supplied base. Working-tree status was clean before and after inspection. No files changed. Tests, builds, browser QA, and native runtime checks were not run.
+## Selected review rework
+
+F1 gates the drawer's loaded content by the requested card ID, preventing previous-card actions from remaining mounted while replacement details load or fail. Its integration test exercises the real detail hook with a pending then rejected read.
+
+F2 scopes transient inspection blur to the active trigger and its own Popover surface. Persistent selected details remain intact. Its keyboard regression moves focus from the final interval control into persistent details and verifies that the next Escape reaches the modal.
+
+Run each regression red before its fix, then run targeted suites and the complete web/build gates. Keep fixes in separate commits. No other review scope or shared overlay behavior changes.
