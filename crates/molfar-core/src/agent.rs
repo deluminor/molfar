@@ -192,6 +192,10 @@ pub struct TurnInfo {
     /// Billing tier the run used, such as `fast` or `flex`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub service_tier: Option<String>,
+    /// The user or a Familiar stopped this turn. Native stops leave no transcript
+    /// row, so completion reports read this after a reload or restart.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub stopped: bool,
 }
 impl TurnInfo {
     pub fn has_duration(&self) -> bool {

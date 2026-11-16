@@ -97,6 +97,9 @@ pub(in crate::store::shared) fn save(
         if let Some(id) = &info.provider_turn_id {
             fields.push(("providerTurnId", json!(id)));
         }
+        if info.stopped {
+            fields.push(("nativeStopped", json!(true)));
+        }
         if let Some(id) = &info.receipt_id {
             fields.push((RECEIPT_ID, json!(id)));
         }
