@@ -127,3 +127,15 @@ S1 and S3–S9 remain open. S2 still needs the other strict action contracts,
 complete read metadata, update persistence with immutable artifact recovery,
 and concurrency tests. No acceptance criterion is complete. No live scratch
 execution, dependency audit, coverage measurement or standalone build ran.
+
+Elevated verification exited 101 with 984 core tests passed, one failed and two
+ignored. It exposed an existing owner-edit error-message contract changed by the
+shared validator extraction. Restored the existing required-content error text;
+full native verification rerun is recorded in
+`/private/tmp/molfar-card40-run5-final.log`. Collect its final outcome.
+
+Final elevated rerun: native script tests 44 passed; formatting and Clippy
+passed; core tests 985 passed, zero failed, two ignored. GPUI tests are still
+compiling, so the complete gate remains unverified (session 98893). No independent
+UI QA was run. This checkpoint preserves the existing owner-edit diagnostic
+contract after the regression was reproduced by the full core suite.

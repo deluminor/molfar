@@ -89,9 +89,12 @@ pub(crate) fn content(
 ) -> Result<String, String> {
     let value = value.trim();
     if (required && value.is_empty()) || value.len() > max {
-        return Err(format!(
-            "{label} must contain valid content within {max} bytes."
-        ));
+        if required {
+            return Err(format!(
+                "{label} is required and must be under {max} bytes."
+            ));
+        }
+        return Err(format!("{label} are too long."));
     }
     Ok(value.to_owned())
 }
