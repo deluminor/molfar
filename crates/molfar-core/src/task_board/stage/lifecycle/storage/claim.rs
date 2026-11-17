@@ -45,6 +45,23 @@ pub(crate) fn next(conn: &mut Connection) -> Result<Option<Card>, String> {
     Ok(card)
 }
 
+/// Sorted keys at every depth, so equal settings are stored as equal text.
+fn canonical(value: &serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => {
+            let sorted: std::collections::BTreeMap<_, _> = map
+                .iter()
+                .map(|(key, value)| (key.clone(), canonical(value)))
+                .collect();
+            serde_json::Value::Object(sorted.into_iter().collect())
+        }
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.iter().map(canonical).collect())
+        }
+        other => other.clone(),
+    }
+}
+
 pub(crate) fn accept(
     conn: &mut Connection,
     card_id: &str,
@@ -53,7 +70,8 @@ pub(crate) fn accept(
     choice: &ResolvedStageChoice,
 ) -> Result<StageContext, String> {
     crate::task_board::create::validation::id(id)?;
-    let settings = serde_json::to_string(&choice.model_settings).map_err(|e| e.to_string())?;
+    let settings =
+        serde_json::to_string(&canonical(&choice.model_settings)).map_err(|e| e.to_string())?;
     if !choice.model_settings.is_object()
         || settings.len() > 20_000
         || choice.model.trim().is_empty()

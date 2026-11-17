@@ -27,8 +27,17 @@ fn family(stage: &str) -> &'static [&'static str] {
 fn same_agent(previous: &StageRun, run: &StageRun) -> bool {
     previous.harness == run.harness
         && previous.model == run.model
-        && previous.settings_json == run.settings_json
+        && same_settings(&previous.settings_json, &run.settings_json)
         && previous.runtime_mode == run.runtime_mode
+}
+
+/// Older runs stored settings with a different key order; equal JSON means the same agent.
+fn same_settings(previous: &str, run: &str) -> bool {
+    if previous == run {
+        return true;
+    }
+    let parse = |json: &str| serde_json::from_str::<serde_json::Value>(json).ok();
+    parse(previous).is_some_and(|value| Some(value) == parse(run))
 }
 
 impl Store {

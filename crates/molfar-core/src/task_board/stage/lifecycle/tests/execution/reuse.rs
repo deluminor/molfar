@@ -40,6 +40,8 @@ fn sql(store: &Store, statement: &str) {
         .unwrap();
 }
 
+const PARTIAL: &str =
+    "<<<MOLFAR:impl_report>>>Status: partial\n## Remaining work\nStage 3<<<END:impl_report>>>";
 const SERIOUS: &str = "<<<MOLFAR:review>>>Verdict: CHANGES_REQUESTED\n\n## F1 [major] Race\nFile: src/a.rs:1\nFix it.<<<END:review>>>";
 
 #[test]
@@ -199,6 +201,50 @@ fn a_failed_build_run_or_an_unsent_draft_starts_fresh() {
     );
     assert_eq!(
         store.board_stage_session_plan("rework").unwrap(),
+        SessionPlan::Fresh
+    );
+}
+
+#[test]
+fn settings_stored_in_a_different_key_order_still_reuse_the_session() {
+    let (_dir, mut store) = gate();
+    approve(&mut store);
+    finish(
+        &mut store,
+        "implement",
+        AgentStage::Implement,
+        "abc123",
+        "h1",
+        PARTIAL,
+    );
+    sent(&store, "board-implement");
+    let card = store.board_claim_next_stage().unwrap().unwrap();
+    store
+        .board_accept_stage("card", card.updated_at, "next", &choice())
+        .unwrap();
+
+    sql(
+        &store,
+        r#"UPDATE task_board_stage_runs SET settings_json='{"reasoningEffort":"medium","serviceTier":"default"}' WHERE id='implement'"#,
+    );
+    sql(
+        &store,
+        r#"UPDATE task_board_stage_runs SET settings_json='{"serviceTier":"default","reasoningEffort":"medium"}' WHERE id='next'"#,
+    );
+    assert_eq!(
+        store.board_stage_session_plan("next").unwrap(),
+        SessionPlan::Reuse {
+            session: "board-implement".into(),
+            compact: false
+        }
+    );
+
+    sql(
+        &store,
+        r#"UPDATE task_board_stage_runs SET settings_json='{"reasoningEffort":"high","serviceTier":"default"}' WHERE id='next'"#,
+    );
+    assert_eq!(
+        store.board_stage_session_plan("next").unwrap(),
         SessionPlan::Fresh
     );
 }
