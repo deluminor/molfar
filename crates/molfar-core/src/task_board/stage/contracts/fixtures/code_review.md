@@ -39,6 +39,9 @@ Severity: blocking = a criterion is unmet or the change is broken; major = a rea
 merge; minor = worth fixing, not dangerous; nit = style. When blocking or major findings remain, MOLFAR sends
 them back to rework automatically together with the minor ones. Use APPROVE only when every criterion is met
 and nothing blocking or major remains.
+Checks the implementation report lists under `## Owner verification` are not yet verified: only the owner can
+run them. They are never a finding and never an unmet criterion, so they alone do not block APPROVE. Copy
+them into the `## Owner verification` section of your review, adding any further owner-only check you notice.
 Also write the pull request description for this change, grounded in the diff, the spec and the
 implementation report: English, no emojis, no filler, no attribution.
 
@@ -51,6 +54,9 @@ Verdict: APPROVE | CHANGES_REQUESTED
 
 ## Acceptance criteria
 - <criterion>: met | not met — <evidence: file, test or check>
+
+## Owner verification
+- <check>: not yet verified — owner runs it at Final review
 
 ## F1 [blocking|major|minor|nit] <finding title>
 File: <path>:<line>

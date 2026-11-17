@@ -10,6 +10,8 @@ pub use sets::{input_contract, output_contract};
 pub mod types;
 
 #[cfg(test)]
+mod owner_tests;
+#[cfg(test)]
 mod tests;
 
 pub fn read_stage_output(
