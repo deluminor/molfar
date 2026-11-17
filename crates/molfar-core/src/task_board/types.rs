@@ -81,3 +81,17 @@ pub struct Snapshot {
     pub artifacts: Vec<ArtifactMeta>,
     pub settings_json: Option<String>,
 }
+
+#[derive(Clone, Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtifactPage {
+    pub body: String,
+    pub next_char_offset: Option<usize>,
+}
+
+pub struct ArtifactRead<'a> {
+    pub kind: &'a str,
+    pub version: i64,
+    pub max_chars: usize,
+    pub char_offset: usize,
+}
