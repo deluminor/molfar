@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn provider_failures_get_their_own_label_and_keep_the_original_text() {
-        let claude = "Claude Code reached its usage limit. Choose another available model or retry when the limit resets.";
+        let claude = crate::provider::limits::CLAUDE_USAGE_LIMIT;
         let codex = "You've hit your usage limit. Upgrade to Pro or try again later.";
         let rate = "429 Too Many Requests: rate_limit_exceeded";
         for error in [claude, codex, rate] {
