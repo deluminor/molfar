@@ -1,4 +1,5 @@
 use super::Store;
+mod archive;
 mod artifacts;
 mod delivery;
 mod notices;
