@@ -191,7 +191,6 @@ export function BoardView({ runtime, projects, besideRail, compactRail, onClose,
           <CardDetailDrawer
             runtime={runtime}
             cardId={selectedId}
-            stallMinutes={board.settings?.stallMinutes ?? 45}
             intent={intent}
             intentSeq={intentSeq}
             onClose={() => open(null)}
