@@ -2,6 +2,7 @@ mod automation;
 mod boundaries;
 mod budget;
 mod checks;
+mod continuation;
 mod fixtures;
 mod guards;
 mod reuse;

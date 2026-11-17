@@ -1,9 +1,7 @@
 use super::super::owner::gate;
 use super::fixtures::*;
-use crate::task_board::stage::{agent::AgentStage, lifecycle::types::StageAction};
+use crate::task_board::stage::agent::AgentStage;
 
-const PARTIAL: &str =
-    "<<<MOLFAR:impl_report>>>Status: partial\n## Remaining work\nStage 3<<<END:impl_report>>>";
 const BLOCKED: &str =
     "<<<MOLFAR:impl_report>>>Status: blocked\n## Summary\nNo access<<<END:impl_report>>>";
 const SERIOUS: &str = "<<<MOLFAR:review>>>Verdict: CHANGES_REQUESTED\n\n## Acceptance criteria\n- AC-1: not met\n\n## F1 [blocking] Missing stage\nFile: src/a.rs:1\nImplement it.\n\n## F2 [minor] Naming\nFile: src/b.rs:2\nRename.\n\n## F3 [nit] Spacing\nOptional.<<<END:review>>>";
@@ -14,87 +12,6 @@ fn card(store: &crate::store::Store) -> crate::task_board::types::Card {
         .unwrap()
         .cards
         .remove(0)
-}
-
-fn run_status(store: &crate::store::Store, run: &str) -> String {
-    store.board_stage_context(run).unwrap().unwrap().run.status
-}
-
-#[test]
-fn partial_runs_continue_in_place_until_the_streak_limit_then_fail() {
-    let (_dir, mut store) = gate();
-    approve(&mut store);
-
-    for (index, run) in ["one", "two", "three", "four", "five"]
-        .into_iter()
-        .enumerate()
-    {
-        let head = format!("head-{index}");
-        let next = format!("head-{}", index + 1);
-        let session = prepare(&mut store, run, AgentStage::Implement, &head);
-        assert_eq!(store.board_stage_continuation(run).unwrap(), index as i64);
-        let output = receipt(
-            &mut store,
-            run,
-            session,
-            AgentStage::Implement,
-            PARTIAL,
-            &next,
-        );
-        let effect = store.board_finish_stage(run, &output).unwrap();
-
-        assert!(effect.notice.is_none());
-        assert_eq!(run_status(&store, run), "partial");
-        let card = card(&store);
-        assert_eq!(
-            (card.column_id.as_str(), card.run_state.as_str()),
-            ("implement", "queued")
-        );
-    }
-    assert_eq!(
-        store
-            .board_stage_inputs("card")
-            .unwrap()
-            .last()
-            .unwrap()
-            .kind,
-        "impl_report"
-    );
-
-    let session = prepare(&mut store, "six", AgentStage::Implement, "head-5");
-    assert_eq!(store.board_stage_continuation("six").unwrap(), 5);
-    let output = receipt(
-        &mut store,
-        "six",
-        session,
-        AgentStage::Implement,
-        PARTIAL,
-        "head-6",
-    );
-    let effect = store.board_finish_stage("six", &output).unwrap();
-
-    assert!(effect.notice.unwrap().body.contains("6 runs in a row"));
-    assert_eq!(run_status(&store, "six"), "failed");
-    let failed = card(&store);
-    assert_eq!(
-        (failed.column_id.as_str(), failed.run_state.as_str()),
-        ("implement", "failed")
-    );
-    assert_eq!(
-        store
-            .board_stage_artifacts("card")
-            .unwrap()
-            .iter()
-            .filter(|meta| meta.kind == "impl_report")
-            .count(),
-        6
-    );
-
-    store
-        .board_stage_action("card", failed.updated_at, StageAction::Retry(None))
-        .unwrap();
-    prepare(&mut store, "retry", AgentStage::Implement, "head-6");
-    assert_eq!(store.board_stage_continuation("retry").unwrap(), 0);
 }
 
 #[test]
@@ -115,7 +32,7 @@ fn blocked_report_fails_the_stage_with_an_actionable_error() {
 
     let card = card(&store);
     assert_eq!(card.run_state, "failed");
-    assert!(card.last_error.unwrap().contains("blocked"));
+    assert!(card.last_error.unwrap().starts_with("Stopped — blocked: "));
 }
 
 #[test]

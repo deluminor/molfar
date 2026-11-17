@@ -181,7 +181,8 @@ impl Store {
             return Err("Board stage artifacts differ from the exact persisted turn.".into());
         }
         let base = self.board_artifact_base()?;
-        settlement::finish(&mut self.conn, &base, id, output)
+        let signals = self.board_turn_signals(&context.run)?;
+        settlement::finish(&mut self.conn, &base, id, output, signals)
     }
 
     pub fn board_fail_stage(

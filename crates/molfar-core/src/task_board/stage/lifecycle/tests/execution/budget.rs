@@ -25,22 +25,22 @@ fn insert_runs(store: &Store, stage: &str, status: &str, count: i64) {
 }
 
 #[test]
-fn ten_automatic_runs_stop_the_card_and_retry_gets_a_new_budget() {
+fn twenty_automatic_turns_stop_the_card_and_retry_gets_a_new_budget() {
     let (_dir, mut store) = gate();
     approve(&mut store);
-    insert_runs(&store, "implement", "succeeded", 9);
+    insert_runs(&store, "implement", "succeeded", 19);
 
-    let session = prepare(&mut store, "tenth", AgentStage::Implement, "h0");
+    let session = prepare(&mut store, "twentieth", AgentStage::Implement, "h0");
     assert!(spent(&store));
     let output = receipt(
         &mut store,
-        "tenth",
+        "twentieth",
         session,
         AgentStage::Implement,
         PARTIAL,
         "h1",
     );
-    store.board_finish_stage("tenth", &output).unwrap();
+    store.board_finish_stage("twentieth", &output).unwrap();
 
     let stopped = store
         .board_snapshot(None, false, Some("card"))
@@ -51,7 +51,7 @@ fn ten_automatic_runs_stop_the_card_and_retry_gets_a_new_budget() {
     assert!(stopped
         .last_error
         .unwrap()
-        .contains("Automatic budget used"));
+        .starts_with("Stopped — automatic turn budget: Automatic budget used"));
     assert!(
         !spent(&store),
         "a stop that needs the user starts a new budget for Retry"
@@ -61,7 +61,7 @@ fn ten_automatic_runs_stop_the_card_and_retry_gets_a_new_budget() {
 #[test]
 fn a_written_decision_resets_the_automatic_budget() {
     let (_dir, store) = gate();
-    insert_runs(&store, "rework", "succeeded", 10);
+    insert_runs(&store, "rework", "succeeded", 20);
     assert!(spent(&store));
 
     rusqlite::Connection::open(store.database_path())

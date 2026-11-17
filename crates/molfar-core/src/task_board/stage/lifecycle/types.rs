@@ -82,6 +82,15 @@ impl FailureStatus {
     }
 }
 
+/// What the engine itself observed about a finished turn, never what the agent claims.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Signals {
+    /// Context share of the turn's session; `None` when the harness never reported a window.
+    pub context_ratio: Option<f32>,
+    /// Compactions MOLFAR triggered in this stage run, this turn included.
+    pub compactions: usize,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NoticeKind {
     Failed,
