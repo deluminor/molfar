@@ -50,3 +50,26 @@ impl Store {
         })
     }
 }
+
+impl Store {
+    /// Projects must come from current trusted grants. Every page rechecks access.
+    /// Offsets describe the current list; concurrent edits may shift page boundaries.
+    pub fn board_scoped_list(
+        &self,
+        project: &str,
+        projects: &[String],
+        archived: bool,
+        offset: u32,
+        limit: u32,
+    ) -> Result<Vec<Card>, String> {
+        if !projects.iter().any(|allowed| allowed == project) {
+            return Err("Board project not found.".into());
+        }
+        if !(1..=constants::MAX_LIST_ENTRIES).contains(&limit) {
+            return Err("Invalid Board page size.".into());
+        }
+
+        read::list_page(&self.conn, project, archived, offset, limit)
+            .map_err(|error| format!("Cannot read Board page: {error}"))
+    }
+}

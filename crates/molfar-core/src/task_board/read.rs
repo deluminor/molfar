@@ -40,6 +40,20 @@ pub(crate) fn card(conn: &Connection, id: &str) -> rusqlite::Result<Option<Card>
         .optional()
 }
 
+pub(crate) fn list_page(
+    conn: &Connection,
+    project: &str,
+    archived: bool,
+    offset: u32,
+    limit: u32,
+) -> rusqlite::Result<Vec<Card>> {
+    conn.prepare(&format!(
+        "{CARDS_SELECT} WHERE project_cwd = ?1 AND archived = ?2 ORDER BY number, id LIMIT ?3 OFFSET ?4"
+    ))?
+    .query_map(params![project, archived, limit, offset], cards_row)?
+    .collect()
+}
+
 pub(crate) const RUNS_SELECT: &str = "SELECT id, card_id, stage, attempt, session_id, harness, model,
   settings_json, runtime_mode, template_version, dispatch, status, error, head_before,
   porcelain_before, fingerprint_before, head_after, started_at, completed_at FROM task_board_stage_runs";

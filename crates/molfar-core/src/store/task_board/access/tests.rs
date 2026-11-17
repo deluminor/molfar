@@ -137,3 +137,48 @@ fn scoped_artifact_pages_bound_unicode_and_hide_foreign_metadata() {
         )
         .is_err());
 }
+
+#[test]
+fn scoped_listing_bounds_pages_and_checks_current_project_access() {
+    let store = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
+    for (id, number, project, archived) in [
+        ("a", 1, "/project", 0),
+        ("b", 2, "/other", 0),
+        ("c", 3, "/project", 0),
+        ("d", 4, "/project", 1),
+    ] {
+        store.conn.execute("INSERT INTO task_board_cards(id,number,project_cwd,title,description,acceptance_criteria,column_id,run_state,position,overrides_json,archived,created_at,updated_at) VALUES(?1,?2,?3,'Title','','','backlog','idle',1,'{}',?4,1,1)", rusqlite::params![id,number,project,archived]).unwrap();
+    }
+    let allowed = vec!["/project".into()];
+    let first = store
+        .board_scoped_list("/project", &allowed, false, 0, 1)
+        .unwrap();
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].id, "a");
+    let second = store
+        .board_scoped_list("/project", &allowed, false, 1, 1)
+        .unwrap();
+    assert_eq!(second[0].id, "c");
+    assert!(store
+        .board_scoped_list("/project", &allowed, false, 2, 1)
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        store
+            .board_scoped_list("/project", &allowed, true, 0, 100)
+            .unwrap()[0]
+            .id,
+        "d"
+    );
+    for limit in [0, 101] {
+        assert!(store
+            .board_scoped_list("/project", &allowed, false, 0, limit)
+            .is_err());
+    }
+    assert!(store
+        .board_scoped_list("/project", &[], false, 1, 1)
+        .is_err());
+    assert!(store
+        .board_scoped_list("/project/../project", &allowed, false, 0, 1)
+        .is_err());
+}
