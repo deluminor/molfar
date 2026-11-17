@@ -193,3 +193,30 @@ fn harness_stops_carry_their_reason_on_the_card_and_the_run() {
         assert_eq!(run.error.as_deref(), Some(expected.as_str()));
     }
 }
+
+#[test]
+fn a_card_stopped_by_the_old_streak_limit_retries_with_a_fresh_budget() {
+    let (_dir, mut store) = gate();
+    approve(&mut store);
+    for index in 0..6 {
+        partial_turn(&mut store, &format!("legacy-{index}"), index, false, false);
+    }
+    rusqlite::Connection::open(store.database_path())
+        .unwrap()
+        .execute_batch("UPDATE task_board_stage_runs SET status='failed',error='Stopped partway 6 runs in a row. Read the implementation report, then Retry to continue or go Back and split the plan.' WHERE id='legacy-5';
+            UPDATE task_board_cards SET run_state='failed',last_error=(SELECT error FROM task_board_stage_runs WHERE id='legacy-5') WHERE id='card';")
+        .unwrap();
+    let stopped = card(&store);
+    assert!(stopped.last_error.unwrap().starts_with("Stopped partway"));
+
+    store
+        .board_stage_action("card", stopped.updated_at, StageAction::Retry(None))
+        .unwrap();
+    partial_turn(&mut store, "retry", 6, false, false);
+
+    assert_eq!(store.board_stage_continuation("retry").unwrap(), 0);
+    assert_eq!(status(&store, "retry"), "partial");
+    let continued = card(&store);
+    assert_eq!(continued.run_state, "queued");
+    assert!(continued.last_error.is_none());
+}
