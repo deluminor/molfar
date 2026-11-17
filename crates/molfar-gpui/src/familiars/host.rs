@@ -5,6 +5,7 @@ use molfar_core::{app_access as app, session_groups::Groups, time::now_ms};
 use serde_json::{Value, json};
 use std::path::Path;
 enum Effect {
+    Board,
     Card(Value),
     None,
     Start(
@@ -103,6 +104,9 @@ impl Familiars {
                 let result = result.map(|(value, effect)| {
                     match effect {
                         Effect::None => (),
+                        Effect::Board => {
+                            let _ = this.owner.update(cx, |owner, cx| owner.refresh_board(cx));
+                        }
                         Effect::Card(value) => {
                             this.hold_card(call.session, &mono_id, value);
                             this.save(cx);
@@ -758,6 +762,29 @@ if let Some(enabled)=input.get("enabled").and_then(Value::as_bool){h.enabled=ena
                         _=>unreachable!(),
                     };Ok((value,Effect::None))
                 },cx);
+                return;
+            }
+            board if app::board::is_board(board) => {
+                let principal = format!("familiar:{}", familiar.id);
+                let request = call.request_id.clone();
+                let projects = familiar.projects.clone();
+                let effect = !app::board::READ_ACTIONS.contains(&board);
+                self.call_work(
+                    call,
+                    target.clone(),
+                    move |store| {
+                        let value = app::board::action(
+                            &mut *locked(&store)?,
+                            &principal,
+                            &request,
+                            &action,
+                            &input,
+                            &projects,
+                        )?;
+                        Ok((value, if effect { Effect::Board } else { Effect::None }))
+                    },
+                    cx,
+                );
                 return;
             }
             _ => Err("Unknown action. Run app help to see supported actions".into()),

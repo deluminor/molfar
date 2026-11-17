@@ -17,6 +17,7 @@ enum Effect {
     Start(Box<(Session, Settings, bool, bool, Placement)>),
     Groups(String, molfar_core::session_groups::Groups),
     Archive(i64),
+    Board,
 }
 impl Shell {
     pub(super) fn init_app_bridge(&mut self, cx: &mut Context<Self>) {
@@ -94,6 +95,7 @@ impl Shell {
                 let result = result.map(|(value, effect)| {
                     match effect {
                         Effect::None => (),
+                        Effect::Board => this.refresh_board(cx),
                         Effect::Start(start) => {
                             let (summary, settings, draft, reveal, placement) = *start;
                             let id = summary.id;
@@ -176,6 +178,7 @@ impl Shell {
                     | "notes.read"
                     | "worktrees.list"
             )
+            && !app::board::READ_ACTIONS.contains(&call.action.as_str())
         {
             return Err("This thread's access policy allows read-only app actions.".into());
         }
@@ -514,6 +517,27 @@ impl Shell {
                     }
                 }
             }
+            board if app::board::is_board(board) => {
+                let principal = format!("operator:{}", call.session);
+                let request = call.request_id.clone();
+                let effect = mutating(&action);
+                self.app_background(
+                    call,
+                    move |store| {
+                        let value = app::board::action(
+                            &mut *locked(&store)?,
+                            &principal,
+                            &request,
+                            &action,
+                            &input,
+                            &[project],
+                        )?;
+                        Ok((value, if effect { Effect::Board } else { Effect::None }))
+                    },
+                    cx,
+                );
+                return;
+            }
             "notes.list" | "notes.read" | "notes.write" => {
                 let caller = call.session;
                 let request = call.request_id.clone();
@@ -616,7 +640,7 @@ fn mutating(action: &str) -> bool {
             | "notes.list"
             | "notes.read"
             | "worktrees.list"
-    )
+    ) && !app::board::READ_ACTIONS.contains(&action)
 }
 fn worktree_json(tree: &molfar_core::git::Worktree) -> Value {
     json!({"path":tree.path,"branch":tree.branch,"head":tree.head,"main":tree.main,"missing":tree.missing})
