@@ -2,7 +2,7 @@
 
 ## Current outcome
 
-Partial investigation only. No feature implementation, dependency pin, credential creation, client configuration change or runtime task submission occurred. S1 remains open; S2–S9 have not started.
+Partial implementation. S2 includes trusted archive/unarchive and scoped card/artifact read primitives. S1 remains open; S3–S9 have not started. No listener, dependency pin, credential creation, client configuration change or runtime task submission occurred.
 
 ## Compatibility inspection
 
@@ -66,3 +66,39 @@ the archive/unarchive Store primitive; shared scoped contracts, update/artifact
 versioning, and bounded reads remain. S3–S9 remain unimplemented. All eleven
 acceptance criteria remain incomplete. No SDK pin, listener, grants, receipts,
 Settings UI, runtime dispatch, or live client verification was added.
+
+
+## Continuation 2 checkpoint
+
+Commit `5b8ed4b0` adds `Store::board_scoped_card` and
+`Store::board_scoped_artifact`. Trusted callers must supply current registered
+project assignments or grants; these methods do not authenticate callers.
+Project identity uses exact membership, with uniform missing/unauthorized card
+errors. Artifact reads authorize before reading artifact metadata/content and
+reuse existing registered-artifact, path, symlink and file-size protections.
+Pages count Unicode scalar values, cap output at 6,000 characters, reject invalid
+sizes/offsets, and expose the next character offset. No session/stage is launched.
+These primitives are not exposed through internal or external adapters yet.
+
+TDD RED: focused compilation exited 101 for missing methods in each vertical
+slice. GREEN after implementation and after the argument-struct refactor:
+`cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core --profile native-dev store::task_board::access -- --test-threads=1`
+exited 0, two passed. Tests cover project isolation, alias rejection, missing
+cards, Unicode paging, terminal pages, invalid page sizes/offsets and path input.
+
+`npm run native:check` exited 101: script tests 44/44; format and Clippy passed;
+core tests 965 passed, 15 failed, 2 ignored. GPUI tests were not reached.
+The output includes sandbox-denied socket fixtures. Elevated rerun results follow.
+`git diff --check` exited 0; local commit hooks accepted the implementation.
+
+S1 remains open. S2 still needs strict action contracts, bounded listings,
+card detail/run/question metadata, updates with immutable artifact versions and
+recovery, and adapter integration. S3–S9 remain open. No acceptance criterion
+is complete. Live OpenBot scratch execution still needs separate authorization.
+
+Elevated rerun: scripts 44/44, formatting and Clippy passed; core tests
+980 passed, 0 failed, 2 ignored (exit 0). Core doctests passed (zero tests).
+The full `npm run native:check` process was still compiling the GPUI test target
+at this checkpoint; its final exit status and GPUI test results are unverified.
+Output: `/private/tmp/molfar-card40-run2-elevated.log` (temporary, not durable).
+Full application build, coverage and dependency audit were not run. No UI QA.
