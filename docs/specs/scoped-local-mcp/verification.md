@@ -35,3 +35,9 @@ Use at most 1 MiB request bodies, 32 queued operations, 8 active operations, 30-
 ## Next work
 
 Complete S1: trace encrypted MCP header persistence; compile the pinned candidate SDK and negotiate with the installed client packages; prove a bounded Tokio/GPUI scheduling seam. Then implement S2–S9 using vertical red/green slices. Live scratch execution requires separate explicit authorization under the approved plan.
+
+## Baseline verification results
+
+`npm run native:check` exited 101. Native script tests passed 44/44; formatting and Clippy completed successfully. Core tests: 961 passed, 15 failed, 2 ignored. Inspected Familiar bridge and SSH bridge failures report `Operation not permitted (os error 1)` while establishing local test bridges under the sandbox. The complete failure set has not been rerun with elevated permissions; do not classify every failure as environmental without that check. The chained GPUI test command was not reached. Full console output was captured at `/private/tmp/molfar-card40-native-check.log` for this session; that temporary file is not a durable artifact.
+
+`git diff --cached --check` and the configured staged secret scanner exited 0 before the initial checkpoint. No source behavior changed, so no feature TDD evidence exists. The session ended at an investigation checkpoint due to available session budget; this is not a completed implementation stage.
