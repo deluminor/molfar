@@ -142,6 +142,32 @@ impl NewSessionDefaults {
         cwd: &str,
         worktree_cwd: Option<String>,
     ) -> Result<(Session, molfar_core::agent::Settings), String> {
+        let summary = store.create(self.kind.id(), cwd)?;
+        let access = self.access;
+        let mut settings = self.settings(store, cwd);
+        settings.worktree_cwd = worktree_cwd;
+        if settings.model.is_some()
+            || settings.effort.is_some()
+            || !settings.model_settings.is_empty()
+            || settings.worktree_cwd.is_some()
+            || settings.account.id != molfar_core::accounts::DEFAULT
+            || access != Default::default()
+        {
+            store.save_agent_settings(summary.id, &settings)?;
+        }
+        Ok((summary, settings))
+    }
+
+    pub(super) fn kind(&self) -> Kind {
+        self.kind
+    }
+
+    /// The starting settings alone, for launches that reserve their own session.
+    pub(super) fn settings(
+        self,
+        store: &molfar_core::store::Store,
+        cwd: &str,
+    ) -> molfar_core::agent::Settings {
         let Self {
             kind,
             model,
@@ -149,7 +175,6 @@ impl NewSessionDefaults {
             access,
             effort,
         } = self;
-        let summary = store.create(kind.id(), cwd)?;
         let mut settings = new_session_settings(
             store
                 .desktop_preferences()
@@ -167,17 +192,7 @@ impl NewSessionDefaults {
             settings.effort = Some(effort);
         }
         settings.account = account;
-        settings.worktree_cwd = worktree_cwd;
-        if settings.model.is_some()
-            || settings.effort.is_some()
-            || !settings.model_settings.is_empty()
-            || settings.worktree_cwd.is_some()
-            || settings.account.id != molfar_core::accounts::DEFAULT
-            || access != Default::default()
-        {
-            store.save_agent_settings(summary.id, &settings)?;
-        }
-        Ok((summary, settings))
+        settings
     }
 }
 

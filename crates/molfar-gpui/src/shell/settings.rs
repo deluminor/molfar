@@ -70,6 +70,7 @@ impl Shell {
             mobile_invite: self.mobile.invite.clone(),
             companion: self.companion_status(),
             companion_offer: self.companion_live_offer(),
+            external_mcp: Some(self.external_settings_status()),
             quick_error: self.quick.error.clone(),
             inbox_connections: self
                 .inbox
@@ -260,6 +261,15 @@ impl Shell {
                 }
                 SettingsEvent::CompanionCancelPair => this.companion_cancel_pair(cx),
                 SettingsEvent::CompanionRevoke(id) => this.companion_revoke(id, cx),
+                SettingsEvent::ExternalConfigure { enabled, port } => {
+                    this.external_configure(*enabled, *port, cx)
+                }
+                SettingsEvent::ExternalCreateClient => this.external_create_client(cx),
+                SettingsEvent::ExternalToggleGrant { id, scope, project } => {
+                    this.external_toggle_grant(id, *scope, project.clone(), cx)
+                }
+                SettingsEvent::ExternalRevoke(id) => this.external_revoke(id, cx),
+                SettingsEvent::ExternalDismissKey => this.external_dismiss_key(cx),
             },
         ));
         // This dialog is painted at the window root, like React's portal.

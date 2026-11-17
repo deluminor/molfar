@@ -17,12 +17,19 @@ use tokio_util::sync::CancellationToken;
 
 pub type Authenticate = Arc<dyn Fn(&str) -> Result<Option<Principal>, String> + Send + Sync>;
 
+pub type Reply = tokio::sync::oneshot::Sender<Result<Value, String>>;
+pub type ReplyReceiver = tokio::sync::oneshot::Receiver<Result<Value, String>>;
+
+pub fn reply_channel() -> (Reply, ReplyReceiver) {
+    tokio::sync::oneshot::channel()
+}
+
 /// One validated, scope-checked tool call for the application to execute.
 pub struct Call {
     pub principal: Principal,
     pub tool: &'static str,
     pub arguments: Value,
-    pub reply: tokio::sync::oneshot::Sender<Result<Value, String>>,
+    pub reply: Reply,
 }
 
 pub struct Server {
@@ -103,7 +110,7 @@ impl Drop for Server {
 }
 
 type Service = Arc<StreamableHttpService<handler::Handler, NeverSessionManager>>;
-type Reply = Response<BoxBody<Bytes, Infallible>>;
+type HttpReply = Response<BoxBody<Bytes, Infallible>>;
 
 async fn accept(
     listener: tokio::net::TcpListener,
@@ -138,7 +145,7 @@ async fn route(
     mut request: Request<Incoming>,
     service: &Service,
     authenticate: Authenticate,
-) -> Reply {
+) -> HttpReply {
     if request.uri().path() != "/mcp" {
         return plain(StatusCode::NOT_FOUND, "Not found");
     }
@@ -162,7 +169,7 @@ async fn route(
     }
 }
 
-fn unauthorized() -> Reply {
+fn unauthorized() -> HttpReply {
     let mut reply = plain(
         StatusCode::UNAUTHORIZED,
         "Missing, invalid or revoked credential",
@@ -174,7 +181,7 @@ fn unauthorized() -> Reply {
     reply
 }
 
-fn plain(status: StatusCode, text: &'static str) -> Reply {
+fn plain(status: StatusCode, text: &'static str) -> HttpReply {
     let mut reply = Response::new(Full::new(Bytes::from_static(text.as_bytes())).boxed());
     *reply.status_mut() = status;
     reply

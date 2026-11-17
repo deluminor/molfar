@@ -23,7 +23,7 @@ impl Store {
     /// numeric ID and mapping in the same SQLite transaction.
     pub fn create_app_session(
         &self,
-        caller: i64,
+        caller: impl std::fmt::Display,
         request: &str,
         fingerprint: &str,
         provider: &str,

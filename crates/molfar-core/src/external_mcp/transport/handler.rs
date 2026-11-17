@@ -37,7 +37,7 @@ impl Handler {
             .clone()
             .try_acquire_owned()
             .map_err(|_| "MOLFAR is busy with other external calls; retry shortly.")?;
-        let (reply, result) = tokio::sync::oneshot::channel();
+        let (reply, result) = super::reply_channel();
         self.calls
             .try_send(Call {
                 principal,
