@@ -44,6 +44,10 @@ fn grill_lifecycle_stall_is_once_per_run_durable_and_does_not_cancel() {
         .board_take_stall_notices(ctx.run.started_at as u64 + 45 * 60_000)
         .unwrap();
     assert_eq!(notices.len(), 1);
+    assert_eq!(
+        notices[0].body,
+        "Grill (analysis and planning) has been running for at least 45 minutes."
+    );
     assert!(store
         .board_take_stall_notices(ctx.run.started_at as u64 + 46 * 60_000)
         .unwrap()
@@ -106,4 +110,20 @@ fn grill_lifecycle_attention_excludes_active_manual_gate_and_session_input_badge
     conn.execute("UPDATE task_board_cards SET archived=1 WHERE id='card'", [])
         .unwrap();
     assert_eq!(store.board_attention().unwrap(), 0);
+}
+
+#[test]
+fn a_continued_card_is_claimed_before_older_queued_cards() {
+    let (_dir, mut store) = fixture();
+    let conn = Connection::open(store.database_path()).unwrap();
+    conn.execute_batch("UPDATE task_board_cards SET column_id='implement',run_state='queued',queued_at=1 WHERE id='card';
+        INSERT INTO task_board_cards(id,number,project_cwd,title,description,column_id,run_state,position,queued_at,created_at,updated_at) VALUES('continued',2,'/project','Continued','Continued','implement','queued',1,5,1,1);
+        INSERT INTO task_board_stage_runs(id,card_id,stage,attempt,harness,model,settings_json,runtime_mode,template_version,dispatch,status,started_at) VALUES('old-success','card','implement',1,'codex','gpt','{}','auto',4,'settled','succeeded',1);
+        INSERT INTO task_board_stage_runs(id,card_id,stage,attempt,harness,model,settings_json,runtime_mode,template_version,dispatch,status,started_at) VALUES('turn','continued','implement',1,'codex','gpt','{}','auto',4,'settled','partial',2);").unwrap();
+
+    assert_eq!(
+        store.board_claim_next_stage().unwrap().unwrap().id,
+        "continued"
+    );
+    assert_eq!(store.board_claim_next_stage().unwrap().unwrap().id, "card");
 }

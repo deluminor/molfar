@@ -8,6 +8,7 @@ use crate::task_board::{
 use crate::task_board::{read, stage::choice::types::ResolvedStageChoice, types::Card};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 
+/// A continued card goes first, so its next turn reaches the warm session before newer cards.
 pub(crate) fn next(conn: &mut Connection) -> Result<Option<Card>, String> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -31,7 +32,7 @@ pub(crate) fn next(conn: &mut Connection) -> Result<Option<Card>, String> {
     if running >= limit {
         return Ok(None);
     }
-    let next:Option<String>=tx.query_row("SELECT id FROM task_board_cards WHERE run_state=?1 AND column_id IN (?2,?3,?4,?5) AND (column_id!=?2 OR grill_round>=1) AND archived=0 ORDER BY queued_at,number LIMIT 1",params![QUEUED,GRILL,IMPLEMENT,CODE_REVIEW,REWORK],|r|r.get(0)).optional().map_err(|e|e.to_string())?;
+    let next:Option<String>=tx.query_row("SELECT id FROM task_board_cards WHERE run_state=?1 AND column_id IN (?2,?3,?4,?5) AND (column_id!=?2 OR grill_round>=1) AND archived=0 ORDER BY COALESCE((SELECT status FROM task_board_stage_runs r WHERE r.card_id=task_board_cards.id ORDER BY r.rowid DESC LIMIT 1)=?6,0) DESC,queued_at,number LIMIT 1",params![QUEUED,GRILL,IMPLEMENT,CODE_REVIEW,REWORK,PARTIAL],|r|r.get(0)).optional().map_err(|e|e.to_string())?;
     let Some(id) = next else { return Ok(None) };
     let old = query::card(&tx, &id)?;
     let now = query::now()?.max(old.updated_at.saturating_add(1));
