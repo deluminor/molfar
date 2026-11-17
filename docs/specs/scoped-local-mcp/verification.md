@@ -139,3 +139,33 @@ passed; core tests 985 passed, zero failed, two ignored. GPUI tests are still
 compiling, so the complete gate remains unverified (session 98893). No independent
 UI QA was run. This checkpoint preserves the existing owner-edit diagnostic
 contract after the regression was reproduced by the full core suite.
+
+## Continuation 7 checkpoint
+
+Implemented S2–S8 end to end:
+
+- Internal Board actions `board.list/read/create/update/archive/unarchive` for
+  Familiars and Operator sessions through `molfar_app` MCP and `molfar-native app`.
+  Card IDs derive from caller and request ID, so a lost receipt cannot duplicate
+  a card. Updates reuse the owner `EditTask` stage action, limited to idle,
+  unqueued, unarchived Backlog cards.
+- External MCP core: grants (`mfx_<id>_<secret>`, SHA-256 verifier, constant-time
+  check), scopes, project allowlists, revocation, receipts, audit ring, strict tool
+  contracts and an rmcp `=3.10.0` stateless Streamable HTTP listener on 127.0.0.1.
+- GPUI adapter and Settings page. Session launches use MOLFAR's new-chat defaults
+  and the durable `create_app_session` reservation keyed by the external client.
+
+Tests: core Board action tests, bridge/validation tests, grants/receipts/audit
+tests and real HTTP transport tests (auth, scope, unknown arguments, Host,
+Origin, protocol version, malformed JSON, 413 bodies, port conflict, shutdown,
+per-request revocation). GPUI tests cover Operator and Familiar Board calls,
+read-only Operator policy, external project isolation, Board create replay after
+a Shell restart, unknown follow-up outcomes, start rejection and Settings grant
+transitions.
+
+A GPUI test that exercised `sessions_start` launched a real local provider; it was
+removed and replaced by a no-launch rejection test. Successful launches reuse the
+existing Operator launch path and remain covered by its tests plus the live smoke.
+
+Not run: OpenBot live smoke (requires separate explicit authorization), coverage
+measurement, dependency audit, independent UI QA.
