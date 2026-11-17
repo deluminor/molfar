@@ -151,34 +151,45 @@ fn scoped_listing_bounds_pages_and_checks_current_project_access() {
     }
     let allowed = vec!["/project".into()];
     let first = store
-        .board_scoped_list("/project", &allowed, false, 0, 1)
+        .board_scoped_list(Some("/project"), &allowed, false, 0, 1)
         .unwrap();
     assert_eq!(first.len(), 1);
     assert_eq!(first[0].id, "a");
     let second = store
-        .board_scoped_list("/project", &allowed, false, 1, 1)
+        .board_scoped_list(Some("/project"), &allowed, false, 1, 1)
         .unwrap();
     assert_eq!(second[0].id, "c");
     assert!(store
-        .board_scoped_list("/project", &allowed, false, 2, 1)
+        .board_scoped_list(Some("/project"), &allowed, false, 2, 1)
         .unwrap()
         .is_empty());
     assert_eq!(
         store
-            .board_scoped_list("/project", &allowed, true, 0, 100)
+            .board_scoped_list(Some("/project"), &allowed, true, 0, 100)
             .unwrap()[0]
             .id,
         "d"
     );
     for limit in [0, 101] {
         assert!(store
-            .board_scoped_list("/project", &allowed, false, 0, limit)
+            .board_scoped_list(Some("/project"), &allowed, false, 0, limit)
             .is_err());
     }
     assert!(store
-        .board_scoped_list("/project", &[], false, 1, 1)
+        .board_scoped_list(Some("/project"), &[], false, 1, 1)
         .is_err());
     assert!(store
-        .board_scoped_list("/project/../project", &allowed, false, 0, 1)
+        .board_scoped_list(Some("/project/../project"), &allowed, false, 0, 1)
         .is_err());
+    let all = store
+        .board_scoped_list(None, &["/project/".into(), "/other".into()], false, 0, 100)
+        .unwrap();
+    assert_eq!(
+        all.iter().map(|card| card.id.as_str()).collect::<Vec<_>>(),
+        ["a", "b", "c"]
+    );
+    assert!(store
+        .board_scoped_list(None, &[], false, 0, 100)
+        .unwrap()
+        .is_empty());
 }

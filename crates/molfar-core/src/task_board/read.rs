@@ -40,17 +40,11 @@ pub(crate) fn card(conn: &Connection, id: &str) -> rusqlite::Result<Option<Card>
         .optional()
 }
 
-pub(crate) fn list_page(
-    conn: &Connection,
-    project: &str,
-    archived: bool,
-    offset: u32,
-    limit: u32,
-) -> rusqlite::Result<Vec<Card>> {
+pub(crate) fn list_page(conn: &Connection, archived: bool) -> rusqlite::Result<Vec<Card>> {
     conn.prepare(&format!(
-        "{CARDS_SELECT} WHERE project_cwd = ?1 AND archived = ?2 ORDER BY number, id LIMIT ?3 OFFSET ?4"
+        "{CARDS_SELECT} WHERE archived = ?1 ORDER BY number, id"
     ))?
-    .query_map(params![project, archived, limit, offset], cards_row)?
+    .query_map([archived], cards_row)?
     .collect()
 }
 

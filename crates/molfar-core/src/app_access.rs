@@ -34,7 +34,8 @@ pub fn validate_operator(action: &str, input: &Value) -> Result<(), String> {
             | "notes.write"
             | "worktrees.list"
             | "worktrees.create"
-    ) {
+    ) && !board::is_board(action)
+    {
         return Err("Unknown Operator action. Run app help for project actions; memory, habits and artifacts require a Familiar.".into());
     }
     crate::familiar::api::validate(action, input)?;

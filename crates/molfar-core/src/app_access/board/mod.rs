@@ -1,6 +1,11 @@
+mod actions;
+mod contracts;
 mod update;
+pub use actions::{action, is_board, validate, READ_ACTIONS, WRITE_ACTIONS};
 pub use update::{parse_update, UpdateRequest};
 
+#[cfg(test)]
+mod action_tests;
 #[cfg(test)]
 mod tests;
 
