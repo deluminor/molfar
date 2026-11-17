@@ -118,6 +118,13 @@ fn a_full_context_after_three_compactions_stops_with_the_latest_report() {
     partial_turn(&mut store, "turn-d", 3, true, true);
 
     assert_eq!(store.board_streak_compactions("turn-d").unwrap(), 3);
+    let counts = store
+        .board_snapshot(None, false, Some("card"))
+        .unwrap()
+        .compactions;
+    assert_eq!(counts.len(), 3);
+    assert_eq!(counts.get("turn-d"), Some(&1));
+    assert!(!counts.contains_key("turn-a"));
     let stopped = card(&store);
     assert_eq!(stopped.run_state, "failed");
     assert_eq!(

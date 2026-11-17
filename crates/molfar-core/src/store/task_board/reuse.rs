@@ -14,6 +14,7 @@ use crate::task_board::{
     types::StageRun,
 };
 use rusqlite::{params, OptionalExtension};
+use std::collections::HashMap;
 
 fn family(stage: &str) -> &'static [&'static str] {
     match stage {
@@ -96,12 +97,12 @@ impl Store {
     }
 
     /// Compactions per run among `runs`; runs without one are left out.
-    pub fn board_run_compactions(&self, runs: &[String]) -> Result<Vec<(String, usize)>, String> {
-        let mut counts = Vec::new();
+    pub fn board_run_compactions(&self, runs: &[String]) -> Result<HashMap<String, usize>, String> {
+        let mut counts = HashMap::new();
         for run in runs {
             let count = self.board_compactions(std::slice::from_ref(run))?;
             if count > 0 {
-                counts.push((run.clone(), count));
+                counts.insert(run.clone(), count);
             }
         }
         Ok(counts)

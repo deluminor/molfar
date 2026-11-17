@@ -140,5 +140,6 @@ fn load(
         runs,
         artifacts,
         settings_json,
+        compactions: Default::default(),
     })
 }
