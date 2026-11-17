@@ -6,6 +6,9 @@ mod header;
 mod metadata;
 #[cfg(test)]
 mod navigation_tests;
+pub(super) mod owner_checks;
+#[cfg(test)]
+mod owner_checks_tests;
 mod tabs;
 #[cfg(test)]
 mod tests;
