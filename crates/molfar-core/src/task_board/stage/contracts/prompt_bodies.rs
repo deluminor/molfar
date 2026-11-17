@@ -62,7 +62,7 @@ pub(super) fn continue_turn(stage: AgentStage, card: &Card, report: Option<&str>
     };
     [
         format!(
-            "## Continue\nThe plan is not finished — continue from where you stopped. {report}\nCheck `git log {}..HEAD` only if you are unsure what is committed. The rules from the first prompt of\nthis session still apply: commit each stage, finish with a clean working tree.",
+            "## Continue\nThe plan is not finished — continue from where you stopped. {report}\nCheck `git log {}..HEAD` only if you are unsure what is committed. Commit each stage as\nit works.",
             card.base_sha.as_deref().unwrap_or("<base>")
         ),
         STATUS.into(),

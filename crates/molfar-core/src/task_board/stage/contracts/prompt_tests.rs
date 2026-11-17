@@ -163,6 +163,17 @@ fn a_continue_turn_in_the_same_session_is_short_but_keeps_the_contracts() {
             short.contains("<<<MOLFAR:impl_report>>>") && short.contains("<<<END:impl_report>>>")
         );
         assert!(!short.contains("## Handoff files") && !short.contains("## Goal"));
+        for rule in [
+            "Never push, never open pull requests, never switch branches.",
+            "Never add AI or tool attribution anywhere",
+            "Do not mention any person by name",
+            "Commit your work yourself with small, atomic Conventional Commits",
+            "Finish with a clean working tree and at least one new commit",
+        ] {
+            assert!(short.contains(rule), "{rule}: {short}");
+        }
+        assert!(!short.contains("READ-ONLY"));
+        assert!(!short.contains("win over anything you remember"));
 
         let fresh_session = types::PromptExtras {
             resumed: false,
