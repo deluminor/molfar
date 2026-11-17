@@ -41,3 +41,28 @@ Complete S1: trace encrypted MCP header persistence; compile the pinned candidat
 `npm run native:check` exited 101. Native script tests passed 44/44; formatting and Clippy completed successfully. Core tests: 961 passed, 15 failed, 2 ignored. Inspected Familiar bridge and SSH bridge failures report `Operation not permitted (os error 1)` while establishing local test bridges under the sandbox. The complete failure set has not been rerun with elevated permissions; do not classify every failure as environmental without that check. The chained GPUI test command was not reached. Full console output was captured at `/private/tmp/molfar-card40-native-check.log` for this session; that temporary file is not a durable artifact.
 
 `git diff --cached --check` and the configured staged secret scanner exited 0 before the initial checkpoint. No source behavior changed, so no feature TDD evidence exists. The session ended at an investigation checkpoint due to available session budget; this is not a completed implementation stage.
+
+## Continuation 1 checkpoint
+
+Implemented the transport-independent S2 archive primitive as `Store::board_set_archived`.
+It uses an immediate transaction, checks the expected revision and idle/unqueued
+eligibility, preserves stage state, and advances the revision monotonically. This
+is a trusted Store operation: caller authorization and mutation receipts remain
+required in the future adapters. No adapter exposes this operation yet.
+
+TDD: focused tests first failed with E0599 (missing method); after implementation,
+`cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core --profile native-dev store::task_board::archive -- --test-threads=1`
+exited 0: two passed. Tests cover round-trip, stale revision, missing card,
+running/queued rejection, preserved content, and no stage runs.
+
+`npm run native:check` exited 101: script tests 44 passed; format and Clippy
+passed; core tests 963 passed, 15 failed, 2 ignored. Failures include sandbox
+permission denials in local socket fixtures and a process-resource test.
+GPUI tests were not reached. No elevated full-suite rerun was performed.
+`git diff --check` exited 0; commit hook secret scan accepted the implementation.
+
+Session budget ended before completing the feature. S1 remains open. S2 has only
+the archive/unarchive Store primitive; shared scoped contracts, update/artifact
+versioning, and bounded reads remain. S3–S9 remain unimplemented. All eleven
+acceptance criteria remain incomplete. No SDK pin, listener, grants, receipts,
+Settings UI, runtime dispatch, or live client verification was added.
