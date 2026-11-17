@@ -13,7 +13,7 @@ fn continuation_runs_point_the_agent_at_the_previous_report_and_commits() {
         let continued = build_stage_prompt(stage, &card(), &[], &[], "HEAD", &extras).unwrap();
 
         assert!(!fresh.contains("## Continuation"));
-        assert!(continued.contains("continuation run 2"));
+        assert!(continued.contains("continuation turn 2"));
         assert!(continued.contains(&format!("git log {}..HEAD", "a".repeat(40))));
     }
 }
@@ -109,4 +109,82 @@ fn a_resumed_run_is_not_told_it_is_a_fresh_session() {
     assert!(!resumed.contains("This is a fresh session"));
     assert!(resumed.contains("continues your earlier session") && resumed.contains("## Session"));
     assert!(fresh.contains("This is a fresh session") && !fresh.contains("## Session"));
+}
+
+fn writing_prompts(extras: &types::PromptExtras) -> Vec<String> {
+    [AgentStage::Implement, AgentStage::Rework]
+        .into_iter()
+        .map(|stage| build_stage_prompt(stage, &card(), &[], &[], "HEAD", extras).unwrap())
+        .collect()
+}
+
+#[test]
+fn writing_prompts_never_permit_stopping_because_the_session_is_long() {
+    let resumed = types::PromptExtras {
+        continuation: 3,
+        resumed: true,
+        ..Default::default()
+    };
+    for extras in [Default::default(), resumed] {
+        for prompt in writing_prompts(&extras) {
+            let lower = prompt.to_lowercase();
+            for loophole in [
+                "run out",
+                "near its limit",
+                "session budget",
+                "near the limit",
+            ] {
+                assert!(!lower.contains(loophole), "{loophole}: {prompt}");
+            }
+            assert!(prompt.contains("`partial` never ends the stage"));
+            assert!(prompt.contains("## Stop signal"));
+        }
+    }
+}
+
+#[test]
+fn a_continue_turn_in_the_same_session_is_short_but_keeps_the_contracts() {
+    let files = [types::ManifestReference {
+        kind: "impl_report".into(),
+        version: 4,
+        path: ".molfar/board/impl_report-v4.md".into(),
+    }];
+    let extras = types::PromptExtras {
+        continuation: 1,
+        resumed: true,
+        ..Default::default()
+    };
+    for stage in [AgentStage::Implement, AgentStage::Rework] {
+        let short = build_stage_prompt(stage, &card(), &files, &[], "HEAD", &extras).unwrap();
+        assert!(short.contains("The plan is not finished — continue from where you stopped."));
+        assert!(short.contains("`.molfar/board/impl_report-v4.md`"));
+        assert!(short.contains("## Status\nStart the report with exactly one status line."));
+        assert!(
+            short.contains("<<<MOLFAR:impl_report>>>") && short.contains("<<<END:impl_report>>>")
+        );
+        assert!(!short.contains("## Handoff files") && !short.contains("## Goal"));
+
+        let fresh_session = types::PromptExtras {
+            resumed: false,
+            ..extras.clone()
+        };
+        let first_turn = types::PromptExtras {
+            continuation: 0,
+            ..extras.clone()
+        };
+        for full in [fresh_session, first_turn] {
+            let prompt = build_stage_prompt(stage, &card(), &files, &[], "HEAD", &full).unwrap();
+            assert!(prompt.contains("## Handoff files") && !prompt.contains("## Continue\n"));
+        }
+    }
+    let review = build_stage_prompt(
+        AgentStage::CodeReview,
+        &card(),
+        &files,
+        &[],
+        "HEAD",
+        &extras,
+    )
+    .unwrap();
+    assert!(!review.contains("## Continue\n"));
 }

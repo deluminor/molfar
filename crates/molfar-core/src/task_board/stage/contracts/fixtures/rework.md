@@ -36,11 +36,14 @@ unselected findings alone unless fixing a selected one requires it. Add or updat
 re-run the lint, typecheck and test commands before you finish.
 
 ## Status
-Start the report with exactly one status line. MOLFAR reads it to decide what happens next:
+Start the report with exactly one status line. Only `complete` and `blocked` end this stage:
 - `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.
-- `Status: partial`: work remains. MOLFAR starts another run that continues from your report and commits,
-  so list precisely what remains.
 - `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.
+- `Status: partial`: work remains. MOLFAR answers at once in this same session and asks you to continue, so
+  `partial` never ends the stage. MOLFAR watches the context and compacts it when needed; you never need to
+  checkpoint.
+When the status is not `complete`, the `## Stop signal` section must name the concrete signal: the exact provider
+or tool error you hit, or the blocker. A feeling that the session is long or expensive is not a signal.
 
 ## Output
 End your final message with these blocks, exactly as delimited. MOLFAR saves them as files; anything outside
@@ -55,5 +58,6 @@ Status: complete | partial | blocked
 ## Checks run and results (lint, typecheck, tests)
 ## Deviations from the plan
 ## Remaining work (only when partial or blocked: exact stages and criteria left)
+## Stop signal (only when partial or blocked: the concrete error or blocker that ended your turn)
 ## Resolution of each selected finding (resolved | not resolved — evidence)
 <<<END:impl_report>>>

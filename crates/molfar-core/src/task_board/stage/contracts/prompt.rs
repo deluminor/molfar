@@ -77,6 +77,18 @@ pub(super) fn build(
         card.branch.as_deref().unwrap_or("(none)"),
         card.base_sha.as_deref().unwrap_or("(unknown)")
     );
+    let continued = extras.resumed
+        && extras.continuation > 0
+        && matches!(stage, AgentStage::Implement | AgentStage::Rework);
+    if continued {
+        let report = files
+            .iter()
+            .rfind(|file| file.kind == super::constants::IMPL_REPORT)
+            .map(|file| file.path.as_str())
+            .filter(|path| !path.contains(['\n', '\r', '`']));
+        let body = super::prompt_bodies::continue_turn(stage, card, report);
+        return Ok(format!("{header}\n\n{body}"));
+    }
     let mut sections = vec![header];
     if !skills.is_empty() {
         sections.push(format!(

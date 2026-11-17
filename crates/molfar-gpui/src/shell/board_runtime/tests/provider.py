@@ -39,6 +39,9 @@ def response(value):
                 '## F1 [minor] Fixture race\nFile: tracked.txt:1\nFix this race.\n\n'
                 '## F2 [nit] Optional rename\nOptional.<<<END:review>>>\n'
                 '<<<MOLFAR:pr_description>>>Fixture PR description<<<END:pr_description>>>')
+    if stage == 'Implement' and behavior == 'partial-once' and not (root / 'partial-sent').exists():
+        (root / 'partial-sent').write_text('1')
+        return '<<<MOLFAR:impl_report>>>Status: partial\n## Remaining work\nStage 2<<<END:impl_report>>>'
     if stage in ('Implement', 'Rework'):
         return f'<<<MOLFAR:impl_report>>>Status: complete\n{stage} fixture report<<<END:impl_report>>>'
     return ('<<<MOLFAR:spec>>>\nFixture specification\n<<<END:spec>>>\n'
