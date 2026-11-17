@@ -70,6 +70,11 @@ for line in sys.stdin:
         with (root / 'submissions').open('a') as output:
             output.write(json.dumps({'cwd': str(pathlib.Path.cwd()), 'request': value}) + '\n')
         send({'id': value['id'], 'result': {'turn': {'id': 'fixture-turn'}}})
+        limited = (root / 'behavior').exists() and (root / 'behavior').read_text().strip() == 'usage-limit'
+        if limited and 'You are the Implement stage' in json.dumps(value):
+            error = {'message': "You've hit your usage limit.", 'codexErrorInfo': 'usageLimitExceeded'}
+            send({'method': 'turn/completed', 'params': {'turn': {'status': 'failed', 'error': error}}})
+            break
         send({'method': 'item/agentMessage/delta', 'params': {'itemId': 'answer', 'delta': response(value)}})
         usage = {'inputTokens': 1200, 'cachedInputTokens': 1000, 'outputTokens': 80, 'totalTokens': 1280}
         send({'method': 'thread/tokenUsage/updated', 'params': {'tokenUsage': {'last': usage, 'total': usage}}})

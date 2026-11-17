@@ -152,3 +152,37 @@ fn three_compactions_with_room_left_in_the_context_keep_going() {
     assert_eq!(store.board_streak_compactions("turn-3").unwrap(), 3);
     assert_eq!(card(&store).run_state, "queued");
 }
+
+#[test]
+fn harness_stops_carry_their_reason_on_the_card_and_the_run() {
+    use crate::task_board::stage::lifecycle::types::FailureStatus;
+
+    for (status, error, label) in [
+        (FailureStatus::Cancelled, "Stage cancelled", "cancelled"),
+        (
+            FailureStatus::Interrupted,
+            "Stage interrupted",
+            "interrupted",
+        ),
+        (
+            FailureStatus::Failed,
+            "This model's maximum context length is 400000 tokens",
+            "provider context limit",
+        ),
+        (
+            FailureStatus::Failed,
+            "Codex exited with status 1",
+            "run failed",
+        ),
+    ] {
+        let (_dir, mut store) = gate();
+        approve(&mut store);
+        prepare(&mut store, "turn", AgentStage::Implement, "head-0");
+        store.board_fail_stage("turn", status, error).unwrap();
+
+        let expected = format!("Stopped — {label}: {error}");
+        assert_eq!(card(&store).last_error.as_deref(), Some(expected.as_str()));
+        let run = store.board_stage_context("turn").unwrap().unwrap().run;
+        assert_eq!(run.error.as_deref(), Some(expected.as_str()));
+    }
+}
