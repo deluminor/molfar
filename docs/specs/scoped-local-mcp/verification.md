@@ -102,3 +102,28 @@ The full `npm run native:check` process was still compiling the GPUI test target
 at this checkpoint; its final exit status and GPUI test results are unverified.
 Output: `/private/tmp/molfar-card40-run2-elevated.log` (temporary, not durable).
 Full application build, coverage and dependency audit were not run. No UI QA.
+
+## Continuation 5 checkpoint
+
+Added `app_access::board::parse_update` with a strict camelCase argument
+contract. It rejects unknown fields, nulls, invalid card identities, empty
+patches, invalid content and conflicting or missing request IDs. Title,
+description and criteria reuse the Board creation limits and shared content
+validation. Criteria may be cleared explicitly. The parser does not authorize
+or mutate cards and is not exposed by either adapter yet.
+
+TDD RED: standalone compilation of the actual Board tests failed with E0432
+for missing `parse_update`. GREEN: focused Cargo tests exited 0 (3 passed).
+The subsequent native suite includes additional boundary coverage and reports
+all four Board contract tests passing.
+
+`npm run native:check` exited 101: script tests 44 passed; formatting and
+Clippy passed; core tests 969 passed, 16 failed, 2 ignored. Socket/process
+fixtures remain sandbox-restricted. GPUI tests were not reached. An elevated
+rerun was started; its result must be collected before claiming full regression
+verification. Logs: `/private/tmp/molfar-card40-run5{,-elevated}.log`.
+
+S1 and S3–S9 remain open. S2 still needs the other strict action contracts,
+complete read metadata, update persistence with immutable artifact recovery,
+and concurrency tests. No acceptance criterion is complete. No live scratch
+execution, dependency audit, coverage measurement or standalone build ran.

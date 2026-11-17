@@ -1,3 +1,6 @@
+mod update;
+pub use update::{parse_update, UpdateRequest};
+
 #[cfg(test)]
 mod tests;
 
