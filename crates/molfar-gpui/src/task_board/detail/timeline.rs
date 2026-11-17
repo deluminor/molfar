@@ -6,9 +6,15 @@ use molfar_core::task_board::{
     stage::lifecycle::constants::{FAILED, PARTIAL, REDIRECTED, RUNNING, SUCCEEDED},
     types::StageRun,
 };
+use std::collections::HashMap;
 
 impl Board {
-    pub(super) fn stage_timeline(&self, runs: &[StageRun], cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn stage_timeline(
+        &self,
+        runs: &[StageRun],
+        compactions: &HashMap<String, usize>,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let mut timeline = div().flex().flex_col();
         if runs.is_empty() {
             return timeline
@@ -20,9 +26,12 @@ impl Board {
                 )
                 .into_any_element();
         }
-        for (position, run) in runs.iter().enumerate() {
+        let entries = super::turns::fold(runs, compactions);
+        for (position, entry) in entries.iter().enumerate() {
             // The rail joins each stage to the next; the last stage ends it.
-            let last = position + 1 == runs.len();
+            let last = position + 1 == entries.len();
+            let run = entry.last;
+            let summary = entry.summary();
             let name = COLUMNS
                 .iter()
                 .find(|(id, _)| *id == run.stage)
@@ -36,9 +45,9 @@ impl Board {
                 RUNNING => ("Running", accent_color()),
                 _ => (run.status.as_str(), content(0.5)),
             };
-            let elapsed = run
-                .completed_at
-                .map(|end| molfar_core::usage::duration(end.saturating_sub(run.started_at)));
+            let elapsed = run.completed_at.map(|end| {
+                molfar_core::usage::duration(end.saturating_sub(entry.first.started_at))
+            });
             let session = run.session_id.clone();
             timeline = timeline.child(
                 div()
@@ -90,11 +99,26 @@ impl Board {
                                             .font_weight(FontWeight::MEDIUM)
                                             .child(name.to_owned()),
                                     )
-                                    .when(run.attempt > 1, |d| {
+                                    .when(entry.first.attempt > 1, |d| {
                                         d.child(
                                             div()
                                                 .text_color(content(0.5))
-                                                .child(format!("attempt {}", run.attempt)),
+                                                .child(format!("attempt {}", entry.first.attempt)),
+                                        )
+                                    })
+                                    .when_some(summary, |d, summary| {
+                                        d.child(
+                                            div()
+                                                .id(gpui::SharedString::from(format!(
+                                                    "board-run-turns-{}",
+                                                    run.id
+                                                )))
+                                                .debug_selector({
+                                                    let id = run.id.clone();
+                                                    move || format!("board-run-turns-{id}")
+                                                })
+                                                .text_color(content(0.5))
+                                                .child(summary),
                                         )
                                     })
                                     .child(div().text_color(tone).child(status.to_owned())),

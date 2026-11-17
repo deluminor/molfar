@@ -6,14 +6,16 @@ pub const SUCCEEDED: &str = "succeeded";
 pub const PARTIAL: &str = "partial";
 /// A code review that never ran because the verify command failed; the card went back to Rework.
 pub const REDIRECTED: &str = "redirected";
-pub(crate) const MAX_CONTINUATIONS: usize = 5;
 pub(crate) const MAX_AUTO_REWORK: usize = 2;
 pub(crate) const MAX_CHECK_REWORK: usize = 2;
-/// Implement, Rework and Code review runs the engine may start since the user last decided.
-pub(crate) const MAX_AUTOMATIC_RUNS: i64 = 10;
+/// Implement, Rework and Code review turns the engine may start since the user last decided.
+pub(crate) const MAX_AUTOMATIC_TURNS: i64 = 20;
+/// Compactions MOLFAR may trigger within one stage run before it stops for the user.
+pub(crate) const MAX_COMPACTIONS: usize = 3;
+/// Per-run marker in the settings store: MOLFAR reset this run's context before its prompt.
+pub(crate) const COMPACTION_MARKER: &str = "board-run-compacted:";
 /// Context share at which a reused session is compacted before the next run.
 pub(crate) const COMPACT_AT: f32 = 0.75;
-pub(crate) const BUDGET_SPENT: &str = "Automatic budget used: 10 agent runs since your last decision. Review the card, then Retry, request a rework or edit the plan to continue.";
 pub const ACCEPTED: &str = "accepted";
 pub const PREPARED: &str = "session_prepared";
 pub const SUBMITTED: &str = "turn_submitted";

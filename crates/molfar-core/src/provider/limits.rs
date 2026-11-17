@@ -3,6 +3,9 @@
 use super::*;
 use crate::usage::Limit;
 
+pub(crate) const CLAUDE_USAGE_LIMIT: &str =
+    "Claude Code reached its usage limit. Choose another available model or retry when the limit resets.";
+
 impl Protocol {
     pub(super) fn claude_error(&mut self, error: &str, frame: &Value) -> String {
         let info = frame
@@ -22,7 +25,7 @@ impl Protocol {
             });
         }
         if self.claude_usage_limit.is_some() {
-            "Claude Code reached its usage limit. Choose another available model or retry when the limit resets.".into()
+            CLAUDE_USAGE_LIMIT.into()
         } else {
             error.into()
         }

@@ -1,8 +1,12 @@
 //! What the engine does with a verified stage output: advance, continue an unfinished
 //! run, stop for the user, or send review findings straight back to rework.
-use super::super::constants::{
-    BUDGET_SPENT, CANCELLED, FAILED, INTERRUPTED, MAX_AUTOMATIC_RUNS, MAX_AUTO_REWORK,
-    MAX_CONTINUATIONS, PARTIAL,
+use super::super::{
+    constants::{
+        CANCELLED, COMPACT_AT, FAILED, INTERRUPTED, MAX_AUTOMATIC_TURNS, MAX_AUTO_REWORK,
+        MAX_COMPACTIONS, PARTIAL,
+    },
+    stop,
+    types::Signals,
 };
 use crate::task_board::{
     constants::{CODE_REVIEW, ENGINE, GRILL, IMPLEMENT, REWORK, USER},
@@ -32,9 +36,9 @@ const AUTO_REWORK_NOTE: &str =
 pub(super) fn decide(
     conn: &Connection,
     card: &str,
-    run: &str,
     stage: AgentStage,
     artifacts: &[ParsedArtifact],
+    signals: Signals,
 ) -> Result<Outcome, String> {
     let body = |kind: &str| {
         artifacts
@@ -46,33 +50,29 @@ pub(super) fn decide(
 
     match stage {
         AgentStage::Grill => Ok(Outcome::Advance),
-        AgentStage::Implement | AgentStage::Rework => {
-            match status::parse(body(IMPL_REPORT)?)? {
-                ImplStatus::Complete => Ok(Outcome::Advance),
-                ImplStatus::Blocked => Ok(Outcome::Stop(
-                    "The agent reported it is blocked. Read the implementation report, resolve the blocker, then Retry."
-                        .into(),
-                )),
-                ImplStatus::Partial => continue_or_stop(conn, card, run),
-            }
-        }
+        AgentStage::Implement | AgentStage::Rework => match status::parse(body(IMPL_REPORT)?)? {
+            ImplStatus::Complete => Ok(Outcome::Advance),
+            ImplStatus::Blocked => Ok(Outcome::Stop(stop::blocked())),
+            ImplStatus::Partial => continue_or_stop(conn, card, signals),
+        },
         AgentStage::CodeReview => rework_or_advance(conn, card, body(REVIEW)?),
     }
 }
 
-fn continue_or_stop(conn: &Connection, card: &str, run: &str) -> Result<Outcome, String> {
+/// A self-declared `partial` is never a stop on its own: only the turn budget or a context
+/// that filled up again after the last allowed compaction ends the run.
+fn continue_or_stop(conn: &Connection, card: &str, signals: Signals) -> Result<Outcome, String> {
     if budget_spent(conn, card)? {
-        return Ok(Outcome::Stop(BUDGET_SPENT.into()));
+        return Ok(Outcome::Stop(stop::budget()));
     }
-    let streak = partial_streak(conn, card, run)?;
-    if streak < MAX_CONTINUATIONS {
-        return Ok(Outcome::Continue);
+    let full = signals
+        .context_ratio
+        .is_some_and(|ratio| ratio >= COMPACT_AT);
+    if full && signals.compactions >= MAX_COMPACTIONS {
+        return Ok(Outcome::Stop(stop::compaction_cap()));
     }
 
-    Ok(Outcome::Stop(format!(
-        "Stopped partway {} runs in a row. Read the implementation report, then Retry to continue or go Back and split the plan.",
-        streak + 1
-    )))
+    Ok(Outcome::Continue)
 }
 
 fn rework_or_advance(conn: &Connection, card: &str, markdown: &str) -> Result<Outcome, String> {
@@ -101,22 +101,25 @@ fn rework_or_advance(conn: &Connection, card: &str, markdown: &str) -> Result<Ou
     review::rework_brief(&parsed.findings, &selected, AUTO_REWORK_NOTE).map(Outcome::AutoRework)
 }
 
-/// Consecutive continuation runs before this one. Any other run (a retry, a failure,
-/// another stage) ends the streak, so an explicit Retry always gets a fresh budget.
-fn partial_streak(conn: &Connection, card: &str, run: &str) -> Result<usize, String> {
+/// The unfinished turns of this stage run before `run`, newest first. Any other run (a
+/// retry, a failure, another stage) ends the streak, so an explicit Retry starts a new run.
+pub(crate) fn turn_streak(conn: &Connection, card: &str, run: &str) -> Result<Vec<String>, String> {
     let mut statement = conn
-        .prepare("SELECT status FROM task_board_stage_runs WHERE card_id=?1 AND id<>?2 ORDER BY rowid DESC")
+        .prepare("SELECT id,status FROM task_board_stage_runs WHERE card_id=?1 AND id<>?2 ORDER BY rowid DESC")
         .map_err(|e| e.to_string())?;
-    let statuses = statement
-        .query_map(params![card, run], |row| row.get::<_, String>(0))
+    let rows = statement
+        .query_map(params![card, run], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
         .map_err(|e| e.to_string())?;
 
-    let mut streak = 0;
-    for status in statuses {
-        if status.map_err(|e| e.to_string())? != PARTIAL {
+    let mut streak = Vec::new();
+    for row in rows {
+        let (id, status) = row.map_err(|e| e.to_string())?;
+        if status != PARTIAL {
             break;
         }
-        streak += 1;
+        streak.push(id);
     }
     Ok(streak)
 }
@@ -144,7 +147,7 @@ pub(crate) fn brief_streak(conn: &Connection, card: &str, source: &str) -> Resul
     Ok(streak)
 }
 
-/// Agent runs since the user last decided: after Grill, after a stop that needed them
+/// Agent turns since the user last decided: after Grill, after a stop that needed them
 /// (failed, cancelled or interrupted run, so Retry starts a new budget) and after their
 /// latest written decision (answers, plan edit, rework request).
 pub(crate) fn budget_spent(conn: &Connection, card: &str) -> Result<bool, String> {
@@ -157,12 +160,12 @@ pub(crate) fn budget_spent(conn: &Connection, card: &str) -> Result<bool, String
             |row| row.get(0),
         )
         .map_err(|e| e.to_string())?;
-    Ok(runs >= MAX_AUTOMATIC_RUNS)
+    Ok(runs >= MAX_AUTOMATIC_TURNS)
 }
 
-/// How many unfinished runs of this streak came before `run`; zero for a fresh start.
+/// How many unfinished turns of this stage run came before `run`; zero for a fresh start.
 pub(crate) fn continuation(conn: &Connection, card: &str, run: &str) -> Result<usize, String> {
-    partial_streak(conn, card, run)
+    turn_streak(conn, card, run).map(|streak| streak.len())
 }
 
 pub(crate) fn brief(body: String) -> ParsedArtifact {

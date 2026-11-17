@@ -165,9 +165,12 @@ fn prepare_inner(store: &Database, run_id: &str, defaults: Defaults) -> Result<P
     };
     let plan = locked(store)?.board_stage_session_plan(run_id)?;
     let (reuse, compact) = match &plan {
-        SessionPlan::Fresh => (None, false),
+        SessionPlan::Fresh | SessionPlan::Reset => (None, false),
         SessionPlan::Reuse { session, compact } => (Some(session.as_str()), *compact),
     };
+    if compact || plan == SessionPlan::Reset {
+        locked(store)?.board_record_compaction(run_id)?;
+    }
     let extras = PromptExtras {
         continuation: locked(store)?.board_stage_continuation(run_id)?,
         checks,

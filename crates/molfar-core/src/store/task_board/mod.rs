@@ -64,6 +64,10 @@ impl Store {
         archived: bool,
         selected: Option<&str>,
     ) -> Result<Snapshot, String> {
-        crate::task_board::read::snapshot(&self.conn, project, archived, selected)
+        let mut snapshot =
+            crate::task_board::read::snapshot(&self.conn, project, archived, selected)?;
+        let runs: Vec<String> = snapshot.runs.iter().map(|run| run.id.clone()).collect();
+        snapshot.compactions = self.board_run_compactions(&runs)?;
+        Ok(snapshot)
     }
 }
