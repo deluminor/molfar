@@ -147,7 +147,7 @@ async fn route(
     authenticate: Authenticate,
 ) -> HttpReply {
     if request.uri().path() != "/mcp" {
-        return plain(StatusCode::NOT_FOUND, "Not found");
+        return reject(request, plain(StatusCode::NOT_FOUND, "Not found")).await;
     }
     let token = request
         .headers()
@@ -156,7 +156,7 @@ async fn route(
         .and_then(|value| value.strip_prefix("Bearer "))
         .map(str::to_owned);
     let Some(token) = token else {
-        return unauthorized();
+        return reject(request, unauthorized()).await;
     };
     let principal = tokio::task::spawn_blocking(move || authenticate(&token)).await;
     match principal {
@@ -164,9 +164,21 @@ async fn route(
             request.extensions_mut().insert(principal);
             service.handle(request).await
         }
-        Ok(Ok(None)) => unauthorized(),
-        _ => plain(StatusCode::SERVICE_UNAVAILABLE, "Credential check failed"),
+        Ok(Ok(None)) => reject(request, unauthorized()).await,
+        _ => {
+            let reply = plain(StatusCode::SERVICE_UNAVAILABLE, "Credential check failed");
+            reject(request, reply).await
+        }
     }
+}
+
+/// Reads a bounded body before rejecting: closing with unread input resets the
+/// socket and the client never sees the status.
+async fn reject(request: Request<Incoming>, reply: HttpReply) -> HttpReply {
+    let _ = http_body_util::Limited::new(request.into_body(), MAX_BODY_BYTES)
+        .collect()
+        .await;
+    reply
 }
 
 fn unauthorized() -> HttpReply {
@@ -181,8 +193,13 @@ fn unauthorized() -> HttpReply {
     reply
 }
 
+/// Rejections skip the request body, so the connection must not be reused.
 fn plain(status: StatusCode, text: &'static str) -> HttpReply {
     let mut reply = Response::new(Full::new(Bytes::from_static(text.as_bytes())).boxed());
     *reply.status_mut() = status;
+    reply.headers_mut().insert(
+        header::CONNECTION,
+        header::HeaderValue::from_static("close"),
+    );
     reply
 }

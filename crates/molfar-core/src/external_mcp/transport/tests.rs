@@ -177,3 +177,26 @@ fn port_conflicts_fail_fast_and_dropping_the_server_closes_the_listener() {
     let (restarted, _) = Server::start(port, authenticate).unwrap();
     assert_eq!(restarted.address().port(), port);
 }
+
+#[test]
+fn revocation_applies_to_the_next_request_on_the_same_connection_pool() {
+    let revoked = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let flag = revoked.clone();
+    let authenticate: Authenticate = Arc::new(move |token| {
+        Ok(
+            (token == "reader" && !flag.load(std::sync::atomic::Ordering::SeqCst))
+                .then(|| principal(&[SCOPE::Read])),
+        )
+    });
+    let (server, calls) = Server::start(0, authenticate).unwrap();
+    echo(calls);
+    let url = format!("http://127.0.0.1:{}/mcp", server.address().port());
+    let list = json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}).to_string();
+
+    let before = post(&url, Some("reader"), &list, &[]);
+    revoked.store(true, std::sync::atomic::Ordering::SeqCst);
+    let after = post(&url, Some("reader"), &list, &[]);
+
+    assert_eq!(before.0, 200);
+    assert_eq!(after.0, 401);
+}
