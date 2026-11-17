@@ -95,5 +95,7 @@ fn a_full_build_session_compacts_before_the_rework_prompt(cx: &mut TestAppContex
         .unwrap()
         .runs;
     assert!(runs.iter().all(|run| run.status == "succeeded"), "{runs:?}");
-    assert_eq!(runs.iter().filter(|run| run.stage == "rework").count(), 1);
+    let rework: Vec<_> = runs.iter().filter(|run| run.stage == "rework").collect();
+    assert_eq!(rework.len(), 1);
+    assert_eq!(store.board_streak_compactions(&rework[0].id).unwrap(), 1);
 }

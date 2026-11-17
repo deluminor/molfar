@@ -52,6 +52,9 @@ pub enum SessionPlan {
         session: String,
         compact: bool,
     },
+    /// The context filled up on a harness that cannot compact: a new session stands in for
+    /// the compaction and counts toward the stage run's compaction cap.
+    Reset,
 }
 
 #[derive(Clone, Debug)]

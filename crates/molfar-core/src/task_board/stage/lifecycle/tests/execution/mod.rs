@@ -5,6 +5,7 @@ mod checks;
 mod continuation;
 mod fixtures;
 mod guards;
+mod harnesses;
 mod reuse;
 use super::owner::gate;
 use crate::task_board::stage::{agent::AgentStage, lifecycle::types::StageAction};

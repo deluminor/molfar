@@ -72,7 +72,7 @@ impl Store {
         let compactable = crate::provider::Kind::parse(&run.harness)
             .is_some_and(crate::provider::supports_compact);
         if !compactable {
-            return Ok(SessionPlan::Fresh);
+            return Ok(SessionPlan::Reset);
         }
         Ok(SessionPlan::Reuse {
             session,

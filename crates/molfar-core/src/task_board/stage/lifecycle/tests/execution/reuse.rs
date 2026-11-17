@@ -20,7 +20,7 @@ fn queue(store: &Store, session: &str, draft: Option<&str>) {
 }
 
 /// A finished run's session as the GUI leaves it: its queued prompt was sent.
-fn sent(store: &Store, session: &str) {
+pub(super) fn sent(store: &Store, session: &str) {
     queue(store, session, None);
 }
 
