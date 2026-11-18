@@ -90,6 +90,9 @@ impl Shell {
         };
         match lookup() {
             Ok(Some(BEGIN::Replay(result))) => Some(result),
+            Ok(Some(BEGIN::Pending)) => {
+                Some(Err("Deletion outcome is pending for this requestId.".into()))
+            }
             Ok(Some(BEGIN::Conflict)) => Some(Err(
                 "requestId was already used with different input.".into(),
             )),

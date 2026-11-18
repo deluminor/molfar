@@ -90,6 +90,8 @@ Every mutation takes a `requestId`. MOLFAR saves a receipt before it acts:
 - An in-flight duplicate reports that the request is still running. If a Board
   action committed before its receipt was saved, the original revision is stale
   and recovery returns a conflict.
+- If a session or note is gone and its delete receipt is pending, retrying
+  reports a pending outcome. A finished receipt returns the saved result.
 - A client-side timeout does not cancel accepted work; use `sessions_stop`.
 
 ## Limits
