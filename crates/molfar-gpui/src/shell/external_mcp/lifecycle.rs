@@ -41,6 +41,7 @@ impl Shell {
                 return;
             }
         };
+        self.ensure_vault(cx);
         self.external.server = Some(server);
         self.external.error = None;
         cx.spawn(async move |this, cx| {

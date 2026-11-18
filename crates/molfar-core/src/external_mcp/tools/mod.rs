@@ -1,9 +1,10 @@
 mod board;
+pub mod knowledge;
 mod schema;
 pub mod sessions;
 
 use super::{
-    grants::types::{Requirement, DOMAIN, GRANT},
+    grants::types::{Requirement, ACCESS, DOMAIN, GRANT},
     types::Principal,
 };
 use schema::object;
@@ -30,6 +31,39 @@ pub struct Tool {
     pub schema: Value,
 }
 
+impl Tool {
+    fn domain(
+        name: &'static str,
+        description: &'static str,
+        domain: DOMAIN,
+        target: TargetKind,
+        mutation: bool,
+        access: ACCESS,
+        schema: Value,
+    ) -> Self {
+        Self {
+            name,
+            requires: Requirement {
+                any: domain_grant(domain, mutation),
+                access,
+            },
+            mutation,
+            target,
+            resumable: true,
+            description,
+            schema,
+        }
+    }
+}
+
+fn domain_grant(domain: DOMAIN, mutation: bool) -> &'static [GRANT] {
+    match (domain, mutation) {
+        (DOMAIN::Knowledge, false) => &[GRANT::Read(DOMAIN::Knowledge)],
+        (DOMAIN::Knowledge, true) => &[GRANT::Write(DOMAIN::Knowledge)],
+        _ => unreachable!("Only registered external domains have tool definitions"),
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Empty {}
@@ -49,6 +83,7 @@ fn build_catalog() -> Vec<Tool> {
     }];
     tools.extend(sessions::definitions());
     tools.extend(board::definitions());
+    tools.extend(knowledge::definitions());
     tools
 }
 
@@ -77,6 +112,15 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         "sessions_start" => check::<SessionsStart>(arguments),
         "sessions_send" => check::<SessionsSend>(arguments),
         "sessions_stop" => check::<SessionsStop>(arguments),
+        name if name.starts_with("knowledge_") => {
+            if tool.mutation {
+                crate::app_access::board::normalize_request_id(
+                    arguments["requestId"].as_str(),
+                    None,
+                )?;
+            }
+            knowledge::validate(name, arguments)
+        }
         board => {
             let internal = board.replacen('_', ".", 1);
             if tool.mutation {

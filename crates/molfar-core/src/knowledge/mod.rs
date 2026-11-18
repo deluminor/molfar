@@ -9,6 +9,7 @@ mod companion;
 mod connection;
 mod constants;
 mod documents;
+pub mod external;
 mod graph;
 mod links;
 mod parse;

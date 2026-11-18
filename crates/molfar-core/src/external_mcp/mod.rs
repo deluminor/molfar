@@ -5,6 +5,7 @@ pub mod constants;
 pub mod grants;
 pub mod receipts;
 pub mod resources;
+pub mod shape;
 pub mod tools;
 pub mod transport;
 pub mod types;

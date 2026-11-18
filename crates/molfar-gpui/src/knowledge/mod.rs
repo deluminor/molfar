@@ -20,6 +20,7 @@ mod page;
 mod panes;
 mod service;
 mod service_companion;
+mod service_external;
 mod slide;
 mod sync;
 mod tasks;

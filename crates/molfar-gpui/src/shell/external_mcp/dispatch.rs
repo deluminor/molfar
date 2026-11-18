@@ -26,6 +26,9 @@ impl Shell {
             | "board_unarchive" => {
                 self.external_board_tool(&scope, tool, arguments, receipt.as_ref(), done, cx)
             }
+            tool if tool.starts_with("knowledge_") => {
+                self.external_knowledge_tool(&scope, tool, &arguments, receipt.as_ref(), done, cx);
+            }
             _ => self.external_session_tool(&scope, tool, arguments, receipt.as_ref(), done, cx),
         }
 
