@@ -1,5 +1,6 @@
 use super::Store;
 use crate::task_board::constants::{FINAL_REVIEW, IDLE, PLAN_APPROVAL};
+use crate::task_board::stage::agent::AgentStage;
 use crate::task_board::stage::lifecycle::{
     constants::{DEFAULT_STALL_MINUTES, FAILED, MAX_STALL_MINUTES, RUNNING},
     storage::{query, settlement},
@@ -31,12 +32,13 @@ impl Store {
             {
                 continue;
             }
+            let stage = AgentStage::parse(&ctx.run.stage).map_or("A stage", AgentStage::label);
             let key = format!("board-stall-notice:{}", ctx.run.id);
             if self.board_claim_notice(&key)? {
                 notices.push(settlement::notice(
                     &ctx.card,
                     NoticeKind::Stalled,
-                    format!("Grill has been running for at least {minutes} minutes."),
+                    format!("{stage} has been running for at least {minutes} minutes."),
                 ));
             }
         }

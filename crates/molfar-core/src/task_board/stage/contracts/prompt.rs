@@ -51,6 +51,16 @@ fn inputs(files: &[ManifestReference], reading: &str) -> Result<String, String> 
     ].join("\n"))
 }
 
+fn rules(stage: AgentStage) -> String {
+    let mut rules = "## Rules\n- Work only inside the working checkout. Never push, never open pull requests, never switch branches.\n- Never add AI or tool attribution anywhere: no Co-authored-by, Generated-by or similar lines.\n- Do not mention any person by name in the artifacts you write; say \"the user\".\n- READ-ONLY stage: do not create, modify, stage or commit any file. MOLFAR compares the checkout before and after;\n  any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.".to_owned();
+    if !stage.is_read_only() {
+        let read_only = rules.find("- READ-ONLY").expect("fixed read-only rules");
+        rules.truncate(read_only);
+        rules.push_str("- Commit your work yourself with small, atomic Conventional Commits (`type(scope): subject`).\n- Finish with a clean working tree and at least one new commit, or this stage fails.");
+    }
+    rules
+}
+
 pub(super) fn build(
     stage: crate::task_board::stage::agent::AgentStage,
     card: &Card,
@@ -63,7 +73,12 @@ pub(super) fn build(
         return Err("Grill round must be positive.".into());
     }
     let role = stage.label();
-    let session = if extras.resumed {
+    let continued = extras.resumed
+        && extras.continuation > 0
+        && matches!(stage, AgentStage::Implement | AgentStage::Rework);
+    let session = if continued {
+        "This turn continues your current session on this stage. The rules and output contract below apply as written;\nthe repository and the latest handoff files are the current state."
+    } else if extras.resumed {
         "This run continues your earlier session on this card. This prompt, the handoff files it lists and the\nrepository are the current state; they win over anything you remember."
     } else {
         "This is a fresh session. Everything you know about the task is in this prompt, the handoff files it lists and\nthe repository."
@@ -77,6 +92,15 @@ pub(super) fn build(
         card.branch.as_deref().unwrap_or("(none)"),
         card.base_sha.as_deref().unwrap_or("(unknown)")
     );
+    if continued {
+        let report = files
+            .iter()
+            .rfind(|file| file.kind == super::constants::IMPL_REPORT)
+            .map(|file| file.path.as_str())
+            .filter(|path| !path.contains(['\n', '\r', '`']));
+        let body = super::prompt_bodies::continue_turn(stage, card, report);
+        return Ok(format!("{header}\n\n{}\n\n{body}", rules(stage)));
+    }
     let mut sections = vec![header];
     if !skills.is_empty() {
         sections.push(format!(
@@ -84,13 +108,7 @@ pub(super) fn build(
             skills.iter().map(|name| format!("/{name}")).collect::<Vec<_>>().join(" ")
         ));
     }
-    let mut rules = "## Rules\n- Work only inside the working checkout. Never push, never open pull requests, never switch branches.\n- Never add AI or tool attribution anywhere: no Co-authored-by, Generated-by or similar lines.\n- Do not mention any person by name in the artifacts you write; say \"the user\".\n- READ-ONLY stage: do not create, modify, stage or commit any file. MOLFAR compares the checkout before and after;\n  any change fails this stage. The git-ignored handoff folder `.molfar/board/` belongs to MOLFAR; leave it as is.".to_owned();
-    if !stage.is_read_only() {
-        let read_only = rules.find("- READ-ONLY").expect("fixed read-only rules");
-        rules.truncate(read_only);
-        rules.push_str("- Commit your work yourself with small, atomic Conventional Commits (`type(scope): subject`).\n- Finish with a clean working tree and at least one new commit, or this stage fails.");
-    }
-    sections.push(rules);
+    sections.push(rules(stage));
     if extras.resumed {
         sections.push("## Session\nThis run continues this card's earlier session for the same stage group: you already know the repository\nand the handoff files you read before. Re-read a handoff file only when its version below is newer than the one\nyou saw, and re-check code you changed only where this step needs it. The rules and output contract below apply\nas written, even if they differ from earlier steps.".into());
     }

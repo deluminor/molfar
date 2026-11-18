@@ -1,4 +1,5 @@
 mod checks;
+mod continuation;
 mod delivery;
 mod failures;
 mod fixtures;

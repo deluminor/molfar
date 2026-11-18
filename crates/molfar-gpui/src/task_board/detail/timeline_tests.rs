@@ -61,3 +61,38 @@ fn timeline_opens_the_selected_attempt_session_and_omits_missing_links(cx: &mut 
     visual.run_until_parked();
     assert_eq!(*seen.borrow(), vec!["session-two".to_owned()]);
 }
+
+#[gpui::test]
+fn timeline_folds_a_turn_streak_into_one_entry_with_its_summary(cx: &mut TestAppContext) {
+    use molfar_core::task_board::{
+        constants::IMPLEMENT,
+        stage::lifecycle::constants::{FAILED, PARTIAL},
+    };
+
+    let window = show(cx, false);
+    let turn = |id: &str, status: &str| StageRun {
+        stage: IMPLEMENT.into(),
+        status: status.into(),
+        ..run(id, Some("build"), 1)
+    };
+    window
+        .update(cx, |board, _, cx| {
+            let snapshot = board.snapshot.as_mut().unwrap();
+            snapshot.runs = vec![
+                turn("turn-one", PARTIAL),
+                StageRun {
+                    error: Some("Stopped — context compaction limit: 3 of 3 used".into()),
+                    ..turn("turn-two", FAILED)
+                },
+            ];
+            snapshot.compactions = [("turn-two".to_owned(), 1)].into();
+            cx.notify();
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    assert!(visual.debug_bounds("board-run-open-turn-one").is_none());
+    assert!(visual.debug_bounds("board-run-open-turn-two").is_some());
+    assert!(visual.debug_bounds("board-run-turns-turn-two").is_some());
+}

@@ -2,9 +2,9 @@ use super::constants::{IMPL_REPORT, PR_DESCRIPTION, REVIEW};
 use super::types::PromptExtras;
 use crate::task_board::{stage::agent::AgentStage, types::Card};
 
-const REPORT: &str = "# Implementation report\nStatus: complete | partial | blocked\n## Summary\n## Acceptance criteria (each one: done | not done — evidence)\n## Commits (sha — subject)\n## Checks run and results (lint, typecheck, tests)\n## Deviations from the plan\n## Remaining work (only when partial or blocked: exact stages and criteria left)";
+const REPORT: &str = "# Implementation report\nStatus: complete | partial | blocked\n## Summary\n## Acceptance criteria (each one: done | not done — evidence)\n## Commits (sha — subject)\n## Checks run and results (lint, typecheck, tests)\n## Deviations from the plan\n## Remaining work (only when partial or blocked: exact stages and criteria left)\n## Stop signal (only when partial or blocked: the concrete error or blocker that ended your turn)";
 
-const STATUS: &str = "## Status\nStart the report with exactly one status line. MOLFAR reads it to decide what happens next:\n- `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.\n- `Status: partial`: work remains. MOLFAR starts another run that continues from your report and commits,\n  so list precisely what remains.\n- `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.";
+const STATUS: &str = "## Status\nStart the report with exactly one status line. Only `complete` and `blocked` end this stage:\n- `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.\n- `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.\n- `Status: partial`: work remains. MOLFAR answers at once in this same session and asks you to continue, so\n  `partial` never ends the stage. MOLFAR watches the context and compacts it when needed; you never need to\n  checkpoint.\nWhen the status is not `complete`, the `## Stop signal` section must name the concrete signal: the exact provider\nor tool error you hit, or the blocker. A feeling that the session is long or expensive is not a signal.";
 
 const OWNER: &str = "## Owner verification\nSome checks only the owner can run: a live smoke against an external service, real credentials, paid\naccounts or a physical device. They are never a reason for `Status: blocked`. Finish everything you can verify\nyourself, report `Status: complete` and list each such check under a `## Owner verification` section of the\nreport, one bullet per check with the acceptance criterion it covers and how to run it. The owner runs them at\nFinal review. Use `blocked` only when something stops the implementation itself.";
 
@@ -28,7 +28,7 @@ fn output(blocks: &[(&str, &str)]) -> String {
 fn continuation(card: &Card, run: i64) -> Option<String> {
     (run > 0).then(|| {
         format!(
-            "## Continuation\nThis is continuation run {run} of this stage: an earlier run stopped partway. Read the latest\nimplementation report in the handoff files and `git log {}..HEAD`, check what is already done, then finish the\nremaining work. Do not redo or revert finished work unless it is wrong.",
+            "## Continuation\nThis is continuation turn {run} of this stage: an earlier turn reported unfinished work. Read the latest\nimplementation report in the handoff files and `git log {}..HEAD`, check what is already done, then finish the\nremaining work. Do not redo or revert finished work unless it is wrong.",
             card.base_sha.as_deref().unwrap_or("<base>")
         )
     })
@@ -49,6 +49,31 @@ fn checks(summary: &Option<String>) -> Option<String> {
     })
 }
 
+/// The follow-up turn after `partial` in a session that already holds the whole prompt:
+/// only what is new, plus the contracts the engine parses.
+pub(super) fn continue_turn(stage: AgentStage, card: &Card, report: Option<&str>) -> String {
+    let report = report.map_or_else(
+        || "Your latest implementation report is in the handoff folder `.molfar/board/`.".to_owned(),
+        |path| format!("Your latest implementation report is `{path}`; its remaining work is where to start."),
+    );
+    let template = if stage == AgentStage::Rework {
+        format!(
+            "{REPORT}\n## Resolution of each selected finding (resolved | not resolved — evidence)"
+        )
+    } else {
+        REPORT.into()
+    };
+    [
+        format!(
+            "## Continue\nThe plan is not finished — continue from where you stopped. {report}\nCheck `git log {}..HEAD` only if you are unsure what is committed. Commit each stage as\nit works.",
+            card.base_sha.as_deref().unwrap_or("<base>")
+        ),
+        STATUS.into(),
+        output(&[(IMPL_REPORT, &template)]),
+    ]
+    .join("\n\n")
+}
+
 pub(super) fn build(
     stage: AgentStage,
     card: &Card,
@@ -64,8 +89,8 @@ pub(super) fn build(
                 "stop after a foundation or a first slice, and do not hand planned stages back as follow-ups.",
                 "Work stage by stage: write tests first where practical, keep every stage building and passing, and commit",
                 "each stage once it works. Before you finish, run the lint, typecheck and test commands the plan or the",
-                "repository defines and fix what fails. Stop early only when you are genuinely blocked or your session is",
-                "about to run out; then commit what works and report exactly what remains.",
+                "repository defines and fix what fails. Keep going until the plan is done; end your turn early only when you",
+                "are genuinely blocked or a provider or tool error stops you, and name that error in the report.",
             ],
             card,
             run,

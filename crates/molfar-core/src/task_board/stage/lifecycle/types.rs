@@ -52,6 +52,9 @@ pub enum SessionPlan {
         session: String,
         compact: bool,
     },
+    /// The context filled up on a harness that cannot compact: a new session stands in for
+    /// the compaction and counts toward the stage run's compaction cap.
+    Reset,
 }
 
 #[derive(Clone, Debug)]
@@ -80,6 +83,15 @@ impl FailureStatus {
             Self::Interrupted => super::constants::INTERRUPTED,
         }
     }
+}
+
+/// What the engine itself observed about a finished turn, never what the agent claims.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Signals {
+    /// Context share of the turn's session; `None` when the harness never reported a window.
+    pub context_ratio: Option<f32>,
+    /// Compactions MOLFAR triggered in this stage run, this turn included.
+    pub compactions: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -32,15 +32,18 @@ the spec. The card is done only when a reviewer can verify each criterion in the
 stop after a foundation or a first slice, and do not hand planned stages back as follow-ups.
 Work stage by stage: write tests first where practical, keep every stage building and passing, and commit
 each stage once it works. Before you finish, run the lint, typecheck and test commands the plan or the
-repository defines and fix what fails. Stop early only when you are genuinely blocked or your session is
-about to run out; then commit what works and report exactly what remains.
+repository defines and fix what fails. Keep going until the plan is done; end your turn early only when you
+are genuinely blocked or a provider or tool error stops you, and name that error in the report.
 
 ## Status
-Start the report with exactly one status line. MOLFAR reads it to decide what happens next:
+Start the report with exactly one status line. Only `complete` and `blocked` end this stage:
 - `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.
-- `Status: partial`: work remains. MOLFAR starts another run that continues from your report and commits,
-  so list precisely what remains.
 - `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.
+- `Status: partial`: work remains. MOLFAR answers at once in this same session and asks you to continue, so
+  `partial` never ends the stage. MOLFAR watches the context and compacts it when needed; you never need to
+  checkpoint.
+When the status is not `complete`, the `## Stop signal` section must name the concrete signal: the exact provider
+or tool error you hit, or the blocker. A feeling that the session is long or expensive is not a signal.
 
 ## Owner verification
 Some checks only the owner can run: a live smoke against an external service, real credentials, paid
@@ -62,4 +65,5 @@ Status: complete | partial | blocked
 ## Checks run and results (lint, typecheck, tests)
 ## Deviations from the plan
 ## Remaining work (only when partial or blocked: exact stages and criteria left)
+## Stop signal (only when partial or blocked: the concrete error or blocker that ended your turn)
 <<<END:impl_report>>>

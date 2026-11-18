@@ -1,7 +1,8 @@
 use super::super::{
     artifacts,
     constants::*,
-    types::{FailureStatus, NoticeKind, StageEffect, StageNotice, VerifiedStageOutput},
+    stop,
+    types::{FailureStatus, NoticeKind, Signals, StageEffect, StageNotice, VerifiedStageOutput},
 };
 use super::outcome::{self, Outcome};
 use super::query;
@@ -51,6 +52,7 @@ pub(crate) fn finish(
     base: &Path,
     id: &str,
     output: &VerifiedStageOutput,
+    signals: Signals,
 ) -> Result<StageEffect, String> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -66,7 +68,7 @@ pub(crate) fn finish(
     let now = query::now()?;
     artifacts::write(&tx, base, &ctx.card.id, id, &output.artifacts, now)?;
     let stage = AgentStage::parse(&ctx.run.stage).ok_or("Unsupported Board stage.")?;
-    let outcome = outcome::decide(&tx, &ctx.card.id, id, stage, &output.artifacts)?;
+    let outcome = outcome::decide(&tx, &ctx.card.id, stage, &output.artifacts, signals)?;
     let (action, status, error) = match &outcome {
         Outcome::Advance => (BoardAction::StageSucceeded, SUCCEEDED, None),
         Outcome::Continue => (BoardAction::StageContinued, PARTIAL, None),
@@ -146,7 +148,7 @@ pub(crate) fn fail(
         return Ok(StageEffect::default());
     }
     let current = query::current(&tx, &ctx)?;
-    let error = bounded(error);
+    let error = bounded(&stop::labeled(status, error));
     let now = query::now()?;
     tx.execute("UPDATE task_board_stage_runs SET status=?2,dispatch=?3,error=?4,completed_at=?5 WHERE id=?1",params![id,status.id(),SETTLED,error,now]).map_err(|e|e.to_string())?;
     let card = if current {

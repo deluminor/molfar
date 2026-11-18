@@ -80,6 +80,8 @@ pub struct Snapshot {
     pub runs: Vec<StageRun>,
     pub artifacts: Vec<ArtifactMeta>,
     pub settings_json: Option<String>,
+    /// Compactions MOLFAR triggered per run in `runs`; runs without one are absent.
+    pub compactions: std::collections::HashMap<String, usize>,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]

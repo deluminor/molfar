@@ -92,3 +92,28 @@ fn dirty_retained_checkout_refuses_implement_before_any_provider_submission(
         "owner edit\n"
     );
 }
+
+#[gpui::test]
+fn a_provider_usage_limit_stops_the_stage_with_a_labeled_reason(cx: &mut TestAppContext) {
+    let fixture = Fixture::new();
+    let window = start(&fixture, cx);
+    std::fs::write(fixture.root.join("behavior"), "usage-limit").unwrap();
+    action(&fixture, window, StageAction::ApprovePlan, cx);
+    wait_until(cx, || fixture.card().run_state == "failed");
+
+    let card = fixture.card();
+    assert_eq!(card.column_id, "implement");
+    let error = card.last_error.unwrap();
+    assert!(
+        error.starts_with("Stopped — provider usage limit: "),
+        "{error}"
+    );
+    assert!(error.contains("You've hit your usage limit."));
+    let store = locked(&fixture.store).unwrap();
+    let runs = store
+        .board_snapshot(None, false, Some("card"))
+        .unwrap()
+        .runs;
+    let implement = runs.iter().find(|run| run.stage == "implement").unwrap();
+    assert_eq!(implement.error.as_deref(), Some(error.as_str()));
+}

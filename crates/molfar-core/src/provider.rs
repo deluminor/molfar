@@ -29,7 +29,7 @@ mod discovery;
 mod follow_up;
 mod kind;
 mod lifecycle;
-mod limits;
+pub(crate) mod limits;
 mod opencode;
 mod parked;
 mod pi;
