@@ -1,3 +1,4 @@
+pub mod automations;
 mod board;
 pub mod knowledge;
 mod schema;
@@ -58,6 +59,8 @@ impl Tool {
 
 fn domain_grant(domain: DOMAIN, mutation: bool) -> &'static [GRANT] {
     match (domain, mutation) {
+        (DOMAIN::Automations, false) => &[GRANT::Read(DOMAIN::Automations)],
+        (DOMAIN::Automations, true) => &[GRANT::Write(DOMAIN::Automations)],
         (DOMAIN::Knowledge, false) => &[GRANT::Read(DOMAIN::Knowledge)],
         (DOMAIN::Knowledge, true) => &[GRANT::Write(DOMAIN::Knowledge)],
         _ => unreachable!("Only registered external domains have tool definitions"),
@@ -84,6 +87,7 @@ fn build_catalog() -> Vec<Tool> {
     tools.extend(sessions::definitions());
     tools.extend(board::definitions());
     tools.extend(knowledge::definitions());
+    tools.extend(automations::definitions());
     tools
 }
 
@@ -105,6 +109,12 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         .iter()
         .find(|tool| tool.name == name)
         .ok_or("Unknown MOLFAR tool.")?;
+    if !arguments.is_object() {
+        return Err("Tool arguments must be a JSON object.".into());
+    }
+    if tool.mutation {
+        crate::app_access::board::normalize_request_id(arguments["requestId"].as_str(), None)?;
+    }
     match name {
         "projects_list" => check::<Empty>(arguments),
         "sessions_list" => check::<SessionsList>(arguments),
@@ -112,23 +122,10 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         "sessions_start" => check::<SessionsStart>(arguments),
         "sessions_send" => check::<SessionsSend>(arguments),
         "sessions_stop" => check::<SessionsStop>(arguments),
-        name if name.starts_with("knowledge_") => {
-            if tool.mutation {
-                crate::app_access::board::normalize_request_id(
-                    arguments["requestId"].as_str(),
-                    None,
-                )?;
-            }
-            knowledge::validate(name, arguments)
-        }
+        name if name.starts_with("knowledge_") => knowledge::validate(name, arguments),
+        name if name.starts_with("automations_") => automations::validate(name, arguments),
         board => {
             let internal = board.replacen('_', ".", 1);
-            if tool.mutation {
-                crate::app_access::board::normalize_request_id(
-                    arguments["requestId"].as_str(),
-                    None,
-                )?;
-            }
             crate::app_access::board::validate(&internal, arguments)
         }
     }?;
@@ -140,9 +137,6 @@ pub fn parse<T: DeserializeOwned>(arguments: &Value) -> Result<T, String> {
 }
 
 fn check<T: DeserializeOwned>(arguments: &Value) -> Result<(), String> {
-    if !arguments.is_object() {
-        return Err("Tool arguments must be a JSON object.".into());
-    }
     parse::<T>(arguments).map(drop)
 }
 

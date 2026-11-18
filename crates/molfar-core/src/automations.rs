@@ -682,6 +682,10 @@ impl Service {
         list(conn)
     }
 
+    pub fn read(&mut self, id: &str) -> Result<Option<Automation>, String> {
+        get(self.lock_conn()?, id)
+    }
+
     pub fn upsert(&mut self, automation: AutomationUpsert) -> Result<Automation, String> {
         let now = now_millis();
         validate_upsert(&automation, now)?;

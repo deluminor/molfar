@@ -71,6 +71,17 @@ impl Store {
         )
     }
 
+    pub fn external_receipt_exists(
+        &self,
+        target: &ReceiptTarget,
+        client: &str,
+        action: &str,
+        request: &str,
+    ) -> Result<bool, String> {
+        self.setting(&key_for(target, client, action, request))
+            .map(|receipt| receipt.is_some())
+    }
+
     fn save_receipt(
         &self,
         key: &str,

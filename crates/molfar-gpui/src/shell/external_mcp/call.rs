@@ -30,27 +30,22 @@ impl Shell {
             return;
         }
         let scope = self.external_scope(principal);
-        let domain_target = if definition.target == tools::TargetKind::Vault {
-            self.ensure_vault(cx);
-            match self.external_vault_target(&scope, cx) {
-                Ok(target) => Some(target),
-                Err(error) => {
-                    let target = audit::domain_target(tool, &arguments);
-                    self.external_audit_entry(
-                        &scope.principal,
-                        tool,
-                        target.as_deref(),
-                        arguments["requestId"].as_str(),
-                        "denied",
-                        definition.requires.access,
-                        cx,
-                    );
-                    let _ = reply.send(Err(error));
-                    return;
-                }
+        let domain_target = match self.external_domain_target(&scope, definition, &arguments, cx) {
+            Ok(target) => target,
+            Err(error) => {
+                let target = audit::domain_target(tool, &arguments);
+                self.external_audit_entry(
+                    &scope.principal,
+                    tool,
+                    target.as_deref(),
+                    arguments["requestId"].as_str(),
+                    "denied",
+                    definition.requires.access,
+                    cx,
+                );
+                let _ = reply.send(Err(error));
+                return;
             }
-        } else {
-            None
         };
         if !definition.mutation {
             self.external_dispatch(scope, tool, arguments, None, reply, cx);
