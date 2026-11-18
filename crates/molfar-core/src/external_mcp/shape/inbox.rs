@@ -37,7 +37,10 @@ pub fn thread(source: Thread, input: &super::super::tools::inbox::Thread) -> Res
 
     let mut entries = Vec::new();
     for (comment, parent) in comments.into_iter().skip(offset).take(limit) {
-        let (body, next) = page::text(&comment.body, input.max_chars, input.char_offset)?;
+        let char_offset = input
+            .char_offset
+            .map(|offset| offset.min(comment.body.chars().count()));
+        let (body, next) = page::text(&comment.body, input.max_chars, char_offset)?;
         entries.push(json!({
             "type":"comment","id":comment.id,"parentId":parent,"kind":comment.kind,
             "author":comment.author,"body":body,"nextCharOffset":next,"createdAt":comment.created_at,
@@ -107,4 +110,51 @@ pub fn safe_item_key(item: &Item) -> bool {
                 url.username().is_empty() && url.password().is_none() && url.query().is_none()
             })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn thread_continuation_keeps_exhausted_comments() {
+        let source = Thread {
+            comments: vec![Comment {
+                id: "long".into(),
+                body: format!("{}tail", "é".repeat(6000)),
+                replies: vec![Comment {
+                    id: "short".into(),
+                    body: "short reply".into(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let mut input = super::super::super::tools::inbox::Thread {
+            item_key: "github:1".into(),
+            limit: None,
+            offset: None,
+            max_chars: None,
+            char_offset: None,
+        };
+
+        let first = thread(source.clone(), &input).unwrap();
+        assert_eq!(first["entries"][0]["nextCharOffset"], 6000);
+        input.char_offset =
+            serde_json::from_value(first["entries"][0]["nextCharOffset"].clone()).unwrap();
+        let continued = thread(source.clone(), &input).unwrap();
+
+        assert_eq!(continued["entries"][0]["body"], "tail");
+        assert_eq!(continued["entries"][0]["nextCharOffset"], Value::Null);
+        assert_eq!(continued["entries"][1]["parentId"], "long");
+        assert_eq!(continued["entries"][1]["body"], "");
+        assert_eq!(continued["entries"][1]["nextCharOffset"], Value::Null);
+
+        input.max_chars = Some(0);
+        assert_eq!(
+            thread(source, &input),
+            Err("Text limit must be between 1 and 6000.".into())
+        );
+    }
 }
