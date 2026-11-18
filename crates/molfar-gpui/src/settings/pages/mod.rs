@@ -5,6 +5,7 @@ mod chat;
 mod companion;
 mod connections;
 mod external_mcp;
+pub(super) use external_mcp::ExternalPageState;
 mod familiars;
 mod general;
 mod inbox;

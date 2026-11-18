@@ -4,7 +4,10 @@ mod handler;
 #[cfg(test)]
 mod tests;
 
-use super::{constants::MAX_BODY_BYTES, types::Principal};
+use super::{
+    constants::MAX_BODY_BYTES,
+    types::{AuditEntry, Principal},
+};
 use bytes::Bytes;
 use http_body_util::{combinators::BoxBody, BodyExt, Full};
 use hyper::{body::Incoming, header, Request, Response, StatusCode};
@@ -16,6 +19,8 @@ use std::{convert::Infallible, net::SocketAddr, sync::Arc, time::Duration};
 use tokio_util::sync::CancellationToken;
 
 pub type Authenticate = Arc<dyn Fn(&str) -> Result<Option<Principal>, String> + Send + Sync>;
+
+pub type Audit = Arc<dyn Fn(AuditEntry) -> Result<(), String> + Send + Sync>;
 
 pub type Reply = tokio::sync::oneshot::Sender<Result<Value, String>>;
 pub type ReplyReceiver = tokio::sync::oneshot::Receiver<Result<Value, String>>;
@@ -44,6 +49,7 @@ impl Server {
     pub fn start(
         port: u16,
         authenticate: Authenticate,
+        audit: Audit,
     ) -> Result<(Self, async_channel::Receiver<Call>), String> {
         let listener = std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port))
             .map_err(|error| format!("Cannot listen on 127.0.0.1:{port}: {error}"))?;
@@ -70,7 +76,7 @@ impl Server {
             ])
             .enforce_origin_validation()
             .with_cancellation_token(cancel.child_token());
-        let handler = handler::Handler::new(calls);
+        let handler = handler::Handler::new(calls, audit);
         let service = Arc::new(StreamableHttpService::new(
             move || Ok(handler.clone()),
             Arc::new(NeverSessionManager::default()),

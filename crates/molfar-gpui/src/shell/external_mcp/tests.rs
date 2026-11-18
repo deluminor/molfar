@@ -1,7 +1,10 @@
 use super::*;
 use gpui::{TestAppContext, WindowHandle};
 use molfar_core::{
-    external_mcp::{transport::reply_channel, types::SCOPE},
+    external_mcp::{
+        grants::types::{DOMAIN, GRANT},
+        transport::reply_channel,
+    },
     store::Store,
 };
 use std::{
@@ -93,7 +96,15 @@ pub(super) fn principal(f: &Fixture) -> Principal {
     Principal {
         client_id: "client".into(),
         name: "OpenBot".into(),
-        scopes: SCOPE::ALL.to_vec(),
+        grants: vec![
+            GRANT::Read(DOMAIN::Board),
+            GRANT::Write(DOMAIN::Board),
+            GRANT::BoardCreate,
+            GRANT::Read(DOMAIN::Sessions),
+            GRANT::Write(DOMAIN::Sessions),
+            GRANT::SessionsStop,
+        ],
+        resources: vec![],
         projects: vec![f.granted.clone(), "/not/registered".into()],
     }
 }
@@ -268,27 +279,47 @@ fn settings_create_scope_and_revoke_clients(cx: &mut TestAppContext) {
     let window = window(&f, cx);
 
     let (status, token) = window
-        .update(cx, |shell, _, cx| {
-            shell.external_create_client(cx);
+        .update(cx, |shell, window, cx| {
+            shell.external_create_client(Some("Laptop"), cx).unwrap();
             let status = shell.external_settings_status();
             let token = status.new_key.clone().unwrap().1;
             let id = status.clients[0].id.clone();
-            shell.external_toggle_grant(&id, Some(SCOPE::Submit), Some(f.granted.clone()), cx);
-            shell.external_dismiss_key(cx);
+            shell.external_toggle_grant(&id, Some(GRANT::BoardCreate), Some(f.granted.clone()), cx);
+            shell.external_rename(&id, "Renamed laptop", cx).unwrap();
+            assert!(
+                shell
+                    .external_create_client(Some("RENAMED LAPTOP"), cx)
+                    .is_err()
+            );
+            assert_eq!(
+                shell.external_settings_status().new_key.as_ref().unwrap().0,
+                "Renamed laptop"
+            );
+            shell.close_settings(window, cx);
             (shell.external_settings_status(), token)
         })
         .unwrap();
 
     assert!(!status.enabled);
     assert!(status.new_key.is_none());
-    assert_eq!(status.clients[0].scopes, [SCOPE::Read, SCOPE::Submit]);
+    assert_eq!(status.clients[0].grants, [GRANT::BoardCreate]);
     assert_eq!(status.clients[0].projects, std::slice::from_ref(&f.granted));
     let principal = locked(&f.store)
         .unwrap()
         .external_authenticate(&token)
         .unwrap()
         .unwrap();
-    assert!(principal.allows(SCOPE::Submit));
+    assert!(principal.grants.contains(&GRANT::BoardCreate));
+    let reopened = Store::open_desktop(&f.root.join("molfar.db")).unwrap();
+    assert_eq!(
+        reopened
+            .external_authenticate(&token)
+            .unwrap()
+            .unwrap()
+            .name,
+        "Renamed laptop"
+    );
+
     window
         .update(cx, |shell, _, cx| {
             shell.external_revoke(&status.clients[0].id, cx)
@@ -305,4 +336,122 @@ fn settings_create_scope_and_revoke_clients(cx: &mut TestAppContext) {
         .update(cx, |shell, _, _| shell.external_settings_status())
         .unwrap();
     assert!(status.clients.is_empty());
+}
+
+#[gpui::test]
+fn board_update_archive_unarchive_respect_eligibility_and_receipts(cx: &mut TestAppContext) {
+    use molfar_core::task_board::stage::lifecycle::types::StageAction;
+
+    let f = fixture();
+    let window = window(&f, cx);
+    let principal = principal(&f);
+    let created = call(
+        window,
+        &principal,
+        "board_create",
+        json!({
+            "project":f.granted, "title":"Before", "description":"Body", "requestId":"new"
+        }),
+        cx,
+    )
+    .unwrap();
+    let id = created["card"]["id"].as_str().unwrap();
+    let edit =
+        json!({"cardId":id, "title":"Edited", "acceptanceCriteria":"Verify", "requestId":"edit"});
+    let updated = call(window, &principal, "board_update", edit.clone(), cx).unwrap();
+    assert_eq!(updated["card"]["title"], "Edited");
+    assert_eq!(updated["card"]["acceptanceCriteria"], "Verify");
+    assert_eq!(
+        call(window, &principal, "board_update", edit.clone(), cx).unwrap(),
+        updated
+    );
+    let conflict = call(
+        window,
+        &principal,
+        "board_update",
+        json!({
+            "cardId":id, "title":"Changed", "requestId":"edit"
+        }),
+        cx,
+    );
+    assert!(conflict.unwrap_err().contains("different input"));
+
+    let mut read_only = principal.clone();
+    read_only
+        .grants
+        .retain(|grant| *grant != GRANT::Write(DOMAIN::Board));
+    assert!(
+        call(window, &read_only, "board_update", edit, cx)
+            .unwrap_err()
+            .contains("lacks permission")
+    );
+    assert!(
+        call(
+            window,
+            &principal,
+            "board_archive",
+            json!({"cardId":id}),
+            cx
+        )
+        .is_err()
+    );
+    for (tool, archived) in [("board_archive", true), ("board_unarchive", false)] {
+        let args = json!({"cardId":id, "requestId":"archive-state"});
+        let first = call(window, &principal, tool, args.clone(), cx).unwrap();
+        assert_eq!(first["card"]["archived"], archived);
+        assert_eq!(call(window, &principal, tool, args, cx).unwrap(), first);
+    }
+
+    let mut other_principal = principal.clone();
+    other_principal.projects = vec![f.other.clone()];
+    for tool in ["board_archive", "board_unarchive", "board_update"] {
+        let args = |card| {
+            let mut args = json!({"cardId":card, "requestId":"outside"});
+            if tool == "board_update" {
+                args["title"] = json!("Denied");
+            }
+            args
+        };
+        let foreign = call(window, &other_principal, tool, args(id), cx).unwrap_err();
+        let missing = call(window, &principal, tool, args("missing"), cx).unwrap_err();
+        assert_eq!(foreign, missing);
+    }
+    let read = call(window, &principal, "board_read", json!({"cardId":id}), cx).unwrap();
+    assert_eq!(
+        read["allowedActions"],
+        json!(["start", "archive", "editTask"])
+    );
+    assert_eq!(read["card"]["title"], "Edited");
+
+    let queued = {
+        let mut store = locked(&f.store).unwrap();
+        let card = store
+            .board_scoped_card(id, std::slice::from_ref(&f.granted))
+            .unwrap();
+        store
+            .board_stage_action(id, card.updated_at, StageAction::Start)
+            .unwrap()
+            .card
+    };
+    for tool in ["board_archive", "board_unarchive", "board_update"] {
+        let mut args = json!({"cardId":id, "requestId":"queued"});
+        if tool == "board_update" {
+            args["title"] = json!("Denied");
+        }
+        assert!(call(window, &principal, tool, args, cx).is_err());
+    }
+    let store = locked(&f.store).unwrap();
+    assert_eq!(
+        store
+            .board_scoped_card(id, std::slice::from_ref(&f.granted))
+            .unwrap(),
+        queued
+    );
+    assert!(
+        store
+            .external_audit_log()
+            .unwrap()
+            .iter()
+            .any(|entry| entry.action == "board_update" && entry.outcome == "denied")
+    );
 }

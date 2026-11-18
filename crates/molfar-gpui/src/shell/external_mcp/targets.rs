@@ -37,6 +37,11 @@ impl Shell {
         if let Some(project) = arguments["project"].as_str() {
             return scope.project(project);
         }
+        if let Some(card_id) = arguments["cardId"].as_str() {
+            return locked(&self.store)?
+                .board_scoped_card(card_id, &scope.projects)
+                .map(|card| card.project_cwd);
+        }
         let id = self.external_target(scope, &arguments["sessionId"], true, cx)?;
         Ok(self.session_metadata(id, cx).summary.cwd.clone())
     }
