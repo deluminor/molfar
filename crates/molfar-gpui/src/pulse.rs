@@ -8,7 +8,11 @@
 //! a closed, scrolled-away or hidden spinner stops costing anything, and the
 //! clock parks once no lease is left. While no window is visible the clock
 //! slows every loop down further; a visible window behind another app's keeps
-//! the full pace, since its loops are still on screen.
+//! the full pace, since its loops are still on screen. Retained spinner paths
+//! share this clock and request presentation without notifying a view.
+mod path;
+pub(crate) use path::paint as paint_path;
+
 use gpui::{
     AnyElement, App, Element, ElementId, EntityId, Global, GlobalElementId, InspectorElementId,
     IntoElement, LayoutId, Pixels, Window,
@@ -106,6 +110,12 @@ fn request_inner(
             painted: true,
             on_tick,
         });
+    start(cx);
+    true
+}
+
+fn start(cx: &mut App) {
+    let clock = cx.default_global::<Clock>();
     if !clock.running {
         clock.running = true;
         cx.spawn(async move |cx| {
@@ -118,7 +128,6 @@ fn request_inner(
         })
         .detach();
     }
-    true
 }
 
 /// Time on the shared clock, so loops of one period stay in step.
@@ -130,10 +139,14 @@ pub(crate) fn elapsed(cx: &mut App) -> Duration {
 
 /// The fraction of `period` the shared clock is into, in `0..1`.
 pub(crate) fn phase(period: Duration, cx: &mut App) -> f32 {
+    phase_at(period, elapsed(cx))
+}
+
+fn phase_at(period: Duration, elapsed: Duration) -> f32 {
     if period.is_zero() {
         return 0.;
     }
-    let into = elapsed(cx).as_nanos() % period.as_nanos();
+    let into = elapsed.as_nanos() % period.as_nanos();
     into as f32 / period.as_nanos() as f32
 }
 
@@ -191,8 +204,10 @@ fn tick(cx: &mut App) -> bool {
         due.push((*view, lease.on_tick.take()));
         true
     });
-    if clock.leases.is_empty() {
-        clock.running = false;
+    let has_leases = !clock.leases.is_empty();
+    let has_paths = path::step(tick, cx);
+    if !has_leases && !has_paths {
+        cx.global_mut::<Clock>().running = false;
         return false;
     }
     for (view, callback) in due {

@@ -13,6 +13,8 @@ use std::{
     iter::Peekable,
     ops::{Add, Range, Sub},
     slice,
+    sync::Arc,
+    time::Duration,
 };
 
 #[allow(non_camel_case_types, unused)]
@@ -36,11 +38,14 @@ impl From<bool> for PaddedBool32 {
     }
 }
 
+pub(crate) type PathAnimation = Arc<dyn Fn(Duration) -> Option<Path<ScaledPixels>> + Send + Sync>;
+
 #[derive(Default)]
 #[expect(missing_docs)]
 pub struct Scene {
     pub(crate) paint_operations: Vec<PaintOperation>,
     primitive_bounds: BoundsTree<ScaledPixels>,
+    animated_paths: Vec<(usize, usize)>,
     layer_stack: Vec<DrawOrder>,
     pub shadows: Vec<Shadow>,
     pub quads: Vec<Quad>,
@@ -59,6 +64,7 @@ impl Scene {
         self.primitive_bounds.clear();
         self.layer_stack.clear();
         self.paths.clear();
+        self.animated_paths.clear();
         self.shadows.clear();
         self.quads.clear();
         self.underlines.clear();
@@ -138,10 +144,51 @@ impl Scene {
             .push(PaintOperation::Primitive(primitive));
     }
 
+    pub(crate) fn insert_animated_path(
+        &mut self,
+        path: Path<ScaledPixels>,
+        animation: PathAnimation,
+    ) {
+        let index = self.paths.len();
+        self.insert_primitive(path);
+        if self.paths.len() != index {
+            let Some(PaintOperation::Primitive(Primitive::Path(path))) = self.paint_operations.pop()
+            else {
+                unreachable!("the inserted path records a paint operation");
+            };
+            self.animated_paths.push((index, self.paint_operations.len()));
+            self.paint_operations
+                .push(PaintOperation::AnimatedPath(path, animation));
+        }
+    }
+
+    pub(crate) fn has_animated_paths(&self) -> bool {
+        !self.animated_paths.is_empty()
+    }
+
+    pub(crate) fn step_animated_paths(&mut self, elapsed: Duration) {
+        for &(index, operation) in &self.animated_paths {
+            let PaintOperation::AnimatedPath(recorded, animation) =
+                &mut self.paint_operations[operation]
+            else {
+                unreachable!("retained path must have a replay record");
+            };
+            if let Some(mut path) = animation(elapsed) {
+                path.id = recorded.id;
+                path.order = recorded.order;
+                recorded.clone_from(&path);
+                self.paths[index] = path;
+            }
+        }
+    }
+
     pub fn replay(&mut self, range: Range<usize>, prev_scene: &Scene) {
         for operation in &prev_scene.paint_operations[range] {
             match operation {
                 PaintOperation::Primitive(primitive) => self.insert_primitive(primitive.clone()),
+                PaintOperation::AnimatedPath(path, animation) => {
+                    self.insert_animated_path(path.clone(), animation.clone());
+                }
                 PaintOperation::StartLayer(bounds) => self.push_layer(*bounds),
                 PaintOperation::EndLayer => self.pop_layer(),
             }
@@ -152,6 +199,15 @@ impl Scene {
         self.shadows.sort_by_key(|shadow| shadow.order);
         self.quads.sort_by_key(|quad| quad.order);
         self.paths.sort_by_key(|path| path.order);
+        if self.has_animated_paths() {
+            let mut indices = vec![0; self.paths.len()];
+            for (index, path) in self.paths.iter().enumerate() {
+                indices[path.id.0] = index;
+            }
+            for (index, _) in &mut self.animated_paths {
+                *index = indices[*index];
+            }
+        }
         self.underlines.sort_by_key(|underline| underline.order);
         self.monochrome_sprites
             .sort_by_key(|sprite| (sprite.order, sprite.tile.tile_id));
@@ -213,6 +269,7 @@ pub(crate) enum PrimitiveKind {
 
 pub(crate) enum PaintOperation {
     Primitive(Primitive),
+    AnimatedPath(Path<ScaledPixels>, PathAnimation),
     StartLayer(Bounds<ScaledPixels>),
     EndLayer,
 }

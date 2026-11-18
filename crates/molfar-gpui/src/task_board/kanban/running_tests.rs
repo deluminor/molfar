@@ -39,7 +39,7 @@ fn only_running_cards_get_a_spinner_and_no_card_animates_its_border(cx: &mut Tes
 }
 
 #[gpui::test]
-fn a_running_card_redraws_the_board_at_half_the_clock_rate(cx: &mut TestAppContext) {
+fn a_running_card_ticks_without_rebuilding_the_open_drawer(cx: &mut TestAppContext) {
     let window = window(cx);
     cx.update(|cx| cx.set_reduce_motion(false));
     window
@@ -49,7 +49,7 @@ fn a_running_card_redraws_the_board_at_half_the_clock_rate(cx: &mut TestAppConte
             board.finish(
                 board.revision,
                 Ok(Snapshot {
-                    cards: vec![card("live", IMPLEMENT)],
+                    cards: vec![card("live", BACKLOG)],
                     selected: Some("live".into()),
                     ..Default::default()
                 }),
@@ -59,12 +59,37 @@ fn a_running_card_redraws_the_board_at_half_the_clock_rate(cx: &mut TestAppConte
         .unwrap();
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
+    assert!(visual.debug_bounds("board-detail").is_some());
     let before = window.update(visual, |board, _, _| board.renders).unwrap();
+    gpui::frame_stats::enable();
+    gpui::frame_stats::take();
 
     visual.executor().advance_clock(TICK * 8);
     visual.run_until_parked();
 
-    let ticks = window.update(visual, |board, _, _| board.renders).unwrap() - before;
-    assert!(ticks >= 1, "the spinner still turns");
-    assert!(ticks <= 4 + 1, "{ticks} renders in 8 ticks");
+    let stats = gpui::frame_stats::take();
+    eprintln!("Running card with drawer, eight ticks: {stats:?}");
+    assert_eq!(stats.views_rendered, 0, "{stats:?}");
+    assert_eq!(stats.counters, [("animated-path-steps", 4)]);
+    assert_eq!(
+        window.update(visual, |board, _, _| board.renders).unwrap(),
+        before
+    );
+
+    window
+        .update(visual, |board, _, cx| {
+            board.snapshot.as_mut().unwrap().cards[0].column_id = IMPLEMENT.into();
+            cx.notify();
+        })
+        .unwrap();
+    visual.run_until_parked();
+    visual.executor().advance_clock(TICK * 2);
+    visual.run_until_parked();
+    visual.update(|window, cx| {
+        assert!(
+            !window.has_animated_paths(),
+            "the clipped spinner has no paint slot"
+        );
+        assert!(!crate::pulse::running(cx));
+    });
 }

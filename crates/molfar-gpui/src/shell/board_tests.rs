@@ -126,13 +126,14 @@ fn an_idle_window_with_the_board_open_draws_almost_no_frames(cx: &mut TestAppCon
     cx.run_until_parked();
 
     let frames = gpui::frame_stats::take().frames;
+    eprintln!("Idle Board: {frames} window draws in 20 simulated seconds");
     assert!(frames <= 4, "{frames} frames in 20 idle seconds");
     assert!(!crate::pulse::running_for_test(cx));
     assert_eq!(board_renders(window, cx), before);
 }
 
 #[gpui::test]
-fn a_working_session_redraws_the_window_at_half_the_clock_rate(cx: &mut TestAppContext) {
+fn a_working_session_ticks_without_rendering_shell(cx: &mut TestAppContext) {
     let (window, session) = open_board_settled(cx);
     cx.update(|cx| cx.set_reduce_motion(false));
     window
@@ -144,12 +145,17 @@ fn a_working_session_redraws_the_window_at_half_the_clock_rate(cx: &mut TestAppC
         })
         .unwrap();
     cx.run_until_parked();
+    window.update(cx, |_, _, cx| cx.notify()).unwrap();
+    cx.run_until_parked();
     gpui::frame_stats::enable();
     gpui::frame_stats::take();
 
     cx.executor().advance_clock(crate::pulse::TICK * 8);
     cx.run_until_parked();
 
-    let frames = gpui::frame_stats::take().frames;
-    assert!((1..=4 + 1).contains(&frames), "{frames} frames in 8 ticks");
+    let stats = gpui::frame_stats::take();
+    eprintln!("Working session, eight ticks: {stats:?}");
+    assert_eq!(stats.views_rendered, 0, "{stats:?}");
+    assert_eq!(stats.frames, 0, "{stats:?}");
+    assert_eq!(stats.counters, [("animated-path-steps", 4)]);
 }
