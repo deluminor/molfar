@@ -94,10 +94,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let canonical = dir.path().canonicalize().unwrap();
         let vault = canonical.join("vault");
-        std::fs::create_dir(&vault).unwrap();
-        std::fs::create_dir(vault.join(".hidden")).unwrap();
         for file in [".hidden/x.md", "note.md", "note.txt", "a\\b.md"] {
-            std::fs::write(vault.join(file), "- [ ] Original\n").unwrap();
+            let path = vault.join(file);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, "- [ ] Original\n").unwrap();
         }
         std::fs::write(canonical.join("outside.md"), "outside").unwrap();
         #[cfg(unix)]
