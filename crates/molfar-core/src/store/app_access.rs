@@ -2,28 +2,12 @@ use super::{Session, Store};
 use serde_json::{json, Value};
 
 impl Store {
-    /// A launch is recoverable as an unsent draft if the app exits before its
-    /// provider accepts it. Queue delivery uses this same stable message ID.
-    pub fn prepare_app_prompt(&self, id: i64, request: &str, prompt: &str) -> Result<(), String> {
-        let mut state = self.follow_ups(id)?;
-        let message_id = prompt_message_id(request);
-        if state.draft.is_none() && !state.messages.iter().any(|m| m.id == message_id) {
-            state.revision += 1;
-            state.draft = Some(crate::follow_up::Message {
-                id: message_id,
-                text: prompt.into(),
-                ..Default::default()
-            });
-            self.save_follow_ups(id, &state)?;
-        }
-        Ok(())
-    }
     /// Reserve a request's child durably before its UI/provider is installed.
     /// Shared stores use a deterministic desktop ID; legacy stores reserve their
     /// numeric ID and mapping in the same SQLite transaction.
     pub fn create_app_session(
         &self,
-        caller: i64,
+        caller: impl std::fmt::Display,
         request: &str,
         fingerprint: &str,
         provider: &str,
@@ -142,6 +126,10 @@ pub(super) fn prompt_message_id(request: &str) -> String {
         crate::familiar::files::content_hash(request)
     )
 }
+
+#[path = "app_access/prompt.rs"]
+mod prompt;
+pub use prompt::PROMPT;
 
 #[cfg(test)]
 #[path = "app_access/companion_tests.rs"]

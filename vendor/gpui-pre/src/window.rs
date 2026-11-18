@@ -3713,6 +3713,23 @@ impl Window {
         profiling::finish_frame!();
     }
 
+    /// Whether the last drawn scene contains any retained path animations.
+    pub fn has_animated_paths(&self) -> bool {
+        self.rendered_frame.scene.has_animated_paths()
+    }
+
+    /// Advances the retained paths and schedules a presentation without invalidating views.
+    pub fn step_animated_paths(&mut self, elapsed: Duration) {
+        if !self.has_animated_paths() {
+            return;
+        }
+        self.rendered_frame.scene.step_animated_paths(elapsed);
+        self.needs_present.set(true);
+        self.platform_window.schedule_frame();
+        self.invalidator.wake_platform();
+        crate::frame_stats::count("animated-path-steps");
+    }
+
     /// Presents the most recently drawn frame if it hasn't been presented yet.
     #[cfg(all(test, feature = "profiler"))]
     pub fn present_if_needed(&mut self) {
@@ -4859,6 +4876,38 @@ impl Window {
         self.next_frame
             .scene
             .insert_primitive(path.scale(scale_factor));
+    }
+
+    /// Paints a clock-driven path whose geometry stays within `bounds`. The
+    /// envelope fixes its scene order and clip while later presentations only
+    /// replace the path. Cached paint replays the registration with its frame.
+    pub fn paint_animated_path(
+        &mut self,
+        bounds: Bounds<Pixels>,
+        elapsed: Duration,
+        frame: impl Fn(Duration) -> Option<(Path<Pixels>, Hsla)> + Send + Sync + 'static,
+    ) {
+        self.invalidator.debug_assert_paint();
+
+        let content_mask = ContentMask {
+            bounds: self.content_mask().bounds.intersect(&bounds),
+        };
+        if content_mask.bounds.is_empty() {
+            return;
+        }
+
+        let scale = self.scale_factor();
+        let opacity = self.element_opacity();
+        let animation: crate::scene::PathAnimation = Arc::new(move |elapsed| {
+            let (mut path, color) = frame(elapsed)?;
+            path.content_mask = content_mask;
+            path.bounds = bounds;
+            path.color = Background::from(color).opacity(opacity);
+            Some(path.scale(scale))
+        });
+        if let Some(path) = animation(elapsed) {
+            self.next_frame.scene.insert_animated_path(path, animation);
+        }
     }
 
     /// Paint an underline into the scene for the next frame at the current z-index.

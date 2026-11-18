@@ -112,11 +112,7 @@ impl Render for PhaseTile {
         let (face, mark, ink) = if self.spinning {
             (
                 tab_tile::Face::Neutral,
-                crate::session_mark::spinner(
-                    ("phase-loader", self.group),
-                    crate::pulse::Rate::Half,
-                )
-                .into_any_element(),
+                crate::session_mark::spinner(("phase-loader", self.group)).into_any_element(),
                 tab_tile::tile_ink(),
             )
         } else {

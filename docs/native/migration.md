@@ -148,6 +148,13 @@ GPUI and its platform crate are pinned to `gpui-pre` 0.3.9. Local Apple renderer
 patches cover alpha blending, font matching, backdrop blur and shadows. The
 headless Metal regression is documented in [verification](verification.md).
 
+The Board and session spinners use a local retained-path patch in
+`gpui-pre/src/{scene,window}.rs`. The shared pulse clock updates bounded path
+slots at about 15 Hz and schedules presentation without notifying a view.
+Cached paint replays the latest path and its animation registration. Preserve
+this when refreshing the GPUI pin. The window still composites its scene on
+presentation.
+
 The vendored framework/platform crates remove the unused `zed-scap` dependency.
 The native build rejects lockfiles that reintroduce it, and the `screen-capture`
 feature remains disabled. Preserve these guards and the licenses in [NOTICE](../../NOTICE).

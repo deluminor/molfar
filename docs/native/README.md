@@ -22,6 +22,12 @@ For interactive visuals, use `/visualize` in an idle local desktop conversation
 or ask a Familiar directly. See [session visuals](visuals.md) and the
 [preview release notes](preview-release-notes.md).
 
+## External MCP access
+
+OpenBot and other local MCP clients can read granted projects, start sessions
+and add idle Backlog cards through an opt-in loopback endpoint. See
+[external MCP access](external-mcp.md).
+
 ## Familiars
 
 A Familiar's **Overview** tab brings together its current activity, a contribution

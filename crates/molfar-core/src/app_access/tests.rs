@@ -507,3 +507,24 @@ fn launch_identity_and_unsent_prompt_survive_reopen_without_duplicate_sessions()
             .unwrap();
     }
 }
+
+#[test]
+fn operator_board_actions_validate_strictly_and_exclude_stage_control() {
+    assert!(validate_operator("board.list", &json!({"archived":true})).is_ok());
+    assert!(validate_operator("board.read", &json!({"cardId":"c","maxChars":10})).is_ok());
+    assert!(validate_operator(
+        "board.create",
+        &json!({"project":"/p","title":"t","description":"d","requestId":"r"})
+    )
+    .is_ok());
+    for (action, input) in [
+        ("board.list", json!({"archived":"true"})),
+        ("board.create", json!({"project":"/p","title":"t"})),
+        ("board.update", json!({"cardId":"c"})),
+        ("board.archive", json!({"cardId":"c","column":"done"})),
+        ("board.queue", json!({"cardId":"c"})),
+        ("board.approve", json!({"cardId":"c"})),
+    ] {
+        assert!(validate_operator(action, &input).is_err(), "{action}");
+    }
+}

@@ -2,6 +2,7 @@
 //! src/app/shell/SettingsRail.tsx: the Settings pages, their rail and the
 //! breadcrumb, search and actions the inset layout puts in its title bar.
 mod data;
+mod external;
 mod keymap;
 #[cfg(test)]
 mod layout_tests;
@@ -15,6 +16,7 @@ mod skill_document;
 pub(crate) use palettes::{PALETTES, palette};
 pub(crate) mod widgets;
 
+pub(crate) use external::{ExternalClientRow, ExternalStatus};
 pub(crate) use keymap::apply as apply_keybindings;
 pub(crate) use model::Section;
 pub(crate) use pages::{ACCENTS, command_shortcut, swatch};
@@ -68,6 +70,8 @@ pub(crate) struct SettingsContext {
     /// BitChain Companion, when this desktop opened `companion.json`.
     pub companion: Option<crate::companion::Status>,
     pub companion_offer: Option<crate::companion::Offer>,
+    /// The inbound MCP endpoint and its client grants.
+    pub external_mcp: Option<ExternalStatus>,
 }
 impl PartialEq for SettingsContext {
     fn eq(&self, other: &Self) -> bool {
@@ -92,6 +96,7 @@ impl PartialEq for SettingsContext {
             && self.mobile_invite == other.mobile_invite
             && self.companion == other.companion
             && self.companion_offer == other.companion_offer
+            && self.external_mcp == other.external_mcp
     }
 }
 #[derive(Clone, Debug, PartialEq)]
@@ -146,6 +151,18 @@ pub(crate) enum SettingsEvent {
     CompanionPair,
     CompanionCancelPair,
     CompanionRevoke(String),
+    ExternalConfigure {
+        enabled: bool,
+        port: u16,
+    },
+    ExternalCreateClient,
+    ExternalToggleGrant {
+        id: String,
+        scope: Option<molfar_core::external_mcp::types::SCOPE>,
+        project: Option<String>,
+    },
+    ExternalRevoke(String),
+    ExternalDismissKey,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

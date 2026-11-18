@@ -22,6 +22,7 @@ mod task_board;
 mod thread_files;
 mod turn_receipts;
 use crate::transcript::{Row, Transcript};
+pub use app_access::PROMPT;
 pub use desktop_import::{desktop_database, ImportReport};
 pub use desktop_import::{desktop_model_id, native_model};
 pub use edit::EditSnapshot;

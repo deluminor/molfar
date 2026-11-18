@@ -58,15 +58,14 @@ pub(crate) fn fields(input: &CardCreate) -> Result<CardCreate, String> {
         (&input.title, MAX_TITLE, "Title"),
         (&input.description, MAX_DESCRIPTION, "Description"),
     ] {
-        if value.is_empty() || value.len() > max {
-            return Err(format!(
-                "{label} is required and must be under {max} bytes."
-            ));
-        }
+        content(value, max, true, label)?;
     }
-    if input.acceptance_criteria.len() > MAX_CRITERIA {
-        return Err("Acceptance criteria are too long.".into());
-    }
+    content(
+        &input.acceptance_criteria,
+        MAX_CRITERIA,
+        false,
+        "Acceptance criteria",
+    )?;
     if let Some(value) = &input.base_ref {
         let valid = value.len() <= MAX_REF
             && !value.starts_with('-')
@@ -80,4 +79,22 @@ pub(crate) fn fields(input: &CardCreate) -> Result<CardCreate, String> {
     }
 
     Ok(input)
+}
+
+pub(crate) fn content(
+    value: &str,
+    max: usize,
+    required: bool,
+    label: &str,
+) -> Result<String, String> {
+    let value = value.trim();
+    if (required && value.is_empty()) || value.len() > max {
+        if required {
+            return Err(format!(
+                "{label} is required and must be under {max} bytes."
+            ));
+        }
+        return Err(format!("{label} are too long."));
+    }
+    Ok(value.to_owned())
 }

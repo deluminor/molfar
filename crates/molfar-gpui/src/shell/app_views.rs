@@ -235,7 +235,11 @@ impl Shell {
             AppView::Knowledge => self.knowledge.clone().map(IntoElement::into_any_element),
             AppView::Inbox => self.inbox.clone().map(IntoElement::into_any_element),
             AppView::Automations => self.automations.clone().map(IntoElement::into_any_element),
-            AppView::Board => self.board.clone().map(IntoElement::into_any_element),
+            AppView::Board => self.board.clone().map(|board| {
+                board
+                    .cached(StyleRefinement::default().size_full())
+                    .into_any_element()
+            }),
         }
     }
 
