@@ -4202,6 +4202,9 @@ impl Shell {
         }
     }
     pub(crate) fn open(&mut self, id: i64, window: &mut Window, cx: &mut Context<Self>) {
+        if self.deleting.contains(&id) {
+            return;
+        }
         if self.workspace.review_owners.contains_key(&id) {
             self.open_file_pane(id, window, cx);
             return;
@@ -4537,7 +4540,8 @@ impl Shell {
         }
         if let Some(id) = self.order.iter().copied().find(|id| {
             let s = self.session_metadata(*id, cx);
-            s.summary.cwd == self.workspace.project
+            !self.deleting.contains(id)
+                && s.summary.cwd == self.workspace.project
                 && molfar_core::files::path_key(self.session_working_copy(*id, cx))
                     == molfar_core::files::path_key(self.working_copy())
                 && !s.summary.archived

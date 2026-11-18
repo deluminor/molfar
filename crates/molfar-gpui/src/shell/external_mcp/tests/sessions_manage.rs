@@ -26,6 +26,7 @@ fn managing_sessions_is_project_scoped_and_deletion_requires_the_flag(cx: &mut T
     window
         .update(cx, |shell, window, cx| {
             shell.open(id, window, cx);
+            shell.sessions[&id].update(cx, |view, _| view.busy = true);
         })
         .unwrap();
     cx.run_until_parked();
@@ -50,6 +51,12 @@ fn managing_sessions_is_project_scoped_and_deletion_requires_the_flag(cx: &mut T
         );
     }
 
+    window
+        .update(cx, |shell, _, cx| {
+            assert!(shell.sessions[&id].read(cx).notification_was_cancelled());
+        })
+        .unwrap();
+
     let args = json!({"sessionId":id,"requestId":"delete"});
     assert!(
         !tools::visible(&principal)
@@ -73,5 +80,44 @@ fn managing_sessions_is_project_scoped_and_deletion_requires_the_flag(cx: &mut T
     assert_eq!(
         call(window, &principal, "sessions_delete", args, cx).unwrap_err(),
         "Session not found."
+    );
+}
+
+#[gpui::test]
+fn deleting_the_last_empty_tab_does_not_reopen_the_target(cx: &mut TestAppContext) {
+    let f = fixture();
+    let window = window(&f, cx);
+    let mut principal = principal(&f);
+    principal.grants.push(GRANT::Destructive);
+    let id = f.sessions.0;
+    window
+        .update(cx, |shell, window, cx| {
+            shell.open(id, window, cx);
+            assert_eq!(shell.workspace.open_sessions(), vec![id]);
+        })
+        .unwrap();
+    cx.run_until_parked();
+
+    call(
+        window,
+        &principal,
+        "sessions_delete",
+        json!({"sessionId":id,"requestId":"delete-last"}),
+        cx,
+    )
+    .unwrap();
+
+    assert!(
+        locked(&f.store)
+            .unwrap()
+            .sessions()
+            .unwrap()
+            .iter()
+            .all(|session| session.id != id)
+    );
+    assert!(
+        window
+            .update(cx, |shell, _, _| shell.workspace.tab_of(id).is_none())
+            .unwrap()
     );
 }
