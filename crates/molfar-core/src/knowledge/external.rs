@@ -81,6 +81,10 @@ fn external_read(root: &Path, path: &str) -> Result<VaultDocument, String> {
     documents::read(root, path).map_err(|_| NOTE_NOT_FOUND.into())
 }
 
+pub(crate) fn read_visible_markdown(root: &Path, path: &str) -> Result<String, String> {
+    documents::read(root, path).map(|document| document.body)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

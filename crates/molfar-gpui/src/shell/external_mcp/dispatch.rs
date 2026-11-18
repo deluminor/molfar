@@ -32,6 +32,9 @@ impl Shell {
             tool if tool.starts_with("automations_") => {
                 self.external_automation_tool(&scope, tool, arguments, receipt.as_ref(), done, cx);
             }
+            tool if tool.starts_with("familiars_") => {
+                self.external_familiar_tool(&scope, tool, &arguments, receipt.as_ref(), done, cx);
+            }
             _ => self.external_session_tool(&scope, tool, arguments, receipt.as_ref(), done, cx),
         }
 

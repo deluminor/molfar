@@ -77,7 +77,7 @@ impl Familiars {
         let previous = self.writes.take();
         self.writes = Some(cx.spawn(async move |_, cx| {
             if let Some(previous) = previous {
-                previous.await;
+                let _ = previous.await;
             }
             let work = cx
                 .background_executor()
@@ -86,7 +86,8 @@ impl Familiars {
                 .await
                 .map(|_| ())
                 .map_err(|e| format!("Could not persist app result: {e}"));
-            let _ = call.reply.send(reply.and(result));
+            let _ = call.reply.send(reply.clone().and(result));
+            reply
         }));
     }
     fn call_work(

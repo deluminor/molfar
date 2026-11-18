@@ -1,4 +1,5 @@
 mod automations;
+mod familiars;
 mod knowledge;
 
 use super::*;
@@ -23,6 +24,11 @@ impl Shell {
             }
             tools::TargetKind::Project if definition.name.starts_with("automations_") => {
                 self.external_automation_target(scope, definition.name, arguments)
+            }
+            tools::TargetKind::Familiar | tools::TargetKind::None
+                if definition.name.starts_with("familiars_") =>
+            {
+                self.external_familiar_target(scope, definition.name, arguments, cx)
             }
             _ => Ok(None),
         }

@@ -69,3 +69,91 @@ fn vault_access_needs_both_grants_and_audit_omits_note_text(cx: &mut TestAppCont
     );
     assert!(!serde_json::to_string(&audit).unwrap().contains(body));
 }
+
+#[gpui::test]
+fn familiar_private_content_requires_read_and_the_same_familiar(cx: &mut TestAppContext) {
+    use molfar_core::{
+        familiar::{self, Roster},
+        transcript::Transcript,
+    };
+    let f = fixture();
+    let id = {
+        let mut store = locked(&f.store).unwrap();
+        let mut roster = Roster::default();
+        let id = roster.create(vec![]).id.clone();
+        roster.get_mut(&id).unwrap().session_id = Some(f.sessions.0);
+        roster.save(&store).unwrap();
+        familiar::files::save(
+            &familiar::root(&store),
+            &id,
+            None,
+            "MEMORY.md",
+            "private memory",
+            None,
+        )
+        .unwrap();
+        let mut transcript = Transcript::default();
+        transcript.begin("user");
+        transcript.append("private conversation");
+        store.write_rows(f.sessions.0, 0, &transcript.rows).unwrap();
+        id
+    };
+    let window = window(&f, cx);
+    let mut client = principal(&f);
+    client.grants.push(GRANT::Write(DOMAIN::Familiars));
+    let included = json!({"familiarId":id,"include":["memory","transcript"]});
+    let grant = ResourceGrant {
+        kind: RESOURCE::Familiar,
+        id: id.clone(),
+    };
+    client.resources.push(grant.clone());
+    assert!(call(window, &client, "familiars_read", included.clone(), cx).is_err());
+    client.resources.clear();
+    client.grants.push(GRANT::Read(DOMAIN::Familiars));
+    assert_eq!(
+        call(window, &client, "familiars_read", included.clone(), cx),
+        Err("Familiar not found.".into())
+    );
+
+    client.resources.push(grant);
+    let profile = call(
+        window,
+        &client,
+        "familiars_read",
+        json!({"familiarId":id}),
+        cx,
+    )
+    .unwrap();
+    assert!(profile.get("memory").is_none() && profile.get("transcript").is_none());
+    let private = call(window, &client, "familiars_read", included, cx).unwrap();
+    assert_eq!(private["memory"]["body"], "private memory");
+    assert!(
+        private["transcript"]
+            .to_string()
+            .contains("private conversation")
+    );
+    assert!(private.get("projects").is_none() && private.get("subsessions").is_none());
+
+    for tool in ["familiars_send", "familiars_reset", "familiars_delete"] {
+        let mut input = json!({"familiarId":id,"requestId":"flag"});
+        if tool == "familiars_send" {
+            input["text"] = json!("do not enqueue");
+        }
+        assert!(
+            call(window, &client, tool, input, cx)
+                .unwrap_err()
+                .contains("lacks permission")
+        );
+    }
+    for key in [
+        "subsessions",
+        "addPath",
+        "removePaths",
+        "projects",
+        "appAccess",
+    ] {
+        let mut input = json!({"familiarId":id,"requestId":"invalid"});
+        input[key] = json!("forbidden");
+        assert!(tools::validate("familiars_update", &input).is_err());
+    }
+}

@@ -5,6 +5,7 @@ pub(crate) mod cards;
 mod changes;
 mod color_picker;
 mod dashboard;
+pub(crate) mod external;
 mod files;
 mod filters;
 mod floating;
@@ -88,7 +89,7 @@ pub(crate) struct Familiars {
     observations: Vec<Subscription>,
     _bridge_task: Option<gpui::Task<()>>,
     _clock: Option<gpui::Task<()>>,
-    writes: Option<gpui::Task<()>>,
+    writes: Option<gpui::Task<Result<(), String>>>,
     loading_chats: HashSet<String>,
     work: work::Cache,
     pub(crate) error: Option<String>,
@@ -648,16 +649,16 @@ impl Familiars {
         let previous = self.writes.take();
         self.writes = Some(cx.spawn(async move |this, cx| {
             if let Some(previous) = previous {
-                previous.await;
+                let _ = previous.await;
             }
             let work = cx.background_executor().spawn(async move {
                 let db = locked(&store)?;
                 roster.save(&db)
             });
             let result = work.await;
-            let _ = this.update(cx, |this, cx| match result {
+            let _ = this.update(cx, |this, cx| match &result {
                 Err(error) => {
-                    this.error = Some(error);
+                    this.error = Some(error.clone());
                     cx.notify();
                 }
                 Ok(()) => {
@@ -667,6 +668,7 @@ impl Familiars {
                     }
                 }
             });
+            result
         }));
         self.changed(cx);
     }
