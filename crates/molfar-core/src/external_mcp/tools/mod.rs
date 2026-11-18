@@ -163,4 +163,24 @@ mod tests {
             assert!(validate(name, &arguments).is_err(), "{name}");
         }
     }
+
+    #[test]
+    fn session_titles_reject_blank_overlong_and_control_characters() {
+        let update = |title: &str| json!({"sessionId":1,"title":title,"requestId":"rename"});
+        assert!(validate(
+            "sessions_update",
+            &update(&format!("  {}  ", "a".repeat(200)))
+        )
+        .is_ok());
+        let overlong = "a".repeat(201);
+        for title in ["", "   ", overlong.as_str(), "line\nbreak", "tab\there"] {
+            assert!(
+                validate("sessions_update", &update(title)).is_err(),
+                "{title:?}"
+            );
+        }
+        let mut extra = update("Kept");
+        extra["model"] = json!("override");
+        assert!(validate("sessions_update", &extra).is_err());
+    }
 }
