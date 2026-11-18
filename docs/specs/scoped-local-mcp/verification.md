@@ -190,3 +190,42 @@ Re-run evidence: five full `npx vitest run` runs and one full `npm run check:web
 run all exited 0, with no worker crash and no new crash report. The check was not
 skipped or weakened. If the crash recurs, upgrading Node within the 24.x line is the
 fix to try; the repository has no code change that addresses a V8 GC fault.
+
+## Rework 2: review findings
+
+- Replays re-check the current grant. A mutation resolves its target project
+  (the `project` argument, or the session's project for `sessionId` tools) against
+  the principal's current projects before any receipt is read. A replay for a
+  removed project gets the same "Project not found." / "Session not found." error
+  as a fresh call and never sees the stored body.
+- Receipt identity is principal, canonical project, action and request ID. Board
+  card IDs also include the project, so one request ID creates one card per
+  granted project.
+- `sessions_send` reserves its prompt under `external:<client>:<requestId>` as a
+  durable draft before handing it to the session. The draft goes out through
+  the same queued app-launch path that Board runs use. A retry finds that prompt
+  delivered or queued and returns the original acceptance, or finds it still a
+  draft and resumes it. The retry never asks for a new request ID. A send is
+  refused while an approval or question is pending.
+- `sessions_start` recovery: a reserved session whose prompt is still a draft
+  relaunches once. A prompt that was queued or delivered does not relaunch. A
+  reservation with no prompt finishes setup and launches.
+- Board `update`, `archive` and `unarchive` save a receipt (principal, project,
+  action, request ID, input digest) before the Store write. A retry replays the
+  saved result, and changed input under the same request ID is rejected.
+
+A prompt that was queued but not delivered before a crash stays in the session's
+paused queue. MOLFAR resumes queues only on explicit user action, so the retry
+reports acceptance and does not resume it.
+
+Tests: `app_access::board` (update and archive replay, and conflict),
+`external_mcp::receipts` (per-project identity), `store::app_access::prompt`
+(draft, queued, delivered), and GPUI `external_mcp::recovery_tests` (replay
+after a project is removed, per-project cards, interrupted follow-up, approval
+guard, interrupted start). The approval guard was checked red and then green.
+With the guard removed, the test submitted the turn and launched the real local
+provider.
+
+Not run: the AC-10 OpenBot live smoke. It needs a separately authorized scratch
+project, an external MCP grant on the user's running MOLFAR and the installed
+OpenBot client. It still waits for the user.
