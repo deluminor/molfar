@@ -120,22 +120,7 @@ impl Shell {
                         json!({"familiarId":id,"queued":true})
                     }
                     "familiars_reset" => {
-                        let familiar = view.external_familiar(id).ok_or(NOT_FOUND)?;
-                        let queued: Vec<_> =
-                            familiar.outbox.iter().map(|message| &message.id).collect();
-                        let binding =
-                            json!([familiar.session_id, familiar.unavailable_session, queued])
-                                .to_string();
-                        let unchanged = locked(&self.store)?.external_receipt_bind(
-                            &receipt.target,
-                            &scope.principal.client_id,
-                            tool,
-                            &receipt.request,
-                            molfar_core::familiar::files::content_hash(&binding),
-                        )?;
-                        if unchanged {
-                            view.mobile_reset(id, cx).map_err(|_| NOT_FOUND)?;
-                        }
+                        view.mobile_reset(id, cx).map_err(|_| NOT_FOUND)?;
                         json!({"familiarId":id,"reset":true})
                     }
                     "familiars_delete" => {

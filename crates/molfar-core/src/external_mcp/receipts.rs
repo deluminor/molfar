@@ -23,8 +23,6 @@ pub enum BEGIN {
 struct Receipt {
     digest: String,
     done: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    binding: Option<String>,
     result: Option<Result<Value, String>>,
 }
 
@@ -115,28 +113,6 @@ impl Store {
             .map(|receipt| receipt.is_some())
     }
 
-    pub fn external_receipt_bind(
-        &self,
-        target: &ReceiptTarget,
-        client: &str,
-        action: &str,
-        request: &str,
-        binding: String,
-    ) -> Result<bool, String> {
-        let key = key_for(target, client, action, request);
-        let raw = self
-            .setting(&key)?
-            .ok_or("Request receipt is unavailable.")?;
-        let mut receipt: Receipt = serde_json::from_str(&raw).map_err(|error| error.to_string())?;
-        if let Some(previous) = receipt.binding {
-            return Ok(previous == binding);
-        }
-        receipt.binding = Some(binding);
-        let raw = serde_json::to_string(&receipt).map_err(|error| error.to_string())?;
-        self.save_setting(&key, &raw)?;
-        Ok(true)
-    }
-
     fn save_receipt(
         &self,
         key: &str,
@@ -146,7 +122,6 @@ impl Store {
         let receipt = Receipt {
             digest: digest.into(),
             done: result.is_some(),
-            binding: None,
             result: result.cloned(),
         };
         let raw = serde_json::to_string(&receipt).map_err(|error| error.to_string())?;
