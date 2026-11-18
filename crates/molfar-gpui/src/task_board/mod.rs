@@ -95,6 +95,8 @@ pub(crate) struct Board {
     drag_sessions: u64,
     drawer_open: bool,
     edge_pointer: Option<(f32, f32, f32)>,
+    #[cfg(test)]
+    renders: usize,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -175,12 +177,19 @@ impl Board {
             drag_sessions: 0,
             drawer_open: false,
             edge_pointer: None,
+            #[cfg(test)]
+            renders: 0,
         }
     }
 
     #[cfg(test)]
     pub(crate) fn project_only_for_test(&self) -> bool {
         self.project_only
+    }
+
+    #[cfg(test)]
+    pub(crate) fn renders_for_test(&self) -> usize {
+        self.renders
     }
 
     #[cfg(test)]

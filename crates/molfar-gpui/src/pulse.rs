@@ -18,7 +18,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-const TICK: Duration = Duration::from_millis(33);
+pub(crate) const TICK: Duration = Duration::from_millis(33);
 /// A hidden app's loops tick this many times slower.
 const BACKGROUND_STRIDE: u64 = 8;
 
@@ -135,6 +135,11 @@ pub(crate) fn phase(period: Duration, cx: &mut App) -> f32 {
     }
     let into = elapsed(cx).as_nanos() % period.as_nanos();
     into as f32 / period.as_nanos() as f32
+}
+
+#[cfg(test)]
+pub(crate) fn running_for_test(cx: &mut gpui::TestAppContext) -> bool {
+    cx.update(|cx| running(cx))
 }
 
 #[cfg(test)]
