@@ -8,7 +8,7 @@ use crate::task_board::stage::{
     choice::overrides::merge_retry_override,
     transitions::{
         self,
-        types::{BoardAction, Position, TransitionEffect},
+        types::{Position, TransitionEffect},
     },
 };
 use rusqlite::{params, Connection, TransactionBehavior};
@@ -29,18 +29,7 @@ pub(crate) fn apply(
         return Err("conflict: the card changed; reload and try again".into());
     }
     let stage = AgentStage::parse(&card.column_id);
-    let board_action = match &action {
-        StageAction::Start => BoardAction::Start,
-        StageAction::ApprovePlan => BoardAction::ApprovePlan,
-        StageAction::Rework { .. } => BoardAction::Rework,
-        StageAction::Retry(_) => BoardAction::Retry,
-        StageAction::Cancel => BoardAction::Cancel,
-        StageAction::Back => BoardAction::Back,
-        StageAction::Answer { .. } => BoardAction::Answer,
-        StageAction::RequestChanges(_) => BoardAction::RequestChanges,
-        StageAction::EditPlan(_) => BoardAction::EditPlan,
-        StageAction::EditTask(_) => BoardAction::EditTask,
-    };
+    let board_action = action.board_action();
     let position = Position {
         column: &card.column_id,
         run_state: &card.run_state,

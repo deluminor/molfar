@@ -98,7 +98,7 @@ fn authenticated_clients_negotiate_list_tools_and_reach_the_application() {
     assert_eq!(status, 200, "{text}");
     let initialized: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(initialized["result"]["protocolVersion"], "2025-06-18");
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 5);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 7);
     assert_eq!(listed["result"]["isError"], false);
     let echoed: Value =
         serde_json::from_str(listed["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
@@ -233,7 +233,16 @@ fn tools_list_is_filtered_and_denials_are_audited() {
         .iter()
         .map(|tool| tool["name"].as_str().unwrap())
         .collect();
-    assert_eq!(names, ["projects_list", "board_list", "board_read"]);
+    assert_eq!(
+        names,
+        [
+            "projects_list",
+            "board_list",
+            "board_read",
+            "board_artifacts_list",
+            "board_artifacts_read"
+        ]
+    );
     assert_eq!(
         rpc(&url, "empty", "tools/list", json!({}))["result"]["tools"],
         json!([])

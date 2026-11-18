@@ -1,6 +1,8 @@
+use crate::app_access::board::artifacts;
 mod board;
 mod schema;
 pub mod sessions;
+mod stage;
 
 use super::{
     grants::types::{Requirement, DOMAIN, GRANT},
@@ -36,6 +38,7 @@ fn build_catalog() -> Vec<Tool> {
     }];
     tools.extend(sessions::definitions());
     tools.extend(board::definitions());
+    tools.extend(stage::definitions());
     tools
 }
 
@@ -57,6 +60,10 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         .iter()
         .find(|tool| tool.name == name)
         .ok_or("Unknown MOLFAR tool.")?;
+    if let Some(stage) = crate::app_access::board::stage::StageTool::from_name(name) {
+        crate::app_access::board::stage::stage_action(stage, arguments)?;
+        return Ok(tool);
+    }
     match name {
         "projects_list" => check::<Empty>(arguments),
         "sessions_list" => check::<SessionsList>(arguments),
@@ -64,6 +71,7 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         "sessions_start" => check::<SessionsStart>(arguments),
         "sessions_send" => check::<SessionsSend>(arguments),
         "sessions_stop" => check::<SessionsStop>(arguments),
+        artifacts::LIST | artifacts::READ => artifacts::validate(name, arguments),
         board => {
             let internal = board.replacen('_', ".", 1);
             if tool.mutation {
@@ -79,20 +87,38 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
 }
 
 pub fn parse<T: DeserializeOwned>(arguments: &Value) -> Result<T, String> {
+    if !arguments.is_object() {
+        return Err("Tool arguments must be a JSON object.".into());
+    }
     serde_json::from_value(arguments.clone()).map_err(|error| format!("Invalid arguments: {error}"))
 }
 
 fn check<T: DeserializeOwned>(arguments: &Value) -> Result<(), String> {
-    if !arguments.is_object() {
-        return Err("Tool arguments must be a JSON object.".into());
-    }
     parse::<T>(arguments).map(drop)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{validate, DOMAIN, GRANT};
+    use super::{catalog, validate, DOMAIN, GRANT};
     use serde_json::json;
+
+    #[test]
+    fn catalog_never_exposes_owner_only_actions() {
+        for tool in catalog() {
+            for forbidden in [
+                "approve",
+                "deliver",
+                "commit",
+                "push",
+                "pull_request",
+                "edit_plan",
+                "model",
+                "approval",
+            ] {
+                assert!(!tool.name.contains(forbidden), "{}", tool.name);
+            }
+        }
+    }
 
     #[test]
     fn arguments_are_strict_and_tools_carry_their_scope() {

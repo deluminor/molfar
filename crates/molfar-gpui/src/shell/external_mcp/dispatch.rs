@@ -12,20 +12,10 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         let (done, result) = async_channel::bounded(1);
-        match tool {
-            "projects_list" => {
-                let projects: Vec<_> = scope
-                    .projects
-                    .iter()
-                    .map(|path| json!({"project":path,"label":self.project_label(path)}))
-                    .collect();
-                let _ = done.try_send(Ok(json!({"projects":projects})));
-            }
-            "board_list" | "board_read" | "board_create" | "board_update" | "board_archive"
-            | "board_unarchive" => {
-                self.external_board_tool(&scope, tool, arguments, receipt.as_ref(), done, cx)
-            }
-            _ => self.external_session_tool(&scope, tool, arguments, receipt.as_ref(), done, cx),
+        if let Some(stage) = board_api::stage::StageTool::from_name(tool) {
+            self.external_stage_tool(&scope, stage, &arguments, done, cx);
+        } else {
+            self.external_dispatch_tool(&scope, tool, arguments, receipt.as_ref(), done, cx);
         }
 
         let store = self.store.clone();
@@ -70,5 +60,36 @@ impl Shell {
             let _ = reply.send(result);
         })
         .detach();
+    }
+    fn external_dispatch_tool(
+        &mut self,
+        scope: &Scope,
+        tool: &'static str,
+        arguments: Value,
+        receipt: Option<&Receipt>,
+        done: Done,
+        cx: &mut Context<Self>,
+    ) {
+        match tool {
+            "projects_list" => {
+                let projects: Vec<_> = scope
+                    .projects
+                    .iter()
+                    .map(|path| json!({"project":path,"label":self.project_label(path)}))
+                    .collect();
+                let _ = done.try_send(Ok(json!({"projects":projects})));
+            }
+            "board_list"
+            | "board_read"
+            | "board_create"
+            | "board_update"
+            | "board_archive"
+            | "board_unarchive"
+            | board_api::artifacts::LIST
+            | board_api::artifacts::READ => {
+                self.external_board_tool(scope, tool, arguments, receipt, done, cx)
+            }
+            _ => self.external_session_tool(scope, tool, arguments, receipt, done, cx),
+        }
     }
 }

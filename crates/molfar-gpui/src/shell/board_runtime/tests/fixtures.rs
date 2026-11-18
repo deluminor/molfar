@@ -12,11 +12,11 @@ pub(in crate::shell::board_runtime) struct Provider {
     pub models: Vec<Model>,
 }
 
-pub(super) struct Fixture {
+pub(in crate::shell) struct Fixture {
     pub root: PathBuf,
     pub project: String,
     pub store: Database,
-    pub provider: Provider,
+    pub(super) provider: Provider,
 }
 
 impl Drop for Fixture {
@@ -133,6 +133,27 @@ impl Fixture {
         window
     }
 
+    pub fn hold_poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
+        window
+            .update(cx, |shell, _, _| shell.board_state.polling = true)
+            .unwrap();
+    }
+
+    pub fn resume_poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
+        window
+            .update(cx, |shell, _, cx| {
+                shell.board_state.polling = false;
+                shell.poll_board(true, cx);
+            })
+            .unwrap();
+    }
+
+    pub fn poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
+        window
+            .update(cx, |shell, _, cx| shell.poll_board(true, cx))
+            .unwrap();
+    }
+
     pub fn card(&self) -> molfar_core::task_board::types::Card {
         locked(&self.store)
             .unwrap()
@@ -152,7 +173,7 @@ impl Fixture {
     }
 }
 
-pub(super) fn wait_until(cx: &mut TestAppContext, predicate: impl Fn() -> bool) {
+pub(in crate::shell) fn wait_until(cx: &mut TestAppContext, predicate: impl Fn() -> bool) {
     let deadline = std::time::Instant::now() + Duration::from_secs(15);
     loop {
         cx.run_until_parked();

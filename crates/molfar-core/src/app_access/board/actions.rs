@@ -57,7 +57,7 @@ pub fn action(
 ) -> Result<Value, String> {
     match action {
         "board.list" => list(store, parse(action, input)?, projects),
-        "board.read" => read(store, parse(action, input)?, projects),
+        "board.read" => read(store, parse(action, input)?, projects, false),
         "board.create" => create(store, principal, envelope, parse(action, input)?, projects),
         "board.update" => {
             let request = parse_update(input.clone(), Some(envelope))?;

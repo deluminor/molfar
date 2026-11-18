@@ -1,26 +1,47 @@
 use super::{
     actions::{card_json, editable, idle_unqueued},
     contracts::ReadRequest,
+    stage::EXTERNAL_ACTIONS,
 };
 use crate::{
     store::Store,
-    task_board::{stage::transitions::allowed::allowed_moves, types::ArtifactRead},
+    task_board::stage::transitions::allowed::{action_allowed, allowed_moves},
 };
 use serde_json::{json, Value};
 
-const DEFAULT_TEXT_PAGE: usize = 6_000;
+pub fn external_read(
+    store: &Store,
+    arguments: &Value,
+    projects: &[String],
+) -> Result<Value, String> {
+    read(
+        store,
+        super::contracts::parse("board_read", arguments)?,
+        projects,
+        true,
+    )
+}
 
 pub(super) fn read(
     store: &Store,
     request: ReadRequest,
     projects: &[String],
+    external: bool,
 ) -> Result<Value, String> {
     let card = store.board_scoped_card(&request.card_id, projects)?;
     let snapshot = store.board_snapshot(Some(&card.project_cwd), card.archived, Some(&card.id))?;
-    let mut allowed_actions: Vec<_> = allowed_moves(&card, Some(&snapshot))
-        .iter()
-        .map(|target| target.action.id())
-        .collect();
+    let mut allowed_actions: Vec<_> = if external {
+        EXTERNAL_ACTIONS
+            .into_iter()
+            .filter(|&action| action_allowed(&card, &snapshot, action).is_ok())
+            .map(|action| action.id())
+            .collect()
+    } else {
+        allowed_moves(&card, Some(&snapshot))
+            .into_iter()
+            .map(|target| target.action.id())
+            .collect()
+    };
     if idle_unqueued(&card) {
         allowed_actions.push(if card.archived {
             "unarchive"
@@ -42,27 +63,14 @@ pub(super) fn read(
         .artifact_kind
         .as_deref()
         .map(|kind| {
-            let version = request
-                .artifact_version
-                .or_else(|| {
-                    artifacts
-                        .iter()
-                        .filter(|meta| meta.kind == kind)
-                        .map(|meta| meta.version)
-                        .max()
-                })
-                .ok_or("Board artifact not found.")?;
-            let page = store.board_scoped_artifact(
-                &card.id,
-                projects,
-                &ArtifactRead {
-                    kind,
-                    version,
-                    max_chars: request.max_chars.unwrap_or(DEFAULT_TEXT_PAGE),
-                    char_offset: request.char_offset,
-                },
-            )?;
-            Ok::<_, String>(json!({"kind":kind,"version":version,"body":page.body,"nextCharOffset":page.next_char_offset}))
+            let request = super::artifacts::Read {
+                card_id: card.id.clone(),
+                kind: kind.to_owned(),
+                version: request.artifact_version,
+                max_chars: request.max_chars,
+                char_offset: request.char_offset,
+            };
+            request.page(store, projects, &artifacts)
         })
         .transpose()?;
 
