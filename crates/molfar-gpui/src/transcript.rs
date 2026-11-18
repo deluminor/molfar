@@ -800,6 +800,7 @@ pub(crate) struct TranscriptView {
     model: String,
     active_provider_turn_id: Option<String>,
     started: Option<std::time::Instant>,
+    elapsed_tick: Option<gpui::Task<()>>,
     elapsed: HashMap<usize, std::time::Duration>,
     outline: outline::Outline,
     pub(crate) list: ListState,
@@ -2582,6 +2583,7 @@ impl TranscriptView {
             model: "Codex".into(),
             active_provider_turn_id: None,
             started: None,
+            elapsed_tick: None,
             elapsed: HashMap::new(),
             outline: outline::Outline::default(),
             list: {
@@ -2698,28 +2700,25 @@ impl TranscriptView {
                 self.list.set_follow_mode(FollowMode::Tail);
             }
             self.started = Some(std::time::Instant::now());
-            cx.spawn(async move |this, cx| {
+            self.elapsed_tick = Some(cx.spawn(async move |this, cx| {
                 loop {
                     cx.background_executor()
                         .timer(std::time::Duration::from_secs(1))
                         .await;
-                    let keep = this
-                        .update(cx, |this, cx| {
-                            // The working time redraws the whole transcript;
-                            // skip it while the tab or the app is out of view.
-                            if this.streaming && this.visible && crate::pulse::app_active(cx) {
-                                cx.notify_paint();
-                            }
-                            this.streaming
-                        })
-                        .unwrap_or(false);
-                    if !keep {
+                    #[cfg(test)]
+                    gpui::frame_stats::count("transcript-duration-wakeups");
+                    let result = this.update(cx, |this, cx| {
+                        if this.visible && crate::pulse::app_active(cx) {
+                            cx.notify_paint();
+                        }
+                    });
+                    if result.is_err() {
                         break;
                     }
                 }
-            })
-            .detach();
+            }));
         } else {
+            self.elapsed_tick = None;
             self.follow.until = Some(Instant::now() + std::time::Duration::from_millis(1200));
             if let Some(started) = self.started.take()
                 && let Some(turn) = self.active_turn()
@@ -5133,10 +5132,7 @@ impl TranscriptView {
                             crate::tab_tile::mark_tile(
                                 &tile,
                                 crate::tab_tile::Face::Neutral,
-                                crate::session_mark::spinner(
-                                    ("tool-loader", message_start),
-                                    crate::pulse::Rate::Half,
-                                ),
+                                crate::session_mark::spinner(("tool-loader", message_start)),
                             )
                         } else {
                             let glyph =

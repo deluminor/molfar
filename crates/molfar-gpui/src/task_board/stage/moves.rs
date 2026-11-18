@@ -1,5 +1,5 @@
 use super::super::{Board, Event, review::Mode};
-use super::back::{back_label, column_label};
+use super::back::column_label;
 #[cfg(test)]
 #[path = "moves_tests.rs"]
 mod tests;
@@ -10,8 +10,8 @@ use molfar_core::task_board::{
     stage::{
         lifecycle::types::StageAction,
         transitions::{
-            moves::legal_moves,
-            types::{BoardAction, Move, Position},
+            allowed::allowed_moves,
+            types::{BoardAction, Move},
         },
     },
     types::Card,
@@ -20,22 +20,7 @@ use molfar_core::task_board::{
 impl Board {
     /// Desktop drop targets, minus Back when the readable-review guard would refuse it.
     pub(in crate::task_board) fn card_moves(&self, card: &Card) -> Vec<Move> {
-        let position = Position {
-            column: &card.column_id,
-            run_state: &card.run_state,
-            archived: card.archived,
-        };
-        // Runs and artifacts are loaded only for the selected card; elsewhere the core
-        // guard decides, as desktop offers Back whenever the transition allows it.
-        let loaded = self
-            .snapshot
-            .as_ref()
-            .is_some_and(|snapshot| snapshot.selected.as_deref() == Some(card.id.as_str()));
-        let back = !loaded || back_label(card, self.snapshot.as_ref()).is_some();
-        legal_moves(position)
-            .into_iter()
-            .filter(|target| target.action != BoardAction::Back || back)
-            .collect()
+        allowed_moves(card, self.snapshot.as_ref())
     }
 
     pub(in crate::task_board) fn move_action(

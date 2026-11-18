@@ -56,3 +56,20 @@ it("scans a moved native module before staging and excludes ignored build output
     repo.dispose();
   }
 });
+
+it("rejects named external client defaults and copy only in external MCP sources", () => {
+  for (const file of [
+    "crates/molfar-core/src/external_mcp/grants/naming.rs",
+    "crates/molfar-gpui/src/shell/external_mcp/lifecycle.rs",
+    "crates/molfar-gpui/src/settings/pages/external_mcp/mod.rs",
+  ]) {
+    expect(brandingViolations(file, '"OpenBot"')).toEqual([`${file}:1`]);
+  }
+  for (const file of [
+    "crates/molfar-core/src/external_mcp/transport/tests.rs",
+    "crates/molfar-gpui/src/shell/external_mcp/recovery_tests.rs",
+    "crates/molfar-gpui/src/other.rs",
+  ]) {
+    expect(brandingViolations(file, '"OpenBot"')).toEqual([]);
+  }
+});

@@ -3,7 +3,8 @@ use crate::task_board::{
     constants::TASK,
     stage::{
         contracts::{
-            constants::{ANSWERS, PLAN, QUESTIONS, SPEC},
+            constants::{ANSWERS, IMPL_REPORT, PLAN, QUESTIONS, SPEC},
+            status,
             types::HandoffInput,
         },
         lifecycle::artifacts,
@@ -116,6 +117,17 @@ impl Store {
             return Err("Board artifact not found.".into());
         }
         artifacts::read(&self.board_artifact_base()?, card, kind, version)
+    }
+
+    /// The latest implementation report's version and its owner-only checks, or `None`
+    /// before the card has a report.
+    pub fn board_owner_checks(&self, card: &str) -> Result<Option<(i64, Vec<String>)>, String> {
+        let Some(version) = owner::latest(&self.conn, card, IMPL_REPORT)? else {
+            return Ok(None);
+        };
+        let report = self.board_stage_artifact(card, IMPL_REPORT, version)?;
+
+        Ok(Some((version, status::owner_checks(&report))))
     }
 
     pub fn board_stage_artifacts(&self, card: &str) -> Result<Vec<ArtifactMeta>, String> {

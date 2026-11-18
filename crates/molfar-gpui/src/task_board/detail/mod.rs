@@ -6,6 +6,9 @@ mod header;
 mod metadata;
 #[cfg(test)]
 mod navigation_tests;
+pub(super) mod owner_checks;
+#[cfg(test)]
+mod owner_checks_tests;
 mod tabs;
 #[cfg(test)]
 mod tests;
@@ -41,23 +44,14 @@ impl Board {
         if !self.drawer_open {
             return;
         }
-        let Some(card) = self
-            .snapshot
-            .as_ref()
-            .and_then(|s| {
-                s.cards
-                    .iter()
-                    .find(|c| Some(&c.id) == self.selected.as_ref())
-            })
-            .cloned()
-        else {
+        let Some(card) = self.snapshot.as_ref().and_then(|s| {
+            s.cards
+                .iter()
+                .find(|c| Some(&c.id) == self.selected.as_ref())
+        }) else {
             return;
         };
-        let cwd = card
-            .worktree_path
-            .as_ref()
-            .unwrap_or(&card.project_cwd)
-            .clone();
+        let cwd = card.worktree_path.as_ref().unwrap_or(&card.project_cwd);
         let same_card = self
             .detail_content
             .as_ref()
@@ -66,14 +60,20 @@ impl Board {
             && self.detail_content.as_ref().is_some_and(|c| {
                 c.description == card.description
                     && c.criteria == card.acceptance_criteria
-                    && c.cwd == cwd
+                    && c.cwd == *cwd
             })
         {
             return;
         }
+        let (card_id, description, criteria, cwd) = (
+            card.id.clone(),
+            card.description.clone(),
+            card.acceptance_criteria.clone(),
+            cwd.clone(),
+        );
         if !same_card {
             self.detail_content = Some(Content {
-                card_id: card.id.clone(),
+                card_id,
                 description: String::new(),
                 criteria: String::new(),
                 cwd: String::new(),
@@ -83,16 +83,16 @@ impl Board {
             });
         }
         let content = self.detail_content.as_mut().expect("selected content");
-        content.description = card.description.clone();
-        content.criteria = card.acceptance_criteria.clone();
-        content.cwd = cwd.clone();
+        content.description.clone_from(&description);
+        content.criteria.clone_from(&criteria);
+        content.cwd.clone_from(&cwd);
         content.generation += 1;
         let generation = content.generation;
         let store = self.store.clone();
         let work = cx.background_executor().spawn(async move {
             (
-                Preview::new(&card.description, &cwd, &store),
-                Preview::new(&card.acceptance_criteria, &cwd, &store),
+                Preview::new(&description, &cwd, &store),
+                Preview::new(&criteria, &cwd, &store),
             )
         });
         let card_id = content.card_id.clone();

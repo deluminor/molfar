@@ -1,50 +1,62 @@
 //! A session's provider mark, working spinner, circled done check and amber
 //! attention mark, for sidebar rows and title tabs.
-use crate::pulse::{self, Rate};
+use crate::pulse;
 use crate::theme::*;
-use gpui::{AnyElement, Context, ElementId, Hsla, Render, Role, Window, div, prelude::*, px, rgb};
+use gpui::{
+    AnyElement, Bounds, Context, ElementId, Hsla, Path, Pixels, Render, Role, Window, canvas, div,
+    point, prelude::*, px, rgb, size,
+};
 use std::f32::consts::TAU;
 use std::time::Duration;
 
 /// One wave across the grid, as TerminalSpinner's `molfar-spinner-wave`.
-pub(crate) const SPINNER_PERIOD: Duration = Duration::from_millis(1_200);
+const SPINNER_PERIOD: Duration = Duration::from_millis(1_200);
 /// Slate, peach and pink, top row to bottom.
 pub(crate) const SPINNER_ROWS: [u32; 3] = [0x6f84a3, 0xe8b583, 0xe47fa6];
 
-/// The working spinner turning on the shared clock at `rate`.
-pub(crate) fn spinner(id: impl Into<ElementId>, rate: Rate) -> pulse::Looping {
-    pulse::looping(id, SPINNER_PERIOD, rate, spinner_at)
+/// TerminalSpinner's 12px grid on the shared paint clock.
+pub(crate) fn spinner(id: impl Into<ElementId>) -> impl IntoElement {
+    div().id(id).size(px(12.)).child(
+        canvas(
+            |_, _, _| (),
+            |bounds, _, window, cx| {
+                for (row, color) in SPINNER_ROWS.into_iter().enumerate() {
+                    for col in 0..3 {
+                        let origin =
+                            bounds.origin + point(px(4. * col as f32), px(4. * row as f32));
+                        let cell = Bounds::new(origin, size(px(4.), px(4.)));
+                        pulse::paint_path(cell, SPINNER_PERIOD, window, cx, move |phase| {
+                            Some(dot(cell, row, col, color, phase))
+                        });
+                    }
+                }
+            },
+        )
+        .size_full(),
+    )
 }
 
-/// TerminalSpinner's 12px 3×3 grid at `fraction` of its period: a soft wave
-/// washes from the top-left corner to the bottom-right, and dots off the
-/// center diagonal peak dimmer.
-pub(crate) fn spinner_at(fraction: f32) -> gpui::Div {
-    let phase = fraction * TAU;
-    div()
-        .size(px(12.))
-        .flex()
-        .flex_col()
-        .children((0..3).map(|row| {
-            div().flex().children((0..3).map(move |col| {
-                let wave = (0.5 - 0.5 * (phase - (col + row) as f32 * 0.9).cos()).powf(3.52);
-                let peak = 0.93 * (1. - 0.65 * (col as f32 - row as f32).abs() / 2.);
-                let alpha = 0.07 + peak * wave;
-                let mut color: Hsla = rgb(SPINNER_ROWS[row]).into();
-                color.a = alpha;
-                div()
-                    .size(px(4.))
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .child(
-                        div()
-                            .size(px(2.5 * (0.89 + 0.11 * peak * wave)))
-                            .rounded_full()
-                            .bg(color),
-                    )
-            }))
-        }))
+fn dot(
+    cell: Bounds<Pixels>,
+    row: usize,
+    col: usize,
+    color: u32,
+    phase: f32,
+) -> (Path<Pixels>, Hsla) {
+    let wave = (0.5 - 0.5 * (phase * TAU - (col + row) as f32 * 0.9).cos()).powf(3.52);
+    let peak = 0.93 * (1. - 0.65 * row.abs_diff(col) as f32 / 2.);
+    let radius = 1.25 * (0.89 + 0.11 * peak * wave);
+    let center = cell.center();
+    let mut color: Hsla = rgb(color).into();
+    color.a = 0.07 + peak * wave;
+
+    let mut path = Path::new(center);
+    path.move_to(center);
+    for step in 0..=12 {
+        let angle = step as f32 * TAU / 12.;
+        path.line_to(center + point(px(radius * angle.cos()), px(radius * angle.sin())));
+    }
+    (path, color)
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum State {
@@ -55,7 +67,7 @@ pub(crate) enum State {
     Attention,
 }
 
-/// A small cached view so animation leaves the conversation untouched.
+/// A session mark with an independently animated working state.
 pub(crate) struct SessionMark {
     side: f32,
     provider: String,
@@ -102,10 +114,9 @@ impl Render for SessionMark {
         let side = self.side;
         let mark: AnyElement = match self.state {
             State::Idle => provider_icon(&self.provider, side).into_any_element(),
-            // Its own small view, so the clock repaints only the mark.
             State::Working => div()
                 .id("session-working")
-                .child(spinner("session-working-spinner", Rate::Smooth))
+                .child(spinner("session-working-spinner"))
                 .role(Role::Image)
                 .aria_label("Working")
                 .into_any_element(),
@@ -144,10 +155,38 @@ mod tests {
         mark.update(cx, |mark, cx| mark.set("codex", State::Working, cx));
         cx.run_until_parked();
         cx.update(|_, cx| assert!(pulse::running(cx)));
+        gpui::frame_stats::enable();
+        cx.simulate_visibility_change(gpui::WindowVisibility::Hidden);
+        gpui::frame_stats::take();
+        cx.executor().advance_clock(crate::pulse::TICK * 4);
+        cx.run_until_parked();
+        assert!(gpui::frame_stats::take().counters.is_empty());
+        cx.simulate_visibility_change(gpui::WindowVisibility::Visible);
+        cx.executor().advance_clock(crate::pulse::TICK * 4);
+        cx.run_until_parked();
+        assert_eq!(
+            gpui::frame_stats::take().counters,
+            [("animated-path-steps", 2)]
+        );
+
+        cx.update(|_, cx| cx.set_reduce_motion(true));
+        cx.run_until_parked();
+        cx.executor().advance_clock(crate::pulse::TICK * 2);
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            assert!(!window.has_animated_paths());
+            assert!(!pulse::running(cx));
+            cx.set_reduce_motion(false);
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            assert!(window.has_animated_paths());
+            assert!(pulse::running(cx));
+        });
+
         mark.update(cx, |mark, cx| mark.set("codex", State::Done, cx));
         cx.run_until_parked();
-        // Two background-paced strides: one notifies, the next finds no loop.
-        cx.executor().advance_clock(Duration::from_secs(2));
+        cx.executor().advance_clock(crate::pulse::TICK * 2);
         cx.run_until_parked();
         cx.update(|_, cx| assert!(!pulse::running(cx)));
     }

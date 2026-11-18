@@ -877,12 +877,9 @@ impl Shell {
                                         d.child(icon("circle-alert", 12.).text_color(tone))
                                     })
                                     .when(working, |d| {
-                                        d.child(crate::pulse::looping(
-                                            SharedString::from(format!("rail-spinner-{lead}-{ix}")),
-                                            crate::session_mark::SPINNER_PERIOD,
-                                            crate::pulse::Rate::Half,
-                                            crate::session_mark::spinner_at,
-                                        ))
+                                        d.child(crate::session_mark::spinner(SharedString::from(
+                                            format!("rail-spinner-{lead}-{ix}"),
+                                        )))
                                     })
                                     .when(done && !alert, |d| {
                                         d.child(icon("check", 12.).text_color(tone))

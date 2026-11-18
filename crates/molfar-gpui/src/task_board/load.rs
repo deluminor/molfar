@@ -61,6 +61,7 @@ impl Board {
                 self.selected = snapshot.selected.clone();
                 self.snapshot = Some(snapshot);
                 self.error = None;
+                self.sync_owner_checks(cx);
                 if self.drawer_open {
                     self.refresh_card_usage(cx);
                 }

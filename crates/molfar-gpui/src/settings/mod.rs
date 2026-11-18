@@ -2,6 +2,7 @@
 //! src/app/shell/SettingsRail.tsx: the Settings pages, their rail and the
 //! breadcrumb, search and actions the inset layout puts in its title bar.
 mod data;
+mod external;
 mod keymap;
 #[cfg(test)]
 mod layout_tests;
@@ -15,6 +16,7 @@ mod skill_document;
 pub(crate) use palettes::{PALETTES, palette};
 pub(crate) mod widgets;
 
+pub(crate) use external::{ExternalClientRow, ExternalStatus};
 pub(crate) use keymap::apply as apply_keybindings;
 pub(crate) use model::Section;
 pub(crate) use pages::{ACCENTS, command_shortcut, swatch};
@@ -68,6 +70,8 @@ pub(crate) struct SettingsContext {
     /// BitChain Companion, when this desktop opened `companion.json`.
     pub companion: Option<crate::companion::Status>,
     pub companion_offer: Option<crate::companion::Offer>,
+    /// The inbound MCP endpoint and its client grants.
+    pub external_mcp: Option<ExternalStatus>,
 }
 impl PartialEq for SettingsContext {
     fn eq(&self, other: &Self) -> bool {
@@ -92,6 +96,7 @@ impl PartialEq for SettingsContext {
             && self.mobile_invite == other.mobile_invite
             && self.companion == other.companion
             && self.companion_offer == other.companion_offer
+            && self.external_mcp == other.external_mcp
     }
 }
 #[derive(Clone, Debug, PartialEq)]
@@ -105,6 +110,7 @@ pub(crate) struct FamiliarSetting {
     pub folders: bool,
 }
 
+#[derive(Clone)]
 pub(crate) enum SettingsEvent {
     WhatsNew,
     CheckAppUpdates,
@@ -146,6 +152,29 @@ pub(crate) enum SettingsEvent {
     CompanionPair,
     CompanionCancelPair,
     CompanionRevoke(String),
+    ExternalConfigure {
+        enabled: bool,
+        port: u16,
+    },
+    ExternalCreateClient {
+        name: String,
+    },
+    ExternalRename {
+        id: String,
+        name: String,
+    },
+    ExternalSetProjects {
+        id: String,
+        all: bool,
+    },
+    ExternalSetPort(u16),
+    ExternalToggleGrant {
+        id: String,
+        grant: Option<molfar_core::external_mcp::grants::types::GRANT>,
+        project: Option<String>,
+    },
+    ExternalRevoke(String),
+    ExternalDismissKey,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -259,6 +288,7 @@ pub(crate) struct SettingsView {
     mcp_filter: String,
     fields: HashMap<&'static str, Entity<Input>>,
     connections: pages::ConnectionsState,
+    external_page: pages::ExternalPageState,
     skill_preview: Option<std::path::PathBuf>,
     skill_preview_text: Option<Result<std::sync::Arc<skill_document::DocumentData>, String>>,
     skill_preview_generation: u64,
@@ -409,6 +439,7 @@ impl SettingsView {
             mcp_filter: "all".into(),
             fields: HashMap::new(),
             connections: pages::ConnectionsState::default(),
+            external_page: pages::ExternalPageState::default(),
             skill_preview: None,
             skill_preview_text: None,
             skill_preview_generation: 0,
@@ -472,6 +503,7 @@ impl SettingsView {
             self.mobile_context_changed(cx);
             if remote_changed {
                 self.leave_connections(cx);
+                self.external_page = pages::ExternalPageState::default();
                 self.watch_connections(cx);
             }
             cx.notify();
@@ -511,6 +543,9 @@ impl SettingsView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
+        if self.dismiss_external_transient(window, cx) {
+            return true;
+        }
         if self.dismiss_notification_transient(window, cx) {
             return true;
         }

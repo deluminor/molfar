@@ -1,5 +1,6 @@
 //! Shared project actions for ordinary Operator threads and resident Familiars.
 //! Visibility and Familiar-only capabilities belong to the caller, not launch JSON.
+pub mod board;
 pub mod turn;
 
 use crate::{
@@ -33,7 +34,8 @@ pub fn validate_operator(action: &str, input: &Value) -> Result<(), String> {
             | "notes.write"
             | "worktrees.list"
             | "worktrees.create"
-    ) {
+    ) && !board::is_board(action)
+    {
         return Err("Unknown Operator action. Run app help for project actions; memory, habits and artifacts require a Familiar.".into());
     }
     crate::familiar::api::validate(action, input)?;

@@ -170,6 +170,14 @@ fn completed_execution_receipts_settle_after_restart_once_without_provider_repla
             .unwrap();
         drop(launch);
         *locked(&fixture.store).unwrap() = molfar_core::store::Store::open_desktop(&path).unwrap();
+        let active = HashSet::from([persisted]);
+        let effect = settle::settle(&fixture.store, &context, &active).unwrap();
+        assert!(
+            !effect.changed,
+            "a live session still owns its completed turn"
+        );
+        assert_eq!(fixture.card().run_state, "running");
+
         let effect = settle::settle(&fixture.store, &context, &HashSet::new()).unwrap();
         assert!(effect.changed);
         assert!(

@@ -88,12 +88,15 @@ pub(crate) struct Board {
     column_scrolls: std::cell::RefCell<std::collections::HashMap<String, ScrollHandle>>,
     detail_content: Option<detail::Content>,
     card_usage: detail::usage::State,
+    owner_checks: detail::owner_checks::State,
     drawer_opens: u64,
     dragging: Option<String>,
     drag_over: Option<String>,
     drag_sessions: u64,
     drawer_open: bool,
     edge_pointer: Option<(f32, f32, f32)>,
+    #[cfg(test)]
+    renders: usize,
 }
 
 impl EventEmitter<Event> for Board {}
@@ -167,18 +170,26 @@ impl Board {
             column_scrolls: Default::default(),
             detail_content: None,
             card_usage: Default::default(),
+            owner_checks: Default::default(),
             drawer_opens: 0,
             dragging: None,
             drag_over: None,
             drag_sessions: 0,
             drawer_open: false,
             edge_pointer: None,
+            #[cfg(test)]
+            renders: 0,
         }
     }
 
     #[cfg(test)]
     pub(crate) fn project_only_for_test(&self) -> bool {
         self.project_only
+    }
+
+    #[cfg(test)]
+    pub(crate) fn renders_for_test(&self) -> usize {
+        self.renders
     }
 
     #[cfg(test)]

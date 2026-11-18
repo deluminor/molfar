@@ -6,7 +6,9 @@ const REPORT: &str = "# Implementation report\nStatus: complete | partial | bloc
 
 const STATUS: &str = "## Status\nStart the report with exactly one status line. Only `complete` and `blocked` end this stage:\n- `Status: complete`: every plan stage and acceptance criterion is implemented, committed and the checks pass.\n- `Status: blocked`: you cannot continue without the user. Explain the blocker in the Summary.\n- `Status: partial`: work remains. MOLFAR answers at once in this same session and asks you to continue, so\n  `partial` never ends the stage. MOLFAR watches the context and compacts it when needed; you never need to\n  checkpoint.\nWhen the status is not `complete`, the `## Stop signal` section must name the concrete signal: the exact provider\nor tool error you hit, or the blocker. A feeling that the session is long or expensive is not a signal.";
 
-const REVIEW_TEMPLATE: &str = "Verdict: APPROVE | CHANGES_REQUESTED\n\n## Acceptance criteria\n- <criterion>: met | not met — <evidence: file, test or check>\n\n## F1 [blocking|major|minor|nit] <finding title>\nFile: <path>:<line>\n<what is wrong, why it matters, how to fix>";
+const OWNER: &str = "## Owner verification\nSome checks only the owner can run: a live smoke against an external service, real credentials, paid\naccounts or a physical device. They are never a reason for `Status: blocked`. Finish everything you can verify\nyourself, report `Status: complete` and list each such check under a `## Owner verification` section of the\nreport, one bullet per check with the acceptance criterion it covers and how to run it. The owner runs them at\nFinal review. Use `blocked` only when something stops the implementation itself.";
+
+const REVIEW_TEMPLATE: &str = "Verdict: APPROVE | CHANGES_REQUESTED\n\n## Acceptance criteria\n- <criterion>: met | not met — <evidence: file, test or check>\n\n## Owner verification\n- <check>: not yet verified — owner runs it at Final review\n\n## F1 [blocking|major|minor|nit] <finding title>\nFile: <path>:<line>\n<what is wrong, why it matters, how to fix>";
 
 const PR_TEMPLATE: &str = "### Summary\n<what changes for the user and why, in two or three sentences>\n\n### Scope\n- <grouped bullets of what the diff actually does>\n\n### Notes for reviewers\n- <decisions, deferred scope, risks; omit the section if there is nothing real to say>\n\n### Testing\n- <only checks that were actually run, with results>";
 
@@ -36,6 +38,7 @@ fn writing(goal: &[&str], card: &Card, run: i64, report: &str) -> Vec<String> {
     let mut sections = vec![format!("## Goal\n{}", goal.join("\n"))];
     sections.extend(continuation(card, run));
     sections.push(STATUS.into());
+    sections.push(OWNER.into());
     sections.push(output(&[(IMPL_REPORT, report)]));
     sections
 }
@@ -121,6 +124,9 @@ pub(super) fn build(
                 "merge; minor = worth fixing, not dangerous; nit = style. When blocking or major findings remain, MOLFAR sends",
                 "them back to rework automatically together with the minor ones. Use APPROVE only when every criterion is met",
                 "and nothing blocking or major remains.",
+                "Checks the implementation report lists under `## Owner verification` are not yet verified: only the owner can",
+                "run them. They are never a finding and never an unmet criterion, so they alone do not block APPROVE. Copy",
+                "them into the `## Owner verification` section of your review, adding any further owner-only check you notice.",
                 "Also write the pull request description for this change, grounded in the diff, the spec and the",
                 "implementation report: English, no emojis, no filler, no attribution.",
             ]
