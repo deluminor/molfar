@@ -38,7 +38,14 @@ fn external_stage_receipts_and_answers_survive_retries(cx: &mut TestAppContext) 
             .unwrap_err()
             .contains("lacks permission")
     );
-    let before = f.card();
+    let before = call(
+        window,
+        &principal,
+        "board_read",
+        json!({"cardId":"card"}),
+        cx,
+    )
+    .unwrap();
     assert!(
         call(
             window,
@@ -49,7 +56,15 @@ fn external_stage_receipts_and_answers_survive_retries(cx: &mut TestAppContext) 
         )
         .is_err()
     );
-    assert_eq!(f.card(), before);
+    let after = call(
+        window,
+        &principal,
+        "board_read",
+        json!({"cardId":"card"}),
+        cx,
+    )
+    .unwrap();
+    assert_eq!(after, before);
     assert!(!f.root.join("submissions").exists());
     let (reply, mut first) = reply_channel();
     let (duplicate_reply, mut duplicate) = reply_channel();

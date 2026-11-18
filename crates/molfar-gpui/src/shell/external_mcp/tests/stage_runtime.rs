@@ -4,6 +4,36 @@ use crate::shell::board_runtime::tests::fixtures::{Fixture as BoardFixture, wait
 use molfar_core::task_board::{constants::PLAN_APPROVAL, stage::lifecycle::types::StageAction};
 
 #[gpui::test]
+fn cancelling_a_running_stage_stops_its_session_and_clears_preparation(cx: &mut TestAppContext) {
+    let f = BoardFixture::new();
+    let principal = board_principal(&f);
+    let window = f.window(cx);
+    let session = f.prepare_busy_session(window, cx);
+    assert_eq!(f.card().run_state, "running");
+    assert!(BoardFixture::has_preparation(window, cx));
+
+    call(
+        window,
+        &principal,
+        "board_cancel",
+        stage_input(&f, "cancel-busy"),
+        cx,
+    )
+    .unwrap();
+
+    assert_eq!(f.card().run_state, "failed");
+    assert!(!BoardFixture::has_preparation(window, cx));
+    window
+        .update(cx, |shell, _, cx| {
+            let view = shell.sessions[&session].read(cx);
+            assert!(!view.busy);
+            assert!(view.notification_was_cancelled());
+        })
+        .unwrap();
+    BoardFixture::resume_poll(window, cx);
+}
+
+#[gpui::test]
 fn cancel_retry_and_back_follow_the_same_column_and_gate_rules(cx: &mut TestAppContext) {
     let f = BoardFixture::new();
     let principal = board_principal(&f);

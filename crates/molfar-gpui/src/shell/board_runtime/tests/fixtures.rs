@@ -133,6 +133,38 @@ impl Fixture {
         window
     }
 
+    pub fn prepare_busy_session(
+        &self,
+        window: WindowHandle<Shell>,
+        cx: &mut TestAppContext,
+    ) -> i64 {
+        let launch = super::recovery::prepared(self);
+        let id = launch.summary.id;
+        window
+            .update(cx, |shell, _, cx| {
+                shell.board_state.polling = true;
+                shell
+                    .board_state
+                    .preparing
+                    .insert("card".into(), launch.run_id);
+                shell.add(launch.summary, cx);
+                shell
+                    .ensure_session(id, cx)
+                    .unwrap()
+                    .update(cx, |view, _| view.busy = true);
+            })
+            .unwrap();
+        id
+    }
+
+    pub fn has_preparation(window: WindowHandle<Shell>, cx: &mut TestAppContext) -> bool {
+        window
+            .update(cx, |shell, _, _| {
+                shell.board_state.preparing.contains_key("card")
+            })
+            .unwrap()
+    }
+
     pub fn hold_poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
         window
             .update(cx, |shell, _, _| shell.board_state.polling = true)
