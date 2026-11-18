@@ -52,7 +52,21 @@ Inspected checkout: `02fbe07286b2d098f4d715ab566c62300cf6c5d1`; working tree cle
 
 External callers cannot choose model/runtime policy or inherit internal capability credentials. Session configuration comes from MOLFAR defaults through its existing launch path.
 
-External Board update/archive tools are outside v1; these additions apply to internal app access only.
+## External grants v2
+
+Clients start with every grant off. Board, sessions, notes, knowledge, automations, inbox, and familiars each have independent read and write grants. Board creation, Board stage execution, and session stop require separate action grants (`board:create`, `board:run`, and `sessions:stop`). Tools that delete or reset require the additional `destructive` flag. Tools that act as the user or another agent require the additional `delegated` flag. Non-project resources use an explicit allowlist keyed by resource kind and ID (vault, inbox provider, familiar) and a separate receipt namespace. No current tool uses these two flags, the resource allowlist, or `board:run`.
+
+| Legacy scope | Migrated grants |
+| --- | --- |
+| `read` | `board:read` and `sessions:read`. Either allows `projects_list`. |
+| `submit` | `sessions:write` and `board:create`. |
+| `stop` | `sessions:stop`. |
+
+Migration preserves project assignments and adds no further permissions. Tool discovery and calls use the current client grants. Permission denials are audited with metadata only.
+
+`board_update`, `board_archive`, and `board_unarchive` require `board:write`, a card in a granted project, and a request ID. Update changes only title, description, or acceptance criteria on an unarchived, idle, unqueued Backlog card. Archive and unarchive require an idle, unqueued card. Receipts are scoped to client, project, action, and request ID. Reusing an ID replays the saved result for matching input and conflicts for different input. `board_read` includes `allowedActions` with the same moves as desktop, including the Back guard, plus eligible edit, archive, and unarchive actions.
+
+External MCP never exposes plan approval, delivery (commit, push, or pull request), runtime approvals, model overrides, external client or scope management, Familiar or automation permission changes, project or app-access administration, credentials (including inbox tokens, vault credentials, Companion pairing, and settings secrets), or shell and arbitrary execution.
 
 ### Internal actions
 
@@ -143,7 +157,7 @@ Authorized Familiars and project sessions can list/read/create/update/archive/un
 
 ## Out of scope
 
-Stable Tauri parity; OAuth; remote access; background daemon; cloud relay; automatic OpenBot wakeups; arbitrary execution; destructive tools; external Board update/archive; model overrides; approval bypasses.
+Stable Tauri parity; OAuth; remote access; background daemon; cloud relay; automatic client wakeups.
 
 Proposed v1 also excludes internal stage queueing/approval, answering Grill questions, and moving columns. The questions block presents this remaining product decision.
 
