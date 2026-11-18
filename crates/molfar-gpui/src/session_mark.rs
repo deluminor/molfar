@@ -105,7 +105,7 @@ impl Render for SessionMark {
             // Its own small view, so the clock repaints only the mark.
             State::Working => div()
                 .id("session-working")
-                .child(spinner("session-working-spinner", Rate::Smooth))
+                .child(spinner("session-working-spinner", Rate::Half))
                 .role(Role::Image)
                 .aria_label("Working")
                 .into_any_element(),
