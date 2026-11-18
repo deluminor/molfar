@@ -24,8 +24,9 @@ or ask a Familiar directly. See [session visuals](visuals.md) and the
 
 ## External MCP access
 
-OpenBot and other local MCP clients can read granted projects, start sessions
-and add idle Backlog cards through an opt-in loopback endpoint. See
+OpenBot and other local MCP clients can read granted projects, start sessions,
+add idle Backlog cards, and use granted knowledge, automations, Familiars, and
+inbox through an opt-in loopback endpoint. See
 [external MCP access](external-mcp.md).
 
 ## Familiars

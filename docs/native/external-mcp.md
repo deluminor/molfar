@@ -15,10 +15,17 @@ the same Board stage runner as the desktop.
 4. Choose **Add client**. Copy the key shown once; MOLFAR stores only a SHA-256
    verifier, so a lost key cannot be shown again. Revoke the client and add a
    new one instead.
-5. Grant the client one or more projects and the permissions needed for its
-   tools. Read and Write grants are independent. Board creation, Board stage
-   actions, and stopping a session each have a separate grant. Permanent
-   deletion also requires **Destructive**.
+5. Grant the client projects, resources, and the permissions needed for its
+   tools. Read and Write grants are independent and start off. Board creation,
+   Board stage actions, and stopping a session each have a separate grant.
+   Permanent deletion and reset also require **Destructive**. Running an
+   automation, sending a Familiar message, and posting an inbox comment also
+   require **Delegated**.
+
+   Knowledge uses the connected vault. Inbox uses one chip per provider, and
+   only connected providers answer. Familiars use one chip per Familiar.
+   Automations follow the project allowlist. Knowledge and inbox reads are
+   marked sensitive.
 
    Changes apply to the next call, including on a connection the client keeps
    open. **Revoke** invalidates the key.
@@ -47,6 +54,19 @@ header storage. Never put the key in the URL, a prompt or a shared file.
 | `notes_list`, `notes_read` | `notes:read` | List notes attached to granted projects and read paged text |
 | `notes_create`, `notes_write` | `notes:write` | Create in an explicit project or edit an existing scoped note |
 | `notes_delete` | `notes:write` + `destructive` | Permanently delete an accessible note |
+| `knowledge_search`, `knowledge_read`, `knowledge_backlinks`, `knowledge_neighbors` | `knowledge:read` | Search and read the allowed vault. Sensitive |
+| `knowledge_write` | `knowledge:write` | Replace an existing Markdown note at its current revision |
+| `knowledge_toggle_task` | `knowledge:write` | Toggle one task in an existing note at its current revision |
+| `automations_list`, `automations_read`, `automations_runs` | `automations:read` | List automations in granted projects and read prompts or run metadata |
+| `automations_set_enabled` | `automations:write` | Enable or disable an automation in a granted project |
+| `automations_upsert`, `automations_run_now` | `automations:write` + `delegated` | Create or edit an automation, or queue one run. Cannot change permissions, model, runtime, or project |
+| `automations_delete` | `automations:write` + `destructive` | Delete an automation in a granted project |
+| `familiars_list`, `familiars_read` | `familiars:read` | List allowed Familiars. Memory and transcript require that Familiar |
+| `familiars_create`, `familiars_update` | `familiars:write` | Create a Familiar with no projects, or change its name, mascot, or colour |
+| `familiars_send` | `familiars:write` + `delegated` | Queue a text message in that Familiar's chat |
+| `familiars_reset`, `familiars_delete` | `familiars:write` + `destructive` | Reset a Familiar's conversation or remove it |
+| `inbox_list`, `inbox_details`, `inbox_thread`, `inbox_diff` | `inbox:read` | Read allowed, connected providers. Sensitive. Diffs are pull and merge requests only |
+| `inbox_comment` | `inbox:write` + `delegated` | Post one comment on an item from an allowed provider |
 
 Session `status` is `idle`, `running`, `needs-input`, `completed`, `failed` or
 `cancelled`. `needs-input` means an approval or question waits in MOLFAR; the
@@ -87,6 +107,19 @@ Every mutation takes a `requestId`. MOLFAR saves a receipt before it acts:
   same session or card. `sessions_send` resumes a reserved draft and
   acknowledges an already queued or delivered prompt. If the queue stayed
   paused after an interruption, resume it in MOLFAR.
+- `knowledge_write` resumes when the stored note already equals the submitted
+  body. Otherwise it applies only when `expected` is still current. A stale
+  revision returns a conflict and leaves the file unchanged. Paths outside the
+  vault, including traversal, absolute paths, hidden components, symlinks, and
+  non-Markdown files, are rejected.
+- `automations_upsert`, `automations_set_enabled`, `automations_delete`,
+  `familiars_create`, `familiars_update`, `familiars_reset`, and
+  `familiars_delete` resume. A delete or reset of a target that is already
+  gone is done. New automation and Familiar ids are derived from the client
+  and `requestId`.
+- `automations_run_now`, `familiars_send`, and `inbox_comment` do not resume.
+  A receipt left pending returns `Outcome unknown: MOLFAR stopped while handling this request. Check the target before trying again with a new requestId.`
+  and does not run, enqueue, or post a second time.
 - An in-flight duplicate reports that the request is still running. If a Board
   action committed before its receipt was saved, the original revision is stale
   and recovery returns a conflict.
@@ -98,10 +131,15 @@ Requests are limited to 1 MiB, 32 queued and 8 running calls, a 30-second wait
 for MOLFAR, 100 list entries and 6,000 characters per text page. Unknown tool
 arguments, unsupported protocol versions, unknown `Host` values and any browser
 `Origin` are rejected. The audit log in MOLFAR's settings keeps the last 200
-calls as client, tool, target, request ID and outcome, without keys, prompts or
-transcripts, note titles, tags, or bodies.
+calls as client, tool, target, request ID and outcome, without keys, prompts,
+transcripts, note titles, tags, or bodies, and without knowledge text,
+automation prompts, Familiar memory, or inbox comments.
 
 ## Not included
 
-The endpoint is loopback-only. Plan approval and editing, delivery, runtime
+The endpoint is loopback-only. It does not return inbox tokens, provider URL,
+email, or organization settings, vault connection internals, Companion pairing,
+or other settings secrets. It cannot change Familiar or automation permissions,
+projects, model, runtime, or app access, connect or disconnect a vault or inbox
+provider, or run a shell. Plan approval and editing, delivery, runtime
 approvals, and model overrides remain desktop operations.

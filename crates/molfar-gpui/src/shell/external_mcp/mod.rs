@@ -2,6 +2,8 @@
 //! models, runtime approvals and Board stages. Mutations persist a receipt
 //! before dispatch so retries never repeat accepted work.
 mod audit;
+#[cfg(test)]
+mod automation_tests;
 mod board_dispatch;
 mod call;
 mod clients;

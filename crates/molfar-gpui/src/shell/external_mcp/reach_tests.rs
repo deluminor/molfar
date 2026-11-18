@@ -157,3 +157,68 @@ fn familiar_private_content_requires_read_and_the_same_familiar(cx: &mut TestApp
         assert!(tools::validate("familiars_update", &input).is_err());
     }
 }
+
+#[gpui::test]
+fn pending_familiar_send_does_not_enqueue_again(cx: &mut TestAppContext) {
+    use molfar_core::familiar::Roster;
+    let f = fixture();
+    let id = {
+        let store = locked(&f.store).unwrap();
+        let mut roster = Roster::default();
+        let id = roster.create(vec![]).id.clone();
+        roster.save(&store).unwrap();
+        id
+    };
+    let window = window(&f, cx);
+    let mut client = principal(&f);
+    client.grants.extend([
+        GRANT::Read(DOMAIN::Familiars),
+        GRANT::Write(DOMAIN::Familiars),
+        GRANT::Delegated,
+    ]);
+    client.resources.push(ResourceGrant {
+        kind: RESOURCE::Familiar,
+        id: id.clone(),
+    });
+    let text = "private familiar message";
+    let input = json!({"familiarId": id, "text": text, "requestId": "interrupted"});
+    let pending = locked(&f.store)
+        .unwrap()
+        .external_receipt_begin(
+            &client.client_id,
+            &ReceiptTarget::Resource {
+                kind: RESOURCE::Familiar,
+                id: id.clone(),
+            },
+            "familiars_send",
+            "interrupted",
+            &receipts::digest("familiars_send", &input),
+        )
+        .unwrap();
+    assert_eq!(pending, BEGIN::Fresh);
+    assert_eq!(
+        call(window, &client, "familiars_send", input, cx),
+        Err(OUTCOME_UNKNOWN.into())
+    );
+    let queued = window
+        .update(cx, |shell, _, cx| {
+            shell
+                .familiars
+                .as_ref()
+                .unwrap()
+                .read(cx)
+                .external_familiar(&id)
+                .unwrap()
+                .outbox
+                .len()
+        })
+        .unwrap();
+    assert_eq!(queued, 0);
+    let audit = locked(&f.store).unwrap().external_audit_log().unwrap();
+    assert!(
+        audit
+            .iter()
+            .any(|entry| entry.outcome == "unknown" && entry.action == "familiars_send")
+    );
+    assert!(!serde_json::to_string(&audit).unwrap().contains(text));
+}
