@@ -121,3 +121,53 @@ fn deleting_the_last_empty_tab_does_not_reopen_the_target(cx: &mut TestAppContex
             .unwrap()
     );
 }
+
+#[gpui::test]
+fn failed_session_renames_keep_the_saved_title_and_can_retry(cx: &mut TestAppContext) {
+    let f = fixture();
+    let window = window(&f, cx);
+    let principal = principal(&f);
+    let id = f.sessions.0;
+    let db = rusqlite::Connection::open(f.root.join("molfar.db")).unwrap();
+    let saved_title = || {
+        locked(&f.store)
+            .unwrap()
+            .sessions()
+            .unwrap()
+            .into_iter()
+            .find(|session| session.id == id)
+            .unwrap()
+            .title
+    };
+    let original = saved_title();
+    db.execute_batch(
+        "CREATE TRIGGER reject_title BEFORE UPDATE OF title ON sessions
+         BEGIN SELECT RAISE(ABORT, 'title write failed'); END;",
+    )
+    .unwrap();
+    let rename = |request, cx: &mut TestAppContext| {
+        call(
+            window,
+            &principal,
+            "sessions_update",
+            json!({"sessionId":id,"title":"Renamed","requestId":request}),
+            cx,
+        )
+    };
+
+    let first = rename("first", cx);
+    let second = rename("second", cx);
+    for result in [first, second] {
+        assert!(result.unwrap_err().contains("title write failed"));
+    }
+    window
+        .update(cx, |shell, _, cx| {
+            assert_eq!(shell.session_metadata(id, cx).summary.title, original);
+        })
+        .unwrap();
+    assert_eq!(saved_title(), original);
+
+    db.execute_batch("DROP TRIGGER reject_title;").unwrap();
+    rename("retry", cx).unwrap();
+    assert_eq!(saved_title(), "Renamed");
+}

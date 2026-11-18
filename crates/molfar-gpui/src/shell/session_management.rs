@@ -11,24 +11,38 @@ impl Shell {
         if !self.session_summaries.contains_key(&id) {
             return Task::ready(Err("Session not found.".into()));
         }
-        if self.session_metadata(id, cx).summary.title == name {
-            return Task::ready(Ok(()));
-        }
-        if let Some(summary) = self.session_summaries.get_mut(&id) {
-            summary.title = name.clone();
-        }
-        if let Some(session) = self.sessions.get(&id) {
-            session.update(cx, |session, cx| session.rename(name.clone(), cx));
-        }
-        self.invalidate_chrome(cx);
-        cx.notify();
 
         let (done, result) = async_channel::bounded(1);
-        self.store_write("rename the session", cx, move |store| {
-            let result = store.title(id, &name);
-            let _ = done.try_send(result.clone());
-            result
-        });
+        let store = self.store.clone();
+        let previous = self.group_writes.take();
+        self.group_writes = Some(cx.spawn(async move |this, cx| {
+            if let Some(previous) = previous {
+                previous.await;
+            }
+            let title = name.clone();
+            let work = cx
+                .background_executor()
+                .spawn(async move { locked(&store)?.title(id, &title) });
+            let saved = work.await;
+            let updated = this.update(cx, |this, cx| {
+                match &saved {
+                    Ok(()) => {
+                        if let Some(summary) = this.session_summaries.get_mut(&id) {
+                            summary.title = name.clone();
+                        }
+                        if let Some(session) = this.sessions.get(&id) {
+                            session.update(cx, |session, cx| session.rename(name, cx));
+                        }
+                        this.invalidate_chrome(cx);
+                    }
+                    Err(error) => {
+                        this.error = Some(format!("Could not rename the session: {error}"));
+                    }
+                }
+                cx.notify();
+            });
+            let _ = done.try_send(saved.and_then(|()| updated.map_err(|error| error.to_string())));
+        }));
         cx.spawn(async move |_, _| {
             result
                 .recv()
