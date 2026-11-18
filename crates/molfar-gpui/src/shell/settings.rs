@@ -64,13 +64,15 @@ impl Shell {
                 catalogs.insert(session.summary.provider.clone(), models);
             }
         }
+        let mut external = self.external_settings_status();
+        external.resource_options = self.external_resources(cx);
         SettingsContext {
             remote: Some(self.remote.clone()),
             mobile: self.mobile_status(),
             mobile_invite: self.mobile.invite.clone(),
             companion: self.companion_status(),
             companion_offer: self.companion_live_offer(),
-            external_mcp: Some(self.external_settings_status()),
+            external_mcp: Some(external),
             quick_error: self.quick.error.clone(),
             inbox_connections: self
                 .inbox
@@ -134,6 +136,9 @@ impl Shell {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if section == Section::Mcp {
+            self.ensure_vault(cx);
+        }
         self.leave_app_search(cx);
         self.close_preview(cx);
         self.menu = None;
@@ -283,6 +288,9 @@ impl Shell {
                 SettingsEvent::ExternalToggleGrant { id, grant, project } => {
                     this.external_toggle_grant(id, *grant, project.clone(), cx)
                 }
+                SettingsEvent::ExternalToggleResource { id, resource } => {
+                    let _ = this.external_toggle_resource(id, resource.clone(), cx);
+                }
                 SettingsEvent::ExternalRevoke(id) => this.external_revoke(id, cx),
                 SettingsEvent::ExternalDismissKey => this.external_dismiss_key(cx),
             },
@@ -316,7 +324,10 @@ impl Shell {
         this_update(self, cx);
     }
     pub(super) fn select_settings(&mut self, section: Section, cx: &mut Context<Self>) {
-        if section != Section::Mcp {
+        if section == Section::Mcp {
+            self.ensure_vault(cx);
+            self.sync_settings(cx);
+        } else {
             self.external_dismiss_key(cx);
         }
 

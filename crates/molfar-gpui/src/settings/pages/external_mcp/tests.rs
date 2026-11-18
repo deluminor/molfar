@@ -81,7 +81,7 @@ fn external_mcp_key_dismissal_revoke_confirmation_and_flags(cx: &mut TestAppCont
                 name: "Laptop".into(),
                 grants: vec![],
                 projects: vec![],
-                resources_count: 0,
+                resources: vec![],
                 created_at: 0,
             }],
             new_key: Some(("Laptop".into(), "fixture".into())),

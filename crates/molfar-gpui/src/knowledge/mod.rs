@@ -31,7 +31,7 @@ mod types;
 
 use drafts::Draft;
 use graph::GraphView;
-pub(crate) use service::VaultService;
+pub(crate) use service::{Event as VaultEvent, VaultService};
 use tree::TreeRow;
 use types::{GraphStats, ScanMeta};
 

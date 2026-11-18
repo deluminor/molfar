@@ -1268,6 +1268,7 @@ impl Shell {
             &familiars,
             |this, _, _: &crate::familiars::Changed, cx| {
                 this.sync_familiar_search(cx);
+                this.sync_settings(cx);
                 this.update_usage_provider(cx);
                 this.invalidate_chrome(cx);
                 cx.notify();
