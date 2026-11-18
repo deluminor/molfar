@@ -31,7 +31,7 @@ Inspected checkout: `02fbe07286b2d098f4d715ab566c62300cf6c5d1`; working tree cle
 ## Scope
 
 1. An opt-in, application-owned loopback Streamable HTTP `/mcp` endpoint.
-2. Independent external client credentials with project allowlists and `read`, `submit`, and `stop` scopes.
+2. Independent external client credentials with project allowlists and per-domain grants.
 3. External project/session reads, session start/follow-up/stop, and Board list/read/create.
 4. Internal Board list/read/create/update/archive/unarchive for authorized Familiars and project sessions.
 5. Shared Board domain operations, separate caller authorization adapters.
@@ -64,7 +64,7 @@ Clients start with every grant off. Board, sessions, notes, knowledge, automatio
 
 Migration preserves project assignments and adds no further permissions. Tool discovery and calls use the current client grants. Permission denials are audited with metadata only.
 
-`board_update`, `board_archive`, and `board_unarchive` require `board:write`, a card in a granted project, and a request ID. Update changes only title, description, or acceptance criteria on an unarchived, idle, unqueued Backlog card. Archive and unarchive require an idle, unqueued card. Receipts are scoped to client, project, action, and request ID. Reusing an ID replays the saved result for matching input and conflicts for different input. `board_read` includes `allowedActions` with the same moves as desktop, including the Back guard, plus eligible edit, archive, and unarchive actions.
+`board_update`, `board_archive`, and `board_unarchive` require `board:write`, a card in a granted project, and a request ID. Update changes only title, description, or acceptance criteria on an unarchived, idle, unqueued Backlog card. Archive and unarchive require an idle, unqueued card. Receipts are scoped to client, project, action, and request ID. Reusing an ID replays the saved result for matching input and conflicts for different input. `board_read` includes `allowedActions`, an array of desktop action IDs. It includes legal moves with the Back guard applied, plus eligible `editTask`, `archive`, and `unarchive` actions. These IDs describe the card state. They do not grant permission or expose the corresponding stage transitions as tools.
 
 External MCP never exposes plan approval, delivery (commit, push, or pull request), runtime approvals, model overrides, external client or scope management, Familiar or automation permission changes, project or app-access administration, credentials (including inbox tokens, vault credentials, Companion pairing, and settings secrets), or shell and arbitrary execution.
 
