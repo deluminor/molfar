@@ -156,3 +156,16 @@ fn external_mcp_key_dismissal_revoke_confirmation_and_flags(cx: &mut TestAppCont
     visual.run_until_parked();
     assert!(visual.debug_bounds("external-status-Error").is_some());
 }
+
+#[test]
+fn permission_hints_follow_tools_in_the_catalog() {
+    use super::permissions::grant_tools;
+    use molfar_core::external_mcp::grants::types::DOMAIN;
+
+    assert_eq!(grant_tools(GRANT::BoardRun), 7);
+    assert_eq!(grant_tools(GRANT::Destructive), 2);
+    assert_eq!(grant_tools(GRANT::Read(DOMAIN::Notes)), 2);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Notes)), 3);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Sessions)), 6);
+    assert_eq!(grant_tools(GRANT::Delegated), 0);
+}

@@ -1,6 +1,9 @@
 use super::*;
-use crate::settings::ExternalClientRow;
-use molfar_core::external_mcp::grants::types::{DOMAIN, GRANT};
+use crate::{settings::ExternalClientRow, task_board::controls};
+use molfar_core::external_mcp::{
+    grants::types::{ACCESS, DOMAIN, GRANT},
+    tools,
+};
 
 impl SettingsView {
     pub(super) fn external_permissions(
@@ -52,7 +55,7 @@ impl SettingsView {
                 client,
                 GRANT::Destructive,
                 "Destructive",
-                "Allows tools to delete or reset data when available.",
+                "Allows permanent deletion of sessions and notes with their respective Write grants.",
                 cx,
             ))
             .child(flag(
@@ -72,6 +75,11 @@ fn grant_chip(
     cx: &mut Context<SettingsView>,
 ) -> gpui::Stateful<gpui::Div> {
     let key = String::from(grant);
+    let hint = match grant_tools(grant) {
+        0 => "No tools yet".to_owned(),
+        1 => "Unlocks 1 tool".to_owned(),
+        count => format!("Unlocks {count} tools"),
+    };
     chip::chip(
         format!("external-{}-{key}", client.id),
         label.to_owned(),
@@ -85,6 +93,7 @@ fn grant_chip(
         cx,
     )
     .debug_selector(move || format!("external-grant-{key}"))
+    .tooltip(move |_, cx| controls::hint(hint.clone(), cx))
 }
 
 fn flag(
@@ -112,4 +121,18 @@ pub(super) fn section_title(title: &'static str) -> gpui::Div {
         .text_size(px(12.))
         .font_weight(FontWeight::SEMIBOLD)
         .child(title)
+}
+
+pub(super) fn grant_tools(grant: GRANT) -> usize {
+    tools::catalog()
+        .iter()
+        .filter(|tool| {
+            tool.requires.any.contains(&grant)
+                || matches!(
+                    (grant, tool.requires.access),
+                    (GRANT::Destructive, ACCESS::Destructive)
+                        | (GRANT::Delegated, ACCESS::Delegated)
+                )
+        })
+        .count()
 }
