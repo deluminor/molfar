@@ -37,6 +37,7 @@ fn build_catalog() -> Vec<Tool> {
         schema: object(json!({}), &[]),
     }];
     tools.extend(sessions::definitions());
+    tools.extend(sessions::management());
     tools.extend(board::definitions());
     tools.extend(stage::definitions());
     tools
@@ -71,6 +72,9 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         "sessions_start" => check::<SessionsStart>(arguments),
         "sessions_send" => check::<SessionsSend>(arguments),
         "sessions_stop" => check::<SessionsStop>(arguments),
+        sessions::UPDATE | sessions::ARCHIVE | sessions::UNARCHIVE | sessions::DELETE => {
+            sessions::validate_manage(name, arguments)
+        }
         artifacts::LIST | artifacts::READ => artifacts::validate(name, arguments),
         board => {
             let internal = board.replacen('_', ".", 1);

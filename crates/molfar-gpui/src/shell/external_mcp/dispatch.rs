@@ -89,6 +89,12 @@ impl Shell {
             | board_api::artifacts::READ => {
                 self.external_board_tool(scope, tool, arguments, receipt, done, cx)
             }
+            tools::sessions::UPDATE
+            | tools::sessions::ARCHIVE
+            | tools::sessions::UNARCHIVE
+            | tools::sessions::DELETE => {
+                self.external_session_manage(scope, tool, &arguments, done, cx);
+            }
             _ => self.external_session_tool(scope, tool, arguments, receipt, done, cx),
         }
     }

@@ -2,6 +2,7 @@ mod artifacts;
 mod board_baseline;
 mod clients;
 mod scope;
+mod sessions_manage;
 mod stage;
 mod stage_runtime;
 use super::*;

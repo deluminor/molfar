@@ -155,6 +155,9 @@ fn migration_keeps_legacy_clients_within_their_mapped_grants() {
             &[
                 "sessions_start",
                 "sessions_send",
+                "sessions_update",
+                "sessions_archive",
+                "sessions_unarchive",
                 "board_create",
             ][..],
         ),

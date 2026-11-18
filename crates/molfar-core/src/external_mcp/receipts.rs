@@ -39,10 +39,7 @@ impl Store {
         digest: &str,
     ) -> Result<BEGIN, String> {
         let key = key(client, project, action, request);
-        let saved = self
-            .setting(&key)?
-            .map(|raw| serde_json::from_str::<Receipt>(&raw).map_err(|error| error.to_string()))
-            .transpose()?;
+        let saved = self.external_receipt(&key)?;
         let Some(saved) = saved else {
             self.save_receipt(&key, digest, None)?;
             return Ok(BEGIN::Fresh);
@@ -53,6 +50,35 @@ impl Store {
             (true, true, Some(result)) => BEGIN::Replay(result),
             _ => BEGIN::Pending,
         })
+    }
+
+    fn external_receipt(&self, key: &str) -> Result<Option<Receipt>, String> {
+        self.setting(key)?
+            .map(|raw| serde_json::from_str(&raw).map_err(|error| error.to_string()))
+            .transpose()
+    }
+
+    pub fn external_receipt_find(
+        &self,
+        client: &str,
+        action: &str,
+        request: &str,
+        projects: &[String],
+        digest: &str,
+    ) -> Result<Option<BEGIN>, String> {
+        let mut conflict = false;
+        for project in projects {
+            if let Some(saved) = self.external_receipt(&key(client, project, action, request))? {
+                if saved.digest == digest {
+                    return Ok(Some(match (saved.done, saved.result) {
+                        (true, Some(result)) => BEGIN::Replay(result),
+                        _ => BEGIN::Pending,
+                    }));
+                }
+                conflict = true;
+            }
+        }
+        Ok(conflict.then_some(BEGIN::Conflict))
     }
 
     pub fn external_receipt_finish(

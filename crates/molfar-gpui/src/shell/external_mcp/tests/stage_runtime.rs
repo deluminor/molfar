@@ -54,6 +54,29 @@ fn request_changes_and_rework_launch_through_the_desktop_runner(cx: &mut TestApp
     )
     .unwrap();
     wait_until(cx, || f.card().column_id == PLAN_APPROVAL);
+    let read = call(
+        window,
+        &principal,
+        "board_read",
+        json!({"cardId":"card"}),
+        cx,
+    )
+    .unwrap();
+    let stage_session = &read["runs"][0]["sessionId"];
+    let mut sessions = principal.clone();
+    sessions.grants.push(GRANT::Write(DOMAIN::Sessions));
+    let rejected = call(
+        window,
+        &sessions,
+        "sessions_archive",
+        json!({
+            "sessionId":stage_session,"requestId":"stage-archive"
+        }),
+        cx,
+    )
+    .unwrap_err();
+    assert!(rejected.contains("controlled from the Board"), "{rejected}");
+
     let mut input = stage_input(&f, "changes");
     input["note"] = json!("Please revise this.");
     call(window, &principal, "board_request_changes", input, cx).unwrap();

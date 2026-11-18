@@ -927,19 +927,7 @@ impl Shell {
         if commit && !name.is_empty() {
             match renaming.target {
                 RenameTarget::Session(id) => {
-                    if self.session_summaries.contains_key(&id)
-                        && self.session_metadata(id, cx).summary.title != name
-                    {
-                        if let Some(summary) = self.session_summaries.get_mut(&id) {
-                            summary.title = name.clone();
-                        }
-                        if let Some(session) = self.sessions.get(&id) {
-                            session.update(cx, |s, cx| {
-                                s.rename(name.clone(), cx);
-                            });
-                        }
-                        self.store_write("rename the session", cx, move |s| s.title(id, &name));
-                    }
+                    self.rename_session(id, name, cx).detach();
                 }
                 RenameTarget::Folder(folder) => {
                     self.update_groups(cx, |groups| groups.rename_folder(&folder, &name))

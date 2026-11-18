@@ -9,6 +9,7 @@ mod lifecycle;
 #[cfg(test)]
 mod recovery_tests;
 mod sessions;
+mod sessions_manage;
 mod stage;
 mod targets;
 #[cfg(test)]
@@ -149,7 +150,9 @@ impl Shell {
         let project = match self.external_mutation_project(&scope, &arguments, cx) {
             Ok(project) => molfar_core::files::path_key(&project),
             Err(error) => {
-                let result = Err(error);
+                let result = self
+                    .external_deleted_replay(&scope, tool, &arguments, &request, &digest)
+                    .unwrap_or(Err(error));
                 let target = audit::target(&result);
                 self.external_audit(
                     &scope.principal,

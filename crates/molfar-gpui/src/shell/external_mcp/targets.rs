@@ -46,6 +46,47 @@ impl Shell {
         Ok(self.session_metadata(id, cx).summary.cwd.clone())
     }
 
+    pub(super) fn external_deleted_replay(
+        &self,
+        scope: &Scope,
+        tool: &str,
+        arguments: &Value,
+        request: &str,
+        digest: &str,
+    ) -> Option<Result<Value, String>> {
+        if tool != tools::sessions::DELETE {
+            return None;
+        }
+        let lookup = || {
+            let store = locked(&self.store)?;
+            let id = &arguments["sessionId"];
+            let sessions = store.sessions()?;
+            let handle = id
+                .as_i64()
+                .or_else(|| id.as_str().and_then(|id| store.resolve_session_id(id).ok()));
+            let exists = handle
+                .is_some_and(|handle| sessions.iter().any(|session| session.id == handle));
+            if exists {
+                return Ok(None);
+            }
+            store.external_receipt_find(
+                &scope.principal.client_id,
+                tool,
+                request,
+                &scope.projects,
+                digest,
+            )
+        };
+        match lookup() {
+            Ok(Some(BEGIN::Replay(result))) => Some(result),
+            Ok(Some(BEGIN::Conflict)) => Some(Err(
+                "requestId was already used with different input.".into(),
+            )),
+            Err(error) => Some(Err(format!("Cannot read deletion receipt: {error}"))),
+            _ => None,
+        }
+    }
+
     pub(super) fn external_reachable(&self, id: i64, projects: &[String], cx: &App) -> bool {
         let Some(summary) = self
             .sessions
