@@ -52,7 +52,9 @@ fn fixture() -> Fixture {
 
 fn call(f: &mut Fixture, name: &str, input: Value) -> Result<Value, String> {
     let projects = [f.mine.clone()];
-    let envelope = input["requestId"].as_str().unwrap_or("envelope").to_owned();
+    let envelope = input["requestId"]
+        .as_str()
+        .map_or_else(crate::familiar::new_id, str::to_owned);
     action(
         &mut f.store,
         "operator:7",
@@ -193,6 +195,51 @@ fn update_versions_the_task_only_for_idle_backlog_cards() {
         .unwrap();
     let error = call(&mut f, "board.update", json!({"cardId":id,"title":"Late"})).unwrap_err();
     assert!(error.contains("idle Backlog"), "{error}");
+}
+
+#[test]
+fn a_retried_update_or_archive_replays_its_receipt_and_rejects_changed_input() {
+    let mut f = fixture();
+    let card = create(&mut f, "create", "First").unwrap();
+    let id = card["card"]["id"].as_str().unwrap().to_owned();
+
+    let renamed = call(
+        &mut f,
+        "board.update",
+        json!({"cardId":id,"title":"Renamed","requestId":"edit-1"}),
+    )
+    .unwrap();
+    let changed = call(
+        &mut f,
+        "board.update",
+        json!({"cardId":id,"title":"Other","requestId":"edit-1"}),
+    );
+    let replay = call(
+        &mut f,
+        "board.update",
+        json!({"cardId":id,"title":"Renamed","requestId":"edit-1"}),
+    )
+    .unwrap();
+    let archived = call(
+        &mut f,
+        "board.archive",
+        json!({"cardId":id,"requestId":"archive-1"}),
+    )
+    .unwrap();
+    call(&mut f, "board.unarchive", json!({"cardId":id})).unwrap();
+    let archive_replay = call(
+        &mut f,
+        "board.archive",
+        json!({"cardId":id,"requestId":"archive-1"}),
+    )
+    .unwrap();
+
+    assert!(changed.unwrap_err().contains("different input"));
+    assert_eq!(replay, renamed);
+    assert_eq!(archive_replay, archived);
+    let read = call(&mut f, "board.read", json!({"cardId":id})).unwrap();
+    assert_eq!(read["card"]["title"], "Renamed");
+    assert_eq!(read["card"]["archived"], false);
 }
 
 #[test]

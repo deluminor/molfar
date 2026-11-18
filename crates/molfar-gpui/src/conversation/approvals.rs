@@ -8,6 +8,13 @@ pub(super) struct State {
     motion: composer_shelf::Motion,
 }
 
+impl Conversation {
+    #[cfg(test)]
+    pub(crate) fn push_test_approval(&mut self, approval: Approval) {
+        self.approvals.push_back(approval);
+    }
+}
+
 impl State {
     fn sync(&self, id: Option<&str>, animate: bool) {
         let mut current = self.current.borrow_mut();

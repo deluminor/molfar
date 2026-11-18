@@ -26,6 +26,21 @@ impl Shell {
         Ok(id)
     }
 
+    /// The project a mutation targets, checked against current grants with the
+    /// same uniform errors a fresh call returns.
+    pub(super) fn external_mutation_project(
+        &self,
+        scope: &Scope,
+        arguments: &Value,
+        cx: &App,
+    ) -> Result<String, String> {
+        if let Some(project) = arguments["project"].as_str() {
+            return scope.project(project);
+        }
+        let id = self.external_target(scope, &arguments["sessionId"], true, cx)?;
+        Ok(self.session_metadata(id, cx).summary.cwd.clone())
+    }
+
     pub(super) fn external_reachable(&self, id: i64, projects: &[String], cx: &App) -> bool {
         let Some(summary) = self
             .sessions

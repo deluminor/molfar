@@ -2,6 +2,8 @@
 //! models, runtime approvals and Board stages. Mutations persist a receipt
 //! before dispatch so retries never repeat accepted work.
 mod lifecycle;
+#[cfg(test)]
+mod recovery_tests;
 mod sessions;
 mod targets;
 #[cfg(test)]
@@ -22,12 +24,31 @@ use serde_json::{Value, json};
 pub(super) struct External {
     server: Option<molfar_core::external_mcp::transport::Server>,
     error: Option<String>,
-    pending: HashSet<(String, String, String)>,
+    pending: HashSet<(String, String, String, String)>,
     /// The credential shown once after creation, as (client name, token).
     new_key: Option<(String, String)>,
 }
 
 type Reply = molfar_core::external_mcp::transport::Reply;
+
+/// A mutation's durable identity: principal, canonical project, action and request ID.
+#[derive(Clone)]
+struct Receipt {
+    request: String,
+    digest: String,
+    project: String,
+}
+
+impl Receipt {
+    fn pending_key(&self, scope: &Scope, tool: &str) -> (String, String, String, String) {
+        (
+            scope.principal.client_id.clone(),
+            self.project.clone(),
+            tool.to_owned(),
+            self.request.clone(),
+        )
+    }
+}
 type Done = async_channel::Sender<Result<Value, String>>;
 
 /// Sessions and cards an external client may reach this call.
@@ -97,44 +118,66 @@ impl Shell {
                 return;
             }
         };
-        let key = (
-            scope.principal.client_id.clone(),
-            tool.to_owned(),
-            request.clone(),
-        );
+        // Authorize against current grants before any receipt is read, so a
+        // replay never returns a result the caller can no longer reach.
+        let project = match self.external_mutation_project(&scope, &arguments, cx) {
+            Ok(project) => molfar_core::files::path_key(&project),
+            Err(error) => {
+                let _ = reply.send(Err(error));
+                return;
+            }
+        };
+        let receipt = Receipt {
+            request,
+            digest: receipts::digest(tool, &arguments),
+            project,
+        };
+        let key = receipt.pending_key(&scope, tool);
         if !self.external.pending.insert(key.clone()) {
             let _ = reply.send(Err(
                 "This request is still running; retry with the same requestId.".into(),
             ));
             return;
         }
-        let digest = receipts::digest(tool, &arguments);
         let store = self.store.clone();
-        let client = key.0.clone();
-        let (action, id, hash) = (tool, request.clone(), digest.clone());
+        let client = scope.principal.client_id.clone();
+        let saved = receipt.clone();
         let begin = cx.background_executor().spawn(async move {
-            locked(&store)?.external_receipt_begin(&client, action, &id, &hash)
+            locked(&store)?.external_receipt_begin(
+                &client,
+                &saved.project,
+                tool,
+                &saved.request,
+                &saved.digest,
+            )
         });
         cx.spawn(async move |this, cx| {
             let begin = begin.await;
             let _ = this.update(cx, |this, cx| {
                 let replay = match begin {
-                    Ok(BEGIN::Fresh) => None,
-                    // Session and card creation and stop are idempotent by their
-                    // durable target identity, so an interrupted call may run again.
-                    Ok(BEGIN::Pending) if tool != "sessions_send" => None,
-                    Ok(BEGIN::Pending) => Some(Err("This follow-up was interrupted and its outcome is unknown. Read the session before sending again with a new requestId.".to_owned())),
+                    // An interrupted call runs again: every mutation resolves its
+                    // durable target identity first and never repeats accepted work.
+                    Ok(BEGIN::Fresh | BEGIN::Pending) => None,
                     Ok(BEGIN::Replay(result)) => Some(result),
-                    Ok(BEGIN::Conflict) => Some(Err("requestId was already used with different input.".to_owned())),
+                    Ok(BEGIN::Conflict) => Some(Err(
+                        "requestId was already used with different input.".to_owned(),
+                    )),
                     Err(error) => Some(Err(format!("Cannot read request receipt: {error}"))),
                 };
                 if let Some(result) = replay {
                     this.external.pending.remove(&key);
-                    this.external_audit(&scope.principal, tool, None, Some(&request), &result, cx);
+                    this.external_audit(
+                        &scope.principal,
+                        tool,
+                        None,
+                        Some(&receipt.request),
+                        &result,
+                        cx,
+                    );
                     let _ = reply.send(result);
                     return;
                 }
-                this.external_dispatch(scope, tool, arguments, Some((request, digest)), reply, cx);
+                this.external_dispatch(scope, tool, arguments, Some(receipt), reply, cx);
             });
         })
         .detach();
@@ -145,7 +188,7 @@ impl Shell {
         scope: Scope,
         tool: &'static str,
         arguments: Value,
-        receipt: Option<(String, String)>,
+        receipt: Option<Receipt>,
         reply: Reply,
         cx: &mut Context<Self>,
     ) {
@@ -164,7 +207,7 @@ impl Shell {
                 let owner = scope.owner();
                 let envelope = receipt
                     .as_ref()
-                    .map_or("read".to_owned(), |(id, _)| id.clone());
+                    .map_or("read".to_owned(), |receipt| receipt.request.clone());
                 let projects = scope.projects.clone();
                 let action = tool.replacen('_', ".", 1);
                 let work = cx.background_executor().spawn(async move {
@@ -195,32 +238,35 @@ impl Shell {
                 .recv()
                 .await
                 .unwrap_or_else(|_| Err("MOLFAR dropped the request.".into()));
-            if let Some((request, digest)) = &receipt {
+            if let Some(receipt) = receipt.clone() {
                 let client = scope.principal.client_id.clone();
                 let saved = result.clone();
-                let (request, digest) = (request.clone(), digest.clone());
                 let finish = cx.background_executor().spawn(async move {
-                    locked(&store)?
-                        .external_receipt_finish(&client, tool, &request, &digest, &saved)
+                    locked(&store)?.external_receipt_finish(
+                        &client,
+                        &receipt.project,
+                        tool,
+                        &receipt.request,
+                        &receipt.digest,
+                        &saved,
+                    )
                 });
                 if let Err(error) = finish.await {
                     log::warn!("external MCP receipt for {tool} was not saved: {error}");
                 }
             }
             let _ = this.update(cx, |this, cx| {
-                if let Some((request, _)) = &receipt {
-                    this.external.pending.remove(&(
-                        scope.principal.client_id.clone(),
-                        tool.to_owned(),
-                        request.clone(),
-                    ));
+                if let Some(receipt) = &receipt {
+                    this.external
+                        .pending
+                        .remove(&receipt.pending_key(&scope, tool));
                 }
                 let target = target(&result);
                 this.external_audit(
                     &scope.principal,
                     tool,
                     target.as_deref(),
-                    receipt.as_ref().map(|(request, _)| request.as_str()),
+                    receipt.as_ref().map(|receipt| receipt.request.as_str()),
                     &result,
                     cx,
                 );

@@ -9,12 +9,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-struct Fixture {
-    root: std::path::PathBuf,
-    granted: String,
-    other: String,
-    store: Database,
-    sessions: (i64, i64),
+pub(super) struct Fixture {
+    pub(super) root: std::path::PathBuf,
+    pub(super) granted: String,
+    pub(super) other: String,
+    pub(super) store: Database,
+    pub(super) sessions: (i64, i64),
 }
 
 impl Drop for Fixture {
@@ -52,7 +52,7 @@ fn project(path: &std::path::Path) -> String {
     path.to_str().unwrap().to_owned()
 }
 
-fn fixture() -> Fixture {
+pub(super) fn fixture() -> Fixture {
     let root = std::env::temp_dir().join(format!(
         "molfar-external-{}",
         molfar_core::familiar::new_id()
@@ -71,7 +71,7 @@ fn fixture() -> Fixture {
     }
 }
 
-fn window(f: &Fixture, cx: &mut TestAppContext) -> WindowHandle<Shell> {
+pub(super) fn window(f: &Fixture, cx: &mut TestAppContext) -> WindowHandle<Shell> {
     let store = f.store.clone();
     let summaries = locked(&store).unwrap().sessions().unwrap();
     let mut state = crate::workspace::Workspace::default();
@@ -89,7 +89,7 @@ fn window(f: &Fixture, cx: &mut TestAppContext) -> WindowHandle<Shell> {
     window
 }
 
-fn principal(f: &Fixture) -> Principal {
+pub(super) fn principal(f: &Fixture) -> Principal {
     Principal {
         client_id: "client".into(),
         name: "OpenBot".into(),
@@ -98,7 +98,7 @@ fn principal(f: &Fixture) -> Principal {
     }
 }
 
-fn call(
+pub(super) fn call(
     window: WindowHandle<Shell>,
     principal: &Principal,
     tool: &'static str,
@@ -233,23 +233,6 @@ fn board_creation_is_idle_deduplicated_and_replayed_after_restart(cx: &mut TestA
             .any(|entry| entry.action == "board_create" && entry.target.as_deref() == Some(id))
     );
     assert!(!serde_json::to_string(&audit).unwrap().contains("Plan it"));
-}
-
-#[gpui::test]
-fn an_interrupted_follow_up_reports_an_unknown_outcome_instead_of_sending(cx: &mut TestAppContext) {
-    let f = fixture();
-    let window = window(&f, cx);
-    let principal = principal(&f);
-    let arguments = json!({"sessionId":f.sessions.0,"prompt":"Continue","requestId":"send-1"});
-    let digest = receipts::digest("sessions_send", &arguments);
-    locked(&f.store)
-        .unwrap()
-        .external_receipt_begin("client", "sessions_send", "send-1", &digest)
-        .unwrap();
-
-    let result = call(window, &principal, "sessions_send", arguments, cx);
-
-    assert!(result.unwrap_err().contains("unknown"));
 }
 
 #[gpui::test]

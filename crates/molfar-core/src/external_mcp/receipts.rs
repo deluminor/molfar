@@ -23,14 +23,16 @@ struct Receipt {
 impl Store {
     /// Persists the reservation before any side effect, so a crash leaves a
     /// visible pending receipt instead of permission to dispatch again.
+    /// `project` must be the caller's canonical target project.
     pub fn external_receipt_begin(
         &self,
         client: &str,
+        project: &str,
         action: &str,
         request: &str,
         digest: &str,
     ) -> Result<BEGIN, String> {
-        let key = key(client, action, request);
+        let key = key(client, project, action, request);
         let saved = self
             .setting(&key)?
             .map(|raw| serde_json::from_str::<Receipt>(&raw).map_err(|error| error.to_string()))
@@ -50,12 +52,13 @@ impl Store {
     pub fn external_receipt_finish(
         &self,
         client: &str,
+        project: &str,
         action: &str,
         request: &str,
         digest: &str,
         result: &Result<Value, String>,
     ) -> Result<(), String> {
-        self.save_receipt(&key(client, action, request), digest, Some(result))
+        self.save_receipt(&key(client, project, action, request), digest, Some(result))
     }
 
     fn save_receipt(
@@ -102,10 +105,11 @@ fn canonical(value: &Value) -> String {
     }
 }
 
-fn key(client: &str, action: &str, request: &str) -> String {
+fn key(client: &str, project: &str, action: &str, request: &str) -> String {
+    let project = crate::files::path_key(project);
     format!(
         "{RECEIPT_PREFIX}:{client}:{}",
-        crate::familiar::files::content_hash(&format!("{action}\n{request}"))
+        crate::familiar::files::content_hash(&format!("{project}\n{action}\n{request}"))
     )
 }
 
@@ -130,7 +134,7 @@ mod tests {
 
         let begin = |digest: &str| {
             store
-                .external_receipt_begin("client", "board_create", "r", digest)
+                .external_receipt_begin("client", "/work/a", "board_create", "r", digest)
                 .unwrap()
         };
 
@@ -139,14 +143,37 @@ mod tests {
         assert_eq!(begin(&first), BEGIN::Pending);
         assert_eq!(begin(&changed), BEGIN::Conflict);
         store
-            .external_receipt_finish("client", "board_create", "r", &first, &Ok(json!({"id":1})))
+            .external_receipt_finish(
+                "client",
+                "/work/a",
+                "board_create",
+                "r",
+                &first,
+                &Ok(json!({"id":1})),
+            )
             .unwrap();
         assert_eq!(begin(&first), BEGIN::Replay(Ok(json!({"id":1}))));
         assert_eq!(
             store
-                .external_receipt_begin("other", "board_create", "r", &first)
+                .external_receipt_begin("other", "/work/a", "board_create", "r", &first)
                 .unwrap(),
             BEGIN::Fresh
         );
+    }
+
+    #[test]
+    fn the_same_request_id_in_another_project_is_a_separate_mutation() {
+        let store = Store::open(std::path::Path::new(":memory:")).unwrap();
+        let a = digest("board_create", &json!({"project":"/work/a","title":"A"}));
+        let b = digest("board_create", &json!({"project":"/work/b","title":"A"}));
+        let begin = |project: &str, digest: &str| {
+            store
+                .external_receipt_begin("client", project, "board_create", "r", digest)
+                .unwrap()
+        };
+
+        assert_eq!(begin("/work/a", &a), BEGIN::Fresh);
+        assert_eq!(begin("/work/b", &b), BEGIN::Fresh);
+        assert_eq!(begin("/work/a", &b), BEGIN::Conflict);
     }
 }
