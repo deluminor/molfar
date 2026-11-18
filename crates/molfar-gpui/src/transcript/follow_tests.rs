@@ -1,5 +1,6 @@
 use super::*;
 use gpui::{TestAppContext, WindowBounds, WindowOptions, point};
+use std::time::Duration;
 
 fn row(role: &str, text: &str) -> Row {
     Row {
@@ -2858,4 +2859,42 @@ fn a_reinstalled_history_keeps_following_the_tail(cx: &mut TestAppContext) {
         assert!(same, "the list stopped following the tail at {after:?}");
         assert!(consumed, "the suspended position is still pending");
     }
+}
+
+#[gpui::test]
+fn elapsed_clock_restarts_at_one_hertz_and_parks_on_stop(cx: &mut TestAppContext) {
+    let window = chat_mode(cx, false);
+    let streaming = |cx: &mut TestAppContext, streaming| {
+        window
+            .update(cx, |view, _, cx| view.streaming(streaming, cx))
+            .unwrap();
+        cx.run_until_parked();
+    };
+    let ticks = || {
+        gpui::frame_stats::take()
+            .counters
+            .into_iter()
+            .find(|(name, _)| *name == "transcript-duration-wakeups")
+            .map_or(0, |(_, count)| count)
+    };
+
+    streaming(cx, true);
+    cx.executor().advance_clock(Duration::from_millis(400));
+    streaming(cx, false);
+    streaming(cx, true);
+    gpui::frame_stats::enable();
+    ticks();
+
+    cx.executor().advance_clock(Duration::from_millis(700));
+    cx.run_until_parked();
+    assert_eq!(ticks(), 0);
+
+    cx.executor().advance_clock(Duration::from_millis(300));
+    cx.run_until_parked();
+    assert_eq!(ticks(), 1);
+
+    streaming(cx, false);
+    cx.executor().advance_clock(Duration::from_secs(3));
+    cx.run_until_parked();
+    assert_eq!(ticks(), 0);
 }

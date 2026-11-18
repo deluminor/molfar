@@ -697,8 +697,6 @@ pub(crate) struct Shell {
     live_agents_expanded: bool,
     /// Repaints the live agents card when one of its elapsed times changes.
     live_tick: Option<gpui::Task<()>>,
-    /// Milliseconds until the next elapsed label in the live agents card changes.
-    live_next_change: u64,
     busy_sessions: HashSet<i64>,
     notification_state: notifications::State,
     github_star: github_star::State,
@@ -1094,7 +1092,6 @@ impl Shell {
             live_marks: HashMap::new(),
             live_agents_expanded: false,
             live_tick: None,
-            live_next_change: 1000,
             busy_sessions: HashSet::new(),
             notification_state,
             github_star: Default::default(),
