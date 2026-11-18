@@ -58,6 +58,7 @@ pub(super) fn target(result: &Result<Value, String>) -> Option<String> {
     value["card"]["id"]
         .as_str()
         .map(str::to_owned)
+        .or_else(|| value["note"]["id"].as_str().map(str::to_owned))
         .or_else(|| value["sessionId"].as_i64().map(|id| id.to_string()))
 }
 

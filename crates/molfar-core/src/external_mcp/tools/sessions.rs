@@ -56,3 +56,78 @@ pub(super) fn definitions() -> Vec<Tool> {
         Tool { name: "sessions_stop", requires: Requirement::standard(&[GRANT::SessionsStop]), mutation: true, target: TargetKind::Project, resumable: true, description: "Stop a session's running turn. History is kept.", schema: object(json!({"sessionId":{"type":["string","integer"]},"requestId":request_id()}), &["sessionId","requestId"]) },
     ]
 }
+
+pub const UPDATE: &str = "sessions_update";
+pub const ARCHIVE: &str = "sessions_archive";
+pub const UNARCHIVE: &str = "sessions_unarchive";
+pub const DELETE: &str = "sessions_delete";
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Update {
+    pub session_id: Value,
+    pub title: String,
+    #[serde(rename = "requestId")]
+    _request_id: String,
+}
+
+pub fn title(input: &str) -> Result<&str, String> {
+    let title = input.trim();
+    if title.is_empty() || title.chars().count() > 200 || input.chars().any(char::is_control) {
+        return Err("Provide a title of 1–200 characters without control characters.".into());
+    }
+    Ok(title)
+}
+
+pub(super) fn validate_manage(tool: &str, args: &Value) -> Result<(), String> {
+    let id = if tool == UPDATE {
+        let update: Update = super::parse(args)?;
+        title(&update.title)?;
+        update.session_id
+    } else {
+        super::parse::<SessionsStop>(args)?.session_id
+    };
+    if !id.is_string() && !id.is_i64() {
+        return Err("Provide a session ID.".into());
+    }
+    Ok(())
+}
+
+pub(super) fn management() -> impl Iterator<Item = Tool> {
+    use crate::external_mcp::grants::types::ACCESS;
+    [
+        (UPDATE, "Rename an accessible session."),
+        (
+            ARCHIVE,
+            "Archive an accessible session and stop its running turn.",
+        ),
+        (UNARCHIVE, "Restore an accessible archived session."),
+        (DELETE, "Permanently delete an accessible session."),
+    ]
+    .into_iter()
+    .map(|(name, description)| {
+        let mut properties =
+            json!({"sessionId":{"type":["string","integer"]},"requestId":request_id()});
+        let mut required = vec!["sessionId", "requestId"];
+        if name == UPDATE {
+            properties["title"] = json!({"type":"string","minLength":1,"maxLength":200});
+            required.push("title");
+        }
+        Tool {
+            name,
+            requires: Requirement {
+                any: &[GRANT::Write(DOMAIN::Sessions)],
+                access: if name == DELETE {
+                    ACCESS::Destructive
+                } else {
+                    ACCESS::Standard
+                },
+            },
+            mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
+            description,
+            schema: object(properties, &required),
+        }
+    })
+}

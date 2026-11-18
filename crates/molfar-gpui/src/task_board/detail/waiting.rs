@@ -61,13 +61,20 @@ impl Board {
             .filter(|s| s.selected == self.selected)?;
         let (message, tabs) = waiting(card, &snapshot.artifacts)?;
 
-        let mut actions = div().flex().flex_wrap().gap_1();
+        const ICON_WIDTH: f32 = 14.;
+        const ICON_GAP: f32 = 8.;
+        let mut actions = div()
+            .flex()
+            .flex_wrap()
+            .gap_2()
+            .pl(px(ICON_WIDTH + ICON_GAP));
         for group in tabs {
             actions = actions.child(
                 controls::ghost_button(
                     gpui::SharedString::from(format!("board-waiting-{}", group.id())),
                     format!("Open {}", group.label()),
                 )
+                .px_0()
                 .debug_selector(move || format!("board-waiting-{}", group.id()))
                 .text_color(accent_color())
                 .on_click(
@@ -94,10 +101,21 @@ impl Board {
                     div()
                         .flex()
                         .items_start()
-                        .gap_2()
+                        .gap(px(ICON_GAP))
                         .text_size(px(12.5))
-                        .child(icon("bell", 14.).mt(px(1.)).text_color(accent_color()))
-                        .child(div().flex_1().min_w_0().child(message)),
+                        .child(
+                            icon("bell", ICON_WIDTH)
+                                .mt(px(1.))
+                                .text_color(accent_color()),
+                        )
+                        .child(
+                            div()
+                                .flex_1()
+                                .min_w_0()
+                                .id("board-waiting-message")
+                                .debug_selector(|| "board-waiting-message".into())
+                                .child(message),
+                        ),
                 )
                 .children(self.owner_checklist(card))
                 .child(actions)

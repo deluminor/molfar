@@ -31,6 +31,25 @@ pub enum StageAction {
     EditTask(super::super::owner::types::TaskEdit),
 }
 
+impl StageAction {
+    pub fn board_action(&self) -> crate::task_board::stage::transitions::types::BoardAction {
+        use crate::task_board::stage::transitions::types::BoardAction;
+
+        match self {
+            Self::Start => BoardAction::Start,
+            Self::ApprovePlan => BoardAction::ApprovePlan,
+            Self::Rework { .. } => BoardAction::Rework,
+            Self::Retry(_) => BoardAction::Retry,
+            Self::Cancel => BoardAction::Cancel,
+            Self::Back => BoardAction::Back,
+            Self::Answer { .. } => BoardAction::Answer,
+            Self::RequestChanges(_) => BoardAction::RequestChanges,
+            Self::EditPlan(_) => BoardAction::EditPlan,
+            Self::EditTask(_) => BoardAction::EditTask,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ActionEffect {
     pub card: Card,

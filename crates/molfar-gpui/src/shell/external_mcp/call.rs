@@ -61,30 +61,48 @@ impl Shell {
         };
         // Authorize against current grants before any receipt is read, so a
         // replay never returns a result the caller can no longer reach.
-        let target = match domain_target
-            .map_or_else(|| self.external_mutation_target(&scope, &arguments, cx), Ok)
-        {
+        let digest = receipts::digest(tool, &arguments);
+        let target = match domain_target.map_or_else(
+            || self.external_mutation_target(&scope, tool, &arguments, cx),
+            Ok,
+        ) {
             Ok(target) => target,
             Err(error) => {
-                let result = Err(error);
-                self.external_audit(&scope.principal, tool, None, Some(&request), &result, cx);
+                let result = self
+                    .external_deleted_replay(&scope, tool, &arguments, &request, &digest)
+                    .unwrap_or(Err(error));
+                let target = audit::target(&result);
+                self.external_audit(
+                    &scope.principal,
+                    tool,
+                    target.as_deref(),
+                    Some(&request),
+                    &result,
+                    cx,
+                );
                 let _ = reply.send(result);
                 return;
             }
         };
         let mut receipt = Receipt {
             request,
-            digest: receipts::digest(tool, &arguments),
+            digest,
             target,
             resumed: false,
         };
         let key = receipt.pending_key(&scope, tool);
-        if !self.external.pending.insert(key.clone()) {
-            let _ = reply.send(Err(
-                "This request is still running; retry with the same requestId.".into(),
-            ));
+        if let Some(pending) = self.external.pending.get(&key) {
+            let error = if pending == &receipt.digest {
+                "This request is still running; retry with the same requestId."
+            } else {
+                "requestId was already used with different input."
+            };
+            let _ = reply.send(Err(error.into()));
             return;
         }
+        self.external
+            .pending
+            .insert(key.clone(), receipt.digest.clone());
         let store = self.store.clone();
         let client = scope.principal.client_id.clone();
         let saved = receipt.clone();
@@ -129,7 +147,8 @@ impl Shell {
                 };
                 if let Some(result) = replay {
                     this.external.pending.remove(&key);
-                    let target = audit::domain_target(tool, &arguments);
+                    let target =
+                        audit::domain_target(tool, &arguments).or_else(|| audit::target(&result));
                     this.external_audit(
                         &scope.principal,
                         tool,

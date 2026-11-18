@@ -1,4 +1,5 @@
 use super::{schema::*, TargetKind, Tool};
+use crate::app_access::board::artifacts;
 use crate::external_mcp::grants::types::{Requirement, DOMAIN, GRANT};
 use serde_json::json;
 
@@ -10,6 +11,8 @@ pub(super) fn definitions() -> Vec<Tool> {
         Tool { name: "board_update", requires: Requirement::standard(&[GRANT::Write(DOMAIN::Board)]), mutation: true, target: TargetKind::Project, resumable: true, description: "Edit title, description or acceptance criteria on an idle Backlog card.", schema: object(json!({"cardId":string("Card ID"),"title":string("Title"),"description":string("Description"),"acceptanceCriteria":string("Acceptance criteria"),"requestId":request_id()}), &["cardId","requestId"]) },
         board_archive_tool("board_archive", "Archive an idle, unqueued Board card."),
         board_archive_tool("board_unarchive", "Restore an idle, unqueued Board card."),
+        Tool { name: artifacts::LIST, requires: Requirement::standard(&[GRANT::Read(DOMAIN::Board)]), mutation: false, target: TargetKind::Project, resumable: true, description: "List registered artifacts for a Board card.", schema: object(json!({"cardId":string("Card ID")}), &["cardId"]) },
+        Tool { name: artifacts::READ, requires: Requirement::standard(&[GRANT::Read(DOMAIN::Board)]), mutation: false, target: TargetKind::Project, resumable: true, description: "Read one page of a registered Board artifact.", schema: object(json!({"cardId":string("Card ID"),"kind":string("Registered artifact kind"),"version":integer("Defaults to latest"),"maxChars":{"type":"integer","minimum":1,"maximum":6000},"charOffset":integer("nextCharOffset from a previous page")}), &["cardId","kind"]) },
     ]
 }
 

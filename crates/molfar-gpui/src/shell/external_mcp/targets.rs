@@ -31,10 +31,11 @@ impl Shell {
     pub(super) fn external_mutation_target(
         &self,
         scope: &Scope,
+        tool: &str,
         arguments: &Value,
         cx: &App,
     ) -> Result<ReceiptTarget, String> {
-        let project = self.external_mutation_project(scope, arguments, cx)?;
+        let project = self.external_mutation_project(scope, tool, arguments, cx)?;
         Ok(ReceiptTarget::Project(molfar_core::files::path_key(
             &project,
         )))
@@ -43,6 +44,7 @@ impl Shell {
     fn external_mutation_project(
         &self,
         scope: &Scope,
+        tool: &str,
         arguments: &Value,
         cx: &App,
     ) -> Result<String, String> {
@@ -54,8 +56,59 @@ impl Shell {
                 .board_scoped_card(card_id, &scope.projects)
                 .map(|card| card.project_cwd);
         }
+        if matches!(tool, notes_api::WRITE | notes_api::DELETE) {
+            let id = arguments["id"].as_str().ok_or("Provide a note ID.")?;
+            return notes_api::target_project(&*locked(&self.store)?, id, &scope.projects);
+        }
         let id = self.external_target(scope, &arguments["sessionId"], true, cx)?;
         Ok(self.session_metadata(id, cx).summary.cwd.clone())
+    }
+
+    pub(super) fn external_deleted_replay(
+        &self,
+        scope: &Scope,
+        tool: &str,
+        arguments: &Value,
+        request: &str,
+        digest: &str,
+    ) -> Option<Result<Value, String>> {
+        if !matches!(tool, tools::sessions::DELETE | notes_api::DELETE) {
+            return None;
+        }
+        let lookup = || {
+            let store = locked(&self.store)?;
+            let exists = if tool == notes_api::DELETE {
+                notes_api::exists(
+                    &store,
+                    arguments["id"].as_str().ok_or("Provide a note ID.")?,
+                )?
+            } else {
+                let id = &arguments["sessionId"];
+                let sessions = store.sessions()?;
+                let handle = id
+                    .as_i64()
+                    .or_else(|| id.as_str().and_then(|id| store.resolve_session_id(id).ok()));
+                handle.is_some_and(|handle| sessions.iter().any(|session| session.id == handle))
+            };
+            if exists {
+                return Ok(None);
+            }
+            store.external_receipt_find(
+                &scope.principal.client_id,
+                tool,
+                request,
+                &scope.projects,
+                digest,
+            )
+        };
+        match lookup() {
+            Ok(Some(BEGIN::Replay(result))) => Some(result),
+            Ok(Some(BEGIN::Conflict)) => Some(Err(
+                "requestId was already used with different input.".into(),
+            )),
+            Err(error) => Some(Err(format!("Cannot read deletion receipt: {error}"))),
+            _ => None,
+        }
     }
 
     pub(super) fn external_reachable(&self, id: i64, projects: &[String], cx: &App) -> bool {

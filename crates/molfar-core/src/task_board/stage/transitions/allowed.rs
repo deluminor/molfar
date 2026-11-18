@@ -1,5 +1,6 @@
 use super::{
     moves::legal_moves,
+    transition,
     types::{BoardAction, Move, Position},
 };
 use crate::task_board::{
@@ -52,4 +53,30 @@ pub fn allowed_moves(card: &Card, snapshot: Option<&Snapshot>) -> Vec<Move> {
     .into_iter()
     .filter(|target| target.action != BoardAction::Back || back)
     .collect()
+}
+
+pub fn action_allowed(card: &Card, snapshot: &Snapshot, action: BoardAction) -> Result<(), String> {
+    transition(
+        Position {
+            column: &card.column_id,
+            run_state: &card.run_state,
+            archived: card.archived,
+        },
+        action,
+    )?;
+
+    let movement = match action {
+        BoardAction::Retry | BoardAction::Cancel => return Ok(()),
+        BoardAction::Answer => BoardAction::RequestChanges,
+        other => other,
+    };
+    if allowed_moves(card, Some(snapshot))
+        .iter()
+        .any(|target| target.action == movement)
+        && (movement != BoardAction::Back || back_allowed(card, Some(snapshot)))
+    {
+        return Ok(());
+    }
+
+    Err(format!("Cannot {} this Board card.", action.id()))
 }

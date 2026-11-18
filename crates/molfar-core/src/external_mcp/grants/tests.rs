@@ -135,7 +135,7 @@ fn invalid_explicit_grants_never_fall_back_to_legacy_permissions() {
 }
 
 #[test]
-fn migration_never_widens_legacy_scopes() {
+fn migration_keeps_legacy_clients_within_their_mapped_grants() {
     use crate::external_mcp::tools;
     let legacy = [
         (
@@ -146,11 +146,20 @@ fn migration_never_widens_legacy_scopes() {
                 "sessions_read",
                 "board_list",
                 "board_read",
+                "board_artifacts_list",
+                "board_artifacts_read",
             ][..],
         ),
         (
             "submit",
-            &["sessions_start", "sessions_send", "board_create"][..],
+            &[
+                "sessions_start",
+                "sessions_send",
+                "sessions_update",
+                "sessions_archive",
+                "sessions_unarchive",
+                "board_create",
+            ][..],
         ),
         ("stop", &["sessions_stop"][..]),
     ];

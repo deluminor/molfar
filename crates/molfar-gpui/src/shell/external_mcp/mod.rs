@@ -10,18 +10,21 @@ mod domains;
 #[cfg(test)]
 mod inbox_tests;
 mod lifecycle;
+mod notes;
 #[cfg(test)]
 mod reach_tests;
 #[cfg(test)]
 mod recovery_tests;
 mod sessions;
+mod sessions_manage;
+mod stage;
 mod targets;
 #[cfg(test)]
 mod tests;
 
 use super::*;
 use molfar_core::{
-    app_access::board as board_api,
+    app_access::{board as board_api, notes::external as notes_api},
     external_mcp::{
         grants::types::ACCESS,
         receipts::{self, BEGIN, ReceiptTarget},
@@ -38,7 +41,7 @@ pub(super) struct External {
     error: Option<String>,
     #[cfg(test)]
     inbox_backend: Option<Arc<dyn domains::inbox::backend::ExternalInbox>>,
-    pending: HashSet<String>,
+    pending: HashMap<String, String>,
     /// The credential shown once after creation, as (client name, token).
     new_key: Option<(String, String)>,
 }

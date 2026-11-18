@@ -1,10 +1,16 @@
+use crate::app_access::{
+    board::{artifacts, stage::StageTool},
+    notes::external as notes_api,
+};
 pub mod automations;
 mod board;
 pub mod familiars;
 pub mod inbox;
 pub mod knowledge;
+mod notes;
 mod schema;
 pub mod sessions;
+mod stage;
 
 use super::{
     grants::types::{Requirement, ACCESS, DOMAIN, GRANT},
@@ -91,7 +97,10 @@ fn build_catalog() -> Vec<Tool> {
         schema: object(json!({}), &[]),
     }];
     tools.extend(sessions::definitions());
+    tools.extend(sessions::management());
     tools.extend(board::definitions());
+    tools.extend(stage::definitions());
+    tools.extend(notes::definitions());
     tools.extend(knowledge::definitions());
     tools.extend(automations::definitions());
     tools.extend(familiars::definitions());
@@ -123,6 +132,10 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
     if tool.mutation {
         crate::app_access::board::normalize_request_id(arguments["requestId"].as_str(), None)?;
     }
+    if let Some(stage) = StageTool::from_name(name) {
+        crate::app_access::board::stage::stage_action(stage, arguments)?;
+        return Ok(tool);
+    }
     match name {
         "projects_list" => check::<Empty>(arguments),
         "sessions_list" => check::<SessionsList>(arguments),
@@ -130,6 +143,15 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         "sessions_start" => check::<SessionsStart>(arguments),
         "sessions_send" => check::<SessionsSend>(arguments),
         "sessions_stop" => check::<SessionsStop>(arguments),
+        sessions::UPDATE | sessions::ARCHIVE | sessions::UNARCHIVE | sessions::DELETE => {
+            sessions::validate_manage(name, arguments)
+        }
+        artifacts::LIST | artifacts::READ => artifacts::validate(name, arguments),
+        notes_api::LIST
+        | notes_api::READ
+        | notes_api::CREATE
+        | notes_api::WRITE
+        | notes_api::DELETE => notes_api::validate(name, arguments),
         name if name.starts_with("knowledge_") => knowledge::validate(name, arguments),
         name if name.starts_with("automations_") => automations::validate(name, arguments),
         name if name.starts_with("familiars_") => familiars::validate(name, arguments),
@@ -152,8 +174,26 @@ fn check<T: DeserializeOwned>(arguments: &Value) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{validate, DOMAIN, GRANT};
+    use super::{catalog, validate, DOMAIN, GRANT};
     use serde_json::json;
+
+    #[test]
+    fn catalog_never_exposes_owner_only_actions() {
+        for tool in catalog() {
+            for forbidden in [
+                "approve",
+                "deliver",
+                "commit",
+                "push",
+                "pull_request",
+                "edit_plan",
+                "model",
+                "approval",
+            ] {
+                assert!(!tool.name.contains(forbidden), "{}", tool.name);
+            }
+        }
+    }
 
     #[test]
     fn arguments_are_strict_and_tools_carry_their_scope() {

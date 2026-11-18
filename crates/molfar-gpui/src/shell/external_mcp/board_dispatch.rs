@@ -4,7 +4,7 @@ impl Shell {
     pub(super) fn external_board_tool(
         &mut self,
         scope: &Scope,
-        tool: &str,
+        tool: &'static str,
         arguments: Value,
         receipt: Option<&Receipt>,
         done: Done,
@@ -15,16 +15,22 @@ impl Shell {
         let owner = scope.owner();
         let envelope = receipt.map_or("read".to_owned(), |receipt| receipt.request.clone());
         let projects = scope.projects.clone();
-        let action = tool.replacen('_', ".", 1);
         let work = cx.background_executor().spawn(async move {
-            board_api::action(
-                &mut *locked(&store)?,
-                &owner,
-                &envelope,
-                &action,
-                &arguments,
-                &projects,
-            )
+            let mut store = locked(&store)?;
+            match tool {
+                "board_read" => board_api::external_read(&store, &arguments, &projects),
+                board_api::artifacts::LIST | board_api::artifacts::READ => {
+                    board_api::artifacts::action(&store, tool, &arguments, &projects)
+                }
+                _ => board_api::action(
+                    &mut store,
+                    &owner,
+                    &envelope,
+                    &tool.replacen('_', ".", 1),
+                    &arguments,
+                    &projects,
+                ),
+            }
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;

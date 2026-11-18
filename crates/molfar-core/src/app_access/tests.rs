@@ -1,5 +1,5 @@
 use super::*;
-use crate::{follow_up::State, notes::NoteUpsert};
+use crate::{follow_up::State, notes::NoteUpsert, store::Store};
 use std::path::Path;
 
 fn model() -> Model {

@@ -32,7 +32,7 @@ Inspected checkout: `02fbe07286b2d098f4d715ab566c62300cf6c5d1`; working tree cle
 
 1. An opt-in, application-owned loopback Streamable HTTP `/mcp` endpoint.
 2. Independent external client credentials with project allowlists and per-domain grants.
-3. External project/session reads, session start/follow-up/stop, and Board list/read/create.
+3. External project discovery, Board card and stage operations, session management, and project-scoped notes.
 4. Internal Board list/read/create/update/archive/unarchive for authorized Familiars and project sessions.
 5. Shared Board domain operations, separate caller authorization adapters.
 6. Durable mutation receipts, bounded requests/results, redacted audit metadata, Settings controls, and setup documentation.
@@ -50,11 +50,47 @@ Inspected checkout: `02fbe07286b2d098f4d715ab566c62300cf6c5d1`; working tree cle
 - `board_read`: card ID and bounded artifact pagination.
 - `board_create`: project, title, description, optional acceptance criteria/base reference, request ID.
 
+All mutations require a normalized `requestId`. Stage mutations require
+`cardId` and `expectedUpdatedAt` from `board_read`.
+
+| Tool | Grant | Additional input |
+| --- | --- | --- |
+| `board_start`, `board_back`, `board_cancel`, `board_retry` | `board:run` | None |
+| `board_answer` | `board:run` | One or more `answers: [{number, answer}]`, optional `note` |
+| `board_request_changes` | `board:run` | `note` |
+| `board_rework` | `board:run` | `findings`, `reviewVersion`, optional `note` |
+| `board_artifacts_list` | `board:read` | `cardId` |
+| `board_artifacts_read` | `board:read` | `cardId`, `kind`, optional `version`, `maxChars` (1–6000), and `charOffset` |
+| `sessions_update` | `sessions:write` | `sessionId`, `title` (trimmed, 1–200 characters, no control characters) |
+| `sessions_archive`, `sessions_unarchive` | `sessions:write` | `sessionId` |
+| `sessions_delete` | `sessions:write` + `destructive` | `sessionId` |
+| `notes_list` | `notes:read` | Optional `project`, `limit` (1–100), and `offset` |
+| `notes_read` | `notes:read` | `id`, optional `maxChars` (1–6000) and `charOffset` |
+| `notes_create` | `notes:write` | Explicit `project`, `body`, optional `title` and `tags` |
+| `notes_write` | `notes:write` | `id` and at least one of `title`, `body`, or `tags` |
+| `notes_delete` | `notes:write` + `destructive` | `id` |
+
+Stage mutations use the desktop transition, owner-input storage, and Shell
+effects. A blank answer uses the question's recommendation. A stale revision
+or illegal transition leaves card data, stage runs, artifacts, and checkout
+untouched. Interrupted stage receipts cannot apply again after a commit because
+the original revision is stale. Retry uses the card's existing stage settings.
+
+Session management excludes Board stage sessions, Familiar sessions, hidden
+sessions, and orchestration workers. Archive stops a running turn and closes
+its tab. Deletion uses the same checks as the desktop.
+
+External notes need a source project in the client's active project grants.
+Unscoped notes remain internal. External creation links to the project without
+a source session. Read offsets count Unicode characters. Mutation receipts
+identify creations by client, project, and request ID. Audit rows omit note
+titles, bodies, and tags.
+
 External callers cannot choose model/runtime policy or inherit internal capability credentials. Session configuration comes from MOLFAR defaults through its existing launch path.
 
 ## External grants v2
 
-Clients start with every grant off. Board, sessions, notes, knowledge, automations, inbox, and familiars each have independent read and write grants. Board creation, Board stage execution, and session stop require separate action grants (`board:create`, `board:run`, and `sessions:stop`). Tools that delete or reset require the additional `destructive` flag. Tools that act as the user or another agent require the additional `delegated` flag. Non-project resources use an explicit allowlist keyed by resource kind and ID (vault, inbox provider, familiar) and a separate receipt namespace. No current tool uses these two flags, the resource allowlist, or `board:run`.
+Clients start with every grant off. Board, sessions, notes, knowledge, automations, inbox, and familiars each have independent read and write grants. Board creation, Board stage execution, and session stop require separate action grants (`board:create`, `board:run`, and `sessions:stop`). Tools that delete or reset require the additional `destructive` flag. Tools that act as the user or another agent require the additional `delegated` flag. Non-project resources use an explicit allowlist keyed by resource kind and ID (vault, inbox provider, familiar) and a separate receipt namespace. The resource allowlist and `delegated` flag are reserved for later tools.
 
 | Legacy scope | Migrated grants |
 | --- | --- |
@@ -64,7 +100,7 @@ Clients start with every grant off. Board, sessions, notes, knowledge, automatio
 
 Migration preserves project assignments and adds no further permissions. Tool discovery and calls use the current client grants. Permission denials are audited with metadata only.
 
-`board_update`, `board_archive`, and `board_unarchive` require `board:write`, a card in a granted project, and a request ID. Update changes only title, description, or acceptance criteria on an unarchived, idle, unqueued Backlog card. Archive and unarchive require an idle, unqueued card. Receipts are scoped to client, project, action, and request ID. Reusing an ID replays the saved result for matching input and conflicts for different input. `board_read` includes `allowedActions`, an array of desktop action IDs. It includes legal moves with the Back guard applied, plus eligible `editTask`, `archive`, and `unarchive` actions. These IDs describe the card state. They do not grant permission or expose the corresponding stage transitions as tools.
+`board_update`, `board_archive`, and `board_unarchive` require `board:write`, a card in a granted project, and a request ID. Update changes only title, description, or acceptance criteria on an unarchived, idle, unqueued Backlog card. Archive and unarchive require an idle, unqueued card. Receipts are scoped to client, project, action, and request ID. Reusing an ID replays the saved result for matching input and conflicts for different input. `board_read` includes `allowedActions`, an array of desktop action IDs. It includes supported stage actions with the Back guard applied, including same-column `retry` and `cancel`, plus eligible `editTask`, `archive`, and `unarchive` actions. Each call separately checks its grant.
 
 External MCP never exposes plan approval, delivery (commit, push, or pull request), runtime approvals, model overrides, external client or scope management, Familiar or automation permission changes, project or app-access administration, credentials (including inbox tokens, vault credentials, Companion pairing, and settings secrets), or shell and arbitrary execution.
 
@@ -83,10 +119,8 @@ Internal session permissions remain capability-gated. Board actions do not impli
 
 ### Authorization
 
-- `read` permits external discovery and reads.
-- `submit` permits external start/send/card creation.
-- `stop` permits external execution cancellation.
-- Scopes are independent; Settings explains that result retrieval requires `read`.
+- Per-domain Read and Write grants are independent. Board creation, Board stage actions, and session stop each have their own grant.
+- Session and note deletion require the matching Write grant and the Destructive flag.
 - Every call rechecks current credential validity, scope, and canonical registered project membership, including receipt replay.
 - Internal calls derive projects from current caller assignments, never from caller-supplied claims.
 - Unauthorized target IDs and foreign pagination cursors reveal no protected metadata.
