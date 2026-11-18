@@ -4,7 +4,7 @@ use super::*;
 fn board_creation_is_idle_deduplicated_and_replayed_after_restart(cx: &mut TestAppContext) {
     let f = fixture();
     let principal = principal(&f);
-    let input = json!({"project":f.granted,"title":"From OpenBot","description":"Plan it","requestId":"card-1"});
+    let input = json!({"project":f.granted,"title":"From External client","description":"Plan it","requestId":"card-1"});
 
     let first_window = window(&f, cx);
     let card = call(first_window, &principal, "board_create", input.clone(), cx).unwrap();
