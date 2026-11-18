@@ -56,10 +56,11 @@ Every mutation takes a `requestId`. MOLFAR saves a receipt before it acts:
 - The same client, tool, `requestId` and arguments return the original result,
   across reconnects and restarts.
 - The same `requestId` with different arguments returns a conflict.
-- If MOLFAR stopped while handling a call, `sessions_start`, `sessions_stop` and
-  `board_create` resume against the same session or card. An interrupted
-  `sessions_send` reports an unknown outcome instead of sending again: read the
-  session, then send with a new `requestId` if needed.
+- If MOLFAR stopped while handling a call, retry with the same `requestId`.
+  `sessions_start`, `sessions_stop` and `board_create` resume against the
+  same session or card. `sessions_send` resumes a reserved draft and
+  acknowledges an already queued or delivered prompt. If the queue stayed
+  paused after an interruption, resume it in MOLFAR.
 - A client-side timeout does not cancel accepted work; use `sessions_stop`.
 
 ## Limits
