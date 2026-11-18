@@ -12,6 +12,9 @@ mod schema;
 pub mod sessions;
 mod stage;
 
+#[cfg(test)]
+mod domain_tests;
+
 use super::{
     grants::types::{Requirement, ACCESS, DOMAIN, GRANT},
     types::Principal,
