@@ -138,3 +138,43 @@ fn an_old_preview_cannot_replace_a_reopened_card(cx: &mut TestAppContext) {
         })
         .unwrap();
 }
+
+#[gpui::test]
+fn unchanged_detail_content_is_neither_resynced_nor_reparsed(cx: &mut TestAppContext) {
+    let window = show(cx, true);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let identity = |board: &crate::task_board::Board, cx: &gpui::App| {
+        let content = board.detail_content.as_ref().unwrap();
+        (
+            content.generation,
+            content.description_view.entity_id(),
+            content
+                .description_view
+                .read(cx)
+                .preview
+                .as_ref()
+                .map(gpui::Entity::entity_id),
+            content
+                .criteria_view
+                .read(cx)
+                .preview
+                .as_ref()
+                .map(gpui::Entity::entity_id),
+        )
+    };
+    let before = window
+        .update(visual, |board, _, cx| identity(board, cx))
+        .unwrap();
+    assert!(before.2.is_some() && before.3.is_some());
+
+    for _ in 0..5 {
+        window.update(visual, |_, _, cx| cx.notify()).unwrap();
+        visual.run_until_parked();
+    }
+
+    let after = window
+        .update(visual, |board, _, cx| identity(board, cx))
+        .unwrap();
+    assert_eq!(after, before);
+}

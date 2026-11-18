@@ -1,3 +1,4 @@
+pub mod allowed;
 pub mod moves;
 #[cfg(test)]
 mod moves_tests;

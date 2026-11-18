@@ -4,6 +4,8 @@ mod archive;
 mod chat;
 mod companion;
 mod connections;
+mod external_mcp;
+pub(super) use external_mcp::ExternalPageState;
 mod familiars;
 mod general;
 mod inbox;
@@ -39,7 +41,11 @@ impl SettingsView {
             Section::Keybindings => self.keybindings_page(cx),
             Section::Chat => self.chat_page(cx),
             Section::Providers => self.providers_page(cx),
-            Section::Mcp => self.mcp_page(cx),
+            Section::Mcp => {
+                let mut page = self.mcp_page(cx);
+                page.extend(self.external_mcp_page(cx));
+                page
+            }
             Section::Skills => self.skills_page(cx),
             Section::Familiars => self.familiars_page(cx),
             Section::Inbox => self.inbox_page(cx),

@@ -127,5 +127,3 @@ every harness and is ignored.
 | Claude, Codex, Pi, OMP, Grok, Devin, OpenCode | Native compaction, then the continue prompt in the same session | — |
 | Cursor, Antigravity, Fx, Hermes | Not supported | `SessionPlan::Reset`: a fresh session with the full prompt; counts as a compaction |
 | Any harness that never reports a context window | Never triggered (share unknown) | Stops only on a provider context-limit error, the turn budget or the user |
-
-

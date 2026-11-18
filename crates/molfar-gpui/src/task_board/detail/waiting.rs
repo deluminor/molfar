@@ -99,6 +99,7 @@ impl Board {
                         .child(icon("bell", 14.).mt(px(1.)).text_color(accent_color()))
                         .child(div().flex_1().min_w_0().child(message)),
                 )
+                .children(self.owner_checklist(card))
                 .child(actions)
                 .into_any_element(),
         )

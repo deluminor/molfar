@@ -23,6 +23,10 @@ pub(super) fn settle(
 
     locked(store)?.board_record_stage_submitted(run)?;
     match result.completion {
+        // The receipt can arrive before the live view releases the previous turn.
+        Some(TurnCompletion::Succeeded { .. }) if is_active(context, active) => {
+            Ok(StageEffect::default())
+        }
         Some(TurnCompletion::Succeeded { .. }) => match verify(context, &result.text) {
             Ok(output) => {
                 let finished = locked(store)?.board_finish_stage(run, &output);

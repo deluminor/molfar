@@ -132,6 +132,17 @@ fn first_failed_review_back_cannot_strand_card_without_a_readable_review() {
     store
         .board_fail_stage("review", FailureStatus::Failed, "provider failed")
         .unwrap();
+    let snapshot = store.board_snapshot(None, false, Some("card")).unwrap();
+    let card = snapshot
+        .cards
+        .iter()
+        .find(|card| card.id == "card")
+        .unwrap();
+    assert!(!crate::task_board::stage::transitions::allowed::back_allowed(card, Some(&snapshot)));
+    assert!(
+        crate::task_board::stage::transitions::allowed::allowed_moves(card, Some(&snapshot))
+            .is_empty()
+    );
     let old = revision(&store);
     let result = store.board_stage_action("card", old, StageAction::Back);
     assert!(
@@ -190,6 +201,19 @@ fn failed_review_back_with_existing_readable_review_preserves_owner_rework() {
     store
         .board_fail_stage("review-two", FailureStatus::Failed, "provider failed")
         .unwrap();
+    let snapshot = store.board_snapshot(None, false, Some("card")).unwrap();
+    let card = snapshot
+        .cards
+        .iter()
+        .find(|card| card.id == "card")
+        .unwrap();
+    assert!(crate::task_board::stage::transitions::allowed::back_allowed(card, Some(&snapshot)));
+    assert_eq!(
+        crate::task_board::stage::transitions::allowed::allowed_moves(card, Some(&snapshot))[0]
+            .action,
+        crate::task_board::stage::transitions::types::BoardAction::Back,
+    );
+
     let result = store
         .board_stage_action("card", revision(&store), StageAction::Back)
         .unwrap();

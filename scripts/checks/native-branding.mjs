@@ -8,13 +8,20 @@ const LEGAL_LINE = /Copyright|SPDX-License-Identifier|derived from|adapted from/
 const UPSTREAM_LINK = /(?:https?:\/\/)?github\.com\/hardbeat920\/monocode\b[^\s"')]*/gi;
 const NATIVE_PATH = /^(?:crates\/molfar-[^/]+\/|scripts\/[^/]*native[^/]*$|scripts\/native-(?:editor|settings)\/|docs\/native\/|\.github\/workflows\/native\.yml$)/;
 
+const EXTERNAL_MCP_PATH = /^crates\/molfar-[^/]+\/src\/(?:[^/]+\/)*external_mcp(?:\/|\.rs$)/;
+const TEST_FILE = /(?:^|\/)[^/]*tests[^/]*\.rs$/;
+
 export function brandingViolations(file, content) {
   if (LEGAL_FILE.test(file) || file.startsWith("vendor/") || content.includes("\0")) return [];
+
+  const externalMcpSource = EXTERNAL_MCP_PATH.test(file) && !TEST_FILE.test(file);
 
   return content.split("\n").flatMap((line, index) => {
     if (LEGAL_LINE.test(line)) return [];
 
-    return /monocode|usemono/i.test(line.replace(UPSTREAM_LINK, "")) ? [`${file}:${index + 1}`] : [];
+    const upstreamBrand = /monocode|usemono/i.test(line.replace(UPSTREAM_LINK, ""));
+    const namedExternalClient = externalMcpSource && /openbot/i.test(line);
+    return upstreamBrand || namedExternalClient ? [`${file}:${index + 1}`] : [];
   });
 }
 

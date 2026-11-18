@@ -7,6 +7,7 @@ mod fixtures;
 mod guards;
 mod harnesses;
 mod reuse;
+mod verification;
 use super::owner::gate;
 use crate::task_board::stage::{agent::AgentStage, lifecycle::types::StageAction};
 use fixtures::*;

@@ -70,6 +70,7 @@ impl Shell {
             mobile_invite: self.mobile.invite.clone(),
             companion: self.companion_status(),
             companion_offer: self.companion_live_offer(),
+            external_mcp: Some(self.external_settings_status()),
             quick_error: self.quick.error.clone(),
             inbox_connections: self
                 .inbox
@@ -260,6 +261,30 @@ impl Shell {
                 }
                 SettingsEvent::CompanionCancelPair => this.companion_cancel_pair(cx),
                 SettingsEvent::CompanionRevoke(id) => this.companion_revoke(id, cx),
+                SettingsEvent::ExternalConfigure { enabled, port } => {
+                    this.external_configure(*enabled, *port, cx)
+                }
+                SettingsEvent::ExternalCreateClient { name } => {
+                    let result = this.external_create_client(Some(name), cx);
+                    this.external_edit_result(result, cx);
+                }
+                SettingsEvent::ExternalRename { id, name } => {
+                    let result = this.external_rename(id, name, cx);
+                    this.external_edit_result(result, cx);
+                }
+                SettingsEvent::ExternalSetProjects { id, all } => {
+                    this.external_set_projects(id, *all, cx)
+                }
+                SettingsEvent::ExternalSetPort(port) => {
+                    let enabled = this.external_settings_status().enabled;
+                    this.external_configure(enabled, *port, cx);
+                    this.external_edit_result(Ok(()), cx);
+                }
+                SettingsEvent::ExternalToggleGrant { id, grant, project } => {
+                    this.external_toggle_grant(id, *grant, project.clone(), cx)
+                }
+                SettingsEvent::ExternalRevoke(id) => this.external_revoke(id, cx),
+                SettingsEvent::ExternalDismissKey => this.external_dismiss_key(cx),
             },
         ));
         // This dialog is painted at the window root, like React's portal.
@@ -291,11 +316,21 @@ impl Shell {
         this_update(self, cx);
     }
     pub(super) fn select_settings(&mut self, section: Section, cx: &mut Context<Self>) {
+        if section != Section::Mcp {
+            self.external_dismiss_key(cx);
+        }
+
         if let Some(view) = &self.settings {
             view.update(cx, |v, cx| v.select_section(section, cx));
         }
         this_update(self, cx);
     }
+    fn external_edit_result(&self, result: Result<(), String>, cx: &mut Context<Self>) {
+        if let Some(view) = &self.settings {
+            view.update(cx, |view, cx| view.external_edit_result(result, cx));
+        }
+    }
+
     pub(super) fn sync_settings(&mut self, cx: &mut Context<Self>) {
         if let Some(view) = self.settings.clone() {
             let context = self.settings_context(cx);
@@ -308,6 +343,7 @@ impl Shell {
     }
     pub(super) fn close_settings(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.settings = None;
+        self.external_dismiss_key(cx);
         self.settings_events = None;
         self.settings_overlay_watch = None;
         // A code nobody can see should not stay usable.

@@ -1,6 +1,9 @@
 use serde_json::Value;
 /// Reject misspelled fields and ambiguous types before any app mutation.
 pub fn validate(action: &str, input: &Value) -> Result<(), String> {
+    if crate::app_access::board::is_board(action) {
+        return crate::app_access::board::validate(action, input);
+    }
     let fields=match action{
         "models.list"|"soul.read"|"habits.list"=>"",
         "sessions.list"|"folders.list"|"worktrees.list"=>"project",

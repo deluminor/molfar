@@ -11,6 +11,7 @@ mod classic_sidebar;
 mod classic_surface_tests;
 mod classic_surfaces;
 mod companion;
+mod external_mcp;
 mod familiar_panes;
 pub(crate) mod familiars;
 mod file_panes;
@@ -631,6 +632,7 @@ pub(crate) struct Shell {
     mobile: mobile_host::Mobile,
     companion: Option<crate::companion::Host>,
     companion_offer: Option<crate::companion::Offer>,
+    external: external_mcp::External,
     app_results: HashMap<(i64, String), (String, Result<serde_json::Value, String>)>,
     app_pending: HashSet<(i64, String)>,
     orchestrations: HashMap<i64, orchestration::Run>,
@@ -695,8 +697,6 @@ pub(crate) struct Shell {
     live_agents_expanded: bool,
     /// Repaints the live agents card when one of its elapsed times changes.
     live_tick: Option<gpui::Task<()>>,
-    /// Milliseconds until the next elapsed label in the live agents card changes.
-    live_next_change: u64,
     busy_sessions: HashSet<i64>,
     notification_state: notifications::State,
     github_star: github_star::State,
@@ -1042,6 +1042,7 @@ impl Shell {
             mobile: mobile_host::Mobile::default(),
             companion: None,
             companion_offer: None,
+            external: Default::default(),
             app_results: HashMap::new(),
             app_pending: HashSet::new(),
             orchestrations: HashMap::new(),
@@ -1091,7 +1092,6 @@ impl Shell {
             live_marks: HashMap::new(),
             live_agents_expanded: false,
             live_tick: None,
-            live_next_change: 1000,
             busy_sessions: HashSet::new(),
             notification_state,
             github_star: Default::default(),
@@ -1335,6 +1335,7 @@ impl Shell {
         }
         this.init_mobile_host(cx);
         this.init_companion(cx);
+        this.init_external_mcp(cx);
         if let Some(id) = this.workspace.active {
             this.ensure_session(this.workspace.session_for_pane(id), cx);
             this.record_worktree_session(id, cx);

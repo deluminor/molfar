@@ -45,6 +45,13 @@ Start the report with exactly one status line. Only `complete` and `blocked` end
 When the status is not `complete`, the `## Stop signal` section must name the concrete signal: the exact provider
 or tool error you hit, or the blocker. A feeling that the session is long or expensive is not a signal.
 
+## Owner verification
+Some checks only the owner can run: a live smoke against an external service, real credentials, paid
+accounts or a physical device. They are never a reason for `Status: blocked`. Finish everything you can verify
+yourself, report `Status: complete` and list each such check under a `## Owner verification` section of the
+report, one bullet per check with the acceptance criterion it covers and how to run it. The owner runs them at
+Final review. Use `blocked` only when something stops the implementation itself.
+
 ## Output
 End your final message with these blocks, exactly as delimited. MOLFAR saves them as files; anything outside
 the blocks is ignored. Each block must be complete Markdown on its own.

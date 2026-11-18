@@ -5,6 +5,10 @@ use gpui::{Context, FontWeight, Render, Role, Window, div, prelude::*, px};
 
 impl Render for Board {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        #[cfg(test)]
+        {
+            self.renders += 1;
+        }
         if self.dragging.is_some() && !cx.has_active_drag() {
             self.dragging = None;
             self.drag_over = None;

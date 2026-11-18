@@ -4,7 +4,7 @@ use gpui::{
     size,
 };
 
-fn window(section: Section, cx: &mut TestAppContext) -> WindowHandle<SettingsView> {
+pub(super) fn window(section: Section, cx: &mut TestAppContext) -> WindowHandle<SettingsView> {
     let window = cx.update(|cx| {
         cx.open_window(
             WindowOptions {

@@ -30,6 +30,9 @@ worktrees.create {branch,base?,existing?,project?}
 folders.list {project?}
 folders.move {sessionId,folderId?,newFolderName?,project?}
 notes.list {limit?,offset?}; notes.read {id}; notes.write {id?,title?,body?,tags?}
+board.list {project?,archived?,limit?,offset?}; board.read {cardId,artifactKind?,artifactVersion?,maxChars?,charOffset?}
+board.create {project,title,description,acceptanceCriteria?,baseRef?,requestId?}; board.update {cardId,title?,description?,acceptanceCriteria?,requestId?}
+board.archive / board.unarchive {cardId,requestId?}
 artifacts.list {kind?,limit?,offset?}; artifacts.read {id}; artifacts.write {id?,kind:"document",title,body,summary?}
 soul.read {}; soul.update {text,expectedHash}
 memory.read {topic?}; memory.search {query,since?}; memory.add {fact,topic?,until?}; memory.replace {find,fact,topic?,until?}; memory.remove {find,topic?}
@@ -38,6 +41,7 @@ chat.card {type:"pr",repo?,number,note?} / {type:"session",sessionId,note?} / {t
 Ordinary Operator sessions are visible in project history. Familiar launches follow its Show started sessions preference. reveal defaults to false and controls navigation, not history visibility. placement right/down explicitly opens a split beside besideSessionId (or the caller).
 sessions.read returns up to three prose exchanges and nextBefore for older turns; pass that turn ID as before. maxChars (200-6000) caps each message; a longer one has nextCharOffset, so read on by repeating the call with that value as charOffset (without limit, charOffset reads only the latest exchange).
 notes.write requires body for a new note; existing notes accept title, body or tags independently.
+Board actions reach assigned projects only. board.create adds an idle Backlog card and starts no stage; board.update edits only an idle Backlog card and saves a new task version; archive state changes only for idle cards. Stage control stays in the Board. A requestId in the input must match --request-id when both are given.
 Artifacts, memory, soul, habits, cards and notifyOnComplete:true require a Familiar.
 The CLI returns {ok,result,requestId}. Retry uncertain mutations with the same request ID and identical input.
 Assigned projects alone may be addressed. Credentials are provided in the environment; never print them.
@@ -189,7 +193,7 @@ pub fn client(args: &[String]) -> Result<Value, String> {
     }
     let action = args[0].clone();
     let mut input = json!({});
-    let mut request_id = super::new_id();
+    let mut request_id = None;
     let mut args = args[1..].iter();
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -214,14 +218,26 @@ pub fn client(args: &[String]) -> Result<Value, String> {
                 }
                 input = serde_json::from_str(&text).map_err(|e| e.to_string())?;
             }
-            "--request-id" => request_id = args.next().ok_or("--request-id needs an ID")?.clone(),
+            "--request-id" => {
+                request_id = Some(args.next().ok_or("--request-id needs an ID")?.clone())
+            }
             json if json.starts_with('{') => {
                 input = serde_json::from_str(json).map_err(|e| e.to_string())?
             }
             _ => return Err(format!("Unknown app argument: {arg}")),
         }
     }
+    let request_id = envelope_id(request_id, &input);
     call(action, input, request_id)
+}
+
+/// A request ID named inside the input also identifies the call, so retries
+/// that only repeat the input still reach the same receipt.
+fn envelope_id(explicit: Option<String>, input: &Value) -> String {
+    explicit
+        .or_else(|| input["requestId"].as_str().map(str::to_owned))
+        .filter(|id| !id.is_empty())
+        .unwrap_or_else(super::new_id)
 }
 
 /// One authenticated request to the running app, with the capability this
@@ -337,7 +353,7 @@ pub fn configure_codex(
 pub fn tool_definitions() -> Vec<Value> {
     vec![json!({
         "name": "app",
-        "description": format!("Run a MOLFAR app action: sessions, worktrees, folders, notes, artifacts, soul, memory, habits and chat cards. Pass the action name and its JSON input. Retry an uncertain mutation with the same requestId and identical input.\n\n{HELP}"),
+        "description": format!("Run a MOLFAR app action: sessions, worktrees, folders, notes, Board cards, artifacts, soul, memory, habits and chat cards. Pass the action name and its JSON input. Retry an uncertain mutation with the same requestId and identical input.\n\n{HELP}"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -371,10 +387,8 @@ fn mcp_response(request: Value) -> Option<Value> {
                     Value::Null => json!({}),
                     input => input.clone(),
                 };
-                let request_id = arguments["requestId"]
-                    .as_str()
-                    .filter(|id| !id.is_empty())
-                    .map_or_else(super::new_id, str::to_owned);
+                let request_id =
+                    envelope_id(arguments["requestId"].as_str().map(str::to_owned), &input);
                 call(action.to_owned(), input, request_id)
             } else {
                 Err("action is required".to_string())
@@ -516,5 +530,18 @@ mod capability_tests {
         assert_eq!(call.session, 7);
         call.reply.send(Ok(json!({"models":[]}))).unwrap();
         assert_eq!(request.join().unwrap().unwrap()["ok"], true);
+    }
+    #[test]
+    fn board_actions_are_documented_and_input_request_ids_identify_calls() {
+        for action in crate::app_access::board::READ_ACTIONS
+            .iter()
+            .chain(&crate::app_access::board::WRITE_ACTIONS)
+        {
+            assert!(HELP.contains(action), "{action} missing from help");
+        }
+        let input = json!({"requestId":"card-1"});
+        assert_eq!(envelope_id(None, &input), "card-1");
+        assert_eq!(envelope_id(Some("explicit".into()), &input), "explicit");
+        assert_ne!(envelope_id(None, &json!({})), envelope_id(None, &json!({})));
     }
 }

@@ -40,6 +40,14 @@ pub(crate) fn card(conn: &Connection, id: &str) -> rusqlite::Result<Option<Card>
         .optional()
 }
 
+pub(crate) fn list_page(conn: &Connection, archived: bool) -> rusqlite::Result<Vec<Card>> {
+    conn.prepare(&format!(
+        "{CARDS_SELECT} WHERE archived = ?1 ORDER BY number, id"
+    ))?
+    .query_map([archived], cards_row)?
+    .collect()
+}
+
 pub(crate) const RUNS_SELECT: &str = "SELECT id, card_id, stage, attempt, session_id, harness, model,
   settings_json, runtime_mode, template_version, dispatch, status, error, head_before,
   porcelain_before, fingerprint_before, head_after, started_at, completed_at FROM task_board_stage_runs";

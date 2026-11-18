@@ -107,7 +107,7 @@ impl Shell {
         }
     }
 
-    pub(super) fn refresh_board(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn refresh_board(&mut self, cx: &mut Context<Self>) {
         if let Some(view) = &self.board {
             view.update(cx, |board, cx| board.refresh(cx));
         }

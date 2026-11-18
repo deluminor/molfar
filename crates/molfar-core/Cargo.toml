@@ -29,7 +29,15 @@ unicode-width = "0.2"
 unicode-normalization = "0.1"
 molfar-mobile-link = { path = "../mobile-link" }
 quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls-ring"] }
-tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "time", "macros", "net"] }
+# External MCP: official SDK over a loopback-only HTTP/1 listener.
+rmcp = { version = "=3.10.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+http = "1"
+bytes = "1"
+tokio-util = "0.7"
 uuid = { version = "1", features = ["v4"] }
 if-addrs = "0.15"
 hostname = "0.4"

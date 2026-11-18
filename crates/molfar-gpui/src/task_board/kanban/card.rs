@@ -4,7 +4,7 @@ use super::{
         CARD_PAD_LEFT, CARD_PAD_RIGHT, CARD_PAD_Y, CARD_RADIUS, REWORK_WARNING_CYCLE, SOURCE_FADE,
         amber,
     },
-    running::{running_border, running_spinner},
+    running::running_spinner,
     status::{StatusKind, chip, status, stripe},
 };
 use crate::task_board::Board;
@@ -153,7 +153,6 @@ impl Board {
                         .hover(|s| s.border_color(content(0.2)).bg(content(0.065)))
                 }
             })
-            .when(running, |card| card.child(running_border(&id)))
             .when(running && !selected, |card| {
                 card.border_color(accent_color().opacity(0.22))
             })
