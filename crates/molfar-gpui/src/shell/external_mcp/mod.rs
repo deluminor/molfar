@@ -7,6 +7,8 @@ mod call;
 mod clients;
 mod dispatch;
 mod domains;
+#[cfg(test)]
+mod inbox_tests;
 mod lifecycle;
 #[cfg(test)]
 mod reach_tests;
@@ -34,6 +36,8 @@ use serde_json::{Value, json};
 pub(super) struct External {
     server: Option<molfar_core::external_mcp::transport::Server>,
     error: Option<String>,
+    #[cfg(test)]
+    inbox_backend: Option<Arc<dyn domains::inbox::backend::ExternalInbox>>,
     pending: HashSet<String>,
     /// The credential shown once after creation, as (client name, token).
     new_key: Option<(String, String)>,

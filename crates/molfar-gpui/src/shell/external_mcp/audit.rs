@@ -14,7 +14,16 @@ impl Shell {
             .iter()
             .find(|entry| entry.name == tool)
             .map_or(ACCESS::Standard, |entry| entry.requires.access);
-        let outcome = if result.is_ok() { "ok" } else { "error" };
+        let outcome = match result.as_ref().map_err(String::as_str) {
+            Ok(_) => "ok",
+            Err(
+                super::domains::inbox::NOT_FOUND
+                | crate::familiars::external::NOT_FOUND
+                | molfar_core::knowledge::external::VAULT_NOT_FOUND
+                | "Automation not found.",
+            ) => "denied",
+            Err(_) => "error",
+        };
         self.external_audit_entry(principal, tool, target, request, outcome, kind, cx);
     }
 

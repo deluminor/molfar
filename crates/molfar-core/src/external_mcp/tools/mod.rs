@@ -1,6 +1,7 @@
 pub mod automations;
 mod board;
 pub mod familiars;
+pub mod inbox;
 pub mod knowledge;
 mod schema;
 pub mod sessions;
@@ -64,6 +65,8 @@ fn domain_grant(domain: DOMAIN, mutation: bool) -> &'static [GRANT] {
         (DOMAIN::Automations, true) => &[GRANT::Write(DOMAIN::Automations)],
         (DOMAIN::Familiars, false) => &[GRANT::Read(DOMAIN::Familiars)],
         (DOMAIN::Familiars, true) => &[GRANT::Write(DOMAIN::Familiars)],
+        (DOMAIN::Inbox, false) => &[GRANT::Read(DOMAIN::Inbox)],
+        (DOMAIN::Inbox, true) => &[GRANT::Write(DOMAIN::Inbox)],
         (DOMAIN::Knowledge, false) => &[GRANT::Read(DOMAIN::Knowledge)],
         (DOMAIN::Knowledge, true) => &[GRANT::Write(DOMAIN::Knowledge)],
         _ => unreachable!("Only registered external domains have tool definitions"),
@@ -92,6 +95,7 @@ fn build_catalog() -> Vec<Tool> {
     tools.extend(knowledge::definitions());
     tools.extend(automations::definitions());
     tools.extend(familiars::definitions());
+    tools.extend(inbox::definitions());
     tools
 }
 
@@ -129,6 +133,7 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         name if name.starts_with("knowledge_") => knowledge::validate(name, arguments),
         name if name.starts_with("automations_") => automations::validate(name, arguments),
         name if name.starts_with("familiars_") => familiars::validate(name, arguments),
+        name if name.starts_with("inbox_") => inbox::validate(name, arguments),
         board => {
             let internal = board.replacen('_', ".", 1);
             crate::app_access::board::validate(&internal, arguments)

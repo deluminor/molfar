@@ -1,5 +1,6 @@
 mod automations;
 mod familiars;
+pub(super) mod inbox;
 mod knowledge;
 
 use super::*;
@@ -29,6 +30,9 @@ impl Shell {
                 if definition.name.starts_with("familiars_") =>
             {
                 self.external_familiar_target(scope, definition.name, arguments, cx)
+            }
+            tools::TargetKind::InboxProvider => {
+                self.external_inbox_target(scope, definition.name, arguments)
             }
             _ => Ok(None),
         }

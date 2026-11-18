@@ -663,13 +663,25 @@ impl Service {
         }
     }
     pub fn list(&self, projects: &[PathBuf], state: &ViewState) -> Snapshot {
+        self.list_providers(projects, state, &PROVIDERS)
+    }
+
+    pub fn list_providers(
+        &self,
+        projects: &[PathBuf],
+        state: &ViewState,
+        providers: &[&str],
+    ) -> Snapshot {
         let mut snapshot = Snapshot::default();
         let limit = if state.filters.fetch_state() == "all" {
             100
         } else {
             40
         };
-        for provider in PROVIDERS {
+        for provider in PROVIDERS
+            .into_iter()
+            .filter(|provider| providers.contains(provider))
+        {
             let status = match self.status(provider) {
                 Ok(status) => status,
                 Err(error) => {

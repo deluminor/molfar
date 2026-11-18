@@ -35,6 +35,9 @@ impl Shell {
             tool if tool.starts_with("familiars_") => {
                 self.external_familiar_tool(&scope, tool, &arguments, receipt.as_ref(), done, cx);
             }
+            tool if tool.starts_with("inbox_") => {
+                self.external_inbox_tool(&scope, tool, arguments, done, cx);
+            }
             _ => self.external_session_tool(&scope, tool, arguments, receipt.as_ref(), done, cx),
         }
 
