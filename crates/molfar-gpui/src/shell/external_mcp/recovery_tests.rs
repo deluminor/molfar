@@ -9,7 +9,7 @@ fn interrupt(f: &Fixture, tool: &str, arguments: &Value) {
         .unwrap()
         .external_receipt_begin(
             "client",
-            &project,
+            &receipts::ReceiptTarget::Project(project),
             tool,
             arguments["requestId"].as_str().unwrap(),
             &receipts::digest(tool, arguments),

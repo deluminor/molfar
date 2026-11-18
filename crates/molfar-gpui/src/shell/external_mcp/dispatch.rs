@@ -40,7 +40,7 @@ impl Shell {
                 let finish = cx.background_executor().spawn(async move {
                     locked(&store)?.external_receipt_finish(
                         &client,
-                        &receipt.project,
+                        &receipts::ReceiptTarget::Project(receipt.project),
                         tool,
                         &receipt.request,
                         &receipt.digest,

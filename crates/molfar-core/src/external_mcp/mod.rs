@@ -4,6 +4,7 @@ pub mod audit;
 pub mod constants;
 pub mod grants;
 pub mod receipts;
+pub mod resources;
 pub mod tools;
 pub mod transport;
 pub mod types;

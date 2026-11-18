@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::grants::types::{Requirement, ResourceGrant, ACCESS, GRANT};
+use super::grants::types::{Requirement, ResourceGrant, ACCESS, GRANT, RESOURCE};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -45,6 +45,12 @@ pub struct Principal {
 }
 
 impl Principal {
+    pub fn reaches(&self, kind: RESOURCE, id: &str) -> bool {
+        self.resources
+            .iter()
+            .any(|grant| grant.kind == kind && grant.id == id)
+    }
+
     pub fn allows(&self, requirement: &Requirement) -> bool {
         let flag = match requirement.access {
             ACCESS::Standard => true,
@@ -70,4 +76,27 @@ pub struct AuditEntry {
     pub outcome: String,
     #[serde(default)]
     pub kind: ACCESS,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resource_reach_matches_kind_and_id() {
+        let principal = Principal {
+            client_id: "client".into(),
+            name: "Client".into(),
+            grants: vec![],
+            resources: vec![ResourceGrant {
+                kind: RESOURCE::Familiar,
+                id: "one".into(),
+            }],
+            projects: vec![],
+        };
+
+        assert!(principal.reaches(RESOURCE::Familiar, "one"));
+        assert!(!principal.reaches(RESOURCE::Familiar, "One"));
+        assert!(!principal.reaches(RESOURCE::Vault, "one"));
+    }
 }

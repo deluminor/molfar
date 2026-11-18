@@ -2,7 +2,8 @@ use super::*;
 use molfar_core::{
     app_access as app,
     external_mcp::tools::{
-        SessionsList, SessionsRead, SessionsSend, SessionsStart, SessionsStop, parse,
+        parse,
+        sessions::{SessionsList, SessionsRead, SessionsSend, SessionsStart, SessionsStop},
     },
     store::PROMPT,
 };

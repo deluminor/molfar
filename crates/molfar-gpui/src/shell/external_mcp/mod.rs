@@ -171,7 +171,7 @@ impl Shell {
         let begin = cx.background_executor().spawn(async move {
             locked(&store)?.external_receipt_begin(
                 &client,
-                &saved.project,
+                &receipts::ReceiptTarget::Project(saved.project),
                 tool,
                 &saved.request,
                 &saved.digest,
