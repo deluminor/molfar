@@ -95,6 +95,13 @@ impl Shell {
             | tools::sessions::DELETE => {
                 self.external_session_manage(scope, tool, &arguments, done, cx);
             }
+            notes_api::LIST
+            | notes_api::READ
+            | notes_api::CREATE
+            | notes_api::WRITE
+            | notes_api::DELETE => {
+                self.external_notes_tool(scope, tool, arguments, receipt, done, cx);
+            }
             _ => self.external_session_tool(scope, tool, arguments, receipt, done, cx),
         }
     }

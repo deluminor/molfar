@@ -1,6 +1,7 @@
 mod artifacts;
 mod board_baseline;
 mod clients;
+mod notes;
 mod scope;
 mod sessions_manage;
 mod stage;

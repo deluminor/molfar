@@ -6,6 +6,7 @@ mod board_dispatch;
 mod clients;
 mod dispatch;
 mod lifecycle;
+mod notes;
 #[cfg(test)]
 mod recovery_tests;
 mod sessions;
@@ -17,7 +18,7 @@ mod tests;
 
 use super::*;
 use molfar_core::{
-    app_access::board as board_api,
+    app_access::{board as board_api, notes::external as notes_api},
     external_mcp::{
         grants::types::ACCESS,
         receipts::{self, BEGIN},
@@ -147,7 +148,7 @@ impl Shell {
         // Authorize against current grants before any receipt is read, so a
         // replay never returns a result the caller can no longer reach.
         let digest = receipts::digest(tool, &arguments);
-        let project = match self.external_mutation_project(&scope, &arguments, cx) {
+        let project = match self.external_mutation_project(&scope, tool, &arguments, cx) {
             Ok(project) => molfar_core::files::path_key(&project),
             Err(error) => {
                 let result = self

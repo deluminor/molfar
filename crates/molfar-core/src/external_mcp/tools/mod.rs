@@ -1,5 +1,7 @@
 use crate::app_access::board::artifacts;
+use crate::app_access::notes::external as notes_api;
 mod board;
+mod notes;
 mod schema;
 pub mod sessions;
 mod stage;
@@ -40,6 +42,7 @@ fn build_catalog() -> Vec<Tool> {
     tools.extend(sessions::management());
     tools.extend(board::definitions());
     tools.extend(stage::definitions());
+    tools.extend(notes::definitions());
     tools
 }
 
@@ -76,6 +79,11 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
             sessions::validate_manage(name, arguments)
         }
         artifacts::LIST | artifacts::READ => artifacts::validate(name, arguments),
+        notes_api::LIST
+        | notes_api::READ
+        | notes_api::CREATE
+        | notes_api::WRITE
+        | notes_api::DELETE => notes_api::validate(name, arguments),
         board => {
             let internal = board.replacen('_', ".", 1);
             if tool.mutation {
