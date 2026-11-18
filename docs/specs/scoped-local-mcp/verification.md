@@ -169,3 +169,24 @@ existing Operator launch path and remain covered by its tests plus the live smok
 
 Not run: OpenBot live smoke (requires separate explicit authorization), coverage
 measurement, dependency audit, independent UI QA.
+
+## Rework 1: `check:web` worker crash
+
+The failed `npm run check:web` run ended with "Worker exited unexpectedly" while
+every reported test passed (801 files passed, 2 skipped, 1 missing of 804). The
+macOS crash report for the lost Vitest fork (`node-2026-11-17-235001.ips`, a child
+of the Vitest process, alive for about 3 seconds) shows a native `SIGSEGV`
+(`EXC_BAD_ACCESS` at `0xe`) inside V8 garbage collection:
+`ClearStaleLeftTrimmedPointerVisitor::VisitRootPointers` called from
+`MarkCompactCollector::MarkRoots`. That is a crash in the Node v24.16.0 runtime,
+not a failing assertion or a `process.exit` in a test.
+
+This branch changes no TypeScript or JavaScript (`git diff --stat 02fbe072 HEAD`
+lists only Rust, Cargo and docs files), so no repository code on the web test path
+changed. No test calls `process.exit`, `process.kill` or `process.abort`; the two
+script tests that do are excluded from Vitest.
+
+Re-run evidence: five full `npx vitest run` runs and one full `npm run check:web`
+run all exited 0, with no worker crash and no new crash report. The check was not
+skipped or weakened. If the crash recurs, upgrading Node within the 24.x line is the
+fix to try; the repository has no code change that addresses a V8 GC fault.
