@@ -1,4 +1,4 @@
-use super::audit::target;
+use super::audit::{domain_target, target};
 use super::*;
 
 impl Shell {
@@ -12,6 +12,7 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         let (done, result) = async_channel::bounded(1);
+        let audit_target = domain_target(tool, &arguments);
         match tool {
             "projects_list" => {
                 let projects: Vec<_> = scope
@@ -40,7 +41,7 @@ impl Shell {
                 let finish = cx.background_executor().spawn(async move {
                     locked(&store)?.external_receipt_finish(
                         &client,
-                        &receipts::ReceiptTarget::Project(receipt.project),
+                        &receipt.target,
                         tool,
                         &receipt.request,
                         &receipt.digest,
@@ -57,7 +58,7 @@ impl Shell {
                         .pending
                         .remove(&receipt.pending_key(&scope, tool));
                 }
-                let target = target(&result);
+                let target = audit_target.or_else(|| target(&result));
                 this.external_audit(
                     &scope.principal,
                     tool,

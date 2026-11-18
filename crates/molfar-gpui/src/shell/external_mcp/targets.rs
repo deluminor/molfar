@@ -28,7 +28,19 @@ impl Shell {
 
     /// The project a mutation targets, checked against current grants with the
     /// same uniform errors a fresh call returns.
-    pub(super) fn external_mutation_project(
+    pub(super) fn external_mutation_target(
+        &self,
+        scope: &Scope,
+        arguments: &Value,
+        cx: &App,
+    ) -> Result<ReceiptTarget, String> {
+        let project = self.external_mutation_project(scope, arguments, cx)?;
+        Ok(ReceiptTarget::Project(molfar_core::files::path_key(
+            &project,
+        )))
+    }
+
+    fn external_mutation_project(
         &self,
         scope: &Scope,
         arguments: &Value,

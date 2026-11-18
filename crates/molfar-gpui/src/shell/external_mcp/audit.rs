@@ -51,3 +51,15 @@ pub(super) fn target(result: &Result<Value, String>) -> Option<String> {
         .map(str::to_owned)
         .or_else(|| value["sessionId"].as_i64().map(|id| id.to_string()))
 }
+
+pub(super) fn domain_target(tool: &str, arguments: &Value) -> Option<String> {
+    let (prefix, field) = match tool.split_once('_')?.0 {
+        "knowledge" => ("knowledge", "path"),
+        "automations" => ("automation", "automationId"),
+        "familiars" => ("familiar", "familiarId"),
+        "inbox" => ("inbox", "itemKey"),
+        _ => return None,
+    };
+    let id = arguments[field].as_str()?;
+    Some(format!("{prefix}:{id}"))
+}
