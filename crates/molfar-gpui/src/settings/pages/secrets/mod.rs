@@ -86,7 +86,7 @@ impl SecretsPage {
         if self.busy {
             return;
         }
-        self.busy = true;
+        self.set_busy(true, cx);
         if clear_on_success {
             self.error = None;
         }
@@ -110,31 +110,44 @@ impl SecretsPage {
                 }
             }
             let result = action(&store, &db);
-            let entries = store.list(&db).map_err(|error| error.to_string())?;
-            let scopes = store.projects(&db).map_err(|error| error.to_string())?;
-            Ok::<_, String>((result, entries, scopes))
+            let snapshot = store
+                .list(&db)
+                .and_then(|entries| store.projects(&db).map(|scopes| (entries, scopes)));
+            Ok::<_, String>((result, snapshot))
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;
             let _ = this.update(cx, |this, cx| {
-                this.busy = false;
-                match result {
-                    Ok((action, entries, scopes)) => {
+                this.set_busy(false, cx);
+                let result = result.and_then(|(action, snapshot)| {
+                    if clear_on_success && action.is_ok() {
+                        this.clear_form(cx);
+                    }
+
+                    let loaded = snapshot.map(|(entries, scopes)| {
                         this.entries = entries;
                         this.scopes = scopes;
-                        match action {
-                            Ok(()) if clear_on_success => this.clear_form(cx),
-                            Ok(()) => (),
-                            Err(error) => this.error = Some(error),
-                        }
-                    }
-                    Err(error) => this.error = Some(error),
+                    });
+                    action.and(loaded.map_err(|error| error.to_string()))
+                });
+                if let Err(error) = result {
+                    this.error = Some(error);
                 }
                 cx.notify();
             });
         })
         .detach();
         cx.notify();
+    }
+
+    fn set_busy(&mut self, busy: bool, cx: &mut Context<Self>) {
+        self.busy = busy;
+        if busy {
+            self.choosing_scope = false;
+        }
+        for field in [&self.name, &self.value] {
+            field.update(cx, |field, _| field.set_read_only(busy));
+        }
     }
 
     fn clear_form(&mut self, cx: &mut Context<Self>) {

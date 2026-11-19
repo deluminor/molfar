@@ -115,6 +115,77 @@ fn settings_labels_missing_projects_and_preserves_existing_names(cx: &mut TestAp
     visual.update_window_entity(&view, |view, _, cx| {
         assert_eq!(view.entries.len(), 2);
         assert!(view.error.as_deref().unwrap().contains("already exists"));
-        assert!(view.value.read(cx).content.is_empty());
+        assert!(view.value.read(cx).content.as_ref() == REPLACEMENT);
     });
+}
+
+#[gpui::test]
+fn settings_replace_preserves_input_until_the_write_succeeds(cx: &mut TestAppContext) {
+    let db = Arc::new(Mutex::new(
+        molfar_core::store::Store::open(Path::new(":memory:")).unwrap(),
+    ));
+    let secrets = SecretStore::in_memory();
+    secrets
+        .create(
+            &locked(&db).unwrap(),
+            Scope::Global,
+            SecretName::parse("API_KEY").unwrap(),
+            SecretValue::from_text(ORIGINAL.into()).unwrap(),
+        )
+        .unwrap();
+    let index = locked(&db)
+        .unwrap()
+        .setting("secrets.index")
+        .unwrap()
+        .unwrap();
+
+    let (view, visual) =
+        cx.add_window_view(|_, cx| SecretsPage::new(db.clone(), secrets.clone(), Vec::new(), cx));
+    visual.run_until_parked();
+    visual.update_window_entity(&view, |view, window, cx| {
+        let edit = Edit::Replace(view.entries[0].clone());
+        view.edit = Some(edit.clone());
+        view.value
+            .update(cx, |input, cx| input.set_text(REPLACEMENT.into(), cx));
+        view.apply(edit, window, cx);
+    });
+    visual.simulate_prompt_answer("Cancel");
+    visual.run_until_parked();
+    visual.update_window_entity(&view, |view, window, cx| {
+        assert!(
+            view.value.read(cx).content.as_ref() == REPLACEMENT,
+            "declining confirmation keeps the draft"
+        );
+        view.apply(view.edit.clone().unwrap(), window, cx);
+    });
+    locked(&db)
+        .unwrap()
+        .save_setting("secrets.index", "{")
+        .unwrap();
+    visual.simulate_prompt_answer("Replace");
+    visual.run_until_parked();
+
+    visual.update_window_entity(&view, |view, window, cx| {
+        assert_eq!(
+            view.error.as_deref(),
+            Some("Could not read or update secret metadata.")
+        );
+        assert!(
+            view.value.read(cx).content.as_ref() == REPLACEMENT,
+            "failed replacement keeps the draft"
+        );
+        locked(&db)
+            .unwrap()
+            .save_setting("secrets.index", &index)
+            .unwrap();
+        view.apply(view.edit.clone().unwrap(), window, cx);
+    });
+    visual.simulate_prompt_answer("Replace");
+    visual.run_until_parked();
+    visual.update_window_entity(&view, |view, _, cx| {
+        assert!(view.value.read(cx).content.is_empty());
+        assert!(view.edit.is_none());
+    });
+    let redactor = secrets.redactor(&locked(&db).unwrap(), None).unwrap();
+    assert_eq!(redactor.text(REPLACEMENT), "[secret:API_KEY]");
 }

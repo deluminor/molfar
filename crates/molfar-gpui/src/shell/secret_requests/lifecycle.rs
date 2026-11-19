@@ -15,11 +15,10 @@ impl Shell {
                 return None;
             }
 
-            match card.take(cx) {
+            match card.secret_value(cx) {
                 Ok(value) => {
-                    card.saving = true;
                     card.error = None;
-                    cx.notify();
+                    card.set_saving(true, cx);
                     Some(value)
                 }
                 Err(error) => {
@@ -50,9 +49,8 @@ impl Shell {
                     this.finish_secret_request(id, Ok(Status::Cancelled), cx)
                 }
                 Err(error) => card.update(cx, |card, cx| {
-                    card.saving = false;
                     card.error = Some(error);
-                    cx.notify();
+                    card.set_saving(false, cx);
                 }),
             });
         })

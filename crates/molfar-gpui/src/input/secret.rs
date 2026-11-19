@@ -11,10 +11,8 @@ impl Input {
         input
     }
 
-    pub(crate) fn take_secret(&mut self, cx: &mut Context<Self>) -> Result<SecretValue, Error> {
-        let value = SecretValue::from_text(self.content.to_string());
-        self.clear_secret(cx);
-        value
+    pub(crate) fn secret_value(&self) -> Result<SecretValue, Error> {
+        SecretValue::from_text(self.content.to_string())
     }
 
     pub(crate) fn clear_secret(&mut self, cx: &mut Context<Self>) {

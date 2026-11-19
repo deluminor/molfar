@@ -133,7 +133,8 @@ impl SecretsPage {
                 let name = name();
                 let value = self
                     .value
-                    .update(cx, |input, cx| input.take_secret(cx))
+                    .read(cx)
+                    .secret_value()
                     .map_err(|error| error.to_string());
                 let project = self
                     .scope
@@ -175,7 +176,8 @@ impl SecretsPage {
             Edit::Replace(entry) => {
                 let value = self
                     .value
-                    .update(cx, |input, cx| input.take_secret(cx))
+                    .read(cx)
+                    .secret_value()
                     .map_err(|error| error.to_string());
                 self.confirm_entry("Replace", entry, window, cx, move |store, db, entry| {
                     store
@@ -209,12 +211,12 @@ impl SecretsPage {
             &[verb, "Cancel"],
             cx,
         );
-        self.busy = true;
+        self.set_busy(true, cx);
         cx.notify();
         cx.spawn(async move |this, cx| {
             let confirmed = prompt.await == Ok(0);
             let _ = this.update(cx, |this, cx| {
-                this.busy = false;
+                this.set_busy(false, cx);
                 if confirmed {
                     this.run(true, move |store, db| action(store, db, entry), cx);
                 } else {

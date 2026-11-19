@@ -172,3 +172,59 @@ fn read_only_can_list_and_cannot_request(cx: &mut TestAppContext) {
         .unwrap_err();
     assert!(error.contains("read-only"));
 }
+
+#[gpui::test]
+fn failed_secret_request_save_can_retry_without_retyping(cx: &mut TestAppContext) {
+    let (window, caller) = fixture(cx);
+    let reply = request(window, caller, "retry-save", cx);
+    let card = window
+        .update(cx, |shell, _, cx| {
+            locked(&shell.store)
+                .unwrap()
+                .save_setting("secrets.index", "{")
+                .unwrap();
+            let card = shell.open_secret_requests[&caller].card.clone().unwrap();
+            card.update(cx, |card, cx| card.enter_value(VALUE.into(), cx));
+            card
+        })
+        .unwrap();
+    cx.run_until_parked();
+    assert!(matches!(reply.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+    window
+        .update(cx, |shell, _, cx| {
+            let form = card.read(cx);
+            assert!(
+                !form.input_is_empty(cx),
+                "failed save must preserve typed input"
+            );
+            assert_eq!(
+                form.error.as_deref(),
+                Some("Could not read or update secret metadata.")
+            );
+            assert!(!form.error.as_deref().unwrap().contains(VALUE));
+            locked(&shell.store)
+                .unwrap()
+                .save_setting("secrets.index", "[]")
+                .unwrap();
+            card.update(cx, |_, cx| {
+                cx.emit(crate::conversation::secret_request::Answer::Save)
+            });
+        })
+        .unwrap();
+    cx.run_until_parked();
+    assert_eq!(
+        reply.try_recv().unwrap().unwrap(),
+        json!({"status":"saved"})
+    );
+
+    window
+        .update(cx, |shell, _, cx| {
+            assert!(card.read(cx).input_is_empty(cx));
+            let db = locked(&shell.store).unwrap();
+            let scope = card.read(cx).request.scope.clone();
+            let redactor = shell.secret_store.redactor(&db, Some(scope)).unwrap();
+            assert_eq!(redactor.text(VALUE), "[secret:API_KEY]");
+        })
+        .unwrap();
+}

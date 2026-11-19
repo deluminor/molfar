@@ -42,11 +42,18 @@ impl SecretRequestCard {
         }
     }
 
-    pub(crate) fn take(
-        &mut self,
-        cx: &mut Context<Self>,
+    pub(crate) fn secret_value(
+        &self,
+        cx: &App,
     ) -> Result<SecretValue, molfar_core::secrets::Error> {
-        self.input.update(cx, |input, cx| input.take_secret(cx))
+        self.input.read(cx).secret_value()
+    }
+
+    pub(crate) fn set_saving(&mut self, saving: bool, cx: &mut Context<Self>) {
+        self.saving = saving;
+        self.input
+            .update(cx, |input, _| input.set_read_only(saving));
+        cx.notify();
     }
 
     #[cfg(test)]
