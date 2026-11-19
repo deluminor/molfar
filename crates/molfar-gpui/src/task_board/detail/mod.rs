@@ -27,13 +27,13 @@ mod waiting;
 use super::Board;
 use crate::notes::preview::Preview;
 use fold::Fold;
-use gpui::{AppContext, Context, Entity};
+use gpui::{AppContext, Context, Entity, SharedString};
 
 pub(super) struct Content {
     card_id: String,
-    description: String,
-    criteria: String,
-    cwd: String,
+    description: SharedString,
+    criteria: SharedString,
+    cwd: SharedString,
     description_view: Entity<Fold>,
     criteria_view: Entity<Fold>,
     generation: u64,
@@ -58,34 +58,31 @@ impl Board {
             .is_some_and(|c| c.card_id == card.id);
         if same_card
             && self.detail_content.as_ref().is_some_and(|c| {
-                c.description == card.description
-                    && c.criteria == card.acceptance_criteria
-                    && c.cwd == *cwd
+                c.description.as_ref() == card.description.as_str()
+                    && c.criteria.as_ref() == card.acceptance_criteria.as_str()
+                    && c.cwd.as_ref() == cwd.as_str()
             })
         {
             return;
         }
-        let (card_id, description, criteria, cwd) = (
-            card.id.clone(),
-            card.description.clone(),
-            card.acceptance_criteria.clone(),
-            cwd.clone(),
-        );
+        let description = SharedString::from(card.description.clone());
+        let criteria = SharedString::from(card.acceptance_criteria.clone());
+        let cwd = SharedString::from(cwd.clone());
         if !same_card {
             self.detail_content = Some(Content {
-                card_id,
-                description: String::new(),
-                criteria: String::new(),
-                cwd: String::new(),
+                card_id: card.id.clone(),
+                description: SharedString::default(),
+                criteria: SharedString::default(),
+                cwd: SharedString::default(),
                 description_view: cx.new(|cx| Fold::new("description", cx)),
                 criteria_view: cx.new(|cx| Fold::new("criteria", cx)),
                 generation: 0,
             });
         }
         let content = self.detail_content.as_mut().expect("selected content");
-        content.description.clone_from(&description);
-        content.criteria.clone_from(&criteria);
-        content.cwd.clone_from(&cwd);
+        content.description = description.clone();
+        content.criteria = criteria.clone();
+        content.cwd = cwd.clone();
         content.generation += 1;
         let generation = content.generation;
         let store = self.store.clone();

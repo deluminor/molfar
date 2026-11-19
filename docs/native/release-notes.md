@@ -2,6 +2,19 @@
 
 MOLFAR Native is an experimental Rust and GPUI application. The React/Tauri app remains the production release. Native previews use their own version line, `0.16.0-preview.N`. They do not bump the desktop `1.0.x` changelog.
 
+## 0.16.0-preview.15
+
+### External access
+
+- Settings can name an external client and grant it Board, sessions, notes, knowledge, automations, Familiars, and inbox separately. Those tools stay off until granted.
+- Deletes and resets also need Destructive. Sending a Familiar message, posting an inbox comment, and running an automation also need Delegated.
+
+### Familiar and Board
+
+- The Terminal button in a Familiar chat opens the bottom terminal.
+- A message sent while a Familiar is still replying stays queued and is answered as the next turn.
+- Scrolling an open Board card no longer redraws the whole board.
+
 ## Since 0.16.0-preview.1
 
 ### Explorer and panes

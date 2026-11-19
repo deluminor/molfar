@@ -3,6 +3,7 @@ use super::*;
 use crate::follow_up::Message;
 
 static STEER_SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+const CLAUDE_STEER_GRACE: Duration = Duration::from_secs(10);
 
 impl Kind {
     pub fn can_steer(self) -> bool {
@@ -74,6 +75,10 @@ impl Protocol {
                     json!({"type":"user","session_id":"","parent_tool_use_id":null,"message":{"role":"user","content":request.claude_content(&prompt)?}}),
                 )?;
                 self.text_key = None;
+                self.claude_steered = true;
+                if self.claude_result_seen {
+                    self.hold_for_claude_steer();
+                }
                 return Ok(vec![Event::FollowUp(message)]);
             }
             Kind::Pi | Kind::Omp => {
@@ -117,6 +122,17 @@ impl Protocol {
         }
         self.steering.insert(wire, (message, Instant::now()));
         Ok(Vec::new())
+    }
+    /// Claude Code answers a user frame it could not fold into the running
+    /// turn in a turn of its own right after `result`. Ending on that
+    /// `result` would park the process before the steered message is answered.
+    pub(super) fn hold_for_claude_steer(&mut self) -> bool {
+        if !std::mem::take(&mut self.claude_steered) {
+            return false;
+        }
+        let until = Instant::now() + CLAUDE_STEER_GRACE;
+        self.claude_resume_at = Some(self.claude_resume_at.map_or(until, |at| at.max(until)));
+        true
     }
     pub(super) fn steer_response(&mut self, value: &Value) -> Option<Vec<Event>> {
         let wire = value["id"].as_str()?;
@@ -338,5 +354,86 @@ for line in sys.stdin:
         .unwrap();
         assert!(delivered);
         assert_eq!(output, "BeforeAfter");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn claude_answers_a_message_steered_too_late_for_the_turn_before_finishing() {
+        use std::os::unix::fs::PermissionsExt;
+        let temp = tempfile::tempdir().unwrap();
+        let binary = temp.path().join("claude");
+        std::fs::write(&binary, r##"#!/usr/bin/env python3
+import json, sys
+
+def send(value):
+    print(json.dumps(value), flush=True)
+
+def answer(text):
+    send({'type': 'system', 'subtype': 'init', 'session_id': 'claude-session'})
+    send({'type': 'assistant', 'parent_tool_use_id': None, 'message': {'id': text, 'content': [{'type': 'text', 'text': text}]}})
+
+while True:
+    line = sys.stdin.readline()
+    if not line:
+        break
+    frame = json.loads(line)
+    if frame.get('type') == 'control_request':
+        send({'type': 'control_response', 'response': {'request_id': frame['request_id'], 'subtype': 'success'}})
+    elif frame.get('type') == 'user':
+        answer('First')
+        # The second message arrives while the first answer is still being written.
+        sys.stdin.readline()
+        send({'type': 'result', 'subtype': 'success', 'result': 'First', 'usage': {}})
+        answer('Second')
+        send({'type': 'result', 'subtype': 'success', 'result': 'Second', 'usage': {}})
+"##).unwrap();
+        std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let (controls, receive) = mpsc::channel();
+        let mut delivered = false;
+        let mut output = String::new();
+
+        run_with_controls(
+            Request {
+                kind: Kind::Claude,
+                binary,
+                cwd: temp.path().into(),
+                prompt: "do it all".into(),
+                provider_id: None,
+                model: None,
+                settings: Default::default(),
+            },
+            Arc::new(AtomicBool::new(false)),
+            Some(receive),
+            |events| {
+                for event in events {
+                    match event {
+                        Event::Ready => controls
+                            .send(Control {
+                                id: "later".into(),
+                                decision: Decision::Steer(Message {
+                                    id: "later".into(),
+                                    text: "what did we do?".into(),
+                                    ..Default::default()
+                                }),
+                            })
+                            .unwrap(),
+                        Event::FollowUp(message) => {
+                            assert_eq!(message.id, "later");
+                            delivered = true;
+                        }
+                        Event::Text(text) => output.push_str(&text),
+                        _ => {}
+                    }
+                }
+                Ok(())
+            },
+        )
+        .unwrap();
+
+        assert!(delivered);
+        assert!(
+            output.contains("Second"),
+            "the turn ended before the steered message was answered: {output:?}"
+        );
     }
 }

@@ -1216,6 +1216,54 @@ mod tests {
         assert!(visual.debug_bounds("footer-terminal").is_some());
     }
 
+    fn click_footer_terminal(visual: &mut gpui::VisualTestContext) {
+        let button = visual.debug_bounds("footer-terminal").unwrap();
+        visual.simulate_click(button.center(), gpui::Modifiers::none());
+    }
+
+    #[gpui::test]
+    fn the_footer_terminal_opens_the_dock_in_a_familiar_and_a_session(
+        cx: &mut gpui::TestAppContext,
+    ) {
+        let (window, _, _) = crate::shell::tests::window(cx);
+        window
+            .update(cx, |shell, window, cx| {
+                cx.set_reduce_motion(true);
+                let project = shell.workspace.project.clone();
+                shell.familiar_manager().update(cx, |familiars, cx| {
+                    let id = familiars.roster.create(vec![project]).id.clone();
+                    familiars.open(&id, window, cx);
+                });
+                assert!(shell.familiar_active(cx));
+            })
+            .unwrap();
+        let visual = &mut gpui::VisualTestContext::from_window(window.into(), cx);
+        visual.run_until_parked();
+        assert!(visual.debug_bounds("terminal-dock").is_none());
+
+        click_footer_terminal(visual);
+        visual.run_until_parked();
+        let dock = visual.debug_bounds("terminal-dock").unwrap();
+        assert!(dock.size.height > px(0.), "{dock:?}");
+
+        click_footer_terminal(visual);
+        visual.run_until_parked();
+        assert!(visual.debug_bounds("terminal-dock").is_none());
+
+        window
+            .update(cx, |shell, window, cx| {
+                let session = shell.workspace.active.unwrap();
+                shell.open(session, window, cx);
+                assert!(!shell.familiar_active(cx));
+            })
+            .unwrap();
+        let visual = &mut gpui::VisualTestContext::from_window(window.into(), cx);
+        visual.run_until_parked();
+        click_footer_terminal(visual);
+        visual.run_until_parked();
+        assert!(visual.debug_bounds("terminal-dock").is_some());
+    }
+
     #[test]
     fn chip_labels_count_repeated_processes_in_order() {
         assert_eq!(chip_label(["vite"]), "vite");

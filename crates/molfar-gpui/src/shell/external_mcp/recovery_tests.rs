@@ -230,7 +230,7 @@ fn deleted_targets_report_pending_receipts_and_replay_finished_results(cx: &mut 
             .unwrap()
             .external_receipt_finish(
                 &principal.client_id,
-                &receipts::ReceiptTarget::Project(f.granted.clone()),
+                &receipts::ReceiptTarget::Project(molfar_core::files::path_key(&f.granted)),
                 tool,
                 arguments["requestId"].as_str().unwrap(),
                 &receipts::digest(tool, &arguments),

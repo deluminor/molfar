@@ -269,6 +269,7 @@ struct Protocol {
     claude_result_seen: bool,
     claude_usage_limit: Option<crate::usage::Limit>,
     claude_resume_at: Option<Instant>,
+    claude_steered: bool,
     follow_up_ready: bool,
     steering: HashMap<String, (crate::follow_up::Message, Instant)>,
     request: Request,
@@ -310,6 +311,7 @@ impl Protocol {
             claude_result_seen: false,
             claude_usage_limit: None,
             claude_resume_at: None,
+            claude_steered: false,
             follow_up_ready: false,
             steering: HashMap::new(),
             emitted: HashMap::new(),
@@ -975,13 +977,14 @@ impl Protocol {
                             );
                         }
                         self.claude_result_seen = true;
+                        let steered = self.hold_for_claude_steer();
                         if self.activities.claude_background.is_empty()
                             && self.activities.claude_pending.is_empty()
                             && self.claude_resume_at.is_none()
                         {
                             events.push(Event::Done);
                             self.done = true;
-                        } else {
+                        } else if !steered {
                             events.push(Event::Status("Waiting for background tasks…".into()));
                         }
                     }
