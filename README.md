@@ -12,7 +12,7 @@
 > [!NOTE]
 > **Native preview.** Rust and GPUI.
 >
-> Download [0.16.0-preview.14](https://github.com/deluminor/molfar/releases/tag/native-v0.16.0-preview.14).
+> Download [0.16.0-preview.15](https://github.com/deluminor/molfar/releases/tag/native-v0.16.0-preview.15).
 >
 > macOS DMG for Apple Silicon and Intel, Windows x64 installer, Linux x64 `.deb`, AppImage, and `.rpm`.
 > Read the [native guide](docs/native/README.md) before installing.
