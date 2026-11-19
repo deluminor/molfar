@@ -72,3 +72,48 @@ fn scoped_deletion_preserves_global_entry() {
     assert_eq!(remaining.len(), 1);
     assert_eq!(remaining[0].scope, Scope::Global);
 }
+
+#[test]
+fn redacts_stream_at_every_unicode_boundary_and_tracks_replaced_values() {
+    let database = Store::open(Path::new(":memory:")).unwrap();
+    let store = SecretStore::new(backend::MemoryBackend::default());
+    let name = SecretName::parse("API_KEY").unwrap();
+    let redactor = store.redactor(&database, None).unwrap();
+    let value = "🔑sample-value";
+    store
+        .create(
+            &database,
+            Scope::Global,
+            name,
+            SecretValue::parse(value.into()).unwrap(),
+        )
+        .unwrap();
+
+    let source = format!("prefix {value} suffix");
+    for (offset, _) in source.char_indices() {
+        let mut stream = super::redact::StreamRedactor::default();
+        let mut result = stream.push(&redactor, &source[..offset]);
+        result.push_str(&stream.push(&redactor, &source[offset..]));
+        result.push_str(&stream.finish(&redactor));
+        assert_eq!(result, "prefix [secret:API_KEY] suffix");
+    }
+
+    let entry = store.list(&database).unwrap().remove(0);
+    let new_value = "longer-value\nanother-line";
+    store
+        .replace(
+            &database,
+            &entry.id,
+            SecretValue::parse(new_value.into()).unwrap(),
+        )
+        .unwrap();
+    store
+        .rename(&database, &entry.id, SecretName::parse("RENAMED").unwrap())
+        .unwrap();
+    assert_eq!(
+        redactor.text(&format!("{value} {new_value} another-line")),
+        "[secret:RENAMED] [secret:RENAMED] [secret:RENAMED]"
+    );
+    store.delete(&database, &entry.id).unwrap();
+    assert_eq!(redactor.text(value), value);
+}

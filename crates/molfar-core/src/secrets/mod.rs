@@ -4,10 +4,13 @@ use crate::store::Store;
 
 mod backend;
 mod projects;
+pub mod redact;
+mod registry;
 mod store;
 mod types;
 
 pub use projects::Project;
+pub use registry::Redactor;
 pub use store::SecretStore;
 pub use types::{Entry, Error, Scope, SecretName, SecretValue, Status};
 

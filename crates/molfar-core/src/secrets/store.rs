@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 
 use super::{
     backend::{Backend, KeyringBackend},
@@ -6,9 +6,12 @@ use super::{
     Store, INDEX, PROJECTS,
 };
 
+use super::registry::{Redactor, Registered, Registry};
+
 #[derive(Clone)]
 pub struct SecretStore {
     backend: Arc<dyn Backend>,
+    registry: Registry,
 }
 
 static INDEX_LOCK: Mutex<()> = Mutex::new(());
@@ -19,7 +22,8 @@ pub(super) fn lock() -> Result<MutexGuard<'static, ()>, Error> {
 
 impl Default for SecretStore {
     fn default() -> Self {
-        Self::new(KeyringBackend)
+        static STORE: LazyLock<SecretStore> = LazyLock::new(|| SecretStore::new(KeyringBackend));
+        STORE.clone()
     }
 }
 
@@ -27,7 +31,32 @@ impl SecretStore {
     pub(super) fn new(backend: impl Backend + 'static) -> Self {
         Self {
             backend: Arc::new(backend),
+            registry: Registry::default(),
         }
+    }
+
+    pub fn redactor(&self, db: &Store, project: Option<Scope>) -> Result<Redactor, Error> {
+        let _lock = lock()?;
+        let index: Vec<Entry> = load(db, INDEX)?;
+        let database = db.database_path().to_owned();
+        let mut registry = self.registry.write().map_err(|_| Error::Index)?;
+        let entries = registry.entry(database.clone()).or_default();
+        for entry in index {
+            if (entry.scope == Scope::Global || project.as_ref() == Some(&entry.scope))
+                && !entries.contains_key(&entry.id)
+            {
+                match self.backend.get(&entry.account()) {
+                    Ok(value) => Registered::add(entries, entry, value),
+                    Err(Error::Missing) => {}
+                    Err(error) => return Err(error),
+                }
+            }
+        }
+        Ok(Redactor {
+            registry: self.registry.clone(),
+            database,
+            project,
+        })
     }
 
     pub fn probe(&self) -> Result<(), Error> {
@@ -81,12 +110,18 @@ impl SecretStore {
             delete_failed: false,
         };
         let account = entry.account();
+        let mut registry = self.registry.write().map_err(|_| Error::Index)?;
         self.backend.set(&account, &value)?;
-        index.push(entry);
+        index.push(entry.clone());
         if let Err(error) = save(db, INDEX, &index) {
             self.backend.delete(&account).map_err(|_| Error::Rollback)?;
             return Err(error);
         }
+        Registered::add(
+            registry.entry(db.database_path().to_owned()).or_default(),
+            entry,
+            value,
+        );
         Ok(Status::Saved)
     }
 
@@ -98,15 +133,22 @@ impl SecretStore {
             .find(|entry| entry.id == id)
             .ok_or(Error::Missing)?;
         let account = entry.account();
+        let mut registry = self.registry.write().map_err(|_| Error::Index)?;
+        let entries = registry.entry(db.database_path().to_owned()).or_default();
         let previous = self.backend.get(&account)?;
         self.backend.set(&account, &value)?;
         entry.updated_at = chrono::Utc::now().timestamp();
+        let entry = entry.clone();
         if let Err(error) = save(db, INDEX, &index) {
             self.backend
                 .set(&account, &previous)
                 .map_err(|_| Error::Rollback)?;
             return Err(error);
         }
+        if !entries.contains_key(id) {
+            Registered::add(entries, entry.clone(), previous);
+        }
+        Registered::add(entries, entry, value);
         Ok(())
     }
 
@@ -125,7 +167,15 @@ impl SecretStore {
 
         index[position].name = name;
         index[position].updated_at = chrono::Utc::now().timestamp();
-        save(db, INDEX, &index)
+        let mut registry = self.registry.write().map_err(|_| Error::Index)?;
+        save(db, INDEX, &index)?;
+        if let Some(registered) = registry
+            .get_mut(db.database_path())
+            .and_then(|entries| entries.get_mut(id))
+        {
+            registered.entry = index[position].clone();
+        }
+        Ok(())
     }
 
     pub fn delete(&self, db: &Store, id: &str) -> Result<(), Error> {
@@ -139,6 +189,8 @@ impl SecretStore {
     fn delete_matching(&self, db: &Store, matches: impl Fn(&Entry) -> bool) -> Result<(), Error> {
         let _lock = lock()?;
         let mut index: Vec<Entry> = load(db, INDEX)?;
+        let mut registry = self.registry.write().map_err(|_| Error::Index)?;
+        let entries = registry.entry(db.database_path().to_owned()).or_default();
         let mut failed = None;
         index.retain_mut(|entry| {
             if !matches(entry) {
@@ -149,6 +201,7 @@ impl SecretStore {
                 failed = Some(error);
                 return true;
             }
+            entries.remove(&entry.id);
             false
         });
         save(db, INDEX, &index)?;
