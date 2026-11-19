@@ -36,7 +36,7 @@ impl Board {
             .border_color(content(0.1))
             .child(self.detail_header(card, metadata_ready, cx))
             .child(self.detail_tabs(cx))
-            .child(div().flex_1().min_h_0().flex().child(self.detail(cx)))
+            .child(div().flex_1().min_h_0().flex().child(self.cached_detail()))
             .when(metadata_ready, |d| {
                 d.child(
                     div()

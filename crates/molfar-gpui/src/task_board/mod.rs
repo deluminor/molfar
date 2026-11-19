@@ -6,6 +6,9 @@ mod kanban;
 mod load;
 #[cfg(test)]
 mod loading_tests;
+mod panes;
+#[cfg(test)]
+mod panes_tests;
 mod project;
 #[cfg(test)]
 mod project_tests;
@@ -87,6 +90,8 @@ pub(crate) struct Board {
     )>,
     column_scrolls: std::cell::RefCell<std::collections::HashMap<String, ScrollHandle>>,
     detail_content: Option<detail::Content>,
+    detail_pane: gpui::Entity<panes::DetailPane>,
+    column_panes: panes::ColumnPanes,
     card_usage: detail::usage::State,
     owner_checks: detail::owner_checks::State,
     drawer_opens: u64,
@@ -125,6 +130,7 @@ impl Focusable for Board {
 
 impl Board {
     pub(crate) fn new(store: Database, cx: &mut Context<Self>) -> Self {
+        let (detail_pane, column_panes) = panes::build(cx);
         Self {
             store,
             focus: cx.focus_handle(),
@@ -169,6 +175,8 @@ impl Board {
                 .collect(),
             column_scrolls: Default::default(),
             detail_content: None,
+            detail_pane,
+            column_panes,
             card_usage: Default::default(),
             owner_checks: Default::default(),
             drawer_opens: 0,

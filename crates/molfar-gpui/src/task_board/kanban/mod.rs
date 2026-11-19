@@ -69,6 +69,25 @@ impl Board {
         columns
     }
 
+    pub(in crate::task_board) fn kanban_column_zone(
+        &self,
+        column: &str,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let Some((id, label, cards)) = self
+            .board_columns()
+            .into_iter()
+            .find(|(id, ..)| id == column)
+        else {
+            return div().into_any_element();
+        };
+
+        let targets = self.drag_targets(cx);
+        let scroll = self.column_scroll(&id);
+        let element = self.kanban_column(&id, &label, &cards, &scroll, cx);
+        self.drop_zone(element, &id, targets.as_ref(), cx)
+    }
+
     pub(super) fn kanban(&self, cx: &mut Context<Self>) -> AnyElement {
         let mut row = div()
             .id("board-list")
@@ -89,14 +108,17 @@ impl Board {
             .as_ref()
             .is_some_and(|snapshot| snapshot.cards.is_empty());
 
-        let targets = self.drag_targets(cx);
         row = row.on_drag_move::<drag::CardDrag>(
             cx.listener(|this, event, _, cx| this.edge_scroll(event, cx)),
         );
-        for (column, label, cards) in self.board_columns() {
-            let scroll = self.column_scroll(&column);
-            let element = self.kanban_column(&column, &label, &cards, &scroll, cx);
-            row = row.child(self.drop_zone(element, &column, targets.as_ref(), cx));
+        let column_style = gpui::StyleRefinement::default()
+            .h_full()
+            .w(px(look::COLUMN_WIDTH))
+            .flex_shrink_0();
+        for (column, ..) in self.board_columns() {
+            if let Some(pane) = self.column_panes.get(&column) {
+                row = row.child(pane.clone().cached(column_style.clone()));
+            }
         }
         div()
             .id("board-workspace")
