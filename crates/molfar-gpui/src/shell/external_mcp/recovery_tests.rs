@@ -230,7 +230,7 @@ fn deleted_targets_report_pending_receipts_and_replay_finished_results(cx: &mut 
             .unwrap()
             .external_receipt_finish(
                 &principal.client_id,
-                &f.granted,
+                &receipts::ReceiptTarget::Project(f.granted.clone()),
                 tool,
                 arguments["requestId"].as_str().unwrap(),
                 &receipts::digest(tool, &arguments),
