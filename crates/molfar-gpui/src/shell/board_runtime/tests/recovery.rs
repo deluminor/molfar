@@ -2,7 +2,7 @@ use super::{super::*, fixtures::*};
 use gpui::TestAppContext;
 use molfar_core::task_board::stage::{agent::AgentStage, choice, lifecycle::types::StageAction};
 
-fn prepared(fixture: &Fixture) -> prepare::Launch {
+pub(super) fn prepared(fixture: &Fixture) -> prepare::Launch {
     prepared_round(fixture, 1)
 }
 

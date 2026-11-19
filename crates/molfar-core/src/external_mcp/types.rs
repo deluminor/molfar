@@ -1,24 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum SCOPE {
-    Read,
-    Submit,
-    Stop,
-}
-
-impl SCOPE {
-    pub const ALL: [SCOPE; 3] = [SCOPE::Read, SCOPE::Submit, SCOPE::Stop];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            SCOPE::Read => "read",
-            SCOPE::Submit => "submit",
-            SCOPE::Stop => "stop",
-        }
-    }
-}
+use super::grants::types::{Requirement, ResourceGrant, ACCESS, GRANT, RESOURCE};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,7 +26,9 @@ pub struct Client {
     pub id: String,
     pub name: String,
     pub verifier: String,
-    pub scopes: Vec<SCOPE>,
+    pub grants: Vec<GRANT>,
+    #[serde(default)]
+    pub resources: Vec<ResourceGrant>,
     pub projects: Vec<String>,
     pub created_at: i64,
     pub revoked_at: Option<i64>,
@@ -55,13 +39,29 @@ pub struct Client {
 pub struct Principal {
     pub client_id: String,
     pub name: String,
-    pub scopes: Vec<SCOPE>,
+    pub grants: Vec<GRANT>,
+    pub resources: Vec<ResourceGrant>,
     pub projects: Vec<String>,
 }
 
 impl Principal {
-    pub fn allows(&self, scope: SCOPE) -> bool {
-        self.scopes.contains(&scope)
+    pub fn reaches(&self, kind: RESOURCE, id: &str) -> bool {
+        self.resources
+            .iter()
+            .any(|grant| grant.kind == kind && grant.id == id)
+    }
+
+    pub fn allows(&self, requirement: &Requirement) -> bool {
+        let flag = match requirement.access {
+            ACCESS::Standard => true,
+            ACCESS::Destructive => self.grants.contains(&GRANT::Destructive),
+            ACCESS::Delegated => self.grants.contains(&GRANT::Delegated),
+        };
+
+        flag && requirement
+            .any
+            .iter()
+            .any(|grant| self.grants.contains(grant))
     }
 }
 
@@ -74,4 +74,29 @@ pub struct AuditEntry {
     pub target: Option<String>,
     pub request_id: Option<String>,
     pub outcome: String,
+    #[serde(default)]
+    pub kind: ACCESS,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resource_reach_matches_kind_and_id() {
+        let principal = Principal {
+            client_id: "client".into(),
+            name: "Client".into(),
+            grants: vec![],
+            resources: vec![ResourceGrant {
+                kind: RESOURCE::Familiar,
+                id: "one".into(),
+            }],
+            projects: vec![],
+        };
+
+        assert!(principal.reaches(RESOURCE::Familiar, "one"));
+        assert!(!principal.reaches(RESOURCE::Familiar, "One"));
+        assert!(!principal.reaches(RESOURCE::Vault, "one"));
+    }
 }

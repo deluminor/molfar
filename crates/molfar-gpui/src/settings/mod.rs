@@ -16,7 +16,7 @@ mod skill_document;
 pub(crate) use palettes::{PALETTES, palette};
 pub(crate) mod widgets;
 
-pub(crate) use external::{ExternalClientRow, ExternalStatus};
+pub(crate) use external::{ExternalClientRow, ExternalResource, ExternalStatus};
 pub(crate) use keymap::apply as apply_keybindings;
 pub(crate) use model::Section;
 pub(crate) use pages::{ACCENTS, command_shortcut, swatch};
@@ -110,6 +110,7 @@ pub(crate) struct FamiliarSetting {
     pub folders: bool,
 }
 
+#[derive(Clone)]
 pub(crate) enum SettingsEvent {
     WhatsNew,
     CheckAppUpdates,
@@ -155,11 +156,26 @@ pub(crate) enum SettingsEvent {
         enabled: bool,
         port: u16,
     },
-    ExternalCreateClient,
+    ExternalCreateClient {
+        name: String,
+    },
+    ExternalRename {
+        id: String,
+        name: String,
+    },
+    ExternalSetProjects {
+        id: String,
+        all: bool,
+    },
+    ExternalSetPort(u16),
     ExternalToggleGrant {
         id: String,
-        scope: Option<molfar_core::external_mcp::types::SCOPE>,
+        grant: Option<molfar_core::external_mcp::grants::types::GRANT>,
         project: Option<String>,
+    },
+    ExternalToggleResource {
+        id: String,
+        resource: molfar_core::external_mcp::grants::types::ResourceGrant,
     },
     ExternalRevoke(String),
     ExternalDismissKey,
@@ -276,6 +292,7 @@ pub(crate) struct SettingsView {
     mcp_filter: String,
     fields: HashMap<&'static str, Entity<Input>>,
     connections: pages::ConnectionsState,
+    external_page: pages::ExternalPageState,
     skill_preview: Option<std::path::PathBuf>,
     skill_preview_text: Option<Result<std::sync::Arc<skill_document::DocumentData>, String>>,
     skill_preview_generation: u64,
@@ -426,6 +443,7 @@ impl SettingsView {
             mcp_filter: "all".into(),
             fields: HashMap::new(),
             connections: pages::ConnectionsState::default(),
+            external_page: pages::ExternalPageState::default(),
             skill_preview: None,
             skill_preview_text: None,
             skill_preview_generation: 0,
@@ -489,6 +507,7 @@ impl SettingsView {
             self.mobile_context_changed(cx);
             if remote_changed {
                 self.leave_connections(cx);
+                self.external_page = pages::ExternalPageState::default();
                 self.watch_connections(cx);
             }
             cx.notify();
@@ -528,6 +547,9 @@ impl SettingsView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
+        if self.dismiss_external_transient(window, cx) {
+            return true;
+        }
         if self.dismiss_notification_transient(window, cx) {
             return true;
         }

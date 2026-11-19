@@ -1,6 +1,11 @@
+use super::super::{
+    constants::{CLIENTS_KEY, CONFIG_KEY, MAX_CLIENTS, TOKEN_PREFIX},
+    types::{Client, Principal, ServerConfig},
+};
 use super::{
-    constants::{CLIENTS_KEY, CONFIG_KEY, MAX_CLIENTS, MAX_CLIENT_NAME, TOKEN_PREFIX},
-    types::{Client, Principal, ServerConfig, SCOPE},
+    migration::{from_legacy, SCOPE},
+    naming::validate_name,
+    types::{ClientUpdate, GRANT},
 };
 use crate::store::Store;
 use rand::RngCore;
@@ -23,26 +28,49 @@ impl Store {
     }
 
     pub fn external_clients(&self) -> Result<Vec<Client>, String> {
-        self.setting(CLIENTS_KEY)?
-            .map(|raw| serde_json::from_str(&raw).map_err(|error| error.to_string()))
-            .transpose()
-            .map(Option::unwrap_or_default)
+        let Some(raw) = self.setting(CLIENTS_KEY)? else {
+            return Ok(Vec::new());
+        };
+        let mut records: Vec<serde_json::Value> =
+            serde_json::from_str(&raw).map_err(|error| error.to_string())?;
+        let mut migrated = false;
+        for record in &mut records {
+            let Some(record) = record.as_object_mut() else {
+                return Err("Invalid stored external MCP client.".into());
+            };
+            if record.contains_key("grants") {
+                continue;
+            }
+
+            let scopes = record
+                .remove("scopes")
+                .unwrap_or_else(|| serde_json::json!([]));
+            let scopes: Vec<SCOPE> =
+                serde_json::from_value(scopes).map_err(|error| error.to_string())?;
+            record.insert("grants".into(), serde_json::json!(from_legacy(&scopes)));
+            migrated = true;
+        }
+
+        let clients: Vec<Client> = records
+            .into_iter()
+            .map(serde_json::from_value)
+            .collect::<Result<_, _>>()
+            .map_err(|error| error.to_string())?;
+        if migrated {
+            self.save_clients(&clients)?;
+        }
+        Ok(clients)
     }
 
     /// Returns the credential once; only its verifier is stored.
     pub fn external_create_client(
         &self,
         name: &str,
-        scopes: &[SCOPE],
+        grants: &[GRANT],
         projects: &[String],
     ) -> Result<(Client, String), String> {
-        let name = name.trim();
-        if name.is_empty() || name.chars().count() > MAX_CLIENT_NAME {
-            return Err(format!(
-                "Name the client in up to {MAX_CLIENT_NAME} characters."
-            ));
-        }
         let mut clients = self.external_clients()?;
+        let name = validate_name(name, &clients, None)?;
         if clients
             .iter()
             .filter(|client| client.revoked_at.is_none())
@@ -61,7 +89,8 @@ impl Store {
             id,
             name: name.into(),
             verifier: verifier(&token),
-            scopes: unique(scopes),
+            grants: unique(grants),
+            resources: Vec::new(),
             projects: projects.to_vec(),
             created_at: now(),
             revoked_at: None,
@@ -74,16 +103,24 @@ impl Store {
     pub fn external_update_client(
         &self,
         id: &str,
-        scopes: &[SCOPE],
-        projects: &[String],
+        update: ClientUpdate<'_>,
     ) -> Result<Client, String> {
         let mut clients = self.external_clients()?;
+        let name = update
+            .name
+            .map(|name| validate_name(name, &clients, Some(id)))
+            .transpose()?
+            .map(str::to_owned);
         let client = clients
             .iter_mut()
             .find(|client| client.id == id && client.revoked_at.is_none())
             .ok_or("External client not found.")?;
-        client.scopes = unique(scopes);
-        client.projects = projects.to_vec();
+        if let Some(name) = name {
+            client.name = name;
+        }
+        client.grants = unique(update.grants);
+        client.projects = update.projects.to_vec();
+        client.resources = unique(update.resources);
         let updated = client.clone();
         self.save_clients(&clients)?;
         Ok(updated)
@@ -124,7 +161,8 @@ impl Store {
             .map(|client| Principal {
                 client_id: client.id,
                 name: client.name,
-                scopes: client.scopes,
+                grants: client.grants,
+                resources: client.resources,
                 projects: client.projects,
             }))
     }
@@ -151,16 +189,15 @@ fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
             == 0
 }
 
-fn unique(scopes: &[SCOPE]) -> Vec<SCOPE> {
-    SCOPE::ALL
-        .into_iter()
-        .filter(|scope| scopes.contains(scope))
+fn unique<T: Clone + Eq + std::hash::Hash>(items: &[T]) -> Vec<T> {
+    let mut seen = std::collections::HashSet::new();
+    items
+        .iter()
+        .filter(|item| seen.insert(*item))
+        .cloned()
         .collect()
 }
 
 pub(crate) fn now() -> i64 {
     i64::try_from(crate::time::now_ms()).unwrap_or(i64::MAX)
 }
-
-#[cfg(test)]
-mod tests;

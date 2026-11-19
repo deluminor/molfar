@@ -235,7 +235,7 @@ impl VaultService {
         .detach();
     }
 
-    fn invalidate(&mut self) {
+    pub(super) fn invalidate(&mut self) {
         self.generation += 1;
         self.snapshot = None;
         self.scanning = false;

@@ -9,7 +9,7 @@ fn interrupt(f: &Fixture, tool: &str, arguments: &Value) {
         .unwrap()
         .external_receipt_begin(
             "client",
-            &project,
+            &receipts::ReceiptTarget::Project(project),
             tool,
             arguments["requestId"].as_str().unwrap(),
             &receipts::digest(tool, arguments),
@@ -178,4 +178,132 @@ fn an_interrupted_start_never_relaunches_an_accepted_prompt(cx: &mut TestAppCont
     let state = store.follow_ups(session.id).unwrap();
     assert!(state.draft.is_none());
     assert_eq!(state.messages.len(), 1);
+}
+
+#[gpui::test]
+fn deleted_targets_report_pending_receipts_and_replay_finished_results(cx: &mut TestAppContext) {
+    use molfar_core::external_mcp::grants::types::{DOMAIN, GRANT};
+
+    let f = fixture();
+    let mut principal = principal(&f);
+    principal
+        .grants
+        .extend([GRANT::Write(DOMAIN::Notes), GRANT::Destructive]);
+
+    let input = json!({"project":f.granted,"body":"Delete me","requestId":"create"});
+    let note = call(window(&f, cx), &principal, notes_api::CREATE, input, cx).unwrap();
+    let note_id = note["note"]["id"].as_str().unwrap();
+    let session = f.sessions.0;
+    let cases = [
+        (
+            tools::sessions::DELETE,
+            json!({"sessionId":session,"requestId":"delete"}),
+            json!({"sessionId":session,"deleted":true}),
+        ),
+        (
+            notes_api::DELETE,
+            json!({"id":note_id,"requestId":"delete"}),
+            json!({"id":note_id,"deleted":true}),
+        ),
+    ];
+    for (tool, arguments, _) in &cases {
+        interrupt(&f, tool, arguments);
+    }
+    {
+        let mut store = locked(&f.store).unwrap();
+        store.delete(session).unwrap();
+        store.delete_note(note_id).unwrap();
+    }
+
+    let reopened = window(&f, cx);
+    let mut revoked = principal.clone();
+    revoked.projects = vec![f.other.clone()];
+    for (tool, arguments, expected) in cases {
+        let denied = call(reopened, &revoked, tool, arguments.clone(), cx).unwrap_err();
+        assert!(!denied.contains("pending"));
+        assert_eq!(
+            call(reopened, &principal, tool, arguments.clone(), cx).unwrap_err(),
+            "Deletion outcome is pending for this requestId."
+        );
+
+        locked(&f.store)
+            .unwrap()
+            .external_receipt_finish(
+                &principal.client_id,
+                &f.granted,
+                tool,
+                arguments["requestId"].as_str().unwrap(),
+                &receipts::digest(tool, &arguments),
+                &Ok(expected.clone()),
+            )
+            .unwrap();
+        assert_eq!(
+            call(reopened, &principal, tool, arguments, cx).unwrap(),
+            expected
+        );
+    }
+}
+
+#[gpui::test]
+fn pending_familiar_reset_clears_changed_state_and_can_repeat_a_completed_clear(
+    cx: &mut TestAppContext,
+) {
+    use molfar_core::{
+        external_mcp::grants::types::{DOMAIN, GRANT, RESOURCE, ResourceGrant},
+        familiar::{Roster, files::content_hash},
+    };
+
+    for already_cleared in [false, true] {
+        let f = fixture();
+        let mut client = principal(&f);
+        client
+            .grants
+            .extend([GRANT::Write(DOMAIN::Familiars), GRANT::Destructive]);
+        let tool = "familiars_reset";
+        let request = "interrupted";
+        let old_session = f.sessions.0;
+        let (id, input) = {
+            let store = locked(&f.store).unwrap();
+            let mut roster = Roster::default();
+            let id = roster.create(vec![]).id.clone();
+            roster.get_mut(&id).unwrap().session_id = (!already_cleared).then_some(old_session);
+            roster.save(&store).unwrap();
+
+            let target = ReceiptTarget::Resource {
+                kind: RESOURCE::Familiar,
+                id: id.clone(),
+            };
+            let input = json!({"familiarId":id,"requestId":request});
+            let before = already_cleared.then_some(old_session);
+            let binding = content_hash(&json!([before, null, []]).to_string());
+            let legacy_receipt = json!({
+                "digest": receipts::digest(tool, &input),
+                "done": false,
+                "binding": binding,
+                "result": null
+            });
+            let key = receipts::key_for(&target, &client.client_id, tool, request);
+            store
+                .save_setting(&key, &legacy_receipt.to_string())
+                .unwrap();
+            (id, input)
+        };
+        client.resources.push(ResourceGrant {
+            kind: RESOURCE::Familiar,
+            id: id.clone(),
+        });
+        let window = window(&f, cx);
+
+        let result = call(window, &client, tool, input.clone(), cx).unwrap();
+        assert_eq!(result, json!({"familiarId":id,"reset":true}));
+
+        let roster = Roster::load(&locked(&f.store).unwrap()).unwrap();
+        assert_ne!(roster.get(&id).unwrap().session_id, Some(old_session));
+        assert_eq!(call(window, &client, tool, input, cx).unwrap(), result);
+        let replayed = Roster::load(&locked(&f.store).unwrap()).unwrap();
+        assert_eq!(
+            replayed.get(&id).unwrap().session_id,
+            roster.get(&id).unwrap().session_id
+        );
+    }
 }

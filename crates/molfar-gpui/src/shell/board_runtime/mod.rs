@@ -7,7 +7,7 @@ mod poll;
 mod prepare;
 mod settle;
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;
 
 use super::*;
 use std::time::Duration;

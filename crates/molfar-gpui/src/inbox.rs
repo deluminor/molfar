@@ -422,6 +422,16 @@ impl Inbox {
         statuses
     }
 
+    pub(crate) fn external_snapshot(&self, providers: &[&str]) -> Option<Snapshot> {
+        providers
+            .iter()
+            .all(|provider| {
+                self.snapshot.connections.contains_key(*provider)
+                    || self.snapshot.errors.contains_key(*provider)
+            })
+            .then(|| self.snapshot.clone())
+    }
+
     pub(crate) fn refresh(&mut self, cx: &mut Context<Self>) {
         if self.loading {
             self.refresh_queued = true;

@@ -1151,16 +1151,31 @@ impl Store {
         if self.remote_session(id)?.is_some() {
             return self.patch_remote_session(id, serde_json::json!({"title": title}));
         }
-        if self.shared.is_some() {
-            return self.shared_patch(id, &[("title", serde_json::json!(title))]);
+        let saved: String = if self.shared.is_some() {
+            self.shared_patch(id, &[("title", serde_json::json!(title))])?;
+            let id = self.persisted_session_id(id)?;
+            self.conn
+                .query_row("SELECT title FROM sessions WHERE id=?1", [id], |row| {
+                    row.get(0)
+                })
+        } else {
+            self.conn
+                .execute(
+                    "UPDATE native_sessions SET title=?2 WHERE id=?1",
+                    params![id, title],
+                )
+                .map_err(|e| e.to_string())?;
+            self.conn.query_row(
+                "SELECT title FROM native_sessions WHERE id=?1",
+                [id],
+                |row| row.get(0),
+            )
+        }
+        .map_err(|e| e.to_string())?;
+        if saved != title {
+            return Err("The saved session title does not match.".into());
         }
 
-        self.conn
-            .execute(
-                "UPDATE native_sessions SET title=?2 WHERE id=?1",
-                params![id, title],
-            )
-            .map_err(|e| e.to_string())?;
         Ok(())
     }
     /// A late generated title cannot replace a manual rename or recreate a deleted session.

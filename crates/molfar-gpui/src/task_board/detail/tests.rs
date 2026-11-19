@@ -178,3 +178,31 @@ fn unchanged_detail_content_is_neither_resynced_nor_reparsed(cx: &mut TestAppCon
         .unwrap();
     assert_eq!(after, before);
 }
+
+#[gpui::test]
+fn waiting_banner_aligns_message_and_plan_link(cx: &mut TestAppContext) {
+    use molfar_core::task_board::{constants::PLAN_APPROVAL, types::ArtifactMeta};
+
+    let window = show(cx, false);
+    window
+        .update(cx, |board, _, cx| {
+            let mut snapshot = board.snapshot.clone().unwrap();
+            snapshot.cards[0].column_id = PLAN_APPROVAL.into();
+            snapshot.artifacts.push(ArtifactMeta {
+                id: "plan-1".into(),
+                card_id: "first".into(),
+                kind: "plan".into(),
+                version: 1,
+                source: "agent".into(),
+                stage_run_id: None,
+                created_at: 1,
+            });
+            board.finish(board.revision, Ok(snapshot), cx);
+        })
+        .unwrap();
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let message = visual.debug_bounds("board-waiting-message").unwrap();
+    let plan = visual.debug_bounds("board-waiting-plan").unwrap();
+    assert_eq!(message.origin.x, plan.origin.x);
+}

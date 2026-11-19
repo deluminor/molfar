@@ -205,21 +205,12 @@ impl Familiars {
             .roster
             .get_mut(id)
             .ok_or("Familiar is no longer available")?;
-        if let Some(name) = params["name"].as_str() {
-            familiar.name = name.trim().chars().take(40).collect();
-        }
-        if let Some(mascot) = params["mascot"].as_str() {
-            if !MASCOTS.contains(&mascot) {
-                return Err("Unknown mascot".into());
-            }
-            familiar.mascot = mascot.into();
-        }
-        if let Some(color) = params["color"].as_str() {
-            familiar.color = u32::from_str_radix(color.trim_start_matches('#'), 16)
-                .ok()
-                .filter(|c| *c <= 0xffffff)
-                .ok_or("Unknown colour")?;
-        }
+        apply_look(
+            familiar,
+            params["name"].as_str(),
+            params["mascot"].as_str(),
+            params["color"].as_str(),
+        )?;
         // The model and effort for sessions it starts; null inherits its own.
         if let Some(value) = params.get("subsessions") {
             familiar.subsessions = if value.is_null() {
@@ -317,4 +308,33 @@ impl Familiars {
             result
         })
     }
+}
+
+pub(super) fn apply_look(
+    familiar: &mut Familiar,
+    name: Option<&str>,
+    mascot: Option<&str>,
+    color: Option<&str>,
+) -> Result<(), String> {
+    if mascot.is_some_and(|mascot| !MASCOTS.contains(&mascot)) {
+        return Err("Unknown mascot".into());
+    }
+    let color = color
+        .map(|color| {
+            u32::from_str_radix(color.trim_start_matches('#'), 16)
+                .ok()
+                .filter(|c| *c <= 0xffffff)
+                .ok_or("Unknown colour")
+        })
+        .transpose()?;
+    if let Some(name) = name {
+        familiar.name = name.trim().chars().take(40).collect();
+    }
+    if let Some(mascot) = mascot {
+        familiar.mascot = mascot.into();
+    }
+    if let Some(color) = color {
+        familiar.color = color;
+    }
+    Ok(())
 }

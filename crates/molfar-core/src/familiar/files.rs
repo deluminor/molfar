@@ -286,6 +286,21 @@ pub fn save(
     Ok(content_hash(text))
 }
 
+pub fn external_memory(root: &Path, familiar: &str) -> Result<String, String> {
+    if !valid_id(familiar) {
+        return Err("Not a Familiar id".into());
+    }
+    let path = format!("{familiar}/{MEMORY_FILE}");
+    match std::fs::symlink_metadata(root.join(&path)) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(String::new()),
+        Err(error) => return Err(error.to_string()),
+        Ok(_) => {}
+    }
+
+    let root = root.canonicalize().map_err(|error| error.to_string())?;
+    crate::knowledge::external::read_visible_markdown(&root, &path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

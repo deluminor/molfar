@@ -103,7 +103,7 @@ impl Board {
                             .bg(content(0.04))
                             .text_size(px(12.))
                             .text_color(content(0.7))
-                            .child(icon("history", 13.))
+                            .child(icon("clock", 13.))
                             .child(div().flex_1().child(format!(
                                 "Older version. Current is {}.",
                                 group.version_label(current)

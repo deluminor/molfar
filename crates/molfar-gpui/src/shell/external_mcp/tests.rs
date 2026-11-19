@@ -1,7 +1,18 @@
+mod artifacts;
+mod board_baseline;
+mod clients;
+mod notes;
+mod scope;
+mod sessions_manage;
+mod stage;
+mod stage_runtime;
 use super::*;
 use gpui::{TestAppContext, WindowHandle};
 use molfar_core::{
-    external_mcp::{transport::reply_channel, types::SCOPE},
+    external_mcp::{
+        grants::types::{DOMAIN, GRANT},
+        transport::reply_channel,
+    },
     store::Store,
 };
 use std::{
@@ -93,7 +104,15 @@ pub(super) fn principal(f: &Fixture) -> Principal {
     Principal {
         client_id: "client".into(),
         name: "OpenBot".into(),
-        scopes: SCOPE::ALL.to_vec(),
+        grants: vec![
+            GRANT::Read(DOMAIN::Board),
+            GRANT::Write(DOMAIN::Board),
+            GRANT::BoardCreate,
+            GRANT::Read(DOMAIN::Sessions),
+            GRANT::Write(DOMAIN::Sessions),
+            GRANT::SessionsStop,
+        ],
+        resources: vec![],
         projects: vec![f.granted.clone(), "/not/registered".into()],
     }
 }
@@ -117,192 +136,4 @@ pub(super) fn call(
         .unwrap();
     cx.run_until_parked();
     result.try_recv().expect("the external call must settle")
-}
-
-#[gpui::test]
-fn grants_reach_only_registered_granted_projects_and_their_sessions(cx: &mut TestAppContext) {
-    let f = fixture();
-    let window = window(&f, cx);
-    let principal = principal(&f);
-
-    let projects = call(window, &principal, "projects_list", json!({}), cx).unwrap();
-    let listed = call(
-        window,
-        &principal,
-        "sessions_list",
-        json!({"project":f.granted}),
-        cx,
-    )
-    .unwrap();
-    let foreign = call(
-        window,
-        &principal,
-        "sessions_list",
-        json!({"project":f.other}),
-        cx,
-    );
-    let hidden = call(
-        window,
-        &principal,
-        "sessions_read",
-        json!({"sessionId":f.sessions.1}),
-        cx,
-    );
-    let missing = call(
-        window,
-        &principal,
-        "sessions_read",
-        json!({"sessionId":999_999}),
-        cx,
-    );
-    let read = call(
-        window,
-        &principal,
-        "sessions_read",
-        json!({"sessionId":f.sessions.0}),
-        cx,
-    )
-    .unwrap();
-    let stop = call(
-        window,
-        &principal,
-        "sessions_stop",
-        json!({"sessionId":f.sessions.0,"requestId":"stop-1"}),
-        cx,
-    )
-    .unwrap();
-
-    assert_eq!(projects["projects"].as_array().unwrap().len(), 1);
-    assert_eq!(projects["projects"][0]["project"], json!(f.granted));
-    assert_eq!(listed["sessions"][0]["sessionId"], json!(f.sessions.0));
-    assert_eq!(listed["sessions"].as_array().unwrap().len(), 1);
-    assert!(foreign.is_err());
-    assert_eq!(hidden.unwrap_err(), missing.unwrap_err());
-    assert_eq!(read["status"], "idle");
-    assert_eq!(stop["alreadyIdle"], true);
-}
-
-#[gpui::test]
-fn board_creation_is_idle_deduplicated_and_replayed_after_restart(cx: &mut TestAppContext) {
-    let f = fixture();
-    let principal = principal(&f);
-    let input = json!({"project":f.granted,"title":"From OpenBot","description":"Plan it","requestId":"card-1"});
-
-    let first_window = window(&f, cx);
-    let card = call(first_window, &principal, "board_create", input.clone(), cx).unwrap();
-    let changed = call(
-        first_window,
-        &principal,
-        "board_create",
-        json!({"project":f.granted,"title":"Other","description":"Plan it","requestId":"card-1"}),
-        cx,
-    );
-    let restarted = window(&f, cx);
-    let replay = call(restarted, &principal, "board_create", input, cx).unwrap();
-    let foreign = call(
-        restarted,
-        &principal,
-        "board_create",
-        json!({"project":f.other,"title":"x","description":"x","requestId":"card-2"}),
-        cx,
-    );
-
-    assert_eq!(card, replay);
-    assert!(changed.unwrap_err().contains("different input"));
-    assert!(foreign.is_err());
-    let id = card["card"]["id"].as_str().unwrap();
-    let read = call(
-        restarted,
-        &principal,
-        "board_read",
-        json!({"cardId":id}),
-        cx,
-    )
-    .unwrap();
-    assert_eq!(read["card"]["column"], "backlog");
-    assert_eq!(read["runs"], json!([]));
-    let store = locked(&f.store).unwrap();
-    assert_eq!(
-        store.board_snapshot(None, false, None).unwrap().cards.len(),
-        1
-    );
-    let audit = store.external_audit_log().unwrap();
-    assert!(
-        audit
-            .iter()
-            .any(|entry| entry.action == "board_create" && entry.target.as_deref() == Some(id))
-    );
-    assert!(!serde_json::to_string(&audit).unwrap().contains("Plan it"));
-}
-
-#[gpui::test]
-fn session_start_outside_the_grant_reserves_nothing(cx: &mut TestAppContext) {
-    let f = fixture();
-    let window = window(&f, cx);
-    let principal = principal(&f);
-    let before = locked(&f.store).unwrap().sessions().unwrap().len();
-
-    let foreign = call(
-        window,
-        &principal,
-        "sessions_start",
-        json!({"project":f.other,"prompt":"Review","requestId":"start-1"}),
-        cx,
-    );
-    let operator = call(
-        window,
-        &principal,
-        "sessions_start",
-        json!({"project":f.granted,"prompt":"/operator take over","requestId":"start-2"}),
-        cx,
-    );
-
-    assert!(foreign.is_err());
-    assert!(operator.is_err());
-    assert_eq!(locked(&f.store).unwrap().sessions().unwrap().len(), before);
-}
-
-#[gpui::test]
-fn settings_create_scope_and_revoke_clients(cx: &mut TestAppContext) {
-    let f = fixture();
-    let window = window(&f, cx);
-
-    let (status, token) = window
-        .update(cx, |shell, _, cx| {
-            shell.external_create_client(cx);
-            let status = shell.external_settings_status();
-            let token = status.new_key.clone().unwrap().1;
-            let id = status.clients[0].id.clone();
-            shell.external_toggle_grant(&id, Some(SCOPE::Submit), Some(f.granted.clone()), cx);
-            shell.external_dismiss_key(cx);
-            (shell.external_settings_status(), token)
-        })
-        .unwrap();
-
-    assert!(!status.enabled);
-    assert!(status.new_key.is_none());
-    assert_eq!(status.clients[0].scopes, [SCOPE::Read, SCOPE::Submit]);
-    assert_eq!(status.clients[0].projects, std::slice::from_ref(&f.granted));
-    let principal = locked(&f.store)
-        .unwrap()
-        .external_authenticate(&token)
-        .unwrap()
-        .unwrap();
-    assert!(principal.allows(SCOPE::Submit));
-    window
-        .update(cx, |shell, _, cx| {
-            shell.external_revoke(&status.clients[0].id, cx)
-        })
-        .unwrap();
-    assert!(
-        locked(&f.store)
-            .unwrap()
-            .external_authenticate(&token)
-            .unwrap()
-            .is_none()
-    );
-    let status = window
-        .update(cx, |shell, _, _| shell.external_settings_status())
-        .unwrap();
-    assert!(status.clients.is_empty());
 }
