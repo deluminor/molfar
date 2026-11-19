@@ -138,6 +138,69 @@ jobs:
       - run: cargo check
       - run: cargo test
 
+  secrets-backends:
+    name: Secrets backend (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    env:
+      MOLFAR_REAL_KEYRING: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Secret Service and keyutils
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libdbus-1-dev dbus gnome-keyring keyutils pkg-config
+      - name: Create isolated macOS keychain
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          keychain="$RUNNER_TEMP/molfar-secrets.keychain-db"
+          security default-keychain -d user > "$RUNNER_TEMP/molfar-original-keychain"
+          security create-keychain -p molfar-ci "$keychain"
+          security default-keychain -d user -s "$keychain"
+          security unlock-keychain -p molfar-ci "$keychain"
+      - name: Write, reopen, and delete credential
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          export MOLFAR_KEYRING_TEST_DB="$RUNNER_TEMP/molfar-secrets.sqlite"
+          cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core real_backend_write -- --ignored
+          cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core real_backend_read_and_delete -- --ignored
+      - name: Restore original keychain
+        if: always() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          original="$RUNNER_TEMP/molfar-original-keychain"
+          if [[ -s "$original" ]]; then
+            security default-keychain -d user -s "$(xargs < "$original")"
+          fi
+          if [[ -f "$RUNNER_TEMP/molfar-secrets.keychain-db" ]]; then
+            security delete-keychain "$RUNNER_TEMP/molfar-secrets.keychain-db"
+          fi
+      - name: Persist across keyutils sessions
+        if: runner.os == 'Linux'
+        run: |
+          export MOLFAR_KEYRING_TEST_DB="$RUNNER_TEMP/molfar-secrets.sqlite"
+          dbus-run-session -- bash -euc '
+            printf %s molfar-ci | gnome-keyring-daemon --unlock --components=secrets
+            cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core real_backend_write -- --ignored
+            keyctl new_session molfar-secrets cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core real_backend_read_and_delete -- --ignored
+          '
+      - name: Reject missing Secret Service
+        if: runner.os == 'Linux'
+        run: |
+          isolated=$(mktemp -d)
+          export MOLFAR_KEYRING_TEST_DB="$isolated/data.sqlite"
+          export DBUS_SESSION_BUS_ADDRESS="unix:path=$isolated/absent"
+          cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core real_backend_unavailable -- --ignored
+
   appimage:
     name: AppImage host libraries
     runs-on: ubuntu-22.04

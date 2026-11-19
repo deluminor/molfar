@@ -117,3 +117,6 @@ fn redacts_stream_at_every_unicode_boundary_and_tracks_replaced_values() {
     store.delete(&database, &entry.id).unwrap();
     assert_eq!(redactor.text(value), value);
 }
+
+mod real_backend;
+mod storage;
