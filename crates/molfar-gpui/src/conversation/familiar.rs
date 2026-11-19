@@ -13,7 +13,6 @@ pub(super) struct ChatState {
     queue_focus: std::collections::HashMap<String, ([gpui::FocusHandle; 2], [Subscription; 2])>,
     pub(super) emoji: bool,
     pub(super) delivered: std::collections::HashSet<String>,
-    pub(super) sending: Option<String>,
     pub(super) failed: Vec<(String, String)>,
     pub(super) external: Option<(String, bool)>,
     /// ModelPicker with `hideSettings`: the model list opens on its own.
@@ -254,41 +253,11 @@ impl Conversation {
         {
             return false;
         }
+        // A Familiar message is its own turn. Steered into the live turn,
+        // Claude may fold it into the running answer or never answer it.
         if self.busy {
-            if self.familiar_ui.sending.is_some()
-                || !self.follow_ups.ready
-                || !Kind::from_id(&self.summary.provider).can_steer()
-                || self
-                    .questions
-                    .iter()
-                    .any(|(card, _)| card.read(cx).blocks_steering())
-            {
-                return false;
-            }
-            let prepared = self.completion.read(cx).prepare_prompt(&message.text);
-            let steer = molfar_core::follow_up::Message {
-                id: message.id.clone(),
-                text: message.text.clone(),
-                sent_at: message.sent_at,
-                prepared_prompt: (prepared != message.text).then_some(prepared),
-                attachments: message.attachments.iter().map(PathBuf::from).collect(),
-                steer: true,
-                ..Default::default()
-            };
-            if self.controls.as_ref().is_some_and(|controls| {
-                controls
-                    .send(Control {
-                        id: message.id.clone(),
-                        decision: Decision::Steer(steer),
-                    })
-                    .is_ok()
-            }) {
-                self.familiar_ui.sending = Some(message.id.clone());
-                return true;
-            }
             return false;
         }
-        self.familiar_ui.sending = None;
         self.settings.familiar_message_id = Some(message.id.clone());
         self.settings.familiar_sent_at = message.sent_at;
         self.settings.internal_message = message.internal;
@@ -435,16 +404,10 @@ impl Conversation {
         &self.familiar_ui.delivered
     }
     pub(super) fn familiar_message_delivered(&mut self, id: String, cx: &mut Context<Self>) {
-        if self.familiar_ui.sending.as_ref() == Some(&id) {
-            self.familiar_ui.sending = None;
-        }
         self.familiar_ui.delivered.insert(id);
         self.sync_familiar_pending(cx);
     }
     pub(super) fn familiar_message_failed(&mut self, id: String, error: String) {
-        if self.familiar_ui.sending.as_ref() == Some(&id) {
-            self.familiar_ui.sending = None;
-        }
         self.familiar_ui.failed.push((id, error));
     }
     pub(crate) fn familiar_take_failures(&mut self) -> Vec<(String, String)> {

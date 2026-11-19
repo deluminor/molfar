@@ -24,14 +24,12 @@ fn conversation(cx: &mut TestAppContext) -> WindowHandle<Conversation> {
 }
 
 #[gpui::test]
-fn familiar_messages_steer_the_ready_provider_once_and_keep_their_send_time(
-    cx: &mut TestAppContext,
-) {
+fn familiar_message_sent_during_a_running_turn_waits_for_its_own_turn(cx: &mut TestAppContext) {
     let window = conversation(cx);
     let (send, receive) = std::sync::mpsc::channel();
     window
         .update(cx, |view, _, cx| {
-            view.summary.provider = "codex".into();
+            view.summary.provider = "claude".into();
             view.configure_familiar(
                 molfar_core::familiar::Familiar::default(),
                 "/tmp".into(),
@@ -39,8 +37,9 @@ fn familiar_messages_steer_the_ready_provider_once_and_keep_their_send_time(
                 cx,
             );
             view.busy = true;
+            view.follow_ups.ready = true;
             view.controls = Some(send);
-            let message = molfar_core::familiar::Message {
+            let first = molfar_core::familiar::Message {
                 id: "follow-up".into(),
                 text: "is".into(),
                 sent_at: Some(1234),
@@ -48,45 +47,37 @@ fn familiar_messages_steer_the_ready_provider_once_and_keep_their_send_time(
                 error: None,
                 attachments: vec!["/tmp/image.png".into()],
             };
-            assert!(
-                !view.familiar_dispatch(&message, cx),
-                "wait for provider readiness"
-            );
-            view.follow_ups.ready = true;
-            assert!(view.familiar_dispatch(&message, cx));
-            let control = receive.try_recv().unwrap();
-            let Decision::Steer(steer) = control.decision else {
-                panic!("expected a real steer");
-            };
-            assert_eq!(steer.id, message.id);
-            assert_eq!(steer.text, "is");
-            assert_eq!(steer.sent_at, Some(1234));
-            assert_eq!(
-                steer.attachments,
-                vec![std::path::PathBuf::from("/tmp/image.png")]
-            );
-            assert!(view.busy);
-            assert!(
-                !view.familiar_dispatch(&message, cx),
-                "do not send twice while acknowledgement is pending"
-            );
-            assert!(receive.try_recv().is_err());
-            view.familiar_message_delivered(message.id.clone(), cx);
-            assert!(
-                !view.familiar_dispatch(&message, cx),
-                "an acknowledged message cannot be resent"
-            );
             let second = molfar_core::familiar::Message {
                 id: "next".into(),
-                ..message
+                text: "and then".into(),
+                ..first.clone()
             };
-            assert!(view.familiar_dispatch(&second, cx));
-            view.familiar_message_failed(second.id.clone(), "Could not steer".into());
-            assert_eq!(
-                view.familiar_take_failures(),
-                vec![(second.id, "Could not steer".into())]
+
+            assert!(
+                !view.familiar_dispatch(&first, cx),
+                "a running turn keeps the message queued"
             );
-            assert!(view.familiar_ui.sending.is_none());
+            assert!(!view.familiar_dispatch(&second, cx));
+            assert!(
+                receive.try_recv().is_err(),
+                "nothing is steered into the running turn"
+            );
+            assert!(view.familiar_delivered().is_empty());
+
+            view.busy = false;
+            view.controls = None;
+            view.summary.provider = "fixture".into();
+            assert!(view.familiar_dispatch(&first, cx));
+            assert!(view.busy);
+            assert_eq!(
+                view.settings.familiar_message_id.as_deref(),
+                Some("follow-up")
+            );
+            assert_eq!(view.settings.familiar_sent_at, Some(1234));
+            assert!(
+                !view.familiar_dispatch(&second, cx),
+                "the next message waits for the turn it queued behind"
+            );
         })
         .unwrap();
 }
