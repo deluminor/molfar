@@ -50,6 +50,7 @@ mod session_filters;
 mod session_folders;
 mod session_groups;
 mod session_loading;
+mod session_management;
 mod session_preview;
 mod session_shortcuts;
 mod settings;
@@ -1555,52 +1556,6 @@ impl Shell {
         let provider = session.summary.provider.clone();
         self.session_marks[&id].update(cx, |mark, cx| mark.set(&provider, state, cx));
         self.tab_marks[&id].update(cx, |mark, cx| mark.set(&provider, tab_state, cx));
-    }
-    fn toggle_archive(&mut self, id: i64, cx: &mut Context<Self>) {
-        if !self.archiving.insert(id) {
-            return;
-        }
-        self.close_preview(cx);
-        let archived = !self.session_metadata(id, cx).summary.archived;
-        let store = self.store.clone();
-        let work = cx
-            .background_executor()
-            .spawn(async move { locked(&store)?.set_archived(id, archived) });
-        cx.spawn(async move |this, cx| {
-            let result = work.await;
-            let _ = this.update_in(cx, |this, window, cx| {
-                this.archiving.remove(&id);
-                match result {
-                    Ok(()) => {
-                        if let Some(summary) = this.session_summaries.get_mut(&id) {
-                            summary.archived = archived;
-                        }
-                        if let Some(view) = this.sessions.get(&id) {
-                            view.update(cx, |session, cx| {
-                                session.summary.archived = archived;
-                                if archived {
-                                    session.stop_if_busy(cx);
-                                }
-                            });
-                        }
-                        this.refresh_session_mark(id, cx);
-                        if archived && this.workspace.tab_of(id).is_some() {
-                            this.close_pane(id, window, cx);
-                        } else {
-                            this.invalidate_chrome(cx);
-                            cx.notify();
-                        }
-                    }
-                    Err(error) => {
-                        this.error = Some(format!("Could not update archive: {error}"));
-                        this.invalidate_chrome(cx);
-                        cx.notify();
-                    }
-                }
-            });
-        })
-        .detach();
-        self.invalidate_chrome(cx);
     }
     fn transfer_response(&mut self, transfer: Transfer, cx: &mut Context<Self>) {
         use molfar_core::{
@@ -4247,6 +4202,9 @@ impl Shell {
         }
     }
     pub(crate) fn open(&mut self, id: i64, window: &mut Window, cx: &mut Context<Self>) {
+        if self.deleting.contains(&id) {
+            return;
+        }
         if self.workspace.review_owners.contains_key(&id) {
             self.open_file_pane(id, window, cx);
             return;
@@ -4582,7 +4540,8 @@ impl Shell {
         }
         if let Some(id) = self.order.iter().copied().find(|id| {
             let s = self.session_metadata(*id, cx);
-            s.summary.cwd == self.workspace.project
+            !self.deleting.contains(id)
+                && s.summary.cwd == self.workspace.project
                 && molfar_core::files::path_key(self.session_working_copy(*id, cx))
                     == molfar_core::files::path_key(self.working_copy())
                 && !s.summary.archived
@@ -7670,7 +7629,9 @@ impl Shell {
             || layout.leaf_ids().iter().any(|id| {
                 self.session_summaries.contains_key(id) && {
                     let s = self.session_metadata(*id, cx);
-                    s.summary.has_messages
+                    s.summary.archived
+                        || self.deleting.contains(id)
+                        || s.summary.has_messages
                         || s.busy
                         || s.has_saved_draft()
                         || self

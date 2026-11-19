@@ -44,8 +44,10 @@ def response(value):
         return '<<<MOLFAR:impl_report>>>Status: partial\n## Remaining work\nStage 2<<<END:impl_report>>>'
     if stage in ('Implement', 'Rework'):
         return f'<<<MOLFAR:impl_report>>>Status: complete\n{stage} fixture report<<<END:impl_report>>>'
+    questions = ('\n<<<MOLFAR:questions>>>\n## Q1 — Scope\nWhich scope?\n'
+                 '**Recommended:** Only tests\n<<<END:questions>>>') if behavior == 'questions' else ''
     return ('<<<MOLFAR:spec>>>\nFixture specification\n<<<END:spec>>>\n'
-            '<<<MOLFAR:plan>>>\nFixture plan\n<<<END:plan>>>')
+            '<<<MOLFAR:plan>>>\nFixture plan\n<<<END:plan>>>' + questions)
 
 
 for line in sys.stdin:

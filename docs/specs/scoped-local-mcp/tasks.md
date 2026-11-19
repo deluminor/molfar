@@ -13,3 +13,5 @@ The user authorized the supplied S1–S9 plan. Stage controls remain excluded fr
 - [~] S9: `npm run native:check` and regression suites run; separately authorized OpenBot scratch smoke not run.
 
 Acceptance coverage follows plan.md. AC-10 needs the user's explicit authorization for the live OpenBot smoke.
+
+External MCP continues in three cards. Card 1 adds per-domain grants, client naming, the External access redesign, and Board edits. Card 2 covers Board transitions, sessions, and notes. Card 3 covers knowledge, automations, inbox, and Familiars.

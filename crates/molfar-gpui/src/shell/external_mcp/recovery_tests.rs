@@ -179,3 +179,67 @@ fn an_interrupted_start_never_relaunches_an_accepted_prompt(cx: &mut TestAppCont
     assert!(state.draft.is_none());
     assert_eq!(state.messages.len(), 1);
 }
+
+#[gpui::test]
+fn deleted_targets_report_pending_receipts_and_replay_finished_results(cx: &mut TestAppContext) {
+    use molfar_core::external_mcp::grants::types::{DOMAIN, GRANT};
+
+    let f = fixture();
+    let mut principal = principal(&f);
+    principal
+        .grants
+        .extend([GRANT::Write(DOMAIN::Notes), GRANT::Destructive]);
+
+    let input = json!({"project":f.granted,"body":"Delete me","requestId":"create"});
+    let note = call(window(&f, cx), &principal, notes_api::CREATE, input, cx).unwrap();
+    let note_id = note["note"]["id"].as_str().unwrap();
+    let session = f.sessions.0;
+    let cases = [
+        (
+            tools::sessions::DELETE,
+            json!({"sessionId":session,"requestId":"delete"}),
+            json!({"sessionId":session,"deleted":true}),
+        ),
+        (
+            notes_api::DELETE,
+            json!({"id":note_id,"requestId":"delete"}),
+            json!({"id":note_id,"deleted":true}),
+        ),
+    ];
+    for (tool, arguments, _) in &cases {
+        interrupt(&f, tool, arguments);
+    }
+    {
+        let mut store = locked(&f.store).unwrap();
+        store.delete(session).unwrap();
+        store.delete_note(note_id).unwrap();
+    }
+
+    let reopened = window(&f, cx);
+    let mut revoked = principal.clone();
+    revoked.projects = vec![f.other.clone()];
+    for (tool, arguments, expected) in cases {
+        let denied = call(reopened, &revoked, tool, arguments.clone(), cx).unwrap_err();
+        assert!(!denied.contains("pending"));
+        assert_eq!(
+            call(reopened, &principal, tool, arguments.clone(), cx).unwrap_err(),
+            "Deletion outcome is pending for this requestId."
+        );
+
+        locked(&f.store)
+            .unwrap()
+            .external_receipt_finish(
+                &principal.client_id,
+                &f.granted,
+                tool,
+                arguments["requestId"].as_str().unwrap(),
+                &receipts::digest(tool, &arguments),
+                &Ok(expected.clone()),
+            )
+            .unwrap();
+        assert_eq!(
+            call(reopened, &principal, tool, arguments, cx).unwrap(),
+            expected
+        );
+    }
+}

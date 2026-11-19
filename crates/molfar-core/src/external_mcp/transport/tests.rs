@@ -1,26 +1,37 @@
 use super::{Authenticate, Server};
-use crate::external_mcp::types::{Principal, SCOPE};
+use crate::external_mcp::{
+    grants::types::{DOMAIN, GRANT},
+    types::{AuditEntry, Principal},
+};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
-fn principal(scopes: &[SCOPE]) -> Principal {
+fn principal(grants: &[GRANT]) -> Principal {
     Principal {
         client_id: "client".into(),
         name: "OpenBot".into(),
-        scopes: scopes.to_vec(),
+        grants: grants.to_vec(),
+        resources: vec![],
         projects: vec!["/project".into()],
     }
+}
+
+fn audit() -> super::Audit {
+    Arc::new(|_: AuditEntry| Ok(()))
 }
 
 fn start() -> (Server, String, async_channel::Receiver<super::Call>) {
     let authenticate: Authenticate = Arc::new(|token| {
         Ok(match token {
-            "reader" => Some(principal(&[SCOPE::Read])),
-            "writer" => Some(principal(&SCOPE::ALL)),
+            "reader" => Some(principal(&[
+                GRANT::Read(DOMAIN::Board),
+                GRANT::Read(DOMAIN::Sessions),
+            ])),
+            "writer" => Some(principal(&[GRANT::Write(DOMAIN::Sessions)])),
             _ => None,
         })
     });
-    let (server, calls) = Server::start(0, authenticate).unwrap();
+    let (server, calls) = Server::start(0, authenticate, audit()).unwrap();
     let url = format!("http://127.0.0.1:{}/mcp", server.address().port());
     (server, url, calls)
 }
@@ -87,7 +98,7 @@ fn authenticated_clients_negotiate_list_tools_and_reach_the_application() {
     assert_eq!(status, 200, "{text}");
     let initialized: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(initialized["result"]["protocolVersion"], "2025-06-18");
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 9);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 7);
     assert_eq!(listed["result"]["isError"], false);
     let echoed: Value =
         serde_json::from_str(listed["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
@@ -115,7 +126,7 @@ fn credentials_scopes_and_arguments_are_checked_before_dispatch() {
     assert!(denied["result"]["content"][0]["text"]
         .as_str()
         .unwrap()
-        .contains("submit scope"));
+        .contains("permission for sessions_start"));
     assert!(unknown["error"].is_object(), "{unknown}");
     assert!(calls.try_recv().is_err(), "nothing reached the application");
 }
@@ -166,7 +177,7 @@ fn port_conflicts_fail_fast_and_dropping_the_server_closes_the_listener() {
     let port = server.address().port();
     let authenticate: Authenticate = Arc::new(|_| Ok(None));
 
-    let conflict = Server::start(port, authenticate.clone());
+    let conflict = Server::start(port, authenticate.clone(), audit());
     drop(server);
 
     assert!(conflict.err().unwrap().contains("Cannot listen"));
@@ -174,7 +185,7 @@ fn port_conflicts_fail_fast_and_dropping_the_server_closes_the_listener() {
         .timeout(std::time::Duration::from_secs(2))
         .send_string("{}")
         .is_err());
-    let (restarted, _) = Server::start(port, authenticate).unwrap();
+    let (restarted, _) = Server::start(port, authenticate, audit()).unwrap();
     assert_eq!(restarted.address().port(), port);
 }
 
@@ -185,10 +196,10 @@ fn revocation_applies_to_the_next_request_on_the_same_connection_pool() {
     let authenticate: Authenticate = Arc::new(move |token| {
         Ok(
             (token == "reader" && !flag.load(std::sync::atomic::Ordering::SeqCst))
-                .then(|| principal(&[SCOPE::Read])),
+                .then(|| principal(&[GRANT::Read(DOMAIN::Board), GRANT::Read(DOMAIN::Sessions)])),
         )
     });
-    let (server, calls) = Server::start(0, authenticate).unwrap();
+    let (server, calls) = Server::start(0, authenticate, audit()).unwrap();
     echo(calls);
     let url = format!("http://127.0.0.1:{}/mcp", server.address().port());
     let list = json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}).to_string();
@@ -199,4 +210,61 @@ fn revocation_applies_to_the_next_request_on_the_same_connection_pool() {
 
     assert_eq!(before.0, 200);
     assert_eq!(after.0, 401);
+}
+
+#[test]
+fn tools_list_is_filtered_and_denials_are_audited() {
+    let authenticate: Authenticate = Arc::new(|token| {
+        Ok(match token {
+            "board" => Some(principal(&[GRANT::Read(DOMAIN::Board)])),
+            "empty" => Some(principal(&[])),
+            _ => None,
+        })
+    });
+    let (send, received) = std::sync::mpsc::channel();
+    let audit: super::Audit =
+        Arc::new(move |entry| send.send(entry).map_err(|error| error.to_string()));
+    let (server, calls) = Server::start(0, authenticate, audit).unwrap();
+    let url = format!("http://{}/mcp", server.address());
+    let result = rpc(&url, "board", "tools/list", json!({}));
+    let names: Vec<_> = result["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|tool| tool["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "projects_list",
+            "board_list",
+            "board_read",
+            "board_artifacts_list",
+            "board_artifacts_read"
+        ]
+    );
+    assert_eq!(
+        rpc(&url, "empty", "tools/list", json!({}))["result"]["tools"],
+        json!([])
+    );
+
+    let denied = call_tool(
+        &url,
+        "board",
+        "board_update",
+        json!({
+            "cardId":"card-1", "title":"private content", "requestId":"r"
+        }),
+    );
+    assert_eq!(denied["result"]["isError"], true);
+    assert!(calls.is_empty());
+    let entry = received.try_recv().unwrap();
+    assert_eq!(entry.action, "board_update");
+    assert_eq!(entry.client_id, "client");
+    assert_eq!(entry.request_id.as_deref(), Some("r"));
+    assert_eq!(entry.outcome, "denied");
+    assert_eq!(entry.kind, Default::default());
+    assert!(!serde_json::to_string(&entry)
+        .unwrap()
+        .contains("private content"));
 }

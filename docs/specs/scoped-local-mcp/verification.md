@@ -229,3 +229,28 @@ provider.
 Not run: the AC-10 OpenBot live smoke. It needs a separately authorized scratch
 project, an external MCP grant on the user's running MOLFAR and the installed
 OpenBot client. It still waits for the user.
+
+## Card 43 verification
+
+The Native workspace is defined by `crates/molfar-gpui/Cargo.toml`. Focused Cargo commands used that manifest with `--offline --locked --profile native-dev`. Loopback and macOS tests ran with sandbox approval.
+
+| Check | Result |
+| --- | --- |
+| `CARGO_NET_OFFLINE=true npm run check` | Passed. Web tests passed 7,160 with 13 skipped. Both TypeScript checks and the web lint and policy checks passed. Root Rust tests passed 792 with one ignored. |
+| `npm run build` | Passed. Vite reported CSS highlight-selector warnings. |
+| Native `cargo fmt --all --check` | Passed. |
+| Native `cargo clippy -p molfar-core -p molfar-gpui --all-targets -- -D warnings` | Passed. Cargo reported a future incompatibility warning in the existing `block` dependency. |
+| Core `cargo test -p molfar-core external_mcp` | Passed, 19 tests. Covers all eight legacy scope subsets, fail-closed malformed grants, filtered discovery, denial audit, naming persistence, and resource receipt isolation. |
+| Core `cargo test -p molfar-core app_access::board` | Passed, 10 tests. |
+| Core `cargo test -p molfar-core task_board::stage` | Passed, 143 tests. Covers Back with and without a completed review. |
+| Native `cargo test -p molfar-gpui --bin molfar-native external_mcp -- --test-threads=1` | Passed, 12 tests. Covers Board edits, archive, replay and conflicts, grant denial, rename, and Settings interactions. |
+| Native `cargo test -p molfar-gpui --bin molfar-native task_board::stage -- --test-threads=1` | Passed, 13 tests. |
+| Native branding guard and `vitest run scripts/checks/native-branding.test.mjs` | Passed, 6 tests. |
+| Diff and changed-line security review | Passed. The tool catalog exposes only scoped operations. Audit entries carry identifiers, outcomes, and grant kind. |
+
+`board_read.allowedActions` is an array of action IDs. The handoff refers to Q3 without including a response contract, so the implementation uses the existing Board action IDs and documents the wire shape in the spec.
+
+### Owner verification
+
+- **AC-3, AC-4, AC-6.** In a scratch project, connect a real MCP client with a key from Settings. Grant Board read and check tool discovery. Grant Board write, edit an idle Backlog card, and replay the same request ID. Rename the client and retry with the same token. Revoke it and verify the next request is rejected.
+- **AC-8.** In Native Settings, check light and dark appearance, keyboard focus, endpoint and key copy, and the key banner after dismissal and reopening Settings.

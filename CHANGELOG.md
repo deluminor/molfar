@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- External MCP clients can use granted Board stage controls, read Board artifacts, manage sessions, and manage project notes.
 - **molfar-connectors** MCP write tools for agent sessions: `jira_issue_get`, `jira_issue_edit`, `jira_issue_create`, `jira_issue_transitions`, `jira_issue_transition`, `jira_search`, `confluence_page_create`, and `confluence_page_update` (vault Atlassian token; no `cloudId`).
 - Phone code blocks show the language and a copy control (MonoCode #1305).
 - The phone composer offers **Paste Image** when the clipboard holds an image (MonoCode #1343).
 
 ### Fixed
 
+- Restore the bell icon in Board waiting banners and the Resume notifications menu. Align waiting messages with their action links.
 - Keep Claude usage refresh read-only and avoid showing renewable credentials as signed out; recognize cleared Keychain logins.
 - Continue usage-limited sessions from a paired phone, with desktop-owned reset information, stale-action protection and a manual retry when continuation fails (MonoCode #1208).
 - Keep Codex session index locks private to each Familiar, remove stale shared links safely and serialize concurrent storage preparation (MonoCode #1297).

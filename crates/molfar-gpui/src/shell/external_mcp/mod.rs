@@ -1,19 +1,28 @@
 //! Runs external MCP calls inside MOLFAR: grants decide reach, MOLFAR keeps
 //! models, runtime approvals and Board stages. Mutations persist a receipt
 //! before dispatch so retries never repeat accepted work.
+mod audit;
+mod board_dispatch;
+mod clients;
+mod dispatch;
 mod lifecycle;
+mod notes;
 #[cfg(test)]
 mod recovery_tests;
 mod sessions;
+mod sessions_manage;
+mod stage;
 mod targets;
 #[cfg(test)]
 mod tests;
 
 use super::*;
 use molfar_core::{
-    app_access::board,
+    app_access::{board as board_api, notes::external as notes_api},
     external_mcp::{
+        grants::types::ACCESS,
         receipts::{self, BEGIN},
+        tools,
         transport::Call,
         types::{AuditEntry, Principal},
     },
@@ -24,7 +33,7 @@ use serde_json::{Value, json};
 pub(super) struct External {
     server: Option<molfar_core::external_mcp::transport::Server>,
     error: Option<String>,
-    pending: HashSet<(String, String, String, String)>,
+    pending: HashMap<(String, String, String, String), String>,
     /// The credential shown once after creation, as (client name, token).
     new_key: Option<(String, String)>,
 }
@@ -102,16 +111,34 @@ impl Shell {
             arguments,
             reply,
         } = call;
+        let definition = match tools::validate(tool, &arguments) {
+            Ok(definition) => definition,
+            Err(error) => {
+                let _ = reply.send(Err(error));
+                return;
+            }
+        };
+        if !principal.allows(&definition.requires) {
+            let error = format!("This client lacks permission for {tool}.");
+            self.external_audit_entry(
+                &principal,
+                tool,
+                None,
+                None,
+                "denied",
+                definition.requires.access,
+                cx,
+            );
+            let _ = reply.send(Err(error));
+            return;
+        }
         let scope = self.external_scope(principal);
-        let mutation = molfar_core::external_mcp::tools::validate(tool, &arguments)
-            .map(|tool| tool.mutation)
-            .unwrap_or(false);
-        if !mutation {
+        if !definition.mutation {
             self.external_dispatch(scope, tool, arguments, None, reply, cx);
             return;
         }
 
-        let request = match board::normalize_request_id(arguments["requestId"].as_str(), None) {
+        let request = match board_api::normalize_request_id(arguments["requestId"].as_str(), None) {
             Ok(request) => request,
             Err(error) => {
                 let _ = reply.send(Err(error));
@@ -120,25 +147,44 @@ impl Shell {
         };
         // Authorize against current grants before any receipt is read, so a
         // replay never returns a result the caller can no longer reach.
-        let project = match self.external_mutation_project(&scope, &arguments, cx) {
+        let digest = receipts::digest(tool, &arguments);
+        let project = match self.external_mutation_project(&scope, tool, &arguments, cx) {
             Ok(project) => molfar_core::files::path_key(&project),
             Err(error) => {
-                let _ = reply.send(Err(error));
+                let result = self
+                    .external_deleted_replay(&scope, tool, &arguments, &request, &digest)
+                    .unwrap_or(Err(error));
+                let target = audit::target(&result);
+                self.external_audit(
+                    &scope.principal,
+                    tool,
+                    target.as_deref(),
+                    Some(&request),
+                    &result,
+                    cx,
+                );
+                let _ = reply.send(result);
                 return;
             }
         };
         let receipt = Receipt {
             request,
-            digest: receipts::digest(tool, &arguments),
+            digest,
             project,
         };
         let key = receipt.pending_key(&scope, tool);
-        if !self.external.pending.insert(key.clone()) {
-            let _ = reply.send(Err(
-                "This request is still running; retry with the same requestId.".into(),
-            ));
+        if let Some(pending) = self.external.pending.get(&key) {
+            let error = if pending == &receipt.digest {
+                "This request is still running; retry with the same requestId."
+            } else {
+                "requestId was already used with different input."
+            };
+            let _ = reply.send(Err(error.into()));
             return;
         }
+        self.external
+            .pending
+            .insert(key.clone(), receipt.digest.clone());
         let store = self.store.clone();
         let client = scope.principal.client_id.clone();
         let saved = receipt.clone();
@@ -166,10 +212,11 @@ impl Shell {
                 };
                 if let Some(result) = replay {
                     this.external.pending.remove(&key);
+                    let target = audit::target(&result);
                     this.external_audit(
                         &scope.principal,
                         tool,
-                        None,
+                        target.as_deref(),
                         Some(&receipt.request),
                         &result,
                         cx,
@@ -182,127 +229,4 @@ impl Shell {
         })
         .detach();
     }
-
-    fn external_dispatch(
-        &mut self,
-        scope: Scope,
-        tool: &'static str,
-        arguments: Value,
-        receipt: Option<Receipt>,
-        reply: Reply,
-        cx: &mut Context<Self>,
-    ) {
-        let (done, result) = async_channel::bounded(1);
-        match tool {
-            "projects_list" => {
-                let projects: Vec<_> = scope
-                    .projects
-                    .iter()
-                    .map(|path| json!({"project":path,"label":self.project_label(path)}))
-                    .collect();
-                let _ = done.try_send(Ok(json!({"projects":projects})));
-            }
-            "board_list" | "board_read" | "board_create" => {
-                let store = self.store.clone();
-                let owner = scope.owner();
-                let envelope = receipt
-                    .as_ref()
-                    .map_or("read".to_owned(), |receipt| receipt.request.clone());
-                let projects = scope.projects.clone();
-                let action = tool.replacen('_', ".", 1);
-                let work = cx.background_executor().spawn(async move {
-                    board::action(
-                        &mut *locked(&store)?,
-                        &owner,
-                        &envelope,
-                        &action,
-                        &arguments,
-                        &projects,
-                    )
-                });
-                cx.spawn(async move |this, cx| {
-                    let result = work.await;
-                    if tool == "board_create" && result.is_ok() {
-                        let _ = this.update(cx, |this, cx| this.refresh_board(cx));
-                    }
-                    let _ = done.send(result).await;
-                })
-                .detach();
-            }
-            _ => self.external_session_tool(&scope, tool, arguments, receipt.as_ref(), done, cx),
-        }
-
-        let store = self.store.clone();
-        cx.spawn(async move |this, cx| {
-            let result = result
-                .recv()
-                .await
-                .unwrap_or_else(|_| Err("MOLFAR dropped the request.".into()));
-            if let Some(receipt) = receipt.clone() {
-                let client = scope.principal.client_id.clone();
-                let saved = result.clone();
-                let finish = cx.background_executor().spawn(async move {
-                    locked(&store)?.external_receipt_finish(
-                        &client,
-                        &receipt.project,
-                        tool,
-                        &receipt.request,
-                        &receipt.digest,
-                        &saved,
-                    )
-                });
-                if let Err(error) = finish.await {
-                    log::warn!("external MCP receipt for {tool} was not saved: {error}");
-                }
-            }
-            let _ = this.update(cx, |this, cx| {
-                if let Some(receipt) = &receipt {
-                    this.external
-                        .pending
-                        .remove(&receipt.pending_key(&scope, tool));
-                }
-                let target = target(&result);
-                this.external_audit(
-                    &scope.principal,
-                    tool,
-                    target.as_deref(),
-                    receipt.as_ref().map(|receipt| receipt.request.as_str()),
-                    &result,
-                    cx,
-                );
-            });
-            let _ = reply.send(result);
-        })
-        .detach();
-    }
-
-    fn external_audit(
-        &mut self,
-        principal: &Principal,
-        tool: &str,
-        target: Option<&str>,
-        request: Option<&str>,
-        result: &Result<Value, String>,
-        cx: &mut Context<Self>,
-    ) {
-        let entry = AuditEntry {
-            at: i64::try_from(molfar_core::time::now_ms()).unwrap_or(i64::MAX),
-            client_id: principal.client_id.clone(),
-            action: tool.into(),
-            target: target.map(str::to_owned),
-            request_id: request.map(str::to_owned),
-            outcome: if result.is_ok() { "ok" } else { "error" }.into(),
-        };
-        self.store_write("record external MCP audit", cx, move |store| {
-            store.external_audit(entry)
-        });
-    }
-}
-
-fn target(result: &Result<Value, String>) -> Option<String> {
-    let value = result.as_ref().ok()?;
-    value["card"]["id"]
-        .as_str()
-        .map(str::to_owned)
-        .or_else(|| value["sessionId"].as_i64().map(|id| id.to_string()))
 }

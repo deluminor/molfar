@@ -189,3 +189,4 @@ This read-only stage supersedes artifact persistence and task initialization req
 The execution stages serve as the draft task breakdown. Coverage: 11 acceptance criteria mapped to 9 stages; no uncovered criteria or orphan stages. The draft resolves the previous task dependency gap by placing internal Board integration after shared mutation receipts, and includes update/archive/unarchive explicitly.
 
 Draft consistency: PASS under the proposed v1 stage-control exclusion. Implementation remains gated by Board approval and S1 compatibility evidence. Choosing expanded stage control requires revising contracts, permission rules, and tests before implementation.
+External MCP continues in three cards. Card 1 adds per-domain grants, client naming, the External access redesign, and Board edits. Card 2 covers Board transitions, sessions, and notes. Card 3 covers knowledge, automations, inbox, and Familiars.

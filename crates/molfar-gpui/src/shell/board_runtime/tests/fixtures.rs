@@ -12,11 +12,11 @@ pub(in crate::shell::board_runtime) struct Provider {
     pub models: Vec<Model>,
 }
 
-pub(super) struct Fixture {
+pub(in crate::shell) struct Fixture {
     pub root: PathBuf,
     pub project: String,
     pub store: Database,
-    pub provider: Provider,
+    pub(super) provider: Provider,
 }
 
 impl Drop for Fixture {
@@ -133,6 +133,59 @@ impl Fixture {
         window
     }
 
+    pub fn prepare_busy_session(
+        &self,
+        window: WindowHandle<Shell>,
+        cx: &mut TestAppContext,
+    ) -> i64 {
+        let launch = super::recovery::prepared(self);
+        let id = launch.summary.id;
+        window
+            .update(cx, |shell, _, cx| {
+                shell.board_state.polling = true;
+                shell
+                    .board_state
+                    .preparing
+                    .insert("card".into(), launch.run_id);
+                shell.add(launch.summary, cx);
+                shell
+                    .ensure_session(id, cx)
+                    .unwrap()
+                    .update(cx, |view, _| view.busy = true);
+            })
+            .unwrap();
+        id
+    }
+
+    pub fn has_preparation(window: WindowHandle<Shell>, cx: &mut TestAppContext) -> bool {
+        window
+            .update(cx, |shell, _, _| {
+                shell.board_state.preparing.contains_key("card")
+            })
+            .unwrap()
+    }
+
+    pub fn hold_poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
+        window
+            .update(cx, |shell, _, _| shell.board_state.polling = true)
+            .unwrap();
+    }
+
+    pub fn resume_poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
+        window
+            .update(cx, |shell, _, cx| {
+                shell.board_state.polling = false;
+                shell.poll_board(true, cx);
+            })
+            .unwrap();
+    }
+
+    pub fn poll(window: WindowHandle<Shell>, cx: &mut TestAppContext) {
+        window
+            .update(cx, |shell, _, cx| shell.poll_board(true, cx))
+            .unwrap();
+    }
+
     pub fn card(&self) -> molfar_core::task_board::types::Card {
         locked(&self.store)
             .unwrap()
@@ -152,7 +205,7 @@ impl Fixture {
     }
 }
 
-pub(super) fn wait_until(cx: &mut TestAppContext, predicate: impl Fn() -> bool) {
+pub(in crate::shell) fn wait_until(cx: &mut TestAppContext, predicate: impl Fn() -> bool) {
     let deadline = std::time::Instant::now() + Duration::from_secs(15);
     loop {
         cx.run_until_parked();

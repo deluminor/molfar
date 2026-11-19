@@ -1,4 +1,4 @@
-//! Opt-in loopback MCP endpoint for local clients such as OpenBot. Grants are
+//! Opt-in loopback MCP endpoint for local clients. Grants are
 //! separate from Familiar capabilities and Companion pairing.
 pub mod audit;
 pub mod constants;

@@ -1,5 +1,9 @@
-use super::Call;
-use crate::external_mcp::{constants::DISPATCH_DEADLINE, tools, types::Principal};
+use super::{Audit, Call};
+use crate::external_mcp::{
+    constants::DISPATCH_DEADLINE,
+    tools,
+    types::{AuditEntry, Principal},
+};
 use rmcp::{
     model::{
         CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, Implementation,
@@ -16,12 +20,14 @@ use tokio::sync::Semaphore;
 pub(super) struct Handler {
     calls: async_channel::Sender<Call>,
     active: Arc<Semaphore>,
+    audit: Audit,
 }
 
 impl Handler {
-    pub(super) fn new(calls: async_channel::Sender<Call>) -> Self {
+    pub(super) fn new(calls: async_channel::Sender<Call>, audit: Audit) -> Self {
         Self {
             calls,
+            audit,
             active: Arc::new(Semaphore::new(crate::external_mcp::constants::MAX_ACTIVE)),
         }
     }
@@ -65,13 +71,13 @@ impl ServerHandler for Handler {
     async fn list_tools(
         &self,
         _request: Option<PaginatedRequestParams>,
-        _context: RequestContext<RoleServer>,
+        context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, ErrorData> {
-        let tools = tools::catalog()
+        let tools = tools::visible(principal(&context)?)
             .into_iter()
             .map(|tool| {
-                let schema = match tool.schema {
-                    Value::Object(schema) => schema,
+                let schema = match &tool.schema {
+                    Value::Object(schema) => schema.clone(),
                     _ => Default::default(),
                 };
                 Tool::new(tool.name, tool.description, Arc::new(schema))
@@ -85,19 +91,32 @@ impl ServerHandler for Handler {
         request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, ErrorData> {
-        let principal = context
-            .extensions
-            .get::<http::request::Parts>()
-            .and_then(|parts| parts.extensions.get::<Principal>())
-            .cloned()
-            .ok_or_else(|| ErrorData::invalid_request("Unauthenticated request", None))?;
+        let principal = principal(&context)?.clone();
         let arguments = Value::Object(request.arguments.unwrap_or_default());
         let tool = tools::validate(&request.name, &arguments)
             .map_err(|error| ErrorData::invalid_params(error, None))?;
-        if !principal.allows(tool.scope) {
+        if !principal.allows(&tool.requires) {
+            let audit = self.audit.clone();
+            let entry = AuditEntry {
+                at: crate::external_mcp::grants::store::now(),
+                client_id: principal.client_id,
+                action: tool.name.into(),
+                target: None,
+                request_id: arguments["requestId"]
+                    .as_str()
+                    .filter(|id| id.len() <= 128)
+                    .map(str::to_owned),
+                outcome: "denied".into(),
+                kind: tool.requires.access,
+            };
+            match tokio::task::spawn_blocking(move || audit(entry)).await {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => eprintln!("Cannot audit external MCP denial: {error}"),
+                Err(error) => eprintln!("External MCP denial audit task failed: {error}"),
+            }
             return Ok(failure(format!(
-                "This client lacks the {} scope.",
-                tool.scope.label()
+                "This client lacks permission for {}.",
+                tool.name
             )));
         }
 
@@ -108,6 +127,14 @@ impl ServerHandler for Handler {
             Err(error) => failure(error),
         })
     }
+}
+
+fn principal(context: &RequestContext<RoleServer>) -> Result<&Principal, ErrorData> {
+    context
+        .extensions
+        .get::<http::request::Parts>()
+        .and_then(|parts| parts.extensions.get::<Principal>())
+        .ok_or_else(|| ErrorData::invalid_request("Unauthenticated request", None))
 }
 
 fn failure(error: String) -> CallToolResponse {

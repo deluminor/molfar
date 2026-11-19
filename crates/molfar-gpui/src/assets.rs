@@ -89,6 +89,7 @@ impl AssetSource for Assets {
    "ai-idea"=>include_bytes!("../assets/hugeicons/ai-idea.svg"),
    "app-window"=>include_bytes!("../assets/hugeicons/app-window.svg"),
    "archive"=>include_bytes!("../assets/hugeicons/archive.svg"),
+   "bell"=>include_bytes!("../assets/hugeicons/bell.svg"),
    "bell-off"=>include_bytes!("../assets/hugeicons/bell-off.svg"),
    "check"=>include_bytes!("../assets/hugeicons/check.svg"),
    "check-2"=>include_bytes!("../assets/hugeicons/check-2.svg"),
@@ -242,3 +243,7 @@ fn icon_body(path: &str) -> Option<&'static str> {
         _ => return None,
     })
 }
+
+#[cfg(test)]
+#[path = "assets_tests.rs"]
+mod tests;

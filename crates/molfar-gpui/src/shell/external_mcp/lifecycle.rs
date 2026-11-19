@@ -1,8 +1,9 @@
 use super::*;
 use crate::settings::{ExternalClientRow, ExternalStatus};
 use molfar_core::external_mcp::{
-    transport::{Authenticate, Server},
-    types::{SCOPE, ServerConfig},
+    grants::naming::default_name,
+    transport::{Audit, Authenticate, Server},
+    types::ServerConfig,
 };
 use std::sync::Arc;
 
@@ -29,7 +30,9 @@ impl Shell {
         let store = self.store.clone();
         let authenticate: Authenticate =
             Arc::new(move |token| locked(&store)?.external_authenticate(token));
-        let (server, calls) = match Server::start(port, authenticate) {
+        let store = self.store.clone();
+        let audit: Audit = Arc::new(move |entry| locked(&store)?.external_audit(entry));
+        let (server, calls) = match Server::start(port, authenticate, audit) {
             Ok(started) => started,
             Err(error) => {
                 self.external.error = Some(format!(
@@ -72,13 +75,16 @@ impl Shell {
                 .as_ref()
                 .map(|server| format!("http://{}/mcp", server.address())),
             error: self.external.error.clone(),
+            default_name: default_name(&clients),
             clients: clients
                 .into_iter()
                 .filter(|client| client.revoked_at.is_none())
                 .map(|client| ExternalClientRow {
                     id: client.id,
                     name: client.name,
-                    scopes: client.scopes,
+                    grants: client.grants,
+                    created_at: client.created_at,
+                    resources_count: client.resources.len(),
                     projects: client.projects,
                 })
                 .collect(),
@@ -105,69 +111,9 @@ impl Shell {
         self.sync_settings(cx);
     }
 
-    pub(in crate::shell) fn external_create_client(&mut self, cx: &mut Context<Self>) {
-        let created = locked(&self.store).and_then(|store| {
-            let count = store.external_clients()?.len();
-            let name = if count == 0 {
-                "OpenBot".to_owned()
-            } else {
-                format!("OpenBot {}", count + 1)
-            };
-            store.external_create_client(&name, &[SCOPE::Read], &[])
-        });
-        match created {
-            Ok((client, token)) => self.external.new_key = Some((client.name, token)),
-            Err(error) => self.external.error = Some(error),
-        }
-        self.sync_settings(cx);
-    }
-
-    pub(in crate::shell) fn external_toggle_grant(
-        &mut self,
-        id: &str,
-        scope: Option<SCOPE>,
-        project: Option<String>,
-        cx: &mut Context<Self>,
-    ) {
-        let updated = locked(&self.store).and_then(|store| {
-            let client = store
-                .external_clients()?
-                .into_iter()
-                .find(|client| client.id == id)
-                .ok_or("External client not found.")?;
-            let mut scopes = client.scopes;
-            if let Some(scope) = scope {
-                toggle(&mut scopes, scope);
-            }
-            let mut projects = client.projects;
-            if let Some(project) = project {
-                toggle(&mut projects, project);
-            }
-            store.external_update_client(id, &scopes, &projects)
-        });
-        if let Err(error) = updated {
-            self.external.error = Some(error);
-        }
-        self.sync_settings(cx);
-    }
-
-    pub(in crate::shell) fn external_revoke(&mut self, id: &str, cx: &mut Context<Self>) {
-        if let Err(error) = locked(&self.store).and_then(|store| store.external_revoke_client(id)) {
-            self.external.error = Some(error);
-        }
-        self.sync_settings(cx);
-    }
-
     pub(in crate::shell) fn external_dismiss_key(&mut self, cx: &mut Context<Self>) {
-        self.external.new_key = None;
-        self.sync_settings(cx);
-    }
-}
-
-fn toggle<T: PartialEq>(items: &mut Vec<T>, item: T) {
-    if let Some(index) = items.iter().position(|existing| *existing == item) {
-        items.remove(index);
-    } else {
-        items.push(item);
+        if self.external.new_key.take().is_some() {
+            self.sync_settings(cx);
+        }
     }
 }

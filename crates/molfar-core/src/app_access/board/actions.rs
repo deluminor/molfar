@@ -1,6 +1,7 @@
 use super::{
     contracts::{parse, ArchiveRequest, CreateRequest, ListRequest, ReadRequest},
     normalize_request_id, parse_update,
+    read::read,
     receipt::reserved,
     UpdateRequest,
 };
@@ -9,13 +10,12 @@ use crate::{
     task_board::{
         constants::{BACKLOG, IDLE},
         stage::{lifecycle::types::StageAction, owner::types::TaskEdit},
-        types::{ArtifactRead, Card, CardCreate},
+        types::{Card, CardCreate},
     },
 };
 use serde_json::{json, Value};
 
 const DEFAULT_LIST: u32 = 30;
-const DEFAULT_TEXT_PAGE: usize = 6_000;
 
 pub const READ_ACTIONS: [&str; 2] = ["board.list", "board.read"];
 pub const WRITE_ACTIONS: [&str; 4] = [
@@ -36,7 +36,10 @@ pub fn validate(action: &str, input: &Value) -> Result<(), String> {
         "board.list" => parse::<ListRequest>(action, input).map(drop),
         "board.read" => parse::<ReadRequest>(action, input).map(drop),
         "board.create" => parse::<CreateRequest>(action, input).map(drop),
-        "board.update" => parse_update(input.clone(), Some("validation")).map(drop),
+        "board.update" => {
+            let fallback = input.get("requestId").is_none().then_some("validation");
+            parse_update(input.clone(), fallback).map(drop)
+        }
         "board.archive" | "board.unarchive" => parse::<ArchiveRequest>(action, input).map(drop),
         _ => Err("Unknown Board action. Run app help.".into()),
     }
@@ -54,7 +57,7 @@ pub fn action(
 ) -> Result<Value, String> {
     match action {
         "board.list" => list(store, parse(action, input)?, projects),
-        "board.read" => read(store, parse(action, input)?, projects),
+        "board.read" => read(store, parse(action, input)?, projects, false),
         "board.create" => create(store, principal, envelope, parse(action, input)?, projects),
         "board.update" => {
             let request = parse_update(input.clone(), Some(envelope))?;
@@ -121,53 +124,6 @@ fn list(store: &Store, request: ListRequest, projects: &[String]) -> Result<Valu
     }))
 }
 
-fn read(store: &Store, request: ReadRequest, projects: &[String]) -> Result<Value, String> {
-    let card = store.board_scoped_card(&request.card_id, projects)?;
-    let snapshot = store.board_snapshot(Some(&card.project_cwd), card.archived, Some(&card.id))?;
-    let runs = if snapshot.selected.as_deref() == Some(card.id.as_str()) {
-        snapshot.runs
-    } else {
-        Vec::new()
-    };
-    let artifacts = store.board_stage_artifacts(&card.id)?;
-    let questions = store.board_scoped_questions(&card.id, projects)?;
-    let artifact = request
-        .artifact_kind
-        .as_deref()
-        .map(|kind| {
-            let version = request
-                .artifact_version
-                .or_else(|| {
-                    artifacts
-                        .iter()
-                        .filter(|meta| meta.kind == kind)
-                        .map(|meta| meta.version)
-                        .max()
-                })
-                .ok_or("Board artifact not found.")?;
-            let page = store.board_scoped_artifact(
-                &card.id,
-                projects,
-                &ArtifactRead {
-                    kind,
-                    version,
-                    max_chars: request.max_chars.unwrap_or(DEFAULT_TEXT_PAGE),
-                    char_offset: request.char_offset,
-                },
-            )?;
-            Ok::<_, String>(json!({"kind":kind,"version":version,"body":page.body,"nextCharOffset":page.next_char_offset}))
-        })
-        .transpose()?;
-
-    Ok(json!({
-        "card": card_json(&card),
-        "runs": runs.iter().map(|run| json!({"id":run.id,"stage":run.stage,"attempt":run.attempt,"status":run.status,"error":run.error,"sessionId":run.session_id,"startedAt":run.started_at,"completedAt":run.completed_at})).collect::<Vec<_>>(),
-        "artifacts": artifacts.iter().map(|meta| json!({"kind":meta.kind,"version":meta.version,"source":meta.source,"createdAt":meta.created_at})).collect::<Vec<_>>(),
-        "questions": questions.iter().map(|q| json!({"number":q.number,"title":q.title,"body":q.body,"recommended":q.recommended})).collect::<Vec<_>>(),
-        "artifact": artifact,
-    }))
-}
-
 /// The card ID derives from caller, project and request ID, so a retry after a lost
 /// receipt finds the saved card instead of creating a second one.
 fn create(
@@ -214,12 +170,16 @@ fn create(
     Ok(json!({"card": card_json(&card)}))
 }
 
+pub(super) fn idle_unqueued(card: &Card) -> bool {
+    card.run_state == IDLE && card.queued_at.is_none()
+}
+
+pub(super) fn editable(card: &Card) -> bool {
+    idle_unqueued(card) && card.column_id == BACKLOG && !card.archived
+}
+
 fn update(store: &mut Store, card: Card, request: UpdateRequest) -> Result<Value, String> {
-    if card.column_id != BACKLOG
-        || card.run_state != IDLE
-        || card.queued_at.is_some()
-        || card.archived
-    {
+    if !editable(&card) {
         return Err("conflict: only an idle Backlog card can be updated".into());
     }
     let edit = TaskEdit {
@@ -250,7 +210,7 @@ fn update(store: &mut Store, card: Card, request: UpdateRequest) -> Result<Value
     Ok(json!({"card": card_json(&effect.card)}))
 }
 
-fn card_json(card: &Card) -> Value {
+pub(super) fn card_json(card: &Card) -> Value {
     json!({
         "id": card.id,
         "number": card.number,

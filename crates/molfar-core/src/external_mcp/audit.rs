@@ -42,6 +42,7 @@ mod tests {
                     target: None,
                     request_id: None,
                     outcome: "ok".into(),
+                    kind: Default::default(),
                 })
                 .unwrap();
         }
@@ -49,5 +50,43 @@ mod tests {
         let log = store.external_audit_log().unwrap();
         assert_eq!(log.len(), 200);
         assert_eq!(log[0].at, 5);
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn audit_kind_and_metadata_only() {
+    use super::{
+        grants::types::{Requirement, ACCESS, DOMAIN, GRANT},
+        types::Principal,
+    };
+    use serde_json::json;
+
+    let raw = json!({"at":0,"clientId":"c","action":"test","target":null,"requestId":"r","outcome":"denied"});
+    let mut entry: AuditEntry = serde_json::from_value(raw).unwrap();
+    assert_eq!(entry.kind, ACCESS::Standard);
+    let mut principal = Principal {
+        client_id: "c".into(),
+        name: "Client".into(),
+        projects: vec![],
+        grants: vec![GRANT::Write(DOMAIN::Board)],
+        resources: vec![],
+    };
+    for (kind, flag, serialized) in [
+        (ACCESS::Destructive, GRANT::Destructive, "destructive"),
+        (ACCESS::Delegated, GRANT::Delegated, "delegated"),
+    ] {
+        let requirement = Requirement {
+            any: &[GRANT::Write(DOMAIN::Board)],
+            access: kind,
+        };
+        assert!(!principal.allows(&requirement));
+        principal.grants.push(flag);
+        assert!(principal.allows(&requirement));
+        principal.grants.pop();
+        entry.kind = kind;
+        let value = serde_json::to_value(&entry).unwrap();
+        assert_eq!(value["kind"], serialized);
+        assert_eq!(value.as_object().unwrap().len(), 7);
     }
 }
