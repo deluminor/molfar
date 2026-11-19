@@ -153,10 +153,8 @@ impl Conversation {
                         .into_iter()
                         .rev()
                         .filter(|request| Some(&request.request_id) != pending.as_ref())
-                        .take(5)
                         .map(|request| request.notice())
                         .collect();
-                    this.secret_notices.reverse();
                     cx.notify();
                 }
                 Err(error) => log::warn!("Secret request history for session {id}: {error}"),
@@ -165,13 +163,25 @@ impl Conversation {
         .detach();
     }
 
-    pub(super) fn render_secret_notices(&self) -> impl Iterator<Item = gpui::Div> {
-        self.secret_notices.iter().map(|notice| {
+    pub(super) fn render_secret_notices(&self) -> Option<gpui::Stateful<gpui::Div>> {
+        if self.secret_notices.is_empty() {
+            return None;
+        }
+
+        Some(
             div()
-                .text_size(px(12.))
-                .text_color(content(0.55))
-                .child(notice.clone())
-        })
+                .id("secret-request-notices")
+                .max_h(px(96.))
+                .overflow_y_scroll()
+                .flex()
+                .flex_col()
+                .children(self.secret_notices.iter().map(|notice| {
+                    div()
+                        .text_size(px(12.))
+                        .text_color(content(0.55))
+                        .child(notice.clone())
+                })),
+        )
     }
 
     pub(crate) fn secret_request(&self, cx: &App) -> Option<SecretRequest> {

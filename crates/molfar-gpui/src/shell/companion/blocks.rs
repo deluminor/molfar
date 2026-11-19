@@ -76,6 +76,15 @@ pub(super) fn block(mut source: Value) -> Option<Value> {
     Some(block)
 }
 
+pub(super) fn secret_request(row: molfar_core::secrets::request::SecretRequest) -> Value {
+    use molfar_core::secrets::request::SECRET_REQUEST_ROLE;
+    json!({
+        "id": format!("{SECRET_REQUEST_ROLE}-{}", row.request_id),
+        "role": "system",
+        "text": row.notice(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,13 +110,4 @@ mod tests {
         assert!(shown["attachments"][0].get("path").is_none());
         assert!(shown["attachments"][0].get("data").is_none());
     }
-}
-
-pub(super) fn secret_request(row: molfar_core::secrets::request::SecretRequest) -> Value {
-    use molfar_core::secrets::request::SECRET_REQUEST_ROLE;
-    json!({
-        "id": format!("{SECRET_REQUEST_ROLE}-{}", row.request_id),
-        "role": "system",
-        "text": row.notice(),
-    })
 }

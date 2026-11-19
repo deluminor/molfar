@@ -177,6 +177,11 @@ impl Conversation {
                 let binary = registered
                     .or_else(|| provider::resolve(kind))
                     .ok_or_else(|| kind.unavailable_hint())?;
+                let mut secrets = crate::runtime::secret_output::SecretOutput::open_path(
+                    &store,
+                    &cwd,
+                    &molfar_core::secrets::SecretStore::default(),
+                )?;
                 let request = Request {
                     kind,
                     binary,
@@ -186,8 +191,8 @@ impl Conversation {
                     model,
                     settings,
                 };
-                provider::compact(request, cancel, |events| {
-                    for event in events {
+                let mut result = provider::compact(request, cancel, |events| {
+                    for event in secrets.batch(events) {
                         match event {
                             Event::Context { used, window } => context.merge(used, window),
                             Event::Commands(discovered) => commands = Some(discovered),
@@ -195,7 +200,11 @@ impl Conversation {
                         }
                     }
                     Ok(())
-                })?;
+                });
+                if let Err(error) = &mut result {
+                    secrets.scrub(error);
+                }
+                result?;
                 let store = locked(&store)?;
                 if store
                     .agent_settings(session)?

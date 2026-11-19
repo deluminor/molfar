@@ -83,7 +83,7 @@ impl Shell {
             }
         };
         let request_id = call.request_id.clone();
-        let agent = caller.settings.model.as_ref().map_or_else(
+        let agent = caller.mobile_model().map_or_else(
             || Kind::from_id(&caller.summary.provider).label().to_owned(),
             |model| {
                 format!(
