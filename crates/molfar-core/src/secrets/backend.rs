@@ -22,7 +22,7 @@ fn map_error(error: keyring::Error) -> Error {
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 fn entry(account: &str) -> Result<keyring::Entry, Error> {
     #[cfg(target_os = "linux")]
-    return keyring::secret_service::SsCredential::new_with_no_target(SERVICE, account)
+    return keyring::secret_service::SsCredential::new_with_target(None, SERVICE, account)
         .map(|credential| keyring::Entry::new_with_credential(Box::new(credential)))
         .map_err(map_error);
 
@@ -78,13 +78,13 @@ impl Backend for KeyringBackend {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-secrets"))]
 #[derive(Default)]
 pub(super) struct MemoryBackend(
     std::sync::Mutex<std::collections::HashMap<String, secrecy::SecretString>>,
 );
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-secrets"))]
 impl Backend for MemoryBackend {
     fn probe(&self) -> Result<(), Error> {
         Ok(())
@@ -111,5 +111,29 @@ impl Backend for MemoryBackend {
     fn delete(&self, account: &str) -> Result<(), Error> {
         self.0.lock().unwrap().remove(account);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maps_locked_keyring_to_unavailable() {
+        let builder = keyring::mock::default_credential_builder();
+        let credential = builder.build(None, SERVICE, "fixture").unwrap();
+        credential
+            .as_any()
+            .downcast_ref::<keyring::mock::MockCredential>()
+            .unwrap()
+            .set_error(keyring::Error::NoStorageAccess(
+                "fixture denied access".into(),
+            ));
+
+        let entry = keyring::Entry::new_with_credential(credential);
+        assert_eq!(
+            entry.get_password().map_err(map_error),
+            Err(Error::Unavailable)
+        );
     }
 }

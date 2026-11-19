@@ -35,6 +35,11 @@ impl SecretStore {
         }
     }
 
+    #[cfg(feature = "test-secrets")]
+    pub fn in_memory() -> Self {
+        Self::new(super::backend::MemoryBackend::default())
+    }
+
     pub fn redactor(&self, db: &Store, project: Option<Scope>) -> Result<Redactor, Error> {
         let _lock = lock()?;
         let index: Vec<Entry> = load(db, INDEX)?;
@@ -47,7 +52,7 @@ impl SecretStore {
             {
                 match self.backend.get(&entry.account()) {
                     Ok(value) => Registered::add(entries, entry, value),
-                    Err(Error::Missing) => {}
+                    Err(Error::Missing) => return Err(Error::Unavailable),
                     Err(error) => return Err(error),
                 }
             }

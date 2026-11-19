@@ -24,10 +24,11 @@ impl Project {
 pub(super) type Projects = BTreeMap<String, Project>;
 
 pub(super) fn scope(db: &Store, path: &Path, label: Option<&str>) -> Result<Scope, Error> {
-    let key = project_root(path).to_string_lossy().into_owned();
+    let path = project_root(path).to_string_lossy().into_owned();
+    let key = crate::files::path_key(&path);
     let mut projects: Projects = load(db, PROJECTS)?;
     if let Some(project) = projects.get(&key) {
-        if label.is_none_or(|label| label == project.last_label) {
+        if label.is_none_or(|label| label == project.last_label && path == project.last_path) {
             return Ok(project.scope());
         }
     } else if label.is_none() {
@@ -35,11 +36,12 @@ pub(super) fn scope(db: &Store, path: &Path, label: Option<&str>) -> Result<Scop
     }
 
     let label = label.ok_or(Error::Missing)?;
-    let project = projects.entry(key.clone()).or_insert_with(|| Project {
+    let project = projects.entry(key).or_insert_with(|| Project {
         id: uuid::Uuid::new_v4().to_string(),
-        last_path: key,
+        last_path: path.clone(),
         last_label: label.to_owned(),
     });
+    project.last_path = path;
     project.last_label = label.to_owned();
     let scope = project.scope();
     save(db, PROJECTS, &projects)?;

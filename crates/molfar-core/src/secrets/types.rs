@@ -58,6 +58,10 @@ impl SecretValue {
         (MIN_VALUE_BYTES..=MAX_VALUE_BYTES).contains(&trim_newline(text).len())
     }
 
+    pub fn from_text(value: String) -> Result<Self, Error> {
+        Self::parse(value.into())
+    }
+
     pub fn parse(value: SecretString) -> Result<Self, Error> {
         use secrecy::ExposeSecret;
         let text = value.expose_secret();

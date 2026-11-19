@@ -1,3 +1,4 @@
+use secrecy::ExposeSecret;
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -16,14 +17,17 @@ pub(super) struct Registered {
 
 impl Registered {
     pub fn add(entries: &mut Entries, entry: Entry, value: SecretValue) {
-        entries
-            .entry(entry.id.clone())
-            .or_insert_with(|| Self {
-                entry,
-                values: Vec::new(),
-            })
+        let registered = entries.entry(entry.id.clone()).or_insert_with(|| Self {
+            entry,
+            values: Vec::new(),
+        });
+        if !registered
             .values
-            .push(value);
+            .iter()
+            .any(|registered| registered.0.expose_secret() == value.0.expose_secret())
+        {
+            registered.values.push(value);
+        }
     }
 }
 
