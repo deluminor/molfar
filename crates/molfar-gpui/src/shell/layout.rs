@@ -765,7 +765,7 @@ impl Shell {
                             {
                                 let session = familiars.read(cx).active_notification_session(cx);
                                 let linked = session.and_then(|id| self.linked_notice(id, cx));
-                                div()
+                                let body = div()
                                     .relative()
                                     .size_full()
                                     .child(self.familiar_bounds.layout_probe())
@@ -780,7 +780,8 @@ impl Shell {
                                             .max_w_full()
                                             .child(notice)
                                     }))
-                                    .into_any_element()
+                                    .into_any_element();
+                                self.with_dock(body, window, cx)
                             } else {
                                 let body = self.workspace_body(window, cx);
                                 self.with_dock(body, window, cx)
