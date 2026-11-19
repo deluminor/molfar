@@ -240,3 +240,10 @@ A value never appears in:
 - **Settings and chat race on the same name.** Mitigation: the store decides at write time. The second writer gets `exists` and never overwrites.
 - **Keychain prompts on dev builds.** Unsigned macOS dev builds may show Keychain access prompts. This is documented and is not a product defect.
 - **File-size ratchet failures.** Mitigation: new modules and thin hooks.
+## Implementation status
+
+- The native shell provides masked Operator requests and a Secrets page. Companion and mobile indicate when a request needs desktop input.
+- Secret-request rows use session-scoped native settings. They retain their role and status independently of the provider transcript's positional writes.
+- Linux writes directly to the default Secret Service collection. Project scope uses the repository's existing linked-worktree resolution.
+- Redaction tests exercise a mid-turn create and replace, split assistant output, shell output, transcript storage, session reads, and Board artifact extraction with synthetic values.
+- The `secrets-backends` CI matrix covers the 1024-byte boundary on each supported OS. Linux also checks a missing Secret Service and readback in a fresh keyutils session. Verify live runner results at Final review.
