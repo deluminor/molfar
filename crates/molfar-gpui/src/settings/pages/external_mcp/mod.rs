@@ -5,6 +5,7 @@ mod header;
 mod new_key;
 mod permissions;
 mod projects;
+mod resources;
 #[cfg(test)]
 mod tests;
 
@@ -31,7 +32,7 @@ impl SettingsView {
         let mut page = vec![
             self.external_header(&status, cx),
             div().text_size(px(12.)).text_color(content(0.62))
-                .child("Let local MCP clients on this Mac access granted projects. MOLFAR keeps control of models, approvals and Board stages. The server starts off and listens only on 127.0.0.1.")
+                .child("Let local MCP clients on this Mac access granted projects and resources. MOLFAR keeps control of models, approvals and Board stages. The server starts off and listens only on 127.0.0.1.")
                 .into_any_element(),
             div().mt_3().flex().justify_between().items_center()
                 .child(div().text_size(px(12.)).font_weight(FontWeight::SEMIBOLD)
@@ -59,7 +60,12 @@ impl SettingsView {
             );
         }
         for client in &status.clients {
-            page.push(self.external_client(client, status.new_key.as_ref(), cx));
+            page.push(self.external_client(
+                client,
+                status.new_key.as_ref(),
+                &status.resource_options,
+                cx,
+            ));
         }
 
         page

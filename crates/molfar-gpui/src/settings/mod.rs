@@ -16,7 +16,7 @@ mod skill_document;
 pub(crate) use palettes::{PALETTES, palette};
 pub(crate) mod widgets;
 
-pub(crate) use external::{ExternalClientRow, ExternalStatus};
+pub(crate) use external::{ExternalClientRow, ExternalResource, ExternalStatus};
 pub(crate) use keymap::apply as apply_keybindings;
 pub(crate) use model::Section;
 pub(crate) use pages::{ACCENTS, command_shortcut, swatch};
@@ -172,6 +172,10 @@ pub(crate) enum SettingsEvent {
         id: String,
         grant: Option<molfar_core::external_mcp::grants::types::GRANT>,
         project: Option<String>,
+    },
+    ExternalToggleResource {
+        id: String,
+        resource: molfar_core::external_mcp::grants::types::ResourceGrant,
     },
     ExternalRevoke(String),
     ExternalDismissKey,

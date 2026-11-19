@@ -1,6 +1,6 @@
 use super::normalize_request_id;
 use crate::{
-    external_mcp::receipts::{digest, BEGIN},
+    external_mcp::receipts::{digest, ReceiptTarget, BEGIN},
     store::Store,
 };
 use serde_json::Value;
@@ -19,13 +19,14 @@ pub(super) fn reserved(
 ) -> Result<Value, String> {
     let request = normalize_request_id(input["requestId"].as_str(), Some(envelope))?;
     let digest = digest(action, input);
-    match store.external_receipt_begin(principal, project, action, &request, &digest)? {
+    let target = ReceiptTarget::Project(project.into());
+    match store.external_receipt_begin(principal, &target, action, &request, &digest)? {
         BEGIN::Replay(result) => return result,
         BEGIN::Conflict => return Err("Request ID was already used with different input".into()),
         BEGIN::Fresh | BEGIN::Pending => {}
     }
 
     let result = write(store);
-    store.external_receipt_finish(principal, project, action, &request, &digest, &result)?;
+    store.external_receipt_finish(principal, &target, action, &request, &digest, &result)?;
     result
 }

@@ -90,7 +90,9 @@ External callers cannot choose model/runtime policy or inherit internal capabili
 
 ## External grants v2
 
-Clients start with every grant off. Board, sessions, notes, knowledge, automations, inbox, and familiars each have independent read and write grants. Board creation, Board stage execution, and session stop require separate action grants (`board:create`, `board:run`, and `sessions:stop`). Tools that delete or reset require the additional `destructive` flag. Tools that act as the user or another agent require the additional `delegated` flag. Non-project resources use an explicit allowlist keyed by resource kind and ID (vault, inbox provider, familiar) and a separate receipt namespace. The resource allowlist and `delegated` flag are reserved for later tools.
+Clients start with every grant off. Board, sessions, notes, knowledge, automations, inbox, and familiars each have independent read and write grants. Board creation, Board stage execution, and session stop require separate action grants (`board:create`, `board:run`, and `sessions:stop`). Tools that delete or reset require the additional `destructive` flag. Tools that act with the user's rights require the additional `delegated` flag. Non-project resources use an explicit allowlist keyed by resource kind and ID (vault, inbox provider, familiar) and a separate receipt namespace.
+
+Knowledge tools require the connected vault, keyed by the vault root path. Inbox tools require a supported provider id and a connected provider. Familiar tools require that Familiar's id. Automations use project grants. `automations_upsert`, `automations_run_now`, `familiars_send`, and `inbox_comment` require `delegated` in addition to the domain write grant. `automations_delete`, `familiars_reset`, and `familiars_delete` require `destructive`. Upsert and Familiar update cannot change permissions, projects, model, runtime, or app access. `automations_run_now`, `familiars_send`, and `inbox_comment` are not resumed: a pending receipt returns outcome unknown and is not dispatched again. Knowledge and inbox reads are sensitive and stay off until granted.
 
 | Legacy scope | Migrated grants |
 | --- | --- |
@@ -120,7 +122,9 @@ Internal session permissions remain capability-gated. Board actions do not impli
 ### Authorization
 
 - Per-domain Read and Write grants are independent. Board creation, Board stage actions, and session stop each have their own grant.
-- Session and note deletion require the matching Write grant and the Destructive flag.
+- Session and note deletion, automation deletion, and Familiar reset or deletion require the matching Write grant and the Destructive flag.
+- Automation upsert and run, Familiar send, and inbox comment require the matching Write grant and the Delegated flag.
+- Knowledge, inbox, and Familiars also require the target on the resource allowlist. An unreachable resource uses the same not-found message as a missing one and is audited as denied.
 - Every call rechecks current credential validity, scope, and canonical registered project membership, including receipt replay.
 - Internal calls derive projects from current caller assignments, never from caller-supplied claims.
 - Unauthorized target IDs and foreign pagination cursors reveal no protected metadata.

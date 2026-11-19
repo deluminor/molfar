@@ -1,4 +1,4 @@
-use super::audit::target;
+use super::audit::{domain_target, target};
 use super::*;
 
 impl Shell {
@@ -12,6 +12,7 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         let (done, result) = async_channel::bounded(1);
+        let audit_target = domain_target(tool, &arguments);
         if let Some(stage) = board_api::stage::StageTool::from_name(tool) {
             self.external_stage_tool(&scope, stage, &arguments, done, cx);
         } else {
@@ -30,7 +31,7 @@ impl Shell {
                 let finish = cx.background_executor().spawn(async move {
                     locked(&store)?.external_receipt_finish(
                         &client,
-                        &receipt.project,
+                        &receipt.target,
                         tool,
                         &receipt.request,
                         &receipt.digest,
@@ -47,7 +48,7 @@ impl Shell {
                         .pending
                         .remove(&receipt.pending_key(&scope, tool));
                 }
-                let target = target(&result);
+                let target = audit_target.or_else(|| target(&result));
                 this.external_audit(
                     &scope.principal,
                     tool,
@@ -101,6 +102,18 @@ impl Shell {
             | notes_api::WRITE
             | notes_api::DELETE => {
                 self.external_notes_tool(scope, tool, arguments, receipt, done, cx);
+            }
+            tool if tool.starts_with("knowledge_") => {
+                self.external_knowledge_tool(scope, tool, &arguments, receipt, done, cx);
+            }
+            tool if tool.starts_with("automations_") => {
+                self.external_automation_tool(scope, tool, arguments, receipt, done, cx);
+            }
+            tool if tool.starts_with("familiars_") => {
+                self.external_familiar_tool(scope, tool, &arguments, receipt, done, cx);
+            }
+            tool if tool.starts_with("inbox_") => {
+                self.external_inbox_tool(scope, tool, arguments, done, cx);
             }
             _ => self.external_session_tool(scope, tool, arguments, receipt, done, cx),
         }

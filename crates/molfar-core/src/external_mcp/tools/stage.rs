@@ -1,6 +1,6 @@
 use super::{
     schema::{integer, object, request_id, string},
-    Tool,
+    TargetKind, Tool,
 };
 use crate::{
     app_access::board::stage::StageTool,
@@ -46,7 +46,7 @@ pub(super) fn definitions() -> impl Iterator<Item = Tool> {
         Tool {
             name: tool.name(),
             requires: Requirement::standard(&[GRANT::BoardRun]),
-            mutation: true,
+            mutation: true, target: TargetKind::Project, resumable: true,
             description,
             schema: object(properties, &required),
         }

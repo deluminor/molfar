@@ -1,5 +1,5 @@
 use super::*;
-use crate::settings::{ExternalClientRow, widgets::icon_action};
+use crate::settings::{ExternalClientRow, ExternalResource, widgets::icon_action};
 use gpui::SharedString;
 
 impl SettingsView {
@@ -7,6 +7,7 @@ impl SettingsView {
         &self,
         client: &ExternalClientRow,
         key: Option<&(String, String)>,
+        resources: &[ExternalResource],
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let id = client.id.clone();
@@ -78,6 +79,7 @@ impl SettingsView {
             )
             .child(self.external_permissions(client, cx))
             .child(self.external_projects(client, cx))
+            .child(self.external_resources(client, resources, cx))
             .into_any_element()
     }
 
@@ -145,8 +147,8 @@ fn client_meta(client: &ExternalClientRow) -> String {
     }
     details.push(format!("{} grants", client.grants.len()));
     details.push(format!("{} projects", client.projects.len()));
-    if client.resources_count > 0 {
-        details.push(format!("{} resources", client.resources_count));
+    if !client.resources.is_empty() {
+        details.push(format!("{} resources", client.resources.len()));
     }
     details.join(" · ")
 }

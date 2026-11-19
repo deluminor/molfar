@@ -130,7 +130,7 @@ fn external_stage_receipts_and_answers_survive_retries(cx: &mut TestAppContext) 
             store
                 .external_receipt_begin(
                     "client",
-                    &f.project,
+                    &receipts::ReceiptTarget::Project(f.project.clone()),
                     "board_request_changes",
                     "lost-reply",
                     &digest,

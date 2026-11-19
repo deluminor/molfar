@@ -1,6 +1,6 @@
 use super::{
     schema::{integer, object, request_id, string},
-    Tool,
+    TargetKind, Tool,
 };
 use crate::{
     app_access::notes::external::*,
@@ -26,6 +26,8 @@ pub(super) fn definitions() -> Vec<Tool> {
             name: LIST,
             requires: Requirement::standard(&[GRANT::Read(DOMAIN::Notes)]),
             mutation: false,
+            target: TargetKind::Project,
+            resumable: true,
             description: "List notes linked to granted projects.",
             schema: object(
                 json!({"project":string("Optional project path"),"limit":integer("1–100, default 30"),"offset":integer("Entries to skip")}),
@@ -36,6 +38,8 @@ pub(super) fn definitions() -> Vec<Tool> {
             name: READ,
             requires: Requirement::standard(&[GRANT::Read(DOMAIN::Notes)]),
             mutation: false,
+            target: TargetKind::Project,
+            resumable: true,
             description: "Read one page of an accessible note.",
             schema: object(
                 json!({"id":note_id,"maxChars":{"type":"integer","minimum":1,"maximum":6000},"charOffset":integer("nextCharOffset from a previous page")}),
@@ -46,6 +50,8 @@ pub(super) fn definitions() -> Vec<Tool> {
             name: CREATE,
             requires: Requirement::standard(&[GRANT::Write(DOMAIN::Notes)]),
             mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
             description: "Create a note in a granted project.",
             schema: object(create, &["project", "body", "requestId"]),
         },
@@ -53,6 +59,8 @@ pub(super) fn definitions() -> Vec<Tool> {
             name: WRITE,
             requires: Requirement::standard(&[GRANT::Write(DOMAIN::Notes)]),
             mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
             description: "Change title, body or tags of an accessible note.",
             schema: object(write, &["id", "requestId"]),
         },
@@ -63,6 +71,8 @@ pub(super) fn definitions() -> Vec<Tool> {
                 access: ACCESS::Destructive,
             },
             mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
             description: "Permanently delete an accessible note.",
             schema: object(
                 json!({"id":note_id,"requestId":request_id()}),

@@ -55,14 +55,14 @@ impl SettingsView {
                 client,
                 GRANT::Destructive,
                 "Destructive",
-                "Allows permanent deletion of sessions and notes with their respective Write grants.",
+                "Allows permanent deletion and reset when the matching Write grant is also on.",
                 cx,
             ))
             .child(flag(
                 client,
                 GRANT::Delegated,
                 "Delegated",
-                "Allows tools to act as you or another agent when available.",
+                "Allows automations, Familiars and inbox comments to act with your rights.",
                 cx,
             ))
     }

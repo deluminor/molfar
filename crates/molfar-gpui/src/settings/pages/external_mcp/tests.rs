@@ -81,7 +81,7 @@ fn external_mcp_key_dismissal_revoke_confirmation_and_flags(cx: &mut TestAppCont
                 name: "Laptop".into(),
                 grants: vec![],
                 projects: vec![],
-                resources_count: 0,
+                resources: vec![],
                 created_at: 0,
             }],
             new_key: Some(("Laptop".into(), "fixture".into())),
@@ -163,9 +163,17 @@ fn permission_hints_follow_tools_in_the_catalog() {
     use molfar_core::external_mcp::grants::types::DOMAIN;
 
     assert_eq!(grant_tools(GRANT::BoardRun), 7);
-    assert_eq!(grant_tools(GRANT::Destructive), 2);
+    assert_eq!(grant_tools(GRANT::Destructive), 5);
     assert_eq!(grant_tools(GRANT::Read(DOMAIN::Notes)), 2);
     assert_eq!(grant_tools(GRANT::Write(DOMAIN::Notes)), 3);
     assert_eq!(grant_tools(GRANT::Write(DOMAIN::Sessions)), 6);
-    assert_eq!(grant_tools(GRANT::Delegated), 0);
+    assert_eq!(grant_tools(GRANT::Read(DOMAIN::Knowledge)), 4);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Knowledge)), 2);
+    assert_eq!(grant_tools(GRANT::Read(DOMAIN::Automations)), 3);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Automations)), 4);
+    assert_eq!(grant_tools(GRANT::Read(DOMAIN::Familiars)), 2);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Familiars)), 5);
+    assert_eq!(grant_tools(GRANT::Read(DOMAIN::Inbox)), 4);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Inbox)), 1);
+    assert_eq!(grant_tools(GRANT::Delegated), 4);
 }

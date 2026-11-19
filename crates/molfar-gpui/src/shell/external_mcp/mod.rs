@@ -2,11 +2,19 @@
 //! models, runtime approvals and Board stages. Mutations persist a receipt
 //! before dispatch so retries never repeat accepted work.
 mod audit;
+#[cfg(test)]
+mod automation_tests;
 mod board_dispatch;
+mod call;
 mod clients;
 mod dispatch;
+mod domains;
+#[cfg(test)]
+mod inbox_tests;
 mod lifecycle;
 mod notes;
+#[cfg(test)]
+mod reach_tests;
 #[cfg(test)]
 mod recovery_tests;
 mod sessions;
@@ -21,7 +29,7 @@ use molfar_core::{
     app_access::{board as board_api, notes::external as notes_api},
     external_mcp::{
         grants::types::ACCESS,
-        receipts::{self, BEGIN},
+        receipts::{self, BEGIN, ReceiptTarget},
         tools,
         transport::Call,
         types::{AuditEntry, Principal},
@@ -33,28 +41,32 @@ use serde_json::{Value, json};
 pub(super) struct External {
     server: Option<molfar_core::external_mcp::transport::Server>,
     error: Option<String>,
-    pending: HashMap<(String, String, String, String), String>,
+    #[cfg(test)]
+    inbox_backend: Option<Arc<dyn domains::inbox::backend::ExternalInbox>>,
+    pending: HashMap<String, String>,
     /// The credential shown once after creation, as (client name, token).
     new_key: Option<(String, String)>,
 }
 
+const OUTCOME_UNKNOWN: &str = "Outcome unknown: MOLFAR stopped while handling this request. Check the target before trying again with a new requestId.";
+
 type Reply = molfar_core::external_mcp::transport::Reply;
 
-/// A mutation's durable identity: principal, canonical project, action and request ID.
 #[derive(Clone)]
 struct Receipt {
     request: String,
     digest: String,
-    project: String,
+    target: ReceiptTarget,
+    resumed: bool,
 }
 
 impl Receipt {
-    fn pending_key(&self, scope: &Scope, tool: &str) -> (String, String, String, String) {
-        (
-            scope.principal.client_id.clone(),
-            self.project.clone(),
-            tool.to_owned(),
-            self.request.clone(),
+    fn pending_key(&self, scope: &Scope, tool: &str) -> String {
+        receipts::key_for(
+            &self.target,
+            &scope.principal.client_id,
+            tool,
+            &self.request,
         )
     }
 }
@@ -102,131 +114,5 @@ impl Shell {
             principal,
             projects,
         }
-    }
-
-    pub(super) fn handle_external_call(&mut self, call: Call, cx: &mut Context<Self>) {
-        let Call {
-            principal,
-            tool,
-            arguments,
-            reply,
-        } = call;
-        let definition = match tools::validate(tool, &arguments) {
-            Ok(definition) => definition,
-            Err(error) => {
-                let _ = reply.send(Err(error));
-                return;
-            }
-        };
-        if !principal.allows(&definition.requires) {
-            let error = format!("This client lacks permission for {tool}.");
-            self.external_audit_entry(
-                &principal,
-                tool,
-                None,
-                None,
-                "denied",
-                definition.requires.access,
-                cx,
-            );
-            let _ = reply.send(Err(error));
-            return;
-        }
-        let scope = self.external_scope(principal);
-        if !definition.mutation {
-            self.external_dispatch(scope, tool, arguments, None, reply, cx);
-            return;
-        }
-
-        let request = match board_api::normalize_request_id(arguments["requestId"].as_str(), None) {
-            Ok(request) => request,
-            Err(error) => {
-                let _ = reply.send(Err(error));
-                return;
-            }
-        };
-        // Authorize against current grants before any receipt is read, so a
-        // replay never returns a result the caller can no longer reach.
-        let digest = receipts::digest(tool, &arguments);
-        let project = match self.external_mutation_project(&scope, tool, &arguments, cx) {
-            Ok(project) => molfar_core::files::path_key(&project),
-            Err(error) => {
-                let result = self
-                    .external_deleted_replay(&scope, tool, &arguments, &request, &digest)
-                    .unwrap_or(Err(error));
-                let target = audit::target(&result);
-                self.external_audit(
-                    &scope.principal,
-                    tool,
-                    target.as_deref(),
-                    Some(&request),
-                    &result,
-                    cx,
-                );
-                let _ = reply.send(result);
-                return;
-            }
-        };
-        let receipt = Receipt {
-            request,
-            digest,
-            project,
-        };
-        let key = receipt.pending_key(&scope, tool);
-        if let Some(pending) = self.external.pending.get(&key) {
-            let error = if pending == &receipt.digest {
-                "This request is still running; retry with the same requestId."
-            } else {
-                "requestId was already used with different input."
-            };
-            let _ = reply.send(Err(error.into()));
-            return;
-        }
-        self.external
-            .pending
-            .insert(key.clone(), receipt.digest.clone());
-        let store = self.store.clone();
-        let client = scope.principal.client_id.clone();
-        let saved = receipt.clone();
-        let begin = cx.background_executor().spawn(async move {
-            locked(&store)?.external_receipt_begin(
-                &client,
-                &saved.project,
-                tool,
-                &saved.request,
-                &saved.digest,
-            )
-        });
-        cx.spawn(async move |this, cx| {
-            let begin = begin.await;
-            let _ = this.update(cx, |this, cx| {
-                let replay = match begin {
-                    // An interrupted call runs again: every mutation resolves its
-                    // durable target identity first and never repeats accepted work.
-                    Ok(BEGIN::Fresh | BEGIN::Pending) => None,
-                    Ok(BEGIN::Replay(result)) => Some(result),
-                    Ok(BEGIN::Conflict) => Some(Err(
-                        "requestId was already used with different input.".to_owned(),
-                    )),
-                    Err(error) => Some(Err(format!("Cannot read request receipt: {error}"))),
-                };
-                if let Some(result) = replay {
-                    this.external.pending.remove(&key);
-                    let target = audit::target(&result);
-                    this.external_audit(
-                        &scope.principal,
-                        tool,
-                        target.as_deref(),
-                        Some(&receipt.request),
-                        &result,
-                        cx,
-                    );
-                    let _ = reply.send(result);
-                    return;
-                }
-                this.external_dispatch(scope, tool, arguments, Some(receipt), reply, cx);
-            });
-        })
-        .detach();
     }
 }

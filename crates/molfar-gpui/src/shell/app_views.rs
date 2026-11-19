@@ -363,6 +363,11 @@ impl Shell {
                     .join(format!("molfar-native-knowledge-{}", uuid::Uuid::new_v4()))
             });
         let vault = cx.new(|cx| crate::knowledge::VaultService::new(directory, cx));
+        self.app_view_events.push(
+            cx.subscribe(&vault, |shell, _, _: &crate::knowledge::VaultEvent, cx| {
+                shell.sync_settings(cx)
+            }),
+        );
         self.vault = Some(vault.clone());
         vault
     }

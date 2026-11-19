@@ -1,7 +1,13 @@
+#[path = "resource_picker.rs"]
+mod resource_picker;
+#[cfg(test)]
+#[path = "resource_tests.rs"]
+mod resource_tests;
+
 use super::*;
 use molfar_core::external_mcp::grants::{
     naming::default_name,
-    types::{ClientUpdate, GRANT},
+    types::{ClientUpdate, GRANT, ResourceGrant},
 };
 
 impl Shell {
@@ -125,6 +131,41 @@ impl Shell {
             self.external.error = Some(error);
         }
         self.sync_settings(cx);
+    }
+
+    pub(in crate::shell) fn external_toggle_resource(
+        &mut self,
+        id: &str,
+        resource: ResourceGrant,
+        cx: &mut Context<Self>,
+    ) -> Result<(), String> {
+        let available = self
+            .external_resources(cx)
+            .iter()
+            .any(|option| option.grant == resource);
+        let result = locked(&self.store).and_then(|store| {
+            let client = active_client(&store, id)?;
+            let mut resources = client.resources;
+            if !available && !resources.contains(&resource) {
+                return Err("External resource not found.".into());
+            }
+            toggle(&mut resources, resource);
+            store.external_update_client(
+                id,
+                ClientUpdate {
+                    name: None,
+                    grants: &client.grants,
+                    projects: &client.projects,
+                    resources: &resources,
+                },
+            )?;
+            Ok(())
+        });
+        if let Err(error) = &result {
+            self.external.error = Some(error.clone());
+        }
+        self.sync_settings(cx);
+        result
     }
 
     pub(in crate::shell) fn external_revoke(&mut self, id: &str, cx: &mut Context<Self>) {

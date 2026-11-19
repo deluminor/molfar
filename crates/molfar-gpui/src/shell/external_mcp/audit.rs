@@ -14,7 +14,16 @@ impl Shell {
             .iter()
             .find(|entry| entry.name == tool)
             .map_or(ACCESS::Standard, |entry| entry.requires.access);
-        let outcome = if result.is_ok() { "ok" } else { "error" };
+        let outcome = match result.as_ref().map_err(String::as_str) {
+            Ok(_) => "ok",
+            Err(
+                super::domains::inbox::NOT_FOUND
+                | crate::familiars::external::NOT_FOUND
+                | molfar_core::knowledge::external::VAULT_NOT_FOUND
+                | "Automation not found.",
+            ) => "denied",
+            Err(_) => "error",
+        };
         self.external_audit_entry(principal, tool, target, request, outcome, kind, cx);
     }
 
@@ -51,4 +60,16 @@ pub(super) fn target(result: &Result<Value, String>) -> Option<String> {
         .map(str::to_owned)
         .or_else(|| value["note"]["id"].as_str().map(str::to_owned))
         .or_else(|| value["sessionId"].as_i64().map(|id| id.to_string()))
+}
+
+pub(super) fn domain_target(tool: &str, arguments: &Value) -> Option<String> {
+    let (prefix, field) = match tool.split_once('_')?.0 {
+        "knowledge" => ("knowledge", "path"),
+        "automations" => ("automation", "automationId"),
+        "familiars" => ("familiar", "familiarId"),
+        "inbox" => ("inbox", "itemKey"),
+        _ => return None,
+    };
+    let id = arguments[field].as_str()?;
+    Some(format!("{prefix}:{id}"))
 }

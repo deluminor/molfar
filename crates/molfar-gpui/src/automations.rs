@@ -334,20 +334,7 @@ impl Automations {
         .detach();
     }
     fn begin(&mut self, template: Option<Template>, cx: &mut Context<Self>) {
-        let preferences = cx.try_global::<crate::settings::Preferences>();
-        let kind = preferences
-            .and_then(|p| p.project_providers.get(&self.cwd))
-            .and_then(|p| p.provider.as_deref())
-            .or_else(|| preferences.and_then(|p| p.default_provider.as_deref()))
-            .map(Kind::from_id)
-            .unwrap_or(Kind::Codex);
-        let model = preferences
-            .and_then(|p| p.project_providers.get(&self.cwd))
-            .and_then(|p| p.models.get(kind.id()))
-            .or_else(|| preferences.and_then(|p| p.default_models.get(kind.id())))
-            .cloned()
-            .unwrap_or_default();
-        let mut draft = AutomationUpsert::new(self.cwd.clone(), kind.id().into(), model);
+        let mut draft = new_draft(&self.cwd, cx);
         if let Some(template) = template {
             draft.name = template.name;
             draft.prompt = template.prompt;
@@ -1195,4 +1182,21 @@ impl Render for Automations {
         }
         root
     }
+}
+
+pub(crate) fn new_draft(cwd: &str, cx: &gpui::App) -> AutomationUpsert {
+    let preferences = cx.try_global::<crate::settings::Preferences>();
+    let kind = preferences
+        .and_then(|p| p.project_providers.get(cwd))
+        .and_then(|p| p.provider.as_deref())
+        .or_else(|| preferences.and_then(|p| p.default_provider.as_deref()))
+        .map(Kind::from_id)
+        .unwrap_or(Kind::Codex);
+    let model = preferences
+        .and_then(|p| p.project_providers.get(cwd))
+        .and_then(|p| p.models.get(kind.id()))
+        .or_else(|| preferences.and_then(|p| p.default_models.get(kind.id())))
+        .cloned()
+        .unwrap_or_default();
+    AutomationUpsert::new(cwd.to_owned(), kind.id().into(), model)
 }

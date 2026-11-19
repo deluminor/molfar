@@ -41,6 +41,7 @@ impl Shell {
                 return;
             }
         };
+        self.ensure_vault(cx);
         self.external.server = Some(server);
         self.external.error = None;
         cx.spawn(async move |this, cx| {
@@ -84,11 +85,12 @@ impl Shell {
                     name: client.name,
                     grants: client.grants,
                     created_at: client.created_at,
-                    resources_count: client.resources.len(),
+                    resources: client.resources,
                     projects: client.projects,
                 })
                 .collect(),
             new_key: self.external.new_key.clone(),
+            resource_options: Vec::new(),
         }
     }
 
