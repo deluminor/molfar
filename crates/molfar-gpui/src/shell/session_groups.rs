@@ -773,6 +773,7 @@ impl Shell {
         if !self.session_summaries.contains_key(&id) || !self.deleting.insert(id) {
             return;
         }
+        self.cancel_secret_request(id, cx);
         self.close_preview(cx);
         if let Some(view) = self.sessions.get(&id) {
             view.update(cx, |session, cx| session.stop_if_busy(cx));

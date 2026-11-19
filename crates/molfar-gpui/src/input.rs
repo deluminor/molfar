@@ -1,3 +1,4 @@
+mod secret;
 // Native text-input plumbing adapted from GPUI's Apache-2.0 examples/input.rs.
 // Copyright Zed Industries. See NOTICE for source and license.
 use gpui::{

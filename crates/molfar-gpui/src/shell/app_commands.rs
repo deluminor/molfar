@@ -44,7 +44,7 @@ impl Shell {
             Err(error) => self.error = Some(format!("Operator app access: {error}")),
         }
     }
-    fn finish_app_call(
+    pub(super) fn finish_app_call(
         &mut self,
         call: Call,
         result: Result<Value, String>,
@@ -114,6 +114,7 @@ impl Shell {
                             this.groups.insert(project, groups);
                         }
                         Effect::Archive(id) => {
+                            this.cancel_secret_request(id, cx);
                             if let Some(summary) = this.session_summaries.get_mut(&id) {
                                 summary.archived = true;
                             }
@@ -177,6 +178,7 @@ impl Shell {
                     | "notes.list"
                     | "notes.read"
                     | "worktrees.list"
+                    | molfar_core::secrets::request::LIST
             )
             && !app::board::READ_ACTIONS.contains(&call.action.as_str())
         {
@@ -199,6 +201,9 @@ impl Shell {
             });
             return;
         }
+        if self.reattach_secret_request(&call) {
+            return;
+        }
         if !self.app_pending.insert(key) {
             let _ = call.reply.send(Err(
                 "Request is still running; retry with the same request ID.".into(),
@@ -206,24 +211,35 @@ impl Shell {
             return;
         }
         if !mutating(&call.action) {
-            self.dispatch_app_call(call, window, cx);
+            self.dispatch_app_call(call, None, window, cx);
             return;
         }
         let receipt_key = app::receipt_key(call.session, &call.request_id);
         let store = self.store.clone();
+        let secrets = self.secret_store.clone();
+        let project = self.sessions[&call.session].read(cx).summary.cwd.clone();
+        let mut input =
+            (call.action != molfar_core::secrets::request::REQUEST).then(|| call.input.clone());
         let work = cx.background_executor().spawn(async move {
-            locked(&store)?
+            let db = locked(&store)?;
+            let receipt = db
                 .setting(&receipt_key)?
                 .map(|raw| {
                     serde_json::from_str::<(String, Result<Value, String>)>(&raw)
                         .map_err(|e| e.to_string())
                 })
-                .transpose()
+                .transpose()?;
+            if receipt.is_none()
+                && let Some(input) = &mut input
+            {
+                super::secret_requests::project_redactor(&secrets, &db, &project)?.json(input);
+            }
+            Ok::<_, String>((receipt, input))
         });
         cx.spawn(async move |this, cx| {
             let saved = work.await;
             let _ = this.update_in(cx, |this, window, cx| match saved {
-                Ok(Some((hash, result))) => {
+                Ok((Some((hash, result)), _)) => {
                     this.app_pending
                         .remove(&(call.session, call.request_id.clone()));
                     let _ = call.reply.send(if hash == fingerprint {
@@ -232,7 +248,7 @@ impl Shell {
                         Err("Request ID was already used with different input".into())
                     });
                 }
-                Ok(None) => this.dispatch_app_call(call, window, cx),
+                Ok((None, input)) => this.dispatch_app_call(call, input, window, cx),
                 Err(error) => this.finish_app_call(call, Err(error), cx),
             });
         })
@@ -314,16 +330,29 @@ impl Shell {
         }
         self.persist(cx);
     }
-    fn dispatch_app_call(&mut self, call: Call, window: &mut Window, cx: &mut Context<Self>) {
+    fn dispatch_app_call(
+        &mut self,
+        call: Call,
+        input: Option<Value>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if let Err(error) = self.authorize_app_call(&call, cx) {
             self.finish_app_call(call, Err(error), cx);
+            return;
+        }
+        if matches!(
+            call.action.as_str(),
+            molfar_core::secrets::request::REQUEST | molfar_core::secrets::request::LIST
+        ) {
+            self.dispatch_secret_call(call, cx);
             return;
         }
         let caller = self.sessions[&call.session].read(cx);
         let project = caller.summary.cwd.clone();
         let provider = caller.summary.provider.clone();
         let inherited = caller.settings.clone();
-        let input = call.input.clone();
+        let input = input.unwrap_or_else(|| call.input.clone());
         let action = call.action.clone();
         let result: Result<Value, String> = match action.as_str() {
             "sessions.list" => Ok(
@@ -640,6 +669,7 @@ fn mutating(action: &str) -> bool {
             | "notes.list"
             | "notes.read"
             | "worktrees.list"
+            | molfar_core::secrets::request::LIST
     ) && !app::board::READ_ACTIONS.contains(&action)
 }
 fn worktree_json(tree: &molfar_core::git::Worktree) -> Value {

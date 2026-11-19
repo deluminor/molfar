@@ -673,3 +673,5 @@ fn app_launch_submission_uses_the_saved_message_identity(cx: &mut TestAppContext
         .unwrap();
 }
 mod board;
+
+mod secrets;

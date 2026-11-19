@@ -15,6 +15,7 @@ const MAX_CUSTOM_ANSWER: usize = 10_000;
 pub(crate) enum Waiting {
     Approval,
     Question,
+    Secret,
 }
 
 impl Conversation {
@@ -252,6 +253,9 @@ impl Conversation {
     }
 
     pub(crate) fn mobile_waiting(&self, cx: &gpui::App) -> Option<Waiting> {
+        if self.secret_request(cx).is_some() {
+            return Some(Waiting::Secret);
+        }
         let inputs = self.pending_notification_inputs(cx);
         if inputs.iter().any(|input| input.kind == InputKind::Approval) {
             Some(Waiting::Approval)

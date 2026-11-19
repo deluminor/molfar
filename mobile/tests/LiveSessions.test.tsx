@@ -248,6 +248,12 @@ describe("working-to-finished pill handoff", () => {
     vi.useRealTimers();
   });
 
+  it("shows that a secret request needs desktop input", () => {
+    activity.working = [{ ...session("Waiting session"), waiting: "secret" }];
+    render();
+    expect(container.textContent).toContain("Answer on desktop");
+  });
+
   it("keeps the outgoing title and subtitle, then shows the finished card after it clears", () => {
     render();
     const done = completed(activity.working[0]);

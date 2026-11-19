@@ -46,6 +46,7 @@ mod rails;
 mod remote_projects;
 mod remote_sessions;
 mod search;
+mod secret_requests;
 mod session_filters;
 mod session_folders;
 mod session_groups;
@@ -636,6 +637,8 @@ pub(crate) struct Shell {
     external: external_mcp::External,
     app_results: HashMap<(i64, String), (String, Result<serde_json::Value, String>)>,
     app_pending: HashSet<(i64, String)>,
+    open_secret_requests: HashMap<i64, secret_requests::OpenRequest>,
+    secret_store: molfar_core::secrets::SecretStore,
     orchestrations: HashMap<i64, orchestration::Run>,
     /// Each lead's last orchestration, whose agents hang under it in the sidebar.
     orchestration_summaries: HashMap<i64, molfar_core::orchestration::Summary>,
@@ -1046,6 +1049,8 @@ impl Shell {
             external: Default::default(),
             app_results: HashMap::new(),
             app_pending: HashSet::new(),
+            open_secret_requests: HashMap::new(),
+            secret_store: molfar_core::secrets::SecretStore::default(),
             orchestrations: HashMap::new(),
             orchestration_summaries: sidebar_metadata.orchestrations,
             started_by: sidebar_metadata.started_by,

@@ -5,7 +5,8 @@ pub fn validate(action: &str, input: &Value) -> Result<(), String> {
         return crate::app_access::board::validate(action, input);
     }
     let fields=match action{
-        "models.list"|"soul.read"|"habits.list"=>"",
+        "models.list"|"soul.read"|"habits.list"|crate::secrets::request::LIST=>"",
+        crate::secrets::request::REQUEST=>"name reason",
         "sessions.list"|"folders.list"|"worktrees.list"=>"project",
         "sessions.read"=>"sessionId project before limit maxChars charOffset",
         "sessions.start"=>"prompt project harness model modelSettings effort runtimeMode title draft reveal workspaceMode worktreeBase worktreeCwd placement besideSessionId notifyOnComplete",
@@ -70,6 +71,9 @@ pub fn validate(action: &str, input: &Value) -> Result<(), String> {
         {
             return Err(format!("{key} must be text"));
         }
+    }
+    if action == crate::secrets::request::REQUEST {
+        crate::secrets::request::parse_request(input)?;
     }
     if input.get("modelSettings").is_some_and(|value| {
         value

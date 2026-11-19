@@ -19,6 +19,7 @@ mod notifications;
 mod remote;
 pub(crate) mod remote_plans;
 mod response_menu;
+pub(crate) mod secret_request;
 #[cfg(test)]
 mod submission_tests;
 mod title;
@@ -203,6 +204,8 @@ pub(crate) struct Conversation {
     questions:
         std::collections::VecDeque<(Entity<crate::questions::QuestionCard>, Vec<Subscription>)>,
     question_overlay: crate::questions::Overlay,
+    secret_card: Option<Entity<secret_request::SecretRequestCard>>,
+    secret_notices: Vec<String>,
     controls: Option<std::sync::mpsc::Sender<Control>>,
     branch: Option<String>,
     git: Option<molfar_core::git::Snapshot>,
@@ -658,6 +661,8 @@ impl Conversation {
             approvals: Default::default(),
             approval_ui: Default::default(),
             questions: Default::default(),
+            secret_card: None,
+            secret_notices: Vec::new(),
             question_overlay: Default::default(),
             controls: None,
             branch: git.as_ref().and_then(|s| s.current.clone()),
@@ -731,6 +736,7 @@ impl Conversation {
             return;
         }
         self.loading = true;
+        self.refresh_secret_notices(cx);
         self.refresh_catalog(cx);
         let store = self.store.clone();
         let id = self.summary.id;
@@ -1498,6 +1504,7 @@ impl Conversation {
                                 this.follow_ups.state.paused = true;
                                 this.save_follow_ups(cx);
                             }
+                            this.cancel_secret_card(cx);
                             this.approvals.clear();
                             this.questions.clear();
                             this.controls = None;
@@ -2730,12 +2737,15 @@ impl Conversation {
         }
         if self.busy {
             self.stop(cx);
+        } else {
+            self.cancel_secret_card(cx);
         }
     }
     fn stop(&mut self, cx: &mut Context<Self>) {
         if !self.busy || self.stopping {
             return;
         }
+        self.cancel_secret_card(cx);
         self.stopping = true;
         self.busy = false;
         self.follow_ups.resuming = false;
@@ -3918,6 +3928,8 @@ impl Render for Conversation {
                             .flex_col()
                             .px(px(10.))
                             .pb(px(6.))
+                            .children(self.render_secret_notices())
+                            .children(self.secret_card.clone())
                             .child({
                                 let composer = self
                                     .composer_motion

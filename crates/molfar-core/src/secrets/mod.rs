@@ -6,6 +6,7 @@ mod backend;
 mod projects;
 pub mod redact;
 mod registry;
+pub mod request;
 mod store;
 mod types;
 

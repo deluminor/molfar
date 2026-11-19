@@ -467,6 +467,7 @@ function MiniPill({
 }
 
 function statusLabel(session: SessionSummary) {
+  if (session.waiting === "secret") return "Answer on desktop";
   if (session.waiting === "approval") return "Needs your approval";
   if (session.waiting === "question") return "Has a question for you";
   return "Working";

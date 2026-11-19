@@ -102,3 +102,12 @@ mod tests {
         assert!(shown["attachments"][0].get("data").is_none());
     }
 }
+
+pub(super) fn secret_request(row: molfar_core::secrets::request::SecretRequest) -> Value {
+    use molfar_core::secrets::request::SECRET_REQUEST_ROLE;
+    json!({
+        "id": format!("{SECRET_REQUEST_ROLE}-{}", row.request_id),
+        "role": "system",
+        "text": row.notice(),
+    })
+}
