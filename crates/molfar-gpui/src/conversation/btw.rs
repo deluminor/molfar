@@ -712,8 +712,11 @@ impl Btw {
                     settings.account.root = store.data_dir().map(std::path::Path::to_path_buf);
                 }
                 let binary = provider::resolve(provider).ok_or_else(|| provider.unavailable_hint())?;
-                provider::run(Request { kind:provider, binary, cwd:cwd.into(), prompt, provider_id:None, model, settings }, cancel.clone(), |events| {
-                    for event in events {
+                let mut secrets = crate::runtime::secret_output::SecretOutput::open_path(
+                    &store, &cwd, &molfar_core::secrets::SecretStore::default()
+                )?;
+                let mut result = provider::run(Request { kind:provider, binary, cwd:cwd.into(), prompt, provider_id:None, model, settings }, cancel.clone(), |events| {
+                    for event in secrets.batch(events) {
                         match event {
                             Event::Text(text) => tx.send_blocking(Stream::Text(text)).map_err(|_| "Side question closed".to_owned())?,
                             Event::Tool(_) | Event::Approval(_) | Event::Question(_) => return Err("The side-question provider attempted to use tools or request input.".into()),
@@ -721,7 +724,16 @@ impl Btw {
                         }
                     }
                     Ok(())
-                })
+                });
+                for event in secrets.flush() {
+                    if let Event::Text(text) = event {
+                        tx.send_blocking(Stream::Text(text)).map_err(|_| "Side question closed".to_owned())?;
+                    }
+                }
+                if let Err(error) = &mut result {
+                    secrets.scrub(error);
+                }
+                result
             })();
             let _ = tx.send_blocking(Stream::Finished(result));
         }).detach();

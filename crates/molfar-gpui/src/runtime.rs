@@ -18,6 +18,9 @@ mod handoff;
 mod handoff_tests;
 mod persistence;
 pub(crate) mod remote;
+pub(crate) mod secret_output;
+#[cfg(all(test, unix))]
+mod secret_output_tests;
 #[cfg(test)]
 pub(crate) mod test_provider;
 mod visual_discovery;
@@ -29,6 +32,7 @@ struct TurnInput {
     summary: Session,
     prompt: String,
     settings: Settings,
+    secrets: molfar_core::secrets::SecretStore,
 }
 pub(crate) struct Update {
     pub(crate) worktree_cwd: Option<String>,
@@ -99,6 +103,7 @@ pub(crate) fn run_turn(
     if let Some(binary) = test_provider::registered(&store, summary.id) {
         run_turn_using(
             TurnInput {
+                secrets: Default::default(),
                 summary,
                 prompt,
                 settings,
@@ -113,6 +118,7 @@ pub(crate) fn run_turn(
     }
     run_turn_using(
         TurnInput {
+            secrets: Default::default(),
             summary,
             prompt,
             settings,
@@ -137,6 +143,7 @@ fn run_turn_using(
         summary,
         prompt,
         mut settings,
+        secrets,
     } = input;
     if settings.account.root.is_none() && settings.account.id != molfar_core::accounts::DEFAULT {
         settings.account.root = locked(&store)
@@ -169,6 +176,7 @@ fn run_turn_using(
         .and_then(|s| s.context_usage(summary.id).ok().flatten())
         .unwrap_or_default();
     let mut usage_limit = None;
+    let mut secret_tail_start = None;
     let result = (|| {
         if let Some(reason) = locked(&store)?.edit_recovery_reason(summary.id)? {
             return Err(reason);
@@ -405,7 +413,7 @@ fn run_turn_using(
                 },
             )?;
             let root = locked(&store)?.data_dir().map(std::path::Path::to_path_buf);
-            let prepared = handoff::prepare(
+            let mut prepared = handoff::prepare(
                 summary.id,
                 &source,
                 settings.worktree_cwd.as_deref().unwrap_or(&summary.cwd),
@@ -414,6 +422,8 @@ fn run_turn_using(
                 root,
                 cancel.clone(),
             );
+            secret_output::SecretOutput::open_path(&store, &summary.cwd, &secrets)?
+                .scrub(&mut prepared.brief);
             transfer.state = if cancel.load(Ordering::Relaxed) {
                 molfar_core::tool::ToolState::Cancelled
             } else {
@@ -595,7 +605,7 @@ fn run_turn_using(
         if !raw_native_command && settings.operator_enabled {
             let cli = std::env::current_exe().map_err(|e| e.to_string())?;
             prompt = format!(
-                "You have MOLFAR app access for this project. Use the CLI: {} app ACTION --json JSON. Supported actions: models.list {{}}, sessions.list {{}}, sessions.read {{sessionId}}, sessions.start {{prompt,harness?,model?,title?,draft?,reveal?}}, sessions.send/draft {{sessionId,prompt}}, sessions.stop {{sessionId}}, folders.list {{}}, folders.move {{sessionId,folderId?,newFolderName?}}, notes.list {{}}, notes.read {{id}}, notes.write {{id?,title,body}}, worktrees.list {{}}. Scope is this thread's project. App credentials are in the environment; never print them. Respect the user’s request and selected access policy.\n\n{prompt}",
+                "You have MOLFAR app access for this project. Use the CLI: {} app ACTION --json JSON. Supported actions: secrets.request {{name,reason}}, secrets.list {{}}, models.list {{}}, sessions.list {{}}, sessions.read {{sessionId}}, sessions.start {{prompt,harness?,model?,title?,draft?,reveal?}}, sessions.send/draft {{sessionId,prompt}}, sessions.stop {{sessionId}}, folders.list {{}}, folders.move {{sessionId,folderId?,newFolderName?}}, notes.list {{}}, notes.read {{id}}, notes.write {{id?,title,body}}, worktrees.list {{}}. Scope is this thread's project. App credentials are in the environment; never print them. Respect the user’s request and selected access policy.\n\n{prompt}",
                 shlex_quote(&cli.to_string_lossy())
             );
         }
@@ -637,16 +647,19 @@ fn run_turn_using(
             model: settings.model.clone(),
             settings,
         };
+        let mut secret_output =
+            secret_output::SecretOutput::open_path(&store, &summary.cwd, &secrets)?;
         let mut tool_rows = std::collections::HashMap::new();
         // The running-work list attributes the provider and its tools to this session.
-        let result = molfar_core::process::owned_by(summary.id, || {
+        let mut result = molfar_core::process::owned_by(summary.id, || {
             provider::run_with_controls(request, cancel.clone(), Some(controls), |events| {
                 // Cancellation freezes the transcript, even while the native
                 // provider drains its interrupt acknowledgement.
                 if cancel.load(Ordering::Relaxed) {
                     return Err("Stopped".into());
                 }
-                let publications = visual_bridge
+                let events = secret_output.batch(events);
+                let mut publications = visual_bridge
                     .as_ref()
                     .map(|bridge| bridge.drain())
                     .unwrap_or_default();
@@ -903,7 +916,9 @@ fn run_turn_using(
                         }
                     }
                 }
-                for publication in &publications {
+                for publication in &mut publications {
+                    secret_output.scrub(&mut publication.document.source);
+                    secret_output.scrub(&mut publication.document.title);
                     let document =
                         serde_json::to_string(&publication.document).map_err(|e| e.to_string())?;
                     let at = transcript.begin("visual");
@@ -960,6 +975,13 @@ fn run_turn_using(
                 publication_result
             })
         });
+        if let Some(changed) = secret_output.finish(&mut transcript) {
+            pending.changed(changed);
+            secret_tail_start = Some(changed);
+        }
+        if let Err(error) = &mut result {
+            secret_output.scrub(error);
+        }
         if result.is_ok()
             && let Some((fingerprint, rules)) = &familiar_fingerprint
         {
@@ -1011,7 +1033,7 @@ fn run_turn_using(
     let mut final_start = if result.is_err() {
         turn_start
     } else {
-        transcript.rows.len()
+        secret_tail_start.unwrap_or(transcript.rows.len())
     };
     for (ix, row) in transcript.rows.iter_mut().enumerate().skip(turn_start) {
         if row.role != "tool" {
