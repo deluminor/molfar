@@ -7,7 +7,7 @@ fn delete_project_removes_its_secrets_and_preserves_global_secrets(cx: &mut Test
     let (window, _, id) = crate::shell::tests::window(cx);
     window
         .update(cx, |shell, window, cx| {
-            let project = shell.session_metadata(id, cx).summary.cwd;
+            let project = shell.session_metadata(id, cx).summary.cwd.clone();
             let store = SecretStore::in_memory();
             let db = locked(&shell.store).unwrap();
             let scope = store

@@ -149,7 +149,11 @@ impl Shell {
         self.navigation_revision += 1;
         let context = self.settings_context(cx);
         let prefs = self.workspace.preferences.clone();
-        let view = cx.new(|cx| SettingsView::new(section, prefs, context, cx));
+        let view = cx.new(|cx| {
+            let mut view = SettingsView::new(section, prefs, context, cx);
+            view.attach_secret_store(self.store.clone(), self.secret_store.clone(), cx);
+            view
+        });
         self.settings_events = Some(cx.subscribe_in(
             &view,
             window,
@@ -752,6 +756,7 @@ mod tests {
         for (section, selector) in Section::ALL.into_iter().zip([
             "settings-nav-general",
             "settings-nav-connections",
+            "settings-nav-secrets",
             "settings-nav-appearance",
             "settings-nav-keybindings",
             "settings-nav-chat",

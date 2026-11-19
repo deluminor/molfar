@@ -36,22 +36,22 @@ impl Shell {
         let store = self.secret_store.clone();
         let work = cx.background_executor().spawn(async move {
             let db = locked(&database)?;
-            if let Some(scope) = secret_scope(&store, &db, &path)? {
-                if let Err(error) = store.delete_scope(&db, &scope) {
-                    if let Ok(entries) = store.list(&db) {
-                        for entry in entries
-                            .into_iter()
-                            .filter(|entry| entry.scope == scope && entry.delete_failed)
-                        {
-                            log::warn!(
-                                "Secret deletion failed for {} in {}",
-                                entry.name.as_str(),
-                                scope
-                            );
-                        }
+            if let Some(scope) = secret_scope(&store, &db, &path)?
+                && let Err(error) = store.delete_scope(&db, &scope)
+            {
+                if let Ok(entries) = store.list(&db) {
+                    for entry in entries
+                        .into_iter()
+                        .filter(|entry| entry.scope == scope && entry.delete_failed)
+                    {
+                        log::warn!(
+                            "Secret deletion failed for {} in {}",
+                            entry.name.as_str(),
+                            scope
+                        );
                     }
-                    return Err(error.to_string());
                 }
+                return Err(error.to_string());
             }
             Ok::<_, String>(())
         });
@@ -60,6 +60,9 @@ impl Shell {
             let _ = this.update(cx, |this, cx| {
                 if let Err(error) = result {
                     this.error = Some(format!("Project secrets: {error} Retry in Settings."));
+                }
+                if let Some(settings) = &this.settings {
+                    settings.update(cx, |settings, cx| settings.refresh_secrets(cx));
                 }
                 this.sync_settings(cx);
                 cx.notify();

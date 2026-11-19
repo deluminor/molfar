@@ -305,6 +305,8 @@ pub(crate) struct SettingsView {
     accent_custom_open: bool,
     accent_anchor: AnchorSlot,
     mobile: pages::MobileState,
+    secret_page: Option<Entity<pages::secrets::SecretsPage>>,
+    secret_database: Option<(crate::runtime::Database, molfar_core::secrets::SecretStore)>,
     _subscriptions: Vec<Subscription>,
 }
 impl EventEmitter<SettingsEvent> for SettingsView {}
@@ -456,6 +458,8 @@ impl SettingsView {
             accent_custom_open: false,
             accent_anchor: AnchorSlot::default(),
             mobile: pages::MobileState::default(),
+            secret_page: None,
+            secret_database: None,
             _subscriptions: subscriptions,
         };
         this.watch_mobile(cx);
@@ -496,6 +500,38 @@ impl SettingsView {
         }));
         cx.notify();
     }
+    pub(crate) fn attach_secret_store(
+        &mut self,
+        database: crate::runtime::Database,
+        store: molfar_core::secrets::SecretStore,
+        cx: &mut Context<Self>,
+    ) {
+        self.secret_database = Some((database, store));
+        self.update_secret_page(cx);
+    }
+
+    pub(crate) fn refresh_secrets(&self, cx: &mut Context<Self>) {
+        if let Some(page) = &self.secret_page {
+            page.update(cx, |page, cx| page.reload(cx));
+        }
+    }
+
+    fn update_secret_page(&mut self, cx: &mut Context<Self>) {
+        if self.section != Section::Secrets {
+            self.secret_page = None;
+        } else if let Some((database, store)) = self.secret_database.clone() {
+            let workspace = self.ctx.projects.clone();
+            if let Some(page) = &self.secret_page {
+                page.update(cx, |page, cx| page.refresh(workspace, cx));
+            } else {
+                self.secret_page =
+                    Some(cx.new(|cx| {
+                        pages::secrets::SecretsPage::new(database, store, workspace, cx)
+                    }));
+            }
+        }
+    }
+
     pub(crate) fn set_context(&mut self, ctx: SettingsContext, cx: &mut Context<Self>) {
         if self.ctx != ctx {
             let remote_changed = match (&self.ctx.remote, &ctx.remote) {
@@ -504,6 +540,7 @@ impl SettingsView {
                 _ => true,
             };
             self.ctx = ctx;
+            self.update_secret_page(cx);
             self.mobile_context_changed(cx);
             if remote_changed {
                 self.leave_connections(cx);
@@ -530,6 +567,7 @@ impl SettingsView {
             self.leave_mobile(cx);
             self.leave_connections(cx);
             self.section = section;
+            self.update_secret_page(cx);
             self.watch_mobile(cx);
             self.watch_connections(cx);
             if section == Section::Mcp {

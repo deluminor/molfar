@@ -79,6 +79,11 @@ impl Shell {
         let Some(open) = self.open_secret_requests.remove(&id) else {
             return;
         };
+        if result == Ok(Status::Saved)
+            && let Some(settings) = &self.settings
+        {
+            settings.update(cx, |settings, cx| settings.refresh_secrets(cx));
+        }
         let result = result.and_then(|status| {
             if let Some(card) = open.card {
                 let mut request = card.read(cx).request.clone();
