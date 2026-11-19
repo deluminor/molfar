@@ -89,6 +89,7 @@ fn concurrent_create_keeps_one_entry() {
 struct FailingBackend {
     memory: Arc<MemoryBackend>,
     refuse_delete: Arc<AtomicBool>,
+    refuse_read: Arc<AtomicBool>,
     last_account: Arc<std::sync::Mutex<String>>,
 }
 
@@ -103,6 +104,9 @@ impl Backend for FailingBackend {
     }
 
     fn get(&self, account: &str) -> Result<SecretValue, Error> {
+        if self.refuse_read.load(Ordering::Relaxed) {
+            return Err(Error::Unavailable);
+        }
         self.memory.get(account)
     }
 
@@ -167,4 +171,35 @@ fn external_catalog_has_no_secret_tools() {
     assert!(crate::external_mcp::tools::catalog()
         .iter()
         .all(|tool| !tool.name.starts_with("secrets")));
+}
+
+#[test]
+fn stale_keyring_entry_does_not_disable_redaction_of_other_values() {
+    let db = Store::open(Path::new(":memory:")).unwrap();
+    let backend = FailingBackend::default();
+    let store = SecretStore::new(backend.clone());
+    for (name, value) in [("STALE", "stale-value"), ("PRESENT", "present-value")] {
+        store
+            .create(
+                &db,
+                Scope::Global,
+                SecretName::parse(name).unwrap(),
+                SecretValue::from_text(value.into()).unwrap(),
+            )
+            .unwrap();
+    }
+
+    let stale = store.list(&db).unwrap().remove(0);
+    backend.delete(&stale.account()).unwrap();
+    let reopened = SecretStore::new(backend.clone());
+    let redactor = reopened.redactor(&db, None).unwrap();
+    assert_eq!(redactor.text("present-value"), "[secret:PRESENT]");
+    assert_eq!(redactor.text("stale-value"), "stale-value");
+
+    backend.refuse_read.store(true, Ordering::Relaxed);
+    let reopened = SecretStore::new(backend);
+    assert!(matches!(
+        reopened.redactor(&db, None),
+        Err(Error::Unavailable)
+    ));
 }

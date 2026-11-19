@@ -52,7 +52,7 @@ impl SecretStore {
             {
                 match self.backend.get(&entry.account()) {
                     Ok(value) => Registered::add(entries, entry, value),
-                    Err(Error::Missing) => return Err(Error::Unavailable),
+                    Err(Error::Missing) => continue,
                     Err(error) => return Err(error),
                 }
             }
