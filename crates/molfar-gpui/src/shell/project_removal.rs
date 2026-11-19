@@ -3,6 +3,9 @@
 use super::*;
 use molfar_core::external_editor::{self, ExternalEditor};
 
+mod secrets;
+use secrets::project_secret_count;
+
 impl Shell {
     /// Finds installed editors once, off the main thread; the first lookup
     /// may read the login shell's PATH.
@@ -85,15 +88,45 @@ impl Shell {
     pub(super) fn confirm_delete_project(
         &mut self,
         path: String,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let count = self.project_sessions(&path).len();
+        let database = self.store.clone();
+        let project = path.clone();
+        let store = self.secret_store.clone();
+        let work = cx.background_executor().spawn(async move {
+            let db = locked(&database)?;
+            project_secret_count(&store, &db, &project)
+        });
+        cx.spawn(async move |this, cx| {
+            let secrets = work.await;
+            let _ = this.update_in(cx, |this, window, cx| match secrets {
+                Ok(secrets) => this.prompt_delete_project(path, count, secrets, window, cx),
+                Err(error) => {
+                    this.error = Some(error);
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
+    }
+
+    fn prompt_delete_project(
+        &mut self,
+        path: String,
+        count: usize,
+        secrets: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let detail = match count {
             0 => String::new(),
             1 => "Its 1 saved conversation will be deleted. ".into(),
             n => format!("Its {n} saved conversations will be deleted. "),
-        } + "The folder on disk stays put, and opening it again brings the project back empty.";
+        } + &format!(
+            "Its {secrets} saved secrets will be deleted. The folder on disk stays put, and opening it again brings the project back empty."
+        );
         let prompt = window.prompt(
             gpui::PromptLevel::Warning,
             &format!("Delete “{}”?", self.project_label(&path)),
@@ -124,6 +157,7 @@ impl Shell {
         for id in sessions {
             self.delete_session(id, window, cx);
         }
+        self.delete_project_secrets(path, cx);
         cx.notify();
     }
     /// Asks before permanently deleting the conversation in a tab.
@@ -185,3 +219,6 @@ impl Shell {
         }
     }
 }
+
+#[cfg(test)]
+mod secret_tests;
