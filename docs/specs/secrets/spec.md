@@ -154,7 +154,7 @@ No action, CLI command, MCP tool or Companion route returns a value. There are n
 - **Save:**
   - Disabled until the value is within the length bounds.
   - Store errors show inline without closing the card.
-  - On Save, the `Input` value is taken out as a `SecretString`. The buffer is then cleared, including selection, marked text and any undo/redo stack, through a new `Input::take_secret`. Then the card is dropped.
+  - Save reads the masked value as a `SecretString` and locks editing during the write. A successful write clears the buffer, selection, marked text, and edit history. On failure, the card keeps the masked value ready for retry.
 - **Cancel or Esc:** returns `cancelled`.
 
 ### 5. Central redactor
@@ -187,7 +187,7 @@ No action, CLI command, MCP tool or Companion route returns a value. There are n
 - **Replace value:** masked value, then a confirm dialog naming the secret and scope. The old value stays redacted until restart.
 - **Rename:** validated, unique per scope, index only. Redactions show the new name from then on.
 - **Delete:** confirm dialog naming the secret and scope. Missing-project rows can be deleted the same way.
-- There is no reveal, copy or export. Masked inputs are cleared with `take_secret` after submit or cancel.
+- There is no reveal, copy or export. Successful writes and form cancellation clear the masked input. A failed write or declined Replace confirmation keeps the draft.
 
 ### 7. Never
 
@@ -245,5 +245,6 @@ A value never appears in:
 - The native shell provides masked Operator requests and a Secrets page. Companion and mobile indicate when a request needs desktop input.
 - Secret-request rows use session-scoped native settings. They retain their role and status independently of the provider transcript's positional writes.
 - Linux writes directly to the default Secret Service collection. Project scope uses the repository's existing linked-worktree resolution.
+- Redactor initialization skips missing keyring items and keeps their metadata available for cleanup in Settings. Backend failures still stop initialization.
 - Redaction tests exercise a mid-turn create and replace, split assistant output, shell output, transcript storage, session reads, and Board artifact extraction with synthetic values.
 - The `secrets-backends` CI matrix covers the 1024-byte boundary on each supported OS. Linux also checks a missing Secret Service and readback in a fresh keyutils session. Verify live runner results at Final review.
