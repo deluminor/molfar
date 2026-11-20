@@ -283,6 +283,8 @@ accepts option IDs only, so the desktop declines a Cursor secret prompt.
 Codex async and remote secret questions are also declined.
 [Cursor ACP question contract](https://prod.cursor.com/docs/cli/acp)
 
-The isolated app runner is covered by the Secrets backend matrix on
-macOS, Windows and Linux. A local fixture checks masked answers and
-bound values across streamed output, tool output and the session database.
+A local fixture checks masked answers and bound values across streamed
+output, tool output and the session database. At final review, run the
+`Secrets backend` jobs in the CI workflow for this commit after publication.
+Confirm isolated process execution and real keyring storage on macOS,
+Windows and Linux.
