@@ -18,6 +18,7 @@ mod handoff;
 mod handoff_tests;
 mod persistence;
 pub(crate) mod remote;
+pub(crate) mod secret_bindings;
 pub(crate) mod secret_output;
 #[cfg(all(test, unix))]
 mod secret_output_tests;
@@ -634,6 +635,13 @@ fn run_turn_using(
                 prompt = discovery.prepend(prompt);
             }
         }
+        secret_bindings::attach(
+            &store,
+            &secrets,
+            &summary.cwd,
+            &mut settings,
+            raw_native_command,
+        )?;
         let request = Request {
             kind,
             binary,

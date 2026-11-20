@@ -236,7 +236,7 @@ impl Conversation {
         self.attach_account(cx);
         let mut settings = self.settings.clone();
         settings.environment.extend(self.app_environment.clone());
-        let request = provider::Request {
+        let mut request = provider::Request {
             kind,
             binary,
             cwd: PathBuf::from(self.execution_cwd()),
@@ -255,7 +255,9 @@ impl Conversation {
         self.status = "Rewinding last turn…".into();
         let store = self.store.clone();
         let id = self.summary.id;
+        let project = self.summary.cwd.clone();
         let work = cx.background_executor().spawn(async move {
+            crate::runtime::secret_bindings::attach(&store, &Default::default(), &project, &mut request.settings, false)?;
             molfar_core::composer::validate_attachments(&checked_attachments)?;
             locked(&store)?.validate_edit_last_turn(id, &edit)?;
             let binding = match provider::rewind_last_turn(request, edit.provider_turn_id.as_deref()) {
