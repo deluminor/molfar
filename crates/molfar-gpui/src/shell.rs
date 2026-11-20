@@ -1,6 +1,7 @@
 mod accounts;
 mod actions;
 mod app_commands;
+pub(crate) mod app_run;
 mod app_views;
 mod automation_runs;
 mod board_runtime;
@@ -637,6 +638,7 @@ pub(crate) struct Shell {
     external: external_mcp::External,
     app_results: HashMap<(i64, String), (String, Result<serde_json::Value, String>)>,
     app_pending: HashSet<(i64, String)>,
+    app_runs: app_run::Runs,
     open_secret_requests: HashMap<i64, secret_requests::OpenRequest>,
     secret_store: molfar_core::secrets::SecretStore,
     orchestrations: HashMap<i64, orchestration::Run>,
@@ -1049,6 +1051,7 @@ impl Shell {
             external: Default::default(),
             app_results: HashMap::new(),
             app_pending: HashSet::new(),
+            app_runs: app_run::Runs::default(),
             open_secret_requests: HashMap::new(),
             secret_store: molfar_core::secrets::SecretStore::default(),
             orchestrations: HashMap::new(),

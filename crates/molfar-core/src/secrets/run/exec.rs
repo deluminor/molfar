@@ -14,15 +14,29 @@ use super::{Outcome, Request, SecretName, OUTPUT_LIMIT};
 use crate::secrets::{redact::StreamRedactor, Redactor, SecretValue};
 
 #[derive(Clone, Default)]
-pub struct Cancellation(Arc<AtomicBool>);
+pub struct Cancellation {
+    stopped: Arc<AtomicBool>,
+    parent: Option<Arc<AtomicBool>>,
+}
 
 impl Cancellation {
     pub fn cancel(&self) {
-        self.0.store(true, Ordering::Release);
+        self.stopped.store(true, Ordering::Release);
+    }
+
+    pub fn child(&self) -> Self {
+        Self {
+            parent: Some(self.stopped.clone()),
+            ..Self::default()
+        }
     }
 
     fn cancelled(&self) -> bool {
-        self.0.load(Ordering::Acquire)
+        self.stopped.load(Ordering::Acquire)
+            || self
+                .parent
+                .as_ref()
+                .is_some_and(|parent| parent.load(Ordering::Acquire))
     }
 }
 

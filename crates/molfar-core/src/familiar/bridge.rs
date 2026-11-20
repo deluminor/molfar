@@ -14,10 +14,13 @@ use std::{
     time::Duration,
 };
 
+mod run;
+
 pub const HELP: &str = r#"MOLFAR app access
 Usage: molfar-native app ACTION --json '{...}' [--request-id ID]
 Pass --input FILE or --input - to read a JSON object instead.
 Actions:
+molfar-native app run --secret NAME[=ENV] [--cwd DIR] [--timeout SECS] -- CMD [ARGS...]
 models.list {}
 sessions.list {project?}
 sessions.read {sessionId,project?,before?,limit?,maxChars?,charOffset?}
@@ -180,7 +183,7 @@ fn serve(
         Ok(Ok(value)) => json!({"ok":true,"result":value,"requestId":request_id}),
         Ok(Err(error)) => json!({"ok":false,"error":error,"requestId":request_id}),
         Err(_) => {
-            json!({"ok":false,"error":"App request timed out; retry using the same request ID","requestId":request_id})
+            json!({"ok":false,"error":run::TIMEOUT,"requestId":request_id})
         }
     };
     writeln!(stream, "{response}").map_err(|e| e.to_string())
@@ -192,6 +195,9 @@ pub fn client(args: &[String]) -> Result<Value, String> {
         .is_none_or(|s| matches!(s.as_str(), "help" | "--help" | "-h"))
     {
         return Ok(json!({"help":HELP}));
+    }
+    if args[0] == crate::secrets::run::ACTION {
+        return run::client(&args[1..]);
     }
     let action = args[0].clone();
     let mut input = json!({});

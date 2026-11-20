@@ -84,6 +84,7 @@ impl Shell {
                     match &result {
                         Ok(()) => {
                             if archived {
+                                this.app_runs.stop(id);
                                 this.cancel_secret_request(id, cx);
                             }
                             if let Some(summary) = this.session_summaries.get_mut(&id) {

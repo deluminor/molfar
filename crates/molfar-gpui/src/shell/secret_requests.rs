@@ -202,7 +202,7 @@ impl Shell {
     }
 }
 
-fn own_scope(
+pub(super) fn own_scope(
     store: &SecretStore,
     db: &molfar_core::store::Store,
     path: &str,

@@ -60,7 +60,9 @@ fn rotate(path: &PathBuf) {
 
 fn wanted(metadata: &log::Metadata) -> bool {
     metadata.level() <= log::Level::Warn
-        || (metadata.level() <= log::Level::Info && metadata.target().starts_with("gpui_macos"))
+        || (metadata.level() <= log::Level::Info
+            && (metadata.target().starts_with("gpui_macos")
+                || metadata.target() == "molfar::app_run"))
 }
 
 impl log::Log for FileLog {

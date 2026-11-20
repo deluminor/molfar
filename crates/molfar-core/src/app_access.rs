@@ -17,6 +17,9 @@ use std::collections::HashMap;
 mod tests;
 
 pub fn validate_operator(action: &str, input: &Value) -> Result<(), String> {
+    if action == crate::secrets::run::ACTION {
+        return crate::secrets::run::Request::parse(input).map(|_| ());
+    }
     if !matches!(
         action,
         "models.list"

@@ -21,6 +21,12 @@ enum Effect {
 }
 impl Shell {
     pub(super) fn init_app_bridge(&mut self, cx: &mut Context<Self>) {
+        cx.on_app_quit(|this, cx| {
+            this.app_runs.stop_all();
+            cx.background_executor()
+                .timer(std::time::Duration::from_millis(750))
+        })
+        .detach();
         if cx.is_test() {
             return;
         }
@@ -50,6 +56,15 @@ impl Shell {
         result: Result<Value, String>,
         cx: &mut Context<Self>,
     ) {
+        self.finish_app_call_with_receipt(call, result.clone(), result, cx);
+    }
+    pub(super) fn finish_app_call_with_receipt(
+        &mut self,
+        call: Call,
+        result: Result<Value, String>,
+        receipt: Result<Value, String>,
+        cx: &mut Context<Self>,
+    ) {
         if !mutating(&call.action) {
             self.app_pending
                 .remove(&(call.session, call.request_id.clone()));
@@ -64,11 +79,11 @@ impl Shell {
         }
         self.app_results.insert(
             (call.session, call.request_id.clone()),
-            (fingerprint.clone(), result.clone()),
+            (fingerprint.clone(), receipt.clone()),
         );
         let store = self.store.clone();
         let key = app::receipt_key(call.session, &call.request_id);
-        let receipt = json!([fingerprint, result]).to_string();
+        let receipt = json!([fingerprint, receipt]).to_string();
         // A successful reply is sent only after its receipt reaches durable storage.
         let saved = cx
             .background_executor()
@@ -114,6 +129,7 @@ impl Shell {
                             this.groups.insert(project, groups);
                         }
                         Effect::Archive(id) => {
+                            this.app_runs.stop(id);
                             this.cancel_secret_request(id, cx);
                             if let Some(summary) = this.session_summaries.get_mut(&id) {
                                 summary.archived = true;
@@ -201,7 +217,7 @@ impl Shell {
             });
             return;
         }
-        if self.reattach_secret_request(&call) {
+        if self.app_runs.reattach(&call) || self.reattach_secret_request(&call) {
             return;
         }
         if !self.app_pending.insert(key) {
@@ -218,8 +234,11 @@ impl Shell {
         let store = self.store.clone();
         let secrets = self.secret_store.clone();
         let project = self.sessions[&call.session].read(cx).summary.cwd.clone();
-        let mut input =
-            (call.action != molfar_core::secrets::request::REQUEST).then(|| call.input.clone());
+        let mut input = (!matches!(
+            call.action.as_str(),
+            molfar_core::secrets::request::REQUEST | molfar_core::secrets::run::ACTION
+        ))
+        .then(|| call.input.clone());
         let work = cx.background_executor().spawn(async move {
             let db = locked(&store)?;
             let receipt = db
@@ -339,6 +358,10 @@ impl Shell {
     ) {
         if let Err(error) = self.authorize_app_call(&call, cx) {
             self.finish_app_call(call, Err(error), cx);
+            return;
+        }
+        if call.action == molfar_core::secrets::run::ACTION {
+            self.dispatch_run(call, cx);
             return;
         }
         if matches!(

@@ -245,6 +245,7 @@ pub(crate) struct Conversation {
     ink: Option<Entity<crate::ink_field::InkField>>,
     runner: Option<Entity<crate::composer_runner::Runner>>,
     cancel: Arc<AtomicBool>,
+    pub(crate) session_runs: crate::shell::app_run::SessionRuns,
     title_cancel: Option<Arc<AtomicBool>>,
     worktree_name_cancel: Option<Arc<AtomicBool>>,
     _submission: Subscription,
@@ -696,6 +697,7 @@ impl Conversation {
             ink: None,
             runner: None,
             cancel: Arc::new(AtomicBool::new(false)),
+            session_runs: Default::default(),
             title_cancel: None,
             worktree_name_cancel: None,
             _submission: submission,
@@ -2738,6 +2740,7 @@ impl Conversation {
         if self.busy {
             self.stop(cx);
         } else {
+            self.session_runs.stop();
             self.cancel_secret_card(cx);
         }
     }
@@ -2745,6 +2748,7 @@ impl Conversation {
         if !self.busy || self.stopping {
             return;
         }
+        self.session_runs.stop();
         self.cancel_secret_card(cx);
         self.stopping = true;
         self.busy = false;

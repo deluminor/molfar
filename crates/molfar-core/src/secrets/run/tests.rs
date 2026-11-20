@@ -1,6 +1,7 @@
 use super::*;
 use crate::secrets::{SecretName, SecretValue};
 use serde_json::json;
+use std::path::Path;
 
 #[test]
 fn run_cwd_excludes_parent_and_symlink() {
