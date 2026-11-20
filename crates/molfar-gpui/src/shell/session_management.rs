@@ -83,6 +83,9 @@ impl Shell {
                     this.archiving.remove(&id);
                     match &result {
                         Ok(()) => {
+                            if archived {
+                                this.cancel_secret_request(id, cx);
+                            }
                             if let Some(summary) = this.session_summaries.get_mut(&id) {
                                 summary.archived = archived;
                             }

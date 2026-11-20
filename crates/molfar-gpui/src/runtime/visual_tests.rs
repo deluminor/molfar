@@ -95,6 +95,7 @@ for line in sys.stdin:
     let worker = std::thread::spawn(move || {
         run_turn_using(
             TurnInput {
+                secrets: Default::default(),
                 summary,
                 prompt,
                 settings: Settings {

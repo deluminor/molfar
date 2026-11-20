@@ -188,9 +188,11 @@ export function SessionNotifications() {
           body:
             category === "agentFinished"
               ? "Finished"
-              : session.waiting === "approval"
-                ? "Needs your approval"
-                : "Has a question for you",
+              : session.waiting === "secret"
+                ? "Answer on desktop"
+                : session.waiting === "approval"
+                  ? "Needs your approval"
+                  : "Has a question for you",
           data: {
             projectId: session.projectId,
             sessionId: session.id,

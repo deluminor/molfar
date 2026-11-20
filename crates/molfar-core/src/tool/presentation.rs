@@ -395,6 +395,8 @@ pub fn app_activity(action: &str, running: bool) -> (&'static str, &'static str)
         "memory.read" | "memory.search" => ("Checking", "Checked", "memory"),
         "sessions.start" => ("Starting", "Started", "a session"),
         "sessions.send" | "sessions.draft" => ("Messaging", "Messaged", "a session"),
+        crate::secrets::request::REQUEST => ("Requesting", "Requested", "secret"),
+        crate::secrets::request::LIST => ("Listing", "Listed", "secrets"),
         "sessions.list" | "sessions.read" => ("Checking", "Checked", "sessions"),
         "sessions.stop" | "sessions.archive" | "sessions.delete" => {
             ("Updating", "Updated", "a session")

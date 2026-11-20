@@ -13,6 +13,7 @@ mod keybindings;
 mod mcp;
 mod mobile;
 mod providers;
+pub(super) mod secrets;
 mod skills;
 mod worktrees;
 
@@ -23,7 +24,7 @@ pub(crate) use keybindings::command_shortcut;
 pub(super) use mobile::MobileState;
 
 use super::{Section, SettingsView};
-use gpui::{AnyElement, Context, Window};
+use gpui::{AnyElement, Context, IntoElement, Window};
 
 impl SettingsView {
     pub(super) fn page(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Vec<AnyElement> {
@@ -37,6 +38,11 @@ impl SettingsView {
                 page.extend(self.companion_page(cx));
                 page
             }
+            Section::Secrets => self
+                .secret_page
+                .iter()
+                .map(|page| page.clone().into_any_element())
+                .collect(),
             Section::Appearance => self.appearance_page(window, cx),
             Section::Keybindings => self.keybindings_page(cx),
             Section::Chat => self.chat_page(cx),

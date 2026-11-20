@@ -1452,7 +1452,17 @@ impl Store {
         sql(self
             .conn
             .execute("DELETE FROM sessions WHERE id=?1", [original]))?;
+        let key = crate::secrets::request::history_key(id);
+        if let Some(extras) = &self.shared.as_ref().unwrap().extras_db {
+            sql(extras.execute("DELETE FROM settings WHERE key=?1", [&key]))?;
+        }
         sql(tx.commit())?;
+        self.shared
+            .as_ref()
+            .unwrap()
+            .extras
+            .borrow_mut()
+            .remove(&key);
         self.shared
             .as_ref()
             .unwrap()

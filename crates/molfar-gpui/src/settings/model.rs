@@ -8,6 +8,7 @@ pub(crate) enum Section {
     #[default]
     General,
     Connections,
+    Secrets,
     Appearance,
     Keybindings,
     Chat,
@@ -26,6 +27,7 @@ pub(crate) const GROUPS: [(&str, &[Section]); 3] = [
         &[
             Section::General,
             Section::Connections,
+            Section::Secrets,
             Section::Appearance,
             Section::Keybindings,
         ],
@@ -47,9 +49,10 @@ pub(crate) const GROUPS: [(&str, &[Section]); 3] = [
 ];
 
 impl Section {
-    pub(crate) const ALL: [Section; 12] = [
+    pub(crate) const ALL: [Section; 13] = [
         Section::General,
         Section::Connections,
+        Section::Secrets,
         Section::Appearance,
         Section::Keybindings,
         Section::Chat,
@@ -65,6 +68,7 @@ impl Section {
         match self {
             Section::General => "general",
             Section::Connections => "connections",
+            Section::Secrets => "secrets",
             Section::Appearance => "appearance",
             Section::Keybindings => "keybindings",
             Section::Chat => "chat",
@@ -81,6 +85,7 @@ impl Section {
         match self {
             Section::General => "General",
             Section::Connections => "Connections",
+            Section::Secrets => "Secrets",
             Section::Appearance => "Appearance",
             Section::Keybindings => "Keybindings",
             Section::Chat => "Chat",
@@ -99,6 +104,7 @@ impl Section {
                 "The build you are running, how MOLFAR reaches you, and the panels it shows."
             }
             Section::Connections => "Connect your machines and run agents remotely through SSH.",
+            Section::Secrets => "Manage credentials saved in the OS store.",
             Section::Appearance => {
                 "Theme, tint, translucency, workspace layout, and conversation backgrounds."
             }
@@ -129,6 +135,7 @@ impl Section {
         match self {
             Section::General => "version update sounds notifications notes rail",
             Section::Connections => "ssh remote host machine server environment always on",
+            Section::Secrets => "credentials tokens password keychain keyring",
             Section::Appearance => {
                 "theme dark light color accent glass blur zoom scale wallpaper rail sidebar"
             }
@@ -156,6 +163,7 @@ impl Section {
         match self {
             Section::General => "sliders",
             Section::Connections => "internet",
+            Section::Secrets => "key",
             Section::Appearance => "palette",
             Section::Keybindings => "keyboard",
             Section::Chat => "message-square",

@@ -52,6 +52,17 @@ impl Shell {
             None => locked(&self.store)?.conversation_blocks(id)?,
         };
         blocks = blocks.into_iter().filter_map(block).collect();
+        let request = view
+            .as_ref()
+            .and_then(|view| view.read(cx).secret_request(cx));
+        let mut history =
+            molfar_core::secrets::request::SecretRequest::history(&*locked(&self.store)?, id)
+                .map_err(|error| error.to_string())?;
+        if let Some(request) = &request {
+            history.retain(|row| row.request_id != request.request_id);
+            history.push(request.clone());
+        }
+        blocks.extend(history.into_iter().map(super::blocks::secret_request));
         let pending = view
             .as_ref()
             .map(|view| view.read(cx).mobile_pending(cx))
@@ -69,7 +80,7 @@ impl Shell {
             .as_ref()
             .map(|view| view.read(cx).mobile_question(cx))
             .filter(|value| !value.is_null());
-        let status = if question.is_some() || needs_approval {
+        let status = if question.is_some() || needs_approval || request.is_some() {
             "needs-you"
         } else if busy {
             "working"

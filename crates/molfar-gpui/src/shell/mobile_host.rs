@@ -432,6 +432,7 @@ impl Shell {
                         waiting: match view.mobile_waiting(cx) {
                             Some(crate::conversation::MobileWaiting::Approval) => Some("approval"),
                             Some(crate::conversation::MobileWaiting::Question) => Some("question"),
+                            Some(crate::conversation::MobileWaiting::Secret) => Some("secret"),
                             None => None,
                         },
                     }
@@ -1014,6 +1015,7 @@ impl Shell {
         let waiting = match chat.mobile_waiting(cx) {
             Some(crate::conversation::MobileWaiting::Approval) => Some("Waiting for approval"),
             Some(crate::conversation::MobileWaiting::Question) => Some("Waiting for answers"),
+            Some(crate::conversation::MobileWaiting::Secret) => Some("Answer on desktop"),
             None => None,
         };
         let snapshot = Snapshot {

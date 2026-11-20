@@ -72,7 +72,15 @@ impl Shell {
             }
             let (title, busy, needs) = {
                 let meta = self.session_metadata(*id, cx);
-                (meta.display_title(), meta.busy, meta.needs_approval())
+                let secret = self
+                    .sessions
+                    .get(id)
+                    .is_some_and(|view| view.read(cx).secret_request(cx).is_some());
+                (
+                    meta.display_title(),
+                    meta.busy,
+                    meta.needs_approval() || secret,
+                )
             };
             let status = if needs {
                 "needs-you"

@@ -300,6 +300,9 @@ impl Familiars {
             .or_else(|| self.running.get(&call.session).map(|r| &r.view))
             .cloned();
         let result = match action.as_str() {
+            molfar_core::secrets::request::REQUEST | molfar_core::secrets::request::LIST => {
+                Err("Familiar secrets arrive in card 2/2.".into())
+            }
             "models.list" => {
                 let profiles = Kind::ALL
                     .into_iter()

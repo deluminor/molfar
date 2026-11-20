@@ -21,6 +21,15 @@ mod vault;
 use types::*;
 
 impl Shell {
+    #[cfg(test)]
+    pub(super) fn companion_test_transcript(
+        &mut self,
+        session: i64,
+        cx: &mut Context<Self>,
+    ) -> Result<Value, String> {
+        self.companion_transcript(Target::Session(session), &json!({}), cx)
+    }
+
     pub(super) fn init_companion(&mut self, cx: &mut Context<Self>) {
         if cx.is_test() {
             return;
