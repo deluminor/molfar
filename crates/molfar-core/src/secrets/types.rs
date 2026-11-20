@@ -8,6 +8,7 @@ use super::{MAX_VALUE_BYTES, MIN_VALUE_BYTES};
 pub enum Scope {
     Global,
     Project(String),
+    Familiar(String),
 }
 
 impl std::fmt::Display for Scope {
@@ -15,6 +16,7 @@ impl std::fmt::Display for Scope {
         match self {
             Self::Global => formatter.write_str("global"),
             Self::Project(id) => write!(formatter, "project:{id}"),
+            Self::Familiar(id) => write!(formatter, "familiar:{id}"),
         }
     }
 }
@@ -51,9 +53,21 @@ impl TryFrom<String> for SecretName {
     }
 }
 
+#[derive(Clone)]
 pub struct SecretValue(pub(super) SecretString);
 
 impl SecretValue {
+    pub fn one_time(value: String) -> Result<Self, Error> {
+        if !Self::valid_one_time(&value) {
+            return Err(Error::InvalidValue);
+        }
+        Ok(Self(value.into()))
+    }
+
+    pub fn valid_one_time(text: &str) -> bool {
+        (1..=MAX_VALUE_BYTES).contains(&text.len())
+    }
+
     pub fn valid(text: &str) -> bool {
         (MIN_VALUE_BYTES..=MAX_VALUE_BYTES).contains(&trim_newline(text).len())
     }

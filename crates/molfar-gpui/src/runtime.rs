@@ -18,6 +18,7 @@ mod handoff;
 mod handoff_tests;
 mod persistence;
 pub(crate) mod remote;
+pub(crate) mod secret_bindings;
 pub(crate) mod secret_output;
 #[cfg(all(test, unix))]
 mod secret_output_tests;
@@ -605,7 +606,7 @@ fn run_turn_using(
         if !raw_native_command && settings.operator_enabled {
             let cli = std::env::current_exe().map_err(|e| e.to_string())?;
             prompt = format!(
-                "You have MOLFAR app access for this project. Use the CLI: {} app ACTION --json JSON. Supported actions: secrets.request {{name,reason}}, secrets.list {{}}, models.list {{}}, sessions.list {{}}, sessions.read {{sessionId}}, sessions.start {{prompt,harness?,model?,title?,draft?,reveal?}}, sessions.send/draft {{sessionId,prompt}}, sessions.stop {{sessionId}}, folders.list {{}}, folders.move {{sessionId,folderId?,newFolderName?}}, notes.list {{}}, notes.read {{id}}, notes.write {{id?,title,body}}, worktrees.list {{}}. Scope is this thread's project. App credentials are in the environment; never print them. Respect the user’s request and selected access policy.\n\n{prompt}",
+                "You have MOLFAR app access for this project. Use the CLI: {} app ACTION --json JSON. To use stored credentials, call app run --secret NAME[=ENV] -- CMD [ARGS...]. Supported actions: secrets.request {{name,reason}}, secrets.list {{}}, models.list {{}}, sessions.list {{}}, sessions.read {{sessionId}}, sessions.start {{prompt,harness?,model?,title?,draft?,reveal?}}, sessions.send/draft {{sessionId,prompt}}, sessions.stop {{sessionId}}, folders.list {{}}, folders.move {{sessionId,folderId?,newFolderName?}}, notes.list {{}}, notes.read {{id}}, notes.write {{id?,title,body}}, worktrees.list {{}}. Scope is this thread's project. App credentials are in the environment; never print them. Respect the user’s request and selected access policy.\n\n{prompt}",
                 shlex_quote(&cli.to_string_lossy())
             );
         }
@@ -634,6 +635,31 @@ fn run_turn_using(
                 prompt = discovery.prepend(prompt);
             }
         }
+        secret_bindings::attach(
+            &store,
+            &secrets,
+            &summary.cwd,
+            &mut settings,
+            raw_native_command,
+        )?;
+        let familiar = settings
+            .familiar
+            .as_ref()
+            .map(|context| context.familiar.id.clone());
+        let mut secret_output = secret_output::SecretOutput::open_session(
+            &store,
+            &summary.cwd,
+            &secrets,
+            familiar.as_deref(),
+            !settings.secret_bindings.is_empty(),
+        )?;
+        settings.secret_answers = settings.secret_answers.with_session(
+            store.clone(),
+            secrets.clone(),
+            summary.cwd.clone(),
+            familiar,
+        );
+        secret_output.use_ephemeral(settings.secret_answers.clone());
         let request = Request {
             kind,
             binary,
@@ -647,8 +673,6 @@ fn run_turn_using(
             model: settings.model.clone(),
             settings,
         };
-        let mut secret_output =
-            secret_output::SecretOutput::open_path(&store, &summary.cwd, &secrets)?;
         let mut tool_rows = std::collections::HashMap::new();
         // The running-work list attributes the provider and its tools to this session.
         let mut result = molfar_core::process::owned_by(summary.id, || {
@@ -901,6 +925,15 @@ fn run_turn_using(
                         Event::Question(question) => {
                             status = "Waiting for your answer".into();
                             questions.push(question);
+                            boundary = true;
+                        }
+                        Event::SecretAnswered(notes) => {
+                            for note in notes {
+                                let at = transcript.begin("system");
+                                transcript.rows[at].text = note;
+                                start = start.min(at);
+                                pending.changed(at);
+                            }
                             boundary = true;
                         }
                         Event::QuestionResolved(id) => {

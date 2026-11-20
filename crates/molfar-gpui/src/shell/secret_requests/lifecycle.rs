@@ -5,32 +5,12 @@ impl Shell {
         let Some(open) = self.open_secret_requests.get(&id) else {
             return;
         };
-        let Some(card) = open.card.clone() else {
+        let database = self.store.clone();
+        let store = self.secret_store.clone();
+        let Some((card, request, value)) = open.take_for_save(cx) else {
             return;
         };
         let cancelled = open.cancelled.clone();
-        let request = card.read(cx).request.clone();
-        let value = card.update(cx, |card, cx| {
-            if card.saving {
-                return None;
-            }
-
-            match card.secret_value(cx) {
-                Ok(value) => {
-                    card.error = None;
-                    card.set_saving(true, cx);
-                    Some(value)
-                }
-                Err(error) => {
-                    card.error = Some(error.to_string());
-                    cx.notify();
-                    None
-                }
-            }
-        });
-        let Some(value) = value else { return };
-        let database = self.store.clone();
-        let store = self.secret_store.clone();
         let cancellation = cancelled.clone();
         let work = cx.background_executor().spawn(async move {
             let db = locked(&database)?;
@@ -99,5 +79,37 @@ impl Shell {
             view.update(cx, |view, cx| view.set_secret_card(None, cx));
         }
         self.finish_app_call(open.call, result, cx);
+    }
+}
+
+impl OpenRequest {
+    pub(crate) fn take_for_save<T: 'static>(
+        &self,
+        cx: &mut Context<T>,
+    ) -> Option<(
+        Entity<SecretRequestCard>,
+        SecretRequest,
+        molfar_core::secrets::SecretValue,
+    )> {
+        let card = self.card.clone()?;
+        let request = card.read(cx).request.clone();
+        let value = card.update(cx, |card, cx| {
+            if card.saving {
+                return None;
+            }
+            match card.secret_value(cx) {
+                Ok(value) => {
+                    card.error = None;
+                    card.set_saving(true, cx);
+                    Some(value)
+                }
+                Err(error) => {
+                    card.error = Some(error.to_string());
+                    cx.notify();
+                    None
+                }
+            }
+        })?;
+        Some((card, request, value))
     }
 }

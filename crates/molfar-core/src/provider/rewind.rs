@@ -74,6 +74,9 @@ pub fn rewind_last_turn(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     process::isolate(&mut command);
+    for notice in crate::secrets::bind::apply(&mut command, &request.settings.secret_bindings) {
+        eprintln!("{notice}");
+    }
     let mut wire = parked::Wire::spawn(&mut command, &request)?;
     let mut rpc = Rpc {
         wire: &mut wire,

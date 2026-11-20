@@ -13,11 +13,36 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-pub(super) struct OpenRequest {
-    call: Call,
-    pub(super) card: Option<Entity<SecretRequestCard>>,
-    subscription: Option<Subscription>,
-    cancelled: Arc<AtomicBool>,
+pub(crate) struct OpenRequest {
+    pub(crate) call: Call,
+    pub(crate) card: Option<Entity<SecretRequestCard>>,
+    pub(crate) subscription: Option<Subscription>,
+    pub(crate) cancelled: Arc<AtomicBool>,
+}
+
+impl OpenRequest {
+    pub(crate) fn new(call: Call) -> Self {
+        Self {
+            call,
+            card: None,
+            subscription: None,
+            cancelled: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub(crate) fn reattach(&mut self, call: &Call) {
+        if self.call.request_id != call.request_id {
+            let _ = call.reply.send(Err(
+                "This session already has an open secret request.".into()
+            ));
+        } else if self.call.input != call.input {
+            let _ = call.reply.send(Err(
+                "Request ID was already used with different input".into()
+            ));
+        } else {
+            self.call.reply = call.reply.clone();
+        }
+    }
 }
 
 impl Shell {
@@ -29,17 +54,7 @@ impl Shell {
             return false;
         };
 
-        if open.call.request_id != call.request_id {
-            let _ = call.reply.send(Err(
-                "This session already has an open secret request.".into()
-            ));
-        } else if open.call.input != call.input {
-            let _ = call.reply.send(Err(
-                "Request ID was already used with different input".into()
-            ));
-        } else {
-            open.call.reply = call.reply.clone();
-        }
+        open.reattach(call);
         true
     }
 
@@ -47,6 +62,7 @@ impl Shell {
         let id = call.session;
         let caller = self.sessions[&id].read(cx);
         let was_busy = caller.busy;
+        let ephemeral = caller.turn_secret_answers.clone();
         if caller.summary.archived {
             self.finish_app_call(call, Err("This session is archived.".into()), cx);
             return;
@@ -60,12 +76,7 @@ impl Shell {
             let result = cx.background_executor().spawn(async move {
                 let db = locked(&database)?;
                 let project = own_scope(&store, &db, &path, None)?;
-                let entries = store.list(&db).map_err(|error| error.to_string())?;
-                Ok(json!(entries.into_iter()
-                    .filter(|entry| entry.scope == Scope::Global || project.as_ref() == Some(&entry.scope))
-                    .map(|entry| json!({"name": entry.name.as_str(), "scope": entry.scope.to_string(),
-                        "createdAt": entry.created_at}))
-                    .collect::<Vec<_>>()))
+                request::list(&store, &db, project)
             });
             cx.spawn(async move |this, cx| {
                 let result = result.await;
@@ -98,15 +109,7 @@ impl Shell {
             return;
         }
 
-        self.open_secret_requests.insert(
-            id,
-            OpenRequest {
-                call,
-                card: None,
-                subscription: None,
-                cancelled: Arc::new(AtomicBool::new(false)),
-            },
-        );
+        self.open_secret_requests.insert(id, OpenRequest::new(call));
         let scope_label = label.clone();
         let pending_id = request_id.clone();
         let result = cx.background_executor().spawn(async move {
@@ -116,26 +119,17 @@ impl Shell {
             let db = locked(&database)?;
             let scope =
                 own_scope(&store, &db, &path, Some(&label))?.ok_or("Secret scope unavailable.")?;
-            let entries = store.list(&db).map_err(|error| error.to_string())?;
-            if entries
-                .iter()
-                .any(|entry| entry.scope == scope && entry.name == name)
-            {
-                return Ok(Err(Status::Exists));
-            }
-            let redactor = store
-                .redactor(&db, Some(scope.clone()))
-                .map_err(|error| error.to_string())?;
-            Ok::<_, String>(Ok(SecretRequest {
+            SecretRequest {
                 request_id,
                 session: id,
-                agent: redactor.text(&agent),
+                agent,
                 name,
                 scope,
-                reason: redactor.text(&reason),
+                reason,
                 status: RequestStatus::Open,
                 time: molfar_core::time::now_ms(),
-            }))
+            }
+            .prepare(&store, &db, ephemeral)
         });
         cx.spawn(async move |this, cx| {
             let result = result.await;
@@ -202,7 +196,7 @@ impl Shell {
     }
 }
 
-fn own_scope(
+pub(super) fn own_scope(
     store: &SecretStore,
     db: &molfar_core::store::Store,
     path: &str,

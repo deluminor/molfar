@@ -20,7 +20,7 @@ impl Protocol {
                 items: Vec::new(),
                 auto_resolve_at: None,
             };
-            respond(stdin, wire, kind, &request, &question, Decision::Deny)?;
+            respond(stdin, wire, kind, &request, &question, &Decision::Deny)?;
         }
         Ok(())
     }
@@ -45,7 +45,7 @@ impl Protocol {
         };
         let rows: Vec<Value> = if kind == "pi" {
             vec![
-                json!({"id":request["id"],"question":request["title"],"options":request["options"],"allowCustom":request["method"] != "select"}),
+                json!({"id":request["id"],"question":request["title"],"options":request["options"],"allowCustom":request["method"] != "select","isSecret":request["isSecret"]}),
             ]
         } else {
             raw["questions"].as_array().cloned().unwrap_or_default()
@@ -56,7 +56,8 @@ impl Protocol {
             return Err("Codex sent an unsupported user-input request.".into());
         }
         for (ix, row) in rows.iter().enumerate() {
-            if row["isSecret"] == true {
+            let secret = row["isSecret"] == true;
+            if secret && matches!(kind, "codex-async" | "cursor") {
                 return Err("The provider requested secret input, which cannot be collected in the conversation.".into());
             }
             if kind == "codex"
@@ -64,17 +65,18 @@ impl Protocol {
                     .as_str()
                     .is_none_or(|id| id.is_empty() || id.trim() != id)
                     || row["question"].as_str().is_none_or(|q| q.trim().is_empty())
-                    || row
-                        .get("options")
-                        .filter(|v| !v.is_null())
-                        .is_some_and(|v| {
-                            !v.is_array()
-                                || v.as_array().is_some_and(|options| {
-                                    options.iter().any(|o| {
-                                        o["label"].as_str().is_none_or(|l| l.trim().is_empty())
+                    || (!secret
+                        && row
+                            .get("options")
+                            .filter(|v| !v.is_null())
+                            .is_some_and(|v| {
+                                !v.is_array()
+                                    || v.as_array().is_some_and(|options| {
+                                        options.iter().any(|o| {
+                                            o["label"].as_str().is_none_or(|l| l.trim().is_empty())
+                                        })
                                     })
-                                })
-                        }))
+                            })))
             {
                 return Err("Codex sent an unsupported user-input question.".into());
             }
@@ -100,6 +102,7 @@ impl Protocol {
                 .as_array()
                 .into_iter()
                 .flatten()
+                .filter(|_| !secret)
                 .filter_map(|option| {
                     let label = option
                         .as_str()
@@ -133,12 +136,14 @@ impl Protocol {
                     || options.is_empty()
             };
             items.push(QuestionItem {
+                secret,
                 id,
                 prompt: prompt.into(),
-                multiple: row["multiSelect"] == true
-                    || row["multiple"] == true
-                    || row["allowMultiple"] == true,
-                allow_custom,
+                multiple: !secret
+                    && (row["multiSelect"] == true
+                        || row["multiple"] == true
+                        || row["allowMultiple"] == true),
+                allow_custom: secret || allow_custom,
                 options,
             });
         }
@@ -152,7 +157,7 @@ impl Protocol {
             auto_resolve_at: None,
         };
         if question.items.is_empty() {
-            return respond(stdin, wire, kind, &request, &question, Decision::Deny);
+            return respond(stdin, wire, kind, &request, &question, &Decision::Deny);
         }
         self.questions
             .insert(id.clone(), (wire, kind.into(), request, question));
@@ -174,7 +179,7 @@ impl Protocol {
             let Some((_, kind, request, question)) = self.questions.get_mut(&id) else {
                 continue;
             };
-            if request["isBlocking"] == false || kind == "codex-async" {
+            if !question.has_secret() && (request["isBlocking"] == false || kind == "codex-async") {
                 question.auto_resolve_at = Some(crate::time::now_ms().saturating_add(120_000));
             }
             self.visible_question = Some(id);
@@ -236,6 +241,10 @@ impl Protocol {
         };
         let mut questions = Vec::new();
         for (ix, row) in rows.iter().enumerate() {
+            if row["isSecret"] == true {
+                events.push(Event::Status("The provider requested secret input, which cannot be collected in the conversation.".into()));
+                return Ok(());
+            }
             if row["title"].as_str().is_none_or(|t| t.trim().is_empty())
                 || row
                     .get("options")
@@ -266,19 +275,14 @@ pub(super) fn respond(
     kind: &str,
     request: &Value,
     question: &Question,
-    decision: Decision,
+    decision: &Decision,
 ) -> Result<(), String> {
-    let answered = matches!(decision, Decision::Answer(_));
-    let answers = if let Decision::Answer(answers) = decision {
-        answers
-    } else {
-        Vec::new()
-    };
-    let pairs = question
-        .items
-        .iter()
-        .enumerate()
-        .map(|(ix, q)| (q, answers.get(ix).cloned().unwrap_or_default()));
+    let answered = matches!(
+        decision,
+        Decision::Answer(_) | Decision::AnswerWithSecrets { .. }
+    );
+    let answers = reply_values(question, decision);
+    let pairs = question.items.iter().zip(answers.iter());
     let result = match kind {
         "codex" => {
             json!({"answers":pairs.filter(|(_,a)|!a.is_empty()).map(|(q,a)|(q.id.clone(),json!({"answers":a}))).collect::<serde_json::Map<_,_>>()})
@@ -299,7 +303,10 @@ pub(super) fn respond(
             if !answered {
                 json!({"outcome":{"outcome":"skipped","reason":"User skipped"}})
             } else {
-                json!({"outcome":{"outcome":"answered","answers":pairs.map(|(q,a)|json!({"questionId":q.id,"selectedOptionIds":q.options.iter().filter(|o|a.contains(&o.label)).map(|o|&o.id).collect::<Vec<_>>()})).collect::<Vec<_>>()}})
+                json!({"outcome":{"outcome":"answered","answers":pairs
+                    .map(|(q,a)|json!({"questionId":q.id,"selectedOptionIds":q.options.iter()
+                        .filter(|o|a.contains(&o.label.as_str())).map(|o|&o.id).collect::<Vec<_>>()}))
+                    .collect::<Vec<_>>()}})
             }
         }
         "grok" => {
@@ -322,6 +329,34 @@ pub(super) fn respond(
         _ => json!({}),
     };
     write_json(stdin, json!({"jsonrpc":"2.0","id":wire,"result":result}))
+}
+
+pub(super) fn reply_values<'a>(question: &Question, decision: &'a Decision) -> Vec<Vec<&'a str>> {
+    let (answers, secrets) = match decision {
+        Decision::Answer(answers) => (Some(answers), None),
+        Decision::AnswerWithSecrets { answers, secrets } => (Some(answers), Some(secrets)),
+        _ => (None, None),
+    };
+    question
+        .items
+        .iter()
+        .enumerate()
+        .map(|(index, item)| {
+            if item.secret {
+                secrets
+                    .and_then(|secrets| secrets.value(index))
+                    .into_iter()
+                    .collect()
+            } else {
+                answers
+                    .and_then(|answers| answers.get(index))
+                    .into_iter()
+                    .flatten()
+                    .map(String::as_str)
+                    .collect()
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -407,23 +442,27 @@ mod tests {
         );
     }
     #[test]
-    fn secret_and_duplicate_questions_are_rejected() {
-        for rows in [
-            json!([{"id":"q","question":"Secret?","isSecret":true}]),
-            json!([{"id":"q","question":"A?"},{"id":"q","question":"B?"}]),
-        ] {
-            let mut p = protocol(Kind::Codex);
-            let mut out = Vec::new();
-            let events = p.frame(json!({"id":1,"method":"item/tool/requestUserInput","params":{"questions":rows}}), &mut out).unwrap();
-            assert!(events.iter().any(|event| matches!(event, Event::Status(_))));
-            assert!(!events
-                .iter()
-                .any(|event| matches!(event, Event::Question(_) | Event::Done)));
-            let response: Value = serde_json::from_slice(&out).unwrap();
-            assert_eq!(response["id"], 1);
-            assert_eq!(response["result"]["answers"], json!({}));
-            assert!(p.questions.is_empty());
-            assert!(!p.done);
-        }
+    fn duplicate_questions_are_rejected() {
+        let rows = json!([{"id":"q","question":"A?"},{"id":"q","question":"B?"}]);
+        let mut p = protocol(Kind::Codex);
+        let mut out = Vec::new();
+        let events = p
+            .frame(
+                json!({"id":1,"method":"item/tool/requestUserInput","params":{"questions":rows}}),
+                &mut out,
+            )
+            .unwrap();
+        assert!(events.iter().any(|event| matches!(event, Event::Status(_))));
+        assert!(!events
+            .iter()
+            .any(|event| matches!(event, Event::Question(_) | Event::Done)));
+        let response: Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(response["id"], 1);
+        assert_eq!(response["result"]["answers"], json!({}));
+        assert!(p.questions.is_empty());
+        assert!(!p.done);
     }
 }
+
+#[cfg(test)]
+mod secrets;

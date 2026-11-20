@@ -1,6 +1,6 @@
 use super::{Database, Event, Transcript, locked};
 use molfar_core::{
-    secrets::{Redactor, SecretStore, redact::StreamRedactor},
+    secrets::{Redactor, Scope, SecretStore, redact::StreamRedactor},
     tool::tasks::Panel,
 };
 
@@ -16,7 +16,24 @@ impl SecretOutput {
         project: &str,
         store: &SecretStore,
     ) -> Result<Self, String> {
+        Self::open_session(database, project, store, None, false)
+    }
+
+    pub(crate) fn open_session(
+        database: &Database,
+        project: &str,
+        store: &SecretStore,
+        familiar: Option<&str>,
+        binding: bool,
+    ) -> Result<Self, String> {
         let db = locked(database)?;
+        if let Some(familiar) = familiar {
+            let redactor = store
+                .redactor(&db, Some(Scope::Familiar(familiar.to_owned())))
+                .map_err(|error| error.to_string())?;
+            return Ok(Self::new(redactor));
+        }
+
         let path = std::path::Path::new(project);
         let scope = match store.project_scope(&db, path, None) {
             Ok(scope) => Ok(scope),
@@ -26,14 +43,25 @@ impl SecretOutput {
             Err(error) => Err(error),
         }
         .map_err(|error| error.to_string())?;
-        let redactor = store
-            .redactor(&db, Some(scope))
-            .map_err(|error| error.to_string())?;
-        Ok(Self {
+        let redactor = if binding {
+            store.redactor_for_spawn(&db, Some(scope))
+        } else {
+            store.redactor(&db, Some(scope))
+        }
+        .map_err(|error| error.to_string())?;
+        Ok(Self::new(redactor))
+    }
+
+    fn new(redactor: Redactor) -> Self {
+        Self {
             redactor,
             text: StreamRedactor::default(),
             reasoning: StreamRedactor::default(),
-        })
+        }
+    }
+
+    pub(crate) fn use_ephemeral(&mut self, ephemeral: molfar_core::secrets::ephemeral::Ephemeral) {
+        self.redactor = self.redactor.clone().with_ephemeral(ephemeral);
     }
 
     pub(crate) fn batch(&mut self, events: Vec<Event>) -> Vec<Event> {
@@ -86,6 +114,9 @@ impl SecretOutput {
                         }
                     }
                 }
+                Event::SecretAnswered(messages) => messages
+                    .iter_mut()
+                    .for_each(|message| redact.scrub(message)),
                 Event::Commands(commands) => {
                     for command in commands {
                         redact.scrub(&mut command.name);

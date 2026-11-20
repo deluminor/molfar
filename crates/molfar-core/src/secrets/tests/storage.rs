@@ -170,7 +170,7 @@ fn index_write_failure_rolls_back_os_credential() {
 fn external_catalog_has_no_secret_tools() {
     assert!(crate::external_mcp::tools::catalog()
         .iter()
-        .all(|tool| !tool.name.starts_with("secrets")));
+        .all(|tool| !tool.name.starts_with("secrets") && tool.name != "run"));
 }
 
 #[test]
@@ -203,3 +203,5 @@ fn stale_keyring_entry_does_not_disable_redaction_of_other_values() {
         Err(Error::Unavailable)
     ));
 }
+
+mod familiar;

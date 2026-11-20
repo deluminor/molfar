@@ -65,8 +65,17 @@ impl SecretsPage {
     fn scope_picker(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let selected = self
             .scope
-            .and_then(|index| self.workspace.get(index))
-            .map_or("Global", |(_, label)| label);
+            .and_then(|index| {
+                self.workspace
+                    .get(index)
+                    .map(|(_, label)| label.clone())
+                    .or_else(|| {
+                        self.familiars
+                            .get(index.saturating_sub(self.workspace.len()))
+                            .map(|familiar| format!("Familiar {}", familiar.name))
+                    })
+            })
+            .unwrap_or_else(|| "Global".into());
         div()
             .flex()
             .flex_col()
@@ -97,6 +106,13 @@ impl SecretsPage {
                                 self.scope_option(Some(index), label.clone(), cx)
                             }),
                     )
+                    .children(self.familiars.iter().enumerate().map(|(index, familiar)| {
+                        self.scope_option(
+                            Some(self.workspace.len() + index),
+                            format!("Familiar {}", familiar.name),
+                            cx,
+                        )
+                    }))
             })
     }
 
@@ -140,6 +156,11 @@ impl SecretsPage {
                     .scope
                     .and_then(|index| self.workspace.get(index))
                     .cloned();
+                let familiar = self
+                    .scope
+                    .and_then(|index| index.checked_sub(self.workspace.len()))
+                    .and_then(|index| self.familiars.get(index))
+                    .map(|familiar| familiar.id.clone());
                 self.run(
                     true,
                     move |store, db| {
@@ -147,7 +168,7 @@ impl SecretsPage {
                             Some((path, label)) => store
                                 .project_scope(db, Path::new(&path), Some(&label))
                                 .map_err(|error| error.to_string())?,
-                            None => Scope::Global,
+                            None => familiar.map_or(Scope::Global, Scope::Familiar),
                         };
                         match store
                             .create(db, scope, name?, value?)

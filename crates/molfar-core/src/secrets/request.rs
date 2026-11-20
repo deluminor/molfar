@@ -2,7 +2,7 @@ use crate::transcript::Row;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::{load, save, Error, Scope, SecretName, Status, Store};
+use super::{load, save, Error, Scope, SecretName, SecretStore, Status, Store};
 
 pub const REQUEST: &str = "secrets.request";
 pub const LIST: &str = "secrets.list";
@@ -18,6 +18,16 @@ pub fn parse_request(input: &Value) -> Result<(SecretName, String), String> {
         return Err("Provide a reason of 1–500 characters.".into());
     }
     Ok((name, reason))
+}
+
+pub fn list(store: &SecretStore, db: &Store, scope: Option<Scope>) -> Result<Value, String> {
+    let scopes: Vec<_> = super::scopes_for(scope).collect();
+    let entries = store.list(db).map_err(|error| error.to_string())?;
+    Ok(Value::Array(entries.into_iter()
+        .filter(|entry| scopes.contains(&entry.scope))
+        .map(|entry| serde_json::json!({
+            "name": entry.name.as_str(), "scope": entry.scope.to_string(), "createdAt": entry.created_at,
+        })).collect()))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -65,6 +75,31 @@ pub struct SecretRequest {
 }
 
 impl SecretRequest {
+    pub fn prepare(
+        mut self,
+        store: &SecretStore,
+        db: &Store,
+        ephemeral: super::ephemeral::Ephemeral,
+    ) -> Result<Result<Self, Status>, String> {
+        if store.probe().is_err() {
+            return Ok(Err(Status::Unavailable));
+        }
+        let entries = store.list(db).map_err(|error| error.to_string())?;
+        if entries
+            .iter()
+            .any(|entry| entry.scope == self.scope && entry.name == self.name)
+        {
+            return Ok(Err(Status::Exists));
+        }
+        let redactor = store
+            .redactor(db, Some(self.scope.clone()))
+            .map_err(|error| error.to_string())?
+            .with_ephemeral(ephemeral);
+        redactor.scrub(&mut self.agent);
+        redactor.scrub(&mut self.reason);
+        Ok(Ok(self))
+    }
+
     pub fn history(store: &Store, session: i64) -> Result<Vec<SecretRequest>, Error> {
         let rows: Vec<Row> = load(store, &history_key(session))?;
         let mut history = rows

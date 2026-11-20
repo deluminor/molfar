@@ -94,6 +94,7 @@ pub(super) struct Pending {
     pub session: String,
     pub wire: String,
     pub form: Option<Value>,
+    question: Option<Question>,
 }
 pub(super) struct State {
     pub protocol: Protocol,
@@ -468,6 +469,7 @@ impl State {
                                 session: session.clone(),
                                 wire: id.into(),
                                 form: None,
+                                question: None,
                             },
                         );
                         events.push(Event::Approval(Approval {
@@ -498,6 +500,7 @@ impl State {
                             session: session.clone(),
                             wire: id.into(),
                             form,
+                            question: Some(question.clone()),
                         },
                     );
                     if interactive {
@@ -735,11 +738,22 @@ impl State {
             return Ok(Vec::new());
         }
         if let Some(pending) = self.questions.remove(&control.id) {
-            let answers = if let Decision::Answer(answers) = control.decision {
-                Some(answers)
+            let question = pending
+                .question
+                .as_ref()
+                .ok_or("OpenCode question is missing.")?;
+            let ephemeral = &self.protocol.request.settings.secret_answers;
+            let secrets = if let Decision::AnswerWithSecrets { secrets, .. } = &control.decision {
+                secrets.register(question, ephemeral)?;
+                Some(secrets)
             } else {
                 None
             };
+            let answers = matches!(
+                control.decision,
+                Decision::Answer(_) | Decision::AnswerWithSecrets { .. }
+            )
+            .then(|| crate::provider::questions::reply_values(question, &control.decision));
             let base = if client.v2 {
                 client.path(&format!(
                     "/session/{}/form/{}",
@@ -764,6 +778,9 @@ impl State {
                             .into_iter()
                             .flatten()
                             .map(|value| {
+                                if question.items.get(index).is_some_and(|item| item.secret) {
+                                    return (*value).to_owned();
+                                }
                                 field["options"]
                                     .as_array()
                                     .into_iter()
@@ -775,6 +792,10 @@ impl State {
                             })
                             .collect();
                         let value = match field["type"].as_str() {
+                            _ if question.items.get(index).is_some_and(|item| item.secret) => {
+                                json!(values.first())
+                            }
+
                             Some("multiselect") => json!(values),
                             Some("boolean") => json!(values.first().is_some_and(|v| matches!(
                                 v.trim().to_lowercase().as_str(),
@@ -808,7 +829,11 @@ impl State {
             } else {
                 client.request("POST", &format!("{base}/reject"), Some(json!({})))?;
             }
-            return Ok(vec![Event::QuestionResolved(control.id)]);
+            let mut events = vec![Event::QuestionResolved(control.id)];
+            if let Some(secrets) = secrets {
+                events.push(Event::SecretAnswered(secrets.metadata(question, ephemeral)));
+            }
+            return Ok(events);
         }
         Ok(Vec::new())
     }
@@ -871,8 +896,14 @@ fn question(ui: &str, raw: &Value, form: bool) -> Question {
                     })
                     .to_vec();
             }
-            let allow_custom = options.is_empty() || row["custom"].as_bool().unwrap_or(!form);
+            let secret = row["isSecret"] == true || row["type"] == "password";
+            if secret {
+                options.clear();
+            }
+            let allow_custom =
+                secret || options.is_empty() || row["custom"].as_bool().unwrap_or(!form);
             QuestionItem {
+                secret,
                 id: id.clone(),
                 prompt: row["question"]
                     .as_str()
@@ -881,7 +912,7 @@ fn question(ui: &str, raw: &Value, form: bool) -> Question {
                     .or_else(|| row["header"].as_str())
                     .unwrap_or(&id)
                     .into(),
-                multiple: row["multiple"] == true || row["type"] == "multiselect",
+                multiple: !secret && (row["multiple"] == true || row["type"] == "multiselect"),
                 allow_custom,
                 options,
             }

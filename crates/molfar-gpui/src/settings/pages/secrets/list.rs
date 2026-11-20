@@ -8,6 +8,16 @@ impl SecretsPage {
         if scope == &Scope::Global {
             return "Global".into();
         }
+        if let Scope::Familiar(id) = scope {
+            return self
+                .familiars
+                .iter()
+                .find(|familiar| &familiar.id == id)
+                .map_or_else(
+                    || format!("Removed Familiar ({id})"),
+                    |familiar| format!("Familiar {}", familiar.name),
+                );
+        }
         let Some(project) = self.scopes.iter().find(|project| &project.scope() == scope) else {
             return "Missing project".into();
         };

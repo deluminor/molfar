@@ -157,6 +157,8 @@ jobs:
       - name: Install Secret Service and keyutils
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libdbus-1-dev dbus gnome-keyring keyutils pkg-config
+      - name: Verify isolated app run
+        run: cargo test --locked --manifest-path crates/molfar-gpui/Cargo.toml -p molfar-core secrets::run::tests
       - name: Create isolated macOS keychain
         if: runner.os == 'macOS'
         shell: bash

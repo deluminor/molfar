@@ -1,3 +1,4 @@
+mod bindings;
 mod editor;
 mod list;
 
@@ -7,7 +8,8 @@ use crate::{
     settings::widgets::{note, primary_button},
 };
 use gpui::{Context, Entity, Render, Subscription, Window, div, prelude::*};
-use molfar_core::secrets::{Entry, Project, SecretStore};
+use molfar_core::secrets::{Entry, Project, SecretStore, bind};
+use std::collections::HashMap;
 use std::path::Path;
 
 use editor::Edit;
@@ -18,6 +20,9 @@ pub(in crate::settings) struct SecretsPage {
     workspace: Vec<(String, String)>,
     entries: Vec<Entry>,
     scopes: Vec<Project>,
+    familiars: Vec<crate::settings::FamiliarSetting>,
+    bindings: HashMap<String, bind::ProjectBindings>,
+    binding: bindings::BindingEditor,
     edit: Option<Edit>,
     name: Entity<Input>,
     value: Entity<Input>,
@@ -46,6 +51,9 @@ impl SecretsPage {
             workspace,
             entries: Vec::new(),
             scopes: Vec::new(),
+            familiars: Vec::new(),
+            bindings: HashMap::new(),
+            binding: bindings::BindingEditor::new(cx),
             edit: None,
             name,
             value,
@@ -59,11 +67,25 @@ impl SecretsPage {
         this
     }
 
+    pub(in crate::settings) fn set_familiars(
+        &mut self,
+        familiars: Vec<crate::settings::FamiliarSetting>,
+    ) {
+        self.familiars = familiars;
+    }
+
     pub(in crate::settings) fn refresh(
         &mut self,
         workspace: Vec<(String, String)>,
+        familiars: Vec<crate::settings::FamiliarSetting>,
         cx: &mut Context<Self>,
     ) {
+        if self.familiars != familiars {
+            self.familiars = familiars;
+            self.clear_form(cx);
+            self.scope = None;
+            self.reload(cx);
+        }
         if self.workspace != workspace {
             self.clear_form(cx);
             self.workspace = workspace;
@@ -99,20 +121,21 @@ impl SecretsPage {
                 if path.starts_with("remote://") || !Path::new(&path).is_dir() {
                     continue;
                 }
-                match store.project_scope(&db, Path::new(&path), None) {
-                    Ok(_) => {
-                        store
-                            .project_scope(&db, Path::new(&path), Some(&label))
-                            .map_err(|error| error.to_string())?;
-                    }
-                    Err(molfar_core::secrets::Error::Missing) => {}
-                    Err(error) => return Err(error.to_string()),
-                }
+                store
+                    .project_scope(&db, Path::new(&path), Some(&label))
+                    .map_err(|error| error.to_string())?;
             }
             let result = action(&store, &db);
-            let snapshot = store
-                .list(&db)
-                .and_then(|entries| store.projects(&db).map(|scopes| (entries, scopes)));
+            let snapshot = store.list(&db).and_then(|entries| {
+                let scopes = store.projects(&db)?;
+                let bindings = scopes
+                    .iter()
+                    .map(|scope| {
+                        bind::settings(&db, &scope.id).map(|config| (scope.id.clone(), config))
+                    })
+                    .collect::<Result<HashMap<_, _>, _>>()?;
+                Ok((entries, scopes, bindings))
+            });
             Ok::<_, String>((result, snapshot))
         });
         cx.spawn(async move |this, cx| {
@@ -124,9 +147,10 @@ impl SecretsPage {
                         this.clear_form(cx);
                     }
 
-                    let loaded = snapshot.map(|(entries, scopes)| {
+                    let loaded = snapshot.map(|(entries, scopes, bindings)| {
                         this.entries = entries;
                         this.scopes = scopes;
+                        this.bindings = bindings;
                     });
                     action.and(loaded.map_err(|error| error.to_string()))
                 });
@@ -186,6 +210,7 @@ impl Render for SecretsPage {
                 page.child(self.editor(edit, cx))
             })
             .children(self.entries.iter().map(|entry| self.entry_row(entry, cx)))
+            .child(self.binding_groups(cx))
             .when(self.entries.is_empty() && !self.busy, |page| {
                 page.child(note("No saved secrets."))
             })

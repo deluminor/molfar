@@ -1,5 +1,6 @@
 //! Familiar workspaces: one runtime per identity, shared by the rail, title tabs,
 //! overview, settings and floating windows.
+mod app_run;
 pub(crate) mod avatar;
 pub(crate) mod cards;
 mod changes;
@@ -19,6 +20,7 @@ mod panel_stack;
 mod panels;
 mod scheduler;
 mod search;
+mod secret_requests;
 #[cfg(all(target_os = "macos", not(test)))]
 mod status;
 #[cfg(test)]
@@ -165,6 +167,9 @@ pub(crate) struct Familiars {
     session_filter_anchor: AnchorSlot,
     app_results: HashMap<(i64, String), (String, Result<serde_json::Value, String>)>,
     app_pending: HashSet<(i64, String)>,
+    app_runs: crate::shell::app_run::Runs,
+    secret_requests: HashMap<i64, crate::shell::secret_requests::OpenRequest>,
+    secret_store: molfar_core::secrets::SecretStore,
 }
 impl EventEmitter<Changed> for Familiars {}
 impl EventEmitter<TabOpened> for Familiars {}
@@ -395,6 +400,9 @@ impl Familiars {
             session_filter_anchor: AnchorSlot::default(),
             app_results: HashMap::new(),
             app_pending: HashSet::new(),
+            app_runs: Default::default(),
+            secret_requests: HashMap::new(),
+            secret_store: Default::default(),
         };
         if let Some(rx) = rx {
             this._bridge_task = Some(cx.spawn(async move |this, cx| {
@@ -408,6 +416,17 @@ impl Familiars {
                 }
             }));
         }
+        cx.on_app_quit(|this, cx| {
+            let executor = cx.background_executor().clone();
+            if this.app_runs.stop_all() {
+                cx.background_executor().spawn(async move {
+                    executor.timer(std::time::Duration::from_millis(750)).await
+                })
+            } else {
+                gpui::Task::ready(())
+            }
+        })
+        .detach();
         this._clock = Some(cx.spawn(async move |this, cx| {
             loop {
                 cx.background_executor()

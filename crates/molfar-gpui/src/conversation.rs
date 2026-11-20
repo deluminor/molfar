@@ -245,6 +245,8 @@ pub(crate) struct Conversation {
     ink: Option<Entity<crate::ink_field::InkField>>,
     runner: Option<Entity<crate::composer_runner::Runner>>,
     cancel: Arc<AtomicBool>,
+    pub(crate) session_runs: crate::shell::app_run::SessionRuns,
+    pub(crate) turn_secret_answers: molfar_core::secrets::ephemeral::Ephemeral,
     title_cancel: Option<Arc<AtomicBool>>,
     worktree_name_cancel: Option<Arc<AtomicBool>>,
     _submission: Subscription,
@@ -696,6 +698,8 @@ impl Conversation {
             ink: None,
             runner: None,
             cancel: Arc::new(AtomicBool::new(false)),
+            session_runs: Default::default(),
+            turn_secret_answers: Default::default(),
             title_cancel: None,
             worktree_name_cancel: None,
             _submission: submission,
@@ -1134,6 +1138,8 @@ impl Conversation {
                     .or_insert_with(|| control.current.clone());
             }
         }
+        self.turn_secret_answers = Default::default();
+        settings.secret_answers = self.turn_secret_answers.clone();
         settings.turn_model = Some(molfar_core::agent::TurnInfo {
             provider: self.summary.provider.clone(),
             model: model_label.to_string(),
@@ -1403,10 +1409,17 @@ impl Conversation {
                                         return;
                                     }
                                     let before = this.needs_approval();
-                                    let decision = reply
-                                        .answers
-                                        .clone()
-                                        .map_or(Decision::Deny, Decision::Answer);
+                                    let decision = if reply.secrets.is_empty() {
+                                        reply
+                                            .answers
+                                            .clone()
+                                            .map_or(Decision::Deny, Decision::Answer)
+                                    } else {
+                                        Decision::AnswerWithSecrets {
+                                            answers: reply.answers.clone().unwrap_or_default(),
+                                            secrets: reply.secrets.clone(),
+                                        }
+                                    };
                                     if this.controls.as_ref().is_none_or(|controls| {
                                         controls
                                             .send(Control {
@@ -1460,6 +1473,7 @@ impl Conversation {
                             this.status = "Waiting for your answer".into();
                         }
                         if finished {
+                            this.turn_secret_answers = Default::default();
                             if this.is_remote() {
                                 this.settings.remote_action = None;
                                 this.remote_state.refreshing = false;
@@ -2738,6 +2752,7 @@ impl Conversation {
         if self.busy {
             self.stop(cx);
         } else {
+            self.session_runs.stop();
             self.cancel_secret_card(cx);
         }
     }
@@ -2745,6 +2760,7 @@ impl Conversation {
         if !self.busy || self.stopping {
             return;
         }
+        self.session_runs.stop();
         self.cancel_secret_card(cx);
         self.stopping = true;
         self.busy = false;
