@@ -574,7 +574,9 @@ pub(super) fn run(
     }
     // Stop aborts the prompt while retaining the local HTTP server, just as
     // cancelOpenCodeTurn does. A transport failure still retires its server.
-    if result.is_ok() || (aborted && cancel.load(Ordering::Relaxed)) {
+    if request.settings.secret_answers.is_empty()
+        && (result.is_ok() || (aborted && cancel.load(Ordering::Relaxed)))
+    {
         if let Some(server) = server.take() {
             park(server, &request, session);
         }

@@ -98,6 +98,7 @@ pub enum Event {
     ApprovalResolved(String),
     Question(crate::agent::Question),
     QuestionResolved(String),
+    SecretAnswered(Vec<String>),
     BeginAssistant,
     Text(String),
     Reasoning(String),
@@ -293,6 +294,7 @@ struct Protocol {
     questions: HashMap<String, (Value, String, Value, crate::agent::Question)>,
     question_order: std::collections::VecDeque<String>,
     visible_question: Option<String>,
+    secret_reply_events: Vec<Event>,
     async_question_items: std::collections::HashSet<String>,
     async_answers: HashMap<String, (Value, String, Value, crate::agent::Question)>,
 }
@@ -333,6 +335,7 @@ impl Protocol {
             questions: HashMap::new(),
             question_order: Default::default(),
             visible_question: None,
+            secret_reply_events: Vec::new(),
             async_question_items: Default::default(),
             async_answers: HashMap::new(),
         }
@@ -1143,7 +1146,16 @@ impl Protocol {
                 }
                 return Ok(());
             }
-            return questions::respond(stdin, wire, &kind, &request, &question, control.decision);
+            let ephemeral = &self.request.settings.secret_answers;
+            if let Decision::AnswerWithSecrets { secrets, .. } = &control.decision {
+                secrets.register(&question, ephemeral)?;
+                questions::respond(stdin, wire, &kind, &request, &question, &control.decision)?;
+                self.secret_reply_events.push(Event::SecretAnswered(
+                    secrets.metadata(&question, ephemeral),
+                ));
+                return Ok(());
+            }
+            return questions::respond(stdin, wire, &kind, &request, &question, &control.decision);
         }
         let Some((wire, kind, request)) = self.approvals.remove(&control.id) else {
             return Ok(());
@@ -1693,6 +1705,7 @@ fn run_operation(
                             }
                         } else {
                             protocol.respond(control, &mut stdin)?;
+                            pending.append(&mut protocol.secret_reply_events);
                         }
                     }
                 }
@@ -1729,7 +1742,10 @@ fn run_operation(
                         }
                         Err(e) => return Err(format!("Invalid provider JSON: {e}")),
                     };
-                    if std::env::var_os("MOLFAR_NATIVE_TRACE").is_some() {
+                    if protocol.request.settings.secret_answers.is_empty()
+                        && protocol.request.settings.secret_bindings.is_empty()
+                        && std::env::var_os("MOLFAR_NATIVE_TRACE").is_some()
+                    {
                         let method = value["method"].as_str().unwrap_or("");
                         let item = &value["params"]["item"];
                         if !method.is_empty()
@@ -1884,6 +1900,7 @@ fn run_operation(
     if !pending.is_empty() {
         let _ = emit(std::mem::take(&mut pending));
     }
+    let eligible = eligible && protocol.request.settings.secret_answers.is_empty();
     if eligible
         && cancel.load(Ordering::Relaxed)
         && !protocol.done

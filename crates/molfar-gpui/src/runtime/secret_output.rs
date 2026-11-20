@@ -56,6 +56,10 @@ impl SecretOutput {
         }
     }
 
+    pub(crate) fn use_ephemeral(&mut self, ephemeral: molfar_core::secrets::ephemeral::Ephemeral) {
+        self.redactor = self.redactor.clone().with_ephemeral(ephemeral);
+    }
+
     pub(crate) fn batch(&mut self, events: Vec<Event>) -> Vec<Event> {
         let mut output = Vec::with_capacity(events.len());
         for mut event in events {
@@ -106,6 +110,9 @@ impl SecretOutput {
                         }
                     }
                 }
+                Event::SecretAnswered(messages) => messages
+                    .iter_mut()
+                    .for_each(|message| redact.scrub(message)),
                 Event::Commands(commands) => {
                     for command in commands {
                         redact.scrub(&mut command.name);

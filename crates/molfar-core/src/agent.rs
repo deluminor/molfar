@@ -112,6 +112,8 @@ pub struct Settings {
     #[serde(skip)]
     pub secret_bindings: crate::secrets::bind::SpawnBindings,
     #[serde(skip)]
+    pub secret_answers: crate::secrets::ephemeral::Ephemeral,
+    #[serde(skip)]
     pub familiar: Option<FamiliarContext>,
     #[serde(skip)]
     pub familiar_message_id: Option<String>,
@@ -247,6 +249,10 @@ pub enum Decision {
     Session,
     Deny,
     Answer(Vec<Vec<String>>),
+    AnswerWithSecrets {
+        answers: Vec<Vec<String>>,
+        secrets: crate::secrets::ephemeral::SecretAnswers,
+    },
     KeepOpen,
 }
 #[derive(Clone, Debug, PartialEq)]
@@ -257,6 +263,7 @@ pub struct QuestionOption {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct QuestionItem {
+    pub secret: bool,
     pub id: String,
     pub prompt: String,
     pub multiple: bool,
@@ -270,6 +277,12 @@ pub struct Question {
     pub items: Vec<QuestionItem>,
     pub auto_resolve_at: Option<u64>,
 }
+impl Question {
+    pub fn has_secret(&self) -> bool {
+        self.items.iter().any(|item| item.secret)
+    }
+}
+
 pub struct Control {
     pub id: String,
     pub decision: Decision,

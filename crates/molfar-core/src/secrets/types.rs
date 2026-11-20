@@ -57,6 +57,17 @@ impl TryFrom<String> for SecretName {
 pub struct SecretValue(pub(super) SecretString);
 
 impl SecretValue {
+    pub fn one_time(value: String) -> Result<Self, Error> {
+        if !Self::valid_one_time(&value) {
+            return Err(Error::InvalidValue);
+        }
+        Ok(Self(value.into()))
+    }
+
+    pub fn valid_one_time(text: &str) -> bool {
+        (1..=MAX_VALUE_BYTES).contains(&text.len())
+    }
+
     pub fn valid(text: &str) -> bool {
         (MIN_VALUE_BYTES..=MAX_VALUE_BYTES).contains(&trim_newline(text).len())
     }

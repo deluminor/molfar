@@ -15,6 +15,16 @@ impl Input {
         SecretValue::from_text(self.content.to_string())
     }
 
+    pub(crate) fn valid_one_time_secret(&self) -> bool {
+        SecretValue::valid_one_time(&self.content)
+    }
+
+    pub(crate) fn take_secret(&mut self, cx: &mut Context<Self>) -> Result<SecretValue, Error> {
+        let value = SecretValue::one_time(self.content.to_string())?;
+        self.clear_secret(cx);
+        Ok(value)
+    }
+
     pub(crate) fn clear_secret(&mut self, cx: &mut Context<Self>) {
         self.reset_editor_history();
         self.set_text(String::new(), cx);

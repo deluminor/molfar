@@ -302,7 +302,10 @@ impl Conversation {
         Ok(())
     }
     pub(crate) fn familiar_status(&self) -> &str {
-        if self.needs_approval() || self.settings.usage_limit.is_some() {
+        if self.secret_card.is_some()
+            || self.needs_approval()
+            || self.settings.usage_limit.is_some()
+        {
             "needs-you"
         } else if self.responding() {
             "working"

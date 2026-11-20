@@ -384,13 +384,27 @@ fn accounting(
     (context, metrics)
 }
 
+fn secret_question(snapshot: &Value) -> bool {
+    snapshot["session"]["pendingQuestion"]["questions"]
+        .as_array()
+        .is_some_and(|items| {
+            items
+                .iter()
+                .any(|item| item["isSecret"] == true || item["secret"] == true)
+        })
+}
+
 pub(crate) fn question(snapshot: &Value) -> Option<Question> {
+    if secret_question(snapshot) {
+        return None;
+    }
     let prompt = &snapshot["session"]["pendingQuestion"];
     let id = prompt["requestId"].as_i64()?;
     let items = prompt["questions"]
         .as_array()?
         .iter()
         .map(|item| QuestionItem {
+            secret: false,
             id: item["id"].as_str().unwrap_or("").into(),
             prompt: item["prompt"].as_str().unwrap_or("").into(),
             multiple: item["multiSelect"] == true,
@@ -661,6 +675,9 @@ pub(crate) fn run_with_client(
             let current_approvals = approvals(&snapshot);
             let current_question = question(&snapshot);
             let mut next = update(if running { "Working…" } else { "Ready" }, !running);
+            if secret_question(&snapshot) {
+                next.status = "The provider requested secret input, which cannot be collected in the conversation.".into();
+            }
             next.start = latest_rows.len();
             if revision != last_revision {
                 let mut projected = snapshot.clone();
@@ -759,6 +776,9 @@ pub(crate) fn run_with_client(
                             .ok_or("Host question is no longer pending")?;
                         next["type"] = json!("answer");
                         next["reply"] = reply(question, answers);
+                    }
+                    Decision::AnswerWithSecrets { .. } => {
+                        return Err("The provider requested secret input, which cannot be collected in the conversation.".into());
                     }
                     Decision::KeepOpen => continue,
                     Decision::Steer(_) => {

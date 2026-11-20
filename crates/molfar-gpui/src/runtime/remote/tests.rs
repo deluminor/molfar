@@ -870,3 +870,10 @@ fn observer_reports_a_host_title_change_once_and_never_writes_it_back() {
         "Named by the host"
     );
 }
+
+#[test]
+fn remote_secret_question_is_rejected() {
+    let snapshot = json!({"session":{"pendingQuestion":{"requestId":7,"questions":[{"id":"q","prompt":"Token?","isSecret":true}]}}});
+    assert!(secret_question(&snapshot));
+    assert!(question(&snapshot).is_none());
+}

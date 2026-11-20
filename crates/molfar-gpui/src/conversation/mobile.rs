@@ -223,7 +223,12 @@ impl Conversation {
     /// for none. Only the first: the desktop answers its questions in order.
     pub(crate) fn mobile_question(&self, cx: &gpui::App) -> Value {
         self.questions.front().map_or(Value::Null, |(card, _)| {
-            question_prompt(card.read(cx).request())
+            let question = card.read(cx).request();
+            if question.has_secret() {
+                Value::Null
+            } else {
+                question_prompt(question)
+            }
         })
     }
 
@@ -242,6 +247,9 @@ impl Conversation {
             .map(|(card, _)| card.clone())
             .filter(|card| question_request_id(card.read(cx).id()) == request_id)
             .ok_or("This question was already answered")?;
+        if card.read(cx).request().has_secret() {
+            return Err("Answer on desktop".into());
+        }
         match reply {
             None => card.update(cx, |card, cx| card.keep_open(cx)),
             Some(reply) => {
@@ -253,7 +261,12 @@ impl Conversation {
     }
 
     pub(crate) fn mobile_waiting(&self, cx: &gpui::App) -> Option<Waiting> {
-        if self.secret_request(cx).is_some() {
+        if self.secret_request(cx).is_some()
+            || self
+                .questions
+                .front()
+                .is_some_and(|(card, _)| card.read(cx).request().has_secret())
+        {
             return Some(Waiting::Secret);
         }
         let inputs = self.pending_notification_inputs(cx);
@@ -688,6 +701,7 @@ mod question_tests {
             title: String::new(),
             items: vec![
                 QuestionItem {
+                    secret: false,
                     id: "fruit".into(),
                     prompt: "Which fruit?".into(),
                     multiple: false,
@@ -706,6 +720,7 @@ mod question_tests {
                     ],
                 },
                 QuestionItem {
+                    secret: false,
                     id: String::new(),
                     prompt: "Toppings?".into(),
                     multiple: true,

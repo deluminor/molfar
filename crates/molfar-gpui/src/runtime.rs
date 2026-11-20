@@ -642,15 +642,23 @@ fn run_turn_using(
             &mut settings,
             raw_native_command,
         )?;
+        let familiar = settings
+            .familiar
+            .as_ref()
+            .map(|context| context.familiar.id.clone());
         let mut secret_output = secret_output::SecretOutput::open_session(
             &store,
             &summary.cwd,
             &secrets,
-            settings
-                .familiar
-                .as_ref()
-                .map(|context| context.familiar.id.as_str()),
+            familiar.as_deref(),
         )?;
+        settings.secret_answers = molfar_core::secrets::ephemeral::Ephemeral::for_session(
+            store.clone(),
+            secrets.clone(),
+            summary.cwd.clone(),
+            familiar,
+        );
+        secret_output.use_ephemeral(settings.secret_answers.clone());
         let request = Request {
             kind,
             binary,
@@ -916,6 +924,15 @@ fn run_turn_using(
                         Event::Question(question) => {
                             status = "Waiting for your answer".into();
                             questions.push(question);
+                            boundary = true;
+                        }
+                        Event::SecretAnswered(notes) => {
+                            for note in notes {
+                                let at = transcript.begin("system");
+                                transcript.rows[at].text = note;
+                                start = start.min(at);
+                                pending.changed(at);
+                            }
                             boundary = true;
                         }
                         Event::QuestionResolved(id) => {

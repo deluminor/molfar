@@ -1405,10 +1405,17 @@ impl Conversation {
                                         return;
                                     }
                                     let before = this.needs_approval();
-                                    let decision = reply
-                                        .answers
-                                        .clone()
-                                        .map_or(Decision::Deny, Decision::Answer);
+                                    let decision = if reply.secrets.is_empty() {
+                                        reply
+                                            .answers
+                                            .clone()
+                                            .map_or(Decision::Deny, Decision::Answer)
+                                    } else {
+                                        Decision::AnswerWithSecrets {
+                                            answers: reply.answers.clone().unwrap_or_default(),
+                                            secrets: reply.secrets.clone(),
+                                        }
+                                    };
                                     if this.controls.as_ref().is_none_or(|controls| {
                                         controls
                                             .send(Control {

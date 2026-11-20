@@ -63,6 +63,12 @@ impl Shell {
             history.push(request.clone());
         }
         blocks.extend(history.into_iter().map(super::blocks::secret_request));
+        let secret = view.as_ref().is_some_and(|view| {
+            view.read(cx).mobile_waiting(cx) == Some(crate::conversation::MobileWaiting::Secret)
+        });
+        if secret && request.is_none() {
+            blocks.push(json!({"id":"provider-secret","role":"system","text":"Answer on desktop"}));
+        }
         let pending = view
             .as_ref()
             .map(|view| view.read(cx).mobile_pending(cx))
@@ -80,7 +86,7 @@ impl Shell {
             .as_ref()
             .map(|view| view.read(cx).mobile_question(cx))
             .filter(|value| !value.is_null());
-        let status = if question.is_some() || needs_approval || request.is_some() {
+        let status = if question.is_some() || needs_approval || secret {
             "needs-you"
         } else if busy {
             "working"

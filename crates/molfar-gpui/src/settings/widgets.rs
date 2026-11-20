@@ -50,7 +50,7 @@ pub(super) fn page_header(title: &'static str, description: &'static str) -> Div
 }
 
 /// A muted line inside a group card: an empty state or a hint.
-pub(super) fn note(text: impl Into<SharedString>) -> AnyElement {
+pub(crate) fn note(text: impl Into<SharedString>) -> AnyElement {
     div()
         .px_4()
         .py(px(14.))

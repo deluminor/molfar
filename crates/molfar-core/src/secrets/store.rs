@@ -63,6 +63,7 @@ impl SecretStore {
             database,
             scopes,
             extra: Vec::new(),
+            ephemeral: Default::default(),
         })
     }
 

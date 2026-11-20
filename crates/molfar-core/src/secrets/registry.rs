@@ -36,10 +36,16 @@ pub struct Redactor {
     pub(super) registry: Registry,
     pub(super) database: PathBuf,
     pub(super) scopes: Vec<Scope>,
+    pub(super) ephemeral: super::ephemeral::Ephemeral,
     pub(super) extra: Vec<(super::SecretName, SecretValue)>,
 }
 
 impl Redactor {
+    pub fn with_ephemeral(mut self, ephemeral: super::ephemeral::Ephemeral) -> Self {
+        self.ephemeral = ephemeral;
+        self
+    }
+
     pub(super) fn with_values(
         mut self,
         values: impl IntoIterator<Item = (super::SecretName, SecretValue)>,

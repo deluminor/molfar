@@ -5,7 +5,9 @@ use gpui::{
     Animation, AnimationExt, AnyElement, App, Context, Entity, EntityId, EventEmitter, FocusHandle,
     Focusable, Hsla, MouseButton, Role, Subscription, Window, canvas, div, prelude::*, px,
 };
-use molfar_core::agent::Question;
+use molfar_core::{agent::Question, secrets::ephemeral::SecretAnswers};
+
+mod secret;
 use std::time::{Duration, Instant};
 
 /// Crossfade between the composer and the card.
@@ -18,6 +20,7 @@ const RADIUS: f32 = 12.;
 pub(crate) struct Answered {
     pub id: String,
     pub answers: Option<Vec<Vec<String>>>,
+    pub secrets: SecretAnswers,
 }
 pub(crate) struct KeptOpen {
     pub id: String,
@@ -31,6 +34,8 @@ pub(crate) struct QuestionCard {
     request: Question,
     selected: Vec<Vec<String>>,
     fields: Vec<Entity<input::Input>>,
+    saves: Vec<Option<secret::Save>>,
+    secret_error: Option<String>,
     focus: FocusHandle,
     focused: bool,
     step: usize,
@@ -59,7 +64,13 @@ impl QuestionCard {
                 } else {
                     "Something else"
                 };
-                cx.new(|cx| input::Input::field(&item.prompt, placeholder, content(0.35), cx))
+                cx.new(|cx| {
+                    if item.secret {
+                        input::Input::secret_field(cx)
+                    } else {
+                        input::Input::field(&item.prompt, placeholder, content(0.35), cx)
+                    }
+                })
             })
             .collect();
         let mut events: Vec<_> = fields
@@ -84,6 +95,11 @@ impl QuestionCard {
                 }
             })
         }));
+        let saves = request
+            .items
+            .iter()
+            .map(|item| item.secret.then(|| secret::Save::new(&item.id, cx)))
+            .collect();
         let selected = vec![Vec::new(); request.items.len()];
         let clock = request.auto_resolve_at.map(|_| {
             cx.spawn(async move |this, cx| {
@@ -105,6 +121,8 @@ impl QuestionCard {
             request,
             selected,
             fields,
+            saves,
+            secret_error: None,
             focus: cx.focus_handle(),
             focused: false,
             step: 0,
@@ -126,10 +144,13 @@ impl QuestionCard {
     /// A phone's reply, as though given here: the same answer event, so the
     /// conversation sends and clears it as for the card's own.
     pub(crate) fn reply(&mut self, answers: Option<Vec<Vec<String>>>, cx: &mut Context<Self>) {
-        cx.emit(Answered {
-            id: self.request.id.clone(),
-            answers,
-        });
+        if !self.request.has_secret() {
+            cx.emit(Answered {
+                id: self.request.id.clone(),
+                answers,
+                secrets: SecretAnswers::default(),
+            });
+        }
     }
     pub(crate) fn blocks_steering(&self) -> bool {
         self.request.auto_resolve_at.is_none()
@@ -160,6 +181,9 @@ impl QuestionCard {
             .iter()
             .enumerate()
             .map(|(ix, item)| {
+                if item.secret {
+                    return Vec::new();
+                }
                 let mut answers = self.selected[ix].clone();
                 let text = self.fields[ix].read(cx).content.trim();
                 if item.allow_custom && !text.is_empty() {
@@ -204,20 +228,30 @@ impl QuestionCard {
         self.keep_open(cx);
         let ix = self.step;
         self.selected[ix].clear();
-        self.fields[ix].update(cx, |field, cx| field.set_text(String::new(), cx));
+        if self.request.items[ix].secret {
+            self.fields[ix].update(cx, |field, cx| field.clear_secret(cx));
+        } else {
+            self.fields[ix].update(cx, |field, cx| field.set_text(String::new(), cx));
+        }
         self.advance(cx);
     }
     fn finish(&mut self, cx: &mut Context<Self>) {
         let answers = self.answers(cx);
+        let Some(secrets) = self.masked_answers(cx) else {
+            return;
+        };
         cx.emit(Answered {
             id: self.request.id.clone(),
             answers: answers.iter().any(|a| !a.is_empty()).then_some(answers),
+            secrets,
         });
     }
     fn dismiss(&mut self, cx: &mut Context<Self>) {
+        self.clear_masked(cx);
         cx.emit(Answered {
             id: self.request.id.clone(),
             answers: None,
+            secrets: SecretAnswers::default(),
         });
     }
     fn choose(&mut self, ix: usize, oi: usize, cx: &mut Context<Self>) {
@@ -283,6 +317,7 @@ impl QuestionCard {
     fn page(&self, ix: usize, live: bool, cx: &mut Context<Self>) -> AnyElement {
         let item = &self.request.items[ix];
         let multiple = item.multiple;
+        let secret_options = item.secret.then(|| self.save_options(ix, live, cx));
         let options = item.options.iter().enumerate().map(|(oi, option)| {
             let label = option.label.clone();
             let selected = self.selected[ix].contains(&label);
@@ -390,6 +425,7 @@ impl QuestionCard {
                         )
                     }),
             )
+            .children(secret_options)
             .when(!item.options.is_empty(), |d| {
                 d.child(
                     div()
@@ -473,7 +509,8 @@ impl QuestionCard {
         let last = ix + 1 == self.request.items.len();
         // Single choices advance on click; a typed or multiple answer needs a
         // button. A revisited page offers the way forward too.
-        let proceed = ready && (item.multiple || typing || ix < self.reached || !item.allow_custom);
+        let proceed = ready
+            && (item.secret || item.multiple || typing || ix < self.reached || !item.allow_custom);
         div()
             .m(px(6.))
             .mt(px(4.))
@@ -820,6 +857,7 @@ mod tests {
             auto_resolve_at: None,
             items: vec![
                 QuestionItem {
+                    secret: false,
                     id: "one".into(),
                     prompt: "Choose one".into(),
                     multiple: false,
@@ -827,6 +865,7 @@ mod tests {
                     options: vec![option("First"), option("Second")],
                 },
                 QuestionItem {
+                    secret: false,
                     id: "many".into(),
                     prompt: "Choose several".into(),
                     multiple: true,
