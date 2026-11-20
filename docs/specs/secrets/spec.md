@@ -260,3 +260,29 @@ and mobile represents a desktop-only request with `MobileWaiting::Secret`.
 A Familiar uses its own `familiar:<id>` scope and can see global entries.
 The Familiar ID and project ID remain distinct even if their text matches.
 The threat model still covers accidental literal echoes.
+
+Use `molfar-native app run --secret NAME[=ENV] -- CMD [ARGS...]` from an
+internal project session. A Familiar can use this command in an assigned
+local project with its own credentials and global credentials. The app
+runs the child in a canonicalized directory inside an allowed root. It
+records session, secret names, exit status, timeout and duration. Retries
+after completion return receipt metadata.
+
+Project bindings are off by default. Settings stores environment names
+and secret IDs. Native provider spawns resolve those references immediately
+before starting their processes. Enabling a binding exposes the variable
+to every tool of the agent. Transformed values fall outside literal
+redaction.
+
+Local provider questions marked `isSecret` use masked desktop input
+when their reply protocol supports free text. A one-time answer is
+registered for redaction before sending it to the provider. Short answers
+are redacted only at whole-token boundaries. Saving is opt-in and uses
+the current project or Familiar scope. Cursor's documented ACP extension
+accepts option IDs only, so the desktop declines a Cursor secret prompt.
+Codex async and remote secret questions are also declined.
+[Cursor ACP question contract](https://prod.cursor.com/docs/cli/acp)
+
+The isolated app runner is covered by the Secrets backend matrix on
+macOS, Windows and Linux. A local fixture checks masked answers and
+bound values across streamed output, tool output and the session database.
