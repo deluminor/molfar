@@ -56,7 +56,21 @@ impl Familiars {
         }
         Ok(familiar)
     }
-    fn finish_call(&mut self, call: Call, result: Result<Value, String>, cx: &mut Context<Self>) {
+    pub(super) fn finish_call(
+        &mut self,
+        call: Call,
+        result: Result<Value, String>,
+        cx: &mut Context<Self>,
+    ) {
+        self.finish_call_with_receipt(call, result.clone(), result, cx);
+    }
+    pub(super) fn finish_call_with_receipt(
+        &mut self,
+        call: Call,
+        result: Result<Value, String>,
+        receipt: Result<Value, String>,
+        cx: &mut Context<Self>,
+    ) {
         let key = (call.session, call.request_id.clone());
         self.app_pending.remove(&key);
         if self.app_results.len() > 1024
@@ -65,15 +79,14 @@ impl Familiars {
             self.app_results.remove(&key);
         }
         self.app_results
-            .insert(key, (fingerprint(&call), result.clone()));
+            .insert(key, (fingerprint(&call), receipt.clone()));
         let store = self.store.clone();
         let receipt_key = format!(
             "familiar-app-receipt:{}:{}",
             call.session,
             files::content_hash(&call.request_id)
         );
-        let receipt =
-            serde_json::to_string(&(fingerprint(&call), result.clone())).unwrap_or_default();
+        let receipt = serde_json::to_string(&(fingerprint(&call), receipt)).unwrap_or_default();
         let previous = self.writes.take();
         self.writes = Some(cx.spawn(async move |_, cx| {
             if let Some(previous) = previous {
@@ -187,6 +200,9 @@ impl Familiars {
             });
             return;
         }
+        if self.app_runs.reattach(&call) || self.reattach_secret(&call) {
+            return;
+        }
         if !self.app_pending.insert(key.clone()) {
             let _ = call.reply.send(Err(
                 "Request is still running; retry with the same request ID".into(),
@@ -268,6 +284,17 @@ impl Familiars {
             self.finish_call(call, Err("Input must be a JSON object".into()), cx);
             return;
         }
+        if call.action == molfar_core::secrets::run::ACTION {
+            self.dispatch_run(call, &familiar, cx);
+            return;
+        }
+        if matches!(
+            call.action.as_str(),
+            molfar_core::secrets::request::REQUEST | molfar_core::secrets::request::LIST
+        ) {
+            self.dispatch_secret(call, familiar, cx);
+            return;
+        }
         let mut input = call.input.clone();
         let action = call.action.clone();
         // A session it starts without naming a model takes the one set for
@@ -300,9 +327,6 @@ impl Familiars {
             .or_else(|| self.running.get(&call.session).map(|r| &r.view))
             .cloned();
         let result = match action.as_str() {
-            molfar_core::secrets::request::REQUEST | molfar_core::secrets::request::LIST => {
-                Err("Familiar secrets arrive in card 2/2.".into())
-            }
             "models.list" => {
                 let profiles = Kind::ALL
                     .into_iter()

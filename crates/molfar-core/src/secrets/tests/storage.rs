@@ -170,7 +170,7 @@ fn index_write_failure_rolls_back_os_credential() {
 fn external_catalog_has_no_secret_tools() {
     assert!(crate::external_mcp::tools::catalog()
         .iter()
-        .all(|tool| !tool.name.starts_with("secrets")));
+        .all(|tool| !tool.name.starts_with("secrets") && tool.name != "run"));
 }
 
 #[test]
@@ -248,5 +248,59 @@ fn familiar_scope_is_isolated_and_deletable() {
     assert_eq!(
         redact.text("familiar-fixture global-fixture"),
         "familiar-fixture [secret:TOKEN]"
+    );
+}
+
+#[test]
+fn familiar_list_and_run_cannot_resolve_project_credentials() {
+    let db = Store::open(Path::new(":memory:")).unwrap();
+    let store = SecretStore::new(MemoryBackend::default());
+    let scope = Scope::Familiar("own".into());
+    let name = SecretName::parse("PROJECT_ONLY").unwrap();
+    store
+        .create(
+            &db,
+            Scope::Project("p".into()),
+            name.clone(),
+            SecretValue::from_text("project-only-fixture".into()).unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        request::list(&store, &db, Some(scope.clone())).unwrap(),
+        serde_json::json!([])
+    );
+    let scopes = scopes_for(Some(scope.clone())).collect::<Vec<_>>();
+    assert_eq!(
+        store
+            .resolve_names(&db, &scopes, std::slice::from_ref(&name))
+            .err()
+            .unwrap(),
+        "Secret PROJECT_ONLY unavailable."
+    );
+    let mut request = request::SecretRequest {
+        request_id: "fixture".into(),
+        session: 42,
+        agent: "Fixture".into(),
+        name,
+        scope: scope.clone(),
+        reason: "Need credential".into(),
+        status: request::RequestStatus::Open,
+        time: 1,
+    }
+    .prepare(&store, &db)
+    .unwrap()
+    .unwrap();
+    request.status = request::RequestStatus::Saved;
+    store
+        .create(
+            &db,
+            request.scope,
+            request.name,
+            SecretValue::from_text("familiar-only-fixture".into()).unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        super::request::list(&store, &db, Some(scope)).unwrap()[0]["scope"],
+        "familiar:own"
     );
 }

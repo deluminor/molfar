@@ -521,13 +521,15 @@ impl SettingsView {
             self.secret_page = None;
         } else if let Some((database, store)) = self.secret_database.clone() {
             let workspace = self.ctx.projects.clone();
+            let familiars = self.ctx.familiars.clone();
             if let Some(page) = &self.secret_page {
-                page.update(cx, |page, cx| page.refresh(workspace, cx));
+                page.update(cx, |page, cx| page.refresh(workspace, familiars, cx));
             } else {
-                self.secret_page =
-                    Some(cx.new(|cx| {
-                        pages::secrets::SecretsPage::new(database, store, workspace, cx)
-                    }));
+                self.secret_page = Some(cx.new(|cx| {
+                    let mut page = pages::secrets::SecretsPage::new(database, store, workspace, cx);
+                    page.set_familiars(familiars);
+                    page
+                }));
             }
         }
     }

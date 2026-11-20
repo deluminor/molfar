@@ -642,6 +642,15 @@ fn run_turn_using(
             &mut settings,
             raw_native_command,
         )?;
+        let mut secret_output = secret_output::SecretOutput::open_session(
+            &store,
+            &summary.cwd,
+            &secrets,
+            settings
+                .familiar
+                .as_ref()
+                .map(|context| context.familiar.id.as_str()),
+        )?;
         let request = Request {
             kind,
             binary,
@@ -655,8 +664,6 @@ fn run_turn_using(
             model: settings.model.clone(),
             settings,
         };
-        let mut secret_output =
-            secret_output::SecretOutput::open_path(&store, &summary.cwd, &secrets)?;
         let mut tool_rows = std::collections::HashMap::new();
         // The running-work list attributes the provider and its tools to this session.
         let mut result = molfar_core::process::owned_by(summary.id, || {

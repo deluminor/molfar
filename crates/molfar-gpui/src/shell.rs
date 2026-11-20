@@ -47,7 +47,7 @@ mod rails;
 mod remote_projects;
 mod remote_sessions;
 mod search;
-mod secret_requests;
+pub(crate) mod secret_requests;
 mod session_filters;
 mod session_folders;
 mod session_groups;

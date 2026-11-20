@@ -20,6 +20,7 @@ pub(in crate::settings) struct SecretsPage {
     workspace: Vec<(String, String)>,
     entries: Vec<Entry>,
     scopes: Vec<Project>,
+    familiars: Vec<crate::settings::FamiliarSetting>,
     bindings: HashMap<String, bind::ProjectBindings>,
     binding: bindings::BindingEditor,
     edit: Option<Edit>,
@@ -50,6 +51,7 @@ impl SecretsPage {
             workspace,
             entries: Vec::new(),
             scopes: Vec::new(),
+            familiars: Vec::new(),
             bindings: HashMap::new(),
             binding: bindings::BindingEditor::new(cx),
             edit: None,
@@ -65,11 +67,25 @@ impl SecretsPage {
         this
     }
 
+    pub(in crate::settings) fn set_familiars(
+        &mut self,
+        familiars: Vec<crate::settings::FamiliarSetting>,
+    ) {
+        self.familiars = familiars;
+    }
+
     pub(in crate::settings) fn refresh(
         &mut self,
         workspace: Vec<(String, String)>,
+        familiars: Vec<crate::settings::FamiliarSetting>,
         cx: &mut Context<Self>,
     ) {
+        if self.familiars != familiars {
+            self.familiars = familiars;
+            self.clear_form(cx);
+            self.scope = None;
+            self.reload(cx);
+        }
         if self.workspace != workspace {
             self.clear_form(cx);
             self.workspace = workspace;

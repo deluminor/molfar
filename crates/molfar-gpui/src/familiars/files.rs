@@ -276,6 +276,42 @@ impl Familiars {
     }
     /// Takes the Familiar off the roster, once confirmed here or on the phone.
     pub(super) fn remove_familiar(&mut self, id: &str, cx: &mut Context<Self>) {
+        let sessions: Vec<_> = self
+            .roster
+            .get(id)
+            .and_then(|familiar| familiar.session_id)
+            .into_iter()
+            .chain(
+                self.running
+                    .iter()
+                    .filter(|(_, run)| run.familiar == id)
+                    .map(|(session, _)| *session),
+            )
+            .collect();
+        for session in sessions {
+            self.app_runs.stop(session);
+            self.cancel_secret(session, cx);
+        }
+        let store = self.store.clone();
+        let secrets = self.secret_store.clone();
+        let scope = molfar_core::secrets::Scope::Familiar(id.to_owned());
+        let work = cx.background_executor().spawn(async move {
+            let db = locked(&store)?;
+            secrets
+                .delete_scope(&db, &scope)
+                .map_err(|error| error.to_string())
+        });
+        cx.spawn(async move |this, cx| {
+            let result = work.await;
+            let _ = this.update(cx, |this, cx| {
+                if let Err(error) = result {
+                    this.error = Some(format!("Could not delete Familiar secrets: {error}"));
+                }
+                this.changed(cx);
+            });
+        })
+        .detach();
+
         if let Some(view) = self.chats.remove(id) {
             view.update(cx, |v, cx| v.familiar_stop(cx));
         }
