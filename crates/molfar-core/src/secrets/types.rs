@@ -53,6 +53,7 @@ impl TryFrom<String> for SecretName {
     }
 }
 
+#[derive(Clone)]
 pub struct SecretValue(pub(super) SecretString);
 
 impl SecretValue {

@@ -43,14 +43,11 @@ impl Redactor {
                 continue;
             }
             for value in &registered.values {
-                let secret = value.0.expose_secret();
-                patterns.extend(
-                    std::iter::once(secret)
-                        .chain(secret.lines())
-                        .filter(|pattern| pattern.len() >= MIN_VALUE_BYTES)
-                        .map(|pattern| (pattern, entry.name.as_str())),
-                );
+                append_patterns(&mut patterns, entry.name.as_str(), value.0.expose_secret());
             }
+        }
+        for (name, value) in &self.extra {
+            append_patterns(&mut patterns, name.as_str(), value.0.expose_secret());
         }
         if patterns.is_empty() {
             return (text.to_owned(), text.len());
@@ -79,6 +76,15 @@ impl Redactor {
         }
         (result, offset)
     }
+}
+
+fn append_patterns<'a>(patterns: &mut Vec<(&'a str, &'a str)>, name: &'a str, secret: &'a str) {
+    patterns.extend(
+        std::iter::once(secret)
+            .chain(secret.lines())
+            .filter(|pattern| pattern.len() >= MIN_VALUE_BYTES)
+            .map(|pattern| (pattern, name)),
+    );
 }
 
 #[derive(Default)]

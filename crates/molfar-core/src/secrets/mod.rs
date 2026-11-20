@@ -7,6 +7,7 @@ mod projects;
 pub mod redact;
 mod registry;
 pub mod request;
+pub mod run;
 mod store;
 mod types;
 
