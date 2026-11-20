@@ -49,11 +49,22 @@ pub struct Prepared {
 }
 
 impl Prepared {
+    pub fn with_ephemeral(mut self, ephemeral: crate::secrets::ephemeral::Ephemeral) -> Self {
+        self.redactor = self.redactor.with_ephemeral(ephemeral);
+        self
+    }
+
     pub fn execute(self, cancel: &Cancellation) -> Result<Outcome, String> {
         if cancel.cancelled() {
             return Err("App run cancelled.".into());
         }
-        let mut command = Command::new(&self.request.argv[0]);
+        let executable = std::path::Path::new(&self.request.argv[0]);
+        let executable = if executable.is_relative() && executable.components().count() > 1 {
+            self.cwd.join(executable)
+        } else {
+            executable.to_owned()
+        };
+        let mut command = Command::new(executable);
         command
             .args(&self.request.argv[1..])
             .current_dir(&self.cwd)
@@ -83,6 +94,7 @@ impl Prepared {
             child.stdout.take().expect("piped stdout"),
             self.redactor.clone(),
         );
+        let cwd = self.redactor.text(&self.cwd.to_string_lossy()).into();
         let stderr = capture(child.stderr.take().expect("piped stderr"), self.redactor);
         let mut status = None;
         let mut out = None;
@@ -134,7 +146,7 @@ impl Prepared {
             stderr,
             truncated: stdout_truncated || stderr_truncated,
             secrets: self.names,
-            cwd: self.cwd,
+            cwd,
         })
     }
 }

@@ -23,6 +23,7 @@ impl Familiars {
                 project: None,
                 scope: Some(Scope::Familiar(familiar.id.clone())),
                 roots,
+                ephemeral: view.read(cx).turn_secret_answers.clone(),
             },
             cx,
         );

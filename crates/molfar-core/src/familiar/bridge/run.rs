@@ -9,9 +9,14 @@ pub(super) fn client(args: &[String]) -> Result<Value, String> {
     let deadline = Instant::now() + Duration::from_secs(timeout + 65);
     loop {
         let result = call(ACTION.to_owned(), input.clone(), id.clone())?;
-        if result["error"].as_str() != Some(TIMEOUT) || Instant::now() >= deadline {
+        let retry = result["error"].as_str().is_some_and(|error| {
+            error == TIMEOUT
+                || error.starts_with("Request is still running; retry with the same request ID")
+        });
+        if !retry || Instant::now() >= deadline {
             return Ok(result);
         }
+        std::thread::sleep(Duration::from_millis(150));
     }
 }
 

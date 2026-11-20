@@ -246,6 +246,7 @@ pub(crate) struct Conversation {
     runner: Option<Entity<crate::composer_runner::Runner>>,
     cancel: Arc<AtomicBool>,
     pub(crate) session_runs: crate::shell::app_run::SessionRuns,
+    pub(crate) turn_secret_answers: molfar_core::secrets::ephemeral::Ephemeral,
     title_cancel: Option<Arc<AtomicBool>>,
     worktree_name_cancel: Option<Arc<AtomicBool>>,
     _submission: Subscription,
@@ -698,6 +699,7 @@ impl Conversation {
             runner: None,
             cancel: Arc::new(AtomicBool::new(false)),
             session_runs: Default::default(),
+            turn_secret_answers: Default::default(),
             title_cancel: None,
             worktree_name_cancel: None,
             _submission: submission,
@@ -1136,6 +1138,8 @@ impl Conversation {
                     .or_insert_with(|| control.current.clone());
             }
         }
+        self.turn_secret_answers = Default::default();
+        settings.secret_answers = self.turn_secret_answers.clone();
         settings.turn_model = Some(molfar_core::agent::TurnInfo {
             provider: self.summary.provider.clone(),
             model: model_label.to_string(),
@@ -1469,6 +1473,7 @@ impl Conversation {
                             this.status = "Waiting for your answer".into();
                         }
                         if finished {
+                            this.turn_secret_answers = Default::default();
                             if this.is_remote() {
                                 this.settings.remote_action = None;
                                 this.remote_state.refreshing = false;

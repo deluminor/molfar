@@ -8,7 +8,7 @@ use super::{
     Store, INDEX, PROJECTS,
 };
 
-use super::registry::{Redactor, Registered, Registry};
+use super::registry::{Registered, Registry};
 
 #[derive(Clone)]
 pub struct SecretStore {
@@ -40,31 +40,6 @@ impl SecretStore {
     #[cfg(feature = "test-secrets")]
     pub fn in_memory() -> Self {
         Self::new(super::backend::MemoryBackend::default())
-    }
-
-    pub fn redactor(&self, db: &Store, project: Option<Scope>) -> Result<Redactor, Error> {
-        let _lock = lock()?;
-        let index: Vec<Entry> = load(db, INDEX)?;
-        let database = db.database_path().to_owned();
-        let mut registry = self.registry.write().map_err(|_| Error::Index)?;
-        let entries = registry.entry(database.clone()).or_default();
-        let scopes: Vec<_> = super::scopes_for(project).collect();
-        for entry in index {
-            if scopes.contains(&entry.scope) && !entries.contains_key(&entry.id) {
-                match self.backend.get(&entry.account()) {
-                    Ok(value) => Registered::add(entries, entry, value),
-                    Err(Error::Missing) => continue,
-                    Err(error) => return Err(error),
-                }
-            }
-        }
-        Ok(Redactor {
-            registry: self.registry.clone(),
-            database,
-            scopes,
-            extra: Vec::new(),
-            ephemeral: Default::default(),
-        })
     }
 
     pub fn probe(&self) -> Result<(), Error> {

@@ -2850,3 +2850,5 @@ fn completion_report_flags_a_child_stopped_before_a_restart(cx: &mut TestAppCont
     });
 }
 mod board;
+
+mod secrets;

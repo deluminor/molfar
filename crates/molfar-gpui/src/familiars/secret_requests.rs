@@ -66,6 +66,7 @@ impl Familiars {
             return self.finish_call(call, Err("Familiar session unavailable.".into()), cx);
         };
         let was_busy = view.read(cx).busy;
+        let ephemeral = view.read(cx).turn_secret_answers.clone();
         let label = format!("Familiar {}", familiar.label());
         let request = SecretRequest {
             request_id: call.request_id.clone(),
@@ -81,7 +82,7 @@ impl Familiars {
         self.secret_requests.insert(session, OpenRequest::new(call));
         let work = cx.background_executor().spawn(async move {
             let db = locked(&db)?;
-            request.prepare(&store, &db)
+            request.prepare(&store, &db, ephemeral)
         });
         cx.spawn(async move |this, cx| {
             let result = work.await;

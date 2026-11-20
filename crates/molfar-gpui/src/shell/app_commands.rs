@@ -22,9 +22,14 @@ enum Effect {
 impl Shell {
     pub(super) fn init_app_bridge(&mut self, cx: &mut Context<Self>) {
         cx.on_app_quit(|this, cx| {
-            this.app_runs.stop_all();
-            cx.background_executor()
-                .timer(std::time::Duration::from_millis(750))
+            let executor = cx.background_executor().clone();
+            if this.app_runs.stop_all() {
+                cx.background_executor().spawn(async move {
+                    executor.timer(std::time::Duration::from_millis(750)).await
+                })
+            } else {
+                gpui::Task::ready(())
+            }
         })
         .detach();
         if cx.is_test() {
@@ -233,7 +238,9 @@ impl Shell {
         let receipt_key = app::receipt_key(call.session, &call.request_id);
         let store = self.store.clone();
         let secrets = self.secret_store.clone();
-        let project = self.sessions[&call.session].read(cx).summary.cwd.clone();
+        let caller = self.sessions[&call.session].read(cx);
+        let project = caller.summary.cwd.clone();
+        let ephemeral = caller.turn_secret_answers.clone();
         let mut input = (!matches!(
             call.action.as_str(),
             molfar_core::secrets::request::REQUEST | molfar_core::secrets::run::ACTION
@@ -251,7 +258,9 @@ impl Shell {
             if receipt.is_none()
                 && let Some(input) = &mut input
             {
-                super::secret_requests::project_redactor(&secrets, &db, &project)?.json(input);
+                super::secret_requests::project_redactor(&secrets, &db, &project)?
+                    .with_ephemeral(ephemeral)
+                    .json(input);
             }
             Ok::<_, String>((receipt, input))
         });

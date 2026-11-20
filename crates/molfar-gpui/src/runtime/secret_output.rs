@@ -16,7 +16,7 @@ impl SecretOutput {
         project: &str,
         store: &SecretStore,
     ) -> Result<Self, String> {
-        Self::open_session(database, project, store, None)
+        Self::open_session(database, project, store, None, false)
     }
 
     pub(crate) fn open_session(
@@ -24,6 +24,7 @@ impl SecretOutput {
         project: &str,
         store: &SecretStore,
         familiar: Option<&str>,
+        binding: bool,
     ) -> Result<Self, String> {
         let db = locked(database)?;
         if let Some(familiar) = familiar {
@@ -42,9 +43,12 @@ impl SecretOutput {
             Err(error) => Err(error),
         }
         .map_err(|error| error.to_string())?;
-        let redactor = store
-            .redactor(&db, Some(scope))
-            .map_err(|error| error.to_string())?;
+        let redactor = if binding {
+            store.redactor_for_spawn(&db, Some(scope))
+        } else {
+            store.redactor(&db, Some(scope))
+        }
+        .map_err(|error| error.to_string())?;
         Ok(Self::new(redactor))
     }
 

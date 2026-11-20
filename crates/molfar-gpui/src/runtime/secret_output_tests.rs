@@ -10,6 +10,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod answers;
+
 const OLD: &str = "fictional-old-value";
 const NEW: &str = "fictional-new-value";
 
@@ -117,17 +119,17 @@ fn provider_output_redacts_live_and_persisted_rows_and_board_reply() {
     let report = read_stage_output(AgentStage::Implement, &reply).unwrap();
     assert!(format!("{report:?}").contains("[secret:TEST_KEY]"));
 
-    assert_no_plaintext(&app_data);
+    assert_no_values(&app_data, &[OLD, NEW]);
 }
 
-fn assert_no_plaintext(path: &Path) {
+fn assert_no_values(path: &Path, values: &[&str]) {
     for entry in fs::read_dir(path).unwrap() {
         let path = entry.unwrap().path();
         if path.is_dir() {
-            assert_no_plaintext(&path);
+            assert_no_values(&path, values);
         } else {
             let bytes = fs::read(path).unwrap();
-            for secret in [OLD, NEW] {
+            for secret in values {
                 assert!(
                     !bytes
                         .windows(secret.len())

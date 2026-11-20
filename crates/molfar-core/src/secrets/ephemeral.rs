@@ -31,21 +31,30 @@ impl fmt::Debug for Ephemeral {
 }
 
 impl Ephemeral {
-    pub fn for_session(
+    #[cfg(test)]
+    fn for_session(
         database: Arc<Mutex<Store>>,
         store: SecretStore,
         project: String,
         familiar: Option<String>,
     ) -> Self {
-        Self {
-            save: Some(SaveTarget {
-                database,
-                store,
-                project,
-                familiar,
-            }),
-            ..Self::default()
-        }
+        Self::default().with_session(database, store, project, familiar)
+    }
+
+    pub fn with_session(
+        mut self,
+        database: Arc<Mutex<Store>>,
+        store: SecretStore,
+        project: String,
+        familiar: Option<String>,
+    ) -> Self {
+        self.save = Some(SaveTarget {
+            database,
+            store,
+            project,
+            familiar,
+        });
+        self
     }
 
     pub(crate) fn is_empty(&self) -> bool {

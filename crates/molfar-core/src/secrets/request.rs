@@ -79,6 +79,7 @@ impl SecretRequest {
         mut self,
         store: &SecretStore,
         db: &Store,
+        ephemeral: super::ephemeral::Ephemeral,
     ) -> Result<Result<Self, Status>, String> {
         if store.probe().is_err() {
             return Ok(Err(Status::Unavailable));
@@ -92,7 +93,8 @@ impl SecretRequest {
         }
         let redactor = store
             .redactor(db, Some(self.scope.clone()))
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())?
+            .with_ephemeral(ephemeral);
         redactor.scrub(&mut self.agent);
         redactor.scrub(&mut self.reason);
         Ok(Ok(self))

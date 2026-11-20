@@ -250,7 +250,8 @@ fn claude_turn_result(value: &Value) -> bool {
 }
 
 fn write_json(out: &mut impl Write, value: Value) -> Result<(), String> {
-    let mut frame = serde_json::to_vec(&value).map_err(|e| e.to_string())?;
+    let mut frame =
+        secrecy::zeroize::Zeroizing::new(serde_json::to_vec(&value).map_err(|e| e.to_string())?);
     frame.push(b'\n');
     out.write_all(&frame)
         .and_then(|_| out.flush())

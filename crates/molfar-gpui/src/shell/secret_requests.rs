@@ -62,6 +62,7 @@ impl Shell {
         let id = call.session;
         let caller = self.sessions[&id].read(cx);
         let was_busy = caller.busy;
+        let ephemeral = caller.turn_secret_answers.clone();
         if caller.summary.archived {
             self.finish_app_call(call, Err("This session is archived.".into()), cx);
             return;
@@ -128,7 +129,7 @@ impl Shell {
                 status: RequestStatus::Open,
                 time: molfar_core::time::now_ms(),
             }
-            .prepare(&store, &db)
+            .prepare(&store, &db, ephemeral)
         });
         cx.spawn(async move |this, cx| {
             let result = result.await;

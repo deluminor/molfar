@@ -417,8 +417,14 @@ impl Familiars {
             }));
         }
         cx.on_app_quit(|this, cx| {
-            this.app_runs.stop_all();
-            cx.background_executor().timer(Duration::from_millis(750))
+            let executor = cx.background_executor().clone();
+            if this.app_runs.stop_all() {
+                cx.background_executor().spawn(async move {
+                    executor.timer(std::time::Duration::from_millis(750)).await
+                })
+            } else {
+                gpui::Task::ready(())
+            }
         })
         .detach();
         this._clock = Some(cx.spawn(async move |this, cx| {

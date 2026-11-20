@@ -183,10 +183,13 @@ impl Familiars {
         .detach();
     }
     pub(super) fn app_call(&mut self, call: Call, _window: &mut Window, cx: &mut Context<Self>) {
-        if let Err(error) = self.app_caller(&call) {
-            let _ = call.reply.send(Err(error));
-            return;
-        }
+        let familiar = match self.app_caller(&call) {
+            Ok(familiar) => familiar,
+            Err(error) => {
+                let _ = call.reply.send(Err(error));
+                return;
+            }
+        };
         if let Err(error) = familiar::api::validate(&call.action, &call.input) {
             let _ = call.reply.send(Err(error));
             return;
@@ -216,6 +219,19 @@ impl Familiars {
         );
         let store = self.store.clone();
         let requested_session = call.input.get("sessionId").cloned();
+        let secrets = self.secret_store.clone();
+        let scope = molfar_core::secrets::Scope::Familiar(familiar.id);
+        let ephemeral = self
+            .secret_chat(call.session, cx)
+            .map(|view| view.read(cx).turn_secret_answers.clone())
+            .unwrap_or_default();
+        let mut input = call.input.clone();
+        let redact = !matches!(
+            call.action.as_str(),
+            molfar_core::secrets::request::REQUEST
+                | molfar_core::secrets::request::LIST
+                | molfar_core::secrets::run::ACTION
+        );
         let lookup = cx.background_executor().spawn(async move {
             let store = locked(&store)?;
             if let Some(value) = requested_session {
@@ -228,13 +244,21 @@ impl Familiars {
                     return Err("Task Board sessions are not available to Familiars.".into());
                 }
             }
-            store
+            let receipt = store
                 .setting(&receipt_key)?
                 .map(|raw| {
                     serde_json::from_str::<(String, Result<Value, String>)>(&raw)
                         .map_err(|error| error.to_string())
                 })
-                .transpose()
+                .transpose()?;
+            if receipt.is_none() && redact {
+                secrets
+                    .redactor_for_spawn(&store, Some(scope))
+                    .map_err(|error| error.to_string())?
+                    .with_ephemeral(ephemeral)
+                    .json(&mut input);
+            }
+            Ok::<_, String>((receipt, input))
         });
         cx.spawn(async move |this, cx| {
             let stored = lookup.await;
@@ -249,10 +273,10 @@ impl Familiars {
                     }
                 };
                 match stored {
-                    Ok(None) => {
-                        this.app_call_ready(call, familiar, window, cx);
+                    Ok((None, input)) => {
+                        this.app_call_ready(call, familiar, input, window, cx);
                     }
-                    Ok(Some((hash, result))) => {
+                    Ok((Some((hash, result)), _)) => {
                         this.app_pending.remove(&key);
                         let _ = call.reply.send(if hash == fingerprint(&call) {
                             result
@@ -277,6 +301,7 @@ impl Familiars {
         &mut self,
         call: Call,
         familiar: Familiar,
+        mut input: Value,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -295,7 +320,6 @@ impl Familiars {
             self.dispatch_secret(call, familiar, cx);
             return;
         }
-        let mut input = call.input.clone();
         let action = call.action.clone();
         // A session it starts without naming a model takes the one set for
         // its sessions, if any; the receipt still keys on what it sent.

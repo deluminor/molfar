@@ -32,15 +32,11 @@ pub fn settings(db: &Store, project: &str) -> Result<ProjectBindings, Error> {
         .unwrap_or_default())
 }
 
-pub fn configure(
-    store: &SecretStore,
-    db: &Store,
-    project: &str,
-    config: ProjectBindings,
-) -> Result<(), String> {
+pub fn configure(db: &Store, project: &str, config: ProjectBindings) -> Result<(), String> {
     let mut seen = HashSet::new();
     let scopes: Vec<_> = scopes_for(Some(Scope::Project(project.to_owned()))).collect();
-    let entries = store.list(db).map_err(|error| error.to_string())?;
+    let _lock = super::store::lock().map_err(|error| error.to_string())?;
+    let entries: Vec<Entry> = load(db, super::INDEX).map_err(|error| error.to_string())?;
     for item in &config.items {
         super::run::validate_env(&item.env)?;
         if !seen.insert(item.env.as_str()) {
@@ -76,7 +72,7 @@ pub(super) fn remove(db: &Store, project: Option<&str>, removed: &[String]) -> R
 
 #[derive(Clone, Default)]
 pub struct SpawnBindings {
-    store: Option<SecretStore>,
+    store: Option<(SecretStore, std::path::PathBuf)>,
     items: Vec<(SecretBinding, Option<Entry>)>,
 }
 
@@ -132,7 +128,7 @@ impl SpawnBindings {
             items.push((item, entry));
         }
         Ok(Self {
-            store: Some(store.clone()),
+            store: Some((store.clone(), db.database_path().to_owned())),
             items,
         })
     }
@@ -140,14 +136,14 @@ impl SpawnBindings {
 
 pub(crate) fn apply(command: &mut Command, bindings: &SpawnBindings) -> Vec<String> {
     let mut notices = Vec::new();
-    let Some(store) = &bindings.store else {
+    let Some((store, database)) = &bindings.store else {
         return notices;
     };
     for (item, entry) in &bindings.items {
         let env = item.env.as_str();
         match entry
             .as_ref()
-            .and_then(|entry| store.value_for_spawn(entry).ok())
+            .and_then(|entry| store.value_for_spawn(database, entry).ok())
         {
             Some(value) if !value.0.expose_secret().contains('\0') => {
                 command.env(env, value.0.expose_secret());
@@ -194,7 +190,6 @@ mod tests {
             .unwrap()
             .is_empty());
         configure(
-            &store,
             &db,
             project,
             ProjectBindings {

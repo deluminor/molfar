@@ -651,8 +651,9 @@ fn run_turn_using(
             &summary.cwd,
             &secrets,
             familiar.as_deref(),
+            !settings.secret_bindings.is_empty(),
         )?;
-        settings.secret_answers = molfar_core::secrets::ephemeral::Ephemeral::for_session(
+        settings.secret_answers = settings.secret_answers.with_session(
             store.clone(),
             secrets.clone(),
             summary.cwd.clone(),

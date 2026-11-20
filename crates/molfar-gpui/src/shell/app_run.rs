@@ -104,10 +104,11 @@ impl Runs {
         }
     }
 
-    pub(crate) fn stop_all(&self) {
+    pub(crate) fn stop_all(&self) -> bool {
         for active in self.0.values() {
             active.cancel.cancel();
         }
+        !self.0.is_empty()
     }
 }
 
@@ -117,6 +118,7 @@ pub(crate) struct Target {
     pub(crate) project: Option<String>,
     pub(crate) scope: Option<Scope>,
     pub(crate) roots: Vec<PathBuf>,
+    pub(crate) ephemeral: molfar_core::secrets::ephemeral::Ephemeral,
 }
 
 impl Target {
@@ -132,7 +134,7 @@ impl Target {
             };
             run::prepare(&self.store, &db, scope, &self.roots, request)?
         };
-        prepared.execute(cancel)
+        prepared.with_ephemeral(self.ephemeral).execute(cancel)
     }
 }
 
@@ -196,6 +198,7 @@ impl super::Shell {
             project: Some(project.clone()),
             scope: None,
             roots: vec![root.into()],
+            ephemeral: view.turn_secret_answers.clone(),
         })
     }
 }

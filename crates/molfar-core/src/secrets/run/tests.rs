@@ -97,5 +97,49 @@ fn run_timeout_kills_process_group() {
         .execute(&Cancellation::default())
         .unwrap();
     assert!(outcome.timed_out);
+    assert!(
+        !outcome.truncated,
+        "Child pipes must close after terminating the tree"
+    );
     assert!(start.elapsed().as_secs() < 10);
+}
+
+#[cfg(unix)]
+#[test]
+fn run_output_truncates_without_releasing_a_partial_secret() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = SecretStore::new(crate::secrets::backend::MemoryBackend::default());
+    let db = Store::open(Path::new(":memory:")).unwrap();
+    store
+        .create(
+            &db,
+            Scope::Global,
+            SecretName::parse("TOKEN").unwrap(),
+            SecretValue::from_text("fixture-run-truncation".into()).unwrap(),
+        )
+        .unwrap();
+    let request = Request::parse(&json!({
+        "argv":["sh","-c","head -c 262140 /dev/zero | tr '\\000' x; printf %s \"$TOKEN\""],
+        "secrets":[{"name":"TOKEN","env":"TOKEN"}]
+    }))
+    .unwrap();
+    let result = prepare(&store, &db, None, &[dir.path().into()], request)
+        .unwrap()
+        .execute(&Cancellation::default())
+        .unwrap();
+    assert!(result.truncated);
+    assert_eq!(result.stdout.len(), OUTPUT_LIMIT - 4);
+    assert!(result.stdout.bytes().all(|byte| byte == b'x'));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn run_cwd_accepts_the_private_tmp_alias() {
+    let root = tempfile::tempdir_in("/tmp").unwrap();
+    let absolute = root.path().canonicalize().unwrap();
+    assert!(absolute.starts_with("/private/tmp"));
+    assert_eq!(
+        validate::cwd(Some(&absolute), &[root.path().to_path_buf()]).unwrap(),
+        absolute
+    );
 }

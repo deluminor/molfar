@@ -241,7 +241,7 @@ impl SecretsPage {
             self.binding.clear(cx);
             self.run(
                 false,
-                move |store, db| bind::configure(store, db, &project, config),
+                move |_, db| bind::configure(db, &project, config),
                 cx,
             );
         }
