@@ -151,7 +151,9 @@ impl SecretStore {
         }
 
         index[position].name = name;
-        index[position].updated_at = chrono::Utc::now().timestamp();
+        index[position].updated_at = chrono::Utc::now()
+            .timestamp()
+            .max(index[position].updated_at.saturating_add(1));
         let mut registry = self.registry.write().map_err(|_| Error::Index)?;
         save(db, INDEX, &index)?;
         if let Some(registered) = registry
@@ -164,8 +166,7 @@ impl SecretStore {
     }
 
     pub fn delete(&self, db: &Store, id: &str) -> Result<(), Error> {
-        self.delete_matching(db, |entry| entry.id == id, None)
-            .and_then(|()| super::bind::remove(db, None, &[id.to_owned()]))
+        self.delete_matching(db, |entry| entry.id == id, None, Some(id))
     }
 
     pub fn delete_scope(&self, db: &Store, scope: &Scope) -> Result<(), Error> {
@@ -173,7 +174,7 @@ impl SecretStore {
             Scope::Project(id) => Some(id.as_str()),
             _ => None,
         };
-        self.delete_matching(db, |entry| &entry.scope == scope, project)
+        self.delete_matching(db, |entry| &entry.scope == scope, project, None)
     }
 
     fn delete_matching(
@@ -181,6 +182,7 @@ impl SecretStore {
         db: &Store,
         matches: impl Fn(&Entry) -> bool,
         project: Option<&str>,
+        retry_id: Option<&str>,
     ) -> Result<(), Error> {
         let _lock = lock()?;
         let mut index: Vec<Entry> = load(db, INDEX)?;
@@ -202,6 +204,9 @@ impl SecretStore {
             false
         });
         save(db, INDEX, &index)?;
+        if removed.is_empty() && failed.is_none() {
+            removed.extend(retry_id.map(str::to_owned));
+        }
         super::bind::remove(db, project, &removed)?;
         failed.map_or(Ok(()), Err)
     }

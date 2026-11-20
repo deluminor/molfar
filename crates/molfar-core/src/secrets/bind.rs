@@ -213,6 +213,19 @@ mod tests {
         assert!(!serialized.contains(value) && !serialized.contains(&secret_id));
         assert!(!db.setting(KEY).unwrap().unwrap().contains(value));
 
+        store
+            .replace(
+                &db,
+                &secret_id,
+                SecretValue::from_text("fixture-bind-replacement".into()).unwrap(),
+            )
+            .unwrap();
+        let replaced = store.list(&db).unwrap()[0].updated_at;
+        store
+            .rename(&db, &secret_id, SecretName::parse("RENAMED").unwrap())
+            .unwrap();
+        let renamed = store.list(&db).unwrap()[0].updated_at;
+        assert!(renamed > replaced);
         store.delete(&db, &secret_id).unwrap();
         assert!(super::settings(&db, project).unwrap().items.is_empty());
         assert_eq!(
