@@ -203,3 +203,50 @@ fn stale_keyring_entry_does_not_disable_redaction_of_other_values() {
         Err(Error::Unavailable)
     ));
 }
+
+#[test]
+fn familiar_scope_is_isolated_and_deletable() {
+    let db = Store::open(Path::new(":memory:")).unwrap();
+    let store = SecretStore::new(MemoryBackend::default());
+    let familiar = Scope::Familiar("id".into());
+    let project = Scope::Project("id".into());
+    for (scope, value) in [
+        (familiar.clone(), "familiar-fixture"),
+        (project.clone(), "project-fixture"),
+        (Scope::Global, "global-fixture"),
+    ] {
+        store
+            .create(
+                &db,
+                scope,
+                SecretName::parse("TOKEN").unwrap(),
+                SecretValue::from_text(value.into()).unwrap(),
+            )
+            .unwrap();
+    }
+
+    let entries = store.list(&db).unwrap();
+    let entry = entries
+        .iter()
+        .find(|entry| entry.scope == familiar)
+        .unwrap();
+    assert_eq!(entry.account(), format!("familiar:id/{}", entry.id));
+    let encoded = serde_json::to_string(entry).unwrap();
+    assert_eq!(*entry, serde_json::from_str::<Entry>(&encoded).unwrap());
+
+    let redact = store.redactor(&db, Some(familiar.clone())).unwrap();
+    assert_eq!(
+        redact.text("familiar-fixture project-fixture global-fixture"),
+        "[secret:TOKEN] project-fixture [secret:TOKEN]"
+    );
+    store.delete_scope(&db, &familiar).unwrap();
+    assert!(store
+        .list(&db)
+        .unwrap()
+        .iter()
+        .all(|entry| entry.scope != familiar));
+    assert_eq!(
+        redact.text("familiar-fixture global-fixture"),
+        "familiar-fixture [secret:TOKEN]"
+    );
+}

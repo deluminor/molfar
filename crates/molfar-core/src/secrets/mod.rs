@@ -15,6 +15,13 @@ pub use registry::Redactor;
 pub use store::SecretStore;
 pub use types::{Entry, Error, Scope, SecretName, SecretValue, Status};
 
+pub fn scopes_for(scope: Option<Scope>) -> impl Iterator<Item = Scope> {
+    scope
+        .filter(|scope| *scope != Scope::Global)
+        .into_iter()
+        .chain(std::iter::once(Scope::Global))
+}
+
 const SERVICE: &str = "com.molfar.secrets";
 const INDEX: &str = "secrets.index";
 const PROJECTS: &str = "secrets.projects";

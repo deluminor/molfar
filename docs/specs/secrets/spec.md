@@ -248,3 +248,15 @@ A value never appears in:
 - Redactor initialization skips missing keyring items and keeps their metadata available for cleanup in Settings. Backend failures still stop initialization.
 - Redaction tests exercise a mid-turn create and replace, split assistant output, shell output, transcript storage, session reads, and Board artifact extraction with synthetic values.
 - The `secrets-backends` CI matrix covers the 1024-byte boundary on each supported OS. Linux also checks a missing Secret Service and readback in a fresh keyutils session. Verify live runner results at Final review.
+
+## Card 2/2
+
+Card #47 builds on the storage and redaction from #46, merged in
+`8b4b2613`. `SecretStore::default()` shares the keyring backend and
+registry process-wide. `secrets::redact::StreamRedactor` wraps the scoped
+`secrets::Redactor`. The desktop request card uses `Input::take_secret`,
+and mobile represents a desktop-only request with `MobileWaiting::Secret`.
+
+A Familiar uses its own `familiar:<id>` scope and can see global entries.
+The Familiar ID and project ID remain distinct even if their text matches.
+The threat model still covers accidental literal echoes.

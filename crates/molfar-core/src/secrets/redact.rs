@@ -1,6 +1,6 @@
 use secrecy::ExposeSecret;
 
-use super::{registry::Redactor, Scope, MIN_VALUE_BYTES};
+use super::{registry::Redactor, MIN_VALUE_BYTES};
 
 impl Redactor {
     pub fn text(&self, text: &str) -> String {
@@ -39,7 +39,7 @@ impl Redactor {
             .map(|(_, value)| value)
         {
             let entry = &registered.entry;
-            if entry.scope != Scope::Global && self.project.as_ref() != Some(&entry.scope) {
+            if !self.scopes.contains(&entry.scope) {
                 continue;
             }
             for value in &registered.values {

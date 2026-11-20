@@ -35,5 +35,5 @@ impl Registered {
 pub struct Redactor {
     pub(super) registry: Registry,
     pub(super) database: PathBuf,
-    pub(super) project: Option<Scope>,
+    pub(super) scopes: Vec<Scope>,
 }

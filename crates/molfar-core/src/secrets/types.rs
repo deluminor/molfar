@@ -8,6 +8,7 @@ use super::{MAX_VALUE_BYTES, MIN_VALUE_BYTES};
 pub enum Scope {
     Global,
     Project(String),
+    Familiar(String),
 }
 
 impl std::fmt::Display for Scope {
@@ -15,6 +16,7 @@ impl std::fmt::Display for Scope {
         match self {
             Self::Global => formatter.write_str("global"),
             Self::Project(id) => write!(formatter, "project:{id}"),
+            Self::Familiar(id) => write!(formatter, "familiar:{id}"),
         }
     }
 }

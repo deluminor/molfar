@@ -46,10 +46,9 @@ impl SecretStore {
         let database = db.database_path().to_owned();
         let mut registry = self.registry.write().map_err(|_| Error::Index)?;
         let entries = registry.entry(database.clone()).or_default();
+        let scopes: Vec<_> = super::scopes_for(project).collect();
         for entry in index {
-            if (entry.scope == Scope::Global || project.as_ref() == Some(&entry.scope))
-                && !entries.contains_key(&entry.id)
-            {
+            if scopes.contains(&entry.scope) && !entries.contains_key(&entry.id) {
                 match self.backend.get(&entry.account()) {
                     Ok(value) => Registered::add(entries, entry, value),
                     Err(Error::Missing) => continue,
@@ -60,7 +59,7 @@ impl SecretStore {
         Ok(Redactor {
             registry: self.registry.clone(),
             database,
-            project,
+            scopes,
         })
     }
 
