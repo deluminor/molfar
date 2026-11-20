@@ -305,6 +305,7 @@ pub(super) fn key(request: &Request) -> String {
         request.model,
         settings,
         request.settings.environment,
+        request.settings.secret_bindings.key(),
         request
             .settings
             .familiar

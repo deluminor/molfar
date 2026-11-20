@@ -3,6 +3,7 @@ use std::path::Path;
 use crate::store::Store;
 
 mod backend;
+pub mod bind;
 mod projects;
 pub mod redact;
 mod registry;

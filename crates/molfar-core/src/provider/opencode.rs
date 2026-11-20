@@ -268,10 +268,11 @@ fn service_url(output: &str) -> Option<String> {
 /// shell tools never see a thread's app credentials. Threads with app access
 /// (/operator and Familiars) run their own `serve` child instead.
 fn shared_service(request: &Request, v2: bool) -> bool {
-    v2 && !request
-        .settings
-        .environment
-        .contains_key("MOLFAR_APP_ENDPOINT")
+    v2 && request.settings.secret_bindings.is_empty()
+        && !request
+            .settings
+            .environment
+            .contains_key("MOLFAR_APP_ENDPOINT")
 }
 fn serve_command(
     request: &Request,
@@ -293,6 +294,7 @@ fn connect(
     request: &Request,
     cancel: &AtomicBool,
     v2: bool,
+    notices: &mut Vec<String>,
 ) -> Result<(Client, Option<Server>), String> {
     let directory = request.cwd.to_string_lossy().into_owned();
     if shared_service(request, v2) {
@@ -343,6 +345,10 @@ fn connect(
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     drop(listener);
     let (mut command, password) = serve_command(request, port, v2)?;
+    notices.extend(crate::secrets::bind::apply(
+        &mut command,
+        &request.settings.secret_bindings,
+    ));
     let mut child = command.spawn().map_err(|e| e.to_string())?;
     let registration = process::register(child.id());
     let account = crate::accounts::track(child.id(), request.kind, &request.settings.account);
@@ -425,7 +431,12 @@ pub(super) fn run(
         &request.cwd.to_string_lossy(),
         &request.settings.attachments,
     )?;
-    let (client, mut server) = connect(&request, &cancel, v2)?;
+    let mut notices = Vec::new();
+    let connected = connect(&request, &cancel, v2, &mut notices);
+    if !notices.is_empty() {
+        emit(notices.into_iter().map(Event::Status).collect())?;
+    }
+    let (client, mut server) = connected?;
     let session = client.session(&request)?;
     if request.provider_id.is_some() {
         let _ = client.repair_unsupported_file_turn(&session);
@@ -575,7 +586,7 @@ fn catalog(request: &Request, cancel: &AtomicBool, v2: bool) -> Result<Value, St
     let mut models = Vec::new();
     let mut agents = Vec::new();
     if v2 {
-        let (mut client, _) = connect(request, cancel, true)?;
+        let (mut client, _) = connect(request, cancel, true, &mut Vec::new())?;
         client.directory.clear();
         let raw = client.request("GET", &client.path("/model"), None)?;
         let providers = client.request("GET", &client.path("/provider"), None)?;
@@ -744,7 +755,12 @@ pub(super) fn rewind(
     // durable history, including a process parked with an older model.
     forget_session(session, &request.settings.account.id, &request.cwd);
     let v2 = generation(request, &cancel)?;
-    let (client, server) = connect(request, &cancel, v2)?;
+    let mut notices = Vec::new();
+    let connected = connect(request, &cancel, v2, &mut notices);
+    for notice in notices {
+        eprintln!("{notice}");
+    }
+    let (client, server) = connected?;
     let messages = client.request(
         "GET",
         &client.path(&format!("/session/{}/message", client::encode(session))),

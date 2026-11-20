@@ -1,3 +1,5 @@
+mod resolve;
+
 use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 
 use super::{
@@ -62,30 +64,6 @@ impl SecretStore {
             scopes,
             extra: Vec::new(),
         })
-    }
-
-    pub(super) fn resolve_names(
-        &self,
-        db: &Store,
-        scopes: &[Scope],
-        names: &[SecretName],
-    ) -> Result<Vec<SecretValue>, String> {
-        let _lock = lock().map_err(|error| error.to_string())?;
-        let index: Vec<Entry> = load(db, INDEX).map_err(|error| error.to_string())?;
-        names
-            .iter()
-            .map(|name| {
-                scopes
-                    .iter()
-                    .find_map(|scope| {
-                        index.iter().find(|entry| {
-                            !entry.delete_failed && &entry.scope == scope && &entry.name == name
-                        })
-                    })
-                    .and_then(|entry| self.backend.get(&entry.account()).ok())
-                    .ok_or_else(|| format!("Secret {} unavailable.", name.as_str()))
-            })
-            .collect()
     }
 
     pub fn probe(&self) -> Result<(), Error> {
@@ -166,7 +144,9 @@ impl SecretStore {
         let entries = registry.entry(db.database_path().to_owned()).or_default();
         let previous = self.backend.get(&account)?;
         self.backend.set(&account, &value)?;
-        entry.updated_at = chrono::Utc::now().timestamp();
+        entry.updated_at = chrono::Utc::now()
+            .timestamp()
+            .max(entry.updated_at.saturating_add(1));
         let entry = entry.clone();
         if let Err(error) = save(db, INDEX, &index) {
             self.backend
@@ -208,19 +188,30 @@ impl SecretStore {
     }
 
     pub fn delete(&self, db: &Store, id: &str) -> Result<(), Error> {
-        self.delete_matching(db, |entry| entry.id == id)
+        self.delete_matching(db, |entry| entry.id == id, None)
+            .and_then(|()| super::bind::remove(db, None, &[id.to_owned()]))
     }
 
     pub fn delete_scope(&self, db: &Store, scope: &Scope) -> Result<(), Error> {
-        self.delete_matching(db, |entry| &entry.scope == scope)
+        let project = match scope {
+            Scope::Project(id) => Some(id.as_str()),
+            _ => None,
+        };
+        self.delete_matching(db, |entry| &entry.scope == scope, project)
     }
 
-    fn delete_matching(&self, db: &Store, matches: impl Fn(&Entry) -> bool) -> Result<(), Error> {
+    fn delete_matching(
+        &self,
+        db: &Store,
+        matches: impl Fn(&Entry) -> bool,
+        project: Option<&str>,
+    ) -> Result<(), Error> {
         let _lock = lock()?;
         let mut index: Vec<Entry> = load(db, INDEX)?;
         let mut registry = self.registry.write().map_err(|_| Error::Index)?;
         let entries = registry.entry(db.database_path().to_owned()).or_default();
         let mut failed = None;
+        let mut removed = Vec::new();
         index.retain_mut(|entry| {
             if !matches(entry) {
                 return true;
@@ -231,9 +222,11 @@ impl SecretStore {
                 return true;
             }
             entries.remove(&entry.id);
+            removed.push(entry.id.clone());
             false
         });
         save(db, INDEX, &index)?;
+        super::bind::remove(db, project, &removed)?;
         failed.map_or(Ok(()), Err)
     }
 }

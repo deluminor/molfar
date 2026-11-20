@@ -110,6 +110,8 @@ pub struct Settings {
     #[serde(skip)]
     pub environment: std::collections::HashMap<String, String>,
     #[serde(skip)]
+    pub secret_bindings: crate::secrets::bind::SpawnBindings,
+    #[serde(skip)]
     pub familiar: Option<FamiliarContext>,
     #[serde(skip)]
     pub familiar_message_id: Option<String>,
@@ -133,6 +135,7 @@ pub struct Settings {
     /// A submitted /operator grants this thread access independently of its next draft.
     pub operator_enabled: bool,
     pub orchestrator: bool,
+    pub orchestration_worker: bool,
     pub new_worktree: bool,
     pub worktree_base: Option<String>,
     pub worktree_cwd: Option<String>,

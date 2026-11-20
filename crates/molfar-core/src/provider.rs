@@ -1614,6 +1614,10 @@ fn run_operation(
             // any cancelled process still draining for this provider binding.
             parked::discard_session(&request);
         }
+        let notices = crate::secrets::bind::apply(&mut command, &request.settings.secret_bindings);
+        if !notices.is_empty() {
+            emit(notices.into_iter().map(Event::Status).collect())?;
+        }
         (
             parked::Wire::spawn(&mut command, &request)?,
             Protocol::new(request),
