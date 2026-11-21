@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 
 mod chrome;
 mod connect;
-mod document;
+pub(crate) mod document;
 mod drafts;
 mod edit;
 mod graph;

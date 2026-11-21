@@ -37,7 +37,7 @@ impl SecretStore {
         }
     }
 
-    #[cfg(feature = "test-secrets")]
+    #[cfg(any(test, feature = "test-secrets"))]
     pub fn in_memory() -> Self {
         Self::new(super::backend::MemoryBackend::default())
     }

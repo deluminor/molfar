@@ -15,6 +15,7 @@ mod companion;
 mod composer_completion;
 mod composer_motion;
 mod composer_runner;
+mod confluence;
 mod consumption;
 mod context_meter;
 mod conversation;

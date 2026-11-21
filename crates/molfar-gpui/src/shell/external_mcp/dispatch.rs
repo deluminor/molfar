@@ -103,6 +103,22 @@ impl Shell {
             | notes_api::DELETE => {
                 self.external_notes_tool(scope, tool, arguments, receipt, done, cx);
             }
+            tools::confluence::SEARCH | tools::confluence::READ | tools::confluence::TREE => {
+                let store = self.store.clone();
+                let secrets = self.secret_store.clone();
+                cx.background_executor()
+                    .spawn(async move {
+                        let result = tools::confluence::action(tool).and_then(|action| {
+                            let reader = molfar_core::confluence::actions::ReadActions::open(
+                                &*locked(&store)?,
+                                &secrets,
+                            )?;
+                            reader.execute(action, &arguments)
+                        });
+                        let _ = done.try_send(result);
+                    })
+                    .detach();
+            }
             tool if tool.starts_with("knowledge_") => {
                 self.external_knowledge_tool(scope, tool, &arguments, receipt, done, cx);
             }

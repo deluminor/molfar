@@ -845,6 +845,7 @@ impl Shell {
                     workspace::AppView::Inbox,
                     workspace::AppView::Notes,
                     workspace::AppView::Knowledge,
+                    workspace::AppView::Confluence,
                     workspace::AppView::Automations,
                 ]
                 .into_iter()
@@ -862,6 +863,7 @@ impl Shell {
                             workspace::AppView::Board => "rail-board",
                             workspace::AppView::Inbox => "rail-inbox",
                             workspace::AppView::Notes => "rail-notes",
+                            workspace::AppView::Confluence => "rail-confluence",
                             workspace::AppView::Knowledge => "rail-knowledge",
                             workspace::AppView::Automations => "rail-automations",
                         },
@@ -891,6 +893,7 @@ impl Shell {
                                 workspace::AppView::Board => this.open_board(w, cx),
                                 workspace::AppView::Inbox => this.open_inbox(w, cx),
                                 workspace::AppView::Notes => this.open_notes(w, cx),
+                                workspace::AppView::Confluence => this.open_confluence(w, cx),
                                 workspace::AppView::Knowledge => this.open_knowledge(w, cx),
                                 workspace::AppView::Automations => this.open_automations(w, cx),
                             }

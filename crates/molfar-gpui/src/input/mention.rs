@@ -15,11 +15,15 @@ pub(super) const ICON_LEN: usize = '\u{2003}'.len_utf8();
 pub(super) enum MentionIcon {
     File(SharedString),
     Note,
+    Confluence,
 }
 impl MentionIcon {
     /// `@path`, `@"spaced path"`, or `@note/slug`.
     pub fn of(token: &str) -> Option<Self> {
         let path = token.strip_prefix('@')?;
+        if path.starts_with(molfar_core::confluence::resolve::PREFIX) {
+            return Some(Self::Confluence);
+        }
         if path.starts_with("note/") {
             return Some(Self::Note);
         }
@@ -88,6 +92,36 @@ impl DisplayLayout {
 }
 
 impl Input {
+    pub(super) fn confluence_paste(&mut self, text: &str, item: &ClipboardItem) -> String {
+        use molfar_core::confluence::resolve::Link;
+        if !self.inline_commands || self.secret || self.read_only {
+            return text.to_owned();
+        }
+        let Some(mut link) = Link::parse(text) else {
+            return text.to_owned();
+        };
+        if let Some(metadata) = item
+            .metadata()
+            .and_then(|metadata| serde_json::from_str::<Link>(metadata).ok())
+            && metadata.url() == link.url()
+        {
+            link.kind = metadata.kind.filter(|kind| {
+                matches!(
+                    kind,
+                    molfar_core::confluence::connector::Kind::Page
+                        | molfar_core::confluence::connector::Kind::Folder
+                )
+            });
+        }
+        let token = link.mention().token();
+        self.confluence_links.insert(token.clone(), link);
+        token
+    }
+
+    pub(crate) fn prepare_confluence_links(&self, text: &str) -> String {
+        molfar_core::confluence::resolve::preserve_links(text, &self.confluence_links)
+    }
+
     pub(super) fn display_layout(&self) -> DisplayLayout {
         let command = self.command_layout();
         if self.secret || self.content.is_empty() {

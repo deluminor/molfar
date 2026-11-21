@@ -1,0 +1,375 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": {
+        "level": 1
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Guide",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Start",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": " ",
+          "marks": []
+        },
+        {
+          "type": "mention",
+          "attrs": {
+            "text": "@Reader"
+          }
+        },
+        {
+          "type": "text",
+          "text": " ",
+          "marks": []
+        },
+        {
+          "type": "emoji",
+          "attrs": {
+            "text": "✅"
+          }
+        },
+        {
+          "type": "text",
+          "text": " ",
+          "marks": []
+        },
+        {
+          "type": "date",
+          "attrs": {
+            "timestamp": "1704067200000"
+          }
+        },
+        {
+          "type": "text",
+          "text": " ",
+          "marks": []
+        },
+        {
+          "type": "text",
+          "text": "Other",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "/wiki/pages/viewpage.action?pageId=42"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Basic",
+                  "marks": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "taskList",
+      "content": [
+        {
+          "type": "taskItem",
+          "attrs": {
+            "state": "DONE"
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "Done",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "content": [
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Name",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Value",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "One",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Two",
+                      "marks": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": {
+        "language": "rust"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "fn example() {}",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "attrs": {
+        "panelType": "note"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Remember",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "attrs": {
+        "panelType": "success"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Good",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "attrs": {
+        "panelType": "warning"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Careful",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "attrs": {
+        "panelType": "error"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Stop",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "attrs": {
+        "panelType": "info"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Notice",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "expand",
+      "attrs": {
+        "title": "Details"
+      },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Inside",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "status",
+          "attrs": {
+            "text": "Ready",
+            "color": "green"
+          }
+        }
+      ]
+    },
+    {
+      "type": "mediaSingle",
+      "content": [
+        {
+          "type": "media",
+          "attrs": {
+            "id": "diagram.png",
+            "alt": "Diagram"
+          }
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "inlineCard",
+          "attrs": {
+            "url": "file.txt"
+          }
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "inlineExtension",
+          "attrs": {
+            "extensionKey": "jira",
+            "parameters": {
+              "macroParams": {
+                "key": {
+                  "value": "PROJ-7"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "extension",
+      "attrs": {
+        "extensionKey": "mystery"
+      }
+    }
+  ]
+}
