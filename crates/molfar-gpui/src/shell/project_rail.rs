@@ -135,7 +135,7 @@ impl Render for ProjectTooltip {
             .px_2()
             .py_1()
             .rounded_md()
-            .bg(pane_fill())
+            .bg(floating_fill())
             .border_1()
             .border_color(content(0.15))
             .text_size(px(12.))
