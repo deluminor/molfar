@@ -56,6 +56,7 @@ pub(super) fn write(
                         }
                     } else {
                         style.link = Some(url.to_string());
+                    }
                 }
                 if !children.is_empty() {
                     write(children, page, &style, out, links);
@@ -70,12 +71,13 @@ pub(super) fn write(
                     &page.url
                 };
                 if let Ok(mut url) = url::Url::parse(domain)
-                    && url.username().is_empty() && url.password().is_none()
+                    && url.username().is_empty()
+                    && url.password().is_none()
                 {
-                        url.set_path(&format!("/browse/{key}"));
-                        url.set_query(None);
-                        url.set_fragment(None);
-                        style.link = Some(url.to_string());
+                    url.set_path(&format!("/browse/{key}"));
+                    url.set_query(None);
+                    url.set_fragment(None);
+                    style.link = Some(url.to_string());
                 }
                 key.clone()
             }
