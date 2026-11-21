@@ -2,7 +2,7 @@ use super::{schema::*, TargetKind, Tool};
 use crate::external_mcp::grants::types::{Requirement, DOMAIN, GRANT};
 use serde_json::json;
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
 #[derive(Deserialize)]
@@ -29,7 +29,28 @@ pub struct SessionsStart {
     pub project: String,
     pub prompt: String,
     pub title: Option<String>,
+    #[serde(default, deserialize_with = "operator_argument")]
+    pub operator: Option<bool>,
     pub request_id: String,
+}
+
+pub const START: &str = "sessions_start";
+pub const SEND: &str = "sessions_send";
+pub const OPERATOR_REQUIRED: &str = "This client needs sessions:operator to use Operator mode.";
+
+fn operator_argument<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<bool>, D::Error> {
+    bool::deserialize(deserializer).map(Some)
+}
+
+pub fn launch_operator(
+    requested: Option<bool>,
+    default: bool,
+    granted: bool,
+) -> Result<bool, String> {
+    if requested == Some(true) && !granted {
+        return Err(OPERATOR_REQUIRED.into());
+    }
+    Ok(granted && requested.unwrap_or(default))
 }
 
 #[derive(Deserialize)]
@@ -49,11 +70,66 @@ pub struct SessionsStop {
 
 pub(super) fn definitions() -> Vec<Tool> {
     vec![
-        Tool { name: "sessions_list", requires: Requirement::standard(&[GRANT::Read(DOMAIN::Sessions)]), mutation: false, target: TargetKind::Project, resumable: true, description: "List a project's sessions with their status.", schema: object(json!({"project":string("Project path from projects_list"),"limit":integer("1-100, default 30"),"offset":integer("Entries to skip")}), &["project"]) },
-        Tool { name: "sessions_read", requires: Requirement::standard(&[GRANT::Read(DOMAIN::Sessions)]), mutation: false, target: TargetKind::Project, resumable: true, description: "Read a session's status and recent exchanges. Pending approvals must be resolved in MOLFAR.", schema: object(json!({"sessionId":{"type":["string","integer"]},"before":{"type":["string","integer"],"description":"nextBefore from a previous page"},"limit":integer("1-3 exchanges"),"maxChars":integer("200-6000 per message"),"charOffset":integer("nextCharOffset from a previous page")}), &["sessionId"]) },
-        Tool { name: "sessions_start", requires: Requirement::standard(&[GRANT::Write(DOMAIN::Sessions)]), mutation: true, target: TargetKind::Project, resumable: true, description: "Start a session in a granted project with MOLFAR's default harness, model and runtime.", schema: object(json!({"project":string("Project path from projects_list"),"prompt":string("The task"),"title":string("Optional title"),"requestId":request_id()}), &["project","prompt","requestId"]) },
-        Tool { name: "sessions_send", requires: Requirement::standard(&[GRANT::Write(DOMAIN::Sessions)]), mutation: true, target: TargetKind::Project, resumable: true, description: "Send a follow-up to an idle session. A busy session returns an error and nothing is sent.", schema: object(json!({"sessionId":{"type":["string","integer"]},"prompt":string("The follow-up"),"requestId":request_id()}), &["sessionId","prompt","requestId"]) },
-        Tool { name: "sessions_stop", requires: Requirement::standard(&[GRANT::SessionsStop]), mutation: true, target: TargetKind::Project, resumable: true, description: "Stop a session's running turn. History is kept.", schema: object(json!({"sessionId":{"type":["string","integer"]},"requestId":request_id()}), &["sessionId","requestId"]) },
+        Tool {
+            name: "sessions_list",
+            requires: Requirement::standard(&[GRANT::Read(DOMAIN::Sessions)]),
+            mutation: false,
+            target: TargetKind::Project,
+            resumable: true,
+            description: "List a project's sessions with their status.",
+            schema: object(
+                json!({"project":string("Project path from projects_list"),"limit":integer("1-100, default 30"),"offset":integer("Entries to skip")}),
+                &["project"],
+            ),
+        },
+        Tool {
+            name: "sessions_read",
+            requires: Requirement::standard(&[GRANT::Read(DOMAIN::Sessions)]),
+            mutation: false,
+            target: TargetKind::Project,
+            resumable: true,
+            description: "Read a session's status and recent exchanges. Pending approvals must be resolved in MOLFAR.",
+            schema: object(
+                json!({"sessionId":{"type":["string","integer"]},"before":{"type":["string","integer"],"description":"nextBefore from a previous page"},"limit":integer("1-3 exchanges"),"maxChars":integer("200-6000 per message"),"charOffset":integer("nextCharOffset from a previous page")}),
+                &["sessionId"],
+            ),
+        },
+        Tool {
+            name: START,
+            requires: Requirement::standard(&[GRANT::Write(DOMAIN::Sessions)]),
+            mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
+            description: "Start a session in a granted project with MOLFAR's default harness, model and runtime.",
+            schema: object(
+                json!({"project":string("Project path from projects_list"),"prompt":string("The task"),"title":string("Optional title"),"operator":{"type":"boolean","description":"Override the desktop Operator default. Operator requires sessions:operator."},"requestId":request_id()}),
+                &["project", "prompt", "requestId"],
+            ),
+        },
+        Tool {
+            name: SEND,
+            requires: Requirement::standard(&[GRANT::Write(DOMAIN::Sessions)]),
+            mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
+            description: "Send a follow-up to an idle session. Operator sessions also require sessions:operator. A busy session returns an error and nothing is sent.",
+            schema: object(
+                json!({"sessionId":{"type":["string","integer"]},"prompt":string("The follow-up"),"requestId":request_id()}),
+                &["sessionId", "prompt", "requestId"],
+            ),
+        },
+        Tool {
+            name: "sessions_stop",
+            requires: Requirement::standard(&[GRANT::SessionsStop]),
+            mutation: true,
+            target: TargetKind::Project,
+            resumable: true,
+            description: "Stop a session's running turn. History is kept.",
+            schema: object(
+                json!({"sessionId":{"type":["string","integer"]},"requestId":request_id()}),
+                &["sessionId", "requestId"],
+            ),
+        },
     ]
 }
 
@@ -130,4 +206,26 @@ pub(super) fn management() -> impl Iterator<Item = Tool> {
             schema: object(properties, &required),
         }
     })
+}
+
+#[test]
+fn operator_default_requires_a_grant_and_explicit_values_override_it() {
+    for default in [false, true] {
+        for granted in [false, true] {
+            for requested in [None, Some(false), Some(true)] {
+                let decision = launch_operator(requested, default, granted);
+                if !granted && requested == Some(true) {
+                    assert_eq!(decision.unwrap_err(), OPERATOR_REQUIRED);
+                } else {
+                    assert_eq!(decision.unwrap(), granted && requested.unwrap_or(default));
+                }
+            }
+        }
+    }
+
+    let mut input = json!({"project":"/fixture","prompt":"test","requestId":"fixture"});
+    for invalid in [Value::Null, json!("true"), json!(1)] {
+        input["operator"] = invalid;
+        assert!(super::validate(START, &input).is_err());
+    }
 }

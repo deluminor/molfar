@@ -194,6 +194,7 @@ fn migration_keeps_legacy_clients_within_their_mapped_grants() {
         actual.sort_unstable();
         expected.sort_unstable();
         assert_eq!(actual, expected, "legacy subset {scopes:?}");
+        assert!(!principal.grants.contains(&GRANT::SessionsOperator));
         assert_eq!(principal.projects, ["/work"]);
     }
 }

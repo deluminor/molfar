@@ -98,6 +98,7 @@ impl ServerHandler for Handler {
         if !principal.allows(&tool.requires) {
             let audit = self.audit.clone();
             let entry = AuditEntry {
+                operator: (tool.name == tools::sessions::START).then_some(false),
                 at: crate::external_mcp::grants::store::now(),
                 client_id: principal.client_id,
                 action: tool.name.into(),

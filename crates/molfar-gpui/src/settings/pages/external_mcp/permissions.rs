@@ -53,6 +53,13 @@ impl SettingsView {
             .child(actions)
             .child(flag(
                 client,
+                GRANT::SessionsOperator,
+                "Sessions Operator",
+                "Sessions started by this client can use MOLFAR app access, including secrets and app run. Requires Sessions Write.",
+                cx,
+            ))
+            .child(flag(
+                client,
                 GRANT::Destructive,
                 "Destructive",
                 "Allows permanent deletion and reset when the matching Write grant is also on.",
@@ -75,10 +82,14 @@ fn grant_chip(
     cx: &mut Context<SettingsView>,
 ) -> gpui::Stateful<gpui::Div> {
     let key = String::from(grant);
-    let hint = match grant_tools(grant) {
-        0 => "No tools yet".to_owned(),
-        1 => "Unlocks 1 tool".to_owned(),
-        count => format!("Unlocks {count} tools"),
+    let hint = if grant == GRANT::SessionsOperator {
+        "Allows Operator mode on session start and follow-up when Sessions Write is granted".into()
+    } else {
+        match grant_tools(grant) {
+            0 => "No tools yet".to_owned(),
+            1 => "Unlocks 1 tool".to_owned(),
+            count => format!("Unlocks {count} tools"),
+        }
     };
     chip::chip(
         format!("external-{}-{key}", client.id),

@@ -14,6 +14,9 @@ mod inbox_tests;
 mod lifecycle;
 mod notes;
 #[cfg(test)]
+mod operator_tests;
+
+#[cfg(test)]
 mod reach_tests;
 #[cfg(test)]
 mod recovery_tests;
@@ -28,7 +31,7 @@ use super::*;
 use molfar_core::{
     app_access::{board as board_api, notes::external as notes_api},
     external_mcp::{
-        grants::types::ACCESS,
+        grants::types::{ACCESS, GRANT},
         receipts::{self, BEGIN, ReceiptTarget},
         tools,
         transport::Call,
@@ -58,6 +61,7 @@ struct Receipt {
     digest: String,
     target: ReceiptTarget,
     resumed: bool,
+    operator: Option<bool>,
 }
 
 impl Receipt {
@@ -87,6 +91,10 @@ impl Scope {
             })
             .cloned()
             .ok_or_else(|| "Project not found.".into())
+    }
+
+    fn permits_operator(&self) -> bool {
+        self.principal.grants.contains(&GRANT::SessionsOperator)
     }
 
     fn owner(&self) -> String {

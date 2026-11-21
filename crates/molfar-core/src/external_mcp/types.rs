@@ -76,6 +76,8 @@ pub struct AuditEntry {
     pub outcome: String,
     #[serde(default)]
     pub kind: ACCESS,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operator: Option<bool>,
 }
 
 #[cfg(test)]

@@ -20,11 +20,21 @@ impl Shell {
                 super::domains::inbox::NOT_FOUND
                 | crate::familiars::external::NOT_FOUND
                 | molfar_core::knowledge::external::VAULT_NOT_FOUND
-                | "Automation not found.",
+                | "Automation not found."
+                | tools::sessions::OPERATOR_REQUIRED,
             ) => "denied",
             Err(_) => "error",
         };
-        self.external_audit_entry(principal, tool, target, request, outcome, kind, cx);
+        let operator = (tool == tools::sessions::START).then(|| {
+            result
+                .as_ref()
+                .ok()
+                .and_then(|value| value["operator"].as_bool())
+                .unwrap_or(false)
+        });
+        self.external_audit_entry(
+            principal, tool, target, request, outcome, kind, operator, cx,
+        );
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -36,6 +46,7 @@ impl Shell {
         request: Option<&str>,
         outcome: &str,
         kind: ACCESS,
+        operator: Option<bool>,
         cx: &mut Context<Self>,
     ) {
         let entry = AuditEntry {
@@ -46,6 +57,7 @@ impl Shell {
             request_id: request.map(str::to_owned),
             outcome: outcome.into(),
             kind,
+            operator,
         };
         self.store_write("record external MCP audit", cx, move |store| {
             store.external_audit(entry)

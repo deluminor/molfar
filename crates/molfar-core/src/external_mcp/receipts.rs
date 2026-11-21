@@ -24,6 +24,8 @@ struct Receipt {
     digest: String,
     done: bool,
     result: Option<Result<Value, String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    operator: Option<bool>,
 }
 
 impl Store {
@@ -38,18 +40,32 @@ impl Store {
         request: &str,
         digest: &str,
     ) -> Result<BEGIN, String> {
+        self.external_receipt_reserve(client, target, action, request, digest, None)
+            .map(|(begin, _)| begin)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn external_receipt_reserve(
+        &self,
+        client: &str,
+        target: &ReceiptTarget,
+        action: &str,
+        request: &str,
+        digest: &str,
+        operator: Option<bool>,
+    ) -> Result<(BEGIN, Option<bool>), String> {
         let key = key_for(target, client, action, request);
-        let saved = self.external_receipt(&key)?;
-        let Some(saved) = saved else {
-            self.save_receipt(&key, digest, None)?;
-            return Ok(BEGIN::Fresh);
+        let Some(saved) = self.external_receipt(&key)? else {
+            self.save_receipt(&key, digest, None, operator)?;
+            return Ok((BEGIN::Fresh, operator));
         };
 
-        Ok(match (saved.digest == digest, saved.done, saved.result) {
+        let begin = match (saved.digest == digest, saved.done, saved.result) {
             (false, _, _) => BEGIN::Conflict,
             (true, true, Some(result)) => BEGIN::Replay(result),
             _ => BEGIN::Pending,
-        })
+        };
+        Ok((begin, saved.operator))
     }
 
     pub fn external_receipt_finish(
@@ -61,11 +77,11 @@ impl Store {
         digest: &str,
         result: &Result<Value, String>,
     ) -> Result<(), String> {
-        self.save_receipt(
-            &key_for(target, client, action, request),
-            digest,
-            Some(result),
-        )
+        let key = key_for(target, client, action, request);
+        let operator = self
+            .external_receipt(&key)?
+            .and_then(|receipt| receipt.operator);
+        self.save_receipt(&key, digest, Some(result), operator)
     }
 
     fn external_receipt(&self, key: &str) -> Result<Option<Receipt>, String> {
@@ -118,11 +134,13 @@ impl Store {
         key: &str,
         digest: &str,
         result: Option<&Result<Value, String>>,
+        operator: Option<bool>,
     ) -> Result<(), String> {
         let receipt = Receipt {
             digest: digest.into(),
             done: result.is_some(),
             result: result.cloned(),
+            operator,
         };
         let raw = serde_json::to_string(&receipt).map_err(|error| error.to_string())?;
         self.save_setting(key, &raw)
