@@ -255,3 +255,50 @@ fn concurrent_start_and_stale_progress_are_refused() {
         .starts_with("conflict:"));
     assert!(store.board_stuck_deliveries().unwrap().is_empty());
 }
+
+#[test]
+fn gitlab_open_skips_github_and_stores_the_merge_request() {
+    let board = Board::at("final_review", "idle");
+    let port = Fake::default();
+    port.forge_kind.set(Some(crate::scm::Forge::GitLab));
+    port.fail("github");
+    let url = "https://gitlab.com/group/app/-/merge_requests/4";
+    *port.created_url.borrow_mut() = Some(url.into());
+
+    deliver(&board, &port, DeliveryMethod::Pr).unwrap();
+
+    assert_eq!(
+        record::parse(board.card().delivery_json.as_deref())
+            .unwrap()
+            .pr_url
+            .as_deref(),
+        Some(url)
+    );
+    assert_eq!(
+        (
+            port.count("github"),
+            port.count("push"),
+            port.count("create")
+        ),
+        (0, 1, 1)
+    );
+}
+
+#[test]
+fn gitlab_squash_merge_fails_before_push() {
+    let board = Board::at("final_review", "idle");
+    let port = Fake::default();
+    port.forge_kind.set(Some(crate::scm::Forge::GitLab));
+
+    let error = deliver(&board, &port, DeliveryMethod::Merge).unwrap_err();
+
+    assert_eq!(error, "Squash-merge is not supported for GitLab yet.");
+    assert_eq!(
+        (
+            port.count("push"),
+            port.count("create"),
+            port.count("github")
+        ),
+        (0, 0, 0)
+    );
+}

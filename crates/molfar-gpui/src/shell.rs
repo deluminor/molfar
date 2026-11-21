@@ -737,6 +737,7 @@ pub(crate) struct Shell {
     pending_folder: Option<(i64, AnchorSlot)>,
     _session_clock: gpui::Task<()>,
     notes: Option<Entity<Notes>>,
+    confluence: Option<Entity<crate::confluence::View>>,
     knowledge: Option<Entity<crate::knowledge::Knowledge>>,
     vault: Option<Entity<crate::knowledge::VaultService>>,
     /// The sidebar's Notes count; `None` until the store has answered.
@@ -1134,6 +1135,7 @@ impl Shell {
             _session_clock: session_clock,
             notes: None,
             knowledge: None,
+            confluence: None,
             vault: None,
             note_count: None,
             inbox: None,
@@ -4612,16 +4614,17 @@ impl Shell {
         only_if_empty: bool,
         cx: &mut Context<Self>,
     ) {
-        self.create_session_target(choice, only_if_empty, None, cx);
+        self.create_session_target(choice, only_if_empty, None, None, cx);
     }
     fn create_in_folder(&mut self, folder: String, cx: &mut Context<Self>) {
-        self.create_session_target(self.default_choice(), false, Some(folder), cx);
+        self.create_session_target(self.default_choice(), false, Some(folder), None, cx);
     }
     fn create_session_target(
         &mut self,
         choice: new_chat_choice::NewChatChoice,
         only_if_empty: bool,
         folder: Option<String>,
+        draft: Option<String>,
         cx: &mut Context<Self>,
     ) {
         let store = self.store.clone();
@@ -4669,6 +4672,9 @@ impl Shell {
                             view.update(cx, |view, cx| view.seed_new_settings(settings, cx));
                         }
                         this.seed_worktree(id, copy.as_ref(), cx);
+                        if let Some(draft) = &draft {
+                            this.add_to_chat(id, draft, cx);
+                        }
                         // A pending blank belongs to the copy that requested it;
                         // navigation to another copy must never redirect that request.
                         if this.workspace.project != cwd

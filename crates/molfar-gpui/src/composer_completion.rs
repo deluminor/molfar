@@ -10,6 +10,8 @@ use gpui::{
     App, Context, Entity, EventEmitter, Focusable, KeyBinding, MouseButton, Role, SharedString,
     Subscription, Window, actions, div, prelude::*, px,
 };
+mod confluence;
+
 use molfar_core::{
     composer::{self, Token, Trigger},
     files::ProjectFile,
@@ -56,6 +58,8 @@ impl Choice {
                 return (
                     if self.insertion.starts_with("@note/") {
                         "note"
+                    } else if self.insertion.starts_with("@confluence/") {
+                        "book-open"
                     } else {
                         "sparkles"
                     },
@@ -75,6 +79,7 @@ pub(crate) struct Completion {
     input: Entity<input::Input>,
     store: Option<crate::runtime::Database>,
     notes: Vec<molfar_core::notes::Note>,
+    confluence: Vec<molfar_core::confluence::connector::Node>,
     cwd: String,
     token: Option<Token>,
     dismissed: Option<Token>,
@@ -145,6 +150,7 @@ impl Completion {
             input,
             store: None,
             notes: Vec::new(),
+            confluence: Vec::new(),
             cwd,
             token: None,
             dismissed: None,
@@ -229,6 +235,7 @@ impl Completion {
         self.files.clear();
         self.short_mentions.clear();
         self.notes.clear();
+        self.confluence.clear();
         self.known = [
             "/plan",
             "/operator",
@@ -313,11 +320,12 @@ impl Completion {
         self.rank();
         cx.notify();
     }
-    pub(crate) fn prepare_prompt(&self, text: &str) -> String {
+    pub(crate) fn prepare_prompt(&self, text: &str, cx: &App) -> String {
         if self.cwd.starts_with("remote://") {
             return text.to_owned();
         }
         let text = self.expand_mentions(text);
+        let text = self.input.read(cx).prepare_confluence_links(&text);
         let text = molfar_core::provider::native_prompt(self.provider, &text);
         let text = self
             .store
@@ -431,7 +439,9 @@ impl Completion {
         }
         self.token = token;
         self.active = 0;
-        if self.token.is_some()
+        if let Some(query) = self.confluence_query().map(str::to_owned) {
+            self.load_confluence(query, cx);
+        } else if self.token.is_some()
             && !self.loading
             && self
                 .loaded
@@ -609,7 +619,16 @@ impl Completion {
         .detach();
     }
     fn highlight(&self, cx: &mut Context<Self>) {
-        let ranges = composer::highlight_ranges(&self.input.read(cx).content, &self.known);
+        let input = &self.input.read(cx).content;
+        let mut ranges = composer::highlight_ranges(input, &self.known);
+        ranges.extend(
+            molfar_core::confluence::resolve::scan(input)
+                .into_iter()
+                .filter(|(_, mention)| mention.link.is_none())
+                .map(|(range, _)| range),
+        );
+        ranges.sort_unstable_by_key(|range| range.start);
+        ranges.dedup();
         self.input
             .update(cx, |input, cx| input.highlight_composer_tokens(ranges, cx));
     }
@@ -650,6 +669,8 @@ impl Completion {
                     server: Some(server),
                 })
                 .collect();
+        } else if let Some(query) = self.confluence_query() {
+            self.choices = self.confluence_choices(query);
         } else if token.trigger == Trigger::Mention {
             if let Some(query) = token.query.strip_prefix("jira/") {
                 let query = query.trim().to_ascii_lowercase();
@@ -1226,6 +1247,37 @@ fn jira_hits(
 }
 
 #[cfg(test)]
+impl Completion {
+    pub(crate) fn preview(
+        input: gpui::Entity<input::Input>,
+        cwd: String,
+        cx: &mut gpui::Context<Self>,
+    ) -> Self {
+        let mut completion = Self::new(input, cwd, cx);
+        completion.loaded = Some(std::time::Instant::now());
+        completion.inline_field = true;
+        completion
+    }
+
+    pub(crate) fn show_confluence_match(
+        &mut self,
+        node: molfar_core::confluence::connector::Node,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        window.focus(&self.input.focus_handle(cx), cx);
+        self.input.update(cx, |input, cx| {
+            input.set_text("@confluence/guide".into(), cx)
+        });
+        self.sync(cx);
+        self.generation = self.generation.wrapping_add(1);
+        self.confluence = vec![node];
+        self.rank();
+        cx.notify();
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use gpui::{TestAppContext, WindowHandle};
@@ -1250,6 +1302,55 @@ mod tests {
         cx.run_until_parked();
         window
     }
+    #[gpui::test]
+    fn confluence_completion_inserts_page_token_and_paste_keeps_space_origin(
+        cx: &mut TestAppContext,
+    ) {
+        use molfar_core::confluence::connector::{Kind, Node};
+
+        let window = window(cx);
+        let visual = &mut gpui::VisualTestContext::from_window(window.into(), cx);
+        window
+            .update(visual, |view, _, cx| {
+                view.input.update(cx, |input, cx| {
+                    input.set_text("@confluence/guide".into(), cx)
+                });
+            })
+            .unwrap();
+        visual.run_until_parked();
+        window
+            .update(visual, |view, window, cx| {
+                view.confluence = vec![Node {
+                    id: "42".into(),
+                    title: "Guide".into(),
+                    kind: Kind::Page,
+                    space_key: "TEAM".into(),
+                    url: "https://example.invalid/wiki".into(),
+                }];
+                view.rank();
+                view.pick(0, window, cx);
+                assert_eq!(view.input.read(cx).content.as_ref(), "@confluence/page/42 ");
+                view.input
+                    .update(cx, |input, cx| input.set_text(String::new(), cx));
+                cx.write_to_clipboard(gpui::ClipboardItem::new_string(
+                    "molfar://confluence/other.invalid/TEAM".into(),
+                ));
+                window.dispatch_action(Box::new(crate::input::Paste), cx);
+            })
+            .unwrap();
+        visual.run_until_parked();
+        window
+            .update(visual, |view, _, cx| {
+                let text = &view.input.read(cx).content;
+                assert_eq!(text.as_ref(), "@confluence/space/TEAM");
+                assert_eq!(
+                    view.prepare_prompt(text, cx),
+                    "molfar://confluence/other.invalid/TEAM"
+                );
+            })
+            .unwrap();
+    }
+
     #[gpui::test]
     fn bare_slash_prioritizes_local_modes_and_typing_filters_skills(cx: &mut TestAppContext) {
         let window = window(cx);
@@ -1441,17 +1542,23 @@ mod tests {
                 view.pick(0, window, cx);
                 assert_eq!(view.input.read(cx).content, "@mcp/docs ");
                 assert!(
-                    view.prepare_prompt("Use @mcp/docs.")
+                    view.prepare_prompt("Use @mcp/docs.", cx)
                         .starts_with("MCP context: Use the configured server ")
                 );
                 assert_eq!(
-                    view.prepare_prompt("Use @mcp/docs-extra"),
+                    view.prepare_prompt("Use @mcp/docs-extra", cx),
                     "Use @mcp/docs-extra"
                 );
-                assert_eq!(view.prepare_prompt("Ordinary request"), "Ordinary request");
-                assert_eq!(view.prepare_prompt("> Use @mcp/docs"), "> Use @mcp/docs");
                 assert_eq!(
-                    view.prepare_prompt("Quote:\n  > @mcp/docs\nOrdinary request"),
+                    view.prepare_prompt("Ordinary request", cx),
+                    "Ordinary request"
+                );
+                assert_eq!(
+                    view.prepare_prompt("> Use @mcp/docs", cx),
+                    "> Use @mcp/docs"
+                );
+                assert_eq!(
+                    view.prepare_prompt("Quote:\n  > @mcp/docs\nOrdinary request", cx),
                     "Quote:\n  > @mcp/docs\nOrdinary request"
                 );
             })

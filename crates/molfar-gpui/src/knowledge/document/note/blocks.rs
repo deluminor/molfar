@@ -1,6 +1,7 @@
 //! Block layout with a reading rhythm: space above each block by kind,
 //! nothing above the first.
 use super::Walk;
+use super::list;
 use crate::{
     markdown::{self, Fence, Tone},
     markdown_model::Block,
@@ -31,15 +32,17 @@ fn gap_above(block: &Block) -> f32 {
     }
 }
 
-pub(super) fn block<T: super::PreviewHost>(
-    host: &T,
-    node: &Block,
+pub(crate) type ToggleTask<T> = fn(&mut T, usize, &mut Context<T>);
+
+pub(crate) fn block<T: 'static>(
+    block: &Block,
     first: bool,
     walk: &mut Walk,
+    toggle: Option<ToggleTask<T>>,
     cx: &mut Context<T>,
 ) -> AnyElement {
-    let gap = if first { 0. } else { gap_above(node) };
-    let body = match node {
+    let gap = if first { 0. } else { gap_above(block) };
+    let body = match block {
         Block::Heading { level, runs } => {
             let (size, line, _) = heading_metrics(*level);
             div()
@@ -57,7 +60,7 @@ pub(super) fn block<T: super::PreviewHost>(
         Block::List {
             ordered_start,
             items,
-        } => super::list::list(host, *ordered_start, items, walk, cx),
+        } => list::list(*ordered_start, items, walk, toggle, cx),
         Block::BlockQuote { children } => div()
             .border_l_2()
             .border_color(content(0.16))
@@ -67,7 +70,7 @@ pub(super) fn block<T: super::PreviewHost>(
                 children
                     .iter()
                     .enumerate()
-                    .map(|(index, child)| block(host, child, index == 0, walk, cx)),
+                    .map(|(index, child)| self::block(child, index == 0, walk, toggle, cx)),
             )
             .into_any_element(),
         Block::CodeBlock { language, code }

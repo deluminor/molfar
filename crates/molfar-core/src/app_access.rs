@@ -36,6 +36,9 @@ pub fn validate_operator(action: &str, input: &Value) -> Result<(), String> {
             | "notes.list"
             | "notes.read"
             | "notes.write"
+            | crate::confluence::actions::SEARCH
+            | crate::confluence::actions::READ
+            | crate::confluence::actions::TREE
             | "worktrees.list"
             | "worktrees.create"
             | "jira.projects"

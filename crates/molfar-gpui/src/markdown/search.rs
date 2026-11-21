@@ -44,47 +44,48 @@ pub(crate) fn row_text(row: &MarkdownRow) -> String {
         Part::Rule => String::new(),
     }
 }
+pub(crate) fn mark_runs(runs: &mut Vec<InlineRun>, query: &str, current: bool) {
+    let text = runs.iter().map(|r| r.text.as_str()).collect::<String>();
+    let matches = molfar_core::search::literal_ranges(&text, query);
+    if matches.is_empty() {
+        return;
+    }
+    let mut marked = Vec::new();
+    let mut offset = 0;
+    for run in runs.drain(..) {
+        let end = offset + run.text.len();
+        let mut cuts = vec![offset, end];
+        for m in &matches {
+            if m.start > offset && m.start < end {
+                cuts.push(m.start);
+            }
+            if m.end > offset && m.end < end {
+                cuts.push(m.end);
+            }
+        }
+        cuts.sort_unstable();
+        cuts.dedup();
+        for span in cuts.windows(2) {
+            let mut style = run.style.clone();
+            if matches.iter().any(|m| m.start < span[1] && m.end > span[0]) {
+                style.search = Some(current);
+            }
+            marked.push(InlineRun {
+                text: run.text[span[0] - offset..span[1] - offset].to_owned(),
+                style,
+            });
+        }
+        offset = end;
+    }
+    *runs = marked;
+}
+
 pub(crate) fn mark_row(row: &mut MarkdownRow, query: &str, current: bool) {
-    let mark = |runs: &mut Vec<InlineRun>| {
-        let text = runs.iter().map(|r| r.text.as_str()).collect::<String>();
-        let matches = molfar_core::search::literal_ranges(&text, query);
-        if matches.is_empty() {
-            return;
-        }
-        let mut marked = Vec::new();
-        let mut offset = 0;
-        for run in runs.drain(..) {
-            let end = offset + run.text.len();
-            let mut cuts = vec![offset, end];
-            for m in &matches {
-                if m.start > offset && m.start < end {
-                    cuts.push(m.start);
-                }
-                if m.end > offset && m.end < end {
-                    cuts.push(m.end);
-                }
-            }
-            cuts.sort_unstable();
-            cuts.dedup();
-            for span in cuts.windows(2) {
-                let mut style = run.style.clone();
-                if matches.iter().any(|m| m.start < span[1] && m.end > span[0]) {
-                    style.search = Some(current);
-                }
-                marked.push(InlineRun {
-                    text: run.text[span[0] - offset..span[1] - offset].to_owned(),
-                    style,
-                });
-            }
-            offset = end;
-        }
-        *runs = marked;
-    };
     match &mut row.part {
-        Part::Text { runs, .. } => mark(runs),
+        Part::Text { runs, .. } => mark_runs(runs, query, current),
         Part::Table { cells, .. } => {
             for runs in cells.iter_mut().flatten() {
-                mark(runs);
+                mark_runs(runs, query, current);
             }
         }
         _ => (),

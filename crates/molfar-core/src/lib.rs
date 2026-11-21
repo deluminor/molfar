@@ -59,3 +59,5 @@ pub mod worktree_management;
 pub mod consumption;
 
 pub mod secrets;
+
+pub mod confluence;

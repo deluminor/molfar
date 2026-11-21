@@ -14,12 +14,13 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 
 import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { GitPr } from "../src/domain/git/pull-request";
 import type {
   FileMtime,
   ProjectFile,
   FsEntry,
 } from "../src/domain/files/file-entry";
+import { forgeName, runCli, type Run } from "./git-forge";
+import { currentRequest, openRequest } from "./git-request";
 import { hostWorktrees } from "./git-worktrees";
 import { createHostBranch, hostBranches, switchHostBranch } from "./git-branches";
 import type { HostStore } from "./store";
@@ -73,6 +74,7 @@ export const WORKSPACE_COMMANDS = [
   "git_sync",
   "git_pr_status",
   "git_pr_create",
+  "git_forge",
   "git_history",
   "git_commit_files",
   "git_commit_file_diff",
@@ -186,9 +188,13 @@ export class WorkspaceCommands {
       case "git_sync":
         return this.gitSync(input.cwd);
       case "git_pr_status":
-        return this.gitPrStatus(input.cwd);
+        return this.gitRequest(input.cwd, (run) => currentRequest(run));
       case "git_pr_create":
-        return this.gitPrCreate(input.cwd, input.title, input.body, input.base, input.head);
+        return this.gitRequest(input.cwd, (run) =>
+          openRequest(run, input.title, input.body, input.base, input.head),
+        );
+      case "git_forge":
+        return this.gitRequest(input.cwd, (run) => forgeName(run));
       case "git_history":
         return this.gitHistory(input.cwd, input.limit);
       case "git_commit_files":
@@ -587,29 +593,9 @@ export class WorkspaceCommands {
     await this.gitAction(cwd, "push");
   }
 
-  private async ghCommand(cwd: unknown, args: string[]): Promise<string> {
+  private async gitRequest<T>(cwd: unknown, action: (run: Run) => Promise<T>): Promise<T> {
     const root = await this.gitRoot(cwd);
-    return (await exec("gh", args, {
-      cwd: root,
-      timeout: 30_000,
-      maxBuffer: 1024 * 1024,
-      encoding: "utf8",
-      env: { ...process.env, GH_PROMPT_DISABLED: "1", GIT_TERMINAL_PROMPT: "0" },
-    })).stdout.trim();
-  }
-
-  private async gitPrStatus(cwd: unknown) {
-    const output = await this.ghCommand(cwd, ["pr", "view", "--json", "number,title,url,state"])
-      .catch(() => "");
-    if (!output) return null;
-    const pr = JSON.parse(output) as GitPr;
-    return { ...pr, state: pr.state.toLowerCase() };
-  }
-
-  private async gitPrCreate(cwd: unknown, title: unknown, body: unknown, base: unknown, head: unknown) {
-    if ([title, body, base, head].some((value) => typeof value !== "string" || value.length > 100_000))
-      throw new Error("Invalid pull request");
-    return this.ghCommand(cwd, ["pr", "create", "--title", title as string, "--body", body as string, "--base", base as string, "--head", head as string]);
+    return action((program, args) => runCli(root, program, args));
   }
 
   private gitSha(value: unknown): string {

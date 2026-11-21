@@ -10,10 +10,11 @@ pub enum DOMAIN {
     Inbox,
     Familiars,
     Jira,
+    Confluence,
 }
 
 impl DOMAIN {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Board,
         Self::Sessions,
         Self::Notes,
@@ -22,7 +23,12 @@ impl DOMAIN {
         Self::Inbox,
         Self::Familiars,
         Self::Jira,
+        Self::Confluence,
     ];
+
+    pub fn allows_write(self) -> bool {
+        self != Self::Confluence
+    }
 
     pub fn label(self) -> &'static str {
         match self {
@@ -34,6 +40,7 @@ impl DOMAIN {
             Self::Inbox => "Inbox",
             Self::Familiars => "Familiars",
             Self::Jira => "Jira",
+            Self::Confluence => "Confluence",
         }
     }
 }
@@ -74,9 +81,10 @@ impl TryFrom<String> for GRANT {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let actions = Self::ACTIONS.into_iter().chain(Self::FLAGS);
-        let domains = DOMAIN::ALL
-            .into_iter()
-            .flat_map(|domain| [Self::Read(domain), Self::Write(domain)]);
+        let domains = DOMAIN::ALL.into_iter().flat_map(|domain| {
+            std::iter::once(Self::Read(domain))
+                .chain(domain.allows_write().then_some(Self::Write(domain)))
+        });
         actions
             .chain(domains)
             .find(|grant| String::from(*grant) == value)

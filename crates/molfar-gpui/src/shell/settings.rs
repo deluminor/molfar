@@ -159,6 +159,11 @@ impl Shell {
             window,
             |this, _, event: &SettingsEvent, window, cx| match event {
                 SettingsEvent::Section(section) => this.select_settings(*section, cx),
+                SettingsEvent::ConfluenceChanged => {
+                    if let Some(view) = &this.confluence {
+                        view.update(cx, |view, cx| view.reload(false, cx));
+                    }
+                }
                 SettingsEvent::ManageInboxProvider(provider) => {
                     this.open_inbox(window, cx);
                     if let Some(inbox) = &this.inbox {

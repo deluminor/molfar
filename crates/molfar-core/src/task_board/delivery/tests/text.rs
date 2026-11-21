@@ -107,6 +107,22 @@ fn pull_request_numbers_come_from_github_urls() {
     );
     assert_eq!(pull_request_number("https://github.com/a/b/pull/0"), None);
     assert_eq!(pull_request_number("https://github.com/a/b"), None);
+    assert_eq!(
+        pull_request_number("https://gitlab.com/group/sub/r/-/merge_requests/7"),
+        Some(7)
+    );
+    assert_eq!(
+        pull_request_number("https://gitlab.com/group/sub/r/-/merge_requests/7?w=1"),
+        Some(7)
+    );
+    assert_eq!(
+        pull_request_number("https://gitlab.com/group/sub/r/-/merge_requests/7#note"),
+        Some(7)
+    );
+    assert_eq!(
+        pull_request_number("https://gitlab.com/group/sub/r/-/merge_requests/0"),
+        None
+    );
 }
 
 #[test]

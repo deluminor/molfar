@@ -2,11 +2,14 @@ use super::super::{Board, Event};
 use super::footer::lead_button;
 use crate::{modal, theme::*};
 use gpui::{AnyElement, Context, Div, Role, Stateful, Window, div, prelude::*, px};
-use molfar_core::task_board::{
-    constants::{DONE, FINAL_REVIEW, IDLE, WAITING_CI},
-    delivery::{record, types::DeliveryMethod},
-    stage::lifecycle::constants::{FAILED, RUNNING},
-    types::Card,
+use molfar_core::{
+    scm::Forge,
+    task_board::{
+        constants::{DONE, FINAL_REVIEW, IDLE, WAITING_CI},
+        delivery::{record, types::DeliveryMethod},
+        stage::lifecycle::constants::{FAILED, RUNNING},
+        types::Card,
+    },
 };
 
 const METHODS: [(DeliveryMethod, &str, &str, &str); 3] = [
@@ -138,20 +141,30 @@ impl Board {
     }
 
     fn method_picker(&self, card: &Card, pending: bool, cx: &mut Context<Self>) -> Div {
-        let github = card
+        let forge = card
             .worktree_path
             .as_ref()
-            .and_then(|path| self.github.get(path).copied());
+            .and_then(|path| self.forge.get(path).copied());
+        let gitlab = forge == Some(Forge::GitLab);
         let mut picker = div().w_full().flex().flex_col().gap(px(6.));
-        if github == Some(false) {
-            picker = picker.child(div().text_size(px(11.)).text_color(content(0.6)).child(
-                "GitHub is not available for this repository, so only Keep branch is offered.",
-            ));
+        if forge == Some(Forge::Unknown) {
+            picker = picker.child(
+                div()
+                    .text_size(px(11.))
+                    .text_color(content(0.6))
+                    .debug_selector(|| "board-deliver-unavailable".into())
+                    .child(
+                        "GitHub and GitLab are not available for this repository, so only Keep branch is offered.",
+                    ),
+            );
         }
 
         let mut options = div().w_full().flex().items_stretch().gap(px(6.));
-        for (method, id, label, hint) in METHODS {
-            if github == Some(false) && method != DeliveryMethod::Keep {
+        for (method, id, label, hint) in method_copy(gitlab) {
+            if forge == Some(Forge::Unknown) && method != DeliveryMethod::Keep {
+                continue;
+            }
+            if gitlab && method == DeliveryMethod::Merge {
                 continue;
             }
             let card_id = card.id.clone();
@@ -205,30 +218,53 @@ impl Board {
     pub(in crate::task_board) fn open_delivery(&mut self, card: &Card, cx: &mut Context<Self>) {
         self.delivery_open = Some(card.id.clone());
         if let Some(path) = &card.worktree_path {
-            self.probe_github(path.clone(), cx);
+            self.probe_forge(path.clone(), cx);
         }
         cx.notify();
     }
 
-    /// `gh repo view` is a network call: probe off-thread, keep a success, and retry a
-    /// failure on the next open so a transient outage does not stick for the session.
-    fn probe_github(&mut self, path: String, cx: &mut Context<Self>) {
-        if self.github_probing.contains(&path) || self.github.get(&path) == Some(&true) {
+    /// Forge detection can run `gh` or `glab`. Probe off-thread, keep a known forge,
+    /// and retry unknown on the next open so a transient outage does not stick.
+    fn probe_forge(&mut self, path: String, cx: &mut Context<Self>) {
+        if self.forge_probing.contains(&path)
+            || matches!(self.forge.get(&path), Some(Forge::GitHub | Forge::GitLab))
+        {
             return;
         }
-        self.github_probing.insert(path.clone());
+        self.forge_probing.insert(path.clone());
         let probe = path.clone();
         let work = cx.background_executor().spawn(async move {
-            molfar_core::scm::github_repo(std::path::Path::new(&probe)).is_ok()
+            molfar_core::scm::forge(std::path::Path::new(&probe)).unwrap_or(Forge::Unknown)
         });
         cx.spawn(async move |this, cx| {
-            let available = work.await;
+            let forge = work.await;
             let _ = this.update(cx, |this, cx| {
-                this.github_probing.remove(&path);
-                this.github.insert(path, available);
+                this.forge_probing.remove(&path);
+                this.forge.insert(path, forge);
                 cx.notify();
             });
         })
         .detach();
     }
+}
+
+fn method_copy(gitlab: bool) -> [(DeliveryMethod, &'static str, &'static str, &'static str); 3] {
+    [
+        (
+            DeliveryMethod::Pr,
+            "board-deliver-pr",
+            if gitlab {
+                "Open merge request"
+            } else {
+                "Open pull request"
+            },
+            if gitlab {
+                "Push the branch and open a merge request."
+            } else {
+                "Push the branch and open a PR."
+            },
+        ),
+        METHODS[1],
+        METHODS[2],
+    ]
 }

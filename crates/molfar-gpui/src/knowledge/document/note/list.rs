@@ -2,7 +2,7 @@
 //! write straight back to the note.
 use super::{
     Walk,
-    blocks::{BODY_LINE, BODY_SIZE},
+    blocks::{BODY_LINE, BODY_SIZE, ToggleTask, block},
 };
 use crate::{
     markdown,
@@ -33,11 +33,11 @@ fn without_task(runs: &[InlineRun], checked: bool) -> Vec<InlineRun> {
         .collect()
 }
 
-pub(super) fn list<T: super::PreviewHost>(
-    host: &T,
+pub(super) fn list<T: 'static>(
     ordered_start: Option<u64>,
     items: &[Vec<Block>],
     walk: &mut Walk,
+    toggle: Option<ToggleTask<T>>,
     cx: &mut Context<T>,
 ) -> AnyElement {
     div()
@@ -47,7 +47,7 @@ pub(super) fn list<T: super::PreviewHost>(
         .children(items.iter().enumerate().map(|(position, children)| {
             let task = task_of(children);
             let marker = match (task, ordered_start) {
-                (Some(checked), _) => checkbox(host, checked, walk, cx),
+                (Some(checked), _) => checkbox(checked, walk, toggle, cx),
                 (None, Some(start)) => text_marker(format!("{}.", start + position as u64), 0.5),
                 (None, None) => text_marker("•".into(), 0.4),
             };
@@ -65,7 +65,7 @@ pub(super) fn list<T: super::PreviewHost>(
                             BODY_SIZE,
                         ))
                         .into_any_element(),
-                    _ => super::blocks::block(host, child, index == 0, walk, cx),
+                    _ => block(child, index == 0, walk, toggle, cx),
                 })
                 .collect();
             div()
@@ -77,10 +77,10 @@ pub(super) fn list<T: super::PreviewHost>(
         .into_any_element()
 }
 
-fn checkbox<T: super::PreviewHost>(
-    _host: &T,
+fn checkbox<T: 'static>(
     checked: bool,
     walk: &mut Walk,
+    toggle: Option<ToggleTask<T>>,
     cx: &mut Context<T>,
 ) -> AnyElement {
     let ordinal = walk.tasks;
@@ -106,7 +106,7 @@ fn checkbox<T: super::PreviewHost>(
                 } else {
                     gpui::Toggled::False
                 })
-                .cursor_pointer()
+                .when(toggle.is_some(), |item| item.cursor_pointer())
                 .size(px(BOX))
                 .rounded(px(4.))
                 .flex()
@@ -121,7 +121,9 @@ fn checkbox<T: super::PreviewHost>(
                 .when(checked, |box_| {
                     box_.child(icon("check", 11.).text_color(white(1.)))
                 })
-                .on_click(cx.listener(move |this, _, _, cx| this.flip_task(ordinal, cx))),
+                .when_some(toggle, |item, toggle| {
+                    item.on_click(cx.listener(move |this, _, _, cx| toggle(this, ordinal, cx)))
+                }),
         )
         .into_any_element()
 }

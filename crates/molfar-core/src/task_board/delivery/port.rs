@@ -15,6 +15,7 @@ pub trait DeliveryPort {
     fn default_base(&self, project: &Path) -> Result<String, String>;
     fn remotes(&self, project: &Path) -> Result<Vec<String>, String>;
     fn github_repo(&self, worktree: &Path) -> Result<String, String>;
+    fn forge(&self, worktree: &Path) -> Result<crate::scm::Forge, String>;
     fn push(&self, worktree: &Path) -> Result<(), String>;
     fn create_pull_request(&self, worktree: &Path, request: &PullRequest)
         -> Result<String, String>;
@@ -47,6 +48,10 @@ impl DeliveryPort for GitDelivery {
 
     fn github_repo(&self, worktree: &Path) -> Result<String, String> {
         crate::scm::github_repo(worktree)
+    }
+
+    fn forge(&self, worktree: &Path) -> Result<crate::scm::Forge, String> {
+        crate::scm::forge(worktree)
     }
 
     fn push(&self, worktree: &Path) -> Result<(), String> {

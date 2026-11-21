@@ -1,6 +1,7 @@
 //! Operator's project actions. Familiars share the launch/request helpers but keep
 //! their own project grants, visibility preference and completion bookkeeping.
 use super::*;
+use molfar_core::confluence::actions as confluence_api;
 use molfar_core::{
     agent::Settings,
     app_access as app,
@@ -207,6 +208,7 @@ impl Shell {
                     | "jira.thread"
             )
             && !app::board::READ_ACTIONS.contains(&call.action.as_str())
+            && !confluence_api::READ_ACTIONS.contains(&call.action.as_str())
         {
             return Err("This thread's access policy allows read-only app actions.".into());
         }
@@ -604,6 +606,19 @@ impl Shell {
                 );
                 return;
             }
+            confluence_api::SEARCH | confluence_api::READ | confluence_api::TREE => {
+                let secrets = self.secret_store.clone();
+                self.app_background(
+                    call,
+                    move |store| {
+                        let reader =
+                            confluence_api::ReadActions::open(&*locked(&store)?, &secrets)?;
+                        Ok((reader.execute(&action, &input)?, Effect::None))
+                    },
+                    cx,
+                );
+                return;
+            }
             "notes.list" | "notes.read" | "notes.write" => {
                 let caller = call.session;
                 let request = call.request_id.clone();
@@ -761,6 +776,7 @@ fn mutating(action: &str) -> bool {
             | "jira.get"
             | "jira.thread"
     ) && !app::board::READ_ACTIONS.contains(&action)
+        && !confluence_api::READ_ACTIONS.contains(&action)
 }
 fn worktree_json(tree: &molfar_core::git::Worktree) -> Value {
     json!({"path":tree.path,"branch":tree.branch,"head":tree.head,"main":tree.main,"missing":tree.missing})

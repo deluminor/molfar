@@ -24,7 +24,7 @@ fn missing(alt: &str) -> AnyElement {
         .into_any_element()
 }
 
-pub(super) fn image<T: 'static>(
+pub(crate) fn image<T: 'static>(
     path: Option<&Path>,
     alt: &str,
     width: Option<f32>,

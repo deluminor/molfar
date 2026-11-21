@@ -403,7 +403,7 @@ impl Shell {
                     .rounded_md()
                     .border_1()
                     .border_color(content(0.1))
-                    .bg(pane_fill())
+                    .bg(floating_fill())
                     .shadow_md()
                     .text_size(px(12.))
                     .text_color(content(1.))

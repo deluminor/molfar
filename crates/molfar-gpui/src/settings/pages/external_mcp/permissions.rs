@@ -13,7 +13,10 @@ impl SettingsView {
     ) -> impl IntoElement {
         let mut matrix = div().flex().flex_col().gap(px(6.));
         for domain in DOMAIN::ALL {
-            let sensitive = matches!(domain, DOMAIN::Inbox | DOMAIN::Knowledge | DOMAIN::Jira);
+            let sensitive = matches!(
+                domain,
+                DOMAIN::Inbox | DOMAIN::Knowledge | DOMAIN::Jira | DOMAIN::Confluence
+            );
             matrix = matrix.child(
                 div()
                     .flex()
@@ -33,7 +36,9 @@ impl SettingsView {
                         )
                         .w(px(112.)),
                     )
-                    .child(grant_chip(client, GRANT::Write(domain), "Write", cx)),
+                    .when(domain.allows_write(), |row| {
+                        row.child(grant_chip(client, GRANT::Write(domain), "Write", cx))
+                    }),
             );
         }
         let actions = div()
