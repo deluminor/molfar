@@ -103,6 +103,34 @@ fn gitlab_create_binds_head_to_source_and_base_to_target() {
 }
 
 #[test]
+fn a_gitlab_card_maps_the_merge_request_and_does_not_start_gh() {
+    let mut cli = Script::ok(
+        r#"{"title":"Ship","state":"opened","web_url":"https://gitlab.com/group/sub/app/-/merge_requests/4","draft":true}"#,
+    );
+    let value =
+        super::super::request_status::glab_view(&mut cli, Some("group/sub/app"), 4).unwrap();
+    assert_eq!(value["title"], "Ship");
+    assert_eq!(value["state"], "open");
+    assert_eq!(
+        value["url"],
+        "https://gitlab.com/group/sub/app/-/merge_requests/4"
+    );
+    assert_eq!(value["isDraft"], true);
+    assert_eq!(value["additions"], 0);
+    assert_eq!(cli.calls[0].0, "glab");
+    assert!(cli.calls.iter().all(|(program, _)| program != "gh"));
+    assert!(cli.calls[0].1.iter().any(|arg| arg == "group/sub/app"));
+    assert!(super::openable_request_url(
+        "https://gitlab.com/group/sub/app/-/merge_requests/4?x=1"
+    ));
+    assert!(super::openable_request_url("https://github.com/o/r/pull/4"));
+    assert!(!super::openable_request_url("https://example.com/readme"));
+    assert!(!super::openable_request_url(
+        "http://evil.example/not-a-request"
+    ));
+}
+
+#[test]
 fn an_empty_title_starts_no_cli() {
     let mut cli = Script::ok("");
     let error = create(&mut cli, Forge::GitLab, "  ", "body", "main", "feature").unwrap_err();

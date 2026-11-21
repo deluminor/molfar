@@ -5,14 +5,17 @@ use super::super::{
 };
 use super::delivery::{pull_request_url, status_text};
 use gpui::{TestAppContext, VisualTestContext, WindowHandle};
-use molfar_core::task_board::types::{Card, Snapshot};
+use molfar_core::{
+    scm::Forge,
+    task_board::types::{Card, Snapshot},
+};
 
-fn show(cx: &mut TestAppContext, card: Card, github: Option<bool>) -> WindowHandle<Board> {
+fn show(cx: &mut TestAppContext, card: Card, forge: Option<Forge>) -> WindowHandle<Board> {
     let window = window(cx);
     window
         .update(cx, |board, _, cx| {
-            if let (Some(path), Some(available)) = (card.worktree_path.clone(), github) {
-                board.github.insert(path, available);
+            if let (Some(path), Some(forge)) = (card.worktree_path.clone(), forge) {
+                board.forge.insert(path, forge);
             }
             let snapshot = Snapshot {
                 cards: vec![card],
@@ -35,7 +38,7 @@ fn reviewed(state: &str) -> Card {
 
 #[gpui::test]
 fn deliver_offers_three_methods_and_emits_once(cx: &mut TestAppContext) {
-    let window = show(cx, reviewed("idle"), Some(true));
+    let window = show(cx, reviewed("idle"), Some(Forge::GitHub));
     let events = record(&window, cx);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
@@ -61,7 +64,7 @@ fn deliver_offers_three_methods_and_emits_once(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn unavailable_github_offers_keep_only(cx: &mut TestAppContext) {
-    let window = show(cx, reviewed("failed"), Some(false));
+    let window = show(cx, reviewed("failed"), Some(Forge::Unknown));
     let events = record(&window, cx);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
@@ -70,13 +73,28 @@ fn unavailable_github_offers_keep_only(cx: &mut TestAppContext) {
 
     assert!(visual.debug_bounds("board-deliver-pr").is_none());
     assert!(visual.debug_bounds("board-deliver-merge").is_none());
+    assert!(visual.debug_bounds("board-deliver-unavailable").is_some());
     click(visual, "board-deliver-keep");
     assert_eq!(*events.borrow(), ["Deliver(Keep)"]);
 }
 
 #[gpui::test]
+fn gitlab_offers_a_merge_request_and_hides_squash(cx: &mut TestAppContext) {
+    let window = show(cx, reviewed("idle"), Some(Forge::GitLab));
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+
+    click(visual, "board-deliver");
+
+    assert!(visual.debug_bounds("board-deliver-pr").is_some());
+    assert!(visual.debug_bounds("board-deliver-merge").is_none());
+    assert!(visual.debug_bounds("board-deliver-keep").is_some());
+    assert!(visual.debug_bounds("board-deliver-unavailable").is_none());
+}
+
+#[gpui::test]
 fn squash_merge_and_reject_require_confirmation(cx: &mut TestAppContext) {
-    let window = show(cx, reviewed("idle"), Some(true));
+    let window = show(cx, reviewed("idle"), Some(Forge::GitHub));
     let events = record(&window, cx);
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();

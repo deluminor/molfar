@@ -115,11 +115,22 @@ pub(super) fn publish(
     step: DeliveryStep,
     previous: Option<Delivery>,
 ) -> Result<Delivery, String> {
-    let repo = port.github_repo(worktree).map_err(|error| {
-        format!(
-            "Only Keep branch is available: GitHub is not reachable for this repository ({error})."
-        )
-    })?;
+    let forge = port.forge(worktree)?;
+    if forge == crate::scm::Forge::GitLab && method == DeliveryMethod::Merge {
+        return Err("Squash-merge is not supported for GitLab yet.".into());
+    }
+    if forge == crate::scm::Forge::Unknown {
+        return Err(crate::scm::UNKNOWN_FORGE.into());
+    }
+    let repo = if forge == crate::scm::Forge::GitHub {
+        port.github_repo(worktree).map_err(|error| {
+            format!(
+                "Only Keep branch is available: GitHub is not reachable for this repository ({error})."
+            )
+        })?
+    } else {
+        String::new()
+    };
     port.push(worktree)?;
 
     let previous_merged = previous.as_ref().is_some_and(|saved| saved.merged);

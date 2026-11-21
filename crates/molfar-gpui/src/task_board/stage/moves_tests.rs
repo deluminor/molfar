@@ -112,7 +112,9 @@ fn input_moves_open_the_owner_panel_instead_of_acting(cx: &mut TestAppContext) {
     visual.run_until_parked();
     window
         .update(visual, |board, _, _| {
-            board.github.insert("/retained/card".into(), true);
+            board
+                .forge
+                .insert("/retained/card".into(), molfar_core::scm::Forge::GitHub);
         })
         .unwrap();
     assert_eq!(targets(window, visual, &reviewed), ["rework", "done"]);

@@ -21,6 +21,20 @@ pub fn pull_request_number(url: &str) -> Option<i64> {
         .filter(|number| *number > 0)
 }
 
+pub fn openable_request_url(url: &str) -> bool {
+    let Some(rest) = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))
+    else {
+        return false;
+    };
+    let path = rest.split(['?', '#']).next().unwrap_or("");
+    let Some((_, path)) = path.split_once('/') else {
+        return false;
+    };
+    pull_request_number(&format!("/{path}")).is_some()
+}
+
 pub(super) fn create(
     cli: &mut impl Cli,
     forge: Forge,

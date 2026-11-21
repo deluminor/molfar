@@ -9,8 +9,8 @@ mod review;
 pub(crate) mod shell;
 pub(crate) mod text;
 
-pub use forge::Forge;
-pub use pull_request::pull_request_number;
+pub use forge::{Forge, UNKNOWN_FORGE};
+pub use pull_request::{openable_request_url, pull_request_number};
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
@@ -40,6 +40,15 @@ pub fn resolve_gui_binary(name: &str) -> Option<std::path::PathBuf> {
 /// GitHub, GitLab, or unknown, from the preferred remote of `cwd`.
 pub fn forge(cwd: &Path) -> Result<Forge, String> {
     forge::at(cwd)
+}
+
+/// The pull request or merge request a Familiar card shows.
+pub fn pull_request_view(
+    cwd: &Path,
+    repo: Option<&str>,
+    number: u64,
+) -> Result<serde_json::Value, String> {
+    request_status::view(cwd, repo, number)
 }
 pub use text::{commit_message_prompt, parse_commit_message, parse_pr_content, pr_content_prompt};
 

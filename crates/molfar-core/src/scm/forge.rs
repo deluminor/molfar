@@ -4,7 +4,7 @@ use super::cli;
 use serde_json::Value;
 
 pub(super) const NO_REMOTE: &str = "No git remote to open a merge request or pull request against.";
-pub(super) const UNKNOWN_FORGE: &str = "Could not tell whether this remote is GitHub or GitLab. Install and authenticate gh or glab for this host.";
+pub const UNKNOWN_FORGE: &str = "Could not tell whether this remote is GitHub or GitLab. Install and authenticate gh or glab for this host.";
 pub(super) const GH_AUTH: &[&str] = &["auth", "status", "--json", "hosts"];
 pub(super) const GLAB_AUTH: &[&str] = &["auth", "status", "--all"];
 
