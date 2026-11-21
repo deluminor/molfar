@@ -3875,6 +3875,7 @@ dependencies = [
  "regex",
  "rmcp",
  "rquickjs",
+ "roxmltree 0.21.1",
  "rusqlite",
  "rusty-leveldb",
  "secrecy",
