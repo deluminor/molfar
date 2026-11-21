@@ -71,7 +71,7 @@ pub fn list(
     } else {
         parts.join(" AND ")
     };
-    let page = super::search(client, &Filter::Jql(jql), None, None)?;
+    let page = super::search_limited(client, &Filter::Jql(jql), None, None, None, limit, None)?;
     Ok(page_value(page, limit))
 }
 
@@ -82,12 +82,24 @@ pub fn search(
     fields: Option<&[String]>,
 ) -> Result<Value, Error> {
     let max_results = max_results.clamp(1, 100);
-    let _ = fields;
-    let page = super::search(client, &Filter::Jql(jql.to_owned()), None, None)?;
+    let page = super::search_limited(
+        client,
+        &Filter::Jql(jql.to_owned()),
+        None,
+        None,
+        None,
+        max_results,
+        fields,
+    )?;
     Ok(page_value(page, max_results))
 }
 
-pub fn get(client: &Client, key: &str, fields: Option<&[String]>) -> Result<Value, Error> {
+pub fn get(
+    client: &Client,
+    key: &str,
+    fields: Option<&[String]>,
+    char_offset: usize,
+) -> Result<Value, Error> {
     let issue = issue::load(client, key, None)?;
     let selected = fields.unwrap_or(&[]);
     let all = selected.iter().any(|field| field == "*all") || selected.is_empty();
@@ -99,12 +111,13 @@ pub fn get(client: &Client, key: &str, fields: Option<&[String]>) -> Result<Valu
     } else {
         selected.to_vec()
     };
+    let include_description = wanted.iter().any(|field| field == "description");
     let mut object = serde_json::Map::new();
     object.insert("key".into(), json!(issue.key));
     for field in wanted {
         let value = match field.as_str() {
             "summary" => json!(issue.summary),
-            "description" => json!(issue.description),
+            "description" => page_text(&issue.description, char_offset)["text"].clone(),
             "status" => json!(issue.status),
             "issuetype" => json!(issue.type_name),
             "priority" => json!(issue.priority),
@@ -118,6 +131,11 @@ pub fn get(client: &Client, key: &str, fields: Option<&[String]>) -> Result<Valu
             _ => continue,
         };
         object.insert(field, value);
+    }
+    if include_description {
+        if let Some(next) = page_text(&issue.description, char_offset).get("nextCharOffset") {
+            object.insert("nextCharOffset".into(), next.clone());
+        }
     }
     Ok(Value::Object(object))
 }
@@ -209,10 +227,16 @@ pub fn execute(client: &Client, action: &str, arguments: &Value) -> Result<Value
             client,
             arguments["jql"].as_str().unwrap_or(""),
             arguments["maxResults"].as_u64().unwrap_or(50) as usize,
-            None,
+            field_list(arguments).as_deref(),
         )
         .map_err(|error| error.to_string()),
-        "get" => get(client, key, None).map_err(|error| error.to_string()),
+        "get" => get(
+            client,
+            key,
+            field_list(arguments).as_deref(),
+            arguments["charOffset"].as_u64().unwrap_or(0) as usize,
+        )
+        .map_err(|error| error.to_string()),
         "thread" => thread(
             client,
             key,
@@ -239,17 +263,18 @@ pub fn execute(client: &Client, action: &str, arguments: &Value) -> Result<Value
         "edit" => issue::edit(
             client,
             key,
-            arguments["summary"].as_str().unwrap_or(""),
-            arguments["description"].as_str().unwrap_or(""),
-            &arguments["labels"]
-                .as_array()
+            arguments.get("summary").and_then(Value::as_str),
+            arguments.get("description").and_then(Value::as_str),
+            arguments
+                .get("labels")
+                .and_then(Value::as_array)
                 .map(|items| {
                     items
                         .iter()
                         .filter_map(|item| item.as_str().map(str::to_owned))
                         .collect::<Vec<_>>()
                 })
-                .unwrap_or_default(),
+                .as_deref(),
         )
         .map(|()| json!({"key": key, "edited": true}))
         .map_err(|error| error.to_string()),
@@ -267,6 +292,19 @@ pub fn execute(client: &Client, action: &str, arguments: &Value) -> Result<Value
         .map_err(|error| error.to_string()),
         _ => Err("Unknown Jira action".into()),
     }
+}
+
+fn field_list(arguments: &Value) -> Option<Vec<String>> {
+    let fields = arguments.get("fields")?;
+    if fields.as_str() == Some("*all") {
+        return Some(vec!["*all".into()]);
+    }
+    fields.as_array().map(|items| {
+        items
+            .iter()
+            .filter_map(|item| item.as_str().map(str::to_owned))
+            .collect()
+    })
 }
 
 fn page_value(page: Page, limit: usize) -> Value {

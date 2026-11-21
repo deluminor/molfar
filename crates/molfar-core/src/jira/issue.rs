@@ -138,24 +138,31 @@ pub fn assign(client: &Client, key: &str, account_id: &str) -> Result<(), Error>
 pub fn edit(
     client: &Client,
     key: &str,
-    summary: &str,
-    description: &str,
-    labels: &[String],
+    summary: Option<&str>,
+    description: Option<&str>,
+    labels: Option<&[String]>,
 ) -> Result<(), Error> {
     let key = issue_key(key)?;
-    let summary = summary.trim();
-    if summary.is_empty() {
-        return Err(Error::Invalid("Summary cannot be empty".into()));
+    let mut fields = serde_json::Map::new();
+    if let Some(summary) = summary {
+        let summary = summary.trim();
+        if summary.is_empty() {
+            return Err(Error::Invalid("Summary cannot be empty".into()));
+        }
+        fields.insert("summary".into(), json!(summary));
+    }
+    if let Some(description) = description {
+        fields.insert("description".into(), adf::from_markdown(description));
+    }
+    if let Some(labels) = labels {
+        fields.insert("labels".into(), json!(labels));
+    }
+    if fields.is_empty() {
+        return Err(Error::Invalid("Nothing to update".into()));
     }
     client.put(
         &format!("/rest/api/3/issue/{key}"),
-        &json!({
-            "fields": {
-                "summary": summary,
-                "description": adf::from_markdown(description),
-                "labels": labels,
-            }
-        }),
+        &json!({ "fields": fields }),
     )?;
     Ok(())
 }
@@ -183,7 +190,7 @@ pub fn sort_comments(comments: &mut [Comment], newest_first: bool) {
 }
 
 pub fn parse(issue: &Value, sprint_field: Option<&str>) -> Issue {
-    let row = query::row(issue, sprint_field);
+    let row = query::row(issue, sprint_field, None);
     let fields = issue.get("fields").unwrap_or(issue);
     Issue {
         key: row.key,
@@ -266,16 +273,18 @@ pub fn parse(issue: &Value, sprint_field: Option<&str>) -> Issue {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .into(),
-            more: fields
-                .pointer("/worklog/total")
-                .and_then(Value::as_u64)
-                .unwrap_or(0)
-                .saturating_sub(
-                    fields
-                        .pointer("/worklog/maxResults")
-                        .and_then(Value::as_u64)
-                        .unwrap_or(0),
-                ),
+            more: {
+                let total = fields
+                    .pointer("/worklog/total")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0);
+                let returned = fields
+                    .pointer("/worklog/worklogs")
+                    .and_then(Value::as_array)
+                    .map(|items| items.len() as u64)
+                    .unwrap_or(0);
+                total.saturating_sub(returned)
+            },
         },
     }
 }

@@ -63,7 +63,7 @@ pub struct ListModel {
     pub unauthorized: bool,
     pub rate_limited: bool,
     pub next: Option<String>,
-    /// Token for the page after the 500-row stop. Load more uses it.
+    /// Token past the 500-row cap. Load more does not request it.
     pub more: Option<String>,
     pub capped: bool,
     pub group_by: GroupBy,

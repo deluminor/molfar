@@ -10,6 +10,7 @@ use crate::atlassian::{Client, Credentials, Error, Exchange, Transport};
 
 struct Script {
     calls: Mutex<Vec<(String, String)>>,
+    bodies: Mutex<Vec<String>>,
     response: Value,
 }
 
@@ -19,7 +20,7 @@ impl Transport for Script {
         method: &str,
         url: &str,
         _authorization: &str,
-        _body: Option<&str>,
+        body: Option<&str>,
     ) -> Result<Exchange, Error> {
         let path = url
             .split("https://team.atlassian.net")
@@ -29,10 +30,16 @@ impl Transport for Script {
             .lock()
             .expect("script")
             .push((method.into(), path.into()));
+        self.bodies
+            .lock()
+            .expect("script")
+            .push(body.unwrap_or("").to_string());
         Ok(Exchange {
             status: 200,
             retry_after: None,
             body: self.response.to_string().into_bytes(),
+            location: None,
+            content_length: None,
         })
     }
 }
@@ -40,6 +47,7 @@ impl Transport for Script {
 fn scripted(payload: Value) -> (Client, Arc<Script>) {
     let script = Arc::new(Script {
         calls: Mutex::new(Vec::new()),
+        bodies: Mutex::new(Vec::new()),
         response: payload,
     });
     let credentials = Credentials::new("team", "user@example.com", "super-secret-token").unwrap();
@@ -289,6 +297,166 @@ fn chips_parse_issue_project_and_jql_and_offline_blocks_expand() {
     let client = Client::with_transport(&credentials, Arc::new(Down));
     let error = expand_mentions(&client, "@jira/team.atlassian.net/TB-1").unwrap_err();
     assert!(matches!(error, Error::Offline(_)));
+}
+
+#[test]
+fn classic_epic_link_groups_with_the_parent_epic() {
+    let row = super::query::row(
+        &json!({
+            "key": "TB-2",
+            "fields": { "customfield_10014": "EP-1", "summary": "Child" }
+        }),
+        None,
+        Some("customfield_10014"),
+    );
+    assert_eq!(row.epic_key, "EP-1");
+    let grouped = groups(&[row], GroupBy::Epic);
+    assert_eq!(grouped[0].title, "EP-1");
+}
+
+#[test]
+fn search_asks_for_the_requested_page_and_fields() {
+    let (client, script) = scripted(json!({"issues": []}));
+    let fields = vec!["summary".to_string(), "status".to_string()];
+    super::search_limited(
+        &client,
+        &Filter::Jql("project = TB".into()),
+        None,
+        None,
+        None,
+        80,
+        Some(&fields),
+    )
+    .unwrap();
+    let body = script.bodies.lock().unwrap();
+    let payload: Value = serde_json::from_str(body[0].as_str()).unwrap();
+    assert_eq!(payload["maxResults"], 80);
+    assert_eq!(payload["fields"], json!(["summary", "status"]));
+}
+
+#[test]
+fn label_only_edit_leaves_the_summary_unchanged() {
+    let (client, script) = scripted(json!({}));
+    super::issue::edit(&client, "TB-1", None, None, Some(&["ship".to_string()])).unwrap();
+    let payload: Value = serde_json::from_str(&script.bodies.lock().unwrap()[0]).unwrap();
+    assert!(payload["fields"].get("summary").is_none());
+    assert!(payload["fields"].get("description").is_none());
+    assert_eq!(payload["fields"]["labels"], json!(["ship"]));
+}
+
+#[test]
+fn a_long_description_returns_the_next_character_offset() {
+    let text = "x".repeat(6001);
+    let (client, _) = scripted(json!({
+        "key": "TB-1",
+        "fields": {
+            "description": {
+                "type": "doc",
+                "version": 1,
+                "content": [{
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": text}]
+                }]
+            }
+        }
+    }));
+    let fields = vec!["description".to_string()];
+    let value = super::tools::get(&client, "TB-1", Some(&fields), 0).unwrap();
+    assert_eq!(value["description"].as_str().unwrap().len(), 6000);
+    assert_eq!(value["nextCharOffset"], 6000);
+}
+
+#[test]
+fn worklog_more_is_the_unreturned_count() {
+    let issue = super::issue::parse(
+        &json!({
+            "key": "TB-1",
+            "fields": {
+                "worklog": {
+                    "total": 3,
+                    "worklogs": [{"id": "1"}]
+                }
+            }
+        }),
+        None,
+    );
+    assert_eq!(issue.work.more, 2);
+}
+
+#[test]
+fn attachment_redirect_drops_authorization_and_skips_a_large_length() {
+    struct Redirect {
+        calls: Mutex<Vec<(String, String)>>,
+    }
+    impl Transport for Redirect {
+        fn exchange(
+            &self,
+            _method: &str,
+            url: &str,
+            authorization: &str,
+            _: Option<&str>,
+        ) -> Result<Exchange, Error> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push((url.into(), authorization.into()));
+            if url.ends_with("/content/1") {
+                return Ok(Exchange {
+                    status: 303,
+                    retry_after: None,
+                    body: Vec::new(),
+                    location: Some("https://media.example/file".into()),
+                    content_length: None,
+                });
+            }
+            Ok(Exchange {
+                status: 200,
+                retry_after: None,
+                body: b"png".to_vec(),
+                location: None,
+                content_length: Some(21 * 1024 * 1024),
+            })
+        }
+    }
+    let transport = Arc::new(Redirect {
+        calls: Mutex::new(Vec::new()),
+    });
+    let credentials = Credentials::new("team", "user@example.com", "super-secret-token").unwrap();
+    let client = Client::with_transport(&credentials, transport.clone());
+    assert!(client
+        .bytes("/rest/api/3/attachment/content/1")
+        .unwrap()
+        .is_none());
+    let calls = transport.calls.lock().unwrap();
+    assert!(calls[1].0.starts_with("https://media.example/file"));
+    assert!(calls[1].1.is_empty());
+    assert!(calls[0].1.starts_with("Basic "));
+}
+
+#[test]
+fn a_page_write_forgets_the_list_cache() {
+    let app = tempfile::tempdir().unwrap();
+    let cached = CachedList {
+        fetched_ms: 1_000,
+        rows: vec![row("TB-1", "", "Open")],
+        adf: Vec::new(),
+    };
+    super::save_list(
+        app.path(),
+        "https://team.atlassian.net",
+        "assignee = currentUser()",
+        &cached,
+    )
+    .unwrap();
+    super::forget_lists(app.path(), "https://team.atlassian.net").unwrap();
+    assert!(super::load_list(
+        app.path(),
+        "https://team.atlassian.net",
+        "assignee = currentUser()",
+        1_000
+    )
+    .unwrap()
+    .is_none());
 }
 
 #[test]

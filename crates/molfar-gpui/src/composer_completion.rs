@@ -455,6 +455,7 @@ impl Completion {
             return;
         }
         self.jira_query = query.clone();
+        let sent = query.clone();
         let store = self.store.clone();
         cx.spawn(async move |this, cx| {
             let found = cx
@@ -462,6 +463,9 @@ impl Completion {
                 .spawn(async move { jira_hits(store, &query) })
                 .await;
             let _ = this.update(cx, |this, cx| {
+                if this.jira_query != sent {
+                    return;
+                }
                 if let Some((host, hits)) = found {
                     this.jira_host = host;
                     this.jira_hits = hits;

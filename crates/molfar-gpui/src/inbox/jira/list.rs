@@ -16,6 +16,14 @@ pub(crate) enum Event {
     ShareFailed(String),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Browse {
+    Issues,
+    Projects,
+    Epics(String),
+    Children(String),
+}
+
 pub(crate) struct JiraList {
     app: PathBuf,
     model: ListModel,
@@ -23,6 +31,7 @@ pub(crate) struct JiraList {
     jql: Entity<Input>,
     saved: Vec<Filter>,
     loading: bool,
+    browse: Browse,
 }
 
 impl EventEmitter<Event> for JiraList {}
@@ -37,6 +46,7 @@ impl JiraList {
             jql,
             saved: Vec::new(),
             loading: false,
+            browse: Browse::Issues,
         }
     }
 
@@ -133,8 +143,14 @@ impl JiraList {
         cx.notify();
     }
 
+    pub(crate) fn ensure_loaded(&mut self, cx: &mut Context<Self>) {
+        if self.model.rows.is_empty() && !self.loading {
+            self.reload(false, cx);
+        }
+    }
+
     fn load_more(&mut self, cx: &mut Context<Self>) {
-        let Some(token) = self.model.more.clone() else {
+        let Some(token) = self.model.next.clone() else {
             return;
         };
         self.loading = true;
@@ -165,13 +181,156 @@ impl JiraList {
         if !keep {
             self.model.rows.clear();
         }
+        self.browse = Browse::Issues;
         self.reload(false, cx);
+    }
+
+    fn open_row(&mut self, key: String, cx: &mut Context<Self>) {
+        match &self.browse {
+            Browse::Projects => self.load_epics(key, cx),
+            Browse::Epics(_) => self.load_children(key, cx),
+            Browse::Issues | Browse::Children(_) => cx.emit(Event::Open(key)),
+        }
+    }
+
+    fn load_projects(&mut self, cx: &mut Context<Self>) {
+        self.loading = true;
+        self.browse = Browse::Projects;
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move { project_rows(&app) })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                this.loading = false;
+                match result {
+                    Ok(rows) => {
+                        this.model = ListModel::default();
+                        jira::append(&mut this.model, rows, None);
+                    }
+                    Err(error) => jira::show_error(&mut this.model, &error),
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    fn load_epics(&mut self, project: String, cx: &mut Context<Self>) {
+        self.loading = true;
+        self.browse = Browse::Epics(project.clone());
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move { epic_rows(&app, &project) })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                this.loading = false;
+                match result {
+                    Ok(rows) => {
+                        this.model = ListModel::default();
+                        jira::append(&mut this.model, rows, None);
+                    }
+                    Err(error) => jira::show_error(&mut this.model, &error),
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    fn load_children(&mut self, epic: String, cx: &mut Context<Self>) {
+        self.loading = true;
+        self.browse = Browse::Children(epic.clone());
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move { child_rows(&app, &epic) })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                this.loading = false;
+                match result {
+                    Ok(rows) => {
+                        this.model = ListModel::default();
+                        jira::append(&mut this.model, rows, None);
+                    }
+                    Err(error) => jira::show_error(&mut this.model, &error),
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    fn copy_link(&mut self, cx: &mut Context<Self>) {
+        if self.model.offline {
+            cx.emit(Event::ShareFailed("offline: Jira is offline".into()));
+            return;
+        }
+        let jql = match &self.filter {
+            Filter::Jql(_) => self.jql.read(cx).content.to_string(),
+            filter => filter.jql().to_string(),
+        };
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move {
+                    let credentials = atlassian::load(&app)
+                        .ok()
+                        .flatten()
+                        .ok_or_else(|| "offline: Jira is not connected".to_string())?;
+                    jira::format_jql(credentials.site(), &jql).map_err(|error| error.to_string())
+                })
+                .await;
+            let _ = this.update(cx, |_, cx| match result {
+                Ok(link) => {
+                    cx.write_to_clipboard(gpui::ClipboardItem::new_string(link));
+                }
+                Err(error) => cx.emit(Event::ShareFailed(error)),
+            });
+        })
+        .detach();
     }
 }
 
 enum Load {
     Page(ListModel, Vec<Filter>),
     Invalid(String),
+}
+
+fn client_for(app: &std::path::Path) -> Result<Client, atlassian::Error> {
+    let credentials = atlassian::load(app)?
+        .ok_or_else(|| atlassian::Error::Invalid("Connect Atlassian in Settings".into()))?;
+    Ok(Client::new(&credentials))
+}
+
+fn project_rows(app: &std::path::Path) -> Result<Vec<jira::Row>, atlassian::Error> {
+    let client = client_for(app)?;
+    Ok(jira::projects(&client)?
+        .into_iter()
+        .map(|(key, name)| jira::Row {
+            key,
+            summary: name,
+            type_name: "Project".into(),
+            ..jira::Row::default()
+        })
+        .collect())
+}
+
+fn epic_rows(app: &std::path::Path, project: &str) -> Result<Vec<jira::Row>, atlassian::Error> {
+    let client = client_for(app)?;
+    let sprint = jira::sprint_field(&client).ok().flatten();
+    jira::epics(&client, project, sprint.as_deref())
+}
+
+fn child_rows(app: &std::path::Path, epic: &str) -> Result<Vec<jira::Row>, atlassian::Error> {
+    let client = client_for(app)?;
+    let sprint = jira::sprint_field(&client).ok().flatten();
+    jira::epic_children(&client, epic, sprint.as_deref())
 }
 
 fn load_page(
@@ -204,7 +363,16 @@ fn load_page(
         jira::load_list(&app, credentials.site(), filter.jql(), now)?
     };
     let sprint = jira::sprint_field(&client).ok().flatten();
-    let page = match jira::search(&client, &filter, None, sprint.as_deref()) {
+    let epic = jira::epic_field(&client).ok().flatten();
+    let page = match jira::search_limited(
+        &client,
+        &filter,
+        None,
+        sprint.as_deref(),
+        epic.as_deref(),
+        50,
+        None,
+    ) {
         Ok(page) => page,
         Err(error) => {
             if let Some(cached) = cached {
@@ -265,7 +433,16 @@ fn next_page(
         filter => filter,
     };
     let sprint = jira::sprint_field(&client).ok().flatten();
-    jira::search(&client, &filter, Some(token), sprint.as_deref())
+    let epic = jira::epic_field(&client).ok().flatten();
+    jira::search_limited(
+        &client,
+        &filter,
+        Some(token),
+        sprint.as_deref(),
+        epic.as_deref(),
+        50,
+        None,
+    )
 }
 
 impl Render for JiraList {
@@ -314,7 +491,11 @@ impl Render for JiraList {
                         cx.notify();
                     }))
                     .child(filter_chip("Refresh", cx, |this, cx| this.reload(true, cx)))
-                    .child(filter_chip("Add to chat", cx, |this, cx| this.share(cx))),
+                    .child(filter_chip("Add to chat", cx, |this, cx| this.share(cx)))
+                    .child(filter_chip("Copy link", cx, |this, cx| this.copy_link(cx)))
+                    .child(filter_chip("Projects", cx, |this, cx| {
+                        this.load_projects(cx)
+                    })),
             )
             .child(
                 div()
@@ -323,7 +504,7 @@ impl Render for JiraList {
                     .child("Key  Type  Summary  Status  Priority  Assignee  Sprint  Updated"),
             )
             .child(div().text_size(px(12.)).child(self.status_text()))
-            .when(self.model.more.is_some(), |pane| {
+            .when(self.model.next.is_some(), |pane| {
                 pane.child(filter_chip("Load more", cx, |this, cx| this.load_more(cx)))
             })
             .children(groups.into_iter().map(|group| {
@@ -349,8 +530,7 @@ impl Render for JiraList {
                                     row.updated
                                 ))
                                 .on_click(cx.listener(move |this, _, _, cx| {
-                                    cx.emit(Event::Open(key.clone()));
-                                    let _ = this;
+                                    this.open_row(key.clone(), cx);
                                 }))
                         }),
                 )
@@ -444,6 +624,12 @@ mod tests {
                     .map(|group| group.title)
                     .collect();
                 assert_eq!(titles, ["EP-1 Epic", "No epic"]);
+                list.model.more = Some("past-cap".into());
+                list.load_more(cx);
+                assert!(!list.loading);
+                list.model.next = Some("page-2".into());
+                list.load_more(cx);
+                assert!(list.loading);
                 let _ = cx;
             });
         });

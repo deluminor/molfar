@@ -58,22 +58,62 @@ pub fn mention_jql(query: &str) -> Result<String, Error> {
     Ok(jql)
 }
 
+pub fn epic_field(client: &Client) -> Result<Option<String>, Error> {
+    let data = client.get("/rest/api/3/field")?;
+    Ok(data.as_array().and_then(|fields| {
+        fields.iter().find_map(|field| {
+            let schema = field.pointer("/schema/custom").and_then(Value::as_str);
+            let epic = schema.is_some_and(|value| value.ends_with(":gh-epic-link"))
+                || field.get("name").and_then(Value::as_str) == Some("Epic Link");
+            epic.then(|| field.get("id").and_then(Value::as_str).map(str::to_owned))
+                .flatten()
+        })
+    }))
+}
+
 pub fn search(
     client: &Client,
     filter: &Filter,
     token: Option<&str>,
     sprint_field: Option<&str>,
 ) -> Result<Page, Error> {
+    search_limited(client, filter, token, sprint_field, None, PAGE_SIZE, None)
+}
+
+pub fn search_limited(
+    client: &Client,
+    filter: &Filter,
+    token: Option<&str>,
+    sprint_field: Option<&str>,
+    epic_field: Option<&str>,
+    max_results: usize,
+    fields: Option<&[String]>,
+) -> Result<Page, Error> {
     let jql = filter.jql();
     check_jql_length(jql)?;
-    let mut fields: Vec<&str> = BASE_FIELDS.to_vec();
+    let max_results = max_results.clamp(1, 100);
+    let mut names: Vec<String> = if let Some(fields) = fields.filter(|fields| !fields.is_empty()) {
+        fields.to_vec()
+    } else {
+        BASE_FIELDS
+            .iter()
+            .map(|field| (*field).to_string())
+            .collect()
+    };
     if let Some(field) = sprint_field {
-        fields.push(field);
+        if !names.iter().any(|name| name == field) {
+            names.push(field.to_string());
+        }
+    }
+    if let Some(field) = epic_field {
+        if !names.iter().any(|name| name == field) {
+            names.push(field.to_string());
+        }
     }
     let mut body = json!({
         "jql": jql,
-        "maxResults": PAGE_SIZE,
-        "fields": fields,
+        "maxResults": max_results,
+        "fields": names,
     });
     if let Some(token) = token.filter(|token| !token.is_empty()) {
         body["nextPageToken"] = json!(token);
@@ -82,7 +122,7 @@ pub fn search(
     Ok(Page {
         rows: issues(&data)
             .iter()
-            .map(|issue| row(issue, sprint_field))
+            .map(|issue| row(issue, sprint_field, epic_field))
             .collect(),
         next: data
             .get("nextPageToken")
@@ -182,7 +222,7 @@ pub fn epic_children(
     )) {
         Ok(data) => Ok(issues(&data)
             .iter()
-            .map(|issue| row(issue, sprint_field))
+            .map(|issue| row(issue, sprint_field, None))
             .collect()),
         Err(Error::NotFound) => Ok(search(
             client,
@@ -210,7 +250,24 @@ fn issues(data: &Value) -> &[Value] {
         .unwrap_or_default()
 }
 
-pub(crate) fn row(issue: &Value, sprint_field: Option<&str>) -> Row {
+fn epic_link(fields: &Value, epic_field: Option<&str>) -> Option<(String, String)> {
+    let value = fields.get(epic_field?)?;
+    if let Some(key) = value.as_str().filter(|key| !key.is_empty()) {
+        return Some((key.to_string(), String::new()));
+    }
+    let key = value.get("key").and_then(Value::as_str).unwrap_or("");
+    if key.is_empty() {
+        return None;
+    }
+    let summary = value
+        .pointer("/fields/summary")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    Some((key.to_string(), summary))
+}
+
+pub(crate) fn row(issue: &Value, sprint_field: Option<&str>, epic_field: Option<&str>) -> Row {
     let fields = issue.get("fields").unwrap_or(issue);
     let parent = fields.get("parent");
     let parent_type = parent
@@ -218,6 +275,7 @@ pub(crate) fn row(issue: &Value, sprint_field: Option<&str>) -> Row {
         .and_then(Value::as_str)
         .unwrap_or_default();
     let epic = parent_type.eq_ignore_ascii_case("epic");
+    let linked = (!epic).then(|| epic_link(fields, epic_field)).flatten();
     Row {
         key: text(issue, "key"),
         type_name: named(fields, "issuetype"),
@@ -234,22 +292,30 @@ pub(crate) fn row(issue: &Value, sprint_field: Option<&str>) -> Row {
             .map(sprint_name)
             .unwrap_or_default(),
         updated: text(fields, "updated"),
-        epic_key: epic
-            .then(|| {
-                parent
-                    .and_then(|parent| parent.get("key"))
-                    .and_then(Value::as_str)
-            })
-            .flatten()
-            .unwrap_or_default()
-            .to_string(),
-        epic_summary: epic
-            .then(|| {
-                parent.and_then(|parent| parent.pointer("/fields/summary").and_then(Value::as_str))
-            })
-            .flatten()
-            .unwrap_or_default()
-            .to_string(),
+        epic_key: if epic {
+            parent
+                .and_then(|parent| parent.get("key"))
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string()
+        } else {
+            linked
+                .as_ref()
+                .map(|(key, _)| key.clone())
+                .unwrap_or_default()
+        },
+        epic_summary: if epic {
+            parent
+                .and_then(|parent| parent.pointer("/fields/summary"))
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string()
+        } else {
+            linked
+                .as_ref()
+                .map(|(_, summary)| summary.clone())
+                .unwrap_or_default()
+        },
     }
 }
 

@@ -78,6 +78,18 @@ pub fn store_media(
     Ok(Some(path))
 }
 
+pub fn forget_lists(app: &Path, site: &str) -> Result<(), Error> {
+    match fs::remove_dir_all(root(app, site).join("lists")) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(storage(error)),
+    }
+}
+
+pub fn site_media_full(app: &Path, site: &str) -> Result<bool, Error> {
+    Ok(directory_size(&root(app, site).join("media"))? >= MEDIA_SITE)
+}
+
 pub fn remove_site(app: &Path, site: &str) -> Result<(), Error> {
     match fs::remove_dir_all(root(app, site)) {
         Ok(()) => Ok(()),

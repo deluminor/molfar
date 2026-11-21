@@ -1,12 +1,18 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use gpui::{Context, EventEmitter, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{
+    Context, Entity, EventEmitter, IntoElement, Render, SharedString, Window, div, prelude::*, px,
+};
 use molfar_core::{
     atlassian::{self, Client},
     jira::{self, Issue},
 };
 
-use crate::knowledge::{self, PreviewHost};
+use crate::{
+    input::Input,
+    knowledge::{self, PreviewHost},
+    theme::content,
+};
 
 use super::actions::Pending;
 
@@ -27,8 +33,14 @@ pub(crate) struct JiraReader {
     pending: Option<Pending>,
     callouts: HashSet<usize>,
     account_id: String,
-    draft: String,
     writes: u32,
+    writing: bool,
+    offline: bool,
+    transitions: Vec<(String, String)>,
+    comment_input: Entity<Input>,
+    summary_input: Entity<Input>,
+    description_input: Entity<Input>,
+    labels_input: Entity<Input>,
 }
 
 impl EventEmitter<Event> for JiraReader {}
@@ -50,7 +62,10 @@ impl PreviewHost for JiraReader {
 }
 
 impl JiraReader {
-    pub(crate) fn new(app: PathBuf) -> Self {
+    pub(crate) fn new(app: PathBuf, cx: &mut Context<Self>) -> Self {
+        let field = |id, placeholder, cx: &mut Context<Self>| {
+            cx.new(|cx| Input::field(id, placeholder, content(0.45), cx))
+        };
         Self {
             app,
             project: String::new(),
@@ -62,8 +77,14 @@ impl JiraReader {
             pending: None,
             callouts: HashSet::new(),
             account_id: String::new(),
-            draft: String::new(),
             writes: 0,
+            writing: false,
+            offline: false,
+            transitions: Vec::new(),
+            comment_input: field("jira-comment", "Comment", cx),
+            summary_input: field("jira-summary", "Summary", cx),
+            description_input: field("jira-description", "Description", cx),
+            labels_input: field("jira-labels", "Labels", cx),
         }
     }
 
@@ -106,11 +127,16 @@ impl JiraReader {
                 this.loading = false;
                 match loaded {
                     Ok((site, issue, account)) => {
+                        this.offline = false;
                         this.site = site;
                         this.account_id = account;
+                        this.fill_fields(&issue, cx);
                         this.issue = Some(issue);
                     }
-                    Err(error) => this.error = Some(error.to_string()),
+                    Err(error) => {
+                        this.offline = matches!(error, atlassian::Error::Offline(_));
+                        this.error = Some(error.to_string());
+                    }
                 }
                 cx.notify();
             });
@@ -126,16 +152,130 @@ impl JiraReader {
         self.pending = Some(Pending::Comment { key, body });
     }
 
-    pub(crate) fn begin_edit(&mut self) {
+    pub(crate) fn begin_edit(&mut self, cx: &mut Context<Self>) {
         let Some(issue) = self.issue.clone() else {
             return;
         };
+        let summary = self.summary_input.read(cx).content.to_string();
+        let description = self.description_input.read(cx).content.to_string();
+        let labels = self
+            .labels_input
+            .read(cx)
+            .content
+            .split(',')
+            .map(|label| label.trim().to_string())
+            .filter(|label| !label.is_empty())
+            .collect::<Vec<_>>();
+        let description = (description != issue.description).then_some(description);
         self.pending = Some(Pending::Edit {
             key: issue.key,
-            summary: issue.summary,
-            description: issue.description,
-            labels: issue.labels,
+            summary,
+            description,
+            labels,
         });
+    }
+
+    fn load_transitions(&mut self, cx: &mut Context<Self>) {
+        let Some(key) = self.issue.as_ref().map(|issue| issue.key.clone()) else {
+            return;
+        };
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let result = cx
+                .background_executor()
+                .spawn(async move {
+                    let credentials = atlassian::load(&app)?.ok_or_else(|| {
+                        atlassian::Error::Invalid("Connect Atlassian in Settings".into())
+                    })?;
+                    let client = Client::new(&credentials);
+                    jira::issue::transitions(&client, &key)
+                })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                if let Ok(items) = result {
+                    this.transitions = items.into_iter().map(|item| (item.id, item.name)).collect();
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
+    }
+
+    fn insert_issue(&mut self, comments: bool, cx: &mut Context<Self>) {
+        if self.offline {
+            self.error = Some("offline: Jira is offline".into());
+            cx.notify();
+            return;
+        }
+        let Some(issue) = self.issue.clone() else {
+            return;
+        };
+        let link = jira::format_issue(&self.site, &issue.key).unwrap_or_default();
+        if comments {
+            cx.emit(Event::AddToChat {
+                text: jira::issue_markdown(&issue, true, &link),
+            });
+            return;
+        }
+        if issue.type_name.eq_ignore_ascii_case("epic") {
+            self.insert_epic(&issue, cx);
+            return;
+        }
+        cx.emit(Event::AddToChat {
+            text: jira::issue_markdown(&issue, false, &link),
+        });
+    }
+
+    fn insert_epic(&mut self, issue: &Issue, cx: &mut Context<Self>) {
+        if self.offline {
+            self.error = Some("offline: Jira is offline".into());
+            cx.notify();
+            return;
+        }
+        let issue = issue.clone();
+        let site = self.site.clone();
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let text = cx
+                .background_executor()
+                .spawn(async move {
+                    let credentials = atlassian::load(&app)
+                        .map_err(|error| error.to_string())?
+                        .ok_or_else(|| "offline: Jira is not connected".to_string())?;
+                    let client = Client::new(&credentials);
+                    let children = jira::epic_children(&client, &issue.key, None)
+                        .map_err(|error| error.to_string())?;
+                    let link =
+                        jira::format_issue(&site, &issue.key).map_err(|error| error.to_string())?;
+                    Ok::<_, String>(jira::epic_index(
+                        &format!("{} {}", issue.key, issue.summary),
+                        &children,
+                        &link,
+                    ))
+                })
+                .await;
+            let _ = this.update(cx, |this, cx| match text {
+                Ok(text) => cx.emit(Event::AddToChat { text }),
+                Err(error) => {
+                    this.offline = error.starts_with("offline");
+                    this.error = Some(error);
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
+    }
+
+    fn fill_fields(&mut self, issue: &Issue, cx: &mut Context<Self>) {
+        let summary = issue.summary.clone();
+        let description = issue.description.clone();
+        let labels = issue.labels.join(", ");
+        self.summary_input
+            .update(cx, |input, cx| input.set_text(summary, cx));
+        self.description_input
+            .update(cx, |input, cx| input.set_text(description, cx));
+        self.labels_input
+            .update(cx, |input, cx| input.set_text(labels, cx));
     }
 
     pub(crate) fn cancel(&mut self) {
@@ -151,10 +291,12 @@ impl JiraReader {
         result: Result<(), atlassian::Error>,
         cx: &mut Context<Self>,
     ) {
+        self.writing = false;
         match result {
             Ok(()) => {
                 self.writes += 1;
                 self.pending = None;
+                let _ = jira::forget_lists(&self.app, &self.site);
                 if let Some(key) = self.issue.as_ref().map(|issue| issue.key.clone()) {
                     self.open(key, cx);
                 }
@@ -164,9 +306,13 @@ impl JiraReader {
     }
 
     fn confirm(&mut self, cx: &mut Context<Self>) {
-        let Some(pending) = self.pending.clone() else {
+        if self.writing {
+            return;
+        }
+        let Some(pending) = self.pending.take() else {
             return;
         };
+        self.writing = true;
         let app = self.app.clone();
         let account = self.account_id.clone();
         cx.spawn(async move |this, cx| {
@@ -187,11 +333,14 @@ fn fetch(app: &std::path::Path, key: &str) -> Result<(String, Issue, String), at
     let sprint = jira::sprint_field(&client).ok().flatten();
     let issue = jira::issue::load(&client, key, sprint.as_deref())?;
     let account = jira::issue::account_id(&client).unwrap_or_default();
-    for attachment in &issue.attachments {
-        if let Ok(bytes) =
-            client.bytes(&format!("/rest/api/3/attachment/content/{}", attachment.id))
-        {
-            let _ = jira::store_media(app, credentials.site(), &attachment.id, &bytes);
+    let site_full = jira::site_media_full(app, credentials.site()).unwrap_or(true);
+    if !site_full {
+        for attachment in &issue.attachments {
+            if let Ok(Some(bytes)) =
+                client.bytes(&format!("/rest/api/3/attachment/content/{}", attachment.id))
+            {
+                let _ = jira::store_media(app, credentials.site(), &attachment.id, &bytes);
+            }
         }
     }
     Ok((credentials.site().to_string(), issue, account))
@@ -214,7 +363,13 @@ fn write_pending(
             summary,
             description,
             labels,
-        } => jira::issue::edit(&client, key, summary, description, labels),
+        } => jira::issue::edit(
+            &client,
+            key,
+            Some(summary),
+            description.as_deref(),
+            Some(labels),
+        ),
     }
 }
 
@@ -262,7 +417,26 @@ impl Render for JiraReader {
         } else {
             knowledge::render_markdown(self, &shown_markdown(&issue, &media), Some(&media), cx)
         };
+        let mut comment_view = Vec::new();
+        if comments.is_empty() {
+            comment_view.push(div().child("No comments").into_any_element());
+        } else {
+            for comment in &comments {
+                comment_view.push(
+                    div()
+                        .child(format!("{} {}", comment.author, comment.created))
+                        .into_any_element(),
+                );
+                comment_view.extend(knowledge::render_markdown(
+                    self,
+                    &comment.body,
+                    Some(&media),
+                    cx,
+                ));
+            }
+        }
         let browse = format!("{}/browse/{}", self.site.trim_end_matches('/'), issue.key);
+        let transitions = self.transitions.clone();
         let link = jira::format_issue(&self.site, &issue.key).unwrap_or_default();
         let prompt = self.pending_prompt();
         div()
@@ -320,29 +494,26 @@ impl Render for JiraReader {
                     .collect::<Vec<_>>()
                     .join("\n")
             })
-            .child(if issue.attachments.is_empty() {
-                "No attachments".to_string()
-            } else {
-                issue
-                    .attachments
-                    .iter()
-                    .map(|item| format!("{} {}", item.name, item.size))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            })
+            .children(issue.attachments.iter().map(|item| {
+                let path = media.join(&item.id);
+                let label = format!("{} {}", item.name, item.size);
+                div()
+                    .id(SharedString::from(format!("jira-file-{}", item.id)))
+                    .child(label)
+                    .on_click(cx.listener(move |_, _, _, cx| {
+                        if path.is_file() {
+                            cx.open_url(&format!("file://{}", path.display()));
+                        }
+                    }))
+            }))
             .child(format!(
-                "Time spent {}  Original {}  Remaining {}  {} more entries",
-                issue.work.spent, issue.work.original, issue.work.remaining, issue.work.more
+                "Time spent {}  Original {}  Remaining {}",
+                issue.work.spent, issue.work.original, issue.work.remaining
             ))
-            .child(if comments.is_empty() {
-                "No comments".to_string()
-            } else {
-                comments
-                    .iter()
-                    .map(|comment| format!("{} {}", comment.author, comment.body))
-                    .collect::<Vec<_>>()
-                    .join("\n")
+            .when(issue.work.more > 0, |pane| {
+                pane.child(format!("{} more entries", issue.work.more))
             })
+            .children(comment_view)
             .child(
                 div()
                     .flex()
@@ -363,22 +534,59 @@ impl Render for JiraReader {
                             cx.write_to_clipboard(gpui::ClipboardItem::new_string(link.clone()))
                         }
                     }))
+                    .child(chip("Copy project link", cx, {
+                        let site = self.site.clone();
+                        let project = issue.key.split('-').next().unwrap_or("").to_string();
+                        move |this, cx| match jira::format_project(&site, &project) {
+                            Ok(link) => {
+                                cx.write_to_clipboard(gpui::ClipboardItem::new_string(link))
+                            }
+                            Err(error) => {
+                                this.error = Some(error.to_string());
+                                cx.notify();
+                            }
+                        }
+                    }))
+                    .child(self.comment_input.clone())
                     .child(chip("Comment", cx, |this, cx| {
-                        let body = this.draft.clone();
-                        this.begin_comment(body);
+                        let body = this.comment_input.read(cx).content.to_string();
+                        if body.trim().is_empty() {
+                            this.error = Some("Comment is empty".into());
+                        } else {
+                            this.begin_comment(body);
+                        }
                         cx.notify();
                     }))
-                    .child(chip("Edit", cx, |this, _| this.begin_edit()))
-                    .child(chip("Transition", cx, |this, cx| {
-                        if let Some(key) = this.issue.as_ref().map(|issue| issue.key.clone()) {
-                            let id = this.draft.clone();
-                            this.pending = Some(Pending::Transition {
-                                key,
-                                name: id.clone(),
-                                id,
-                            });
-                            cx.notify();
-                        }
+                    .child(self.summary_input.clone())
+                    .child(self.description_input.clone())
+                    .child(self.labels_input.clone())
+                    .child(chip("Edit", cx, |this, cx| {
+                        this.begin_edit(cx);
+                        cx.notify();
+                    }))
+                    .child(chip("Transitions", cx, |this, cx| {
+                        this.load_transitions(cx)
+                    }))
+                    .children(transitions.into_iter().map(|(id, name)| {
+                        let transition_id = id.clone();
+                        let transition_name = name.clone();
+                        div()
+                            .id(SharedString::from(format!("jira-transition-{id}")))
+                            .px_2()
+                            .text_size(px(12.))
+                            .child(name)
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                if let Some(key) =
+                                    this.issue.as_ref().map(|issue| issue.key.clone())
+                                {
+                                    this.pending = Some(Pending::Transition {
+                                        key,
+                                        id: transition_id.clone(),
+                                        name: transition_name.clone(),
+                                    });
+                                    cx.notify();
+                                }
+                            }))
                     }))
                     .child(chip("Assign to me", cx, |this, cx| {
                         if let Some(key) = this.issue.as_ref().map(|issue| issue.key.clone()) {
@@ -387,13 +595,16 @@ impl Render for JiraReader {
                         }
                     }))
                     .child(chip("Add to chat", cx, |this, cx| {
+                        this.insert_issue(false, cx)
+                    }))
+                    .child(chip("Add comments", cx, |this, cx| {
+                        this.insert_issue(true, cx)
+                    }))
+                    .child(chip("Add epic children", cx, |this, cx| {
                         let Some(issue) = this.issue.clone() else {
                             return;
                         };
-                        let link = jira::format_issue(&this.site, &issue.key).unwrap_or_default();
-                        cx.emit(Event::AddToChat {
-                            text: jira::issue_markdown(&issue, false, &link),
-                        });
+                        this.insert_epic(&issue, cx);
                     }))
                     .when(!self.project.is_empty(), |row| {
                         row.child(chip("Start session", cx, |this, cx| {
@@ -452,7 +663,7 @@ mod tests {
         cx: &mut gpui::TestAppContext,
     ) {
         cx.update(|cx| {
-            let reader = cx.new(|_| JiraReader::new(PathBuf::from("/tmp/jira-reader")));
+            let reader = cx.new(|cx| JiraReader::new(PathBuf::from("/tmp/jira-reader"), cx));
             reader.update(cx, |reader, cx| {
                 reader.issue = Some(Issue {
                     key: "TB-1".into(),
@@ -460,10 +671,30 @@ mod tests {
                     description: "Body".into(),
                     ..Issue::default()
                 });
-                reader.begin_edit();
+                let issue = reader.issue.clone().unwrap();
+                reader.fill_fields(&issue, cx);
+                reader.begin_edit(cx);
+                assert!(
+                    !reader
+                        .pending_prompt()
+                        .unwrap()
+                        .contains(super::super::actions::DESCRIPTION_WARNING)
+                );
+                reader
+                    .description_input
+                    .update(cx, |input, cx| input.set_text("Replacement".into(), cx));
+                reader.begin_edit(cx);
                 let prompt = reader.pending_prompt().unwrap();
                 assert!(prompt.contains("TB-1"));
                 assert!(prompt.contains(super::super::actions::DESCRIPTION_WARNING));
+                reader.offline = true;
+                reader.insert_issue(false, cx);
+                assert_eq!(reader.error.as_deref(), Some("offline: Jira is offline"));
+                reader.offline = false;
+                reader.begin_comment("Ship it".into());
+                reader.confirm(cx);
+                assert!(reader.pending.is_none());
+                assert!(reader.writing);
                 reader.cancel();
                 assert!(reader.pending.is_none());
                 assert_eq!(reader.writes, 0);

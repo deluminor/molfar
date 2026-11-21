@@ -60,9 +60,27 @@ pub(super) fn target(result: &Result<Value, String>) -> Option<String> {
         .map(str::to_owned)
         .or_else(|| value["note"]["id"].as_str().map(str::to_owned))
         .or_else(|| value["sessionId"].as_i64().map(|id| id.to_string()))
+        .or_else(|| {
+            value["key"]
+                .as_str()
+                .filter(|key| !key.is_empty())
+                .map(|key| format!("issue:{key}"))
+        })
 }
 
 pub(super) fn domain_target(tool: &str, arguments: &Value) -> Option<String> {
+    if tool.starts_with("jira_") {
+        if let Some(key) = arguments["issueKey"].as_str().filter(|key| !key.is_empty()) {
+            return Some(format!("issue:{key}"));
+        }
+        if let Some(key) = arguments["projectKey"]
+            .as_str()
+            .filter(|key| !key.is_empty())
+        {
+            return Some(format!("project:{key}"));
+        }
+        return None;
+    }
     let (prefix, field) = match tool.split_once('_')?.0 {
         "knowledge" => ("knowledge", "path"),
         "automations" => ("automation", "automationId"),
@@ -72,4 +90,22 @@ pub(super) fn domain_target(tool: &str, arguments: &Value) -> Option<String> {
     };
     let id = arguments[field].as_str()?;
     Some(format!("{prefix}:{id}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::domain_target;
+    use serde_json::json;
+
+    #[test]
+    fn jira_write_records_the_issue_key_without_the_body() {
+        let arguments = json!({"issueKey": "TB-1", "body": "secret comment"});
+        let target = domain_target("jira_comment", &arguments).unwrap();
+        assert_eq!(target, "issue:TB-1");
+        assert!(!target.contains("secret"));
+        assert_eq!(
+            domain_target("jira_create", &json!({"projectKey": "TB"})).unwrap(),
+            "project:TB"
+        );
+    }
 }

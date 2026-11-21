@@ -13,6 +13,8 @@ pub struct Exchange {
     pub status: u16,
     pub retry_after: Option<u64>,
     pub body: Vec<u8>,
+    pub location: Option<String>,
+    pub content_length: Option<u64>,
 }
 
 pub trait Transport: Send + Sync {
@@ -64,8 +66,35 @@ impl Client {
         self.json("PUT", path, Some(body))
     }
 
-    pub fn bytes(&self, path: &str) -> Result<Vec<u8>, Error> {
-        Ok(self.request("GET", path, None)?.body)
+    pub fn bytes(&self, path: &str) -> Result<Option<Vec<u8>>, Error> {
+        if !path.starts_with('/') || path.starts_with("//") || path.contains('\\') {
+            return Err(Error::Invalid("Invalid Atlassian API path".into()));
+        }
+        let url = format!("{}{path}", self.site);
+        let exchange = self
+            .transport
+            .exchange("GET", &url, &self.authorization, None)?;
+        let exchange = if matches!(exchange.status, 301 | 302 | 303 | 307 | 308) {
+            let location = exchange
+                .location
+                .filter(|location| location.starts_with("https://"))
+                .ok_or_else(|| Error::http(exchange.status))?;
+            self.transport.exchange("GET", &location, "", None)?
+        } else {
+            exchange
+        };
+        if !(200..300).contains(&exchange.status) {
+            return Err(Error::http(exchange.status));
+        }
+        const MEDIA_LIMIT: u64 = 20 * 1024 * 1024;
+        if exchange
+            .content_length
+            .is_some_and(|length| length > MEDIA_LIMIT)
+            || exchange.body.len() as u64 > MEDIA_LIMIT
+        {
+            return Ok(None);
+        }
+        Ok(Some(exchange.body))
     }
 
     fn json(&self, method: &str, path: &str, body: Option<&Value>) -> Result<Value, Error> {
@@ -123,11 +152,13 @@ impl Transport for LiveTransport {
         authorization: &str,
         body: Option<&str>,
     ) -> Result<Exchange, Error> {
-        let request = self
+        let mut request = self
             .agent
             .request(method, url)
-            .set("Authorization", authorization)
             .set("Accept", "application/json");
+        if !authorization.is_empty() {
+            request = request.set("Authorization", authorization);
+        }
         let result = match body {
             Some(payload) => request
                 .set("Content-Type", "application/json")
@@ -147,11 +178,23 @@ fn read_response(response: ureq::Response) -> Result<Exchange, Error> {
     let retry_after = response
         .header("Retry-After")
         .and_then(|value| value.parse().ok());
-    let mut body = Vec::new();
-    let _ = std::io::Read::read_to_end(&mut response.into_reader(), &mut body);
+    let location = response.header("Location").map(str::to_owned);
+    let content_length = response
+        .header("Content-Length")
+        .and_then(|value| value.parse().ok());
+    const MEDIA_LIMIT: u64 = 20 * 1024 * 1024;
+    let body = if content_length.is_some_and(|length| length > MEDIA_LIMIT) {
+        Vec::new()
+    } else {
+        let mut body = Vec::new();
+        let _ = std::io::Read::read_to_end(&mut response.into_reader(), &mut body);
+        body
+    };
     Ok(Exchange {
         status,
         retry_after,
         body,
+        location,
+        content_length,
     })
 }

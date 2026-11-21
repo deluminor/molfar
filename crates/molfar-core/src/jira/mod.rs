@@ -5,7 +5,9 @@ mod model;
 mod query;
 pub mod tools;
 
-pub use cache::{load_list, remove_site, save_list, store_media, CachedList};
+pub use cache::{
+    forget_lists, load_list, remove_site, save_list, site_media_full, store_media, CachedList,
+};
 pub use issue::Issue;
 pub use link::{
     chips, epic_index, expand_mentions, format_issue, format_jql, format_project, host_of,
@@ -16,8 +18,8 @@ pub use model::{
     Filter, GroupBy, ListModel, Row, PAGE_SIZE, ROW_CAP,
 };
 pub use query::{
-    epic_children, epics, favourites, mention_jql, projects, search, sprint_field, validate_jql,
-    Page,
+    epic_children, epic_field, epics, favourites, mention_jql, projects, search, search_limited,
+    sprint_field, validate_jql, Page,
 };
 
 #[cfg(test)]
