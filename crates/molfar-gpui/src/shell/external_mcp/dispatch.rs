@@ -115,6 +115,23 @@ impl Shell {
             tool if tool.starts_with("inbox_") => {
                 self.external_inbox_tool(scope, tool, arguments, done, cx);
             }
+            tool if tool.starts_with("jira_") => {
+                let _ = scope;
+                let directory = crate::data_dir();
+                let name = tool.to_string();
+                cx.background_executor()
+                    .spawn(async move {
+                        let result = (|| {
+                            let credentials = molfar_core::atlassian::load(&directory)
+                                .map_err(|error| error.to_string())?
+                                .ok_or_else(|| "Connect Atlassian in Settings".to_string())?;
+                            let client = molfar_core::atlassian::Client::new(&credentials);
+                            molfar_core::jira::tools::execute(&client, &name, &arguments)
+                        })();
+                        let _ = done.try_send(result);
+                    })
+                    .detach();
+            }
             _ => self.external_session_tool(scope, tool, arguments, receipt, done, cx),
         }
     }

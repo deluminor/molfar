@@ -15,6 +15,7 @@ pub(super) const ICON_LEN: usize = '\u{2003}'.len_utf8();
 pub(super) enum MentionIcon {
     File(SharedString),
     Note,
+    Jira,
 }
 impl MentionIcon {
     /// `@path`, `@"spaced path"`, or `@note/slug`.
@@ -22,6 +23,9 @@ impl MentionIcon {
         let path = token.strip_prefix('@')?;
         if path.starts_with("note/") {
             return Some(Self::Note);
+        }
+        if path.starts_with("jira/") {
+            return Some(Self::Jira);
         }
         let path = path
             .strip_prefix('"')

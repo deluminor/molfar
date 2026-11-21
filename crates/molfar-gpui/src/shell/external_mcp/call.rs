@@ -136,7 +136,12 @@ impl Shell {
                             definition.requires.access,
                             cx,
                         );
-                        let _ = reply.send(Err(OUTCOME_UNKNOWN.into()));
+                        let message = if tool.starts_with("jira_") {
+                            "outcome unknown"
+                        } else {
+                            OUTCOME_UNKNOWN
+                        };
+                        let _ = reply.send(Err(message.into()));
                         return;
                     }
                     Ok(BEGIN::Replay(result)) => Some(result),

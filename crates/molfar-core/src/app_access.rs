@@ -38,6 +38,16 @@ pub fn validate_operator(action: &str, input: &Value) -> Result<(), String> {
             | "notes.write"
             | "worktrees.list"
             | "worktrees.create"
+            | "jira.projects"
+            | "jira.list"
+            | "jira.search"
+            | "jira.get"
+            | "jira.thread"
+            | "jira.comment"
+            | "jira.create"
+            | "jira.edit"
+            | "jira.transitions"
+            | "jira.transition"
             | crate::secrets::request::REQUEST
             | crate::secrets::request::LIST
     ) && !board::is_board(action)

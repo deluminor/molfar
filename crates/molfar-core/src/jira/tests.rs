@@ -129,6 +129,36 @@ fn pages_stop_at_five_hundred_rows() {
 }
 
 #[test]
+fn links_cap_the_issue_epic_and_jql_text() {
+    let issue = super::Issue {
+        key: "TB-1".into(),
+        summary: "Ship".into(),
+        status: "Open".into(),
+        description: "d".repeat(9000),
+        comments: (0..40)
+            .map(|index| super::issue::Comment {
+                author: "Ada".into(),
+                created: format!("2024-01-{:02}", index + 1),
+                body: "c".repeat(400),
+                ..super::issue::Comment::default()
+            })
+            .collect(),
+        ..super::Issue::default()
+    };
+    let link = super::format_issue("https://Team.atlassian.net", "TB-1").unwrap();
+    assert_eq!(link, "molfar://jira/team.atlassian.net/TB-1");
+    let markdown = super::issue_markdown(&issue, true, &link);
+    assert!(markdown.contains("truncated"));
+    assert!(markdown.ends_with(&link));
+    assert!(markdown.len() < 9000 + 8000 + link.len() + 64);
+    let rows = vec![row("TB-1", "", "Open"); 41];
+    let index = super::list_index("Assigned", &rows, &link);
+    assert!(index.contains("truncated"));
+    assert!(super::format_jql("team", &"a".repeat(2001)).is_err());
+    assert!(super::format_issue("team", "bad key").is_err());
+}
+
+#[test]
 fn favourite_filters_keep_name_and_jql() {
     let (client, script) = scripted(json!([
         {"name": "Mine", "jql": "project = TB"},

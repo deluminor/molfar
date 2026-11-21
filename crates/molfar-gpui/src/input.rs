@@ -1056,7 +1056,10 @@ impl Input {
     }
     fn paste(&mut self, _: &Paste, w: &mut Window, cx: &mut Context<Self>) {
         if let Some(text) = cx.read_from_clipboard().and_then(|i| i.text()) {
-            self.replace_text_in_range(None, &text.replace("\r\n", "\n"), w, cx);
+            let text = text
+                .replace("\r\n", "\n")
+                .replace("molfar://jira/", "@jira/");
+            self.replace_text_in_range(None, &text, w, cx);
         }
     }
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
@@ -1793,7 +1796,7 @@ impl Element for InputElement {
                                     );
                                 }
                             }
-                            MentionIcon::Note => {
+                            MentionIcon::Note | MentionIcon::Jira => {
                                 let _ = w.paint_svg(
                                     icon_bounds,
                                     "note".into(),
@@ -1954,6 +1957,7 @@ mod tests {
         let asset = |token| match MentionIcon::of(token) {
             Some(MentionIcon::File(asset)) => asset.to_string(),
             Some(MentionIcon::Note) => "note".into(),
+            Some(MentionIcon::Jira) => "jira".into(),
             None => String::new(),
         };
         assert_eq!(asset("@src/main.rs"), "mi/rust.svg");

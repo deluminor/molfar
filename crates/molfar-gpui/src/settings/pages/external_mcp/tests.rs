@@ -175,5 +175,7 @@ fn permission_hints_follow_tools_in_the_catalog() {
     assert_eq!(grant_tools(GRANT::Write(DOMAIN::Familiars)), 5);
     assert_eq!(grant_tools(GRANT::Read(DOMAIN::Inbox)), 4);
     assert_eq!(grant_tools(GRANT::Write(DOMAIN::Inbox)), 1);
-    assert_eq!(grant_tools(GRANT::Delegated), 4);
+    assert_eq!(grant_tools(GRANT::Delegated), 9);
+    assert_eq!(grant_tools(GRANT::Read(DOMAIN::Jira)), 5);
+    assert_eq!(grant_tools(GRANT::Write(DOMAIN::Jira)), 5);
 }

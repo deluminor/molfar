@@ -3,6 +3,7 @@ pub mod issue;
 pub mod link;
 mod model;
 mod query;
+pub mod tools;
 
 pub use cache::{load_list, remove_site, save_list, store_media, CachedList};
 pub use issue::Issue;

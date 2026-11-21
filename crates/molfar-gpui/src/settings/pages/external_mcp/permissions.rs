@@ -13,7 +13,7 @@ impl SettingsView {
     ) -> impl IntoElement {
         let mut matrix = div().flex().flex_col().gap(px(6.));
         for domain in DOMAIN::ALL {
-            let sensitive = matches!(domain, DOMAIN::Inbox | DOMAIN::Knowledge);
+            let sensitive = matches!(domain, DOMAIN::Inbox | DOMAIN::Knowledge | DOMAIN::Jira);
             matrix = matrix.child(
                 div()
                     .flex()

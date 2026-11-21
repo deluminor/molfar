@@ -9,10 +9,11 @@ pub enum DOMAIN {
     Automations,
     Inbox,
     Familiars,
+    Jira,
 }
 
 impl DOMAIN {
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Board,
         Self::Sessions,
         Self::Notes,
@@ -20,6 +21,7 @@ impl DOMAIN {
         Self::Automations,
         Self::Inbox,
         Self::Familiars,
+        Self::Jira,
     ];
 
     pub fn label(self) -> &'static str {
@@ -31,6 +33,7 @@ impl DOMAIN {
             Self::Automations => "Automations",
             Self::Inbox => "Inbox",
             Self::Familiars => "Familiars",
+            Self::Jira => "Jira",
         }
     }
 }
