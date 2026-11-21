@@ -104,7 +104,11 @@ pub fn evaluate(checks: Vec<Check>, waited_ms: i64) -> CiState {
 
 /// The GitHub Actions job id in a check link, for `gh run view --job <id> --log-failed`.
 pub fn job_id(link: &str) -> Option<&str> {
-    let id = link.split("/job/").nth(1)?.split(['/', '?', '#']).next()?;
+    let rest = link
+        .split_once("/-/jobs/")
+        .map(|(_, rest)| rest)
+        .or_else(|| link.split_once("/job/").map(|(_, rest)| rest))?;
+    let id = rest.split(['/', '?', '#']).next()?;
     (!id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit())).then_some(id)
 }
 

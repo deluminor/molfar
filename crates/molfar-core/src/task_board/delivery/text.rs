@@ -15,8 +15,6 @@ static HEADING: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(#{1,4})(\s)").expect("valid heading regex"));
 static TOP_TITLE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^#\s").expect("valid title regex"));
-static PR_NUMBER: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"/pull/(\d+)(?:[/?#]|$)").expect("valid pull number regex"));
 
 fn utf16_len(text: &str) -> usize {
     text.encode_utf16().count()
@@ -102,13 +100,7 @@ pub fn pull_request_body(number: i64, description: &str, docs: PullRequestDocs<'
 }
 
 pub fn pull_request_number(url: &str) -> Option<i64> {
-    PR_NUMBER
-        .captures(url)?
-        .get(1)?
-        .as_str()
-        .parse()
-        .ok()
-        .filter(|number| *number > 0)
+    crate::scm::pull_request_number(url)
 }
 
 /// `gh pr create --base` needs a branch name, while native cards store full refs.

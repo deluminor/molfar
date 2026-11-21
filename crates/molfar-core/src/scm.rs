@@ -1,14 +1,21 @@
 //! Source control for the Changes and History panes, ported from
 //! src-tauri/src/fs.rs. Synchronous: callers run these on a background executor.
+mod checks;
+mod cli;
+mod forge;
+mod pull_request;
+mod request_status;
 mod review;
 pub(crate) mod shell;
 pub(crate) mod text;
+
+pub use forge::{Forge, UNKNOWN_FORGE};
+pub use pull_request::{openable_request_url, pull_request_number};
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::files::remote as remote_workspace;
 use serde::{Deserialize, Serialize};
@@ -28,6 +35,20 @@ pub fn terminal_search_path() -> String {
 /// Resolve a CLI using the login-shell PATH available to Finder-launched apps.
 pub fn resolve_gui_binary(name: &str) -> Option<std::path::PathBuf> {
     shell::resolve_gui_binary(name)
+}
+
+/// GitHub, GitLab, or unknown, from the preferred remote of `cwd`.
+pub fn forge(cwd: &Path) -> Result<Forge, String> {
+    forge::at(cwd)
+}
+
+/// The pull request or merge request a Familiar card shows.
+pub fn pull_request_view(
+    cwd: &Path,
+    repo: Option<&str>,
+    number: u64,
+) -> Result<serde_json::Value, String> {
+    request_status::view(cwd, repo, number)
 }
 pub use text::{commit_message_prompt, parse_commit_message, parse_pr_content, pr_content_prompt};
 
@@ -367,10 +388,7 @@ pub fn pr_check_rollup(cwd: &Path, url: &str) -> Result<String, String> {
     if remote_workspace::is_remote(cwd) {
         return Err("CI status is local only".into());
     }
-    gh_run(
-        &expand_home(cwd),
-        &["pr", "view", url, "--json", "statusCheckRollup"],
-    )
+    checks::rollup(&expand_home(cwd), url)
 }
 
 /// The failed steps' log of one GitHub Actions job.
@@ -378,10 +396,7 @@ pub fn job_failed_log(cwd: &Path, job: &str) -> Result<String, String> {
     if remote_workspace::is_remote(cwd) {
         return Err("CI logs are local only".into());
     }
-    gh_run(
-        &expand_home(cwd),
-        &["run", "view", "--job", job, "--log-failed"],
-    )
+    checks::failed_log(&expand_home(cwd), job)
 }
 
 /// The working copy's GitHub `owner/name`, via `gh` (Tauri's git_github_repo).
@@ -406,47 +421,14 @@ pub fn pr_create(
             json!({"cwd":cwd,"title":title,"body":body,"base":base,"head":head}),
         );
     }
-    let root = expand_home(cwd);
     let title = title.trim();
     if title.is_empty() {
         return Err("Pull request title cannot be empty".into());
     }
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let body_path = std::env::temp_dir().join(format!("molfar-pr-{stamp}.md"));
-    std::fs::write(&body_path, body.trim()).map_err(|e| e.to_string())?;
-    let result = gh_run(
-        &root,
-        &[
-            "pr",
-            "create",
-            "--title",
-            title,
-            "--body-file",
-            &body_path.to_string_lossy(),
-            "--base",
-            base.trim(),
-            "--head",
-            head.trim(),
-        ],
-    );
-    let _ = std::fs::remove_file(&body_path);
-    result.and_then(|output| {
-        output
-            .lines()
-            .rev()
-            .find(|line| line.starts_with("http://") || line.starts_with("https://"))
-            .map(|line| line.trim().to_string())
-            .ok_or_else(|| {
-                if output.trim().is_empty() {
-                    "gh returned no pull request URL".into()
-                } else {
-                    output
-                }
-            })
-    })
+    let root = expand_home(cwd);
+    let forge = forge::at(&root)?;
+    let mut cli = cli::Process { root: &root };
+    pull_request::create(&mut cli, forge, title, body, base, head)
 }
 
 fn diff_stats_for(root: &Path) -> DiffStats {
@@ -1027,26 +1009,21 @@ fn push_for(root: &Path) -> Result<(), String> {
 
 fn pr_status_for(root: &Path) -> Option<Pr> {
     let branch = git_branch(root)?;
-    let repo = github_repo_for(root).ok()?;
-    let (owner, _) = split_github_repo(&repo).ok()?;
-    // gh rejects `owner:branch` for --head, so fork PRs are excluded by owner afterwards.
-    let json = gh_run(
-        root,
-        &[
-            "pr",
-            "list",
-            "--head",
-            &branch,
-            "--json",
-            "number,title,url,state,headRepositoryOwner",
-            "--limit",
-            "20",
-            "--state",
-            "all",
-        ],
-    )
-    .ok()?;
-    parse_gh_pr_list(&json, &owner)
+    let mut cli = cli::Process { root };
+    match forge::at(root).ok()? {
+        Forge::GitHub => {
+            let repo = github_repo_for(root).ok()?;
+            let (owner, _) = split_github_repo(&repo).ok()?;
+            // gh rejects `owner:branch` for --head, so fork PRs are excluded by owner afterwards.
+            request_status::github_status(&mut cli, &branch, &owner)
+                .ok()
+                .flatten()
+        }
+        Forge::GitLab => request_status::gitlab_status(&mut cli, &branch)
+            .ok()
+            .flatten(),
+        Forge::Unknown => None,
+    }
 }
 
 fn github_repo_for(root: &Path) -> Result<String, String> {
@@ -1080,44 +1057,6 @@ fn split_github_repo(slug: &str) -> Result<(String, String), String> {
         return Err("GitHub did not return a repository".into());
     }
     Ok((owner.to_string(), name.to_string()))
-}
-
-fn parse_gh_pr_list(json: &str, owner: &str) -> Option<Pr> {
-    #[derive(Deserialize)]
-    struct Owner {
-        login: String,
-    }
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Row {
-        number: i64,
-        title: String,
-        url: String,
-        state: String,
-        head_repository_owner: Option<Owner>,
-    }
-    let rows: Vec<Row> = serde_json::from_str(json).ok()?;
-    let mut best: Option<Pr> = None;
-    let own = |row: &Row| {
-        row.head_repository_owner
-            .as_ref()
-            .is_none_or(|head| head.login.eq_ignore_ascii_case(owner))
-    };
-    for row in rows.into_iter().filter(own) {
-        let pr = Pr {
-            number: row.number,
-            title: row.title,
-            url: row.url,
-            state: row.state.to_lowercase(),
-        };
-        if pr.state == "open" {
-            return Some(pr);
-        }
-        if best.is_none() {
-            best = Some(pr);
-        }
-    }
-    best
 }
 
 fn gh_run(root: &Path, args: &[&str]) -> Result<String, String> {
@@ -1399,7 +1338,7 @@ pub fn git_dirs(root: &Path) -> Vec<std::path::PathBuf> {
     dirs
 }
 
-fn git_stdout(root: &Path, args: &[&str]) -> Option<String> {
+pub(super) fn git_stdout(root: &Path, args: &[&str]) -> Option<String> {
     let output = git_cmd().arg("-C").arg(root).args(args).output().ok()?;
     if !output.status.success() {
         return None;

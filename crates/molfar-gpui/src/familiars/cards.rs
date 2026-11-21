@@ -614,13 +614,14 @@ impl Familiars {
                 }
             }
             "pr" => {
-                if let Some(url) = value["url"]
-                    .as_str()
-                    .filter(|s| s.starts_with("https://github.com/"))
+                let stored = value["url"].as_str().filter(|url| !url.is_empty());
+                if let Some(url) = stored.filter(|url| molfar_core::scm::openable_request_url(url))
                 {
                     cx.open_url(url);
-                } else if let (Some(repo), Some(number)) =
-                    (value["repo"].as_str(), value["number"].as_u64())
+                } else if stored.is_none()
+                    && card_is_github(self, familiar)
+                    && let (Some(repo), Some(number)) =
+                        (value["repo"].as_str(), value["number"].as_u64())
                 {
                     cx.open_url(&format!("https://github.com/{repo}/pull/{number}"));
                 }
@@ -629,4 +630,15 @@ impl Familiars {
         }
         cx.notify();
     }
+}
+
+fn card_is_github(familiars: &super::Familiars, familiar: &str) -> bool {
+    let Some(cwd) = familiars
+        .roster
+        .get(familiar)
+        .and_then(|item| item.projects.first())
+    else {
+        return false;
+    };
+    molfar_core::scm::forge(std::path::Path::new(cwd)).ok() == Some(molfar_core::scm::Forge::GitHub)
 }

@@ -33,14 +33,7 @@ pub fn parse(v: &Value) -> Result<Value, String> {
                 .filter(|n| *n > 0)
                 .ok_or("Provide a positive PR number")?;
             let repo = v.get("repo").map(|_| text(v, "repo", 140)).transpose()?;
-            if repo.as_ref().is_some_and(|r| {
-                r.split('/').count() != 2
-                    || !r
-                        .chars()
-                        .all(|c| c.is_ascii_alphanumeric() || "._-/".contains(c))
-                    || r.starts_with('/')
-                    || r.ends_with('/')
-            }) {
+            if repo.as_ref().is_some_and(|repo| !valid_repo(repo)) {
                 return Err("repo must be owner/name".into());
             }
             json!({"type":"pr","number":number,"repo":repo})
@@ -85,29 +78,21 @@ pub fn parse(v: &Value) -> Result<Value, String> {
     Ok(result)
 }
 pub fn pull_request(cwd: &str, repo: Option<&str>, number: u64) -> Result<Value, String> {
-    let binary = crate::scm::shell::resolve_gui_binary("gh").ok_or("GitHub CLI not found")?;
-    let mut cmd = std::process::Command::new(binary);
-    cmd.current_dir(cwd).args([
-        "pr",
-        "view",
-        &number.to_string(),
-        "--json",
-        "title,state,url,isDraft,additions,deletions",
-    ]);
-    if let Some(repo) = repo {
-        cmd.args(["--repo", repo]);
+    crate::scm::pull_request_view(std::path::Path::new(cwd), repo, number)
+}
+
+fn valid_repo(repo: &str) -> bool {
+    if repo.starts_with('/') || repo.ends_with('/') || repo.contains("..") {
+        return false;
     }
-    cmd.env("GH_PROMPT_DISABLED", "1");
-    crate::scm::shell::apply_gui_env(&mut cmd);
-    crate::process::configure_child(&mut cmd);
-    let output = cmd.output().map_err(|e| e.to_string())?;
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr)
-            .chars()
-            .take(1000)
-            .collect());
-    }
-    serde_json::from_slice(&output.stdout).map_err(|e| e.to_string())
+    let parts: Vec<&str> = repo.split('/').collect();
+    parts.len() >= 2
+        && parts.iter().all(|part| {
+            !part.is_empty()
+                && part
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c))
+        })
 }
 #[cfg(test)]
 mod tests {
@@ -115,6 +100,11 @@ mod tests {
     #[test]
     fn cards_validate_fields_and_do_not_accept_arbitrary_links_or_commands() {
         assert!(parse(&json!({"type":"pr","repo":"owner/repo;echo x","number":1})).is_err());
+        assert!(parse(&json!({"type":"pr","repo":"owner/name","number":1})).is_ok());
+        assert!(parse(&json!({"type":"pr","repo":"group/sub/project","number":1})).is_ok());
+        assert!(parse(&json!({"type":"pr","repo":"group/sub/../project","number":1})).is_err());
+        assert!(parse(&json!({"type":"pr","repo":"/group/project","number":1})).is_err());
+        assert!(parse(&json!({"type":"pr","repo":"group/project/","number":1})).is_err());
         assert!(parse(&json!({"type":"choices","options":["a"],"command":"rm"})).is_err());
         assert!(parse(&json!({"type":"choices","options":["a","b","c","d","e"]})).is_err());
         assert_eq!(

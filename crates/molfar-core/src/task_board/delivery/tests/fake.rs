@@ -27,6 +27,8 @@ pub(super) struct Fake {
     pub existing: RefCell<Option<ExistingPullRequest>>,
     pub dirty: RefCell<bool>,
     pub rollup: RefCell<String>,
+    pub forge_kind: std::cell::Cell<Option<crate::scm::Forge>>,
+    pub created_url: RefCell<Option<String>>,
 }
 
 impl Fake {
@@ -89,6 +91,10 @@ impl DeliveryPort for Fake {
         self.step("github").map(|_| "acme/app".into())
     }
 
+    fn forge(&self, _worktree: &Path) -> Result<crate::scm::Forge, String> {
+        Ok(self.forge_kind.get().unwrap_or(crate::scm::Forge::GitHub))
+    }
+
     fn push(&self, _worktree: &Path) -> Result<(), String> {
         self.step("push")
     }
@@ -100,7 +106,11 @@ impl DeliveryPort for Fake {
     ) -> Result<String, String> {
         self.step("create")?;
         self.requests.borrow_mut().push(request.clone());
-        Ok(URL.into())
+        Ok(self
+            .created_url
+            .borrow()
+            .clone()
+            .unwrap_or_else(|| URL.into()))
     }
 
     fn existing_pull_request(&self, _worktree: &Path) -> Option<ExistingPullRequest> {
