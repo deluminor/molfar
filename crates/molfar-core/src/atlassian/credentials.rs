@@ -155,10 +155,16 @@ fn migrate(app: &Path, store: &SecretStore) -> Result<Option<Credentials>, Error
 
 pub fn disconnect(app: &Path) -> Result<(), Error> {
     let _lock = CONNECTION_LOCK.lock().map_err(storage_error)?;
+    let site =
+        migrate(app, &SecretStore::default())?.map(|credentials| credentials.site().to_string());
     remove_legacy(app)?;
     SecretStore::default()
         .set_atlassian(None)
-        .map_err(storage_error)
+        .map_err(storage_error)?;
+    if let Some(site) = site.as_deref() {
+        crate::jira::remove_site(app, site)?;
+    }
+    Ok(())
 }
 
 fn remove_legacy(app: &Path) -> Result<(), Error> {

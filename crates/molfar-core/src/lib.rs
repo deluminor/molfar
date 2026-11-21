@@ -20,6 +20,7 @@ pub mod github_star;
 pub mod harness_updates;
 pub mod host;
 pub mod inbox;
+pub mod jira;
 pub mod knowledge;
 pub mod mobile;
 pub mod notes;

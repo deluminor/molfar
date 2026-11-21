@@ -633,22 +633,29 @@ impl Inbox {
             .flex()
             .flex_col()
             .child(sources)
-            .when(!connected.is_empty(), |d| d.child(tools))
-            .child(
-                div()
-                    .id("inbox-list-scroll")
-                    .role(Role::ListBox)
-                    .aria_label("Inbox items")
-                    .min_h_0()
-                    .flex_1()
-                    .overflow_y_scroll()
-                    .p(px(6.))
-                    .flex()
-                    .flex_col()
-                    .gap(px(2.))
-                    .when(rows.is_empty(), |d| d.child(message(empty)))
-                    .children(rows),
-            )
+            .when(!connected.is_empty() && self.state.source != "jira", |d| {
+                d.child(tools)
+            })
+            .when(self.state.source == "jira", |pane| {
+                pane.child(div().flex_1().min_h_0().child(self.jira_list.clone()))
+            })
+            .when(self.state.source != "jira", |pane| {
+                pane.child(
+                    div()
+                        .id("inbox-list-scroll")
+                        .role(Role::ListBox)
+                        .aria_label("Inbox items")
+                        .min_h_0()
+                        .flex_1()
+                        .overflow_y_scroll()
+                        .p(px(6.))
+                        .flex()
+                        .flex_col()
+                        .gap(px(2.))
+                        .when(rows.is_empty(), |d| d.child(message(empty)))
+                        .children(rows),
+                )
+            })
             .child(
                 div()
                     .id("inbox-list-resize")

@@ -3,6 +3,7 @@
 mod avatar;
 mod diff;
 mod document;
+mod jira;
 pub(crate) mod pulse;
 mod ui;
 pub(crate) use avatar::image as avatar_image;
@@ -53,6 +54,7 @@ pub(crate) struct Inbox {
     snapshot: Snapshot,
     sessions: Vec<Session>,
     focus: FocusHandle,
+    jira_list: Entity<jira::JiraList>,
     search: Entity<Input>,
     comment: Entity<Input>,
     summary_scroll: ListState,
@@ -246,6 +248,7 @@ impl Inbox {
             })
             .detach();
         }
+        let jira_dir = data_dir.clone();
         Self {
             service: Service {
                 data_dir,
@@ -258,6 +261,7 @@ impl Inbox {
             snapshot: Snapshot::default(),
             sessions: vec![],
             focus: cx.focus_handle(),
+            jira_list: cx.new(|cx| jira::JiraList::new(jira_dir, cx)),
             search,
             comment,
             summary_scroll: ListState::new(0, ListAlignment::Top, px(200.)),
