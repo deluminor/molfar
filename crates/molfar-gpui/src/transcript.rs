@@ -5785,20 +5785,32 @@ impl TranscriptView {
             .w_full()
             .children(self.secret_outcomes.iter().map(|request| {
                 div()
-                    .id(gpui::SharedString::from(format!(
+                    .id(SharedString::from(format!(
                         "secret-outcome-{}",
                         request.request_id
                     )))
+                    .role(Role::Status)
+                    .w_full()
                     .flex()
-                    .items_center()
-                    .gap_2()
-                    .h(px(28.))
-                    .px_2()
-                    .text_size(px(12.))
-                    .text_color(content(0.65))
-                    .role(gpui::Role::Status)
-                    .child(icon("key", 14.))
-                    .child(crate::conversation::secret_request::outcome_text(request))
+                    .justify_center()
+                    .child(
+                        div()
+                            .w_full()
+                            .max_w(px(COLUMN))
+                            .px(px(COLUMN_PAD))
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .h(px(28.))
+                            .text_size(px(12.))
+                            .text_color(content(0.65))
+                            .child(icon("key", 14.).flex_shrink_0())
+                            .child(
+                                div().min_w_0().truncate().child(
+                                    crate::conversation::secret_request::outcome_text(request),
+                                ),
+                            ),
+                    )
             }))
             .into_any_element()
     }

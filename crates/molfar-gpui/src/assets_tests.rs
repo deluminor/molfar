@@ -2,6 +2,24 @@ use super::*;
 use std::{fs, path::Path};
 
 fn unresolved_literals(parser: &mut tree_sitter::Parser, source: &str) -> Vec<String> {
+    fn check_argument(arguments: tree_sitter::Node, source: &str, missing: &mut Vec<String>) {
+        let mut cursor = arguments.walk();
+        let literal = arguments
+            .named_children(&mut cursor)
+            .find(|child| !child.is_extra())
+            .filter(|child| matches!(child.kind(), "string_literal" | "raw_string_literal"));
+        if let Some(literal) = literal {
+            let mut cursor = literal.walk();
+            let body = literal
+                .named_children(&mut cursor)
+                .find(|child| child.kind() == "string_content");
+            let name = body.map_or("", |body| body.utf8_text(source.as_bytes()).unwrap());
+            if Assets.load(name).unwrap().is_none() {
+                missing.push(format!("{}: {name}", literal.start_position().row + 1));
+            }
+        }
+    }
+
     fn visit(node: tree_sitter::Node, source: &str, missing: &mut Vec<String>) {
         if node.kind() == "call_expression"
             && let Some(function) = node.child_by_field_name("function")
@@ -10,27 +28,25 @@ fn unresolved_literals(parser: &mut tree_sitter::Parser, source: &str) -> Vec<St
                 .is_ok_and(|name| name.rsplit("::").next() == Some("icon"))
             && let Some(arguments) = node.child_by_field_name("arguments")
         {
-            let mut cursor = arguments.walk();
-            if let Some(literal) = arguments
-                .named_children(&mut cursor)
-                .find(|child| !child.is_extra())
-                .filter(|child| matches!(child.kind(), "string_literal" | "raw_string_literal"))
-            {
-                let mut cursor = literal.walk();
-                if let Some(body) = literal
-                    .named_children(&mut cursor)
-                    .find(|child| child.kind() == "string_content")
-                {
-                    let name = body.utf8_text(source.as_bytes()).unwrap();
-                    if Assets.load(name).unwrap().is_none() {
-                        missing.push(format!("{}: {name}", literal.start_position().row + 1));
-                    }
-                }
-            }
+            check_argument(arguments, source, missing);
         }
 
         let mut cursor = node.walk();
-        for child in node.named_children(&mut cursor) {
+        let mut after_icon = false;
+        for child in node
+            .named_children(&mut cursor)
+            .filter(|child| !child.is_extra())
+        {
+            // Rust macros keep calls as tokens until expansion.
+            if node.kind() == "token_tree"
+                && after_icon
+                && child.kind() == "token_tree"
+                && source.as_bytes()[child.start_byte()] == b'('
+            {
+                check_argument(child, source, missing);
+            }
+            after_icon =
+                child.kind() == "identifier" && child.utf8_text(source.as_bytes()) == Ok("icon");
             visit(child, source, missing);
         }
     }
@@ -92,10 +108,11 @@ fn guard_detects_an_unknown_icon_and_skips_comments_and_strings() {
             theme::icon(
                 /* spacing */ "unknown-molfar-icon", 12.,
             );
+            let _ = vec![icon(r#"unknown-macro-icon"#, 12.)];
         }
     "##;
     assert_eq!(
         unresolved_literals(&mut parser(), source),
-        ["6: unknown-molfar-icon"]
+        ["6: unknown-molfar-icon", "8: unknown-macro-icon"]
     );
 }

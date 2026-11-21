@@ -471,6 +471,12 @@ impl SettingsView {
         this.refresh(cx);
         this
     }
+    #[cfg(all(test, target_os = "macos"))]
+    pub(crate) fn stop_fixture_discovery(&mut self) {
+        self.discovery_task = None;
+        self.discovery_loading = false;
+    }
+
     pub(super) fn refresh(&mut self, cx: &mut Context<Self>) {
         if self.section == Section::Providers
             && let Some(center) = crate::accounts::get(cx)

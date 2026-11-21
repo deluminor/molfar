@@ -564,6 +564,7 @@ pub(super) fn composer_banner(id: &'static str, accent: u32) -> gpui::Stateful<g
         .bg(tint(accent, 0.1))
         .px(px(8.))
         .text_size(px(12.))
+        .text_color(content(0.85))
 }
 
 pub(super) fn usage_button(

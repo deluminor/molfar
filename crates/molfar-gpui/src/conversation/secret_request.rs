@@ -190,3 +190,7 @@ pub(crate) use notices::outcome_text;
 #[cfg(test)]
 #[path = "secret_request/tests.rs"]
 mod tests;
+
+#[cfg(all(test, target_os = "macos"))]
+#[path = "secret_request/qa.rs"]
+mod qa;
