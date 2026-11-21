@@ -85,3 +85,10 @@ impl SecretStore {
         Ok(value)
     }
 }
+
+impl SecretStore {
+    pub(crate) fn read_value(&self, entry: &Entry) -> Result<secrecy::SecretString, Error> {
+        let _lock = lock()?;
+        self.backend.get(&entry.account()).map(|value| value.0)
+    }
+}
