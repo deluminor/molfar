@@ -55,10 +55,6 @@ impl PreviewHost for JiraReader {
             self.callouts.insert(index);
         }
     }
-
-    fn flip_task(&mut self, _ordinal: usize, cx: &mut Context<Self>) {
-        cx.notify();
-    }
 }
 
 impl JiraReader {

@@ -256,7 +256,6 @@ impl Knowledge {
 pub(crate) trait PreviewHost: 'static + Sized {
     fn callout_open(&self, index: usize) -> bool;
     fn toggle_callout(&mut self, index: usize);
-    fn flip_task(&mut self, ordinal: usize, cx: &mut Context<Self>);
 }
 
 pub(crate) fn render_markdown<T: PreviewHost>(
