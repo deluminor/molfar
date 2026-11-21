@@ -195,33 +195,54 @@ impl View {
         if !self.query.trim().is_empty() {
             return;
         }
-        let offset = self.tree_scroll.offset().y.abs();
-        if self.tree_scroll.max_offset().y.abs() - offset > px(64.) {
+        let rows = self.rows();
+        if rows.is_empty() {
             return;
         }
 
-        let tail = self
-            .rows()
-            .last()
-            .map(|row| row.parent.clone())
-            .unwrap_or_default();
-        if !tail.is_empty()
-            && self
-                .branches
-                .get(&tail)
-                .is_some_and(|branch| branch.cursor.is_some())
-            && let Some(row) = self.rows().into_iter().find(|row| row.node.id == tail)
-        {
-            self.load_children(Some((tail, row.node.kind)), false, cx);
+        let bottom = self.tree_scroll.bottom_item().min(rows.len() - 1);
+        let viewport_bottom = self.tree_scroll.bounds().bottom() - self.tree_scroll.offset().y;
+        let near = |index: usize| match self.tree_scroll.bounds_for_item(index) {
+            Some(bounds) => {
+                let distance = viewport_bottom - bounds.bottom();
+                distance >= px(-64.) && distance <= px(64.)
+            }
+            None => index.abs_diff(bottom) <= 2,
+        };
+        let mut choice: Option<(usize, String)> = None;
+        for (index, row) in rows.iter().enumerate() {
+            let last = rows
+                .get(index + 1)
+                .is_none_or(|next| next.parent != row.parent);
+            if !near(index)
+                || !last
+                || !self
+                    .branches
+                    .get(&row.parent)
+                    .is_some_and(|branch| branch.cursor.is_some())
+            {
+                continue;
+            }
+            if choice.as_ref().is_none_or(|(depth, _)| row.depth >= *depth) {
+                choice = Some((row.depth, row.parent.clone()));
+            }
+        }
+
+        let Some((_, parent)) = choice else {
+            return;
+        };
+        if parent.is_empty() {
+            self.load_children(None, false, cx);
             return;
         }
-        if self
-            .branches
-            .get("")
-            .is_some_and(|branch| branch.cursor.is_some())
-        {
-            self.load_children(None, false, cx);
-        }
+        let Some(kind) = rows
+            .into_iter()
+            .find(|row| row.node.id == parent)
+            .map(|row| row.node.kind)
+        else {
+            return;
+        };
+        self.load_children(Some((parent, kind)), false, cx);
     }
 
     pub(super) fn toggle_hidden(&mut self, id: String, cx: &mut Context<Self>) {

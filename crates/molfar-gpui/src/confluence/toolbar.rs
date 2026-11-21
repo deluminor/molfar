@@ -156,50 +156,107 @@ impl View {
                     .overflow_y_scroll()
                     .px_3()
                     .py_2()
-                    .children(self.spaces.iter().cloned().map(|space| {
-                        let hidden = self.hidden.contains(&space.id);
-                        let id = space.id.clone();
-                        div()
-                            .flex()
-                            .items_center()
-                            .h(px(30.))
-                            .gap_2()
-                            .child(
-                                secondary_button(
-                                    gpui::SharedString::from(format!(
-                                        "confluence-space-{}",
-                                        space.id
-                                    )),
-                                    space.title.clone(),
-                                    false,
-                                    hidden,
-                                )
-                                .child(space.title)
-                                .when(!hidden, |button| {
-                                    button.on_click(cx.listener(move |this, _, _, cx| {
-                                        this.space_menu = false;
-                                        this.select_space(Some(id.clone()), false, cx);
-                                    }))
-                                }),
+                    .children(
+                        self.spaces
+                            .iter()
+                            .filter(|space| !self.hidden.contains(&space.id))
+                            .cloned()
+                            .map(|space| {
+                                let id = space.id.clone();
+                                let selector = id.clone();
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .h(px(30.))
+                                    .gap_2()
+                                    .child(
+                                        secondary_button(
+                                            gpui::SharedString::from(format!(
+                                                "confluence-space-{id}"
+                                            )),
+                                            space.title.clone(),
+                                            false,
+                                            false,
+                                        )
+                                        .debug_selector(move || {
+                                            format!("confluence-space-{selector}")
+                                        })
+                                        .child(space.title)
+                                        .on_click(
+                                            cx.listener(move |this, _, _, cx| {
+                                                this.space_menu = false;
+                                                this.select_space(Some(id.clone()), false, cx);
+                                            }),
+                                        ),
+                                    )
+                                    .child(self.hide_space(space.id, false, cx))
+                            }),
+                    )
+                    .when(
+                        self.spaces
+                            .iter()
+                            .any(|space| self.hidden.contains(&space.id)),
+                        |menu| {
+                            menu.child(
+                                div()
+                                    .debug_selector(|| "confluence-hidden-spaces".into())
+                                    .px_1()
+                                    .py_1()
+                                    .text_size(px(11.))
+                                    .text_color(content(0.45))
+                                    .child("Hidden"),
                             )
-                            .child(
-                                secondary_button(
-                                    gpui::SharedString::from(format!(
-                                        "confluence-hidden-{}",
-                                        space.id
-                                    )),
-                                    if hidden { "Show space" } else { "Hide space" },
-                                    false,
-                                    false,
-                                )
-                                .child(if hidden { "Show" } else { "Hide" })
-                                .on_click(cx.listener(
-                                    move |this, _, _, cx| this.toggle_hidden(space.id.clone(), cx),
-                                )),
-                            )
-                    })),
+                        },
+                    )
+                    .children(
+                        self.spaces
+                            .iter()
+                            .filter(|space| self.hidden.contains(&space.id))
+                            .cloned()
+                            .map(|space| {
+                                let selector = space.id.clone();
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .h(px(30.))
+                                    .gap_2()
+                                    .child(
+                                        div()
+                                            .debug_selector(move || {
+                                                format!("confluence-hidden-label-{selector}")
+                                            })
+                                            .text_size(px(12.))
+                                            .text_color(content(0.55))
+                                            .child(space.title),
+                                    )
+                                    .child(self.hide_space(space.id, true, cx))
+                            }),
+                    ),
             );
         }
         header.into_any_element()
+    }
+
+    fn hide_space(
+        &self,
+        id: String,
+        hidden: bool,
+        cx: &mut Context<Self>,
+    ) -> gpui::Stateful<gpui::Div> {
+        let selector = id.clone();
+        secondary_button(
+            gpui::SharedString::from(format!("confluence-hidden-{id}")),
+            if hidden { "Show space" } else { "Hide space" },
+            false,
+            false,
+        )
+        .debug_selector(move || {
+            format!(
+                "confluence-{}-{selector}",
+                if hidden { "show" } else { "hide" }
+            )
+        })
+        .child(if hidden { "Show" } else { "Hide" })
+        .on_click(cx.listener(move |this, _, _, cx| this.toggle_hidden(id.clone(), cx)))
     }
 }

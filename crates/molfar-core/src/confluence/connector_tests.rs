@@ -124,6 +124,44 @@ fn confluence_pages_cache_versions_and_open_offline() {
     assert_cache_has_no_secret(dir.path());
 }
 
+#[test]
+fn confluence_lineage_walks_folder_and_page_parents() {
+    let dir = tempfile::tempdir().unwrap();
+    let connector = fixture(
+        dir.path(),
+        [
+            (
+                "/wiki/api/v2/pages/30",
+                Ok(json!({"title":"Child","parentId":"20","parentType":"folder"})),
+            ),
+            (
+                "/wiki/api/v2/folders/20",
+                Ok(json!({"title":"Notes","parentId":"10","parentType":"page"})),
+            ),
+            ("/wiki/api/v2/pages/10", Ok(json!({"title":"Root"}))),
+        ],
+    );
+    let chain = connector.lineage(Some("30".into()), Kind::Page, "TEAM");
+    assert_eq!(
+        chain
+            .iter()
+            .map(|node| node.id.as_str())
+            .collect::<Vec<_>>(),
+        ["10", "20", "30"]
+    );
+    assert_eq!(
+        chain
+            .iter()
+            .map(|node| node.title.as_str())
+            .collect::<Vec<_>>(),
+        ["Root", "Notes", "Child"]
+    );
+    assert_eq!(
+        chain.iter().map(|node| node.kind).collect::<Vec<_>>(),
+        [Kind::Page, Kind::Folder, Kind::Page]
+    );
+}
+
 fn assert_cache_has_no_secret(dir: &std::path::Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();

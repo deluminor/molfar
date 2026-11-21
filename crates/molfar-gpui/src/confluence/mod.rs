@@ -1,7 +1,9 @@
 mod handoff;
 mod inline;
+mod outline;
 mod page;
 mod reader;
+mod relations;
 mod render;
 pub(crate) mod service;
 mod toolbar;

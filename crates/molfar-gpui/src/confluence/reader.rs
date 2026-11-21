@@ -20,11 +20,8 @@ impl View {
     pub(super) fn open_page(&mut self, id: String, refresh: bool, cx: &mut Context<Self>) {
         self.page_generation += 1;
         let generation = self.page_generation;
-        self.reading = true;
+        self.reading = self.document.is_none();
         self.error = None;
-        self.document = None;
-        self.selection_source = None;
-        self.folded.clear();
         let service = self.service.clone();
         let spaces = self.spaces.clone();
         let query = self.query.clone();
@@ -34,6 +31,8 @@ impl View {
                 .page(&id, refresh)
                 .map_err(|error| error.to_string())?;
             let space = spaces.iter().find(|space| space.id == page.space_id);
+            let space_key = space.map_or_else(String::new, |space| space.key.clone());
+            let ancestors = connector.lineage(page.parent_id.clone(), page.parent_kind, &space_key);
             let children = space
                 .and_then(|space| {
                     connector
@@ -47,9 +46,11 @@ impl View {
                 title: page.title.clone(),
                 url: page.url.clone(),
                 kind: Kind::Page,
-                space_key: space.map_or_else(String::new, |space| space.key.clone()),
+                space_key,
             };
-            Ok::<_, String>((node, DocumentView::new(page, children, &query)))
+            let mut document = DocumentView::new(page, children, &query);
+            document.ancestors = ancestors;
+            Ok::<_, String>((node, document))
         });
 
         cx.spawn(async move |view, cx| {
@@ -60,6 +61,8 @@ impl View {
                     match result {
                         Ok((node, document)) => {
                             this.selected_node = Some(node);
+                            this.selection_source = None;
+                            this.folded.clear();
                             this.document = Some(document);
                             this.document_scroll.set_offset(gpui::point(px(0.), px(0.)));
                         }

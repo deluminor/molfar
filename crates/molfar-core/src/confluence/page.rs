@@ -4,11 +4,18 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    connector::{api_path, field, valid_id, webui, Connector, Kind},
+    connector::{api_path, field, valid_id, webui, Connector, Kind, Node},
     document::{adf, markdown, storage, Document},
     error::ConfluenceError,
     http::Transport,
 };
+
+struct Heading {
+    title: String,
+    parent_id: Option<String>,
+    parent_kind: Kind,
+    url: String,
+}
 
 const MAX_PAGE_CHARS: usize = 120_000;
 const TRUNCATION: &str = "\n\n_Confluence page truncated._";
@@ -148,6 +155,70 @@ impl<T: Transport> Connector<T> {
             .map(|row| field(&row, "displayName"))
             .filter(|name| !name.is_empty())
             .unwrap_or_else(|| author_id.to_owned())
+    }
+
+    pub fn lineage(&self, mut id: Option<String>, mut kind: Kind, space_key: &str) -> Vec<Node> {
+        let mut chain = Vec::new();
+        for _ in 0..16 {
+            let Some(current) = id.take().filter(|id| valid_id(id)) else {
+                break;
+            };
+            let Ok((kind_found, heading)) = self.heading(kind, &current, space_key) else {
+                break;
+            };
+            chain.push(Node {
+                url: heading.url,
+                id: current,
+                title: heading.title,
+                kind: kind_found,
+                space_key: space_key.to_owned(),
+            });
+            id = heading.parent_id;
+            kind = heading.parent_kind;
+        }
+        chain.reverse();
+        chain
+    }
+
+    fn heading(
+        &self,
+        kind: Kind,
+        id: &str,
+        space_key: &str,
+    ) -> Result<(Kind, Heading), ConfluenceError> {
+        match self.heading_at(kind, id, space_key) {
+            Err(ConfluenceError::NotFound) if kind == Kind::Page => self
+                .heading_at(Kind::Folder, id, space_key)
+                .map(|heading| (Kind::Folder, heading)),
+            other => other.map(|heading| (kind, heading)),
+        }
+    }
+
+    fn heading_at(
+        &self,
+        kind: Kind,
+        id: &str,
+        space_key: &str,
+    ) -> Result<Heading, ConfluenceError> {
+        let (path, fallback) = match kind {
+            Kind::Folder => (
+                format!("/wiki/api/v2/folders/{id}"),
+                format!("/wiki/spaces/{space_key}/folder/{id}"),
+            ),
+            Kind::Page => (
+                format!("/wiki/api/v2/pages/{id}"),
+                format!("/wiki/spaces/{space_key}/pages/{id}"),
+            ),
+            _ => return Err(ConfluenceError::NotFound),
+        };
+        let row: Value = self.client.json(&path)?;
+        let parent = field(&row, "parentId");
+        Ok(Heading {
+            title: field(&row, "title"),
+            parent_id: valid_id(&parent).then_some(parent),
+            parent_kind: Kind::parse(&field(&row, "parentType")),
+            url: self.url(webui(&row), &fallback),
+        })
     }
 
     pub fn folder(&self, id: &str) -> Result<(String, String), ConfluenceError> {

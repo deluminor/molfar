@@ -1,10 +1,7 @@
-use gpui::{AnyElement, Context, FontWeight, Role, Window, div, prelude::*, px};
-use molfar_core::{
-    confluence::connector::{Kind, Node},
-    knowledge::NoteProperty,
-};
+use gpui::{AnyElement, Context, FontWeight, Window, div, prelude::*, px};
+use molfar_core::{confluence::connector::Kind, knowledge::NoteProperty};
 
-use super::{OpenPage, View, render::DocumentView};
+use super::{OpenPage, View};
 use crate::{
     knowledge::document::{note::Walk, properties},
     settings::widgets::secondary_button,
@@ -20,7 +17,7 @@ impl View {
             .min_h_0()
             .flex_1()
             .h_full();
-        if self.reading {
+        if self.reading && self.document.is_none() {
             return pane
                 .child(center("Loading Confluence page…"))
                 .into_any_element();
@@ -28,12 +25,7 @@ impl View {
         if let Some(doc) = &self.document {
             let page = &doc.page;
             let space = self.spaces.iter().find(|space| space.id == page.space_id);
-            let parent = page.parent_id.as_deref().and_then(|id| {
-                self.branches
-                    .values()
-                    .flat_map(|branch| &branch.nodes)
-                    .find(|node| node.id == id)
-            });
+            let ancestors = self.ancestor_nodes(page);
             let author = NoteProperty {
                 key: "author".into(),
                 values: vec![page.author.clone()],
@@ -93,40 +85,13 @@ impl View {
                 .map(|(index, block)| self.block_element(block, page, index == 0, &mut walk, cx))
                 .collect();
             pane = pane
-                .child(
-                    div()
-                        .debug_selector(|| "confluence-breadcrumb".into())
-                        .flex()
-                        .gap_2()
-                        .items_center()
-                        .px_4()
-                        .py_2()
-                        .border_b_1()
-                        .border_color(content(0.08))
-                        .text_size(px(12.))
-                        .text_color(content(0.58))
-                        .when_some(space, |breadcrumbs, space| {
-                            breadcrumbs.child(space.title.clone())
-                        })
-                        .when_some(parent, |breadcrumbs, parent| {
-                            breadcrumbs.child("›").child(parent.title.clone())
-                        })
-                        .child("›")
-                        .child(page.title.clone())
-                        .child(div().flex_1())
-                        .child(
-                            secondary_button("confluence-select-text", "Select text", false, false)
-                                .child(if self.selection_source.is_some() {
-                                    "Reading view"
-                                } else {
-                                    "Select text"
-                                })
-                                .on_click(cx.listener(|this, _, window, cx| {
-                                    this.toggle_selection_source(window, cx)
-                                })),
-                        )
-                        .child(open_browser(page.url.clone())),
-                )
+                .child(self.breadcrumbs(
+                    space.map(|space| space.title.as_str()),
+                    &ancestors,
+                    &page.title,
+                    page.url.clone(),
+                    cx,
+                ))
                 .child(
                     div()
                         .flex()
@@ -155,7 +120,7 @@ impl View {
                                     body.child(center("This page is empty."))
                                 })
                                 .children(blocks)
-                                .child(self.relations(doc, parent, cx)),
+                                .child(self.relations(doc, &ancestors, cx)),
                         )
                         .when(!doc.headings.is_empty(), |body| {
                             body.child(self.outline(doc, cx))
@@ -179,88 +144,6 @@ impl View {
             pane = pane.child(center("Choose a page to read."));
         }
         pane.into_any_element()
-    }
-
-    fn outline(&self, doc: &DocumentView, cx: &mut Context<Self>) -> AnyElement {
-        let headings = doc.headings.iter().enumerate().map(|(n, (index, title))| {
-            let index = *index;
-            div()
-                .id(("confluence-outline", n))
-                .debug_selector(|| "confluence-outline-entry".into())
-                .role(Role::Button)
-                .cursor_pointer()
-                .rounded_md()
-                .p_1()
-                .text_size(px(12.))
-                .text_color(content(0.62))
-                .hover(|row| row.bg(content(0.06)))
-                .child(title.clone())
-                .on_click(cx.listener(move |this, _, _, cx| {
-                    this.document_scroll.scroll_to_item(index + 2);
-                    cx.notify();
-                }))
-        });
-        div()
-            .id("confluence-outline")
-            .w(px(168.))
-            .flex_shrink_0()
-            .overflow_y_scroll()
-            .border_l_1()
-            .border_color(content(0.08))
-            .p_3()
-            .child(
-                div()
-                    .text_size(px(12.))
-                    .font_weight(FontWeight::SEMIBOLD)
-                    .mb_2()
-                    .child("On this page"),
-            )
-            .children(headings)
-            .into_any_element()
-    }
-
-    fn relations(
-        &self,
-        doc: &DocumentView,
-        parent: Option<&Node>,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let links = parent
-            .into_iter()
-            .map(|node| (node.id.clone(), format!("Parent · {}", node.title)))
-            .chain(
-                doc.children
-                    .iter()
-                    .filter(|node| node.kind == Kind::Page)
-                    .map(|node| (node.id.clone(), format!("Child · {}", node.title))),
-            )
-            .chain(
-                doc.internal_links
-                    .iter()
-                    .map(|(id, title)| (id.clone(), format!("Link · {title}"))),
-            );
-        div()
-            .debug_selector(|| "confluence-relations".into())
-            .mt_6()
-            .child(
-                div()
-                    .text_size(px(13.))
-                    .font_weight(FontWeight::SEMIBOLD)
-                    .child("Relations"),
-            )
-            .children(links.enumerate().map(|(index, (id, title))| {
-                div()
-                    .id(("confluence-relation", index))
-                    .cursor_pointer()
-                    .text_size(px(12.))
-                    .py_1()
-                    .text_color(accent_color())
-                    .child(title)
-                    .on_click(
-                        cx.listener(move |this, _, _, cx| this.open_page(id.clone(), false, cx)),
-                    )
-            }))
-            .into_any_element()
     }
 }
 
@@ -332,7 +215,7 @@ pub(super) fn center(text: impl Into<gpui::SharedString>) -> gpui::Div {
         .child(text.into())
 }
 
-fn open_browser(url: String) -> gpui::Stateful<gpui::Div> {
+pub(super) fn open_browser(url: String) -> gpui::Stateful<gpui::Div> {
     secondary_button("confluence-open-browser", "Open in browser", false, false)
         .child(icon("external-link", 13.))
         .child("Open in browser")

@@ -16,6 +16,7 @@ use crate::{
 pub(super) struct DocumentView {
     pub page: Arc<Page>,
     pub children: Vec<TreeNode>,
+    pub ancestors: Vec<TreeNode>,
     pub blocks: Vec<ReaderBlock>,
     pub headings: Vec<(usize, String)>,
     pub internal_links: Vec<(String, String)>,
@@ -53,6 +54,7 @@ impl DocumentView {
         Self {
             page: Arc::new(page),
             children,
+            ancestors: Vec::new(),
             blocks,
             headings,
             internal_links,
