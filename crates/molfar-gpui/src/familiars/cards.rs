@@ -618,12 +618,12 @@ impl Familiars {
                 if let Some(url) = stored.filter(|url| molfar_core::scm::openable_request_url(url))
                 {
                     cx.open_url(url);
-                } else if stored.is_none() && card_is_github(self, familiar) {
-                    if let (Some(repo), Some(number)) =
+                } else if stored.is_none()
+                    && card_is_github(self, familiar)
+                    && let (Some(repo), Some(number)) =
                         (value["repo"].as_str(), value["number"].as_u64())
-                    {
-                        cx.open_url(&format!("https://github.com/{repo}/pull/{number}"));
-                    }
+                {
+                    cx.open_url(&format!("https://github.com/{repo}/pull/{number}"));
                 }
             }
             _ => (),

@@ -86,7 +86,7 @@ fn keep_branch_delivery_removes_worktree_detaches_sessions_and_keeps_branch(
 }
 
 #[gpui::test]
-fn unreachable_github_fails_delivery_then_reject_archives_and_drops_unpushed_branch(
+fn missing_remote_fails_delivery_then_reject_archives_and_drops_unpushed_branch(
     cx: &mut TestAppContext,
 ) {
     let fixture = Fixture::new();
@@ -104,12 +104,9 @@ fn unreachable_github_fails_delivery_then_reject_archives_and_drops_unpushed_bra
 
     let failed = fixture.card();
     assert_eq!(failed.column_id, "final_review");
-    assert!(
-        failed
-            .last_error
-            .as_deref()
-            .unwrap()
-            .starts_with("Only Keep branch is available")
+    assert_eq!(
+        failed.last_error.as_deref(),
+        Some("No git remote to open a merge request or pull request against.")
     );
     assert!(Path::new(&worktree).exists());
     window

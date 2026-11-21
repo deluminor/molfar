@@ -125,9 +125,7 @@ fn check(name: &str, status: &str, url: Option<&str>) -> Value {
 }
 
 fn url_forge(url: &str) -> Option<Forge> {
-    if pull_request_number(url).is_none() {
-        return None;
-    }
+    pull_request_number(url)?;
     if url.contains("/-/merge_requests/") {
         Some(Forge::GitLab)
     } else if url.contains("/pull/") {
