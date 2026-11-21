@@ -105,13 +105,13 @@ impl Input {
             .and_then(|metadata| serde_json::from_str::<Link>(metadata).ok())
             && metadata.url() == link.url()
         {
-                link.kind = metadata.kind.filter(|kind| {
-                    matches!(
-                        kind,
-                        molfar_core::confluence::connector::Kind::Page
-                            | molfar_core::confluence::connector::Kind::Folder
-                    )
-                });
+            link.kind = metadata.kind.filter(|kind| {
+                matches!(
+                    kind,
+                    molfar_core::confluence::connector::Kind::Page
+                        | molfar_core::confluence::connector::Kind::Folder
+                )
+            });
         }
         let token = link.mention().token();
         self.confluence_links.insert(token.clone(), link);

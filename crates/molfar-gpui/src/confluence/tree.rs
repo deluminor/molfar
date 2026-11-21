@@ -177,8 +177,8 @@ impl View {
                     && let Some(parent) = rows
                         .iter()
                         .position(|candidate| candidate.node.id == row.parent)
-                    {
-                        self.cursor_row = parent;
+                {
+                    self.cursor_row = parent;
                 }
             }
             "right" => self.expand(&row.node, cx),
@@ -212,8 +212,8 @@ impl View {
                 .is_some_and(|branch| branch.cursor.is_some())
             && let Some(row) = self.rows().into_iter().find(|row| row.node.id == tail)
         {
-                self.load_children(Some((tail, row.node.kind)), false, cx);
-                return;
+            self.load_children(Some((tail, row.node.kind)), false, cx);
+            return;
         }
         if self
             .branches

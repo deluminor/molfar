@@ -1068,8 +1068,8 @@ impl Input {
         if let Some(item) = cx.read_from_clipboard()
             && let Some(text) = item.text()
         {
-                let text = self.confluence_paste(&text, &item);
-                self.replace_text_in_range(None, &text.replace("\r\n", "\n"), w, cx);
+            let text = self.confluence_paste(&text, &item);
+            self.replace_text_in_range(None, &text.replace("\r\n", "\n"), w, cx);
         }
     }
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {

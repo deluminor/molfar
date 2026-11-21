@@ -375,7 +375,12 @@ impl Shell {
         vault
     }
 
-    pub(super) fn add_confluence_context(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn add_confluence_context(
+        &mut self,
+        text: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if let Some(id) = self.workspace.active {
             self.close_app_view(window, cx);
             self.add_to_chat(id, text, cx);
