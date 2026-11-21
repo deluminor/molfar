@@ -162,6 +162,29 @@ fn confluence_lineage_walks_folder_and_page_parents() {
     );
 }
 
+#[test]
+fn confluence_lineage_keeps_known_ancestors_when_a_parent_fails() {
+    let dir = tempfile::tempdir().unwrap();
+    let connector = fixture(
+        dir.path(),
+        [
+            (
+                "/wiki/api/v2/pages/30",
+                Ok(json!({"title":"Child","parentId":"20","parentType":"page"})),
+            ),
+            ("/wiki/api/v2/pages/20", Err(ConfluenceError::Offline)),
+        ],
+    );
+    let chain = connector.lineage(Some("30".into()), Kind::Page, "TEAM");
+    assert_eq!(
+        chain
+            .iter()
+            .map(|node| node.id.as_str())
+            .collect::<Vec<_>>(),
+        ["30"]
+    );
+}
+
 fn assert_cache_has_no_secret(dir: &std::path::Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();

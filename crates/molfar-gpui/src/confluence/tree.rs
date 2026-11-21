@@ -200,20 +200,24 @@ impl View {
             return;
         }
 
-        let bottom = self.tree_scroll.bottom_item().min(rows.len() - 1);
-        let viewport_bottom = self.tree_scroll.bounds().bottom() - self.tree_scroll.offset().y;
-        let near = |index: usize| match self.tree_scroll.bounds_for_item(index) {
-            Some(bounds) => {
-                let distance = viewport_bottom - bounds.bottom();
-                distance >= px(-64.) && distance <= px(64.)
-            }
-            None => index.abs_diff(bottom) <= 2,
+        let offset = self.tree_scroll.offset().y;
+        let at_end = (self.tree_scroll.max_offset().y - offset.abs()).abs() <= px(1.);
+        let viewport_top = self.tree_scroll.bounds().top() - offset;
+        let viewport_bottom = self.tree_scroll.bounds().bottom() - offset;
+        let near = |index: usize| {
+            let Some(bounds) = self.tree_scroll.bounds_for_item(index) else {
+                return false;
+            };
+            let distance = viewport_bottom - bounds.bottom();
+            let close = distance >= px(-64.) && distance <= px(64.);
+            let visible = bounds.bottom() > viewport_top && bounds.top() < viewport_bottom;
+            close || (at_end && visible)
         };
         let mut choice: Option<(usize, String)> = None;
         for (index, row) in rows.iter().enumerate() {
-            let last = rows
-                .get(index + 1)
-                .is_none_or(|next| next.parent != row.parent);
+            let last = !rows[index + 1..]
+                .iter()
+                .any(|next| next.parent == row.parent);
             if !near(index)
                 || !last
                 || !self

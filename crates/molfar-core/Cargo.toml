@@ -16,6 +16,7 @@ rusqlite.workspace = true
 async-channel = "2"
 shlex = "2"
 url = "2"
+log = "0.4"
 base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 sha2 = "0.10"

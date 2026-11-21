@@ -163,8 +163,12 @@ impl<T: Transport> Connector<T> {
             let Some(current) = id.take().filter(|id| valid_id(id)) else {
                 break;
             };
-            let Ok((kind_found, heading)) = self.heading(kind, &current, space_key) else {
-                break;
+            let (kind_found, heading) = match self.heading(kind, &current, space_key) {
+                Ok(found) => found,
+                Err(error) => {
+                    log::debug!("Confluence ancestor {current} failed: {}", error.kind());
+                    break;
+                }
             };
             chain.push(Node {
                 url: heading.url,

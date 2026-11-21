@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use gpui::{App, AppContext, TestAppContext, VisualTestContext, WindowOptions};
+use gpui::{App, AppContext, TestAppContext, VisualTestContext, WindowOptions, px};
 use molfar_core::{
     confluence::{
         connector::{Kind, Node},
@@ -20,6 +20,7 @@ use molfar_core::{
 
 use super::{
     View,
+    reader::script_page_open,
     render::{DocumentView, ReaderBlock},
 };
 use crate::markdown_model::Block;
@@ -177,13 +178,192 @@ fn confluence_tree_loads_the_next_page_of_a_branch_that_is_not_the_tail(cx: &mut
                 },
             );
             view.expanded.insert("10".into());
+            cx.notify();
+        })
+        .unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            assert!(
+                view.tree_scroll.bounds_for_item(0).is_some(),
+                "tree was not painted"
+            );
+            let max = view.tree_scroll.max_offset();
+            view.tree_scroll.set_offset(gpui::point(px(0.), -max.y));
             view.tree_scrolled(cx);
             assert!(
                 view.pending.contains("10"),
-                "first branch cursor was ignored: {:?}",
+                "visible branch end was ignored: {:?}",
                 view.pending
             );
             assert!(!view.pending.contains(""));
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn confluence_expanded_row_does_not_page_its_parent(cx: &mut TestAppContext) {
+    let (window, mut visual) = confluence_window(cx);
+    let visual = &mut visual;
+    window
+        .update(visual, |view, _, cx| {
+            view.connected = true;
+            view.spaces.push(space());
+            view.selected_space = Some("1".into());
+            let mut nodes = Vec::new();
+            for index in 0..80 {
+                nodes.push(node(&format!("p{index}"), "Page", Kind::Page));
+            }
+            nodes.push(node("10", "Folder", Kind::Folder));
+            nodes.push(node("12", "Sibling", Kind::Page));
+            view.branches.insert(
+                String::new(),
+                Children {
+                    nodes,
+                    cursor: Some("more".into()),
+                },
+            );
+            view.branches.insert(
+                "10".into(),
+                Children {
+                    nodes: vec![
+                        node("11", "One", Kind::Page),
+                        node("13", "Two", Kind::Page),
+                        node("14", "Three", Kind::Page),
+                    ],
+                    cursor: None,
+                },
+            );
+            view.expanded.insert("10".into());
+            cx.notify();
+        })
+        .unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            let rows = view.rows();
+            let folder = rows.iter().position(|row| row.node.id == "10").unwrap();
+            let sibling = rows.iter().position(|row| row.node.id == "12").unwrap();
+            let row = view
+                .tree_scroll
+                .bounds_for_item(folder)
+                .expect("folder painted");
+            let viewport = view.tree_scroll.bounds();
+            let mut offset = viewport.bottom() - row.bottom();
+            let max = view.tree_scroll.max_offset().y;
+            if offset < -max {
+                offset = -max;
+            }
+            if offset > px(0.) {
+                offset = px(0.);
+            }
+            view.tree_scroll.set_offset(gpui::point(px(0.), offset));
+            let viewport_bottom = viewport.bottom() - view.tree_scroll.offset().y;
+            let folder_distance =
+                viewport_bottom - view.tree_scroll.bounds_for_item(folder).unwrap().bottom();
+            let sibling_distance =
+                viewport_bottom - view.tree_scroll.bounds_for_item(sibling).unwrap().bottom();
+            assert!(
+                folder_distance >= px(-64.) && folder_distance <= px(64.),
+                "folder is not at the pane bottom: {folder_distance:?}"
+            );
+            assert!(
+                sibling_distance < px(-64.),
+                "sibling is still near the pane bottom: {sibling_distance:?}"
+            );
+            view.tree_scrolled(cx);
+            assert!(
+                !view.pending.contains(""),
+                "expanded folder paged its parent: {:?}",
+                view.pending
+            );
+            assert!(!view.pending.contains("10"));
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn confluence_page_is_shown_before_ancestors_resolve(cx: &mut TestAppContext) {
+    let (window, mut visual) = confluence_window(cx);
+    let visual = &mut visual;
+    let (gate_tx, gate_rx) = async_channel::bounded(1);
+    let mut nested = guide_page();
+    nested.id = "99".into();
+    nested.title = "Nested".into();
+    nested.parent_id = Some("20".into());
+    script_page_open(
+        Ok(nested),
+        vec![node("20", "Parent", Kind::Page)],
+        Vec::new(),
+        gate_rx,
+    );
+    cx.executor().allow_parking();
+    window
+        .update(visual, |view, _, cx| {
+            view.connected = true;
+            view.document = Some(DocumentView::new(guide_page(), Vec::new(), ""));
+            view.open_page("99".into(), false, cx);
+        })
+        .unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, _| {
+            let document = view.document.as_ref().unwrap();
+            assert_eq!(document.page.id, "99");
+            assert!(document.ancestors.is_empty());
+            assert!(view.error.is_none());
+        })
+        .unwrap();
+    gate_tx.send_blocking(()).unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, _| {
+            let document = view.document.as_ref().unwrap();
+            assert_eq!(document.page.id, "99");
+            assert_eq!(document.ancestors[0].id, "20");
+            assert!(view.error.is_none());
+        })
+        .unwrap();
+}
+
+#[gpui::test]
+fn confluence_late_ancestors_do_not_replace_a_newer_page(cx: &mut TestAppContext) {
+    let (window, mut visual) = confluence_window(cx);
+    let visual = &mut visual;
+    let (gate_tx, gate_rx) = async_channel::bounded(1);
+    let mut nested = guide_page();
+    nested.id = "99".into();
+    nested.parent_id = Some("20".into());
+    script_page_open(
+        Ok(nested),
+        vec![node("20", "Parent", Kind::Page)],
+        Vec::new(),
+        gate_rx,
+    );
+    cx.executor().allow_parking();
+    window
+        .update(visual, |view, _, cx| {
+            view.document = Some(DocumentView::new(guide_page(), Vec::new(), ""));
+            view.open_page("99".into(), false, cx);
+        })
+        .unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, cx| {
+            assert_eq!(view.document.as_ref().unwrap().page.id, "99");
+            view.page_generation += 1;
+            view.open_page("404".into(), false, cx);
+        })
+        .unwrap();
+    visual.run_until_parked();
+    gate_tx.send_blocking(()).unwrap();
+    visual.run_until_parked();
+    window
+        .update(visual, |view, _, _| {
+            let document = view.document.as_ref().unwrap();
+            assert_eq!(document.page.id, "99");
+            assert!(document.ancestors.is_empty());
+            assert!(view.error.is_some());
         })
         .unwrap();
 }
