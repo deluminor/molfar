@@ -1,3 +1,4 @@
+pub mod adf;
 mod client;
 mod credentials;
 mod error;
