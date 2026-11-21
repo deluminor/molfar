@@ -2,17 +2,19 @@
 //! src-tauri/src/fs.rs. Synchronous: callers run these on a background executor.
 mod cli;
 mod forge;
+mod pull_request;
+mod request_status;
 mod review;
 pub(crate) mod shell;
 pub(crate) mod text;
 
 pub use forge::Forge;
+pub use pull_request::pull_request_number;
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::files::remote as remote_workspace;
 use serde::{Deserialize, Serialize};
@@ -415,47 +417,14 @@ pub fn pr_create(
             json!({"cwd":cwd,"title":title,"body":body,"base":base,"head":head}),
         );
     }
-    let root = expand_home(cwd);
     let title = title.trim();
     if title.is_empty() {
         return Err("Pull request title cannot be empty".into());
     }
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let body_path = std::env::temp_dir().join(format!("molfar-pr-{stamp}.md"));
-    std::fs::write(&body_path, body.trim()).map_err(|e| e.to_string())?;
-    let result = gh_run(
-        &root,
-        &[
-            "pr",
-            "create",
-            "--title",
-            title,
-            "--body-file",
-            &body_path.to_string_lossy(),
-            "--base",
-            base.trim(),
-            "--head",
-            head.trim(),
-        ],
-    );
-    let _ = std::fs::remove_file(&body_path);
-    result.and_then(|output| {
-        output
-            .lines()
-            .rev()
-            .find(|line| line.starts_with("http://") || line.starts_with("https://"))
-            .map(|line| line.trim().to_string())
-            .ok_or_else(|| {
-                if output.trim().is_empty() {
-                    "gh returned no pull request URL".into()
-                } else {
-                    output
-                }
-            })
-    })
+    let root = expand_home(cwd);
+    let forge = forge::at(&root)?;
+    let mut cli = cli::Process { root: &root };
+    pull_request::create(&mut cli, forge, title, body, base, head)
 }
 
 fn diff_stats_for(root: &Path) -> DiffStats {
@@ -1036,26 +1005,21 @@ fn push_for(root: &Path) -> Result<(), String> {
 
 fn pr_status_for(root: &Path) -> Option<Pr> {
     let branch = git_branch(root)?;
-    let repo = github_repo_for(root).ok()?;
-    let (owner, _) = split_github_repo(&repo).ok()?;
-    // gh rejects `owner:branch` for --head, so fork PRs are excluded by owner afterwards.
-    let json = gh_run(
-        root,
-        &[
-            "pr",
-            "list",
-            "--head",
-            &branch,
-            "--json",
-            "number,title,url,state,headRepositoryOwner",
-            "--limit",
-            "20",
-            "--state",
-            "all",
-        ],
-    )
-    .ok()?;
-    parse_gh_pr_list(&json, &owner)
+    let mut cli = cli::Process { root };
+    match forge::at(root).ok()? {
+        Forge::GitHub => {
+            let repo = github_repo_for(root).ok()?;
+            let (owner, _) = split_github_repo(&repo).ok()?;
+            // gh rejects `owner:branch` for --head, so fork PRs are excluded by owner afterwards.
+            request_status::github_status(&mut cli, &branch, &owner)
+                .ok()
+                .flatten()
+        }
+        Forge::GitLab => request_status::gitlab_status(&mut cli, &branch)
+            .ok()
+            .flatten(),
+        Forge::Unknown => None,
+    }
 }
 
 fn github_repo_for(root: &Path) -> Result<String, String> {
@@ -1089,44 +1053,6 @@ fn split_github_repo(slug: &str) -> Result<(String, String), String> {
         return Err("GitHub did not return a repository".into());
     }
     Ok((owner.to_string(), name.to_string()))
-}
-
-fn parse_gh_pr_list(json: &str, owner: &str) -> Option<Pr> {
-    #[derive(Deserialize)]
-    struct Owner {
-        login: String,
-    }
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Row {
-        number: i64,
-        title: String,
-        url: String,
-        state: String,
-        head_repository_owner: Option<Owner>,
-    }
-    let rows: Vec<Row> = serde_json::from_str(json).ok()?;
-    let mut best: Option<Pr> = None;
-    let own = |row: &Row| {
-        row.head_repository_owner
-            .as_ref()
-            .is_none_or(|head| head.login.eq_ignore_ascii_case(owner))
-    };
-    for row in rows.into_iter().filter(own) {
-        let pr = Pr {
-            number: row.number,
-            title: row.title,
-            url: row.url,
-            state: row.state.to_lowercase(),
-        };
-        if pr.state == "open" {
-            return Some(pr);
-        }
-        if best.is_none() {
-            best = Some(pr);
-        }
-    }
-    best
 }
 
 fn gh_run(root: &Path, args: &[&str]) -> Result<String, String> {
