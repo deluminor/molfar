@@ -3,6 +3,7 @@ pub mod accounts;
 pub mod agent;
 pub mod app_access;
 pub mod app_update;
+pub mod atlassian;
 pub mod automations;
 pub mod catalog;
 pub mod checkpoint;

@@ -30,6 +30,7 @@ use std::{
 
 pub(crate) enum Event {
     Close,
+    ManageAtlassian,
     OpenSession(i64),
     StartSession { item: Box<Item>, prompt: String },
     ItemsChanged(Vec<Item>),
@@ -856,6 +857,11 @@ impl Inbox {
     }
     pub(crate) fn open_connection(&mut self, provider: String, cx: &mut Context<Self>) {
         self.connections_open = false;
+        if provider == "jira" {
+            cx.emit(Event::ManageAtlassian);
+            cx.notify();
+            return;
+        }
         self.connect_error = None;
         let status = self
             .snapshot

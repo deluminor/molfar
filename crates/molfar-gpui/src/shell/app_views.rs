@@ -408,6 +408,10 @@ impl Shell {
                 window,
                 |this, _, event: &inbox::Event, window, cx| match event {
                     inbox::Event::Close => this.close_app_view(window, cx),
+                    inbox::Event::ManageAtlassian => {
+                        this.open_settings(crate::settings::Section::Connections, window, cx);
+                    }
+
                     inbox::Event::OpenSession(id) => this.open(*id, window, cx),
                     inbox::Event::StartSession { item, prompt } => {
                         this.start_inbox_session(item.as_ref().clone(), prompt.clone(), cx);

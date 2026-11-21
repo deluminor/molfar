@@ -84,7 +84,13 @@ impl SettingsView {
                     )
                     .child(if connected { "Manage" } else { "Connect" })
                     .on_click(cx.listener(move |_, _, _, cx| {
-                        cx.emit(SettingsEvent::ManageInboxProvider(id.into()))
+                        if id == "jira" {
+                            cx.emit(SettingsEvent::Section(
+                                crate::settings::Section::Connections,
+                            ));
+                        } else {
+                            cx.emit(SettingsEvent::ManageInboxProvider(id.into()));
+                        }
                     }))
                     .into_any_element(),
                 ]
