@@ -608,8 +608,7 @@ impl Protocol {
                         }
                         if self.request.settings.plan {
                             params["sandboxPolicy"] = json!({"type":"readOnly"});
-                            if self.request.settings.operator
-                                || self.request.settings.operator_enabled
+                            if self.request.settings.operator_for_turn()
                                 || self.request.settings.orchestrator
                             {
                                 params["sandboxPolicy"]["networkAccess"] = true.into();

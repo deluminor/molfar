@@ -110,6 +110,13 @@ pub(super) fn new_session_settings(
     settings
 }
 
+pub(super) fn new_session_operator(cwd: &str, cx: &App) -> bool {
+    !cwd.starts_with("remote://")
+        && cx
+            .try_global::<crate::settings::Preferences>()
+            .is_none_or(|preferences| preferences.start_in_operator)
+}
+
 /// The user's defaults for a new session: provider, model, access, effort and
 /// account. Read on the UI thread, applied with the store in the background,
 /// so every way of starting a session (new tab, split) begins the same way.
@@ -119,6 +126,7 @@ pub(super) struct NewSessionDefaults {
     account: molfar_core::accounts::Profile,
     access: molfar_core::agent::AccessMode,
     effort: Option<String>,
+    operator: bool,
 }
 
 impl NewSessionDefaults {
@@ -132,6 +140,7 @@ impl NewSessionDefaults {
                 .unwrap_or_default(),
             access: crate::conversation::default_access(cx),
             effort: crate::conversation::preferred_effort(kind.id(), cx),
+            operator: new_session_operator(cwd, cx),
         }
     }
 
@@ -143,18 +152,9 @@ impl NewSessionDefaults {
         worktree_cwd: Option<String>,
     ) -> Result<(Session, molfar_core::agent::Settings), String> {
         let summary = store.create(self.kind.id(), cwd)?;
-        let access = self.access;
         let mut settings = self.settings(store, cwd);
         settings.worktree_cwd = worktree_cwd;
-        if settings.model.is_some()
-            || settings.effort.is_some()
-            || !settings.model_settings.is_empty()
-            || settings.worktree_cwd.is_some()
-            || settings.account.id != molfar_core::accounts::DEFAULT
-            || access != Default::default()
-        {
-            store.save_agent_settings(summary.id, &settings)?;
-        }
+        store.save_agent_settings(summary.id, &settings)?;
         Ok((summary, settings))
     }
 
@@ -174,6 +174,7 @@ impl NewSessionDefaults {
             account,
             access,
             effort,
+            operator,
         } = self;
         let mut settings = new_session_settings(
             store
@@ -182,6 +183,8 @@ impl NewSessionDefaults {
             model,
         );
         settings.access = access;
+        settings.operator = false;
+        settings.set_operator(operator);
         if let Some(effort) = effort {
             settings.model_settings.retain(|key, _| {
                 !matches!(
@@ -201,6 +204,112 @@ mod tests {
     use super::*;
     use gpui::TestAppContext;
     use molfar_core::{agent::Settings, store::Store};
+
+    #[gpui::test]
+    fn new_sessions_persist_operator_defaults_without_changing_existing_threads(
+        cx: &mut TestAppContext,
+    ) {
+        let db = Store::open_desktop(std::path::Path::new(":memory:")).unwrap();
+        let old = db.create("codex", "/project").unwrap();
+        cx.update(|cx| {
+            use crate::settings::Preferences;
+            let prefs: Preferences = serde_json::from_str("{}").unwrap();
+            assert!(prefs.start_in_operator);
+            cx.set_global(prefs);
+            let remote = NewSessionDefaults::read(
+                super::super::new_chat_choice::NewChatChoice {
+                    kind: Kind::Codex,
+                    model: None,
+                },
+                "remote://host/project",
+                cx,
+            );
+            assert!(
+                !remote
+                    .settings(&db, "remote://host/project")
+                    .operator_enabled
+            );
+            for expected in [true, false] {
+                let path = "/project";
+                let defaults = NewSessionDefaults::read(
+                    super::super::new_chat_choice::NewChatChoice {
+                        kind: Kind::Codex,
+                        model: None,
+                    },
+                    path,
+                    cx,
+                );
+                let (session, settings) = defaults.create(&db, path, None).unwrap();
+                assert_eq!(settings.operator_enabled, expected);
+                assert_eq!(
+                    db.agent_settings(session.id)
+                        .unwrap()
+                        .unwrap()
+                        .operator_enabled,
+                    expected
+                );
+                cx.set_global(Preferences {
+                    start_in_operator: false,
+                    ..Preferences::default()
+                });
+            }
+        });
+        assert!(
+            !db.agent_settings(old.id)
+                .unwrap()
+                .unwrap_or_default()
+                .operator_enabled
+        );
+    }
+
+    #[gpui::test]
+    fn desktop_tabs_and_splits_persist_the_current_operator_preference(cx: &mut TestAppContext) {
+        let (window, _, anchor) = crate::shell::tests::window(cx);
+        for enabled in [true, false] {
+            for split in [false, true] {
+                let existing = window
+                    .update(cx, |shell, window, cx| {
+                        shell.open(anchor, window, cx);
+                        cx.set_global(crate::settings::Preferences {
+                            start_in_operator: enabled,
+                            ..Default::default()
+                        });
+                        let existing = shell
+                            .session_summaries
+                            .keys()
+                            .copied()
+                            .collect::<HashSet<_>>();
+                        if split {
+                            shell.split_session(SplitDir::Right, cx);
+                        } else {
+                            shell.create(Kind::Codex, cx);
+                        }
+                        existing
+                    })
+                    .unwrap();
+                cx.run_until_parked();
+                window
+                    .update(cx, |shell, _, _| {
+                        let db = locked(&shell.store).unwrap();
+                        let added: Vec<_> = db
+                            .sessions()
+                            .unwrap()
+                            .into_iter()
+                            .filter(|session| !existing.contains(&session.id))
+                            .collect();
+                        assert_eq!(added.len(), 1, "split={split}");
+                        assert_eq!(
+                            db.agent_settings(added[0].id)
+                                .unwrap()
+                                .unwrap()
+                                .operator_enabled,
+                            enabled
+                        );
+                    })
+                    .unwrap();
+            }
+        }
+    }
 
     #[gpui::test]
     fn whole_project_sidebar_keeps_seven_today_sessions_across_worktrees_lazy(

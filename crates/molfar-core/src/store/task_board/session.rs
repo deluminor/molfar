@@ -84,7 +84,7 @@ impl Store {
         settings.new_worktree = false;
         settings.worktree_removed = false;
         settings.operator = false;
-        settings.operator_enabled = false;
+        settings.set_operator(false);
         settings.orchestrator = false;
         settings.familiar = None;
         settings.internal_message = false;

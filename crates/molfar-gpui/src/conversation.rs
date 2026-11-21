@@ -1129,7 +1129,7 @@ impl Conversation {
         let cancel = self.cancel.clone();
         // Composer modes reset after Send; the thread grant and running turn's
         // access policy must outlive that reset and edits to the next draft.
-        self.settings.operator_enabled |= self.settings.operator;
+        self.settings.operator_enabled = self.settings.operator_for_turn();
         self.app_read_only = self.settings.plan
             || self.settings.orchestrator
             || self.settings.access == AccessMode::ReadOnly;
@@ -2597,7 +2597,7 @@ impl Conversation {
                         let checked = match action.id.as_ref() {
                             "plan" => self.settings.plan,
                             "draft" => self.draft_active(cx),
-                            "operator" => self.settings.operator,
+                            "operator" => self.settings.operator_enabled,
                             "orchestrator" => self.settings.orchestrator,
                             _ => false,
                         };

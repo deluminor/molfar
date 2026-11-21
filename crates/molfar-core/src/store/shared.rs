@@ -755,19 +755,21 @@ impl Store {
         // Desktop blocks are authoritative. Native-only legacy metadata remains
         // available, but cannot override a saved desktop turn's identity/time.
         let blocks = self.shared_blocks(id)?;
-        settings.operator_enabled |= blocks.iter().any(|block| {
-            block["role"] == "user"
-                && block["draft"] != true
-                && block["internal"] != true
-                && (block["molfar"] == true
-                    || ["familiar", "molfar"].into_iter().any(|command| {
-                        crate::composer::consume_command(
-                            block["text"].as_str().unwrap_or_default(),
-                            command,
-                        )
-                        .is_some()
-                    }))
-        });
+        if !settings.operator_explicit {
+            settings.operator_enabled |= blocks.iter().any(|block| {
+                block["role"] == "user"
+                    && block["draft"] != true
+                    && block["internal"] != true
+                    && (block["molfar"] == true
+                        || ["familiar", "molfar"].into_iter().any(|command| {
+                            crate::composer::consume_command(
+                                block["text"].as_str().unwrap_or_default(),
+                                command,
+                            )
+                            .is_some()
+                        }))
+            });
+        }
         for info in settings.turns.values_mut() {
             info.completion = None;
         }

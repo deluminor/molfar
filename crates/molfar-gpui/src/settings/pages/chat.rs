@@ -79,6 +79,20 @@ impl SettingsView {
         ];
         let composer = vec![
             self.row(
+                Some("start-in-operator"),
+                false,
+                "Start new sessions in Operator mode",
+                Some("Operator gives the agent access to MOLFAR: secrets, app run, Board and sessions through the app CLI/MCP. Turn off to start sessions without it; you can still enable it per thread with /operator.".into()),
+                vec![self.toggle(
+                    "start-in-operator",
+                    "Start new sessions in Operator mode",
+                    p.start_in_operator,
+                    false,
+                    cx,
+                    |this, on, cx| this.update(cx, |p| p.start_in_operator = on),
+                )],
+            ),
+            self.row(
                 Some("follow-up"),
                 true,
                 "Follow-up behavior",

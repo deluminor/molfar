@@ -35,7 +35,7 @@ impl Conversation {
             _ => true,
         };
         if !enabled {
-            self.toggle_mode(id, cx);
+            self.set_mode(id, false, cx);
         }
     }
     pub(crate) fn clear_mode(&mut self, id: &str, cx: &mut Context<Self>) {
@@ -66,6 +66,10 @@ impl Conversation {
         cx.notify();
     }
     pub(crate) fn toggle_mode(&mut self, id: &str, cx: &mut Context<Self>) {
+        self.set_mode(id, true, cx);
+    }
+
+    fn set_mode(&mut self, id: &str, explicit: bool, cx: &mut Context<Self>) {
         if self.is_remote() && matches!(id, "operator" | "orchestrator") {
             self.status = "This mode is not available on remote projects.".into();
             cx.notify();
@@ -87,7 +91,10 @@ impl Conversation {
                 self.settings.operator = false;
             }
             "operator" => {
-                self.settings.operator = !self.settings.operator;
+                if explicit {
+                    self.settings.set_operator(!self.settings.operator_enabled);
+                }
+                self.settings.operator = !explicit || self.settings.operator_enabled;
                 self.settings.plan = false;
                 self.settings.orchestrator = false;
             }
@@ -138,6 +145,7 @@ impl Conversation {
                         self.settings.operator = false;
                     }
                     "operator" => {
+                        self.settings.set_operator(!self.is_remote());
                         self.settings.operator = true;
                         self.settings.plan = false;
                         self.settings.orchestrator = false;

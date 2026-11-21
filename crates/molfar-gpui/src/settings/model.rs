@@ -410,6 +410,12 @@ pub(crate) const INDEX: &[(&str, Section, &str, &str)] = &[
         "worked for collapse tool calls reply inline expanded history turns",
     ),
     (
+        "start-in-operator",
+        Section::Chat,
+        "Start new sessions in Operator mode",
+        "default app access secrets app run",
+    ),
+    (
         "follow-up",
         Section::Chat,
         "Follow-up behavior",

@@ -39,6 +39,20 @@ fn desktop_operator_access_restores_only_from_submitted_user_messages() {
 }
 
 #[test]
+fn explicit_operator_off_survives_legacy_transcript_markers() {
+    let store = Store::open_desktop(Path::new(":memory:")).unwrap();
+    let (id, _) = saved(
+        &store,
+        json!([{"role":"user", "text":"Legacy Operator turn", "molfar":true}]),
+    );
+    let mut settings = store.agent_settings(id).unwrap().unwrap();
+    assert!(settings.operator_enabled);
+    settings.set_operator(false);
+    store.save_agent_settings(id, &settings).unwrap();
+    assert!(!store.agent_settings(id).unwrap().unwrap().operator_enabled);
+}
+
+#[test]
 fn saved_turn_metrics_reload_with_the_same_revision() {
     // Without exact float parsing these reload one ULP away, and the next
     // save reports the conversation as changed in another window.
