@@ -35,7 +35,9 @@ impl Forge {
 
 pub(super) fn at(cwd: &Path) -> Result<Forge, String> {
     if crate::files::remote::is_remote(cwd) {
-        return Err("Forge detection is local only".into());
+        let text: String =
+            crate::files::remote::command("git_forge", serde_json::json!({ "cwd": cwd }))?;
+        return Ok(Forge::parse(&text));
     }
     let root = super::expand_home(cwd);
     let upstream = super::git_stdout(&root, &["rev-parse", "--abbrev-ref", "@{upstream}"]);
