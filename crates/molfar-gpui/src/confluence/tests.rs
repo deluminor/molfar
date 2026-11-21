@@ -18,7 +18,11 @@ use molfar_core::{
     store::Store,
 };
 
-use super::{View, render::DocumentView};
+use super::{
+    View,
+    render::{DocumentView, ReaderBlock},
+};
+use crate::markdown_model::Block;
 
 #[gpui::test]
 fn confluence_renders_reader_and_keeps_it_open_on_error(cx: &mut TestAppContext) {
@@ -80,6 +84,13 @@ fn confluence_renders_reader_and_keeps_it_open_on_error(cx: &mut TestAppContext)
                 },
             );
             view.document = Some(DocumentView::new(page, Vec::new(), "Guide"));
+            assert!(view.document.as_ref().unwrap().blocks.iter().any(|block| {
+                matches!(
+                    block,
+                    ReaderBlock::Common(Block::Heading { runs, .. })
+                        if runs.iter().any(|run| run.style.search.is_some())
+                )
+            }));
             assert!(view.tree_key("down", cx));
             cx.notify();
         })
@@ -120,4 +131,42 @@ fn confluence_renders_reader_and_keeps_it_open_on_error(cx: &mut TestAppContext)
         assert!(visual.debug_bounds("confluence-error").is_some());
         assert!(visual.debug_bounds("confluence-document").is_some());
     }
+}
+
+#[test]
+fn confluence_qa_screenshots_are_saved() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/specs/confluence-gpui/qa");
+    for name in [
+        "disconnected.png",
+        "tree.png",
+        "page.png",
+        "error.png",
+        "mention.png",
+    ] {
+        let bytes = std::fs::read(root.join(name)).unwrap_or_else(|_| panic!("missing {name}"));
+        assert!(bytes.starts_with(&[0x89, b'P', b'N', b'G', b'\r', b'\n', 0x1a, b'\n']));
+        assert!(bytes.len() > 8_000, "{name}");
+    }
+}
+
+#[test]
+fn confluence_gpui_sources_do_not_depend_on_the_tauri_connector() {
+    fn visit(dir: &std::path::Path) {
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                visit(&path);
+                continue;
+            }
+            if path.extension().is_some_and(|ext| ext == "rs") {
+                let text = std::fs::read_to_string(&path).unwrap();
+                for needle in [["src", "-tauri"].concat(), ["src", "_tauri"].concat()] {
+                    assert!(!text.contains(&needle), "{}", path.display());
+                }
+            }
+        }
+    }
+
+    visit(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/confluence"));
 }

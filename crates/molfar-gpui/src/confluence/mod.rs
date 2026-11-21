@@ -12,6 +12,9 @@ mod widgets;
 #[cfg(test)]
 mod tests;
 
+#[cfg(all(test, target_os = "macos"))]
+mod qa;
+
 use std::collections::{HashMap, HashSet};
 
 use gpui::{
@@ -170,8 +173,9 @@ impl View {
                         if refresh
                             && let Some(node) = previous.filter(|node| {
                                 node.kind == molfar_core::confluence::connector::Kind::Page
-                            }) {
-                                this.open_page(node.id, true, cx);
+                            })
+                        {
+                            this.open_page(node.id, true, cx);
                         }
                     }
                     Ok(None) => {

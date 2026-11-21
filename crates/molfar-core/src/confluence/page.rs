@@ -158,3 +158,31 @@ impl<T: Transport> Connector<T> {
         Ok((field(&row, "title"), field(&row, "spaceId")))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::confluence::document::{Document, Node};
+
+    #[test]
+    fn confluence_page_export_truncates_after_one_hundred_twenty_thousand_characters() {
+        let page = Page {
+            id: "1".into(),
+            title: "Long".into(),
+            url: "https://example.invalid/wiki/spaces/TEAM/pages/1".into(),
+            space_id: "1".into(),
+            parent_id: None,
+            parent_kind: Kind::Page,
+            version: 1,
+            updated: String::new(),
+            author: String::new(),
+            labels: Vec::new(),
+            document: Document(vec![Node::Paragraph(vec![Node::Text("a".repeat(130_000))])]),
+            images: HashMap::new(),
+        };
+        let (markdown, truncated) = page.markdown();
+        assert!(truncated);
+        assert!(markdown.ends_with("\n\n_Confluence page truncated._"));
+        assert_eq!(markdown.chars().count(), MAX_PAGE_CHARS);
+    }
+}

@@ -1161,6 +1161,37 @@ impl Render for Completion {
 }
 
 #[cfg(test)]
+impl Completion {
+    pub(crate) fn preview(
+        input: gpui::Entity<input::Input>,
+        cwd: String,
+        cx: &mut gpui::Context<Self>,
+    ) -> Self {
+        let mut completion = Self::new(input, cwd, cx);
+        completion.loaded = Some(std::time::Instant::now());
+        completion.inline_field = true;
+        completion
+    }
+
+    pub(crate) fn show_confluence_match(
+        &mut self,
+        node: molfar_core::confluence::connector::Node,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        window.focus(&self.input.focus_handle(cx), cx);
+        self.input.update(cx, |input, cx| {
+            input.set_text("@confluence/guide".into(), cx)
+        });
+        self.sync(cx);
+        self.generation = self.generation.wrapping_add(1);
+        self.confluence = vec![node];
+        self.rank();
+        cx.notify();
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use gpui::{TestAppContext, WindowHandle};
@@ -1186,36 +1217,52 @@ mod tests {
         window
     }
     #[gpui::test]
-    fn confluence_completion_inserts_page_token_and_paste_keeps_space_origin(cx: &mut TestAppContext) {
+    fn confluence_completion_inserts_page_token_and_paste_keeps_space_origin(
+        cx: &mut TestAppContext,
+    ) {
         use molfar_core::confluence::connector::{Kind, Node};
 
         let window = window(cx);
         let visual = &mut gpui::VisualTestContext::from_window(window.into(), cx);
-        window.update(visual, |view, _, cx| {
-            view.input.update(cx, |input, cx| input.set_text("@confluence/guide".into(), cx));
-        }).unwrap();
+        window
+            .update(visual, |view, _, cx| {
+                view.input.update(cx, |input, cx| {
+                    input.set_text("@confluence/guide".into(), cx)
+                });
+            })
+            .unwrap();
         visual.run_until_parked();
-        window.update(visual, |view, window, cx| {
-            view.confluence = vec![Node {
-                id: "42".into(),
-                title: "Guide".into(),
-                kind: Kind::Page,
-                space_key: "TEAM".into(),
-                url: "https://example.invalid/wiki".into(),
-            }];
-            view.rank();
-            view.pick(0, window, cx);
-            assert_eq!(view.input.read(cx).content.as_ref(), "@confluence/page/42 ");
-            view.input.update(cx, |input, cx| input.set_text(String::new(), cx));
-            cx.write_to_clipboard(gpui::ClipboardItem::new_string("molfar://confluence/other.invalid/TEAM".into()));
-            window.dispatch_action(Box::new(crate::input::Paste), cx);
-        }).unwrap();
+        window
+            .update(visual, |view, window, cx| {
+                view.confluence = vec![Node {
+                    id: "42".into(),
+                    title: "Guide".into(),
+                    kind: Kind::Page,
+                    space_key: "TEAM".into(),
+                    url: "https://example.invalid/wiki".into(),
+                }];
+                view.rank();
+                view.pick(0, window, cx);
+                assert_eq!(view.input.read(cx).content.as_ref(), "@confluence/page/42 ");
+                view.input
+                    .update(cx, |input, cx| input.set_text(String::new(), cx));
+                cx.write_to_clipboard(gpui::ClipboardItem::new_string(
+                    "molfar://confluence/other.invalid/TEAM".into(),
+                ));
+                window.dispatch_action(Box::new(crate::input::Paste), cx);
+            })
+            .unwrap();
         visual.run_until_parked();
-        window.update(visual, |view, _, cx| {
-            let text = &view.input.read(cx).content;
-            assert_eq!(text.as_ref(), "@confluence/space/TEAM");
-            assert_eq!(view.prepare_prompt(text, cx), "molfar://confluence/other.invalid/TEAM");
-        }).unwrap();
+        window
+            .update(visual, |view, _, cx| {
+                let text = &view.input.read(cx).content;
+                assert_eq!(text.as_ref(), "@confluence/space/TEAM");
+                assert_eq!(
+                    view.prepare_prompt(text, cx),
+                    "molfar://confluence/other.invalid/TEAM"
+                );
+            })
+            .unwrap();
     }
 
     #[gpui::test]

@@ -57,4 +57,19 @@ mod tests {
             include_str!("fixtures/rich.md").trim_end()
         );
     }
+
+    #[test]
+    fn confluence_empty_bodies_export_the_empty_page_paragraph() {
+        let url = "https://example.invalid/page";
+        let expected = "_This page is empty._";
+        assert_eq!(markdown::export(&super::Document::default(), url), expected);
+        assert_eq!(
+            markdown::export(&adf::parse(r#"{"type":"doc","content":[]}"#).unwrap(), url),
+            expected
+        );
+        assert_eq!(
+            markdown::export(&storage::parse("").unwrap(), url),
+            expected
+        );
+    }
 }

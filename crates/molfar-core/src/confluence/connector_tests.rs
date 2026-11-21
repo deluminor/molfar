@@ -121,4 +121,26 @@ fn confluence_pages_cache_versions_and_open_offline() {
     assert!(index.contains("Reference"));
     assert!(index.chars().count() <= 8_000);
     assert_eq!(super::index::excerpt(&"𐍈".repeat(500)).chars().count(), 160);
+    assert_cache_has_no_secret(dir.path());
+}
+
+fn assert_cache_has_no_secret(dir: &std::path::Path) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            assert_cache_has_no_secret(&path);
+            continue;
+        }
+        let text = String::from_utf8_lossy(&std::fs::read(&path).unwrap()).to_string();
+        assert!(
+            !text.contains("fixture-auth"),
+            "{} contains the token",
+            path.display()
+        );
+        assert!(
+            !text.to_ascii_lowercase().contains("authorization"),
+            "{} contains an authorization header",
+            path.display()
+        );
+    }
 }
