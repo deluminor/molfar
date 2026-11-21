@@ -285,6 +285,15 @@ fn page_value(page: Page, limit: usize) -> Value {
     })
 }
 
+fn page_text(text: &str, offset: usize) -> Value {
+    let start = offset.min(text.len());
+    let end = (start + 6000).min(text.len());
+    json!({
+        "text": &text[start..end],
+        "nextCharOffset": (end < text.len()).then_some(end),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -370,13 +379,4 @@ mod tests {
         assert!(!audit.contains(marker));
         assert!(audit.contains("TB-1"));
     }
-}
-
-fn page_text(text: &str, offset: usize) -> Value {
-    let start = offset.min(text.len());
-    let end = (start + 6000).min(text.len());
-    json!({
-        "text": &text[start..end],
-        "nextCharOffset": (end < text.len()).then_some(end),
-    })
 }

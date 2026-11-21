@@ -348,6 +348,7 @@ impl Render for JiraReader {
                     .child(chip("Assign to me", cx, |this, cx| {
                         if let Some(key) = this.issue.as_ref().map(|issue| issue.key.clone()) {
                             this.pending = Some(Pending::Assign { key });
+                            cx.notify();
                         }
                     }))
                     .child(chip(

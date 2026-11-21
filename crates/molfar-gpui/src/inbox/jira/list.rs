@@ -38,15 +38,18 @@ impl JiraList {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn show_model(&mut self, model: ListModel) {
         self.model = model;
         self.loading = false;
     }
 
+    #[cfg(test)]
     pub(crate) fn model(&self) -> &ListModel {
         &self.model
     }
 
+    #[cfg(test)]
     pub(crate) fn reject_jql(&mut self, message: String) {
         jira::keep_rows_on_invalid(&mut self.model, message);
     }
@@ -361,6 +364,20 @@ impl JiraList {
     }
 }
 
+fn filter_chip(
+    label: impl Into<SharedString>,
+    cx: &mut Context<JiraList>,
+    action: impl Fn(&mut JiraList, &mut Context<JiraList>) + 'static,
+) -> impl IntoElement {
+    let label = label.into();
+    div()
+        .id(SharedString::from(format!("jira-filter-{label}")))
+        .px_2()
+        .text_size(px(12.))
+        .child(label)
+        .on_click(cx.listener(move |this, _, _, cx| action(this, cx)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -399,18 +416,4 @@ mod tests {
             });
         });
     }
-}
-
-fn filter_chip(
-    label: impl Into<SharedString>,
-    cx: &mut Context<JiraList>,
-    action: impl Fn(&mut JiraList, &mut Context<JiraList>) + 'static,
-) -> impl IntoElement {
-    let label = label.into();
-    div()
-        .id(SharedString::from(format!("jira-filter-{label}")))
-        .px_2()
-        .text_size(px(12.))
-        .child(label)
-        .on_click(cx.listener(move |this, _, _, cx| action(this, cx)))
 }

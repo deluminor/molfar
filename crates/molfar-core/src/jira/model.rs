@@ -6,16 +6,11 @@ pub const PAGE_SIZE: usize = 50;
 pub const ROW_CAP: usize = 500;
 pub const JQL_LIMIT: usize = 2000;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GroupBy {
+    #[default]
     Epic,
     Status,
-}
-
-impl Default for GroupBy {
-    fn default() -> Self {
-        Self::Epic
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

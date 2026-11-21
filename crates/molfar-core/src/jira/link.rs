@@ -78,7 +78,7 @@ pub fn issue_markdown(issue: &Issue, comments: bool, link: &str) -> String {
         key = issue.key,
         summary = issue.summary,
         status = issue.status,
-        description = &issue.description
+        description = issue.description
     );
     body.truncate(ISSUE_CAP);
     if comments {
