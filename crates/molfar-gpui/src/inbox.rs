@@ -55,6 +55,7 @@ pub(crate) struct Inbox {
     sessions: Vec<Session>,
     focus: FocusHandle,
     jira_list: Entity<jira::JiraList>,
+    jira_reader: Entity<jira::JiraReader>,
     search: Entity<Input>,
     comment: Entity<Input>,
     summary_scroll: ListState,
@@ -249,6 +250,15 @@ impl Inbox {
             .detach();
         }
         let jira_dir = data_dir.clone();
+        let jira_list = cx.new(|cx| jira::JiraList::new(jira_dir.clone(), cx));
+        let jira_reader = cx.new(|_| jira::JiraReader::new(jira_dir));
+        cx.subscribe(&jira_list, |this, _, event, cx| {
+            let jira::ListEvent::Open(key) = event;
+            let key = key.clone();
+            this.jira_reader
+                .update(cx, |reader, cx| reader.open(key, cx));
+        })
+        .detach();
         Self {
             service: Service {
                 data_dir,
@@ -261,7 +271,8 @@ impl Inbox {
             snapshot: Snapshot::default(),
             sessions: vec![],
             focus: cx.focus_handle(),
-            jira_list: cx.new(|cx| jira::JiraList::new(jira_dir, cx)),
+            jira_list,
+            jira_reader,
             search,
             comment,
             summary_scroll: ListState::new(0, ListAlignment::Top, px(200.)),

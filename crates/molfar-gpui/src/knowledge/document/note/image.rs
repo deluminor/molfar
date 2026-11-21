@@ -1,6 +1,6 @@
 //! Vault images inside a note: fitted to the panel, framed, and opened in
 //! the system viewer on click.
-use super::{super::super::Knowledge, Walk};
+use super::Walk;
 use crate::theme::*;
 use gpui::{AnyElement, Context, ObjectFit, Role, div, img, prelude::*, px};
 use std::path::Path;
@@ -24,13 +24,13 @@ fn missing(alt: &str) -> AnyElement {
         .into_any_element()
 }
 
-pub(super) fn image(
+pub(super) fn image<T: 'static>(
     path: Option<&Path>,
     alt: &str,
     width: Option<f32>,
     first: bool,
     walk: &mut Walk,
-    cx: &mut Context<Knowledge>,
+    cx: &mut Context<T>,
 ) -> AnyElement {
     let id = walk.id("image");
     let body = match path {

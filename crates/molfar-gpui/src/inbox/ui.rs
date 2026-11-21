@@ -696,6 +696,12 @@ impl Inbox {
     }
 
     fn detail_view(&self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+        if self.state.source == "jira" {
+            return div()
+                .size_full()
+                .child(self.jira_reader.clone())
+                .into_any_element();
+        }
         let Some(item) = self.item() else {
             return div()
                 .size_full()
