@@ -187,6 +187,9 @@ impl Shell {
                         }
                         settings = saved;
                     }
+                    // The reservation wins over a later /operator or account
+                    // switch. The reported flag is this same value.
+                    settings.set_operator(operator);
                     true
                 }
                 PROMPT::Queued | PROMPT::Delivered => {
@@ -200,7 +203,7 @@ impl Shell {
         });
         cx.spawn(async move |this, cx| {
             let result = work.await.and_then(|(summary, settings, fresh, launch)| {
-                let value = json!({"sessionId":summary.id,"project":project,"harness":summary.provider,"model":settings.model,"accepted":true,"operator":operator});
+                let value = json!({"sessionId":summary.id,"project":project,"harness":summary.provider,"model":settings.model,"accepted":true,"operator":settings.operator_enabled});
                 this.update(cx, |this, cx| {
                     let id = summary.id;
                     if fresh {

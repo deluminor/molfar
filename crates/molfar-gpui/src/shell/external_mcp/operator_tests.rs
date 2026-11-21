@@ -115,6 +115,43 @@ fn external_operator_is_opt_in_and_receipts_keep_the_launch_flag(cx: &mut TestAp
 }
 
 #[gpui::test]
+fn a_drafted_operator_retry_relaunches_the_reserved_flag(cx: &mut TestAppContext) {
+    let fixture = fixture();
+    let args = json!({
+        "project": fixture.granted,
+        "prompt": "Fixture",
+        "requestId": "draft-retry",
+        "operator": true
+    });
+    let session = reserve_session(&fixture, &args);
+    let _provider = crate::runtime::test_provider::Registration::new(
+        &fixture.store,
+        session,
+        fixture.root.join("absent-provider"),
+    );
+    {
+        let db = locked(&fixture.store).unwrap();
+        let mut settings = db.agent_settings(session).unwrap().unwrap_or_default();
+        settings.set_operator(false);
+        db.save_agent_settings(session, &settings).unwrap();
+        db.prepare_app_prompt(session, "draft-retry", "Fixture")
+            .unwrap();
+    }
+    let window = window(&fixture, cx);
+    let mut privileged = principal(&fixture);
+    privileged.grants.push(GRANT::SessionsOperator);
+
+    let result = call(window, &privileged, START, args, cx).unwrap();
+
+    assert_eq!(result["operator"], true);
+    window
+        .update(cx, |shell, _, cx| {
+            assert!(shell.sessions[&session].read(cx).settings.operator_enabled);
+        })
+        .unwrap();
+}
+
+#[gpui::test]
 fn a_pending_operator_reservation_requires_the_grant_after_restart(cx: &mut TestAppContext) {
     let fixture = fixture();
     let args = json!({"project":fixture.granted,"prompt":"Fixture","requestId":"recover"});
