@@ -3,6 +3,7 @@
 //! `git_commit_file_diff_for` and `git_stage_contents_for`.
 use super::*;
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 use std::{
     collections::{HashMap, HashSet},
     io::Write,

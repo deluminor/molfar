@@ -88,6 +88,7 @@ fn host_arguments(command: &str, args: Value) -> Result<(String, Value), String>
             | "git_sync"
             | "git_pr_status"
             | "git_pr_create"
+            | "git_forge"
             | "git_history"
             | "git_commit_files"
             | "git_commit_file_diff"

@@ -63,6 +63,15 @@ fn job_ids_come_only_from_actions_job_links() {
     );
     assert_eq!(job_id("https://vercel.com/x"), None);
     assert_eq!(job_id("https://github.com/o/r/job/abc"), None);
+    assert_eq!(
+        job_id("https://gitlab.com/group/sub/r/-/jobs/22"),
+        Some("22")
+    );
+    assert_eq!(
+        job_id("https://gitlab.com/group/sub/r/-/jobs/22?trace=1"),
+        Some("22")
+    );
+    assert_eq!(job_id("https://gitlab.com/g/p/-/pipelines/9"), None);
 }
 
 #[test]

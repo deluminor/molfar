@@ -224,6 +224,8 @@ pub(crate) struct Changes {
     pr: Option<Pr>,
     pr_branch: Option<String>,
     pr_request: u64,
+    forge: scm::Forge,
+    forge_request: u64,
     generate_cancel: Option<Arc<AtomicBool>>,
     staged_open: bool,
     changes_open: bool,
@@ -262,6 +264,8 @@ impl Changes {
             pr: None,
             pr_branch: None,
             pr_request: 0,
+            forge: scm::Forge::Unknown,
+            forge_request: 0,
             generate_cancel: None,
             staged_open: true,
             changes_open: true,
@@ -316,6 +320,7 @@ impl Changes {
             self.selected = None;
             self.message
                 .update(cx, |m, cx| m.set_text(String::new(), cx));
+            self.load_forge(cx);
         }
         let index = self.git.read(cx).index.clone();
         if let Some((branch, head)) = &self.amend
@@ -360,6 +365,31 @@ impl Changes {
             });
         })
         .detach();
+    }
+    fn load_forge(&mut self, cx: &mut Context<Self>) {
+        self.forge_request += 1;
+        let request = self.forge_request;
+        if self.cwd.is_empty() || self.cwd == "~" {
+            self.forge = scm::Forge::Unknown;
+            return;
+        }
+        let path = PathBuf::from(&self.cwd);
+        let work = cx
+            .background_executor()
+            .spawn(async move { scm::forge(&path).unwrap_or(scm::Forge::Unknown) });
+        cx.spawn(async move |this, cx| {
+            let forge = work.await;
+            let _ = this.update(cx, |this, cx| {
+                if this.forge_request == request {
+                    this.forge = forge;
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
+    }
+    fn gitlab(&self) -> bool {
+        self.forge == scm::Forge::GitLab
     }
     fn staged_unstaged(index: Option<&DiffIndex>) -> (Vec<usize>, Vec<usize>) {
         let files = index.map_or(&[][..], |i| &i.files[..]);
@@ -740,7 +770,7 @@ impl Changes {
         {
             questions.push((
                 if create_pr {
-                    format!("Create a pull request from default branch \"{branch}\"?")
+                    default_request_question(self.gitlab(), &branch)
                 } else {
                     format!("Push to default branch \"{branch}\"?")
                 },
@@ -842,13 +872,14 @@ impl Changes {
     fn create_pr(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let index = self.index(cx);
         let ahead = index.as_ref().is_some_and(|i| i.ahead > 0);
+        let gitlab = self.gitlab();
         let question = Self::on_default(index.as_ref()).then(|| {
-            format!(
-                "Create a pull request from default branch \"{}\"?",
-                index
+            default_request_question(
+                gitlab,
+                &index
                     .as_ref()
                     .and_then(|i| i.branch.clone())
-                    .unwrap_or_default()
+                    .unwrap_or_default(),
             )
         });
         let harness = self.text_harness(cx);
@@ -907,7 +938,7 @@ impl Changes {
                     MenuAction::new("push", "Commit & Push")
                         .disabled(!can_push)
                         .into(),
-                    MenuAction::new("push-pr", "Commit, Push & Create PR")
+                    MenuAction::new("push-pr", push_create_label(self.gitlab()))
                         .disabled(!can_push_pr)
                         .into(),
                     MenuItem::Separator,
@@ -1342,12 +1373,7 @@ impl Changes {
                 )
             })
             .when(show_create, |d| {
-                let title = index
-                    .default_branch
-                    .as_ref()
-                    .map_or("Create pull request".to_owned(), |b| {
-                        format!("Create a pull request into {b}")
-                    });
+                let title = create_title(self.gitlab(), index.default_branch.as_deref());
                 let enabled = can_create_pr && !busy;
                 d.child(
                     button("create-pr", title, enabled)
@@ -1356,7 +1382,7 @@ impl Changes {
                         } else {
                             glyph("git-pull-request")
                         })
-                        .child("Create PR")
+                        .child(create_short(self.gitlab()))
                         .when(enabled, |d| {
                             d.on_click(
                                 cx.listener(|this, _, window, cx| this.create_pr(window, cx)),
@@ -1371,21 +1397,18 @@ impl Changes {
                     url: String::new(),
                     state: String::new(),
                 });
-                let title = if pr.title.is_empty() {
-                    "View pull request".to_owned()
-                } else {
-                    format!("View PR #{}: {}", pr.number, pr.title)
-                };
+                let title = view_title(self.gitlab(), &pr);
                 let enabled = can_view_pr && !busy;
                 let url = pr.url.clone();
                 d.child(
                     button("view-pr", title, enabled)
                         .child(glyph("external-link"))
-                        .child(div().min_w_0().truncate().child(if pr.number > 0 {
-                            format!("View PR #{}", pr.number)
-                        } else {
-                            "View PR".into()
-                        }))
+                        .child(
+                            div()
+                                .min_w_0()
+                                .truncate()
+                                .child(view_button(self.gitlab(), pr.number)),
+                        )
                         .when(enabled, |d| d.on_click(move |_, _, cx| cx.open_url(&url))),
                 )
             })
@@ -1991,9 +2014,103 @@ impl Render for Changes {
     }
 }
 
+fn create_title(gitlab: bool, branch: Option<&str>) -> String {
+    match (gitlab, branch) {
+        (true, Some(branch)) => format!("Create a merge request into {branch}"),
+        (true, None) => "Create merge request".into(),
+        (false, Some(branch)) => format!("Create a pull request into {branch}"),
+        (false, None) => "Create pull request".into(),
+    }
+}
+
+fn create_short(gitlab: bool) -> &'static str {
+    if gitlab { "Create MR" } else { "Create PR" }
+}
+
+fn push_create_label(gitlab: bool) -> &'static str {
+    if gitlab {
+        "Commit, Push & Create MR"
+    } else {
+        "Commit, Push & Create PR"
+    }
+}
+
+fn default_request_question(gitlab: bool, branch: &str) -> String {
+    if gitlab {
+        format!("Create a merge request from default branch \"{branch}\"?")
+    } else {
+        format!("Create a pull request from default branch \"{branch}\"?")
+    }
+}
+
+fn view_title(gitlab: bool, pr: &Pr) -> String {
+    if pr.title.is_empty() {
+        if gitlab {
+            "View merge request".into()
+        } else {
+            "View pull request".into()
+        }
+    } else if gitlab {
+        format!("View MR #{}: {}", pr.number, pr.title)
+    } else {
+        format!("View PR #{}: {}", pr.number, pr.title)
+    }
+}
+
+fn view_button(gitlab: bool, number: i64) -> String {
+    let short = if gitlab { "MR" } else { "PR" };
+    if number > 0 {
+        format!("View {short} #{number}")
+    } else {
+        format!("View {short}")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn gitlab_copy_names_a_merge_request() {
+        assert_eq!(create_title(true, None), "Create merge request");
+        assert_eq!(
+            create_title(true, Some("main")),
+            "Create a merge request into main"
+        );
+        assert_eq!(create_short(true), "Create MR");
+        assert_eq!(push_create_label(true), "Commit, Push & Create MR");
+        assert_eq!(
+            default_request_question(true, "main"),
+            "Create a merge request from default branch \"main\"?"
+        );
+        assert_eq!(
+            view_title(
+                true,
+                &Pr {
+                    number: 4,
+                    title: "Ship".into(),
+                    url: String::new(),
+                    state: "open".into(),
+                }
+            ),
+            "View MR #4: Ship"
+        );
+        assert_eq!(view_button(true, 4), "View MR #4");
+        assert_eq!(
+            view_title(
+                true,
+                &Pr {
+                    number: 0,
+                    title: String::new(),
+                    url: String::new(),
+                    state: String::new(),
+                }
+            ),
+            "View merge request"
+        );
+        assert_eq!(create_title(false, None), "Create pull request");
+        assert_eq!(create_short(false), "Create PR");
+    }
+
     #[gpui::test]
     fn enabling_an_enabled_changes_panel_does_not_reload(cx: &mut gpui::TestAppContext) {
         let window = cx.update(|cx| {
