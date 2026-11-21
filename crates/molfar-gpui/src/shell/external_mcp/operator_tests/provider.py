@@ -61,11 +61,14 @@ for line in sys.stdin:
     elif message.get("id") == 3:
         # TestAppContext runs the provider synchronously. The app client can wait
         # for shell work only after the fixture transport returns control.
+        # The test peer has its own bounded socket lifetime even if the provider
+        # is retired as soon as it completes the turn.
         subprocess.Popen(
             [sys.executable, __file__, "--app-calls"],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            start_new_session=True,
         )
         publish({"method": "turn/completed", "params": {"turn": {"status": "completed"}}})
         break
