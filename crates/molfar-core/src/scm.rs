@@ -1,5 +1,6 @@
 //! Source control for the Changes and History panes, ported from
 //! src-tauri/src/fs.rs. Synchronous: callers run these on a background executor.
+mod checks;
 mod cli;
 mod forge;
 mod pull_request;
@@ -378,10 +379,7 @@ pub fn pr_check_rollup(cwd: &Path, url: &str) -> Result<String, String> {
     if remote_workspace::is_remote(cwd) {
         return Err("CI status is local only".into());
     }
-    gh_run(
-        &expand_home(cwd),
-        &["pr", "view", url, "--json", "statusCheckRollup"],
-    )
+    checks::rollup(&expand_home(cwd), url)
 }
 
 /// The failed steps' log of one GitHub Actions job.
@@ -389,10 +387,7 @@ pub fn job_failed_log(cwd: &Path, job: &str) -> Result<String, String> {
     if remote_workspace::is_remote(cwd) {
         return Err("CI logs are local only".into());
     }
-    gh_run(
-        &expand_home(cwd),
-        &["run", "view", "--job", job, "--log-failed"],
-    )
+    checks::failed_log(&expand_home(cwd), job)
 }
 
 /// The working copy's GitHub `owner/name`, via `gh` (Tauri's git_github_repo).

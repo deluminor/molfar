@@ -141,7 +141,7 @@ fn url_from(stdout: &str, empty: &str) -> Result<String, String> {
         })
 }
 
-fn fail(forge: Forge, detail: String) -> String {
+pub(super) fn fail(forge: Forge, detail: String) -> String {
     if forge != Forge::GitLab {
         return detail;
     }
