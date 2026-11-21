@@ -821,6 +821,7 @@ impl Conversation {
                     })
                     .children(self.usage_notice(true, cx))
                     .children(self.auth_notice(cx))
+                    .children(self.render_secret_notice(cx))
                     .child(self.approval_shelf(window, cx))
                     .child({
                         let composer = div()

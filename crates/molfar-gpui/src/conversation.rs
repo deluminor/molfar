@@ -205,7 +205,9 @@ pub(crate) struct Conversation {
         std::collections::VecDeque<(Entity<crate::questions::QuestionCard>, Vec<Subscription>)>,
     question_overlay: crate::questions::Overlay,
     secret_card: Option<Entity<secret_request::SecretRequestCard>>,
-    secret_notices: Vec<String>,
+    secret_status: Option<molfar_core::secrets::request::SecretRequest>,
+    dismissed_secret_status: Option<String>,
+    secret_notice_generation: u64,
     controls: Option<std::sync::mpsc::Sender<Control>>,
     branch: Option<String>,
     git: Option<molfar_core::git::Snapshot>,
@@ -664,7 +666,9 @@ impl Conversation {
             approval_ui: Default::default(),
             questions: Default::default(),
             secret_card: None,
-            secret_notices: Vec::new(),
+            secret_status: None,
+            dismissed_secret_status: None,
+            secret_notice_generation: 0,
             question_overlay: Default::default(),
             controls: None,
             branch: git.as_ref().and_then(|s| s.current.clone()),
@@ -2876,6 +2880,7 @@ impl Conversation {
             .child(self.background_shelf(window, cx))
             .child(self.message_queue(window, cx))
             .children(if self.is_remote() { None } else { self.auth_notice(cx) })
+            .children(self.render_secret_notice(cx))
             .when(self.settings.worktree_removed,|d|d.child(div().mb_2().p_3().rounded_lg().border_1().border_color(content(0.1)).flex().items_center().gap_3().text_size(px(12.)).child(div().flex_1().child("Worktree deleted. Select a branch or worktree to continue this conversation.")).child(tool_pill("reattach-worktree","Select worktree").child("Select worktree").on_click(cx.listener(|this,_,window,cx|this.open_git(GitMode::Worktree,window,cx))))))
             .when_some(self.settings.handoff.clone(), |d, handoff| {
                 d.child(
@@ -3944,8 +3949,6 @@ impl Render for Conversation {
                             .flex_col()
                             .px(px(10.))
                             .pb(px(6.))
-                            .children(self.render_secret_notices())
-                            .children(self.secret_card.clone())
                             .child({
                                 let composer = self
                                     .composer_motion

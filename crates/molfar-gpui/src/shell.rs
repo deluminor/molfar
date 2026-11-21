@@ -4204,7 +4204,7 @@ impl Shell {
             return;
         }
         if let Some(view) = self.workspace.active.and_then(|id| self.sessions.get(&id)) {
-            let focus = view.read(cx).input.read(cx).focus_handle(cx);
+            let focus = view.read(cx).composer_focus(cx);
             window.focus(&focus, cx);
         } else {
             window.focus(&self.focus, cx);
@@ -4452,7 +4452,7 @@ impl Shell {
             .and_then(|pane| self.sessions.get(&self.workspace.session_for_pane(pane)))
         {
             self.review_focused = false;
-            window.focus(&view.read(cx).input.focus_handle(cx), cx);
+            window.focus(&view.read(cx).composer_focus(cx), cx);
         }
     }
 
@@ -8599,7 +8599,7 @@ impl Render for Shell {
             && let Some(view) = self.sessions.get(&id)
         {
             self.review_focused = false;
-            window.focus(&view.read(cx).input.focus_handle(cx), cx);
+            window.focus(&view.read(cx).composer_focus(cx), cx);
         }
         if let Some(m) = &self.familiars {
             m.read(cx).hide_html(cx);

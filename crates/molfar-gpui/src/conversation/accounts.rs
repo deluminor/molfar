@@ -40,35 +40,27 @@ impl Conversation {
         let id = self.settings.account.id.clone();
         Some(
             div()
-                .mx_2()
-                .mb_2()
-                .p_3()
-                .rounded_lg()
-                .bg(content(0.04))
-                .flex()
-                .items_center()
-                .gap_2()
-                .child(provider_icon(kind.id(), 20.))
+                .px(px(8.))
                 .child(
-                    div()
-                        .flex_1()
-                        .child(format!("Sign in to {} to continue", kind.label())),
-                )
-                .child(
-                    crate::settings::widgets::secondary_button(
-                        "conversation-sign-in",
-                        "Sign in",
-                        true,
-                        false,
-                    )
-                    .child("Sign in")
-                    .on_click(cx.listener(move |_, _, _, cx| {
-                        if let Some(center) = crate::accounts::get(cx) {
-                            center.update(cx, |center, cx| {
-                                center.begin_auth(kind, &id, action, None, cx)
-                            });
-                        }
-                    })),
+                    composer_banner("conversation-auth-banner", AMBER_400)
+                        .h(px(32.))
+                        .child(provider_icon(kind.id(), 20.))
+                        .child(
+                            div()
+                                .flex_1()
+                                .child(format!("Sign in to {} to continue", kind.label())),
+                        )
+                        .child(
+                            usage_button("conversation-sign-in", "Sign in", true, false, false)
+                                .child("Sign in")
+                                .on_click(cx.listener(move |_, _, _, cx| {
+                                    if let Some(center) = crate::accounts::get(cx) {
+                                        center.update(cx, |center, cx| {
+                                            center.begin_auth(kind, &id, action, None, cx)
+                                        });
+                                    }
+                                })),
+                        ),
                 )
                 .into_any_element(),
         )
@@ -541,19 +533,8 @@ impl Conversation {
             notice
                 .px(px(8.))
                 .child(
-                    div()
-                        .id("usage-limit-banner")
-                        .debug_selector(|| "usage-limit-banner".into())
+                    composer_banner("usage-limit-banner", AMBER_400)
                         .h(px(32.))
-                        .flex()
-                        .items_center()
-                        .gap(px(8.))
-                        .rounded_t(px(10.))
-                        .border_1()
-                        .border_b_0()
-                        .border_color(tint(AMBER_400, 0.25))
-                        .bg(tint(AMBER_400, 0.1))
-                        .px(px(8.))
                         .child(heading)
                         .child(
                             div()
@@ -569,7 +550,23 @@ impl Conversation {
     }
 }
 
-fn usage_button(
+pub(super) fn composer_banner(id: &'static str, accent: u32) -> gpui::Stateful<gpui::Div> {
+    div()
+        .id(id)
+        .debug_selector(move || id.into())
+        .flex()
+        .items_center()
+        .gap(px(8.))
+        .rounded_t(px(10.))
+        .border_1()
+        .border_b_0()
+        .border_color(tint(accent, 0.25))
+        .bg(tint(accent, 0.1))
+        .px(px(8.))
+        .text_size(px(12.))
+}
+
+pub(super) fn usage_button(
     id: &'static str,
     label: &'static str,
     primary: bool,

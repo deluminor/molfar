@@ -174,7 +174,7 @@ fn read_only_can_list_and_cannot_request(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn failed_secret_request_save_can_retry_without_retyping(cx: &mut TestAppContext) {
+fn failed_secret_request_save_clears_the_value_and_can_retry(cx: &mut TestAppContext) {
     let (window, caller) = fixture(cx);
     let reply = request(window, caller, "retry-save", cx);
     let card = window
@@ -195,21 +195,19 @@ fn failed_secret_request_save_can_retry_without_retyping(cx: &mut TestAppContext
         .update(cx, |shell, _, cx| {
             let form = card.read(cx);
             assert!(
-                !form.input_is_empty(cx),
-                "failed save must preserve typed input"
+                form.input_is_empty(cx),
+                "a failed write must leave no plaintext in the field"
             );
             assert_eq!(
                 form.error.as_deref(),
-                Some("Could not read or update secret metadata.")
+                Some("Could not save secret. Enter the value to retry.")
             );
             assert!(!form.error.as_deref().unwrap().contains(VALUE));
             locked(&shell.store)
                 .unwrap()
                 .save_setting("secrets.index", "[]")
                 .unwrap();
-            card.update(cx, |_, cx| {
-                cx.emit(crate::conversation::secret_request::Answer::Save)
-            });
+            card.update(cx, |card, cx| card.enter_value(VALUE.into(), cx));
         })
         .unwrap();
     cx.run_until_parked();

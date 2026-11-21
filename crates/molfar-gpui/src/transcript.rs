@@ -790,6 +790,7 @@ pub(crate) struct TranscriptView {
     /// The conversation's git action pill holds the column's left end, so the
     /// jump button moves from the center to the right end.
     jump_beside_pill: bool,
+    secret_outcomes: Vec<molfar_core::secrets::request::SecretRequest>,
     jump_anchor: crate::popover::AnchorSlot,
     scroll_bound: bool,
     fold_targets: HashMap<usize, Option<usize>>,
@@ -2573,6 +2574,7 @@ impl TranscriptView {
             commit_files: HashMap::new(),
             copied_commit: None,
             jump_beside_pill: false,
+            secret_outcomes: Vec::new(),
             jump_anchor: Default::default(),
             scroll_bound: false,
             fold_targets: HashMap::new(),
@@ -5762,12 +5764,42 @@ impl TranscriptView {
                 remaining -= f32::from(self.measure_row_height(ix, window, cx));
             }
         }
-        px(BOTTOM_INSET + remaining.max(0.))
+        px(BOTTOM_INSET + remaining.max(28. * self.secret_outcomes.len() as f32))
+    }
+
+    pub(crate) fn set_secret_outcomes(
+        &mut self,
+        outcomes: Vec<molfar_core::secrets::request::SecretRequest>,
+        cx: &mut Context<Self>,
+    ) {
+        if self.secret_outcomes != outcomes {
+            self.secret_outcomes = outcomes;
+            self.list
+                .remeasure_items(self.footer_ix()..self.footer_ix() + 1);
+            cx.notify();
+        }
     }
     fn footer(&mut self, window: &mut Window, cx: &mut Context<Self>) -> gpui::AnyElement {
         div()
             .h(self.footer_height(window, cx))
             .w_full()
+            .children(self.secret_outcomes.iter().map(|request| {
+                div()
+                    .id(gpui::SharedString::from(format!(
+                        "secret-outcome-{}",
+                        request.request_id
+                    )))
+                    .flex()
+                    .items_center()
+                    .gap_2()
+                    .h(px(28.))
+                    .px_2()
+                    .text_size(px(12.))
+                    .text_color(content(0.65))
+                    .role(gpui::Role::Status)
+                    .child(icon("key", 14.))
+                    .child(crate::conversation::secret_request::outcome_text(request))
+            }))
             .into_any_element()
     }
     fn update_jump(&mut self, cx: &mut Context<Self>) {
