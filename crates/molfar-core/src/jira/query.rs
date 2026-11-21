@@ -39,6 +39,25 @@ pub fn favourites(client: &Client) -> Result<Vec<Filter>, Error> {
         .collect())
 }
 
+pub fn mention_jql(query: &str) -> Result<String, Error> {
+    let safe: String = query
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control() && *c != '"' && *c != '\\')
+        .take(80)
+        .collect();
+    if safe.is_empty() {
+        return Err(Error::Invalid("Mention query is empty".into()));
+    }
+    let jql = if issue_key(&safe).is_ok() && safe.contains('-') {
+        format!("key = {safe} OR summary ~ \"{safe}\" ORDER BY updated DESC")
+    } else {
+        format!("summary ~ \"{safe}\" ORDER BY updated DESC")
+    };
+    check_jql_length(&jql)?;
+    Ok(jql)
+}
+
 pub fn search(
     client: &Client,
     filter: &Filter,

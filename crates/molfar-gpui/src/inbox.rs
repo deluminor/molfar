@@ -34,6 +34,9 @@ pub(crate) enum Event {
     ManageAtlassian,
     OpenSession(i64),
     StartSession { item: Box<Item>, prompt: String },
+    CreateCard { title: String, description: String },
+    AddToChat { text: String },
+    JiraNotice { text: String },
     ItemsChanged(Vec<Item>),
 }
 
@@ -252,11 +255,40 @@ impl Inbox {
         let jira_dir = data_dir.clone();
         let jira_list = cx.new(|cx| jira::JiraList::new(jira_dir.clone(), cx));
         let jira_reader = cx.new(|_| jira::JiraReader::new(jira_dir));
-        cx.subscribe(&jira_list, |this, _, event, cx| {
-            let jira::ListEvent::Open(key) = event;
-            let key = key.clone();
-            this.jira_reader
-                .update(cx, |reader, cx| reader.open(key, cx));
+        cx.subscribe(&jira_list, |this, _, event, cx| match event {
+            jira::ListEvent::Open(key) => {
+                let key = key.clone();
+                this.jira_reader
+                    .update(cx, |reader, cx| reader.open(key, cx));
+            }
+            jira::ListEvent::Share(text) => cx.emit(Event::AddToChat { text: text.clone() }),
+            jira::ListEvent::ShareFailed(text) => cx.emit(Event::JiraNotice { text: text.clone() }),
+        })
+        .detach();
+        let project = cwd.display().to_string();
+        jira_reader.update(cx, |reader, _| reader.set_project(project.clone()));
+        cx.subscribe(&jira_reader, move |_this, _, event, cx| match event {
+            jira::ReaderEvent::StartSession { title, prompt } => {
+                let item = Item {
+                    provider: "jira".into(),
+                    identifier: title.clone(),
+                    project_path: project.clone(),
+                    ..Item::default()
+                };
+                cx.emit(Event::StartSession {
+                    item: Box::new(item),
+                    prompt: prompt.clone(),
+                });
+            }
+            jira::ReaderEvent::CreateCard { title, description } => {
+                cx.emit(Event::CreateCard {
+                    title: title.clone(),
+                    description: description.clone(),
+                });
+            }
+            jira::ReaderEvent::AddToChat { text } => {
+                cx.emit(Event::AddToChat { text: text.clone() });
+            }
         })
         .detach();
         Self {

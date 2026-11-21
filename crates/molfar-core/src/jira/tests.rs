@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use serde_json::{json, Value};
 
 use super::{
-    append, groups, keep_rows_on_invalid, parent_jql, show_error, store_media, validate_jql,
-    CachedList, Filter, GroupBy, ListModel, Row, ROW_CAP,
+    append, chips, expand_mentions, groups, keep_rows_on_invalid, mention_jql, parent_jql,
+    show_error, store_media, validate_jql, CachedList, Filter, GroupBy, ListModel, Row, ROW_CAP,
 };
 use crate::atlassian::{Client, Credentials, Error, Exchange, Transport};
 
@@ -243,6 +243,52 @@ fn grouping_names_missing_epic_and_status_and_errors_are_visible() {
     assert!(model.unauthorized);
     show_error(&mut model, &Error::RateLimited);
     assert!(model.rate_limited);
+}
+
+#[test]
+fn mention_search_matches_a_key_or_a_summary() {
+    assert_eq!(
+        mention_jql("TB-1").unwrap(),
+        "key = TB-1 OR summary ~ \"TB-1\" ORDER BY updated DESC"
+    );
+    assert_eq!(
+        mention_jql("ship").unwrap(),
+        "summary ~ \"ship\" ORDER BY updated DESC"
+    );
+    assert!(mention_jql("  ").is_err());
+}
+
+#[test]
+fn chips_parse_issue_project_and_jql_and_offline_blocks_expand() {
+    let found = chips("see @jira/team.atlassian.net/TB-1 and @jira/team.atlassian.net/project/TB");
+    assert!(matches!(found[0].target, super::Target::Issue { .. }));
+    assert!(matches!(found[1].target, super::Target::Project { .. }));
+    let jql = chips("@jira/team.atlassian.net/jql?q=project%20%3D%20TB");
+    assert!(matches!(jql[0].target, super::Target::Jql { .. }));
+
+    let (client, _) = scripted(json!({
+        "key": "TB-1",
+        "fields": {
+            "summary": "Ship",
+            "status": { "name": "Open" },
+            "issuetype": { "name": "Task" }
+        }
+    }));
+    let text = expand_mentions(&client, "look @jira/team.atlassian.net/TB-1").unwrap();
+    assert!(text.contains("TB-1 Ship"));
+    assert!(text.contains("molfar://jira/team.atlassian.net/TB-1"));
+    assert!(!text.contains("@jira/"));
+
+    struct Down;
+    impl Transport for Down {
+        fn exchange(&self, _: &str, _: &str, _: &str, _: Option<&str>) -> Result<Exchange, Error> {
+            Err(Error::Offline("no route".into()))
+        }
+    }
+    let credentials = Credentials::new("team", "user@example.com", "super-secret-token").unwrap();
+    let client = Client::with_transport(&credentials, Arc::new(Down));
+    let error = expand_mentions(&client, "@jira/team.atlassian.net/TB-1").unwrap_err();
+    assert!(matches!(error, Error::Offline(_)));
 }
 
 #[test]

@@ -12,6 +12,8 @@ use crate::{input::Input, theme::*};
 
 pub(crate) enum Event {
     Open(String),
+    Share(String),
+    ShareFailed(String),
 }
 
 pub(crate) struct JiraList {
@@ -52,6 +54,35 @@ impl JiraList {
     #[cfg(test)]
     pub(crate) fn reject_jql(&mut self, message: String) {
         jira::keep_rows_on_invalid(&mut self.model, message);
+    }
+
+    fn share(&mut self, cx: &mut Context<Self>) {
+        if self.model.offline {
+            cx.emit(Event::ShareFailed("offline: Jira is offline".into()));
+            return;
+        }
+        let rows = self.model.rows.clone();
+        let title = self.filter.jql().to_string();
+        let app = self.app.clone();
+        cx.spawn(async move |this, cx| {
+            let text = cx
+                .background_executor()
+                .spawn(async move {
+                    let credentials = atlassian::load(&app)
+                        .ok()
+                        .flatten()
+                        .ok_or_else(|| "offline: Jira is not connected".to_string())?;
+                    let link = jira::format_jql(credentials.site(), &title)
+                        .map_err(|error| error.to_string())?;
+                    Ok::<_, String>(jira::list_index(&title, &rows, &link))
+                })
+                .await;
+            let _ = this.update(cx, |_, cx| match text {
+                Ok(text) => cx.emit(Event::Share(text)),
+                Err(error) => cx.emit(Event::ShareFailed(error)),
+            });
+        })
+        .detach();
     }
 
     pub(crate) fn reload(&mut self, refresh: bool, cx: &mut Context<Self>) {
@@ -282,7 +313,8 @@ impl Render for JiraList {
                         this.model.group_by = GroupBy::Status;
                         cx.notify();
                     }))
-                    .child(filter_chip("Refresh", cx, |this, cx| this.reload(true, cx))),
+                    .child(filter_chip("Refresh", cx, |this, cx| this.reload(true, cx)))
+                    .child(filter_chip("Add to chat", cx, |this, cx| this.share(cx))),
             )
             .child(
                 div()

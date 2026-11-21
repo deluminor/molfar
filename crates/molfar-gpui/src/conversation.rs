@@ -154,6 +154,9 @@ pub(crate) struct Conversation {
     _input_focus: Option<[Subscription; 2]>,
     draft_has_value: bool,
     folder_selected: bool,
+    resolving_jira: bool,
+    jira_ready: bool,
+    jira_notice: Option<String>,
     follow_ups: follow_up::FollowUps,
     background: background_tasks::BackgroundTasks,
     changes: changes_shelf::ChangesShelf,
@@ -620,6 +623,9 @@ impl Conversation {
             _input_focus: None,
             draft_has_value: false,
             folder_selected: false,
+            resolving_jira: false,
+            jira_ready: false,
+            jira_notice: None,
             follow_ups: Default::default(),
             background: Default::default(),
             changes: Default::default(),
@@ -951,6 +957,11 @@ impl Conversation {
         {
             return;
         }
+        if self.input.read(cx).content.contains("@jira/") && !self.jira_ready {
+            self.resolve_jira_then_send(invert, cx);
+            return;
+        }
+        self.jira_ready = false;
         if self.input.read(cx).is_composing() {
             return;
         }
@@ -1591,6 +1602,98 @@ impl EventEmitter<SessionChanged> for Conversation {}
 impl EventEmitter<ChooseFolder> for Conversation {}
 impl EventEmitter<OpenSessionChanges> for Conversation {}
 impl EventEmitter<Transfer> for Conversation {}
+impl Conversation {
+    pub(crate) fn show_jira_notice(&mut self, text: &str, cx: &mut Context<Self>) {
+        self.jira_notice = Some(text.to_string());
+        cx.notify();
+    }
+
+    fn jira_banner(&mut self, cx: &mut Context<Self>) -> Option<gpui::AnyElement> {
+        let text = self.jira_notice.clone()?;
+        Some(
+            div()
+                .id("jira-resolve-notice")
+                .h(px(32.))
+                .mb_2()
+                .flex()
+                .items_center()
+                .gap(px(8.))
+                .rounded(px(10.))
+                .border_1()
+                .border_color(tint(AMBER_400, 0.25))
+                .bg(tint(AMBER_400, 0.1))
+                .px(px(8.))
+                .text_size(px(12.))
+                .child(icon("gauge", 14.).text_color(gpui::rgb(AMBER_400)))
+                .child(div().min_w_0().flex_1().truncate().child(text))
+                .child(
+                    div()
+                        .id("dismiss-jira-notice")
+                        .child(icon("close", 14.))
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            this.jira_notice = None;
+                            cx.notify();
+                        })),
+                )
+                .into_any_element(),
+        )
+    }
+
+    fn resolve_jira_then_send(&mut self, invert: bool, cx: &mut Context<Self>) {
+        if self.resolving_jira {
+            return;
+        }
+        self.resolving_jira = true;
+        let store = self.store.clone();
+        let text = self.input.read(cx).content.to_string();
+        cx.spawn(async move |this, cx| {
+            let resolved = cx
+                .background_executor()
+                .spawn(async move { resolve_jira_draft(&store, &text) })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                this.resolving_jira = false;
+                match resolved {
+                    Ok(next) => {
+                        this.jira_notice = None;
+                        this.jira_ready = true;
+                        this.input.update(cx, |input, cx| input.set_text(next, cx));
+                        this.send_follow_up(invert, cx);
+                    }
+                    Err(error) => {
+                        this.jira_notice = Some(error);
+                        cx.notify();
+                    }
+                }
+            });
+        })
+        .detach();
+    }
+
+    pub(crate) fn append_draft(&mut self, text: &str, cx: &mut Context<Self>) {
+        let current = self.input.read(cx).content.to_string();
+        let next = if current.is_empty() {
+            text.to_string()
+        } else {
+            format!("{current}\n{text}")
+        };
+        self.input.update(cx, |input, cx| input.set_text(next, cx));
+    }
+}
+
+fn resolve_jira_draft(store: &Database, text: &str) -> Result<String, String> {
+    let db = locked(store)?;
+    let dir = db
+        .data_dir()
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| "offline: Jira is not connected".to_string())?;
+    let credentials = molfar_core::atlassian::load(&dir)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "offline: Jira is not connected".to_string())?;
+    let client = molfar_core::atlassian::Client::new(&credentials);
+    molfar_core::jira::expand_mentions(&client, text).map_err(|error| error.to_string())
+}
+
 impl EventEmitter<composer_features::StartOrchestration> for Conversation {}
 impl EventEmitter<composer_features::StopOrchestration> for Conversation {}
 
@@ -2872,6 +2975,7 @@ impl Conversation {
             .children(self.model_list_popover(cx))
             .children(self.orchestration_card(cx))
             .children(if self.is_remote() { None } else { self.usage_notice(false, cx) })
+            .children(self.jira_banner(cx))
             .child(self.changes_shelf(window, cx))
             .child(self.background_shelf(window, cx))
             .child(self.message_queue(window, cx))

@@ -1,5 +1,5 @@
-use super::{issue::Comment, issue_key, Issue, Row};
-use crate::atlassian::Error;
+use super::{epic_children, issue, issue::Comment, issue_key, search, Filter, Issue, Row};
+use crate::atlassian::{Client, Error};
 
 const ISSUE_CAP: usize = 8_000;
 const COMMENT_CAP: usize = 8_000;
@@ -40,6 +40,80 @@ pub fn format_jql(site: &str, jql: &str) -> Result<String, Error> {
         host_of(site),
         urlencoding(jql)
     ))
+}
+
+pub struct Chip {
+    pub start: usize,
+    pub end: usize,
+    pub target: Target,
+}
+
+pub fn chips(text: &str) -> Vec<Chip> {
+    let mut found = Vec::new();
+    let mut index = 0;
+    while let Some(at) = text[index..].find("@jira/") {
+        let start = index + at;
+        let mut end = start + "@jira/".len();
+        let bytes = text.as_bytes();
+        while end < bytes.len() && !bytes[end].is_ascii_whitespace() {
+            end += 1;
+        }
+        if let Ok(target) = parse(&format!("molfar://{}", &text[start + 1..end])) {
+            found.push(Chip { start, end, target });
+        }
+        index = end;
+    }
+    found
+}
+
+pub fn expand_mentions(client: &Client, text: &str) -> Result<String, Error> {
+    let found = chips(text);
+    if found.is_empty() {
+        return Ok(text.to_string());
+    }
+    let mut out = String::new();
+    let mut cursor = 0;
+    for chip in found {
+        out.push_str(&text[cursor..chip.start]);
+        out.push_str(&render_chip(client, &chip.target)?);
+        cursor = chip.end;
+    }
+    out.push_str(&text[cursor..]);
+    Ok(out)
+}
+
+fn render_chip(client: &Client, target: &Target) -> Result<String, Error> {
+    match target {
+        Target::Jql { host, jql } => {
+            let page = search(client, &Filter::Jql(jql.clone()), None, None)?;
+            let link = format_jql(&format!("https://{host}"), jql)?;
+            Ok(list_index(jql, &page.rows, &link))
+        }
+        Target::Project { host, key } => {
+            let page = search(
+                client,
+                &Filter::Jql(format!("project = {key} ORDER BY updated DESC")),
+                None,
+                None,
+            )?;
+            let link = format_project(&format!("https://{host}"), key)?;
+            Ok(list_index(key, &page.rows, &link))
+        }
+        Target::Issue { host, key } => {
+            let loaded = issue::load(client, key, None)?;
+            let link = format_issue(&format!("https://{host}"), key)?;
+            if loaded.type_name.eq_ignore_ascii_case("epic") {
+                let children = epic_children(client, key, None)?;
+                Ok(epic_index(
+                    &format!("{} {}", loaded.key, loaded.summary),
+                    &children,
+                    &link,
+                ))
+            } else {
+                Ok(issue_markdown(&loaded, false, &link))
+            }
+        }
+    }
 }
 
 pub fn parse(url: &str) -> Result<Target, Error> {

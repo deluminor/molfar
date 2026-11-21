@@ -1,6 +1,6 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use gpui::{Context, IntoElement, Render, Window, div, prelude::*, px};
+use gpui::{Context, EventEmitter, IntoElement, Render, Window, div, prelude::*, px};
 use molfar_core::{
     atlassian::{self, Client},
     jira::{self, Issue},
@@ -10,8 +10,15 @@ use crate::knowledge::{self, PreviewHost};
 
 use super::actions::Pending;
 
+pub(crate) enum Event {
+    StartSession { title: String, prompt: String },
+    CreateCard { title: String, description: String },
+    AddToChat { text: String },
+}
+
 pub(crate) struct JiraReader {
     app: PathBuf,
+    project: String,
     issue: Option<Issue>,
     site: String,
     loading: bool,
@@ -23,6 +30,8 @@ pub(crate) struct JiraReader {
     draft: String,
     writes: u32,
 }
+
+impl EventEmitter<Event> for JiraReader {}
 
 impl PreviewHost for JiraReader {
     fn callout_open(&self, index: usize) -> bool {
@@ -44,6 +53,7 @@ impl JiraReader {
     pub(crate) fn new(app: PathBuf) -> Self {
         Self {
             app,
+            project: String::new(),
             issue: None,
             site: String::new(),
             loading: false,
@@ -54,6 +64,31 @@ impl JiraReader {
             account_id: String::new(),
             draft: String::new(),
             writes: 0,
+        }
+    }
+
+    pub(crate) fn set_project(&mut self, project: String) {
+        self.project = project;
+    }
+
+    fn handoff(&mut self, card: bool, cx: &mut Context<Self>) {
+        if self.project.is_empty() {
+            return;
+        }
+        let Some(issue) = self.issue.clone() else {
+            return;
+        };
+        let link = jira::format_issue(&self.site, &issue.key).unwrap_or_default();
+        let prompt = jira::issue_markdown(&issue, false, &link);
+        let title = format!("{} {}", issue.key, issue.summary);
+        if card {
+            let browse = format!("{}/browse/{}", self.site.trim_end_matches('/'), issue.key);
+            cx.emit(Event::CreateCard {
+                title,
+                description: format!("{prompt}\n{browse}"),
+            });
+        } else {
+            cx.emit(Event::StartSession { title, prompt });
         }
     }
 
@@ -351,6 +386,25 @@ impl Render for JiraReader {
                             cx.notify();
                         }
                     }))
+                    .child(chip("Add to chat", cx, |this, cx| {
+                        let Some(issue) = this.issue.clone() else {
+                            return;
+                        };
+                        let link = jira::format_issue(&this.site, &issue.key).unwrap_or_default();
+                        cx.emit(Event::AddToChat {
+                            text: jira::issue_markdown(&issue, false, &link),
+                        });
+                    }))
+                    .when(!self.project.is_empty(), |row| {
+                        row.child(chip("Start session", cx, |this, cx| {
+                            this.handoff(false, cx)
+                        }))
+                        .child(chip(
+                            "Create Board card",
+                            cx,
+                            |this, cx| this.handoff(true, cx),
+                        ))
+                    })
                     .child(chip(
                         if self.newest {
                             "Oldest first"
