@@ -8,6 +8,7 @@ pub mod http;
 pub mod index;
 mod media;
 pub mod page;
+pub mod resolve;
 pub mod search;
 pub mod spaces;
 pub mod tree;

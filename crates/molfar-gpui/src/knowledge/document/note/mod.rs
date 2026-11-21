@@ -13,8 +13,8 @@ use std::{
     sync::Arc,
 };
 
-mod blocks;
-mod image;
+pub(crate) mod blocks;
+pub(crate) mod image;
 mod inline;
 mod list;
 
@@ -96,21 +96,26 @@ fn decorated(mut tree: BlockTree) -> BlockTree {
 /// order to match [`molfar_core::knowledge::toggle_task`], and every element
 /// gets a unique id.
 #[derive(Default)]
-pub(super) struct Walk {
+pub(crate) struct Walk {
     pub tasks: usize,
     pub callouts: usize,
     pub ids: usize,
 }
 
 impl Walk {
-    pub(super) fn id(&mut self, kind: &str) -> gpui::SharedString {
+    pub(crate) fn next_callout(&mut self) -> usize {
+        self.callouts += 1;
+        self.callouts
+    }
+
+    pub(crate) fn id(&mut self, kind: &str) -> gpui::SharedString {
         self.ids += 1;
         format!("knowledge-{kind}-{}", self.ids).into()
     }
 }
 
 /// Hue and icon per callout family, as Obsidian groups them.
-fn style(kind: &str) -> (Option<f32>, &'static str) {
+pub(crate) fn style(kind: &str) -> (Option<f32>, &'static str) {
     match kind {
         "tip" | "hint" | "important" | "success" | "check" | "done" => (Some(0.4), "check-circle"),
         "warning" | "caution" | "attention" => (Some(0.1), "alert-circle"),
@@ -123,7 +128,7 @@ fn style(kind: &str) -> (Option<f32>, &'static str) {
     }
 }
 
-fn tint(hue: Option<f32>, alpha: f32) -> Hsla {
+pub(crate) fn tint(hue: Option<f32>, alpha: f32) -> Hsla {
     match hue {
         Some(hue) if is_light() => hsla(hue, 0.6, 0.42, alpha),
         Some(hue) => hsla(hue, 0.7, 0.65, alpha),
@@ -148,7 +153,13 @@ impl Knowledge {
                 PreviewBlock::Markdown(tree) => {
                     for top in &tree.blocks {
                         let first = out.is_empty();
-                        out.push(self.block(&top.block, first, walk, cx));
+                        out.push(blocks::block(
+                            &top.block,
+                            first,
+                            walk,
+                            Some(Knowledge::toggle_task),
+                            cx,
+                        ));
                     }
                 }
                 PreviewBlock::Callout {

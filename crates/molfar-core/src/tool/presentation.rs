@@ -404,6 +404,9 @@ pub fn app_activity(action: &str, running: bool) -> (&'static str, &'static str)
         "artifacts.write" => ("Writing", "Wrote", "a document"),
         "artifacts.list" | "artifacts.read" => ("Reading", "Read", "documents"),
         "notes.write" => ("Writing", "Wrote", "a note"),
+        crate::confluence::actions::SEARCH
+        | crate::confluence::actions::READ
+        | crate::confluence::actions::TREE => ("Reading", "Read", "Confluence"),
         "notes.list" | "notes.read" => ("Reading", "Read", "notes"),
         "habits.list" => ("Checking", "Checked", "habits"),
         "habits.run" => ("Running", "Ran", "a habit"),

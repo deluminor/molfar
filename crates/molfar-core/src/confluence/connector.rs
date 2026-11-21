@@ -23,6 +23,12 @@ impl Connector {
 }
 
 impl<T: Transport> Connector<T> {
+    pub fn test_connection(&self) -> Result<(), ConfluenceError> {
+        self.client
+            .request("/wiki/api/v2/spaces?limit=1")
+            .map(|_| ())
+    }
+
     pub fn site(&self) -> &Url {
         &self.client.site
     }

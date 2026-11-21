@@ -4,6 +4,7 @@ use crate::app_access::{
 };
 pub mod automations;
 mod board;
+pub mod confluence;
 pub mod familiars;
 pub mod inbox;
 pub mod knowledge;
@@ -76,6 +77,7 @@ fn domain_grant(domain: DOMAIN, mutation: bool) -> &'static [GRANT] {
         (DOMAIN::Familiars, true) => &[GRANT::Write(DOMAIN::Familiars)],
         (DOMAIN::Inbox, false) => &[GRANT::Read(DOMAIN::Inbox)],
         (DOMAIN::Inbox, true) => &[GRANT::Write(DOMAIN::Inbox)],
+        (DOMAIN::Confluence, false) => &[GRANT::Read(DOMAIN::Confluence)],
         (DOMAIN::Knowledge, false) => &[GRANT::Read(DOMAIN::Knowledge)],
         (DOMAIN::Knowledge, true) => &[GRANT::Write(DOMAIN::Knowledge)],
         _ => unreachable!("Only registered external domains have tool definitions"),
@@ -108,6 +110,7 @@ fn build_catalog() -> Vec<Tool> {
     tools.extend(automations::definitions());
     tools.extend(familiars::definitions());
     tools.extend(inbox::definitions());
+    tools.extend(confluence::definitions());
     tools
 }
 
@@ -155,6 +158,9 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         | notes_api::CREATE
         | notes_api::WRITE
         | notes_api::DELETE => notes_api::validate(name, arguments),
+        name @ (confluence::SEARCH | confluence::READ | confluence::TREE) => {
+            confluence::validate(name, arguments)
+        }
         name if name.starts_with("knowledge_") => knowledge::validate(name, arguments),
         name if name.starts_with("automations_") => automations::validate(name, arguments),
         name if name.starts_with("familiars_") => familiars::validate(name, arguments),

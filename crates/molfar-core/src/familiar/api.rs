@@ -7,6 +7,9 @@ pub fn validate(action: &str, input: &Value) -> Result<(), String> {
     if crate::app_access::board::is_board(action) {
         return crate::app_access::board::validate(action, input);
     }
+    if crate::confluence::actions::READ_ACTIONS.contains(&action) {
+        return crate::confluence::actions::validate(action, input);
+    }
     let fields=match action{
         "models.list"|"soul.read"|"habits.list"|crate::secrets::request::LIST=>"",
         crate::secrets::request::REQUEST=>"name reason",

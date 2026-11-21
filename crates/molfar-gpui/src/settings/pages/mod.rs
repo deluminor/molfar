@@ -3,6 +3,7 @@ mod appearance;
 mod archive;
 mod chat;
 mod companion;
+pub(super) mod confluence;
 mod connections;
 mod external_mcp;
 pub(super) use external_mcp::ExternalPageState;
@@ -34,6 +35,7 @@ impl SettingsView {
                 // As on the earlier desktop and in the phone app's copy:
                 // Settings → Connections holds both machines and phones.
                 let mut page = self.connections_page(cx);
+                page.push(self.confluence_card(cx));
                 page.extend(self.mobile_page(cx));
                 page.extend(self.companion_page(cx));
                 page

@@ -22,7 +22,10 @@ impl<T: Transport> Connector<T> {
         scope: Scope,
     ) -> Result<Vec<Node>, ConfluenceError> {
         let query = query.trim();
-        if query.is_empty() || query.chars().count() > 200 || query.chars().any(char::is_control) {
+        if (query.is_empty() && matches!(scope, Scope::Text))
+            || query.chars().count() > 200
+            || query.chars().any(char::is_control)
+        {
             return Ok(Vec::new());
         }
 
@@ -48,10 +51,14 @@ impl<T: Transport> Connector<T> {
                 Scope::Text => "text",
                 Scope::Title => "title",
             };
-            let cql = format!(
-                "type = page AND space IN ({keys}) AND {field_name} ~ {}",
-                quote(&phrase(query))
-            );
+            let cql = if query.is_empty() {
+                format!("type = page AND space IN ({keys}) ORDER BY lastmodified DESC")
+            } else {
+                format!(
+                    "type = page AND space IN ({keys}) AND {field_name} ~ {}",
+                    quote(&phrase(query))
+                )
+            };
             let (items, _) = self.collection(&api_path(
                 "/wiki/rest/api/content/search",
                 &[

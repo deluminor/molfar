@@ -15,6 +15,7 @@ impl Shell {
             AppView::Inbox => "Inbox",
             AppView::Notes => "Notes",
             AppView::Knowledge => "Knowledge",
+            AppView::Confluence => "Confluence",
             AppView::Automations => "Automations",
             AppView::Board => "Board",
         })
@@ -232,6 +233,7 @@ impl Shell {
         match self.active_app_view? {
             AppView::Home => self.home.clone().map(IntoElement::into_any_element),
             AppView::Notes => self.notes.clone().map(IntoElement::into_any_element),
+            AppView::Confluence => self.confluence.clone().map(IntoElement::into_any_element),
             AppView::Knowledge => self.knowledge.clone().map(IntoElement::into_any_element),
             AppView::Inbox => self.inbox.clone().map(IntoElement::into_any_element),
             AppView::Automations => self.automations.clone().map(IntoElement::into_any_element),
@@ -247,6 +249,7 @@ impl Shell {
         let focus = match self.active_app_view {
             Some(AppView::Home) => self.home.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Notes) => self.notes.as_ref().map(|view| view.focus_handle(cx)),
+            Some(AppView::Confluence) => self.confluence.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Knowledge) => self.knowledge.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Inbox) => self.inbox.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Automations) => {
@@ -370,6 +373,46 @@ impl Shell {
         );
         self.vault = Some(vault.clone());
         vault
+    }
+
+    pub(super) fn add_confluence_context(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(id) = self.workspace.active {
+            self.close_app_view(window, cx);
+            self.add_to_chat(id, text, cx);
+        } else {
+            self.create_session_target(
+                self.default_choice(),
+                false,
+                None,
+                Some(text.to_owned()),
+                cx,
+            );
+        }
+    }
+
+    pub(super) fn open_confluence(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        use crate::confluence::{Event, View};
+
+        self.prepare_app_view(window, cx);
+        if self.confluence.is_none() {
+            let view = cx.new(|cx| View::new(self.store.clone(), self.secret_store.clone(), cx));
+            self.app_view_events.push(cx.subscribe_in(
+                &view,
+                window,
+                |this, _, event: &Event, window, cx| match event {
+                    Event::Settings => {
+                        this.open_settings(crate::settings::Section::Connections, window, cx)
+                    }
+                    Event::Close => this.close_app_view(window, cx),
+                    Event::AddToChat(text) => this.add_confluence_context(text, window, cx),
+                },
+            ));
+            self.confluence = Some(view);
+        }
+        if let Some(view) = &self.confluence {
+            view.update(cx, |view, cx| view.reload(false, cx));
+        }
+        self.show_app_view(AppView::Confluence, window, cx);
     }
 
     pub(super) fn open_knowledge(&mut self, window: &mut Window, cx: &mut Context<Self>) {
