@@ -1,8 +1,12 @@
 //! Source control for the Changes and History panes, ported from
 //! src-tauri/src/fs.rs. Synchronous: callers run these on a background executor.
+mod cli;
+mod forge;
 mod review;
 pub(crate) mod shell;
 pub(crate) mod text;
+
+pub use forge::Forge;
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
@@ -28,6 +32,11 @@ pub fn terminal_search_path() -> String {
 /// Resolve a CLI using the login-shell PATH available to Finder-launched apps.
 pub fn resolve_gui_binary(name: &str) -> Option<std::path::PathBuf> {
     shell::resolve_gui_binary(name)
+}
+
+/// GitHub, GitLab, or unknown, from the preferred remote of `cwd`.
+pub fn forge(cwd: &Path) -> Result<Forge, String> {
+    forge::at(cwd)
 }
 pub use text::{commit_message_prompt, parse_commit_message, parse_pr_content, pr_content_prompt};
 
@@ -1399,7 +1408,7 @@ pub fn git_dirs(root: &Path) -> Vec<std::path::PathBuf> {
     dirs
 }
 
-fn git_stdout(root: &Path, args: &[&str]) -> Option<String> {
+pub(super) fn git_stdout(root: &Path, args: &[&str]) -> Option<String> {
     let output = git_cmd().arg("-C").arg(root).args(args).output().ok()?;
     if !output.status.success() {
         return None;
