@@ -198,6 +198,7 @@ pub fn guarded_write(
         request_id: Some(request_id),
         outcome: outcome.into(),
         kind: ACCESS::Delegated,
+        operator: None,
     })?;
     result
 }
