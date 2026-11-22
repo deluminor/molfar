@@ -316,6 +316,25 @@ pub(crate) fn row(issue: &Value, sprint_field: Option<&str>, epic_field: Option<
                 .map(|(_, summary)| summary.clone())
                 .unwrap_or_default()
         },
+        parent_key: if epic {
+            String::new()
+        } else {
+            parent
+                .and_then(|parent| parent.get("key"))
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string()
+        },
+        status_category: fields
+            .pointer("/status/statusCategory/key")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        assignee_avatar: fields
+            .pointer("/assignee/avatarUrls/24x24")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
     }
 }
 

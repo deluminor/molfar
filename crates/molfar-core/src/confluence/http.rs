@@ -8,6 +8,9 @@ use super::error::ConfluenceError;
 
 const MAX_REDIRECTS: usize = 5;
 const MAX_RESPONSE_BYTES: u64 = 32 * 1024 * 1024;
+const ATTACHMENT_PATH: &str = "/wiki/download/attachments/";
+// Atlassian Support documents this as the Confluence Cloud binary redirect target.
+const MEDIA_HOST: &str = "api.media.atlassian.com";
 const BACKOFF: [Duration; 3] = [
     Duration::from_millis(500),
     Duration::from_secs(1),
@@ -23,7 +26,11 @@ pub struct Response {
 }
 
 pub trait Transport {
-    fn get(&self, url: &Url, authorization: &SecretString) -> Result<Response, ConfluenceError>;
+    fn get(
+        &self,
+        url: &Url,
+        authorization: Option<&SecretString>,
+    ) -> Result<Response, ConfluenceError>;
 
     fn wait(&self, delay: Duration) {
         std::thread::sleep(delay);
@@ -46,14 +53,20 @@ impl Default for Http {
 }
 
 impl Transport for Http {
-    fn get(&self, url: &Url, authorization: &SecretString) -> Result<Response, ConfluenceError> {
+    fn get(
+        &self,
+        url: &Url,
+        authorization: Option<&SecretString>,
+    ) -> Result<Response, ConfluenceError> {
         use secrecy::ExposeSecret;
-        let result = self
+        let mut request = self
             .agent
             .get(url.as_str())
-            .set("Authorization", authorization.expose_secret())
-            .set("Accept", "application/json, image/*, */*;q=0.1")
-            .call();
+            .set("Accept", "application/json, image/*, */*;q=0.1");
+        if let Some(authorization) = authorization {
+            request = request.set("Authorization", authorization.expose_secret());
+        }
+        let result = request.call();
         let response = match result {
             Ok(response) | Err(ureq::Error::Status(_, response)) => response,
             Err(ureq::Error::Transport(_)) => return Err(ConfluenceError::Offline),
@@ -97,22 +110,46 @@ impl<T: Transport> Client<T> {
     }
 
     pub fn request(&self, path: &str) -> Result<Response, ConfluenceError> {
+        self.request_with_redirects(path, false)
+    }
+
+    pub(super) fn request_attachment(&self, path: &str) -> Result<Response, ConfluenceError> {
+        self.request_with_redirects(path, true)
+    }
+
+    fn request_with_redirects(
+        &self,
+        path: &str,
+        attachment: bool,
+    ) -> Result<Response, ConfluenceError> {
         let mut url = self
             .site
             .join(path)
             .map_err(|_| ConfluenceError::InvalidResponse)?;
+        let site_origin = self.site.origin();
+        if attachment && (url.origin() != site_origin || !url.path().starts_with(ATTACHMENT_PATH)) {
+            return Err(ConfluenceError::UnsafeRedirect);
+        }
+
         let mut redirects = 0;
         let mut retries = BACKOFF.into_iter();
         loop {
+            let same_origin = url.origin() == site_origin;
+            let media_redirect = attachment
+                && redirects > 0
+                && url.host_str() == Some(MEDIA_HOST)
+                && url.port().is_none();
             if url.scheme() != "https"
-                || url.origin() != self.site.origin()
+                || !(same_origin || media_redirect)
                 || !url.username().is_empty()
                 || url.password().is_some()
             {
                 return Err(ConfluenceError::UnsafeRedirect);
             }
 
-            let response = self.transport.get(&url, &self.authorization)?;
+            let response = self
+                .transport
+                .get(&url, same_origin.then_some(&self.authorization))?;
             match response.status {
                 200..=299 => return Ok(response),
                 301 | 302 | 303 | 307 | 308 if redirects < MAX_REDIRECTS => {
@@ -156,98 +193,4 @@ fn retry_delay(value: &str) -> Option<Duration> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::cell::RefCell;
-    use std::collections::VecDeque;
-
-    struct Stub {
-        states: RefCell<VecDeque<Result<Response, ConfluenceError>>>,
-        waits: RefCell<Vec<Duration>>,
-    }
-
-    impl Transport for Stub {
-        fn get(&self, _: &Url, _: &SecretString) -> Result<Response, ConfluenceError> {
-            self.states
-                .borrow_mut()
-                .pop_front()
-                .expect("one call per fixture")
-        }
-
-        fn wait(&self, delay: Duration) {
-            self.waits.borrow_mut().push(delay);
-        }
-    }
-
-    fn response(status: u16) -> Response {
-        Response {
-            status,
-            location: None,
-            retry_after: None,
-            link: None,
-            bytes: Vec::new(),
-        }
-    }
-
-    fn client(states: impl IntoIterator<Item = Result<Response, ConfluenceError>>) -> Client<Stub> {
-        Client::new(
-            Url::parse("https://fixture.atlassian.net").unwrap(),
-            "fixture-auth".into(),
-            Stub {
-                states: RefCell::new(states.into_iter().collect()),
-                waits: RefCell::default(),
-            },
-        )
-    }
-
-    #[test]
-    fn confluence_typed_errors_do_not_retry_auth_or_missing() {
-        for (status, error) in [
-            (401, ConfluenceError::Unauthorized),
-            (403, ConfluenceError::Forbidden),
-            (404, ConfluenceError::NotFound),
-        ] {
-            assert_eq!(
-                client([Ok(response(status))]).request("/wiki").err(),
-                Some(error)
-            );
-            assert!(!error.to_string().contains("fixture-auth"));
-        }
-        assert_eq!(
-            client([Err(ConfluenceError::Offline)])
-                .request("/wiki")
-                .err(),
-            Some(ConfluenceError::Offline)
-        );
-    }
-
-    #[test]
-    fn confluence_cross_origin_redirect_stops_before_auth_is_sent() {
-        let mut redirect = response(302);
-        redirect.location = Some("https://other.invalid/wiki".into());
-        assert_eq!(
-            client([Ok(redirect)]).request("/wiki").err(),
-            Some(ConfluenceError::UnsafeRedirect)
-        );
-    }
-
-    #[test]
-    fn confluence_rate_limits_retry_three_times_with_bounded_wait() {
-        let mut initial = response(429);
-        initial.retry_after = Some("60".into());
-        let client = client([
-            Ok(initial),
-            Ok(response(429)),
-            Ok(response(429)),
-            Ok(response(429)),
-        ]);
-        assert_eq!(
-            client.request("/wiki").err(),
-            Some(ConfluenceError::RateLimited(2))
-        );
-        assert_eq!(
-            client.transport.waits.into_inner(),
-            [Duration::from_secs(30), BACKOFF[1], BACKOFF[2]]
-        );
-    }
-}
+mod tests;

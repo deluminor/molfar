@@ -47,6 +47,14 @@ pub struct Row {
     pub updated: String,
     pub epic_key: String,
     pub epic_summary: String,
+    /// Parent of a sub-task; empty for epics' children and top-level issues.
+    #[serde(default)]
+    pub parent_key: String,
+    /// Jira status category key: `new`, `indeterminate` or `done`.
+    #[serde(default)]
+    pub status_category: String,
+    #[serde(default)]
+    pub assignee_avatar: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

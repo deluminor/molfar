@@ -29,7 +29,7 @@ mod tests;
 mod tree;
 mod types;
 
-pub(crate) use document::{PreviewHost, banner, render_markdown};
+pub(crate) use document::{PreviewBlock, PreviewHost, banner, parse_preview, render_preview};
 use drafts::Draft;
 use graph::GraphView;
 pub(crate) use loading::{orbit_loader, skeleton_rows};

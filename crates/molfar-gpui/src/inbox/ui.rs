@@ -1,12 +1,13 @@
 use super::*;
+use crate::editor_scrollbar::Metrics;
 use crate::popover::{Align, Anchor, popover};
 use gpui::{
-    Animation, AnimationExt, AnyElement, ClipboardItem, CursorStyle, Div, FontWeight, Hsla,
-    MouseButton, Pixels, Role, SharedString, Stateful, Window, canvas, div, list, prelude::*, px,
-    rgb,
+    Animation, AnimationExt, AnyElement, Bounds, ClipboardItem, CursorStyle, Div, FontWeight, Hsla,
+    MouseButton, Pixels, Role, SharedString, Stateful, Window, canvas, div, list, point,
+    prelude::*, px, rgb, size,
 };
 
-fn action(id: impl Into<SharedString>, label: impl Into<SharedString>) -> Stateful<Div> {
+pub(super) fn action(id: impl Into<SharedString>, label: impl Into<SharedString>) -> Stateful<Div> {
     plain_action(id, label).hover(|s| s.bg(content(0.07)).text_color(content(1.)))
 }
 /// An [`action`] without its hover, for callers that set their own.
@@ -38,7 +39,11 @@ const COPIED: Hsla = Hsla {
 };
 const COPIED_POP: Duration = Duration::from_millis(260);
 
-fn icon_action(id: impl Into<SharedString>, label: &str, name: &'static str) -> Stateful<Div> {
+pub(super) fn icon_action(
+    id: impl Into<SharedString>,
+    label: &str,
+    name: &'static str,
+) -> Stateful<Div> {
     icon_action_ink(id, label, name, content(0.7))
 }
 fn icon_action_ink(
@@ -84,12 +89,14 @@ fn action_icon(name: &'static str, ink: Hsla) -> gpui::Svg {
     icon(name, 14.).text_color(ink)
 }
 pub(crate) fn relative_time(iso: &str) -> String {
-    if model::timestamp_ms(iso) == 0 {
+    relative_time_at(iso, chrono::Utc::now().timestamp_millis())
+}
+pub(crate) fn relative_time_at(iso: &str, now_ms: i64) -> String {
+    let at = model::timestamp_ms(iso);
+    if at == 0 {
         return String::new();
     }
-    let mut value =
-        (((model::timestamp_ms(iso) - chrono::Utc::now().timestamp_millis()) as f64 / 1000.) + 0.5)
-            .floor();
+    let mut value = (((at - now_ms) as f64 / 1000.) + 0.5).floor();
     let mut unit = "second";
     for (step, name) in [
         (60., "second"),
@@ -181,7 +188,7 @@ fn timeline_event(name: &str, action: &str, time: &str) -> Div {
             d.child("·").child(relative_time(time))
         })
 }
-fn menu_row(
+pub(super) fn menu_row(
     id: impl Into<SharedString>,
     label: impl Into<SharedString>,
     checked: bool,
@@ -209,7 +216,7 @@ fn menu_row(
         )
         .child(div().flex_1().min_w_0().truncate().child(label))
 }
-fn caption(text: impl Into<SharedString>) -> Div {
+pub(super) fn caption(text: impl Into<SharedString>) -> Div {
     div()
         .px(px(8.))
         .pt(px(10.))
@@ -219,7 +226,7 @@ fn caption(text: impl Into<SharedString>) -> Div {
         .text_color(content(0.4))
         .child(text.into())
 }
-fn message(text: impl Into<SharedString>) -> Div {
+pub(super) fn message(text: impl Into<SharedString>) -> Div {
     div()
         .p(px(12.))
         .text_size(px(12.))
@@ -227,11 +234,19 @@ fn message(text: impl Into<SharedString>) -> Div {
         .text_color(content(0.5))
         .child(text.into())
 }
-fn error(text: impl Into<SharedString>) -> Div {
+pub(super) fn error(text: impl Into<SharedString>) -> Div {
     message(text).text_color(rgb(0xf87171))
 }
-fn provider_mark(provider: &str) -> gpui::Svg {
+fn source_label(source: &str) -> &'static str {
+    if source == CONFLUENCE {
+        "Confluence"
+    } else {
+        model::provider_label(source)
+    }
+}
+pub(super) fn provider_mark(provider: &str) -> gpui::Svg {
     let (path, color) = match provider {
+        CONFLUENCE => ("inbox-confluence", rgb(0x2684ff).into()),
         "linear" => ("inbox-linear", content(0.8)),
         "jira" => ("inbox-jira", rgb(0x2684ff).into()),
         "gitlab" => ("inbox-gitlab", rgb(0xfc6d26).into()),
@@ -349,34 +364,25 @@ impl Inbox {
         )
     }
 
-    fn list_view(&self, cx: &mut Context<Self>) -> AnyElement {
-        let connected = model::PROVIDERS
-            .into_iter()
-            .filter(|provider| {
-                self.snapshot
-                    .connections
-                    .get(*provider)
-                    .is_some_and(|s| s.connected)
-            })
-            .collect::<Vec<_>>();
-        let items = self.visible_items(cx);
-        let sources = div()
-            .h(px(36.))
-            .px(px(8.))
-            .flex_shrink_0()
+    fn connector_strip(&self, connected: &[&str], cx: &mut Context<Self>) -> Div {
+        let tabs = div()
+            .id("inbox-source-viewport")
+            .h(px(24.))
+            .w_full()
             .flex()
             .items_center()
             .gap(px(1.))
-            .border_b_1()
-            .border_color(content(0.07))
-            .children(connected.iter().map(|provider| {
+            .overflow_x_scroll()
+            .track_scroll(&self.source_scroll)
+            .children(connected.iter().map(|&provider| {
                 let source = provider.to_string();
                 div()
                     .id(SharedString::from(format!("inbox-source-{provider}")))
                     .role(Role::Tab)
-                    .aria_label(model::provider_label(provider))
-                    .flex_1()
-                    .min_w_0()
+                    .debug_selector(move || format!("inbox-source-{provider}"))
+                    .aria_label(source_label(provider))
+                    .aria_selected(self.state.source == provider)
+                    .flex_shrink_0()
                     .h(px(24.))
                     .px(px(8.))
                     .flex()
@@ -385,33 +391,81 @@ impl Inbox {
                     .gap(px(6.))
                     .rounded(px(6.))
                     .text_size(px(12.))
-                    .text_color(content(if self.state.source == *provider {
+                    .text_color(content(if self.state.source == provider {
                         1.
                     } else {
                         0.5
                     }))
-                    .when(self.state.source == *provider, |d| d.bg(content(0.1)))
+                    .when(self.state.source == provider, |d| d.bg(content(0.1)))
                     .hover(|s| s.bg(content(0.05)))
                     .child(provider_mark(provider))
-                    .child(
-                        div()
-                            .min_w_0()
-                            .truncate()
-                            .child(model::provider_label(provider)),
-                    )
+                    .whitespace_nowrap()
+                    .child(source_label(provider))
                     .on_click(
                         cx.listener(move |this, _, _, cx| this.change_source(source.clone(), cx)),
                     )
-            }))
+            }));
+
+        let scroll = self.source_scroll.clone();
+        let fade = canvas(
+            |_, _, _| {},
+            move |_, _, window, _| {
+                let viewport = scroll.bounds();
+                if scroll.offset().x + scroll.max_offset().x <= px(0.) || viewport.is_empty() {
+                    return;
+                }
+                let width = px(18.).min(viewport.size.width);
+                let bounds = Bounds::new(
+                    point(viewport.right() - width, viewport.top()),
+                    size(width, viewport.size.height),
+                );
+                let surface = background_base().blend(pane_fill());
+                let gradient = gpui::linear_gradient(
+                    90.,
+                    gpui::linear_color_stop(surface.opacity(0.), 0.),
+                    gpui::linear_color_stop(surface, 1.),
+                );
+
+                // GPUI batches quads before glyphs on the same layer.
+                window.paint_layer(bounds, |window| {
+                    window.paint_quad(gpui::fill(bounds, gradient));
+                });
+            },
+        )
+        .absolute()
+        .inset_0();
+
+        div()
+            .h(px(36.))
+            .px(px(8.))
+            .flex_shrink_0()
+            .flex()
+            .items_center()
+            .gap(px(1.))
+            .border_b_1()
+            .border_color(content(0.07))
+            .child(
+                div()
+                    .relative()
+                    .flex_1()
+                    .min_w_0()
+                    .h_full()
+                    .flex()
+                    .items_center()
+                    .child(tabs)
+                    .child(fade)
+                    .child(self.connector_scrollbar(cx)),
+            )
             .child(
                 div()
                     .id("inbox-add-connection")
+                    .debug_selector(|| "inbox-add-connection".into())
                     .role(Role::Button)
                     .aria_label("Add connection")
                     .relative()
                     .h(px(24.))
-                    .flex_1()
-                    .min_w_0()
+                    .flex_shrink_0()
+                    .whitespace_nowrap()
                     .px(px(6.))
                     .flex()
                     .items_center()
@@ -423,15 +477,100 @@ impl Inbox {
                     .hover(|s| s.bg(content(0.05)))
                     .child(self.connection_anchor.probe())
                     .child(icon("plus", 14.))
-                    .when(connected.len() < 2, |d| {
-                        d.child(div().truncate().child("Add connection"))
-                    })
+                    .when(connected.len() < 2, |d| d.child("Add connection"))
                     .on_click(cx.listener(|this, _, _, cx| {
                         this.connections_open = !this.connections_open;
                         this.filters_open = false;
                         cx.notify();
                     })),
-            );
+            )
+    }
+
+    fn connector_scroll_metrics(scroll: &gpui::ScrollHandle) -> Metrics {
+        let width = f32::from(scroll.bounds().size.width);
+        Metrics::new(
+            -f32::from(scroll.offset().x),
+            width + f32::from(scroll.max_offset().x),
+            width,
+            width,
+        )
+    }
+
+    fn drag_connector_scrollbar(&self, x: Pixels, cx: &mut Context<Self>) {
+        if let Some(grab) = self.source_scroll_drag {
+            let metrics = Self::connector_scroll_metrics(&self.source_scroll);
+            let position = f32::from(x - self.source_scroll.bounds().left());
+            let offset = metrics.scroll_from_pointer(position, grab);
+            self.source_scroll.set_offset(point(px(-offset), px(0.)));
+            cx.notify();
+        }
+    }
+
+    fn connector_scrollbar(&self, cx: &mut Context<Self>) -> Stateful<Div> {
+        let scroll = self.source_scroll.clone();
+        div()
+            .id("inbox-source-scrollbar")
+            .debug_selector(|| "inbox-source-scrollbar".into())
+            .absolute()
+            .left_0()
+            .right_0()
+            .bottom_0()
+            .h(px(5.))
+            .child(
+                canvas(
+                    |bounds, _, _| bounds,
+                    move |bounds, _, window, _| {
+                        let metrics = Self::connector_scroll_metrics(&scroll);
+                        if metrics.scrollable {
+                            window.paint_quad(
+                                gpui::fill(
+                                    Bounds::new(
+                                        bounds.origin + point(px(metrics.thumb_top), px(0.5)),
+                                        size(px(metrics.thumb_height), px(4.)),
+                                    ),
+                                    content(0.24),
+                                )
+                                .corner_radii(px(2.)),
+                            );
+                        }
+                    },
+                )
+                .size_full(),
+            )
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, event: &gpui::MouseDownEvent, _, cx| {
+                    let metrics = Self::connector_scroll_metrics(&this.source_scroll);
+                    if !metrics.scrollable {
+                        return;
+                    }
+                    let position = f32::from(event.position.x - this.source_scroll.bounds().left());
+                    let grab = position - metrics.thumb_top;
+                    this.source_scroll_drag =
+                        Some(if (0. ..=metrics.thumb_height).contains(&grab) {
+                            grab
+                        } else {
+                            metrics.thumb_height / 2.
+                        });
+                    this.drag_connector_scrollbar(event.position.x, cx);
+                    cx.stop_propagation();
+                }),
+            )
+    }
+
+    fn list_view(&self, cx: &mut Context<Self>) -> AnyElement {
+        let connected = model::PROVIDERS
+            .into_iter()
+            .filter(|provider| {
+                self.snapshot
+                    .connections
+                    .get(*provider)
+                    .is_some_and(|s| s.connected)
+            })
+            .collect::<Vec<_>>();
+        let connected = source_tabs(&connected, self.confluence_connected(cx));
+        let items = self.visible_items(cx);
+        let sources = self.connector_strip(&connected, cx);
         let tools = div()
             .h(px(36.))
             .px(px(8.))
@@ -623,6 +762,7 @@ impl Inbox {
                     .on_click(cx.listener(move |this, _, _, cx| this.select(key.clone(), cx)))
             })
             .collect::<Vec<_>>();
+        let own_list = self.state.source == "jira" || self.state.source == CONFLUENCE;
         div()
             .relative()
             .w(px(self.state.list_width.clamp(240., 420.)))
@@ -633,13 +773,21 @@ impl Inbox {
             .flex()
             .flex_col()
             .child(sources)
-            .when(!connected.is_empty() && self.state.source != "jira", |d| {
-                d.child(tools)
-            })
+            .when(!connected.is_empty() && !own_list, |d| d.child(tools))
             .when(self.state.source == "jira", |pane| {
                 pane.child(div().flex_1().min_h_0().child(self.jira_list.clone()))
             })
-            .when(self.state.source != "jira", |pane| {
+            .when(self.state.source == CONFLUENCE, |pane| {
+                pane.children(self.confluence.clone().map(|view| {
+                    div()
+                        .flex_1()
+                        .min_h_0()
+                        .flex()
+                        .flex_col()
+                        .child(view.update(cx, |view, cx| view.tree_pane(cx)))
+                }))
+            })
+            .when(!own_list, |pane| {
                 pane.child(
                     div()
                         .id("inbox-list-scroll")
@@ -700,6 +848,14 @@ impl Inbox {
             return div()
                 .size_full()
                 .child(self.jira_reader.clone())
+                .into_any_element();
+        }
+        if self.state.source == CONFLUENCE
+            && let Some(view) = self.confluence.clone()
+        {
+            return div()
+                .size_full()
+                .child(view.update(cx, |view, cx| view.reader_view(cx)))
                 .into_any_element();
         }
         let Some(item) = self.item() else {
@@ -2357,38 +2513,45 @@ impl Inbox {
             });
         })
         .child(caption("CONNECTIONS"))
-        .children(model::PROVIDERS.into_iter().map(|provider| {
-            let connected = self
-                .snapshot
-                .connections
-                .get(provider)
-                .is_some_and(|s| s.connected);
-            let label = format!(
-                "{} {}",
-                if connected { "Manage" } else { "Connect" },
-                model::provider_label(provider)
-            );
-            div()
-                .id(SharedString::from(format!("inbox-connect-{provider}")))
-                .role(Role::Button)
-                .aria_label(label.clone())
-                .w_full()
-                .h(px(28.))
-                .px(px(10.))
-                .flex()
-                .items_center()
-                .gap(px(6.))
-                .rounded(px(6.))
-                .text_size(px(12.))
-                .text_color(content(0.7))
-                .cursor_pointer()
-                .hover(|s| s.bg(content(0.07)).text_color(content(1.)))
-                .child(provider_mark(provider))
-                .child(label)
-                .on_click(
-                    cx.listener(move |this, _, _, cx| this.open_connection(provider.into(), cx)),
-                )
-        }))
+        .children(
+            source_tabs(&model::PROVIDERS, true)
+                .into_iter()
+                .map(|provider| {
+                    let connected = if provider == CONFLUENCE {
+                        self.confluence_connected(cx)
+                    } else {
+                        self.snapshot
+                            .connections
+                            .get(provider)
+                            .is_some_and(|s| s.connected)
+                    };
+                    let label = format!(
+                        "{} {}",
+                        if connected { "Manage" } else { "Connect" },
+                        source_label(provider)
+                    );
+                    div()
+                        .id(SharedString::from(format!("inbox-connect-{provider}")))
+                        .role(Role::Button)
+                        .aria_label(label.clone())
+                        .w_full()
+                        .h(px(28.))
+                        .px(px(10.))
+                        .flex()
+                        .items_center()
+                        .gap(px(6.))
+                        .rounded(px(6.))
+                        .text_size(px(12.))
+                        .text_color(content(0.7))
+                        .cursor_pointer()
+                        .hover(|s| s.bg(content(0.07)).text_color(content(1.)))
+                        .child(provider_mark(provider))
+                        .child(label)
+                        .on_click(cx.listener(move |this, _, _, cx| {
+                            this.open_connection(provider.into(), cx)
+                        }))
+                }),
+        )
         .into_any_element()
     }
 
@@ -2864,6 +3027,7 @@ impl gpui::Render for Inbox {
             }))
             .on_mouse_move(
                 cx.listener(|this, event: &gpui::MouseMoveEvent, window, cx| {
+                    this.drag_connector_scrollbar(event.position.x, cx);
                     if let Some((start, width)) = this.resize_start {
                         let max = (f32::from(window.viewport_size().width) * 0.5).clamp(240., 420.);
                         this.state.list_width =
@@ -2875,6 +3039,7 @@ impl gpui::Render for Inbox {
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(|this, _, _, cx| {
+                    this.source_scroll_drag = None;
                     if this.resize_start.take().is_some() {
                         this.save();
                         cx.notify();
@@ -2884,6 +3049,7 @@ impl gpui::Render for Inbox {
             .on_mouse_up_out(
                 MouseButton::Left,
                 cx.listener(|this, _, _, cx| {
+                    this.source_scroll_drag = None;
                     if this.resize_start.take().is_some() {
                         this.save();
                         cx.notify();
@@ -2925,6 +3091,185 @@ mod tests {
         point, size,
     };
     use std::sync::{Arc, Mutex};
+
+    struct ConnectorStripFixture {
+        inbox: Entity<Inbox>,
+        width: Pixels,
+        connected: Vec<&'static str>,
+    }
+
+    impl Render for ConnectorStripFixture {
+        fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+            self.inbox.update(cx, |inbox, cx| {
+                div()
+                    .size_full()
+                    .child(
+                        div()
+                            .w(self.width)
+                            .child(inbox.connector_strip(&self.connected, cx)),
+                    )
+                    .when(inbox.connections_open, |host| {
+                        host.child(inbox.connection_menu(cx))
+                    })
+            })
+        }
+    }
+
+    #[gpui::test]
+    fn connector_strip_keeps_natural_widths_and_reaches_the_last_tab(cx: &mut TestAppContext) {
+        let window = cx.update(|cx| {
+            cx.open_window(WindowOptions::default(), |_, cx| {
+                cx.new(|cx| ConnectorStripFixture {
+                    width: px(420.),
+                    connected: source_tabs(&["github", "jira", "gitlab"], true),
+                    inbox: cx.new(|cx| {
+                        let store = Arc::new(Mutex::new(
+                            molfar_core::store::Store::open(std::path::Path::new(":memory:"))
+                                .unwrap(),
+                        ));
+                        Inbox::new_inner(store, vec![], PathBuf::from("/repo"), false, cx)
+                    }),
+                })
+            })
+            .unwrap()
+        });
+        let visual = &mut gpui::VisualTestContext::from_window(window.into(), cx);
+        visual.run_until_parked();
+        let scroll = window
+            .update(visual, |fixture, _, cx| {
+                fixture.inbox.read(cx).source_scroll.clone()
+            })
+            .unwrap();
+        let tabs = [
+            "inbox-source-github",
+            "inbox-source-jira",
+            "inbox-source-confluence",
+            "inbox-source-gitlab",
+        ];
+        let fade_is_painted = |visual: &mut gpui::VisualTestContext| {
+            window
+                .update(visual, |_, window, _| {
+                    let viewport = scroll.bounds();
+                    let scale = window.scale_factor();
+                    let surface = background_base().blend(pane_fill());
+                    let gradient = gpui::linear_gradient(
+                        90.,
+                        gpui::linear_color_stop(surface.opacity(0.), 0.),
+                        gpui::linear_color_stop(surface, 1.),
+                    );
+                    window.painted_quads().iter().any(|quad| {
+                        quad.background == gradient
+                            && (quad.bounds.right().0 - viewport.right().scale(scale).0).abs() <= 1.
+                            && (quad.bounds.size.width.0 - 18. * scale).abs() <= 1.
+                    })
+                })
+                .unwrap()
+        };
+        let wide_widths = tabs.map(|tab| visual.debug_bounds(tab).unwrap().size.width);
+        let center_y = visual.debug_bounds(tabs[0]).unwrap().center().y;
+        assert_eq!(center_y, px(17.5));
+        assert_eq!(
+            visual
+                .debug_bounds("inbox-add-connection")
+                .unwrap()
+                .center()
+                .y,
+            center_y
+        );
+        assert!(wide_widths[2] > wide_widths[1]);
+        assert!(!Inbox::connector_scroll_metrics(&scroll).scrollable);
+        assert!(!fade_is_painted(visual));
+
+        window
+            .update(visual, |fixture, _, cx| {
+                fixture.width = px(240.);
+                cx.notify();
+            })
+            .unwrap();
+        visual.run_until_parked();
+        for (tab, width) in tabs.into_iter().zip(wide_widths) {
+            let bounds = visual.debug_bounds(tab).unwrap();
+            assert_eq!(bounds.size.width, width, "{tab}");
+            assert_eq!(bounds.center().y, center_y, "{tab}");
+        }
+        let viewport = scroll.bounds();
+        let add = visual.debug_bounds("inbox-add-connection").unwrap();
+        let track = visual.debug_bounds("inbox-source-scrollbar").unwrap();
+        assert!(viewport.right() <= add.left());
+        assert!(add.right() <= px(240.));
+        assert_eq!(add.center().y, center_y);
+        assert!(track.top() >= viewport.bottom());
+        assert!(Inbox::connector_scroll_metrics(&scroll).scrollable);
+        assert!(fade_is_painted(visual));
+
+        visual.simulate_event(gpui::ScrollWheelEvent {
+            position: point(viewport.right() - px(1.), center_y),
+            delta: gpui::ScrollDelta::Pixels(point(px(-10.), px(0.))),
+            ..Default::default()
+        });
+        visual.run_until_parked();
+        assert_eq!(scroll.offset().x, px(-10.));
+        assert!(fade_is_painted(visual));
+
+        visual.simulate_click(
+            point(track.right() - px(1.), track.center().y),
+            Default::default(),
+        );
+        visual.run_until_parked();
+        let last = visual.debug_bounds("inbox-source-gitlab").unwrap();
+        assert!(last.right() <= viewport.right() + px(1.));
+        assert!(last.left() >= viewport.left());
+        let end = scroll.offset().x;
+        assert_eq!(end, -scroll.max_offset().x);
+        assert!(!fade_is_painted(visual));
+        assert_eq!(visual.debug_bounds("inbox-add-connection"), Some(add));
+
+        visual.simulate_click(last.center(), Default::default());
+        visual.run_until_parked();
+        window
+            .update(visual, |fixture, _, cx| {
+                assert_eq!(fixture.inbox.read(cx).state.source, "gitlab");
+                cx.notify();
+            })
+            .unwrap();
+        visual.run_until_parked();
+        assert_eq!(scroll.offset().x, end);
+
+        visual.simulate_event(gpui::ScrollWheelEvent {
+            position: viewport.center(),
+            delta: gpui::ScrollDelta::Pixels(point(px(10.), px(0.))),
+            ..Default::default()
+        });
+        visual.run_until_parked();
+        assert!(fade_is_painted(visual));
+
+        visual.simulate_click(add.center(), Default::default());
+        visual.run_until_parked();
+        window
+            .update(visual, |fixture, _, cx| {
+                let inbox = fixture.inbox.read(cx);
+                assert!(inbox.connections_open);
+                assert_eq!(inbox.connection_anchor.get(), Some(add));
+                fixture.width = px(420.);
+                cx.notify();
+            })
+            .unwrap();
+        visual.run_until_parked();
+        assert_eq!(scroll.offset().x, px(0.));
+        assert!(!Inbox::connector_scroll_metrics(&scroll).scrollable);
+        assert!(!fade_is_painted(visual));
+
+        window
+            .update(visual, |fixture, _, cx| {
+                fixture.connected.truncate(1);
+                cx.notify();
+            })
+            .unwrap();
+        visual.run_until_parked();
+        for selector in [tabs[0], "inbox-add-connection"] {
+            assert_eq!(visual.debug_bounds(selector).unwrap().center().y, center_y);
+        }
+    }
 
     struct Fixture {
         inbox: Entity<Inbox>,

@@ -18,7 +18,7 @@ use super::{
 struct Fixture(RefCell<VecDeque<(&'static str, Result<Value, ConfluenceError>)>>);
 
 impl Transport for Fixture {
-    fn get(&self, url: &Url, _: &SecretString) -> Result<Response, ConfluenceError> {
+    fn get(&self, url: &Url, _: Option<&SecretString>) -> Result<Response, ConfluenceError> {
         let (path, value) = self
             .0
             .borrow_mut()

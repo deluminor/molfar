@@ -52,10 +52,21 @@ pub(crate) fn image<T: 'static>(
                 .border_color(content(0.08))
                 .child(
                     img(path.to_path_buf())
+                        .id("bitmap")
                         .max_w_full()
                         .max_h(px(MAX_HEIGHT))
                         .when_some(width, |image, width| image.w(px(width)))
                         .object_fit(ObjectFit::Contain)
+                        .with_loading(|| {
+                            div()
+                                .px_3()
+                                .py_2()
+                                .bg(content(0.04))
+                                .text_size(px(12.))
+                                .text_color(content(0.45))
+                                .child("Loading image…")
+                                .into_any_element()
+                        })
                         .with_fallback(move || missing(&label)),
                 )
                 .on_click(cx.listener(move |_, _, _, cx| cx.open_with_system(&file)))

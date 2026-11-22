@@ -50,19 +50,55 @@ fn write_confluence_qa_screenshots() {
                 url: "https://example.invalid/wiki/spaces/TEAM".into(),
             });
             view.selected_space = Some("1".into());
+            let page = |id: &str, title: &str, kind: Kind| Node {
+                id: id.into(),
+                title: title.into(),
+                url: format!("https://example.invalid/wiki/spaces/TEAM/pages/{id}"),
+                kind,
+                space_key: "TEAM".into(),
+            };
             view.branches.insert(
                 String::new(),
                 Children {
-                    nodes: vec![Node {
-                        id: "42".into(),
-                        title: "Guide".into(),
-                        url: "https://example.invalid/wiki/spaces/TEAM/pages/42".into(),
-                        kind: Kind::Page,
-                        space_key: "TEAM".into(),
-                    }],
+                    nodes: vec![
+                        page("42", "Guide", Kind::Page),
+                        page(
+                            "50",
+                            "Trading strategy research and validation",
+                            Kind::Folder,
+                        ),
+                        page("60", "Minimum Balance Protection", Kind::Page),
+                        page("61", "Release notes", Kind::Folder),
+                    ],
                     cursor: None,
                 },
             );
+            view.branches.insert(
+                "50".into(),
+                Children {
+                    nodes: vec![
+                        page("51", "STAGE 1. Signal Generation", Kind::Page),
+                        page(
+                            "52",
+                            "MINI backtest for stage 1,2,3,4 with a long descriptive title",
+                            Kind::Page,
+                        ),
+                        page("53", "Risk model", Kind::Folder),
+                    ],
+                    cursor: None,
+                },
+            );
+            view.branches.insert(
+                "53".into(),
+                Children {
+                    nodes: vec![page("54", "Position sizing under drawdown", Kind::Page)],
+                    cursor: None,
+                },
+            );
+            view.expanded.insert("50".into());
+            view.expanded.insert("53".into());
+            view.selected_node = Some(page("52", "MINI backtest", Kind::Page));
+            view.rebuild_rows();
             cx.notify();
         })
         .unwrap();

@@ -13,30 +13,40 @@ impl View {
                 .role(Role::Button)
                 .cursor_pointer()
                 .rounded_md()
-                .p_1()
+                .h(px(26.))
+                .px_2()
+                .flex()
+                .items_center()
                 .text_size(px(12.))
                 .text_color(content(0.62))
-                .hover(|row| row.bg(content(0.06)))
-                .child(title.clone())
+                .hover(|row| row.bg(content(0.06)).text_color(content(1.)))
+                .child(div().min_w_0().truncate().child(title.clone()))
+                .tooltip(crate::tooltip::text(title.clone()))
                 .on_click(cx.listener(move |this, _, _, cx| {
-                    this.document_scroll.scroll_to_item(index + 2);
+                    this.document_list.scroll_to(gpui::ListOffset {
+                        item_ix: index + 1,
+                        offset_in_item: px(0.),
+                    });
                     cx.notify();
                 }))
         });
         div()
             .id("confluence-outline")
-            .w(px(168.))
+            .w(px(200.))
             .flex_shrink_0()
             .overflow_y_scroll()
             .border_l_1()
-            .border_color(content(0.08))
-            .p_3()
+            .border_color(content(0.07))
+            .px_2()
+            .py_4()
             .child(
                 div()
-                    .text_size(px(12.))
-                    .font_weight(FontWeight::SEMIBOLD)
+                    .px_2()
                     .mb_2()
-                    .child("On this page"),
+                    .text_size(px(11.))
+                    .font_weight(FontWeight::SEMIBOLD)
+                    .text_color(content(0.45))
+                    .child("ON THIS PAGE"),
             )
             .children(headings)
             .into_any_element()

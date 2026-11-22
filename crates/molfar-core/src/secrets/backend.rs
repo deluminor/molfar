@@ -1,6 +1,4 @@
-use secrecy::ExposeSecret;
-
-use super::{Error, SecretValue, SERVICE};
+use super::{Error, SecretValue};
 
 pub(super) trait Backend: Send + Sync {
     fn probe(&self) -> Result<(), Error>;
@@ -9,9 +7,14 @@ pub(super) trait Backend: Send + Sync {
     fn delete(&self, account: &str) -> Result<(), Error>;
 }
 
+// Builds that link the in-memory test store must not compile the OS keychain path.
+#[cfg(any(test, not(feature = "test-secrets")))]
 pub(super) struct KeyringBackend;
 
-#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+#[cfg(all(
+    any(test, not(feature = "test-secrets")),
+    any(target_os = "macos", target_os = "windows", target_os = "linux")
+))]
 fn map_error(error: keyring::Error) -> Error {
     match error {
         keyring::Error::NoEntry => Error::Missing,
@@ -19,8 +22,13 @@ fn map_error(error: keyring::Error) -> Error {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+#[cfg(all(
+    any(test, not(feature = "test-secrets")),
+    any(target_os = "macos", target_os = "windows", target_os = "linux")
+))]
 fn entry(account: &str) -> Result<keyring::Entry, Error> {
+    use super::SERVICE;
+
     #[cfg(target_os = "linux")]
     return keyring::secret_service::SsCredential::new_with_target(None, SERVICE, account)
         .map(|credential| keyring::Entry::new_with_credential(Box::new(credential)))
@@ -30,9 +38,25 @@ fn entry(account: &str) -> Result<keyring::Entry, Error> {
     keyring::Entry::new(SERVICE, account).map_err(map_error)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+// Unsigned test binaries get a new signature per build, so macOS re-prompts every run.
+#[cfg(test)]
+fn deny_in_tests() {
+    assert_eq!(
+        std::env::var("MOLFAR_REAL_KEYRING").as_deref(),
+        Ok("1"),
+        "tests must not use the OS keychain; use SecretStore::in_memory()"
+    );
+}
+
+#[cfg(all(
+    any(test, not(feature = "test-secrets")),
+    any(target_os = "macos", target_os = "windows", target_os = "linux")
+))]
 impl Backend for KeyringBackend {
     fn probe(&self) -> Result<(), Error> {
+        #[cfg(test)]
+        deny_in_tests();
+
         #[cfg(target_os = "linux")]
         {
             use dbus_secret_service::{EncryptionType, SecretService};
@@ -55,6 +79,8 @@ impl Backend for KeyringBackend {
     }
 
     fn set(&self, account: &str, value: &SecretValue) -> Result<(), Error> {
+        use secrecy::ExposeSecret;
+
         self.probe()?;
         entry(account)?
             .set_password(value.0.expose_secret())
@@ -116,6 +142,7 @@ impl Backend for MemoryBackend {
 
 #[cfg(test)]
 mod tests {
+    use super::super::SERVICE;
     use super::*;
 
     #[test]
@@ -135,5 +162,11 @@ mod tests {
             entry.get_password().map_err(map_error),
             Err(Error::Unavailable)
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "tests must not use the OS keychain")]
+    fn keyring_backend_is_denied_in_tests() {
+        let _ = KeyringBackend.probe();
     }
 }

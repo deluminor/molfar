@@ -7,6 +7,37 @@ const ORIGINAL: &str = "fixture-old-credential";
 const REPLACEMENT: &str = "fixture-replaced-credential";
 
 #[gpui::test]
+fn settings_renders_secret_action_labels(cx: &mut TestAppContext) {
+    let db = Arc::new(Mutex::new(
+        molfar_core::store::Store::open(Path::new(":memory:")).unwrap(),
+    ));
+    let secrets = SecretStore::in_memory();
+    secrets
+        .create(
+            &locked(&db).unwrap(),
+            Scope::Global,
+            SecretName::parse("API_KEY").unwrap(),
+            SecretValue::from_text(ORIGINAL.into()).unwrap(),
+        )
+        .unwrap();
+
+    let workspace = vec![(env!("CARGO_MANIFEST_DIR").into(), "Fixture project".into())];
+    let (_, visual) = cx.add_window_view(|_, cx| SecretsPage::new(db, secrets, workspace, cx));
+    visual.run_until_parked();
+
+    for selector in [
+        "settings-button-label-Add secret",
+        "settings-button-label-Rename",
+        "settings-button-label-Replace",
+        "settings-button-label-Delete",
+        "settings-button-label-Session environment · Fixture project",
+    ] {
+        let bounds = visual.debug_bounds(selector).expect(selector);
+        assert!(bounds.size.width > gpui::px(0.), "{selector}");
+    }
+}
+
+#[gpui::test]
 fn settings_manages_credentials_without_revealing_them(cx: &mut TestAppContext) {
     let db = Arc::new(Mutex::new(
         molfar_core::store::Store::open(Path::new(":memory:")).unwrap(),

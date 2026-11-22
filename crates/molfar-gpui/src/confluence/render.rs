@@ -1,6 +1,5 @@
 use std::{path::PathBuf, sync::Arc};
 
-use gpui::{AnyElement, SharedString};
 use molfar_core::confluence::{
     connector::{Node as TreeNode, valid_id},
     document::Node,
@@ -18,6 +17,9 @@ pub(super) struct DocumentView {
     pub children: Vec<TreeNode>,
     pub ancestors: Vec<TreeNode>,
     pub blocks: Vec<ReaderBlock>,
+    /// Expand blocks before each top-level block, for stable fold ids when
+    /// blocks are laid out one at a time.
+    pub callout_starts: Vec<usize>,
     pub headings: Vec<(usize, String)>,
     pub internal_links: Vec<(String, String)>,
 }
@@ -51,14 +53,32 @@ impl DocumentView {
                 _ => None,
             })
             .collect();
+        let mut seen = 0;
+        let callout_starts = blocks
+            .iter()
+            .map(|block| {
+                let start = seen;
+                seen += expands(block);
+                start
+            })
+            .collect();
         Self {
             page: Arc::new(page),
             children,
             ancestors: Vec::new(),
+            callout_starts,
             blocks,
             headings,
             internal_links,
         }
+    }
+}
+
+fn expands(block: &ReaderBlock) -> usize {
+    match block {
+        ReaderBlock::Expand(_, children) => 1 + children.iter().map(expands).sum::<usize>(),
+        ReaderBlock::Panel(_, children) => children.iter().map(expands).sum(),
+        _ => 0,
     }
 }
 
@@ -226,13 +246,4 @@ pub(super) fn page_id(page: &Page, url: &Url) -> Option<String> {
             let id = rest.split('/').next()?;
             valid_id(id).then(|| id.to_owned())
         })
-}
-
-pub(super) fn title(text: &str, query: &str, id: SharedString) -> AnyElement {
-    let mut runs = vec![InlineRun {
-        text: text.to_owned(),
-        style: InlineStyle::default(),
-    }];
-    markdown::mark_runs(&mut runs, query, false);
-    markdown::inline(&runs, id, 13.)
 }

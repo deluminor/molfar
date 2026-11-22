@@ -1,8 +1,11 @@
-use gpui::{Context, px};
+use gpui::{Context, ScrollStrategy};
 use molfar_core::confluence::{
     config,
     connector::{Kind, Node},
 };
+
+mod paging;
+pub(super) mod panel;
 
 use super::View;
 use crate::runtime::locked;
@@ -12,6 +15,8 @@ pub(super) struct Row {
     pub node: Node,
     pub parent: String,
     pub depth: usize,
+    /// The last loaded child of `parent`, where its next page starts.
+    pub last: bool,
 }
 
 impl View {
@@ -32,7 +37,8 @@ impl View {
         self.selection_source = None;
         self.reading = false;
         self.cursor_row = 0;
-        self.tree_scroll.set_offset(gpui::point(px(0.), px(0.)));
+        self.tree_scroll.scroll_to_item(0, ScrollStrategy::Top);
+        self.rebuild_rows();
         if self.active_space().is_some() {
             self.load_children(None, refresh, cx);
         }
@@ -99,31 +105,41 @@ impl View {
                             branch.cursor = None;
                         }
                     }
-                    Err(error) => this.failure(error),
+                    Err(error) => {
+                        // Stop paging this branch until a refresh, or a
+                        // visible failing tail would retry every frame.
+                        if let Some(branch) = this.branches.get_mut(&key) {
+                            branch.cursor = None;
+                        }
+                        this.failure(error);
+                    }
                 }
+                this.rebuild_rows();
                 cx.notify();
             });
         })
         .detach();
     }
 
-    pub(super) fn rows(&self) -> Vec<Row> {
-        if !self.query.trim().is_empty() {
-            return self
-                .results
-                .iter()
-                .cloned()
-                .map(|node| Row {
-                    node,
-                    depth: 0,
-                    parent: String::new(),
-                })
-                .collect();
-        }
+    pub(super) fn rows(&self) -> &[Row] {
+        &self.tree_rows
+    }
 
+    /// Flattens the tree once per change; frames only read the cached rows.
+    pub(super) fn rebuild_rows(&mut self) {
         let mut rows = Vec::new();
-        self.append_rows("", 0, &mut rows);
-        rows
+        if self.query.trim().is_empty() {
+            self.append_rows("", 0, &mut rows);
+        } else {
+            rows.extend(self.results.iter().cloned().map(|node| Row {
+                node,
+                depth: 0,
+                parent: String::new(),
+                last: false,
+            }));
+        }
+        self.cursor_row = self.cursor_row.min(rows.len().saturating_sub(1));
+        self.tree_rows = rows;
     }
 
     fn append_rows(&self, key: &str, depth: usize, rows: &mut Vec<Row>) {
@@ -131,11 +147,13 @@ impl View {
             return;
         }
         if let Some(branch) = self.branches.get(key) {
-            for node in &branch.nodes {
+            let count = branch.nodes.len();
+            for (index, node) in branch.nodes.iter().enumerate() {
                 rows.push(Row {
                     node: node.clone(),
                     depth,
                     parent: key.into(),
+                    last: index + 1 == count,
                 });
                 if self.expanded.contains(&node.id) {
                     self.append_rows(&node.id, depth + 1, rows);
@@ -152,6 +170,7 @@ impl View {
             if !self.branches.contains_key(&node.id) {
                 self.load_children(Some((node.id.clone(), node.kind)), false, cx);
             }
+            self.rebuild_rows();
             cx.notify();
         }
     }
@@ -159,22 +178,28 @@ impl View {
     pub(super) fn collapse(&mut self, id: &str, cx: &mut Context<Self>) -> bool {
         let removed = self.expanded.remove(id);
         if removed {
+            self.rebuild_rows();
             cx.notify();
         }
         removed
     }
 
     pub(super) fn tree_key(&mut self, key: &str, cx: &mut Context<Self>) -> bool {
-        let rows = self.rows();
-        let Some(row) = rows.get(self.cursor_row.min(rows.len().saturating_sub(1))) else {
+        let rows = &self.tree_rows;
+        let Some(row) = rows
+            .get(self.cursor_row.min(rows.len().saturating_sub(1)))
+            .cloned()
+        else {
             return false;
         };
+        let count = rows.len();
         match key {
             "up" => self.cursor_row = self.cursor_row.saturating_sub(1),
-            "down" => self.cursor_row = (self.cursor_row + 1).min(rows.len() - 1),
+            "down" => self.cursor_row = (self.cursor_row + 1).min(count - 1),
             "left" => {
                 if !self.collapse(&row.node.id, cx)
-                    && let Some(parent) = rows
+                    && let Some(parent) = self
+                        .tree_rows
                         .iter()
                         .position(|candidate| candidate.node.id == row.parent)
                 {
@@ -186,67 +211,10 @@ impl View {
             _ => return false,
         }
 
-        self.tree_scroll.scroll_to_item(self.cursor_row);
+        self.tree_scroll
+            .scroll_to_item(self.cursor_row, ScrollStrategy::Nearest);
         cx.notify();
         true
-    }
-
-    pub(super) fn tree_scrolled(&mut self, cx: &mut Context<Self>) {
-        if !self.query.trim().is_empty() {
-            return;
-        }
-        let rows = self.rows();
-        if rows.is_empty() {
-            return;
-        }
-
-        let offset = self.tree_scroll.offset().y;
-        let at_end = (self.tree_scroll.max_offset().y - offset.abs()).abs() <= px(1.);
-        let viewport_top = self.tree_scroll.bounds().top() - offset;
-        let viewport_bottom = self.tree_scroll.bounds().bottom() - offset;
-        let near = |index: usize| {
-            let Some(bounds) = self.tree_scroll.bounds_for_item(index) else {
-                return false;
-            };
-            let distance = viewport_bottom - bounds.bottom();
-            let close = distance >= px(-64.) && distance <= px(64.);
-            let visible = bounds.bottom() > viewport_top && bounds.top() < viewport_bottom;
-            close || (at_end && visible)
-        };
-        let mut choice: Option<(usize, String)> = None;
-        for (index, row) in rows.iter().enumerate() {
-            let last = !rows[index + 1..]
-                .iter()
-                .any(|next| next.parent == row.parent);
-            if !near(index)
-                || !last
-                || !self
-                    .branches
-                    .get(&row.parent)
-                    .is_some_and(|branch| branch.cursor.is_some())
-            {
-                continue;
-            }
-            if choice.as_ref().is_none_or(|(depth, _)| row.depth >= *depth) {
-                choice = Some((row.depth, row.parent.clone()));
-            }
-        }
-
-        let Some((_, parent)) = choice else {
-            return;
-        };
-        if parent.is_empty() {
-            self.load_children(None, false, cx);
-            return;
-        }
-        let Some(kind) = rows
-            .into_iter()
-            .find(|row| row.node.id == parent)
-            .map(|row| row.node.kind)
-        else {
-            return;
-        };
-        self.load_children(Some((parent, kind)), false, cx);
     }
 
     pub(super) fn toggle_hidden(&mut self, id: String, cx: &mut Context<Self>) {

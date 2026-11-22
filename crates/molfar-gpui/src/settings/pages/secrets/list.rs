@@ -1,5 +1,5 @@
 use super::*;
-use crate::{settings::widgets::secondary_button, theme::content};
+use crate::{settings::widgets::labeled_secondary_button as secondary_button, theme::content};
 use gpui::{AnyElement, SharedString, px};
 use molfar_core::secrets::Scope;
 

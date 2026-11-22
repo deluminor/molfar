@@ -118,5 +118,29 @@ fn redacts_stream_at_every_unicode_boundary_and_tracks_replaced_values() {
     assert_eq!(redactor.text(value), value);
 }
 
+#[test]
+fn default_store_is_shared_and_in_memory_in_tests() {
+    let database = Store::open(Path::new(":memory:")).unwrap();
+    let store = SecretStore::default();
+    let value = "default-store-fixture-value";
+
+    assert!(store.shares_backend(&SecretStore::default()));
+    assert_eq!(store.probe(), Ok(()));
+    assert_eq!(
+        store.create(
+            &database,
+            Scope::Global,
+            SecretName::parse("DEFAULT_STORE_FIXTURE").unwrap(),
+            SecretValue::parse(value.into()).unwrap()
+        ),
+        Ok(Status::Saved)
+    );
+    assert_eq!(
+        store.redactor(&database, None).unwrap().text(value),
+        "[secret:DEFAULT_STORE_FIXTURE]"
+    );
+    store.delete_scope(&database, &Scope::Global).unwrap();
+}
+
 mod real_backend;
 mod storage;

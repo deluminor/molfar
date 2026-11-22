@@ -92,7 +92,9 @@ fn confluence_renders_reader_and_keeps_it_open_on_error(cx: &mut TestAppContext)
                         if runs.iter().any(|run| run.style.search.is_some())
                 )
             }));
+            view.rebuild_rows();
             assert!(view.tree_key("down", cx));
+            view.rebuild_rows();
             cx.notify();
         })
         .unwrap();
@@ -105,13 +107,14 @@ fn confluence_renders_reader_and_keeps_it_open_on_error(cx: &mut TestAppContext)
         "confluence-callout",
         "confluence-status",
         "confluence-expand",
-        "confluence-placeholder",
     ] {
         assert!(
             visual.debug_bounds(selector).is_some(),
             "{selector} is shown"
         );
     }
+    reveal_document_end(window, visual);
+    assert!(visual.debug_bounds("confluence-placeholder").is_some());
 
     for error in [
         ConfluenceError::Offline,
@@ -125,6 +128,7 @@ fn confluence_renders_reader_and_keeps_it_open_on_error(cx: &mut TestAppContext)
                 view.failure(error.to_string());
                 assert_eq!(view.error.as_deref(), Some(error.to_string().as_str()));
                 assert_eq!(view.document.as_ref().unwrap().page.id, "42");
+                view.rebuild_rows();
                 cx.notify();
             })
             .unwrap();
@@ -156,7 +160,7 @@ fn confluence_tree_loads_the_next_page_of_a_branch_that_is_not_the_tail(cx: &mut
     let (window, mut visual) = confluence_window(cx);
     let visual = &mut visual;
     window
-        .update(visual, |view, _, cx| {
+        .update(visual, |view, _, _| {
             view.connected = true;
             view.spaces.push(space());
             view.selected_space = Some("1".into());
@@ -178,25 +182,18 @@ fn confluence_tree_loads_the_next_page_of_a_branch_that_is_not_the_tail(cx: &mut
                 },
             );
             view.expanded.insert("10".into());
-            cx.notify();
-        })
-        .unwrap();
-    visual.run_until_parked();
-    window
-        .update(visual, |view, _, cx| {
-            assert!(
-                view.tree_scroll.bounds_for_item(0).is_some(),
-                "tree was not painted"
+            view.rebuild_rows();
+            assert_eq!(
+                view.page_candidate(0..view.rows().len()).as_deref(),
+                Some("10"),
+                "visible branch end was ignored"
             );
-            let max = view.tree_scroll.max_offset();
-            view.tree_scroll.set_offset(gpui::point(px(0.), -max.y));
-            view.tree_scrolled(cx);
-            assert!(
-                view.pending.contains("10"),
-                "visible branch end was ignored: {:?}",
-                view.pending
+            view.pending.insert("10".into());
+            assert_eq!(
+                view.page_candidate(0..view.rows().len()),
+                None,
+                "no duplicate request"
             );
-            assert!(!view.pending.contains(""));
         })
         .unwrap();
 }
@@ -206,7 +203,7 @@ fn confluence_expanded_row_does_not_page_its_parent(cx: &mut TestAppContext) {
     let (window, mut visual) = confluence_window(cx);
     let visual = &mut visual;
     window
-        .update(visual, |view, _, cx| {
+        .update(visual, |view, _, _| {
             view.connected = true;
             view.spaces.push(space());
             view.selected_space = Some("1".into());
@@ -235,49 +232,21 @@ fn confluence_expanded_row_does_not_page_its_parent(cx: &mut TestAppContext) {
                 },
             );
             view.expanded.insert("10".into());
-            cx.notify();
-        })
-        .unwrap();
-    visual.run_until_parked();
-    window
-        .update(visual, |view, _, cx| {
+            view.rebuild_rows();
             let rows = view.rows();
             let folder = rows.iter().position(|row| row.node.id == "10").unwrap();
             let sibling = rows.iter().position(|row| row.node.id == "12").unwrap();
-            let row = view
-                .tree_scroll
-                .bounds_for_item(folder)
-                .expect("folder painted");
-            let viewport = view.tree_scroll.bounds();
-            let mut offset = viewport.bottom() - row.bottom();
-            let max = view.tree_scroll.max_offset().y;
-            if offset < -max {
-                offset = -max;
-            }
-            if offset > px(0.) {
-                offset = px(0.);
-            }
-            view.tree_scroll.set_offset(gpui::point(px(0.), offset));
-            let viewport_bottom = viewport.bottom() - view.tree_scroll.offset().y;
-            let folder_distance =
-                viewport_bottom - view.tree_scroll.bounds_for_item(folder).unwrap().bottom();
-            let sibling_distance =
-                viewport_bottom - view.tree_scroll.bounds_for_item(sibling).unwrap().bottom();
-            assert!(
-                folder_distance >= px(-64.) && folder_distance <= px(64.),
-                "folder is not at the pane bottom: {folder_distance:?}"
+            assert_eq!(sibling, folder + 4);
+            assert_eq!(
+                view.page_candidate(folder.saturating_sub(20)..folder + 1),
+                None,
+                "expanded folder paged its parent"
             );
-            assert!(
-                sibling_distance < px(-64.),
-                "sibling is still near the pane bottom: {sibling_distance:?}"
+            assert_eq!(
+                view.page_candidate(sibling - 20..sibling + 1).as_deref(),
+                Some(""),
+                "the root pages once its tail is in view"
             );
-            view.tree_scrolled(cx);
-            assert!(
-                !view.pending.contains(""),
-                "expanded folder paged its parent: {:?}",
-                view.pending
-            );
-            assert!(!view.pending.contains("10"));
         })
         .unwrap();
 }
@@ -387,12 +356,14 @@ fn confluence_breadcrumbs_keep_ancestors_and_folder_children_select_the_tree(
                 node("20", "Parent", Kind::Page),
             ];
             view.document = Some(document);
+            view.rebuild_rows();
             cx.notify();
         })
         .unwrap();
     visual.run_until_parked();
     assert!(visual.debug_bounds("confluence-breadcrumb-10").is_some());
     assert!(visual.debug_bounds("confluence-breadcrumb-20").is_some());
+    reveal_document_end(window, visual);
     assert!(visual.debug_bounds("confluence-relation-11").is_some());
 
     window
@@ -417,6 +388,7 @@ fn confluence_breadcrumbs_keep_ancestors_and_folder_children_select_the_tree(
             view.open_target("11".into(), cx);
             assert_eq!(view.selected_node.as_ref().unwrap().id, "11");
             assert_eq!(view.selected_node.as_ref().unwrap().kind, Kind::Folder);
+            view.rebuild_rows();
             cx.notify();
         })
         .unwrap();
@@ -426,6 +398,7 @@ fn confluence_breadcrumbs_keep_ancestors_and_folder_children_select_the_tree(
             let mut page = guide_page();
             page.parent_id = Some("20".into());
             view.document = Some(DocumentView::new(page, Vec::new(), ""));
+            view.rebuild_rows();
             cx.notify();
         })
         .unwrap();
@@ -452,6 +425,7 @@ fn confluence_space_switcher_keeps_hidden_spaces_out_of_the_destination_list(
             view.spaces.push(hidden);
             view.hidden.insert("2".into());
             view.selected_space = Some("1".into());
+            view.rebuild_rows();
             cx.notify();
         })
         .unwrap();
@@ -462,7 +436,9 @@ fn confluence_space_switcher_keeps_hidden_spaces_out_of_the_destination_list(
     assert!(visual.debug_bounds("confluence-show-2").is_some());
 }
 
-fn confluence_window(cx: &mut TestAppContext) -> (gpui::WindowHandle<View>, VisualTestContext) {
+pub(super) fn confluence_window(
+    cx: &mut TestAppContext,
+) -> (gpui::WindowHandle<View>, VisualTestContext) {
     let window = cx.update(|cx: &mut App| {
         cx.open_window(WindowOptions::default(), |_, cx| {
             cx.new(|cx| {
@@ -479,7 +455,18 @@ fn confluence_window(cx: &mut TestAppContext) -> (gpui::WindowHandle<View>, Visu
     (window, visual)
 }
 
-fn space() -> Space {
+/// The body is virtualized: blocks below the fold are built once scrolled to.
+fn reveal_document_end(window: gpui::WindowHandle<View>, visual: &mut VisualTestContext) {
+    window
+        .update(visual, |view, _, cx| {
+            view.document_list.scroll_to_end();
+            cx.notify();
+        })
+        .unwrap();
+    visual.run_until_parked();
+}
+
+pub(super) fn space() -> Space {
     Space {
         id: "1".into(),
         key: "TEAM".into(),
@@ -489,7 +476,7 @@ fn space() -> Space {
     }
 }
 
-fn node(id: &str, title: &str, kind: Kind) -> Node {
+pub(super) fn node(id: &str, title: &str, kind: Kind) -> Node {
     Node {
         id: id.into(),
         title: title.into(),
@@ -499,7 +486,7 @@ fn node(id: &str, title: &str, kind: Kind) -> Node {
     }
 }
 
-fn guide_page() -> Page {
+pub(super) fn guide_page() -> Page {
     Page {
         id: "42".into(),
         title: "Guide".into(),
@@ -555,4 +542,70 @@ fn confluence_gpui_sources_do_not_depend_on_the_tauri_connector() {
     }
 
     visit(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/confluence"));
+}
+
+#[gpui::test]
+fn confluence_tree_indents_levels_keeps_titles_on_one_line_and_builds_only_visible_rows(
+    cx: &mut TestAppContext,
+) {
+    let (window, mut visual) = confluence_window(cx);
+    let visual = &mut visual;
+    let long = "MINI backtest for stage 1,2,3,4 with a title far wider than the tree pane";
+    window
+        .update(visual, |view, _, cx| {
+            view.connected = true;
+            view.spaces.push(space());
+            view.selected_space = Some("1".into());
+            let mut roots = vec![node("10", "Research", Kind::Folder)];
+            roots.extend((0..500).map(|index| node(&format!("p{index}"), long, Kind::Page)));
+            view.branches.insert(
+                String::new(),
+                Children {
+                    nodes: roots,
+                    cursor: None,
+                },
+            );
+            view.branches.insert(
+                "10".into(),
+                Children {
+                    nodes: vec![node("11", long, Kind::Page)],
+                    cursor: None,
+                },
+            );
+            view.expanded.insert("10".into());
+            view.rebuild_rows();
+            cx.notify();
+        })
+        .unwrap();
+    visual.run_until_parked();
+
+    let parent = visual.debug_bounds("confluence-tree-row-10").unwrap();
+    let child = visual.debug_bounds("confluence-tree-row-11").unwrap();
+    let next = visual.debug_bounds("confluence-tree-row-p0").unwrap();
+    assert_eq!(parent.size.height, px(28.), "one line per row");
+    assert_eq!(child.size.height, px(28.), "long titles never wrap");
+    assert!(
+        child.top() >= parent.bottom() && next.top() >= child.bottom(),
+        "rows never overlap"
+    );
+    let parent_title = visual.debug_bounds("confluence-tree-title-10").unwrap();
+    let child_title = visual.debug_bounds("confluence-tree-title-11").unwrap();
+    assert_eq!(
+        child_title.left() - parent_title.left(),
+        px(16.),
+        "one indent per level"
+    );
+    assert!(
+        child_title.right() <= child.right(),
+        "the title is clipped inside its row"
+    );
+    window
+        .update(visual, |view, _, _| {
+            assert_eq!(view.rows()[1].depth, 1);
+        })
+        .unwrap();
+    assert!(
+        visual.debug_bounds("confluence-tree-row-p499").is_none(),
+        "off-screen rows are not built"
+    );
 }

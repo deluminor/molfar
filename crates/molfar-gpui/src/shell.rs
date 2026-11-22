@@ -8916,6 +8916,11 @@ impl Render for Shell {
                 this.open_settings(crate::settings::Section::General, window, cx)
             }))
             .on_action(cx.listener(|this, _: &OpenInbox, window, cx| this.open_inbox(window, cx)))
+            .on_action(
+                cx.listener(|this, action: &crate::confluence::OpenPage, window, cx| {
+                    this.open_confluence(Some(action.0.clone()), window, cx)
+                }),
+            )
             .on_action(cx.listener(|this, _: &OpenNotes, window, cx| this.open_notes(window, cx)))
             .on_action(
                 cx.listener(|this, _: &OpenKnowledge, window, cx| this.open_knowledge(window, cx)),

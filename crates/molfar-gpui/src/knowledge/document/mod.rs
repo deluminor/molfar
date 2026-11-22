@@ -10,8 +10,7 @@ pub(crate) mod properties;
 mod relations;
 mod toolbar;
 
-pub(super) use note::PreviewBlock;
-pub(crate) use note::{PreviewHost, parse as parse_preview, render_markdown};
+pub(crate) use note::{PreviewBlock, PreviewHost, parse as parse_preview, render_preview};
 pub(super) use relations::Relations;
 
 pub(crate) fn banner(

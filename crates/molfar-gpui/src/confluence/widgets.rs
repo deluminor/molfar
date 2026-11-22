@@ -117,6 +117,7 @@ impl View {
                                 if !this.folded.remove(&id) {
                                     this.folded.insert(id);
                                 }
+                                this.document_list.remeasure();
                                 cx.notify();
                             })),
                     )

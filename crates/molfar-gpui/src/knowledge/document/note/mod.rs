@@ -258,14 +258,13 @@ pub(crate) trait PreviewHost: 'static + Sized {
     fn toggle_callout(&mut self, index: usize);
 }
 
-pub(crate) fn render_markdown<T: PreviewHost>(
+/// Lays out blocks parsed once with [`parse`]; never re-parses per frame.
+pub(crate) fn render_preview<T: PreviewHost>(
     host: &T,
-    markdown: &str,
-    root: Option<&Path>,
+    blocks: &[PreviewBlock],
     cx: &mut Context<T>,
 ) -> Vec<AnyElement> {
-    let blocks = parse(markdown, root);
-    hosted_elements(host, &blocks, &mut Walk::default(), cx)
+    hosted_elements(host, blocks, &mut Walk::default(), cx)
 }
 
 fn hosted_elements<T: PreviewHost>(

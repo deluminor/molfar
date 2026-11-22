@@ -1,5 +1,5 @@
 use super::{Event, View, render::DocumentView, service::Service};
-use gpui::{Context, Focusable, KeyDownEvent, Window, px};
+use gpui::{Context, Focusable, KeyDownEvent, Window};
 use molfar_core::confluence::{
     connector::{Connector, Kind, Node},
     page::Page,
@@ -160,7 +160,7 @@ impl View {
         cx.notify();
     }
 
-    pub(super) fn open_page(&mut self, id: String, refresh: bool, cx: &mut Context<Self>) {
+    pub(crate) fn open_page(&mut self, id: String, refresh: bool, cx: &mut Context<Self>) {
         self.page_generation += 1;
         let generation = self.page_generation;
         self.reading = self.document.is_none();
@@ -205,7 +205,6 @@ impl View {
                 this.selection_source = None;
                 this.folded.clear();
                 this.document = Some(DocumentView::new(page, Vec::new(), &query));
-                this.document_scroll.set_offset(gpui::point(px(0.), px(0.)));
                 cx.notify();
                 true
             });

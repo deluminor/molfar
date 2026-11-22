@@ -18,7 +18,7 @@ use crate::{
 };
 use gpui::{
     App, AppContext, Context, Entity, EventEmitter, FocusHandle, Focusable, ListAlignment,
-    ListState, Pixels, Subscription, px,
+    ListState, Pixels, ScrollHandle, Subscription, px,
 };
 use molfar_core::{
     inbox::{self as model, Checks, Details, Diff, Item, Service, Snapshot, Thread, ViewState},
@@ -28,6 +28,23 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
+
+pub(crate) use model::CONFLUENCE_SOURCE as CONFLUENCE;
+
+/// Source tabs in order: providers as listed in `PROVIDERS`, with
+/// Confluence immediately after Jira.
+pub(crate) fn source_tabs(connected: &[&'static str], confluence: bool) -> Vec<&'static str> {
+    let mut tabs = Vec::new();
+    for provider in model::PROVIDERS {
+        if connected.contains(&provider) {
+            tabs.push(provider);
+        }
+        if provider == "jira" && confluence {
+            tabs.push(CONFLUENCE);
+        }
+    }
+    tabs
+}
 
 pub(crate) enum Event {
     Close,
@@ -59,6 +76,8 @@ pub(crate) struct Inbox {
     focus: FocusHandle,
     jira_list: Entity<jira::JiraList>,
     jira_reader: Entity<jira::JiraReader>,
+    confluence: Option<Entity<crate::confluence::View>>,
+    _confluence_watch: Option<Subscription>,
     search: Entity<Input>,
     comment: Entity<Input>,
     summary_scroll: ListState,
@@ -98,6 +117,8 @@ pub(crate) struct Inbox {
     connections_open: bool,
     filter_anchor: AnchorSlot,
     connection_anchor: AnchorSlot,
+    source_scroll: ScrollHandle,
+    source_scroll_drag: Option<f32>,
     connect_provider: Option<String>,
     connect_url: Entity<Input>,
     connect_email: Entity<Input>,
@@ -263,6 +284,7 @@ impl Inbox {
             }
             jira::ListEvent::Share(text) => cx.emit(Event::AddToChat { text: text.clone() }),
             jira::ListEvent::ShareFailed(text) => cx.emit(Event::JiraNotice { text: text.clone() }),
+            jira::ListEvent::Manage => cx.emit(Event::ManageAtlassian),
         })
         .detach();
         let project = cwd.display().to_string();
@@ -309,6 +331,8 @@ impl Inbox {
             focus: cx.focus_handle(),
             jira_list,
             jira_reader,
+            confluence: None,
+            _confluence_watch: None,
             search,
             comment,
             summary_scroll: ListState::new(0, ListAlignment::Top, px(200.)),
@@ -347,6 +371,8 @@ impl Inbox {
             connections_open: false,
             filter_anchor: AnchorSlot::default(),
             connection_anchor: AnchorSlot::default(),
+            source_scroll: ScrollHandle::new(),
+            source_scroll_drag: None,
             connect_provider: None,
             connect_url,
             connect_email,
@@ -440,6 +466,28 @@ impl Inbox {
             }
         }
         cx.notify();
+    }
+
+    /// Shows the shared Confluence reader as the tab right after Jira.
+    pub(crate) fn attach_confluence(
+        &mut self,
+        view: Entity<crate::confluence::View>,
+        cx: &mut Context<Self>,
+    ) {
+        self._confluence_watch = Some(cx.observe(&view, |_, _, cx| cx.notify()));
+        self.confluence = Some(view);
+    }
+
+    pub(crate) fn confluence_connected(&self, cx: &App) -> bool {
+        self.confluence
+            .as_ref()
+            .is_some_and(|view| view.read(cx).connected())
+    }
+
+    pub(crate) fn show_confluence(&mut self, cx: &mut Context<Self>) {
+        if self.state.source != CONFLUENCE {
+            self.change_source(CONFLUENCE.into(), cx);
+        }
     }
 
     pub(crate) fn unread_count(&self) -> usize {
@@ -546,11 +594,14 @@ impl Inbox {
                 {
                     this.state.seen.mark(&item);
                 }
-                if !this
-                    .snapshot
-                    .connections
-                    .get(&this.state.source)
-                    .is_some_and(|s| s.connected)
+                let on_confluence =
+                    this.state.source == CONFLUENCE && this.confluence_connected(cx);
+                if !on_confluence
+                    && !this
+                        .snapshot
+                        .connections
+                        .get(&this.state.source)
+                        .is_some_and(|s| s.connected)
                     && let Some(source) = model::PROVIDERS.into_iter().find(|p| {
                         this.snapshot
                             .connections
@@ -679,6 +730,12 @@ impl Inbox {
         self.state.source = source;
         if self.state.source == "jira" {
             self.jira_list.update(cx, |list, cx| list.ensure_loaded(cx));
+        }
+        if self.state.source == CONFLUENCE
+            && let Some(view) = &self.confluence
+            && !view.read(cx).connected()
+        {
+            view.update(cx, |view, cx| view.reload(false, cx));
         }
         self.selected = None;
         self.details = None;
@@ -918,7 +975,7 @@ impl Inbox {
     }
     pub(crate) fn open_connection(&mut self, provider: String, cx: &mut Context<Self>) {
         self.connections_open = false;
-        if provider == "jira" {
+        if provider == "jira" || provider == CONFLUENCE {
             cx.emit(Event::ManageAtlassian);
             cx.notify();
             return;
@@ -1036,5 +1093,23 @@ impl Inbox {
         })
         .detach();
         cx.notify();
+    }
+}
+
+#[cfg(test)]
+mod source_tab_tests {
+    use super::{CONFLUENCE, source_tabs};
+
+    #[test]
+    fn confluence_sits_right_after_jira() {
+        assert_eq!(
+            source_tabs(&["gitlab", "jira", "github"], true),
+            ["github", "jira", CONFLUENCE, "gitlab"]
+        );
+        assert_eq!(
+            source_tabs(&["github", "gitlab"], true),
+            ["github", CONFLUENCE, "gitlab"]
+        );
+        assert_eq!(source_tabs(&["github", "jira"], false), ["github", "jira"]);
     }
 }

@@ -9,10 +9,11 @@ use std::collections::{HashMap, HashSet};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub(crate) enum AppView {
     Home,
+    /// Confluence lives in the Inbox now; saved Confluence tabs open it there.
+    #[serde(alias = "Confluence")]
     Inbox,
     Notes,
     Knowledge,
-    Confluence,
     Automations,
     Board,
 }
@@ -23,7 +24,6 @@ impl AppView {
             Self::Inbox => "Inbox",
             Self::Notes => "Notes",
             Self::Knowledge => "Knowledge",
-            Self::Confluence => "Confluence",
             Self::Automations => "Automations",
             Self::Board => "Board",
         }
@@ -34,7 +34,6 @@ impl AppView {
             Self::Inbox => "inbox",
             Self::Notes => "note",
             Self::Knowledge => "folder-tree",
-            Self::Confluence => "book-open",
             Self::Automations => "zap",
             Self::Board => "dashboard",
         }
@@ -1244,6 +1243,23 @@ pub(crate) fn project_name(path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn saved_confluence_tabs_open_the_inbox_once() {
+        let tabs: Vec<super::TitleTab> =
+            serde_json::from_value(serde_json::json!([{"App": "Confluence"}, {"App": "Inbox"}]))
+                .unwrap();
+        assert_eq!(tabs[0], super::TitleTab::App(super::AppView::Inbox));
+        let mut state = super::Workspace {
+            title_order: tabs,
+            ..Default::default()
+        };
+        state.normalize_title_order();
+        assert_eq!(
+            state.title_order,
+            [super::TitleTab::App(super::AppView::Inbox)]
+        );
+    }
+
     #[test]
     fn legacy_empty_session_choices_survive_upgrade_and_new_choices_take_precedence() {
         for (preferences, expected) in [

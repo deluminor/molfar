@@ -474,3 +474,38 @@ fn media_over_twenty_mebibytes_is_skipped() {
             .is_some()
     );
 }
+
+#[test]
+fn rows_carry_sub_task_parent_status_category_and_avatar() {
+    let issue = json!({
+        "key": "TB-7",
+        "fields": {
+            "summary": "Wire it",
+            "status": { "name": "In Review", "statusCategory": { "key": "indeterminate" } },
+            "assignee": { "displayName": "Ada", "avatarUrls": { "24x24": "https://a.invalid/ada.png" } },
+            "parent": { "key": "TB-3", "fields": { "issuetype": { "name": "Story" } } }
+        }
+    });
+    let row = super::query::row(&issue, None, None);
+    assert_eq!(row.parent_key, "TB-3");
+    assert_eq!(row.status_category, "indeterminate");
+    assert_eq!(row.assignee_avatar, "https://a.invalid/ada.png");
+
+    let epic_child = json!({
+        "key": "TB-8",
+        "fields": { "parent": { "key": "EP-1", "fields": { "issuetype": { "name": "Epic" } } } }
+    });
+    let row = super::query::row(&epic_child, None, None);
+    assert_eq!(row.parent_key, "");
+    assert_eq!(row.epic_key, "EP-1");
+}
+
+#[test]
+fn cached_rows_without_new_fields_still_load() {
+    let row: Row = serde_json::from_value(json!({
+        "key": "TB-1", "type_name": "", "summary": "", "status": "", "priority": "",
+        "assignee": "", "sprint": "", "updated": "", "epic_key": "", "epic_summary": ""
+    }))
+    .unwrap();
+    assert_eq!(row.parent_key, "");
+}

@@ -1,18 +1,23 @@
+mod breadcrumbs;
 mod handoff;
 mod inline;
 mod outline;
 mod page;
+mod placeholder;
 mod reader;
 mod relations;
 mod render;
 pub(crate) mod service;
+mod spaces;
 mod toolbar;
 mod tree;
-mod tree_panel;
 mod widgets;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod scroll_bench;
 
 #[cfg(all(test, target_os = "macos"))]
 mod qa;
@@ -20,8 +25,8 @@ mod qa;
 use std::collections::{HashMap, HashSet};
 
 use gpui::{
-    App, AppContext, Context, Entity, EventEmitter, FocusHandle, Focusable, ScrollHandle,
-    Subscription,
+    App, AppContext, Context, Entity, EventEmitter, FocusHandle, Focusable, ListAlignment,
+    ListState, Subscription, UniformListScrollHandle, px,
 };
 use molfar_core::{
     confluence::{config, connector::Node, spaces::Space, tree::Children},
@@ -66,8 +71,11 @@ pub(crate) struct View {
     expanded: HashSet<String>,
     pending: HashSet<String>,
     cursor_row: usize,
-    tree_scroll: ScrollHandle,
-    document_scroll: ScrollHandle,
+    tree_rows: Vec<tree::Row>,
+    tree_scroll: UniformListScrollHandle,
+    /// Virtualized page body: header, one item per block, then relations.
+    document_list: ListState,
+    document_key: Option<(String, u64)>,
     results: Vec<Node>,
     document: Option<DocumentView>,
     selected_node: Option<Node>,
@@ -121,8 +129,10 @@ impl View {
             expanded: HashSet::new(),
             pending: HashSet::new(),
             cursor_row: 0,
-            tree_scroll: ScrollHandle::new(),
-            document_scroll: ScrollHandle::new(),
+            tree_rows: Vec::new(),
+            tree_scroll: UniformListScrollHandle::new(),
+            document_list: ListState::new(0, ListAlignment::Top, px(800.)),
+            document_key: None,
             results: Vec::new(),
             document: None,
             selected_node: None,
@@ -130,6 +140,10 @@ impl View {
             menu: None,
             selection_source: None,
         }
+    }
+
+    pub(crate) fn connected(&self) -> bool {
+        self.connected
     }
 
     pub(crate) fn reload(&mut self, refresh: bool, cx: &mut Context<Self>) {
@@ -208,6 +222,7 @@ impl View {
         let generation = self.search_generation;
         self.results.clear();
         self.cursor_row = 0;
+        self.rebuild_rows();
         let query = self.query.clone();
         if query.trim().is_empty() || !self.connected {
             cx.notify();
@@ -245,7 +260,10 @@ impl View {
             let _ = view.update(cx, |this, cx| {
                 if this.search_generation == generation {
                     match result {
-                        Ok(results) => this.results = results,
+                        Ok(results) => {
+                            this.results = results;
+                            this.rebuild_rows();
+                        }
                         Err(error) => this.failure(error),
                     }
                     cx.notify();

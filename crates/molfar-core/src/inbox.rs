@@ -20,6 +20,8 @@ use std::{
 };
 
 pub const PROVIDERS: [&str; 5] = ["github", "linear", "jira", "gitlab", "azuredevops"];
+/// The Inbox's Confluence tab: a remembered source, but not an item provider.
+pub const CONFLUENCE_SOURCE: &str = "confluence";
 pub fn provider_label(provider: &str) -> &'static str {
     match provider {
         "linear" => "Linear",
@@ -158,8 +160,10 @@ impl Item {
         )
     }
 }
+/// RFC 3339, or Jira's `2026-11-22T14:39:20.882+0200` without the offset colon.
 pub fn timestamp_ms(value: &str) -> i64 {
     chrono::DateTime::parse_from_rfc3339(value)
+        .or_else(|_| chrono::DateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S%.f%z"))
         .map(|at| at.timestamp_millis())
         .unwrap_or(0)
 }
@@ -471,7 +475,7 @@ impl ViewState {
         let mut state = Self::default();
         if let Some(source) = desktop
             .get("molfar.inboxSource")
-            .filter(|s| PROVIDERS.contains(s))
+            .filter(|s| PROVIDERS.contains(s) || *s == CONFLUENCE_SOURCE)
         {
             state.source = source.into();
         }
@@ -1061,6 +1065,16 @@ fn run_command(
 #[cfg(test)]
 mod notification_tests {
     use super::*;
+
+    #[test]
+    fn jira_offsets_without_a_colon_parse() {
+        assert_eq!(
+            timestamp_ms("2026-11-22T14:39:20.882+0200"),
+            timestamp_ms("2026-11-22T12:39:20.882Z")
+        );
+        assert_ne!(timestamp_ms("2026-11-22T14:39:20.882+0200"), 0);
+        assert_eq!(timestamp_ms("not a date"), 0);
+    }
 
     fn item(number: i64, provider: &str) -> Item {
         Item {

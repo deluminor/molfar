@@ -5,7 +5,7 @@ fn fixture() -> (Store, SecretStore) {
     let path = std::env::var_os("MOLFAR_KEYRING_TEST_DB").expect("set a temporary database path");
     (
         Store::open(Path::new(&path)).unwrap(),
-        SecretStore::default(),
+        SecretStore::keyring(),
     )
 }
 

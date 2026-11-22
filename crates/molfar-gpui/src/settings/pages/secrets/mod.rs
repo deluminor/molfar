@@ -5,7 +5,7 @@ mod list;
 use crate::{
     input::{self, Input},
     runtime::{Database, locked},
-    settings::widgets::{note, primary_button},
+    settings::widgets::{labeled_primary_button as primary_button, note},
 };
 use gpui::{Context, Entity, Render, Subscription, Window, div, prelude::*};
 use molfar_core::secrets::{Entry, Project, SecretStore, bind};
@@ -191,17 +191,19 @@ impl Render for SecretsPage {
             .flex_col()
             .gap_3()
             .child(
-                div().child(primary_button("add-secret", "Add secret", self.busy).when(
-                    !self.busy,
-                    |button| {
-                        button.on_click(cx.listener(|this, _, _, cx| {
-                            this.clear_form(cx);
-                            this.scope = None;
-                            this.edit = Some(Edit::Add);
-                            cx.notify();
-                        }))
-                    },
-                )),
+                div()
+                    .flex()
+                    .child(primary_button("add-secret", "Add secret", self.busy).when(
+                        !self.busy,
+                        |button| {
+                            button.on_click(cx.listener(|this, _, _, cx| {
+                                this.clear_form(cx);
+                                this.scope = None;
+                                this.edit = Some(Edit::Add);
+                                cx.notify();
+                            }))
+                        },
+                    )),
             )
             .when_some(self.error.as_ref(), |page, error| {
                 page.child(note(error.clone()))

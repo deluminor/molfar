@@ -87,12 +87,41 @@ pub(crate) fn secondary_button(
     })
 }
 
+pub(super) fn labeled_secondary_button(
+    id: impl Into<ElementId>,
+    label: impl Into<SharedString>,
+    danger: bool,
+    disabled: bool,
+) -> Stateful<Div> {
+    with_button_label(label, |label| secondary_button(id, label, danger, disabled))
+}
+
+pub(super) fn labeled_primary_button(
+    id: impl Into<ElementId>,
+    label: impl Into<SharedString>,
+    disabled: bool,
+) -> Stateful<Div> {
+    with_button_label(label, |label| primary_button(id, label, disabled))
+}
+
+fn with_button_label(
+    label: impl Into<SharedString>,
+    button: impl FnOnce(SharedString) -> Stateful<Div>,
+) -> Stateful<Div> {
+    let label = label.into();
+    button(label.clone()).child(
+        div()
+            .debug_selector(|| format!("settings-button-label-{label}"))
+            .child(label),
+    )
+}
+
 fn button_base(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Stateful<Div> {
     let label = label.into();
     div()
         .id(id)
         .role(Role::Button)
-        .aria_label(label.clone())
+        .aria_label(label)
         .flex()
         .flex_shrink_0()
         .items_center()

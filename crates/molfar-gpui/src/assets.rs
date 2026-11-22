@@ -76,6 +76,7 @@ impl AssetSource for Assets {
    "inbox-github"=>include_bytes!("../assets/inbox-github.svg"),
    "inbox-linear"=>include_bytes!("../assets/inbox-linear.svg"),
    "inbox-jira"=>include_bytes!("../assets/inbox-jira.svg"),
+   "inbox-confluence"=>include_bytes!("../assets/inbox-confluence.svg"),
    "inbox-gitlab"=>include_bytes!("../assets/inbox-gitlab.svg"),
    "inbox-gitlab-color.svg"=>include_bytes!("../assets/inbox-gitlab-color.svg"),
    "inbox-azuredevops"=>include_bytes!("../assets/inbox-azuredevops.svg"),
@@ -247,6 +248,15 @@ fn icon_body(path: &str) -> Option<&'static str> {
         "circle-dashed" => {
             "<path d='M12 3a9 9 0 0 1 4.5 1.2m3.3 3.3A9 9 0 0 1 21 12m-1.2 4.5a9 9 0 0 1-3.3 3.3M12 21a9 9 0 0 1-4.5-1.2m-3.3-3.3A9 9 0 0 1 3 12m1.2-4.5a9 9 0 0 1 3.3-3.3'/>"
         }
+        "jira-story" => "<path d='M7 3h10a1 1 0 0 1 1 1v17l-6-4-6 4V4a1 1 0 0 1 1-1Z'/>",
+        "jira-task" => {
+            "<rect x='4' y='4' width='16' height='16' rx='3'/><path d='m8.5 12 2.5 2.5 4.5-5'/>"
+        }
+        "jira-subtask" => {
+            "<rect x='3' y='3' width='11' height='11' rx='2'/><rect x='10' y='10' width='11' height='11' rx='2'/>"
+        }
+        "priority-highest" => "<path d='m7 13 5-5 5 5M7 18l5-5 5 5'/>",
+        "priority-lowest" => "<path d='m7 6 5 5 5-5M7 11l5 5 5-5'/>",
         _ => return None,
     })
 }

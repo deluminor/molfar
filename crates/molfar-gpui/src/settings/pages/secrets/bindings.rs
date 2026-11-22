@@ -1,5 +1,5 @@
 use super::*;
-use crate::settings::widgets::secondary_button;
+use crate::settings::widgets::labeled_secondary_button as secondary_button;
 use gpui::{AnyElement, Role, Toggled};
 use molfar_core::secrets::{
     Scope, SecretName,

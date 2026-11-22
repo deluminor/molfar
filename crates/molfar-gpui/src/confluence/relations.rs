@@ -49,106 +49,82 @@ impl View {
         }
     }
 
-    pub(super) fn breadcrumbs(
-        &self,
-        space_title: Option<&str>,
-        ancestors: &[Node],
-        title: &str,
-        url: String,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        div()
-            .debug_selector(|| "confluence-breadcrumb".into())
-            .flex()
-            .gap_2()
-            .items_center()
-            .px_4()
-            .py_2()
-            .border_b_1()
-            .border_color(content(0.08))
-            .text_size(px(12.))
-            .text_color(content(0.58))
-            .when_some(space_title, |breadcrumbs, space| {
-                breadcrumbs.child(space.to_owned())
-            })
-            .children(ancestors.iter().enumerate().map(|(index, ancestor)| {
-                let id = ancestor.id.clone();
-                let selector = id.clone();
-                let title = ancestor.title.clone();
-                div()
-                    .id(("confluence-ancestor", index))
-                    .debug_selector(move || format!("confluence-breadcrumb-{selector}"))
-                    .flex()
-                    .gap_2()
-                    .cursor_pointer()
-                    .child("›")
-                    .child(title)
-                    .on_click(cx.listener(move |this, _, _, cx| this.open_target(id.clone(), cx)))
-            }))
-            .child("›")
-            .child(title.to_owned())
-            .child(div().flex_1())
-            .child(
-                crate::settings::widgets::secondary_button(
-                    "confluence-select-text",
-                    "Select text",
-                    false,
-                    false,
-                )
-                .child(if self.selection_source.is_some() {
-                    "Reading view"
-                } else {
-                    "Select text"
-                })
-                .on_click(
-                    cx.listener(|this, _, window, cx| this.toggle_selection_source(window, cx)),
-                ),
-            )
-            .child(super::page::open_browser(url))
-            .into_any_element()
-    }
-
     pub(super) fn relations(
         &self,
         doc: &DocumentView,
         ancestors: &[Node],
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let links = ancestors
+        let links: Vec<_> = ancestors
             .last()
-            .map(|node| (node.id.clone(), format!("Parent · {}", node.title)))
+            .map(|node| (node.id.clone(), "Parent", node.title.clone()))
             .into_iter()
             .chain(
                 doc.children
                     .iter()
-                    .map(|node| (node.id.clone(), format!("Child · {}", node.title))),
+                    .map(|node| (node.id.clone(), "Child", node.title.clone())),
             )
             .chain(
                 doc.internal_links
                     .iter()
-                    .map(|(id, title)| (id.clone(), format!("Link · {title}"))),
-            );
+                    .map(|(id, title)| (id.clone(), "Link", title.clone())),
+            )
+            .collect();
+        if links.is_empty() {
+            return div().h(px(32.)).into_any_element();
+        }
         div()
             .debug_selector(|| "confluence-relations".into())
-            .mt_6()
+            .mt(px(32.))
+            .pb(px(32.))
             .child(
                 div()
-                    .text_size(px(13.))
+                    .mb(px(8.))
+                    .text_size(px(11.))
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child("Relations"),
+                    .text_color(content(0.45))
+                    .child("RELATED PAGES"),
             )
-            .children(links.enumerate().map(|(index, (id, title))| {
-                let selector = id.clone();
-                div()
-                    .id(("confluence-relation", index))
-                    .debug_selector(move || format!("confluence-relation-{selector}"))
-                    .cursor_pointer()
-                    .text_size(px(12.))
-                    .py_1()
-                    .text_color(accent_color())
-                    .child(title)
-                    .on_click(cx.listener(move |this, _, _, cx| this.open_target(id.clone(), cx)))
-            }))
+            .children(
+                links
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, (id, relation, title))| {
+                        let selector = id.clone();
+                        div()
+                            .id(("confluence-relation", index))
+                            .debug_selector(move || format!("confluence-relation-{selector}"))
+                            .role(gpui::Role::Link)
+                            .h(px(28.))
+                            .px(px(8.))
+                            .flex()
+                            .items_center()
+                            .gap(px(8.))
+                            .rounded(px(6.))
+                            .cursor_pointer()
+                            .hover(|d| d.bg(content(0.05)))
+                            .text_size(px(12.))
+                            .child(
+                                div()
+                                    .w(px(48.))
+                                    .flex_shrink_0()
+                                    .text_color(content(0.4))
+                                    .child(relation),
+                            )
+                            .child(icon("file", 12.).text_color(content(0.4)))
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .truncate()
+                                    .text_color(content(0.85))
+                                    .child(title),
+                            )
+                            .on_click(
+                                cx.listener(move |this, _, _, cx| this.open_target(id.clone(), cx)),
+                            )
+                    }),
+            )
             .into_any_element()
     }
 

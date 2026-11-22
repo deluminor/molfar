@@ -95,6 +95,7 @@ mod task_board;
 mod terminal;
 mod theme;
 #[cfg(target_os = "macos")]
+mod tooltip;
 mod traffic_lights;
 mod transcript;
 mod usage_footer;

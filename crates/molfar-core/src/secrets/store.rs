@@ -3,9 +3,8 @@ mod resolve;
 use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 
 use super::{
-    backend::{Backend, KeyringBackend},
-    load, projects, save, Entry, Error, Path, Project, Scope, SecretName, SecretValue, Status,
-    Store, INDEX, PROJECTS,
+    backend::Backend, load, projects, save, Entry, Error, Path, Project, Scope, SecretName,
+    SecretValue, Status, Store, INDEX, PROJECTS,
 };
 
 use super::registry::{Registered, Registry};
@@ -24,7 +23,7 @@ pub(super) fn lock() -> Result<MutexGuard<'static, ()>, Error> {
 
 impl Default for SecretStore {
     fn default() -> Self {
-        static STORE: LazyLock<SecretStore> = LazyLock::new(|| SecretStore::new(KeyringBackend));
+        static STORE: LazyLock<SecretStore> = LazyLock::new(SecretStore::shared);
         STORE.clone()
     }
 }
@@ -40,6 +39,26 @@ impl SecretStore {
     #[cfg(any(test, feature = "test-secrets"))]
     pub fn in_memory() -> Self {
         Self::new(super::backend::MemoryBackend::default())
+    }
+
+    #[cfg(any(test, not(feature = "test-secrets")))]
+    pub(super) fn keyring() -> Self {
+        Self::new(super::backend::KeyringBackend)
+    }
+
+    #[cfg(not(any(test, feature = "test-secrets")))]
+    fn shared() -> Self {
+        Self::keyring()
+    }
+
+    #[cfg(any(test, feature = "test-secrets"))]
+    fn shared() -> Self {
+        Self::in_memory()
+    }
+
+    #[cfg(test)]
+    pub(super) fn shares_backend(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.backend, &other.backend)
     }
 
     // Connector credentials must stay outside the index used for agent secret bindings.

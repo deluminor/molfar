@@ -15,7 +15,6 @@ impl Shell {
             AppView::Inbox => "Inbox",
             AppView::Notes => "Notes",
             AppView::Knowledge => "Knowledge",
-            AppView::Confluence => "Confluence",
             AppView::Automations => "Automations",
             AppView::Board => "Board",
         })
@@ -233,7 +232,6 @@ impl Shell {
         match self.active_app_view? {
             AppView::Home => self.home.clone().map(IntoElement::into_any_element),
             AppView::Notes => self.notes.clone().map(IntoElement::into_any_element),
-            AppView::Confluence => self.confluence.clone().map(IntoElement::into_any_element),
             AppView::Knowledge => self.knowledge.clone().map(IntoElement::into_any_element),
             AppView::Inbox => self.inbox.clone().map(IntoElement::into_any_element),
             AppView::Automations => self.automations.clone().map(IntoElement::into_any_element),
@@ -249,7 +247,6 @@ impl Shell {
         let focus = match self.active_app_view {
             Some(AppView::Home) => self.home.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Notes) => self.notes.as_ref().map(|view| view.focus_handle(cx)),
-            Some(AppView::Confluence) => self.confluence.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Knowledge) => self.knowledge.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Inbox) => self.inbox.as_ref().map(|view| view.focus_handle(cx)),
             Some(AppView::Automations) => {
@@ -395,29 +392,43 @@ impl Shell {
         }
     }
 
-    pub(super) fn open_confluence(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    /// The Confluence reader shared with the Inbox's Confluence tab.
+    pub(super) fn ensure_confluence(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         use crate::confluence::{Event, View};
 
-        self.prepare_app_view(window, cx);
-        if self.confluence.is_none() {
-            let view = cx.new(|cx| View::new(self.store.clone(), self.secret_store.clone(), cx));
-            self.app_view_events.push(cx.subscribe_in(
-                &view,
-                window,
-                |this, _, event: &Event, window, cx| match event {
-                    Event::Settings => {
-                        this.open_settings(crate::settings::Section::Connections, window, cx)
-                    }
-                    Event::Close => this.close_app_view(window, cx),
-                    Event::AddToChat(text) => this.add_confluence_context(text, window, cx),
-                },
-            ));
-            self.confluence = Some(view);
+        if self.confluence.is_some() {
+            return;
         }
-        if let Some(view) = &self.confluence {
-            view.update(cx, |view, cx| view.reload(false, cx));
+        let view = cx.new(|cx| View::new(self.store.clone(), self.secret_store.clone(), cx));
+        self.app_view_events.push(cx.subscribe_in(
+            &view,
+            window,
+            |this, _, event: &Event, window, cx| match event {
+                Event::Settings => {
+                    this.open_settings(crate::settings::Section::Connections, window, cx)
+                }
+                Event::Close => this.close_app_view(window, cx),
+                Event::AddToChat(text) => this.add_confluence_context(text, window, cx),
+            },
+        ));
+        view.update(cx, |view, cx| view.reload(false, cx));
+        self.confluence = Some(view);
+    }
+
+    /// Opens the Inbox on its Confluence tab, optionally at one page.
+    pub(super) fn open_confluence(
+        &mut self,
+        page: Option<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.open_inbox(window, cx);
+        if let Some(inbox) = &self.inbox {
+            inbox.update(cx, |inbox, cx| inbox.show_confluence(cx));
         }
-        self.show_app_view(AppView::Confluence, window, cx);
+        if let (Some(view), Some(page)) = (&self.confluence, page) {
+            view.update(cx, |view, cx| view.open_page(page, false, cx));
+        }
     }
 
     pub(super) fn open_knowledge(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -450,7 +461,15 @@ impl Shell {
         if self.inbox.is_none() {
             let projects = self.workspace.projects.iter().map(Into::into).collect();
             let cwd = self.workspace.project.clone().into();
-            let view = cx.new(|cx| inbox::Inbox::new(self.store.clone(), projects, cwd, cx));
+            self.ensure_confluence(window, cx);
+            let confluence = self.confluence.clone();
+            let view = cx.new(|cx| {
+                let mut inbox = inbox::Inbox::new(self.store.clone(), projects, cwd, cx);
+                if let Some(confluence) = confluence {
+                    inbox.attach_confluence(confluence, cx);
+                }
+                inbox
+            });
             self.app_view_events.push(cx.subscribe_in(
                 &view,
                 window,

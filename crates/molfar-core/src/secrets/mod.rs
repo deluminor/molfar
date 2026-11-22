@@ -26,6 +26,7 @@ pub fn scopes_for(scope: Option<Scope>) -> impl Iterator<Item = Scope> {
         .chain(std::iter::once(Scope::Global))
 }
 
+#[cfg(any(test, not(feature = "test-secrets")))]
 const SERVICE: &str = "com.molfar.secrets";
 const INDEX: &str = "secrets.index";
 const PROJECTS: &str = "secrets.projects";
