@@ -15,7 +15,9 @@ fn golden_files_match_markdown_exactly() {
             continue;
         }
         let doc: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-        let expected = fs::read_to_string(path.with_extension("md")).unwrap();
+        let expected = fs::read_to_string(path.with_extension("md"))
+            .unwrap()
+            .replace("\r\n", "\n");
         assert_eq!(to_markdown(&doc), expected.trim_end(), "{}", path.display());
         seen.push(path.file_stem().unwrap().to_string_lossy().into_owned());
     }
