@@ -44,7 +44,7 @@ fn orbit_frame(phase: f32) -> gpui::Div {
 }
 
 /// The animated orbit with a caption and optional detail line.
-pub(super) fn orbit_loader(
+pub(crate) fn orbit_loader(
     id: impl Into<ElementId>,
     caption: String,
     detail: Option<String>,
@@ -71,7 +71,7 @@ pub(super) fn orbit_loader(
 }
 
 /// Shimmering placeholder rows in the tree's rhythm.
-pub(super) fn skeleton_rows(id: impl Into<ElementId>) -> AnyElement {
+pub(crate) fn skeleton_rows(id: impl Into<ElementId>) -> AnyElement {
     pulse::looping(id, SHIMMER, pulse::Rate::Half, |phase| {
         div().flex().flex_col().gap(px(10.)).px_3().py_3().children(
             SKELETON_WIDTHS

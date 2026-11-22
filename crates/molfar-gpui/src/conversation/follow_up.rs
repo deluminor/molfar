@@ -1,5 +1,6 @@
 //! Composer.tsx / MessageQueue.tsx's durable follow-ups and saved user draft.
 use super::*;
+mod confluence;
 use molfar_core::follow_up::{Message, State};
 
 #[derive(Default)]
@@ -35,7 +36,7 @@ impl Conversation {
         cx: &gpui::App,
     ) -> Message {
         static SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-        let prepared = self.completion.read(cx).prepare_prompt(&text);
+        let prepared = self.completion.read(cx).prepare_prompt(&text, cx);
         Message {
             prepared_prompt: (prepared != text).then_some(prepared),
             id: format!(
@@ -350,23 +351,7 @@ impl Conversation {
             {
                 return;
             }
-            if let Some(controls) = &self.controls {
-                if controls
-                    .send(Control {
-                        id: message.id.clone(),
-                        decision: Decision::Steer(message.clone()),
-                    })
-                    .is_ok()
-                {
-                    self.follow_ups.sending = Some(message.id);
-                } else {
-                    self.fail_follow_up(
-                        &message.id,
-                        "The provider disconnected before accepting this message".into(),
-                        cx,
-                    );
-                }
-            }
+            self.send_steer_with_context(message, cx);
         } else {
             if self.settings.new_worktree && self.settings.worktree_cwd.is_none() {
                 self.prepare_worktree(cx);
@@ -470,7 +455,7 @@ impl Conversation {
         }
         if save {
             let text = edit.input.read(cx).content.to_string();
-            let prepared = self.completion.read(cx).prepare_prompt(&text);
+            let prepared = self.completion.read(cx).prepare_prompt(&text, cx);
             if let Some(message) = self
                 .follow_ups
                 .state

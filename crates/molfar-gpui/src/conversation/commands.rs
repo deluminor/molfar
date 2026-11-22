@@ -70,7 +70,7 @@ impl Conversation {
             cx.notify();
             return;
         }
-        let request = self.completion.read(cx).prepare_prompt(request);
+        let request = self.completion.read(cx).prepare_prompt(request, cx);
         let attachments = std::mem::take(&mut self.attachments);
         let mut message = self.message(text.to_owned(), attachments, None, cx);
         message.prepared_prompt = Some(molfar_core::visual_bridge::requested_prompt(&request));

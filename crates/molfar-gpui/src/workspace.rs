@@ -12,6 +12,7 @@ pub(crate) enum AppView {
     Inbox,
     Notes,
     Knowledge,
+    Confluence,
     Automations,
     Board,
 }
@@ -22,6 +23,7 @@ impl AppView {
             Self::Inbox => "Inbox",
             Self::Notes => "Notes",
             Self::Knowledge => "Knowledge",
+            Self::Confluence => "Confluence",
             Self::Automations => "Automations",
             Self::Board => "Board",
         }
@@ -32,6 +34,7 @@ impl AppView {
             Self::Inbox => "inbox",
             Self::Notes => "note",
             Self::Knowledge => "folder-tree",
+            Self::Confluence => "book-open",
             Self::Automations => "zap",
             Self::Board => "dashboard",
         }

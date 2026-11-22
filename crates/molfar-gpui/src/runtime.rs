@@ -494,6 +494,11 @@ fn run_turn_using(
                 .starts_with('/');
         let prompt = if raw_native_command {
             prompt
+        } else {
+            crate::confluence::service::apply_context(&store, &secrets, &prompt)
+        };
+        let prompt = if raw_native_command {
+            prompt
         } else if let Some(familiar) = &settings.familiar {
             let files = molfar_core::familiar::load_files(&familiar.root, &familiar.familiar)?;
             let rotated = provider_id.is_some() && context.ratio().is_some_and(|r| r >= 0.8);

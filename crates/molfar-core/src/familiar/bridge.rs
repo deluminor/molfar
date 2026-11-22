@@ -35,6 +35,7 @@ worktrees.create {branch,base?,existing?,project?}
 folders.list {project?}
 folders.move {sessionId,folderId?,newFolderName?,project?}
 notes.list {limit?,offset?}; notes.read {id}; notes.write {id?,title?,body?,tags?}
+confluence.search {query,spaceKey?,limit?}; confluence.read {id}; confluence.tree {spaceKey,spaceId,parentId?,parentKind?}
 board.list {project?,archived?,limit?,offset?}; board.read {cardId,artifactKind?,artifactVersion?,maxChars?,charOffset?}
 board.create {project,title,description,acceptanceCriteria?,baseRef?,requestId?}; board.update {cardId,title?,description?,acceptanceCriteria?,requestId?}
 board.archive / board.unarchive {cardId,requestId?}

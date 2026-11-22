@@ -9,6 +9,7 @@ use std::collections::HashMap;
 pub(crate) struct Preferences {
     // General
     pub sounds: bool,
+    pub jira_operator_write: bool,
     pub notifications: bool,
     pub project_notifications: serde_json::Value,
     pub notification_projects: serde_json::Value,
@@ -116,6 +117,7 @@ impl Default for Preferences {
     fn default() -> Self {
         Self {
             sounds: true,
+            jira_operator_write: false,
             notifications: false,
             project_notifications: serde_json::json!({}),
             notification_projects: serde_json::json!([]),

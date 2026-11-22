@@ -1,0 +1,28 @@
+{
+  "type": "doc",
+  "version": 1,
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "inlineCard",
+          "attrs": {
+            "url": "https://example.com/a"
+          }
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "blockCard",
+          "attrs": {
+            "url": "https://example.com/b"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -13,7 +13,7 @@ use gpui::{
     MouseButton, Pixels, Point, Role, SharedString, StrikethroughStyle, StyledText, div,
     prelude::*, px, rgb,
 };
-pub(crate) use search::{mark_row, mark_styles, row_text};
+pub(crate) use search::{mark_row, mark_runs, mark_styles, row_text};
 
 #[derive(Clone, Debug, PartialEq, gpui::Action)]
 #[action(namespace = markdown, no_json)]
@@ -718,6 +718,12 @@ pub(crate) fn resolve_file_links(row: &mut MarkdownRow, base: &str) {
 }
 
 fn open_link(url: &str, window: &mut Window, cx: &mut App) {
+    if let Some(id) = url.strip_prefix("molfar-confluence:") {
+        if molfar_core::confluence::connector::valid_id(id) {
+            window.dispatch_action(Box::new(crate::confluence::OpenPage(id.into())), cx);
+        }
+        return;
+    }
     if let Some(path) = molfar_core::knowledge::vault_target(url) {
         window.dispatch_action(Box::new(crate::knowledge::OpenVaultNote(path)), cx);
         return;

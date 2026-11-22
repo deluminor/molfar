@@ -112,6 +112,7 @@ pub(crate) struct FamiliarSetting {
 
 #[derive(Clone)]
 pub(crate) enum SettingsEvent {
+    ConfluenceChanged,
     WhatsNew,
     CheckAppUpdates,
     CheckHarnessUpdates,
@@ -292,6 +293,8 @@ pub(crate) struct SettingsView {
     mcp_filter: String,
     fields: HashMap<&'static str, Entity<Input>>,
     connections: pages::ConnectionsState,
+    atlassian: pages::AtlassianState,
+    confluence: pages::confluence::ConfluenceSettings,
     external_page: pages::ExternalPageState,
     skill_preview: Option<std::path::PathBuf>,
     skill_preview_text: Option<Result<std::sync::Arc<skill_document::DocumentData>, String>>,
@@ -444,7 +447,9 @@ impl SettingsView {
             provider_scope: "global".into(),
             mcp_filter: "all".into(),
             fields: HashMap::new(),
+            confluence: Default::default(),
             connections: pages::ConnectionsState::default(),
+            atlassian: pages::AtlassianState::default(),
             external_page: pages::ExternalPageState::default(),
             skill_preview: None,
             skill_preview_text: None,

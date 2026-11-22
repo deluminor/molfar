@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 
 mod chrome;
 mod connect;
-mod document;
+pub(crate) mod document;
 mod drafts;
 mod edit;
 mod graph;
@@ -29,8 +29,10 @@ mod tests;
 mod tree;
 mod types;
 
+pub(crate) use document::{PreviewHost, banner, render_markdown};
 use drafts::Draft;
 use graph::GraphView;
+pub(crate) use loading::{orbit_loader, skeleton_rows};
 pub(crate) use service::{Event as VaultEvent, VaultService};
 use tree::TreeRow;
 use types::{GraphStats, ScanMeta};

@@ -230,6 +230,7 @@ pub struct Input {
     marked: Option<Range<usize>>,
     composer_tokens: Vec<Range<usize>>,
     inline_commands: bool,
+    confluence_links: std::collections::HashMap<String, molfar_core::confluence::resolve::Link>,
     selected_command: Option<Command>,
     lines: Vec<WrappedLine>,
     bounds: Option<Bounds<Pixels>>,
@@ -283,6 +284,7 @@ impl Input {
             marked: None,
             composer_tokens: Vec::new(),
             inline_commands: false,
+            confluence_links: Default::default(),
             selected_command: None,
             lines: Vec::new(),
             bounds: None,
@@ -503,6 +505,14 @@ impl Input {
         input.max_height = input.min_height;
         input
     }
+    pub(crate) fn selected_content(&self) -> Option<String> {
+        if self.secret || self.selection.is_empty() {
+            return None;
+        }
+        let text = self.content[self.selection.clone()].to_owned();
+        (!text.trim().is_empty()).then_some(text)
+    }
+
     pub(crate) fn select_range(&mut self, range: Range<usize>, cx: &mut Context<Self>) {
         self.manual_scroll = false;
         self.reveal_pending = self.reveal_in_parent;
@@ -1055,8 +1065,14 @@ impl Input {
         }
     }
     fn paste(&mut self, _: &Paste, w: &mut Window, cx: &mut Context<Self>) {
-        if let Some(text) = cx.read_from_clipboard().and_then(|i| i.text()) {
-            self.replace_text_in_range(None, &text.replace("\r\n", "\n"), w, cx);
+        if let Some(item) = cx.read_from_clipboard()
+            && let Some(text) = item.text()
+        {
+            let text = self
+                .confluence_paste(&text, &item)
+                .replace("\r\n", "\n")
+                .replace("molfar://jira/", "@jira/");
+            self.replace_text_in_range(None, &text, w, cx);
         }
     }
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
@@ -1793,10 +1809,14 @@ impl Element for InputElement {
                                     );
                                 }
                             }
-                            MentionIcon::Note => {
+                            MentionIcon::Note | MentionIcon::Jira | MentionIcon::Confluence => {
+                                let glyph = match icon {
+                                    MentionIcon::Confluence => "book-open",
+                                    _ => "note",
+                                };
                                 let _ = w.paint_svg(
                                     icon_bounds,
-                                    "note".into(),
+                                    glyph.into(),
                                     None,
                                     Default::default(),
                                     crate::theme::accent_color(),
@@ -1954,6 +1974,8 @@ mod tests {
         let asset = |token| match MentionIcon::of(token) {
             Some(MentionIcon::File(asset)) => asset.to_string(),
             Some(MentionIcon::Note) => "note".into(),
+            Some(MentionIcon::Jira) => "jira".into(),
+            Some(MentionIcon::Confluence) => "book-open".into(),
             None => String::new(),
         };
         assert_eq!(asset("@src/main.rs"), "mi/rust.svg");

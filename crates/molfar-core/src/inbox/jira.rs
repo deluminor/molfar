@@ -1,13 +1,9 @@
-//! Native adapter of the original Tauri Inbox provider. Network parsing and secret-file formats remain identical.
-use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
-use base64::Engine as _;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{json, Value};
 
-const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
+use crate::atlassian::{self, Client, Credentials, Error};
 const DEFAULT_LIMIT: u32 = 40;
 const COMMENT_LIMIT: u32 = 50;
 const ISSUE_FIELDS: [&str; 6] = [
@@ -20,13 +16,6 @@ pub struct JiraStatus {
     pub connected: bool,
     pub site: String,
     pub email: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct JiraConfig {
-    site: String,
-    email: String,
-    token: String,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -110,7 +99,7 @@ pub struct JiraIssueThread {
 }
 
 pub fn jira_status(app: PathBuf) -> Result<JiraStatus, String> {
-    let config = read_config(&app)?;
+    let config = atlassian::load(&app).map_err(|error| error.to_string())?;
     Ok(status_for(config.as_ref()))
 }
 
@@ -120,36 +109,26 @@ pub fn jira_set_config(
     email: String,
     token: String,
 ) -> Result<JiraStatus, String> {
-    let token = token.trim().to_string();
-    if token.is_empty() {
-        delete_config(&app)?;
+    if token.trim().is_empty() {
+        atlassian::disconnect(&app).map_err(|error| error.to_string())?;
         return Ok(status_for(None));
     }
-    let email = email.trim().to_string();
-    if email.is_empty() || !email.contains('@') {
-        return Err("Enter the email address of your Atlassian account".into());
-    }
-    let config = JiraConfig {
-        site: normalize_jira_site(&site)?,
-        email,
-        token,
-    };
-    let myself = jira_get(&config, "/rest/api/3/myself")?;
-    if string_field(&myself, "accountId")
-        .unwrap_or_default()
-        .is_empty()
-    {
-        return Err("Jira did not return the current user".into());
-    }
-    write_config(&app, &config)?;
-    Ok(status_for(Some(&config)))
+    let credentials = Credentials::new(&site, &email, &token).map_err(|error| error.to_string())?;
+    let status =
+        atlassian::test_connection(&app, credentials).map_err(|error| error.to_string())?;
+    Ok(JiraStatus {
+        connected: true,
+        site: status.site,
+        email: status.email,
+    })
 }
 
 pub fn jira_list_projects(app: PathBuf) -> Result<Vec<JiraProject>, String> {
     let config = require_config(&app)?;
+    let client = Client::new(&config);
     fetch_jira_projects(|start| {
         jira_get(
-            &config,
+            &client,
             &format!("/rest/api/3/project/search?maxResults=100&orderBy=name&startAt={start}"),
         )
     })
@@ -162,24 +141,24 @@ pub fn jira_list_issues(
     project_ids: Vec<String>,
     limit: Option<u32>,
 ) -> Result<Vec<JiraIssue>, String> {
-    let Some(config) = read_config(&app)? else {
+    let Some(config) = atlassian::load(&app).map_err(|error| error.to_string())? else {
         return Ok(Vec::new());
     };
     let limit = limit.unwrap_or(DEFAULT_LIMIT).clamp(1, 100);
     let jql = issue_jql(assigned_to_me, &state, &project_ids);
     let data = jira_post(
-        &config,
+        &Client::new(&config),
         "/rest/api/3/search/jql",
         &json!({ "jql": jql, "maxResults": limit, "fields": ISSUE_FIELDS }),
     )?;
-    parse_jira_issues(&data, &config.site)
+    parse_jira_issues(&data, config.site())
 }
 
 pub fn jira_issue_details(app: PathBuf, key: String) -> Result<JiraIssueDetails, String> {
     let config = require_config(&app)?;
     let key = require_issue_key(&key)?;
     let data = jira_get(
-        &config,
+        &Client::new(&config),
         &format!("/rest/api/3/issue/{key}?fields=description,reporter,creator,assignee"),
     )?;
     parse_jira_issue_details(&data)
@@ -190,10 +169,10 @@ pub fn jira_issue_thread(app: PathBuf, key: String) -> Result<JiraIssueThread, S
     let key = require_issue_key(&key)?;
     // Newest first so a long thread keeps its latest comments; re-sorted below.
     let data = jira_get(
-        &config,
+        &Client::new(&config),
         &format!("/rest/api/3/issue/{key}/comment?maxResults={COMMENT_LIMIT}&orderBy=-created"),
     )?;
-    parse_jira_issue_thread(&data, &config.site, key)
+    parse_jira_issue_thread(&data, config.site(), key)
 }
 
 pub fn jira_issue_comment(app: PathBuf, key: String, body: String) -> Result<String, String> {
@@ -204,23 +183,25 @@ pub fn jira_issue_comment(app: PathBuf, key: String, body: String) -> Result<Str
         return Err("Comment cannot be empty".into());
     }
     let data = jira_post(
-        &config,
+        &Client::new(&config),
         &format!("/rest/api/3/issue/{key}/comment"),
-        &json!({ "body": text_to_adf(body) }),
+        &json!({ "body": crate::atlassian::adf::from_markdown(body) }),
     )?;
     let id = string_field(&data, "id").unwrap_or_default();
     if id.is_empty() {
         return Err("Could not post Jira comment".into());
     }
-    Ok(comment_url(&config.site, key, &id))
+    Ok(comment_url(config.site(), key, &id))
 }
 
-fn status_for(config: Option<&JiraConfig>) -> JiraStatus {
+fn status_for(config: Option<&Credentials>) -> JiraStatus {
     JiraStatus {
         connected: config.is_some(),
-        site: config.map(|config| config.site.clone()).unwrap_or_default(),
+        site: config
+            .map(|config| config.site().to_owned())
+            .unwrap_or_default(),
         email: config
-            .map(|config| config.email.clone())
+            .map(|config| config.email().to_owned())
             .unwrap_or_default(),
     }
 }
@@ -249,88 +230,12 @@ fn issue_jql(assigned_to_me: bool, state: &str, project_ids: &[String]) -> Strin
     format!("{} ORDER BY updated DESC", clauses.join(" AND "))
 }
 
-fn jira_authorization(config: &JiraConfig) -> String {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(format!(
-        "{}:{}",
-        config.email.trim(),
-        config.token.trim()
-    ));
-    format!("Basic {encoded}")
+fn jira_get(client: &Client, path: &str) -> Result<Value, String> {
+    client.get(path).map_err(|error| error.to_string())
 }
 
-fn jira_get(config: &JiraConfig, path: &str) -> Result<Value, String> {
-    let agent = ureq::AgentBuilder::new().timeout(HTTP_TIMEOUT).build();
-    let result = agent
-        .get(&format!("{}{path}", config.site))
-        .set("Authorization", &jira_authorization(config))
-        .set("Accept", "application/json")
-        .call();
-    read_jira_response(result)
-}
-
-fn jira_post(config: &JiraConfig, path: &str, body: &Value) -> Result<Value, String> {
-    let agent = ureq::AgentBuilder::new().timeout(HTTP_TIMEOUT).build();
-    let payload = serde_json::to_string(body).map_err(|error| error.to_string())?;
-    let result = agent
-        .post(&format!("{}{path}", config.site))
-        .set("Authorization", &jira_authorization(config))
-        .set("Accept", "application/json")
-        .set("Content-Type", "application/json")
-        .send_string(&payload);
-    read_jira_response(result)
-}
-
-fn read_jira_response(result: Result<ureq::Response, ureq::Error>) -> Result<Value, String> {
-    let response = match result {
-        Ok(response) => response,
-        Err(ureq::Error::Status(401, _)) => {
-            return Err("Jira email or API token is invalid".into());
-        }
-        Err(ureq::Error::Status(status, response)) => {
-            let body = response.into_string().unwrap_or_default();
-            return Err(jira_http_error(status, &body));
-        }
-        Err(_) => return Err("Could not reach Jira".into()),
-    };
-    let status = response.status();
-    let body = response
-        .into_string()
-        .map_err(|_| "Jira returned an unreadable response".to_string())?;
-    if !(200..300).contains(&status) {
-        return Err(jira_http_error(status, &body));
-    }
-    serde_json::from_str(&body).map_err(|_| "Jira returned invalid JSON".to_string())
-}
-
-fn jira_http_error(status: u16, body: &str) -> String {
-    if let Some(message) = jira_error_message(body) {
-        return message;
-    }
-    match status {
-        403 => "Jira denied access. Check the API token's permissions".into(),
-        404 => "Jira could not find that issue".into(),
-        _ => format!("Jira request failed ({status})"),
-    }
-}
-
-fn jira_error_message(body: &str) -> Option<String> {
-    let parsed: Value = serde_json::from_str(body).ok()?;
-    let from_list = parsed
-        .get("errorMessages")
-        .and_then(Value::as_array)
-        .and_then(|messages| messages.iter().filter_map(Value::as_str).next())
-        .map(str::to_string);
-    let from_map = || {
-        parsed
-            .get("errors")
-            .and_then(Value::as_object)
-            .and_then(|errors| errors.values().filter_map(Value::as_str).next())
-            .map(str::to_string)
-    };
-    from_list
-        .or_else(from_map)
-        .map(|message| message.trim().to_string())
-        .filter(|message| !message.is_empty())
+fn jira_post(client: &Client, path: &str, body: &Value) -> Result<Value, String> {
+    client.post(path, body).map_err(|error| error.to_string())
 }
 
 fn parse_jira_projects(data: &Value) -> Result<Vec<JiraProject>, String> {
@@ -567,350 +472,19 @@ fn string_field(value: &Value, key: &str) -> Option<String> {
         .map(|text| text.trim().to_string())
 }
 
-// ---- Atlassian Document Format ----
-
 /// Descriptions and comments arrive as ADF (v3) or plain text; the Inbox renders markdown.
 fn rich_text(value: Option<&Value>) -> String {
     match value {
         Some(Value::String(text)) => text.trim().to_string(),
-        Some(doc @ Value::Object(_)) => adf_to_markdown(doc),
+        Some(doc @ Value::Object(_)) => crate::atlassian::adf::to_markdown(doc),
         _ => String::new(),
     }
 }
 
-fn adf_to_markdown(doc: &Value) -> String {
-    let mut blocks = Vec::new();
-    for node in children(doc) {
-        let block = adf_block(node, "");
-        if !block.trim().is_empty() {
-            blocks.push(block);
-        }
-    }
-    blocks.join("\n\n").trim().to_string()
-}
-
-fn children(node: &Value) -> &[Value] {
-    node.get("content")
-        .and_then(Value::as_array)
-        .map(Vec::as_slice)
-        .unwrap_or_default()
-}
-
-fn node_type(node: &Value) -> &str {
-    node.get("type").and_then(Value::as_str).unwrap_or_default()
-}
-
-fn attr<'a>(node: &'a Value, name: &str) -> Option<&'a Value> {
-    node.pointer(&format!("/attrs/{name}"))
-}
-
-fn attr_str<'a>(node: &'a Value, name: &str) -> &'a str {
-    attr(node, name).and_then(Value::as_str).unwrap_or_default()
-}
-
-fn adf_block(node: &Value, indent: &str) -> String {
-    match node_type(node) {
-        "paragraph" => adf_inline(children(node)),
-        "heading" => {
-            let level = attr(node, "level")
-                .and_then(Value::as_u64)
-                .unwrap_or(1)
-                .clamp(1, 6) as usize;
-            format!("{} {}", "#".repeat(level), adf_inline(children(node)))
-        }
-        "bulletList" => adf_list(node, indent, None),
-        "orderedList" => {
-            let start = attr(node, "order").and_then(Value::as_u64).unwrap_or(1);
-            adf_list(node, indent, Some(start))
-        }
-        "codeBlock" => {
-            let code: String = children(node)
-                .iter()
-                .filter_map(|child| child.get("text").and_then(Value::as_str))
-                .collect();
-            format!("```{}\n{}\n```", attr_str(node, "language"), code)
-        }
-        "blockquote" | "panel" => adf_blocks(children(node), indent)
-            .lines()
-            .map(|line| format!("> {line}"))
-            .collect::<Vec<_>>()
-            .join("\n"),
-        "rule" => "---".into(),
-        "table" => adf_table(node),
-        "mediaSingle" | "mediaGroup" | "media" => String::new(),
-        _ => {
-            if children(node).is_empty() {
-                adf_inline(std::slice::from_ref(node))
-            } else {
-                adf_blocks(children(node), indent)
-            }
-        }
-    }
-}
-
-fn adf_blocks(nodes: &[Value], indent: &str) -> String {
-    nodes
-        .iter()
-        .map(|node| adf_block(node, indent))
-        .filter(|block| !block.trim().is_empty())
-        .collect::<Vec<_>>()
-        .join("\n\n")
-}
-
-fn adf_list(node: &Value, indent: &str, start: Option<u64>) -> String {
-    let mut lines = Vec::new();
-    for (index, item) in children(node).iter().enumerate() {
-        let marker = match start {
-            Some(start) => format!("{}. ", start + index as u64),
-            None => "- ".into(),
-        };
-        let nested = format!("{indent}{}", " ".repeat(marker.len()));
-        let mut first = true;
-        for child in children(item) {
-            let text = adf_block(child, &nested);
-            if text.trim().is_empty() {
-                continue;
-            }
-            if matches!(node_type(child), "bulletList" | "orderedList") {
-                lines.push(text);
-            } else if first {
-                lines.push(format!(
-                    "{indent}{marker}{}",
-                    text.replace('\n', &format!("\n{nested}"))
-                ));
-                first = false;
-            } else {
-                lines.push(format!(
-                    "{nested}{}",
-                    text.replace('\n', &format!("\n{nested}"))
-                ));
-            }
-        }
-    }
-    lines.join("\n")
-}
-
-fn adf_table(node: &Value) -> String {
-    let rows: Vec<Vec<String>> = children(node)
-        .iter()
-        .map(|row| {
-            children(row)
-                .iter()
-                .map(|cell| {
-                    adf_blocks(children(cell), "")
-                        .replace('\n', " ")
-                        .replace('|', "\\|")
-                })
-                .collect()
+fn require_config(app: &Path) -> Result<Credentials, String> {
+    atlassian::load(app)
+        .and_then(|credentials| {
+            credentials.ok_or_else(|| Error::Invalid("Connect Atlassian in Settings".into()))
         })
-        .filter(|row: &Vec<String>| !row.is_empty())
-        .collect();
-    let Some(width) = rows.iter().map(Vec::len).max() else {
-        return String::new();
-    };
-    let line = |cells: &[String]| {
-        let mut padded = cells.to_vec();
-        padded.resize(width, String::new());
-        format!("| {} |", padded.join(" | "))
-    };
-    let mut lines = vec![line(&rows[0]), format!("|{}", " --- |".repeat(width))];
-    lines.extend(rows[1..].iter().map(|row| line(row)));
-    lines.join("\n")
-}
-
-fn adf_inline(nodes: &[Value]) -> String {
-    let mut out = String::new();
-    for node in nodes {
-        match node_type(node) {
-            "text" => out.push_str(&adf_marked_text(node)),
-            "hardBreak" => out.push('\n'),
-            "mention" => {
-                let text = attr_str(node, "text");
-                if text.starts_with('@') {
-                    out.push_str(text);
-                } else if !text.is_empty() {
-                    out.push('@');
-                    out.push_str(text);
-                }
-            }
-            "emoji" => {
-                let text = attr_str(node, "text");
-                out.push_str(if text.is_empty() {
-                    attr_str(node, "shortName")
-                } else {
-                    text
-                });
-            }
-            "inlineCard" | "blockCard" | "embedCard" => {
-                let url = attr_str(node, "url");
-                if !url.is_empty() {
-                    out.push_str(&format!("<{url}>"));
-                }
-            }
-            "status" => out.push_str(&format!("`{}`", attr_str(node, "text"))),
-            "date" => {}
-            _ => out.push_str(&adf_inline(children(node))),
-        }
-    }
-    out
-}
-
-fn adf_marked_text(node: &Value) -> String {
-    let mut text = node
-        .get("text")
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_string();
-    if text.is_empty() {
-        return text;
-    }
-    let marks = node
-        .get("marks")
-        .and_then(Value::as_array)
-        .map(Vec::as_slice)
-        .unwrap_or_default();
-    if marks.iter().any(|mark| node_type(mark) == "code") {
-        return format!("`{text}`");
-    }
-    for mark in marks {
-        text = match node_type(mark) {
-            "strong" => format!("**{text}**"),
-            "em" => format!("_{text}_"),
-            "strike" => format!("~~{text}~~"),
-            "link" => {
-                let href = attr_str(mark, "href");
-                if href.is_empty() {
-                    text
-                } else {
-                    format!("[{text}]({href})")
-                }
-            }
-            _ => text,
-        };
-    }
-    text
-}
-
-/// Posts plain text as ADF: blank lines split paragraphs, single newlines become hard breaks.
-fn text_to_adf(text: &str) -> Value {
-    let paragraphs: Vec<Value> = text
-        .replace("\r\n", "\n")
-        .split("\n\n")
-        .map(str::trim)
-        .filter(|paragraph| !paragraph.is_empty())
-        .map(|paragraph| {
-            let mut content = Vec::new();
-            for (index, line) in paragraph.lines().enumerate() {
-                if index > 0 {
-                    content.push(json!({ "type": "hardBreak" }));
-                }
-                if !line.is_empty() {
-                    content.push(json!({ "type": "text", "text": line }));
-                }
-            }
-            json!({ "type": "paragraph", "content": content })
-        })
-        .collect();
-    json!({ "type": "doc", "version": 1, "content": paragraphs })
-}
-
-// ---- Config storage ----
-
-fn normalize_jira_site(raw: &str) -> Result<String, String> {
-    let raw = raw.trim().trim_end_matches('/');
-    if raw.is_empty() {
-        return Err("Enter your Jira site (e.g. yourteam.atlassian.net)".into());
-    }
-    // Bare `yourteam` becomes the Atlassian Cloud site.
-    let with_scheme = if raw.contains("://") {
-        raw.to_string()
-    } else if raw.contains('.') {
-        format!("https://{raw}")
-    } else {
-        format!("https://{raw}.atlassian.net")
-    };
-    let url = url::Url::parse(&with_scheme).map_err(|_| "Jira site is invalid".to_string())?;
-    // The API token travels on every request as Basic auth.
-    if url.scheme() != "https" {
-        return Err("Jira site must use HTTPS".into());
-    }
-    if !url.username().is_empty() || url.password().is_some() {
-        return Err("Jira site is invalid".into());
-    }
-    let host = url
-        .host_str()
-        .filter(|host| !host.is_empty())
-        .ok_or_else(|| "Jira site is invalid".to_string())?;
-    Ok(match url.port() {
-        Some(port) => format!("https://{}:{port}", host.to_ascii_lowercase()),
-        None => format!("https://{}", host.to_ascii_lowercase()),
-    })
-}
-
-fn config_path(app: &Path) -> Result<PathBuf, String> {
-    Ok(app.join("jira-config.json"))
-}
-
-fn read_config(app: &Path) -> Result<Option<JiraConfig>, String> {
-    let path = config_path(app)?;
-    match fs::read_to_string(path) {
-        Ok(raw) => {
-            let mut config: JiraConfig =
-                serde_json::from_str(&raw).map_err(|_| "Jira settings are invalid".to_string())?;
-            config.site = normalize_jira_site(&config.site)?;
-            config.email = config.email.trim().to_string();
-            config.token = config.token.trim().to_string();
-            if config.token.is_empty() || config.email.is_empty() {
-                Ok(None)
-            } else {
-                Ok(Some(config))
-            }
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(error) => Err(error.to_string()),
-    }
-}
-
-fn require_config(app: &Path) -> Result<JiraConfig, String> {
-    read_config(app)?.ok_or_else(|| "Connect Jira in Settings".to_string())
-}
-
-fn write_config(app: &Path, config: &JiraConfig) -> Result<(), String> {
-    let path = config_path(app)?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let value = serde_json::to_string(config).map_err(|error| error.to_string())?;
-    write_secret_file(&path, &value)
-}
-
-fn delete_config(app: &Path) -> Result<(), String> {
-    let path = config_path(app)?;
-    match fs::remove_file(path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error.to_string()),
-    }
-}
-
-fn write_secret_file(path: &Path, value: &str) -> Result<(), String> {
-    #[cfg(unix)]
-    {
-        use std::io::Write;
-        use std::os::unix::fs::OpenOptionsExt;
-        let mut file = fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(path)
-            .map_err(|error| error.to_string())?;
-        file.write_all(value.as_bytes())
-            .map_err(|error| error.to_string())?;
-        Ok(())
-    }
-    #[cfg(not(unix))]
-    {
-        fs::write(path, value).map_err(|error| error.to_string())
-    }
+        .map_err(|error| error.to_string())
 }

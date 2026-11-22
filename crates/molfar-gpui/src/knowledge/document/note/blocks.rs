@@ -1,7 +1,7 @@
 //! Block layout with a reading rhythm: space above each block by kind,
 //! nothing above the first.
-use super::super::super::Knowledge;
 use super::Walk;
+use super::list;
 use crate::{
     markdown::{self, Fence, Tone},
     markdown_model::Block,
@@ -32,63 +32,63 @@ fn gap_above(block: &Block) -> f32 {
     }
 }
 
-impl Knowledge {
-    pub(super) fn block(
-        &self,
-        block: &Block,
-        first: bool,
-        walk: &mut Walk,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let gap = if first { 0. } else { gap_above(block) };
-        let body = match block {
-            Block::Heading { level, runs } => {
-                let (size, line, _) = heading_metrics(*level);
-                div()
-                    .text_size(px(size))
-                    .line_height(px(line))
-                    .font_weight(FontWeight::SEMIBOLD)
-                    .text_color(content(0.96))
-                    .when(*level <= 2, |heading| {
-                        heading.pb(px(6.)).border_b_1().border_color(content(0.07))
-                    })
-                    .child(markdown::inline(&bold(runs), walk.id("heading"), size))
-                    .into_any_element()
-            }
-            Block::Paragraph { runs } => paragraph(runs, walk),
-            Block::List {
-                ordered_start,
-                items,
-            } => self.list(*ordered_start, items, walk, cx),
-            Block::BlockQuote { children } => div()
-                .border_l_2()
-                .border_color(content(0.16))
-                .pl_4()
-                .opacity(0.82)
-                .children(
-                    children
-                        .iter()
-                        .enumerate()
-                        .map(|(index, child)| self.block(child, index == 0, walk, cx)),
-                )
-                .into_any_element(),
-            Block::CodeBlock { language, code }
-                if !language
-                    .as_deref()
-                    .is_some_and(|language| language.eq_ignore_ascii_case("mermaid")) =>
-            {
-                code_block(language.as_deref().unwrap_or(""), code, walk)
-            }
-            Block::Rule => div().h(px(1.)).bg(content(0.08)).into_any_element(),
-            other => fallback(other, walk),
-        };
-        div()
-            .w_full()
-            .min_w_0()
-            .pt(px(gap))
-            .child(body)
-            .into_any_element()
-    }
+pub(crate) type ToggleTask<T> = fn(&mut T, usize, &mut Context<T>);
+
+pub(crate) fn block<T: 'static>(
+    block: &Block,
+    first: bool,
+    walk: &mut Walk,
+    toggle: Option<ToggleTask<T>>,
+    cx: &mut Context<T>,
+) -> AnyElement {
+    let gap = if first { 0. } else { gap_above(block) };
+    let body = match block {
+        Block::Heading { level, runs } => {
+            let (size, line, _) = heading_metrics(*level);
+            div()
+                .text_size(px(size))
+                .line_height(px(line))
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(content(0.96))
+                .when(*level <= 2, |heading| {
+                    heading.pb(px(6.)).border_b_1().border_color(content(0.07))
+                })
+                .child(markdown::inline(&bold(runs), walk.id("heading"), size))
+                .into_any_element()
+        }
+        Block::Paragraph { runs } => paragraph(runs, walk),
+        Block::List {
+            ordered_start,
+            items,
+        } => list::list(*ordered_start, items, walk, toggle, cx),
+        Block::BlockQuote { children } => div()
+            .border_l_2()
+            .border_color(content(0.16))
+            .pl_4()
+            .opacity(0.82)
+            .children(
+                children
+                    .iter()
+                    .enumerate()
+                    .map(|(index, child)| self::block(child, index == 0, walk, toggle, cx)),
+            )
+            .into_any_element(),
+        Block::CodeBlock { language, code }
+            if !language
+                .as_deref()
+                .is_some_and(|language| language.eq_ignore_ascii_case("mermaid")) =>
+        {
+            code_block(language.as_deref().unwrap_or(""), code, walk)
+        }
+        Block::Rule => div().h(px(1.)).bg(content(0.08)).into_any_element(),
+        other => fallback(other, walk),
+    };
+    div()
+        .w_full()
+        .min_w_0()
+        .pt(px(gap))
+        .child(body)
+        .into_any_element()
 }
 
 fn bold(runs: &[crate::markdown_model::InlineRun]) -> Vec<crate::markdown_model::InlineRun> {

@@ -5,15 +5,16 @@ use crate::theme::*;
 use gpui::{AnyElement, Context, FontWeight, Hsla, Role, div, hsla, prelude::*, px};
 
 mod callout;
-mod note;
-mod properties;
+pub(crate) mod note;
+pub(crate) mod properties;
 mod relations;
 mod toolbar;
 
-pub(super) use note::{PreviewBlock, parse as parse_preview};
+pub(super) use note::PreviewBlock;
+pub(crate) use note::{PreviewHost, parse as parse_preview, render_markdown};
 pub(super) use relations::Relations;
 
-fn banner(
+pub(crate) fn banner(
     id: &'static str,
     hue: f32,
     glyph: &'static str,

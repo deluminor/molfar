@@ -3,6 +3,7 @@ pub mod accounts;
 pub mod agent;
 pub mod app_access;
 pub mod app_update;
+pub mod atlassian;
 pub mod automations;
 pub mod catalog;
 pub mod checkpoint;
@@ -19,6 +20,7 @@ pub mod github_star;
 pub mod harness_updates;
 pub mod host;
 pub mod inbox;
+pub mod jira;
 pub mod knowledge;
 pub mod mobile;
 pub mod notes;
@@ -57,3 +59,5 @@ pub mod worktree_management;
 pub mod consumption;
 
 pub mod secrets;
+
+pub mod confluence;
