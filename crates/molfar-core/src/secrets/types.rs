@@ -57,6 +57,11 @@ impl TryFrom<String> for SecretName {
 pub struct SecretValue(pub(super) SecretString);
 
 impl SecretValue {
+    pub(crate) fn expose(&self) -> &str {
+        use secrecy::ExposeSecret;
+        self.0.expose_secret()
+    }
+
     pub fn one_time(value: String) -> Result<Self, Error> {
         if !Self::valid_one_time(&value) {
             return Err(Error::InvalidValue);

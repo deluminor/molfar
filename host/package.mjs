@@ -148,7 +148,11 @@ for (const target of targets) {
   if (windows) {
     if (process.platform === "win32")
       ps(
-        `Compress-Archive -Path ${psQuote(join(folder, "*"))} -DestinationPath ${psQuote(join(output, filename))}`,
+        // The smoke test just ran this node.exe. Windows can keep it locked
+        // for a moment, and Compress-Archive then fails with access denied.
+        `$src = ${psQuote(join(folder, "*"))}; $dest = ${psQuote(join(output, filename))}; ` +
+          `for ($try = 1; $try -le 8; $try++) { try { Compress-Archive -Path $src -DestinationPath $dest; break } ` +
+          `catch { if ($try -eq 8) { throw }; Start-Sleep -Milliseconds (200 * $try) } }`,
       );
     else
       execFileSync("zip", ["-q", "-r", join(output, filename), "."], {

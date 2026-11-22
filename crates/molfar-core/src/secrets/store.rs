@@ -42,6 +42,22 @@ impl SecretStore {
         Self::new(super::backend::MemoryBackend::default())
     }
 
+    // Connector credentials must stay outside the index used for agent secret bindings.
+    pub(crate) fn atlassian(&self) -> Result<Option<SecretValue>, Error> {
+        match self.backend.get("global/ATLASSIAN") {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::Missing) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    pub(crate) fn set_atlassian(&self, value: Option<&SecretValue>) -> Result<(), Error> {
+        match value {
+            Some(value) => self.backend.set("global/ATLASSIAN", value),
+            None => self.backend.delete("global/ATLASSIAN"),
+        }
+    }
+
     pub fn probe(&self) -> Result<(), Error> {
         self.backend.probe()
     }

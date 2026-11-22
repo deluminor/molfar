@@ -40,12 +40,20 @@ pub enum Node {
 mod tests {
     use super::{adf, markdown, storage};
 
+    /// Windows checkouts may store the fixture with CRLF. The exporter always uses LF.
+    fn golden() -> String {
+        include_str!("fixtures/rich.md")
+            .replace("\r\n", "\n")
+            .trim_end()
+            .to_owned()
+    }
+
     #[test]
     fn confluence_adf_rich_document_matches_golden() {
         let document = adf::parse(include_str!("fixtures/rich.json")).unwrap();
         assert_eq!(
             markdown::export(&document, "https://example.invalid/page"),
-            include_str!("fixtures/rich.md").trim_end()
+            golden()
         );
     }
 
@@ -54,7 +62,7 @@ mod tests {
         let document = storage::parse(include_str!("fixtures/rich.xhtml")).unwrap();
         assert_eq!(
             markdown::export(&document, "https://example.invalid/page"),
-            include_str!("fixtures/rich.md").trim_end()
+            golden()
         );
     }
 

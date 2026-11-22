@@ -201,6 +201,11 @@ impl Shell {
                     | "notes.read"
                     | "worktrees.list"
                     | molfar_core::secrets::request::LIST
+                    | "jira.projects"
+                    | "jira.list"
+                    | "jira.search"
+                    | "jira.get"
+                    | "jira.thread"
             )
             && !app::board::READ_ACTIONS.contains(&call.action.as_str())
             && !confluence_api::READ_ACTIONS.contains(&call.action.as_str())
@@ -701,11 +706,59 @@ impl Shell {
                 );
                 return;
             }
+            action if action.starts_with("jira.") => {
+                let write = !matches!(
+                    action,
+                    "jira.projects" | "jira.list" | "jira.search" | "jira.get" | "jira.thread"
+                );
+                if write && !self.workspace.preferences.jira_operator_write {
+                    Err("Jira writes are not granted".into())
+                } else {
+                    let directory = crate::data_dir();
+                    let name = action.to_string();
+                    let arguments = input.clone();
+                    self.app_background(
+                        call,
+                        move |database| {
+                            let value = run_jira(&directory, &database, &name, &arguments, write)?;
+                            Ok((value, Effect::None))
+                        },
+                        cx,
+                    );
+                    return;
+                }
+            }
             _ => Err("Unknown Operator action".into()),
         };
         self.finish_app_call(call, result, cx);
     }
 }
+fn run_jira(
+    directory: &std::path::Path,
+    database: &Database,
+    action: &str,
+    arguments: &Value,
+    write: bool,
+) -> Result<Value, String> {
+    let credentials = molfar_core::atlassian::load(directory)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "Connect Atlassian in Settings".to_string())?;
+    let client = molfar_core::atlassian::Client::new(&credentials);
+    let perform = || molfar_core::jira::tools::execute(&client, action, arguments);
+    if !write {
+        return perform();
+    }
+    let store = locked(database)?;
+    let request = arguments["requestId"].as_str().unwrap_or("");
+    let target = arguments["issueKey"]
+        .as_str()
+        .or_else(|| arguments["projectKey"].as_str())
+        .unwrap_or("");
+    molfar_core::jira::tools::guarded_write(
+        &store, "operator", action, target, request, arguments, perform,
+    )
+}
+
 fn mutating(action: &str) -> bool {
     !matches!(
         action,
@@ -717,6 +770,11 @@ fn mutating(action: &str) -> bool {
             | "notes.read"
             | "worktrees.list"
             | molfar_core::secrets::request::LIST
+            | "jira.projects"
+            | "jira.list"
+            | "jira.search"
+            | "jira.get"
+            | "jira.thread"
     ) && !app::board::READ_ACTIONS.contains(&action)
         && !confluence_api::READ_ACTIONS.contains(&action)
 }

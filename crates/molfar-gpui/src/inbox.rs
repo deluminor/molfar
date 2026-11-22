@@ -3,6 +3,7 @@
 mod avatar;
 mod diff;
 mod document;
+mod jira;
 pub(crate) mod pulse;
 mod ui;
 pub(crate) use avatar::image as avatar_image;
@@ -30,8 +31,12 @@ use std::{
 
 pub(crate) enum Event {
     Close,
+    ManageAtlassian,
     OpenSession(i64),
     StartSession { item: Box<Item>, prompt: String },
+    CreateCard { title: String, description: String },
+    AddToChat { text: String },
+    JiraNotice { text: String },
     ItemsChanged(Vec<Item>),
 }
 
@@ -52,6 +57,8 @@ pub(crate) struct Inbox {
     snapshot: Snapshot,
     sessions: Vec<Session>,
     focus: FocusHandle,
+    jira_list: Entity<jira::JiraList>,
+    jira_reader: Entity<jira::JiraReader>,
     search: Entity<Input>,
     comment: Entity<Input>,
     summary_scroll: ListState,
@@ -245,6 +252,49 @@ impl Inbox {
             })
             .detach();
         }
+        let jira_dir = data_dir.clone();
+        let jira_list = cx.new(|cx| jira::JiraList::new(jira_dir.clone(), cx));
+        let jira_reader = cx.new(|cx| jira::JiraReader::new(jira_dir, cx));
+        cx.subscribe(&jira_list, |this, _, event, cx| match event {
+            jira::ListEvent::Open(key) => {
+                let key = key.clone();
+                this.jira_reader
+                    .update(cx, |reader, cx| reader.open(key, cx));
+            }
+            jira::ListEvent::Share(text) => cx.emit(Event::AddToChat { text: text.clone() }),
+            jira::ListEvent::ShareFailed(text) => cx.emit(Event::JiraNotice { text: text.clone() }),
+        })
+        .detach();
+        let project = cwd.display().to_string();
+        jira_reader.update(cx, |reader, _| reader.set_project(project));
+        cx.subscribe(&jira_reader, |this, _, event, cx| match event {
+            jira::ReaderEvent::StartSession { title, prompt } => {
+                let project_path = this.service.cwd.display().to_string();
+                if project_path.is_empty() {
+                    return;
+                }
+                let item = Item {
+                    provider: "jira".into(),
+                    identifier: title.clone(),
+                    project_path,
+                    ..Item::default()
+                };
+                cx.emit(Event::StartSession {
+                    item: Box::new(item),
+                    prompt: prompt.clone(),
+                });
+            }
+            jira::ReaderEvent::CreateCard { title, description } => {
+                cx.emit(Event::CreateCard {
+                    title: title.clone(),
+                    description: description.clone(),
+                });
+            }
+            jira::ReaderEvent::AddToChat { text } => {
+                cx.emit(Event::AddToChat { text: text.clone() });
+            }
+        })
+        .detach();
         Self {
             service: Service {
                 data_dir,
@@ -257,6 +307,8 @@ impl Inbox {
             snapshot: Snapshot::default(),
             sessions: vec![],
             focus: cx.focus_handle(),
+            jira_list,
+            jira_reader,
             search,
             comment,
             summary_scroll: ListState::new(0, ListAlignment::Top, px(200.)),
@@ -325,9 +377,13 @@ impl Inbox {
         cwd: PathBuf,
         cx: &mut Context<Self>,
     ) {
-        if !projects.contains(&cwd) {
+        if !cwd.as_os_str().is_empty() && !projects.contains(&cwd) {
             projects.push(cwd.clone());
         }
+        self.jira_reader.update(cx, |reader, cx| {
+            reader.set_project(cwd.display().to_string());
+            cx.notify();
+        });
         if self.projects != projects || self.service.cwd != cwd {
             let switched = self.service.cwd != cwd;
             if switched {
@@ -433,6 +489,9 @@ impl Inbox {
     }
 
     pub(crate) fn refresh(&mut self, cx: &mut Context<Self>) {
+        if self.state.source == "jira" {
+            self.jira_list.update(cx, |list, cx| list.ensure_loaded(cx));
+        }
         if self.loading {
             self.refresh_queued = true;
             return;
@@ -618,6 +677,9 @@ impl Inbox {
     }
     fn change_source(&mut self, source: String, cx: &mut Context<Self>) {
         self.state.source = source;
+        if self.state.source == "jira" {
+            self.jira_list.update(cx, |list, cx| list.ensure_loaded(cx));
+        }
         self.selected = None;
         self.details = None;
         self.document = None;
@@ -856,6 +918,11 @@ impl Inbox {
     }
     pub(crate) fn open_connection(&mut self, provider: String, cx: &mut Context<Self>) {
         self.connections_open = false;
+        if provider == "jira" {
+            cx.emit(Event::ManageAtlassian);
+            cx.notify();
+            return;
+        }
         self.connect_error = None;
         let status = self
             .snapshot

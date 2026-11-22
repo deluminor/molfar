@@ -7,6 +7,7 @@ mod board;
 pub mod confluence;
 pub mod familiars;
 pub mod inbox;
+pub mod jira;
 pub mod knowledge;
 mod notes;
 mod schema;
@@ -80,6 +81,8 @@ fn domain_grant(domain: DOMAIN, mutation: bool) -> &'static [GRANT] {
         (DOMAIN::Confluence, false) => &[GRANT::Read(DOMAIN::Confluence)],
         (DOMAIN::Knowledge, false) => &[GRANT::Read(DOMAIN::Knowledge)],
         (DOMAIN::Knowledge, true) => &[GRANT::Write(DOMAIN::Knowledge)],
+        (DOMAIN::Jira, false) => &[GRANT::Read(DOMAIN::Jira)],
+        (DOMAIN::Jira, true) => &[GRANT::Write(DOMAIN::Jira)],
         _ => unreachable!("Only registered external domains have tool definitions"),
     }
 }
@@ -110,6 +113,7 @@ fn build_catalog() -> Vec<Tool> {
     tools.extend(automations::definitions());
     tools.extend(familiars::definitions());
     tools.extend(inbox::definitions());
+    tools.extend(jira::definitions());
     tools.extend(confluence::definitions());
     tools
 }
@@ -165,6 +169,7 @@ pub fn validate(name: &str, arguments: &Value) -> Result<&'static Tool, String> 
         name if name.starts_with("automations_") => automations::validate(name, arguments),
         name if name.starts_with("familiars_") => familiars::validate(name, arguments),
         name if name.starts_with("inbox_") => inbox::validate(name, arguments),
+        name if name.starts_with("jira_") => jira::validate(name, arguments),
         board => {
             let internal = board.replacen('_', ".", 1);
             crate::app_access::board::validate(&internal, arguments)
@@ -183,7 +188,8 @@ fn check<T: DeserializeOwned>(arguments: &Value) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{catalog, validate, DOMAIN, GRANT};
+    use super::{catalog, validate, visible, DOMAIN, GRANT};
+    use crate::external_mcp::types::Principal;
     use serde_json::json;
 
     #[test]
@@ -254,5 +260,56 @@ mod tests {
         let mut extra = update("Kept");
         extra["model"] = json!("override");
         assert!(validate("sessions_update", &extra).is_err());
+    }
+
+    #[test]
+    fn pre_jira_grants_hide_jira_tools_and_writes_need_delegated() {
+        let mut grants = Vec::new();
+        for domain in DOMAIN::ALL {
+            if domain == DOMAIN::Jira {
+                continue;
+            }
+            grants.push(GRANT::Read(domain));
+            grants.push(GRANT::Write(domain));
+        }
+        grants.extend([
+            GRANT::BoardCreate,
+            GRANT::BoardRun,
+            GRANT::SessionsStop,
+            GRANT::Destructive,
+            GRANT::Delegated,
+        ]);
+        let principal = Principal {
+            client_id: "old".into(),
+            name: "Old".into(),
+            grants,
+            resources: vec![],
+            projects: vec![],
+        };
+        assert!(visible(&principal)
+            .iter()
+            .all(|tool| !tool.name.starts_with("jira_")));
+        let comment = validate(
+            "jira_comment",
+            &json!({"issueKey":"TB-1","body":"Hi","requestId":"c1"}),
+        )
+        .unwrap();
+        assert!(!principal.allows(&comment.requires));
+        let mut granted = Principal {
+            client_id: "writer".into(),
+            name: "Writer".into(),
+            grants: vec![GRANT::Write(DOMAIN::Jira)],
+            resources: vec![],
+            projects: vec![],
+        };
+        assert!(!granted.allows(&comment.requires));
+        granted.grants.push(GRANT::Delegated);
+        assert!(granted.allows(&comment.requires));
+        let inbox = validate(
+            "inbox_comment",
+            &json!({"itemKey":"jira:issue","body":"Hello","requestId":"c1"}),
+        )
+        .unwrap();
+        assert_eq!(inbox.requires.any, [GRANT::Write(DOMAIN::Inbox)]);
     }
 }

@@ -9,11 +9,12 @@ pub enum DOMAIN {
     Automations,
     Inbox,
     Familiars,
+    Jira,
     Confluence,
 }
 
 impl DOMAIN {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Board,
         Self::Sessions,
         Self::Notes,
@@ -21,6 +22,7 @@ impl DOMAIN {
         Self::Automations,
         Self::Inbox,
         Self::Familiars,
+        Self::Jira,
         Self::Confluence,
     ];
 
@@ -37,6 +39,7 @@ impl DOMAIN {
             Self::Automations => "Automations",
             Self::Inbox => "Inbox",
             Self::Familiars => "Familiars",
+            Self::Jira => "Jira",
             Self::Confluence => "Confluence",
         }
     }

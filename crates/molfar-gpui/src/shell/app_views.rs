@@ -456,10 +456,19 @@ impl Shell {
                 window,
                 |this, _, event: &inbox::Event, window, cx| match event {
                     inbox::Event::Close => this.close_app_view(window, cx),
+                    inbox::Event::ManageAtlassian => {
+                        this.open_settings(crate::settings::Section::Connections, window, cx);
+                    }
+
                     inbox::Event::OpenSession(id) => this.open(*id, window, cx),
                     inbox::Event::StartSession { item, prompt } => {
                         this.start_inbox_session(item.as_ref().clone(), prompt.clone(), cx);
                     }
+                    inbox::Event::CreateCard { title, description } => {
+                        this.create_jira_card(title.clone(), description.clone(), cx);
+                    }
+                    inbox::Event::AddToChat { text } => this.append_composer(text, cx),
+                    inbox::Event::JiraNotice { text } => this.notice_composer(text, cx),
                     inbox::Event::ItemsChanged(items) => {
                         this.inbox_automation_events(items.clone(), cx)
                     }
@@ -616,6 +625,51 @@ impl Shell {
         self.focus_active(window, cx);
     }
 
+    fn notice_composer(&mut self, text: &str, cx: &mut Context<Self>) {
+        let Some(id) = self.workspace.active else {
+            return;
+        };
+        let Some(session) = self.sessions.get(&id).cloned() else {
+            return;
+        };
+        session.update(cx, |conversation, cx| {
+            conversation.show_jira_notice(text, cx)
+        });
+    }
+
+    fn append_composer(&mut self, text: &str, cx: &mut Context<Self>) {
+        let Some(id) = self.workspace.active else {
+            return;
+        };
+        let Some(session) = self.sessions.get(&id).cloned() else {
+            return;
+        };
+        session.update(cx, |conversation, cx| conversation.append_draft(text, cx));
+    }
+
+    fn create_jira_card(&mut self, title: String, description: String, cx: &mut Context<Self>) {
+        let project = self.workspace.project.to_string();
+        if project.is_empty() {
+            return;
+        }
+        let input = molfar_core::task_board::types::CardCreate {
+            id: molfar_core::familiar::new_id(),
+            project_cwd: project,
+            title,
+            description,
+            acceptance_criteria: String::new(),
+            base_ref: None,
+        };
+        let store = self.store.clone();
+        let projects: Vec<String> = self.workspace.projects.iter().map(Into::into).collect();
+        cx.background_executor()
+            .spawn(async move {
+                crate::runtime::locked(&store)?.board_create(&input, &projects)?;
+                Ok::<(), String>(())
+            })
+            .detach();
+    }
+
     fn start_inbox_session(
         &mut self,
         item: molfar_core::inbox::Item,
@@ -642,6 +696,7 @@ impl Shell {
             account: crate::accounts::get(cx)
                 .map(|accounts| accounts.read(cx).selected(kind, &cwd))
                 .unwrap_or_default(),
+            operator_enabled: false,
             ..Default::default()
         };
         let store = self.store.clone();
@@ -653,7 +708,11 @@ impl Shell {
             }
             let store = locked(&store)?;
             let mut summary = store.create(kind.id(), &cwd)?;
-            summary.title = format!("{} · {}", item.reference(), item.title);
+            summary.title = if item.provider == "jira" {
+                item.identifier.clone()
+            } else {
+                format!("{} · {}", item.reference(), item.title)
+            };
             summary.work_item = Some(item.work_item());
             store.title(summary.id, &summary.title)?;
             store.set_work_item(summary.id, summary.work_item.as_ref())?;

@@ -94,6 +94,9 @@ pub(crate) struct Completion {
     disabled_paths: Vec<String>,
     known: std::collections::HashSet<String>,
     files: Vec<ProjectFile>,
+    jira_hits: Vec<(String, String)>,
+    jira_host: String,
+    jira_query: String,
     /// `@name` → `@relative/path` for file names unique in the project; the
     /// picker writes the short label and sending expands it back.
     short_mentions: std::collections::HashMap<String, String>,
@@ -175,6 +178,9 @@ impl Completion {
             .into_iter()
             .collect(),
             files: Vec::new(),
+            jira_hits: Vec::new(),
+            jira_host: String::new(),
+            jira_query: String::new(),
             short_mentions: Default::default(),
             choices: Vec::new(),
             active: 0,
@@ -444,7 +450,41 @@ impl Completion {
             self.load(cx);
         }
         self.rank();
+        self.queue_jira(cx);
         cx.notify();
+    }
+    fn queue_jira(&mut self, cx: &mut Context<Self>) {
+        let Some(token) = &self.token else {
+            return;
+        };
+        let Some(query) = token.query.strip_prefix("jira/") else {
+            return;
+        };
+        let query = query.trim().to_string();
+        if query.len() < 2 || query == self.jira_query {
+            return;
+        }
+        self.jira_query = query.clone();
+        let sent = query.clone();
+        let store = self.store.clone();
+        cx.spawn(async move |this, cx| {
+            let found = cx
+                .background_executor()
+                .spawn(async move { jira_hits(store, &query) })
+                .await;
+            let _ = this.update(cx, |this, cx| {
+                if this.jira_query != sent {
+                    return;
+                }
+                if let Some((host, hits)) = found {
+                    this.jira_host = host;
+                    this.jira_hits = hits;
+                    this.rank();
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
     }
     fn load_native(&mut self, cx: &mut Context<Self>) {
         if self.native_loading
@@ -594,7 +634,7 @@ impl Completion {
     }
     fn rank(&mut self) {
         self.choices.clear();
-        let Some(token) = &self.token else {
+        let Some(token) = self.token.clone() else {
             return;
         };
         if self.mcp_open {
@@ -632,6 +672,30 @@ impl Completion {
         } else if let Some(query) = self.confluence_query() {
             self.choices = self.confluence_choices(query);
         } else if token.trigger == Trigger::Mention {
+            if let Some(query) = token.query.strip_prefix("jira/") {
+                let query = query.trim().to_ascii_lowercase();
+                let host = self.jira_host.clone();
+                self.choices = self
+                    .jira_hits
+                    .iter()
+                    .filter(|(key, summary)| {
+                        query.is_empty()
+                            || key.eq_ignore_ascii_case(&query)
+                            || summary.to_ascii_lowercase().contains(&query)
+                    })
+                    .take(20)
+                    .map(|(key, summary)| Choice {
+                        label: format!("{key} {summary}"),
+                        detail: key.clone(),
+                        insertion: format!("@jira/{host}/{key}"),
+                        builtin: None,
+                        mode: None,
+                        file: false,
+                        server: None,
+                    })
+                    .collect();
+                return;
+            }
             self.choices = composer::rank_files(&self.files, &token.query, 60)
                 .into_iter()
                 .map(|file| Choice {
@@ -1158,6 +1222,28 @@ impl Render for Completion {
         }
         root
     }
+}
+
+fn jira_hits(
+    store: Option<crate::runtime::Database>,
+    query: &str,
+) -> Option<(String, Vec<(String, String)>)> {
+    let store = store?;
+    let db = crate::runtime::locked(&store).ok()?;
+    let dir = db.data_dir().map(std::path::PathBuf::from)?;
+    let credentials = molfar_core::atlassian::load(&dir).ok()??;
+    let host = molfar_core::jira::host_of(credentials.site());
+    let client = molfar_core::atlassian::Client::new(&credentials);
+    let jql = molfar_core::jira::mention_jql(query).ok()?;
+    let page = molfar_core::jira::search(&client, &molfar_core::jira::Filter::Jql(jql), None, None)
+        .ok()?;
+    let hits = page
+        .rows
+        .into_iter()
+        .take(20)
+        .map(|row| (row.key, row.summary))
+        .collect();
+    Some((host, hits))
 }
 
 #[cfg(test)]

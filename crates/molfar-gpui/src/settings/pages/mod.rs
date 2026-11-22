@@ -1,6 +1,8 @@
 //! One file per Settings page, each a port of its SettingsView.tsx function.
 mod appearance;
 mod archive;
+mod atlassian;
+pub(super) use atlassian::AtlassianState;
 mod chat;
 mod companion;
 pub(super) mod confluence;
@@ -34,7 +36,8 @@ impl SettingsView {
             Section::Connections => {
                 // As on the earlier desktop and in the phone app's copy:
                 // Settings → Connections holds both machines and phones.
-                let mut page = self.connections_page(cx);
+                let mut page = vec![self.atlassian_group(cx)];
+                page.extend(self.connections_page(cx));
                 page.push(self.confluence_card(cx));
                 page.extend(self.mobile_page(cx));
                 page.extend(self.companion_page(cx));

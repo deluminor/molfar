@@ -1068,8 +1068,11 @@ impl Input {
         if let Some(item) = cx.read_from_clipboard()
             && let Some(text) = item.text()
         {
-            let text = self.confluence_paste(&text, &item);
-            self.replace_text_in_range(None, &text.replace("\r\n", "\n"), w, cx);
+            let text = self
+                .confluence_paste(&text, &item)
+                .replace("\r\n", "\n")
+                .replace("molfar://jira/", "@jira/");
+            self.replace_text_in_range(None, &text, w, cx);
         }
     }
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
@@ -1806,11 +1809,10 @@ impl Element for InputElement {
                                     );
                                 }
                             }
-                            MentionIcon::Note | MentionIcon::Confluence => {
-                                let glyph = if matches!(icon, MentionIcon::Confluence) {
-                                    "book-open"
-                                } else {
-                                    "note"
+                            MentionIcon::Note | MentionIcon::Jira | MentionIcon::Confluence => {
+                                let glyph = match icon {
+                                    MentionIcon::Confluence => "book-open",
+                                    _ => "note",
                                 };
                                 let _ = w.paint_svg(
                                     icon_bounds,
@@ -1972,6 +1974,7 @@ mod tests {
         let asset = |token| match MentionIcon::of(token) {
             Some(MentionIcon::File(asset)) => asset.to_string(),
             Some(MentionIcon::Note) => "note".into(),
+            Some(MentionIcon::Jira) => "jira".into(),
             Some(MentionIcon::Confluence) => "book-open".into(),
             None => String::new(),
         };

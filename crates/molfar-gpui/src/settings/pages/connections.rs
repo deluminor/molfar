@@ -172,20 +172,20 @@ impl SettingsView {
         }
     }
 
-    fn connection_value(&self, key: &'static str, cx: &Context<Self>) -> String {
+    pub(super) fn connection_value(&self, key: &'static str, cx: &Context<Self>) -> String {
         self.fields
             .get(key)
             .map(|input| input.read(cx).content.to_string())
             .unwrap_or_default()
     }
 
-    fn clear_connection_field(&mut self, key: &'static str, cx: &mut Context<Self>) {
+    pub(super) fn clear_connection_field(&mut self, key: &'static str, cx: &mut Context<Self>) {
         if let Some(input) = self.fields.get(key) {
             input.update(cx, |input, cx| input.set_text(String::new(), cx));
         }
     }
 
-    fn connection_field(
+    pub(super) fn connection_field(
         &mut self,
         key: &'static str,
         label: &'static str,

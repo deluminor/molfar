@@ -15,7 +15,7 @@ impl SettingsView {
         for domain in DOMAIN::ALL {
             let sensitive = matches!(
                 domain,
-                DOMAIN::Inbox | DOMAIN::Knowledge | DOMAIN::Confluence
+                DOMAIN::Inbox | DOMAIN::Knowledge | DOMAIN::Jira | DOMAIN::Confluence
             );
             matrix = matrix.child(
                 div()
