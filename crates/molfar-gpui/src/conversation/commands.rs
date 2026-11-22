@@ -9,6 +9,19 @@ impl Conversation {
     /// A rejected command keeps its draft and attachments intact.
     pub(super) fn handle_local_command(&mut self, cx: &mut Context<Self>) -> bool {
         let text = self.input.read(cx).content.trim().to_owned();
+        if text.eq_ignore_ascii_case("/operator")
+            && !self.settings.operator
+            && self.settings.familiar.is_none()
+        {
+            if !self.input.read(cx).is_composing() {
+                self.toggle_mode("operator", cx);
+                self.input
+                    .update(cx, |input, cx| input.set_text(String::new(), cx));
+                self.settings.operator = false;
+                self.save_settings(cx);
+            }
+            return true;
+        }
         if text.eq_ignore_ascii_case("/mcp") {
             if self.input.read(cx).is_composing() {
                 return true;

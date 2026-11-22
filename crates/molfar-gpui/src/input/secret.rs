@@ -15,6 +15,15 @@ impl Input {
         SecretValue::from_text(self.content.to_string())
     }
 
+    pub(crate) fn take_reusable_secret(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> Result<SecretValue, Error> {
+        let value = self.secret_value()?;
+        self.clear_secret(cx);
+        Ok(value)
+    }
+
     pub(crate) fn valid_one_time_secret(&self) -> bool {
         SecretValue::valid_one_time(&self.content)
     }

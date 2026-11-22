@@ -214,7 +214,12 @@ impl Shell {
         }
         Ok(())
     }
-    fn handle_app_call(&mut self, call: Call, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn handle_app_call(
+        &mut self,
+        call: Call,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if let Err(error) = self.authorize_app_call(&call, cx) {
             let _ = call.reply.send(Err(error));
             return;

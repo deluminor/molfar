@@ -136,6 +136,8 @@ pub struct Settings {
     pub operator: bool,
     /// A submitted /operator grants this thread access independently of its next draft.
     pub operator_enabled: bool,
+    /// Explicit selection takes precedence over legacy transcript markers.
+    pub operator_explicit: bool,
     pub orchestrator: bool,
     pub orchestration_worker: bool,
     pub new_worktree: bool,
@@ -286,4 +288,15 @@ impl Question {
 pub struct Control {
     pub id: String,
     pub decision: Decision,
+}
+
+impl Settings {
+    pub fn operator_for_turn(&self) -> bool {
+        self.operator_enabled || (!self.operator_explicit && self.operator)
+    }
+
+    pub fn set_operator(&mut self, enabled: bool) {
+        self.operator_enabled = enabled;
+        self.operator_explicit = true;
+    }
 }

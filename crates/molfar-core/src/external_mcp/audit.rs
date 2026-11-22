@@ -42,6 +42,7 @@ mod tests {
                     target: None,
                     request_id: None,
                     outcome: "ok".into(),
+                    operator: None,
                     kind: Default::default(),
                 })
                 .unwrap();

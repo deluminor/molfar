@@ -3,7 +3,7 @@ use molfar_core::{
     app_access as app,
     external_mcp::tools::{
         parse,
-        sessions::{SessionsList, SessionsRead, SessionsSend, SessionsStart, SessionsStop},
+        sessions::{self, SessionsList, SessionsRead, SessionsSend, SessionsStart, SessionsStop},
     },
     store::PROMPT,
 };
@@ -128,8 +128,12 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         let Receipt {
-            request, digest, ..
+            request,
+            digest,
+            operator,
+            ..
         } = receipt;
+        let operator = operator.unwrap_or(false);
         let parsed = parse::<SessionsStart>(arguments).and_then(|input| {
             let project = scope.project(&input.project)?;
             let prompt = app::prompt(&json!({"prompt":input.prompt}))?;
@@ -154,6 +158,7 @@ impl Shell {
         );
         let kind = defaults.kind();
         let owner = scope.owner();
+        let permits_operator = scope.permits_operator();
         let store = self.store.clone();
         let cwd = project.clone();
         let work = cx.background_executor().spawn(async move {
@@ -161,6 +166,7 @@ impl Shell {
             let settings = defaults.settings(&store, &cwd);
             let mut settings = app::launch_settings(&json!({}), kind.id(), settings, kind, &[])?;
             settings.revision = 0;
+            settings.set_operator(operator);
             let (mut summary, fresh) =
                 store.create_app_session(&owner, &request, &digest, kind.id(), &cwd)?;
             // A start interrupted before its provider accepted the prompt
@@ -176,17 +182,28 @@ impl Shell {
                 }
                 PROMPT::Draft => {
                     if let Some(saved) = store.agent_settings(summary.id)? {
+                        if saved.operator_enabled && !permits_operator {
+                            return Err(sessions::OPERATOR_REQUIRED.into());
+                        }
                         settings = saved;
                     }
+                    // The reservation wins over a later /operator or account
+                    // switch. The reported flag is this same value.
+                    settings.set_operator(operator);
                     true
                 }
-                PROMPT::Queued | PROMPT::Delivered => false,
+                PROMPT::Queued | PROMPT::Delivered => {
+                    if let Some(saved) = store.agent_settings(summary.id)? {
+                        settings = saved;
+                    }
+                    false
+                }
             };
             Ok::<_, String>((summary, settings, fresh, launch))
         });
         cx.spawn(async move |this, cx| {
             let result = work.await.and_then(|(summary, settings, fresh, launch)| {
-                let value = json!({"sessionId":summary.id,"project":project,"harness":kind.id(),"model":settings.model,"accepted":true});
+                let value = json!({"sessionId":summary.id,"project":project,"harness":summary.provider,"model":settings.model,"accepted":true,"operator":settings.operator_enabled});
                 this.update(cx, |this, cx| {
                     let id = summary.id;
                     if fresh {
@@ -225,7 +242,21 @@ impl Shell {
         let view = self.ensure_session(id, cx).ok_or("Session not found.")?;
         let key = format!("{}:{request}", scope.owner());
         let accepted = json!({"sessionId":id,"submitted":true});
-        let state = locked(&self.store)?.app_prompt_state(id, &key)?;
+        let state = {
+            let store = locked(&self.store)?;
+            let state = store.app_prompt_state(id, &key)?;
+            if !matches!(state, PROMPT::Delivered | PROMPT::Queued) && !scope.permits_operator() {
+                let current = &view.read(cx).settings;
+                if current.operator_enabled
+                    || store
+                        .agent_settings(id)?
+                        .is_some_and(|saved| saved.operator_enabled)
+                {
+                    return Err(sessions::OPERATOR_REQUIRED.into());
+                }
+            }
+            state
+        };
         match state {
             PROMPT::Delivered | PROMPT::Queued => return Ok(accepted),
             PROMPT::Draft => {

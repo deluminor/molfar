@@ -197,7 +197,7 @@ fn run_turn_using(
         transcript = locked(&store)?.load(summary.id)?;
         history_loaded = true;
         turn_start = transcript.rows.len();
-        settings.operator_enabled |= settings.operator;
+        settings.operator_enabled = settings.operator_for_turn();
         let mut persisted = settings.clone();
         persisted.handoff = None;
         // These modes belong to this turn, not the next composer draft.

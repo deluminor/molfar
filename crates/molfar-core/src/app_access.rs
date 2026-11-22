@@ -274,7 +274,7 @@ pub fn launch_settings(
     settings.familiar_message_id = None;
     settings.familiar_sent_at = None;
     settings.operator = false;
-    settings.operator_enabled = false;
+    settings.set_operator(false);
     settings.orchestrator = false;
     settings.plan = false;
     settings.environment.clear();

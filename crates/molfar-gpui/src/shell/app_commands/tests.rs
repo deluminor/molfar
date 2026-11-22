@@ -146,6 +146,35 @@ fn unsent_operator_selection_does_not_grant_app_access(cx: &mut TestAppContext) 
 }
 
 #[gpui::test]
+fn bare_operator_command_toggles_the_persisted_thread_grant(cx: &mut TestAppContext) {
+    let (window, _, caller) = setup(cx);
+    for enabled in [false, true] {
+        window
+            .update(cx, |shell, _, cx| {
+                shell.sessions[&caller].update(cx, |view, cx| {
+                    view.quick_submit("/operator".into(), view.settings.clone(), cx);
+                    assert!(!view.busy);
+                    assert_eq!(view.settings.operator_enabled, enabled);
+                });
+            })
+            .unwrap();
+        cx.run_until_parked();
+        window
+            .update(cx, |shell, _, _| {
+                let db = locked(&shell.store).unwrap();
+                let saved = db.agent_settings(caller).unwrap().unwrap();
+                assert_eq!(saved.operator_enabled, enabled);
+                assert!(saved.operator_explicit);
+            })
+            .unwrap();
+        assert_eq!(
+            call(window, caller, "toggle", "sessions.list", json!({}), cx).is_ok(),
+            enabled
+        );
+    }
+}
+
+#[gpui::test]
 fn operator_planning_turns_keep_read_only_app_access_after_submission(cx: &mut TestAppContext) {
     for mode in ["plan", "orchestrator"] {
         let (window, _, caller) = setup(cx);

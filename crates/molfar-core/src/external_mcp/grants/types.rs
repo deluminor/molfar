@@ -53,12 +53,18 @@ pub enum GRANT {
     BoardCreate,
     BoardRun,
     SessionsStop,
+    SessionsOperator,
     Destructive,
     Delegated,
 }
 
 impl GRANT {
-    pub const ACTIONS: [Self; 3] = [Self::BoardCreate, Self::BoardRun, Self::SessionsStop];
+    pub const ACTIONS: [Self; 4] = [
+        Self::BoardCreate,
+        Self::BoardRun,
+        Self::SessionsStop,
+        Self::SessionsOperator,
+    ];
     pub const FLAGS: [Self; 2] = [Self::Destructive, Self::Delegated];
 }
 
@@ -69,6 +75,7 @@ impl From<GRANT> for String {
             GRANT::Write(domain) => format!("{}:write", domain.label().to_ascii_lowercase()),
             GRANT::BoardCreate => "board:create".into(),
             GRANT::BoardRun => "board:run".into(),
+            GRANT::SessionsOperator => "sessions:operator".into(),
             GRANT::SessionsStop => "sessions:stop".into(),
             GRANT::Destructive => "destructive".into(),
             GRANT::Delegated => "delegated".into(),

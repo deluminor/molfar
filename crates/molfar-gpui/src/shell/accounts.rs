@@ -124,7 +124,7 @@ impl Shell {
         settings.usage_limit = None;
         settings.handoff = None;
         settings.turns.clear();
-        settings.operator_enabled = false;
+        settings.set_operator(false);
         settings.revision = 0;
         let cwd = current.summary.cwd.clone();
         let store = self.store.clone();

@@ -122,7 +122,14 @@ impl Familiars {
         }
 
         let title = view.read(cx).summary.title.clone();
-        let card = cx.new(|cx| SecretRequestCard::new(request, title, label, cx));
+        let focus = self.settings.is_none() && self.chat().as_ref() == Some(&view);
+        let card = cx.new(|cx| {
+            let mut card = SecretRequestCard::new(request, title, label, cx);
+            if focus {
+                card.focus_on_mount();
+            }
+            card
+        });
         let subscription = cx.subscribe(&card, move |this, _, answer, cx| match answer {
             Answer::Save => this.save_secret(session, cx),
             Answer::Cancel => this.cancel_secret(session, cx),
@@ -161,10 +168,7 @@ impl Familiars {
                 Err(_) if cancelled.load(Ordering::Acquire) => {
                     this.finish_secret(session, Ok(Status::Cancelled), cx)
                 }
-                Err(error) => card.update(cx, |card, cx| {
-                    card.error = Some(error);
-                    card.set_saving(false, cx);
-                }),
+                Err(error) => card.update(cx, |card, cx| card.save_failed(&error, cx)),
             });
         })
         .detach();

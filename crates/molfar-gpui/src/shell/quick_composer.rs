@@ -140,10 +140,11 @@ impl Shell {
         let account = crate::accounts::get(cx)
             .map(|a| a.read(cx).selected(launch.kind, &launch.cwd))
             .unwrap_or_default();
+        let operator = super::session_loading::new_session_operator(&launch.cwd, cx);
         let work = cx.background_executor().spawn(async move {
             let store = locked(&store)?;
             let summary = store.create(choice.kind.id(), &choice.cwd)?;
-            let settings = molfar_core::agent::Settings {
+            let mut settings = molfar_core::agent::Settings {
                 account,
                 model: choice.model,
                 access: choice.access,
@@ -154,6 +155,7 @@ impl Shell {
                 worktree_cwd: choice.worktree_cwd,
                 ..Default::default()
             };
+            settings.set_operator(operator);
             store.save_agent_settings(summary.id, &settings)?;
             let attachments = store.adopt_attachments(
                 summary.id,

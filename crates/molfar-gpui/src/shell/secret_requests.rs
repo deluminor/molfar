@@ -170,6 +170,12 @@ impl Shell {
         cx: &mut Context<Self>,
     ) {
         let id = request.session;
+        let focus = self
+            .workspace
+            .active
+            .map(|pane| self.workspace.session_for_pane(pane))
+            == Some(id)
+            && !self.app_view_open();
         let Some(open) = self
             .open_secret_requests
             .get_mut(&id)
@@ -184,7 +190,13 @@ impl Shell {
             return;
         }
 
-        let card = cx.new(|cx| SecretRequestCard::new(request, title, label, cx));
+        let card = cx.new(|cx| {
+            let mut card = SecretRequestCard::new(request, title, label, cx);
+            if focus {
+                card.focus_on_mount();
+            }
+            card
+        });
         open.subscription = Some(
             cx.subscribe(&card, move |this, _, answer, cx| match answer {
                 Answer::Save => this.submit_secret(id, cx),

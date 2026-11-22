@@ -28,10 +28,7 @@ impl Shell {
                 Err(_) if cancelled.load(Ordering::Acquire) => {
                     this.finish_secret_request(id, Ok(Status::Cancelled), cx)
                 }
-                Err(error) => card.update(cx, |card, cx| {
-                    card.error = Some(error);
-                    card.set_saving(false, cx);
-                }),
+                Err(error) => card.update(cx, |card, cx| card.save_failed(&error, cx)),
             });
         })
         .detach();
@@ -97,7 +94,7 @@ impl OpenRequest {
             if card.saving {
                 return None;
             }
-            match card.secret_value(cx) {
+            match card.take_secret(cx) {
                 Ok(value) => {
                     card.error = None;
                     card.set_saving(true, cx);

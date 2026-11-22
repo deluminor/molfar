@@ -1,4 +1,5 @@
 use super::*;
+use molfar_core::external_mcp::tools::sessions;
 
 impl Shell {
     pub(super) fn handle_external_call(&mut self, call: Call, cx: &mut Context<Self>) {
@@ -24,6 +25,7 @@ impl Shell {
                 None,
                 "denied",
                 definition.requires.access,
+                (tool == sessions::START).then_some(false),
                 cx,
             );
             let _ = reply.send(Err(error));
@@ -41,6 +43,7 @@ impl Shell {
                     arguments["requestId"].as_str(),
                     "denied",
                     definition.requires.access,
+                    (tool == sessions::START).then_some(false),
                     cx,
                 );
                 let _ = reply.send(Err(error));
@@ -84,11 +87,41 @@ impl Shell {
                 return;
             }
         };
+        let operator = if tool == sessions::START {
+            let default = super::super::session_loading::new_session_operator(
+                arguments["project"].as_str().unwrap_or_default(),
+                cx,
+            );
+            match sessions::launch_operator(
+                arguments["operator"].as_bool(),
+                default,
+                scope.permits_operator(),
+            ) {
+                Ok(enabled) => Some(enabled),
+                Err(error) => {
+                    self.external_audit_entry(
+                        &scope.principal,
+                        tool,
+                        arguments["project"].as_str(),
+                        Some(&request),
+                        "denied",
+                        definition.requires.access,
+                        Some(false),
+                        cx,
+                    );
+                    let _ = reply.send(Err(error));
+                    return;
+                }
+            }
+        } else {
+            None
+        };
         let mut receipt = Receipt {
             request,
             digest,
             target,
             resumed: false,
+            operator,
         };
         let key = receipt.pending_key(&scope, tool);
         if let Some(pending) = self.external.pending.get(&key) {
@@ -107,17 +140,22 @@ impl Shell {
         let client = scope.principal.client_id.clone();
         let saved = receipt.clone();
         let begin = cx.background_executor().spawn(async move {
-            locked(&store)?.external_receipt_begin(
+            locked(&store)?.external_receipt_reserve(
                 &client,
                 &saved.target,
                 tool,
                 &saved.request,
                 &saved.digest,
+                saved.operator,
             )
         });
         cx.spawn(async move |this, cx| {
             let begin = begin.await;
             let _ = this.update(cx, |this, cx| {
+                let begin = begin.map(|(begin, operator)| {
+                    receipt.operator = operator;
+                    begin
+                });
                 let replay = match begin {
                     Ok(BEGIN::Fresh) => None,
                     Ok(BEGIN::Pending) if definition.resumable => {
@@ -134,6 +172,7 @@ impl Shell {
                             Some(&receipt.request),
                             "unknown",
                             definition.requires.access,
+                            (tool == sessions::START).then_some(false),
                             cx,
                         );
                         let message = if tool.starts_with("jira_") {
@@ -150,7 +189,12 @@ impl Shell {
                     )),
                     Err(error) => Some(Err(format!("Cannot read request receipt: {error}"))),
                 };
-                if let Some(result) = replay {
+                if let Some(mut result) = replay {
+                    if tool == sessions::START
+                        && let Ok(value) = &mut result
+                    {
+                        value["operator"] = json!(receipt.operator.unwrap_or(false));
+                    }
                     this.external.pending.remove(&key);
                     let target =
                         audit::domain_target(tool, &arguments).or_else(|| audit::target(&result));
@@ -163,6 +207,21 @@ impl Shell {
                         cx,
                     );
                     let _ = reply.send(result);
+                    return;
+                }
+                if receipt.operator == Some(true) && !scope.permits_operator() {
+                    this.external.pending.remove(&key);
+                    this.external_audit_entry(
+                        &scope.principal,
+                        tool,
+                        arguments["project"].as_str(),
+                        Some(&receipt.request),
+                        "denied",
+                        definition.requires.access,
+                        Some(false),
+                        cx,
+                    );
+                    let _ = reply.send(Err(sessions::OPERATOR_REQUIRED.into()));
                     return;
                 }
                 this.external_dispatch(scope, tool, arguments, Some(receipt), reply, cx);

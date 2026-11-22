@@ -1152,7 +1152,7 @@ impl Familiars {
         if self.settings.is_none()
             && let Some(chat) = self.chat()
         {
-            window.focus(&chat.read(cx).input.focus_handle(cx), cx);
+            window.focus(&chat.read(cx).composer_focus(cx), cx);
         } else {
             window.focus(&self.settings_focus, cx);
         }
@@ -1179,7 +1179,7 @@ impl Familiars {
         }
         self.save_open_file(cx);
         if let Some(chat) = self.chat() {
-            window.focus(&chat.read(cx).input.focus_handle(cx), cx);
+            window.focus(&chat.read(cx).composer_focus(cx), cx);
         }
         cx.notify();
         true

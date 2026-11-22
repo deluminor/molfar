@@ -79,7 +79,7 @@ impl Shell {
         settings.orchestrator = false;
         settings.orchestration_worker = true;
         settings.operator = false;
-        settings.operator_enabled = false;
+        settings.set_operator(false);
         settings.handoff = None;
         settings.turns.clear();
         settings.environment.clear();

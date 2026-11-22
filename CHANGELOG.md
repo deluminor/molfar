@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New local desktop chats start in Operator mode on fresh and upgraded installs. Turn off **Settings → Chat → Start new sessions in Operator mode** to change the default. Existing threads keep their mode, and `/operator` can toggle it for the current thread.
 - Source Control and Board delivery open GitLab merge requests with `glab`, and GitHub pull requests still use `gh`.
 - External MCP clients can use granted Board stage controls, read Board artifacts, manage sessions, and manage project notes.
 - **molfar-connectors** MCP write tools for agent sessions: `jira_issue_get`, `jira_issue_edit`, `jira_issue_create`, `jira_issue_transitions`, `jira_issue_transition`, `jira_search`, `confluence_page_create`, and `confluence_page_update` (vault Atlassian token; no `cloudId`).
