@@ -65,8 +65,8 @@ impl Panes {
         self.panes.values().map(|pane| pane.read(cx).renders).sum()
     }
 
-    pub(in crate::home) fn len(&self) -> usize {
-        self.panes.len()
+    pub(in crate::home) fn entities(&self) -> Vec<Entity<HostPane<Home>>> {
+        self.panes.values().cloned().collect()
     }
 }
 

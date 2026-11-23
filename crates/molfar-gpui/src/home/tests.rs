@@ -240,31 +240,41 @@ fn animation_ticks_reuse_the_data_widgets(cx: &mut TestAppContext) {
     cx.update(|cx| cx.set_reduce_motion(false));
     window.update(cx, |_, _, cx| cx.notify()).unwrap();
     cx.run_until_parked();
-    // Cards rise in on entrance; positions settle before the measurement.
+    // Cards rise in on entrance, timed by the wall clock; positions settle
+    // before the measurement, or moving bounds would redraw the panes.
     cx.executor()
         .advance_clock(std::time::Duration::from_secs(3));
+    std::thread::sleep(super::motion::ENTRANCE * 2);
+    window.update(cx, |_, _, cx| cx.notify()).unwrap();
     cx.run_until_parked();
     let renders = |cx: &mut TestAppContext| {
         window
-            .update(cx, |home, _, cx| (home.panes.renders(cx), home.panes.len()))
+            .update(cx, |home, _, cx| home.panes.renders(cx))
             .unwrap()
     };
-    // Data that lands mid-measurement notifies Home and may redraw the
-    // panes; only those notifies may, never the animation ticks themselves.
-    let home = window.update(cx, |_, _, cx| cx.entity()).unwrap();
+    // A pane redraws for its own notify: Home's data landing, or a chart
+    // still drawing itself in. Animation ticks elsewhere must never add one.
     let notifies = Rc::new(RefCell::new(0));
-    let counter = notifies.clone();
-    let _watch = cx.update(|cx| cx.observe(&home, move |_, _| *counter.borrow_mut() += 1));
-    let (before, panes) = renders(cx);
+    let panes = window
+        .update(cx, |home, _, _| home.panes.entities())
+        .unwrap();
+    let _watches: Vec<_> = panes
+        .iter()
+        .map(|pane| {
+            let counter = notifies.clone();
+            cx.update(|cx| cx.observe(pane, move |_, _| *counter.borrow_mut() += 1))
+        })
+        .collect();
+    let before = renders(cx);
 
     cx.executor().advance_clock(crate::pulse::TICK * 8);
     cx.run_until_parked();
 
-    let (after, _) = renders(cx);
+    let after = renders(cx);
     assert!(before > 0);
     assert!(
-        after - before <= *notifies.borrow() * panes,
-        "{} pane renders for {} Home notifies over 8 ticks",
+        after - before <= *notifies.borrow(),
+        "{} pane renders for {} pane notifies over 8 ticks",
         after - before,
         notifies.borrow()
     );
