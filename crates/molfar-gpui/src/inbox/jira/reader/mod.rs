@@ -1,4 +1,5 @@
 //! The Jira issue reader: Knowledge-style body with confirmed write actions.
+mod body;
 mod load;
 mod panels;
 mod sections;
@@ -9,7 +10,7 @@ mod write;
 
 use std::{collections::HashSet, path::PathBuf};
 
-use gpui::{AppContext, Context, Entity, EventEmitter, ScrollHandle};
+use gpui::{AppContext, Context, Entity, EventEmitter, ListAlignment, ListState, px};
 use molfar_core::{
     atlassian::{self},
     jira::{Issue, issue::Comment},
@@ -19,7 +20,7 @@ use self::load::{Loaded, load};
 use super::actions::Pending;
 use crate::{
     input::Input,
-    knowledge::{PreviewBlock, PreviewHost},
+    knowledge::{PreviewBlock, PreviewHost, PreviewItems},
     popover::AnchorSlot,
     theme::content,
 };
@@ -57,12 +58,12 @@ pub(crate) struct JiraReader {
     description_input: Entity<Input>,
     labels_input: Entity<Input>,
     media: PathBuf,
-    description: Vec<PreviewBlock>,
+    description: PreviewItems,
     comments: Vec<(Comment, Vec<PreviewBlock>)>,
     panel: Option<Panel>,
     more_open: bool,
     more_anchor: AnchorSlot,
-    scroll: ScrollHandle,
+    body: ListState,
 }
 
 impl EventEmitter<Event> for JiraReader {}
@@ -105,12 +106,12 @@ impl JiraReader {
                 .new(|cx| Input::multiline_field("Description", "Markdown description", cx)),
             labels_input: field("jira-labels", "Labels, comma separated", cx),
             media: PathBuf::new(),
-            description: Vec::new(),
+            description: PreviewItems::default(),
             comments: Vec::new(),
             panel: None,
             more_open: false,
             more_anchor: AnchorSlot::default(),
-            scroll: ScrollHandle::new(),
+            body: ListState::new(0, ListAlignment::Top, px(400.)),
         }
     }
 
@@ -177,7 +178,7 @@ impl JiraReader {
         self.site = loaded.site;
         self.account_id = loaded.account;
         self.media = loaded.media;
-        self.description = loaded.description;
+        self.description = PreviewItems::new(loaded.description);
         self.comments = loaded.comments;
         self.fill_fields(&loaded.issue, cx);
         self.issue = Some(loaded.issue);
@@ -185,9 +186,8 @@ impl JiraReader {
             self.panel = None;
             self.transitions.clear();
             self.callouts.clear();
-            self.scroll
-                .set_offset(gpui::point(gpui::px(0.), gpui::px(0.)));
         }
+        self.sync_body(switched);
     }
 
     fn fill_fields(&mut self, issue: &Issue, cx: &mut Context<Self>) {

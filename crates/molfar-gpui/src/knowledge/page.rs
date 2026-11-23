@@ -1,11 +1,35 @@
 //! Knowledge's screens: connect hero, full-page loaders and the workspace
 //! (tree, note panel, then graph between header and footer).
 use super::{Knowledge, loading};
+use crate::host_pane::HostPane;
 use crate::theme::*;
-use gpui::{AnyElement, Context, FontWeight, Role, div, prelude::*, px};
+use gpui::{
+    AnyElement, AppContext, Context, Entity, FontWeight, Role, StyleRefinement, div, prelude::*, px,
+};
 use molfar_core::knowledge::ConnectionState;
 
+type Panes = (Entity<HostPane<Knowledge>>, Entity<HostPane<Knowledge>>);
+
 impl Knowledge {
+    /// The tree and the open note render in cached panes, so graph frames and
+    /// either pane's scroll leave the other's layout untouched.
+    pub(super) fn panes(cx: &mut Context<Self>) -> Panes {
+        let host = cx.entity();
+        let tree = cx.new(|cx| HostPane::new(&host, |this, _, cx| this.tree(cx), cx));
+        let note = cx.new(|cx| {
+            HostPane::new(
+                &host,
+                |this, _, cx| match this.selected.clone() {
+                    Some(path) => this.document(&path, cx),
+                    None => div().into_any_element(),
+                },
+                cx,
+            )
+        });
+
+        (tree, note)
+    }
+
     pub(super) fn hero(&self, reason: Option<String>, cx: &mut Context<Self>) -> AnyElement {
         div()
             .id("knowledge-empty")
@@ -134,7 +158,11 @@ impl Knowledge {
             .flex_1()
             .min_w_0()
             .h_full()
-            .child(self.graph.clone())
+            .child(
+                self.graph
+                    .clone()
+                    .cached(StyleRefinement::default().size_full()),
+            )
             .into_any_element()
     }
 
@@ -152,7 +180,7 @@ impl Knowledge {
         let opened = self.panel_open && self.selected.is_some();
         let panel_reveal = self.panel_slide.step(opened, animate, window);
         // A closing panel keeps drawing its note until it has slid away.
-        let panel = self.selected.clone().filter(|_| panel_reveal > 0.);
+        let panel = self.selected.is_some() && panel_reveal > 0.;
 
         div()
             .size_full()
@@ -175,7 +203,10 @@ impl Knowledge {
                                 .child(loading::skeleton_rows("knowledge-skeleton"))
                                 .into_any_element()
                         } else {
-                            self.tree(cx)
+                            self.tree_pane
+                                .clone()
+                                .cached(StyleRefinement::default().size_full())
+                                .into_any_element()
                         };
                         // The clip narrows while the tree keeps its width, so it
                         // slides rather than squeezing.
@@ -188,8 +219,11 @@ impl Knowledge {
                                 .child(tree),
                         )
                     })
-                    .when_some(panel, |body, path| {
-                        let note = self.document(&path, cx);
+                    .when(panel, |body| {
+                        let note = self
+                            .note_pane
+                            .clone()
+                            .cached(StyleRefinement::default().size_full());
                         body.child(
                             div()
                                 .w(px(self.widths.panel * panel_reveal))

@@ -313,7 +313,8 @@ fn vault_images_highlights_and_tags_render_and_tags_search(cx: &mut TestAppConte
     window
         .update(visual, |view, _, cx| {
             let images: Vec<(Option<std::path::PathBuf>, Option<f32>)> = view
-                .preview_blocks
+                .note
+                .blocks()
                 .iter()
                 .flat_map(|block| match block {
                     super::super::document::PreviewBlock::Image { path, width, .. } => {

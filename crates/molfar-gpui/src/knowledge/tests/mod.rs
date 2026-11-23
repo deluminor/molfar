@@ -8,6 +8,8 @@ use molfar_core::knowledge::ConnectionState;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
+mod panes;
+mod scroll_bench;
 mod view;
 
 struct Fixture {

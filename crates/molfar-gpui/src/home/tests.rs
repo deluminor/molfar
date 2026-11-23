@@ -233,3 +233,27 @@ fn escape_leaves_edit_mode_before_closing_home(cx: &mut TestAppContext) {
     visual.simulate_keystrokes("escape");
     assert!(*closed.borrow());
 }
+
+#[gpui::test]
+fn animation_ticks_reuse_the_data_widgets(cx: &mut TestAppContext) {
+    let (window, _) = open(cx, 1400., Value::Null);
+    cx.update(|cx| cx.set_reduce_motion(false));
+    window.update(cx, |_, _, cx| cx.notify()).unwrap();
+    cx.run_until_parked();
+    // Cards rise in on entrance; positions settle before the measurement.
+    cx.executor()
+        .advance_clock(std::time::Duration::from_secs(3));
+    cx.run_until_parked();
+    let renders = |cx: &mut TestAppContext| {
+        window
+            .update(cx, |home, _, cx| home.panes.renders(cx))
+            .unwrap()
+    };
+    let before = renders(cx);
+
+    cx.executor().advance_clock(crate::pulse::TICK * 8);
+    cx.run_until_parked();
+
+    assert!(before > 0);
+    assert_eq!(renders(cx), before);
+}

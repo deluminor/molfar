@@ -6,11 +6,14 @@ use gpui::{AnyElement, Context, FontWeight, Hsla, Role, div, hsla, prelude::*, p
 
 mod callout;
 pub(crate) mod note;
+mod preview;
 pub(crate) mod properties;
 mod relations;
 mod toolbar;
 
-pub(crate) use note::{PreviewBlock, PreviewHost, parse as parse_preview, render_preview};
+pub(crate) use note::{
+    PreviewBlock, PreviewHost, PreviewItems, parse as parse_preview, render_preview,
+};
 pub(super) use relations::Relations;
 
 pub(crate) fn banner(
@@ -98,33 +101,25 @@ impl Knowledge {
                     ),
                 )
             })
-            .child(
+            .child(if preview {
                 div()
-                    .id(if preview {
-                        "knowledge-preview"
-                    } else {
-                        "knowledge-source"
-                    })
-                    .debug_selector(move || {
-                        if preview {
-                            "knowledge-preview"
-                        } else {
-                            "knowledge-source"
-                        }
-                        .into()
-                    })
+                    .id("knowledge-preview")
+                    .debug_selector(|| "knowledge-preview".into())
+                    .flex_1()
+                    .min_h_0()
+                    .child(self.preview_body(cx))
+            } else {
+                div()
+                    .id("knowledge-source")
+                    .debug_selector(|| "knowledge-source".into())
                     .flex_1()
                     .min_h_0()
                     .overflow_y_scroll()
                     .px_6()
                     .pt_5()
                     .pb_8()
-                    .when(preview, |body| {
-                        body.children(properties::card(&self.properties))
-                            .children(self.note_blocks(cx))
-                    })
-                    .when(!preview, |body| body.child(self.source.clone())),
-            )
+                    .child(self.source.clone())
+            })
             .child(self.relations(cx))
             .child(self.resize_handle(super::panes::Side::Panel, cx))
             .into_any_element()

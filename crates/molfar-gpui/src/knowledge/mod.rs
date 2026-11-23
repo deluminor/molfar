@@ -1,4 +1,5 @@
 use crate::{
+    host_pane::HostPane,
     input::{self, Input},
     theme::*,
 };
@@ -29,7 +30,9 @@ mod tests;
 mod tree;
 mod types;
 
-pub(crate) use document::{PreviewBlock, PreviewHost, banner, parse_preview, render_preview};
+pub(crate) use document::{
+    PreviewBlock, PreviewHost, PreviewItems, banner, parse_preview, render_preview,
+};
 use drafts::Draft;
 use graph::GraphView;
 pub(crate) use loading::{orbit_loader, skeleton_rows};
@@ -81,6 +84,8 @@ pub(crate) struct Knowledge {
     meta: ScanMeta,
     stats: GraphStats,
     graph: Entity<GraphView>,
+    tree_pane: Entity<HostPane<Self>>,
+    note_pane: Entity<HostPane<Self>>,
     tree_rows: Vec<(TreeRow, Option<usize>)>,
     expanded: HashSet<String>,
     callouts_toggled: HashSet<usize>,
@@ -96,7 +101,9 @@ pub(crate) struct Knowledge {
     preview: bool,
     drafts: HashMap<String, Draft>,
     prepared: String,
-    preview_blocks: Vec<document::PreviewBlock>,
+    note: document::PreviewItems,
+    note_list: gpui::ListState,
+    note_path: Option<String>,
     relations: document::Relations,
     properties: Vec<NoteProperty>,
     applying: bool,
@@ -164,6 +171,7 @@ impl Knowledge {
                 }
             }),
         ];
+        let (tree_pane, note_pane) = Self::panes(cx);
         let mut this = Self {
             service,
             focus: cx.focus_handle(),
@@ -177,6 +185,8 @@ impl Knowledge {
             meta: ScanMeta::default(),
             stats: GraphStats::default(),
             graph,
+            tree_pane,
+            note_pane,
             tree_rows: Vec::new(),
             expanded: HashSet::new(),
             callouts_toggled: HashSet::new(),
@@ -192,7 +202,9 @@ impl Knowledge {
             preview: true,
             drafts: HashMap::new(),
             prepared: String::new(),
-            preview_blocks: Vec::new(),
+            note: document::PreviewItems::default(),
+            note_list: gpui::ListState::new(0, gpui::ListAlignment::Top, gpui::px(600.)),
+            note_path: None,
             relations: document::Relations::default(),
             properties: Vec::new(),
             applying: false,

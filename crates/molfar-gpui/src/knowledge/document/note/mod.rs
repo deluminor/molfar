@@ -1,22 +1,26 @@
 //! The note preview, laid out block by block for reading: spaced headings,
 //! real list markers and nesting, working checkboxes, quiet quotes, framed
 //! code, vault images, highlights, tag links and foldable Obsidian callouts.
-use super::super::Knowledge;
 use super::callout::{Segment, segments};
 use crate::{
     markdown_model::{Block, BlockTree, parse_full_hard_breaks},
     theme::*,
 };
-use gpui::{AnyElement, Context, FontWeight, Hsla, Role, div, hsla, prelude::*, px};
+use gpui::{Hsla, hsla};
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
 
 pub(crate) mod blocks;
+mod hosted;
 pub(crate) mod image;
 mod inline;
+mod items;
 mod list;
+
+pub(crate) use hosted::{PreviewHost, render_preview};
+pub(crate) use items::PreviewItems;
 
 /// A note parsed once per edit; frames only lay its blocks out.
 pub(crate) enum PreviewBlock {
@@ -95,7 +99,7 @@ fn decorated(mut tree: BlockTree) -> BlockTree {
 /// Running counters while walking a note: tasks are numbered in document
 /// order to match [`molfar_core::knowledge::toggle_task`], and every element
 /// gets a unique id.
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct Walk {
     pub tasks: usize,
     pub callouts: usize,
@@ -134,238 +138,4 @@ pub(crate) fn tint(hue: Option<f32>, alpha: f32) -> Hsla {
         Some(hue) => hsla(hue, 0.7, 0.65, alpha),
         None => content(alpha),
     }
-}
-
-impl Knowledge {
-    pub(super) fn note_blocks(&self, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        self.preview_elements(&self.preview_blocks, &mut Walk::default(), cx)
-    }
-
-    fn preview_elements(
-        &self,
-        blocks: &[PreviewBlock],
-        walk: &mut Walk,
-        cx: &mut Context<Self>,
-    ) -> Vec<AnyElement> {
-        let mut out = Vec::new();
-        for block in blocks {
-            match block {
-                PreviewBlock::Markdown(tree) => {
-                    for top in &tree.blocks {
-                        let first = out.is_empty();
-                        out.push(blocks::block(
-                            &top.block,
-                            first,
-                            walk,
-                            Some(Knowledge::toggle_task),
-                            cx,
-                        ));
-                    }
-                }
-                PreviewBlock::Callout {
-                    kind,
-                    title,
-                    body,
-                    fold,
-                } => {
-                    let first = out.is_empty();
-                    out.push(self.callout(kind, title, body, *fold, first, walk, cx));
-                }
-                PreviewBlock::Image { path, alt, width } => {
-                    let first = out.is_empty();
-                    out.push(image::image(path.as_deref(), alt, *width, first, walk, cx));
-                }
-            }
-        }
-        out
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn callout(
-        &self,
-        kind: &str,
-        title: &str,
-        body: &[PreviewBlock],
-        fold: Option<bool>,
-        first: bool,
-        walk: &mut Walk,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        walk.callouts += 1;
-        let index = walk.callouts;
-        let (hue, glyph) = style(kind);
-        let toggled = self.callouts_toggled.contains(&index);
-        let folded = fold.is_some_and(|folded| folded != toggled);
-        let foldable = fold.is_some();
-        // Folded bodies still count their tasks so later checkboxes keep
-        // their document order.
-        let children = self.preview_elements(body, walk, cx);
-
-        div()
-            .id(("knowledge-callout", index))
-            .debug_selector(move || format!("knowledge-callout-{index}"))
-            .when(!first, |card| card.mt(px(16.)))
-            .rounded_lg()
-            .border_l_2()
-            .border_color(tint(hue, 0.8))
-            .bg(tint(hue, 0.06))
-            .px_4()
-            .py_2p5()
-            .child(
-                div()
-                    .id(("knowledge-callout-title", index))
-                    .debug_selector(move || format!("knowledge-callout-title-{index}"))
-                    .flex()
-                    .items_center()
-                    .gap_2()
-                    .text_size(px(13.))
-                    .line_height(px(22.))
-                    .font_weight(FontWeight::SEMIBOLD)
-                    .text_color(tint(hue, 1.))
-                    .child(icon(glyph, 14.).text_color(tint(hue, 1.)))
-                    .child(div().flex_1().min_w_0().child(title.to_string()))
-                    .when(foldable, |header| {
-                        header
-                            .role(Role::Button)
-                            .aria_expanded(!folded)
-                            .cursor_pointer()
-                            .child(
-                                icon(
-                                    if folded {
-                                        "chevron-right"
-                                    } else {
-                                        "chevron-down"
-                                    },
-                                    13.,
-                                )
-                                .text_color(tint(hue, 0.7)),
-                            )
-                            .on_click(cx.listener(move |this, _, _, cx| {
-                                if !this.callouts_toggled.remove(&index) {
-                                    this.callouts_toggled.insert(index);
-                                }
-                                cx.notify();
-                            }))
-                    }),
-            )
-            .when(!folded, |card| card.child(div().pt_1().children(children)))
-            .into_any_element()
-    }
-}
-
-pub(crate) trait PreviewHost: 'static + Sized {
-    fn callout_open(&self, index: usize) -> bool;
-    fn toggle_callout(&mut self, index: usize);
-}
-
-/// Lays out blocks parsed once with [`parse`]; never re-parses per frame.
-pub(crate) fn render_preview<T: PreviewHost>(
-    host: &T,
-    blocks: &[PreviewBlock],
-    cx: &mut Context<T>,
-) -> Vec<AnyElement> {
-    hosted_elements(host, blocks, &mut Walk::default(), cx)
-}
-
-fn hosted_elements<T: PreviewHost>(
-    host: &T,
-    blocks: &[PreviewBlock],
-    walk: &mut Walk,
-    cx: &mut Context<T>,
-) -> Vec<AnyElement> {
-    let mut out = Vec::new();
-    for block in blocks {
-        match block {
-            PreviewBlock::Markdown(tree) => {
-                for top in &tree.blocks {
-                    let first = out.is_empty();
-                    out.push(blocks::block(&top.block, first, walk, None, cx));
-                }
-            }
-            PreviewBlock::Callout {
-                kind,
-                title,
-                body,
-                fold,
-            } => {
-                let first = out.is_empty();
-                out.push(hosted_callout(
-                    host, kind, title, body, *fold, first, walk, cx,
-                ));
-            }
-            PreviewBlock::Image { path, alt, width } => {
-                let first = out.is_empty();
-                out.push(image::image(path.as_deref(), alt, *width, first, walk, cx));
-            }
-        }
-    }
-    out
-}
-
-#[allow(clippy::too_many_arguments)]
-fn hosted_callout<T: PreviewHost>(
-    host: &T,
-    kind: &str,
-    title: &str,
-    body: &[PreviewBlock],
-    fold: Option<bool>,
-    first: bool,
-    walk: &mut Walk,
-    cx: &mut Context<T>,
-) -> AnyElement {
-    walk.callouts += 1;
-    let index = walk.callouts;
-    let (hue, glyph) = style(kind);
-    let toggled = host.callout_open(index);
-    let folded = fold.is_some_and(|folded| folded != toggled);
-    let foldable = fold.is_some();
-    let children = hosted_elements(host, body, walk, cx);
-
-    div()
-        .id(("knowledge-callout", index))
-        .debug_selector(move || format!("knowledge-callout-{index}"))
-        .when(!first, |card| card.mt(px(16.)))
-        .rounded_lg()
-        .border_l_2()
-        .border_color(tint(hue, 0.8))
-        .bg(tint(hue, 0.06))
-        .px_4()
-        .py_2p5()
-        .child(
-            div()
-                .id(("knowledge-callout-title", index))
-                .debug_selector(move || format!("knowledge-callout-title-{index}"))
-                .flex()
-                .items_center()
-                .gap_2()
-                .text_size(px(13.))
-                .line_height(px(22.))
-                .font_weight(FontWeight::SEMIBOLD)
-                .text_color(tint(hue, 1.))
-                .child(icon(glyph, 14.).text_color(tint(hue, 1.)))
-                .child(div().flex_1().min_w_0().child(title.to_string()))
-                .when(foldable, |header| {
-                    header
-                        .role(Role::Button)
-                        .aria_expanded(!folded)
-                        .cursor_pointer()
-                        .child(
-                            icon(
-                                if folded {
-                                    "chevron-right"
-                                } else {
-                                    "chevron-down"
-                                },
-                                13.,
-                            )
-                            .text_color(tint(hue, 0.7)),
-                        )
-                        .on_click(cx.listener(move |this, _, _, cx| {
-                            this.toggle_callout(index);
-                            cx.notify();
-                        }))
-                }),
-        )
-        .when(!folded, |card| card.child(div().pt_1().children(children)))
-        .into_any_element()
 }
