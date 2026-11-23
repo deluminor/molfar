@@ -64,6 +64,10 @@ impl Panes {
     pub(in crate::home) fn renders(&self, cx: &gpui::App) -> usize {
         self.panes.values().map(|pane| pane.read(cx).renders).sum()
     }
+
+    pub(in crate::home) fn len(&self) -> usize {
+        self.panes.len()
+    }
 }
 
 fn animated(id: WidgetId) -> bool {
