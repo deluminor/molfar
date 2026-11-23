@@ -39,7 +39,8 @@ fn jira_description_resolves_a_media_uuid_to_the_cached_attachment(cx: &mut gpui
                 let mut reader = JiraReader::new(directory.clone(), cx);
                 reader.issue = Some(issue);
                 reader.media = directory.clone();
-                reader.description = preview;
+                reader.description = crate::knowledge::PreviewItems::new(preview);
+                reader.sync_body(true);
                 reader
             })
         })
@@ -47,7 +48,7 @@ fn jira_description_resolves_a_media_uuid_to_the_cached_attachment(cx: &mut gpui
     });
     let visual = &mut VisualTestContext::from_window(window.into(), cx);
     visual.run_until_parked();
-    assert!(visual.debug_bounds("knowledge-image-1").is_some());
+    assert!(visual.debug_bounds("knowledge-image-10001").is_some());
     std::fs::remove_dir_all(&directory).unwrap();
 }
 
