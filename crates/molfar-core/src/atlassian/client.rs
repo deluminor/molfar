@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{io::Read, sync::Arc, time::Duration};
 
 use base64::Engine as _;
 use serde_json::Value;
@@ -8,6 +8,7 @@ use super::{Credentials, Error};
 const TIMEOUT: Duration = Duration::from_secs(20);
 const RATE_LIMIT_RETRIES: usize = 3;
 const BACKOFF_CAP_SECONDS: u64 = 8;
+const MEDIA_LIMIT: u64 = 20 * 1024 * 1024;
 
 pub struct Exchange {
     pub status: u16,
@@ -77,16 +78,22 @@ impl Client {
         let exchange = if matches!(exchange.status, 301 | 302 | 303 | 307 | 308) {
             let location = exchange
                 .location
-                .filter(|location| location.starts_with("https://"))
+                .and_then(|location| url::Url::parse(&location).ok())
+                .filter(|url| {
+                    url.scheme() == "https"
+                        && url.host_str().is_some()
+                        && url.username().is_empty()
+                        && url.password().is_none()
+                })
                 .ok_or_else(|| Error::http(exchange.status))?;
-            self.transport.exchange("GET", &location, "", None)?
+            self.transport
+                .exchange("GET", location.as_str(), "", None)?
         } else {
             exchange
         };
         if !(200..300).contains(&exchange.status) {
             return Err(Error::http(exchange.status));
         }
-        const MEDIA_LIMIT: u64 = 20 * 1024 * 1024;
         if exchange
             .content_length
             .is_some_and(|length| length > MEDIA_LIMIT)
@@ -182,14 +189,14 @@ fn read_response(response: ureq::Response) -> Result<Exchange, Error> {
     let content_length = response
         .header("Content-Length")
         .and_then(|value| value.parse().ok());
-    const MEDIA_LIMIT: u64 = 20 * 1024 * 1024;
-    let body = if content_length.is_some_and(|length| length > MEDIA_LIMIT) {
-        Vec::new()
-    } else {
-        let mut body = Vec::new();
-        let _ = std::io::Read::read_to_end(&mut response.into_reader(), &mut body);
-        body
-    };
+    let mut body = Vec::new();
+    if (200..300).contains(&status) && content_length.is_none_or(|length| length <= MEDIA_LIMIT) {
+        response
+            .into_reader()
+            .take(MEDIA_LIMIT + 1)
+            .read_to_end(&mut body)
+            .map_err(|_| Error::Offline("Could not read the Atlassian response".into()))?;
+    }
     Ok(Exchange {
         status,
         retry_after,

@@ -18,6 +18,8 @@ mod widgets;
 mod slots_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod toolbar_tests;
 
 #[cfg(test)]
 mod scroll_bench;

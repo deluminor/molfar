@@ -1,8 +1,8 @@
-use gpui::{AnyElement, Context, div, prelude::*, px};
+use gpui::{AnyElement, Context, Div, Stateful, div, prelude::*, px};
 use molfar_core::confluence::connector::Node;
 
 use super::View;
-use crate::theme::*;
+use crate::{settings::widgets::secondary_button, theme::*};
 
 impl View {
     pub(super) fn breadcrumbs(
@@ -21,12 +21,22 @@ impl View {
                 .truncate()
                 .child(text)
         };
+        let selecting = self.selection_source.is_some();
+        let selection_label = if selecting {
+            "Reading view"
+        } else {
+            "Select text"
+        };
+
         div()
             .debug_selector(|| "confluence-breadcrumb".into())
             .flex_shrink_0()
-            .h(px(44.))
+            .min_h(px(44.))
             .px(px(16.))
+            .py_1()
             .flex()
+            .flex_wrap()
+            .justify_end()
             .items_center()
             .gap(px(6.))
             .border_b_1()
@@ -35,8 +45,10 @@ impl View {
             .text_color(content(0.5))
             .child(
                 div()
-                    .flex_1()
+                    .flex_grow(1.)
+                    .flex_basis(px(120.))
                     .min_w_0()
+                    .max_w_full()
                     .flex()
                     .items_center()
                     .gap(px(6.))
@@ -72,54 +84,58 @@ impl View {
                     ),
             )
             .child(
-                icon_button("confluence-copy-link", "Copy MOLFAR link", "link").on_click(
-                    cx.listener(|this, _, _, cx| {
-                        if this.selected_node.is_some() {
-                            this.copy_link(None, cx);
-                        } else {
-                            this.copy_space(cx);
-                        }
-                    }),
-                ),
-            )
-            .child(
-                icon_button(
-                    "confluence-select-text",
-                    if self.selection_source.is_some() {
-                        "Reading view"
-                    } else {
-                        "Select text"
-                    },
-                    "cursor-magic",
-                )
-                .when(self.selection_source.is_some(), |d| d.bg(content(0.1)))
-                .on_click(
-                    cx.listener(|this, _, window, cx| this.toggle_selection_source(window, cx)),
-                ),
-            )
-            .child(
-                icon_button(
-                    "confluence-open-browser",
-                    "Open in browser",
-                    "external-link",
-                )
-                .on_click(move |_, _, cx| cx.open_url(&url)),
-            )
-            .child(
-                crate::settings::widgets::secondary_button(
-                    "confluence-add-to-chat",
-                    "Add to chat",
-                    false,
-                    false,
-                )
-                .child(icon("comment-add", 13.))
-                .child("Add to chat")
-                .on_click(cx.listener(
-                    |this, event: &gpui::ClickEvent, window, cx| {
-                        this.add_menu(event.position(), window, cx)
-                    },
-                )),
+                div()
+                    .flex()
+                    .flex_wrap()
+                    .min_w_0()
+                    .max_w_full()
+                    .justify_end()
+                    .gap(px(6.))
+                    .child(
+                        action("confluence-copy-link", "Copy link", "link")
+                            .tooltip(crate::tooltip::text("Copy MOLFAR link"))
+                            .on_click(cx.listener(|this, _, _, cx| {
+                                if this.selected_node.is_some() {
+                                    this.copy_link(None, cx);
+                                } else {
+                                    this.copy_space(cx);
+                                }
+                            })),
+                    )
+                    .child(
+                        action("confluence-select-text", selection_label, "cursor-magic")
+                            .when(selecting, |d| d.bg(content(0.1)))
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.toggle_selection_source(window, cx)
+                            })),
+                    )
+                    .child(
+                        action(
+                            "confluence-open-browser",
+                            "Open in browser",
+                            "external-link",
+                        )
+                        .on_click(move |_, _, cx| cx.open_url(&url)),
+                    )
+                    .child(
+                        action("confluence-add-to-chat", "Add to chat", "comment-add").on_click(
+                            cx.listener(|this, event: &gpui::ClickEvent, window, cx| {
+                                this.add_menu(event.position(), window, cx)
+                            }),
+                        ),
+                    ),
             )
             .into_any_element()
     }
+}
+
+fn action(id: &'static str, label: &'static str, glyph: &'static str) -> Stateful<Div> {
+    secondary_button(id, label, false, false)
+        .debug_selector(|| id.into())
+        .child(icon(glyph, 13.))
+        .child(
+            div()
+                .debug_selector(|| format!("{id}-{label}"))
+                .child(label),
+        )
 }

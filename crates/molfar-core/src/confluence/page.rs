@@ -8,6 +8,7 @@ use super::{
     document::{adf, markdown, storage, Document},
     error::ConfluenceError,
     http::Transport,
+    media::has_missing_images,
 };
 
 struct Heading {
@@ -68,7 +69,12 @@ impl<T: Transport> Connector<T> {
             if let Some(cached) = self.cached_page(id) {
                 match self.client.json::<Value>(&path) {
                     Ok(head) if head["version"]["number"].as_u64() == Some(cached.version) => {
-                        return Ok(cached)
+                        let media_key = media_cache_key(id, cached.version);
+                        if !has_missing_images(&cached.document, &cached.images)
+                            || self.cache.read::<bool>("pages", &media_key, None) == Some(true)
+                        {
+                            return Ok(cached);
+                        }
                     }
                     Ok(_) => (),
                     Err(ConfluenceError::Offline) => return Ok(cached),
@@ -84,6 +90,11 @@ impl<T: Transport> Connector<T> {
                     .write("pages", &format!("{id}:{}", page.version), &page)
                     .is_ok()
                 {
+                    if has_missing_images(&page.document, &page.images) {
+                        self.cache
+                            .write("pages", &media_cache_key(id, page.version), &true)
+                            .ok();
+                    }
                     self.cache
                         .write("pages", &format!("{id}:latest"), &page.version)
                         .ok();
@@ -232,6 +243,10 @@ impl<T: Transport> Connector<T> {
         let row: Value = self.client.json(&format!("/wiki/api/v2/folders/{id}"))?;
         Ok((field(&row, "title"), field(&row, "spaceId")))
     }
+}
+
+fn media_cache_key(id: &str, version: u64) -> String {
+    format!("{id}:{version}:media-v2")
 }
 
 #[cfg(test)]
