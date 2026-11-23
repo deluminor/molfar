@@ -14,6 +14,7 @@ use crate::confluence::{
 const SITE: &str = "https://fixture.atlassian.net";
 const LIST: &str = "/wiki/api/v2/pages/10/attachments?limit=50";
 const DOWNLOAD: &str = "/wiki/download/attachments/10/diagram.png?api=v2";
+const REST_DOWNLOAD: &str = "/wiki/rest/api/content/10/child/attachment/att1/download";
 const MEDIA: &str = "https://api.media.atlassian.com/file/media-id/binary?token=fixture-token";
 
 type Step = (&'static str, Response);
@@ -111,7 +112,96 @@ fn confluence_attachment_redirect_resolves_an_adf_image_and_caches_its_png() {
 }
 
 #[test]
-fn confluence_refresh_retries_an_unavailable_storage_image() {
+fn confluence_resolves_a_unique_filename_and_uses_the_rest_download_route() {
+    let dir = tempfile::tempdir().unwrap();
+    let connector = connector(
+        dir.path(),
+        [
+            (
+                LIST,
+                json_response(json!({"results": [{
+                    "id": "att1",
+                    "title": "diagram.png",
+                    "mediaType": "image/png",
+                    "downloadLink": "/rest/api/content/10/child/attachment/att1/download"
+                }]})),
+            ),
+            (REST_DOWNLOAD, response(302, Some(MEDIA), vec![])),
+            (MEDIA, png()),
+        ],
+    );
+    let document = crate::confluence::document::adf::parse(
+        r#"{"type":"doc","content":[{"type":"mediaSingle","content":[{"type":"media","attrs":{"id":"media-id","alt":"diagram.png"}}]}]}"#,
+    )
+    .unwrap();
+
+    let images = connector.images("/wiki/api/v2/pages/10", "10", 1, &document);
+    assert_eq!(image::open(&images["media-id"]).unwrap().width(), 1);
+}
+
+#[test]
+fn confluence_filename_fallback_rejects_ambiguous_or_non_image_attachments() {
+    let dir = tempfile::tempdir().unwrap();
+    let connector = connector(
+        dir.path(),
+        [(
+            LIST,
+            json_response(json!({"results": [
+                {"id": "att1", "title": "duplicate.png"},
+                {"id": "att2", "title": "duplicate.png"},
+                {"id": "att3", "title": "document.pdf", "mediaType": "application/pdf"}
+            ]})),
+        )],
+    );
+    let document = crate::confluence::document::adf::parse(
+        r#"{"type":"doc","content":[
+            {"type":"media","attrs":{"id":"first","alt":"duplicate.png"}},
+            {"type":"media","attrs":{"id":"second","alt":"document.pdf"}}
+        ]}"#,
+    )
+    .unwrap();
+
+    assert!(connector
+        .images("/wiki/api/v2/pages/10", "10", 1, &document)
+        .is_empty());
+}
+
+#[test]
+fn confluence_attachment_download_stays_on_the_matched_route_and_rejects_invalid_images() {
+    let dir = tempfile::tempdir().unwrap();
+    let connector = connector(
+        dir.path(),
+        [
+            (
+                LIST,
+                json_response(json!({"results": [
+                    {"id": "att1", "title": "wrong.png", "mediaType": "image/png",
+                     "downloadLink": "/rest/api/content/11/child/attachment/att1/download"},
+                    {"id": "att2", "title": "invalid.png", "mediaType": "image/png",
+                     "downloadLink": "/rest/api/content/10/child/attachment/att2/download"}
+                ]})),
+            ),
+            (
+                "/wiki/rest/api/content/10/child/attachment/att2/download",
+                response(200, None, b"not an image".to_vec()),
+            ),
+        ],
+    );
+    let document = crate::confluence::document::adf::parse(
+        r#"{"type":"doc","content":[
+            {"type":"media","attrs":{"id":"first","alt":"wrong.png"}},
+            {"type":"media","attrs":{"id":"second","alt":"invalid.png"}}
+        ]}"#,
+    )
+    .unwrap();
+
+    assert!(connector
+        .images("/wiki/api/v2/pages/10", "10", 1, &document)
+        .is_empty());
+}
+
+#[test]
+fn confluence_reopens_old_cache_and_retries_an_unavailable_storage_image() {
     let dir = tempfile::tempdir().unwrap();
     let page = || {
         json_response(json!({
@@ -127,7 +217,7 @@ fn confluence_refresh_retries_an_unavailable_storage_image() {
             "_links": {"download": "/download/attachments/10/diagram.png?api=v2"}
         }]}))
     };
-    let connector = connector(
+    let writer = connector(
         dir.path(),
         [
             ("/wiki/api/v2/pages/10?body-format=atlas_doc_format", page()),
@@ -140,6 +230,24 @@ fn confluence_refresh_retries_an_unavailable_storage_image() {
                 DOWNLOAD,
                 response(302, Some("https://other.invalid/file"), vec![]),
             ),
+        ],
+    );
+    assert!(writer.page("10", false).unwrap().images.is_empty());
+    writer
+        .cache
+        .write("pages", "10:1:media-v2", &false)
+        .unwrap();
+
+    let offline = connector(
+        dir.path(),
+        [("/wiki/api/v2/pages/10", response(503, None, vec![]))],
+    );
+    assert!(offline.page("10", false).unwrap().images.is_empty());
+
+    let reader = connector(
+        dir.path(),
+        [
+            ("/wiki/api/v2/pages/10", page()),
             ("/wiki/api/v2/pages/10?body-format=atlas_doc_format", page()),
             (
                 "/wiki/api/v2/pages/10/labels?limit=50",
@@ -151,11 +259,7 @@ fn confluence_refresh_retries_an_unavailable_storage_image() {
         ],
     );
 
-    assert!(connector.page("10", false).unwrap().images.is_empty());
-    let refreshed = connector.page("10", true).unwrap();
+    let refreshed = reader.page("10", false).unwrap();
     assert!(refreshed.images["diagram.png"].is_file());
-    assert_eq!(
-        connector.cached_page("10").unwrap().images,
-        refreshed.images,
-    );
+    assert_eq!(reader.cached_page("10").unwrap().images, refreshed.images,);
 }

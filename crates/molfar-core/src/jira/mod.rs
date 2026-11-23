@@ -6,7 +6,8 @@ mod query;
 pub mod tools;
 
 pub use cache::{
-    forget_lists, load_list, remove_site, save_list, site_media_full, store_media, CachedList,
+    cached_file, cached_image, forget_lists, load_list, media_root, remove_site, save_list,
+    site_media_full, store_media, valid_media_id, CachedList,
 };
 pub use issue::Issue;
 pub use link::{

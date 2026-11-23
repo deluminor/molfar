@@ -87,7 +87,8 @@ impl JiraList {
                     .aria_selected(active)
                     .size_full()
                     .px(px(10.))
-                    .py(px(7.))
+                    .pt(px(7.))
+                    .pb(px(2.))
                     .flex()
                     .flex_col()
                     .justify_between()
@@ -99,6 +100,7 @@ impl JiraList {
                     .child(
                         div()
                             .h(px(14.))
+                            .flex_shrink_0()
                             .flex()
                             .items_center()
                             .gap(px(6.))
@@ -124,7 +126,9 @@ impl JiraList {
                     )
                     .child(
                         div()
+                            .debug_selector(|| format!("jira-summary-{key}"))
                             .min_w_0()
+                            .flex_shrink_0()
                             .truncate()
                             .text_size(px(13.))
                             .line_height(px(18.))
@@ -134,7 +138,10 @@ impl JiraList {
                     )
                     .child(
                         div()
+                            .debug_selector(|| format!("jira-metadata-{key}"))
+                            .mt(px(3.))
                             .h(px(18.))
+                            .flex_shrink_0()
                             .min_w_0()
                             .flex()
                             .items_center()

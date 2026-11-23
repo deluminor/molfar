@@ -1,5 +1,6 @@
 //! The Jira issue reader: Knowledge-style body with confirmed write actions.
 mod load;
+mod media;
 mod panels;
 mod sections;
 mod share;

@@ -97,7 +97,15 @@ fn confluence_media_redirect_requires_an_attachment_request_to_the_exact_https_h
         client([Ok(redirect)]).request("/wiki").err(),
         Some(ConfluenceError::UnsafeRedirect)
     );
-    for path in [media_url, "/wiki", "/wiki/download/attachments/../../wiki"] {
+    for path in [
+        media_url,
+        "/wiki",
+        "/wiki/download/attachments/../../wiki",
+        "/wiki/rest/api/content/1/child/attachment/att1",
+        "/wiki/rest/api/content/1/child/attachment/att1/edit/download",
+        "/wiki/rest/api/content/1/child/attachment/attX/download",
+        "https://other.invalid/wiki/rest/api/content/1/child/attachment/att1/download",
+    ] {
         assert_eq!(
             client([]).request_attachment(path).err(),
             Some(ConfluenceError::UnsafeRedirect)
