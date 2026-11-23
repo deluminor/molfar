@@ -9,6 +9,7 @@ use super::error::ConfluenceError;
 const MAX_REDIRECTS: usize = 5;
 const MAX_RESPONSE_BYTES: u64 = 32 * 1024 * 1024;
 const ATTACHMENT_PATH: &str = "/wiki/download/attachments/";
+pub(super) const REST_ATTACHMENT_PATH: &str = "/wiki/rest/api/content/";
 // Atlassian Support documents this as the Confluence Cloud binary redirect target.
 const MEDIA_HOST: &str = "api.media.atlassian.com";
 const BACKOFF: [Duration; 3] = [
@@ -127,7 +128,7 @@ impl<T: Transport> Client<T> {
             .join(path)
             .map_err(|_| ConfluenceError::InvalidResponse)?;
         let site_origin = self.site.origin();
-        if attachment && (url.origin() != site_origin || !url.path().starts_with(ATTACHMENT_PATH)) {
+        if attachment && (url.origin() != site_origin || !is_attachment_path(url.path())) {
             return Err(ConfluenceError::UnsafeRedirect);
         }
 
@@ -181,6 +182,24 @@ impl<T: Transport> Client<T> {
         let response = self.request(path)?;
         serde_json::from_slice(&response.bytes).map_err(|_| ConfluenceError::InvalidResponse)
     }
+}
+
+fn is_attachment_path(path: &str) -> bool {
+    if path.starts_with(ATTACHMENT_PATH) {
+        return true;
+    }
+
+    let Some(rest) = path.strip_prefix(REST_ATTACHMENT_PATH) else {
+        return false;
+    };
+    let Some((page, attachment)) = rest.split_once("/child/attachment/") else {
+        return false;
+    };
+    let Some(attachment) = attachment.strip_suffix("/download") else {
+        return false;
+    };
+    super::connector::valid_id(page)
+        && super::connector::valid_id(attachment.strip_prefix("att").unwrap_or(attachment))
 }
 
 fn retry_delay(value: &str) -> Option<Duration> {

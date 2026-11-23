@@ -463,16 +463,46 @@ fn a_page_write_forgets_the_list_cache() {
 fn media_over_twenty_mebibytes_is_skipped() {
     let app = tempfile::tempdir().unwrap();
     let bytes = vec![1; 20 * 1024 * 1024 + 1];
-    assert!(
-        store_media(app.path(), "https://team.atlassian.net", "file", &bytes)
-            .unwrap()
-            .is_none()
+    assert!(store_media(
+        app.path(),
+        "https://team.atlassian.net",
+        "account-a",
+        "file",
+        &bytes
+    )
+    .unwrap()
+    .is_none());
+    assert!(store_media(
+        app.path(),
+        "https://team.atlassian.net",
+        "account-a",
+        "file",
+        b"png"
+    )
+    .unwrap()
+    .is_some());
+}
+
+#[test]
+fn jira_attachment_cache_isolates_accounts_and_rejects_non_image_bytes() {
+    let app = tempfile::tempdir().unwrap();
+    let site = "https://team.atlassian.net";
+    let id = "123";
+    let path = super::store_media(app.path(), site, "account-a", id, b"not an image")
+        .unwrap()
+        .unwrap();
+    let account = super::media_root(app.path(), site, "account-a");
+    assert_eq!(
+        super::cached_file(&account, id).unwrap(),
+        path.canonicalize().unwrap()
     );
-    assert!(
-        store_media(app.path(), "https://team.atlassian.net", "file", b"png")
-            .unwrap()
-            .is_some()
-    );
+    assert!(super::cached_image(&account, id).is_none());
+    assert!(super::cached_file(&super::media_root(app.path(), site, "account-b"), id).is_none());
+    assert!(super::cached_file(
+        &super::media_root(app.path(), "https://other.atlassian.net", "account-a"),
+        id
+    )
+    .is_none());
 }
 
 #[test]

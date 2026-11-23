@@ -1,13 +1,17 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashMap},
     io::Cursor,
     path::PathBuf,
 };
 
+use serde_json::Value;
+
+use crate::atlassian::decode_image;
+
 use super::{
-    connector::{api_path, field, Connector},
+    connector::{api_path, field, valid_id, Connector},
     document::{Document, Node},
-    http::Transport,
+    http::{Transport, REST_ATTACHMENT_PATH},
 };
 
 const MAX_IMAGES: usize = 40;
@@ -20,80 +24,99 @@ impl<T: Transport> Connector<T> {
         version: u64,
         document: &Document,
     ) -> HashMap<String, PathBuf> {
-        let mut media = HashSet::new();
+        let mut media = BTreeMap::new();
         collect(&document.0, &mut media);
         if media.is_empty() {
             return HashMap::new();
         }
 
-        let attachments_path = format!("{path}/attachments");
+        let (attachments, complete) = self.image_attachments(path);
         let mut images = HashMap::new();
-        let mut cursor = None::<String>;
-        for _ in 0..10 {
-            let mut pairs = vec![("limit", "50")];
-            if let Some(cursor) = &cursor {
-                pairs.push(("cursor", cursor.as_str()));
-            }
-            let (attachments, next) = match self.collection(&api_path(&attachments_path, &pairs)) {
-                Ok(collection) => collection,
-                Err(error) => {
-                    log::debug!("Confluence attachment listing failed: {}", error.kind());
-                    return images;
-                }
-            };
-            for attachment in attachments {
-                let title = field(&attachment, "title");
-                let file_id = field(&attachment, "fileId");
-                let attachment_id = field(&attachment, "id");
-                if ![title.as_str(), file_id.as_str(), attachment_id.as_str()]
+        for (media_id, alt) in media {
+            let exact = unique_attachment(&attachments, |item| {
+                ["id", "fileId"]
                     .iter()
-                    .any(|key| media.contains(key))
-                {
-                    continue;
-                }
-
-                if attachment_id.is_empty() {
-                    log::debug!("Confluence image failed: missing attachment ID");
-                    continue;
-                }
-
-                let mut download = field(&attachment, "downloadLink");
-                if download.is_empty() {
-                    download = field(&attachment["_links"], "download");
-                }
-                let key = format!("{id}:{attachment_id}:{version}");
-                let path = match self.image(&key, &download) {
-                    Ok(path) => path,
-                    Err(reason) => {
-                        log::debug!("Confluence image failed: {reason}");
-                        continue;
-                    }
-                };
-                for name in [title, file_id, attachment_id] {
-                    if media.remove(name.as_str()) {
-                        images.insert(name, path.clone());
+                    .any(|key| field(item, key) == media_id)
+            });
+            let attachment = match exact {
+                Ok(Some(item)) => Some(item),
+                Ok(None) if complete => {
+                    match unique_attachment(&attachments, |item| field(item, "title") == media_id) {
+                        Ok(None) if !alt.is_empty() => {
+                            unique_attachment(&attachments, |item| field(item, "title") == alt)
+                                .ok()
+                                .flatten()
+                        }
+                        result => result.ok().flatten(),
                     }
                 }
-                if images.len() >= MAX_IMAGES || media.is_empty() {
-                    return images;
-                }
-            }
+                _ => None,
+            };
+            let Some(attachment) = attachment else {
+                continue;
+            };
 
-            if next.is_none() || cursor == next {
-                break;
+            let mime = field(attachment, "mediaType");
+            if !mime.is_empty() && !mime.starts_with("image/") {
+                continue;
             }
-            cursor = next;
-        }
-        if !media.is_empty() {
-            log::debug!(
-                "Confluence images unresolved after attachment lookup: {}",
-                media.len()
-            );
+            let attachment_id = field(attachment, "id");
+            if !valid_id(attachment_id.strip_prefix("att").unwrap_or(&attachment_id)) {
+                continue;
+            }
+            let mut download = field(attachment, "downloadLink");
+            if download.is_empty() {
+                download = field(&attachment["_links"], "download");
+            }
+            let key = format!("{id}:{attachment_id}:{version}");
+            match self.image(&key, id, &attachment_id, &download) {
+                Ok(path) => {
+                    images.insert(media_id.to_owned(), path);
+                    if images.len() >= MAX_IMAGES {
+                        break;
+                    }
+                }
+                Err(reason) => log::debug!("Confluence image failed: {reason}"),
+            }
         }
         images
     }
 
-    fn image(&self, key: &str, download: &str) -> Result<PathBuf, &'static str> {
+    fn image_attachments(&self, path: &str) -> (Vec<Value>, bool) {
+        let path = format!("{path}/attachments");
+        let mut attachments = Vec::new();
+        let mut cursor = None::<String>;
+        for _ in 0..10 {
+            let mut pairs = vec![("limit", "50")];
+            if let Some(cursor) = &cursor {
+                pairs.push(("cursor", cursor));
+            }
+            let (items, next) = match self.collection(&api_path(&path, &pairs)) {
+                Ok(collection) => collection,
+                Err(error) => {
+                    log::debug!("Confluence attachment listing failed: {}", error.kind());
+                    return (attachments, false);
+                }
+            };
+            attachments.extend(items);
+            if next.is_none() {
+                return (attachments, true);
+            }
+            if cursor == next {
+                break;
+            }
+            cursor = next;
+        }
+        (attachments, false)
+    }
+
+    fn image(
+        &self,
+        key: &str,
+        page: &str,
+        attachment: &str,
+        download: &str,
+    ) -> Result<PathBuf, &'static str> {
         let path = self
             .cache
             .image_path(key)
@@ -105,29 +128,29 @@ impl<T: Transport> Connector<T> {
             return Err("missing download link");
         }
 
-        let download = if download.starts_with("/download/") {
-            format!("/wiki{download}")
-        } else {
-            download.to_owned()
-        };
+        let download =
+            if download.starts_with("/download/") || download.starts_with("/rest/api/content/") {
+                format!("/wiki{download}")
+            } else {
+                download.to_owned()
+            };
+        let url = self
+            .site()
+            .join(&download)
+            .map_err(|_| "invalid download URL")?;
+        if url.path().starts_with(REST_ATTACHMENT_PATH)
+            && url.path()
+                != format!("{REST_ATTACHMENT_PATH}{page}/child/attachment/{attachment}/download")
+        {
+            return Err("download route does not match the attachment");
+        }
+
         let bytes = self
             .client
-            .request_attachment(&download)
+            .request_attachment(url.as_str())
             .map_err(|error| error.kind())?
             .bytes;
-        let mut reader = image::ImageReader::new(Cursor::new(bytes))
-            .with_guessed_format()
-            .map_err(|_| "image format detection failed")?;
-        let mut limits = image::Limits::default();
-        limits.max_image_width = Some(8192);
-        limits.max_image_height = Some(8192);
-        limits.max_alloc = Some(64 * 1024 * 1024);
-        reader.limits(limits);
-        let image = reader.decode().map_err(|error| match error {
-            image::ImageError::Limits(_) => "image exceeds decode limits",
-            image::ImageError::Unsupported(_) => "unsupported image format",
-            _ => "image decode failed",
-        })?;
+        let image = decode_image(&bytes)?;
         let mut png = Cursor::new(Vec::new());
         image
             .write_to(&mut png, image::ImageFormat::Png)
@@ -140,11 +163,29 @@ impl<T: Transport> Connector<T> {
     }
 }
 
-fn collect<'a>(nodes: &'a [Node], media: &mut HashSet<&'a str>) {
+fn unique_attachment(
+    attachments: &[Value],
+    matches: impl Fn(&Value) -> bool,
+) -> Result<Option<&Value>, ()> {
+    let mut matches = attachments.iter().filter(|value| matches(value));
+    let item = matches.next();
+    if matches.next().is_some() {
+        return Err(());
+    }
+    Ok(item)
+}
+
+pub(super) fn has_missing_images(document: &Document, images: &HashMap<String, PathBuf>) -> bool {
+    let mut media = BTreeMap::new();
+    collect(&document.0, &mut media);
+    media.keys().any(|id| !images.contains_key(*id))
+}
+
+fn collect<'a>(nodes: &'a [Node], media: &mut BTreeMap<&'a str, &'a str>) {
     for node in nodes {
         match node {
-            Node::Media(id, _) if !id.is_empty() => {
-                media.insert(id);
+            Node::Media(id, alt) if !id.is_empty() => {
+                media.entry(id).or_insert(alt);
             }
             Node::Paragraph(nodes)
             | Node::Heading(_, nodes)

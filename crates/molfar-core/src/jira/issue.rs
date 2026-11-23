@@ -18,6 +18,13 @@ pub struct Attachment {
     pub id: String,
     pub name: String,
     pub size: u64,
+    pub mime_type: String,
+}
+
+impl Attachment {
+    pub fn is_image(&self) -> bool {
+        self.mime_type.starts_with("image/")
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -234,6 +241,7 @@ pub fn parse(issue: &Value, sprint_field: Option<&str>) -> Issue {
                         id: text(item, "id"),
                         name: text(item, "filename"),
                         size: item.get("size").and_then(Value::as_u64).unwrap_or(0),
+                        mime_type: text(item, "mimeType"),
                     })
                     .collect()
             })

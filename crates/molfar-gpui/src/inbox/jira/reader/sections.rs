@@ -146,8 +146,7 @@ impl JiraReader {
             .attachments
             .iter()
             .map(|item| {
-                let path = self.media.join(&item.id);
-                let present = path.is_file();
+                let path = molfar_core::jira::cached_file(&self.media, &item.id);
                 div()
                     .id(SharedString::from(format!("jira-file-{}", item.id)))
                     .role(Role::Button)
@@ -158,14 +157,14 @@ impl JiraReader {
                     .gap(px(8.))
                     .rounded(px(6.))
                     .text_size(px(12.))
-                    .when(present, |d| {
+                    .when(path.is_some(), |d| {
                         d.cursor_pointer().hover(|s| s.bg(content(0.05)))
                     })
                     .child(icon("file", 13.).text_color(content(0.5)))
                     .child(div().flex_1().min_w_0().truncate().child(item.name.clone()))
                     .child(div().text_color(content(0.4)).child(size_label(item.size)))
                     .on_click(cx.listener(move |_, _, _, cx| {
-                        if path.is_file() {
+                        if let Some(path) = &path {
                             cx.open_url(&format!("file://{}", path.display()));
                         }
                     }))

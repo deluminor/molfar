@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use gpui::{AppContext, TestAppContext, VisualTestContext, WindowOptions};
+use gpui::{AppContext, TestAppContext, VisualTestContext, WindowOptions, px};
 use molfar_core::jira::{self, GroupBy, ListModel, Row};
 
 use super::JiraList;
@@ -83,4 +83,9 @@ fn only_visible_issue_rows_are_built(cx: &mut TestAppContext) {
     let first = visual.debug_bounds("jira-row-TB-0").unwrap();
     let second = visual.debug_bounds("jira-row-TB-1").unwrap();
     assert!(second.top() >= first.bottom(), "rows never overlap");
+    let summary = visual.debug_bounds("jira-summary-TB-0").unwrap();
+    let metadata = visual.debug_bounds("jira-metadata-TB-0").unwrap();
+    assert!(metadata.top() - summary.bottom() >= px(3.));
+    assert!(summary.size.height <= px(18.));
+    assert!(metadata.bottom() <= first.bottom());
 }
