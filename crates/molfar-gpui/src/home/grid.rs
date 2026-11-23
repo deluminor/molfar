@@ -56,7 +56,7 @@ impl Home {
         let mut floating = None;
         for (index, item) in shown.iter().enumerate() {
             let target = grid.rect(item);
-            let body = self.widget(item.id, card::body(target.w, target.h), window, cx);
+            let body = self.widget(item.id, card::body(target.w, target.h));
             let actions = self
                 .widget_actions(item.id, cx)
                 .into_iter()

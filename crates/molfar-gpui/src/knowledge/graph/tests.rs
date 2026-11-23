@@ -201,3 +201,8 @@ fn pressing_a_control_over_a_node_does_not_select_it(cx: &mut TestAppContext) {
         })
         .unwrap();
 }
+
+#[test]
+fn the_graph_starts_still_until_rotate_is_turned_on() {
+    assert!(!GraphView::new().spinning);
+}

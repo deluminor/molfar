@@ -112,7 +112,7 @@ impl GraphView {
             camera: Camera::default(),
             target_distance: Camera::default().distance,
             fit_pending: true,
-            spinning: true,
+            spinning: false,
             neighbors_only: false,
             hovered: None,
             selected: None,

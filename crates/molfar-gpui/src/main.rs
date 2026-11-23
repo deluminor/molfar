@@ -42,6 +42,7 @@ mod gpu_trim;
 mod hang_watchdog;
 mod history;
 mod home;
+mod host_pane;
 mod image_lightbox;
 mod image_memory;
 mod inbox;

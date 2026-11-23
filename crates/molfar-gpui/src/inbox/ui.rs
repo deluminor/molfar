@@ -3,8 +3,8 @@ use crate::editor_scrollbar::Metrics;
 use crate::popover::{Align, Anchor, popover};
 use gpui::{
     Animation, AnimationExt, AnyElement, Bounds, ClipboardItem, CursorStyle, Div, FontWeight, Hsla,
-    MouseButton, Pixels, Role, SharedString, Stateful, Window, canvas, div, list, point,
-    prelude::*, px, rgb, size,
+    MouseButton, Pixels, Role, SharedString, Stateful, StyleRefinement, Window, canvas, div, list,
+    point, prelude::*, px, rgb, size,
 };
 
 pub(super) fn action(id: impl Into<SharedString>, label: impl Into<SharedString>) -> Stateful<Div> {
@@ -775,16 +775,22 @@ impl Inbox {
             .child(sources)
             .when(!connected.is_empty() && !own_list, |d| d.child(tools))
             .when(self.state.source == "jira", |pane| {
-                pane.child(div().flex_1().min_h_0().child(self.jira_list.clone()))
+                pane.child(
+                    div().flex_1().min_h_0().child(
+                        self.jira_list
+                            .clone()
+                            .cached(StyleRefinement::default().size_full()),
+                    ),
+                )
             })
             .when(self.state.source == CONFLUENCE, |pane| {
-                pane.children(self.confluence.clone().map(|view| {
+                pane.children(self.confluence_panes.as_ref().map(|panes| {
                     div()
                         .flex_1()
                         .min_h_0()
                         .flex()
                         .flex_col()
-                        .child(view.update(cx, |view, cx| view.tree_pane(cx)))
+                        .child(panes.tree())
                 }))
             })
             .when(!own_list, |pane| {
@@ -847,15 +853,21 @@ impl Inbox {
         if self.state.source == "jira" {
             return div()
                 .size_full()
-                .child(self.jira_reader.clone())
+                .child(
+                    self.jira_reader
+                        .clone()
+                        .cached(StyleRefinement::default().size_full()),
+                )
                 .into_any_element();
         }
         if self.state.source == CONFLUENCE
-            && let Some(view) = self.confluence.clone()
+            && let Some(panes) = &self.confluence_panes
         {
             return div()
                 .size_full()
-                .child(view.update(cx, |view, cx| view.reader_view(cx)))
+                .flex()
+                .flex_col()
+                .child(panes.reader())
                 .into_any_element();
         }
         let Some(item) = self.item() else {

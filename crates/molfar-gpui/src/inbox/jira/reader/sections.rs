@@ -173,57 +173,58 @@ impl JiraReader {
             .collect()
     }
 
-    pub(super) fn comment_list(
+    /// The comment at `position` in the chosen order, newest or oldest first.
+    pub(super) fn comment(
         &self,
+        position: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
-    ) -> Vec<AnyElement> {
-        let order: Vec<usize> = if self.newest {
-            (0..self.comments.len()).rev().collect()
+    ) -> AnyElement {
+        let count = self.comments.len();
+        let index = if self.newest {
+            count.saturating_sub(position + 1)
         } else {
-            (0..self.comments.len()).collect()
+            position
         };
-        order
-            .into_iter()
-            .map(|index| {
-                let (comment, blocks) = &self.comments[index];
+        let Some((comment, blocks)) = self.comments.get(index) else {
+            return div().into_any_element();
+        };
+
+        div()
+            .debug_selector(|| "jira-comment".into())
+            .mt(px(12.))
+            .flex()
+            .gap(px(10.))
+            .child(avatar_image("jira", &comment.author, "", 24., window, cx))
+            .child(
                 div()
-                    .debug_selector(|| "jira-comment".into())
-                    .mt(px(12.))
-                    .flex()
-                    .gap(px(10.))
-                    .child(avatar_image("jira", &comment.author, "", 24., window, cx))
+                    .flex_1()
+                    .min_w_0()
                     .child(
                         div()
-                            .flex_1()
-                            .min_w_0()
+                            .flex()
+                            .items_center()
+                            .gap(px(6.))
+                            .text_size(px(12.))
                             .child(
                                 div()
-                                    .flex()
-                                    .items_center()
-                                    .gap(px(6.))
-                                    .text_size(px(12.))
-                                    .child(
-                                        div()
-                                            .font_weight(FontWeight::SEMIBOLD)
-                                            .text_color(content(0.9))
-                                            .child(comment.author.clone()),
-                                    )
-                                    .child(
-                                        div()
-                                            .text_color(content(0.45))
-                                            .child(relative_time(&comment.created)),
-                                    ),
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .text_color(content(0.9))
+                                    .child(comment.author.clone()),
                             )
                             .child(
                                 div()
-                                    .text_size(px(13.))
-                                    .children(render_preview(self, blocks, cx)),
+                                    .text_color(content(0.45))
+                                    .child(relative_time(&comment.created)),
                             ),
                     )
-                    .into_any_element()
-            })
-            .collect()
+                    .child(
+                        div()
+                            .text_size(px(13.))
+                            .children(render_preview(self, blocks, cx)),
+                    ),
+            )
+            .into_any_element()
     }
 }
 

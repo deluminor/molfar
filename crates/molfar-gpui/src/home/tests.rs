@@ -233,3 +233,49 @@ fn escape_leaves_edit_mode_before_closing_home(cx: &mut TestAppContext) {
     visual.simulate_keystrokes("escape");
     assert!(*closed.borrow());
 }
+
+#[gpui::test]
+fn animation_ticks_reuse_the_data_widgets(cx: &mut TestAppContext) {
+    let (window, _) = open(cx, 1400., Value::Null);
+    cx.update(|cx| cx.set_reduce_motion(false));
+    window.update(cx, |_, _, cx| cx.notify()).unwrap();
+    cx.run_until_parked();
+    // Cards rise in on entrance, timed by the wall clock; positions settle
+    // before the measurement, or moving bounds would redraw the panes.
+    cx.executor()
+        .advance_clock(std::time::Duration::from_secs(3));
+    std::thread::sleep(super::motion::ENTRANCE * 2);
+    window.update(cx, |_, _, cx| cx.notify()).unwrap();
+    cx.run_until_parked();
+    let renders = |cx: &mut TestAppContext| {
+        window
+            .update(cx, |home, _, cx| home.panes.renders(cx))
+            .unwrap()
+    };
+    // A pane redraws for its own notify: Home's data landing, or a chart
+    // still drawing itself in. Animation ticks elsewhere must never add one.
+    let notifies = Rc::new(RefCell::new(0));
+    let panes = window
+        .update(cx, |home, _, _| home.panes.entities())
+        .unwrap();
+    let _watches: Vec<_> = panes
+        .iter()
+        .map(|pane| {
+            let counter = notifies.clone();
+            cx.update(|cx| cx.observe(pane, move |_, _| *counter.borrow_mut() += 1))
+        })
+        .collect();
+    let before = renders(cx);
+
+    cx.executor().advance_clock(crate::pulse::TICK * 8);
+    cx.run_until_parked();
+
+    let after = renders(cx);
+    assert!(before > 0);
+    assert!(
+        after - before <= *notifies.borrow(),
+        "{} pane renders for {} pane notifies over 8 ticks",
+        after - before,
+        notifies.borrow()
+    );
+}

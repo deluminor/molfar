@@ -92,3 +92,25 @@ fn a_board_change_still_refreshes_the_cached_panes(cx: &mut TestAppContext) {
     assert!(columns_after > columns_before);
     assert!(visual.debug_bounds("board-card-second").is_none());
 }
+
+#[gpui::test]
+#[ignore = "benchmark: cargo test --bin molfar-native board_detail_scroll_frame_time -- --ignored --nocapture"]
+fn board_detail_scroll_frame_time(cx: &mut TestAppContext) {
+    const FRAMES: usize = 40;
+    let window = open_long_card(cx);
+    let visual = &mut VisualTestContext::from_window(window.into(), cx);
+    visual.run_until_parked();
+    let detail = visual.debug_bounds("board-detail").unwrap();
+
+    let start = std::time::Instant::now();
+    for _ in 0..FRAMES {
+        visual.simulate_event(ScrollWheelEvent {
+            position: detail.center(),
+            delta: ScrollDelta::Pixels(point(px(0.), px(-24.))),
+            ..Default::default()
+        });
+        visual.run_until_parked();
+    }
+    let ms = start.elapsed().as_secs_f64() * 1000. / FRAMES as f64;
+    eprintln!("board detail scroll {ms:.2} ms/frame");
+}

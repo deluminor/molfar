@@ -81,7 +81,7 @@ impl Knowledge {
         self.tree_rows.clear();
         self.selected = None;
         self.prepared.clear();
-        self.preview_blocks.clear();
+        self.show_preview(None, Vec::new());
         self.relations = Default::default();
         self.properties.clear();
         self.drafts.clear();

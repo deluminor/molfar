@@ -77,6 +77,8 @@ pub(crate) struct Inbox {
     jira_list: Entity<jira::JiraList>,
     jira_reader: Entity<jira::JiraReader>,
     confluence: Option<Entity<crate::confluence::View>>,
+    /// Confluence's tree and page, each cached so one's scroll leaves the other.
+    confluence_panes: Option<crate::confluence::slots::Slots>,
     _confluence_watch: Option<Subscription>,
     search: Entity<Input>,
     comment: Entity<Input>,
@@ -332,6 +334,7 @@ impl Inbox {
             jira_list,
             jira_reader,
             confluence: None,
+            confluence_panes: None,
             _confluence_watch: None,
             search,
             comment,
@@ -475,6 +478,7 @@ impl Inbox {
         cx: &mut Context<Self>,
     ) {
         self._confluence_watch = Some(cx.observe(&view, |_, _, cx| cx.notify()));
+        self.confluence_panes = Some(crate::confluence::slots::Slots::new(&view, cx));
         self.confluence = Some(view);
     }
 

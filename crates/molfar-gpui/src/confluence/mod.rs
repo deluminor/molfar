@@ -8,11 +8,14 @@ mod reader;
 mod relations;
 mod render;
 pub(crate) mod service;
+pub(crate) mod slots;
 mod spaces;
 mod toolbar;
 mod tree;
 mod widgets;
 
+#[cfg(test)]
+mod slots_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

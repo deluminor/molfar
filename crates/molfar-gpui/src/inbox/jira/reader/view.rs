@@ -1,6 +1,4 @@
-use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, Render, Role, Window, div, prelude::*, px,
-};
+use gpui::{AnyElement, Context, FontWeight, IntoElement, Render, Window, div, prelude::*, px};
 use molfar_core::jira::issue::Issue;
 
 use super::JiraReader;
@@ -14,7 +12,7 @@ use crate::{
         relative_time,
         ui::message,
     },
-    knowledge::{self, render_preview},
+    knowledge,
     theme::*,
 };
 
@@ -138,12 +136,6 @@ impl Render for JiraReader {
                 })
                 .into_any_element();
         };
-        let body = render_preview(self, &self.description, cx);
-        let comments = self.comment_list(window, cx);
-        let subtasks = self.linked("subtask", &issue.subtasks, cx);
-        let links = self.linked("link", &issue.links, cx);
-        let files = self.attachments(&issue, cx);
-
         div()
             .id("jira-reader")
             .debug_selector(|| "jira-reader".into())
@@ -164,59 +156,10 @@ impl Render for JiraReader {
             .child(
                 div()
                     .id("jira-reader-body")
+                    .debug_selector(|| "jira-reader-body".into())
                     .flex_1()
                     .min_h_0()
-                    .overflow_y_scroll()
-                    .track_scroll(&self.scroll)
-                    .child(
-                        div()
-                            .max_w(px(820.))
-                            .px(px(20.))
-                            .pt(px(16.))
-                            .pb(px(40.))
-                            .child(self.details(&issue))
-                            .child(section_title("Description"))
-                            .child(if body.is_empty() {
-                                message("No description").p_0().into_any_element()
-                            } else {
-                                div().text_size(px(13.)).children(body).into_any_element()
-                            })
-                            .when(!subtasks.is_empty(), |d| {
-                                d.child(section_title(format!("Sub-tasks · {}", subtasks.len())))
-                                    .children(subtasks)
-                            })
-                            .when(!links.is_empty(), |d| {
-                                d.child(section_title("Linked issues")).children(links)
-                            })
-                            .when(!files.is_empty(), |d| {
-                                d.child(section_title("Attachments")).children(files)
-                            })
-                            .child(
-                                section_title(format!("Comments · {}", self.comments.len()))
-                                    .child(div().flex_1())
-                                    .child(
-                                        div()
-                                            .id("jira-comment-order")
-                                            .role(Role::Button)
-                                            .cursor_pointer()
-                                            .text_color(content(0.5))
-                                            .hover(|s| s.text_color(content(1.)))
-                                            .child(if self.newest {
-                                                "Newest first"
-                                            } else {
-                                                "Oldest first"
-                                            })
-                                            .on_click(cx.listener(|this, _, _, cx| {
-                                                this.newest = !this.newest;
-                                                cx.notify();
-                                            })),
-                                    ),
-                            )
-                            .when(comments.is_empty(), |d| {
-                                d.child(message("No comments yet").p_0())
-                            })
-                            .children(comments),
-                    ),
+                    .child(self.body(cx)),
             )
             .into_any_element()
     }

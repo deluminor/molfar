@@ -70,7 +70,7 @@ impl Knowledge {
             self.panel_open = false;
             self.selected = None;
             self.prepared.clear();
-            self.preview_blocks.clear();
+            self.show_preview(None, Vec::new());
             cx.notify();
         }
     }
@@ -169,7 +169,8 @@ impl Knowledge {
         let embedded = embed_images(body, &self.entries, path);
         self.prepared = prepare_preview(&embedded, &self.notes, path);
         let root = self.vault_root();
-        self.preview_blocks = super::document::parse_preview(&self.prepared, root.as_deref());
+        let blocks = super::document::parse_preview(&self.prepared, root.as_deref());
+        self.show_preview(Some(path), blocks);
         self.relations = super::document::Relations::of(&self.notes, path);
         self.properties = properties;
     }

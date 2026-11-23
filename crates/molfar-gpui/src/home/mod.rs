@@ -50,6 +50,7 @@ pub(crate) struct Home {
     _poll: Option<gpui::Task<()>>,
     _inbox: Option<gpui::Subscription>,
     views: Views,
+    panes: widgets::Panes,
 }
 
 struct Views {
@@ -93,6 +94,7 @@ impl Home {
             _poll: None,
             _inbox: None,
             views,
+            panes: widgets::Panes::new(cx),
         }
     }
 

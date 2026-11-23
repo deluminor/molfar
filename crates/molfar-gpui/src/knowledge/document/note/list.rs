@@ -22,6 +22,29 @@ fn task_of(children: &[Block]) -> Option<bool> {
     }
 }
 
+/// Checkboxes `block` draws, counted the way [`list`] numbers them.
+pub(super) fn tasks_in(block: &Block) -> usize {
+    match block {
+        Block::List { items, .. } => items
+            .iter()
+            .map(|children| {
+                let task = task_of(children);
+                let nested: usize = children
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, child)| {
+                        !(*index == 0 && task.is_some() && matches!(child, Block::Paragraph { .. }))
+                    })
+                    .map(|(_, child)| tasks_in(child))
+                    .sum();
+                usize::from(task.is_some()) + nested
+            })
+            .sum(),
+        Block::BlockQuote { children } => children.iter().map(tasks_in).sum(),
+        _ => 0,
+    }
+}
+
 fn without_task(runs: &[InlineRun], checked: bool) -> Vec<InlineRun> {
     runs.iter()
         .cloned()
